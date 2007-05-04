@@ -24,7 +24,7 @@ _rule_re = re.compile(r'''(?x)
         (?:\((?P<args>[^\)]*)\))?               # converter arguments
         \:                                      # variable delimiter
     )?
-    (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)        # variable name
+    (?P<variable>[a-zA-Z][a-zA-Z0-9_]*)         # variable name
     >
 ''')
 
@@ -72,8 +72,14 @@ class RoutingException(Exception):
 class RequestRedirect(RoutingException):
     """
     Raise if the map requests a redirect. This is for example the case
-    if `strict_slashes` are activated and an url that requires a leading
+    if `strict_slasheses` are activated and an url that requires a leading
     slash.
+    """
+
+
+class RequestSlash(RoutingException):
+    """
+    Internal exception never propagated.
     """
 
 
@@ -91,7 +97,7 @@ class ValidationError(ValueError):
 
 class IneptUrl(Warning):
     """
-    You'll receive this warning if there the mapper is in `strict_slashes`
+    You'll receive this warning if there the mapper is in `strict_slasheses`
     mode and there is an url that requires a trailing slash and the same
     url without that slash would lead to a different page.
     """
@@ -103,12 +109,18 @@ class Rule(object):
     """
 
     def __init__(self, string, subdomain=None, endpoint=None,
-                 strict_slash=None):
+                 strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
+        if string.endswith('/'):
+            self.is_leaf = False
+            string = string.rstrip('/')
+        else:
+            self.is_leaf = True
         self.rule = string
+
         self.map = None
-        self.strict_slash = strict_slash
+        self.strict_slashes = strict_slashes
         self.subdomain = subdomain
         self.endpoint = endpoint
 
@@ -121,8 +133,8 @@ class Rule(object):
         if self.map is not None:
             raise RuntimeError('rule %r already bound to %r' % (self, map))
         self.map = map
-        if self.strict_slash is None:
-            self.strict_slash = map.strict_slash
+        if self.strict_slashes is None:
+            self.strict_slashes = map.strict_slashes
         if self.subdomain is None:
             self.subdomain = map.default_subdomain
 
@@ -143,18 +155,24 @@ class Rule(object):
                 self._trace.append((True, variable))
                 self._arguments.add(variable)
 
-        # XXX: lazy slash support
-        regex = r'^<%s>%s$(?u)' % (
+        regex = r'^<%s>%s%s$(?u)' % (
             re.escape(self.subdomain),
-            u''.join(tmp)
+            u''.join(tmp),
+            not self.is_leaf and '(?P<__suffix__>/?)' or ''
         )
         self._regex = re.compile(regex)
 
     def match(self, path):
         m = self._regex.search(path)
         if m is not None:
+            groups = m.groupdict()
+            no_suffix = not groups.pop('__suffix__')
+            # we have a folder like part of the url without a trailing
+            # slash and strict slashes enabled. raise an error
+            if self.strict_slashes and not self.is_leaf and no_suffix:
+                raise RequestSlash()
             result = {}
-            for name, value in m.groupdict().iteritems():
+            for name, value in groups.iteritems():
                 try:
                     value = self._converters[name].to_python(value)
                 except ValidationError:
@@ -236,7 +254,10 @@ class Matcher(object):
     def match(self, path_info):
         path = '<%s>/%s' % (self.subdomain, path_info.lstrip('/'))
         for rule in self._rules:
-            rv = rule.match(path)
+            try:
+                rv = rule.match(path)
+            except RequestSlash:
+                raise RequestRedirect(path_info + '/')
             if rv is not None:
                 return rule.endpoint, rv
         raise NotFound(path_info)
@@ -248,11 +269,11 @@ class Map(object):
     """
 
     def __init__(self, rules, default_subdomain='www', charset='utf-8',
-                 strict_slash=False):
+                 strict_slashes=False):
         self.rules = []
 
         self.charset = charset
-        self.strict_slash = strict_slash
+        self.strict_slashes = strict_slashes
         self.default_subdomain = default_subdomain
 
         self.converters = {
