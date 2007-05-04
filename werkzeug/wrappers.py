@@ -30,7 +30,7 @@ class BaseRequest(object):
 
     def __init__(self, environ):
         self.environ = environ
-        self.environ['wsgitk.request'] = self
+        self.environ['werkzeug.request'] = self
 
     def _handle_file_upload(self, name, filename, content_type, payload):
         """You can override this to change the way uploads are handled."""

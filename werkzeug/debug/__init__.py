@@ -108,7 +108,7 @@ class DebuggedApplication(object):
         else:
             extypestr = str(exception_type)
 
-        request = environ.get('wsgitk.request')
+        request = environ.get('werkzeug.request')
         req_vars = request and request.get_debugging_vars() or []
 
         return Namespace(
