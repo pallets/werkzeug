@@ -9,14 +9,14 @@
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import posixpath
 import cgi
 import email
 import urllib
-from datetime import datetime
+import posixpath
 from time import gmtime
-from email.Message import Message as MessageType
 from Cookie import SimpleCookie
+from datetime import datetime
+from email.Message import Message as MessageType
 
 from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FieldStorage, Headers

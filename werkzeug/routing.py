@@ -16,7 +16,7 @@ except NameError:
     from sets import Set as set
 
 
-_rule_re = re.compile(r'''(?x)
+_rule_re = re.compile(r'''
     (?P<static>[^<]*)                           # static rule data
     <
     (?:
@@ -26,15 +26,14 @@ _rule_re = re.compile(r'''(?x)
     )?
     (?P<variable>[a-zA-Z][a-zA-Z0-9_]*)         # variable name
     >
-''')
+''', re.VERBOSE)
 
 
 def parse_rule(rule):
     """
-    Parse a rule and return it as generator. Each iteration yields
-    tuples in the form ``(converter, arguments, variable)``. If the
-    converter is `None` it's a static url part, otherwise it's a
-    dynamic one.
+    Parse a rule and return it as generator. Each iteration yields tuples in the
+    form ``(converter, arguments, variable)``. If the converter is `None` it's a
+    static url part, otherwise it's a dynamic one.
     """
     pos = 0
     end = len(rule)
@@ -50,30 +49,28 @@ def parse_rule(rule):
         variable = data['variable']
         converter = data['converter'] or 'default'
         if variable in used_names:
-            raise ValueError('variable name %r used twice.' %
-                             variable)
+            raise ValueError('variable name %r used twice.' % variable)
         used_names.add(variable)
         yield converter, data['args'] or None, variable
         pos = m.end()
     if pos < end:
         remaining = rule[pos:]
         if '>' in remaining or '<' in remaining:
-            raise ValueError('malformed url rule')
+            raise ValueError('malformed url rule: %r' % rule)
         yield None, None, remaining
 
 
 class RoutingException(Exception):
     """
-    Special exceptions that require the application to redirect, notifies
-    him about missing urls etc.
+    Special exceptions that require the application to redirect, notifies him
+    about missing urls etc.
     """
 
 
 class RequestRedirect(RoutingException):
     """
-    Raise if the map requests a redirect. This is for example the case
-    if `strict_slasheses` are activated and an url that requires a leading
-    slash.
+    Raise if the map requests a redirect. This is for example the case if
+    `strict_slashes` are activated and an url that requires a leading slash.
     """
 
 
@@ -97,19 +94,18 @@ class ValidationError(ValueError):
 
 class IneptUrl(Warning):
     """
-    You'll receive this warning if there the mapper is in `strict_slasheses`
-    mode and there is an url that requires a trailing slash and the same
-    url without that slash would lead to a different page.
+    You'll receive this warning if there the mapper is in `strict_slashes`
+    mode and there is an url that requires a trailing slash and the same url
+    without that slash would lead to a different page.
     """
 
 
 class Rule(object):
     """
-    Represents one url.
+    Represents one url pattern.
     """
 
-    def __init__(self, string, subdomain=None, endpoint=None,
-                 strict_slashes=None):
+    def __init__(self, string, subdomain=None, endpoint=None, strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
         if string.endswith('/'):
@@ -131,36 +127,31 @@ class Rule(object):
 
     def bind(self, map):
         if self.map is not None:
-            raise RuntimeError('rule %r already bound to %r' % (self, map))
+            raise RuntimeError('rule %r already bound to %r' % (self, self.map))
         self.map = map
         if self.strict_slashes is None:
             self.strict_slashes = map.strict_slashes
         if self.subdomain is None:
             self.subdomain = map.default_subdomain
 
-        if self.map is None:
-            raise RuntimeError('cannot compile unbound rule')
-        tmp = []
+        regex_parts = []
         for converter, arguments, variable in parse_rule(self.rule):
             if converter is None:
-                tmp.append(re.escape(variable))
+                regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
             else:
-                f = self.map.converters[converter](self.map, arguments)
-                tmp.append('(?P<%s>%s)' % (
-                    variable,
-                    f.regex
-                ))
-                self._converters[variable] = f
+                convobj = map.converters[converter](map, arguments)
+                regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
+                self._converters[variable] = convobj
                 self._trace.append((True, variable))
                 self._arguments.add(variable)
 
-        regex = r'^<%s>%s%s$(?u)' % (
+        regex = r'^<%s>%s%s$' % (
             re.escape(self.subdomain),
-            u''.join(tmp),
+            u''.join(regex_parts),
             not self.is_leaf and '(?P<__suffix__>/?)' or ''
         )
-        self._regex = re.compile(regex)
+        self._regex = re.compile(regex, re.UNICODE)
 
     def match(self, path):
         m = self._regex.search(path)
