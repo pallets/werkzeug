@@ -5,6 +5,59 @@
 
     An extensible URL mapper.
 
+    Map creation::
+
+        >>> m = Map([
+        ...     # Static URLs
+        ...     Rule('/', endpoint='static/index'),
+        ...     Rule('/about', endpoint='static/about'),
+        ...     Rule('/help', endpoint='static/help'),
+        ...     # Knowledge Base
+        ...     Rule('/', subdomain='kb', endpoint='kb/index'),
+        ...     Rule('/browse/', subdomain='kb', endpoint='kb/browse'),
+        ...     Rule('/browse/<int:id>/', subdomain='kb', endpoint='kb/browse'),
+        ...     Rule('/browse/<int:id>/<int:page>', subdomain='kb', endpoint='kb/browse')
+        ... ], 'example.com')
+
+    URL building::
+
+        >>> m.build("kb/browse", dict(id=42))
+        'http://kb.example.com/browse/42/'
+        >>> m.build("kb/browse", dict())
+        'http://kb.example.com/browse/'
+        >>> m.build("kb/browse", dict(id=42, page=3))
+        'http://kb.example.com/browse/42/3'
+        >>> m.build("static/about")
+        u'/about'
+        >>> m.build("static/about", subdomain="kb")
+        'http://www.example.com/about'
+        >>> m.build("static/index", force_external=True)
+        'http://www.example.com/'
+
+    URL matching::
+
+        >>> m.match("/")
+        ('static/index', {})
+        >>> m.match("/about")
+        ('static/about', {})
+        >>> m.match("/", subdomain="kb")
+        ('kb/index', {})
+        >>> m.match("/browse/42/23", subdomain="kb")
+        ('kb/browse', {'id': 42, 'page': 23})
+
+    Exceptions::
+
+        >>> m.match("/browse/42", subdomain="kb")
+        Traceback (most recent call last):
+        ...
+        werkzeug.routing.RequestRedirect: http://kb.example.com/browse/42/
+        >>> m.match("/missing", subdomain="kb")
+        Traceback (most recent call last):
+        ...
+        werkzeug.routing.NotFound: /missing
+        >>> m.match("/missing", subdomain="kb")
+
+
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
@@ -28,7 +81,6 @@ _rule_re = re.compile(r'''
     (?P<variable>[a-zA-Z][a-zA-Z0-9_]*)         # variable name
     >
 ''', re.VERBOSE)
-
 
 def parse_rule(rule):
     """
@@ -59,6 +111,39 @@ def parse_rule(rule):
         if '>' in remaining or '<' in remaining:
             raise ValueError('malformed url rule: %r' % rule)
         yield None, None, remaining
+
+
+def parse_arguments(argstring, **defaults):
+    """
+    Helper function for the converters. It's used to parse the
+    argument string and fill the defaults.
+    """
+    result = {}
+    rest = argstring or ''
+
+    while True:
+        tmp = rest.split('=', 1)
+        if len(tmp) != 2:
+            break
+        key, rest = tmp
+        tmp = rest.split(',')
+        if len(tmp) == 2:
+            value, rest = tmp
+        else:
+            value = tmp
+        key = key.strip()
+        if key not in defaults:
+            raise ValueError('unknown parameter %r' % key)
+        conv = defaults[key][0]
+        if conv is bool:
+            result[key] = value.strip().lower() == 'true'
+        else:
+            result[key] = conv(value.strip())
+
+    for key, value in defaults.iteritems():
+        result[key] = value[1]
+
+    return result
 
 
 class RoutingException(Exception):
@@ -99,20 +184,13 @@ class ValidationError(ValueError):
     """
 
 
-class IneptUrl(Warning):
-    """
-    You'll receive this warning if there the mapper is in `strict_slashes`
-    mode and there is an url that requires a trailing slash and the same url
-    without that slash would lead to a different page.
-    """
-
-
 class Rule(object):
     """
     Represents one url pattern.
     """
 
-    def __init__(self, string, subdomain=None, endpoint=None, strict_slashes=None):
+    def __init__(self, string, subdomain=None, endpoint=None,
+                 strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
         if string.endswith('/'):
@@ -133,8 +211,13 @@ class Rule(object):
         self._regex = None
 
     def bind(self, map):
+        """
+        Bind the url to a map and create a regular expression based on
+        the information from the rule itself and the defaults from the map.
+        """
         if self.map is not None:
-            raise RuntimeError('rule %r already bound to %r' % (self, self.map))
+            raise RuntimeError('url rule %r already bound to map %r' %
+                               (self, self.map))
         self.map = map
         if self.strict_slashes is None:
             self.strict_slashes = map.strict_slashes
@@ -152,6 +235,8 @@ class Rule(object):
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
                 self._arguments.add(variable)
+        if not self.is_leaf:
+            self._trace.append((False, '/'))
 
         regex = r'^<%s>%s%s$' % (
             re.escape(self.subdomain),
@@ -161,11 +246,20 @@ class Rule(object):
         self._regex = re.compile(regex, re.UNICODE)
 
     def match(self, path):
+        """
+        Check if the rule matches a given path. Path is a string in the
+        form ``"<subdomain>/path"`` and is assembled by the map.
+
+        If the rule matches a dict with the converted values is returned,
+        otherwise the return value is `None`.
+        """
         m = self._regex.search(path)
         if m is not None:
             groups = m.groupdict()
             # we have a folder like part of the url without a trailing
-            # slash and strict slashes enabled. raise an error
+            # slash and strict slashes enabled. raise an exception that
+            # tells the map to redirect to the same url but with a
+            # trailing slash
             if self.strict_slashes and not self.is_leaf \
                and not groups.pop('__suffix__'):
                 raise RequestSlash()
@@ -179,11 +273,15 @@ class Rule(object):
             return result
 
     def build(self, values):
+        """
+        Assembles the relative url for that rule. If this is not possible
+        (values missing or malformed) `None` is returned.
+        """
         tmp = []
         for is_dynamic, data in self._trace:
             if is_dynamic:
                 try:
-                    value = self._converters[data].to_url(values[data])
+                    tmp.append(self._converters[data].to_url(values[data]))
                 except ValidationError:
                     return
             else:
@@ -191,6 +289,9 @@ class Rule(object):
         return u''.join(tmp)
 
     def __cmp__(self, other):
+        """
+        Order rules by complexity.
+        """
         if not isinstance(other, Rule):
             return NotImplemented
         return cmp(len(self._trace), len(other._trace))
@@ -207,21 +308,58 @@ class BaseConverter(object):
         return value
 
     def to_url(self, value):
-        return quote_plus(unicode(value).encode(map.charset))
+        return quote_plus(unicode(value).encode(self.map.charset))
 
 
 class UnicodeConverter(BaseConverter):
-    pass
+
+    def __init__(self, map, args):
+        super(UnicodeConverter, self).__init__(map, args)
+        options = parse_arguments(args,
+            minlength=(int, 0),
+            maxlength=(int, -1),
+            allow_slash=(bool, False)
+        )
+        self.minlength = options['minlength'] or None
+        if options['maxlength'] != -1:
+            self.maxlength = options['maxlength']
+        else:
+            self.maxlength = None
+        if options['allow_slash']:
+            self.regex = '.+?'
+
+    def to_python(self, value):
+        if (self.minlength is not None and len(value) < self.minlength) or \
+           (self.maxlength is not None and len(value) > self.maxlength):
+            raise ValidationError()
+        return value
 
 
 class IntegerConverter(BaseConverter):
-    regex = r'\d+'
-    to_python = int
+    regex = '\d+'
 
+    def __init__(self, map, args):
+        super(IntegerConverter, self).__init__(map, args)
+        options = parse_arguments(args,
+            fixed_digits=(int, -1),
+            min=(int, 0),
+            max=(int, -1)
+        )
+        self.fixed_digits = options['fixed_digits']
+        self.min = options['min'] or None
+        if options['max'] == -1:
+            self.max = None
+        else:
+            self.max = options['max']
 
-class FloatConverter(BaseConverter):
-    regex = r'\d+\.\d+'
-    to_python = float
+    def to_python(self, value):
+        if (self.fixed_digits != -1 and len(value) != self.fixed_digits):
+            raise ValidationError()
+        value = int(value)
+        if (self.min is not None and value < self.min) or \
+           (self.max is not None and value > self.max):
+            raise ValidationError()
+        return value
 
 
 class Map(object):
@@ -230,15 +368,37 @@ class Map(object):
     """
     converters = {
         'int':          IntegerConverter,
-        'float':        FloatConverter,
         'string':       UnicodeConverter,
         'default':      UnicodeConverter
     }
 
     def __init__(self, rules, server_name, default_subdomain='www',
                  url_scheme='http', charset='utf-8', strict_slashes=True):
+        """
+        `rules`
+            sequence of url rules for this map.
+
+        `server_name`
+            hostname of the server excluding any subdomains but with
+            the tld. Must not contain non ascii chars, if you want to
+            use a i18n domain name you have to provide the domain name
+            encoded in punycode.
+
+        `default_subdomain`
+            The default subdomain for rules without a subdomain defined.
+
+        `url_scheme`
+            url scheme. For example ``"http"`` or ``"https"``.
+
+        `charset`
+            charset of the url. defaults to ``"utf-8"``
+
+        `strict_slashes`
+            Take care of trailing slashes.
+        """
         self._rules = []
         self._rules_by_endpoint = {}
+        self._remap = True
 
         self.server_name = server_name
         self.default_subdomain = default_subdomain
@@ -247,30 +407,43 @@ class Map(object):
         self.strict_slashes = strict_slashes
 
         for rule in rules:
-            self.connect(rule)
-        self.remap()
+            self.add_rule(rule)
 
-    def connect(self, rule):
+    def add_rule(self, rule):
+        """
+        Add a new rule to the map and bind it. Requires that the rule is
+        not bound to another map. After adding new rules you have to call
+        the `remap` method.
+        """
         if not isinstance(rule, Rule):
             raise TypeError('rule objects required')
         rule.bind(self)
         self._rules.append(rule)
         self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
-
-    def remap(self):
-        self._rules.sort()
+        self._remap = True
 
     def match(self, path_info, script_name='/', subdomain=None):
+        """
+        Match a given path_info, script_name and subdomain against the
+        known rules. If the subdomain is not given it defaults to the
+        default subdomain of the map which is usally `www`. Thus if you
+        don't defined it anywhere you can safely ignore it.
+        """
+        if self._remap:
+            self._remap = False
+            self._rules.sort()
         if subdomain is None:
             subdomain = self.default_subdomain
         if not script_name.endswith('/'):
             script_name += '/'
+        if not isinstance(path_info, unicode):
+            path_info = path_info.decode(self.charset, 'ignore')
         path = '<%s>/%s' % (subdomain, path_info.lstrip('/'))
         for rule in self._rules:
             try:
                 rv = rule.match(path)
             except RequestSlash:
-                raise RequestRedirect('%s://%s.%s%s/%s/' % (
+                raise RequestRedirect(u'%s://%s.%s%s/%s/' % (
                     self.url_scheme,
                     subdomain,
                     self.server_name,
@@ -281,8 +454,17 @@ class Map(object):
                 return rule.endpoint, rv
         raise NotFound(path_info)
 
-    def build(self, endpoint, values, script_name='/', subdomain=None,
+    def build(self, endpoint, values=None, script_name='/', subdomain=None,
               force_external=False):
+        """
+        Build a new url hostname relative to the current one. If you
+        reference a resource on another subdomain the hostname is added
+        automatically. You can force external urls by setting
+        `force_external` to `True`.
+        """
+        if self._remap:
+            self._remap = False
+            self._rules.sort()
         if subdomain is None:
             subdomain = self.default_subdomain
         if not script_name.endswith('/'):
@@ -290,20 +472,21 @@ class Map(object):
         possible = set(self._rules_by_endpoint.get(endpoint) or ())
         if not possible:
             raise NotFound(endpoint)
+        values = values or {}
         valueset = set(values.iterkeys())
-        for route in possible:
-            if route._arguments == valueset:
-                rv = route.build(values)
+        for rule in possible:
+            if rule._arguments == valueset:
+                rv = rule.build(values)
                 if rv is not None:
                     break
         else:
             raise NotFound(endpoint, values)
-        if not force_external and route.subdomain == subdomain:
-            return urljoin(script_name, rv.lstrip('/'))
-        return '%s://%s.%s%s/%s' % (
+        if not force_external and rule.subdomain == subdomain:
+            return unicode(urljoin(script_name, rv.lstrip('/')))
+        return str('%s://%s.%s%s/%s' % (
             self.url_scheme,
-            subdomain,
+            rule.subdomain,
             self.server_name,
             script_name[:-1],
             rv.lstrip('/')
-        )
+        ))
