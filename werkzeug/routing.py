@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+from urlparse import urljoin
 from urllib import quote_plus
 try:
     set
@@ -71,12 +72,18 @@ class RequestRedirect(RoutingException):
     """
     Raise if the map requests a redirect. This is for example the case if
     `strict_slashes` are activated and an url that requires a leading slash.
+
+    The attribute `new_url` contains the absolute desitination url.
     """
+
+    def __init__(self, new_url):
+        self.new_url = new_url
+        RoutingException.__init__(self, new_url)
 
 
 class RequestSlash(RoutingException):
     """
-    Internal exception never propagated.
+    Internal exception.
     """
 
 
@@ -157,10 +164,10 @@ class Rule(object):
         m = self._regex.search(path)
         if m is not None:
             groups = m.groupdict()
-            no_suffix = not groups.pop('__suffix__')
             # we have a folder like part of the url without a trailing
             # slash and strict slashes enabled. raise an error
-            if self.strict_slashes and not self.is_leaf and no_suffix:
+            if self.strict_slashes and not self.is_leaf \
+               and not groups.pop('__suffix__'):
                 raise RequestSlash()
             result = {}
             for name, value in groups.iteritems():
@@ -217,84 +224,86 @@ class FloatConverter(BaseConverter):
     to_python = float
 
 
-class Builder(object):
-    """
-    Helper for url generation.
-    """
-
-    def __init__(self, map, url_scheme, server_name, subdomain, script_name):
-        self.map = map
-        self.url_scheme = url_scheme
-        self.server_name = server_name
-        self.subdomain = subdomain
-        self.script_name = script_name
-
-
-class Matcher(object):
-    """
-    Helper for url matching.
-    """
-
-    def __init__(self, map, server_name, subdomain, script_name):
-        self.map = map
-        self.server_name = server_name
-        self.subdomain = subdomain
-        self.script_name = script_name
-        self._rules = self.map.rules
-
-    def match(self, path_info):
-        path = '<%s>/%s' % (self.subdomain, path_info.lstrip('/'))
-        for rule in self._rules:
-            try:
-                rv = rule.match(path)
-            except RequestSlash:
-                raise RequestRedirect(path_info + '/')
-            if rv is not None:
-                return rule.endpoint, rv
-        raise NotFound(path_info)
-
-
 class Map(object):
     """
     The base class for all the url maps.
     """
+    converters = {
+        'int':          IntegerConverter,
+        'float':        FloatConverter,
+        'string':       UnicodeConverter,
+        'default':      UnicodeConverter
+    }
 
-    def __init__(self, rules, default_subdomain='www', charset='utf-8',
-                 strict_slashes=False):
-        self.rules = []
+    def __init__(self, rules, server_name, default_subdomain='www',
+                 url_scheme='http', charset='utf-8', strict_slashes=True):
+        self._rules = []
+        self._rules_by_endpoint = {}
 
+        self.server_name = server_name
+        self.default_subdomain = default_subdomain
+        self.url_scheme = url_scheme
         self.charset = charset
         self.strict_slashes = strict_slashes
-        self.default_subdomain = default_subdomain
-
-        self.converters = {
-            'int':          IntegerConverter,
-            'float':        FloatConverter,
-            'string':       UnicodeConverter,
-            'default':      UnicodeConverter,
-            #'hexstring':    HexstringConverter
-        }
 
         for rule in rules:
             self.connect(rule)
-        self.finish()
+        self.remap()
 
     def connect(self, rule):
         if not isinstance(rule, Rule):
             raise TypeError('rule objects required')
         rule.bind(self)
-        self.rules.append(rule)
+        self._rules.append(rule)
+        self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
 
-    def finish(self):
-        self.rules.sort()
+    def remap(self):
+        self._rules.sort()
 
-    def get_builder(self, server_name, script_name, url_scheme='http',
-                    subdomain=None):
+    def match(self, path_info, script_name='/', subdomain=None):
         if subdomain is None:
             subdomain = self.default_subdomain
-        return Builder(self, url_scheme, server_name, subdomain, script_name)
+        if not script_name.endswith('/'):
+            script_name += '/'
+        path = '<%s>/%s' % (subdomain, path_info.lstrip('/'))
+        for rule in self._rules:
+            try:
+                rv = rule.match(path)
+            except RequestSlash:
+                raise RequestRedirect('%s://%s.%s%s/%s/' % (
+                    self.url_scheme,
+                    subdomain,
+                    self.server_name,
+                    script_name[:-1],
+                    path_info.lstrip('/')
+                ))
+            if rv is not None:
+                return rule.endpoint, rv
+        raise NotFound(path_info)
 
-    def get_matcher(self, server_name, script_name, subdomain=None):
+    def build(self, endpoint, values, script_name='/', subdomain=None,
+              force_external=False):
         if subdomain is None:
             subdomain = self.default_subdomain
-        return Matcher(self, server_name, subdomain, script_name)
+        if not script_name.endswith('/'):
+            script_name += '/'
+        possible = set(self._rules_by_endpoint.get(endpoint) or ())
+        if not possible:
+            raise NotFound(endpoint)
+        valueset = set(values.iterkeys())
+        for route in possible:
+            if route._arguments == valueset:
+                rv = route.build(values)
+                if rv is not None:
+                    break
+        else:
+            raise NotFound(endpoint, values)
+        if not force_external and route.subdomain == subdomain:
+            return urljoin(script_name, rv.lstrip('/'))
+        return '%s://%s.%s%s/%s' % (
+            self.url_scheme,
+            subdomain,
+            self.server_name,
+            script_name[:-1],
+            rv.lstrip('/')
+        )
