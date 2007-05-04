@@ -155,6 +155,15 @@ class BaseRequest(object):
         return self._path
     path = property(path, doc=path.__doc__)
 
+    def get_debugging_vars(self):
+        retvars = []
+        for varname in dir(self):
+            if varname[0] == '_': continue
+            value = getattr(self, varname)
+            if hasattr(value, 'im_func'): continue
+            retvars.append((varname, value))
+        return retvars
+
 
 class BaseResponse(object):
     """

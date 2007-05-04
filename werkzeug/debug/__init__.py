@@ -13,7 +13,7 @@ import cgi
 import inspect
 import traceback
 
-from werkzeug.debug.render import DebugRenderer
+from werkzeug.debug.render import debug_page
 from werkzeug.debug.util import ThreadedStream, get_uid, get_frame_info, Namespace
 
 
@@ -23,23 +23,17 @@ class DebuggedApplication(object):
 
         from werkzeug.debug import DebuggedApplication
         from myapp import app
-        app = DebuggedApplication(app)
+        app = DebuggedApplication(app, evalex=True)
 
-    Or for a whole package::
+    The `evalex` keyword argument allows evaluating expressions in a
+    traceback's frame context.
 
-        app = DebuggedApplication("myapp:app")
+    THIS IS A GAPING SECURITY HOLE IF PUBLICLY ACCESSIBLE!
     """
 
-    def __init__(self, application, evalex=True):
+    def __init__(self, application, evalex=False):
         self.evalex = bool(evalex)
-        if not isinstance(application, basestring):
-            self.application = application
-        else:
-            try:
-                self.module, self.handler = application.split(':', 1)
-            except ValueError:
-                self.module = application
-                self.handler = 'app'
+        self.application = application
         self.tracebacks = {}
 
     def __call__(self, environ, start_response):
@@ -60,12 +54,7 @@ class DebuggedApplication(object):
                 return
         appiter = None
         try:
-            if hasattr(self, 'application'):
-                appiter = self.application(environ, start_response)
-            else:
-                module = __import__(self.module, '', '', [''])
-                app = getattr(module, self.handler)
-                appiter = app(environ, start_response)
+            appiter = self.application(environ, start_response)
             for line in appiter:
                 yield line
         except:
@@ -76,13 +65,13 @@ class DebuggedApplication(object):
                 start_response('500 INTERNAL SERVER ERROR', headers)
             except:
                 pass
-            debug_context = self.get_debug_context(exc_info)
-            yield debug_info(environ.get('colubrid.request'), debug_context, self.evalex)
+            debug_context = self.create_debug_context(environ, exc_info)
+            yield debug_page(debug_context)
 
         if hasattr(appiter, 'close'):
             appiter.close()
 
-    def get_debug_context(self, exc_info):
+    def create_debug_context(self, environ, exc_info):
         exception_type, exception_value, tb = exc_info
         # skip first internal frame
         if not tb.tb_next is None:
@@ -97,7 +86,7 @@ class DebuggedApplication(object):
             tb_uid = get_uid()
             frame_map = self.tracebacks[tb_uid] = {}
 
-        # walk through frames and collect informations
+        # walk through frames and collect information
         while tb is not None:
             if not tb.tb_frame.f_locals.get('__traceback_hide__', False):
                 if tb_uid:
@@ -119,33 +108,20 @@ class DebuggedApplication(object):
         else:
             extypestr = str(exception_type)
 
+        request = environ.get('wsgitk.request')
+        req_vars = request and request.get_debugging_vars() or []
+
         return Namespace(
+            evalex =          self.evalex,
             exception_type =  extypestr,
             exception_value = str(exception_value),
             frames =          frames,
             last_frame =      frames[-1],
             plaintb =         plaintb,
             tb_uid =          tb_uid,
-            frame_map =       frame_map
+            frame_map =       frame_map,
+            req_vars =        req_vars,
         )
-
-
-def debug_info(request, context=None, evalex=True):
-    """
-    Return debug info for the request
-    """
-    if context is None:
-        context = Namespace()
-
-    req_vars = []
-    for item in dir(request):
-        attr = getattr(request, item)
-        if not (item.startswith("_") or inspect.isroutine(attr)):
-            req_vars.append((item, attr))
-    req_vars.sort()
-
-    context.req_vars = req_vars
-    return DebugRenderer(context, evalex).render()
 
 
 class EvalContext(object):

@@ -9,7 +9,115 @@
     :license: BSD, see LICENSE for more details.
 """
 
-JAVASCRIPT = r'''
+BODY = r'''
+<div id="wsgi-traceback">
+<h1><?& exception_type ?></h1>
+<p class="errormsg"><?& exception_value ?></p>
+
+<p class="errorline"><?& last_frame['filename'] ?> in <?& last_frame['function'] ?>,
+  line <?= last_frame['lineno']</p>
+
+<h2 onclick="change_tb()" class="tb">Traceback (click to switch to raw view)</h2>
+<div id="wsgi-traceback-interactive">
+  <p class="text">A problem occurred in your Python WSGI application.
+    Here is the sequence of function calls leading up to the error, in the order
+    they occurred. Click on a header to show context lines.</p>
+
+<? for num, frame in enumerate(frames) ?>
+  <div class="frame" id="frame-<?= num ?>">
+    <h3 class="fn"><?& frame['function'] ?> in <?& frame['filename'] ?></h3>
+    <?= code_table(frame) ?>
+
+    <h3 class="indent">▸ local variables</h3>
+    <?= var_table(frame['vars']) ?>
+
+    <? if evalex ?>
+    <? full_id = tb_uid + '-' + frame['frame_uid'] ?>
+    <h3 class="indent">▸ execute code</h3>
+    <table class="exec_code">
+      <tr>
+        <td class="output" colspan="2"><pre id="output-<?= full_id ?>"></pre></td>
+      </tr>
+      <tr>
+        <td class="input">
+          <textarea class="small" id="input-<?= full_id ?>" value=""></textarea>
+        </td>
+        <td class="extend">
+          <input type="button"
+            onclick="toggleExtend('<?= tb_uid ?>', '<?= frame['frame_uid'] ?>')"
+            value="extend">
+        </td>
+      </tr>
+    </table>
+    <? end ?>
+  </div>
+<? end ?>
+
+</div>
+
+<div id="wsgi-traceback-plain">
+<p class="text">Here is the plain Python traceback for copy and paste:</p>
+<pre class="plain">
+<?& plaintb ?>
+</pre>
+</div>
+
+
+<? if req_vars ?>
+<h2>Request Data</h2>
+<p class="text">The following list contains all important request variables.
+  Click on a header to expand the list.</p>
+<? for key, info in req_vars ?>
+  <dl>
+    <dt><?& key ?></dt>
+    <dd><?= var_table(info) ?></dd>
+  </dl>
+<? end ?>
+<? end ?>
+
+<script type="text/javascript">initTB();</script>
+</div>
+<div id="wsgi-traceback-footer">
+Brought to you by <span class="arthur">DON'T PANIC, your friendly traceback interpreter.
+</div>
+<!-- Plain traceback:
+
+<?& plaintb ?>
+-->
+'''
+
+CODETABLE = r'''
+<table class="code">
+<? for line in lines ?>
+  <tr class="<?& line.mode ?>">
+    <td class="lineno"><?= line.lineno ?></td>
+    <td class="code"><?= line.code ?></td>
+  </tr>
+<? end ?>
+</table>
+'''
+
+VARTABLE = r'''
+<table class="vars">
+<? if type == 'empty' ?>
+  <tr><th>no data given</th></tr>
+<? elif type == 'simple' ?>
+  <tr><td class="value"><?& value ?></td></tr>
+<? elif type == 'dict' ?>
+  <tr><th>Name</th><th>Value</th></tr>
+  <? for key, item in value ?>
+  <tr><td class="name"><?& key ?></td><td class="value"><?& item ?></td></tr>
+  <? end ?>
+<? elif type == 'list' ?>
+  <? for item in value ?>
+  <tr><td class="value"><?& item ?></td></tr>
+  <? end ?>
+<? end ?>
+</table>
+'''
+
+HEADER = r'''
+<script type="text/javascript">
 function toggleBlock(handler) {
     if (handler.nodeName == 'H3') {
         var table = handler;
@@ -162,23 +270,36 @@ function toggleExtend(traceback, frame) {
 }
 
 function change_tb() {
-    interactive = document.getElementById('interactive');
-    plain = document.getElementById('plain');
+    interactive = document.getElementById('wsgi-traceback-interactive');
+    plain = document.getElementById('wsgi-traceback-plain');
     interactive.style.display = ((interactive.style.display == 'block') | (interactive.style.display == '')) ? 'none' : 'block';
     plain.style.display = (plain.style.display == 'block') ? 'none' : 'block';
 }
-'''
+</script>
 
-STYLESHEET = '''
+
+<style type="text/css">
 body {
-  font-size:0.9em;
+  font-size: 0.9em;
   margin: 0;
   padding: 1.3em;
 }
 
 * {
-  margin:0;
-  padding:0;
+  margin: 0;
+  padding: 0;
+}
+
+#wsgi-traceback-footer {
+  margin: 1em;
+  font-size: 0.9em;
+  letter-spacing: 0.1em;
+  color: #555;
+  text-align: right;
+}
+
+#wsgi-traceback-footer .arthur {
+  font-weight: bold;
 }
 
 #wsgi-traceback {
@@ -187,149 +308,137 @@ body {
   background-color: #F6F6F6;
 }
 
-.footer {
-  margin: 1em;
-  font-size: 0.9em;
-  letter-spacing: 0.1em;
-  color: #555;
-  text-align: right;
-}
-
-.footer .arthur {
-  font-weight: bold;
-}
-
-h1 {
+#wsgi-traceback h1 {
   background-color: #3F7CA4;
-  font-size:1.2em;
-  color:#FFFFFF;
-  padding:0.3em;
-  margin:0 0 0.2em 0;
+  font-size: 1.2em;
+  color: #FFFFFF;
+  padding: 0.3em;
+  margin: 0 0 0.2em 0;
 }
 
-h2 {
-  background-color:#5F9CC4;
-  font-size:1em;
-  color:#FFFFFF;
-  padding:0.3em;
-  margin:0.4em 0 0.2em 0;
+#wsgi-traceback h2 {
+  background-color: #5F9CC4;
+  font-size: 1em;
+  color: #FFFFFF;
+  padding: 0.3em;
+  margin: 0.4em 0 0.2em 0;
 }
 
-h2.tb {
-  cursor:pointer;
+#wsgi-traceback h2.tb {
+  cursor: pointer;
 }
 
-h3 {
-  font-size:1em;
-  cursor:pointer;
+#wsgi-traceback h3 {
+  font-size: 1em;
+  cursor: pointer;
 }
 
-h3.fn {
+#wsgi-traceback h3.fn {
   margin-top: 0.5em;
   padding: 0.3em;
 }
 
-h3.fn:hover {
+#wsgi-traceback h3.fn:hover {
   color: #777;
 }
 
-h3.indent {
-  margin:0 0.7em 0 0.7em;
-  font-weight:normal;
+#wsgi-traceback h3.indent {
+  margin: 0 0.7em 0 0.7em;
+  font-weight: normal;
 }
 
-p.text {
-  padding:0.1em 0.5em 0.1em 0.5em;
+#wsgi-traceback p.text {
+  padding: 0.1em 0.5em 0.1em 0.5em;
 }
 
-p.errormsg {
-  padding:0.1em 0.5em 0.1em 0.5em;
+#wsgi-traceback p.errormsg {
+  padding: 0.1em 0.5em 0.1em 0.5em;
   font-size: 16px;
 }
 
-p.errorline {
-  padding:0.1em 0.5em 0.1em 2em;
+#wsgi-traceback p.errorline {
+  padding: 0.1em 0.5em 0.1em 2em;
   font-size: 14px;
 }
 
-div.frame {
+#wsgi-traceback div.frame {
   margin: 0 2em 0 1em;
 }
 
-table.code {
+#wsgi-traceback table.code {
   margin: 0.4em 0 0 0.5em;
-  background-color:#E0E0E0;
-  width:100%;
+  background-color: #E0E0E0;
+  width: 100%;
   font-family: monospace;
-  font-size:13px;
-  border:1px solid #C9C9C9;
-  border-collapse:collapse;
+  font-size: 13px;
+  border: 1px solid #C9C9C9;
+  border-collapse: collapse;
 }
 
-table.code td.lineno {
-  width:42px;
-  text-align:right;
-  padding:0 5px 0 0;
-  color:#444444;
-  font-weight:bold;
-  border-right:1px solid #888888;
+#wsgi-traceback table.code td.lineno {
+  width: 42px;
+  text-align: right;
+  padding: 0 5px 0 0;
+  color: #444444;
+  font-weight: bold;
+  border-right: 1px solid #888888;
 }
 
-table.code td.code {
-  background-color:#EFEFEF;
-  padding:1px 0 1px 5px;
-  white-space:pre;
+#wsgi-traceback table.code td.code {
+  background-color: #EFEFEF;
+  padding: 1px 0 1px 5px;
+  white-space: pre;
 }
 
-table.code tr.cur td.code {
+#wsgi-traceback table.code tr.cur td.code {
   background-color: #fff;
   border-top: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
   white-space: pre;
 }
 
-pre.plain {
-  margin:0.5em 1em 1em 1em;
-  padding:0.5em;
+#wsgi-traceback pre.plain {
+  margin: 0.5em 1em 1em 1em;
+  padding: 0.5em;
   border:1px solid #999999;
   background-color: #FFFFFF;
   font-family: monospace;
   font-size: 13px;
 }
 
-table.exec_code {
-  width:100%;
-  margin:0 1em 0 1em;
+#wsgi-traceback table.exec_code {
+  width: 100%;
+  margin: 0 1em 0 1em;
 }
 
-table.exec_code td.input {
-  width:100%;
+#wsgi-traceback table.exec_code td.input {
+  width: 100%;
 }
 
-table.exec_code textarea.small {
-  width:100%;
-  height:1.5em;
-  border:1px solid #999999;
+#wsgi-traceback table.exec_code textarea.small {
+  width: 100%;
+  height: 1.5em;
+  border: 1px solid #999999;
 }
 
-table.exec_code textarea.big {
-  width:100%;
-  height:5em;
-  border:1px solid #999999;
+#wsgi-traceback table.exec_code textarea.big {
+  width: 100%;
+  height: 5em;
+  border: 1px solid #999999;
 }
 
-table.exec_code input {
-  height:1.5em;
-  border:1px solid #999999;
-  background-color:#FFFFFF;
+#wsgi-traceback table.exec_code input {
+  height: 1.5em;
+  border: 1px solid #999999;
+  background-color: #FFFFFF;
 }
 
-table.exec_code td.extend {
-  width:70px;
-  padding:0 5px 0 5px;
+#wsgi-traceback table.exec_code td.extend {
+  width: 70px;
+  padding: 0 5px 0 5px;
 }
 
-table.exec_code td.output pre {
+#wsgi-traceback table.exec_code td.output pre {
   font-family: monospace;
   white-space: pre-wrap;       /* css-3 should we be so lucky... */
   white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -339,13 +448,13 @@ table.exec_code td.output pre {
   _white-space: pre;   /* IE only hack to re-specify in addition to word-wrap  */
 }
 
-table.vars {
-  margin:0 1.5em 0 1.5em;
-  border-collapse:collapse;
+#wsgi-traceback table.vars {
+  margin: 0 1.5em 0 1.5em;
+  border-collapse: collapse;
   font-size: 0.9em;
 }
 
-table.vars td {
+#wsgi-traceback table.vars td {
   font-family: 'Bitstream Vera Sans Mono', 'Courier New', monospace;
   padding: 0.3em;
   border: 1px solid #ddd;
@@ -353,61 +462,63 @@ table.vars td {
   background-color: white;
 }
 
-table.vars .name {
+#wsgi-traceback table.vars .name {
   font-style: italic;
 }
 
-table.vars .value {
+#wsgi-traceback table.vars .value {
   color: #555;
 }
 
-table.vars th {
+#wsgi-traceback table.vars th {
   padding: 0.2em;
   border: 1px solid #ddd;
   background-color: #f2f2f2;
   text-align: left;
 }
 
-#plain {
+#wsgi-traceback-plain {
   display: none;
 }
 
-dl dt {
+#wsgi-traceback dl dt {
   padding: 0.2em 0 0.2em 1em;
   font-weight: bold;
   cursor: pointer;
   background-color: #ddd;
 }
 
-dl dt:hover {
-  background-color: #bbb; color: white;
+#wsgi-traceback dl dt:hover {
+  background-color: #bbb;
+  color: white;
 }
 
-dl dd {
+#wsgi-traceback dl dd {
   padding: 0 0 0 2em;
   background-color: #eee;
 }
 
-span.p-kw {
+#wsgi-traceback span.p-kw {
   font-weight: bold;
   color: #008800;
 }
 
-span.p-cmt {
+#wsgi-traceback span.p-cmt {
   color: #888888;
 }
 
-span.p-str {
+#wsgi-traceback span.p-str {
   color: #dd2200;
   background-color: #fff0f0;
 }
 
-span.p-num {
+#wsgi-traceback span.p-num {
   color: #0000DD;
   font-weight: bold;
 }
 
-span.p-op {
+#wsgi-traceback span.p-op {
   color: black;
 }
+</style>
 '''
