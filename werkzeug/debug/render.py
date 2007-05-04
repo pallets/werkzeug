@@ -10,7 +10,7 @@
 """
 import pprint
 
-from werkzeug.debug.stpy import Template
+from werkzeug.minitmpl import Template
 from werkzeug.debug.util import Namespace
 from werkzeug.debug.templates import HEADER, BODY, CODETABLE, VARTABLE
 

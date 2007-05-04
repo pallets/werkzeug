@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.debug.stpy
-    ~~~~~~~~~~~~~~~~~~~
+    werkzeug.minitmpl
+    ~~~~~~~~~~~~~~~~~
 
     A very simple Python "Template Engine". In fact it just look up
     PHP like blocks and executes the code::

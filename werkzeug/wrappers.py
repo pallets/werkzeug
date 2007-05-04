@@ -19,7 +19,8 @@ from datetime import datetime
 from email.Message import Message as MessageType
 
 from werkzeug.constants import HTTP_STATUS_CODES
-from werkzeug.utils import MultiDict, CombinedMultiDict, FieldStorage, Headers
+from werkzeug.utils import MultiDict, CombinedMultiDict, FieldStorage, \
+     Headers, lazy_property
 
 
 class BaseRequest(object):
@@ -37,7 +38,7 @@ class BaseRequest(object):
         return FieldStorage(name, filename, content_type, payload)
 
     def _load_post_data(self):
-        """Method used internally to retreive submitted data."""
+        """Method used internally to retrieve submitted data."""
         self._data = ''
         post = []
         files = []
@@ -96,64 +97,59 @@ class BaseRequest(object):
 
     def args(self):
         """URL parameters"""
-        if not hasattr(self, '_args'):
-            items = []
-            qs = self.environ.get('QUERY_STRING', '')
-            for key, values in cgi.parse_qs(qs, True).iteritems():
-                for value in values:
-                    value = value.decode(self.charset, 'ignore')
-                    items.append((key, value))
-            self._args = MultiDict(items)
-        return self._args
-    args = property(args, doc=args.__doc__)
-
-    def form(self):
-        """form parameters."""
-        if not hasattr(self, '_form'):
-            self._load_post_data()
-        return self._form
-    form = property(form, doc=form.__doc__)
-
-    def values(self):
-        """combined multi dict for `args` and `form`"""
-        return CombinedMultiDict([self.args, self.form])
-    values = property(values, doc=values.__doc__)
-
-    def files(self):
-        """File uploads."""
-        if not hasattr(self, '_files'):
-            self._load_post_data()
-        return self._files
-    files = property(files, doc=files.__doc__)
-
-    def cookies(self):
-        """Stored Cookies."""
-        if not hasattr(self, '_cookie'):
-            self._cookie = SimpleCookie()
-            self._cookie.load(self.environ.get('HTTP_COOKIE', ''))
-        return self._cookie
-    cookies = property(cookies, doc=cookies.__doc__)
+        items = []
+        qs = self.environ.get('QUERY_STRING', '')
+        for key, values in cgi.parse_qs(qs, True).iteritems():
+            for value in values:
+                value = value.decode(self.charset, 'ignore')
+                items.append((key, value))
+        return = MultiDict(items)
+    args = lazy_property(args)
 
     def data(self):
         """raw value of input stream."""
         if not hasattr(self, '_data'):
             self._load_post_data()
         return self._data
-    data = property(data, doc=data.__doc__)
+    data = lazy_property(data)
+
+    def form(self):
+        """form parameters."""
+        if not hasattr(self, '_form'):
+            self._load_post_data()
+        return self._form
+    form = lazy_property(form)
+
+    def values(self):
+        """combined multi dict for `args` and `form`"""
+        return CombinedMultiDict([self.args, self.form])
+    values = lazy_property(values)
+
+    def files(self):
+        """File uploads."""
+        if not hasattr(self, '_files'):
+            self._load_post_data()
+        return self._files
+    files = lazy_property(files)
+
+    def cookies(self):
+        """Stored Cookies."""
+        cookie = SimpleCookie()
+        cookie.load(self.environ.get('HTTP_COOKIE', ''))
+        return cookie
+    cookies = lazy_property(cookies)
 
     def method(self):
         """Request method."""
         return self.environ['REQUEST_METHOD']
-    method = property(method, doc=method.__doc__)
+    method = lazy_property(method)
 
     def path(self):
         """Requested path."""
-        if not hasattr(self, '_path'):
-            path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
-            path = path.decode(self.charset, self.charset)
-            self._path = path
-        return self._path
-    path = property(path, doc=path.__doc__)
+        path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
+        path = path.decode(self.charset, self.charset)
+        return path
+    path = lazy_property(path)
 
     def get_debugging_vars(self):
         retvars = []
