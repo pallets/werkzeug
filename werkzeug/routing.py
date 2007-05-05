@@ -88,6 +88,7 @@ _rule_re = re.compile(r'''
     >
 ''', re.VERBOSE)
 
+
 def parse_rule(rule):
     """
     Parse a rule and return it as generator. Each iteration yields tuples in the
@@ -220,7 +221,7 @@ class Rule(RuleFactory):
     Represents one url pattern.
     """
 
-    def __init__(self, string, subdomain=None, endpoint=None,
+    def __init__(self, string, subdomain=None, methods=None, endpoint=None,
                  strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
@@ -234,6 +235,13 @@ class Rule(RuleFactory):
         self.map = None
         self.strict_slashes = strict_slashes
         self.subdomain = subdomain
+        if methods is None:
+            self.methods = None
+        else:
+            self.methods = m = []
+            for method in methods:
+                m.append(method.upper())
+            self.methods.sort(lambda a, b: cmp(len(b), len(a)))
         self.endpoint = endpoint
 
         self._trace = []
@@ -272,8 +280,14 @@ class Rule(RuleFactory):
         if not self.is_leaf:
             self._trace.append((False, '/'))
 
-        regex = r'^<%s>%s%s$' % (
-            self.subdomain == 'ALL' and '[^>]*' or re.escape(self.subdomain),
+        if self.methods is None:
+            method_re = '[^>]*'
+        else:
+            method_re = '|'.join([re.escape(x) for x in self.methods])
+
+        regex = r'^<%s|%s>%s%s$' % (
+            self.subdomain == 'ALL' and '[^|]*' or re.escape(self.subdomain),
+            method_re,
             u''.join(regex_parts),
             not self.is_leaf and '(?P<__suffix__>/?)' or ''
         )
@@ -367,6 +381,9 @@ class Rule(RuleFactory):
 
 
 class BaseConverter(object):
+    """
+    Base class for all converters.
+    """
     regex = '[^/]+'
 
     def __init__(self, map, args):
@@ -381,6 +398,10 @@ class BaseConverter(object):
 
 
 class UnicodeConverter(BaseConverter):
+    """
+    The default converter for all URL parts. Matches one string, optionally
+    with a slash in the part. Can also check for the length of that string.
+    """
     names = ['default', 'string']
 
     def __init__(self, map, args):
@@ -406,6 +427,9 @@ class UnicodeConverter(BaseConverter):
 
 
 class IntegerConverter(BaseConverter):
+    """
+    Only accepts integers.
+    """
     names = ['int']
     regex = '\d+'
 
@@ -522,6 +546,10 @@ class Map(object):
 
 
 class MapAdapter(object):
+    """
+    Retured by `Map.bind` or `Map.bind_to_environ` and does the
+    URL matching and building based on runtime information.
+    """
 
     def __init__(self, map, server_name, script_name, subdomain,
                  url_scheme):
@@ -533,7 +561,7 @@ class MapAdapter(object):
         self.subdomain = subdomain
         self.url_scheme = url_scheme
 
-    def match(self, path_info):
+    def match(self, path_info, method='GET'):
         """
         Match a given path_info, script_name and subdomain against the
         known rules. If the subdomain is not given it defaults to the
@@ -543,7 +571,11 @@ class MapAdapter(object):
         self.map.update()
         if not isinstance(path_info, unicode):
             path_info = path_info.decode(self.map.charset, 'ignore')
-        path = u'<%s>/%s' % (self.subdomain, path_info.lstrip('/'))
+        path = u'<%s|%s>/%s' % (
+            self.subdomain,
+            method.upper(),
+            path_info.lstrip('/')
+        )
         for rule in self.map._rules:
             try:
                 rv = rule.match(path)
