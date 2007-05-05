@@ -126,8 +126,11 @@ class MultiDict(dict):
     popitemlist = dict.popitem
 
     def __repr__(self):
-        # this repr is not evallable...
-        return '%s(%s)' % (self.__class__.__name__, dict.__repr__(self)[1:-1])
+        tmp = []
+        for key, values in self.iterlists():
+            for value in values:
+                tmp.append((key, value))
+        return '%s(%r)' % (self.__class__.__name__, tmp)
 
 
 class CombinedMultiDict(MultiDict):
@@ -214,7 +217,7 @@ class CombinedMultiDict(MultiDict):
         return key in self.keys()
 
     def __repr__(self):
-        return '%s(...)' % self.__class__.__name__
+        return '%s(%r)' % (self.__class__.__name__, self.dicts)
 
 
 class FieldStorage(object):
