@@ -494,6 +494,23 @@ class Map(object):
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme)
 
+    def bind_to_environ(self, environ, subdomain=None):
+        """
+        Like `bind` but the required information are pulled from the
+        WSGI environment provided where possible. For some information
+        this won't work (subdomains), if you want that feature you have
+        to provide the subdomain with the `subdomain` variable.
+        """
+        if 'HTTP_HOST' in environ:
+            server_name = environ['HTTP_HOST']
+        else:
+            server_name = environ['SERVER_NAME']
+            if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not in \
+               (('https', '443'), ('http', '80')):
+                server_name += ':' + environ['SERVER_PORT']
+        return self.bind(server_name, environ.get('SCRIPT_NAME'), subdomain,
+                         environ['wsgi.url_scheme'])
+
     def update(self):
         """
         Called before matching and building to keep the compiled rules
