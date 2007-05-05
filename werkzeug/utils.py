@@ -213,6 +213,9 @@ class CombinedMultiDict(MultiDict):
     def __contains__(self, key):
         return key in self.keys()
 
+    def __repr__(self):
+        return '%s(...)' % self.__class__.__name__
+
 
 class FieldStorage(object):
     """
