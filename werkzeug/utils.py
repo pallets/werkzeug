@@ -9,6 +9,10 @@
     :license: BSD, see LICENSE for more details.
 """
 from cStringIO import StringIO
+try:
+    set
+except NameError:
+    from sets import Set as set
 
 
 class MultiDict(dict):
@@ -141,10 +145,6 @@ class CombinedMultiDict(MultiDict):
                 return d[key]
         raise KeyError(key)
 
-    def __setitem__(self, *args):
-        raise TypeError('%r instances are immutable' %
-                        self.__class__.__name__)
-
     def get(self, key, default=None):
         for d in self.dicts:
             if key in d:
@@ -157,39 +157,61 @@ class CombinedMultiDict(MultiDict):
             rv.extend(d.getlist(key))
         return rv
 
-    def lists(self):
-        rv = []
+    def keys(self):
+        rv = set()
         for d in self.dicts:
-            rv.extend(d.lists())
+            rv.update(d.keys())
+        return list(rv)
+
+    def values(self):
+        rv = []
+        for i in self.keys():
+            rv.append(self[i])
         return rv
 
-    def itervalues(self):
+    def items(self):
+        rv = {}
+        for d in reversed(self.dicts):
+            rv.update(d)
+        return rv.items()
+
+    def lists(self):
+        rv = {}
         for d in self.dicts:
-            for item in d.itervalues():
-                yield item
+            for k, v in d.iterlists():
+                rv.setdefault(k, []).extend(v)
+        return rv.items()
+
+    def iterkeys(self):
+        return iter(self.keys())
+
+    __iter__ = iterkeys
+
+    def itervalues(self):
+        return iter(self.values())
+
+    def iteritems(self):
+        return iter(self.items())
 
     def iterlists(self):
-        for d in self.dicts:
-            for item in d.iterlists():
-                yield item
+        return iter(self.lists())
 
     def copy(self):
         """Return a shallow copy of this object."""
         return self.__class__(self.dicts[:])
 
-    setlist = setdefault = setlistdefault = update = pop = popitem = \
-    poplist = popitemlist = __setitem__
+    def __immutable(self, *args):
+        raise TypeError('%r instances are immutable' %
+                        self.__class__.__name__)
 
-    def __iter__(self):
-        for d in self.dicts:
-            for key in d:
-                yield key
+    setlist = setdefault = setlistdefault = update = pop = popitem = \
+    poplist = popitemlist = __setitem__ = __delitem__ = __immutable
 
     def __len__(self):
-        tmp = {}
-        for d in self.dicts:
-            tmp.update(d)
-        return len(tmp)
+        return len(self.keys())
+
+    def __contains__(self, key):
+        return key in self.keys()
 
 
 class FieldStorage(object):

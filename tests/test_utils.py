@@ -98,8 +98,6 @@ def test_multidict():
     assert md.poplist('a') == [1, 2, 3, 4]
     assert 'a' not in md
 
-    print md
-
     # remaining: b=2, c=3
     popped = md.popitem()
     assert popped in [('b', 2), ('c', 3)]
