@@ -48,11 +48,9 @@ class MultiDict(dict):
         except KeyError:
             return []
 
-    def setlist(self, key, l):
+    def setlist(self, key, new_list):
         """Set new values for an key."""
-        if not isinstance(l, list):
-            l = list(l)
-        dict.__setitem__(self, key, l)
+        dict.__setitem__(self, key, list(new_list))
 
     def setdefault(self, key, default=None):
         if key not in self:
@@ -63,7 +61,8 @@ class MultiDict(dict):
 
     def setlistdefault(self, key, default_list=()):
         if key not in self:
-            self.setlist(key, default_list)
+            default_list = list(default_list)
+            dict.__setitem__(self, key, default_list)
         else:
             default_list = self.getlist(key)
         return default_list
@@ -75,24 +74,28 @@ class MultiDict(dict):
         """
         return [(key, self[key]) for key in self.iterkeys()]
 
-    def lists(self):
-        """Return a list of (key, list) pairs."""
-        return dict.items(self)
+    lists = dict.items
 
     def values(self):
         """Returns a list of the last value on every key list."""
         return [self[key] for key in self.iterkeys()]
 
+    def iteritems(self):
+        for key, values in dict.iteritems(self):
+            yield key, values[0]
+
+    iterlists = dict.iteritems
+
     def itervalues(self):
         for values in dict.itervalues(self):
-            return values[0]
-
-    def iterlists(self):
-        return dict.iteritems(self)
+            yield values[0]
 
     def copy(self):
         """Return a shallow copy of this object."""
-        return MultiDict(self, dict.iteritems(self))
+        md = MultiDict()
+        for key, values in dict.iteritems(self):
+            md.setlist(key, values)
+        return md
 
     def update(self, other_dict):
         """update() extends rather than replaces existing key lists."""
@@ -110,17 +113,17 @@ class MultiDict(dict):
         """Pop the first item for a list on the dict."""
         return dict.pop(self, *args)[0]
 
-    def popitem(self, *args):
+    def popitem(self):
         """Pop an item from the dict."""
-        return dict.popitem(self, *args)[0]
+        item = dict.popitem(self)
+        return (item[0], item[1][0])
 
-    def poplist(self, *args):
-        """Pop all values from the dict."""
-        return dict.pop(self, *args)
+    poplist = dict.pop
+    popitemlist = dict.popitem
 
-    def popitemlist(self, *args):
-        """Pop all item as lists form the dict."""
-        return dict.popitem(self, *args)
+    def __repr__(self):
+        # this repr is not evallable...
+        return '%s(%s)' % (self.__class__.__name__, dict.__repr__(self)[1:-1])
 
 
 class CombinedMultiDict(MultiDict):
