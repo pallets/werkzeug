@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="100"
+   height="100"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.44"
+   version="1.0"
+   sodipodi:docbase="/home/blackbird/Development/werkzeug/trunk/artwork"
+   sodipodi:docname="logo.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="3.959798"
+     inkscape:cx="23.674311"
+     inkscape:cy="60.95385"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     width="100px"
+     height="100px"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1396"
+     inkscape:window-height="975"
+     inkscape:window-x="0"
+     inkscape:window-y="24" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#da9000;fill-opacity:1;stroke:#000072;stroke-width:0.72392678;stroke-opacity:1"
+       d="M 21.758104,66.753035 C 21.703463,66.730811 21.539234,66.685515 21.393172,66.652385 C 21.00734,66.56488 20.515237,66.098621 20.305461,65.621807 C 19.935807,64.78161 20.101955,63.228522 20.690006,62.027195 C 21.706341,59.950919 23.397022,58.320387 26.511206,56.413141 C 29.132628,54.807663 29.208942,54.705282 28.862727,53.258619 C 28.729081,52.700205 28.667975,52.222738 28.708262,52.05182 C 28.826524,51.550191 29.231968,51.031761 29.681876,50.806893 C 30.200489,50.547696 30.677229,50.531402 31.304895,50.751417 C 31.559257,50.840568 31.799915,50.875199 31.839697,50.828354 C 31.879468,50.781497 32.391493,50.131525 32.977521,49.383966 C 33.563551,48.636394 34.054116,48.024758 34.067666,48.024758 C 34.081215,48.024758 35.229331,48.617366 36.619032,49.341673 C 39.661676,50.927491 41.695099,51.826311 44.213005,52.698427 C 48.191853,54.076542 51.434508,54.692584 54.709716,54.692584 C 57.059472,54.692584 59.30855,54.325826 61.128762,53.645822 L 61.953038,53.33788 L 61.582032,52.912472 C 60.764223,51.974762 39.868378,29.662575 39.807995,29.662575 C 39.772297,29.662575 38.390236,31.058787 36.736726,32.765252 L 33.730349,35.86793 L 30.898811,32.944523 L 28.067273,30.021103 L 34.563748,23.314408 L 41.060235,16.607714 L 45.700397,17.467496 C 48.252495,17.940365 50.39262,18.360807 50.456243,18.401794 C 50.529371,18.448905 49.165325,19.92962 46.747708,22.427524 L 42.923499,26.378751 L 43.27018,26.723709 C 43.460858,26.913438 48.512724,31.83668 54.496558,37.664261 C 60.480391,43.491843 65.69924,48.585446 66.094003,48.983375 L 66.81174,49.706881 L 67.065556,49.460697 C 67.738778,48.807712 69.02584,46.543063 69.572355,45.04987 C 69.914922,44.11389 70.557087,41.469772 70.801539,39.988646 C 71.064017,38.398275 71.166099,34.991081 70.997333,33.453342 C 70.428998,28.274933 68.306844,23.511206 64.387946,18.616846 C 63.314321,17.275976 60.010881,13.842793 58.570241,12.570642 C 56.335426,10.597195 54.093824,8.8271696 51.317103,6.8433607 C 50.470081,6.2382127 49.754705,5.7186446 49.72738,5.6887702 C 49.489855,5.4289922 53.918324,6.9546632 56.036611,7.8623792 C 60.357025,9.713738 64.19864,12.032651 67.661495,14.879484 C 69.153599,16.106145 71.768246,18.790476 72.918258,20.276334 C 75.895682,24.123254 77.955905,28.575492 78.831211,33.054482 C 79.694844,37.47371 79.603712,42.598664 78.589655,46.639901 C 77.763928,49.930576 76.159262,53.207113 74.238739,55.523956 L 73.59209,56.304041 L 76.326174,58.960445 C 77.829921,60.421477 79.122313,61.707923 79.198154,61.819213 C 79.274004,61.930491 79.336058,62.257801 79.336058,62.546546 C 79.336058,64.248642 76.842127,66.797253 75.176553,66.797253 L 74.625675,66.797253 L 73.472436,65.59192 C 72.838149,64.928984 71.463008,63.467613 70.416562,62.344446 L 68.513939,60.302306 L 67.690284,60.69112 C 64.837226,62.037908 62.456596,62.579495 59.017345,62.66419 C 56.598469,62.72377 55.16347,62.595231 52.906836,62.116866 C 47.323549,60.93331 41.259762,57.746625 35.866937,53.161938 C 35.429764,52.790265 34.989951,52.419705 34.889569,52.338447 C 34.723781,52.204242 34.677318,52.227289 34.382278,52.590127 L 34.057488,52.989531 L 34.237402,53.409443 C 34.651736,54.376507 34.56184,55.251554 33.980937,55.906003 L 33.646929,56.28229 L 32.485151,56.333734 L 31.323374,56.385178 L 30.901718,56.866338 C 30.610349,57.198804 30.318247,57.737656 29.956398,58.610221 C 29.668379,59.304736 29.241404,60.267529 29.007551,60.749755 C 27.67684,63.493905 25.62499,65.672839 23.648178,66.44105 C 23.037153,66.678494 21.996948,66.850199 21.758104,66.753035 z "
+       id="path1937" />
+    <text
+       xml:space="preserve"
+       style="font-size:17.68897057px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Frutiger"
+       x="4.6733007"
+       y="79.438057"
+       id="text2827"
+       sodipodi:linespacing="125%"
+       transform="scale(0.934261,1.070365)"><tspan
+         sodipodi:role="line"
+         id="tspan2829"
+         x="4.6733007"
+         y="79.438057">Werkzeug</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Serif"
+       x="10.859139"
+       y="93.181465"
+       id="text2831"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan2833"
+         x="10.859139"
+         y="93.181465">инструмент</tspan></text>
+  </g>
+</svg>
