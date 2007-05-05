@@ -19,32 +19,35 @@
         ...         Rule('/browse/<int:id>/', endpoint='kb/browse'),
         ...         Rule('/browse/<int:id>/<int:page>', endpoint='kb/browse')
         ...     ])
-        ... ], server_name='example.com')
+        ... ], default_subdomain='www')
 
     URL building::
 
-        >>> m.build("kb/browse", dict(id=42))
+        >>> c = m.bind('example.com', '/')
+        >>> c.build("kb/browse", dict(id=42))
         'http://kb.example.com/browse/42/'
-        >>> m.build("kb/browse", dict())
+        >>> c.build("kb/browse", dict())
         'http://kb.example.com/browse/'
-        >>> m.build("kb/browse", dict(id=42, page=3))
+        >>> c.build("kb/browse", dict(id=42, page=3))
         'http://kb.example.com/browse/42/3'
-        >>> m.build("static/about")
+        >>> c.build("static/about")
         u'/about'
-        >>> m.build("static/about", subdomain="kb")
+        >>> c.build("static/about", subdomain="kb")
         'http://www.example.com/about'
-        >>> m.build("static/index", force_external=True)
+        >>> c.build("static/index", force_external=True)
         'http://www.example.com/'
 
     URL matching::
 
-        >>> m.match("/")
+        >>> c = m.bind('example.com', '/')
+        >>> c.match("/")
         ('static/index', {})
-        >>> m.match("/about")
+        >>> c.match("/about")
         ('static/about', {})
-        >>> m.match("/", subdomain="kb")
+        >>> c = m.bind('example.com', '/', 'kb')
+        >>> c.match("/", subdomain="kb")
         ('kb/index', {})
-        >>> m.match("/browse/42/23", subdomain="kb")
+        >>> c.match("/browse/42/23", subdomain="kb")
         ('kb/browse', {'id': 42, 'page': 23})
 
     Exceptions::
@@ -439,23 +442,14 @@ class Map(object):
         for name in cls.names:
             converters[name] = cls
 
-    def __init__(self, rules, server_name=None, default_subdomain='www',
-                 url_scheme='http', charset='utf-8', strict_slashes=True):
+    def __init__(self, rules, default_subdomain='', charset='utf-8',
+                 strict_slashes=True):
         """
         `rules`
             sequence of url rules for this map.
 
-        `server_name`
-            hostname of the server excluding any subdomains but with
-            the tld. Must not contain non ascii chars, if you want to
-            use a i18n domain name you have to provide the domain name
-            encoded in punycode.
-
         `default_subdomain`
             The default subdomain for rules without a subdomain defined.
-
-        `url_scheme`
-            url scheme. For example ``"http"`` or ``"https"``.
 
         `charset`
             charset of the url. defaults to ``"utf-8"``
@@ -467,9 +461,7 @@ class Map(object):
         self._rules_by_endpoint = {}
         self._remap = True
 
-        self.server_name = server_name
         self.default_subdomain = default_subdomain
-        self.url_scheme = url_scheme
         self.charset = charset
         self.strict_slashes = strict_slashes
 
@@ -490,54 +482,75 @@ class Map(object):
         self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
         self._remap = True
 
-    def match(self, path_info, script_name='/', subdomain=None):
+    def bind(self, server_name, script_name=None, subdomain=None,
+             url_scheme='http'):
+        """
+        Return a new map adapter for this request.
+        """
+        if subdomain is None:
+            subdomain = self.default_subdomain
+        if script_name is None:
+            script_name = '/'
+        return MapAdapter(self, server_name, script_name, subdomain,
+                          url_scheme)
+
+    def update(self):
+        """
+        Called before matching and building to keep the compiled rules
+        in the correct order after things changed.
+        """
+        if self._remap:
+            self._rules.sort()
+            self._remap = False
+
+
+class MapAdapter(object):
+
+    def __init__(self, map, server_name, script_name, subdomain,
+                 url_scheme):
+        self.map = map
+        self.server_name = server_name
+        if not script_name.endswith('/'):
+            script_name += '/'
+        self.script_name = script_name
+        self.subdomain = subdomain
+        self.url_scheme = url_scheme
+
+    def match(self, path_info):
         """
         Match a given path_info, script_name and subdomain against the
         known rules. If the subdomain is not given it defaults to the
         default subdomain of the map which is usally `www`. Thus if you
         don't define it anywhere you can safely ignore it.
         """
-        if self._remap:
-            self._remap = False
-            self._rules.sort()
-        if subdomain is None:
-            subdomain = self.default_subdomain
-        if not script_name.endswith('/'):
-            script_name += '/'
+        self.map.update()
         if not isinstance(path_info, unicode):
-            path_info = path_info.decode(self.charset, 'ignore')
-        path = u'<%s>/%s' % (subdomain, path_info.lstrip('/'))
-        for rule in self._rules:
+            path_info = path_info.decode(self.map.charset, 'ignore')
+        path = u'<%s>/%s' % (self.subdomain, path_info.lstrip('/'))
+        for rule in self.map._rules:
             try:
                 rv = rule.match(path)
             except RequestSlash:
                 raise RequestRedirect(str('%s://%s%s%s/%s/' % (
                     self.url_scheme,
-                    subdomain and subdomain + '.' or '',
+                    self.subdomain and self.subdomain + '.' or '',
                     self.server_name,
-                    script_name[:-1],
+                    self.script_name[:-1],
                     path_info.lstrip('/')
                 )))
             if rv is not None:
                 return rule.endpoint, rv
         raise NotFound(path_info)
 
-    def build(self, endpoint, values=None, script_name='/', subdomain=None,
-              force_external=False):
+    def build(self, endpoint, values=None, force_external=False):
         """
         Build a new url hostname relative to the current one. If you
         reference a resource on another subdomain the hostname is added
         automatically. You can force external urls by setting
         `force_external` to `True`.
         """
-        if self._remap:
-            self._remap = False
-            self._rules.sort()
-        if subdomain is None:
-            subdomain = self.default_subdomain
-        if not script_name.endswith('/'):
-            script_name += '/'
-        possible = set(self._rules_by_endpoint.get(endpoint) or ())
+        self.map.update()
+        possible = set(self.map._rules_by_endpoint.get(endpoint) or ())
         if not possible:
             raise NotFound(endpoint)
         values = values or {}
@@ -549,12 +562,12 @@ class Map(object):
                     break
         else:
             raise NotFound(endpoint, values)
-        if not force_external and rule.subdomain == subdomain:
-            return unicode(urljoin(script_name, rv.lstrip('/')))
-        return str('%s://%s.%s%s/%s' % (
+        if not force_external and rule.subdomain == self.subdomain:
+            return unicode(urljoin(self.script_name, rv.lstrip('/')))
+        return str('%s://%s%s%s/%s' % (
             self.url_scheme,
-            rule.subdomain,
+            rule.subdomain and rule.subdomain + '.' or '',
             self.server_name,
-            script_name[:-1],
+            self.script_name[:-1],
             rv.lstrip('/')
         ))

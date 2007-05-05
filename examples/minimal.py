@@ -40,7 +40,7 @@ class MiniApplication(object):
             Rule('/', endpoint='index'),
             Rule('/downloads/', endpoint='downloads_index'),
             Rule('/downloads/<int:download_id>', endpoint='downloads_show')
-        ], server_name, '')
+        ])
 
     def on_page_not_found(self, req):
         return TemplateResponse('not_found')
@@ -56,8 +56,11 @@ class MiniApplication(object):
 
     def __call__(self, environ, start_response):
         req = Request(environ)
+        c = self.map.bind(environ['HTTP_HOST'],
+                          environ.get('SCRIPT_NAME'),
+                          url_scheme=environ['wsgi.url_scheme'])
         try:
-            endpoint, arguments = self.map.match(req.path, self.script_name)
+            endpoint, arguments = c.match(req.path)
         except NotFound, e:
             endpoint = 'page_not_found'
             arguments = {}

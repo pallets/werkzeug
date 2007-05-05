@@ -296,6 +296,35 @@ class Headers(object):
                 result.append((k, v))
         return result
 
+    def setlist(self, key, values):
+        for value in values:
+            result.append((key, value))
+
+    def lists(self, lowercased=False):
+        if not lowercased:
+            return self._list[:]
+        return [(x.lower(), y) for x, y in self._list]
+
+    def iterlists(self, lowercased=False):
+        for key, value in self._list:
+            if lowercased:
+                key = key.lower()
+            yield key, value
+
+    def iterkeys(self):
+        for key, _ in self.iterlists():
+            yield key
+
+    def itervalues(self):
+        for _, value in self.iterlists():
+            yield value
+
+    def keys(self):
+        return list(self.iterkeys())
+
+    def values(self):
+        return list(self.itervalues())
+
     def __delitem__(self, key):
         key = key.lower()
         new = []
@@ -329,6 +358,8 @@ class Headers(object):
         del self[key]
         self.add(key, value)
 
+    __setitem__ = set
+
     def to_list(self, charset):
         """Create a str only list of the headers."""
         result = []
@@ -339,6 +370,15 @@ class Headers(object):
                 v = str(v)
             result.append((k, v))
         return result
+
+    def copy(self):
+        return self.__class__(self._list)
+
+    def __repr__(self):
+        return '%s(%r)' % (
+            self.__class__.__name__,
+            self._list
+        )
 
 
 class lazy_property(object):
