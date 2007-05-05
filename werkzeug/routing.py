@@ -13,11 +13,13 @@
         ...     Rule('/about', endpoint='static/about'),
         ...     Rule('/help', endpoint='static/help'),
         ...     # Knowledge Base
-        ...     Rule('/', subdomain='kb', endpoint='kb/index'),
-        ...     Rule('/browse/', subdomain='kb', endpoint='kb/browse'),
-        ...     Rule('/browse/<int:id>/', subdomain='kb', endpoint='kb/browse'),
-        ...     Rule('/browse/<int:id>/<int:page>', subdomain='kb', endpoint='kb/browse')
-        ... ], 'example.com')
+        ...     Subdomain('kb', [
+        ...         Rule('/', endpoint='kb/index'),
+        ...         Rule('/browse/', endpoint='kb/browse'),
+        ...         Rule('/browse/<int:id>/', endpoint='kb/browse'),
+        ...         Rule('/browse/<int:id>/<int:page>', endpoint='kb/browse')
+        ...     ])
+        ... ], server_name='example.com')
 
     URL building::
 
@@ -185,7 +187,32 @@ class ValidationError(ValueError):
     """
 
 
-class Rule(object):
+class RuleFactory(object):
+    """
+    An object that produces Rules when given a Map.
+    """
+
+    def get_rules(self, map):
+        raise NotImplementedError
+
+
+class Subdomain(RuleFactory):
+    """
+    Collects rules for a given subdomain.
+    """
+
+    def __init__(self, subdomain, rules):
+        self.subdomain = subdomain
+        self.rules = rules
+
+    def get_rules(self, map):
+        for rulefactory in self.rules:
+            for rule in rulefactory.get_rules(map):
+                rule.subdomain = self.subdomain
+                yield rule
+
+
+class Rule(RuleFactory):
     """
     Represents one url pattern.
     """
@@ -210,6 +237,9 @@ class Rule(object):
         self._arguments = set()
         self._converters = {}
         self._regex = None
+
+    def get_rules(self, map):
+        yield self
 
     def bind(self, map):
         """
@@ -443,8 +473,9 @@ class Map(object):
         self.charset = charset
         self.strict_slashes = strict_slashes
 
-        for rule in rules:
-            self.add_rule(rule)
+        for rulefactory in rules:
+            for rule in rulefactory.get_rules(self):
+                self.add_rule(rule)
 
     def add_rule(self, rule):
         """
@@ -464,7 +495,7 @@ class Map(object):
         Match a given path_info, script_name and subdomain against the
         known rules. If the subdomain is not given it defaults to the
         default subdomain of the map which is usally `www`. Thus if you
-        don't defined it anywhere you can safely ignore it.
+        don't define it anywhere you can safely ignore it.
         """
         if self._remap:
             self._remap = False
