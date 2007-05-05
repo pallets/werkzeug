@@ -61,6 +61,7 @@
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import sys
 import re
 from urlparse import urljoin
 from urllib import quote_plus
@@ -239,7 +240,7 @@ class Rule(object):
             self._trace.append((False, '/'))
 
         regex = r'^<%s>%s%s$' % (
-            re.escape(self.subdomain),
+            self.subdomain == 'ALL' and '[^>]*' or re.escape(self.subdomain),
             u''.join(regex_parts),
             not self.is_leaf and '(?P<__suffix__>/?)' or ''
         )
@@ -288,13 +289,25 @@ class Rule(object):
                 tmp.append(data)
         return u''.join(tmp)
 
+    def complexity(self):
+        """
+        The complexity of that rule.
+        """
+        rv = len(self._arguments)
+        # a rule that listens on all subdomains is pretty low leveled.
+        # below all others
+        if self.subdomain == 'ALL':
+            rv = -sys.maxint + rv
+        return rv
+    complexity = property(complexity, doc=complexity.__doc__)
+
     def __cmp__(self, other):
         """
         Order rules by complexity.
         """
         if not isinstance(other, Rule):
             return NotImplemented
-        return cmp(len(self._trace), len(other._trace))
+        return cmp(other.compecity, self.complexity)
 
     def __unicode__(self):
         return self.rule
@@ -306,6 +319,7 @@ class Rule(object):
     def __repr__(self):
         if self.map is None:
             return '<%s (unbound)>' % self.__class__.__name__
+        charset = self.map is not None and self.map.charset or 'utf-8'
         tmp = []
         for is_dynamic, data in self._trace:
             if is_dynamic:
@@ -314,7 +328,7 @@ class Rule(object):
                 tmp.append(data)
         return '<%s %r -> %s>' % (
             self.__class__.__name__,
-            u''.join(tmp),
+            u''.join(tmp).encode(charset),
             self.endpoint
         )
 
