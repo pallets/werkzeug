@@ -58,7 +58,7 @@ class MultiDict(dict):
             self[key] = default
         else:
             default = self[key]
-        return rv
+        return default
 
     def setlistdefault(self, key, default_list=()):
         if key not in self:
