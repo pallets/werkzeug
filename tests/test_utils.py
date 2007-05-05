@@ -9,7 +9,7 @@
 
 from py.test import raises
 
-from werkzeug.utils import MultiDict
+from werkzeug.utils import MultiDict, lazy_property
 
 def test_multidict():
     md = MultiDict()
@@ -103,3 +103,32 @@ def test_multidict():
     assert popped in [('b', 2), ('c', 3)]
     popped = md.popitemlist()
     assert popped in [('b', [2]), ('c', [3])]
+
+
+def test_lazy_property():
+    foo = []
+    class A(object):
+        def prop(self):
+            foo.append(42)
+            return 42
+        prop = lazy_property(prop)
+
+    a = A()
+    p = a.prop
+    q = a.prop
+    assert p == q == 42
+    assert foo == [42]
+
+    foo = []
+    class A(object):
+        def prop(self):
+            foo.append(42)
+            return 42
+        prop = lazy_property(prop, name='propval')
+
+    a = A()
+    p = a.prop
+    q = a.prop
+    r = a.propval
+    assert p == q == r == 42
+    assert foo == [42, 42]
