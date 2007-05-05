@@ -5,9 +5,10 @@
 
     Various utils.
 
-    :copyright: 2007 by Armin Ronacher.
+    :copyright: 2007 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
 """
+from cStringIO import StringIO
 
 
 class MultiDict(dict):
@@ -212,7 +213,7 @@ class FieldStorage(object):
     def readlines(self):
         if not hasattr(self, '_cached_buffer'):
             self._cached_buffer = StringIO(self.data)
-        return self._cached_buffer.readline(*args)
+        return self._cached_buffer.readlines()
 
     def __iter__(self):
         while True:

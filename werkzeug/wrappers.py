@@ -6,7 +6,7 @@
     This module provides simple wrappers around `environ` and
     `start_response`.
 
-    :copyright: 2007 by Armin Ronacher.
+    :copyright: 2007 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
 """
 import cgi
@@ -15,6 +15,7 @@ import urllib
 import posixpath
 from time import gmtime
 from Cookie import SimpleCookie
+from cStringIO import StringIO
 from datetime import datetime
 from email.Message import Message as MessageType
 
@@ -103,7 +104,7 @@ class BaseRequest(object):
             for value in values:
                 value = value.decode(self.charset, 'ignore')
                 items.append((key, value))
-        return = MultiDict(items)
+        return MultiDict(items)
     args = lazy_property(args)
 
     def data(self):
