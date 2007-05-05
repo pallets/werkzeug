@@ -348,6 +348,7 @@ class BaseConverter(object):
 
 
 class UnicodeConverter(BaseConverter):
+    names = ['default', 'string']
 
     def __init__(self, map, args):
         super(UnicodeConverter, self).__init__(map, args)
@@ -372,6 +373,7 @@ class UnicodeConverter(BaseConverter):
 
 
 class IntegerConverter(BaseConverter):
+    names = ['int']
     regex = '\d+'
 
     def __init__(self, map, args):
@@ -402,11 +404,10 @@ class Map(object):
     """
     The base class for all the url maps.
     """
-    converters = {
-        'int':          IntegerConverter,
-        'string':       UnicodeConverter,
-        'default':      UnicodeConverter
-    }
+    converters = {}
+    for cls in BaseConverter.__subclasses__():
+        for name in cls.names:
+            converters[name] = cls
 
     def __init__(self, rules, server_name=None, default_subdomain='www',
                  url_scheme='http', charset='utf-8', strict_slashes=True):
