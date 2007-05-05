@@ -244,11 +244,7 @@ class FieldStorage(object):
         return self._cached_buffer.readlines()
 
     def __iter__(self):
-        while True:
-            row = self.readline()
-            if not row:
-                break
-            yield row
+        return iter(self.readline, '')
 
     def __repr__(self):
         return '<%s: %r (%r)>' % (
