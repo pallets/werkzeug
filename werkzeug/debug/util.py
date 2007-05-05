@@ -26,8 +26,12 @@ def get_current_thread():
 
 
 class Namespace(object):
+
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
+
+    def to_dict(self):
+        return self.__dict__.copy()
 
 
 class ThreadedStream(object):

@@ -15,7 +15,7 @@ BODY = r'''
 <p class="errormsg"><?& exception_value ?></p>
 
 <p class="errorline"><?& last_frame['filename'] ?> in <?& last_frame['function'] ?>,
-  line <?= last_frame['lineno']</p>
+  line <?= last_frame['lineno'] ?></p>
 
 <h2 onclick="change_tb()" class="tb">Traceback (click to switch to raw view)</h2>
 <div id="wsgi-traceback-interactive">
@@ -23,7 +23,7 @@ BODY = r'''
     Here is the sequence of function calls leading up to the error, in the order
     they occurred. Click on a header to show context lines.</p>
 
-<? for num, frame in enumerate(frames) ?>
+<? for num, frame in enumerate(frames): ?>
   <div class="frame" id="frame-<?= num ?>">
     <h3 class="fn"><?& frame['function'] ?> in <?& frame['filename'] ?></h3>
     <?= code_table(frame) ?>
@@ -31,7 +31,7 @@ BODY = r'''
     <h3 class="indent">▸ local variables</h3>
     <?= var_table(frame['vars']) ?>
 
-    <? if evalex ?>
+    <? if evalex: ?>
     <? full_id = tb_uid + '-' + frame['frame_uid'] ?>
     <h3 class="indent">▸ execute code</h3>
     <table class="exec_code">
@@ -63,11 +63,11 @@ BODY = r'''
 </div>
 
 
-<? if req_vars ?>
+<? if req_vars: ?>
 <h2>Request Data</h2>
 <p class="text">The following list contains all important request variables.
   Click on a header to expand the list.</p>
-<? for key, info in req_vars ?>
+<? for key, info in req_vars: ?>
   <dl>
     <dt><?& key ?></dt>
     <dd><?= var_table(info) ?></dd>
@@ -88,7 +88,7 @@ Brought to you by <span class="arthur">DON'T PANIC, your friendly traceback inte
 
 CODETABLE = r'''
 <table class="code">
-<? for line in lines ?>
+<? for line in lines: ?>
   <tr class="<?& line.mode ?>">
     <td class="lineno"><?= line.lineno ?></td>
     <td class="code"><?= line.code ?></td>
@@ -99,17 +99,17 @@ CODETABLE = r'''
 
 VARTABLE = r'''
 <table class="vars">
-<? if type == 'empty' ?>
+<? if type == 'empty': ?>
   <tr><th>no data given</th></tr>
-<? elif type == 'simple' ?>
+<? elif type == 'simple': ?>
   <tr><td class="value"><?& value ?></td></tr>
-<? elif type == 'dict' ?>
+<? elif type == 'dict': ?>
   <tr><th>Name</th><th>Value</th></tr>
-  <? for key, item in value ?>
+  <? for key, item in value: ?>
   <tr><td class="name"><?& key ?></td><td class="value"><?& item ?></td></tr>
   <? end ?>
-<? elif type == 'list' ?>
-  <? for item in value ?>
+<? elif type == 'list': ?>
+  <? for item in value: ?>
   <tr><td class="value"><?& item ?></td></tr>
   <? end ?>
 <? end ?>

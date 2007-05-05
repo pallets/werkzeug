@@ -307,7 +307,7 @@ class Rule(object):
         """
         if not isinstance(other, Rule):
             return NotImplemented
-        return cmp(other.compecity, self.complexity)
+        return cmp(other.complexity, self.complexity)
 
     def __unicode__(self):
         return self.rule
@@ -408,7 +408,7 @@ class Map(object):
         'default':      UnicodeConverter
     }
 
-    def __init__(self, rules, server_name, default_subdomain='www',
+    def __init__(self, rules, server_name=None, default_subdomain='www',
                  url_scheme='http', charset='utf-8', strict_slashes=True):
         """
         `rules`
@@ -474,18 +474,18 @@ class Map(object):
             script_name += '/'
         if not isinstance(path_info, unicode):
             path_info = path_info.decode(self.charset, 'ignore')
-        path = '<%s>/%s' % (subdomain, path_info.lstrip('/'))
+        path = u'<%s>/%s' % (subdomain, path_info.lstrip('/'))
         for rule in self._rules:
             try:
                 rv = rule.match(path)
             except RequestSlash:
-                raise RequestRedirect(u'%s://%s.%s%s/%s/' % (
+                raise RequestRedirect(str('%s://%s%s%s/%s/' % (
                     self.url_scheme,
-                    subdomain,
+                    subdomain and subdomain + '.' or '',
                     self.server_name,
                     script_name[:-1],
                     path_info.lstrip('/')
-                ))
+                )))
             if rv is not None:
                 return rule.endpoint, rv
         raise NotFound(path_info)

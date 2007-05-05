@@ -71,7 +71,7 @@ def var_table(var):
 
 
 def debug_page(context):
-    tc = context.copy()
+    tc = context.to_dict()
     tc['var_table'] = var_table
     tc['code_table'] = code_table
     return HEADER + t_body.render(tc)

@@ -6,7 +6,7 @@
     A very simple Python "Template Engine". In fact it just recognizes
     PHP like blocks and executes the code in them::
 
-        t = Template('<? for u in users ?><?= u['username'] ?>\n<? end ?>')
+        t = Template('<? for u in users: ?><?= u['username'] ?>\n<? end ?>')
         t.render(users=[{'username': 'John'},
                         {'username': 'Jane'}])
 
@@ -117,7 +117,8 @@ class Template(object):
                     write(data, 1)
                 else:
                     write(data, 0)
-                    indention += 1
+                    if data.rstrip().endswith(':'):
+                        indention += 1
         source = '\n'.join(sourcelines)
         self.code = compile(source, '<template>', 'exec')
 
