@@ -198,7 +198,7 @@ class Rule(object):
             string = string.rstrip('/')
         else:
             self.is_leaf = True
-        self.rule = string
+        self.rule = unicode(string)
 
         self.map = None
         self.strict_slashes = strict_slashes
@@ -295,6 +295,28 @@ class Rule(object):
         if not isinstance(other, Rule):
             return NotImplemented
         return cmp(len(self._trace), len(other._trace))
+
+    def __unicode__(self):
+        return self.rule
+
+    def __str__(self):
+        charset = self.map is not None and self.map.charset or 'utf-8'
+        return unicode(self).encode(charset)
+
+    def __repr__(self):
+        if self.map is None:
+            return '<%s (unbound)>' % self.__class__.__name__
+        tmp = []
+        for is_dynamic, data in self._trace:
+            if is_dynamic:
+                tmp.append('<%s>' % data)
+            else:
+                tmp.append(data)
+        return '<%s %r -> %s>' % (
+            self.__class__.__name__,
+            u''.join(tmp),
+            self.endpoint
+        )
 
 
 class BaseConverter(object):
