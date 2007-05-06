@@ -216,13 +216,45 @@ class Subdomain(RuleFactory):
                 yield rule
 
 
+class Submount(RuleFactory):
+    """
+    Collects rules for a given path.
+    """
+
+    def __init__(self, path, rules):
+        self.path = path.rstrip('/')
+        self.rules = rules
+
+    def get_rules(self, map):
+        for rulefactory in self.rules:
+            for rule in rulefactory.get_rules(map):
+                rule.rule = self.path + rule.rule
+                yield rule
+
+
+class EndpointPrefix(RuleFactory):
+    """
+    Prefixes all endpoints with a given string.
+    """
+
+    def __init__(self, prefix, rules):
+        self.prefix = prefix
+        self.rules = rules
+
+    def get_rules(self, map):
+        for rulefactory in self.rules:
+            for rule in rulefactory.get_rules(map):
+                rule.endpoint = self.prefix + rule.endpoint
+                yield rule
+
+
 class Rule(RuleFactory):
     """
     Represents one url pattern.
     """
 
-    def __init__(self, string, subdomain=None, methods=None, endpoint=None,
-                 strict_slashes=None):
+    def __init__(self, string, screen=None, subdomain=None, methods=None,
+                 endpoint=None, strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
         if string.endswith('/'):
@@ -235,6 +267,7 @@ class Rule(RuleFactory):
         self.map = None
         self.strict_slashes = strict_slashes
         self.subdomain = subdomain
+        self.screen = screen
         if methods is None:
             self.methods = None
         else:
@@ -245,7 +278,10 @@ class Rule(RuleFactory):
         self.endpoint = endpoint
 
         self._trace = []
-        self._arguments = set()
+        if screen is not None:
+            self.arguments = set(map(str, screen))
+        else:
+            self.arguments = set()
         self._converters = {}
         self._regex = None
 
@@ -276,7 +312,7 @@ class Rule(RuleFactory):
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
-                self._arguments.add(variable)
+                self.arguments.add(str(variable))
         if not self.is_leaf:
             self._trace.append((False, '/'))
 
@@ -285,7 +321,7 @@ class Rule(RuleFactory):
         else:
             method_re = '|'.join([re.escape(x) for x in self.methods])
 
-        regex = r'^<%s|%s>%s%s$' % (
+        regex = r'^<%s\|%s>%s%s$' % (
             self.subdomain == 'ALL' and '[^|]*' or re.escape(self.subdomain),
             method_re,
             u''.join(regex_parts),
@@ -336,17 +372,52 @@ class Rule(RuleFactory):
                 tmp.append(data)
         return u''.join(tmp)
 
+    def is_screening(self, rule):
+        """
+        Check if this rule is screened for a given rule.
+        """
+        return self.screen is not None and self.endpoint == rule.endpoint \
+               and self != rule and self.arguments == rule.arguments
+
+    def suitable_for(self, values):
+        """
+        Check if the dict of values contains enough data for url generation.
+        """
+        valueset = set(values)
+
+        if self.screen is None:
+            return self.arguments == valueset
+
+        if self.arguments == valueset:
+            for key, value in self.screen.iteritems():
+                if value != values[key]:
+                    return False
+
+        return True
+
     def complexity(self):
         """
         The complexity of that rule.
         """
-        rv = len(self._arguments)
+        rv = len(self.arguments)
         # a rule that listens on all subdomains is pretty low leveled.
         # below all others
         if self.subdomain == 'ALL':
             rv = -sys.maxint + rv
+        # although screened variables are already in the arguments
+        # we add them a second time to the complexity to push the
+        # rule.
+        if self.screen is not None:
+            rv += len(self.screen)
         return rv
     complexity = property(complexity, doc=complexity.__doc__)
+
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and \
+               self._trace == other._trace
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __cmp__(self, other):
         """
@@ -467,7 +538,7 @@ class Map(object):
             converters[name] = cls
 
     def __init__(self, rules, default_subdomain='', charset='utf-8',
-                 strict_slashes=True):
+                 strict_slashes=True, redirect_screened=False):
         """
         `rules`
             sequence of url rules for this map.
@@ -480,6 +551,10 @@ class Map(object):
 
         `strict_slashes`
             Take care of trailing slashes.
+
+        `redirect_screened`
+            This will redirect to the screened rule if it wasn't visited
+            that way. This helps creating unique urls.
         """
         self._rules = []
         self._rules_by_endpoint = {}
@@ -488,6 +563,7 @@ class Map(object):
         self.default_subdomain = default_subdomain
         self.charset = charset
         self.strict_slashes = strict_slashes
+        self.redirect_screened = redirect_screened
 
         for rulefactory in rules:
             for rule in rulefactory.get_rules(self):
@@ -518,20 +594,21 @@ class Map(object):
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme)
 
-    def bind_to_environ(self, environ, subdomain=None):
+    def bind_to_environ(self, environ, server_name=None, subdomain=None):
         """
         Like `bind` but the required information are pulled from the
         WSGI environment provided where possible. For some information
         this won't work (subdomains), if you want that feature you have
         to provide the subdomain with the `subdomain` variable.
         """
-        if 'HTTP_HOST' in environ:
-            server_name = environ['HTTP_HOST']
-        else:
-            server_name = environ['SERVER_NAME']
-            if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not in \
-               (('https', '443'), ('http', '80')):
-                server_name += ':' + environ['SERVER_PORT']
+        if server_name is None:
+            if 'HTTP_HOST' in environ:
+                server_name = environ['HTTP_HOST']
+            else:
+                server_name = environ['SERVER_NAME']
+                if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
+                   in (('https', '443'), ('http', '80')):
+                    server_name += ':' + environ['SERVER_PORT']
         return self.bind(server_name, environ.get('SCRIPT_NAME'), subdomain,
                          environ['wsgi.url_scheme'])
 
@@ -542,6 +619,8 @@ class Map(object):
         """
         if self._remap:
             self._rules.sort()
+            for rules in self._rules_by_endpoint.itervalues():
+                rules.sort()
             self._remap = False
 
 
@@ -587,8 +666,20 @@ class MapAdapter(object):
                     self.script_name[:-1],
                     path_info.lstrip('/')
                 )))
-            if rv is not None:
-                return rule.endpoint, rv
+            if rv is None:
+                continue
+            if self.map.redirect_screened:
+                for r in self.map._rules_by_endpoint[rule.endpoint]:
+                    if r.is_screening(rule):
+                        rv.update(r.screen)
+                        raise RequestRedirect(str('%s://%s%s%s/%s' % (
+                            self.url_scheme,
+                            self.subdomain and self.subdomain + '.' or '',
+                            self.server_name,
+                            self.script_name[:-1],
+                            r.build(rv).lstrip('/')
+                        )))
+            return rule.endpoint, rv
         raise NotFound(path_info)
 
     def build(self, endpoint, values=None, force_external=False):
@@ -599,13 +690,11 @@ class MapAdapter(object):
         `force_external` to `True`.
         """
         self.map.update()
-        possible = set(self.map._rules_by_endpoint.get(endpoint) or ())
+        possible = self.map._rules_by_endpoint.get(endpoint) or []
         if not possible:
             raise NotFound(endpoint)
-        values = values or {}
-        valueset = set(values.iterkeys())
         for rule in possible:
-            if rule._arguments == valueset:
+            if rule.suitable_for(values):
                 rv = rule.build(values)
                 if rv is not None:
                     break
