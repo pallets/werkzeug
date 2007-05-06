@@ -253,7 +253,7 @@ class Rule(RuleFactory):
     Represents one url pattern.
     """
 
-    def __init__(self, string, screen=None, subdomain=None, methods=None,
+    def __init__(self, string, defaults=None, subdomain=None, methods=None,
                  endpoint=None, strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
@@ -267,7 +267,7 @@ class Rule(RuleFactory):
         self.map = None
         self.strict_slashes = strict_slashes
         self.subdomain = subdomain
-        self.screen = screen
+        self.defaults = defaults
         if methods is None:
             self.methods = None
         else:
@@ -278,8 +278,8 @@ class Rule(RuleFactory):
         self.endpoint = endpoint
 
         self._trace = []
-        if screen is not None:
-            self.arguments = set(map(str, screen))
+        if defaults is not None:
+            self.arguments = set(map(str, defaults))
         else:
             self.arguments = set()
         self._converters = {}
@@ -372,11 +372,11 @@ class Rule(RuleFactory):
                 tmp.append(data)
         return u''.join(tmp)
 
-    def is_screening(self, rule):
+    def provides_defaults_for(self, rule):
         """
-        Check if this rule is screened for a given rule.
+        Check if this rule is defaults for a given rule.
         """
-        return self.screen is not None and self.endpoint == rule.endpoint \
+        return self.defaults is not None and self.endpoint == rule.endpoint \
                and self != rule and self.arguments == rule.arguments
 
     def suitable_for(self, values):
@@ -385,11 +385,11 @@ class Rule(RuleFactory):
         """
         valueset = set(values)
 
-        if self.screen is None:
+        if self.defaults is None:
             return self.arguments == valueset
 
         if self.arguments == valueset:
-            for key, value in self.screen.iteritems():
+            for key, value in self.defaults.iteritems():
                 if value != values[key]:
                     return False
 
@@ -404,11 +404,11 @@ class Rule(RuleFactory):
         # below all others
         if self.subdomain == 'ALL':
             rv = -sys.maxint + rv
-        # although screened variables are already in the arguments
+        # although defaults variables are already in the arguments
         # we add them a second time to the complexity to push the
         # rule.
-        if self.screen is not None:
-            rv += len(self.screen)
+        if self.defaults is not None:
+            rv += len(self.defaults)
         return rv
     complexity = property(complexity, doc=complexity.__doc__)
 
@@ -538,7 +538,7 @@ class Map(object):
             converters[name] = cls
 
     def __init__(self, rules, default_subdomain='', charset='utf-8',
-                 strict_slashes=True, redirect_screened=False):
+                 strict_slashes=True, redirect_defaults=False):
         """
         `rules`
             sequence of url rules for this map.
@@ -552,8 +552,8 @@ class Map(object):
         `strict_slashes`
             Take care of trailing slashes.
 
-        `redirect_screened`
-            This will redirect to the screened rule if it wasn't visited
+        `redirect_defaults`
+            This will redirect to the default rule if it wasn't visited
             that way. This helps creating unique urls.
         """
         self._rules = []
@@ -563,7 +563,7 @@ class Map(object):
         self.default_subdomain = default_subdomain
         self.charset = charset
         self.strict_slashes = strict_slashes
-        self.redirect_screened = redirect_screened
+        self.redirect_defaults = redirect_defaults
 
         for rulefactory in rules:
             for rule in rulefactory.get_rules(self):
@@ -668,10 +668,10 @@ class MapAdapter(object):
                 )))
             if rv is None:
                 continue
-            if self.map.redirect_screened:
+            if self.map.redirect_defaults:
                 for r in self.map._rules_by_endpoint[rule.endpoint]:
-                    if r.is_screening(rule):
-                        rv.update(r.screen)
+                    if r.provides_defaults_for(rule):
+                        rv.update(r.defaults)
                         raise RequestRedirect(str('%s://%s%s%s/%s' % (
                             self.url_scheme,
                             self.subdomain and self.subdomain + '.' or '',
@@ -693,6 +693,7 @@ class MapAdapter(object):
         possible = self.map._rules_by_endpoint.get(endpoint) or []
         if not possible:
             raise NotFound(endpoint)
+        values = values or {}
         for rule in possible:
             if rule.suitable_for(values):
                 rv = rule.build(values)
@@ -701,7 +702,7 @@ class MapAdapter(object):
         else:
             raise NotFound(endpoint, values)
         if not force_external and rule.subdomain == self.subdomain:
-            return unicode(urljoin(self.script_name, rv.lstrip('/')))
+            return str(urljoin(self.script_name, rv.lstrip('/')))
         return str('%s://%s%s%s/%s' % (
             self.url_scheme,
             rule.subdomain and rule.subdomain + '.' or '',

@@ -12,8 +12,8 @@ m = Map([
         Rule('/', endpoint='index'),
         Submount('/browse', [
             Rule('/', endpoint='browse'),
-            Rule('/<int:id>/', screen={'page': 1}, endpoint='browse'),
+            Rule('/<int:id>/', defaults={'page': 1}, endpoint='browse'),
             Rule('/<int:id>/<int:page>', endpoint='browse')
         ])
     ])])
-], redirect_screened=True)
+], redirect_defaults=True)
