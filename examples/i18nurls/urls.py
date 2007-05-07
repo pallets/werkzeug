@@ -6,6 +6,6 @@ map = Map([
         Rule('/', endpoint='index'),
         Rule('/about', endpoint='about'),
         Rule('/blog/', endpoint='blog/index'),
-        Rule('/blog/<int:post_slug>', endpoint='blog/show')
+        Rule('/blog/<int:post_id>', endpoint='blog/show')
     ])
 ])

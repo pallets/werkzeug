@@ -137,13 +137,16 @@ class BaseRequest(object):
         """Stored Cookies."""
         cookie = SimpleCookie()
         cookie.load(self.environ.get('HTTP_COOKIE', ''))
-        return cookie
+        result = {}
+        for key, value in cookie.iteritems():
+            result[key] = value.decode(self.charset, 'ignore')
+        return result
     cookies = lazy_property(cookies)
 
     def method(self):
         """Request method."""
         return self.environ['REQUEST_METHOD']
-    method = lazy_property(method)
+    method = property(method, doc=method.__doc__)
 
     def path(self):
         """Requested path."""
@@ -182,12 +185,12 @@ class BaseResponse(object):
         else:
             self.headers = Headers(headers)
         if mimetype is not None:
-            if 'charset=' not in mimetype:
+            if 'charset=' not in mimetype and mimetype.startswith('text/'):
                 mimetype += '; charset=' + self.charset
-            self.headers.add('Content-Type', mimetype)
+            self.headers['Content-Type'] = mimetype
         elif 'Content-Type' not in self.headers:
-            self.headers.add('Content-Type', 'text/plain; charset=' +
-                             self.charset)
+            self.headers['Content-Type'] = 'text/plain; charset=' + \
+                                           self.charset
         self.status = status
         self._cookies = None
 

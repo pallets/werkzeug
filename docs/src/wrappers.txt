@@ -1,0 +1,188 @@
+========
+Wrappers
+========
+
+The wrappers are simple request and response object which you can subclass to
+do whatever you want them to do.
+
+Request
+=======
+
+When a page is requested, you create an request object that contains metadata
+about the request. You can then pass the request object as argument to the view
+functions or use it inside the application callable.
+
+.. sourcecode:: python
+
+    from werkzeug.wrappers import BaseRequest
+
+    class Request(BaseRequest):
+        charset = 'utf-8'
+
+    def application(environ, start_response):
+        req = Request(environ)
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        yield 'Hello %s!' % req.args.get('subject', 'World')
+
+Per default the `BaseRequest` object only accepts `ASCII` values. Because of
+that you have to tell it the actual used encoding when subclassing it. All
+data is stored internally as `unicode`.
+
+The request object will store itself as ``'werkzeug.request'`` in the WSGI
+environment.
+
+Members
+-------
+
+`path`
+    The current path requested, relative to the position where the WSGI
+    application is mounted (`PATH_INFO`). It will contain a trailing slash
+    and will be at least a string with a single slash when accessing the
+    URL root.
+
+`method`
+    The request method. `GET`, `POST` etc.
+
+`args`
+    A dictionary-like object containing all given HTTP GET parameters.
+    See the `MultiDict` documentation in the `utils`_ section.
+
+`form`
+    A dictionary-like object containing all given HTTP POST parameters.
+    See the `MultiDict` documentation in the `utils`_ section.
+
+    This dict does not contain uploaded files, see `files` therefore.
+
+`values`
+    An immutable dictionary-like object containing both the `args`
+    and `form` values. See the `CombinedMultiDict` documentation in
+    the `utils`_ section.
+
+`cookies`
+    A dictionary with the submitted cookie values.
+
+`files`
+    A dictionary-like object containing all uploaded files. Each key in
+    `files` is the name from the ``<input type="file" name="" />``. Each
+    value in `files` is a werkzeug `FieldStorage` object with the following
+    members:
+
+    - `filename` - The name of the uploaded file, as a Python string.
+    - `type` - The content type of the uploaded file.
+    - `data` - The raw content of the uploaded file.
+    - `read()` - reads from the stream
+
+    Note that `files` will only contain data if the request method was
+    POST and the ``<form>`` that posted to the request had
+    ``enctype="multipart/form-data"``. Otherwise, it will be empty.
+
+    See the `MultiDict` documentation in the `utils`_ section for more
+    details about the used datastructure.
+
+`environ`
+    The WSGI environment used to create the request object.
+
+`data`
+    The raw value of the input stream.
+
+Response
+========
+
+The response object is the opposite of the request object. It wraps the
+`start_response` function. In order to keep the interface extensible it
+has the same signature as a normal WSGI callable, thus it takes the
+`environ` as first argument.
+
+You can use that as replacement for `start_response` and returning an
+iterable:
+
+.. sourcecode:: python
+
+    from werkzeug.wrappers import BaseResponse
+
+    class Response(BaseResponse):
+        charset = 'utf-8'
+
+    def application(environ, start_response):
+        return Response(u'Hello World')
+
+Per default the `BaseResponse` object only accepts `ASCII` values. Because of
+that you have to tell it the actual used encoding when subclassing it. All
+data is stored internally as `unicode`. Bytestrings passed to the object
+will be returned unchanged in order to support binary data.
+
+Usage
+-----
+
+There are multiple ways to use the response object. The constructor accepts
+the following arguments:
+
+`response`
+    Can be an iterator or a string or None. If it's an iterator, it should
+    return strings (`unicode`/`str`), and those strings will be joined
+    together to form the content of the response.
+
+    If you pass it an iterable it's used for direct data submission (streaming):
+
+    .. sourcecode:: python
+
+        def my_view(...):
+            def wrapped():
+                for item in range(100):
+                    yield str(item) + ' '
+                    time.sleep(0.1)
+            return Response(wrapped, mimetype='text/html')
+
+    This will then take 10 seconds to submit all data but the browser will
+    render after each iteration.
+
+`headers`
+    Either `None`, a list or dict of headers or a werkzeug `Headers` instance.
+    See the `Headers` documentation in the `utils`_ section.
+
+`status`
+    The status number of the response. Defaults to `200`. Note that those
+    are integers, not strings.
+
+`mimetype`
+    The mimetype of the response. If there is no `charset` definition in
+    that mimetype and the mimetype is a text mimetype it will automatically
+    append the charset of the response object. The default mimetype is
+    ``'text/plain'``.
+
+
+Members
+-------
+
+`headers`
+    A `Headers` instance from the `utils`_ module that represents the
+    headers set currently.
+
+`write(data)`
+    If the response object was creating by not passing it an iterable but
+    either a string, list or nothing it will be created in file-like mode.
+
+    This means that you can write data to the internal buffer, it doesn't
+    mean that you directly pass the data to the webserver, if you want to
+    do that have a look at the generator notice above.
+
+`set_cookie(key, value='', max_age=None, expires=None, path='/', domain=None, secure=None)`
+
+    Sets a cookie. The parameters are the same as in the cookie Morsel object
+    in the Python standard library but it accepts unicode data too:
+
+    - `max_age` should be a number of seconds, or None (default) if the
+       cookie should last only as long as the client’s browser session.
+    - expires should be a `datetime` object or unix timestamp.
+    - Use `domain` if you want to set a cross-domain cookie. For example,
+      ``domain=".example.com"`` will set a cookie that is readable by the
+      domain ``www.example.com``, ``foo.example.com`` etc. Otherwise, a
+      cookie will only be readable by the domain that set it.
+    - `path` limits the cookie to a given path, per default it will span
+      the whole domain.
+
+`delete_cookie(key)`
+    Deletes the cookie with the given key. Fails silently if the key doesn’t exist.
+
+
+.. _utils: utils.txt
