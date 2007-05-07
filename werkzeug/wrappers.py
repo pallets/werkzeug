@@ -28,7 +28,7 @@ class BaseRequest(object):
     """
     Base Request class.
     """
-    charset = 'utf-8'
+    charset = 'ascii'
 
     def __init__(self, environ):
         self.environ = environ
@@ -166,7 +166,7 @@ class BaseResponse(object):
     """
     Base response class.
     """
-    charset = 'utf-8'
+    charset = 'ascii'
 
     def __init__(self, response=None, headers=None, status=200, mimetype=None):
         if response is None:
@@ -182,11 +182,20 @@ class BaseResponse(object):
         else:
             self.headers = Headers(headers)
         if mimetype is not None:
+            if 'charset=' not in mimetype:
+                mimetype += '; charset=' + self.charset
             self.headers.add('Content-Type', mimetype)
         elif 'Content-Type' not in self.headers:
-            self.headers.add('Content-Type', 'text/plain')
+            self.headers.add('Content-Type', 'text/plain; charset=' +
+                             self.charset)
         self.status = status
         self._cookies = None
+
+    def write(self, value):
+        if not isinstance(self.response, list):
+            raise RuntimeError('cannot write to streaming response')
+        self.write = self.response.append
+        self.response.append(value)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None):

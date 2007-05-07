@@ -137,13 +137,15 @@ def parse_arguments(argstring, **defaults):
         if len(tmp) == 2:
             value, rest = tmp
         else:
-            value = tmp
+            value = tmp[0]
         key = key.strip()
         if key not in defaults:
             raise ValueError('unknown parameter %r' % key)
         conv = defaults[key][0]
         if conv is bool:
             result[key] = value.strip().lower() == 'true'
+        elif conv is unicode:
+            result[key] = value.strip()
         else:
             result[key] = conv(value.strip())
 
@@ -302,8 +304,10 @@ class Rule(RuleFactory):
         if self.subdomain is None:
             self.subdomain = map.default_subdomain
 
+        rule = self.subdomain + '|' + self.rule
+
         regex_parts = []
-        for converter, arguments, variable in parse_rule(self.rule):
+        for converter, arguments, variable in parse_rule(rule):
             if converter is None:
                 regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
@@ -321,18 +325,17 @@ class Rule(RuleFactory):
         else:
             method_re = '|'.join([re.escape(x) for x in self.methods])
 
-        regex = r'^<%s\|%s>%s%s$' % (
-            self.subdomain == 'ALL' and '[^|]*' or re.escape(self.subdomain),
-            method_re,
+        regex = r'^%s%s\(%s\)$' % (
             u''.join(regex_parts),
-            not self.is_leaf and '(?P<__suffix__>/?)' or ''
+            not self.is_leaf and '(?P<__suffix__>/?)' or '',
+            method_re
         )
         self._regex = re.compile(regex, re.UNICODE)
 
     def match(self, path):
         """
         Check if the rule matches a given path. Path is a string in the
-        form ``"<subdomain>/path"`` and is assembled by the map.
+        form ``"subdomain|/path(method)"`` and is assembled by the map.
 
         If the rule matches a dict with the converted values is returned,
         otherwise the return value is `None`.
@@ -358,8 +361,8 @@ class Rule(RuleFactory):
 
     def build(self, values):
         """
-        Assembles the relative url for that rule. If this is not possible
-        (values missing or malformed) `None` is returned.
+        Assembles the relative url for that rule and the subdomain.
+        If building doesn't work for some reasons `None` is returned.
         """
         tmp = []
         for is_dynamic, data in self._trace:
@@ -370,7 +373,7 @@ class Rule(RuleFactory):
                     return
             else:
                 tmp.append(data)
-        return u''.join(tmp)
+        return (u''.join(tmp)).split('|', 1)
 
     def provides_defaults_for(self, rule):
         """
@@ -386,9 +389,9 @@ class Rule(RuleFactory):
         valueset = set(values)
 
         if self.defaults is None:
-            return self.arguments == valueset
+            return self.arguments.issubset(valueset)
 
-        if self.arguments == valueset:
+        if self.arguments.issubset(valueset):
             for key, value in self.defaults.iteritems():
                 if value != values[key]:
                     return False
@@ -400,10 +403,6 @@ class Rule(RuleFactory):
         The complexity of that rule.
         """
         rv = len(self.arguments)
-        # a rule that listens on all subdomains is pretty low leveled.
-        # below all others
-        if self.subdomain == 'ALL':
-            rv = -sys.maxint + rv
         # although defaults variables are already in the arguments
         # we add them a second time to the complexity to push the
         # rule.
@@ -446,7 +445,7 @@ class Rule(RuleFactory):
                 tmp.append(data)
         return '<%s %r -> %s>' % (
             self.__class__.__name__,
-            u''.join(tmp).encode(charset),
+            (u''.join(tmp).encode(charset)).lstrip('|'),
             self.endpoint
         )
 
@@ -479,22 +478,20 @@ class UnicodeConverter(BaseConverter):
         super(UnicodeConverter, self).__init__(map, args)
         options = parse_arguments(args,
             minlength=(int, 0),
-            maxlength=(int, -1),
+            maxlength=(int, 0),
+            length=(int, 0),
             allow_slash=(bool, False)
         )
-        self.minlength = options['minlength'] or None
-        if options['maxlength'] != -1:
-            self.maxlength = options['maxlength']
+        if options['length']:
+            length = '{%s}' % options['length']
+        elif options['minlength'] or options['maxlength']:
+            length = '{%s,%s}' % (
+                options['minlength'] or '1',
+                options['maxlength'] or ''
+            )
         else:
-            self.maxlength = None
-        if options['allow_slash']:
-            self.regex = '.+?'
-
-    def to_python(self, value):
-        if (self.minlength is not None and len(value) < self.minlength) or \
-           (self.maxlength is not None and len(value) > self.maxlength):
-            raise ValidationError()
-        return value
+            length = '+'
+        self.regex = (options['allow_slash'] and '.' or '[^/]') + length
 
 
 class IntegerConverter(BaseConverter):
@@ -538,7 +535,7 @@ class Map(object):
             converters[name] = cls
 
     def __init__(self, rules, default_subdomain='', charset='utf-8',
-                 strict_slashes=True, redirect_defaults=False):
+                 strict_slashes=True, redirect_defaults=True):
         """
         `rules`
             sequence of url rules for this map.
@@ -650,10 +647,10 @@ class MapAdapter(object):
         self.map.update()
         if not isinstance(path_info, unicode):
             path_info = path_info.decode(self.map.charset, 'ignore')
-        path = u'<%s|%s>/%s' % (
+        path = u'%s|/%s(%s)' % (
             self.subdomain,
-            method.upper(),
-            path_info.lstrip('/')
+            path_info.lstrip('/'),
+            method.upper()
         )
         for rule in self.map._rules:
             try:
@@ -691,9 +688,9 @@ class MapAdapter(object):
         """
         self.map.update()
         possible = self.map._rules_by_endpoint.get(endpoint) or []
-        if not possible:
-            raise NotFound(endpoint)
         values = values or {}
+        if not possible:
+            raise NotFound(endpoint, values)
         for rule in possible:
             if rule.suitable_for(values):
                 rv = rule.build(values)
@@ -701,12 +698,13 @@ class MapAdapter(object):
                     break
         else:
             raise NotFound(endpoint, values)
-        if not force_external and rule.subdomain == self.subdomain:
-            return str(urljoin(self.script_name, rv.lstrip('/')))
+        subdomain, path = rv
+        if not force_external and subdomain == self.subdomain:
+            return str(urljoin(self.script_name, path.lstrip('/')))
         return str('%s://%s%s%s/%s' % (
             self.url_scheme,
             rule.subdomain and rule.subdomain + '.' or '',
             self.server_name,
             self.script_name[:-1],
-            rv.lstrip('/')
+            path.lstrip('/')
         ))

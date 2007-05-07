@@ -438,8 +438,10 @@ body {
   padding: 0 5px 0 5px;
 }
 
-#wsgi-traceback table.exec_code td.output pre {
+#wsgi-traceback table.exec_code td.output pre,
+#wsgi-traceback table.vars td.value {
   font-family: monospace;
+  font-size: 13px;
   white-space: pre-wrap;       /* css-3 should we be so lucky... */
   white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
   white-space: -pre-wrap;      /* Opera 4-6 ?? */

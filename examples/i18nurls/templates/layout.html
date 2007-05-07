@@ -1,0 +1,22 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <title><?& title ?> | Example Application</title>
+  </head>
+  <body>
+    <h1>Example Application</h1>
+    <p>
+      Request Language: <strong><?& req.language ?></strong>
+    </p>
+    <?= body ?>
+    <blockquote>
+      <p>This page in other languages:
+      <ul>
+      <? for lng in ['en', 'de', 'fr']: ?>
+        <li><a href="<?& req.url_for('this', lang_code=lng) ?>"><?= lng ?></a></li>
+      <? end ?>
+      </ul>
+    </blockquote>
+  </body>
+</html>

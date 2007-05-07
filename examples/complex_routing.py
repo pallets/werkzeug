@@ -16,4 +16,4 @@ m = Map([
             Rule('/<int:id>/<int:page>', endpoint='browse')
         ])
     ])])
-], redirect_defaults=True)
+])

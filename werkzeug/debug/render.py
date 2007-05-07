@@ -41,8 +41,10 @@ def code_table(frame):
 
 def var_table(var):
     def safe_pformat(x):
-        try: return pprint.pformat(x)
-        except: return '?'
+        try:
+            return pprint.pformat(x)
+        except:
+            return '?'
 
     # dicts
     if isinstance(var, dict) or hasattr(var, 'items'):
