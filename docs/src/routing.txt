@@ -1,0 +1,140 @@
+==============
+Routing System
+==============
+
+When it comes to combining multiple controller or view functions (however
+you want to call them) you need a dispatcher. A simple way would be
+applying regular expression tests on the ``PATH_INFO`` and call registered
+callback functions that return the value then.
+
+Werkzeug provides a much more powerful system, similar to `routes`_.
+
+Quickstart
+==========
+
+Here a simple example which could be the URL definition for a blog:
+
+.. sourcecode:: python
+
+    from werkzeug.routing import Map, Rule, NotFound, RequestRedirect
+
+    map = Map([
+        Rule('/', endpoint='blog/index'),
+        Rule('/<int:year>/', endpoint='blog/archive'),
+        Rule('/<int:year>/<int:month>/', endpoint='blog/archive'),
+        Rule('/<int:year>/<int:month>/<int:day>/', endpoint='blog/archive'),
+        Rule('/<int:year>/<int:month>/<int:day>/<slug>', endpoint='blog/show_post'),
+        Rule('/about', endpoint='blog/about_me'),
+        Rule('/feeds/', endpoint='blog/feeds'),
+        Rule('/feeds/<feed_name>.rss', endpoint='blog/show_feed')
+    ])
+
+    def application(environ, start_response):
+        urls = map.bind_to_environ(environ)
+        try:
+            endpoint, args = urls.match(environ.get('PATH_INFO') or '/')
+        except NotFound:
+            response = 'Rule Not Found'
+        except RequestRedirect, e:
+            response = 'Rule redirects to %s' % e.new_url
+        else:
+            response = 'Rule points to %r with arguments %r' % (endpoint, args)
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        yield response
+
+So what does that do? First of all we create a new `Map` which stores a
+bunch of URL rules. Then we pass it a list of `Rule` objects.
+
+Each `Rule` object is instanciated with a string that represents a rule and
+an endpoint which will be the alias for that rule. Multiple rules can have
+the same endpoints but should have different arguments to allow URL
+construction.
+
+The format for the URL rules is straigtforward but explained in detail below.
+
+Inside the WSGI application we bind the map to the current request which will
+return a new `MapAdapter`. This map adapter can then be used to match or
+build domains for the current request.
+
+The `match` method can then either return a tuple in the form
+``(endpoint, args)`` or raise one of the two exception `NotFound` or
+`RequestRedirect`. The first one is raised if there is no URL matching the
+current request, the latter if a rule was found that redirects to another
+rule. This for example happens if a user visits ``/feeds`` but only ``/feeds/``
+is matching.
+
+The redirect test can be disabled but it's a good idea to keep it activated
+because it helps you create unique URLs.
+
+Rule Format
+===========
+
+Rule strings basically are just normal url paths with placeholders in the
+format ``<converter(arguments):name>`` where converter and the arguments
+are optional. If no converter is defined the `default` converter is used
+which means `string` in the normal configuration.
+
+URL rules that end with a slash are branch URLs, others are leaves. If you
+have `strict_slashes` enabled which is the default, all branch URLs that
+are visited without a trailing slash will trigger a redirect to the same
+URL with that slash appended.
+
+The list of converters can be extended, the default converters are explained
+below.
+
+Rule Options
+============
+
+There are some options for `Rule` that change the way it behaves. Note that
+beside the rule string itself all arguments *must* be keyword arguments in
+order to not break the application on Werkzeug upgrades.
+
+`string`
+    The first argument which is the rule format as explained above
+
+`endpoint`
+    The endpoint for this rule. This can be anything. A reference to a
+    function, a string, a number etc. The preferred way is using a string
+    as endpoint because you'll use the endpoint for url generation.
+
+`defaults`
+    An optional dict with defaults for other rules with the same endpoint.
+    This is a bit tricky but useful if you want to have unique URLs:
+
+    .. sourcecode:: python
+
+        map = Map([
+            Rule('/all/', defaults={'page': 1}, endpoint='all_entries'),
+            Rule('/all/<int:page_number>', endpoint='all_entries')
+        ])
+
+    If a user now visits ``http://example.com/all/1`` he will be redirected
+    to ``http://example.com/all/``. If `redirect_defaults` is disabled on
+    the `Map` instance this will only affect the URL generation.
+
+`subdomain`
+    The subdomain rule string for this rule. If not specified the rule only
+    matches for the `default_subdomain` or the map. If the map is not bound
+    to a subdomain this feature is disabled.
+
+    Can be useful if you want to have user profiles on different subdomains
+    and all subdomains are forwarded to your application:
+
+    .. sourcecode:: python
+
+        map = Map([
+            Rule('/', subdomain='<username>', endpoint='user/homepage'),
+            Rule('/stats', subdomain='<username>', endpoint='user/stats')
+        ])
+
+`methods`
+    A sequence of http methods this rule applies to. If not specified all
+    methods are allowed. For example this can be useful if you want different
+    endpoints for `POST` and `GET`.
+
+`strict_slashes`
+    Override the `Map` setting for `strict_slashes` only for this rule. If
+    not specified the `Map` setting is used.
+
+
+.. _routes: http://routes.groovie.org/
