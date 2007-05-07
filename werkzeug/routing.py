@@ -504,7 +504,7 @@ class IntegerConverter(BaseConverter):
     def __init__(self, map, args):
         super(IntegerConverter, self).__init__(map, args)
         options = parse_arguments(args,
-            fixed_digits=(int, -1),
+            fixed_digits=(int, 0),
             min=(int, 0),
             max=(int, -1)
         )
@@ -516,13 +516,18 @@ class IntegerConverter(BaseConverter):
             self.max = options['max']
 
     def to_python(self, value):
-        if (self.fixed_digits != -1 and len(value) != self.fixed_digits):
+        if (self.fixed_digits and len(value) != self.fixed_digits):
             raise ValidationError()
         value = int(value)
         if (self.min is not None and value < self.min) or \
            (self.max is not None and value > self.max):
             raise ValidationError()
         return value
+
+    def to_url(self, value):
+        if self.fixed_digits:
+            value = ('%%%s0d' % self.fixed_digits) % value
+        return str(value)
 
 
 class Map(object):
@@ -534,8 +539,9 @@ class Map(object):
         for name in cls.names:
             converters[name] = cls
 
-    def __init__(self, rules, default_subdomain='', charset='utf-8',
-                 strict_slashes=True, redirect_defaults=True):
+    def __init__(self, rules, default_subdomain='', charset='ascii',
+                 strict_slashes=True, redirect_defaults=True,
+                 converters=None):
         """
         `rules`
             sequence of url rules for this map.
@@ -544,7 +550,7 @@ class Map(object):
             The default subdomain for rules without a subdomain defined.
 
         `charset`
-            charset of the url. defaults to ``"utf-8"``
+            charset of the url. defaults to ``"ascii"``
 
         `strict_slashes`
             Take care of trailing slashes.
@@ -552,6 +558,11 @@ class Map(object):
         `redirect_defaults`
             This will redirect to the default rule if it wasn't visited
             that way. This helps creating unique urls.
+
+        `converters`
+            A dict of converters that adds additional converters to the
+            list of converters. If you redefine one converter this will
+            override the original one.
         """
         self._rules = []
         self._rules_by_endpoint = {}
@@ -561,6 +572,10 @@ class Map(object):
         self.charset = charset
         self.strict_slashes = strict_slashes
         self.redirect_defaults = redirect_defaults
+
+        self.converters = self.converters.copy()
+        if converters:
+            self.converters.update(converters)
 
         for rulefactory in rules:
             for rule in rulefactory.get_rules(self):

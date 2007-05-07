@@ -82,6 +82,73 @@ URL with that slash appended.
 The list of converters can be extended, the default converters are explained
 below.
 
+Builtin Converters
+==================
+
+Here a list of converters that come with Werkzeug:
+
+`string`
+    This converter is the default converter and accepts just a string -
+    optionally with a slash.
+
+    Supported arguments:
+
+    - `minlength` - the minimum length of the string. must be greater
+      than 1.
+    - `maxlength` - the maximum length of the string.
+    - `length` - the exact length of that string.
+    - `allow_slash` - set this to `True` if you want the converter to
+      accept slashes as value too:
+
+      .. sourcecode:: python
+
+          Rule('/users/<string(allow_slash=True):username>',    
+               endpoint='view_profile')
+
+
+`int`
+    This converter only accepts integer values.
+
+    Supported arguments:
+
+    - `fixed_digits` - the number of fixed digits in the URL. If you
+      set this to ``4`` for example, the application will only match
+      if the url looks like ``/0001/`` for example. The default is
+      variable length.
+    - `min` - the minimal number.
+    - `max` - the maximal number.
+
+Map Options
+===========
+
+Some of the configuration values are only stored on the `Map` instance since
+those affect all rules. Other are just defaults and can be overridden for
+each rule. Note that you have to specify all arguments beside the `rules`
+as keywords arguments!
+
+`rules`
+    First argument can be positional argument. A sequence of rules or
+    rule factories for this map.
+
+`default_subdomain`
+    The default subdomain. If no subdomain is defined this is used. The
+    default value is no subdomain. This only takes effect if subdomains
+    are in use.
+
+`charset`
+    The charset for all URLs. Defaults to `ascii`.
+
+`strict_slashes`
+    If this is enable werkzeug will take care of trailing slashes, otherwise
+    those are stripped before matching. Default is enabled.
+
+`redirect_defaults`
+    If there are defaults (explained below) and you don't want redirecting
+    you can disable this rule.
+
+`converters`
+    A dict of additional converters.
+
 Rule Options
 ============
 
@@ -135,6 +202,100 @@ order to not break the application on Werkzeug upgrades.
 `strict_slashes`
     Override the `Map` setting for `strict_slashes` only for this rule. If
     not specified the `Map` setting is used.
+
+Rule Factories
+==============
+
+As soon as you have more complex URL setups it's a good idea to use the
+rule factories provided. They automate some of the repetitive tasks. They
+also allow you to span rules over multiple python modules and combining
+them to one map.
+
+`Subdomain`
+    All URLs provided by this factory have the subdomain set to a
+    specific domain. For example if you want to use the subdomain for
+    the current language this can be a good setup:
+
+    .. sourcecode:: python
+
+        from werkzeug.routing import Map, Rule, Subdomain
+
+        map = Map([
+            Rule('/', endpoint='#select_language'),
+            Subdomain('<string(length=2):lang_code>', [
+                Rule('/', endpoint='index'),
+                Rule('/about', endpoint='about'),
+                Rule('/help', endpoint='help')
+            ])
+        ])
+
+    All the rules except of the ``'#select_language'`` endpoint will now
+    listen on a two letter long subdomain that helds the language code
+    for the current request.
+
+`Submount`
+    Like `Subdomain` but prefixes the url rule with a given string:
+
+    .. sourcecode:: python
+
+        from werkzeug.routing import Map, Rule, Submount
+
+        map = Map([
+            Rule('/', endpoint='index'),
+            Submount('/blog', [
+                Rule('/', endpoint='blog/index'),
+                Rule('/entry/<entry_slug>', endpoint='blog/show')
+            ])
+        ])
+
+    Now the rule ``'blog/show'`` listens on ``/blog/entry/<entry_slug>`` etc.
+
+`EndpointPrefix`
+    Prefixes all endpoints (which must be strings for this factory) with
+    another string. This can be useful for the blog example above:
+
+    .. sourcecode:: python
+
+        from werkzeug.routing import Map, Rule, Submount, EndpointPrefix
+
+        map = Map([
+            Rule('/', endpoint='index'),
+            EndpointPrefix('blog/', [Submount('/blog', [
+                Rule('/', endpoint='index'),
+                Rule('/entry/<entry_slug>', endpoint='show')
+            ])])
+        ])
+
+Custom Converters
+=================
+
+You can easily add custom converters. The only thing you have to do is to
+subclass `BaseConverter` and pass that new converter to the map. A converter
+has to provide two public methods: `to_python` and `to_url` and a member that
+represents a regular expression. Here a small example:
+
+.. sourcecode:: python
+
+    from werkzeug.routing import Rule, Map, BaseConverter
+
+    class BooleanConverter(BaseConverter):
+
+        def __init__(self, map, args):
+            # args is the string that represents the arguments
+            # defined in the rule. You can use `parse_arguments`
+            # to parse those.
+            super(BooleanConverter, self).__init__(map, args)
+            self.regex = '(?:yes|no)'
+
+        def to_python(self, value):
+            return value == 'yes'
+
+        def to_value(self, value):
+            return value and 'yes' or 'no'
+
+    map = Map([
+        Rule('/vote/<bool:werkzeug_rocks>', endpoint='vote')
+    ], converters={'bool': BooleanConverter})
 
 
 .. _routes: http://routes.groovie.org/
