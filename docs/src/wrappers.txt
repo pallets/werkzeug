@@ -2,13 +2,13 @@
 Wrappers
 ========
 
-The wrappers are simple request and response object which you can subclass to
+The wrappers are simple request and response objects which you can subclass to
 do whatever you want them to do.
 
 Request
 =======
 
-When a page is requested, you create an request object that contains metadata
+When a page is requested, you create a request object that contains metadata
 about the request. You can then pass the request object as argument to the view
 functions or use it inside the application callable.
 
@@ -25,7 +25,7 @@ functions or use it inside the application callable.
         yield 'Hello %s!' % req.args.get('subject', 'World')
 
 Per default the `BaseRequest` object only accepts `ASCII` values. Because of
-that you have to tell it the actual used encoding when subclassing it. All
+that you have to tell it the actual encoding to use when subclassing it. All
 data is stored internally as `unicode`.
 
 The request object will store itself as ``'werkzeug.request'`` in the WSGI
@@ -77,7 +77,7 @@ Members
     ``enctype="multipart/form-data"``. Otherwise, it will be empty.
 
     See the `MultiDict` documentation in the `utils`_ section for more
-    details about the used datastructure.
+    details about the used data structure.
 
 `environ`
     The WSGI environment used to create the request object.
@@ -160,7 +160,7 @@ Members
     headers set currently.
 
 `write(data)`
-    If the response object was creating by not passing it an iterable but
+    If the response object was created not by passing it an iterable but
     either a string, list or nothing it will be created in file-like mode.
 
     This means that you can write data to the internal buffer, it doesn't
@@ -174,7 +174,7 @@ Members
 
     - `max_age` should be a number of seconds, or None (default) if the
        cookie should last only as long as the client’s browser session.
-    - expires should be a `datetime` object or unix timestamp.
+    - `expires` should be a `datetime` object or unix timestamp.
     - Use `domain` if you want to set a cross-domain cookie. For example,
       ``domain=".example.com"`` will set a cookie that is readable by the
       domain ``www.example.com``, ``foo.example.com`` etc. Otherwise, a

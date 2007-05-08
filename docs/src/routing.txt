@@ -45,19 +45,19 @@ Here a simple example which could be the URL definition for a blog:
 So what does that do? First of all we create a new `Map` which stores a
 bunch of URL rules. Then we pass it a list of `Rule` objects.
 
-Each `Rule` object is instanciated with a string that represents a rule and
-an endpoint which will be the alias for that rule. Multiple rules can have
-the same endpoints but should have different arguments to allow URL
-construction.
+Each `Rule` object is instantiated with a string that represents a rule and
+an endpoint which will be the alias for what view the rule represents.
+Multiple rules can have the same endpoint but should have different
+arguments to allow URL construction.
 
-The format for the URL rules is straigtforward but explained in detail below.
+The format for the URL rules is straightforward but explained in detail below.
 
 Inside the WSGI application we bind the map to the current request which will
 return a new `MapAdapter`. This map adapter can then be used to match or
 build domains for the current request.
 
 The `match` method can then either return a tuple in the form
-``(endpoint, args)`` or raise one of the two exception `NotFound` or
+``(endpoint, args)`` or raise one of the two exceptions `NotFound` or
 `RequestRedirect`. The first one is raised if there is no URL matching the
 current request, the latter if a rule was found that redirects to another
 rule. This for example happens if a user visits ``/feeds`` but only ``/feeds/``
@@ -88,8 +88,8 @@ Builtin Converters
 Here a list of converters that come with Werkzeug:
 
 `string`
-    This converter is the default converter and accepts just a string -
-    optionally with a slash.
+    This converter is the default converter and accepts any string -
+    optionally one containing slashes.
 
     Supported arguments:
 
@@ -113,10 +113,10 @@ Here a list of converters that come with Werkzeug:
 
     - `fixed_digits` - the number of fixed digits in the URL. If you
       set this to ``4`` for example, the application will only match
-      if the url looks like ``/0001/`` for example. The default is
+      if the url looks like ``/0001/``. The default is
       variable length.
-    - `min` - the minimal number.
-    - `max` - the maximal number.
+    - `min` - the minimal value.
+    - `max` - the maximal value.
 
 Map Options
 ===========
@@ -127,7 +127,7 @@ each rule. Note that you have to specify all arguments beside the `rules`
 as keywords arguments!
 
 `rules`
-    First argument can be positional argument. A sequence of rules or
+    First argument; can be positional argument. A sequence of rules or
     rule factories for this map.
 
 `default_subdomain`
@@ -157,7 +157,7 @@ beside the rule string itself all arguments *must* be keyword arguments in
 order to not break the application on Werkzeug upgrades.
 
 `string`
-    The first argument which is the rule format as explained above
+    The first argument which is the rule format as explained above.
 
 `endpoint`
     The endpoint for this rule. This can be anything. A reference to a
@@ -195,7 +195,7 @@ order to not break the application on Werkzeug upgrades.
         ])
 
 `methods`
-    A sequence of http methods this rule applies to. If not specified all
+    A sequence of http methods this rule applies to. If not specified, all
     methods are allowed. For example this can be useful if you want different
     endpoints for `POST` and `GET`.
 
@@ -272,7 +272,7 @@ Custom Converters
 You can easily add custom converters. The only thing you have to do is to
 subclass `BaseConverter` and pass that new converter to the map. A converter
 has to provide two public methods: `to_python` and `to_url` and a member that
-represents a regular expression. Here a small example:
+represents a regular expression. Here is a small example:
 
 .. sourcecode:: python
 

@@ -2,12 +2,13 @@
 Debugging System
 ================
 
-Depending on the WSGI gateway/server exceptions are handled differently but
+Depending on the WSGI gateway/server, exceptions are handled differently but
 most of the time exceptions go to stderr or the error log.
 
 Since this is not the best debugging environment Werkzeug provides a WSGI
 middleware that renders nice debugging tracebacks, optionally with an AJAX
-based debugger.
+based debugger (which allows to execute code in the context of the
+traceback's frames).
 
 Usage:
 
@@ -22,10 +23,12 @@ Usage:
     srv = make_server('localhost', 4000, application)
     srv.serve_forever()
 
-This code spawns a Debugging Server on `localhost:4000` with the enabled
-debugger. If you set `evalex` to `False` the debugger is disabled.
+This code spawns a Debugging Server on `localhost:4000` with the debugger
+enabled. If you set `evalex` to `False`, the debugger is disabled.
 
-Don't ever use the debugging middleware in a production environment since it
-can leak internal information that are part of the variable debug table. Even
-worse is a enabled `evalex` interactive debugger that can be used to execute
-code on the server!
+.. warning::
+
+   Don't ever use the debugging middleware in a production environment since it
+   can leak internal information that is part of the variable debug table. Even
+   worse is a debugger with enabled `evalex` feature that can be used to execute
+   code on the server!

@@ -1,8 +1,7 @@
-
 # -*- coding: utf-8 -*-
 """
     Generate Werkzeug Documentation
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Generates a bunch of html files containing the documentation.
 

@@ -15,7 +15,8 @@ for the same key which is for example used by the parsing functions in the
 wrappers. This is necessary because some HTML form elements pass multiple values
 for the same key.
 
-`MultiDict` implements the all standard dictionary methods but they will
+`MultiDict` implements the all standard dictionary methods. Internally, it
+saves all values for a key as a list, but the standard dict access methods will
 only return the first value for a key. If you want to gain access to the
 other values too you have to use the `list` methods as explained below.
 
@@ -45,10 +46,12 @@ values for a key:
 
 `getlist`
     Return the list of items for a given key. If that key is not in the
-    `MultiDict` the return value will be an empty list.
+    `MultiDict`, the return value will be an empty list.
 
 `setlist`
-    Remove the old values for a key and add new ones.
+    Remove the old values for a key and add new ones. Note that the list you
+    pass the values in will be shallow-copied before it is inserted in the
+    dictionary.
     
     .. sourcecode:: pycon
     
@@ -69,6 +72,9 @@ values for a key:
     Like `values` but it will return lists for all values instead
     of only the first value.
 
+`iterlists`
+    Like `lists` but returns an iterator.
+
 `iterlistvalues`
     Like `itervalues` but it will yield lists for all values instead
     of only the first value.
@@ -77,7 +83,7 @@ values for a key:
     Like `pop` for normal dicts; pops all the values for a key and
     removes the key from the dict.
 
-`popitem`
+`popitemlist`
     Like `popitem` for normal dicts; pops all the values for a key,
     removes the key from the dict and then returns a tuple in the
     form ``(key, values)``.

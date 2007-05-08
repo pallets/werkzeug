@@ -11,32 +11,32 @@ What is WSGI?
 =============
 
 Basically WSGI is an interface between web servers and web applications.
-We'll explain the mechanics of WSGI below, but to sum it up WSGI let you
+We'll explain the mechanics of WSGI below, but to sum it up WSGI lets you
 develop rich web application without the need to know about your server
 environment. A WSGI application runs on standalone servers, on any
 webserver out there, via `mod_python`, `FastCGI`, `CGI`, basically everything
-that runs python.
+that runs Python.
 
 But there's much more; WSGI is more than just HTTP! You and other developers
 can extend WSGI by adding new features to it, filtering input or output,
 adding rich debugging systems, automatically send e-mails to your mailer
-as soon as an unhandled application error occours. You can add session
+as soon as an unhandled application error occurs. You can add session
 features to it etc.
 
-There are few things you cannot do with WSGI and Werkzeug itself is just
-a tiny wrapper around WSGI, thus you don't loose any functionally unlike some
-other implementations that abstract more. If you don't require all the powers
-of WSGI you can choose a higher level implementation like Django or web.py.
+There are few things you cannot do with WSGI, and Werkzeug itself is just
+a tiny wrapper around WSGI, thus you don't lose any functionally unlike some
+other implementations that abstract more. If you don't require all the power
+of WSGI you can choose a higher level implementation like Django.
 
 Writing a WSGI Application
 ==========================
 
 The first part is about how to use WSGI without Werkzeug. You can read
-the PEP that defines it, but we'll do a very brief summary:
+the PEP (:pep:333) that defines it, but we'll do a very brief summary:
 
-- a WSGI application is just a callable function that is passed an
+- a WSGI application is just a callable object that is passed an
   `environ` - a dict that contains request data, and a `start_response`
-  function that is called to start the response.
+  function that is called to start sending the response.
 
   In order to send data to the server all you have to do is to call
   `start_response` and return an iterable.
@@ -56,8 +56,8 @@ So, here's a simple application:
         start_response('200 OK', [('Content-Type', 'text/html')])
         return ['Hello World!']
 
-Now you have an application, but how can you start it? With Python2.5 onwards
-the stdlib contains a WSGI server called `wsgiref`, for Python2.4 and lower
+Now you have an application, but how can you start it? From Python 2.5,
+the stdlib contains a WSGI server called `wsgiref`, for Python 2.4 and lower
 you have to install that on your own. There are also other standalone
 implementations which you can find online at `wsgi.org`_.
 
@@ -74,7 +74,7 @@ this start hook to the file:
 When you now start the application you will see ``Hello World!`` on
 ``http://localhost:8080/``.
 
-The name hook is a good idea so that you can use the module for other modules
+The `__name__` hook is a good idea so that you can use the module for other modules
 like flup (provides a bridge to Apache and other webservers via FastCGI and
 similar protocols) without altering the code.
 
@@ -103,8 +103,8 @@ That Sucks!
 ===========
 
 Indeed it does. It's neither fun to work with nor does it look clean and
-simple. And that's where utilities like Werkzeug come into game. Werkzeug
-for example let you easily create unicode aware applications (in fact it
+simple. And that's where utilities like Werkzeug come into play. Werkzeug
+for example lets you easily create unicode aware applications (in fact it
 forces you to use unicode internally) and avoid repetitive work.
 
 In this example we want to connect `/` with an index function and `/about`
@@ -160,19 +160,18 @@ or some of the Werkzeug features:
             resp = views[req.path](req)
         return resp(environ, start_response)
 
-Alright. That's quite a lot of code but let's go step by step trough that
-code.
+Alright. That's quite a lot of code but let's go step by step through it.
 
 The first thing we do is importing the stuff we use. In that example we need
 the `escape` function from the `cgi` module that SGML escapes strings. This
 is required to avoid XSS attacks to the application. The next import gives
-use the `BaseRequest` and `BaseResponse` objects we then subclass in order to
+us the `BaseRequest` and `BaseResponse` objects we then subclass in order to
 tell them to use utf-8 encoding. The default encoding is ASCII, thus we
-wouldn't be able to use any non ASCII characters.
+wouldn't be able to use any non-ASCII characters.
 
 Then we define a bunch of callback functions that just return HTML responses.
-One of them `not_found` is called when we don't have a matching URL, the others
-are bound to urls in the `views` dict.
+One of them - `not_found` - is called when we don't have a matching URL,
+the others are bound to urls in the `views` dict.
 
 The WSGI application itself just creates a request object and looks up the
 callbacks or proceeds with the `not_found` function if there is no matching
@@ -181,7 +180,7 @@ URL. The return value of the response is then called as WSGI application.
 Because `Response` objects behave like WSGI applications this is possible.
 
 Of course this example is still bad code, in real applications you would use
-on of the template engines that are available for python. But for the simple
+one of the template engines that are available for Python. But for the simple
 example that should be enough.
 
 

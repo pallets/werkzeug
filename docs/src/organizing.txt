@@ -2,11 +2,11 @@
 Organizing Code
 ===============
 
-Werkzeug doesn't limit you in what you do thus there is no general way of
+Werkzeug doesn't limit you in what you do; thus there is no general rule
 where to locate your modules, what to do with your data etc.
 
-However there is a general pattern which is used in many web application which
-is called the "Model View Controller" pattern (`MVC`) which makes sense for many
+However there is a general pattern which is used in many web applications,
+the "Model View Controller" pattern (`MVC`), which makes sense for many
 applications.
 
 The idea is that you have "models" in one file, the "views" in another and the
@@ -15,28 +15,29 @@ new idea of naming those components which is called "Model Template View"
 (`MTV`) which probably makes more sense for web applications although it means
 nearly the same. We will use the latter naming in this file.
 
-So here what those terms mean:
+So here is what those terms mean:
 
 Model
     A model is an abstraction to your data. For example if you have a database
     you can use the excellent `SQLAlchemy`_ library that maps database tables
-    to class or just provides a thin layer that lets you write your own
+    to classes or just provides a thin layer that lets you write your own
     classes.
 
 Template
     The templates contain the actual HTML markup with placeholders for data
-    passed to those templates. Although there is a minimal template language
-    in the Werkzeug package we don't recommend using it for larger application
-    since there many good and powerful template engines out there that support
-    debugging, template inheritance, XML output etc.
+    passed to them. Although there is a `minimal template language
+    <minitmpl.txt>`_ in the Werkzeug package we don't recommend using it for
+    larger applications since there are many good and powerful template
+    engines out there that support debugging, template inheritance, XML
+    output etc.
 
-    The integrated templating language is a good idea of you have one or two
+    The integrated templating language is a good idea if you have one or two
     templates and don't want to install one of the big template engines but
-    not suitable for more complex tasks!
+    is not suitable for more complex tasks!
 
 View
-    The view is the part that processes data and connects model with template
-    and then return the output. This is the part where Werkzeug helps you
+    The view is the code that processes data, connecting model with template,
+    and then outputs the result. This is the part where Werkzeug helps you.
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 
@@ -48,7 +49,7 @@ dispatches the requests. It's also a good idea to assemble the final URL map
 there if you use the Werkzeug `routing system`_.
 
 It's a good idea to call the file something like ``main.py`` or
-``application.py`` and locate it in the root of the package. Here what it
+``application.py`` and locate it in the root of the package. This is what it
 *could* look like:
 
 .. sourcecode:: python
@@ -93,7 +94,7 @@ Utils
 
 If we continue the example above we need an utils module with the request and
 response objects. This would also contain other utilities and a bridge to a
-template engine. In this example we will use `Jinja`_ as template engine -
+template engine. In this example we will use the `Jinja`_ as template engine -
 basically because it's something we use too - but you can of course use any
 template engine:
 
@@ -153,7 +154,7 @@ This is just one small URL rule for one view.
 View
 ====
 
-Here the view defined above. Must be saved in `myprojects/views/static.py` as
+Here is the view defined above. It must be saved in `myprojects/views/static.py` as
 defined above:
 
 .. sourcecode:: python
