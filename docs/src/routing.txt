@@ -181,7 +181,7 @@ order to not break the application on Werkzeug upgrades.
 
 `subdomain`
     The subdomain rule string for this rule. If not specified the rule only
-    matches for the `default_subdomain` or the map. If the map is not bound
+    matches for the `default_subdomain` of the map. If the map is not bound
     to a subdomain this feature is disabled.
 
     Can be useful if you want to have user profiles on different subdomains

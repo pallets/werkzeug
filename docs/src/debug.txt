@@ -1,0 +1,31 @@
+================
+Debugging System
+================
+
+Depending on the WSGI gateway/server exceptions are handled differently but
+most of the time exceptions go to stderr or the error log.
+
+Since this is not the best debugging environment Werkzeug provides a WSGI
+middleware that renders nice debugging tracebacks, optionally with an AJAX
+based debugger.
+
+Usage:
+
+.. sourcecode:: python
+
+    from myapplication import application
+    from werkzeug.debug import DebuggedApplication
+    from wsgiref.simple_server import make_server
+
+    application = DebuggedApplication(application, evalex=True)
+    
+    srv = make_server('localhost', 4000, application)
+    srv.serve_forever()
+
+This code spawns a Debugging Server on `localhost:4000` with the enabled
+debugger. If you set `evalex` to `False` the debugger is disabled.
+
+Don't ever use the debugging middleware in a production environment since it
+can leak internal information that are part of the variable debug table. Even
+worse is a enabled `evalex` interactive debugger that can be used to execute
+code on the server!

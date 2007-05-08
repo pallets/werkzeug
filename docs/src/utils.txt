@@ -10,13 +10,19 @@ wrappers, you can however use them without the wrappers too.
 MultiDict
 =========
 
-The `MultiDict` behaves like a normal dict and is in fact a subclass of it,
-but it can store multiple values per key.
+A `MultiDict` is a dictionary subclass customized to deal with multiple values
+for the same key which is for example used by the parsing functions in the
+wrappers. This is necessary because some HTML form elements pass multiple values
+for the same key.
 
-You can construct such a `MultiDict` from a list of ``(key, value)`` tuples
-or another `MultiDict`, *not* from a dict itself.
+`MultiDict` implements the all standard dictionary methods but they will
+only return the first value for a key. If you want to gain access to the
+other values too you have to use the `list` methods as explained below.
 
-Usage:
+You can construct a `MultiDict` from a list of ``(key, value)`` tuples, a dict
+or another `MultiDict`.
+
+Basic Usage:
 
 .. sourcecode:: pycon
 
@@ -34,7 +40,112 @@ Usage:
 It behaves like a normal dict thus all dict functions will only return the
 first value when multiple values for one key are found.
 
-If you want to get or set all values use the `getlist`, `setlist`,
-`setlistdefault`, `iterlists`, `lists`, `iterlistvalues`, `listvalues`,
-`poplist` and `postitemlist` that work like their non list pendants but
-return a list of all the values.
+The following additional functions exist that are used to get or set the other
+values for a key:
+
+`getlist`
+    Return the list of items for a given key. If that key is not in the
+    `MultiDict` the return value will be an empty list.
+
+`setlist`
+    Remove the old values for a key and add new ones.
+    
+    .. sourcecode:: pycon
+    
+        >>> multidict.setlist('foo', ['1', '2'])
+        >>> multidict['foo']
+        '1'
+        >>> multidict.getlist('foo')
+        ['1', '2']
+
+`setlistdefault`
+    Like `setdefault` but sets multiple values.
+
+`lists`
+    Like `items` but the values will be lists with all the values for
+    a key.
+
+`listvalues`
+    Like `values` but it will return lists for all values instead
+    of only the first value.
+
+`iterlistvalues`
+    Like `itervalues` but it will yield lists for all values instead
+    of only the first value.
+
+`poplist`
+    Like `pop` for normal dicts; pops all the values for a key and
+    removes the key from the dict.
+
+`popitem`
+    Like `popitem` for normal dicts; pops all the values for a key,
+    removes the key from the dict and then returns a tuple in the
+    form ``(key, values)``.
+
+Also notable: `update` adds values and does not replace existing.
+
+
+CombinedMultiDict
+=================
+
+A read only `MultiDict` decorator that you can pass multiple `MultiDict`
+instances as sequence and it will combine the return values of all wrapped
+dicts:
+
+.. sourcecode:: pycon
+
+    >>> from werkzeug.utils import MultiDict, CombinedMultiDict
+    >>> post = MultiDict([('foo', 'bar')])
+    >>> get = MultiDict([('blub', 'blah')])
+    >>> combined = CombinedMultiDict([get, post])
+    >>> combined['foo']
+    'bar'
+    >>> combined['blub']
+    'blah'
+
+This works for all read operations and will raise a `TypeError` for methods
+that want to change data which isn't possible.
+
+
+Headers
+=======
+
+Another useful class is `Headers`. It behaves in a similar to a `MultiDict`
+but it stores the values in a different way. In fact it's not a dict at all,
+it's more a list because the values are stored both sorted and unhashed.
+
+This data structure is useful if you want a nicer way to handle WSGI
+headers which are stored as tuples in a list.
+
+Changes to `MultiDict`:
+
+`iterlistvalues` and `listvalues` are missing because `itervalues` and
+`values` work completely different.
+
+`add`
+    Add a new value to a key ``foo.add('Content-Type', 'text/plain')``
+
+`__iter__`
+    yields ``(key, value)`` tuples.
+
+`set` / `__setitem__`
+    remove all old keys and add a new value. 
+
+`to_list`
+    Convert the headers into a list and converts the unicode headers to
+    the specified charset. The charset parameter is obligatory.
+    (``foo.to_list('utf-8')``)
+
+`getlist`
+    Return a list of allvalues for a given key
+
+`setlist`
+    Add a list of values to a given key. Removes all old values for this
+    key first.
+
+`addlist`
+    Add a list of values to the headers for this key.
+
+`itervalues` and similar methods...
+    ...yield all values for a key, not only the first one! `iterkeys` can
+    of corse yield multiple keys with the same name analog to that.

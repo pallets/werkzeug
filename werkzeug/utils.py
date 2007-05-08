@@ -14,6 +14,9 @@ try:
 except NameError:
     from sets import Set as set
 
+    def reversed(item):
+        return tuple(item)[::-1]
+
 
 class MultiDict(dict):
     """
@@ -24,6 +27,11 @@ class MultiDict(dict):
     def __init__(self, mapping=()):
         if isinstance(mapping, MultiDict):
             dict.__init__(self, mapping.lists())
+        elif isinstance(mapping, dict):
+            tmp = {}
+            for key, value in mapping:
+                tmp[key] = [value]
+            dict.__init__(self, tmp)
         else:
             tmp = {}
             for key, value in mapping:
@@ -143,10 +151,14 @@ class CombinedMultiDict(MultiDict):
     dict which resolves items from the passed dicts.
     """
 
-    #XXX: missing support for iterlistvalues/listvalues
-
     def __init__(self, dicts=None):
         self.dicts = dicts or []
+
+    def fromkeys(cls):
+        raise TypeError('cannot create %r instances by fromkeys' %
+            cls.__name__
+        )
+    fromkeys = classmethod(fromkeys)
 
     def __getitem__(self, key):
         for d in self.dicts:
@@ -173,10 +185,10 @@ class CombinedMultiDict(MultiDict):
         return list(rv)
 
     def values(self):
-        rv = []
-        for i in self.keys():
-            rv.append(self[i])
-        return rv
+        rv = {}
+        for d in reversed(self.dicts):
+            rv.update(d)
+        return rv.values()
 
     def items(self):
         rv = {}
@@ -190,6 +202,12 @@ class CombinedMultiDict(MultiDict):
             for k, v in d.iterlists():
                 rv.setdefault(k, []).extend(v)
         return rv.items()
+
+    def listvalues(self):
+        rv = {}
+        for d in reversed(self.dicts):
+            rv.update(d.lists())
+        return rv.values()
 
     def iterkeys(self):
         return iter(self.keys())
@@ -205,22 +223,31 @@ class CombinedMultiDict(MultiDict):
     def iterlists(self):
         return iter(self.lists())
 
+    def iterlistvalues(self):
+        return iter(self.listvalues())
+
     def copy(self):
         """Return a shallow copy of this object."""
         return self.__class__(self.dicts[:])
 
-    def __immutable(self, *args):
+    def _immutable(self, *args):
         raise TypeError('%r instances are immutable' %
                         self.__class__.__name__)
 
     setlist = setdefault = setlistdefault = update = pop = popitem = \
-    poplist = popitemlist = __setitem__ = __delitem__ = __immutable
+    poplist = popitemlist = __setitem__ = __delitem__ = _immutable
+    del _immutable
 
     def __len__(self):
         return len(self.keys())
 
     def __contains__(self, key):
-        return key in self.keys()
+        for d in self.dicts:
+            if key in d:
+                return True
+        return False
+
+    has_key = __contains__
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.dicts)
@@ -303,6 +330,10 @@ class Headers(object):
         return result
 
     def setlist(self, key, values):
+        del self[key]
+        self.addlist(key, values)
+
+    def addlist(self, values):
         for value in values:
             result.append((key, value))
 
@@ -339,12 +370,16 @@ class Headers(object):
                 new.append((k, v))
         self._list[:] = new
 
+    remove = __delitem__
+
     def __contains__(self, key):
         key = key.lower()
         for k, v in self._list:
             if k.lower() == key:
                 return True
         return False
+
+    has_key = __contains__
 
     def __iter__(self):
         return iter(self._list)

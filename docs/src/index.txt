@@ -4,17 +4,35 @@ Documentation Overview
 
 Welcome in the Werkzeug documentation.
 
+Reference
+=========
+
+Documentation regarding the Werkzeug modules and Werkzeug as such.
+
 - `Installing Werkzeug <installation.txt>`_
 
 - `Wrappers <wrappers.txt>`_ - wrap environ and start_response
   in request/response objects.
 
-- `Routing System <routing.txt>`_ - a powerful url dispatcher
+- `Routing System <routing.txt>`_ - a powerful URL dispatcher
   and builder.
 
 - `Mini Templates <minitmpl.txt>`_ - minimal templating system
 
 - `Utilities <utils.txt>`_ - useful things like multi value dicts,
-  a datastructure for headers etc.
+  a data structure for headers etc.
 
 - `Debugging System <debug.txt>`_ - interactive debugger
+
+General Development Information
+===============================
+
+This part of the documentation mainly explains how to develop WSGI
+applications. This is also interesting if you don't want to use
+Werkzeug but other WSGI utilities, the ideas are the same.
+
+- `How WSGI Works <wsgihowto.txt>`_ - short introduction to WSGI and
+  Werkzeug.
+
+- `Organizing Code <organizing.txt>`_ - gives you an idea how you can
+  organize your code when using Werkzeug.

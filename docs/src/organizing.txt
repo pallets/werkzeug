@@ -1,0 +1,175 @@
+===============
+Organizing Code
+===============
+
+Werkzeug doesn't limit you in what you do thus there is no general way of
+where to locate your modules, what to do with your data etc.
+
+However there is a general pattern which is used in many web application which
+is called the "Model View Controller" pattern (`MVC`) which makes sense for many
+applications.
+
+The idea is that you have "models" in one file, the "views" in another and the
+"controllers" in the third file or folder. The Django framework came up with a
+new idea of naming those components which is called "Model Template View"
+(`MTV`) which probably makes more sense for web applications although it means
+nearly the same. We will use the latter naming in this file.
+
+So here what those terms mean:
+
+Model
+    A model is an abstraction to your data. For example if you have a database
+    you can use the excellent `SQLAlchemy`_ library that maps database tables
+    to class or just provides a thin layer that lets you write your own
+    classes.
+
+Template
+    The templates contain the actual HTML markup with placeholders for data
+    passed to those templates. Although there is a minimal template language
+    in the Werkzeug package we don't recommend using it for larger application
+    since there many good and powerful template engines out there that support
+    debugging, template inheritance, XML output etc.
+
+    The integrated templating language is a good idea of you have one or two
+    templates and don't want to install one of the big template engines but
+    not suitable for more complex tasks!
+
+View
+    The view is the part that processes data and connects model with template
+    and then return the output. This is the part where Werkzeug helps you
+
+.. _SQLAlchemy: http://www.sqlalchemy.org/
+
+Entry Point
+===========
+
+There should be one central file that provides the WSGI application and
+dispatches the requests. It's also a good idea to assemble the final URL map
+there if you use the Werkzeug `routing system`_.
+
+It's a good idea to call the file something like ``main.py`` or
+``application.py`` and locate it in the root of the package. Here what it
+*could* look like:
+
+.. sourcecode:: python
+
+    from mypackage.urls import map, not_found
+    from mypackage.utils import Request, Response
+    from werkzeug.routing import NotFound, RequestRedirect
+
+    def application(environ, start_response):
+        urls = map.bind_to_environ(environ)
+        req = Request(environ, urls)
+        try:
+            endpoint, args = urls.match(req.path)
+        except NotFound:
+            resp = not_found(req)
+        except RequestRedirect, e:
+            resp = Response('moved to %s' % e.new_url, status=302)
+            resp.headers['Location'] = e.new_url
+        else:
+            module, func = endpoint.split('/', 1)
+            mod = __import__('mypackage.views.' + module, None,
+                             None, [''])
+            view = getattr(module, func)
+            resp = view(req, **args)
+        return resp(environ, start_response)
+
+This will look for the controller functions in `mypackage.views.module`.
+If the URL is configured with an endpoint of ``'static/index'`` the module
+`mypackage.views.static` is loaded and `index(req)` is called.
+
+The URL rule parameters are passed to the function as keyword argument then.
+
+**Note**: This is just one idea of how things can look like. This doesn't
+necessarily have to represent your application. You can for example save
+the request object in a thread local storage or have your views as methods
+of a controller class you instantiate with the request as argument for each
+incoming request. You can also use other request objects or no request object
+at all etc.
+
+Utils
+=====
+
+If we continue the example above we need an utils module with the request and
+response objects. This would also contain other utilities and a bridge to a
+template engine. In this example we will use `Jinja`_ as template engine -
+basically because it's something we use too - but you can of course use any
+template engine:
+
+.. sourcecode:: python
+
+    from werkzeug.wrappers import BaseRequest, BaseResponse
+    from jinja import Environment, PackageLoader
+
+    env = Environment(loader=PackageLoader('mypackage', 'templates'))
+
+    class Request(BaseRequest):
+        charset = 'utf-8'
+
+        def __init__(self, environ, urls):
+            self.environ = environ
+            self.urls = urls
+
+        def url_for(self, endpoint, **values):
+            return self.urls.build(endpoint, values)
+
+    class Response(BaseResponse):
+        charset = 'utf-8'
+
+    class TemplateResponse(Response):
+
+        def __init__(self, template_name, **values):
+            tmpl = env.get_template(template_name)
+            output = tmpl.render(values)
+            super(TemplateResponse, self).__init__(output, mimetype='text/html')
+
+**Note**: templates in this example are saved in the `templates` folder inside
+the `mypackage` package. The way template loading and rendering works depends on
+the template engine, have a look at the template engine's documentation regarding
+that.
+
+We just subclass request and response for our needs and provide a second response
+subclass that is used to render templates. It's used in the example view below.
+
+`req.url_for` can be used to get an URL to another view.
+
+URLs
+====
+
+Because we use the Werkzeug URL routing system in this example and the URLs are
+stored in `urls.py` we need that file:
+
+.. sourcecode:: python
+
+    from werkzeug.routing import Map, Rule
+
+    map = Map([
+        Rule('/', 'static/index')
+    ])
+
+This is just one small URL rule for one view.
+
+View
+====
+
+Here the view defined above. Must be saved in `myprojects/views/static.py` as
+defined above:
+
+.. sourcecode:: python
+
+    from myproject.utils import TemplateResponse
+
+    def index(req):
+        return TemplateResponse('index.html', title='Welcome')
+
+Models and Templates
+====================
+
+Models and templates are out of the scope for this documentation but you should
+get an idea how you can organize your WSGI application built with the help of
+Werkzeug.
+
+
+.. _routing system: routing.txt
+.. _Jinja: http://jinja.pocoo.org/
