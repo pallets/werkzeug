@@ -1,0 +1,40 @@
+=========
+Utilities
+=========
+
+Werkzeug comes with a bunch of utilties that can be useful for WSGI
+applications. Most of the classes provided by this module are used by the
+wrappers, you can however use them without the wrappers too.
+
+
+MultiDict
+=========
+
+The `MultiDict` behaves like a normal dict and is in fact a subclass of it,
+but it can store multiple values per key.
+
+You can construct such a `MultiDict` from a list of ``(key, value)`` tuples
+or another `MultiDict`, *not* from a dict itself.
+
+Usage:
+
+.. sourcecode:: pycon
+
+    >>> from werkzeug.utils import MultiDict
+    >>> d = MultiDict([('a', 'b'), ('a', 'c')])
+    >>> d
+    MultiDict([('a', 'b'), ('a', 'c')])
+    >>> d['a']
+    'b'
+    >>> d.getlist('a')
+    ['b', 'c']
+    >>> 'a' in d
+    True
+
+It behaves like a normal dict thus all dict functions will only return the
+first value when multiple values for one key are found.
+
+If you want to get or set all values use the `getlist`, `setlist`,
+`setlistdefault`, `iterlists`, `lists`, `iterlistvalues`, `listvalues`,
+`poplist` and `postitemlist` that work like their non list pendants but
+return a list of all the values.

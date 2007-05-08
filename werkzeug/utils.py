@@ -22,10 +22,13 @@ class MultiDict(dict):
     """
 
     def __init__(self, mapping=()):
-        tmp = {}
-        for key, value in mapping:
-            tmp.setdefault(key, []).append(value)
-        dict.__init__(self, tmp)
+        if isinstance(mapping, MultiDict):
+            dict.__init__(self, mapping.lists())
+        else:
+            tmp = {}
+            for key, value in mapping:
+                tmp.setdefault(key, []).append(value)
+            dict.__init__(self, tmp)
 
     def __getitem__(self, key):
         """
@@ -84,6 +87,8 @@ class MultiDict(dict):
         """Returns a list of the last value on every key list."""
         return [self[key] for key in self.iterkeys()]
 
+    listvalues = dict.values
+
     def iteritems(self):
         for key, values in dict.iteritems(self):
             yield key, values[0]
@@ -94,12 +99,11 @@ class MultiDict(dict):
         for values in dict.itervalues(self):
             yield values[0]
 
+    iterlistvalues = dict.itervalues
+
     def copy(self):
         """Return a shallow copy of this object."""
-        md = MultiDict()
-        for key, values in dict.iteritems(self):
-            md.setlist(key, values)
-        return md
+        return self.__class__(self)
 
     def update(self, other_dict):
         """update() extends rather than replaces existing key lists."""
@@ -138,6 +142,8 @@ class CombinedMultiDict(MultiDict):
     Pass it multiple multidicts to create a new read only
     dict which resolves items from the passed dicts.
     """
+
+    #XXX: missing support for iterlistvalues/listvalues
 
     def __init__(self, dicts=None):
         self.dicts = dicts or []
