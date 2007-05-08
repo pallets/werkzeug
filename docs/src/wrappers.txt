@@ -104,7 +104,8 @@ iterable:
         charset = 'utf-8'
 
     def application(environ, start_response):
-        return Response(u'Hello World')
+        resp = Response(u'<h1>Hello World</h1>', mimetype='text/html')
+        return resp(environ, start_response)
 
 Per default the `BaseResponse` object only accepts `ASCII` values. Because of
 that you have to tell it the actual used encoding when subclassing it. All
