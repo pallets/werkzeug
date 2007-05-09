@@ -81,7 +81,7 @@ _rule_re = re.compile(r'''
     <
     (?:
         (?P<converter>[a-zA-Z_][a-zA-Z0-9_]*)   # converter name
-        (?:\((?P<args>[^\)]*)\))?               # converter arguments
+        (?:\((?P<args>.*?)\))?                  # converter arguments
         \:                                      # variable delimiter
     )?
     (?P<variable>[a-zA-Z][a-zA-Z0-9_]*)         # variable name
@@ -118,41 +118,6 @@ def parse_rule(rule):
         if '>' in remaining or '<' in remaining:
             raise ValueError('malformed url rule: %r' % rule)
         yield None, None, remaining
-
-
-def parse_arguments(argstring, **defaults):
-    """
-    Helper function for the converters. It's used to parse the
-    argument string and fill the defaults.
-    """
-    result = {}
-    rest = argstring or ''
-
-    while True:
-        tmp = rest.split('=', 1)
-        if len(tmp) != 2:
-            break
-        key, rest = tmp
-        tmp = rest.split(',')
-        if len(tmp) == 2:
-            value, rest = tmp
-        else:
-            value = tmp[0]
-        key = key.strip()
-        if key not in defaults:
-            raise ValueError('unknown parameter %r' % key)
-        conv = defaults[key][0]
-        if conv is bool:
-            result[key] = value.strip().lower() == 'true'
-        elif conv is unicode:
-            result[key] = value.strip()
-        else:
-            result[key] = conv(value.strip())
-
-    for key, value in defaults.iteritems():
-        result[key] = value[1]
-
-    return result
 
 
 class RoutingException(Exception):
@@ -312,7 +277,7 @@ class Rule(RuleFactory):
                 regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
             else:
-                convobj = map.converters[converter](map, arguments)
+                convobj = map.get_converter(converter, arguments)
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
@@ -456,9 +421,8 @@ class BaseConverter(object):
     """
     regex = '[^/]+'
 
-    def __init__(self, map, args):
+    def __init__(self, map):
         self.map = map
-        self.args = args
 
     def to_python(self, value):
         return value
@@ -474,24 +438,19 @@ class UnicodeConverter(BaseConverter):
     """
     names = ['default', 'string']
 
-    def __init__(self, map, args):
-        super(UnicodeConverter, self).__init__(map, args)
-        options = parse_arguments(args,
-            minlength=(int, 0),
-            maxlength=(int, 0),
-            length=(int, 0),
-            allow_slash=(bool, False)
-        )
-        if options['length']:
+    def __init__(self, map, minlength=1, maxlength=None, length=None,
+                 allow_slash=False):
+        super(UnicodeConverter, self).__init__(map)
+        if length is not None:
             length = '{%s}' % options['length']
-        elif options['minlength'] or options['maxlength']:
-            length = '{%s,%s}' % (
-                options['minlength'] or '1',
-                options['maxlength'] or ''
-            )
         else:
-            length = '+'
-        self.regex = (options['allow_slash'] and '.' or '[^/]') + length
+            if maxlength is None:
+                maxlength = ''
+            length = '{%s,%s}' % (
+                minlength,
+                maxlength
+            )
+        self.regex = (allow_slash and '.' or '[^/]') + length
 
 
 class IntegerConverter(BaseConverter):
@@ -501,19 +460,11 @@ class IntegerConverter(BaseConverter):
     names = ['int']
     regex = '\d+'
 
-    def __init__(self, map, args):
-        super(IntegerConverter, self).__init__(map, args)
-        options = parse_arguments(args,
-            fixed_digits=(int, 0),
-            min=(int, 0),
-            max=(int, -1)
-        )
-        self.fixed_digits = options['fixed_digits']
-        self.min = options['min'] or None
-        if options['max'] == -1:
-            self.max = None
-        else:
-            self.max = options['max']
+    def __init__(self, map, fixed_digits=0, min=None, max=None):
+        super(IntegerConverter, self).__init__(map)
+        self.fixed_digits = fixed_digits
+        self.min = min
+        self.max = max
 
     def to_python(self, value):
         if (self.fixed_digits and len(value) != self.fixed_digits):
@@ -634,6 +585,16 @@ class Map(object):
             for rules in self._rules_by_endpoint.itervalues():
                 rules.sort()
             self._remap = False
+
+    def get_converter(self, name, args):
+        """
+        Create a new converter for the given arguments or raise
+        exception if the converter does not exist.
+        """
+        if not name in self.converters:
+            raise LookupError('the converter %r does not exist' % name)
+        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % (args or ''))
+        return self.converters[name](self, *args, **kwargs)
 
 
 class MapAdapter(object):
