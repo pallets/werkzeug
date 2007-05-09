@@ -76,10 +76,6 @@ except NameError:
     from sets import Set as set
 
 
-#: list filled by the `ConverterMeta` metaclass.
-ALL_CONVERTERS = {}
-
-
 _rule_re = re.compile(r'''
     (?P<static>[^<]*)                           # static rule data
     <
@@ -122,6 +118,22 @@ def parse_rule(rule):
         if '>' in remaining or '<' in remaining:
             raise ValueError('malformed url rule: %r' % rule)
         yield None, None, remaining
+
+
+def get_converter(map, name, args, frame):
+    """
+    Create a new converter for the given arguments or raise
+    exception if the converter does not exist.
+    """
+    if not name in map.converters:
+        raise LookupError('the converter %r does not exist' % name)
+    if args:
+        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args,
+                            frame.f_globals, frame.f_locals)
+    else:
+        args = ()
+        kwargs = {}
+    return map.converters[name](map, *args, **kwargs)
 
 
 class RoutingException(Exception):
@@ -256,6 +268,8 @@ class Rule(RuleFactory):
         self._converters = {}
         self._regex = None
 
+        self._frame = sys._getframe(1)
+
     def get_rules(self, map):
         yield self
 
@@ -281,7 +295,8 @@ class Rule(RuleFactory):
                 regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
             else:
-                convobj = map.get_converter(converter, arguments)
+                convobj = get_converter(map, converter, arguments,
+                                        self._frame)
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
@@ -300,6 +315,7 @@ class Rule(RuleFactory):
             method_re
         )
         self._regex = re.compile(regex, re.UNICODE)
+        self._frame = None
 
     def match(self, path):
         """
@@ -419,24 +435,10 @@ class Rule(RuleFactory):
         )
 
 
-class ConverterMeta(type):
-    """
-    Register named converters in the `ALL_CONVERTERS` dict.
-    """
-
-    def __new__(cls, name, bases, d):
-        rv = type.__new__(cls, name, bases, d)
-        if 'names' in d:
-            for name in d['names']:
-                ALL_CONVERTERS[name] = rv
-        return rv
-
-
 class BaseConverter(object):
     """
     Base class for all converters.
     """
-    __metaclass__ = ConverterMeta
     regex = '[^/]+'
 
     def __init__(self, map):
@@ -454,13 +456,12 @@ class UnicodeConverter(BaseConverter):
     The default converter for all URL parts. Matches one string, optionally
     with a slash in the part. Can also check for the length of that string.
     """
-    names = ['default', 'string']
 
     def __init__(self, map, minlength=1, maxlength=None, length=None,
                  allow_slash=False):
         super(UnicodeConverter, self).__init__(map)
         if length is not None:
-            length = '{%s}' % options['length']
+            length = '{%s}' % length
         else:
             if maxlength is None:
                 maxlength = ''
@@ -502,7 +503,6 @@ class IntegerConverter(NumberConverter):
     """
     Only accepts integers.
     """
-    names = ['int']
     regex = r'\d+'
     num_convert = int
 
@@ -511,7 +511,6 @@ class FloatConverter(NumberConverter):
     """
     Only accepts floats and integers.
     """
-    names = ['float']
     regex = r'\d+\.\d+'
     num_convert = float
 
@@ -520,7 +519,6 @@ class Map(object):
     """
     The base class for all the url maps.
     """
-    converters = ALL_CONVERTERS
 
     def __init__(self, rules, default_subdomain='', charset='ascii',
                  strict_slashes=True, redirect_defaults=True,
@@ -551,15 +549,12 @@ class Map(object):
         self._rules_by_endpoint = {}
         self._remap = True
 
-        #: used by `get_controller` to access the parent namespace
-        self._parent_frame = sys._getframe(1)
-
         self.default_subdomain = default_subdomain
         self.charset = charset
         self.strict_slashes = strict_slashes
         self.redirect_defaults = redirect_defaults
 
-        self.converters = self.converters.copy()
+        self.converters = DEFAULT_CONVERTERS.copy()
         if converters:
             self.converters.update(converters)
 
@@ -620,22 +615,6 @@ class Map(object):
             for rules in self._rules_by_endpoint.itervalues():
                 rules.sort()
             self._remap = False
-
-    def get_converter(self, name, args):
-        """
-        Create a new converter for the given arguments or raise
-        exception if the converter does not exist.
-        """
-        if not name in self.converters:
-            raise LookupError('the converter %r does not exist' % name)
-        if args:
-            args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args,
-                                self._parent_frame.f_globals,
-                                self._parent_frame.f_locals)
-        else:
-            args = ()
-            kwargs = {}
-        return self.converters[name](self, *args, **kwargs)
 
 
 class MapAdapter(object):
@@ -725,3 +704,11 @@ class MapAdapter(object):
             self.script_name[:-1],
             path.lstrip('/')
         ))
+
+
+DEFAULT_CONVERTERS = {
+    'default':          UnicodeConverter,
+    'string':           UnicodeConverter,
+    'int':              IntegerConverter,
+    'float':            FloatConverter
+}
