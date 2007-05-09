@@ -121,7 +121,7 @@ Here a list of converters that come with Werkzeug:
 `float`
     Like `int` but it returns and takes a floating point number.
 
-.. adominition:: Important
+.. admonition:: Important
 
     Werkzeug evaluates converter arguments as if they are python method
     calls. Thus you should **never** create rules from user submitted
