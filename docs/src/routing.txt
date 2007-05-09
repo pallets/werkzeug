@@ -118,6 +118,28 @@ Here a list of converters that come with Werkzeug:
     - `min` - the minimal value.
     - `max` - the maximal value.
 
+`float`
+    Like `int` but it returns and takes a floating point number.
+
+.. adominition:: Important
+
+    Werkzeug evaluates converter arguments as if they are python method
+    calls. Thus you should **never** create rules from user submitted
+    data since they could insert arbitrary python code in the parameters
+    part.
+
+    The advantage of this method is that you can access variables defined
+    outside of the url definition:
+
+    .. sourcecode:: python
+
+        PICTURE_ID_LENGTH = 4
+
+        map = Map([
+            Rule('/picture/<int(fixed_digits=PICTURE_ID_LENGTH):id>.png',
+                 endpoint='view_image')
+        ])
+
 Map Options
 ===========
 
@@ -300,6 +322,8 @@ represents a regular expression. Here is a small example:
         Rule('/vote/<bool:werkzeug_rocks>', endpoint='vote'),
         Rule('/vote/<bool(randomify=True):foo>', endpoint='foo')
     ], converters={'bool': BooleanConverter})
+
+If you want that converter to be the default converter name it ``'default'``.
 
 
 .. _routes: http://routes.groovie.org/

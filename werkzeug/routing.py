@@ -76,6 +76,10 @@ except NameError:
     from sets import Set as set
 
 
+#: list filled by the `ConverterMeta` metaclass.
+ALL_CONVERTERS = {}
+
+
 _rule_re = re.compile(r'''
     (?P<static>[^<]*)                           # static rule data
     <
@@ -118,21 +122,6 @@ def parse_rule(rule):
         if '>' in remaining or '<' in remaining:
             raise ValueError('malformed url rule: %r' % rule)
         yield None, None, remaining
-
-
-def get_converter(map, name, args):
-    """
-    Create a new converter for the given arguments or raise
-    exception if the converter does not exist.
-    """
-    if not name in map.converters:
-        raise LookupError('the converter %r does not exist' % name)
-    if args:
-        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args)
-    else:
-        args = ()
-        kwargs = {}
-    return map.converters[name](map, *args, **kwargs)
 
 
 class RoutingException(Exception):
@@ -292,7 +281,7 @@ class Rule(RuleFactory):
                 regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
             else:
-                convobj = get_converter(map, converter, arguments)
+                convobj = map.get_converter(converter, arguments)
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
@@ -430,10 +419,24 @@ class Rule(RuleFactory):
         )
 
 
+class ConverterMeta(type):
+    """
+    Register named converters in the `ALL_CONVERTERS` dict.
+    """
+
+    def __new__(cls, name, bases, d):
+        rv = type.__new__(cls, name, bases, d)
+        if 'names' in d:
+            for name in d['names']:
+                ALL_CONVERTERS[name] = rv
+        return rv
+
+
 class BaseConverter(object):
     """
     Base class for all converters.
     """
+    __metaclass__ = ConverterMeta
     regex = '[^/]+'
 
     def __init__(self, map):
@@ -468,15 +471,13 @@ class UnicodeConverter(BaseConverter):
         self.regex = (allow_slash and '.' or '[^/]') + length
 
 
-class IntegerConverter(BaseConverter):
+class NumberConverter(BaseConverter):
     """
-    Only accepts integers.
+    Baseclass for `IntegerConverter` and `FloatConverter`.
     """
-    names = ['int']
-    regex = '\d+'
 
     def __init__(self, map, fixed_digits=0, min=None, max=None):
-        super(IntegerConverter, self).__init__(map)
+        super(NumberConverter, self).__init__(map)
         self.fixed_digits = fixed_digits
         self.min = min
         self.max = max
@@ -484,26 +485,42 @@ class IntegerConverter(BaseConverter):
     def to_python(self, value):
         if (self.fixed_digits and len(value) != self.fixed_digits):
             raise ValidationError()
-        value = int(value)
+        value = self.num_convert(value)
         if (self.min is not None and value < self.min) or \
            (self.max is not None and value > self.max):
             raise ValidationError()
         return value
 
     def to_url(self, value):
+        value = self.num_convert(value)
         if self.fixed_digits:
             value = ('%%%s0d' % self.fixed_digits) % value
         return str(value)
+
+
+class IntegerConverter(NumberConverter):
+    """
+    Only accepts integers.
+    """
+    names = ['int']
+    regex = r'\d+'
+    num_convert = int
+
+
+class FloatConverter(NumberConverter):
+    """
+    Only accepts floats and integers.
+    """
+    names = ['float']
+    regex = r'\d+\.\d+'
+    num_convert = float
 
 
 class Map(object):
     """
     The base class for all the url maps.
     """
-    converters = {}
-    for cls in BaseConverter.__subclasses__():
-        for name in cls.names:
-            converters[name] = cls
+    converters = ALL_CONVERTERS
 
     def __init__(self, rules, default_subdomain='', charset='ascii',
                  strict_slashes=True, redirect_defaults=True,
@@ -533,6 +550,9 @@ class Map(object):
         self._rules = []
         self._rules_by_endpoint = {}
         self._remap = True
+
+        #: used by `get_controller` to access the parent namespace
+        self._parent_frame = sys._getframe(1)
 
         self.default_subdomain = default_subdomain
         self.charset = charset
@@ -600,6 +620,22 @@ class Map(object):
             for rules in self._rules_by_endpoint.itervalues():
                 rules.sort()
             self._remap = False
+
+    def get_converter(self, name, args):
+        """
+        Create a new converter for the given arguments or raise
+        exception if the converter does not exist.
+        """
+        if not name in self.converters:
+            raise LookupError('the converter %r does not exist' % name)
+        if args:
+            args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args,
+                                self._parent_frame.f_globals,
+                                self._parent_frame.f_locals)
+        else:
+            args = ()
+            kwargs = {}
+        return self.converters[name](self, *args, **kwargs)
 
 
 class MapAdapter(object):
