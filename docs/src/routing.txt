@@ -256,7 +256,7 @@ them to one map.
     for the current request.
 
 `Submount`
-    Like `Subdomain` but prefixes the url rule with a given string:
+    Like `Subdomain` but prefixes the URL rule with a given string:
 
     .. sourcecode:: python
 
@@ -287,6 +287,119 @@ them to one map.
                 Rule('/entry/<entry_slug>', endpoint='show')
             ])])
         ])
+
+Matching and Building
+=====================
+
+Once the URLs are set up you usually want to connect your map with the views
+or controllers or something similar. There are also ways to generate URLs
+by their endpoint and provided parameters.
+
+Binding a Map to a Request
+--------------------------
+
+Because Werkzeug routing is subdomain and aware you have to bind the map to
+maybe changing request variables. This process is called `binding` and returns
+a new object which is called an `MapAdapter` that knows how to match and build
+URLs for the current request.
+
+There are basically two ways to bind a request:
+
+`bind(server_name, script_name=None, subdomain=None, url_scheme='http')`
+    Return a new `MapAdapter` with the details specified to the call. Note
+    that `script_name` will default to ``'/'`` if not further specified
+    or `None`. The `server_name` at least is a requirement because the HTTP
+    RFC requires absolute URLs for redirects and so all redirect exceptions
+    raised by Werkzeug will contain the full canonical URL.
+
+    `subdomain` will default to the `default_subdomain` for this map if not
+    defined. If there is no `default_subdomain` you cannot use the subdomain
+    feature.
+
+`bind_to_environ(environ, server_name=None, subdomain=None)`
+    Like `bind` but you can pass it an WSGI environment and it will fetch
+    the information from that directory. Note that because of limitations in
+    the protocol there is no way to get the current subdomain and real
+    `server_name` from the environment. If you don't provide it, Werkzeug
+    will use `SERVER_NAME` and `SERVER_PORT` (or `HTTP_HOST` if provided)
+    as used `server_name` with disabled subdomain feature.
+
+
+Matching URLs
+-------------
+
+Once you have a `MapAdapter` object you can use the `match` method provided
+to match a given `PATH_INFO` against the map adapter. The usage is simple:
+you just pass the `adapter.match` method the current path info as well as
+the method (which defaults to `GET`). The following things can then happen:
+
+- you receive a `NotFound` exception that indicates that no URL is matching.
+
+- you receive a `RequestRedirect` exception with a `new_url` attribute. This
+  exception is used to notify you about a request Werkzeug requests by your
+  WSGI application. This is for example the case if you request ``/foo``
+  although the correct URL is ``/foo/``.
+
+- you get a tuple in the form ``(endpoint, arguments)`` when there is a
+  match.
+
+Here a small example for matching:
+
+.. sourcecode:: pycon
+
+    >>> from werkzeug.routing import Map, Rule
+    >>> m = Map([
+    ...     Rule('/', endpoint='index'),
+    ...     Rule('/downloads/', endpoint='downloads/index'), 
+    ...     Rule('/downloads/<int:download_id>', endpoint='downloads/show')
+    ... ])
+    >>> urls = m.bind("example.com", "/")
+    >>> urls.match("/", "GET")
+    ('index', {})
+    >>> urls.match("/downloads/42")
+    ('downloads/show', {'download_id': 42})
+
+And here what happens on redirect and missing URLs:
+
+.. sourcecode:: pycon
+
+    >>> urls.match("/downloads")
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "werkzeug/routing.py", line 660, in match
+        path_info.lstrip('/')
+    werkzeug.routing.RequestRedirect: http://example.com/downloads/
+    >>> urls.match("/missing")
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "werkzeug/routing.py", line 676, in match
+        raise NotFound(path_info)
+    werkzeug.routing.NotFound: /missing
+
+Building URLs
+-------------
+
+Building URLs works pretty much the other way round. Instead of `match`
+you call `build` and pass it the endpoint and a dict of arguments for the
+placeholders.
+
+The `build` function also accepts a third argument (`force_external`)
+which, if you set it to `True` will force external URLs. Per default external
+URLs (include the server name) will only be used if the target URL is on a
+different subdomain.
+
+With the same map as in the example above this code generates some target
+URLs:
+
+.. sourcecode:: pycon
+
+    >>> urls.build("index", {})
+    '/'
+    >>> urls.build("downloads/show", {'download_id': 42})
+    '/downloads/42'
+    >>> urls.build("downloads/show", {'download_id': 42}, True)
+    'http://example.com/downloads/42'
+
 
 Custom Converters
 =================
