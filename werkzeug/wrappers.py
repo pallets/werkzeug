@@ -13,6 +13,7 @@ import cgi
 import email
 import urllib
 import posixpath
+import tempfile
 from time import gmtime
 from Cookie import SimpleCookie
 from cStringIO import StringIO
@@ -20,8 +21,32 @@ from datetime import datetime
 from email.Message import Message as MessageType
 
 from werkzeug.constants import HTTP_STATUS_CODES
-from werkzeug.utils import MultiDict, CombinedMultiDict, FieldStorage, \
+from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, lazy_property
+
+
+class _StorageHelper(cgi.FieldStorage):
+    """
+    Helper class used by `BaseRequest` to parse submitted file and
+    form data. Don't use this class directly.
+    """
+
+    FieldStorageClass = cgi.FieldStorage
+
+    def __init__(self, environ, get_stream):
+        cgi.FieldStorage.__init__(self,
+            fp=environ['wsgi.input'],
+            environ={
+                'REQUEST_METHOD':   environ['REQUEST_METHOD'],
+                'CONTENT_TYPE':     environ['CONTENT_TYPE'],
+                'CONTENT_LENGTH':   environ['CONTENT_LENGTH']
+            },
+            keep_blank_values=True
+        )
+        self.get_stream = get_stream
+
+    def make_file(self, binary=None):
+        return self.get_stream()
 
 
 class BaseRequest(object):
@@ -34,9 +59,12 @@ class BaseRequest(object):
         self.environ = environ
         self.environ['werkzeug.request'] = self
 
-    def _handle_file_upload(self, name, filename, content_type, payload):
-        """You can override this to change the way uploads are handled."""
-        return FieldStorage(name, filename, content_type, payload)
+    def _get_file_stream(self):
+        """Called to get a stream for the file upload.
+
+        This must provide a file-like class with `read()`, `readline()`
+        and `seek()` methods that is both writeable and readable."""
+        return tempfile.TemporaryFile('w+b')
 
     def _load_post_data(self):
         """Method used internally to retrieve submitted data."""
@@ -44,45 +72,22 @@ class BaseRequest(object):
         post = []
         files = []
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
-            maxlen = int(self.environ['CONTENT_LENGTH'])
-            self._data = self.environ['wsgi.input'].read(maxlen)
-            if self.environ.get('CONTENT_TYPE', '').startswith('multipart'):
-                lines = ['Content-Type: %s' %
-                         self.environ.get('CONTENT_TYPE', '')]
-                for key, value in self.environ.items():
-                    if key.startswith('HTTP_'):
-                        lines.append('%s: %s' % (key, value))
-                raw = '\r\n'.join(lines) + '\r\n\r\n' + self._data
-                msg = email.message_from_string(raw)
-                for sub in msg.get_payload():
-                    if not isinstance(sub, MessageType):
-                        continue
-                    name_dict = cgi.parse_header(sub['Content-Disposition'])[1]
-                    if 'filename' in name_dict:
-                        payload = sub.get_payload()
-                        filename = name_dict['filename']
-                        if isinstance(payload, list) or not filename.strip():
-                            continue
-                        filename = name_dict['filename']
-                        # fixes stupid ie bug but can cause problems
-                        filename = filename[filename.rfind('\\') + 1:]
-                        if 'Content-Type' in sub:
-                            content_type = sub['Content-Type']
-                        else:
-                            content_type = None
-                        fs = self._handle_file_upload(name_dict['name'], filename,
-                                                      content_type, payload)
-                        files.append(name_dict['name'], fs)
+            storage = _StorageHelper(self.environ, self._get_file_stream)
+            for key in storage.keys():
+                values = storage[key]
+                if not isinstance(values, list):
+                    values = [values]
+                for item in values:
+                    if getattr(item, 'filename', None) is not None:
+                        fn = item.filename.decode(self.charset, 'ignore')
+                        # fix stupid IE bug
+                        if len(fn) > 1 and fn[1] == ':' and '\\' in fn:
+                            fn = fn[fn.index('\\') + 1:]
+                        files.append((key, FileStorage(key, fn, item.type,
+                                      item.length, item.file)))
                     else:
-                        value = sub.get_payload()
-                        value = value.decode(self.charset, 'ignore')
-                        post.append(name_dict['name'], value)
-            else:
-                d = cgi.parse_qs(self._data, True)
-                for key, values in d.iteritems():
-                    for value in values:
-                        value = value.decode(self.charset, 'ignore')
-                        post.append((key, value))
+                        post.append((key, item.value.decode(self.charset,
+                                                            'ignore')))
         self._form = MultiDict(post)
         self._files = MultiDict(files)
 
@@ -154,15 +159,6 @@ class BaseRequest(object):
         path = path.decode(self.charset, self.charset)
         return path
     path = lazy_property(path)
-
-    def get_debugging_vars(self):
-        retvars = []
-        for varname in dir(self):
-            if varname[0] == '_': continue
-            value = getattr(self, varname)
-            if hasattr(value, 'im_func'): continue
-            retvars.append((varname, value))
-        return retvars
 
 
 class BaseResponse(object):

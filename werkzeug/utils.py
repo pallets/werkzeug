@@ -156,8 +156,7 @@ class CombinedMultiDict(MultiDict):
 
     def fromkeys(cls):
         raise TypeError('cannot create %r instances by fromkeys' %
-            cls.__name__
-        )
+                        cls.__name__)
     fromkeys = classmethod(fromkeys)
 
     def __getitem__(self, key):
@@ -253,40 +252,41 @@ class CombinedMultiDict(MultiDict):
         return '%s(%r)' % (self.__class__.__name__, self.dicts)
 
 
-class FieldStorage(object):
+class FileStorage(object):
     """
     Represents an uploaded file.
     """
 
-    def __init__(self, name, filename, ftype, data):
+    def __init__(self, name, filename, content_type, content_length, stream):
         self.name = name
-        self.type = ftype
         self.filename = filename
-        self.data = data
+        self.content_type = content_type
+        self.content_length = content_length
+        self.stream = stream
+
+    def __str__(self):
+        return self.stream.read()
+
+    def __len__(self):
+        return self.content_length
 
     def read(self, *args):
-        if not hasattr(self, '_cached_buffer'):
-            self._cached_buffer = StringIO(self.data)
-        return self._cached_buffer.read(*args)
+        return self.stream.read(*args)
 
     def readline(self, *args):
-        if not hasattr(self, '_cached_buffer'):
-            self._cached_buffer = StringIO(self.data)
-        return self._cached_buffer.readline(*args)
+        return self.stream.readline(*args)
 
     def readlines(self):
-        if not hasattr(self, '_cached_buffer'):
-            self._cached_buffer = StringIO(self.data)
-        return self._cached_buffer.readlines()
+        return self.stream.readlines()
 
     def __iter__(self):
-        return iter(self.readline, '')
+        return iter(self.stream.readline, '')
 
     def __repr__(self):
         return '<%s: %r (%r)>' % (
             self.__class__.__name__,
             self.filename,
-            self.type
+            self.content_type
         )
 
 

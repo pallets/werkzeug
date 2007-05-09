@@ -108,8 +108,20 @@ class DebuggedApplication(object):
         else:
             extypestr = str(exception_type)
 
+        # support for the werkzeug request object or fall back to
+        # WSGI environment
         request = environ.get('werkzeug.request')
-        req_vars = request and request.get_debugging_vars() or []
+        if request is not None:
+            req_vars = []
+            for varname in dir(request):
+                if varname[0] == '_':
+                    continue
+                value = getattr(self, varname)
+                if hasattr(value, 'im_func'):
+                    continue
+                req_vars.append((varname, value))
+        else:
+            req_vars = [('WSGI Environ', environ)]
 
         return Namespace(
             evalex =          self.evalex,

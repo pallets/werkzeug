@@ -400,6 +400,9 @@ URLs:
     >>> urls.build("downloads/show", {'download_id': 42}, True)
     'http://example.com/downloads/42'
 
+Because URLs cannot contain non ASCII data you will always get bytestrings
+back. Non ASCII characters are urlencoded with the charset defined on the
+map instance.
 
 Custom Converters
 =================
