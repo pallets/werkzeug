@@ -276,25 +276,29 @@ represents a regular expression. Here is a small example:
 
 .. sourcecode:: python
 
-    from werkzeug.routing import Rule, Map, BaseConverter
+    from random import randrange
+    from werkzeug.routing import Rule, Map, BaseConverter, ValidationError
 
     class BooleanConverter(BaseConverter):
 
-        def __init__(self, map, args):
-            # args is the string that represents the arguments
-            # defined in the rule. You can use `parse_arguments`
-            # to parse those.
-            super(BooleanConverter, self).__init__(map, args)
-            self.regex = '(?:yes|no)'
+        def __init__(self, map, randomify=False):
+            super(BooleanConverter, self).__init__(map)
+            self.randomify = randomify
+            self.regex = '(?:yes|no|maybe)'
 
         def to_python(self, value):
+            if value == 'maybe':
+                if self.randomify:
+                    return not randrange(0, 1)
+                raise ValidationError()
             return value == 'yes'
 
         def to_value(self, value):
             return value and 'yes' or 'no'
 
     map = Map([
-        Rule('/vote/<bool:werkzeug_rocks>', endpoint='vote')
+        Rule('/vote/<bool:werkzeug_rocks>', endpoint='vote'),
+        Rule('/vote/<bool(randomify=True):foo>', endpoint='foo')
     ], converters={'bool': BooleanConverter})
 
 

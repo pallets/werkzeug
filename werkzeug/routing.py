@@ -120,6 +120,21 @@ def parse_rule(rule):
         yield None, None, remaining
 
 
+def get_converter(map, name, args):
+    """
+    Create a new converter for the given arguments or raise
+    exception if the converter does not exist.
+    """
+    if not name in map.converters:
+        raise LookupError('the converter %r does not exist' % name)
+    if args:
+        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args)
+    else:
+        args = ()
+        kwargs = {}
+    return map.converters[name](map, *args, **kwargs)
+
+
 class RoutingException(Exception):
     """
     Special exceptions that require the application to redirect, notifies him
@@ -277,7 +292,7 @@ class Rule(RuleFactory):
                 regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
             else:
-                convobj = map.get_converter(converter, arguments)
+                convobj = get_converter(map, converter, arguments)
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
@@ -585,16 +600,6 @@ class Map(object):
             for rules in self._rules_by_endpoint.itervalues():
                 rules.sort()
             self._remap = False
-
-    def get_converter(self, name, args):
-        """
-        Create a new converter for the given arguments or raise
-        exception if the converter does not exist.
-        """
-        if not name in self.converters:
-            raise LookupError('the converter %r does not exist' % name)
-        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % (args or ''))
-        return self.converters[name](self, *args, **kwargs)
 
 
 class MapAdapter(object):
