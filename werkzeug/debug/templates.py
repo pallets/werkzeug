@@ -9,13 +9,14 @@
     :license: BSD, see LICENSE for more details.
 """
 
-BODY = r'''
+BODY = ur'''
 <div id="wsgi-traceback">
-<h1><?& exception_type ?></h1>
-<p class="errormsg"><?& exception_value ?></p>
+<h1><%= exception_type|escape %></h1>
+<p class="errormsg"><%= exception_value|escape %></p>
 
-<p class="errorline"><?& last_frame['filename'] ?> in <?& last_frame['function'] ?>,
-  line <?= last_frame['lineno'] ?></p>
+<p class="errorline"><%= last_frame['filename']|escape %> in
+                     <%= last_frame['function']|escape %>,
+  line <%= last_frame['lineno'] %></p>
 
 <h2 onclick="change_tb()" class="tb">Traceback (click to switch to raw view)</h2>
 <div id="wsgi-traceback-interactive">
@@ -23,100 +24,99 @@ BODY = r'''
     Here is the sequence of function calls leading up to the error, in the order
     they occurred. Click on a header to show context lines.</p>
 
-<? for num, frame in enumerate(frames): ?>
-  <div class="frame" id="frame-<?= num ?>">
-    <h3 class="fn"><?& frame['function'] ?> in <?& frame['filename'] ?></h3>
-    <?= code_table(frame) ?>
+<% for num, frame in enumerate(frames): %>
+  <div class="frame" id="frame-<%= num %>">
+    <h3 class="fn"><%= frame['function']|escape %> in
+                   <%= frame['filename']|escape %></h3>
+    <%= code_table(frame) %>
 
     <h3 class="indent">▸ local variables</h3>
-    <?= var_table(frame['vars']) ?>
+    <%= var_table(frame['vars']) %>
 
-    <? if evalex: ?>
-    <? full_id = tb_uid + '-' + frame['frame_uid'] ?>
+    <% if evalex: %>
+    <% full_id = tb_uid + '-' + frame['frame_uid'] %>
     <h3 class="indent">▸ execute code</h3>
     <table class="exec_code">
       <tr>
-        <td class="output" colspan="2"><pre id="output-<?= full_id ?>"></pre></td>
+        <td class="output" colspan="2"><pre id="output-<%= full_id %>"></pre></td>
       </tr>
       <tr>
         <td class="input">
-          <textarea class="small" id="input-<?= full_id ?>" value=""></textarea>
+          <textarea class="small" id="input-<%= full_id %>" value=""></textarea>
         </td>
         <td class="extend">
           <input type="button"
-            onclick="toggleExtend('<?= tb_uid ?>', '<?= frame['frame_uid'] ?>')"
+            onclick="toggleExtend('<%= tb_uid %>', '<%= frame['frame_uid'] %>')"
             value="extend">
         </td>
       </tr>
     </table>
-    <? end ?>
+    <% end %>
   </div>
-<? end ?>
-
+<% end %>
 </div>
 
 <div id="wsgi-traceback-plain">
 <p class="text">Here is the plain Python traceback for copy and paste:</p>
-<pre class="plain">
-<?& plaintb ?>
-</pre>
+<pre class="plain"><%= plaintb|escape %></pre>
 </div>
 
 
-<? if req_vars: ?>
-<h2>Request Data</h2>
-<p class="text">The following list contains all important request variables.
-  Click on a header to expand the list.</p>
-<? for key, info in req_vars: ?>
-  <dl>
-    <dt><?& key ?></dt>
-    <dd><?= var_table(info) ?></dd>
-  </dl>
-<? end ?>
-<? end ?>
+<% if req_vars: %>
+  <h2>Request Data</h2>
+  <p class="text">The following list contains all important request variables.
+    Click on a header to expand the list.</p>
+  <% for key, info in req_vars: %>
+    <dl>
+      <dt><%= key|escape %></dt>
+      <dd><%= var_table(info) %></dd>
+    </dl>
+  <% end %>
+<% end %>
 
 <script type="text/javascript">initTB();</script>
 </div>
 <div id="wsgi-traceback-footer">
-Brought to you by <span class="arthur">DON'T PANIC, your friendly traceback interpreter.
+Brought to you by <span class="arthur">DON'T PANIC</span>, your friendly
+Werkzeug powered traceback interpreter.
 </div>
 <!-- Plain traceback:
 
-<?& plaintb ?>
+<%= plaintb|escape %>
 -->
 '''
 
-CODETABLE = r'''
+CODETABLE = ur'''
 <table class="code">
-<? for line in lines: ?>
-  <tr class="<?& line.mode ?>">
-    <td class="lineno"><?= line.lineno ?></td>
-    <td class="code"><?= line.code ?></td>
+<% for line in lines: %>
+  <tr class="<%= line.mode|escape %>">
+    <td class="lineno"><%= line.lineno %></td>
+    <td class="code"><%= line.code %></td>
   </tr>
-<? end ?>
+<% end %>
 </table>
 '''
 
-VARTABLE = r'''
+VARTABLE = ur'''
 <table class="vars">
-<? if type == 'empty': ?>
+<% if type == 'empty': %>
   <tr><th>no data given</th></tr>
-<? elif type == 'simple': ?>
-  <tr><td class="value"><?& value ?></td></tr>
-<? elif type == 'dict': ?>
+<% elif type == 'simple': %>
+  <tr><td class="value"><%= value|escape %></td></tr>
+<% elif type == 'dict': %>
   <tr><th>Name</th><th>Value</th></tr>
-  <? for key, item in value: ?>
-  <tr><td class="name"><?& key ?></td><td class="value"><?& item ?></td></tr>
-  <? end ?>
-<? elif type == 'list': ?>
-  <? for item in value: ?>
-  <tr><td class="value"><?& item ?></td></tr>
-  <? end ?>
-<? end ?>
+  <% for key, item in value: %>
+  <tr><td class="name"><%= key|escape %></td><td class="value"><%= item %></td></tr>
+  <% end %>
+<% elif type == 'list': %>
+  <% for item in value: %>
+  <tr><td class="value"><%= item|escape %></td></tr>
+  <% end %>
+<% end %>
 </table>
 '''
 
-HEADER = r'''
+HEADER = ur'''
 <script type="text/javascript">
 function toggleBlock(handler) {
     if (handler.nodeName == 'H3') {
@@ -280,9 +280,11 @@ function change_tb() {
 
 <style type="text/css">
 body {
-  font-size: 0.9em;
+  font-family: 'Arial', sans-serif;
+  font-size: 15px;
   margin: 0;
   padding: 1.3em;
+  background-color: #333;
 }
 
 * {
@@ -292,9 +294,9 @@ body {
 
 #wsgi-traceback-footer {
   margin: 1em;
-  font-size: 0.9em;
+  font-size: 13em;
   letter-spacing: 0.1em;
-  color: #555;
+  color: #eee;
   text-align: right;
 }
 
@@ -310,7 +312,7 @@ body {
 
 #wsgi-traceback h1 {
   background-color: #3F7CA4;
-  font-size: 1.2em;
+  font-size: 24px;
   color: #FFFFFF;
   padding: 0.3em;
   margin: 0 0 0.2em 0;
@@ -318,7 +320,7 @@ body {
 
 #wsgi-traceback h2 {
   background-color: #5F9CC4;
-  font-size: 1em;
+  font-size: 16px;
   color: #FFFFFF;
   padding: 0.3em;
   margin: 0.4em 0 0.2em 0;
@@ -329,7 +331,7 @@ body {
 }
 
 #wsgi-traceback h3 {
-  font-size: 1em;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -348,7 +350,7 @@ body {
 }
 
 #wsgi-traceback p.text {
-  padding: 0.1em 0.5em 0.1em 0.5em;
+  padding: 0.4em 1em 0.4em 1em;
 }
 
 #wsgi-traceback p.errormsg {
@@ -358,7 +360,7 @@ body {
 
 #wsgi-traceback p.errorline {
   padding: 0.1em 0.5em 0.1em 2em;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 #wsgi-traceback div.frame {
@@ -453,7 +455,7 @@ body {
 #wsgi-traceback table.vars {
   margin: 0 1.5em 0 1.5em;
   border-collapse: collapse;
-  font-size: 0.9em;
+  font-size: 13px;
 }
 
 #wsgi-traceback table.vars td {

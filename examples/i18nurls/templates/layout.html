@@ -2,20 +2,20 @@
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
   <head>
-    <title><?& title ?> | Example Application</title>
+    <title><%= title %> | Example Application</title>
   </head>
   <body>
     <h1>Example Application</h1>
     <p>
-      Request Language: <strong><?& req.language ?></strong>
+      Request Language: <strong><%= req.language %></strong>
     </p>
-    <?= body ?>
+    <%= body %>
     <blockquote>
       <p>This page in other languages:
       <ul>
-      <? for lng in ['en', 'de', 'fr']: ?>
-        <li><a href="<?& req.url_for('this', lang_code=lng) ?>"><?= lng ?></a></li>
-      <? end ?>
+      <% for lng in ['en', 'de', 'fr']: %>
+        <li><a href="<%= req.url_for('this', lang_code=lng)|escape %>"><%= lng %></a></li>
+      <% end %>
       </ul>
     </blockquote>
   </body>

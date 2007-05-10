@@ -1,4 +1,4 @@
 <p>
   This is just another page. Maybe you want to head over to the
-  <a href="<?& req.url_for('blog/index') ?>">blog</a>.
+  <a href="<%= req.url_for('blog/index')|escape %>">blog</a>.
 </p>

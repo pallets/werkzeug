@@ -6,7 +6,7 @@
     A very simple Python "Template Engine". In fact it just recognizes
     PHP like blocks and executes the code in them::
 
-        t = Template('<? for u in users: ?><?= u['username'] ?>\n<? end ?>')
+        t = Template('<% for u in users: %><%= u['username'] %>\n<% end %>')
         t.render(users=[{'username': 'John'},
                         {'username': 'Jane'}])
 
@@ -17,17 +17,17 @@
 
     Syntax Elements::
 
-        <? code ?>
+        <% code %>
             executes code
 
-        <?= variable ?>
+        <%= variable %>
             prints out the variable value
 
-        <?& variable ?>
-            prints out the variable value, HTML-escaped
-
-        <?# comment ?>
+        <%# comment %>
             is just a comment
+
+        <%% / %%>
+            escaped tags
 
 
     :copyright: 2006 by Armin Ronacher, Georg Brandl.
@@ -36,31 +36,34 @@
 import re
 from cgi import escape
 
-tag_re = re.compile(r'(.*?)(<\?[=\#|]?\s*.*?\s*\?>)(?uism)')
+tag_re = re.compile(r'(.*?)(<\%[=\#|]?(?!%)\s*.*?\s*\%(?!\%)>)(?uism)')
+
+
+def _unescape(s):
+    return s.replace('<%%', '<%').replace('%%>', '%>')
 
 
 def _tokenize(source):
+    source = u'\n'.join(source.splitlines())
     remove_newline = False
     match = None
     for match in tag_re.finditer(source):
         data = match.group(1)
         if remove_newline and data.startswith('\n'):
             data = data[1:]
-        yield 'TEXT', data
+        yield 'TEXT', _unescape(data)
         remove_newline = False
-        tag = match.group(2)
-        if tag.startswith('<?='):
+        tag = _unescape(match.group(2))
+        if tag.startswith('<%='):
             yield 'VARIABLE', tag[3:-2].strip()
-        elif tag.startswith('<?&'):
-            yield 'EVARIABLE', tag[3:-2].strip()
-        elif tag.startswith('<?#'):
+        elif tag.startswith('<%#'):
             remove_newline = True
         else:
             token_type = 'BLOCK'
             lines = tag[2:-2].strip().splitlines()
             if len(lines) > 1:
                 new_lines = []
-                indent = match.start(2) - match.end(1) + 3
+                indent = match.start(2) - match.end(1) + 4
                 for line in lines[1:]:
                     if line[:indent].strip():
                         raise SyntaxError()
@@ -74,15 +77,36 @@ def _tokenize(source):
     if remove_newline and rest.startswith('\n'):
         rest = rest[1:]
     if rest:
-        yield 'TEXT', rest
+        yield 'TEXT', _unescape(rest)
 
 
-def _get_variable(value):
-    if isinstance(value, unicode):
-        return value.encode('utf-8')
-    elif not isinstance(value, str):
-        return str(value)
-    return value
+class TemplateFilter(object):
+    """
+    Creates a template filter for a function.
+    """
+
+    def __init__(self, func):
+        self.func = func
+
+    def __ror__(self, value):
+        return self.func(value)
+
+    def __call__(self, *args, **kwargs):
+        return PreparedTemplateFilter(self.func, args, kwargs)
+
+
+class PreparedTemplateFilter(object):
+    """
+    Helper for `TemplateFilter`
+    """
+
+    def __init__(self, func, args, kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def __ror__(self, value):
+        return self.func(value, *self.args, **self.kwargs)
 
 
 class Template(object):
@@ -92,23 +116,25 @@ class Template(object):
         t = Template('templatetext')
         t.render(**templatecontext)
     """
+    filters = {
+        'escape':       TemplateFilter(lambda s, *a, **kw:
+                                       escape(unicode(s), *a, **kw))
+    }
 
     def __init__(self, source):
-        sourcelines = []
-        indention = 0
-        def write(data, offset):
-            sourcelines.append(('    ' * (indention - offset)) + data)
+        sourcelines = ['def generate():', '    if 0: yield None']
+        indention = 1
+
+        write = lambda d, o: sourcelines.append(('    ' * (indention - o)) + d)
+        def write_block(d):
+            for line in d.splitlines():
+                write(line, 0)
 
         for token_type, data in _tokenize(source):
             if token_type == 'TEXT':
-                if data:
-                    write('__write(%r)' % data, 0)
+                write('yield %r' % data, 0)
             elif token_type == 'VARIABLE':
-                if data:
-                    write('__write_var(%s)' % data, 0)
-            elif token_type == 'EVARIABLE':
-                if data:
-                    write('__write_var(__escape(%s))' % data, 0)
+                write('yield unicode(%s)' % data, 0)
             elif token_type == 'BLOCK':
                 statement = data.split()[0]
                 if data == 'end':
@@ -116,17 +142,20 @@ class Template(object):
                 elif statement in ('else:', 'elif', 'except:'):
                     write(data, 1)
                 else:
-                    write(data, 0)
+                    write_block(data)
                     if data.rstrip().endswith(':'):
                         indention += 1
         source = '\n'.join(sourcelines)
         self.code = compile(source, '<template>', 'exec')
+        self._generate = None
+        self.filters = self.filters.copy()
+
+    def add_filter(self, name, func):
+        self.filters[name] = TemplateFilter(func)
 
     def render(self, *args, **kwargs):
-        lines = []
-        ns = dict(*args, **kwargs)
-        ns['__write'] = lines.append
-        ns['__write_var'] = lambda x: lines.append(_get_variable(x))
-        ns['__escape'] = escape
-        exec self.code in ns
-        return ''.join(lines)
+        ns = self.filters.copy()
+        ns.update(*args, **kwargs)
+        tmp = {}
+        exec self.code in ns, tmp
+        return u''.join(tuple(tmp['generate']()))

@@ -144,7 +144,7 @@ class BaseRequest(object):
         cookie.load(self.environ.get('HTTP_COOKIE', ''))
         result = {}
         for key, value in cookie.iteritems():
-            result[key] = value.decode(self.charset, 'ignore')
+            result[key] = value.value.decode(self.charset, 'ignore')
         return result
     cookies = lazy_property(cookies)
 

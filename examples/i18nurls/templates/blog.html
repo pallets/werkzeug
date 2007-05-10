@@ -1,4 +1,4 @@
-<p>Blog <? if mode == 'index': ?>Index<? else: ?>Post <?= post_id ?><? end ?></p>
+<p>Blog <% if mode == 'index': %>Index<% else: %>Post <%= post_id %><% end %></p>
 <p>
-  How about going to <a href="<?& req.url_for('index') ?>">the index</a>.
+  How about going to <a href="<%= req.url_for('index')|escape %>">the index</a>.
 </p>

@@ -1,0 +1,121 @@
+==============
+Mini Templates
+==============
+
+Werkzeug ships a **minimal** templating system which is useful for small
+scripts where you just want to generate some HTML and don't want another
+dependency or full blown templat engine system.
+
+It's however not recommended to use this template system for anything else
+than simple content generation.
+
+Usage
+=====
+
+In the application you can pass the `Template` class a string with the
+template code and then call `render()` with either a dict or some keyword
+arguments to render the template:
+
+.. sourcecode:: python
+
+    from werkzeug.minitmpl import Template
+
+    tmpl = Template(u'''\
+    <h1><%= title|escape %></h1>
+    <ul>
+    <% for href, caption in links: %>
+      <li><a href="<%= href %>"><%= caption %></a></li>
+    <% end %>
+    </ul>''')
+
+    print tmpl.render(
+        title='Foo',
+        links=[
+            ('/', 'Index'),
+            ('/about', 'About')
+        ]
+    )
+
+This will then generate this:
+
+.. sourcecode:: html
+
+    <h1>Foo</h1>
+    <ul>
+      <li><a href="/">Index</a></li>
+      <li><a href="/about">About</a></li>
+    </ul>
+
+
+Template Syntax
+===============
+
+The template syntax is straigtforward. If you know ERB (Ruby templates) or PHP
+already you will find the syntax familiar.
+
+``<% code %>``
+    Executes the wrapped code. If `code` is ``end`` it will close the last
+    opened block.
+
+``<%= expr %>``
+    Output the evaluated expression `expr`.
+
+``<%# comment %>``
+    Just an internal comment.
+
+``<%%`` / ``%%>``
+    Escape a ``<%`` / ``%>`` tag
+
+Note that the template class passes an additional object called `escape` to
+the namespace which you can use to pipe data trough it in order to SGML/XML
+escape data. (``<%= page_title|escape %>``).
+
+The parenthesis for filters are optional but required when passing arguments:
+
+.. sourcecode:: erb
+
+    <%= foo|escape %>
+        is the same as
+    <%= foo|escape() %>
+        but you have to do
+    <%= foo|escape(True) %>
+        if you want to escape quotes too
+
+The default `escape` filter has the same signature as the `cgi.escape`
+function.
+
+
+Adding Filters
+==============
+
+Adding filters is straigt forward. Just use the `add_filter` method of a
+template to add a function as filter:
+
+.. sourcecode:: python
+
+    from werkzeug.minitmpl import Template
+
+    class MyTemplate(Template):
+        
+        def __init__(self, code):
+            super(MyTemplate, self).__init__(code)
+            self.add_filter('upper', lambda s: unicode(s).upper())
+
+Now you can do ``<%= value|upper %>`` in templates to convert something to
+uppercase.
+
+
+Limitations
+===========
+
+Since it's a minimal template engines there are many limitations that won't
+change.
+
+The main limitation is the missing debugging support. Templates with an
+syntax error are **hard to debug**. If an error occours it can occour in a
+completely different line because minitmpl indents in a wrong way etc. Also
+the line numbers are wrong at all.
+
+Again the warning: For bigger web applications you should really use a full
+blown template engine like Genshi, Mako, Jinja or any other python template
+engine.

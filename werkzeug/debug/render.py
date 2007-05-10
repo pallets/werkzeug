@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import pprint
+from textwrap import wrap
 
 from werkzeug.minitmpl import Template
 from werkzeug.debug.util import Namespace
@@ -42,9 +43,10 @@ def code_table(frame):
 def var_table(var):
     def safe_pformat(x):
         try:
-            return pprint.pformat(x)
+            tmp = pprint.pformat(x)
         except:
             return '?'
+        return '\n'.join(wrap(tmp, 79))
 
     # dicts
     if isinstance(var, dict) or hasattr(var, 'items'):

@@ -264,9 +264,6 @@ class FileStorage(object):
         self.content_length = content_length
         self.stream = stream
 
-    def __str__(self):
-        return self.stream.read()
-
     def __len__(self):
         return self.content_length
 

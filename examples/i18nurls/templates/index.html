@@ -1,5 +1,5 @@
 <p>Hello in the i18n URL example application.</p>
 <p>Because I'm too lazy to translate here is just english content.</p>
 <ul>
-  <li><a href="<?& req.url_for('about') ?>">about this page</a></li>
+  <li><a href="<%= req.url_for('about')|escape %>">about this page</a></li>
 </ul>

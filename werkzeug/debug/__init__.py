@@ -66,7 +66,7 @@ class DebuggedApplication(object):
             except:
                 pass
             debug_context = self.create_debug_context(environ, exc_info)
-            yield debug_page(debug_context)
+            yield debug_page(debug_context).encode('utf-8')
 
         if hasattr(appiter, 'close'):
             appiter.close()
@@ -116,7 +116,7 @@ class DebuggedApplication(object):
             for varname in dir(request):
                 if varname[0] == '_':
                     continue
-                value = getattr(self, varname)
+                value = getattr(request, varname)
                 if hasattr(value, 'im_func'):
                     continue
                 req_vars.append((varname, value))
