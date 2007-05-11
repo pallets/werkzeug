@@ -330,9 +330,8 @@ class Headers(object):
         del self[key]
         self.addlist(key, values)
 
-    def addlist(self, values):
-        for value in values:
-            result.append((key, value))
+    def addlist(self, key, values):
+        self._list.extend(values)
 
     def lists(self, lowercased=False):
         if not lowercased:
