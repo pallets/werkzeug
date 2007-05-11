@@ -1,0 +1,7 @@
+Successfully created default werkzeug package structure. You can now
+start the development server using the following command:
+
+    python start-<%= PACKAGE %>.py --debug
+
+After that you can open `http://localhost:5000/` which will be the
+URL of the development server.
