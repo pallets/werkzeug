@@ -1,0 +1,83 @@
+=================
+Package Templates
+=================
+
+Werkzeug comes with a small script called `werkzeug-bootstrapping`
+which you can use to generate so called bootstrapping code from
+templates. Either from the templates that come with Werkzeug or your
+own ones.
+
+
+Getting Started
+===============
+
+To get started we can use one of the templates coming with Werkzeug.
+Just call the `werkzeug-bootstrapping` tool with the correct parameters::
+
+    werkzeug-bootstrapping -t werkzeug_default -c utf-8 myproject /path/to/project
+
+This will now generate a new package `myproject` based on the template
+`werkzeug_default` in ``/path/to/project`` with the charset `utf-8` for
+the files and application.
+
+If you specify a full canonical path for the `-t` parameter the data for
+this path is used to generate the package, otherwise the template is looked
+up in the builtin template folder.
+
+
+Builtin Templates
+=================
+
+The following templates come with werkzeug:
+
+`werkzeug_default`
+    Simple package structure. Generates also a start script that fires up
+    a wsgiref development server. The generated application will provide
+    subclasses of the request and response objects with the specified
+    charset, a minimal wsgi application with Werkzeug routing and a default
+    view with additional information.
+
+
+Writing Templates
+=================
+
+If you plan to create more than just one application with the same schema
+you can create templates for that. Just create an folder somewhere and fill
+it with defaults. Files that end with ``.py``, ``.html`` or ``.txt`` are
+considered being werkzeug `minitmpl`_ templates, you can override this
+list. If a filename contains the name `PACKAGE` it will be replaced by the
+real package name.
+
+Other special files:
+
+`.INFO`
+    a template that is displayed after template generation
+
+`.TEMPLATED`
+    this file can contain line separated fnmatch rules for all files
+    that should be processed by the templating system. All others
+    are just copied.
+
+    Files that are processed by the templating system **must** be
+    encoded in `utf-8` encoding because they are converted to the
+    application encoding after saving.
+
+    example file::
+
+        *.py
+        *.css
+        *.html
+
+Global variables for all templates:
+
+`PACKAGE`
+    the name of the package (``my_project``)
+
+`PACKAGE_PASCAL_CASE`
+    the name of the package in pascal case (``MyProject``)
+
+`FILE_ENCODING`
+    the name of the encoding specified on the command line.
+
+
+.. _minitmpl: minitmpl.txt
