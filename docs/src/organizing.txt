@@ -179,10 +179,10 @@ Getting the application started is usually a quite boring process because you
 write the same code again and again. Because of that Werkzeug comes with a
 tiny script that can generate a package structure from a package template.
 
-Have a look at the `bootstrapping`_ documentation for more information about
+Have a look at the `bootstrap`_ documentation for more information about
 this topic.
 
 
 .. _routing system: routing.txt
 .. _Jinja: http://jinja.pocoo.org/
-.. _bootstrapping: bootstrapping.txt
+.. _bootstrapping: bootstrap.txt
