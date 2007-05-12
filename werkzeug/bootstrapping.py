@@ -119,13 +119,14 @@ def main(args):
         optlist, args = getopt(args[1:], 't:c:')
     except GetoptError, err:
         args = []
-    if len(args) != 2:
+    if len(args) not in (1, 2):
         print >>sys.stderr, usage
         return -1
     options = dict(optlist)
 
-    charset = options.get('c') or 'utf-8'
-    template = options.get('t') or 'werkzeug_default'
-    package, dst = args
+    charset = options.get('-c') or 'utf-8'
+    template = options.get('-t') or 'werkzeug_default'
+    package = args.pop(0)
+    dst = args and args[0] or '.'
 
     return bootstrap(package, dst, template, charset)

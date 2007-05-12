@@ -1,0 +1,3 @@
+#!/usr/bin/env python
+import sys, werkzeug.serving
+sys.exit(werkzeug.serving.main(sys.argv))

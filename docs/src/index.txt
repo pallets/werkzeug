@@ -40,3 +40,6 @@ Werkzeug but other WSGI utilities, the ideas are the same.
 
 - `Organizing Code <organizing.txt>`_ - gives you an idea how you can
   organize your code when using Werkzeug.
+
+- `Other Libraries <libraries.txt>`_ - links to other libraries you
+  can use with Werkzeug.
