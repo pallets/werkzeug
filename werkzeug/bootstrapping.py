@@ -56,22 +56,6 @@ def bootstrap(package_name, destination_path, template, charset, author):
     pascal_cased = package_name.title().replace('_', '')
     print 'Generating from "%s"' % template_path
 
-    # all template packages can have a ``.TEMPLATED`` control file
-    # that contains fnmatch rules which are used to tell the bootstrapping
-    # loop which files are templates and which aren't.
-    templated_fn = os.path.join(template_path, '.TEMPLATED')
-    templated_filters = []
-    if os.path.exists(templated_fn):
-        f = file(templated_fn)
-        try:
-            for line in f:
-                templated_filters.append(line.strip())
-        finally:
-            f.close()
-    else:
-        templated_filters.extend(TEMPLATED_FILTERS)
-    print 'Processing as template: %s' % ', '.join(templated_filters)
-
     # if someone want's to use the `make_docstring` function there
     # should be a template for all of the docstrings (``.DOCSTRING``)
     try:
@@ -149,15 +133,12 @@ def bootstrap(package_name, destination_path, template, charset, author):
                 finally:
                     f.close()
 
-                for pat in templated_filters:
-                    # templated files are encoded to the target encoding,
-                    # other files (because they could be binary) are just
-                    # copied as it.
-                    if fnmatch(src_fn, pat):
-                        tmpl = Template(data.decode('utf-8'))
-                        ctx = get_context(dst_fn[len(destination_path) + 1:])
-                        data = tmpl.render(ctx).encode(charset)
-                        break
+                # process templated files
+                if src_fn.endswith('_tmpl'):
+                    dst_fn = dst_fn[:-5]
+                    tmpl = Template(data.decode('utf-8'))
+                    ctx = get_context(dst_fn[len(destination_path) + 1:])
+                    data = tmpl.render(ctx).encode(charset)
 
                 f = file(dst_fn, 'wb')
                 try:
@@ -165,7 +146,7 @@ def bootstrap(package_name, destination_path, template, charset, author):
                 finally:
                     f.close()
 
-                print '   ' + dst_fn
+                print '   ' + dst_fn[len(destination_path) + 1:]
 
             # for each folder recursive and create a new one in the
             # target location. We don't ignore empty folders.

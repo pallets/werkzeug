@@ -28,9 +28,12 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Text Processing :: Markup :: HTML'
     ],
-    scripts = ['werkzeug-bootstrapping', 'werkzeug-debug'],
+    scripts = ['werkzeug-bootstrapping'],
     packages = ['werkzeug', 'werkzeug.debug'],
     platforms = 'any',
     include_package_data = True,
-    extras_require = {'plugin': ['setuptools>=0.6a2']}
+    extras_require = {
+        'plugin': ['setuptools>=0.6a2'],
+        'wsgiref': ['wsgiref']
+    }
 )

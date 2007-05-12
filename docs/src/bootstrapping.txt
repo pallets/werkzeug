@@ -43,32 +43,39 @@ Writing Templates
 
 If you plan to create more than just one application with the same schema
 you can create templates for that. Just create an folder somewhere and fill
-it with defaults. Files that end with ``.py``, ``.html`` or ``.txt`` are
-considered being werkzeug `minitmpl`_ templates, you can override this
-list. If a filename contains the name `PACKAGE` it will be replaced by the
-real package name.
+it with defaults. Files that end with ``_tmpl`` are considered being werkzeug
+`minitmpl`_ templates. If a filename contains the name `PACKAGE` it will be
+replaced by the real package name.
 
 Other special files:
 
-`.INFO`
+``.INFO``
     a template that is displayed after template generation
 
-`.TEMPLATED`
-    this file can contain line separated fnmatch rules for all files
-    that should be processed by the templating system. All others
-    are just copied.
+``.DOCSTRING``
+    a template for docstrings. Example:
 
-    Files that are processed by the templating system **must** be
-    encoded in `utf-8` encoding because they are converted to the
-    application encoding after saving.
+    .. sourcecode:: python
+    
+        """
+            <%= MODULE %>
+            <%= '~' * len(MODULE) %>
 
-    example file::
+        <%= make_textblock(4, 79, DOCSTRING) %>
 
-        *.py
-        *.css
-        *.html
+            :copyright: <%= datetime.now().year %> by <%= AUTHOR %>.
+        """
+
+    The functions are explained below. You can then render the
+    docstring from any template using ``<%= make_docstring(MODULE, 'foo') %>``
+    where `MODULE` is the current module and ``'foo'`` the text for the
+    docstring.
 
 Global variables for all templates:
+
+`AUTHOR`
+    the author for the templates. Defaults to the loginname or on UNIX
+    systems to the realname of the current user.
 
 `PACKAGE`
     the name of the package (``my_project``)
@@ -78,6 +85,24 @@ Global variables for all templates:
 
 `FILE_ENCODING`
     the name of the encoding specified on the command line.
+
+Global variables for templates that contain python code:
+
+`MODULE`
+    import name of the current module.
+
+The following helper functions exist:
+
+`datetime`
+    just a reference to the datetime class
+
+`make_textblock`
+    Helper function to create aligned text blocks automatically.
+    See the example for the ``.DOCSTRING`` template above.
+
+`make_docstring`
+    Helper function that renders a docstring using the template
+    defined in ``.DOCSTRING``. See the example above.
 
 
 .. _minitmpl: minitmpl.txt

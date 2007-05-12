@@ -35,6 +35,8 @@ This part of the documentation mainly explains how to develop WSGI
 applications. This is also interesting if you don't want to use
 Werkzeug but other WSGI utilities, the ideas are the same.
 
+- `Serving WSGI Applications <serving.txt>`_ - serving WSGI applications.
+
 - `How WSGI Works <wsgihowto.txt>`_ - short introduction to WSGI and
   Werkzeug.
 

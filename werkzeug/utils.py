@@ -267,20 +267,15 @@ class FileStorage(object):
         self.content_length = content_length
         self.stream = stream
 
+        self.read = stream.read
+        self.readline = stream.readline
+        self.readlines = stream.readlines
+
     def __len__(self):
         return self.content_length
 
-    def read(self, *args):
-        return self.stream.read(*args)
-
-    def readline(self, *args):
-        return self.stream.readline(*args)
-
-    def readlines(self):
-        return self.stream.readlines()
-
     def __iter__(self):
-        return iter(self.stream.readline, '')
+        return iter(self.readline, '')
 
     def __repr__(self):
         return '<%s: %r (%r)>' % (
@@ -519,3 +514,6 @@ def url_unquote(s, charset='utf-8'):
     URL decode a single string with a given decoding.
     """
     return urllib.unquote_plus(s).decode(charset, 'ignore')
+
+
+escape = cgi.escape

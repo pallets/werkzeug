@@ -155,3 +155,91 @@ Changes to `MultiDict`:
 `itervalues` and similar methods...
     ...yield all values for a key, not only the first one! `iterkeys` can
     of corse yield multiple keys with the same name analog to that.
+
+
+FileStorage
+===========
+
+The `FileStorage` object is a thin wrapper over incoming files. It has
+the following attributes and methods:
+
+`name`
+    The name of the form field which represents the data.
+
+`filename`
+    The incoming filename
+
+`content_type`
+    The mimetype of the file. For example ``'text/html'``.
+
+`content_length / len()`
+    The expected length of the file.
+
+`read([bytes])`
+    Read `bytes` or all of the incoming file. Note that the default
+    wrappers store the incoming data on the filesystem rather than the
+    RAM. Thus you should keep in mind that reading without an maxmimum
+    length can easily break your application if the user submitted data
+    is too big.
+
+`readline() / readlines() / __iter__`
+    Behave like the methods of any other file object.
+
+`stream`
+    Gives you access to the underlaying stream. Note that the exact
+    methods of this stream and it's type is not strictly specified. In
+    most situations it will be a `TemporaryFile` object.
+
+
+SharedDataMiddleware
+====================
+
+A WSGI middleware that provides static content for development environments
+or simple server setups. Usage is quite simple:
+
+.. sourcecode:: python
+
+    import os
+    from werkzeug.utils import SharedDataMiddleware
+
+    app = SharedDataMiddleware(app, {
+        '/shared': os.path.join(os.path.dirname(__file__), 'shared')
+    })
+
+The contents of the folder ``./shared`` will now be available on
+``http://example.com/shared/``. This is pretty useful if you don't want
+to start a standalone media server or something like that.
+
+
+Helper Functions
+================
+
+`url_decode(s, charset='utf-8')`
+    parse a querystring and return it as `MultiDict`.
+
+`url_encode(s, charset='utf-8')`
+    URL encode a dict/`MultiDict`.
+
+`url_quote(s, charset='utf-8')`
+    URL encode a single string with a given encoding.
+
+`url_unquote(s, charset='utf-8')`
+    URL decode a single string with a given decoding.
+
+`escape(s, quote=False)`
+    SGML/XML escape an unicode object or string.
+
+`lazy_property(func)`
+    A decorator that converts a function into a lazy property. The
+    function wrapped is called the first time to retrieve the result
+    and than that calculated result is used the next time you access
+    the value.
+
+    .. sourcecode:: python
+
+        class Foo(object):
+
+            @lazy_property
+            def foo(self):
+                # calculate something important here
+                return 42

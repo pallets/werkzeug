@@ -1,0 +1,14 @@
+#!/usr/bin/env werkzeug-serve
+# -*- coding: <%= FILE_ENCODING %> -*-
+from werkzeug.serving import run_simple
+from <%= PACKAGE %> import make_app
+
+# development configuration
+config = {
+    'debug':            True,
+    'evalex':           True,
+    'auto_reload':      True
+}
+
+if __name__ == '__main__':
+    run_simple('localhost', 5000, make_app(config), config['auto_reload'])

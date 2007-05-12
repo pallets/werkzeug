@@ -3,18 +3,15 @@
     werkzeug.serving
     ~~~~~~~~~~~~~~~~
 
-    Helper module used by `werkzeug-serve`. Because there is no working
-    way without sideeffects to reload python applications while they
-    are running this module wraps a starter script.
+    This module wraps the `wsgiref` module so that it reloads code
+    automatically. Works with any WSGI application but it won't help in
+    non `wsgiref` environments. Use it only for development.
 
-    Create a file ``start.py`` with something like this in::
+    Usage::
 
-        #!/usr/bin/env werkzeug-serve
-        from myapplication import make_app
-        application = make_app()
-
-    And and then run it with ``./start.py`` after you gave it the executable
-    bit. The object called `application` is used as WSGI application.
+        from werkzeug.serving import run_simple
+        from myproject import make_app
+        run_simple('localhost', 8080, make_app())
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
@@ -23,12 +20,11 @@ import os
 import sys
 import time
 import subprocess
-import tempfile
-from thread import start_new_thread
+import thread
 from getopt import getopt, GetoptError
 
 
-def _reloader_loop(extra_files):
+def reloader_loop(extra_files):
     """When this function is run from the main thread, it will force other
     threads to exit when any modules currently loaded change.
 
@@ -58,83 +54,51 @@ def _reloader_loop(extra_files):
         time.sleep(1)
 
 
-def act_as_host(app, starter, hostname, port, do_reload):
+def restart_with_reloader():
+    """Spawn a new Python interpreter with the same arguments as this one,
+    but running the reloader thread."""
+    while True:
+        args = [sys.executable] + sys.argv
+        if sys.platform == 'win32':
+            args = ['"%s"' % arg for arg in args]
+        new_environ = os.environ.copy()
+        new_environ['RUN_MAIN'] = 'true'
+        exit_code = os.spawnve(os.P_WAIT, sys.executable, args, new_environ)
+        if exit_code != 3:
+            return exit_code
+
+
+def run_with_reloader(main_func, extra_watch):
     """
-    Helper for the `werkzeug-serve` script.
+    Run the given function in an independent python interpreter.
     """
+    if os.environ.get('RUN_MAIN') == 'true':
+        thread.start_new_thread(main_func, ())
+        try:
+            reloader_loop(extra_watch)
+        except KeyboardInterrupt:
+            return
+    try:
+        sys.exit(restart_with_reloader())
+    except KeyboardInterrupt:
+        pass
+
+
+def run_simple(hostname, port, application, use_reloader=False,
+               extra_files=None):
+    """
+    Start an application using wsgiref and with an optional reloader.
+    """
+    from wsgiref.simple_server import make_server
     def inner():
-        from wsgiref.simple_server import make_server
-        srv = make_server(hostname, port, app)
+        srv = make_server(hostname, port, application)
         try:
             srv.serve_forever()
         except KeyboardInterrupt:
             pass
-    if do_reload:
-        start_new_thread(inner, ())
-        try:
-            _reloader_loop([starter])
-        except KeyboardInterrupt:
-            pass
+    if os.environ.get('RUN_MAIN') != 'true':
+        print 'Running on http://%s:%d/' % (hostname, port)
+    if use_reloader:
+        run_with_reloader(inner, extra_files or [])
     else:
         inner()
-
-
-def run(hostname, port, starter_name, do_reload):
-    f = file(starter_name)
-    try:
-        code = f.read()
-    finally:
-        f.close()
-    code += '\n\ntry:\n' \
-            '    application\n' \
-            'except NameError:\n' \
-            '    import sys\n' \
-            '    sys.stderr.write("No application specified\\n")\n' \
-            '    sys.exit(1)\n' \
-            'from werkzeug import serving\n' \
-            'serving.act_as_host(application, __file__, %r, %r, %r)' % \
-            (hostname, port, do_reload)
-    f = tempfile.NamedTemporaryFile()
-    f.write(code)
-    f.flush()
-
-    print 'Serving on http://%s:%d/' % (hostname, port)
-    if do_reload:
-        print 'automatic reloader enabled'
-
-    while 1:
-        try:
-            retcode = subprocess.call([sys.executable, f.name])
-        except KeyboardInterrupt:
-            retcode = -1
-        if retcode != 3:
-            break
-
-
-def main(args):
-    """
-    Helper function for the `werkzeug-serve` script.
-    """
-    usage = 'Usage: %s -r [-h <hostname>] [-p <port>] <starter>' % \
-            os.path.basename(args[0])
-    try:
-        optlist, args = getopt(args[1:], 'rh:p:')
-    except GetoptError, err:
-        args = []
-    if len(args) != 1:
-        print >>sys.stderr, usage
-        return -1
-    options = dict(optlist)
-
-    hostname = options.get('-h') or 'localhost'
-    try:
-        port = int(options.get('-p') or '5000')
-    except ValueError:
-        print >>sys.stderr, 'ERROR: port must be an interger'
-        return -2
-
-    run(hostname, port, args[0], '-r' in options)
-
-
-if __name__ == '__main__':
-    print "FOO"

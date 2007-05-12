@@ -48,4 +48,7 @@ def make_app(config=None):
     app = SharedDataMiddleware(app, {
         '/public': os.path.join(os.path.dirname(__file__), 'public')
     })
+    if config.get('debug', False):
+        from werkzeug.debug import DebuggedApplication
+        app = DebuggedApplication(app, evalex=config.get('evalex', False))
     return app
