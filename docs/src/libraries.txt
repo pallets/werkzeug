@@ -1,0 +1,69 @@
+===============
+Other Libraries
+===============
+
+Because Werkzeug is just a thin layer over WSGI it's very easy to use WSGI
+middlewares together with Werkzeug powered applications. It's also possible
+to just use small parts of Werkzeug like the URL mapper etc with complete
+different implementations or frameworks.
+
+Here a small list of libraries you may want to try out
+
+
+Database Layers
+===============
+
+If you want to use relational databases in your application.
+
+`SQLAlchemy <http://www.sqlalchemy.org/>`_
+    SQLAlchemy is a great database layer and object relational mapper
+    that let you construct SQL Queries using Python expressions. It also
+    provides connection pools and plays nice with the WSGI standard.
+
+
+Template Engines
+================
+
+Bigger applications deserve something better than minitmpl :)
+
+`Genshi <http://genshi.edgewall.org/>`_
+    If you like XML template engines check out Genshi. Ass-kicking
+    template engine, but unfortunately not the fastest.
+
+`Mako <http://www.makotemplates.org/>`_
+    The fastest designer friendly template engine for Python. Similar
+    to ERB in terms of the syntax but with a powerful template inheritance
+    system and multiple namespaces.
+
+`Jinja <http://jinja.pocoo.org/>`_
+    Sandboxes, django/smarty like template engine but with inline
+    expressions that let you execute a subset of python expressions in
+    your templates.
+
+
+Tools and Utilities
+===================
+
+Something's missing? Check here first
+
+`wsgitools <http://subdivi.de/~helmut/wsgitools/>`_
+    Various small WSGI utilities like a minimal traceback or auth
+    middleware. It also includes an SCGI server.
+
+`flup <http://www.saddi.com/software/flup/>`_
+    flup provides a session middleware as well as an error middleware
+    that can send mails to administators if something went wrong. It
+    also allows you to gzip the output sent to the webserver and provides
+    bridges to FastCGI, SCGI and AJP.
+
+`paste <http://pythonpaste.org/>`_
+    Many tools for use with WSGI; dispatching, composition, simple
+    applications (e.g., file serving), and more.
+
+`routes <http://routes.groovie.org/>`_
+    port of the rails url mapping system.
+
+You can find a more complete list on the `wsgi.org`_ webpage.
+
+
+.. _wsgi.org: http://wsgi.org/wsgi/Middleware_and_Utilities

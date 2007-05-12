@@ -134,3 +134,7 @@ def main(args):
         return -2
 
     run(hostname, port, args[0], '-r' in options)
+
+
+if __name__ == '__main__':
+    print "FOO"

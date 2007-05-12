@@ -1,4 +1,5 @@
 # -*- coding: <%= FILE_ENCODING %> -*-
+<%= make_docstring(MODULE, 'Contains the default index and not_found view.') %>
 from <%= PACKAGE %>.utils import Response
 
 

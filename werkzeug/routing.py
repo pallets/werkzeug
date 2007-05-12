@@ -663,14 +663,16 @@ class MapAdapter(object):
                 continue
             if self.map.redirect_defaults:
                 for r in self.map._rules_by_endpoint[rule.endpoint]:
-                    if r.provides_defaults_for(rule):
+                    if r.provides_defaults_for(rule) and \
+                       r.suitable_for(rv):
                         rv.update(r.defaults)
+                        subdomain, path = r.build(rv)
                         raise RequestRedirect(str('%s://%s%s%s/%s' % (
                             self.url_scheme,
-                            self.subdomain and self.subdomain + '.' or '',
+                            subdomain and subdomain + '.' or '',
                             self.server_name,
                             self.script_name[:-1],
-                            r.build(rv).lstrip('/')
+                            path.lstrip('/')
                         )))
             return rule.endpoint, rv
         raise NotFound(path_info)

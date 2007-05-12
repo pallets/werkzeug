@@ -1,4 +1,9 @@
 # -*- coding: <%= FILE_ENCODING %> -*-
+<%= make_docstring(MODULE, '''\
+This module contains the subclasses of the base request and response
+objects provided by werkzeug. The subclasses know about their charset
+and implement some additional functionallity like the ability to link
+to view functions.''') %>
 from werkzeug.wrappers import BaseRequest, BaseResponse
 
 

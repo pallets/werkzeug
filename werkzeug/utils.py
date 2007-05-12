@@ -8,6 +8,9 @@
     :copyright: 2007 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
 """
+import os
+import cgi
+import urllib
 from cStringIO import StringIO
 try:
     set
@@ -418,11 +421,48 @@ class Headers(object):
         )
 
 
+class SharedDataMiddleware(object):
+    """
+    Redirects calls to an folder with static data.
+    """
+
+    def __init__(self, app, exports):
+        self.app = app
+        self.exports = exports
+
+    def serve_file(self, filename, start_response):
+        from mimetypes import guess_type
+        guessed_type = guess_type(filename)
+        if guessed_type[0] is None:
+            mime_type = 'text/plain'
+        else:
+            mime_type = guessed_type[0]
+        start_response('200 OK', [('Content-Type', mime_type)])
+        fp = file(filename, 'rb')
+        try:
+            result = fp.read()
+        finally:
+            fp.close()
+        return iter([result])
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        for search_path, file_path in self.exports.iteritems():
+            if not search_path.endswith('/'):
+                search_path += '/'
+            if path.startswith(search_path):
+                real_path = os.path.join(file_path, path[len(search_path):])
+                if os.path.exists(real_path) and os.path.isfile(real_path):
+                    return self.serve_file(real_path, start_response)
+        return self.app(environ, start_response)
+
+
 class lazy_property(object):
     """
     Descriptor implementing a "lazy property", i.e. the function
     calculating the property value is called only once.
     """
+
     def __init__(self, func, name=None, doc=None):
         self._func = func
         self._name = name or func.func_name
@@ -434,3 +474,48 @@ class lazy_property(object):
         value = self._func(obj)
         setattr(obj, self._name, value)
         return value
+
+
+def url_decode(s, charset='utf-8'):
+    """
+    Parse a querystring and return it as `MultiDict`.
+    """
+    tmp = []
+    for key, values in cgi.parse_qs(str(s)):
+        for value in values:
+            tmp.append((key, value.decode(charset, 'ignore')))
+    return MultiDict(tmp)
+
+
+def url_encode(obj, charset='utf-8'):
+    """
+    Urlencode a dict/MultiDict.
+    """
+    if isinstance(obj, dict):
+        items = [(key, [value]) for key, value in obj.iteritems()]
+    else:
+        items = obj.lists()
+    tmp = []
+    for key, values in items:
+        for value in values:
+            if isinstance(value, unicode):
+                value = value.encode(charset)
+            tmp.append('%s=%s' % (urllib.quote_plus(key),
+                                  urllib.quote_plus(value)))
+    return '&'.join(tmp)
+
+
+def url_quote(s, charset='utf-8'):
+    """
+    URL encode a single string with a given encoding.
+    """
+    if isinstance(s, unicode):
+        s = s.encode(charset)
+    return urllib.quote_plus(s)
+
+
+def url_unquote(s, charset='utf-8'):
+    """
+    URL decode a single string with a given decoding.
+    """
+    return urllib.unquote_plus(s).decode(charset, 'ignore')

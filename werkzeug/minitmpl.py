@@ -45,20 +45,14 @@ def _unescape(s):
 
 def _tokenize(source):
     source = u'\n'.join(source.splitlines())
-    remove_newline = False
     match = None
     for match in tag_re.finditer(source):
         data = match.group(1)
-        if remove_newline and data.startswith('\n'):
-            data = data[1:]
         yield 'TEXT', _unescape(data)
-        remove_newline = False
         tag = _unescape(match.group(2))
         if tag.startswith('<%='):
             yield 'VARIABLE', tag[3:-2].strip()
-        elif tag.startswith('<%#'):
-            remove_newline = True
-        else:
+        elif not tag.startswith('<%#'):
             token_type = 'BLOCK'
             lines = tag[2:-2].strip().splitlines()
             if len(lines) > 1:
@@ -71,11 +65,8 @@ def _tokenize(source):
                 data = '\n'.join(lines[:1] + new_lines)
             else:
                 data = lines[0]
-            remove_newline = True
             yield token_type, data
     rest = source[(match and match.end() or 0):]
-    if remove_newline and rest.startswith('\n'):
-        rest = rest[1:]
     if rest:
         yield 'TEXT', _unescape(rest)
 
