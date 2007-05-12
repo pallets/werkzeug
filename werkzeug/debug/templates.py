@@ -294,7 +294,7 @@ body {
 
 #wsgi-traceback-footer {
   margin: 1em;
-  font-size: 13em;
+  font-size: 13px;
   letter-spacing: 0.1em;
   color: #eee;
   text-align: right;
