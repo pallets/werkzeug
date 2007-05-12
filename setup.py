@@ -14,7 +14,7 @@ setup(
     author = 'Armin Ronacher',
     author_email = 'armin.ronacher@active-4.com',
     description = 'foo',
-    long_description = getdoc(pygments),
+    long_description = getdoc(werkzeug),
     zip_safe = True,
     classifiers = [
         'Development Status :: 5 - Production/Stable',
