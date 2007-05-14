@@ -70,6 +70,7 @@ import sys
 import re
 from urlparse import urljoin
 from urllib import quote_plus
+from werkzeug.utils import url_encode
 try:
     set
 except NameError:
@@ -350,15 +351,25 @@ class Rule(RuleFactory):
         If building doesn't work for some reasons `None` is returned.
         """
         tmp = []
+        processed = set(self.arguments)
         for is_dynamic, data in self._trace:
             if is_dynamic:
                 try:
                     tmp.append(self._converters[data].to_url(values[data]))
                 except ValidationError:
                     return
+                processed.add(data)
             else:
                 tmp.append(data)
-        return (u''.join(tmp)).split('|', 1)
+        subdomain, url = (u''.join(tmp)).split('|', 1)
+
+        query_vars = {}
+        for key in set(values) - processed:
+            query_vars[key] = values[key]
+        if query_vars:
+            url += '?' + url_encode(query_vars, self.map.charset)
+
+        return subdomain, url
 
     def provides_defaults_for(self, rule):
         """

@@ -1,0 +1,45 @@
+# -*- coding: <%= FILE_ENCODING %> -*-
+<%= make_docstring(MODULE, '''\
+This module provides the WSGI application.
+
+The WSGI middlewares are applied in the `make_app` factory function that
+automatically wraps the application within the require middlewares. Per
+default only the `SharedDataMiddleware` is applied.''' % globals()) %>
+
+
+class <%= PACKAGE_PASCAL_CASED %>Application(object):
+    """
+    The application class. It's passed a directory with configuration values.
+    """
+
+    def __init__(self, config):
+        self.config = config
+
+    def __call__(self, environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        yield '''
+        <h1>Minimal WSGI Application</h1>
+        <p>
+          This application doesn't really include Werkzeug related code
+          but provides a simple quickstart for complex use cases that
+          use much non werkzeug code.
+        </p>
+        <p>
+          Edit <tt><%= PACKAGE %>.application</tt> to get stated.
+        </p>
+        '''
+
+
+def make_app(config=None):
+    """
+    Factory function that creates a new `<%= PACKAGE_PASCAL_CASED %>Application`
+    object. Optional WSGI middlewares should be applied here.
+    """
+    app = <%= PACKAGE_PASCAL_CASED %>Application(config or {})
+
+    # if we are in debug mode we wrap the application in the debugger
+    # middleware provided by werkzeug.
+    if config.get('debug', False):
+        from werkzeug.debug import DebuggedApplication
+        app = DebuggedApplication(app, evalex=config.get('evalex', False))
+    return app
