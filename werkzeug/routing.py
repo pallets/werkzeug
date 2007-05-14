@@ -343,6 +343,8 @@ class Rule(RuleFactory):
                 except ValidationError:
                     return
                 result[str(name)] = value
+            if self.defaults is not None:
+                result.update(self.defaults)
             return result
 
     def build(self, values):

@@ -404,6 +404,14 @@ Because URLs cannot contain non ASCII data you will always get bytestrings
 back. Non ASCII characters are urlencoded with the charset defined on the
 map instance.
 
+Additional values are converted to unicode and appended to the URL as
+URL querystring parameters:
+
+.. sourcecode:: pycon
+
+    >>> urls.build("index", {'q': 'My Searchstring'})
+    '/?q=My+Searchstring'
+
 Custom Converters
 =================
 
