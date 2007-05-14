@@ -193,7 +193,7 @@ def main(args):
     options = dict(optlist)
 
     charset = options.get('-c') or 'utf-8'
-    template = options.get('-t') or 'werkzeug_default'
+    template = options.get('-t') or 'default'
     author = options.get('-a')
     if not author:
         from getpass import getuser

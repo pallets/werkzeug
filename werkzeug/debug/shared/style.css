@@ -42,7 +42,7 @@ h2 {
     font-size: 16px;
     color: #FFFFFF;
     padding: 0.3em;
-    margin: 0.4em 0 0.2em 0;
+    margin: 1em 0 0.2em 0;
     clear: both;
 }
 
@@ -55,7 +55,7 @@ h3 {
 }
 
 h3.fn {
-    margin-top: 0.5em;
+    margin-top: 0.4em;
     padding: 0.3em;
     clear: both;
 }
