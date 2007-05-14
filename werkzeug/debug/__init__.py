@@ -91,8 +91,8 @@ class DebuggedApplication(object):
         # skip first internal frame
         if not tb.tb_next is None:
             tb = tb.tb_next
-        plaintb = ''.join(traceback.format_exception(*exc_info))
-
+        plaintb = ''.join(traceback.format_exception(exception_type,
+                                                     exception_value, tb))
         # load frames
         frames = []
         frame_map = {}

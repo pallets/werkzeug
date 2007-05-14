@@ -6,7 +6,7 @@
 <% elif type == 'dict': %>
   <tr><th>Name</th><th>Value</th></tr>
   <% for key, item in value: %>
-  <tr><td class="name"><%= key|escape %></td><td class="value"><%= item %></td></tr>
+  <tr><td class="name"><%= key|escape %></td><td class="value"><%= item|escape %></td></tr>
   <% end %>
 <% elif type == 'list': %>
   <% for item in value: %>

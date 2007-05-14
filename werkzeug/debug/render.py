@@ -11,7 +11,6 @@
 import pprint
 from os.path import dirname, join
 
-from werkzeug.utils import escape
 from werkzeug.minitmpl import Template
 from werkzeug.debug.util import Namespace
 
@@ -68,7 +67,7 @@ def var_table(var):
             if len(line) > 79:
                 line = line[:79] + '...'
             tmp.append(line)
-        return escape('\n'.join(tmp))
+        return '\n'.join(tmp)
 
     # dicts
     if isinstance(var, dict) or hasattr(var, 'items'):
@@ -78,8 +77,7 @@ def var_table(var):
         else:
             typ = 'dict'
             value.sort()
-            value = [(escape(repr(key)), safe_pformat(val))
-                     for key, val in value]
+            value = [(repr(key), safe_pformat(val)) for key, val in value]
 
     # lists
     elif isinstance(var, list):
@@ -92,7 +90,7 @@ def var_table(var):
     # others
     else:
         typ = 'simple'
-        value = escape(repr(var))
+        value = repr(var)
 
     return t_vartable.render(type=typ, value=value)
 
