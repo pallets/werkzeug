@@ -10,8 +10,9 @@ The WSGI middlewares are applied in the `make_app` factory function that
 automatically wraps the application within the require middlewares. Per
 default only the `SharedDataMiddleware` is applied.''' % globals()) %>
 import os
-from <%= PACKAGE %>.urls import url_map, not_found
-from <%= PACKAGE %>.utils import Request, Response, RedirectResponse
+from <%= PACKAGE %>.urls import url_map
+from <%= PACKAGE %>.utils import Request, Response, RedirectResponse, \
+     NotFoundResponse
 from <%= PACKAGE %>.views import get_view
 from werkzeug.utils import SharedDataMiddleware
 from werkzeug.routing import NotFound, RequestRedirect
@@ -26,16 +27,25 @@ class <%= PACKAGE_PASCAL_CASED %>Application(object):
         self.config = config
 
     def __call__(self, environ, start_response):
+        # create a new URL adapter for this request and pass it
+        # to the new request object so that the views can build
+        # URLs easily.
         url_adapter = url_map.bind_to_environ(environ)
         req = Request(environ, url_adapter)
+        # try to get the matched view. If this is not possible
+        # process the `NotFound` and `RequestRedirect` exceptions
+        # that can occour.
         try:
             endpoint, args = url_adapter.match(req.path)
         except NotFound:
-            resp = get_view(not_found)(req)
+            resp = NotFoundResponse()
         except RequestRedirect, e:
             resp = RedirectResponse(e.new_url)
         else:
             resp = get_view(endpoint)(req, **args)
+        # process the response as WSGI application. Because the
+        # `Response` objects have the same signature those are
+        # valid return values.
         return resp(environ, start_response)
 
 
@@ -45,9 +55,16 @@ def make_app(config=None):
     object. Optional WSGI middlewares should be applied here.
     """
     app = <%= PACKAGE_PASCAL_CASED %>Application(config or {})
+
+    # files in the `public` folder are available on the URL so that there
+    # is no need to start another server for that. For production setups
+    # it's a good idea to override that in the werbserver.
     app = SharedDataMiddleware(app, {
         '/public': os.path.join(os.path.dirname(__file__), 'public')
     })
+
+    # if we are in debug mode we wrap the application in the debugger
+    # middleware provided by werkzeug.
     if config.get('debug', False):
         from werkzeug.debug import DebuggedApplication
         app = DebuggedApplication(app, evalex=config.get('evalex', False))

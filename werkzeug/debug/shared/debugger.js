@@ -1,0 +1,113 @@
+HISTORY = {};
+HISTORY_POSITIONS = {};
+
+function changeTB() {
+  $('#interactive').slideToggle('fast');
+  $('#plain').slideToggle('fast');
+}
+
+function toggleFrame(num) {
+  var t = $('#frame-' + num + ' .code');
+  $('.pre', t).toggle();
+  $('.post', t).toggle();
+}
+
+function toggleFrameVars(num) {
+  $('#frame-' + num + ' .vars').slideToggle('fast');
+}
+
+function toggleInterpreter(num) {
+  $('#frame-' + num + ' .exec_code').slideToggle('fast');
+}
+
+function toggleTableVars(num) {
+  $('#tvar-' + num + ' .vars').slideToggle('fast');
+}
+
+function getHistory(tb, frame) {
+  var key = tb + '||' + frame;
+  if (key in HISTORY)
+    var h = HISTORY[key];
+  else {
+    var h = HISTORY[key] = [''];
+    HISTORY_POSITIONS[key] = 0;
+  }
+  return {
+    history:  h,
+    setPos: function(val) {
+      HISTORY_POSITIONS[key] = val;
+    },
+    getPos: function() {
+      return HISTORY_POSITIONS[key];
+    },
+    getCurrent: function() {
+      return h[HISTORY_POSITIONS[key]];
+    }
+  };
+}
+
+function addToHistory(tb, frame, value) {
+  var h = getHistory(tb, frame);
+  var tmp = h.history.pop();
+  h.history.push(value);
+  if (tmp != undefined)
+    h.history.push(tmp);
+  h.setPos(h.history.length - 1);
+}
+
+function backInHistory(tb, frame, input) {
+  var pos, h = getHistory(tb, frame);
+  if ((pos = h.getPos()) > 0)
+    h.setPos(pos - 1);
+  input.value = h.getCurrent();
+}
+
+function forwardInHistory(tb, frame, input) {
+  var pos, h = getHistory(tb, frame);
+  if ((pos = h.getPos()) < h.history.length - 1)
+    h.setPos(pos + 1);
+  input.value = h.getCurrent();
+}
+
+function sendCommand(tb, frame, cmd, output) {
+  addToHistory(tb, frame, cmd);
+  $.get('__traceback__', {
+    tb:     tb,
+    frame:  frame,
+    code:   cmd + '\n'
+  }, function(data) {
+    output.append($('<div/>').text(data));
+  });
+}
+
+$(document).ready(function() {
+  $('.exec_code').hide();
+  $('.vars').hide();
+  $('.code .pre').hide();
+  $('.code .post').hide();
+
+  $('.exec_code').submit(function() {
+    sendCommand(this.tb.value, this.frame.value, this.cmd.value,
+                $('.output', this));
+    this.cmd.value = '';
+    return false;
+  });
+
+  $('.exec_code input.input').keyup(function(e) {
+    var code = e.keyCode || e.which;
+    if (code == 100 || e.ctrlKey) {
+      $('.output', $(this).parent()).empty();
+      return false;
+    }
+    else if (code == 38 || code == 40) {
+      var parent = $(this).parent();
+      var tb = $('input[@name="tb"]', parent).attr('value');
+      var frame = $('input[@name="frame"]', parent).attr('value');
+      console.debug(tb, frame, parent);
+      if (code == 38)
+        backInHistory(tb, frame, this);
+      else
+        forwardInHistory(tb, frame, this);
+    }
+  });
+});

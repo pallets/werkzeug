@@ -476,7 +476,7 @@ def url_decode(s, charset='utf-8'):
     Parse a querystring and return it as `MultiDict`.
     """
     tmp = []
-    for key, values in cgi.parse_qs(str(s)):
+    for key, values in cgi.parse_qs(str(s)).iteritems():
         for value in values:
             tmp.append((key, value.decode(charset, 'ignore')))
     return MultiDict(tmp)

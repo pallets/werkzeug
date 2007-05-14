@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <title><%= exception_type|escape %> (Werkzeug Debugger)</title>
+    <link rel="stylesheet" href="__traceback__?resource=style.css&amp;mimetype=text/css" type="text/css">
+    <script type="text/javascript" src="__traceback__?resource=jquery.js&amp;mimetype=text/javascript"></script>
+    <script type="text/javascript" src="__traceback__?resource=debugger.js&amp;mimetype=text/javascript"></script>
+  </head>
+  <body>
+    <div class="traceback_wrapper">
+      <h1><%= exception_type|escape %></h1>
+      <p class="errormsg"><%= exception_value|escape %></p>
+
+      <p class="errorline"><%= last_frame['filename']|escape %> in
+                           <%= last_frame['function']|escape %>,
+        line <%= last_frame['lineno'] %></p>
+
+      <h2 onclick="changeTB()" class="tb">Traceback (click to switch to raw view)</h2>
+      <div id="interactive">
+        <p class="text">A problem occurred in your Python WSGI application.
+          Here is the sequence of function calls leading up to the error, in the order
+          they occurred. Click on a header to show context lines.</p>
+
+      <% for num, frame in enumerate(frames): %>
+        <div class="frame" id="frame-<%= num %>">
+          <h3 class="fn" onclick="toggleFrame(<%= num %>)"><%=
+            frame['function']|escape %> in <%= frame['filename']|escape %></h3>
+          <a class="locals" href="javascript:toggleFrameVars(<%= num %>)"><span>local variables</span></a>
+          <a class="eval" href="javascript:toggleInterpreter(<%= num %>)"><span>execute code</span></a>
+
+
+          <%= code_table(frame) %>
+
+          <%= var_table(frame['vars']) %>
+          <% if evalex: %>
+          <% full_id = tb_uid + '-' + frame['frame_uid'] %>
+          <form class="exec_code">
+            <pre class="output"></pre>
+            <input type="hidden" name="tb" value="<%= tb_uid %>">
+            <input type="hidden" name="frame" value="<%= frame['frame_uid'] %>">
+            <input type="text" name="cmd" class="input" value="">
+          </form>
+          <% end %>
+        </div>
+      <% end %>
+      </div>
+
+      <div id="plain">
+      <p class="text">Here is the plain Python traceback for copy and paste:</p>
+      <pre class="plain"><%= plaintb|escape %></pre>
+      </div>
+
+
+      <% if req_vars: %>
+        <h2>Request Data</h2>
+        <p class="text">The following list contains all important request variables.
+          Click on a header to expand the list.</p>
+        <% for num, (key, info) in enumerate(req_vars): %>
+          <dl>
+            <dt onclick="toggleTableVars(<%= num %>)"><%= key|escape %></dt>
+            <dd id="tvar-<%= num %>"><%= var_table(info) %></dd>
+          </dl>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div id="footer">
+      Brought to you by <span class="arthur">DON'T PANIC</span>, your friendly
+      Werkzeug powered traceback interpreter.
+    </div>
+  </body>
+</html>
+
+<!-- Plain traceback:
+
+<%= plaintb|escape %>
+-->

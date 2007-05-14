@@ -9,12 +9,14 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-import cgi
 import inspect
 import traceback
+import code
 
-from werkzeug.debug.render import debug_page
-from werkzeug.debug.util import ThreadedStream, get_uid, get_frame_info, Namespace
+from werkzeug.debug.render import debug_page, load_resource
+from werkzeug.debug.util import ThreadedStream, Namespace, get_uid, \
+     get_frame_info
+from werkzeug.utils import url_decode
 
 
 class DebuggedApplication(object):
@@ -37,14 +39,25 @@ class DebuggedApplication(object):
         self.tracebacks = {}
 
     def __call__(self, environ, start_response):
-        # exec code in open tracebacks
-        if self.evalex and environ.get('PATH_INFO', '').strip('/').endswith('__traceback__'):
-            parameters = cgi.parse_qs(environ['QUERY_STRING'])
+        # exec code in open tracebacks or provide shared data
+        if self.evalex and environ.get('PATH_INFO', '').strip('/') \
+                                  .endswith('__traceback__'):
+            parameters = url_decode(environ.get('QUERY_STRING', ''))
+            # shared data
+            if 'resource' in parameters and 'mimetype' in parameters:
+                data = load_resource(parameters['resource'])
+                start_response('200 OK', [
+                    ('Content-Type', str(parameters['mimetype'])),
+                    ('Content-Length', str(len(data)))
+                ])
+                yield data
+                return
+            # execute commands in an existing debug context
             try:
-                tb = self.tracebacks[parameters['tb'][0]]
-                frame = parameters['frame'][0]
+                tb = self.tracebacks[parameters['tb']]
+                frame = parameters['frame']
                 context = tb[frame]
-                code = parameters['code'][0].replace('\r','')
+                code = parameters['code']
             except (IndexError, KeyError):
                 pass
             else:
@@ -52,6 +65,8 @@ class DebuggedApplication(object):
                 start_response('200 OK', [('Content-Type', 'text/plain')])
                 yield result
                 return
+
+        # wrap the application and catch errors.
         appiter = None
         try:
             appiter = self.application(environ, start_response)
@@ -91,7 +106,7 @@ class DebuggedApplication(object):
             if not tb.tb_frame.f_locals.get('__traceback_hide__', False):
                 if tb_uid:
                     frame_uid = get_uid()
-                    frame_map[frame_uid] = EvalContext(tb.tb_frame)
+                    frame_map[frame_uid] = InteractiveDebugger(tb.tb_frame)
                 else:
                     frame_uid = None
                 frame = get_frame_info(tb)
@@ -136,23 +151,44 @@ class DebuggedApplication(object):
         )
 
 
-class EvalContext(object):
+class InteractiveDebugger(code.InteractiveInterpreter):
+    """
+    Subclass of the python interactive interpreter that
+    automatically captures stdout and buffers older input.
+    """
 
-    def __init__(self, frm):
-        self.locals = frm.f_locals
-        self.globals = frm.f_globals
+    def __init__(self, frame):
+        self.globals = frame.f_globals
+        code.InteractiveInterpreter.__init__(self, frame.f_locals)
+        self.prompt = '>>> '
+        self.buffer = []
 
-    def exec_expr(self, s):
+    def runsource(self, source):
+        prompt = self.prompt
         sys.stdout.push()
         try:
-            try:
-                code = compile(s, '<stdin>', 'single', 0, 1)
-                exec code in self.globals, self.locals
-            except:
-                etype, value, tb = sys.exc_info()
-                tb = tb.tb_next
-                msg = ''.join(traceback.format_exception(etype, value, tb))
-                sys.stdout.write(msg)
+            source_to_eval = ''.join(self.buffer + [source])
+            if code.InteractiveInterpreter.runsource(self,
+               source_to_eval, '<debugger>', 'single'):
+                self.prompt = '... '
+                self.buffer.append(source)
+            else:
+                self.prompt = '>>> '
+                del self.buffer[:]
         finally:
-            output = sys.stdout.release()
-        return output
+            return prompt + source + sys.stdout.release()
+
+    def runcode(self, code):
+        try:
+            exec code in self.globals, self.locals
+        except:
+            self.showtraceback()
+
+    def write(self, data):
+        sys.stdout.write(data)
+
+    def exec_expr(self, code):
+        rv = self.runsource(code)
+        if isinstance(rv, unicode):
+            return rv.encode('utf-8')
+        return rv

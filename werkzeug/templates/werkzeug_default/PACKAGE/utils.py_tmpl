@@ -8,26 +8,47 @@ from werkzeug.wrappers import BaseRequest, BaseResponse
 
 
 class Request(BaseRequest):
+    """
+    The concrete request object used in the WSGI application.
+    It has some helper functions that can be used to build URLs.
+    """
     charset = '<%= FILE_ENCODING %>'
 
     def __init__(self, environ, url_adapter):
-        super(Request, self).__init__(environ)
+        BaseRequest.__init__(self, environ)
         self.url_adapter = url_adapter
 
     def url_for(self, endpoint, **values):
+        """Create an URL to a given endpoint."""
         return self.url_adapter.build(endpoint, values)
 
     def external_url_for(self, endpoint, **values):
+        """Create an external URL to a given endpoint."""
         return self.url_adapter.build(endpoint, values, True)
 
 
 class Response(BaseResponse):
+    """
+    The concrete response object for the WSGI application.
+    """
     charset = '<%= FILE_ENCODING %>'
 
 
 class RedirectResponse(Response):
+    """
+    A response object that redirects to a new URL.
+    """
 
     def __init__(self, url, code=302):
-        super(RedirectResponse, self).__init__('page moved to %s' % url)
-        self.status = code
-        self.headers['Location'] = url
+        Response.__init__(self, 'page moved to %s' % url,
+                          [('Location', url)], code)
+
+
+class NotFoundResponse(Response):
+    """
+    A response that represents a not existing resource.
+    """
+
+    def __init__(self):
+        Response.__init__(self, '<h1>Page Not Found</h1>',
+                          status=404, mimetype='text/html')

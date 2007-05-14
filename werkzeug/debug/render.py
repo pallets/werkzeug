@@ -9,16 +9,30 @@
     :license: BSD, see LICENSE for more details.
 """
 import pprint
-from textwrap import wrap
+from os.path import dirname, join
 
 from werkzeug.minitmpl import Template
 from werkzeug.debug.util import Namespace
-from werkzeug.debug.templates import HEADER, BODY, CODETABLE, VARTABLE
 
 
-t_body = Template(BODY)
-t_codetable = Template(CODETABLE)
-t_vartable = Template(VARTABLE)
+def get_template(name):
+    return Template(load_resource(name).decode('utf-8'))
+
+
+def load_resource(res):
+    try:
+        f = file(join(dirname(__file__), 'shared', res))
+    except IOError:
+        return ''
+    try:
+        return f.read()
+    finally:
+        f.close()
+
+
+t_body = get_template('body.tmpl')
+t_codetable = get_template('codetable.tmpl')
+t_vartable = get_template('vartable.tmpl')
 
 
 def code_table(frame):
@@ -29,13 +43,15 @@ def code_table(frame):
         for l in frame['pre_context']:
             lines.append(Namespace(mode='pre', lineno=lineno, code=l))
             lineno += 1
-        lines.append(Namespace(mode='cur', lineno=lineno, code=frame['context_line']))
+        lines.append(Namespace(mode='cur', lineno=lineno,
+                               code=frame['context_line']))
         lineno += 1
         for l in frame['post_context']:
             lines.append(Namespace(mode='post', lineno=lineno, code=l))
             lineno += 1
     else:
-        lines.append(Namespace(mode='cur', lineno=1, code='Sourcecode not available'))
+        lines.append(Namespace(mode='cur', lineno=1,
+                               code='Sourcecode not available'))
 
     return t_codetable.render(lines=lines)
 
@@ -43,10 +59,15 @@ def code_table(frame):
 def var_table(var):
     def safe_pformat(x):
         try:
-            tmp = pprint.pformat(x)
+            lines = pprint.pformat(x).splitlines()
         except:
             return '?'
-        return '\n'.join(wrap(tmp, 79))
+        tmp = []
+        for line in lines:
+            if len(line) > 79:
+                line = line[:79] + '...'
+            tmp.append(line)
+        return '\n'.join(tmp)
 
     # dicts
     if isinstance(var, dict) or hasattr(var, 'items'):
@@ -78,4 +99,4 @@ def debug_page(context):
     tc = context.to_dict()
     tc['var_table'] = var_table
     tc['code_table'] = code_table
-    return HEADER + t_body.render(tc)
+    return t_body.render(tc)
