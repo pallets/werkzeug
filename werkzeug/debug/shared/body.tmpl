@@ -24,10 +24,9 @@
 
       <% for num, frame in enumerate(frames): %>
         <div class="frame" id="frame-<%= num %>">
-          <h3 class="fn" onclick="toggleFrame(<%= num %>)"><%=
-            frame['function']|escape %> in <%= frame['filename']|escape %></h3>
-          <a class="locals" href="javascript:toggleFrameVars(<%= num %>)"><span>local variables</span></a>
-          <a class="eval" href="javascript:toggleInterpreter(<%= num %>)"><span>execute code</span></a>
+          <h3 class="fn"><%= frame['function']|escape %> in <%= frame['filename']|escape %></h3>
+          <a class="locals" href="javascript:toggleFrameVars(<%= num %>)">(local variables)</a>
+          <a class="eval" href="javascript:toggleInterpreter(<%= num %>)">(execute code)</a>
 
 
           <%= code_table(frame) %>

@@ -6,12 +6,6 @@ function changeTB() {
   $('#plain').slideToggle('fast');
 }
 
-function toggleFrame(num) {
-  var t = $('#frame-' + num + ' .code');
-  $('.pre', t).toggle();
-  $('.post', t).toggle();
-}
-
 function toggleFrameVars(num) {
   $('#frame-' + num + ' .vars').slideToggle('fast');
 }
@@ -93,6 +87,11 @@ $(document).ready(function() {
     return false;
   });
 
+  $('.code').click(function() {
+    $('.pre', $(this)).toggle();
+    $('.post', $(this)).toggle();
+  });
+
   $('.exec_code input.input').keyup(function(e) {
     var code = e.keyCode || e.which;
     if (code == 100 || e.ctrlKey) {
@@ -108,6 +107,8 @@ $(document).ready(function() {
         backInHistory(tb, frame, this);
       else
         forwardInHistory(tb, frame, this);
+      return false;
     }
+    return true;
   });
 });

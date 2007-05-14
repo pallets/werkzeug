@@ -52,7 +52,6 @@ h2.tb {
 
 h3 {
     font-size: 14px;
-    cursor: pointer;
 }
 
 h3.fn {
@@ -61,37 +60,12 @@ h3.fn {
     clear: both;
 }
 
-h3.fn:hover {
-    color: #777;
-}
-
 a.eval, a.locals {
-    margin: -20px 0 0 0;
-    padding: 4px;
-    float: right;
     display: block;
-    width: 22px;
-    height: 22px;
-    background-repeat: no-repeat;
-    background-position: center center;
-}
-
-a.eval:hover, a.locals:hover {
-    background-color: #fff;
-    padding: 3px;
-    border: 1px solid #ccc;
-}
-
-a.eval span, a.locals span {
-    display: none;
-}
-
-a.eval {
-    background-image: url('__traceback__?resource=eval.png&mimetype=image/png');
-}
-
-a.locals {
-    background-image: url('__traceback__?resource=variables.png&mimetype=image/png');
+    float: right;
+    margin: -12px 2px 0 5px;
+    font-size: 12px;
+    color: #333;
 }
 
 p.text {
@@ -120,6 +94,7 @@ table.code {
     font-size: 13px;
     border: 1px solid #C9C9C9;
     border-collapse: collapse;
+    cursor: pointer;
 }
 
 table.code td.lineno {
