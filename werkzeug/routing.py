@@ -365,7 +365,7 @@ class Rule(RuleFactory):
 
         query_vars = {}
         for key in set(values) - processed:
-            query_vars[key] = values[key]
+            query_vars[key] = unicode(values[key])
         if query_vars:
             url += '?' + url_encode(query_vars, self.map.charset)
 
