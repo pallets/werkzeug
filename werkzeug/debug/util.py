@@ -228,9 +228,12 @@ def get_frame_info(tb, context_lines=7):
             pre_context = post_context = [], []
         context_lineno = lbound
 
+    if isinstance(fn, unicode):
+        fn = fn.encode('utf-8')
     return {
         'tb':               tb,
-        'filename':         isinstance(fn, unicode) and fn.encode('utf-8') or fn,
+        'filename':         fn,
+        'basename':         os.path.basename(fn),
         'loader':           loader,
         'function':         function,
         'lineno':           lineno,

@@ -1,4 +1,4 @@
-#!/usr/bin/env werkzeug-serve
+#!/usr/bin/env python
 # -*- coding: <%= FILE_ENCODING %> -*-
 from werkzeug.serving import run_simple
 from <%= PACKAGE %> import make_app

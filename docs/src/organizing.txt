@@ -185,4 +185,4 @@ this topic.
 
 .. _routing system: routing.txt
 .. _Jinja: http://jinja.pocoo.org/
-.. _bootstrapping: bootstrap.txt
+.. _bootstrap: bootstrap.txt

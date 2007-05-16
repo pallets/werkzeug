@@ -15,60 +15,13 @@
         John
         Jane
 
-    Syntax Elements::
-
-        <% code %>
-            executes code
-
-        <%= variable %>
-            prints out the variable value
-
-        <%# comment %>
-            is just a comment
-
-        <%% / %%>
-            escaped tags
-
-
     :copyright: 2006 by Armin Ronacher, Georg Brandl.
     :license: BSD License.
 """
 import re
 from cgi import escape
 
-tag_re = re.compile(r'(.*?)(<\%[=\#|]?(?!%)\s*.*?\s*\%(?!\%)>)(?uism)')
-
-
-def _unescape(s):
-    return s.replace('<%%', '<%').replace('%%>', '%>')
-
-
-def _tokenize(source):
-    source = u'\n'.join(source.splitlines())
-    match = None
-    for match in tag_re.finditer(source):
-        data = match.group(1)
-        yield 'TEXT', _unescape(data)
-        tag = _unescape(match.group(2))
-        if tag.startswith('<%='):
-            yield 'VARIABLE', tag[3:-2].strip()
-        elif not tag.startswith('<%#'):
-            token_type = 'BLOCK'
-            lines = tag[2:-2].strip().splitlines()
-            if len(lines) > 1:
-                new_lines = []
-                indent = match.start(2) - match.end(1) + 4
-                for line in lines[1:]:
-                    if line[:indent].strip():
-                        raise SyntaxError()
-                    new_lines.append(line[indent:])
-                data = '\n'.join(lines[:1] + new_lines)
-            else:
-                data = lines[0]
-            yield token_type, data
-    rest = source[(match and match.end() or 0):]
-    if rest:
-        yield 'TEXT', _unescape(rest)
+tag_re = re.compile(r'(.*?)(<\%(?!\%).*?(?<!\%)\%>)(?sm)')
 
 
 class TemplateFilter(object):
@@ -76,28 +29,18 @@ class TemplateFilter(object):
     Creates a template filter for a function.
     """
 
-    def __init__(self, func):
-        self.func = func
-
-    def __ror__(self, value):
-        return self.func(value)
-
-    def __call__(self, *args, **kwargs):
-        return PreparedTemplateFilter(self.func, args, kwargs)
-
-
-class PreparedTemplateFilter(object):
-    """
-    Helper for `TemplateFilter`
-    """
-
-    def __init__(self, func, args, kwargs):
+    def __init__(self, func, args=None, kwargs=None):
         self.func = func
         self.args = args
         self.kwargs = kwargs
 
     def __ror__(self, value):
-        return self.func(value, *self.args, **self.kwargs)
+        return self.func(value, *(self.args or ()), **(self.kwargs or {}))
+
+    def __call__(self, *args, **kwargs):
+        if self.args is self.kwargs is None:
+            raise TypeError('filter is not callable')
+        return TemplateFilter(self.func, args, kwargs)
 
 
 class Template(object):
@@ -107,39 +50,50 @@ class Template(object):
         t = Template('templatetext')
         t.render(**templatecontext)
     """
-    filters = {
-        'escape':       TemplateFilter(lambda s, *a, **kw:
-                                       escape(unicode(s), *a, **kw))
-    }
 
     def __init__(self, source):
-        sourcelines = ['def generate():', '    if 0: yield None']
+        lines = ['def __generate():', '    if 0: yield None']
         indention = 1
+        write = lambda d, o: lines.append(('    ' * (indention - o)) + d)
 
-        write = lambda d, o: sourcelines.append(('    ' * (indention - o)) + d)
-        def write_block(d):
-            for line in d.splitlines():
-                write(line, 0)
-
-        for token_type, data in _tokenize(source):
-            if token_type == 'TEXT':
-                write('yield %r' % data, 0)
-            elif token_type == 'VARIABLE':
-                write('yield unicode(%s)' % data, 0)
-            elif token_type == 'BLOCK':
-                statement = data.split()[0]
+        source = u'\n'.join(source.replace('\\\n', ' ').splitlines())
+        match = None
+        for match in tag_re.finditer(source):
+            write('yield %r' % match.group(1), 0)
+            tag = match.group(2)
+            if tag.startswith('<%='):
+                write('yield unicode(%s)' % tag[3:-2].strip(), 0)
+            elif tag.startswith('<%!'):
+                tmp = tag[3:-2].splitlines() or ['']
+                if tmp.pop(0).strip():
+                    raise SyntaxError('invalid syntax for long block')
+                margin = None
+                for line in tmp:
+                    contents = len(line.lstrip())
+                    if contents:
+                        indent = len(line) - contents
+                        if margin is None or indent < margin:
+                            margin = indent
+                for idx, item in enumerate(tmp):
+                    write(item[margin or 0:], 0)
+            elif not tag.startswith('<%#'):
+                data = tag[2:-2].strip()
                 if data == 'end':
                     indention -= 1
-                elif statement in ('else:', 'elif', 'except:'):
+                elif data.split(None, 1)[0].rstrip('\t :') in \
+                     ('else', 'elif', 'except'):
                     write(data, 1)
                 else:
-                    write_block(data)
+                    write(data, 0)
                     if data.rstrip().endswith(':'):
                         indention += 1
-        source = '\n'.join(sourcelines)
+        rest = source[(match and match.end() or 0):]
+        if rest:
+            write('yield %r' % rest, 0)
+        source = '\n'.join(lines).replace('<%%', '<%').replace('%%>', '%>')
+
         self.code = compile(source, '<template>', 'exec')
-        self._generate = None
-        self.filters = self.filters.copy()
+        self.filters = DEFAULT_FILTERS.copy()
 
     def add_filter(self, name, func):
         self.filters[name] = TemplateFilter(func)
@@ -149,4 +103,9 @@ class Template(object):
         ns.update(*args, **kwargs)
         tmp = {}
         exec self.code in ns, tmp
-        return u''.join(tuple(tmp['generate']()))
+        return u''.join(tuple(tmp['__generate']()))
+
+
+DEFAULT_FILTERS = {
+    'escape': TemplateFilter(lambda s, *a, **k: escape(unicode(s), *a, **k))
+}

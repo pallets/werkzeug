@@ -3,7 +3,7 @@ body {
     font-size: 15px;
     margin: 0;
     padding: 1.3em;
-    background-color: #333;
+    background-color: #07131d;
 }
 
 * {
@@ -25,12 +25,12 @@ body {
 
 .traceback_wrapper {
     margin: 1em;
-    border: 1px solid #5F9CC4;
+    border: 1px solid #1b3042;
     background-color: #F6F6F6;
 }
 
 h1 {
-    background-color: #3F7CA4;
+    background-color: #1b3042;
     font-size: 24px;
     color: #FFFFFF;
     padding: 0.3em;
@@ -38,7 +38,7 @@ h1 {
 }
 
 h2 {
-    background-color: #5F9CC4;
+    background-color: #3F7CA4;
     font-size: 16px;
     color: #FFFFFF;
     padding: 0.3em;
@@ -50,22 +50,48 @@ h2.tb {
     cursor: pointer;
 }
 
+h2.tb span {
+    display: none;
+}
+
+h2.tb:hover span {
+    display: inline;
+}
+
 h3 {
     font-size: 14px;
+    padding: 0;
 }
 
 h3.fn {
-    margin-top: 0.4em;
-    padding: 0.3em;
+    margin-top: 0.8em;
     clear: both;
+    font-weight: normal;
+}
+
+h3.fn em {
+    font-style: normal;
+    font-weight: bold;
+}
+
+h3.fn tt {
+    color: #444;
+    font-size: 0.9em;
+    font-family: 'Arial', sans-serif;
 }
 
 a.eval, a.locals {
     display: block;
     float: right;
-    margin: -12px 2px 0 5px;
+    margin: -12px 0 0 8px;
     font-size: 12px;
     color: #333;
+    text-decoration: none;
+}
+
+a.eval:hover, a.locals:hover {
+    color: black;
+    background-color: #ccc;
 }
 
 p.text {
@@ -88,11 +114,11 @@ div.frame {
 
 table.code {
     margin: 0.4em 0 0 0.5em;
-    background-color: #E0E0E0;
+    background-color: #eee;
     width: 100%;
     font-family: monospace;
     font-size: 13px;
-    border: 1px solid #C9C9C9;
+    border: 1px solid #ccc;
     border-collapse: collapse;
     cursor: pointer;
 }
@@ -101,9 +127,10 @@ table.code td.lineno {
     width: 42px;
     text-align: right;
     padding: 0 5px 0 0;
-    color: #444444;
+    color: #444;
+    background-color: #ddd;
     font-weight: bold;
-    border-right: 1px solid #888888;
+    border-right: 1px solid #888;
 }
 
 table.code td.code {
@@ -117,6 +144,11 @@ table.code tr.cur td.code {
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
     white-space: pre;
+}
+
+table.code tr.cur td.lineno {
+    background-color: #bbb;
+    border: 1px solid #999;
 }
 
 pre.plain {
@@ -152,6 +184,13 @@ table.vars td.value {
     white-space: -o-pre-wrap;    /* Opera 7 ?? */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
     _white-space: pre;          /* IE only hack to re-specify in addition to word-wrap  */
+}
+
+pre.output {
+    background-color: #222;
+    color: #fff;
+    padding: 4px;
+    border: 1px solid #666;
 }
 
 table.vars {
@@ -193,6 +232,7 @@ dl dt {
     font-weight: bold;
     cursor: pointer;
     background-color: #ddd;
+    border-top: 1px solid #ccc;
 }
 
 dl dt:hover {

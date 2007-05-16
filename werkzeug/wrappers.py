@@ -166,6 +166,7 @@ class BaseResponse(object):
     Base response class.
     """
     charset = 'ascii'
+    default_mimetype = 'text/plain'
 
     def __init__(self, response=None, headers=None, status=200, mimetype=None):
         if response is None:
@@ -180,13 +181,12 @@ class BaseResponse(object):
             self.headers = headers
         else:
             self.headers = Headers(headers)
+        if mimetype is None and 'Content-Type' not in self.headers:
+            mimetype = self.default_mimetype
         if mimetype is not None:
             if 'charset=' not in mimetype and mimetype.startswith('text/'):
                 mimetype += '; charset=' + self.charset
             self.headers['Content-Type'] = mimetype
-        elif 'Content-Type' not in self.headers:
-            self.headers['Content-Type'] = 'text/plain; charset=' + \
-                                           self.charset
         self.status = status
         self._cookies = None
 

@@ -116,12 +116,15 @@ class DebuggedApplication(object):
 
         # guard for string exceptions
         if isinstance(exception_type, str):
-            extypestr = "string exception"
+            extypestr = 'string exception'
             exception_value = exception_type
-        elif exception_type.__module__ == "exceptions":
+        elif exception_type.__module__ == 'exceptions':
             extypestr = exception_type.__name__
         else:
-            extypestr = str(exception_type)
+            extypestr = '%s.%s' % (
+                exception_type.__module__,
+                exception_type.__name__
+            )
 
         # support for the werkzeug request object or fall back to
         # WSGI environment

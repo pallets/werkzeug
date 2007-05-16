@@ -112,6 +112,15 @@ that you have to tell it the actual used encoding when subclassing it. All
 data is stored internally as `unicode`. Bytestrings passed to the object
 will be returned unchanged in order to support binary data.
 
+The following members exist:
+
+`charset`
+    Override this to change the internal charset. This is always a very good
+    idea because the default is `ascii`.
+
+`default_mimetype`
+    The used mimetype if no other is defined. Default is ``text/plain``.
+
 Usage
 -----
 

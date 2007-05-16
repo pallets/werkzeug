@@ -20,16 +20,14 @@ from werkzeug.minitmpl import Template
 
 
 TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
-TEMPLATED_FILTERS = ['*.py', '*.html', '*.txt']
 
 par_re = re.compile(r'\n{2,}')
 
 
 def make_textblock(left, right, text):
     """
-    Helper function to indent some text. This is used by the
-    `make_docstring` function available in the context of a
-    file template.
+    Helper function to indent some text. This is usually used by the
+    docstring template.
     """
     return u'\n\n'.join([textwrap.fill(block, right - left,
                                        initial_indent=' ' * left,
@@ -43,13 +41,15 @@ def bootstrap(package_name, destination_path, template, charset, author):
     """
     # if we have an template path we load the templates located there
     # otherwise we load the templates from the template folder.
-    if os.sep in template:
+    if os.path.exists(template):
         template_path = template
     else:
         template_path = os.path.join(TEMPLATES, template)
     if not os.path.exists(template_path):
-        print >>sys.stderr, "Template path not found"
+        print >>sys.stderr, 'Template "%s" not found' % \
+                            os.path.basename(template_path)
         return -2
+    template_path = os.path.abspath(template_path)
 
     # the pascal cased name of the package is used in the
     # templates for creating class names etc.

@@ -2,7 +2,7 @@
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
   <head>
-    <title><%= exception_type|escape %> (Werkzeug Debugger)</title>
+    <title><%= exception_type|escape %> in <%= last_frame['basename']|escape %> (Werkzeug Debugger)</title>
     <link rel="stylesheet" href="__traceback__?resource=style.css&amp;mimetype=text/css" type="text/css">
     <script type="text/javascript" src="__traceback__?resource=jquery.js&amp;mimetype=text/javascript"></script>
     <script type="text/javascript" src="__traceback__?resource=debugger.js&amp;mimetype=text/javascript"></script>
@@ -16,7 +16,7 @@
                            <%= last_frame['function']|escape %>,
         line <%= last_frame['lineno'] %></p>
 
-      <h2 onclick="changeTB()" class="tb">Traceback (click to switch to raw view)</h2>
+      <h2 onclick="changeTB()" class="tb">Traceback <span>(click to toggle raw view)</span></h2>
       <div id="interactive">
         <p class="text">A problem occurred in your Python WSGI application.
           Here is the sequence of function calls leading up to the error, in the order
@@ -24,9 +24,9 @@
 
       <% for num, frame in enumerate(frames): %>
         <div class="frame" id="frame-<%= num %>">
-          <h3 class="fn"><%= frame['function']|escape %> in <%= frame['filename']|escape %></h3>
-          <a class="locals" href="javascript:toggleFrameVars(<%= num %>)">(local variables)</a>
-          <a class="eval" href="javascript:toggleInterpreter(<%= num %>)">(execute code)</a>
+          <h3 class="fn"><em><%= frame['function']|escape %></em> in <tt><%= frame['filename']|escape %></tt></h3>
+          <a class="locals" href="javascript:toggleFrameVars(<%= num %>)">[inspect]</a>
+          <a class="eval" href="javascript:toggleInterpreter(<%= num %>)">[console]</a>
 
 
           <%= code_table(frame) %>
@@ -35,7 +35,7 @@
           <% if evalex: %>
           <% full_id = tb_uid + '-' + frame['frame_uid'] %>
           <form class="exec_code">
-            <pre class="output"></pre>
+            <pre class="output">[console ready]</pre>
             <input type="hidden" name="tb" value="<%= tb_uid %>">
             <input type="hidden" name="frame" value="<%= frame['frame_uid'] %>">
             <input type="text" name="cmd" class="input" value="">

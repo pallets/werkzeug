@@ -55,7 +55,8 @@ already you will find the syntax familiar.
 
 ``<% code %>``
     Executes the wrapped code. If `code` is ``end`` it will close the last
-    opened block.
+    opened block. Code cannot spawn multiple lines! Escape newlines if you
+    want to break lines.
 
 ``<%= expr %>``
     Output the evaluated expression `expr`.
@@ -65,6 +66,31 @@ already you will find the syntax familiar.
 
 ``<%%`` / ``%%>``
     Escape a ``<%`` / ``%>`` tag
+
+If you need to add whole blocks of python code to the templates use the
+special block code syntax (``<%! ... %>``) that requires a newline after
+the opening tag:
+
+.. sourcecode:: html+erb
+
+    <%!
+        foo = [1, 2, 3]
+        bar = 42
+    %>
+    <% for item in foo + [bar]: %>
+        <li><%= item %></li>
+    <% end %>
+
+You can escape newlines using a backslash at the end of a line:
+
+.. sourcecode:: html+erb
+
+    <ul>\
+    <% for item in seq: %>
+        <li><%= item + \
+            "foo" %></li>\
+    <% end %>
+    </ul>
 
 Note that the template class passes an additional object called `escape` to
 the namespace which you can use to pipe data trough it in order to SGML/XML
@@ -115,6 +141,9 @@ The main limitation is the missing debugging support. Templates with an
 syntax error are **hard to debug**. If an error occours it can occour in a
 completely different line because minitmpl indents in a wrong way etc. Also
 the line numbers are wrong at all.
+
+Also multiline strings are horrible broken as well as other multiline
+constructs.
 
 Again the warning: For bigger web applications you should really use a full
 blown template engine like Genshi, Mako, Jinja or any other python template
