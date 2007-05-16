@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% set page_title = 'Welcome to the Magic' %}
+{% block page_body %}
+  <p>
+    Welcome to the magic! This is a bigger example for the
+    Werkzeug toolkit. And it contains a lot of magic.
+  </p>
+  <p>
+    <a href="{{ h.url_for('static.about') }}">about the implementation</a> or
+    click here if you want to see a <a href="{{ h.url_for('static.broken')
+    }}">broken view</a>.
+  </p>
+{% endblock %}

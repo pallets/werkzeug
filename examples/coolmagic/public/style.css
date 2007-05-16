@@ -1,0 +1,10 @@
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: sans-serif;
+    font-size: 15px;
+}
+
+h1, a {
+    color: #a00;
+}

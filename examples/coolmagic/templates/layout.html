@@ -1,0 +1,13 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <title>{{ page_title }} &mdash; Cool Magic!</title>
+    <link rel="stylesheet" href="{{ h.url_for('shared_data', file='style.css') }}" type="text/css">
+  </head>
+  <body>
+    <h1>Cool Magic</h1>
+    <h2>{{ page_title }}</h2>
+    {% block page_body %}{% endblock %}
+  </body>
+</html>
