@@ -28,7 +28,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Text Processing :: Markup :: HTML'
     ],
-    scripts = ['werkzeug-bootstrapping'],
+    scripts = ['werkzeug-bootstrap'],
     packages = ['werkzeug', 'werkzeug.debug'],
     platforms = 'any',
     include_package_data = True,
