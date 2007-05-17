@@ -58,6 +58,7 @@ def restart_with_reloader():
     """Spawn a new Python interpreter with the same arguments as this one,
     but running the reloader thread."""
     while True:
+        print '* Restarting with reloader...'
         args = [sys.executable] + sys.argv
         if sys.platform == 'win32':
             args = ['"%s"' % arg for arg in args]
@@ -97,7 +98,7 @@ def run_simple(hostname, port, application, use_reloader=False,
         except KeyboardInterrupt:
             pass
     if os.environ.get('RUN_MAIN') != 'true':
-        print 'Running on http://%s:%d/' % (hostname, port)
+        print '* Running on http://%s:%d/' % (hostname, port)
     if use_reloader:
         run_with_reloader(inner, extra_files or [])
     else:
