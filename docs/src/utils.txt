@@ -229,6 +229,9 @@ Helper Functions
 `escape(s, quote=False)`
     SGML/XML escape an unicode object or string.
 
+`get_current_url(environ)`
+    Return the absolute, canonical URL for the current request.
+
 `lazy_property(func)`
     A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result

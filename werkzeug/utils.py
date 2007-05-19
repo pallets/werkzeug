@@ -517,3 +517,28 @@ def url_unquote(s, charset='utf-8'):
 
 
 escape = cgi.escape
+
+
+def get_current_url(environ):
+    """
+    Recreate the URL of the current request.
+    """
+    tmp = [environ['wsgi.url_scheme'], '://']
+    cat = tmp.append
+
+    if 'HTTP_HOST' in environ:
+        cat(environ['HTTP_HOST'])
+    else:
+        cat(environ['SERVER_NAME'])
+        if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
+           in (('https', '443'), ('http', '80')):
+            cat(':' + environ['SERVER_PORT'])
+
+    cat(urllib.quote(environ.get('SCRIPT_INFO', '').rstrip('/')))
+    cat(urllib.quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
+
+    qs = environ.get('QUERY_STRING')
+    if qs:
+        cat('?' + qs)
+
+    return ''.join(tmp)

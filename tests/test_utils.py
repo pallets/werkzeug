@@ -9,7 +9,7 @@
 
 from py.test import raises
 
-from werkzeug.utils import MultiDict, lazy_property
+from werkzeug.utils import MultiDict, CombinedMultiDict, lazy_property
 
 def test_multidict():
     md = MultiDict()
@@ -103,6 +103,32 @@ def test_multidict():
     assert popped in [('b', 2), ('c', 3)]
     popped = md.popitemlist()
     assert popped in [('b', [2]), ('c', [3])]
+
+
+def test_combined_multidict():
+    d1 = MultiDict([('foo', 1)])
+    d2 = MultiDict([('bar', 2)])
+    d = CombinedMultiDict([d1, d2])
+
+    # lookup
+    assert d['foo'] == 1
+    assert d['bar'] == 2
+
+    # get key errors for missing stuff
+    try:
+        d['missing']
+    except KeyError:
+        pass
+    else:
+        raise AssertionError('expected KeyError')
+
+    # make sure that they are immutable
+    try:
+        d['foo'] = "blub"
+    except TypeError:
+        pass
+    else:
+        raise AssertionError('expected TypeError')
 
 
 def test_lazy_property():

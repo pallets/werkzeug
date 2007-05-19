@@ -40,8 +40,7 @@ class DebuggedApplication(object):
 
     def __call__(self, environ, start_response):
         # exec code in open tracebacks or provide shared data
-        if self.evalex and environ.get('PATH_INFO', '').strip('/') \
-                                  .endswith('__traceback__'):
+        if environ.get('PATH_INFO', '').strip('/').endswith('__traceback__'):
             parameters = url_decode(environ.get('QUERY_STRING', ''))
             # shared data
             if 'resource' in parameters and 'mimetype' in parameters:
@@ -53,18 +52,19 @@ class DebuggedApplication(object):
                 yield data
                 return
             # execute commands in an existing debug context
-            try:
-                tb = self.tracebacks[parameters['tb']]
-                frame = parameters['frame']
-                context = tb[frame]
-                code = parameters['code']
-            except (IndexError, KeyError):
-                pass
-            else:
-                result = context.exec_expr(code)
-                start_response('200 OK', [('Content-Type', 'text/plain')])
-                yield result
-                return
+            elif evalex:
+                try:
+                    tb = self.tracebacks[parameters['tb']]
+                    frame = parameters['frame']
+                    context = tb[frame]
+                    code = parameters['code']
+                except (IndexError, KeyError):
+                    pass
+                else:
+                    result = context.exec_expr(code)
+                    start_response('200 OK', [('Content-Type', 'text/plain')])
+                    yield result
+                    return
 
         # wrap the application and catch errors.
         appiter = None

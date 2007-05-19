@@ -225,6 +225,11 @@ order to not break the application on Werkzeug upgrades.
     Override the `Map` setting for `strict_slashes` only for this rule. If
     not specified the `Map` setting is used.
 
+`build_only`
+    Set this to true and the rule will never match but will create a URL
+    that can be build. This is useful if you have resources on a subdomain
+    or folder that are not handled by the WSGI application (like static data)
+
 Rule Factories
 ==============
 

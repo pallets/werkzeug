@@ -238,7 +238,7 @@ class Rule(RuleFactory):
     """
 
     def __init__(self, string, defaults=None, subdomain=None, methods=None,
-                 endpoint=None, strict_slashes=None):
+                 build_only=False, endpoint=None, strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
         if string.endswith('/'):
@@ -252,6 +252,7 @@ class Rule(RuleFactory):
         self.strict_slashes = strict_slashes
         self.subdomain = subdomain
         self.defaults = defaults
+        self.build_only = build_only
         if methods is None:
             self.methods = None
         else:
@@ -310,12 +311,13 @@ class Rule(RuleFactory):
         else:
             method_re = '|'.join([re.escape(x) for x in self.methods])
 
-        regex = r'^%s%s\(%s\)$' % (
-            u''.join(regex_parts),
-            not self.is_leaf and '(?P<__suffix__>/?)' or '',
-            method_re
-        )
-        self._regex = re.compile(regex, re.UNICODE)
+        if not self.build_only:
+            regex = r'^%s%s\(%s\)$' % (
+                u''.join(regex_parts),
+                not self.is_leaf and '(?P<__suffix__>/?)' or '',
+                method_re
+            )
+            self._regex = re.compile(regex, re.UNICODE)
         self._frame = None
 
     def match(self, path):
@@ -326,26 +328,27 @@ class Rule(RuleFactory):
         If the rule matches a dict with the converted values is returned,
         otherwise the return value is `None`.
         """
-        m = self._regex.search(path)
-        if m is not None:
-            groups = m.groupdict()
-            # we have a folder like part of the url without a trailing
-            # slash and strict slashes enabled. raise an exception that
-            # tells the map to redirect to the same url but with a
-            # trailing slash
-            if self.strict_slashes and not self.is_leaf \
-               and not groups.pop('__suffix__'):
-                raise RequestSlash()
-            result = {}
-            for name, value in groups.iteritems():
-                try:
-                    value = self._converters[name].to_python(value)
-                except ValidationError:
-                    return
-                result[str(name)] = value
-            if self.defaults is not None:
-                result.update(self.defaults)
-            return result
+        if not self.build_only:
+            m = self._regex.search(path)
+            if m is not None:
+                groups = m.groupdict()
+                # we have a folder like part of the url without a trailing
+                # slash and strict slashes enabled. raise an exception that
+                # tells the map to redirect to the same url but with a
+                # trailing slash
+                if self.strict_slashes and not self.is_leaf \
+                   and not groups.pop('__suffix__'):
+                    raise RequestSlash()
+                result = {}
+                for name, value in groups.iteritems():
+                    try:
+                        value = self._converters[name].to_python(value)
+                    except ValidationError:
+                        return
+                    result[str(name)] = value
+                if self.defaults is not None:
+                    result.update(self.defaults)
+                return result
 
     def build(self, values):
         """
@@ -377,13 +380,17 @@ class Rule(RuleFactory):
         """
         Check if this rule is defaults for a given rule.
         """
-        return self.defaults is not None and self.endpoint == rule.endpoint \
-               and self != rule and self.arguments == rule.arguments
+        return not self.build_only and self.defaults is not None and \
+               self.endpoint == rule.endpoint and self != rule and \
+               self.arguments == rule.arguments
 
     def suitable_for(self, values):
         """
         Check if the dict of values contains enough data for url generation.
         """
+        if self.build_only:
+            return False
+
         valueset = set(values)
 
         if self.defaults is None:
