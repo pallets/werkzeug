@@ -314,7 +314,7 @@ class Rule(RuleFactory):
         if not self.build_only:
             regex = r'^%s%s\(%s\)$' % (
                 u''.join(regex_parts),
-                not self.is_leaf and '(?P<__suffix__>/?)' or '',
+                not self.is_leaf and '(?<!/)(?P<__suffix__>/?)' or '',
                 method_re
             )
             self._regex = re.compile(regex, re.UNICODE)
@@ -413,6 +413,9 @@ class Rule(RuleFactory):
         # rule.
         if self.defaults is not None:
             rv += len(self.defaults)
+        # push leafs
+        if self.is_leaf:
+            rv += 3
         return rv
     complexity = property(complexity, doc=complexity.__doc__)
 
@@ -473,12 +476,11 @@ class BaseConverter(object):
 
 class UnicodeConverter(BaseConverter):
     """
-    The default converter for all URL parts. Matches one string, optionally
-    with a slash in the part. Can also check for the length of that string.
+    The default converter for all URL parts. Matches one string without a
+    slash in the part. Can also check for the length of that string.
     """
 
-    def __init__(self, map, minlength=1, maxlength=None, length=None,
-                 allow_slash=False):
+    def __init__(self, map, minlength=1, maxlength=None, length=None):
         super(UnicodeConverter, self).__init__(map)
         if length is not None:
             length = '{%s}' % length
@@ -489,7 +491,14 @@ class UnicodeConverter(BaseConverter):
                 minlength,
                 maxlength
             )
-        self.regex = (allow_slash and '.' or '[^/]') + length
+        self.regex = '[^/]' + length
+
+
+class PathConverter(BaseConverter):
+    """
+    Matches a whole path (including slashes)
+    """
+    regex = '[^/].*'
 
 
 class NumberConverter(BaseConverter):
@@ -607,12 +616,19 @@ class Map(object):
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme)
 
-    def bind_to_environ(self, environ, server_name=None, subdomain=None):
+    def bind_to_environ(self, environ, server_name=None, subdomain=None,
+                        calculate_subdomain=False):
         """
         Like `bind` but the required information are pulled from the
         WSGI environment provided where possible. For some information
         this won't work (subdomains), if you want that feature you have
         to provide the subdomain with the `subdomain` variable.
+
+        If `subdomain` is `None` but an environment and a server name is
+        provided it will calculate the current subdomain automatically.
+        Example: `server_name` is ``'example.com'`` and the `SERVER_NAME`
+        in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
+        subdomain will be ``'staging.dev'``.
         """
         if server_name is None:
             if 'HTTP_HOST' in environ:
@@ -622,6 +638,14 @@ class Map(object):
                 if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
                    in (('https', '443'), ('http', '80')):
                     server_name += ':' + environ['SERVER_PORT']
+        elif subdomain is None:
+            cur_server_name = environ['SERVER_NAME'].split('.')
+            real_server_name = server_name.split(':', 1)[0].split('.')
+            offset = -len(real_server_name)
+            if cur_server_name[offset:] != real_server_name:
+                raise ValueError('the server name provided does not match the '
+                                 'server name from the WSGI environment')
+            subdomain = '.'.join(filter(None, cur_server_name[:offset]))
         return self.bind(server_name, environ.get('SCRIPT_NAME'), subdomain,
                          environ['wsgi.url_scheme'])
 
@@ -668,6 +692,7 @@ class MapAdapter(object):
             path_info.lstrip('/'),
             method.upper()
         )
+        raise_later = None
         for rule in self.map._rules:
             try:
                 rv = rule.match(path)
@@ -731,6 +756,7 @@ class MapAdapter(object):
 DEFAULT_CONVERTERS = {
     'default':          UnicodeConverter,
     'string':           UnicodeConverter,
+    'path':             PathConverter,
     'int':              IntegerConverter,
     'float':            FloatConverter
 }

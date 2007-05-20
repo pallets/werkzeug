@@ -88,8 +88,8 @@ Builtin Converters
 Here a list of converters that come with Werkzeug:
 
 `string`
-    This converter is the default converter and accepts any string -
-    optionally one containing slashes.
+    This converter is the default converter and accepts any string but
+    only one one path segment. Thus the string can not include a slash.
 
     Supported arguments:
 
@@ -97,13 +97,10 @@ Here a list of converters that come with Werkzeug:
       than 1.
     - `maxlength` - the maximum length of the string.
     - `length` - the exact length of that string.
-    - `allow_slash` - set this to `True` if you want the converter to
-      accept slashes as value too:
 
-      .. sourcecode:: python
 
-          Rule('/users/<string(allow_slash=True):username>',    
-               endpoint='view_profile')
+`path`
+    Matches everything including a slash. No further configuration.
 
 
 `int`
@@ -328,6 +325,12 @@ There are basically two ways to bind a request:
     `server_name` from the environment. If you don't provide it, Werkzeug
     will use `SERVER_NAME` and `SERVER_PORT` (or `HTTP_HOST` if provided)
     as used `server_name` with disabled subdomain feature.
+
+    If `subdomain` is `None` but an environment and a server name is
+    provided it will calculate the current subdomain automatically.
+    Example: `server_name` is ``'example.com'`` and the `SERVER_NAME`
+    in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
+    subdomain will be ``'staging.dev'``.
 
 
 Matching URLs
