@@ -10,15 +10,11 @@
     :license: BSD, see LICENSE for more details.
 """
 import cgi
-import email
-import urllib
-import posixpath
 import tempfile
 from time import gmtime
 from Cookie import SimpleCookie
 from cStringIO import StringIO
 from datetime import datetime
-from email.Message import Message as MessageType
 
 from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \

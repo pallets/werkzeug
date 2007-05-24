@@ -52,7 +52,7 @@ class DebuggedApplication(object):
                 yield data
                 return
             # execute commands in an existing debug context
-            elif evalex:
+            elif self.evalex:
                 try:
                     tb = self.tracebacks[parameters['tb']]
                     frame = parameters['frame']

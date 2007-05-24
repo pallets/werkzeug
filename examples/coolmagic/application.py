@@ -34,7 +34,7 @@ class CoolMagicApplication(object):
             # url for shared data. this will always be unmatched
             # because either the middleware or the webserver
             # handles that request first.
-            Rule('/public/<string(allow_slash=True):file>',
+            Rule('/public/<path:file>',
                  endpoint='shared_data')
         ]
         self.views = {}
