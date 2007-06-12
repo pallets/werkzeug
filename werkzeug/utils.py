@@ -11,6 +11,7 @@
 import os
 import cgi
 import urllib
+from time import asctime, gmtime, time
 from cStringIO import StringIO
 try:
     set
@@ -421,24 +422,24 @@ class SharedDataMiddleware(object):
     Redirects calls to an folder with static data.
     """
 
-    def __init__(self, app, exports):
+    def __init__(self, app, exports, disallow=None):
         self.app = app
         self.exports = exports
+        self.disallow = disallow
 
     def serve_file(self, filename, start_response):
         from mimetypes import guess_type
         guessed_type = guess_type(filename)
-        if guessed_type[0] is None:
-            mime_type = 'text/plain'
-        else:
-            mime_type = guessed_type[0]
-        start_response('200 OK', [('Content-Type', mime_type)])
+        mime_type = guessed_type[0] or 'text/plain'
+        expiry = asctime(gmtime(time() + 3600))
+        start_response('200 OK', [('Content-Type', mime_type),
+                                  ('Cache-Control', 'public'),
+                                  ('Expires', expiry)])
         fp = file(filename, 'rb')
         try:
-            result = fp.read()
+            return [fp.read()]
         finally:
             fp.close()
-        return iter([result])
 
     def __call__(self, environ, start_response):
         path = environ.get('PATH_INFO', '')
@@ -448,7 +449,13 @@ class SharedDataMiddleware(object):
             if path.startswith(search_path):
                 real_path = os.path.join(file_path, path[len(search_path):])
                 if os.path.exists(real_path) and os.path.isfile(real_path):
-                    return self.serve_file(real_path, start_response)
+                    if self.disallow:
+                        from fnmatch import fnmatch
+                        for pattern in self.disallow:
+                            if fnmatch(real_path, pattern):
+                                break
+                        else:
+                            return self.serve_file(real_path, start_response)
         return self.app(environ, start_response)
 
 
