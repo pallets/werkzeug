@@ -26,8 +26,7 @@
         <div class="frame" id="frame-<%= num %>">
           <h3 class="fn"><em><%= frame['function']|escape %></em> in <tt><%= frame['filename']|escape %></tt></h3>
           <a class="locals" href="javascript:toggleFrameVars(<%= num %>)">[inspect]</a>
-          <a class="eval" href="javascript:toggleInterpreter(<%= num %>)">[console]</a>
-
+          <% if evalex: %><a class="eval" href="javascript:toggleInterpreter(<%= num %>)">[console]</a><% end %>
 
           <%= code_table(frame) %>
 

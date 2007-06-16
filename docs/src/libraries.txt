@@ -41,6 +41,23 @@ Bigger applications deserve something better than minitmpl :)
     your templates.
 
 
+Form Validation
+===============
+
+Here some form validation packages for WSGI applications:
+
+`Newforms Extracted <http://code.google.com/p/newforms-extracted/>`_
+    This is a project to extract Django's newforms and make that package
+    usable by other projects, since Django doesn't seem interested in
+    making this code framework independent.
+
+`FormEncode <http://formencode.org/>`_
+    FormEncode is a validation and form generation package. The validation can
+    be used separately from the form generation. The validation works on
+    compound data structures, with all parts being nestable. It is separate
+    from HTTP or any other input mechanism.
+
+
 Tools and Utilities
 ===================
 

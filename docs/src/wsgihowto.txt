@@ -72,7 +72,7 @@ this start hook to the file:
         srv.serve_forever()
 
 When you now start the application you will see ``Hello World!`` on
-``http://localhost:8080/``.
+``http://localhost:5000/``.
 
 The `__name__` hook is a good idea so that you can use the module for other modules
 like flup (provides a bridge to Apache and other webservers via FastCGI and
@@ -85,7 +85,7 @@ Adding Interactive Elements
 ===========================
 
 Let's extend the example from above so that we say ``Hello John`` if the
-user visits ``http://localhost:8080/?name=John``:
+user visits ``http://localhost:5000/?name=John``:
 
 .. sourcecode:: python
 
