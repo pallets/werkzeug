@@ -524,7 +524,7 @@ class NumberConverter(BaseConverter):
     def to_url(self, value):
         value = self.num_convert(value)
         if self.fixed_digits:
-            value = ('%%%s0d' % self.fixed_digits) % value
+            value = ('%%0%sd' % self.fixed_digits) % value
         return str(value)
 
 

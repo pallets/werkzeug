@@ -456,6 +456,8 @@ class SharedDataMiddleware(object):
                                 break
                         else:
                             return self.serve_file(real_path, start_response)
+                    else:
+                        return self.serve_file(real_path, start_response)
         return self.app(environ, start_response)
 
 
