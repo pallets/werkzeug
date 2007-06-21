@@ -16,11 +16,11 @@
                            <%= last_frame['function']|escape %>,
         line <%= last_frame['lineno'] %></p>
 
-      <h2 onclick="changeTB()" class="tb">Traceback <span>(click to toggle raw view)</span></h2>
+      <h2 onclick="changeTB()" class="tb">Traceback <span>(toggle raw view)</span></h2>
       <div id="interactive">
         <p class="text">A problem occurred in your Python WSGI application.
           Here is the sequence of function calls leading up to the error, in the order
-          they occurred. Click on a header to show context lines.</p>
+          they occurred. Activate a header to show context lines.</p>
 
       <% for num, frame in enumerate(frames): %>
         <div class="frame" id="frame-<%= num %>">
@@ -53,7 +53,7 @@
       <% if req_vars: %>
         <h2>Request Data</h2>
         <p class="text">The following list contains all important request variables.
-          Click on a header to expand the list.</p>
+          Select a header to expand the list.</p>
         <% for num, (key, info) in enumerate(req_vars): %>
           <dl>
             <dt onclick="toggleTableVars(<%= num %>)"><%= key|escape %></dt>

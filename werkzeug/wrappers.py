@@ -194,6 +194,10 @@ class BaseResponse(object):
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None):
+        try:
+            key = str(key)
+        except UnicodeError:
+            raise TypeError('invalid key %r' % key)
         if self._cookies is None:
             self._cookies = SimpleCookie()
         if isinstance(value, unicode):
