@@ -70,6 +70,7 @@ import sys
 import re
 from urlparse import urljoin
 from urllib import quote_plus
+
 from werkzeug.utils import url_encode
 try:
     set
@@ -393,31 +394,42 @@ class Rule(RuleFactory):
 
         valueset = set(values)
 
-        if self.defaults is None:
-            return self.arguments.issubset(valueset)
+        for key in self.arguments - set(self.defaults or ()):
+            if key not in values:
+                return False
 
         if self.arguments.issubset(valueset):
+            if self.defaults is None:
+                return True
             for key, value in self.defaults.iteritems():
                 if value != values[key]:
                     return False
 
         return True
 
-    def complexity(self):
-        """
-        The complexity of that rule.
-        """
-        rv = len(self.arguments)
-        # although defaults variables are already in the arguments
-        # we add them a second time to the complexity to push the
-        # rule.
-        if self.defaults is not None:
-            rv += len(self.defaults)
-        # push leafs
-        if self.is_leaf:
-            rv += 3
-        return rv
-    complexity = property(complexity, doc=complexity.__doc__)
+    def match_compare(self, other):
+        """Compare this object with another one for matching"""
+        # XXX: make this more robust
+        def calc(obj):
+            rv = len(obj.arguments)
+            # although defaults variables are already in the arguments
+            # we add them a second time to the complexity to push the
+            # rule.
+            if obj.defaults is not None:
+                rv += len(obj.defaults) + 2
+            # push leafs
+            if obj.is_leaf:
+                rv += 2
+            return -rv
+        return cmp(calc(self), calc(other))
+
+    def build_compare(self, other):
+        """Compare this object with another one for building."""
+        if other.defaults is None and self.defaults is not None:
+            return 1
+        if self.provides_defaults_for(other):
+            return 1
+        return -1
 
     def __eq__(self, other):
         return self.__class__ is other.__class__ and \
@@ -425,14 +437,6 @@ class Rule(RuleFactory):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-    def __cmp__(self, other):
-        """
-        Order rules by complexity.
-        """
-        if not isinstance(other, Rule):
-            return NotImplemented
-        return cmp(other.complexity, self.complexity)
 
     def __unicode__(self):
         return self.rule
@@ -655,9 +659,9 @@ class Map(object):
         in the correct order after things changed.
         """
         if self._remap:
-            self._rules.sort()
+            self._rules.sort(lambda a, b: a.match_compare(b))
             for rules in self._rules_by_endpoint.itervalues():
-                rules.sort()
+                rules.sort(lambda a, b: a.build_compare(b))
             self._remap = False
 
 
@@ -734,6 +738,7 @@ class MapAdapter(object):
         values = values or {}
         if not possible:
             raise NotFound(endpoint, values)
+
         for rule in possible:
             if rule.suitable_for(values):
                 rv = rule.build(values)

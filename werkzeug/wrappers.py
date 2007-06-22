@@ -76,9 +76,9 @@ class BaseRequest(object):
                 for item in values:
                     if getattr(item, 'filename', None) is not None:
                         fn = item.filename.decode(self.charset, 'ignore')
-                        # fix stupid IE bug
-                        if len(fn) > 1 and fn[1] == ':' and '\\' in fn:
-                            fn = fn[fn.index('\\') + 1:]
+                        # fix stupid IE bug (IE6 sends the whole file path)
+                        if fn[1:3] == ':\\':
+                            fn = fn.split('\\')[-1]
                         files.append((key, FileStorage(key, fn, item.type,
                                       item.length, item.file)))
                     else:
