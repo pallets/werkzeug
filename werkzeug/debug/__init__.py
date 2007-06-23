@@ -93,6 +93,8 @@ class DebuggedApplication(object):
             tb = tb.tb_next
         plaintb = ''.join(traceback.format_exception(exception_type,
                                                      exception_value, tb))
+        environ['wsgi.errors'].write(plaintb)
+
         # load frames
         frames = []
         frame_map = {}

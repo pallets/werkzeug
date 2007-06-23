@@ -553,7 +553,7 @@ class Map(object):
     The base class for all the url maps.
     """
 
-    def __init__(self, rules, default_subdomain='', charset='ascii',
+    def __init__(self, rules=None, default_subdomain='', charset='ascii',
                  strict_slashes=True, redirect_defaults=True,
                  converters=None):
         """
@@ -591,7 +591,7 @@ class Map(object):
         if converters:
             self.converters.update(converters)
 
-        for rulefactory in rules:
+        for rulefactory in rules or ():
             for rule in rulefactory.get_rules(self):
                 self.add_rule(rule)
 
@@ -696,7 +696,6 @@ class MapAdapter(object):
             path_info.lstrip('/'),
             method.upper()
         )
-        raise_later = None
         for rule in self.map._rules:
             try:
                 rv = rule.match(path)

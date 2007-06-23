@@ -30,6 +30,7 @@ class _StorageHelper(cgi.FieldStorage):
     FieldStorageClass = cgi.FieldStorage
 
     def __init__(self, environ, get_stream):
+        self.get_stream = get_stream
         cgi.FieldStorage.__init__(self,
             fp=environ['wsgi.input'],
             environ={
@@ -39,7 +40,6 @@ class _StorageHelper(cgi.FieldStorage):
             },
             keep_blank_values=True
         )
-        self.get_stream = get_stream
 
     def make_file(self, binary=None):
         return self.get_stream()
@@ -69,21 +69,25 @@ class BaseRequest(object):
         files = []
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
             storage = _StorageHelper(self.environ, self._get_file_stream)
-            for key in storage.keys():
-                values = storage[key]
-                if not isinstance(values, list):
-                    values = [values]
-                for item in values:
-                    if getattr(item, 'filename', None) is not None:
-                        fn = item.filename.decode(self.charset, 'ignore')
-                        # fix stupid IE bug (IE6 sends the whole file path)
-                        if fn[1:3] == ':\\':
-                            fn = fn.split('\\')[-1]
-                        files.append((key, FileStorage(key, fn, item.type,
-                                      item.length, item.file)))
-                    else:
-                        post.append((key, item.value.decode(self.charset,
-                                                            'ignore')))
+            value = storage.value
+            if isinstance(value, str):
+                self._data = value
+            else:
+                for key in storage.keys():
+                    values = storage[key]
+                    if not isinstance(values, list):
+                        values = [values]
+                    for item in values:
+                        if getattr(item, 'filename', None) is not None:
+                            fn = item.filename.decode(self.charset, 'ignore')
+                            # fix stupid IE bug (IE6 sends the whole path)
+                            if fn[1:3] == ':\\':
+                                fn = fn.split('\\')[-1]
+                            files.append((key, FileStorage(key, fn, item.type,
+                                          item.length, item.file)))
+                        else:
+                            post.append((key, item.value.decode(self.charset,
+                                                                'ignore')))
         self._form = MultiDict(post)
         self._files = MultiDict(files)
 
