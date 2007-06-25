@@ -51,6 +51,22 @@ class DebuggedApplication(object):
                 ])
                 yield data
                 return
+            # pastebin
+            elif parameters.get('pastetb'):
+                from xmlrpclib import ServerProxy
+                try:
+                    length = int(environ['CONTENT_LENGTH'])
+                except (KeyError, ValueError):
+                    length = 0
+                data = environ['wsgi.input'].read(length)
+                s = ServerProxy('http://paste.pocoo.org/xmlrpc/')
+                paste_id = s.pastes.newPaste('pytb', data)
+                start_response('200 OK', [('Content-Type', 'text/plain')])
+                yield '{"paste_id": %d, "url": "%s"}' % (
+                    paste_id,
+                    'http://paste.pocoo.org/show/%d' % paste_id
+                )
+                return
             # execute commands in an existing debug context
             elif self.evalex:
                 try:

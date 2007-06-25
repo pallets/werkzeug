@@ -503,8 +503,8 @@ def url_encode(obj, charset='utf-8'):
         for value in values:
             if isinstance(value, unicode):
                 value = value.encode(charset)
-            tmp.append('%s=%s' % (urllib.quote_plus(key),
-                                  urllib.quote_plus(value)))
+            tmp.append('%s=%s' % (urllib.quote(key),
+                                  urllib.quote(value)))
     return '&'.join(tmp)
 
 
@@ -514,7 +514,7 @@ def url_quote(s, charset='utf-8'):
     """
     if isinstance(s, unicode):
         s = s.encode(charset)
-    return urllib.quote_plus(s)
+    return urllib.quote(s)
 
 
 def url_unquote(s, charset='utf-8'):

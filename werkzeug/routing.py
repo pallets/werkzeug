@@ -69,7 +69,7 @@
 import sys
 import re
 from urlparse import urljoin
-from urllib import quote_plus
+from urllib import quote
 
 from werkzeug.utils import url_encode
 try:
@@ -475,7 +475,7 @@ class BaseConverter(object):
         return value
 
     def to_url(self, value):
-        return quote_plus(unicode(value).encode(self.map.charset))
+        return quote(unicode(value).encode(self.map.charset))
 
 
 class UnicodeConverter(BaseConverter):

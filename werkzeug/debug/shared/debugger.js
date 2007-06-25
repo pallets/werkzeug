@@ -74,6 +74,28 @@ function sendCommand(tb, frame, cmd, output) {
   });
 }
 
+function pasteIt() {
+  var info = $('#plain p.pastebininfo');
+  var orig = info.html();
+  info.html('<em>submitting traceback...</em>');
+
+  $.ajax({
+    type:     'POST',
+    url:      '__traceback__?pastetb=yes',
+    data:     $('#plain pre.plain').text(),
+    dataType: 'json',
+    error: function() {
+      alert('Submitting paste failed');
+      info.html(orig);
+    },
+    success: function(result) {
+      info.text('Submitted paste: ').append(
+        $('<a>').attr('href', result.url).text('#' + result.paste_id)
+      );
+    }
+  });
+}
+
 $(document).ready(function() {
   $('.exec_code').hide();
   $('.vars').hide();

@@ -80,6 +80,10 @@ h3.fn tt {
     font-family: 'Arial', sans-serif;
 }
 
+a {
+    color: #333;
+}
+
 a.eval, a.locals {
     display: block;
     float: right;

@@ -45,10 +45,13 @@
       </div>
 
       <div id="plain">
-      <p class="text">Here is the plain Python traceback for copy and paste:</p>
-      <pre class="plain"><%= plaintb|escape %></pre>
+        <p class="text">Here is the plain Python traceback for copy and paste:</p>
+        <pre class="plain"><%= plaintb|escape %></pre>
+        <p class="text pastebininfo">
+          <a href="javascript:pasteIt()">Create a new Paste</a> with
+          this traceback in the lodgeit pastebin.
+        </p>
       </div>
-
 
       <% if req_vars: %>
         <h2>Request Data</h2>
