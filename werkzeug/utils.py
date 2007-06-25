@@ -12,7 +12,6 @@ import os
 import cgi
 import urllib
 from time import asctime, gmtime, time
-from cStringIO import StringIO
 try:
     set
 except NameError:

@@ -14,7 +14,6 @@ import os
 import sys
 import textwrap
 from datetime import datetime
-from fnmatch import fnmatch
 from getopt import getopt, GetoptError
 from werkzeug.minitmpl import Template
 

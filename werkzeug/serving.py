@@ -19,9 +19,7 @@
 import os
 import sys
 import time
-import subprocess
 import thread
-from getopt import getopt, GetoptError
 
 
 def reloader_loop(extra_files):
