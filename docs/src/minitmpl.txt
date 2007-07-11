@@ -4,7 +4,7 @@ Mini Templates
 
 Werkzeug ships a **minimal** templating system which is useful for small
 scripts where you just want to generate some HTML and don't want another
-dependency or full blown templat engine system.
+dependency or full blown template engine system.
 
 It's however not recommended to use this template system for anything else
 than simple content generation.
