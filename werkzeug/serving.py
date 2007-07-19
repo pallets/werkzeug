@@ -17,6 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import socket
 import sys
 import time
 import thread
@@ -95,9 +96,16 @@ def run_simple(hostname, port, application, use_reloader=False,
             srv.serve_forever()
         except KeyboardInterrupt:
             pass
+
     if os.environ.get('RUN_MAIN') != 'true':
         print '* Running on http://%s:%d/' % (hostname, port)
     if use_reloader:
+        # Create and destroy a socket so that any exceptions are raised before we
+        # spawn a separate Python interpreter and loose this ability.
+        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        test_socket.bind((hostname, port))
+        test_socket.close()
         run_with_reloader(inner, extra_files or [])
     else:
         inner()
