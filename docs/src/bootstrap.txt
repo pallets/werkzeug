@@ -14,7 +14,7 @@ Getting Started
 To get started we can use one of the templates coming with Werkzeug.
 Just call the `werkzeug-bootstrap` tool with the correct parameters::
 
-    werkzeug-bootstrap -t werkzeug_default -c utf-8 myproject /path/to/project
+    werkzeug-bootstrap -t default -c utf-8 myproject /path/to/project
 
 This will now generate a new package `myproject` based on the template
 `werkzeug_default` in ``/path/to/project`` with the charset `utf-8` for
