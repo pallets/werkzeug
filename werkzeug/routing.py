@@ -315,7 +315,8 @@ class Rule(RuleFactory):
         if not self.build_only:
             regex = r'^%s%s\(%s\)$' % (
                 u''.join(regex_parts),
-                not self.is_leaf and '(?<!/)(?P<__suffix__>/?)' or '',
+                (not self.is_leaf or not self.strict_slashes) and \
+                    '(?<!/)(?P<__suffix__>/?)' or '',
                 method_re
             )
             self._regex = re.compile(regex, re.UNICODE)
@@ -337,9 +338,14 @@ class Rule(RuleFactory):
                 # slash and strict slashes enabled. raise an exception that
                 # tells the map to redirect to the same url but with a
                 # trailing slash
-                if not groups.pop('__suffix__') and self.strict_slashes \
-                   and not self.is_leaf:
+                if self.strict_slashes and not self.is_leaf and \
+                   not groups.pop('__suffix__'):
                     raise RequestSlash()
+                # if we are not in strict slashes mode we have to remove
+                # a __suffix__
+                elif not self.strict_slashes:
+                    del groups['__suffix__']
+
                 result = {}
                 for name, value in groups.iteritems():
                     try:
