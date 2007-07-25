@@ -32,7 +32,7 @@ class MultiDict(dict):
             dict.__init__(self, mapping.lists())
         elif isinstance(mapping, dict):
             tmp = {}
-            for key, value in mapping:
+            for key, value in mapping.iteritems():
                 tmp[key] = [value]
             dict.__init__(self, tmp)
         else:
@@ -527,7 +527,7 @@ def url_unquote(s, charset='utf-8'):
 escape = cgi.escape
 
 
-def get_current_url(environ):
+def get_current_url(environ, root_only=False):
     """
     Recreate the URL of the current request.
     """
@@ -542,11 +542,15 @@ def get_current_url(environ):
            in (('https', '443'), ('http', '80')):
             cat(':' + environ['SERVER_PORT'])
 
-    cat(urllib.quote(environ.get('SCRIPT_INFO', '').rstrip('/')))
-    cat(urllib.quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
+    cat(urllib.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
+    if root_only:
+        cat('/')
+    else:
+        cat(urllib.quote('/' + environ.get('PATH_INFO', '') \
+                  .lstrip('/')))
 
-    qs = environ.get('QUERY_STRING')
-    if qs:
-        cat('?' + qs)
+        qs = environ.get('QUERY_STRING')
+        if qs:
+            cat('?' + qs)
 
     return ''.join(tmp)

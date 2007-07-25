@@ -337,8 +337,8 @@ class Rule(RuleFactory):
                 # slash and strict slashes enabled. raise an exception that
                 # tells the map to redirect to the same url but with a
                 # trailing slash
-                if self.strict_slashes and not self.is_leaf \
-                   and not groups.pop('__suffix__'):
+                if not groups.pop('__suffix__') and self.strict_slashes and \
+                   and not self.is_leaf:
                     raise RequestSlash()
                 result = {}
                 for name, value in groups.iteritems():
