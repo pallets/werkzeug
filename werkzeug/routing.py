@@ -657,8 +657,8 @@ class Map(object):
                                  'server name from the WSGI environment (%r)' %
                                  (environ['SERVER_NAME'], server_name))
             subdomain = '.'.join(filter(None, cur_server_name[:offset]))
-        return self.bind(server_name, environ.get('SCRIPT_NAME'), subdomain,
-                         environ['wsgi.url_scheme'])
+        return Map.bind(self, server_name, environ.get('SCRIPT_NAME'), subdomain,
+                        environ['wsgi.url_scheme'])
 
     def update(self):
         """
