@@ -15,7 +15,7 @@ import code
 
 from werkzeug.debug.render import debug_page, load_resource
 from werkzeug.debug.util import ThreadedStream, Namespace, get_uid, \
-     get_frame_info
+     get_frame_info, ExceptionRepr
 from werkzeug.utils import url_decode
 
 
@@ -152,7 +152,10 @@ class DebuggedApplication(object):
             for varname in dir(request):
                 if varname[0] == '_':
                     continue
-                value = getattr(request, varname)
+                try:
+                    value = getattr(request, varname)
+                except Exception, err:
+                    value = ExceptionRepr(err)
                 if hasattr(value, 'im_func'):
                     continue
                 req_vars.append((varname, value))

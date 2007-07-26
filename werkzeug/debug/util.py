@@ -15,6 +15,7 @@ import token
 import inspect
 import keyword
 import tokenize
+import traceback
 import threading
 from cgi import escape
 from random import random
@@ -23,6 +24,15 @@ from cStringIO import StringIO
 
 def get_current_thread():
     return threading.currentThread()
+
+
+class ExceptionRepr(object):
+    def __init__(self, exc):
+        exclines = traceback.format_exception_only(type(exc), exc)
+        self.repr = 'got %s' % exclines[-1].strip()
+
+    def __repr__(self):
+        return self.repr
 
 
 class Namespace(object):
