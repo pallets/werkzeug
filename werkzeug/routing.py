@@ -653,8 +653,9 @@ class Map(object):
             real_server_name = server_name.split(':', 1)[0].split('.')
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
-                raise ValueError('the server name provided does not match the '
-                                 'server name from the WSGI environment')
+                raise ValueError('the server name provided (%r) does not match the '
+                                 'server name from the WSGI environment (%r)' %
+                                 (environ['SERVER_NAME'], server_name))
             subdomain = '.'.join(filter(None, cur_server_name[:offset]))
         return self.bind(server_name, environ.get('SCRIPT_NAME'), subdomain,
                          environ['wsgi.url_scheme'])
