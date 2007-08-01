@@ -5,7 +5,7 @@
 
     WSGI application traceback debugger.
 
-    :copyright: 2007 by Georg Brandl.
+    :copyright: 2007 by Georg Brandl, Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 import sys
@@ -102,14 +102,15 @@ class DebuggedApplication(object):
         if hasattr(appiter, 'close'):
             appiter.close()
 
-    def create_debug_context(self, environ, exc_info):
+    def format_exception(self, exc_info):
+        """Format a text/plain traceback."""
+        return self.create_debug_context({}, exc_info, True).plaintb
+
+    def create_debug_context(self, environ, exc_info, simple=False):
         exception_type, exception_value, tb = exc_info
         # skip first internal frame
         if not tb.tb_next is None:
             tb = tb.tb_next
-        plaintb = ''.join(traceback.format_exception(exception_type,
-                                                     exception_value, tb))
-        environ['wsgi.errors'].write(plaintb)
 
         # load frames
         frames = []
@@ -119,17 +120,29 @@ class DebuggedApplication(object):
             tb_uid = get_uid()
             frame_map = self.tracebacks[tb_uid] = {}
 
+        plaintb_buffer = ['Traceback (most recent call last):']
+        write = plaintb_buffer.append
+
         # walk through frames and collect information
         while tb is not None:
             if not tb.tb_frame.f_locals.get('__traceback_hide__', False):
-                if tb_uid:
+                if tb_uid and not simple:
                     frame_uid = get_uid()
-                    frame_map[frame_uid] = InteractiveDebugger(tb.tb_frame)
+                    frame_map[frame_uid] = InteractiveDebugger(self, tb.tb_frame)
                 else:
                     frame_uid = None
-                frame = get_frame_info(tb)
+                frame = get_frame_info(tb, simple=simple)
                 frame['frame_uid'] = frame_uid
                 frames.append(frame)
+                write('  File "%s", line %s, in %s' % (
+                    frame['filename'],
+                    frame['lineno'],
+                    frame['function']
+                ))
+                if frame['raw_context_line'] is None:
+                    write('    <no sourcecode available>')
+                else:
+                    write('    ' + frame['raw_context_line'])
             tb = tb.tb_next
 
         # guard for string exceptions
@@ -144,23 +157,34 @@ class DebuggedApplication(object):
                 exception_type.__name__
             )
 
+        # finialize plain traceback and write it to stderr
+        try:
+            exvalstr = ': ' + str(exception_value)
+        except:
+            exvalstr = ''
+        write(extypestr + exvalstr)
+        plaintb = '\n'.join(plaintb_buffer)
+
+        if not simple:
+            environ['wsgi.errors'].write(plaintb)
+
         # support for the werkzeug request object or fall back to
         # WSGI environment
-        request = environ.get('werkzeug.request')
-        if request is not None:
-            req_vars = []
-            for varname in dir(request):
-                if varname[0] == '_':
-                    continue
-                try:
-                    value = getattr(request, varname)
-                except Exception, err:
-                    value = ExceptionRepr(err)
-                if hasattr(value, 'im_func'):
-                    continue
-                req_vars.append((varname, value))
-        else:
-            req_vars = [('WSGI Environ', environ)]
+        req_vars = []
+        if not simple:
+            request = environ.get('werkzeug.request')
+            if request is not None:
+                for varname in dir(request):
+                    if varname.startswith('_'):
+                        continue
+                    try:
+                        value = getattr(request, varname)
+                    except Exception, err:
+                        value = ExceptionRepr(err)
+                    if not hasattr(value, 'im_func'):
+                        req_vars.append((varname, value))
+            else:
+                req_vars.append(('WSGI Environ', environ))
 
         return Namespace(
             evalex =          self.evalex,
@@ -181,7 +205,8 @@ class InteractiveDebugger(code.InteractiveInterpreter):
     automatically captures stdout and buffers older input.
     """
 
-    def __init__(self, frame):
+    def __init__(self, middleware, frame):
+        self.middleware = middleware
         self.globals = frame.f_globals
         code.InteractiveInterpreter.__init__(self, frame.f_locals)
         self.prompt = '>>> '
@@ -200,6 +225,7 @@ class InteractiveDebugger(code.InteractiveInterpreter):
                 self.prompt = '>>> '
                 del self.buffer[:]
         finally:
+            source = source.encode('utf-8')
             return prompt + source + sys.stdout.release()
 
     def runcode(self, code):
@@ -207,6 +233,9 @@ class InteractiveDebugger(code.InteractiveInterpreter):
             exec code in self.globals, self.locals
         except:
             self.showtraceback()
+
+    def showtraceback(self):
+        self.write(self.middleware.format_exception(sys.exc_info()))
 
     def write(self, data):
         sys.stdout.write(data)

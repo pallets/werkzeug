@@ -27,6 +27,7 @@ def get_current_thread():
 
 
 class ExceptionRepr(object):
+
     def __init__(self, exc):
         exclines = traceback.format_exception_only(type(exc), exc)
         self.repr = 'got %s' % exclines[-1].strip()
@@ -75,6 +76,8 @@ class ThreadedStream(object):
         return result
 
     def write(self, d):
+        if isinstance(d, unicode):
+            d = d.encode('utf-8')
         tid = get_current_thread()
         if tid in self._buffer:
             self._buffer[tid].write(d)
@@ -185,12 +188,13 @@ class PythonParser(object):
             toktype = self._KEYWORD
         clsname = self._classes.get(toktype, 'txt')
 
-        self.out.write('<span class="code-item p-%s">' % clsname)
-        self.out.write(escape(toktext))
-        self.out.write('</span>')
+        self.out.write('<span class="code-item p-%s">%s</span>' % (
+            clsname,
+            escape(toktext)
+        ))
 
 
-def get_frame_info(tb, context_lines=7):
+def get_frame_info(tb, context_lines=7, simple=False):
     """
     Return a dict of information about a given traceback.
     """
@@ -214,29 +218,34 @@ def get_frame_info(tb, context_lines=7):
     loader = tb.tb_frame.f_globals.get('__loader__')
 
     # sourcecode
+    source = ''
+    pre_context, post_context = [], []
+    context_line = raw_context_line = context_lineno = None
     try:
         if not loader is None:
             source = loader.get_source(modname)
         else:
             source = file(fn).read()
     except:
-        source = ''
-        pre_context, post_context = [], []
-        context_line, context_lineno = None, None
+        pass
     else:
-        parser = PythonParser(source)
-        parser.parse()
-        parsed_source = parser.get_html_output()
-        lbound = max(0, lineno - context_lines - 1)
-        ubound = lineno + context_lines
         try:
-            context_line = parsed_source[lineno - 1]
-            pre_context = parsed_source[lbound:lineno - 1]
-            post_context = parsed_source[lineno:ubound]
-        except IndexError, e:
-            context_line = None
-            pre_context = post_context = [], []
-        context_lineno = lbound
+            raw_context_line = source.splitlines()[lineno - 1].strip()
+        except IndexError:
+            pass
+        if not simple:
+            parser = PythonParser(source)
+            parser.parse()
+            parsed_source = parser.get_html_output()
+            lbound = max(0, lineno - context_lines - 1)
+            ubound = lineno + context_lines
+            try:
+                context_line = parsed_source[lineno - 1]
+                pre_context = parsed_source[lbound:lineno - 1]
+                post_context = parsed_source[lineno:ubound]
+            except IndexError, e:
+                pass
+            context_lineno = lbound
 
     if isinstance(fn, unicode):
         fn = fn.encode('utf-8')
@@ -250,6 +259,7 @@ def get_frame_info(tb, context_lines=7):
         'vars':             variables,
         'pre_context':      pre_context,
         'context_line':     context_line,
+        'raw_context_line': raw_context_line,
         'post_context':     post_context,
         'context_lineno':   context_lineno,
         'source':           source

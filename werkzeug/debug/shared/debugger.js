@@ -11,7 +11,10 @@ function toggleFrameVars(num) {
 }
 
 function toggleInterpreter(num) {
-  $('#frame-' + num + ' .exec_code').slideToggle('fast');
+  $('#frame-' + num + ' .exec_code').slideToggle('fast', function() {
+    if ($(this).css('display') == 'block')
+      $('input.input', this).focus();
+  });
 }
 
 function toggleTableVars(num) {
@@ -85,7 +88,8 @@ function pasteIt() {
     data:     $('#plain pre.plain').text(),
     dataType: 'json',
     error: function() {
-      alert('Submitting paste failed');
+      alert('Submitting paste failed. Make sure you have a\n' +
+            'working internet connection.');
       info.html(orig);
     },
     success: function(result) {
@@ -114,18 +118,16 @@ $(document).ready(function() {
     $('.post', $(this)).toggle();
   });
 
-  $('.exec_code input.input').keyup(function(e) {
-    var code = e.keyCode || e.which;
-    if (code == 100 || e.ctrlKey) {
-      $('.output', $(this).parent()).empty();
+  $('.exec_code input.input').keypress(function(e) {
+    if (e.charCode == 100 && e.ctrlKey) {
+      $('.output', $(this).parent()).text('--- screen cleared ---');
       return false;
     }
-    else if (code == 38 || code == 40) {
+    else if (e.keyCode == 38 || e.keyCode == 40) {
       var parent = $(this).parent();
       var tb = $('input[@name="tb"]', parent).attr('value');
       var frame = $('input[@name="frame"]', parent).attr('value');
-      console.debug(tb, frame, parent);
-      if (code == 38)
+      if (e.keyCode == 38)
         backInHistory(tb, frame, this);
       else
         forwardInHistory(tb, frame, this);

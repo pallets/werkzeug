@@ -52,6 +52,8 @@ h2.tb {
 
 h2.tb span {
     display: none;
+    color: #d2f2f3;
+    font-weight: normal;
 }
 
 h2.tb:hover span {
@@ -138,7 +140,7 @@ table.code td.lineno {
 }
 
 table.code td.code {
-    background-color: #EFEFEF;
+    background-color: #f6f6f6;
     padding: 1px 0 1px 5px;
     white-space: pre;
 }
@@ -251,20 +253,19 @@ dl dd {
 
 span.p-kw {
     font-weight: bold;
-    color: #008800;
+    color: #1d6170;
 }
 
 span.p-cmt {
-    color: #888888;
+    color: #7bbc2e;
 }
 
 span.p-str {
-    color: #dd2200;
-    background-color: #fff0f0;
+    color: #ab7219;
 }
 
 span.p-num {
-    color: #0000DD;
+    color: #3f7719;
     font-weight: bold;
 }
 
