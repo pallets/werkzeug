@@ -435,6 +435,8 @@ class Rule(RuleFactory):
             return 1
         if self.provides_defaults_for(other):
             return 1
+        if len(self.arguments) < len(other.arguments):
+            return 1
         return -1
 
     def __eq__(self, other):
@@ -740,12 +742,9 @@ class MapAdapter(object):
         `force_external` to `True`.
         """
         self.map.update()
-        possible = self.map._rules_by_endpoint.get(endpoint) or []
         values = values or {}
-        if not possible:
-            raise NotFound(endpoint, values)
 
-        for rule in possible:
+        for rule in self.map._rules_by_endpoint.get(endpoint) or ():
             if rule.suitable_for(values):
                 rv = rule.build(values)
                 if rv is not None:
