@@ -239,9 +239,10 @@ class BaseResponse(object):
     def delete_cookie(self, key):
         if self._cookies is None:
             self._cookies = SimpleCookie()
-        if not key in self._cookies:
+        if key not in self._cookies:
             self._cookies[key] = ''
         self._cookies[key]['max-age'] = 0
+        self._cookies[key]['expires'] = 0
 
     def __call__(self, environ, start_response):
         headers = self.headers.to_list(self.charset)
