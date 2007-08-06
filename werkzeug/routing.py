@@ -447,7 +447,10 @@ class Rule(RuleFactory):
         return not self.__eq__(other)
 
     def __unicode__(self):
-        return self.rule
+        rule = self.rule
+        if not self.is_leaf:
+            rule += u'/'
+        return rule
 
     def __str__(self):
         charset = self.map is not None and self.map.charset or 'utf-8'
