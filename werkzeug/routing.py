@@ -395,9 +395,6 @@ class Rule(RuleFactory):
         """
         Check if the dict of values contains enough data for url generation.
         """
-        if self.build_only:
-            return False
-
         valueset = set(values)
 
         for key in self.arguments - set(self.defaults or ()):
