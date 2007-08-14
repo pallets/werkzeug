@@ -72,7 +72,7 @@ It's a good idea to call the file something like ``main.py`` or
             module, func = endpoint.split('/', 1)
             mod = __import__('mypackage.views.' + module, None,
                              None, [''])
-            view = getattr(module, func)
+            view = getattr(mod, func)
             resp = view(req, **args)
         return resp(environ, start_response)
 

@@ -447,7 +447,7 @@ represents a regular expression. Here is a small example:
                 raise ValidationError()
             return value == 'yes'
 
-        def to_value(self, value):
+        def to_url(self, value):
             return value and 'yes' or 'no'
 
     map = Map([
