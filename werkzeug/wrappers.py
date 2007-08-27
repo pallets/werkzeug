@@ -316,8 +316,8 @@ class BaseReporterStream(object):
 
         return ''.join(buffer)
 
-    def readline(self):
-        line = self._stream.readline()
+    def readline(self, *args):
+        line = self._stream.readline(*args)
         self.pos += len(line)
         self.processed()
         return line

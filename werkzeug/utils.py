@@ -267,9 +267,11 @@ class FileStorage(object):
         self.content_length = content_length
         self.stream = stream
 
-        self.read = stream.read
-        self.readline = stream.readline
-        self.readlines = stream.readlines
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+    def __nonzero__(self):
+        return bool(self.filename and self.content_length)
 
     def __len__(self):
         return self.content_length
