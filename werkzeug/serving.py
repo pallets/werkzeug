@@ -21,6 +21,65 @@ import socket
 import sys
 import time
 import thread
+from wsgiref.simple_server import ServerHandler, WSGIRequestHandler, \
+     WSGIServer
+from SocketServer import ThreadingMixIn, ForkingMixIn
+
+
+class BaseRequestHandler(WSGIRequestHandler):
+    """
+    Subclass of the normal request handler that thinks it is
+    threaded or something like that. The default wsgiref handler
+    has wrong information so we need this class.
+    """
+    multithreaded = False
+    multiprocess = False
+    _handler_class = None
+
+    def get_handler(self):
+        handler = self._handler_class
+        if handler is None:
+            class handler(ServerHandler):
+                wsgi_multithread = self.multithreaded
+                wsgi_multiprocess = self.multiprocess
+            self._handler_class = handler
+
+        rv = handler(self.rfile, self.wfile, self.get_stderr(),
+                     self.get_environ())
+        rv.request_handler = self
+        return rv
+
+    def handle(self):
+        self.raw_requestline = self.rfile.readline()
+        if self.parse_request():
+            self.get_handler().run(self.server.get_app())
+
+
+def make_server(host, port, app=None, threaded=False, processes=1):
+    """
+    Create a new wsgiref server that is either threaded, or forks
+    or just processes one request after another.
+    """
+    if threaded and processes > 1:
+        raise ValueError("cannot have a multithreaded and "
+                         "multi process server.")
+    elif threaded:
+        class handler(BaseRequestHandler):
+            multithreaded = True
+        class server(ThreadingMixIn, WSGIServer):
+            pass
+    elif processes > 1:
+        class handler(BaseRequestHandler):
+            multiprocess = True
+            max_children = processes - 1
+        class server(ForkingMixIn, WSGIServer):
+            pass
+    else:
+        handler = BaseRequestHandler
+        server = WSGIServer
+    srv = server((host, port), handler)
+    srv.set_app(app)
+    return srv
 
 
 def reloader_loop(extra_files):
@@ -44,7 +103,11 @@ def reloader_loop(extra_files):
             if filename[-4:] in ('.pyc', '.pyo'):
                 filename = filename[:-1]
 
-            mtime = os.stat(filename).st_mtime
+            try:
+                mtime = os.stat(filename).st_mtime
+            except OSError:
+                continue
+
             if filename not in mtimes:
                 mtimes[filename] = mtime
                 continue
@@ -54,15 +117,17 @@ def reloader_loop(extra_files):
 
 
 def restart_with_reloader():
-    """Spawn a new Python interpreter with the same arguments as this one,
-    but running the reloader thread."""
+    """
+    Spawn a new Python interpreter with the same arguments as this one,
+    but running the reloader thread.
+    """
     while True:
         print '* Restarting with reloader...'
         args = [sys.executable] + sys.argv
         if sys.platform == 'win32':
             args = ['"%s"' % arg for arg in args]
         new_environ = os.environ.copy()
-        new_environ['RUN_MAIN'] = 'true'
+        new_environ['WERKZEUG_RUN_MAIN'] = 'true'
         exit_code = os.spawnve(os.P_WAIT, sys.executable, args, new_environ)
         if exit_code != 3:
             return exit_code
@@ -72,7 +137,7 @@ def run_with_reloader(main_func, extra_watch):
     """
     Run the given function in an independent python interpreter.
     """
-    if os.environ.get('RUN_MAIN') == 'true':
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         thread.start_new_thread(main_func, ())
         try:
             reloader_loop(extra_watch)
@@ -85,19 +150,19 @@ def run_with_reloader(main_func, extra_watch):
 
 
 def run_simple(hostname, port, application, use_reloader=False,
-               extra_files=None):
+               extra_files=None, threaded=False, processes=1):
     """
     Start an application using wsgiref and with an optional reloader.
     """
-    from wsgiref.simple_server import make_server
     def inner():
-        srv = make_server(hostname, port, application)
+        srv = make_server(hostname, port, application, threaded,
+                          processes)
         try:
             srv.serve_forever()
         except KeyboardInterrupt:
             pass
 
-    if os.environ.get('RUN_MAIN') != 'true':
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         print '* Running on http://%s:%d/' % (hostname, port)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before we
