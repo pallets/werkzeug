@@ -186,41 +186,40 @@ class CombinedMultiDict(MultiDict):
             rv.update(d.keys())
         return list(rv)
 
+    def iteritems(self):
+        found = set()
+        for d in self.dicts:
+            for key, value in d.iteritems():
+                if not key in found:
+                    found.add(key)
+                    yield key, value
+
+    def itervalues(self):
+        for key, value in self.iteritems():
+            yield value
+
     def values(self):
-        rv = {}
-        for d in reversed(self.dicts):
-            rv.update(d)
-        return rv.values()
+        return list(self.itervalues())
 
     def items(self):
-        rv = {}
-        for d in reversed(self.dicts):
-            rv.update(d)
-        return rv.items()
+        return list(self.iteritems())
 
     def lists(self):
         rv = {}
         for d in self.dicts:
-            for k, v in d.iterlists():
-                rv.setdefault(k, []).extend(v)
+            rv.update(d)
         return rv.items()
 
     def listvalues(self):
         rv = {}
         for d in reversed(self.dicts):
-            rv.update(d.lists())
+            rv.update(d)
         return rv.values()
 
     def iterkeys(self):
         return iter(self.keys())
 
     __iter__ = iterkeys
-
-    def itervalues(self):
-        return iter(self.values())
-
-    def iteritems(self):
-        return iter(self.items())
 
     def iterlists(self):
         return iter(self.lists())
