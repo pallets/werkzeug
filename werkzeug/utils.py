@@ -442,8 +442,11 @@ class SharedDataMiddleware(object):
             fp.close()
 
     def __call__(self, environ, start_response):
-        path = environ.get('PATH_INFO', '')
+        path = '/' + '/'.join(environ.get('PATH_INFO', '').
+                              lstrip('/').split('/'))
         for search_path, file_path in self.exports.iteritems():
+            if search_path == path and os.path.isfile(file_path):
+                return self.serve_file(file_path, start_response)
             if not search_path.endswith('/'):
                 search_path += '/'
             if path.startswith(search_path):
