@@ -86,10 +86,15 @@ class ThreadedStream(object):
 
 
 def get_uid():
-    """
-    Return a random unique ID.
-    """
+    """Return a random unique ID."""
     return str(random()).encode('base64')[3:11]
+
+
+def highlight_python(source):
+    """Highlight some python code. Return a list of lines"""
+    parser = PythonParser(source)
+    parser.parse()
+    return parser.get_html_output()
 
 
 class PythonParser(object):
@@ -137,8 +142,10 @@ class PythonParser(object):
         text = StringIO(self.raw)
         try:
             tokenize.tokenize(text.readline, self)
-        except tokenize.TokenError:
-            pass
+        except (SyntaxError, tokenize.TokenError):
+            self.error = True
+        else:
+            self.error = False
 
     def get_html_output(self):
         """ Return line generator. """
@@ -164,6 +171,8 @@ class PythonParser(object):
                     line += '</%s>' % tag.group(1)
                 yield line
 
+        if self.error:
+            return escape(self.raw).splitlines()
         return list(html_splitlines(self.out.getvalue().splitlines()))
 
     def __call__(self, toktype, toktext, (srow,scol), (erow,ecol), line):
@@ -234,9 +243,7 @@ def get_frame_info(tb, context_lines=7, simple=False):
         except IndexError:
             pass
         if not simple:
-            parser = PythonParser(source)
-            parser.parse()
-            parsed_source = parser.get_html_output()
+            parsed_source = highlight_python(source)
             lbound = max(0, lineno - context_lines - 1)
             ubound = lineno + context_lines
             try:
