@@ -244,6 +244,11 @@ class BaseResponse(object):
         self._cookies[key]['max-age'] = 0
         self._cookies[key]['expires'] = 0
 
+    def close(self):
+        """Close the wrapped response if possible."""
+        if hasattr(self.response, 'close'):
+            self.response.close()
+
     def __call__(self, environ, start_response):
         headers = self.headers.to_list(self.charset)
         if self._cookies is not None:
