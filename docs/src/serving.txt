@@ -27,6 +27,7 @@ application:
     from myproject import make_app
     from werkzeug.serving import run_simple
 
+    app = make_app(...)
     run_simple('localhost', 8080, app, use_reloader=True)
 
 You can also pass it a `extra_files` keyword argument with a list of
