@@ -156,8 +156,7 @@ class BaseRequest(object):
     def path(self):
         """Requested path."""
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
-        path = path.decode(self.charset, self.charset)
-        return path.replace('+', ' ')
+        return path.decode(self.charset, self.charset)
     path = lazy_property(path)
 
 

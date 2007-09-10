@@ -521,9 +521,27 @@ def url_quote(s, charset='utf-8'):
     return urllib.quote(s)
 
 
+def url_quote_plus(s, charset='utf-8'):
+    """
+    URL encode a single string with the given encoding and convert
+    whitespace to "+".
+    """
+    if isinstance(s, unicode):
+        s = s.encode(charset)
+    return urllib.quote_plus(s)
+
+
 def url_unquote(s, charset='utf-8'):
     """
     URL decode a single string with a given decoding.
+    """
+    return urllib.unquote(s).decode(charset, 'ignore')
+
+
+def url_unquote_plus(s, charset='utf-8'):
+    """
+    URL decode a single string with the given decoding and decode
+    a "+" to whitespace.
     """
     return urllib.unquote_plus(s).decode(charset, 'ignore')
 
