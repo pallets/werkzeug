@@ -475,7 +475,7 @@ class lazy_property(object):
         self._name = name or func.func_name
         self.__doc__ = doc or func.__doc__
 
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj, type=None):
         if obj is None:
             return self
         value = self._func(obj)
@@ -500,19 +500,22 @@ class environ_property(object):
     def __init__(self, name):
         self.name = name
 
-    def __get__(self, instance, type=None):
-        if type is None:
-            return instance.environ.get(self.name)
-        return self
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        return instance.environ.get(self.name)
 
-    def __set__(self, instance, value):
-        instance.environ[self.name] = value
+    def __set__(self, obj, value):
+        obj.environ[self.name] = value
 
-    def __delete__(self):
-        instance.environ.pop(self.name, None)
+    def __delete__(self, obj):
+        obj.environ.pop(self.name, None)
 
     def __repr__(self):
-        return '<environ_property %s>'%self.name
+        return '<%s %s>' % (
+            self.__class__.__name__,
+            self.name
+        )
 
 
 
