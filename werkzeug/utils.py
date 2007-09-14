@@ -503,7 +503,7 @@ class environ_property(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        return instance.environ.get(self.name)
+        return obj.environ.get(self.name)
 
     def __set__(self, obj, value):
         obj.environ[self.name] = value
