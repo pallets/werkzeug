@@ -159,7 +159,11 @@ class DebuggedApplication(object):
 
         # finialize plain traceback and write it to stderr
         try:
-            exvalstr = ': ' + str(exception_value)
+            if isinstance(exception_value, unicode):
+                exception_value = exception_value.encode('utf-8')
+            else:
+                exception_value = str(exception_value)
+            exvalstr = ': ' + exception_value
         except:
             exvalstr = ''
         write(extypestr + exvalstr)
@@ -189,7 +193,7 @@ class DebuggedApplication(object):
         return Namespace(
             evalex =          self.evalex,
             exception_type =  extypestr,
-            exception_value = str(exception_value),
+            exception_value = exception_value,
             frames =          frames,
             last_frame =      frames[-1],
             plaintb =         plaintb,
