@@ -483,6 +483,39 @@ class lazy_property(object):
         return value
 
 
+class environ_property(object):
+    """
+    Maps request attributes to environment variables. This works not only
+    for the Werzeug request object, but also any other class with an
+    environment attribute:
+
+    >>> class test_p(object):
+    ...     environ = { 'test': 'test' }
+    ...     test = environ_property('test')
+    >>> var = test_p()
+    >>> var.test
+    test
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, type=None):
+        if type is None:
+            return instance.environ.get(self.name)
+        return self
+
+    def __set__(self, instance, value):
+        instance.environ[self.name] = value
+
+    def __delete__(self):
+        instance.environ.pop(self.name, None)
+
+    def __repr__(self):
+        return '<environ_property %s>'%self.name
+
+
+
 def url_decode(s, charset='utf-8'):
     """
     Parse a querystring and return it as `MultiDict`.
