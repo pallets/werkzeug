@@ -163,7 +163,7 @@ def run_simple(hostname, port, application, use_reloader=False,
             pass
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        print '* Running on http://%s:%d/' % (hostname, port)
+        print '* Running on http://%s:%d/' % (hostname or '0.0.0.0', port)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before we
         # spawn a separate Python interpreter and loose this ability.
