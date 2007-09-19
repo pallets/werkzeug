@@ -428,6 +428,8 @@ class Rule(RuleFactory):
 
     def build_compare(self, other):
         """Compare this object with another one for building."""
+        if not other.arguments and self.arguments:
+            return -1
         if other.defaults is None and self.defaults is not None:
             return 1
         if self.provides_defaults_for(other):
