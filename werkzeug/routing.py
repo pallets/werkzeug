@@ -822,7 +822,7 @@ class MapAdapter(object):
             return str(urljoin(self.script_name, path.lstrip('/')))
         return str('%s://%s%s%s/%s' % (
             self.url_scheme,
-            rule.subdomain and rule.subdomain + '.' or '',
+            subdomain and subdomain + '.' or '',
             self.server_name,
             self.script_name[:-1],
             path.lstrip('/')
