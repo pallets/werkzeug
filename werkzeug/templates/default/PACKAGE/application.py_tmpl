@@ -58,7 +58,7 @@ def make_app(config=None):
 
     # files in the `public` folder are available on the URL so that there
     # is no need to start another server for that. For production setups
-    # it's a good idea to override that in the werbserver.
+    # it's a good idea to override that in the webserver.
     app = SharedDataMiddleware(app, {
         '/public': os.path.join(os.path.dirname(__file__), 'public')
     })
