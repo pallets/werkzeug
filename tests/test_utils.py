@@ -9,7 +9,10 @@
 
 from py.test import raises
 
-from werkzeug.utils import MultiDict, CombinedMultiDict, lazy_property
+from werkzeug.utils import MultiDict, CombinedMultiDict, Headers, \
+     lazy_property, environ_property, url_decode, url_encode, url_quote, \
+     url_unquote, url_quote_plus, url_unquote_plus, escape
+
 
 def test_multidict():
     md = MultiDict()
@@ -115,20 +118,46 @@ def test_combined_multidict():
     assert d['bar'] == 2
 
     # get key errors for missing stuff
-    try:
-        d['missing']
-    except KeyError:
-        pass
-    else:
-        raise AssertionError('expected KeyError')
+    raises(KeyError, 'd["missing"]')
 
     # make sure that they are immutable
-    try:
-        d['foo'] = "blub"
-    except TypeError:
-        pass
-    else:
-        raise AssertionError('expected TypeError')
+    raises(TypeError, 'd["foo"] = "blub"')
+
+
+def test_headers():
+    # simple header tests
+    headers = Headers()
+    headers.add('Content-Type', 'text/plain')
+    headers.add('X-Foo', 'bar')
+    assert 'x-Foo' in headers
+    assert 'Content-type' in headers
+
+    headers['Content-Type'] = 'foo/bar'
+    assert headers['Content-Type'] == 'foo/bar'
+    assert len(headers.getlist('Content-Type')) == 1
+
+    # list conversion
+    assert headers.to_list() == [
+        ('X-Foo', 'bar'),
+        ('Content-Type', 'foo/bar')
+    ]
+
+    # defaults
+    headers = Headers({
+        'Content-Type': 'text/plain',
+        'X-Foo':        'bar',
+        'X-Bar':        ['1', '2']
+    })
+    assert headers.getlist('x-bar') == ['1', '2']
+    assert headers.get('x-Bar') == '1'
+    assert headers.get('Content-Type') == 'text/plain'
+
+    # copying
+    a = Headers([('foo', 'bar')])
+    b = a.copy()
+    a.add('foo', 'baz')
+    assert a.getlist('foo') == ['bar', 'baz']
+    assert b.getlist('foo') == ['bar']
 
 
 def test_lazy_property():
@@ -158,3 +187,34 @@ def test_lazy_property():
     r = a.propval
     assert p == q == r == 42
     assert foo == [42, 42]
+
+
+def test_environ_property():
+    class A(object):
+        environ = {'string': 'abc', 'number': '42'}
+
+        string = environ_property('string')
+        missing = environ_property('missing', 'spam')
+        read_only = environ_property('number', read_only=True)
+        number = environ_property('number', convert=int)
+        broken_number = environ_property('broken_number', convert=int)
+
+    a = A()
+    assert a.string == 'abc'
+    assert a.missing == 'spam'
+    raises(AttributeError, 'a.read_only = "something"')
+    assert a.number == 42
+    assert a.broken_number == None
+
+
+def test_quoting():
+    assert url_quote(u'\xf6\xe4\xfc') == '%C3%B6%C3%A4%C3%BC'
+    assert url_unquote(url_quote(u'#%="\xf6')) == u'#%="\xf6'
+    assert url_quote_plus('foo bar') == 'foo+bar'
+    assert url_unquote_plus('foo+bar') == 'foo bar'
+
+
+def test_escape():
+    assert escape('<>') == '&lt;&gt;'
+    assert escape('"foo"') == '"foo"'
+    assert escape('"foo"', True) == '&quot;foo&quot;'

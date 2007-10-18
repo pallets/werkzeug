@@ -29,7 +29,7 @@ class MultiDict(dict):
 
     def __init__(self, mapping=()):
         if isinstance(mapping, MultiDict):
-            dict.__init__(self, mapping.lists())
+            dict.__init__(self, [(k, v[:]) for k, v in mapping.lists()])
         elif isinstance(mapping, dict):
             tmp = {}
             for key, value in mapping.iteritems():
@@ -288,7 +288,8 @@ class FileStorage(object):
 
 class Headers(object):
     """
-    An object that stores some headers.
+    An object that stores some headers.  It has a dict like interface
+    but is ordered and can store keys multiple times.
     """
 
     def __init__(self, defaults=None):
@@ -301,8 +302,7 @@ class Headers(object):
                 else:
                     self._list.append((key, value))
         elif defaults is not None:
-            for key, value in defaults:
-                self._list.append((key, value))
+            self._list[:] = defaults
 
     def __getitem__(self, key):
         ikey = key.lower()
@@ -310,6 +310,13 @@ class Headers(object):
             if k.lower() == ikey:
                 return v
         raise KeyError(key)
+
+    def __eq__(self, other):
+        return other.__class__ is self.__class__ and \
+               set(other._list) == set(self._list)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def get(self, key, default=None):
         try:
@@ -322,46 +329,37 @@ class Headers(object):
         result = []
         for k, v in self._list:
             if k.lower() == ikey:
-                result.append((k, v))
+                result.append(v)
         return result
 
-    def setlist(self, key, values):
-        del self[key]
-        self.addlist(key, values)
-
-    def addlist(self, key, values):
-        self._list.extend(values)
-
-    def lists(self, lowercased=False):
-        if not lowercased:
-            return self._list[:]
-        return [(x.lower(), y) for x, y in self._list]
-
-    def iterlists(self, lowercased=False):
+    def iteritems(self, lower=False):
         for key, value in self._list:
-            if lowercased:
+            if lower:
                 key = key.lower()
             yield key, value
 
-    def iterkeys(self):
-        for key, _ in self.iterlists():
+    def iterkeys(self, lower=False):
+        for key, _ in self.iterlists(lower):
             yield key
 
     def itervalues(self):
         for _, value in self.iterlists():
             yield value
 
-    def keys(self):
-        return list(self.iterkeys())
+    def keys(self, lower=False):
+        return list(self.iterkeys(lower))
 
     def values(self):
         return list(self.itervalues())
+
+    def items(self, lower=False):
+        return list(self.iteritems(lower))
 
     def __delitem__(self, key):
         key = key.lower()
         new = []
         for k, v in self._list:
-            if k != key:
+            if k.lower() != key:
                 new.append((k, v))
         self._list[:] = new
 
@@ -391,12 +389,12 @@ class Headers(object):
         """remove all header tuples for key and add
         a new one
         """
-        del self[key]
+        self.remove(key)
         self.add(key, value)
 
     __setitem__ = set
 
-    def to_list(self, charset):
+    def to_list(self, charset='utf-8'):
         """Create a str only list of the headers."""
         result = []
         for k, v in self:
@@ -471,15 +469,15 @@ class lazy_property(object):
     """
 
     def __init__(self, func, name=None, doc=None):
-        self._func = func
-        self._name = name or func.func_name
+        self.func = func
+        self.__name__ = name or func.__name__
         self.__doc__ = doc or func.__doc__
 
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        value = self._func(obj)
-        setattr(obj, self._name, value)
+        value = self.func(obj)
+        setattr(obj, self.__name__, value)
         return value
 
 
@@ -487,7 +485,7 @@ class environ_property(object):
     """
     Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an
-    environment attribute:
+    environ attribute:
 
     >>> class test_p(object):
     ...     environ = { 'test': 'test' }
@@ -495,20 +493,41 @@ class environ_property(object):
     >>> var = test_p()
     >>> var.test
     test
+
+    If you pass it a second value it's used as default if the key does not
+    exist, the third one can be a converter that takes a value and converts
+    it.  If it raises `ValueError` or `TypeError` the default value is used.
+    If no default value is provided `None` is used.
+
+    Per default the property works in two directions, but if you set
+    `read_only` to False it will block set/delete.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, default=None, convert=None, read_only=False):
         self.name = name
+        self.default = default
+        self.convert = convert
+        self.read_only = read_only
 
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        return obj.environ.get(self.name)
+        rv = obj.environ.get(self.name, self.default)
+        if rv is self.default or self.convert is None:
+            return rv
+        try:
+            return self.convert(rv)
+        except (ValueError, TypeError):
+            return self.default
 
     def __set__(self, obj, value):
+        if self.read_only:
+            raise AttributeError('read only property')
         obj.environ[self.name] = value
 
     def __delete__(self, obj):
+        if self.read_only:
+            raise AttributeError('read only property')
         obj.environ.pop(self.name, None)
 
     def __repr__(self):
@@ -516,7 +535,6 @@ class environ_property(object):
             self.__class__.__name__,
             self.name
         )
-
 
 
 def url_decode(s, charset='utf-8'):
@@ -585,7 +603,8 @@ def url_unquote_plus(s, charset='utf-8'):
 escape = cgi.escape
 
 
-def get_current_url(environ, root_only=False):
+def get_current_url(environ, root_only=False, strip_querystring=False,
+                    host_only=False):
     """
     Recreate the URL of the current request.
     """
@@ -600,6 +619,9 @@ def get_current_url(environ, root_only=False):
            in (('https', '443'), ('http', '80')):
             cat(':' + environ['SERVER_PORT'])
 
+    if host_only:
+        return ''.join(tmp) + '/'
+
     cat(urllib.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
     if root_only:
         cat('/')
@@ -607,8 +629,9 @@ def get_current_url(environ, root_only=False):
         cat(urllib.quote('/' + environ.get('PATH_INFO', '') \
                   .lstrip('/')))
 
-        qs = environ.get('QUERY_STRING')
-        if qs:
-            cat('?' + qs)
+        if not strip_querystring:
+            qs = environ.get('QUERY_STRING')
+            if qs:
+                cat('?' + qs)
 
     return ''.join(tmp)

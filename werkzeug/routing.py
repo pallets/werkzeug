@@ -122,7 +122,7 @@ def parse_rule(rule):
         yield None, None, remaining
 
 
-def get_converter(map, name, args, frame):
+def get_converter(map, name, args):
     """
     Create a new converter for the given arguments or raise
     exception if the converter does not exist.
@@ -130,8 +130,8 @@ def get_converter(map, name, args, frame):
     if not name in map.converters:
         raise LookupError('the converter %r does not exist' % name)
     if args:
-        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args,
-                            frame.f_globals, frame.f_locals)
+        storage = type('_Storage', (), {'__getitem__': lambda s, x: x})()
+        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
     else:
         args = ()
         kwargs = {}
@@ -271,8 +271,6 @@ class Rule(RuleFactory):
         self._converters = {}
         self._regex = None
 
-        self._frame = sys._getframe(1)
-
     def get_rules(self, map):
         yield self
 
@@ -298,8 +296,7 @@ class Rule(RuleFactory):
                 regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
             else:
-                convobj = get_converter(map, converter, arguments,
-                                        self._frame)
+                convobj = get_converter(map, converter, arguments)
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
@@ -320,7 +317,6 @@ class Rule(RuleFactory):
                 method_re
             )
             self._regex = re.compile(regex, re.UNICODE)
-        self._frame = None
 
     def match(self, path):
         """
@@ -580,7 +576,7 @@ class Map(object):
     The base class for all the url maps.
     """
 
-    def __init__(self, rules=None, default_subdomain='', charset='ascii',
+    def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
                  converters=None):
         """
@@ -591,7 +587,7 @@ class Map(object):
             The default subdomain for rules without a subdomain defined.
 
         `charset`
-            charset of the url. defaults to ``"ascii"``
+            charset of the url. defaults to ``"utf-8"``
 
         `strict_slashes`
             Take care of trailing slashes.
