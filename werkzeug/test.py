@@ -167,7 +167,6 @@ class Client(object):
         kw['method'] = 'POST'
         return self.open(*args, **kw)
 
-
     def head(self, *args, **kw):
         """Like open but method is enforced to HEAD"""
         kw['method'] = 'HEAD'
