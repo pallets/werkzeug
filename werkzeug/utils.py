@@ -11,7 +11,9 @@
 import os
 import cgi
 import urllib
+import urlparse
 from time import asctime, gmtime, time
+from cStringIO import StringIO
 try:
     set
 except NameError:
@@ -19,6 +21,9 @@ except NameError:
 
     def reversed(item):
         return tuple(item)[::-1]
+
+
+_empty_stream = StringIO('')
 
 
 class MultiDict(dict):
@@ -635,3 +640,52 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
                 cat('?' + qs)
 
     return ''.join(tmp)
+
+
+def create_environ(path='/', base_url=None, query_string=None, method='GET',
+                   input_stream=None, content_type=None, content_length=0,
+                   errors_stream=None, multithread=False,
+                   multiprocess=False, run_once=False):
+    """
+    Create a new WSGI environ dict based on the values passed.  The first
+    parameter should be the path of the request which defaults to '/'.
+    The second one can either be a absolute path (in that case the url
+    host is localhost:80) or a full path to the request with scheme,
+    netloc port and the path to the script.
+    """
+    scheme, netloc, script_name, qs, fragment = urlparse.urlsplit(base_url)
+    if ':' in netloc:
+        server_name, server_port = netloc.split(':')
+    else:
+        if scheme == 'http':
+            server_port = '80'
+        elif scheme == 'https':
+            server_port = '443'
+        server_name = netloc
+    if qs or fragment:
+        raise ValueError('base url cannot contain a query string '
+                         'or fragment')
+    if path and '?' in path:
+        path, query_string = path.split('?', 1)
+    path = unquote(path) or '/'
+    script_name = unquote(script_name) or ''
+
+    return {
+        'REQUEST_METHOD':       method,
+        'SCRIPT_NAME':          script_name,
+        'PATH_INFO':            path,
+        'QUERY_STRING':         query_string,
+        'SERVER_NAME':          server_name,
+        'SERVER_PORT':          server_port,
+        'HTTP_HOST':            netloc,
+        'SERVER_PROTOCOL':      'HTTP/1.0',
+        'CONTENT_TYPE':         content_type or '',
+        'CONTENT_LENGTH':       str(content_length),
+        'wsgi.version':         (1, 0),
+        'wsgi.url_scheme':      scheme,
+        'wsgi.input':           input_stream or _empty_stream,
+        'wsgi.errors':          errors_stream or sys.stderr,
+        'wsgi.multithread':     multithread,
+        'wsgi.multiprocess':    multiprocess,
+        'wsgi.run_once':        run_once
+    }

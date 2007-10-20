@@ -13,16 +13,13 @@ import cgi
 import tempfile
 from time import gmtime
 from Cookie import SimpleCookie
-from cStringIO import StringIO
 from datetime import datetime
 from warnings import warn
 
 from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
-     Headers, lazy_property, environ_property, get_current_url
-
-
-_empty_stream = StringIO('')
+     Headers, lazy_property, environ_property, get_current_url, \
+     create_environ, url_encode, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -48,6 +45,18 @@ class _StorageHelper(cgi.FieldStorage):
     def make_file(self, binary=None):
         return self.get_stream()
 
+    def __repr__(self):
+        """
+        A repr that doesn't read the file.  In theory that code is never
+        triggered, but if we debug werkzeug itself it could be that
+        werkzeug fetches the debug info for a _StorageHelper.  The default
+        repr reads the whole file which causes problems in the debug view.
+        """
+        return '<%s %r>' % (
+            self.__class__.__name__,
+            self.name
+        )
+
 
 class BaseRequest(object):
     """
@@ -55,9 +64,31 @@ class BaseRequest(object):
     """
     charset = 'utf-8'
 
-    def __init__(self, environ):
+    def __init__(self, environ, populate_request=True):
         self.environ = environ
-        self.environ['werkzeug.request'] = self
+        if populate_request:
+            self.environ['werkzeug.request'] = self
+
+    def from_values(cls, path='/', base_url=None, query_string=None,
+                    method='GET', environ=None):
+        """
+        Create a new request object based on the values provided.  If
+        environ is given missing values are filled from there.  This method
+        is useful for small scripts when you need to simulate a request
+        from an url.  Do not use this method for unittesting, there is a
+        full featured client object in `werkzeug.test` that allows to create
+        multipart requests etc.
+        """
+        if isisntance(query_string, dict):
+            query_string = url_encode(query_string, cls.charset)
+        new_env = create_environ(path, base_url, query_string,
+                                 method)
+        result = {}
+        if environ is not None:
+            result.update(environ)
+        result.update(new_env)
+        return cls(result)
+    from_values = classmethod(from_values)
 
     def _get_file_stream(self):
         """Called to get a stream for the file upload.
@@ -225,11 +256,67 @@ class BaseResponse(object):
         self.status = status
         self._cookies = None
 
+    def from_app(cls, app, environ, buffered=False):
+        """
+        Create a new response object from an application output.  This works
+        best if you pass it an application that returns a generator all the
+        time.  Sometimes applications may use the `write()` callable returned
+        by the `start_response` function.  This tries to resolve such edge
+        cases automatically.  But if you don't get the expected output you
+        should set `buffered` to `True` which enforces buffering.
+        """
+        response = []
+        buffer = []
+
+        def start_response(status, headers, exc_info=None):
+            if exc_info is not None:
+                raise exc_info[0], exc_info[1], exc_info[2]
+            response[:] = [status, headers]
+            return buffer.append
+
+        app_iter = app(start_response, environ)
+        if buffered or buffer or not response:
+            try:
+                buffer.extend(app_iter)
+            finally:
+                if hasattr(app_iter, 'close'):
+                    app_iter.close()
+            app_iter = buffer
+        return cls(app_iter, response[1], response[0])
+    from_app = classmethod(from_app)
+
     def write(self, value):
         """If we have a buffered response this writes to the buffer."""
         if not isinstance(self.response, list):
             raise RuntimeError('cannot write to a streamed response.')
         self.response.append(value)
+
+    def response_body(self):
+        """
+        The string representation of the request body.  Whenever you access
+        this property the request iterable is encoded and flattened.  This
+        can lead to unwanted behavior if you stream big data.
+        """
+        if not isinstance(self.response, list):
+            response = []
+            for item in self.response:
+                response.append(item)
+            self.response = response
+        return ''.join(self.iter_encoded())
+    response_body = property(response_body, doc=response_body.__doc__)
+
+    def iter_encoded(self, charset=None):
+        """
+        Iter the response encoded with the encoding specified.  If no
+        encoding is given the encoding from the class is used.  Note that
+        this does not encode data that is already a bytestring.
+        """
+        charset = charset or self.charset or 'ascii'
+        for item in self.response:
+            if isinstance(item, unicode):
+                yield item.encode(charset)
+            else:
+                yield str(item)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None):
@@ -294,13 +381,8 @@ class BaseResponse(object):
                 headers.append(('Set-Cookie', morsel.output(header='')))
         status = '%d %s' % (self.status, HTTP_STATUS_CODES[self.status])
 
-        charset = self.charset or 'utf-8'
         start_response(status, headers)
-        for item in self.response:
-            if isinstance(item, unicode):
-                yield item.encode(charset)
-            else:
-                yield str(item)
+        return self.iter_encoded()
 
 
 class BaseReporterStream(object):
