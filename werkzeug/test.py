@@ -156,7 +156,7 @@ class Client(object):
         rv = run_wsgi_app(self.application, environ)
         return self.response_wrapper(*rv)
 
-    def get(self, *args, *kw):
+    def get(self, *args, **kw):
         """Like open but method is enforced to GET"""
         kw['method'] = 'GET'
         return self.open(*args, **kw)

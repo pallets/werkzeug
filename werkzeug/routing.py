@@ -427,8 +427,10 @@ class Rule(RuleFactory):
         if not other.arguments and self.arguments:
             return -1
         if other.defaults is None and self.defaults is not None:
-            return 1
+            return -1
         if self.provides_defaults_for(other):
+            return -1
+        if other.provides_defaults_for(self):
             return 1
         if len(self.arguments) < len(other.arguments):
             return 1
