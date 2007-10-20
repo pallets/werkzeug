@@ -253,6 +253,8 @@ class BaseResponse(object):
             if 'charset=' not in mimetype and mimetype.startswith('text/'):
                 mimetype += '; charset=' + self.charset
             self.headers['Content-Type'] = mimetype
+        if isinstance(status, basestring):
+            status = int(status.split(None, 1)[0])
         self.status = status
         self._cookies = None
 

@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import sys
 import cgi
 import urllib
 import urlparse
@@ -653,22 +654,28 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
     host is localhost:80) or a full path to the request with scheme,
     netloc port and the path to the script.
     """
-    scheme, netloc, script_name, qs, fragment = urlparse.urlsplit(base_url)
-    if ':' in netloc:
-        server_name, server_port = netloc.split(':')
+    if base_url is not None:
+        scheme, netloc, script_name, qs, fragment = urlparse.urlsplit(base_url)
+        if ':' in netloc:
+            server_name, server_port = netloc.split(':')
+        else:
+            if scheme == 'http':
+                server_port = '80'
+            elif scheme == 'https':
+                server_port = '443'
+            server_name = netloc
+        if qs or fragment:
+            raise ValueError('base url cannot contain a query string '
+                             'or fragment')
+        script_name = urllib.unquote(script_name) or ''
     else:
-        if scheme == 'http':
-            server_port = '80'
-        elif scheme == 'https':
-            server_port = '443'
-        server_name = netloc
-    if qs or fragment:
-        raise ValueError('base url cannot contain a query string '
-                         'or fragment')
+        scheme = 'http'
+        server_name = netloc = 'localhost'
+        server_port = '80'
+        script_name = ''
     if path and '?' in path:
         path, query_string = path.split('?', 1)
-    path = unquote(path) or '/'
-    script_name = unquote(script_name) or ''
+    path = urllib.unquote(path) or '/'
 
     return {
         'REQUEST_METHOD':       method,
@@ -711,8 +718,8 @@ def run_wsgi_app(app, environ, buffered=False):
         response[:] = [status, headers]
         return buffer.append
 
-    app_iter = app(start_response, environ)
-    if buffered or buffer or not response:
+    app_iter = app(environ, start_response)
+    if buffered or buffer:
         try:
             buffer.extend(app_iter)
         finally:
