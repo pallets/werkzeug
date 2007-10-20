@@ -112,8 +112,8 @@ class Client(object):
 
     def open(self, path='/', base_url=None, query_string=None, method='GET',
              data=None, input_stream=None, content_type=None,
-             content_length=0, errors_stream=None,
-             multithread=False, multiprocess=False, run_once=False):
+             content_length=0, errors_stream=None, multithread=False,
+             multiprocess=False, run_once=False, environ_overrides=None):
         """
         Open a page for the application.  This function takes similar
         arguments as the `create_environ` method from the utils module.  If
@@ -152,7 +152,8 @@ class Client(object):
                                      input_stream, content_type, content_length,
                                      errors_stream, multithread,
                                      multiprocess, run_once)
-
+        if environ_overrides:
+            environ.update(environ_overrides)
         rv = run_wsgi_app(self.application, environ)
         return self.response_wrapper(*rv)
 
