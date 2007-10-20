@@ -719,7 +719,7 @@ def run_wsgi_app(app, environ, buffered=False):
         return buffer.append
 
     app_iter = app(environ, start_response)
-    if buffered or buffer:
+    if buffered or buffer or not response:
         try:
             buffer.extend(app_iter)
         finally:
