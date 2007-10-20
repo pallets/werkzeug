@@ -19,7 +19,7 @@ from warnings import warn
 from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, lazy_property, environ_property, get_current_url, \
-     create_environ, url_encode, _empty_stream
+     create_environ, url_encode, run_wsgi_app, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -234,7 +234,7 @@ class BaseResponse(object):
     charset = 'utf-8'
     default_mimetype = 'text/plain'
 
-    def __init__(self, response=None, headers=None, status=200, mimetype=None):
+    def __init__(self, response=None, status=200, headers=None, mimetype=None):
         if response is None:
             self.response = []
         elif isinstance(response, basestring):
@@ -265,24 +265,7 @@ class BaseResponse(object):
         cases automatically.  But if you don't get the expected output you
         should set `buffered` to `True` which enforces buffering.
         """
-        response = []
-        buffer = []
-
-        def start_response(status, headers, exc_info=None):
-            if exc_info is not None:
-                raise exc_info[0], exc_info[1], exc_info[2]
-            response[:] = [status, headers]
-            return buffer.append
-
-        app_iter = app(start_response, environ)
-        if buffered or buffer or not response:
-            try:
-                buffer.extend(app_iter)
-            finally:
-                if hasattr(app_iter, 'close'):
-                    app_iter.close()
-            app_iter = buffer
-        return cls(app_iter, response[1], response[0])
+        return cls(*run_wsgi_app(app, environ, buffered))
     from_app = classmethod(from_app)
 
     def write(self, value):

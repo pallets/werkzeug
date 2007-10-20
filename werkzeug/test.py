@@ -14,7 +14,7 @@ from urllib import urlencode
 from cStringIO import StringIO
 from mimetypes import guess_type
 from werkzeug.wrappers import BaseResponse
-from werkzeug.utils import create_environ
+from werkzeug.utils import create_environ, run_wsgi_app
 
 
 def encode_multipart(values):
@@ -87,24 +87,27 @@ class File(object):
         )
 
 
-class ApplicationResponse(BaseResponse):
-    """Default response class for the client."""
-
-    def __repr__(self):
-        return '<%s status=%s, headers=%r>' % (
-            self.__class__.__name__,
-            self.status,
-            self.headers
-        )
-
-
 class Client(object):
     """
     This class allows to send requests to a wrapped application.
     """
 
-    def __init__(self, application, response_wrapper=ApplicationResponse):
+    def __init__(self, application, response_wrapper=None):
+        """
+        The response wrapper can be a class or factory function that takes
+        three arguments: app_iter, status and headers.  The default response
+        wrapper just returns a tuple.
+
+        Example::
+
+            class ClientResponse(BaseResponse):
+                ...
+
+            client = Client(MyApplication(), response_wrapper=ClientResponse)
+        """
         self.application = application
+        if response_wrapper is None:
+            response_wrapper = lambda a, s, h: (a, s, h)
         self.response_wrapper = response_wrapper
 
     def open(self, path='/', base_url=None, query_string=None, method='GET',
@@ -149,7 +152,9 @@ class Client(object):
                                      input_stream, content_type, content_length,
                                      errors_stream, multithread,
                                      multiprocess, run_once)
-        return self.response_wrapper.from_app(self.application, environ)
+
+        rv = run_wsgi_app(self.application, environ)
+        return self.response_wrapper(*rv)
 
     def get(self, *args, *kw):
         """Like open but method is enforced to GET"""

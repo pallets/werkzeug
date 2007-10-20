@@ -689,3 +689,35 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
         'wsgi.multiprocess':    multiprocess,
         'wsgi.run_once':        run_once
     }
+
+
+def run_wsgi_app(app, environ, buffered=False):
+    """
+    Return a tuple in the form (app_iter, status, headers) of the application
+    output.  This works best if you pass it an application that returns a
+    generator all the time.
+
+    Sometimes applications may use the `write()` callable returned
+    by the `start_response` function.  This tries to resolve such edge
+    cases automatically.  But if you don't get the expected output you
+    should set `buffered` to `True` which enforces buffering.
+    """
+    response = []
+    buffer = []
+
+    def start_response(status, headers, exc_info=None):
+        if exc_info is not None:
+            raise exc_info[0], exc_info[1], exc_info[2]
+        response[:] = [status, headers]
+        return buffer.append
+
+    app_iter = app(start_response, environ)
+    if buffered or buffer or not response:
+        try:
+            buffer.extend(app_iter)
+        finally:
+            if hasattr(app_iter, 'close'):
+                app_iter.close()
+        app_iter = buffer
+
+    return app_iter, response[0], response[1]
