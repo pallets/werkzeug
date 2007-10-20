@@ -57,6 +57,12 @@
         Werkzeug provides a minimal template engine that looks and behaves
         like the e-ruby template engine.
 
+    **Test utilities**
+
+        Werkzeug provides a `Client` class that can be used to test
+        applications.  Just instanciate it with the app and fire virtual
+        requests.
+
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
@@ -71,6 +77,7 @@ object_origins = {
     'BaseReporterStream':   'werkzeug.wrappers',
     'DebuggedApplication':  'werkzeug.debug',
     'Template':             'werkzeug.minitmpl',
+    'Client':               'werkzeug.test',
     'run_simple':           'werkzeug.serving',
     'SharedDataMiddleware': 'werkzeug.utils',
     'environ_property':     'werkzeug.utils',
