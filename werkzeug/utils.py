@@ -468,6 +468,37 @@ class SharedDataMiddleware(object):
         return self.app(environ, start_response)
 
 
+class ClosingIterator(object):
+    """
+    A class that wraps an iterator (which can have a close method) and
+    adds a close method for the callback and the iterator.
+    """
+
+    def __init__(self, iterable, callback=None):
+        iterator = iter(iterable)
+        self._next = iterator.next
+        self._close = getattr(iterator, 'close', None)
+        self._callback = callback
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self._next()
+
+    def close(self):
+        if self._close:
+            try:
+                self._close()
+            except:
+                pass
+        if self._callback:
+            try:
+                self._callback()
+            except:
+                pass
+
+
 class lazy_property(object):
     """
     Descriptor implementing a "lazy property", i.e. the function
@@ -709,6 +740,8 @@ def run_wsgi_app(app, environ, buffered=False):
     cases automatically.  But if you don't get the expected output you
     should set `buffered` to `True` which enforces buffering.
     """
+    # TODO: only read until a response is set, then return a closing
+    # iterator that yields the buffer first and then the data.
     response = []
     buffer = []
 
@@ -719,6 +752,7 @@ def run_wsgi_app(app, environ, buffered=False):
         return buffer.append
 
     app_iter = app(environ, start_response)
+
     if buffered or buffer or not response:
         try:
             buffer.extend(app_iter)
