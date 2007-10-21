@@ -89,7 +89,7 @@ class DebuggedApplication(object):
             for line in appiter:
                 yield line
         except:
-            ThreadedStream.install(environ)
+            ThreadedStream.install()
             exc_info = sys.exc_info()
             try:
                 headers = [('Content-Type', 'text/html; charset=utf-8')]
@@ -116,7 +116,7 @@ class DebuggedApplication(object):
         frames = []
         frame_map = {}
         tb_uid = None
-        if ThreadedStream.can_interact():
+        if not environ['wsgi.run_once'] and not environ['wsgi.multiprocess']:
             tb_uid = get_uid()
             frame_map = self.tracebacks[tb_uid] = {}
 
@@ -217,8 +217,8 @@ class InteractiveDebugger(code.InteractiveInterpreter):
         self.buffer = []
 
     def runsource(self, source):
+        ThreadedStream.push()
         prompt = self.prompt
-        sys.stdout.push()
         try:
             source_to_eval = ''.join(self.buffer + [source])
             if code.InteractiveInterpreter.runsource(self,
@@ -230,7 +230,7 @@ class InteractiveDebugger(code.InteractiveInterpreter):
                 del self.buffer[:]
         finally:
             source = source.encode('utf-8')
-            return prompt + source + sys.stdout.release()
+            return prompt + source + ThreadedStream.fetch()
 
     def runcode(self, code):
         try:

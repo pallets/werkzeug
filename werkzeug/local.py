@@ -95,7 +95,7 @@ class Local(object):
             self.__dict__['__lock'].release()
 
 
-class LocalManager(objects):
+class LocalManager(object):
     """
     Manages local objects.
     """

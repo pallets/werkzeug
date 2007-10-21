@@ -16,14 +16,13 @@ import inspect
 import keyword
 import tokenize
 import traceback
-import threading
 from cgi import escape
 from random import random
 from cStringIO import StringIO
+from werkzeug.local import Local
 
 
-def get_current_thread():
-    return threading.currentThread()
+local = Local()
 
 
 class ExceptionRepr(object):
@@ -46,43 +45,42 @@ class Namespace(object):
 
 
 class ThreadedStream(object):
-    _orig = None
+    """
+    Thin wrapper around sys.stdout so that we can dispatch access
+    to it for different threads.
+    """
 
-    def __init__(self):
-        self._buffer = {}
+    def push():
+        local.stream = StringIO()
+    push = staticmethod(push)
 
-    def install(cls, environ):
-        if cls._orig or not environ['wsgi.multithread']:
-            return
-        cls._orig = sys.stdout
+    def fetch():
+        try:
+            stream = local.stream
+        except AttributeError:
+            return ''
+        stream.reset()
+        return stream.read()
+    fetch = staticmethod(fetch)
+
+    def install(cls):
         sys.stdout = cls()
     install = classmethod(install)
 
-    def can_interact(cls):
-        return not cls._orig is None
-    can_interact = classmethod(can_interact)
+    def __setattr__(self, name, value):
+        raise AttributeError('read only attribute %s' % name)
 
-    def push(self):
-        tid = get_current_thread()
-        self._buffer[tid] = StringIO()
+    def __getattribute__(self, name):
+        if name == '__members__':
+            return dir(sys.__stdout__)
+        try:
+            stream = local.stream
+        except AttributeError:
+            stream = sys.__stdout__
+        return getattr(stream, name)
 
-    def release(self):
-        tid = get_current_thread()
-        if tid in self._buffer:
-            result = self._buffer[tid].getvalue()
-            del self._buffer[tid]
-        else:
-            result = ''
-        return result
-
-    def write(self, d):
-        if isinstance(d, unicode):
-            d = d.encode('utf-8')
-        tid = get_current_thread()
-        if tid in self._buffer:
-            self._buffer[tid].write(d)
-        else:
-            self._orig.write(d)
+    def __repr__(self):
+        return repr(sys.__stdout__)
 
 
 def get_uid():
