@@ -599,6 +599,7 @@ def parse_accept_header(value):
             quality = max(min(float(quality), 1), 0)
         result.append((quality, match.group(1)))
     result.sort()
+    result.reverse()
     return [(b, a) for a, b in result]
 
 
