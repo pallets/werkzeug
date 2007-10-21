@@ -421,20 +421,6 @@ class Rule(RuleFactory):
         elif len(self.arguments) < len(other.arguments):
             return -1
         return 1
-        # XXX: make this more robust
-        def calc(obj):
-            rv = len(obj.arguments)
-            # although defaults variables are already in the arguments
-            # we add them a second time to the complexity to push the
-            # rule.
-            if obj.defaults is not None:
-                rv += len(obj.defaults) + 2
-            # push leafs
-            if obj.is_leaf:
-                rv += 2
-            print obj, -rv
-            return -rv
-        return cmp(calc(self), calc(other))
 
     def build_compare(self, other):
         """Compare this object with another one for building."""
