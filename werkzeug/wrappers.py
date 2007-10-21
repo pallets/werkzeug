@@ -19,7 +19,8 @@ from warnings import warn
 from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, lazy_property, environ_property, get_current_url, \
-     create_environ, url_encode, run_wsgi_app, _empty_stream
+     create_environ, url_encode, run_wsgi_app, parse_accept_header, \
+     _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -186,10 +187,37 @@ class BaseRequest(object):
         return result
     cookies = lazy_property(cookies)
 
-    def method(self):
-        """Request method."""
-        return self.environ['REQUEST_METHOD']
-    method = property(method, doc=method.__doc__)
+    def accept_mimetypes(self):
+        """List of mimetypes this client supports."""
+        if not 'HTTP_ACCEPT' in self.environ:
+            return []
+        return parse_accept_header(self.environ['HTTP_ACCEPT'])
+    accept_mimetypes = lazy_property(accept_mimetypes)
+
+    def accept_charsets(self):
+        """list of charsets this client supports."""
+        if not 'HTTP_ACCEPT_CHARSET' in self.environ:
+            return []
+        return parse_accept_header(self.environ['HTTP_ACCEPT_CHARSET'])
+    accept_charsets = lazy_property(accept_charsets)
+
+    def accept_encodings(self):
+        """
+        List of encodings this client accepts.  Encodings in an HTTP term are
+        compression encodings such as gzip.  For charsets have a look at
+        `accept_charset`.
+        """
+        if not 'HTTP_ACCEPT_ENCODING' in self.environ:
+            return []
+        return parse_accept_header(self.environ['HTTP_ACCEPT_ENCODING'])
+    accept_encodings = lazy_property(accept_encodings)
+
+    def accept_languages(self):
+        """List of languages this client accepts."""
+        if not 'HTTP_ACCEPT_LANGUAGE' in self.environ:
+            return []
+        return parse_accept_header(self.environ['HTTP_ACCEPT_LANGUAGE'])
+    accept_languages = lazy_property(accept_languages)
 
     def path(self):
         """Requested path."""
@@ -225,6 +253,7 @@ class BaseRequest(object):
 
     query_string = environ_property('QUERY_STRING', '', read_only=True)
     remote_addr = environ_property('REMOTE_ADDR', read_only=True)
+    method = environ_property('REQUEST_METHOD', 'GET', read_only=True)
 
 
 class BaseResponse(object):

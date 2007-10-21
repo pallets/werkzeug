@@ -8,6 +8,7 @@
     :copyright: 2007 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
 """
+import re
 import os
 import sys
 import cgi
@@ -25,6 +26,8 @@ except NameError:
 
 
 _empty_stream = StringIO('')
+
+_accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
 
 
 class MultiDict(dict):
@@ -472,13 +475,25 @@ class ClosingIterator(object):
     """
     A class that wraps an iterator (which can have a close method) and
     adds a close method for the callback and the iterator.
+
+    Usage::
+
+        return ClosingIterator(iter, [list, of, callbacks])
     """
 
-    def __init__(self, iterable, callback=None):
+    def __init__(self, iterable, callbacks=None):
         iterator = iter(iterable)
         self._next = iterator.next
-        self._close = getattr(iterator, 'close', None)
-        self._callback = callback
+        if callbacks is None:
+            callbacks = []
+        elif callable(callback):
+            callbacks = [callback]
+        else:
+            callbacks = list(callbacks)
+        iterable_close = getattr(iterator, 'close', None)
+        if iterable_close:
+            callbacks.insert(0, iterable_close)
+        self._callbacks = callbacks
 
     def __iter__(self):
         return self
@@ -487,16 +502,8 @@ class ClosingIterator(object):
         return self._next()
 
     def close(self):
-        if self._close:
-            try:
-                self._close()
-            except:
-                pass
-        if self._callback:
-            try:
-                self._callback()
-            except:
-                pass
+        for callback in self._callbacks:
+            callback()
 
 
 class lazy_property(object):
@@ -572,6 +579,26 @@ class environ_property(object):
             self.__class__.__name__,
             self.name
         )
+
+
+def parse_accept_header(value):
+    """
+    Parses an HTTP Accept-* header.  This does not implement a complete valid
+    algorithm but one that supports at least value and quality extraction.
+
+    Returns a list of ``(value, quality)`` tuples sorted by the quality.
+    """
+    result = []
+    for match in _accept_re.finditer(value):
+        name = match.group(1)
+        quality = match.group(2)
+        if not quality:
+            quality = 1
+        else:
+            quality = max(min(float(quality), 1), 0)
+        result.append((quality, name))
+    result.sort()
+    return [(b, a) for a, b in result]
 
 
 def url_decode(s, charset='utf-8'):

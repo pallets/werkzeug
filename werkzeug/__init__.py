@@ -57,6 +57,13 @@
         Werkzeug provides a minimal template engine that looks and behaves
         like the e-ruby template engine.
 
+    **Context Locals**
+
+        The `Local` object works pretty much like a normal thread local but
+        it has support for py.magic greenlets too.  Additionally there is a
+        `LocalManager` that allows you to clean up all the context locals you
+        have instanciated.
+
     **Test utilities**
 
         Werkzeug provides a `Client` class that can be used to test
@@ -78,9 +85,13 @@ object_origins = {
     'DebuggedApplication':  'werkzeug.debug',
     'Template':             'werkzeug.minitmpl',
     'Client':               'werkzeug.test',
+    'Local':                'werkzeug.locals',
+    'LocalManager':         'werkzeug.locals',
     'run_simple':           'werkzeug.serving',
     'SharedDataMiddleware': 'werkzeug.utils',
+    'ClosingIterator':      'werkzeug.utils',
     'environ_property':     'werkzeug.utils',
+    'parse_accept_header':  'werkzeug.utils',
     'url_decode':           'werkzeug.utils',
     'url_encode':           'werkzeug.utils',
     'url_quote':            'werkzeug.utils',
