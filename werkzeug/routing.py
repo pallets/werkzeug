@@ -408,6 +408,19 @@ class Rule(RuleFactory):
 
     def match_compare(self, other):
         """Compare this object with another one for matching"""
+        if not other.arguments and self.arguments:
+            return 1
+        elif other.arguments and not self.arguments:
+            return -1
+        elif other.defaults is None and self.defaults is not None:
+            return 1
+        elif other.defaults is not None and self.defaults is None:
+            return -1
+        elif len(self.arguments) > len(other.arguments):
+            return 1
+        elif len(self.arguments) < len(other.arguments):
+            return -1
+        return 1
         # XXX: make this more robust
         def calc(obj):
             rv = len(obj.arguments)
@@ -419,6 +432,7 @@ class Rule(RuleFactory):
             # push leafs
             if obj.is_leaf:
                 rv += 2
+            print obj, -rv
             return -rv
         return cmp(calc(self), calc(other))
 

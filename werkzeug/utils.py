@@ -486,8 +486,8 @@ class ClosingIterator(object):
         self._next = iterator.next
         if callbacks is None:
             callbacks = []
-        elif callable(callback):
-            callbacks = [callback]
+        elif callable(callbacks):
+            callbacks = [callbacks]
         else:
             callbacks = list(callbacks)
         iterable_close = getattr(iterator, 'close', None)
@@ -547,11 +547,13 @@ class environ_property(object):
     `read_only` to False it will block set/delete.
     """
 
-    def __init__(self, name, default=None, convert=None, read_only=False):
+    def __init__(self, name, default=None, convert=None, read_only=False,
+                 doc=None):
         self.name = name
         self.default = default
         self.convert = convert
         self.read_only = read_only
+        self.__doc__ = doc
 
     def __get__(self, obj, type=None):
         if obj is None:
@@ -590,13 +592,12 @@ def parse_accept_header(value):
     """
     result = []
     for match in _accept_re.finditer(value):
-        name = match.group(1)
         quality = match.group(2)
         if not quality:
             quality = 1
         else:
             quality = max(min(float(quality), 1), 0)
-        result.append((quality, name))
+        result.append((quality, match.group(1)))
     result.sort()
     return [(b, a) for a, b in result]
 
