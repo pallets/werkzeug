@@ -128,7 +128,8 @@ class DebuggedApplication(object):
             if not tb.tb_frame.f_locals.get('__traceback_hide__', False):
                 if tb_uid and not simple:
                     frame_uid = get_uid()
-                    frame_map[frame_uid] = InteractiveDebugger(self, tb.tb_frame)
+                    frame_map[frame_uid] = InteractiveDebugger(self,
+                                                               tb.tb_frame)
                 else:
                     frame_uid = None
                 frame = get_frame_info(tb, simple=simple)
