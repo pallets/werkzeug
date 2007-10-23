@@ -33,9 +33,11 @@ class DebuggedApplication(object):
     THIS IS A GAPING SECURITY HOLE IF PUBLICLY ACCESSIBLE!
     """
 
-    def __init__(self, application, evalex=False):
+    def __init__(self, application, evalex=False,
+                 request_key='werkzeug.request'):
         self.evalex = bool(evalex)
         self.application = application
+        self.request_key = request_key
         self.tracebacks = {}
 
     def __call__(self, environ, start_response):
@@ -177,7 +179,7 @@ class DebuggedApplication(object):
         # WSGI environment
         req_vars = []
         if not simple:
-            request = environ.get('werkzeug.request')
+            request = environ.get(self.request_key)
             if request is not None:
                 for varname in dir(request):
                     if varname.startswith('_'):

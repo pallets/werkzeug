@@ -507,12 +507,14 @@ class UnicodeConverter(BaseConverter):
     def __init__(self, map, minlength=1, maxlength=None, length=None):
         super(UnicodeConverter, self).__init__(map)
         if length is not None:
-            length = '{%s}' % length
+            length = '{%d}' % int(length)
         else:
             if maxlength is None:
                 maxlength = ''
+            else:
+                maxlength = int(maxlength)
             length = '{%s,%s}' % (
-                minlength,
+                int(minlength),
                 maxlength
             )
         self.regex = '[^/]' + length
