@@ -11,6 +11,9 @@
 from werkzeug.wrappers import BaseRequest, BaseResponse
 
 
+__all__ = ['Request', 'Response']
+
+
 class Request(BaseRequest):
     """
     A handy subclass of the base request that adds a URL builder.
