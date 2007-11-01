@@ -1,6 +1,6 @@
 #
-# Jinja Makefile
-# ~~~~~~~~~~~~~~
+# Werkzeug Makefile
+# ~~~~~~~~~~~~~~~~~
 #
 # Shortcuts for various tasks.
 #

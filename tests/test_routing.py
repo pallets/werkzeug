@@ -31,6 +31,9 @@ def test_basic_building():
         Rule('/', endpoint='index'),
         Rule('/foo', endpoint='foo'),
         Rule('/bar/<baz>', endpoint='bar'),
+        Rule('/bar/<int:bazi>', endpoint='bari'),
+        Rule('/bar/<float:bazf>', endpoint='barf'),
+        Rule('/bar/<path:bazp>', endpoint='barp'),
         Rule('/hehe', endpoint='blah', subdomain='blah')
     ])
     adapter = map.bind('example.org', '/', subdomain='blah')
@@ -38,6 +41,9 @@ def test_basic_building():
     assert adapter.build('index', {}) == 'http://example.org/'
     assert adapter.build('foo', {}) == 'http://example.org/foo'
     assert adapter.build('bar', {'baz': 'blub'}) == 'http://example.org/bar/blub'
+    assert adapter.build('bari', {'bazi': 50}) == 'http://example.org/bar/50'
+    assert adapter.build('barf', {'bazf': 0.815}) == 'http://example.org/bar/0.815'
+    assert adapter.build('barp', {'bazp': 'la/di'}) == 'http://example.org/bar/la/di'
     assert adapter.build('blah', {}) == '/hehe'
     raises(NotFound, lambda: adapter.build('urks'))
 
