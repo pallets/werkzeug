@@ -40,8 +40,8 @@ class RedirectResponse(Response):
     """
 
     def __init__(self, url, code=302):
-        Response.__init__(self, 'page moved to %s' % url,
-                          [('Location', url)], code)
+        Response.__init__(self, 'page moved to %s' % url, code
+                          [('Location', url)])
 
 
 class NotFoundResponse(Response):

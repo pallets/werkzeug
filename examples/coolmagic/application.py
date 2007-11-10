@@ -64,7 +64,8 @@ def make_app(config=None):
     Factory function that creates a new `CoolmagicApplication`
     object. Optional WSGI middlewares should be applied here.
     """
-    app = CoolMagicApplication(config or {})
+    config = config or {}
+    app = CoolMagicApplication(config)
 
     # static stuff
     from werkzeug.utils import SharedDataMiddleware
