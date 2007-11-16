@@ -182,7 +182,7 @@ class RuleFactory(object):
     """
 
     def get_rules(self, map):
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class Subdomain(RuleFactory):
@@ -384,7 +384,7 @@ class Rule(RuleFactory):
 
     def provides_defaults_for(self, rule):
         """
-        Check if this rule is defaults for a given rule.
+        Check if this rule has defaults for a given rule.
         """
         return not self.build_only and self.defaults is not None and \
                self.endpoint == rule.endpoint and self != rule and \
@@ -506,8 +506,7 @@ class BaseConverter(object):
     def js_to_url_function(self):
         if hasattr(self, '_js_to_url'):
             return u'(function(value) { %s })' % self._js_to_url()
-        else:
-            return u'encodeURIComponent'
+        return u'encodeURIComponent'
 
 
 class UnicodeConverter(BaseConverter):
@@ -570,12 +569,10 @@ class NumberConverter(BaseConverter):
         if self.fixed_digits:
             return u'''\
 var result = value.toString();
-while (result.length < %s) {
+while (result.length < %s)
     result = '0' + result;
-}
 return result;''' % self.fixed_digits
-        else:
-            return u'return value.toString();'
+        return u'return value.toString();'
 
 
 class IntegerConverter(NumberConverter):

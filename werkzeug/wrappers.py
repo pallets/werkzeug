@@ -20,7 +20,7 @@ from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, lazy_property, environ_property, get_current_url, \
      create_environ, url_encode, run_wsgi_app, parse_accept_header, \
-     _empty_stream
+     get_host, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -134,7 +134,7 @@ class BaseRequest(object):
         return self._data_stream.readline(*args)
 
     def stream(self):
-        """The stream."""
+        """The input stream."""
         return self._data_stream
     stream = property(stream, doc=stream.__doc__)
 
@@ -250,6 +250,16 @@ class BaseRequest(object):
         """Just the host with scheme."""
         return get_current_url(self.environ, host_only=True)
     host_url = lazy_property(host_url)
+
+    def host(self):
+        """Just the host including the port if available."""
+        return get_host(self.environ)
+    host = lazy_property(host)
+
+    def is_secure(self):
+        """True if the request is secure."""
+        return self.environ['wsgi.url_scheme'] == 'https'
+    is_secure = property(is_secure, doc=is_secure.__doc__)
 
     query_string = environ_property('QUERY_STRING', '', read_only=True)
     remote_addr = environ_property('REMOTE_ADDR', read_only=True)

@@ -506,6 +506,60 @@ class ClosingIterator(object):
             callback()
 
 
+class LimitedStream(object):
+    """
+    Wraps a stream and doesn't read more than n bytes.
+    """
+
+    def __init__(self, environ, limit):
+        self._environ = environ
+        self._stream = environ['wsgi.input']
+        self._limit = min(limit, int(environ.get('CONTENT_LENGTH') or 0))
+        self._pos = 0
+
+    def read(self, size=None):
+        if self._pos >= self._limit:
+            return ''
+        if size is None:
+            size = self._limit
+        read = self._stream.read(min(self._limit - self._pos, size))
+        self._pos += len(read)
+        return read
+
+    def readline(self, *args):
+        if self._pos >= self._limit:
+            return ''
+        line = self._stream.readline(*args)
+        self.pos += len(line)
+        self.processed()
+        return line
+
+    def readlines(self, hint=None):
+        result = []
+        while self.pos < self._limit:
+            result.append(self.readline())
+        return result
+
+
+class StreamLimitMiddleware(object):
+    """
+    Limits the input stream to a given number of bytes.  This is useful if
+    you have a WSGI application that reads form data into memory (django for
+    example) and you don't want users to harm the server by uploading tons of
+    data.
+
+    Default is 10MB
+    """
+
+    def __init__(self, app, maximum_size=1024 * 1024 * 10):
+        self.app = app
+        self.maximum_size = maximum_size
+
+    def __call__(self, environ, start_response):
+        environ['wsgi.input'] = LimitedStream(environ, self.maximum_size)
+        return self.app(environ, start_response)
+
+
 class lazy_property(object):
     """
     Descriptor implementing a "lazy property", i.e. the function
@@ -669,6 +723,21 @@ def url_unquote_plus(s, charset='utf-8'):
 escape = cgi.escape
 
 
+def get_host(environ):
+    """
+    Return the real host for the given environment.
+    """
+    if 'HTTP_X_FORWARDED_HOST' in environ:
+        return environ['HTTP_X_FORWARDED_HOST']
+    elif 'HTTP_HOST' in environ:
+        return environ['HTTP_HOST']
+    result = environ['SERVER_NAME']
+    if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
+       in (('https', '443'), ('http', '80')):
+        result += ':' + environ['SERVER_PORT']
+    return result
+
+
 def get_current_url(environ, root_only=False, strip_querystring=False,
                     host_only=False):
     """
@@ -676,14 +745,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     """
     tmp = [environ['wsgi.url_scheme'], '://']
     cat = tmp.append
-
-    if 'HTTP_HOST' in environ:
-        cat(environ['HTTP_HOST'])
-    else:
-        cat(environ['SERVER_NAME'])
-        if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
-           in (('https', '443'), ('http', '80')):
-            cat(':' + environ['SERVER_PORT'])
+    cat(get_host(environ))
 
     if host_only:
         return ''.join(tmp) + '/'
