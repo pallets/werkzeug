@@ -275,6 +275,26 @@ class FileStorage(object):
         self.content_length = content_length
         self.stream = stream
 
+    def save(self, dst, buffer_size=16384):
+        """
+        Save the file to a destination path or file object.  If the
+        destination is a file object you have to close it yourself after the call.
+        The buffer size is the number of bytes held in the memory during the copy
+        process.  It defaults to 16KB.
+        """
+        from shutil import copyfileobj
+        if isinstance(dst, basestring):
+            dst = file(dst, 'wb')
+            close_dst = True
+        else:
+            close_dst = False
+
+        try:
+            copyfileobj(self.stream, dst, buffer_size)
+        finally:
+            if close_dst:
+                dst.close()
+
     def __getattr__(self, name):
         return getattr(self.stream, name)
 
