@@ -262,6 +262,7 @@ class Rule(RuleFactory):
                 m.append(method.upper())
             self.methods.sort(lambda a, b: cmp(len(b), len(a)))
         self.endpoint = endpoint
+        self.greediness = 0
 
         self._trace = []
         if defaults is not None:
@@ -301,6 +302,8 @@ class Rule(RuleFactory):
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
                 self.arguments.add(str(variable))
+                if convobj.is_greedy:
+                    self.greediness += 1
         if not self.is_leaf:
             self._trace.append((False, '/'))
 
@@ -416,6 +419,10 @@ class Rule(RuleFactory):
             return 1
         elif other.defaults is not None and self.defaults is None:
             return -1
+        elif self.greediness > other.greediness:
+            return -1
+        elif self.greediness < other.greediness:
+            return 1
         elif len(self.arguments) > len(other.arguments):
             return 1
         elif len(self.arguments) < len(other.arguments):
@@ -435,6 +442,10 @@ class Rule(RuleFactory):
         elif self.provides_defaults_for(other):
             return -1
         elif other.provides_defaults_for(self):
+            return 1
+        elif self.greediness > other.greediness:
+            return -1
+        elif self.greediness < other.greediness:
             return 1
         elif len(self.arguments) > len(other.arguments):
             return -1
@@ -481,6 +492,7 @@ class BaseConverter(object):
     Base class for all converters.
     """
     regex = '[^/]+'
+    is_greedy = False
 
     def __init__(self, map):
         self.map = map
@@ -525,6 +537,7 @@ class PathConverter(BaseConverter):
     Matches a whole path (including slashes)
     """
     regex = '[^/].*'
+    is_greedy = True
 
 
 class NumberConverter(BaseConverter):

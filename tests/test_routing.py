@@ -3,12 +3,11 @@
     werkzeug.routing test
     ~~~~~~~~~~~~~~~~~~~~~
 
+
     :copyright: 2007 by Armin Ronacher.
     :license: BSD license.
 """
-
 from py.test import raises
-
 from werkzeug.routing import Map, Rule, NotFound, RequestRedirect
 
 
@@ -61,3 +60,20 @@ def test_defaults():
     assert adapter.build('foo', {}) == '/foo/'
     assert adapter.build('foo', {'page': 1}) == '/foo/'
     assert adapter.build('foo', {'page': 2}) == '/foo/2'
+
+
+def test_greedy():
+    map = Map([
+        Rule('/foo', endpoint='foo'),
+        Rule('/<path:bar>', endpoint='bar'),
+        Rule('/<path:bar>/<path:blub>', endpoint='bar')
+    ])
+    adapter = map.bind('example.org', '/')
+
+    assert adapter.match('/foo') == ('foo', {})
+    assert adapter.match('/blub') == ('bar', {'bar': 'blub'})
+    assert adapter.match('/he/he') == ('bar', {'bar': 'he', 'blub': 'he'})
+
+    assert adapter.build('foo', {}) == '/foo'
+    assert adapter.build('bar', {'bar': 'blub'}) == '/blub'
+    assert adapter.build('bar', {'bar': 'blub', 'blub': 'bar'}) == '/blub/bar'
