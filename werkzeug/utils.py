@@ -42,7 +42,11 @@ class MultiDict(dict):
         elif isinstance(mapping, dict):
             tmp = {}
             for key, value in mapping.iteritems():
-                tmp[key] = [value]
+                if isinstance(value, (tuple, list)):
+                    value = list(value)
+                else:
+                    value = [value]
+                tmp[key] = value
             dict.__init__(self, tmp)
         else:
             tmp = {}
@@ -124,6 +128,16 @@ class MultiDict(dict):
     def copy(self):
         """Return a shallow copy of this object."""
         return self.__class__(self)
+
+    def to_dict(self, flat=True):
+        """
+        Returns the contents as simple dict.  If `flat` is `True` the
+        resulting dict will only have the first item present, if `flat`
+        is `False` all values will be lists.
+        """
+        if flat:
+            return dict(self.iteritems())
+        return dict(self)
 
     def update(self, other_dict):
         """update() extends rather than replaces existing key lists."""
@@ -239,6 +253,17 @@ class CombinedMultiDict(MultiDict):
     def copy(self):
         """Return a shallow copy of this object."""
         return self.__class__(self.dicts[:])
+
+    def to_dict(self, flat=True):
+        """
+        Returns the contents as simple dict.  If `flat` is `True` the
+        resulting dict will only have the first item present, if `flat`
+        is `False` all values will be lists.
+        """
+        rv = {}
+        for d in reversed(self.dicts):
+            rv.update(d.to_dict(flat))
+        return rv
 
     def _immutable(self, *args):
         raise TypeError('%r instances are immutable' %
