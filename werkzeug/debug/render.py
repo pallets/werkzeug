@@ -85,7 +85,7 @@ def var_table(var):
             typ = 'empty'
         else:
             typ = 'list'
-            value = [safe_pformat(item) for item in var]
+        value = [safe_pformat(item) for item in var]
 
     # others
     else:
