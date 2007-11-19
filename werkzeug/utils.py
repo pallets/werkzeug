@@ -15,6 +15,7 @@ import cgi
 import urllib
 import urlparse
 from time import asctime, gmtime, time
+from datetime import datetime
 from cStringIO import StringIO
 try:
     set
@@ -808,6 +809,32 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
                 cat('?' + qs)
 
     return ''.join(tmp)
+
+
+def cookie_date(expires):
+    """
+    Formats the time to ensure compatibility with Netscape's cookie standard.
+
+    Accepts a floating point number expressed in seconds since the epoc in, a
+    datetime object or a timetuple.  All times in UTC.
+
+    Outputs a string in the format 'Wdy, DD-Mon-YYYY HH:MM:SS GMT'.
+    """
+    if isinstance(expires, datetime):
+        expires = expires.utctimetuple()
+    elif isinstance(expires, (int, long)):
+        expires = gmtime(expires)
+
+    return '%s, %02d-%s-%s %02d:%02d:%02d GMT' % (
+        ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[expires.tm_wday],
+        expires.tm_mday,
+        ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+         'Oct', 'Nov', 'Dec')[expires.tm_mon - 1],
+        str(expires.tm_year),
+        expires.tm_hour,
+        expires.tm_min,
+        expires.tm_sec
+    )
 
 
 def create_environ(path='/', base_url=None, query_string=None, method='GET',

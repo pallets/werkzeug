@@ -20,7 +20,7 @@ from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, lazy_property, environ_property, get_current_url, \
      create_environ, url_encode, run_wsgi_app, parse_accept_header, \
-     get_host, _empty_stream
+     get_host, cookie_date, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -357,30 +357,14 @@ class BaseResponse(object):
         if max_age is not None:
             self._cookies[key]['max-age'] = max_age
         if expires is not None:
-            if isinstance(expires, basestring):
-                self._cookies[key]['expires'] = expires
-                expires = None
-            elif isinstance(expires, datetime):
-                expires = expires.utctimetuple()
-            elif not isinstance(expires, (int, long)):
-                expires = gmtime(expires)
-            else:
-                raise ValueError('datetime or integer required')
-            month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-                     'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][expires.tm_mon - 1]
-            day = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
-                   'Friday', 'Saturday', 'Sunday'][expires.tm_wday]
-            date = '%02d-%s-%s' % (
-                expires.tm_mday, month, str(expires.tm_year)[-2:]
-            )
-            d = '%s, %s %02d:%02d:%02d GMT' % (day, date, expires.tm_hour,
-                                               expires.tm_min, expires.tm_sec)
-            self._cookies[key]['expires'] = d
-        if not path is None:
+            if not isinstance(expires, basestring):
+                expires = cookie_date(expires)
+            self._cookies[key]['expires'] = expires
+        if path is not None:
             self._cookies[key]['path'] = path
-        if not domain is None:
+        if domain is not None:
             self._cookies[key]['domain'] = domain
-        if not secure is None:
+        if secure is not None:
             self._cookies[key]['secure'] = secure
 
     def delete_cookie(self, key):
