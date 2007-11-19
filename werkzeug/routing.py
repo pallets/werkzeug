@@ -90,6 +90,9 @@ _rule_re = re.compile(r'''
     >
 ''', re.VERBOSE)
 
+# filled on the fly.
+_javascript_routing_template = None
+
 
 def parse_rule(rule):
     """
@@ -713,8 +716,11 @@ class Map(object):
         information, don't use JavaScript generation!
         """
         from simplejson import dumps
-        from werkzeug.minitmpl import Template
-        from werkzeug.constants import JAVASCRIPT_ROUTING
+        global _javascript_routing_template
+        if _javascript_routing_template is None:
+            from werkzeug.minitmpl import Template
+            from werkzeug.constants import JAVASCRIPT_ROUTING
+            _javascript_routing_template = Template(JAVASCRIPT_ROUTING)
 
         self.update()
         rules = []
@@ -741,7 +747,7 @@ class Map(object):
                 u'defaults':    rule.defaults
             })
 
-        return Template(JAVASCRIPT_ROUTING).render({
+        return _javascript_routing_template.render({
             'name_parts':   name and name.split('.') or [],
             'rules':        dumps(rules),
             'converters':   converters
