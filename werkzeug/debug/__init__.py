@@ -19,6 +19,13 @@ from werkzeug.debug.util import ThreadedStream, Namespace, get_uid, \
 from werkzeug.utils import url_decode
 
 
+try:
+    system_exceptions = (GeneratorExist,)
+except NameError:
+    system_exceptions = ()
+system_exceptions += (SystemExit, KeyboardInterrupt)
+
+
 class DebuggedApplication(object):
     """
     Enables debugging support for a given application::
@@ -90,6 +97,8 @@ class DebuggedApplication(object):
             appiter = self.application(environ, start_response)
             for line in appiter:
                 yield line
+        except system_exceptions, e:
+            raise e
         except:
             ThreadedStream.install()
             exc_info = sys.exc_info()
