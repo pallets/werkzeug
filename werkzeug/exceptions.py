@@ -58,7 +58,7 @@ class HTTPException(Exception):
     def get_body(self, environ):
         return (
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-            '<title>%(code)s %(name)s</title>\n
+            '<title>%(code)s %(name)s</title>\n'
             '<h1>%(name)s</h1>\n'
             '%(description)s\n'
         ) % {
