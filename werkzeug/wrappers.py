@@ -273,7 +273,20 @@ class BaseResponse(object):
     charset = 'utf-8'
     default_mimetype = 'text/plain'
 
-    def __init__(self, response=None, status=200, headers=None, mimetype=None):
+    def __init__(self, response=None, status=200, headers=None, mimetype=None,
+                 content_type=None):
+        """
+        Response can be any kind of iterable or string.  If it's a string it's
+        considered being an iterable with one item which is the string passed.
+        headers can be a list of tuples or a `Headers` object.
+
+        Special note for `mimetype` and `content_type`.  For most mime types
+        `mimetype` and `content_type` works the same, the difference affects
+        only 'text' mimetypes.  If the mimetype passed with `mimetype` is a
+        mimetype starting with `text/` it becomes a charset parameter defined
+        with the charset of the response object.  In constrast the
+        `content_type` parameter is always added as header unmodified.
+        """
         if response is None:
             self.response = []
         elif isinstance(response, basestring):
@@ -286,12 +299,14 @@ class BaseResponse(object):
             self.headers = headers
         else:
             self.headers = Headers(headers)
-        if mimetype is None and 'Content-Type' not in self.headers:
-            mimetype = self.default_mimetype
-        if mimetype is not None:
-            if 'charset=' not in mimetype and mimetype.startswith('text/'):
+        if content_type is None:
+            if mimetype is None and 'Content-Type' not in self.headers:
+                mimetype = self.default_mimetype
+            if mimetype is not None and mimetype.startswith('text/'):
                 mimetype += '; charset=' + self.charset
-            self.headers['Content-Type'] = mimetype
+            content_type = mimetype
+        if content_type is not None:
+            self.headers['Content-Type'] = content_type
         if isinstance(status, basestring):
             status = int(status.split(None, 1)[0])
         self.status = status
@@ -387,7 +402,10 @@ class BaseResponse(object):
         if self._cookies is not None:
             for morsel in self._cookies.values():
                 headers.append(('Set-Cookie', morsel.output(header='')))
-        status = '%d %s' % (self.status, HTTP_STATUS_CODES[self.status])
+        status = '%d %s' % (
+            self.status,
+            HTTP_STATUS_CODES[self.status].upper()
+        )
 
         start_response(status, headers)
         return self.iter_encoded()
