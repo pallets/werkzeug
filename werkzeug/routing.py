@@ -167,9 +167,16 @@ class RequestSlash(RoutingException):
     """
 
 
-class NotFound(RoutingException, ValueError):
+class NotFound(RoutingException, LookupError):
     """
-    Raise if there is no match for the current url.
+    Raise if there is no match or build rule for the current url.
+    """
+
+
+class BuildError(NotFound):
+    """
+    Subclass of `NotFound` that is raised if the routing system was unable
+    to find a suitable url while building.
     """
 
 
@@ -841,7 +848,7 @@ class MapAdapter(object):
                 if rv is not None:
                     break
         else:
-            raise NotFound(endpoint, values)
+            raise BuildError(endpoint, values)
         subdomain, path = rv
         if not force_external and subdomain == self.subdomain:
             return str(urljoin(self.script_name, path.lstrip('/')))
