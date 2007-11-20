@@ -5,12 +5,14 @@
 
     Contains user-submitted code that other users may find useful,
     but which are not part of Werkzeug core. Anyone can write
-    code for inclusion in the `contrib` package, which may be
-    included in future releases if it proves useful.
+    code for inclusion in the `contrib` package.  All the modules
+    in this package are distributed as an addon library and thus not
+    part of `werkzeug` itself.
 
     This file itself is mostly for informational purposes and to
     tell the Python interpreter that `contrib` is a package.
 
-    :copyright: 2007 by Marek Kubica
+
+    :copyright: 2007 by Marek Kubica.
     :license: BSD, see LICENSE for more details.
 """

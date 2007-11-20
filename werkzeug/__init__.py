@@ -78,32 +78,30 @@ from types import ModuleType
 import sys
 
 
-object_origins = {
-    'BaseRequest':          'werkzeug.wrappers',
-    'BaseResponse':         'werkzeug.wrappers',
-    'BaseReporterStream':   'werkzeug.wrappers',
-    'DebuggedApplication':  'werkzeug.debug',
-    'Template':             'werkzeug.minitmpl',
-    'Client':               'werkzeug.test',
-    'Local':                'werkzeug.locals',
-    'LocalManager':         'werkzeug.locals',
-    'run_simple':           'werkzeug.serving',
-    'SharedDataMiddleware': 'werkzeug.utils',
-    'ClosingIterator':      'werkzeug.utils',
-    'environ_property':     'werkzeug.utils',
-    'parse_accept_header':  'werkzeug.utils',
-    'url_decode':           'werkzeug.utils',
-    'url_encode':           'werkzeug.utils',
-    'url_quote':            'werkzeug.utils',
-    'url_unquote':          'werkzeug.utils',
-    'url_quote_plus':       'werkzeug.utils',
-    'url_unquote_plus':     'werkzeug.utils',
-    'escape':               'werkzeug.utils'
+all_by_module = {
+    'werkzeug.debug':       ['DebuggedApplication'],
+    'werkzeug.locals':      ['Local', 'LocalManager'],
+    'werkzeug.minitmpl':    ['Template'],
+    'werkzeug.serving':     ['run_simple'],
+    'werkzeug.test':        ['Client'],
+    'werkzeug.utils':       ['escape', 'create_environ', 'url_quote',
+                             'environ_property', 'cookie_date',
+                             'url_encode', 'url_quote_plus',
+                             'CombinedMultiDict', 'run_wsgi_app',
+                             'get_host', 'SharedDataMiddleware',
+                             'url_unquote_plus', 'ClosingIterator',
+                             'Headers', 'parse_accept_header',
+                             'url_unquote', 'get_current_url',
+                             'lazy_property', 'MultiDict', 'url_decode'],
+    'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest',
+                             'BaseReporterStream']
 }
 
-all_by_module = {}
-for name, module in object_origins.iteritems():
-    all_by_module.setdefault(module, []).append(name)
+
+object_origins = {}
+for module, items in all_by_module.iteritems():
+    for item in items:
+        object_origins[item] = module
 
 
 class _AutoModule(ModuleType):

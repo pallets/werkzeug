@@ -66,10 +66,10 @@ class Session(dict):
             self.should_save and '*' or ''
         )
 
-    @property
     def should_save(self):
         """True if the session should be saved."""
         return self.modified or self.new
+    should_save = property(should_save)
 
     def copy(self):
         """Create a flat copy of the session."""
