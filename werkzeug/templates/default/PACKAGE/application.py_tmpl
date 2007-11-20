@@ -36,7 +36,7 @@ class <%= PACKAGE_PASCAL_CASED %>Application(object):
         # process the `NotFound` and `RequestRedirect` exceptions
         # that can occour.
         try:
-            endpoint, args = url_adapter.match(req.path)
+            endpoint, args = url_adapter.match(req.path, req.method)
         except NotFound:
             resp = NotFoundResponse()
         except RequestRedirect, e:
