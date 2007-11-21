@@ -80,7 +80,7 @@ import sys
 
 all_by_module = {
     'werkzeug.debug':       ['DebuggedApplication'],
-    'werkzeug.locals':      ['Local', 'LocalManager'],
+    'werkzeug.local':       ['Local', 'LocalManager'],
     'werkzeug.minitmpl':    ['Template'],
     'werkzeug.serving':     ['run_simple'],
     'werkzeug.test':        ['Client'],
@@ -91,7 +91,7 @@ all_by_module = {
                              'get_host', 'SharedDataMiddleware',
                              'url_unquote_plus', 'ClosingIterator',
                              'Headers', 'parse_accept_header',
-                             'url_unquote', 'get_current_url',
+                             'url_unquote', 'get_current_url', 'redirect',
                              'lazy_property', 'MultiDict', 'url_decode'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest',
                              'BaseReporterStream']

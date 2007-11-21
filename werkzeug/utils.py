@@ -792,6 +792,7 @@ def redirect(location, code=302):
     If-Modified-Since headers.
     """
     assert code in (301, 302, 303, 305, 307)
+    from werkzeug.wrappers import _RedirectResponse
     response = _RedirectResponse(code, location)
     return response
 
@@ -884,30 +885,3 @@ def run_wsgi_app(app, environ, buffered=False):
         app_iter = buffer
 
     return app_iter, response[0], response[1]
-
-
-from werkzeug.wrappers import BaseResponse
-class _RedirectResponse(BaseResponse):
-    """
-    Internally used by the `redirect` function.
-    """
-    default_mimetype = 'text/html'
-
-    def __init__(self, code, location):
-        BaseResponse.__init__(self,
-            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-            '<title>Redirecting...</title>\n'
-            '<h1>Redirecting...</h1>\n'
-            '<p>You should be redirected automatically to target URL: '
-            '<a href="%s">%s</a>.  If not click the link.' % (
-                escape(location),
-                escape(location)
-            ), code)
-        self.location = location
-
-    def __call__(self, environ, start_response):
-        if not 'Location' in self.headers:
-            root = get_current_url(environ, root_only=True)
-            location = urlparse.urljoin(root, self.location)
-            self.headers['Location'] = location
-        return BaseResponse.__call__(self, environ, start_response)

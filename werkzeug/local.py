@@ -24,6 +24,24 @@
             return ClosingIterator(response(environ, start_response),
                                    local_manager.cleanup)
 
+    Additionally you can use the `make_middleware` middleware factory to
+    accomplish the same::
+
+        from werkzeug import Local, LocalManager, ClosingIterator
+
+        local = Local()
+        local_manager = LocalManager([local])
+
+        def view(request):
+            return Response('...')
+
+        def application(environ, start_response):
+            request = Request(environ)
+            local.request = request
+            return view(request)(environ, start_response)
+
+        application = local_manager.make_middleware(application)
+
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
@@ -39,6 +57,7 @@ try:
 except ImportError:
     from dummy_thread import get_ident as get_current_thread
     from dummy_threading import Lock
+from werkzeug.utils import ClosingIterator
 
 
 def get_ident():
@@ -103,18 +122,33 @@ class LocalManager(object):
     def __init__(self, locals=None):
         self.locals = locals and list(locals) or []
 
+    def get_ident(self):
+        """Returns the current identifier for this context."""
+        return get_ident()
+
     def cleanup(self):
         """
         Call this at the request end to clean up all data stored for
         the current greenlet / thread.
         """
-        ident = get_ident()
+        ident = self.get_ident()
         for local in self.locals:
-            local.__lock.acquire()
+            d = local.__dict__
+            d['__lock'].acquire()
             try:
-                local.__storage.pop(ident, None)
+                d['__storage'].pop(ident, None)
             finally:
-                local.__lock.release()
+                d['__lock'].release()
+
+    def make_middleware(self, app):
+        """
+        Wrap a WSGI application so that cleaning up happens after
+        request end.
+        """
+        def application(environ, start_response):
+            return ClosingIterator(app(environ, start_response),
+                                   self.cleanup)
+        return application
 
     def __repr__(self):
         return '<%s storages: %d>' % (

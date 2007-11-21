@@ -11,16 +11,16 @@
 """
 import cgi
 import tempfile
+import urlparse
 from time import gmtime
 from Cookie import SimpleCookie
 from datetime import datetime
 from warnings import warn
-
 from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, lazy_property, environ_property, get_current_url, \
      create_environ, url_encode, run_wsgi_app, parse_accept_header, \
-     get_host, cookie_date, _empty_stream
+     get_host, cookie_date, escape, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -80,10 +80,9 @@ class BaseRequest(object):
         full featured client object in `werkzeug.test` that allows to create
         multipart requests etc.
         """
-        if isisntance(query_string, dict):
+        if isinstance(query_string, dict):
             query_string = url_encode(query_string, cls.charset)
-        new_env = create_environ(path, base_url, query_string,
-                                 method)
+        new_env = create_environ(path, base_url, query_string, method)
         result = {}
         if environ is not None:
             result.update(environ)
@@ -484,3 +483,29 @@ class BaseReporterStream(object):
         while self.pos < self.length:
             result.append(self.readline())
         return result
+
+
+class _RedirectResponse(BaseResponse):
+    """
+    Internally used by the `redirect` function.
+    """
+    default_mimetype = 'text/html'
+
+    def __init__(self, code, location):
+        BaseResponse.__init__(self,
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+            '<title>Redirecting...</title>\n'
+            '<h1>Redirecting...</h1>\n'
+            '<p>You should be redirected automatically to target URL: '
+            '<a href="%s">%s</a>.  If not click the link.' % (
+                escape(location),
+                escape(location)
+            ), code)
+        self.location = location
+
+    def __call__(self, environ, start_response):
+        if not 'Location' in self.headers:
+            root = get_current_url(environ, root_only=True)
+            location = urlparse.urljoin(root, self.location)
+            self.headers['Location'] = location
+        return BaseResponse.__call__(self, environ, start_response)
