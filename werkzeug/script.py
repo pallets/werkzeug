@@ -16,6 +16,10 @@
 import sys
 import inspect
 import getopt
+try:
+    set = set
+except NameError:
+    from sets import Set as set
 
 
 argument_types = {
@@ -57,26 +61,41 @@ def run(frame_offset=0):
     long_options = []
     formatstring = ''
     func, doc, arg_def = actions[args.pop(0)]
-    for arg, shortcut, default, option_type in arg_def:
+    for idx, (arg, shortcut, default, option_type) in enumerate(arg_def):
         real_arg = arg.replace('-', '_')
         converter = converters[option_type]
         if shortcut:
             formatstring += shortcut + ':'
             key_to_arg['-' + shortcut] = real_arg
-            conv['-' + shortcut] = converter
         long_options.append(arg + '=')
         key_to_arg['--' + arg] = real_arg
-        conv['--' + arg] = converter
+        key_to_arg[idx] = real_arg
+        conv[real_arg] = converter
         arguments[real_arg] = default
 
     try:
-        optlist, args = getopt.gnu_getopt(args, formatstring, long_options)
+        optlist, posargs = getopt.gnu_getopt(args, formatstring, long_options)
     except getopt.GetoptError, e:
         fail(str(e))
 
-    for key, value in optlist:
+    specified_arguments = set()
+    for key, value in enumerate(posargs):
         try:
-            arguments[key_to_arg[key]] = conv[key](value)
+            arg = key_to_arg[key]
+        except IndexError:
+            fail('Too many parameters')
+        specified_arguments.add(arg)
+        try:
+            arguments[arg] = conv[arg](value)
+        except ValueError:
+            fail('Invalid value for argument %s (%s): %s' % (key, arg, value))
+
+    for key, value in optlist:
+        arg = key_to_arg[key]
+        if arg in specified_arguments:
+            fail('Argument \'%s\' is specified twice' % arg)
+        try:
+            arguments[arg] = conv[arg](value)
         except ValueError:
             fail('Invalid value for \'%s\': %s' % (key, value))
 
@@ -161,15 +180,20 @@ def make_shell(init_func=lambda: {}, banner=None, use_ipython=True):
 
 
 def make_runserver(app_factory, hostname='localhost', port=5000,
-                   use_reloader=False, threaded=False, processes=1):
+                   use_reloader=False, use_debugger=False, use_evalex=True,
+                   threaded=False, processes=1):
     """
     Returns an action callback that spawns a new wsgiref server.
     """
     def action(hostname=('h', hostname), port=('p', port),
-               use_reloader=use_reloader, threaded=threaded,
-               processes=processes):
+               use_reloader=use_reloader, use_debugger=use_debugger,
+               use_evalex=use_evalex, threaded=threaded, processes=processes):
         """Start a new development server."""
         from werkzeug.serving import run_simple
+        app = app_factory()
+        if use_debugger:
+            from werkzeug.debug import DebuggedApplication
+            app = DebuggedApplication(app, use_evalex)
         run_simple(hostname, port, app_factory(), use_reloader,
                    None, threaded, processes)
     return action

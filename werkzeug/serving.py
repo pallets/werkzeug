@@ -121,7 +121,7 @@ def restart_with_reloader():
     Spawn a new Python interpreter with the same arguments as this one,
     but running the reloader thread.
     """
-    while True:
+    while 1:
         print '* Restarting with reloader...'
         args = [sys.executable] + sys.argv
         if sys.platform == 'win32':
