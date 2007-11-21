@@ -108,7 +108,7 @@ class DebuggedApplication(object):
             except:
                 pass
             debug_context = self.create_debug_context(environ, exc_info)
-            yield debug_page(debug_context).encode('utf-8')
+            yield debug_page(debug_context)
 
         if hasattr(appiter, 'close'):
             appiter.close()

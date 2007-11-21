@@ -16,7 +16,7 @@ from werkzeug.debug.util import Namespace
 
 
 def get_template(name):
-    return Template(load_resource(name).decode('utf-8'))
+    return Template(load_resource(name), unicode_mode=False)
 
 
 def load_resource(res):

@@ -661,9 +661,7 @@ def url_decode(s, charset='utf-8'):
 
 
 def url_encode(obj, charset='utf-8'):
-    """
-    Urlencode a dict/MultiDict.
-    """
+    """Urlencode a dict/MultiDict."""
     if isinstance(obj, dict):
         items = [(key, [value]) for key, value in obj.iteritems()]
     else:
@@ -671,8 +669,12 @@ def url_encode(obj, charset='utf-8'):
     tmp = []
     for key, values in items:
         for value in values:
-            if isinstance(value, unicode):
+            if value is None:
+                continue
+            elif isinstance(value, unicode):
                 value = value.encode(charset)
+            else:
+                value = str(value)
             tmp.append('%s=%s' % (urllib.quote(key),
                                   urllib.quote(value)))
     return '&'.join(tmp)

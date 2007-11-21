@@ -129,7 +129,7 @@ class IterI(IterIO):
         stream = object.__new__(cls)
         stream.__init__(greenlet.getcurrent())
 
-        g = greenlet(func, stream._parent)
+        g = greenlet(lambda: func(stream), stream._parent)
         while 1:
             rv = g.switch()
             if not rv:

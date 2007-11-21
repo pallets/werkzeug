@@ -51,18 +51,19 @@ class Template(object):
         t.render(**templatecontext)
     """
 
-    def __init__(self, source):
+    def __init__(self, source, unicode_mode=True):
+        self.unicode_mode = unicode_mode
         lines = ['def __generate():', '    if 0: yield None']
         indention = 1
         write = lambda d, o: lines.append(('    ' * (indention - o)) + d)
 
-        source = u'\n'.join(source.replace('\\\n', ' ').splitlines())
+        source = '\n'.join(source.replace('\\\n', ' ').splitlines())
         match = None
         for match in tag_re.finditer(source):
             write('yield %r' % match.group(1), 0)
             tag = match.group(2)
             if tag.startswith('<%='):
-                write('yield unicode(%s)' % tag[3:-2].strip(), 0)
+                write('yield __make_string(%s)' % tag[3:-2].strip(), 0)
             elif tag.startswith('<%!'):
                 tmp = tag[3:-2].splitlines() or ['']
                 if tmp.pop(0).strip():
@@ -93,7 +94,15 @@ class Template(object):
         source = '\n'.join(lines).replace('<%%', '<%').replace('%%>', '%>')
 
         self.code = compile(source, '<template>', 'exec')
-        self.filters = DEFAULT_FILTERS.copy()
+        self.filters = {
+            'escape':   TemplateFilter(lambda s, *a, **k:
+                        escape(self.make_string(s), *a, **k))
+        }
+
+    def make_string(self, value):
+        if self.unicode_mode:
+            return unicode(value)
+        return str(value)
 
     def add_filter(self, name, func):
         self.filters[name] = TemplateFilter(func)
@@ -101,11 +110,7 @@ class Template(object):
     def render(self, *args, **kwargs):
         ns = self.filters.copy()
         ns.update(*args, **kwargs)
+        ns['__make_string'] = self.make_string
         tmp = {}
         exec self.code in ns, tmp
-        return u''.join(tuple(tmp['__generate']()))
-
-
-DEFAULT_FILTERS = {
-    'escape': TemplateFilter(lambda s, *a, **k: escape(unicode(s), *a, **k))
-}
+        return ''.join(tuple(tmp['__generate']()))
