@@ -5,6 +5,7 @@
 
     This module contains special pages such as the recent changes page.
 
+
     :copyright: Copyright 2007 by Armin Ronacher.
     :license: BSD.
 """

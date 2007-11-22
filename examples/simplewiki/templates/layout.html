@@ -5,7 +5,7 @@
     <head py:attrs="select('@*')">
       <title py:with="title = list(select('title/text()'))"><py:if
         test="title">${title} — </py:if>SimpleWiki</title>
-      <link rel="stylesheet" type="text/css" href="${href('_shared/style.css')}" />
+      <link rel="stylesheet" type="text/css" href="${href('_shared', 'style.css')}" />
       ${select('*[local-name()!="title"]')}
     </head>
   </py:match>

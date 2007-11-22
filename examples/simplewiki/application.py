@@ -13,7 +13,7 @@
 from os import path
 from sqlalchemy import create_engine
 from werkzeug import ClosingIterator, SharedDataMiddleware, redirect
-from simplewiki.utils import Request, Response, local, local_manager
+from simplewiki.utils import Request, Response, local, local_manager, href
 from simplewiki.database import Session, metadata
 from simplewiki import actions
 from simplewiki.specialpages import pages, page_not_found
@@ -45,18 +45,6 @@ class SimpleWiki(object):
         """Called from the management script to generate the db."""
         metadata.create_all(bind=self.database_engine)
 
-    def create_request(self, path='/', base_url=None, query_string=None,
-                       method='GET'):
-        """
-        Useful for the script.  Creates a request object from data
-        provided.  Which is useful for unittesting or playing in the
-        shell.
-        """
-        if isinstance(query_string, dict):
-            query_string = url_encode(query_string, 'utf-8')
-        return Request(create_environ(path, base_url, query_string,
-                                      method), self)
-
     def bind_to_context(self):
         """
         Useful for the shell.  Binds the application to the current active
@@ -70,8 +58,9 @@ class SimpleWiki(object):
         # creating a request object, propagating the application to the
         # current context and instanciating the database session.
         self.bind_to_context()
-        request = Request(environ, self)
+        request = Request(environ)
         request.db_session = Session()
+        request.bind_to_context()
 
         # get the current action from the url and normalize the page name
         # which is just the request path
@@ -81,7 +70,7 @@ class SimpleWiki(object):
 
         # redirect to the Main_Page if the user requested the index
         if not page_name:
-            response = redirect('/Main_Page')
+            response = redirect(href('Main_Page'))
 
         # check special pages
         elif page_name.startswith('Special:'):

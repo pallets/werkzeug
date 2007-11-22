@@ -306,9 +306,10 @@ class BaseResponse(object):
             content_type = mimetype
         if content_type is not None:
             self.headers['Content-Type'] = content_type
-        if isinstance(status, basestring):
-            status = int(status.split(None, 1)[0])
-        self.status = status
+        if isinstance(status, (int, long)):
+            self.status_code = status
+        else:
+            self.status = status
         self._cookies = None
 
     def from_app(cls, app, environ, buffered=False):
@@ -323,25 +324,35 @@ class BaseResponse(object):
         return cls(*run_wsgi_app(app, environ, buffered))
     from_app = classmethod(from_app)
 
+    def _get_status_code(self):
+        return int(self.status.split(None, 1)[0])
+    def _set_status_code(self, code):
+        self.status = '%d %s' % (code, HTTP_STATUS_CODES[code].upper())
+    status_code = property(_get_status_code, _set_status_code,
+                           'Get the HTTP Status code as number')
+    del _get_status_code, _set_status_code
+
     def write(self, value):
         """If we have a buffered response this writes to the buffer."""
         if not isinstance(self.response, list):
             raise RuntimeError('cannot write to a streamed response.')
         self.response.append(value)
 
-    def response_body(self):
+    def _get_response_body(self):
         """
         The string representation of the request body.  Whenever you access
         this property the request iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
         """
         if not isinstance(self.response, list):
-            response = []
-            for item in self.response:
-                response.append(item)
-            self.response = response
+            self.response = list(self.response)
         return ''.join(self.iter_encoded())
-    response_body = property(response_body, doc=response_body.__doc__)
+    def _set_response_body(self, value):
+        """Set a new string as response body."""
+        self.response = [value]
+    response_body = property(_get_response_body, _set_response_body,
+                             doc=_get_response_body.__doc__)
+    del _get_response_body, _set_response_body
 
     def iter_encoded(self, charset=None):
         """
@@ -368,18 +379,14 @@ class BaseResponse(object):
         if isinstance(value, unicode):
             value = value.encode(self.charset)
         self._cookies[key] = value
-        if max_age is not None:
-            self._cookies[key]['max-age'] = max_age
         if expires is not None:
             if not isinstance(expires, basestring):
                 expires = cookie_date(expires)
             self._cookies[key]['expires'] = expires
-        if path is not None:
-            self._cookies[key]['path'] = path
-        if domain is not None:
-            self._cookies[key]['domain'] = domain
-        if secure is not None:
-            self._cookies[key]['secure'] = secure
+        for k, v in (('path', path), ('domain', domain), ('secure', secure),
+                     ('max-age', max_age)):
+            if v is not None:
+                self._cookies[key][k] = v
 
     def delete_cookie(self, key):
         """Delete a cookie."""
@@ -390,6 +397,31 @@ class BaseResponse(object):
         self._cookies[key]['max-age'] = 0
         self._cookies[key]['expires'] = 0
 
+    def header_list(self):
+        """
+        The complete header list including headers set by the request object
+        internally which are not part of the `headers` instance (such as the
+        cookie headers).
+        """
+        headers = self.headers.to_list(self.charset)
+        if self._cookies is not None:
+            for morsel in self._cookies.values():
+                headers.append(('Set-Cookie', morsel.output(header='')))
+        return headers
+    header_list = property(header_list, doc=header_list.__doc__)
+
+    def fix_headers(self, environ):
+        """
+        This is automatically called right before the response is started
+        and should fix common mistakes in headers.  For example location
+        headers are joined with the root URL here.
+        """
+        if 'Location' in self.headers:
+            self.headers['Location'] = urlparse.urljoin(
+                get_current_url(environ, host_only=True),
+                self.headers['Location']
+            )
+
     def close(self):
         """Close the wrapped response if possible."""
         if hasattr(self.response, 'close'):
@@ -397,16 +429,13 @@ class BaseResponse(object):
 
     def __call__(self, environ, start_response):
         """Process this response as WSGI application."""
-        headers = self.headers.to_list(self.charset)
-        if self._cookies is not None:
-            for morsel in self._cookies.values():
-                headers.append(('Set-Cookie', morsel.output(header='')))
-        status = '%d %s' % (
-            self.status,
-            HTTP_STATUS_CODES[self.status].upper()
-        )
-
-        start_response(status, headers)
+        self.fix_headers(environ)
+        if environ['REQUEST_METHOD'] == 'HEAD':
+            return ()
+        elif 100 <= self.status_code < 200 or self.status_code in (204, 304):
+            self.headers['Content-Length'] = 0
+            return ()
+        start_response(self.status, self.header_list)
         return self.iter_encoded()
 
 
@@ -422,7 +451,7 @@ class BaseReporterStream(object):
         class ReporterStream(BaseReporterStream):
 
             def __init__(self, environ):
-                super(ReporterStream, self).__init__(environ, 1024)
+                super(ReporterStream, self).__init__(environ, 1024 * 16)
                 self.transport_id = randrange(0, 100000)
 
             def processed(self):
@@ -483,29 +512,3 @@ class BaseReporterStream(object):
         while self.pos < self.length:
             result.append(self.readline())
         return result
-
-
-class _RedirectResponse(BaseResponse):
-    """
-    Internally used by the `redirect` function.
-    """
-    default_mimetype = 'text/html'
-
-    def __init__(self, code, location):
-        BaseResponse.__init__(self,
-            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-            '<title>Redirecting...</title>\n'
-            '<h1>Redirecting...</h1>\n'
-            '<p>You should be redirected automatically to target URL: '
-            '<a href="%s">%s</a>.  If not click the link.' % (
-                escape(location),
-                escape(location)
-            ), code)
-        self.location = location
-
-    def __call__(self, environ, start_response):
-        if not 'Location' in self.headers:
-            root = get_current_url(environ, root_only=True)
-            location = urlparse.urljoin(root, self.location)
-            self.headers['Location'] = location
-        return BaseResponse.__call__(self, environ, start_response)

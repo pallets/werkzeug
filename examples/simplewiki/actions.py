@@ -3,7 +3,11 @@
     simplewiki.actions
     ~~~~~~~~~~~~~~~~~~
 
-    The per page actions.
+    The per page actions.  The actions are defined in the URL with the
+    `action` parameter and directly dispatched to the functions in this
+    module.  In the module the actions are prefixed with 'on_', so be
+    careful not to name any other objects in the module with the same
+    prefix unless you want to act them as actions.
 
     :copyright: Copyright 2007 by Armin Ronacher.
     :license: BSD.
@@ -179,4 +183,4 @@ def missing_action(request, action):
     """Displayed if a user tried to access a action that does not exist."""
     return Response(generate_template('missing_action.html',
         action=action
-    ))
+    ), status=404)

@@ -10,7 +10,7 @@
 """
 from datetime import datetime
 from sqlalchemy import Table, Column, Integer, String, DateTime, \
-     ForeignKey, MetaData, join, desc
+     ForeignKey, MetaData, join
 from sqlalchemy.orm import relation, create_session, scoped_session
 from simplewiki.utils import get_application, get_request, local_manager, \
      parse_creole
@@ -102,10 +102,7 @@ class Page(object):
         return self.name.replace('_', ' ')
 
     def __repr__(self):
-        return '<%s %r>' % (
-            self.__class__.__name__,
-            self.name
-        )
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 
 class RevisionedPage(Page, Revision):
@@ -130,7 +127,8 @@ class RevisionedPage(Page, Revision):
 # setup mappers
 Session.mapper(Revision, revision_table)
 Session.mapper(Page, page_table, properties=dict(
-    revisions=relation(Revision, backref='page', order_by=[desc(Revision.revision_id)])
+    revisions=relation(Revision, backref='page',
+                       order_by=Revision.revision_id.desc())
 ))
 Session.mapper(RevisionedPage, join(page_table, revision_table), properties=dict(
     page_id=[page_table.c.page_id, revision_table.c.page_id],

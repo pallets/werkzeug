@@ -684,10 +684,12 @@ def url_decode(s, charset='utf-8'):
 
 def url_encode(obj, charset='utf-8'):
     """Urlencode a dict/MultiDict."""
-    if isinstance(obj, dict):
+    if isinstance(obj, MultiDict):
+        items = obj.lists()
+    elif isinstance(obj, dict):
         items = [(key, [value]) for key, value in obj.iteritems()]
     else:
-        items = obj.lists()
+        items = obj
     tmp = []
     for key, values in items:
         for value in values:
@@ -816,8 +818,15 @@ def redirect(location, code=302):
     If-Modified-Since headers.
     """
     assert code in (301, 302, 303, 305, 307)
-    from werkzeug.wrappers import _RedirectResponse
-    response = _RedirectResponse(code, location)
+    from werkzeug.wrappers import BaseResponse
+    response = BaseResponse(
+        '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+        '<title>Redirecting...</title>\n'
+        '<h1>Redirecting...</h1>\n'
+        '<p>You should be redirected automatically to target URL: '
+        '<a href="%s">%s</a>.  If not click the link.' %
+        ((escape(location),) * 2), code, mimetype='text/html')
+    response.headers['Location'] = location
     return response
 
 

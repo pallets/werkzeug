@@ -3,7 +3,8 @@
     simplewiki.utils
     ~~~~~~~~~~~~~~~~
 
-    Various utilities.
+    This module implements various utility functions and classes used all
+    over the application.
 
     :copyright: Copyright 2007 by Armin Ronacher.
     :license: BSD.
@@ -23,7 +24,11 @@ template_loader = TemplateLoader(TEMPLATE_PATH, auto_reload=True,
                                  variable_lookup='lenient')
 
 
-# context locals
+# context locals.  these two objects are use by the application to
+# bind objects to the current context.  A context is defined as the
+# current thread and the current greenlet if there is greenlet support.
+# the `get_request` and `get_application` functions look up the request
+# and application objects from this local manager.
 local = Local()
 local_manager = LocalManager([local])
 
@@ -61,7 +66,10 @@ def parse_creole(request, markup):
 
 
 def href(*args, **kw):
-    """Simple function for URL generation."""
+    """
+    Simple function for URL generation.  Position arguments are used for the
+    URL path and keyword arguments are used for the url parameters.
+    """
     request = get_request()
     result = [(request and request.script_root or '') + '/']
     for idx, arg in enumerate(args):
@@ -78,18 +86,12 @@ def format_datetime(obj):
 
 class Request(BaseRequest):
     """
-    Encapsulates a request.
+    Simple request subclass that allows to bind the object to the
+    current context.
     """
 
-    def __init__(self, environ, wiki):
-        BaseRequest.__init__(self, environ)
-        self.wiki = wiki
+    def bind_to_context(self):
         local.request = self
-
-    def from_values(app, *args, **kw):
-        """Compatibility with the normal from_values."""
-        return app.create_request(*args, **kw)
-    from_values = staticmethod(from_values)
 
 
 class Response(BaseResponse):
