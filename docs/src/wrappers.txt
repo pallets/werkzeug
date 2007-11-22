@@ -24,21 +24,73 @@ functions or use it inside the application callable.
         start_response('200 OK', [('Content-Type', 'text/plain')])
         yield 'Hello %s!' % req.args.get('subject', 'World')
 
-Per default the `BaseRequest` object only accepts `ASCII` values. Because of
-that you have to tell it the actual encoding to use when subclassing it. All
-data is stored internally as `unicode`.
+All incoming data is decoded into unicode objects automatically so you don't
+have to care about that.
 
 The request object will store itself as ``'werkzeug.request'`` in the WSGI
 environment.
+
+Class Methods
+-------------
+
+`from_values(path, base_url, query_string, **options)`
+    Create a new request object based on the values provided.  If
+    environ is given missing values are filled from there.  This method
+    is useful for small scripts when you need to simulate a request
+    from an url.  Do not use this method for unittesting, there is a
+    full featured client object in `werkzeug.test` that allows to create
+    multipart requests etc.
+
+    This accepts the same options as the `create_environ` function from the
+    utils module and additionally an `environ` parameter that can contain
+    values which will override the values from dict returned by
+    `create_environ`.
+
+    Additionally a dict passed to `query_string` will be encoded in the
+    request class charset.
+
+
+Methods
+-------
+
+`_get_file_stream()`
+    This method is called whenever the form data parser needs a read and
+    write stream for the incoming data.  Per default this returns a stream
+    that points to a temporary file.  If you want to override this method
+    keep in mind that the stream object returned must support read *and*
+    write operations.
+
 
 Members
 -------
 
 `path`
     The current path requested, relative to the position where the WSGI
-    application is mounted (`PATH_INFO`). It will contain a trailing slash
+    application is mounted (`PATH_INFO`). It will contain a leading slash
     and will be at least a string with a single slash when accessing the
     URL root.
+
+`script_root`
+    The root path for the script (`SCRIPT_NAME`).  Does not contain a
+    trailing slash.
+
+`url`
+    The full URL for the current request.
+
+`base_url`
+    The current full URL without the query string.
+
+`url_root`
+    The current URL up to the script root.
+
+`host_url`
+    The current URL for the host.
+
+`host`
+    The current hostname, without scheme.
+
+`is_secure`
+    True if this is an https request.
 
 `method`
     The request method. `GET`, `POST` etc.
@@ -82,8 +134,32 @@ Members
 `environ`
     The WSGI environment used to create the request object.
 
+`stream`
+    The stream with incoming data from the webbrowser.  Depending on
+    if the request object has parsed form data already this will be
+    either a copy of the incoming data or the wsgi input stream.
+    Parsing of form data takes place the first time you access `form`,
+    `values`, `data`, or `files`.
+
 `data`
-    The raw value of the input stream.
+    The incoming form data as string.  This reads the whole stream into
+    the memory and parse form data.  After calling this `stream` will be
+    a buffered stream object.
+
+`accept_mimetypes``
+    List of mimetypes this client supports.
+
+`accept_charsets`
+    List of charsets this client supports.
+
+`accept_encodings`
+    List of encodings this client accepts.  Do not mix this up with
+    `accept_charset` which contains character encodings whereas
+    `accept_encodings` contains compression encodings such as gzip.
+
+`accept_languages`
+    List of langauges this client accepts.
+
 
 Response
 ========
@@ -107,10 +183,8 @@ iterable:
         resp = Response(u'<h1>Hello World</h1>', mimetype='text/html')
         return resp(environ, start_response)
 
-Per default the `BaseResponse` object only accepts `ASCII` values. Because of
-that you have to tell it the actual used encoding when subclassing it. All
-data is stored internally as `unicode`. Bytestrings passed to the object
-will be returned unchanged in order to support binary data.
+Ideally all data is stored internally as `unicode`. Bytestrings passed to
+the object will be returned unchanged in order to support binary data.
 
 The following members exist:
 
@@ -146,13 +220,13 @@ the following arguments:
     This will then take 10 seconds to submit all data but the browser will
     render after each iteration.
 
+`status`
+    The status number of the response. Defaults to `200`. Note that those
+    can either be strings or integers.
+
 `headers`
     Either `None`, a list or dict of headers or a werkzeug `Headers` instance.
     See the `Headers` documentation in the `utils`_ section.
-
-`status`
-    The status number of the response. Defaults to `200`. Note that those
-    are integers, not strings.
 
 `mimetype`
     The mimetype of the response. If there is no `charset` definition in
@@ -160,21 +234,37 @@ the following arguments:
     append the charset of the response object. The default mimetype is
     ``'text/plain'``.
 
+`content_type`
+    Most of the time `mimetype` and `content_type` work the same.  The
+    difference affects only 'text' mimetypes.  If the mimetype passed with
+    `mimetype` is a mimetype starting with `text/` it gets a charset
+    parameter added  with the charset of the response object.  In constrast
+    the `content_type` parameter is always added as header unmodified.
 
-Members
+
+Class Methods
+-------------
+
+`from_app(app, environ, buffered=False)`
+    Create a new response object from an application output.  This works
+    best if you pass it an application that returns a generator all the
+    time.  Sometimes applications may use the `write()` callable returned
+    by the `start_response` function.  This tries to resolve such edge
+    cases automatically.  But if you don't get the expected output you
+    should set `buffered` to `True` which enforces buffering.
+
+
+Methods
 -------
 
-`headers`
-    A `Headers` instance from the `utils`_ module that represents the
-    headers set currently.
-
-`write(data)`
+`write(data)` / `writelines(lines)`
     If the response object was created not by passing it an iterable but
     either a string, list or nothing it will be created in file-like mode.
 
     This means that you can write data to the internal buffer, it doesn't
     mean that you directly pass the data to the webserver, if you want to
-    do that have a look at the generator notice above.
+    do that you should use a generator and pass that to the response
+    object.
 
 `set_cookie(key, value='', max_age=None, expires=None, path='/', domain=None, secure=None)`
 
@@ -193,6 +283,46 @@ Members
 
 `delete_cookie(key)`
     Deletes the cookie with the given key. Fails silently if the key doesn’t exist.
+
+`iter_encoded(charset=None)`
+    Iterate over the response encoded with the encoding specified.  If no
+    encoding is given the encoding from the class is used.  Note that
+    this does not encode data that is already encoded into a bytestring.
+
+`fix_headers(environ)`
+    This is automatically called right before the response is started
+    and should fix common mistakes in headers.  For example location
+    headers are joined with the root URL here.
+
+`close()`
+    Close the wrapped response object if there is anything to close.
+
+
+Members
+-------
+
+`headers`
+    A `Headers` instance from the `utils`_ module that represents the
+    headers set currently.
+
+`header_list`
+    The complete header list including headers set by the request object
+    internally which are not part of the `headers` instance (such as the
+    cookie headers).
+
+`response`
+    The current response object.  This always is an iterable.
+
+`response_body`
+    The string representation of the request body.  Whenever you access
+    this property the request iterable is encoded and flattened.  This
+    can lead to unwanted behavior if you stream big data.
+
+`status`
+    The status string.  For example ``'200 OK'``.
+
+`status_code`
+    The status code.  For example ``200``.
 
 
 .. _utils: utils.txt

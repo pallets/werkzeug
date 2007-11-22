@@ -783,7 +783,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     return ''.join(tmp)
 
 
-def cookie_date(expires):
+def cookie_date(expires, _date_delim='-'):
     """
     Formats the time to ensure compatibility with Netscape's cookie standard.
 
@@ -797,16 +797,30 @@ def cookie_date(expires):
     elif isinstance(expires, (int, long)):
         expires = gmtime(expires)
 
-    return '%s, %02d-%s-%s %02d:%02d:%02d GMT' % (
+    return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
         ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[expires.tm_wday],
         expires.tm_mday,
+        _date_delim,
         ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
          'Oct', 'Nov', 'Dec')[expires.tm_mon - 1],
+        _date_delim,
         str(expires.tm_year),
         expires.tm_hour,
         expires.tm_min,
         expires.tm_sec
     )
+
+
+def http_date(timestamp):
+    """
+    Formats the time to match the RFC1123 date format.
+
+    Accepts a floating point number expressed in seconds since the epoc in, a
+    datetime object or a timetuple.  All times in UTC.
+
+    Outputs a string in the format 'Wdy, DD Mon YYYY HH:MM:SS GMT'.
+    """
+    return cookie_date(timestamp, ' ')
 
 
 def redirect(location, code=302):
@@ -862,6 +876,8 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
         script_name = ''
     if path and '?' in path:
         path, query_string = path.split('?', 1)
+    elif not isinstance(query_string, basestring):
+        query_string = url_encode(query_string)
     path = urllib.unquote(path) or '/'
 
     return {

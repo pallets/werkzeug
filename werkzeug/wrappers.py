@@ -70,8 +70,7 @@ class BaseRequest(object):
         if populate_request:
             self.environ['werkzeug.request'] = self
 
-    def from_values(cls, path='/', base_url=None, query_string=None,
-                    method='GET', environ=None):
+    def from_values(cls, path='/', base_url=None, query_string=None, **options):
         """
         Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method
@@ -82,7 +81,8 @@ class BaseRequest(object):
         """
         if isinstance(query_string, dict):
             query_string = url_encode(query_string, cls.charset)
-        new_env = create_environ(path, base_url, query_string, method)
+        environ = options.pop('environ', None)
+        new_env = create_environ(path, base_url, query_string, **options)
         result = {}
         if environ is not None:
             result.update(environ)
@@ -124,16 +124,10 @@ class BaseRequest(object):
         self._form = MultiDict(post)
         self._files = MultiDict(files)
 
-    def read(self, *args):
-        warn(DeprecationWarning('use stream.read'))
-        return self._data_stream.read(*args)
-
-    def readline(self, *args):
-        warn(DeprecationWarning('use stream.readline'))
-        return self._data_stream.readline(*args)
-
     def stream(self):
         """The input stream."""
+        if not hasattr(self, '_data_stream'):
+            return self.environ['wsgi.input']
         return self._data_stream
     stream = property(stream, doc=stream.__doc__)
 
@@ -202,7 +196,7 @@ class BaseRequest(object):
 
     def accept_encodings(self):
         """
-        List of encodings this client accepts.  Encodings in an HTTP term are
+        List of encodings this client accepts.  Encodings in a HTTP term are
         compression encodings such as gzip.  For charsets have a look at
         `accept_charset`.
         """
@@ -280,7 +274,7 @@ class BaseResponse(object):
         headers can be a list of tuples or a `Headers` object.
 
         Special note for `mimetype` and `content_type`.  For most mime types
-        `mimetype` and `content_type` works the same, the difference affects
+        `mimetype` and `content_type` work the same, the difference affects
         only 'text' mimetypes.  If the mimetype passed with `mimetype` is a
         mimetype starting with `text/` it becomes a charset parameter defined
         with the charset of the response object.  In constrast the
@@ -332,11 +326,15 @@ class BaseResponse(object):
                            'Get the HTTP Status code as number')
     del _get_status_code, _set_status_code
 
-    def write(self, value):
+    def write(self, data):
         """If we have a buffered response this writes to the buffer."""
         if not isinstance(self.response, list):
             raise RuntimeError('cannot write to a streamed response.')
-        self.response.append(value)
+        self.response.append(data)
+
+    def writelines(self, lines):
+        """Write lines."""
+        self.write(''.join(lines))
 
     def _get_response_body(self):
         """

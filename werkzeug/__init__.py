@@ -85,7 +85,7 @@ all_by_module = {
     'werkzeug.serving':     ['run_simple'],
     'werkzeug.test':        ['Client'],
     'werkzeug.utils':       ['escape', 'create_environ', 'url_quote',
-                             'environ_property', 'cookie_date',
+                             'environ_property', 'cookie_date', 'http_date',
                              'url_encode', 'url_quote_plus',
                              'CombinedMultiDict', 'run_wsgi_app',
                              'get_host', 'SharedDataMiddleware',

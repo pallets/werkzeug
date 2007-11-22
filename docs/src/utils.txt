@@ -90,6 +90,19 @@ values for a key:
 
 Also notable: `update` adds values and does not replace existing.
 
+Because `MultiDict` usually hold use submitted data there you often have
+to convert incoming data to integers etc.  The `get` and `getlist`
+functions accept an type argument which can point to a function that
+converts the value or raises an `ValueError` which is catched.  This
+makes the following pieces of code roughly equivalent::
+
+    try:
+        page = int(multidict['key'])
+    except (ValueError, KeyError):
+        page = default
+
+    page = multidict.get('key', type=int)
+
 
 CombinedMultiDict
 =================
@@ -190,6 +203,15 @@ the following attributes and methods:
     methods of this stream and it's type is not strictly specified. In
     most situations it will be a `TemporaryFile` object.
 
+`save(dst[, buffer_size]<)`
+    Because uploaded files inside a `FileStorage` are kept in temporary
+    files without filenames you often have to copy the files over to a
+    new location on the filesystem.  This method is able to save the
+    file content to a new stream or file on the filesystem (just pass it
+    a filename in that case) without consuming all the memory.  If you
+    have more memory available you can raise the buffer size to speed
+    up the process.  The default buffer sizes is ``16384`` (16KB)
+
 
 SharedDataMiddleware
 ====================
@@ -208,7 +230,28 @@ or simple server setups. Usage is quite simple:
 
 The contents of the folder ``./shared`` will now be available on
 ``http://example.com/shared/``. This is pretty useful if you don't want
-to start a standalone media server or something like that.
+to start a standalone media server or something like that.  You can also mount
+a files on the root folder and still continue to use your application because
+the shared data middleware forwards all unhandled requests to the application,
+even if they are below one of the shared folders.
+
+
+ClosingIterator
+===============
+
+The WSGI specification requires that all middlewares and gateways respect the
+`close` callback of an iterator.  Because you often want to add another close
+action to a returned iterator you have to create a new iterator class that has
+such a close method.
+
+Because this is a very common task you can use the `ClosingIterator` to add
+more close methods to an iterable::
+
+    return ClosingIterator(app(environ, start_response), [cleanup_session,
+                                                          cleanup_locals])
+
+If you just have one close function you can pass it directly without wrapping
+it in a list/tuple.
 
 
 Helper Functions
@@ -218,7 +261,8 @@ Helper Functions
     parse a querystring and return it as `MultiDict`.
 
 `url_encode(s, charset='utf-8')`
-    URL encode a dict/`MultiDict`.
+    URL encode a dict/`MultiDict`.  If a value is `None` it will not
+    appear in the result string.
 
 `url_quote(s, charset='utf-8')`
     URL encode a single string with a given encoding.
@@ -246,3 +290,100 @@ Helper Functions
             def foo(self):
                 # calculate something important here
                 return 42
+
+`parse_accept_header(value)`
+    Parses an HTTP Accept-* header.  This does not implement a complete
+    valid algorithm but one that supports at least value and quality
+    extraction.
+
+    Returns a list of ``(value, quality)`` tuples sorted by the quality.
+
+`get_host(environ)`
+    Return the real host for the given WSGI enviornment.  This takes care
+    of the `X-Forwarded-Host` header.
+
+`get_current_url(environ, root=only=False, strip_querystring=False, host_only=False)`
+    This method allows you to recreate the full URL for the current request or
+    parts of it.  Here an example::
+
+        >>> env = create_environ("/?param=foo", "http://localhost/script")
+        >>> get_current_url(env)
+        'http://localhost/script/?param=foo'
+        >>> get_current_url(env, root_only=True)
+        'http://localhost/script/'
+        >>> get_current_url(env, host_only=True)
+        'http://localhost/'
+        >>> get_current_url(env, strip_querystring=True)
+        'http://localhost/script/'
+
+`cookie_date(expires)`
+    Formats the time to ensure compatibility with Netscape's cookie standard.
+
+    Accepts a floating point number expressed in seconds since the epoc in, a
+    datetime object or a timetuple.  All times in UTC.
+
+    Outputs a string in the format ``Wdy, DD-Mon-YYYY HH:MM:SS GMT``.
+
+`http_date(timestamp)`
+    Formats the time to match the RFC1123 date format.
+
+    Accepts a floating point number expressed in seconds since the epoc in, a
+    datetime object or a timetuple.  All times in UTC.
+
+    Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
+
+`redirect(location, code=302)`
+    Return a response object (a WSGI application) that, if called, redirects
+    the client to the target location.  Supported codes are 301, 302, 303,
+    305, and 307.  300 is not supported because it's not a real redirect and
+    304 because it's the answer for a request with a request with defined
+    If-Modified-Since headers.
+
+`create_environ(path='/', base_url=None, query_string=None, **options)`
+    Create a new WSGI environ dict based on the values passed.  The first
+    parameter should be the path of the request which defaults to '/'.
+    The second one can either be a absolute path (in that case the url
+    host is localhost:80) or a full path to the request with scheme,
+    netloc port and the path to the script.
+    
+    If the `path` contains a query string it will be used, even if the
+    `query_string` parameter was given.  If it does not contain one
+    the `query_string` parameter is used as querystring.  In that case
+    it can either be a dict, MultiDict or string.
+
+    The following options exist:
+
+    `method`
+        The request method.  Defaults to `GET`
+
+    `input_stream`
+        The input stream.  Defaults to an empty read only stream.
+
+    `content_type`
+        The content type for this request.  Default is an empty content
+        type.
+
+    `content_length`
+        The value for the content length header.  Defaults to 0.
+
+    `errors_stream`
+        The wsgi.errors stream.  Defaults to `sys.stderr`.
+
+    `multithread`
+        The multithreaded flag for the WSGI Environment.  Defaults to `False`.
+
+    `multiprocess`
+        The multiprocess flag for the WSGI Environment.  Defaults to `False`.
+
+    `run_once`
+        The run_once flag for the WSGI Environment.  Defaults to `False`.
+
+`run_wsgi_app(app, environ, buffered=False)`
+    Return a tuple in the form (app_iter, status, headers) of the application
+    output.  This works best if you pass it an application that returns a
+    generator all the time.
+
+    Sometimes applications may use the `write()` callable returned
+    by the `start_response` function.  This tries to resolve such edge
+    cases automatically.  But if you don't get the expected output you
+    should set `buffered` to `True` which enforces buffering.
