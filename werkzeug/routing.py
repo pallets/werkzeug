@@ -639,7 +639,7 @@ class Map(object):
             return iter(self._rules_by_endpoint[endpoint])
         return iter(self._rules)
 
-    def add_rule(self, rulefactory):
+    def add(self, rulefactory):
         """
         Add a new rule or factory to the map and bind it.  Requires that the
         rule is not bound to another map.
@@ -649,6 +649,11 @@ class Map(object):
             self._rules.append(rule)
             self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
         self._remap = True
+
+    def add_rule(self, rule):
+        from warnings import warn
+        warn(DeprecationWarning('use map.add instead of map.add_rule now'))
+        return self.add(rule)
 
     def bind(self, server_name, script_name=None, subdomain=None,
              url_scheme='http'):
