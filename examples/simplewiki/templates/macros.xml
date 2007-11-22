@@ -1,0 +1,18 @@
+<div xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/"
+     py:strip="">
+  
+  <py:def function="render_pagination(pagination)">
+    <div class="pagination" py:if="pagination.pages > 1">
+      <py:choose test="pagination.has_previous">
+        <a href="${pagination.previous}" py:when="True">&laquo; Previous</a>
+        <span class="inactive" py:when="False">&laquo; Previous</span>
+      </py:choose>
+      | <span class="active">${pagination.page}</span> |
+      <py:choose test="pagination.has_next">
+        <a href="${pagination.next}" py:when="True">Next &raquo;</a>
+        <span class="inactive" py:when="False">Next &raquo;</span>
+      </py:choose>
+    </div>
+  </py:def>
+
+</div>

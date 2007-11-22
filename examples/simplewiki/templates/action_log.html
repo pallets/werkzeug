@@ -1,0 +1,44 @@
+<?python
+  page_action = 'log'
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"><xi:include href="layout.html" />
+  <head>
+    <title>Revisions for “${page.title}”</title>
+  </head>
+  <body>
+    <h1>Revisions for “<a href="${href(page.name)}">${page.title}</a>”</h1>
+    <p>
+      In this list you can see all the revisions of the requested page.
+    </p>
+    <form action="${href(page.name)}" method="get">
+      <input type="hidden" name="action" value="diff" />
+      <table class="revisions">
+        <tr>
+          <th class="timestamp">Date</th>
+          <th class="change_note">Change Note</th>
+          <th class="diff"><input type="submit" value="Diff" /></th>
+          <th class="actions">Actions</th>
+        </tr>
+        <tr py:for="idx, revision in enumerate(page.revisions)"
+            class="${idx % 2 == 1 and 'even' or 'odd'}">
+          <td class="timestamp">${format_datetime(revision.timestamp)}</td>
+          <td class="change_note">${revision.change_note}</td>
+          <td class="diff">
+            <input type="radio" name="old" value="${revision.revision_id}"
+                   checked="${idx == 1 and 'checked' or None}" />
+            <input type="radio" name="new" value="${revision.revision_id}"
+                   checked="${idx == 0 and 'checked' or None}" />
+          </td>
+          <td class="actions">
+            <a href="${href(page.name, rev=revision.revision_id)}">show</a>
+            <py:if test="idx">|
+              <a href="${href(page.name, rev=revision.revision_id,
+                              action='revert')}">revert</a>
+            </py:if>
+          </td>
+        </tr>
+      </table>
+    </form>
+  </body>
+</html>

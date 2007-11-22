@@ -1,0 +1,26 @@
+<?python
+  hide_navigation = True
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"><xi:include href="layout.html" />
+  <head>
+    <title>Recent Changes</title>
+  </head>
+  <body>
+    <h1>Recent Changes</h1>
+    <table class="changes">
+      <tr>
+        <th class="timestamp">Date</th>
+        <th class="page">Page</th>
+        <th class="change_note">Change Note</th>
+      </tr>
+      <tr py:for="idx, entry in enumerate(pagination.entries)"
+          class="${idx % 2 == 1 and 'even' or 'odd'}">
+        <td class="timestamp">${format_datetime(entry.timestamp)}</td>
+        <td class="page"><a href="${href(entry.name)}">${entry.title}</a></td>
+        <td class="change_note">${entry.change_note}</td>
+      </tr>
+    </table>
+    ${render_pagination(pagination)}
+  </body>
+</html>

@@ -66,19 +66,36 @@ class MultiDict(dict):
         """Set an item as list."""
         dict.__setitem__(self, key, [value])
 
-    def get(self, key, default=None):
-        """Return the default value if the requested data doesn't exist"""
+    def get(self, key, default=None, type=None):
+        """
+        Return the default value if the requested data doesn't exist.
+        Additionally you can pass it a type function that is used as
+        converter.  That function should either conver the value or
+        raise a `ValueError`.
+        """
         try:
-            return self[key]
-        except KeyError:
-            return default
+            rv = self[key]
+            if type is not None:
+                rv = type(rv)
+        except (KeyError, ValueError):
+            rv = default
+        return rv
 
-    def getlist(self, key):
+    def getlist(self, key, type=None):
         """Return an empty list if the requested data doesn't exist"""
         try:
-            return dict.__getitem__(self, key)
+            rv = dict.__getitem__(self, key)
         except KeyError:
             return []
+        if type is None:
+            return rv
+        result = []
+        for item in rv:
+            try:
+                result.append(type(item))
+            except ValueError:
+                pass
+        return result
 
     def setlist(self, key, new_list):
         """Set new values for an key."""
@@ -192,16 +209,21 @@ class CombinedMultiDict(MultiDict):
                 return d[key]
         raise KeyError(key)
 
-    def get(self, key, default=None):
+    def get(self, key, default=None, type=None):
         for d in self.dicts:
             if key in d:
+                if type is not None:
+                    try:
+                        type(d[key])
+                    except ValueError:
+                        continue
                 return d[key]
         return default
 
-    def getlist(self, key):
+    def getlist(self, key, type=None):
         rv = []
         for d in self.dicts:
-            rv.extend(d.getlist(key))
+            rv.extend(d.getlist(key, type))
         return rv
 
     def keys(self):

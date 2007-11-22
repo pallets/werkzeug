@@ -1,0 +1,24 @@
+<?python
+  hide_navigation = True
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"><xi:include href="layout.html" />
+  <head>
+    <title>Page Not Found</title>
+  </head>
+  <body>
+    <h1>Page Not Found</h1>
+    <p>The page you requested does not exist.</p>
+    <p py:if="revision_requested">
+      It also could be that there is no such revision of that page.
+    </p>
+    <p py:if="not protected">
+      Feel free to <a href="${href(page_name, action='edit'
+      )}">create such a page</a>.
+    </p>
+    <p py:if="protected">
+      Although this page does not exist by now you cannot create it because
+      the system protected the page name for future use.
+    </p>
+  </body>
+</html>

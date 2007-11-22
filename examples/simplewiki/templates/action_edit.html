@@ -1,0 +1,26 @@
+<?python
+  hide_navigation = new
+  page_action = 'edit'
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"><xi:include href="layout.html" />
+  <head>
+    <title>${new and 'Create' or 'Edit'} Page</title>
+  </head>
+  <body>
+    <h1>${new and 'Create' or 'Edit'} “${page.title or page_name}”</h1>
+    <p>
+      You can now ${new and 'create' or 'modify'} the page contents.  To
+      format your text you can use <a href="http://www.wikicreole.org/">creole markup</a>.
+    </p>
+    <p class="error" py:if="error">${error}</p>
+    <form action="" method="post">
+      <textarea name="text" rows="15" cols="50">${revision.text}</textarea>
+      <div class="actions">
+        <input type="text" name="change_note" value="${change_note}" size="50" />
+        <input type="submit" value="Save" />
+        <input type="submit" name="cancel" value="Cancel" />
+      </div>
+    </form>
+  </body>
+</html>

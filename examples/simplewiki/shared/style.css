@@ -1,0 +1,210 @@
+body {
+    font-family: 'Luxi Sans', 'Lucida Sans', 'Trebuchet MS', sans-serif;
+    margin: 2em 1em 2em 1em;
+    padding: 0;
+    background: #1C0424;
+}
+
+a {
+    color: #6A2F7E;
+}
+
+a:hover {
+    color: #3D0F4D;
+}
+
+pre {
+    border: 1px solid #ccc;
+    background-color: white;
+    font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans', monospace;
+    font-size: 0.9em;
+    padding: 0.3em;
+}
+
+table {
+    border: 2px solid #ccc;
+    border-collapse: collapse;
+}
+
+table td, table th {
+    border: 1px solid #ccc;
+    padding: 0.4em;
+}
+
+div.bodywrapper {
+    margin: 0 auto 0 auto;
+    max-width: 50em;
+    background: #F1EBF3;
+    border: 1px solid #4C1068;
+    padding: 0;
+    color: #111;
+}
+
+div.header {
+    background-color: #320846;
+    color: white;
+}
+
+div.header h1 {
+    margin: 0;
+    padding: 0.4em;
+    font-size: 1.7em;
+}
+
+div.header h1 a {
+    text-decoration: none;
+    color: white;
+}
+
+div.header h1 a:hover {
+    color: #6A2F7E;
+}
+
+div.contents {
+    padding: 1em;
+    margin: 0;
+    border: 1px solid #3D0F4D;
+}
+
+div.footer {
+    padding: 0.5em;
+    background: #15031B;
+    color: white;
+    font-size: 0.8em;
+    text-align: right;
+    color: white;
+}
+
+div.contents h1, div.contents h2, div.contents h3, div.contents h4,
+div.contents h5 {
+    margin: 0;
+    padding: 0.3em 0 0.2em 0;
+    color: #3D0F4D;
+}
+
+div.contents h1 { font-size: 1.7em; }
+div.contents h2 { font-size: 1.6em; }
+div.contents h3 { font-size: 1.4em; }
+div.contents h4 { font-size: 1.2em; }
+div.contents h5 { font-size: 1em; }
+
+div.contents p {
+    margin: 0;
+    padding: 0.3em 0 0.3em 0;
+    line-height: 1.5em;
+}
+
+div.contents div.navigation {
+    padding: 0 0 0.3em 0;
+    margin: 0 0 0.3em 0;
+    border-bottom: 1px solid #6A2F7E;
+    font-size: 0.85em;
+    color: #555;
+}
+
+div.contents div.navigation a {
+    padding: 0 0.2em 0 0.2em;
+    font-weight: bold;
+    color: #555;
+}
+
+div.contents div.navigation a:hover {
+    color: #6A2F7E;
+}
+
+div.contents div.navigation a.active {
+    background-color: #ccc;
+    text-decoration: none;
+}
+
+div.contents div.page_meta {
+    font-size: 0.7em;
+    color: #555;
+    float: right;
+}
+
+textarea {
+    width: 99%;
+    font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans', monospace;
+    font-size: 0.9em;
+    padding: 0.3em;
+    margin: 0.5em 0 0.5em 0;
+}
+
+input {
+    font-family: 'Luxi Sans', 'Lucida Sans', 'Trebuchet MS', sans-serif;
+}
+
+table.revisions, table.changes {
+    border-collapse: collapse;
+    border: 1px solid #6A2F7E;
+    background: #fdfdfd;
+    width: 100%;
+    margin: 1em 0 0.5em 0;
+}
+
+table.revisions th, table.changes th {
+    background-color: #6A2F7E;
+    color: white;
+    padding: 0.1em 0.6em 0.1em 0.6em;
+    font-size: 0.8em;
+    border: none;
+}
+
+table.revisions td, table.changes td {
+    padding: 0.2em 0.5em 0.2em 0.5em;
+    font-size: 0.9em;
+    border: none;
+}
+
+table.revisions .timestamp, table.changes .timestamp {
+    text-align: left;
+    width: 10em;
+}
+
+table.revisions td.timestamp, table.changes td.timestamp {
+    color: #444;
+}
+
+table.revisions .change_note, table.changes .change_note {
+    text-align: left;
+}
+
+table.revisions td.change_note, table.changes td.change_note {
+    font-style: italic;
+}
+
+table.revisions th.diff input {
+    background-color: #3D0F4D;
+    color: white;
+    border: 1px solid #1C0424;
+}
+
+table.revisions .diff {
+    width: 5em;
+    text-align: right;
+}
+
+table.revisions .actions {
+    width: 8em;
+    text-align: left;
+}
+
+table.revisions td.actions {
+    font-size: 0.75em;
+}
+
+table.revisions tr.odd, table.changes tr.odd {
+    background-color: #f7f7f7;
+}
+
+pre.udiff {
+    overflow: auto;
+    font-size: 0.75em;
+}
+
+div.pagination {
+    font-size: 0.9em;
+    padding: 0.5em 0 0.5em 0;
+    text-align: center;
+}

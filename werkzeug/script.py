@@ -9,6 +9,10 @@
     common actions such as running a WSGI server and starting a python
     shell.
 
+    This module is quite magical because it uses frame introspection to
+    locate the action callbacks.  You should only use it for small
+    manage scripts and similar things.
+
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
@@ -194,6 +198,6 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
         if use_debugger:
             from werkzeug.debug import DebuggedApplication
             app = DebuggedApplication(app, use_evalex)
-        run_simple(hostname, port, app_factory(), use_reloader,
-                   None, threaded, processes)
+        run_simple(hostname, port, app, use_reloader, None, threaded,
+                   processes)
     return action

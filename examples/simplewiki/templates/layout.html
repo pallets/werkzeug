@@ -1,0 +1,46 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+  <xi:include href="macros.xml" />
+  <py:match path="head" once="true">
+    <head py:attrs="select('@*')">
+      <title py:with="title = list(select('title/text()'))"><py:if
+        test="title">${title} — </py:if>SimpleWiki</title>
+      <link rel="stylesheet" type="text/css" href="${href('_shared/style.css')}" />
+      ${select('*[local-name()!="title"]')}
+    </head>
+  </py:match>
+  <py:match path="body" once="true">
+    <body py:attrs="select('@*')">
+      <div class="bodywrapper">
+        <div class="header">
+          <h1><a href="${href()}">Simple Wiki</a></h1>
+        </div>
+        <div class="contents">
+          <div class="page_meta" py:if="not hide_navigation and page.timestamp">
+            <a href="${href(page.name, rev=page.revision_id)}">This revision</a>
+            was created on ${format_datetime(page.timestamp)}.
+          </div>
+          <div class="navigation">
+            <py:if test="not hide_navigation">
+              <py:for each="id, href, title in (
+                ('show', href(page.name), 'show'),
+                ('edit', href(page.name, action='edit'), 'edit'),
+                ('log', href(page.name, action='log'), 'log')
+              )">
+                <a href="${href}" py:attrs="id == page_action and {
+                  'class': 'active'} or None">${title}</a> |
+              </py:for>
+            </py:if>
+            <a href="${href()}">main</a> |
+            <a href="${href('Special:Index')}">index</a> |
+            <a href="${href('Special:Recent_Changes')}">changes</a>
+          </div>
+          ${select('*|text()')}
+        </div>
+        <div class="footer">
+          Werkzeug Example Wiki Application
+        </div>
+      </div>
+    </body>
+  </py:match>
+</html>

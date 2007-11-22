@@ -1,0 +1,27 @@
+<?python
+  page_action = 'log'
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"><xi:include href="layout.html" />
+  <head>
+    <title>View Diff</title>
+  </head>
+  <body>
+    <py:if test="not error">
+    <h1>Diff for “<a href="${href(page.name)}">${page.title}</a>”</h1>
+      <p>
+        Below you can see the differences between the revision from
+        <a href="${href(page.name, rev=old_revision.revision_id)}"
+        >${format_datetime(old_revision.timestamp)}</a> and the
+        revision from <a href="${href(page.name, rev=new_revision.revision_id)}"
+        >${format_datetime(new_revision.timestamp)}</a> in unified
+        diff format.
+      </p>
+      <pre class="udiff">${diff}</pre>
+    </py:if>
+    <py:if test="error">
+      <h1>Cannot Display Diff</h1>
+      <p class="error" py:if="error">${error}</p>
+    </py:if>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+<?python
+  page_action = 'log'
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"><xi:include href="layout.html" />
+  <head>
+    <title>Revert Old Revision</title>
+  </head>
+  <body>
+    <py:if test="not error">
+    <h1>Revert Old Revision of “<a href="${href(page.name)}">${page.title}</a>”</h1>
+      <p>
+        If you want to restore the old revision from
+        <a href="${href(page.name, rev=old_revision.revision_id)}"
+        >${format_datetime(old_revision.timestamp)}</a> enter your change
+        note and click “Revert”.
+      </p>
+      <form action="" method="post">
+        <div class="actions">
+          <input type="text" name="change_note" value="${change_note}" size="50" />
+          <input type="submit" value="Revert" />
+          <input type="submit" name="cancel" value="Cancel" />
+        </div>
+      </form>
+    </py:if>
+    <py:if test="error">
+      <h2>Cannot Revert</h2>
+      <p class="error" py:if="error">${error}</p>
+    </py:if>
+  </body>
+</html>
