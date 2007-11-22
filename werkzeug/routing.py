@@ -631,8 +631,7 @@ class Map(object):
             self.converters.update(converters)
 
         for rulefactory in rules or ():
-            for rule in rulefactory.get_rules(self):
-                self.add_rule(rule)
+            self.add_rule(rulefactory)
 
     def iter_rules(self, endpoint=None):
         """Iterate over all rules or the rules of an endpoint."""
@@ -640,17 +639,15 @@ class Map(object):
             return iter(self._rules_by_endpoint[endpoint])
         return iter(self._rules)
 
-    def add_rule(self, rule):
+    def add_rule(self, rulefactory):
         """
-        Add a new rule to the map and bind it. Requires that the rule is
-        not bound to another map. After adding new rules you have to call
-        the `remap` method.
+        Add a new rule or factory to the map and bind it.  Requires that the
+        rule is not bound to another map.
         """
-        if not isinstance(rule, Rule):
-            raise TypeError('rule objects required')
-        rule.bind(self)
-        self._rules.append(rule)
-        self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
+        for rule in rulefactory.get_rules(self):
+            rule.bind(self)
+            self._rules.append(rule)
+            self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
         self._remap = True
 
     def bind(self, server_name, script_name=None, subdomain=None,
