@@ -27,7 +27,7 @@ Basic Usage:
 
 .. sourcecode:: pycon
 
-    >>> from werkzeug.utils import MultiDict
+    >>> from werkzeug import MultiDict
     >>> d = MultiDict([('a', 'b'), ('a', 'c')])
     >>> d
     MultiDict([('a', 'b'), ('a', 'c')])
@@ -94,7 +94,9 @@ Because `MultiDict` usually hold use submitted data there you often have
 to convert incoming data to integers etc.  The `get` and `getlist`
 functions accept an type argument which can point to a function that
 converts the value or raises an `ValueError` which is catched.  This
-makes the following pieces of code roughly equivalent::
+makes the following pieces of code roughly equivalent:
+
+.. sourcecode:: python
 
     try:
         page = int(multidict['key'])
@@ -113,7 +115,7 @@ dicts:
 
 .. sourcecode:: pycon
 
-    >>> from werkzeug.utils import MultiDict, CombinedMultiDict
+    >>> from werkzeug import MultiDict, CombinedMultiDict
     >>> post = MultiDict([('foo', 'bar')])
     >>> get = MultiDict([('blub', 'blah')])
     >>> combined = CombinedMultiDict([get, post])
@@ -222,7 +224,7 @@ or simple server setups. Usage is quite simple:
 .. sourcecode:: python
 
     import os
-    from werkzeug.utils import SharedDataMiddleware
+    from werkzeug import SharedDataMiddleware
 
     app = SharedDataMiddleware(app, {
         '/shared': os.path.join(os.path.dirname(__file__), 'shared')
@@ -245,7 +247,9 @@ action to a returned iterator you have to create a new iterator class that has
 such a close method.
 
 Because this is a very common task you can use the `ClosingIterator` to add
-more close methods to an iterable::
+more close methods to an iterable:
+
+.. sourcecode:: python
 
     return ClosingIterator(app(environ, start_response), [cleanup_session,
                                                           cleanup_locals])
@@ -304,7 +308,9 @@ Helper Functions
 
 `get_current_url(environ, root=only=False, strip_querystring=False, host_only=False)`
     This method allows you to recreate the full URL for the current request or
-    parts of it.  Here an example::
+    parts of it.  Here an example:
+
+    .. sourcecode:: pycon
 
         >>> env = create_environ("/?param=foo", "http://localhost/script")
         >>> get_current_url(env)

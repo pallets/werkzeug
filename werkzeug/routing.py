@@ -90,9 +90,6 @@ _rule_re = re.compile(r'''
     >
 ''', re.VERBOSE)
 
-# filled on the fly.
-_javascript_routing_template = None
-
 
 def parse_rule(rule):
     """
@@ -513,11 +510,6 @@ class BaseConverter(object):
     def to_url(self, value):
         return quote(unicode(value).encode(self.map.charset))
 
-    def js_to_url_function(self):
-        if hasattr(self, '_js_to_url'):
-            return u'(function(value) { %s })' % self._js_to_url()
-        return u'encodeURIComponent'
-
 
 class UnicodeConverter(BaseConverter):
     """
@@ -526,7 +518,7 @@ class UnicodeConverter(BaseConverter):
     """
 
     def __init__(self, map, minlength=1, maxlength=None, length=None):
-        super(UnicodeConverter, self).__init__(map)
+        BaseConverter.__init__(self, map)
         if length is not None:
             length = '{%d}' % int(length)
         else:
@@ -555,7 +547,7 @@ class NumberConverter(BaseConverter):
     """
 
     def __init__(self, map, fixed_digits=0, min=None, max=None):
-        super(NumberConverter, self).__init__(map)
+        BaseConverter.__init__(self, map)
         self.fixed_digits = fixed_digits
         self.min = min
         self.max = max
@@ -575,15 +567,6 @@ class NumberConverter(BaseConverter):
             value = ('%%0%sd' % self.fixed_digits) % value
         return str(value)
 
-    def _js_to_url(self):
-        if self.fixed_digits:
-            return u'''\
-var result = value.toString();
-while (result.length < %s)
-    result = '0' + result;
-return result;''' % self.fixed_digits
-        return u'return value.toString();'
-
 
 class IntegerConverter(NumberConverter):
     """
@@ -599,6 +582,9 @@ class FloatConverter(NumberConverter):
     """
     regex = r'\d+\.\d+'
     num_convert = float
+
+    def __init__(self, map, min=None, max=None):
+        NumberConverter.__init__(self, map, 0, min, max)
 
 
 class Map(object):
@@ -647,6 +633,12 @@ class Map(object):
         for rulefactory in rules or ():
             for rule in rulefactory.get_rules(self):
                 self.add_rule(rule)
+
+    def iter_rules(self, endpoint=None):
+        """Iterate over all rules or the rules of an endpoint."""
+        if endpoint is not None:
+            return iter(self._rules_by_endpoint[endpoint])
+        return iter(self._rules)
 
     def add_rule(self, rule):
         """
@@ -706,59 +698,6 @@ class Map(object):
             subdomain = '.'.join(filter(None, cur_server_name[:offset]))
         return Map.bind(self, server_name, environ.get('SCRIPT_NAME'), subdomain,
                         environ['wsgi.url_scheme'])
-
-    def generate_javascript(self, name='url_map'):
-        """
-        Generates a JavaScript function containing the rules defined in
-        this map, to be used with a MapAdapter's generate_javascript
-        method.  If you don't pass a name the returned JavaScript code is
-        an expression that returns a function.  Otherwise it's a standalone
-        script that assigns the function with that name.  Dotted names are
-        resolved (so you an use a name like 'obj.url_for')
-
-        In order to use JavaScript generation, simplejson must be installed.
-
-        Note that using this feature will expose the rules
-        defined in your map to users. If your rules contain sensitive
-        information, don't use JavaScript generation!
-        """
-        from simplejson import dumps
-        global _javascript_routing_template
-        if _javascript_routing_template is None:
-            from werkzeug.minitmpl import Template
-            from werkzeug.constants import JAVASCRIPT_ROUTING
-            _javascript_routing_template = Template(JAVASCRIPT_ROUTING)
-
-        self.update()
-        rules = []
-        converters = []
-        for rule in self._rules:
-            trace = [{
-                'is_dynamic':   is_dynamic,
-                'data':         data
-            } for is_dynamic, data in rule._trace]
-            rule_converters = {}
-            for key, converter in rule._converters.iteritems():
-                js_func = converter.js_to_url_function()
-                try:
-                    index = converters.index(js_func)
-                except ValueError:
-                    converters.append(js_func)
-                    index = len(converters) - 1
-                rule_converters[key] = index
-            rules.append({
-                u'endpoint':    rule.endpoint,
-                u'arguments':   list(rule.arguments),
-                u'converters':  rule_converters,
-                u'trace':       trace,
-                u'defaults':    rule.defaults
-            })
-
-        return _javascript_routing_template.render({
-            'name_parts':   name and name.split('.') or [],
-            'rules':        dumps(rules),
-            'converters':   converters
-        })
 
     def update(self):
         """
@@ -859,28 +798,6 @@ class MapAdapter(object):
             self.script_name[:-1],
             path.lstrip('/')
         ))
-
-    def generate_javascript(self, name='url_for', map_name='url_map'):
-        """
-        Generates JavaScript that calls the function generated by
-        Map.generate_javascript with this adapter's arguments.
-        """
-        from simplejson import dumps
-        values = {
-            u'server_name':     dumps(self.server_name),
-            u'script_name':     dumps(self.script_name),
-            u'subdomain':       dumps(self.subdomain),
-            u'url_scheme':      dumps(self.url_scheme),
-            u'name':            name,
-            u'map_name':        map_name
-        }
-        return u'''\
-var %(name)s = %(map_name)s(
-    %(server_name)s,
-    %(script_name)s,
-    %(subdomain)s,
-    %(url_scheme)s
-);''' % values
 
 
 DEFAULT_CONVERTERS = {

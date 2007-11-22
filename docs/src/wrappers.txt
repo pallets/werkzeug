@@ -14,7 +14,7 @@ functions or use it inside the application callable.
 
 .. sourcecode:: python
 
-    from werkzeug.wrappers import BaseRequest
+    from werkzeug import BaseRequest
 
     class Request(BaseRequest):
         charset = 'utf-8'
@@ -174,7 +174,7 @@ iterable:
 
 .. sourcecode:: python
 
-    from werkzeug.wrappers import BaseResponse
+    from werkzeug import BaseResponse
 
     class Response(BaseResponse):
         charset = 'utf-8'

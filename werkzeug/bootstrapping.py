@@ -225,7 +225,7 @@ def main(args):
       -c, --charset   Character set used for the files and application.
       -a, --author    Project author\'s name.
 
-    Report bugs via the web at <http://trac.pocoo.org/>.''' % (
+    Report bugs via the web at <http://dev.pocoo.org/projects/werkzeug>.''' % (
         os.path.basename(args[0]), os.path.basename(args[0]))
 
     try:
