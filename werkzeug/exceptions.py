@@ -72,9 +72,10 @@ class HTTPException(Exception):
 
     def __call__(self, environ, start_response):
         status = '%d %s' % (self.code, self.name)
-        headers = self.get_headers(environ)
-        start_response(status, headers)
-        yield self.get_body(environ)
+        start_response(status, self.get_headers(environ))
+        if environ['REQUEST_METHOD'] == 'HEAD':
+            return ()
+        return [self.get_body(environ)]
 
 
 class BadRequest(HTTPException):
