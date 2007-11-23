@@ -684,7 +684,9 @@ def url_decode(s, charset='utf-8'):
 
 def url_encode(obj, charset='utf-8'):
     """Urlencode a dict/MultiDict."""
-    if isinstance(obj, MultiDict):
+    if obj is None:
+        items = []
+    elif isinstance(obj, MultiDict):
         items = obj.lists()
     elif isinstance(obj, dict):
         items = [(key, [value]) for key, value in obj.iteritems()]
