@@ -337,19 +337,6 @@ class Parser(object):
         return ast.Discard(node, lineno=lineno)
 
 
-class SimpleIO(object):
-
-    def __init__(self, filter):
-        self.buffer = []
-        self.filter = filter
-
-    def write(self, val):
-        self.buffer.append(self.filter(val))
-
-    def to_unicode(self):
-        return u''.join(self.buffer)
-
-
 class UndefinedType(object):
     __slots__ = ()
 
