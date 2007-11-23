@@ -67,6 +67,9 @@ class HTTPException(Exception):
             'description':  self.get_description(environ)
         }
 
+    def get_headers(self, environ):
+        return [('Content-Type', 'text/html')]
+
     def __call__(self, environ, start_response):
         status = '%d %s' % (self.code, self.name)
         headers = self.get_headers(environ)

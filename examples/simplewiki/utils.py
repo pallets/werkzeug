@@ -15,7 +15,7 @@ from genshi import Stream
 from genshi.template import TemplateLoader
 from creoleparser import Parser, Creole10
 from werkzeug import BaseRequest, BaseResponse, Local, LocalManager, \
-     url_encode, url_quote, redirect
+     url_encode, url_quote, redirect, lazy_property
 
 
 # calculate the path to the templates an create the template loader
@@ -123,10 +123,10 @@ class Pagination(object):
         self.link = link
         self._count = None
 
-    @property
+    @lazy_property
     def entries(self):
         return self.query.offset((self.page - 1) * self.per_page) \
-                         .limit(self.per_page)
+                         .limit(self.per_page).all()
 
     @property
     def has_previous(self):
@@ -144,11 +144,9 @@ class Pagination(object):
     def next(self):
         return href(self.link, page=self.page + 1)
 
-    @property
+    @lazy_property
     def count(self):
-        if self._count is None:
-            self._count = self.query.count()
-        return self._count
+        return self.query.count()
 
     @property
     def pages(self):
