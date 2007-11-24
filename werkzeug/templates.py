@@ -15,6 +15,10 @@ r"""
         John
         Jane
 
+    You can also create templates from files::
+
+        t = Template.from_file('test.html')
+
     The syntax elements are a mixture of django, genshi text and mod_python
     templates and used internally in werkzeug components.
 
@@ -22,12 +26,18 @@ r"""
     because is quite slow and does not provide any advanced features.  For
     simple applications (cgi script like) this can however be sufficient.
 
+
     Syntax Elements
     ---------------
 
     Printing Variables::
 
+        $variable
+        $variable.attribute[item](some, function)(calls)
         ${expression} or <%py print expression %>
+
+    Keep in mind that the print statement adds a newline after the call or
+    a whitespace if it ends with a comma.
 
     For Loops::
 
@@ -69,6 +79,13 @@ r"""
         %>
             ...
 
+    Comments::
+
+        <%#
+            This is a comment
+        %>
+
+
     Missing Variables
     -----------------
 
@@ -81,12 +98,13 @@ r"""
             ...
         <% endif %>
 
+    Copyright notice: The `parse_data` method uses the string interpolation
+    algorithm by Ka-Ping Yee which originally was part of `ltpl20.py`_
 
-    XXX: the parse_data method uses code from the genshi template engine
-         (genshi.template.eval).  Figure out correct copyright information
-         before release.
+    .. _ltipl20.py: http://lfw.org/python/Itpl20.py
 
-    :copyright: 2006 by Armin Ronacher.
+
+    :copyright: 2006 by Armin Ronacher, Ka-Ping Yee.
     :license: BSD License.
 """
 import sys
@@ -100,35 +118,17 @@ from werkzeug import utils
 directive_re = re.compile(r'(?<!\\)<%(?:(#)|(py(?:thon)?\b)|'
                           r'(?:\s*(\w+))\s*)(.*?)\s*%>(?s)')
 escape_re = re.compile(r'\\\n|\\(\\|<%)')
-NAMESTART = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
-NAMECHARS = NAMESTART + '.0123456789'
-
-
-def to_unicode_stmt(node, lineno=None):
-    if isinstance(node, basestring):
-        return ast.Const(node, lineno=lineno)
-    if isinstance(node, ast.Const):
-        return node
-    return call_stmt('__to_unicode', [node], lineno)
+namestart_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
+undefined = type('UndefinedType', (object,), {
+    '__iter__': lambda x: (),
+    '__repr__': lambda x: 'Undefined',
+    '__str__':  lambda x: ''
+})()
 
 
 def call_stmt(func, args, lineno):
     return ast.CallFunc(ast.Name(func, lineno=lineno),
                         args, lineno=lineno)
-
-
-def parse_python(expr, type, filename, lineno):
-    try:
-        node = parse(expr, type)
-    except SyntaxError, e:
-        raise TemplateSyntaxError(str(e), filename, lineno + e.lineno - 1)
-    nodes = [node]
-    while nodes:
-        n = nodes.pop()
-        if hasattr(n, 'lineno'):
-            n.lineno = (n.lineno or 1) + lineno - 1
-        nodes.extend(n.getChildNodes())
-    return node.node
 
 
 def tokenize(source, filename):
@@ -170,9 +170,9 @@ def transform(node, filename):
 class TemplateSyntaxError(SyntaxError):
 
     def __init__(self, msg, filename, lineno):
-        SyntaxError.__init__(self, msg)
-        self.lineno = lineno
-        self.filename = filename
+        from linecache import getline
+        l = getline(filename, lineno)
+        SyntaxError.__init__(self, msg, (filename, lineno, len(l) or 1, l))
 
 
 class Parser(object):
@@ -184,6 +184,20 @@ class Parser(object):
 
     def fail(self, msg):
         raise TemplateSyntaxError(msg, self.filename, self.lineno)
+
+    def parse_python(self, expr, type='exec'):
+        try:
+            node = parse(expr, type)
+        except SyntaxError, e:
+            raise TemplateSyntaxError(str(e), self.filename,
+                                      self.lineno + e.lineno - 1)
+        nodes = [node]
+        while nodes:
+            n = nodes.pop()
+            if hasattr(n, 'lineno'):
+                n.lineno = (n.lineno or 1) + self.lineno - 1
+            nodes.extend(n.getChildNodes())
+        return node.node
 
     def parse(self, needle=()):
         start_lineno = self.lineno
@@ -214,23 +228,23 @@ class Parser(object):
         return ast.Stmt(result, lineno=start_lineno)
 
     def parse_loop(self, args, type):
-        loop = parse_python('%s %s: pass' % (type, args), 'exec',
-                            self.filename, self.lineno).nodes[0]
-        tag, value, loop.body = self.parse(('end' + type,))
+        rv = self.parse_python('%s %s: pass' % (type, args), 'exec').nodes[0]
+        tag, value, rv.body = self.parse(('end' + type,))
         if value:
             self.fail('unexpected data after end' + type)
-        return loop
+        return rv
 
     def parse_if(self, args):
-        cond = parse_python('if %s: pass' % args, 'exec',
-                            self.filename, self.lineno).nodes[0]
+        cond = self.parse_python('if %s: pass' % args).nodes[0]
         tag, value, body = self.parse(('else', 'elif', 'endif'))
         cond.tests[0] = (cond.tests[0][0], body)
         while 1:
             if tag == 'else':
+                if value:
+                    self.fail('unexpected data after else')
                 tag, value, cond.else_ = self.parse(('endif',))
             elif tag == 'elif':
-                expr = parse_python(value, 'eval', self.filename, self.lineno)
+                expr = self.parse_python(value, 'eval')
                 tag, value, body = self.parse(('else', 'elif', 'endif'))
                 cond.tests.append((expr, body))
                 continue
@@ -249,109 +263,77 @@ class Parser(object):
         if lines:
             lines[0] = lines[0].lstrip()
         if margin < sys.maxint:
-            for i in range(1, len(lines)):
+            for i in xrange(1, len(lines)):
                 lines[i] = lines[i][margin:]
         while lines and not lines[-1]:
             lines.pop()
         while lines and not lines[0]:
             lines.pop(0)
-        return parse_python('\n'.join(lines), 'exec', self.filename,
-                            self.lineno)
+        return self.parse_python('\n'.join(lines))
 
     def parse_data(self, text):
-        lineno = self.lineno
-        offset = pos = 0
+        start_lineno = lineno = self.lineno
+        pos = 0
         end = len(text)
-        escaped = False
         nodes = []
-        start_lineno = lineno
-        write = lambda *a: nodes.append(to_unicode_stmt(*a))
+
+        def match_or_fail(pos):
+            match = tokenprog.match(text, pos)
+            if match is None:
+                self.fail('invalid syntax')
+            return match.group().strip(), match.end()
+
+        def write_expr(code):
+            node = self.parse_python(code, 'eval')
+            nodes.append(call_stmt('__to_unicode', [node], lineno))
+            return code.count('\n')
+
+        def write_data(value):
+            if value:
+                nodes.append(ast.Const(value, lineno))
+                return value.count('\n')
+            return 0
 
         while 1:
-            if escaped:
-                offset = text.find('$', offset + 2)
-                escaped = False
-            else:
-                offset = text.find('$', pos)
-            if offset < 0 or offset == end - 1:
+            offset = text.find('$', pos)
+            if offset < 0:
                 break
             next = text[offset + 1]
 
             if next == '{':
-                if offset > pos:
-                    data = text[pos:offset]
-                    write(data, lineno)
-                    lineno += data.count('\n')
+                lineno += write_data(text[pos:offset])
                 pos = offset + 2
                 level = 1
                 while level:
-                    match = tokenprog.match(text, pos)
-                    if match is None:
-                        self.fail('invalid syntax')
-                    pos = match.end()
-                    token = match.group().strip()
+                    token, pos = match_or_fail(pos)
                     if token in '{}':
                         level += token == '{' and 1 or -1
-                data = text[offset + 2:pos - 1]
-                write(parse_python(data, 'eval', self.filename, lineno),
-                      lineno)
-                lineno += data.count('\n')
-
-            elif next in NAMESTART:
-                if offset > pos:
-                    data = text[pos:offset]
-                    write(data, lineno)
-                    lineno += data.count('\n')
-                    pos = offset
-                pos += 1
+                lineno += write_expr(text[offset + 2:pos - 1])
+            elif next in namestart_chars:
+                lineno += write_data(text[pos:offset])
+                token, pos = match_or_fail(offset + 1)
                 while pos < end:
-                    char = text[pos]
-                    if char not in NAMECHARS:
+                    if text[pos] == '.' and pos + 1 < end and \
+                       text[pos + 1] in namestart_chars:
+                        token, pos = match_or_fail(pos + 1)
+                    elif text[pos] in '([':
+                        pos += 1
+                        level = 1
+                        while level:
+                            token, pos = match_or_fail(pos)
+                            if token in '()[]':
+                                level += token in '([' and 1 or -1
+                    else:
                         break
-                    pos += 1
-                data = text[offset + 1:pos].strip()
-                write(parse_python(text[offset + 1:pos].strip(), 'eval',
-                                   self.filename, self.lineno))
-
-            elif not escaped and next == '$':
-                if offset > pos:
-                    data = text[pos:offset]
-                    write(data, lineno)
-                    lineno += data.count('\n')
-                escaped = True
-                pos = offset + 1
-
+                lineno += write_expr(text[offset + 1:pos])
             else:
-                data = text[pos:offset + 1]
-                write(data, lineno)
-                lineno += data.count('\n')
-                pos = offset + 1
+                lineno += write_data(text[pos:offset + 1])
+                pos = offset + 1 + (next == '$')
+        write_data(text[pos:])
 
-        if pos < end:
-            write(text[pos:], lineno)
-        if len(nodes) == 1:
-            return call_stmt('__write', [to_unicode_stmt(nodes[0],
-                             lineno)], lineno)
-        else:
-            node = call_stmt('__write_many', nodes, lineno)
-        return ast.Discard(node, lineno=lineno)
-
-
-class UndefinedType(object):
-    __slots__ = ()
-
-    def __new__(self):
-        raise TypeError('cannot create %r instances' %
-                        self.__class__.__name__)
-
-    def __iter__(self):
-        return iter(())
-
-    def __repr__(self):
-        return 'Undefined'
-
-    def __str__(self):
-        return ''
+        return ast.Discard(call_stmt(len(nodes) == 1 and '__write' or
+                           '__write_many', nodes, start_lineno),
+                           lineno=start_lineno)
 
 
 class Context(object):
@@ -359,20 +341,20 @@ class Context(object):
     def __init__(self, namespace, encoding, errors):
         self.encoding = encoding
         self.errors = errors
-        self.join = u''.join
         self._namespace = namespace
         self._buffer = []
+        self._write = self._buffer.append
+        _extend = self._buffer.extend
         self._namespace.update(
-            __join=self.join,
+            Undefined=undefined,
             __to_unicode=self.to_unicode,
             __stream=self,
-            __write=self.write,
-            __write_many=lambda *a: self._buffer.extend(
-                                    map(self.to_unicode, a))
+            __write=self._write,
+            __write_many=lambda *a: _extend(a)
         )
 
     def write(self, value):
-        self._buffer.append(self.to_unicode(value))
+        self._write(self.to_unicode(value))
 
     def to_unicode(self, value):
         if isinstance(value, str):
@@ -380,13 +362,13 @@ class Context(object):
         return unicode(value)
 
     def get_value(self, as_unicode=True):
-        rv = self.join(self._buffer)
+        rv = u''.join(self._buffer)
         if not as_unicode:
             return rv.encode(self.encoding, self.errors)
         return rv
 
     def __getitem__(self, key):
-        return self._namespace.get(key, Undefined)
+        return self._namespace.get(key, undefined)
 
     def __setitem__(self, key, value):
         self._namespace[key] = value
@@ -395,12 +377,10 @@ class Context(object):
         del self._namespace[key]
 
 
-Undefined = object.__new__(UndefinedType)
-
-
 class Template(object):
     """
-    Represents a simple text based template.
+    Represents a simple text based template.  It's a good idea to load such
+    templates from files on the file system to get better debug output.
     """
     default_context = {
         'escape':           utils.escape,
@@ -421,11 +401,10 @@ class Template(object):
 
     def from_file(cls, file, encoding='utf-8', errors='strict',
                   unicode_mode=True):
+        close = False
         if isinstance(file, basestring):
             f = open(file, 'r')
             close = True
-        else:
-            close = False
         try:
             data = f.read().decode(encoding, errors)
         finally:
@@ -441,3 +420,6 @@ class Template(object):
         context = Context(ns, self.encoding, self.errors)
         exec self.code in None, context
         return context.get_value(self.unicode_mode)
+
+    def substitute(self, *args, **kwargs):
+        return self.render(*args, **kwargs)
