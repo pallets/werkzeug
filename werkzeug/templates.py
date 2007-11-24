@@ -109,6 +109,7 @@ r"""
 """
 import sys
 import re
+import __builtin__ as builtins
 from compiler import ast, parse
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import tokenprog
@@ -368,7 +369,9 @@ class Context(object):
         return rv
 
     def __getitem__(self, key):
-        return self._namespace.get(key, undefined)
+        if key in self._namespace:
+            return self._namespace[key]
+        return getattr(builtins, key, undefined)
 
     def __setitem__(self, key, value):
         self._namespace[key] = value
