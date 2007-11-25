@@ -485,7 +485,7 @@ represents a regular expression. Here is a small example:
         def to_python(self, value):
             if value == 'maybe':
                 if self.randomify:
-                    return not randrange(0, 1)
+                    return not randrange(2)
                 raise ValidationError()
             return value == 'yes'
 

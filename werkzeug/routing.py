@@ -532,9 +532,11 @@ class Rule(RuleFactory):
                 tmp.append('<%s>' % data)
             else:
                 tmp.append(data)
-        return '<%s %r -> %s>' % (
+        return '<%s %r%s -> %s>' % (
             self.__class__.__name__,
             (u''.join(tmp).encode(charset)).lstrip('|'),
+            self.methods is not None and ' (%s)' % \
+                ', '.join(self.methods) or '',
             self.endpoint
         )
 

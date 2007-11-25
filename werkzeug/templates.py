@@ -225,8 +225,8 @@ class Parser(object):
                 elif name in ('break', 'continue'):
                     if args:
                         self.fail('%s takes no arguments' % name)
-                    add(ast.Stmt(name == 'break' and ast.Break or
-                                 ast.Continue)(self.lineno), self.lineno)
+                    add(ast.Stmt([(name == 'break' and ast.Break or
+                                  ast.Continue)(self.lineno)], self.lineno))
                 else:
                     self.fail('unknown directive %S' % name)
         if needle:

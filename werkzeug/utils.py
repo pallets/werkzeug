@@ -721,7 +721,7 @@ def url_encode(obj, charset='utf-8'):
             else:
                 value = str(value)
             tmp.append('%s=%s' % (urllib.quote(key),
-                                  urllib.quote(value)))
+                                  urllib.quote_plus(value)))
     return '&'.join(tmp)
 
 
@@ -770,6 +770,7 @@ def get_host(environ):
         return environ['HTTP_X_FORWARDED_HOST']
     elif 'HTTP_HOST' in environ:
         return environ['HTTP_HOST']
+    print environ
     result = environ['SERVER_NAME']
     if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
        in (('https', '443'), ('http', '80')):
