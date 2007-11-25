@@ -69,6 +69,7 @@ class BaseRequest(object):
         self.environ = environ
         if populate_request:
             self.environ['werkzeug.request'] = self
+        self._data_stream = None
 
     def from_values(cls, path='/', base_url=None, query_string=None, **options):
         """
@@ -104,7 +105,8 @@ class BaseRequest(object):
         files = []
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
             storage = _StorageHelper(self.environ, self._get_file_stream)
-            self._data_stream = storage.file or _empty_stream
+            if storage.file:
+                self._data_stream = storage.file
             if storage.list is not None:
                 for key in storage.keys():
                     values = storage[key]
@@ -125,11 +127,15 @@ class BaseRequest(object):
         self._files = MultiDict(files)
 
     def stream(self):
-        """The input stream."""
-        if not hasattr(self, '_data_stream'):
-            return self.environ['wsgi.input']
+        """
+        The parsed stream if the submitted data was not multipart or
+        urlencoded form data.
+        """
+        if self._data_stream is None:
+            self._load_post_data()
         return self._data_stream
-    stream = property(stream, doc=stream.__doc__)
+    stream = property(stream, doc=stream)
+    input_stream = environ_property('wsgi.input', 'The WSGI input stream.')
 
     def args(self):
         """URL parameters"""
@@ -146,9 +152,7 @@ class BaseRequest(object):
         """
         This reads the buffered incoming data from the client into the string.
         """
-        if not hasattr(self, '_data_stream'):
-            self._load_post_data()
-        return self._data_stream.read()
+        return self.stream.read()
     data = lazy_property(data)
 
     def form(self):

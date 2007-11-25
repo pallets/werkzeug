@@ -135,16 +135,20 @@ Members
     The WSGI environment used to create the request object.
 
 `stream`
-    The stream with incoming data from the webbrowser.  Depending on
-    if the request object has parsed form data already this will be
-    either a copy of the incoming data or the wsgi input stream.
-    Parsing of form data takes place the first time you access `form`,
-    `values`, `data`, or `files`.
+    The buffered stream with incoming data from the webbrowser if the
+    submitted data was not multipart or urlencoded form data.
+
+`input_stream`
+    The input stream provided by the client.  Used internally by the form
+    data parser.  Reading from this stream must never be mixed with
+    accessing `stream`, `data`, `files`, or `form` because then it is not
+    guaranteed that more data is requested from the client than expected.
+    Never read beyond ``environ['CONTENT_LENGTH']``.
 
 `data`
-    The incoming form data as string.  This reads the whole stream into
-    the memory and parse form data.  After calling this `stream` will be
-    a buffered stream object.
+    Accessing this the first time reads the whole `stream` and stores it.
+    Keep in mind that this does not read the whole wsgi input stream like
+    django does.
 
 `accept_mimetypes``
     List of mimetypes this client supports.
