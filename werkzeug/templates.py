@@ -112,10 +112,15 @@ import re
 import __builtin__ as builtins
 from compiler import ast, parse
 from compiler.pycodegen import ModuleCodeGenerator
-from tokenize import tokenprog
+from tokenize import PseudoToken
 from werkzeug import utils
 
 
+multiline_strings = (
+    r'[uU]?[rR]?"""([^"\\]*(?:\\.[^"\\]*)*)"""|'
+    r"[uU]?[rR]?'''([^'\\]*(?:\\.[^'\\]*)*)'''"
+)
+token_re = re.compile('%s|%s(?i)' % (multiline_strings, PseudoToken))
 directive_re = re.compile(r'(?<!\\)<%(?:(#)|(py(?:thon)?\b)|'
                           r'(?:\s*(\w+))\s*)(.*?)\s*%>(?s)')
 escape_re = re.compile(r'\\\n|\\(\\|<%)')
@@ -279,7 +284,7 @@ class Parser(object):
         nodes = []
 
         def match_or_fail(pos):
-            match = tokenprog.match(text, pos)
+            match = token_re.match(text, pos)
             if match is None:
                 self.fail('invalid syntax')
             return match.group().strip(), match.end()
@@ -322,7 +327,7 @@ class Parser(object):
                         level = 1
                         while level:
                             token, pos = match_or_fail(pos)
-                            if token in '()[]':
+                            if token in ('(', ')', '[', ']'):
                                 level += token in '([' and 1 or -1
                     else:
                         break
@@ -394,6 +399,8 @@ class Template(object):
 
     def __init__(self, source, filename='<template>', encoding='utf-8',
                  errors='strict', unicode_mode=True):
+        if isinstance(source, str):
+            source = source.decode(encoding, errors)
         node = Parser(tokenize('\n'.join(source.splitlines()),
                                filename), filename).parse()
         self.code = ModuleCodeGenerator(transform(node, filename)).getCode()

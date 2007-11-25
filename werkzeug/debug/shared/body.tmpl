@@ -12,9 +12,11 @@
       <h1>$escape(exception_type)</h1>
       <p class="errormsg">$escape(exception_value)</p>
 
-      <p class="errorline">$escape(last_frame['filename']) in
-                           $escape(last_frame['function']),
-        line $last_frame['lineno']</p>
+      <p class="errorline">
+        $escape(last_frame['filename']) in
+        $escape(last_frame['function']),
+        line $last_frame['lineno']
+      </p>
 
       <h2 onclick="changeTB()" class="tb">Traceback <span>(toggle raw view)</span></h2>
       <div id="interactive">

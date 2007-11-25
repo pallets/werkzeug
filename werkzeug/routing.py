@@ -631,7 +631,7 @@ class Map(object):
             self.converters.update(converters)
 
         for rulefactory in rules or ():
-            self.add_rule(rulefactory)
+            self.add(rulefactory)
 
     def iter_rules(self, endpoint=None):
         """Iterate over all rules or the rules of an endpoint."""

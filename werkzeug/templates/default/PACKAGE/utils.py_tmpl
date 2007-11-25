@@ -1,9 +1,9 @@
-# -*- coding: <%= FILE_ENCODING %> -*-
-<%= make_docstring(MODULE, '''\
+# -*- coding: $FILE_ENCODING -*-
+$make_docstring(MODULE, '''\
 This module contains the subclasses of the base request and response
 objects provided by werkzeug. The subclasses know about their charset
 and implement some additional functionallity like the ability to link
-to view functions.''') %>
+to view functions.''')
 from werkzeug.wrappers import BaseRequest, BaseResponse
 
 
@@ -12,7 +12,7 @@ class Request(BaseRequest):
     The concrete request object used in the WSGI application.
     It has some helper functions that can be used to build URLs.
     """
-    charset = '<%= FILE_ENCODING %>'
+    charset = '$FILE_ENCODING'
 
     def __init__(self, environ, url_adapter):
         BaseRequest.__init__(self, environ)
@@ -31,7 +31,7 @@ class Response(BaseResponse):
     """
     The concrete response object for the WSGI application.
     """
-    charset = '<%= FILE_ENCODING %>'
+    charset = '$FILE_ENCODING'
 
 
 class RedirectResponse(Response):

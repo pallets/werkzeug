@@ -15,7 +15,7 @@ import sys
 import textwrap
 from datetime import datetime
 from getopt import getopt, GetoptError
-from werkzeug.minitmpl import Template
+from werkzeug.templates import Template
 
 
 TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
@@ -57,16 +57,11 @@ def bootstrap(package_name, destination_path, template, charset, author):
 
     # if someone want's to use the `make_docstring` function there
     # should be a template for all of the docstrings (``.DOCSTRING``)
-    try:
-        f = file(os.path.join(template_path, '.DOCSTRING'))
-    except IOError:
-        docstring_template = '<%= DOCSTRING %>'
+    filename = os.path.join(template_path, '.DOCSTRING')
+    if os.path.exists(filename):
+        docstring_template = Template.from_file(filename)
     else:
-        try:
-            docstring_template = f.read().decode('utf-8')
-        finally:
-            f.close()
-    docstring_template = Template(docstring_template)
+        docstring_template = Template('$DOCSTRING')
 
     # create the target folder if it does not exist by now.
     try:
@@ -135,7 +130,7 @@ def bootstrap(package_name, destination_path, template, charset, author):
                 # process templated files
                 if src_fn.endswith('_tmpl'):
                     dst_fn = dst_fn[:-5]
-                    tmpl = Template(data.decode('utf-8'))
+                    tmpl = Template(data.decode('utf-8'), src_fn)
                     ctx = get_context(dst_fn[len(destination_path) + 1:])
                     data = tmpl.render(ctx).encode(charset)
 
@@ -160,9 +155,9 @@ def bootstrap(package_name, destination_path, template, charset, author):
     # doesn't exist we fall back to a simple "Finished template generation".
     info_fn = os.path.join(template_path, '.INFO')
     if os.path.exists(info_fn):
+        tmpl = Template.from_file(info_fn)
         f = file(info_fn)
         try:
-            tmpl = Template(f.read().decode('utf-8'))
             ctx = get_context('.INFO')
             msg = tmpl.render(ctx).encode(sys.stdout.encoding, 'ignore')
         finally:

@@ -3,19 +3,19 @@
     werkzeug.contrib.kickstart
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    This module provides some simple shortcuts to make using Werkzeug simpler.
+    This module provides some simple shortcuts to make using Werkzeug
+    simpler for small scripts.
 
-    :copyright: 2007 by Marek Kubica.
+
+    :copyright: 2007 by Marek Kubica, Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 from os import path
-import codecs
 from werkzeug.wrappers import BaseRequest, BaseResponse
-from werkzeug.minitmpl import Template
+from werkzeug.templates import Template
 
 
-__all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader',
-           'TemplateResponse']
+__all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader']
 
 
 class Request(BaseRequest):
@@ -38,7 +38,7 @@ class Response(BaseResponse):
     default_mimetype = 'text/html'
 
 
-class TemplateNotFound(IOError, RuntimeError):
+class TemplateNotFound(IOError, LookupError):
     """
     A template was not found by the template loader.
     """
@@ -54,38 +54,26 @@ class TemplateLoader(object):
     template language.
     """
 
-    def __init__(self, search_path, charset='utf-8'):
+    def __init__(self, search_path, encoding='utf-8'):
         self.search_path = path.abspath(search_path)
-        self.charset = charset
+        self.encoding = encoding
 
-    def get_source(self, name):
-        """Load and return a files source as a unicode string"""
+    def get_template(self, name):
+        """Get a template from a given name."""
         filename = path.join(self.search_path, *[p for p in name.split('/')
-                                           if p and p[0] != '.'])
-        if path.exists(filename):
-            f = codecs.open(filename, 'r', self.charset)
-            try:
-                return f.read()
-            finally:
-                f.close()
-        else:
+                                                 if p and p[0] != '.'])
+        if not path.exists(filename):
             raise TemplateNotFound(name)
+        return Template.from_file(filename, self.encoding)
 
+    def render_to_response(self, *args, **kwargs):
+        """Load and render a template into a response object."""
+        return Response(self.render_to_string(*args, **kwargs))
 
-
-class TemplateResponse(Response):
-    """
-    A base class that provides rendering of a minitmpl template to
-    a response.
-
-    If no loader is given *template* is interpreted as a template
-    source code.
-    """
-
-    def __init__(self, template, loader=None, *args, **kwargs):
-        if loader is None:
-            template = Template(template)
-        else:
-            template = Template(loader.get_source(template))
-        Response.__init__(self, template.render(*args, **kwargs),
-                          mimetype='text/html')
+    def render_to_string(self, *args, **kwargs):
+        """Load and render a tempalte into a unicode string."""
+        try:
+            template_name, args = args[0], args[1:]
+        except IndexError:
+            raise TypeError('name of template required')
+        return self.get_template(template_name).render(*args, **kwargs)

@@ -1,6 +1,6 @@
-# -*- coding: <%= FILE_ENCODING %> -*-
-<%= make_docstring(MODULE, 'Contains the default index and not_found view.') %>
-from <%= PACKAGE %>.utils import Response
+# -*- coding: $FILE_ENCODING -*-
+$make_docstring(MODULE, 'Contains the default index and not_found view.')
+from ${PACKAGE}.utils import Response
 
 
 def index(req):
@@ -24,19 +24,19 @@ def index(req):
       Here a small explanation for this structure:
     </p>
     <ul>
-      <li><tt>start-<%= PACKAGE %>.py</tt> &mdash; minimal python
+      <li><tt>start-${PACKAGE}.py</tt> &mdash; minimal python
           script that spawns a wsgiref server for this application</li>
-      <li><tt><%= PACKAGE %>/application.py</tt> &mdash; implements
+      <li><tt>${PACKAGE}/application.py</tt> &mdash; implements
           the WSGI application and dispatches requests.</li>
-      <li><tt><%= PACKAGE %>/urls.py</tt> &mdash; contains the url
+      <li><tt>${PACKAGE}/urls.py</tt> &mdash; contains the url
           mapping definitions that map to the view functions.</li>
-      <li><tt><%= PACKAGE %>/utils.py</tt> &mdash; contains subclasses
+      <li><tt>${PACKAGE}/utils.py</tt> &mdash; contains subclasses
           of the base request and response objects.</li>
-      <li><tt><%= PACKAGE %>/views/</tt> &mdash; contains all the
+      <li><tt>${PACKAGE}/views/</tt> &mdash; contains all the
           modules with the view functions.</li>
     </ul>
     <p>
-      To change this page to go <tt><%= PACKAGE %>/urls.py</tt> and
+      To change this page to go <tt>${PACKAGE}/urls.py</tt> and
       change the rules there in order to point to your view functions.
       You can then remove the <tt>default.py</tt> views.
     </p>

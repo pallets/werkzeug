@@ -1,9 +1,9 @@
 Successfully created a minimal werkzeug package structure. You can now
 start the development server using the following command:
 
-    python start-<%= PACKAGE %>.py
+    python start-${PACKAGE}.py
 
 After that you can open `http://localhost:5000/` which will be the
 URL of the development server.
 
-Edit the `start-<%= PACKAGE %>.py` to alter the debugging settings.
+Edit the `start-${PACKAGE}.py` to alter the debugging settings.

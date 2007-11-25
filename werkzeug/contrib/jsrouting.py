@@ -21,15 +21,15 @@ from werkzeug.routing import NumberConverter
 
 
 _javascript_routing_template = Template(u'''\
-<% if name_parts: %>\
-<% for idx in xrange(0, len(name_parts) - 1): %>\
-if (typeof <%= '.'.join(name_parts[:idx + 1]) %> === 'undefined') \
-<%= '.'.join(name_parts[:idx + 1]) %> = {};
-<% end %>\
-<%= '.'.join(name_parts) %> = <% end %>\
+<% if name_parts %>\
+<% for idx in xrange(0, len(name_parts) - 1) %>\
+if (typeof ${'.'.join(name_parts[:idx + 1])} === 'undefined') \
+${'.'.join(name_parts[:idx + 1])} = {};
+<% endfor %>\
+${'.'.join(name_parts)} = <% endif %>\
 (function (server_name, script_name, subdomain, url_scheme) {
-    var converters = [<%= ', '.join(converters) %>];
-    var rules = <%= rules %>;
+    var converters = ${', '.join(converters)};
+    var rules = $rules;
     function in_array(array, value) {
         if (array.indexOf != undefined) {
             return array.indexOf(value) != -1;
@@ -213,10 +213,10 @@ def generate_map(map, name='url_map'):
 def generate_adapter(adapter, name='url_for', map_name='url_map'):
     """Generates the url building function for a map."""
     values = {
-        u'server_name':     dumps(self.server_name),
-        u'script_name':     dumps(self.script_name),
-        u'subdomain':       dumps(self.subdomain),
-        u'url_scheme':      dumps(self.url_scheme),
+        u'server_name':     dumps(adapter.server_name),
+        u'script_name':     dumps(adapter.script_name),
+        u'subdomain':       dumps(adapter.subdomain),
+        u'url_scheme':      dumps(adapter.url_scheme),
         u'name':            name,
         u'map_name':        map_name
     }

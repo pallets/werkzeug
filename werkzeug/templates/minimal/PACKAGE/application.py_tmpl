@@ -1,13 +1,13 @@
-# -*- coding: <%= FILE_ENCODING %> -*-
-<%= make_docstring(MODULE, '''\
+# -*- coding: $FILE_ENCODING -*-
+$make_docstring(MODULE, '''\
 This module provides the WSGI application.
 
 The WSGI middlewares are applied in the `make_app` factory function that
 automatically wraps the application within the require middlewares. Per
-default only the `SharedDataMiddleware` is applied.''' % globals()) %>
+default only the `SharedDataMiddleware` is applied.''')
 
 
-class <%= PACKAGE_PASCAL_CASED %>Application(object):
+class ${PACKAGE_PASCAL_CASED}Application(object):
     """
     The application class. It's passed a directory with configuration values.
     """
@@ -25,17 +25,17 @@ class <%= PACKAGE_PASCAL_CASED %>Application(object):
           use much non werkzeug code.
         </p>
         <p>
-          Edit <tt><%= PACKAGE %>.application</tt> to get stated.
+          Edit <tt>${PACKAGE}.application</tt> to get stated.
         </p>
         '''
 
 
 def make_app(config=None):
     """
-    Factory function that creates a new `<%= PACKAGE_PASCAL_CASED %>Application`
+    Factory function that creates a new `${PACKAGE_PASCAL_CASED}Application`
     object. Optional WSGI middlewares should be applied here.
     """
-    app = <%= PACKAGE_PASCAL_CASED %>Application(config or {})
+    app = ${PACKAGE_PASCAL_CASED}Application(config or {})
 
     # if we are in debug mode we wrap the application in the debugger
     # middleware provided by werkzeug.
