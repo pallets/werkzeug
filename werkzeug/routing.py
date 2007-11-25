@@ -301,12 +301,8 @@ class Rule(RuleFactory):
                  build_only=False, endpoint=None, strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
-        self.rule = self._rule = string
-        if string.endswith('/'):
-            self.is_leaf = False
-            self._rule = string.rstrip('/')
-        else:
-            self.is_leaf = True
+        self.rule = string
+        self.is_leaf = not string.endswith('/')
 
         self.map = None
         self.strict_slashes = strict_slashes
@@ -348,7 +344,8 @@ class Rule(RuleFactory):
         if self.subdomain is None:
             self.subdomain = map.default_subdomain
 
-        rule = self.subdomain + '|' + self._rule
+        rule = self.subdomain + '|' + (self.is_leaf and self.rule
+                                       or self.rule.rstrip('/'))
 
         regex_parts = []
         for converter, arguments, variable in parse_rule(rule):

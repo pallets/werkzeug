@@ -232,14 +232,14 @@ def main(args):
     except GetoptError, err:
         args = []
     options = dict(optlist)
-    if '--version' in options:
-        print >>sys.stdout, re.sub('\n    ', '\n', version)
+    if '--version' in options or '-v' in options:
+        print >>sys.stdout, version.replace('\n    ', '\n')
         return -1
-    if '--help' in options:
-        print >>sys.stdout, re.sub('\n    ', '\n', help)
+    if '--help' in options or '-h' in options:
+        print >>sys.stdout, help.replace('\n    ', '\n')
         return -1
     if len(args) not in (1, 2):
-        print >>sys.stderr, re.sub('\n    ', '\n', help)
+        print >>sys.stderr, help.replace('\n    ', '\n')
         return -1
 
     charset = options.get('-c') or options.get('--charset') or 'utf-8'
