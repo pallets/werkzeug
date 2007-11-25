@@ -212,6 +212,7 @@ def test_quoting():
     assert url_unquote(url_quote(u'#%="\xf6')) == u'#%="\xf6'
     assert url_quote_plus('foo bar') == 'foo+bar'
     assert url_unquote_plus('foo+bar') == 'foo bar'
+    assert url_encode({'a': None, 'b': 'foo bar'}) == 'b=foo%20bar'
 
 
 def test_escape():

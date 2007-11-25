@@ -393,17 +393,16 @@ class Rule(RuleFactory):
         return subdomain, url
 
     def provides_defaults_for(self, rule):
-        """
-        Check if this rule has defaults for a given rule.
-        """
+        """Check if this rule has defaults for a given rule."""
         return not self.build_only and self.defaults is not None and \
                self.endpoint == rule.endpoint and self != rule and \
                self.arguments == rule.arguments
 
-    def suitable_for(self, values):
-        """
-        Check if the dict of values contains enough data for url generation.
-        """
+    def suitable_for(self, values, method):
+        """Check if the dict of values has enough data for url generation."""
+        if self.methods is not None and method not in self.methods:
+            return False
+
         valueset = set(values)
 
         for key in self.arguments - set(self.defaults or ()):
@@ -659,7 +658,7 @@ class Map(object):
         return self.add(rule)
 
     def bind(self, server_name, script_name=None, subdomain=None,
-             url_scheme='http'):
+             url_scheme='http', default_method='GET'):
         """
         Return a new map adapter for this request.
         """
@@ -668,7 +667,7 @@ class Map(object):
         if script_name is None:
             script_name = '/'
         return MapAdapter(self, server_name, script_name, subdomain,
-                          url_scheme)
+                          url_scheme, default_method)
 
     def bind_to_environ(self, environ, server_name=None, subdomain=None,
                         calculate_subdomain=False):
@@ -702,7 +701,7 @@ class Map(object):
                                  (environ['SERVER_NAME'], server_name))
             subdomain = '.'.join(filter(None, cur_server_name[:offset]))
         return Map.bind(self, server_name, environ.get('SCRIPT_NAME'), subdomain,
-                        environ['wsgi.url_scheme'])
+                        environ['wsgi.url_scheme'], environ['REQUEST_METHOD'])
 
     def update(self):
         """
@@ -723,7 +722,7 @@ class MapAdapter(object):
     """
 
     def __init__(self, map, server_name, script_name, subdomain,
-                 url_scheme):
+                 url_scheme, default_method):
         self.map = map
         self.server_name = server_name
         if not script_name.endswith('/'):
@@ -731,8 +730,9 @@ class MapAdapter(object):
         self.script_name = script_name
         self.subdomain = subdomain
         self.url_scheme = url_scheme
+        self.default_method = default_method
 
-    def dispatch(self, view_func, path_info, method='GET'):
+    def dispatch(self, view_func, path_info, method=None):
         """
         Does the complete dispatching process.  `view_func` is called with
         the endpoint and a dict with the values for the view.  It should
@@ -745,7 +745,7 @@ class MapAdapter(object):
             return e
         return view_func(endpoint, args)
 
-    def match(self, path_info, method='GET'):
+    def match(self, path_info, method=None):
         """
         Match a given path_info, script_name and subdomain against the
         known rules. If the subdomain is not given it defaults to the
@@ -758,7 +758,7 @@ class MapAdapter(object):
         path = u'%s|/%s(%s)' % (
             self.subdomain,
             path_info.lstrip('/'),
-            method.upper()
+            (method or self.default_method).upper()
         )
         for rule in self.map._rules:
             try:
@@ -776,7 +776,7 @@ class MapAdapter(object):
             if self.map.redirect_defaults:
                 for r in self.map._rules_by_endpoint[rule.endpoint]:
                     if r.provides_defaults_for(rule) and \
-                       r.suitable_for(rv):
+                       r.suitable_for(rv, method):
                         rv.update(r.defaults)
                         subdomain, path = r.build(rv)
                         raise RequestRedirect(str('%s://%s%s%s/%s' % (
@@ -789,7 +789,7 @@ class MapAdapter(object):
             return rule.endpoint, rv
         raise NotFound()
 
-    def build(self, endpoint, values=None, force_external=False):
+    def build(self, endpoint, values=None, method=None, force_external=False):
         """
         Build a new url hostname relative to the current one. If you
         reference a resource on another subdomain the hostname is added
@@ -797,10 +797,11 @@ class MapAdapter(object):
         `force_external` to `True`.
         """
         self.map.update()
+        method = method or self.default_method
         values = values or {}
 
         for rule in self.map._rules_by_endpoint.get(endpoint) or ():
-            if rule.suitable_for(values):
+            if rule.suitable_for(values, method):
                 rv = rule.build(values)
                 if rv is not None:
                     break
