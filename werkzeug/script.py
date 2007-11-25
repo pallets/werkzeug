@@ -42,16 +42,20 @@ converters = {
 }
 
 
-def run(frame_offset=0):
+def run(namespace=None, action_prefix='action_'):
     """
     Run the script.  Participating actions are looked up in the callers
-    namespace.
+    namespace if no namespace is given, otherwise in the dict provided.
+    Only items that start with action_prefix are processed as actions.  If
+    you want to use all items in the namespace provided as actions set
+    action_prefix to an empty string.
     """
-    frm = sys._getframe(1 + max(0, frame_offset))
+    if namespace is None:
+        namespace = sys._getframe(1 + max(0, frame_offset)).f_locals
     actions = {}
-    for key, value in frm.f_locals.iteritems():
-        if key.startswith('action_'):
-            actions[key[7:]] = analyse_action(value)
+    for key, value in namespace.iteritems():
+        if key.startswith(action_prefix):
+            actions[key[len(action_prefix):]] = analyse_action(value)
 
     args = sys.argv[1:]
     if not args or args[0] in ('-h', '--help'):
