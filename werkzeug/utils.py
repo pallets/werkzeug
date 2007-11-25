@@ -29,7 +29,7 @@ except NameError:
 _empty_stream = StringIO('')
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
-_format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]',) * 2))
+_format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 
 
 class MultiDict(dict):
@@ -663,7 +663,10 @@ def format_string(string, context):
     formattings have a look at the `werkzeug.template` module.
     """
     def lookup_arg(match):
-        return context[match.group(1)]
+        x = context[match.group(1)]
+        if not isinstance(x, basestring):
+            x = type(string)(x)
+        return x
     return _format_re.sub(lookup_arg, string)
 
 
