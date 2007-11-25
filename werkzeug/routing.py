@@ -71,7 +71,7 @@ import re
 from urlparse import urljoin
 from urllib import quote
 
-from werkzeug.utils import url_encode, redirect
+from werkzeug.utils import url_encode, redirect, format_string
 from werkzeug.exceptions import NotFound
 try:
     set
@@ -243,6 +243,55 @@ class EndpointPrefix(RuleFactory):
                 yield rule
 
 
+class RuleTemplate(object):
+    """
+    Returns copies of the rules wrapped and expands string templates in
+    the endpoint, rule, defaults or subdomain sections.
+    """
+
+    def __init__(self, rules):
+        self.rules = list(rules)
+
+    def __call__(self, *args, **kwargs):
+        return RuleTemplateFactory(self.rules, dict(*args, **kwargs))
+
+
+class RuleTemplateFactory(RuleFactory):
+    """
+    A factory that fills in template variables into rules.  Used by
+    `RuleTemplate` internally.
+    """
+
+    def __init__(self, rules, context):
+        self.rules = rules
+        self.context = context
+
+    def get_rules(self, map):
+        for rulefactory in self.rules:
+            for rule in rulefactory.get_rules(map):
+                new_defaults = subdomain = None
+                if rule.defaults is not None:
+                    new_defaults = {}
+                    for key, value in rule.defaults.iteritems():
+                        if isinstance(value, basestring):
+                            value = format_string(value, self.context)
+                        new_defaults[key] = value
+                if rule.subdomain is not None:
+                    subdomain = format_string(rule.subdomain, self.context)
+                new_endpoint = rule.endpoint
+                if isinstance(new_endpoint, basestring):
+                    new_endpoint = format_string(new_endpoint, self.context)
+                yield Rule(
+                    format_string(rule.rule, self.context),
+                    new_defaults,
+                    subdomain,
+                    rule.methods,
+                    rule.build_only,
+                    new_endpoint,
+                    rule.strict_slashes
+                )
+
+
 class Rule(RuleFactory):
     """
     Represents one url pattern.
@@ -257,7 +306,7 @@ class Rule(RuleFactory):
             string = string.rstrip('/')
         else:
             self.is_leaf = True
-        self.rule = unicode(string)
+        self._rule = unicode(string)
 
         self.map = None
         self.strict_slashes = strict_slashes
@@ -299,7 +348,7 @@ class Rule(RuleFactory):
         if self.subdomain is None:
             self.subdomain = map.default_subdomain
 
-        rule = self.subdomain + '|' + self.rule
+        rule = self.subdomain + '|' + self._rule
 
         regex_parts = []
         for converter, arguments, variable in parse_rule(rule):
@@ -470,10 +519,12 @@ class Rule(RuleFactory):
         return not self.__eq__(other)
 
     def __unicode__(self):
-        rule = self.rule
+        rule = self._rule
         if not self.is_leaf:
             rule += u'/'
         return rule
+
+    rule = property(__unicode__)
 
     def __str__(self):
         charset = self.map is not None and self.map.charset or 'utf-8'

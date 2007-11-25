@@ -29,6 +29,7 @@ except NameError:
 _empty_stream = StringIO('')
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
+_format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]',) * 2))
 
 
 class MultiDict(dict):
@@ -649,6 +650,21 @@ class environ_property(object):
             self.__class__.__name__,
             self.name
         )
+
+
+def format_string(string, context):
+    """
+    String-template format a string::
+
+        >>> format_string('$foo and ${foo}s', dict(foo=42))
+        '42 and 42s'
+
+    This does not do any attribute lookup etc.  For more advanced string
+    formattings have a look at the `werkzeug.template` module.
+    """
+    def lookup_arg(match):
+        return context[match.group(1)]
+    return _format_re.sub(lookup_arg, string)
 
 
 def parse_accept_header(value):
