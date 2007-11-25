@@ -145,7 +145,10 @@ def bootstrap(package_name, destination_path, template, charset, author):
             # for each folder recursive and create a new one in the
             # target location. We don't ignore empty folders.
             elif os.path.isdir(src_fn):
-                os.mkdir(dst_fn)
+                try:
+                    os.mkdir(dst_fn)
+                except OSError:
+                    pass
                 walk(src_fn)
 
     walk(template_path)
