@@ -52,6 +52,11 @@ class Template(object):
     """
 
     def __init__(self, source, unicode_mode=True):
+        from warnings import warn
+        warn(DeprecationWarning('minitmpl is deprecated, use templates now. '
+                                'the old template module will go away with '
+                                'werkzeug 0.1 for various reasons.'))
+
         self.unicode_mode = unicode_mode
         lines = ['def __generate():', '    if 0: yield None']
         indention = 1
