@@ -36,10 +36,4 @@ def make_app(config=None):
     object. Optional WSGI middlewares should be applied here.
     """
     app = ${PACKAGE_PASCAL_CASED}Application(config or {})
-
-    # if we are in debug mode we wrap the application in the debugger
-    # middleware provided by werkzeug.
-    if config.get('debug', False):
-        from werkzeug.debug import DebuggedApplication
-        app = DebuggedApplication(app, evalex=config.get('evalex', False))
     return app

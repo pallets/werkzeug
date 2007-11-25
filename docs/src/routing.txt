@@ -33,14 +33,10 @@ Here a simple example which could be the URL definition for a blog:
         urls = map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match(environ.get('PATH_INFO') or '/')
-        except NotFound:
-            response = 'Rule Not Found'
-        except RequestRedirect, e:
-            response = 'Rule redirects to %s' % e.new_url
-        else:
-            response = 'Rule points to %r with arguments %r' % (endpoint, args)
+        except (NotFound, RequestRedirect), e:
+            return e(environ, start_response)
         start_response('200 OK', [('Content-Type', 'text/plain')])
-        yield response
+        return ['Rule points to %r with arguments %r' % (endpoint, args)]
 
 So what does that do? First of all we create a new `Map` which stores a
 bunch of URL rules. Then we pass it a list of `Rule` objects.
@@ -62,6 +58,10 @@ The `match` method can then either return a tuple in the form
 current request, the latter if a rule was found that redirects to another
 rule. This for example happens if a user visits ``/feeds`` but only ``/feeds/``
 is matching.
+
+Both of the exceptions are valid responses.  The `NotFound` exception is
+the same exception as the `NotFound` exception from the http exceptions
+module.
 
 The redirect test can be disabled but it's a good idea to keep it activated
 because it helps you create unique URLs.
@@ -342,11 +342,13 @@ you just pass the `adapter.match` method the current path info as well as
 the method (which defaults to `GET`). The following things can then happen:
 
 - you receive a `NotFound` exception that indicates that no URL is matching.
+  A `NotFound` exception is also a valid response object.
 
 - you receive a `RequestRedirect` exception with a `new_url` attribute. This
   exception is used to notify you about a request Werkzeug requests by your
   WSGI application. This is for example the case if you request ``/foo``
-  although the correct URL is ``/foo/``.
+  although the correct URL is ``/foo/``.  You can use the `RequestRedirect`
+  instance as response object.
 
 - you get a tuple in the form ``(endpoint, arguments)`` when there is a
   match.
@@ -419,6 +421,46 @@ URL querystring parameters:
 
     >>> urls.build("index", {'q': 'My Searchstring'})
     '/?q=My+Searchstring'
+
+If a rule does not exist when building a `BuildError` exception is raised.
+
+
+Dispatching
+===========
+
+The usual way to bind endpoints to controllers / view functions is a dict
+or using (simplified) import paths as endpoint names.  Because the
+dispatching process roughly works the same all the time there is a special
+`dispatch` method:
+
+.. sourcecode:: python
+
+    from werkzeug.routing import Map
+    from werkzeug.exceptions import HTTPException
+
+    url_map = Map(...)
+    views = {
+        'endpoint':     view_callback
+        ...
+    }
+
+    def application(environ, start_response):
+        urls = Map.bind_to_environ(environ)
+        try:
+            response = urls.dispatch(lambda e, v: views[e](environ, **v),
+                                     environ.get('PATH_INFO') or '/',
+                                     environ['REQUEST_METHOD])
+        except HTTPException, e:
+            response = e
+        return response(environ, start_response)
+
+
+**Important Note**: the function passed to dispatch has to return a response
+object or a WSGI application that already did the view processing.  That means
+you should not return a response that has not processed the client data or
+will raise a `HTTPException`.  Otherwise the try/except block is bypassed
+becaue the execution will happen in the server itself.
+
 
 Custom Converters
 =================

@@ -32,23 +32,3 @@ class Response(BaseResponse):
     The concrete response object for the WSGI application.
     """
     charset = '$FILE_ENCODING'
-
-
-class RedirectResponse(Response):
-    """
-    A response object that redirects to a new URL.
-    """
-
-    def __init__(self, url, code=302):
-        Response.__init__(self, 'page moved to %s' % url, code
-                          [('Location', url)])
-
-
-class NotFoundResponse(Response):
-    """
-    A response that represents a not existing resource.
-    """
-
-    def __init__(self):
-        Response.__init__(self, '<h1>Page Not Found</h1>',
-                          status=404, mimetype='text/html')

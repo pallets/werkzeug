@@ -116,17 +116,17 @@ from tokenize import PseudoToken
 from werkzeug import utils
 
 
-multiline_strings = (
-    r'[uU]?[rR]?"""([^"\\]*(?:\\.[^"\\]*)*)"""|'
-    r"[uU]?[rR]?'''([^'\\]*(?:\\.[^'\\]*)*)'''"
-)
-token_re = re.compile('%s|%s(?i)' % (multiline_strings, PseudoToken))
+token_re = re.compile('%s|%s|%s(?i)' % (
+    r'[uU]?[rR]?"""([^"\\]*(?:\\.[^"\\]*)*)"""',
+    r"[uU]?[rR]?'''([^'\\]*(?:\\.[^'\\]*)*)'''",
+    PseudoToken
+))
 directive_re = re.compile(r'(?<!\\)<%(?:(#)|(py(?:thon)?\b)|'
                           r'(?:\s*(\w+))\s*)(.*?)\s*%>(?s)')
 escape_re = re.compile(r'\\\n|\\(\\|<%)')
 namestart_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
 undefined = type('UndefinedType', (object,), {
-    '__iter__': lambda x: (),
+    '__iter__': lambda x: iter(()),
     '__repr__': lambda x: 'Undefined',
     '__str__':  lambda x: ''
 })()
@@ -168,7 +168,7 @@ def transform(node, filename):
         node = nodes.pop()
         node.filename = filename
         if node.__class__ in (ast.Printnl, ast.Print):
-            node.dest = ast.Name('__stream')
+            node.dest = ast.Name('__context')
         nodes.extend(node.getChildNodes())
     return root
 
@@ -312,7 +312,7 @@ class Parser(object):
                 level = 1
                 while level:
                     token, pos = match_or_fail(pos)
-                    if token in '{}':
+                    if token in ('{', '}'):
                         level += token == '{' and 1 or -1
                 lineno += write_expr(text[offset + 2:pos - 1])
             elif next in namestart_chars:
@@ -354,7 +354,7 @@ class Context(object):
         self._namespace.update(
             Undefined=undefined,
             __to_unicode=self.to_unicode,
-            __stream=self,
+            __context=self,
             __write=self._write,
             __write_many=lambda *a: _extend(a)
         )
@@ -428,7 +428,7 @@ class Template(object):
         ns = self.default_context.copy()
         ns.update(*args, **kwargs)
         context = Context(ns, self.encoding, self.errors)
-        exec self.code in None, context
+        exec self.code in {}, context
         return context.get_value(self.unicode_mode)
 
     def substitute(self, *args, **kwargs):

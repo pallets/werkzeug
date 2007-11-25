@@ -8,7 +8,7 @@
     :license: BSD license.
 """
 from py.test import raises
-from werkzeug.routing import Map, Rule, NotFound, RequestRedirect
+from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect
 
 
 def test_basic_routing():
@@ -44,7 +44,7 @@ def test_basic_building():
     assert adapter.build('barf', {'bazf': 0.815}) == 'http://example.org/bar/0.815'
     assert adapter.build('barp', {'bazp': 'la/di'}) == 'http://example.org/bar/la/di'
     assert adapter.build('blah', {}) == '/hehe'
-    raises(NotFound, lambda: adapter.build('urks'))
+    raises(BuildError, lambda: adapter.build('urks'))
 
 
 def test_defaults():

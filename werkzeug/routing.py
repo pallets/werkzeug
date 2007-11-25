@@ -71,7 +71,8 @@ import re
 from urlparse import urljoin
 from urllib import quote
 
-from werkzeug.utils import url_encode
+from werkzeug.utils import url_encode, redirect
+from werkzeug.exceptions import NotFound
 try:
     set
 except NameError:
@@ -157,6 +158,9 @@ class RequestRedirect(RoutingException):
         self.new_url = new_url
         RoutingException.__init__(self, new_url)
 
+    def __call__(self, environ, start_response):
+        return redirect(self.new_url)(environ, start_response)
+
 
 class RequestSlash(RoutingException):
     """
@@ -164,17 +168,16 @@ class RequestSlash(RoutingException):
     """
 
 
-class NotFound(RoutingException, LookupError):
+class BuildError(RoutingException, LookupError):
     """
-    Raise if there is no match or build rule for the current url.
+    Raised if the build system cannot find a URL for an endpoint with the
+    values provided.
     """
 
-
-class BuildError(NotFound):
-    """
-    Subclass of `NotFound` that is raised if the routing system was unable
-    to find a suitable url while building.
-    """
+    def __init__(self, endpoint, values):
+        LookupError.__init__(self, endpoint)
+        self.endpoint = endpoint
+        self.values = values
 
 
 class ValidationError(ValueError):
@@ -729,6 +732,19 @@ class MapAdapter(object):
         self.subdomain = subdomain
         self.url_scheme = url_scheme
 
+    def dispatch(self, view_func, path_info, method='GET'):
+        """
+        Does the complete dispatching process.  `view_func` is called with
+        the endpoint and a dict with the values for the view.  It should
+        look up the view function, call it, and return a response object
+        or WSGI application.  http exceptions are not catched.
+        """
+        try:
+            endpoint, args = self.match(path_info, method)
+        except RequestRedirect, e:
+            return e
+        return view_func(endpoint, args)
+
     def match(self, path_info, method='GET'):
         """
         Match a given path_info, script_name and subdomain against the
@@ -771,7 +787,7 @@ class MapAdapter(object):
                             path.lstrip('/')
                         )))
             return rule.endpoint, rv
-        raise NotFound(path_info)
+        raise NotFound()
 
     def build(self, endpoint, values=None, force_external=False):
         """

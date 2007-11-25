@@ -81,7 +81,7 @@ import sys
 all_by_module = {
     'werkzeug.debug':       ['DebuggedApplication'],
     'werkzeug.local':       ['Local', 'LocalManager'],
-    'werkzeug.minitmpl':    ['Template'],
+    'werkzeug.templates':   ['Template'],
     'werkzeug.serving':     ['run_simple'],
     'werkzeug.test':        ['Client'],
     'werkzeug.utils':       ['escape', 'create_environ', 'url_quote',
