@@ -429,12 +429,14 @@ class BaseResponse(object):
         """Process this response as WSGI application."""
         self.fix_headers(environ)
         if environ['REQUEST_METHOD'] == 'HEAD':
-            return ()
+            resp = ()
         elif 100 <= self.status_code < 200 or self.status_code in (204, 304):
             self.headers['Content-Length'] = 0
-            return ()
+            resp = ()
+        else:
+            resp = self.iter_encoded()
         start_response(self.status, self.header_list)
-        return self.iter_encoded()
+        return resp
 
 
 class BaseReporterStream(object):

@@ -51,7 +51,7 @@ def run(namespace=None, action_prefix='action_'):
     action_prefix to an empty string.
     """
     if namespace is None:
-        namespace = sys._getframe(1 + max(0, frame_offset)).f_locals
+        namespace = sys._getframe(1).f_locals
     actions = {}
     for key, value in namespace.iteritems():
         if key.startswith(action_prefix):
