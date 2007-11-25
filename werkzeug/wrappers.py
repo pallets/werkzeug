@@ -104,7 +104,7 @@ class BaseRequest(object):
         files = []
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
             storage = _StorageHelper(self.environ, self._get_file_stream)
-            self._data_stream = storage.file
+            self._data_stream = storage.file or _empty_stream
             if storage.list is not None:
                 for key in storage.keys():
                     values = storage[key]

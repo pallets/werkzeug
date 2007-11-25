@@ -301,12 +301,12 @@ class Rule(RuleFactory):
                  build_only=False, endpoint=None, strict_slashes=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
+        self.rule = self._rule = string
         if string.endswith('/'):
             self.is_leaf = False
-            string = string.rstrip('/')
+            self._rule = string.rstrip('/')
         else:
             self.is_leaf = True
-        self._rule = unicode(string)
 
         self.map = None
         self.strict_slashes = strict_slashes
@@ -519,12 +519,7 @@ class Rule(RuleFactory):
         return not self.__eq__(other)
 
     def __unicode__(self):
-        rule = self._rule
-        if not self.is_leaf:
-            rule += u'/'
-        return rule
-
-    rule = property(__unicode__)
+        return self.rule
 
     def __str__(self):
         charset = self.map is not None and self.map.charset or 'utf-8'
