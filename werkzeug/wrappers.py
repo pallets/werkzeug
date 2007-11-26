@@ -154,7 +154,12 @@ class BaseRequest(object):
     data = lazy_property(data)
 
     def form(self):
-        """form parameters."""
+        """
+        Form parameters.  Currently it's not guaranteed that the MultiDict
+        returned by this function is ordered in the same way as the submitted
+        form data.  The reason for this is that the underlaying cgi library
+        uses a dict internally and loses the ordering.
+        """
         if not hasattr(self, '_form'):
             self._load_post_data()
         return self._form

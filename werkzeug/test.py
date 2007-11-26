@@ -122,24 +122,30 @@ class Client(object):
         """
         if input_stream is None and data and method in ('PUT', 'POST'):
             need_multipart = False
-            for key, value in data.iteritems():
-                if isinstance(value, basestring):
-                    if isinstance(value, unicode):
-                        data[key] = str(value)
-                    continue
-                need_multipart = True
-                if isinstance(value, tuple):
-                    data[key] = File(*value)
-                elif isinstance(value, dict):
-                    data[key] = File(**value)
-                elif not isinstance(value, File):
-                    data[key] = File(value)
-            if need_multipart:
-                boundary, data = encode_multipart(data)
-                content_type = 'multipart/form-data; boundary=' + boundary
+            if isinstance(data, basestring):
+                assert content_type is not None, 'content type required'
             else:
-                data = urlencode(data)
-                content_type = 'application/x-www-form-urlencoded'
+                for key, value in data.iteritems():
+                    if isinstance(value, basestring):
+                        if isinstance(value, unicode):
+                            data[key] = str(value)
+                        continue
+                    need_multipart = True
+                    if isinstance(value, tuple):
+                        data[key] = File(*value)
+                    elif isinstance(value, dict):
+                        data[key] = File(**value)
+                    elif not isinstance(value, File):
+                        data[key] = File(value)
+                if need_multipart:
+                    boundary, data = encode_multipart(data)
+                    if content_type is None:
+                        content_type = 'multipart/form-data; boundary=' + \
+                            boundary
+                else:
+                    data = urlencode(data)
+                    if content_type is None:
+                        content_type = 'application/x-www-form-urlencoded'
             content_length = len(data)
             input_stream = StringIO(data)
 
