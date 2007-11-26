@@ -12,9 +12,7 @@
 import cgi
 import tempfile
 import urlparse
-from time import gmtime
 from Cookie import SimpleCookie
-from datetime import datetime
 from warnings import warn
 from werkzeug.constants import HTTP_STATUS_CODES
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
@@ -261,6 +259,16 @@ class BaseRequest(object):
     query_string = environ_property('QUERY_STRING', '', read_only=True)
     remote_addr = environ_property('REMOTE_ADDR', read_only=True)
     method = environ_property('REQUEST_METHOD', 'GET', read_only=True)
+
+    def is_xhr(self):
+        """
+        True if the request was triggered via an JavaScript XMLHttpRequest.
+        This only works with libraries that support the X-Requested-With
+        header and set it to "XMLHttpRequest".  Libraries that do that are
+        prototype, jQuery and Mochikit.
+        """
+        return self.environ.get('X_REQUESTED_WITH') == 'XmlHttpRequest'
+    is_xhr = property(is_xhr, doc=is_xhr.__doc__)
 
 
 class BaseResponse(object):

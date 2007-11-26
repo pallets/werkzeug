@@ -84,6 +84,7 @@ all_by_module = {
     'werkzeug.templates':   ['Template'],
     'werkzeug.serving':     ['run_simple'],
     'werkzeug.test':        ['Client'],
+    'werkzeug.testapp':     ['test_app'],
     'werkzeug.utils':       ['escape', 'create_environ', 'url_quote',
                              'environ_property', 'cookie_date', 'http_date',
                              'url_encode', 'url_quote_plus',

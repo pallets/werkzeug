@@ -10,6 +10,7 @@ import sys
 from os import path
 from py.test import raises
 from werkzeug.utils import *
+from werkzeug.test import Client
 
 
 def test_multidict():

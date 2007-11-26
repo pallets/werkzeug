@@ -82,3 +82,8 @@ def test_unicode():
     assert t.render(szlig='ß') == u'öäüß'
     t = Template(u'öäü$szlig', unicode_mode=False, encoding='iso-8859-15')
     assert t.render(szlig='\xdf') == '\xf6\xe4\xfc\xdf'
+
+
+def test_nl_trimp():
+    t = Template('<% if 1 %>1<% endif %>\n2')
+    assert t.render() == '12'

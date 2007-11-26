@@ -122,7 +122,7 @@ token_re = re.compile('%s|%s|%s(?i)' % (
     PseudoToken
 ))
 directive_re = re.compile(r'(?<!\\)<%(?:(#)|(py(?:thon)?\b)|'
-                          r'(?:\s*(\w+))\s*)(.*?)\s*%>(?s)')
+                          r'(?:\s*(\w+))\s*)(.*?)\s*%>\n?(?s)')
 escape_re = re.compile(r'\\\n|\\(\\|<%)')
 namestart_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
 undefined = type('UndefinedType', (object,), {
