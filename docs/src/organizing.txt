@@ -56,18 +56,16 @@ It's a good idea to call the file something like ``main.py`` or
 
     from mypackage.urls import map, not_found
     from mypackage.utils import Request, Response
-    from werkzeug.routing import NotFound, RequestRedirect
+    from werkzeug.routing import RequestRedirect
+    from werkzeug.exceptions import HTTPException
 
     def application(environ, start_response):
         urls = map.bind_to_environ(environ)
         req = Request(environ, urls)
         try:
             endpoint, args = urls.match(req.path)
-        except NotFound:
-            resp = not_found(req)
-        except RequestRedirect, e:
-            resp = Response('moved to %s' % e.new_url, status=302)
-            resp.headers['Location'] = e.new_url
+        except (RequestRedirect, HTTPException), e:
+            resp = e
         else:
             module, func = endpoint.split('/', 1)
             mod = __import__('mypackage.views.' + module, None,
@@ -75,6 +73,9 @@ It's a good idea to call the file something like ``main.py`` or
             view = getattr(mod, func)
             resp = view(req, **args)
         return resp(environ, start_response)
+
+You can even further simplify the dispatching by using `urls.dispatch` as
+explained on the routing page.
 
 This will look for the controller functions in `mypackage.views.module`.
 If the URL is configured with an endpoint of ``'static/index'`` the module
@@ -100,13 +101,12 @@ template engine:
 
 .. sourcecode:: python
 
-    from werkzeug.wrappers import BaseRequest, BaseResponse
+    from werkzeug import BaseRequest, BaseResponse
     from jinja import Environment, PackageLoader
 
     env = Environment(loader=PackageLoader('mypackage', 'templates'))
 
     class Request(BaseRequest):
-        charset = 'utf-8'
 
         def __init__(self, environ, urls):
             self.environ = environ
@@ -116,7 +116,7 @@ template engine:
             return self.urls.build(endpoint, values)
 
     class Response(BaseResponse):
-        charset = 'utf-8'
+        pass
 
     class TemplateResponse(Response):
 

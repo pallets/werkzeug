@@ -15,13 +15,11 @@ Usage:
 .. sourcecode:: python
 
     from myapplication import application
-    from werkzeug.debug import DebuggedApplication
-    from wsgiref.simple_server import make_server
+    from werkzeug import DebuggedApplication, run_simple
 
     application = DebuggedApplication(application, evalex=True)
     
-    srv = make_server('localhost', 4000, application)
-    srv.serve_forever()
+    run_simple('localhost', 4000, application)
 
 This code spawns a Debugging Server on `localhost:4000` with the debugger
 enabled. If you set `evalex` to `False`, the debugger is disabled.
