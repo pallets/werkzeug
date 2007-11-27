@@ -49,7 +49,7 @@ try:
     from py.magic import greenlet
     get_current_greenlet = greenlet.getcurrent
     del greenlet
-except ImportError:
+except (RuntimeError, ImportError):
     get_current_greenlet = lambda: None
 try:
     from thread import get_ident as get_current_thread

@@ -40,7 +40,7 @@
 """
 try:
     from py.magic import greenlet
-except ImportError:
+except (RuntimeError, ImportError):
     greenlet = None
 
 
