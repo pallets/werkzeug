@@ -67,12 +67,6 @@ Something's missing? Check here first
     Various small WSGI utilities like a minimal traceback or auth
     middleware. It also includes an SCGI server.
 
-`flup <http://www.saddi.com/software/flup/>`_
-    flup provides a session middleware as well as an error middleware
-    that can send mails to administators if something went wrong. It
-    also allows you to gzip the output sent to the webserver and provides
-    bridges to FastCGI, SCGI and AJP.
-
 `paste <http://pythonpaste.org/>`_
     Many tools for use with WSGI; dispatching, composition, simple
     applications (e.g., file serving), and more.

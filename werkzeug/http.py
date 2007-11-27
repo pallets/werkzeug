@@ -88,7 +88,7 @@ class Accept(list):
             self.provided = False
         else:
             self.provided = True
-            values = [(a, b) for b, a in values]
+            values = [(a, b) for b, a__ in values]
             values.sort()
             list.__init__(self, [(a, b) for b, a in values])
 
@@ -97,7 +97,7 @@ class Accept(list):
             for value in self:
                 if value[0] == key:
                     return value[1]
-            raise KeyError(key)
+            return 0
         return list.__getitem__(self, key)
 
     def __contains__(self, key):
@@ -128,6 +128,11 @@ class Accept(list):
     def values(self):
         """Just the values, not the qualities."""
         return [x[1] for x in self]
+
+    def itervalues(self):
+        """Iterate over all values."""
+        for item in self:
+            yield item[0]
 
     def best(self):
         """The best match as tuple."""

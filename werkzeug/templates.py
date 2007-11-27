@@ -48,7 +48,7 @@ r"""
     While Loops::
 
         <% while expression %>
-            <% break / continue %>
+            <%py break / continue %>
         <% endwhile %>
 
     If Conditions::
@@ -222,11 +222,6 @@ class Parser(object):
                     add(self.parse_loop(args, name))
                 elif name == 'if':
                     add(self.parse_if(args))
-                elif name in ('break', 'continue'):
-                    if args:
-                        self.fail('%s takes no arguments' % name)
-                    add(ast.Stmt([(name == 'break' and ast.Break or
-                                  ast.Continue)(self.lineno)], self.lineno))
                 else:
                     self.fail('unknown directive %S' % name)
         if needle:

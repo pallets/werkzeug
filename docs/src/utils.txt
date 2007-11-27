@@ -172,6 +172,15 @@ Changes to `MultiDict`:
     of corse yield multiple keys with the same name analog to that.
 
 
+EnvironHeaders
+==============
+
+Works like `Headers` but is read only and constructed from a WSGI enviornment.
+It gives a nicer access to the client headers that become part of the WSGI
+environment.  All methods that would modify the header list raise a
+`TypeError`.
+
+
 FileStorage
 ===========
 
@@ -258,6 +267,53 @@ If you just have one close function you can pass it directly without wrapping
 it in a list/tuple.
 
 
+Accept
+======
+
+An `Accept` object is just a list subclass for lists of ``(value, quality)``
+tuples.  It is automatically sorted by quality and provides the following
+access methods and members:
+
+`provided`
+    `True` if the `Accept` object was created from a list, `False` is the
+    initial value was None.  This use used by there request wrappers to keep
+    an information if the header was present or not.
+
+`best`
+    The best value (does not return a tuple!)
+
+`__getitem__(key)`
+    Beside index lookup (getting item n) you can also pass it a string to
+    get the quality for the item.  If the item is not in the list the returned
+    quality is ``0``.
+
+`find(key)` / `index(key)`
+    Work like their list equivalents but you can also look up by the value and
+    not only the tuple.
+
+`values()`
+    Returns a list with all the values.
+
+`itervalues()`
+    Returns a generator for all the values.
+
+
+CacheControl
+============
+
+Subclass of a dict that stores values for a Cache-Control header.  It has
+accesors for all the cache-control directives specified in RFC 2616.  The 
+class does not differentiate between request and response directives.
+
+Because the cache-control directives in the HTTP header use dashes the
+python descriptors use underscores for that.
+
+To get a header of the `CacheControl` object again you can convert the
+object into a string or call the `to_header()` function.  If you plan
+to subclass it and add your own items have a look at the sourcecode for
+that class.
+
+
 Helper Functions
 ================
 
@@ -331,6 +387,12 @@ Helper Functions
 
     Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
 
+`parse_accept_header(value)`
+    Parse an HTTP Accept-* header and return a new `Accept` object.
+
+`parse_cache_control_header(value)`
+    Parse a new Cache-Control header and return a new `CacheControl` object.
+
 `redirect(location, code=302)`
     Return a response object (a WSGI application) that, if called, redirects
     the client to the target location.  Supported codes are 301, 302, 303,
@@ -386,3 +448,9 @@ Helper Functions
     by the `start_response` function.  This tries to resolve such edge
     cases automatically.  But if you don't get the expected output you
     should set `buffered` to `True` which enforces buffering.
+
+`test_app(environ, start_response)`
+    A small WSGI application that shows the WSGI environ, information about
+    the python interpreter and a list of installed eggs when called.  This
+    is useful to test a middleware (when you need an application) or a WSGI
+    server (installation).

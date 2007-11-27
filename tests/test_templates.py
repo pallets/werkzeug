@@ -49,13 +49,13 @@ def test_if():
 
 
 def test_break():
-    t = Template('<% for i in xrange(5) %><% break %>$i<% endfor %>')
+    t = Template('<% for i in xrange(5) %><%py break %>$i<% endfor %>')
     assert t.render() == ''
 
 
 def test_continue():
     t = Template('<% for i in xrange(10) %><% if i % 2 == 0 %>'
-                 '<% continue %><% endif %>$i<% endfor %>')
+                 '<%py continue %><% endif %>$i<% endfor %>')
     assert t.render() == '13579'
 
 
