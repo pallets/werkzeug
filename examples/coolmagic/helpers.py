@@ -9,8 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 from coolmagic.utils import Response, TemplateResponse, ThreadedRequest, \
-     export, url_for, abort, redirect
-from werkzeug.utils import escape
+     export, url_for, redirect
+from werkzeug import escape
 
 
 #: a thread local proxy request object

@@ -27,21 +27,10 @@ def broken():
     raise RuntimeError('that\'s really broken')
 
 
-@export(404, template='static/not_found.html')
+@export(None, template='static/not_found.html')
 def not_found():
     """
     This function is always executed if an url does not
-    match or `abort(404)` is called.
+    match or a `NotFound` exception is raised.
     """
     pass
-
-
-@export(302)
-def redirect_to(url):
-    """
-    Helper function for ``redirect(url[, 302])``.
-    """
-    resp = Response('Redirecting to %s...' % url,
-                    mimetype='text/html', status=302)
-    resp.headers['Location'] = url
-    return resp

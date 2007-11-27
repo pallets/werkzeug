@@ -88,7 +88,7 @@ class Accept(list):
             self.provided = False
         else:
             self.provided = True
-            values = [(a, b) for b, a__ in values]
+            values = [(a, b) for b, a in values]
             values.sort()
             list.__init__(self, [(a, b) for b, a in values])
 
@@ -135,8 +135,8 @@ class Accept(list):
             yield item[0]
 
     def best(self):
-        """The best match as tuple."""
-        return self and self[0] or None
+        """The best match as value."""
+        return self and self[0][0] or None
     best = property(best)
 
 

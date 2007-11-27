@@ -1,23 +1,31 @@
 #!/usr/bin/env python
-from werkzeug.wrappers import BaseRequest, BaseResponse
+"""
+    Simple Upload Application
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    All uploaded files are directly send back to the client.
 
-class Request(BaseRequest):
-    charset = 'utf-8'
-
-class Response(BaseResponse):
-    charset = 'utf-8'
+    :copyright: 2007 by Armin Ronacher.
+    :license: BSD, see LICENSE for more details.
+"""
+from werkzeug import BaseRequest, BaseResponse, run_simple
 
 
 def view_file(req):
     if not 'uploaded_file' in req.files:
-        return Response('no file uploaded')
+        return BaseResponse('no file uploaded')
     f = req.files['uploaded_file']
-    return Response(f.read(), mimetype=f.content_type)
+    def stream():
+        while 1:
+            data = f.read(65536)
+            if not data:
+                break
+            yield data
+    return BaseResponse(stream(), mimetype=f.content_type)
 
 
 def upload_file(req):
-    return Response('''
+    return BaseResponse('''
     <h1>Upload File</h1>
     <form action="" method="post" enctype="multipart/form-data">
         <input type="file" name="uploaded_file">
@@ -27,7 +35,7 @@ def upload_file(req):
 
 
 def application(environ, start_response):
-    req = Request(environ)
+    req = BaseRequest(environ)
     if req.method == 'POST':
         resp = view_file(req)
     else:
@@ -36,6 +44,4 @@ def application(environ, start_response):
 
 
 if __name__ == '__main__':
-    from wsgiref.simple_server import make_server
-    srv = make_server('localhost', 5000, application)
-    srv.serve_forever()
+    run_simple('localhost', 5000, application)

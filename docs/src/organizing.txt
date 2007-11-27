@@ -64,14 +64,13 @@ It's a good idea to call the file something like ``main.py`` or
         req = Request(environ, urls)
         try:
             endpoint, args = urls.match(req.path)
-        except (RequestRedirect, HTTPException), e:
-            resp = e
-        else:
             module, func = endpoint.split('/', 1)
             mod = __import__('mypackage.views.' + module, None,
                              None, [''])
             view = getattr(mod, func)
             resp = view(req, **args)
+        except (RequestRedirect, HTTPException), e:
+            resp = e
         return resp(environ, start_response)
 
 You can even further simplify the dispatching by using `urls.dispatch` as

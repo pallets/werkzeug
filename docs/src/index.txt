@@ -20,7 +20,7 @@ Documentation regarding the Werkzeug modules and Werkzeug as such.
 - `Routing System <routing.txt>`_ - a powerful URL dispatcher
   and builder.
 
-- `Mini Templates <minitmpl.txt>`_ - minimal templating system
+- `Mini Templates <templates.txt>`_ - minimal templating system
 
 - `Utilities <utils.txt>`_ - useful things like multi value dicts,
   a data structure for headers etc.

@@ -125,7 +125,7 @@ Comments::
 
 
 Missing Variables
------------------
+=================
 
 If you try to access a missing variable you will get back an `Undefined`
 object.  You can iterate over such an object or print it and it won't
@@ -135,3 +135,21 @@ variable is undefined you can use this expression::
     <% if variable is Undefined %>
         ...
     <% endif %>
+
+
+Global Functions
+================
+
+Beside the normal global functions and objects the following functions are
+added to every namespace: `escape`, `url_encode`, `url_quote`, and
+`url_quote_plus`.  You can change those by subclassing `Template` and
+overriding the `default_context` dict:
+
+.. sourcecode:: python
+
+    class MyTemplate(Template):
+        default_namespace = {
+            'ueber_func':       ueber_func
+        }
+        # and now add the old functions too because they are useful
+        default_namespace.update(Template.default_namespace)

@@ -11,22 +11,18 @@
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import threading
 from os.path import dirname, join
 from jinja import Environment, FileSystemLoader
-from werkzeug.wrappers import BaseRequest, BaseResponse
+from werkzeug import BaseRequest, BaseResponse, Local, LocalManager, redirect
 
 
-thread_locals = threading.local()
-
+local = Local()
+local_manager = LocalManager([local])
 template_env = Environment(
     loader=FileSystemLoader(join(dirname(__file__), 'templates'),
                             use_memcache=False)
 )
-
-
 exported_views = {}
-exported_aborts = {}
 
 
 def export(string, template=None, **extra):
@@ -45,10 +41,7 @@ def export(string, template=None, **extra):
                 return rv
             f.__name__ = old_f.__name__
             f.__doc__ = old_f.__doc__
-        if isinstance(string, (int, long)):
-            exported_aborts[string] = f
-        else:
-            exported_views[endpoint] = (f, string, extra)
+        exported_views[endpoint] = (f, string, extra)
         return f
     return wrapped
 
@@ -57,31 +50,7 @@ def url_for(endpoint, **values):
     """
     Build a URL
     """
-    return thread_locals.request.url_adapter.build(endpoint, values)
-
-
-def abort(code, **args):
-    """
-    Abort somehow.
-    """
-    raise DirectResponse(exported_aborts[code](**args))
-
-
-def redirect(url, code=302):
-    """
-    Looks nicer than abort.
-    """
-    abort(code, url=url)
-
-
-class DirectResponse(Exception):
-    """
-    Raise this exception to send a response to the wsgi app.
-    """
-
-    def __init__(self, response):
-        self.response = response
-        Exception.__init__(self, response)
+    return local.request.url_adapter.build(endpoint, values)
 
 
 class Request(BaseRequest):
@@ -94,22 +63,23 @@ class Request(BaseRequest):
     def __init__(self, environ, url_adapter):
         BaseRequest.__init__(self, environ)
         self.url_adapter = url_adapter
-        thread_locals.request = self
+        local.request = self
 
 
 class ThreadedRequest(object):
+    """
+    A pseudo request object that always poins to the current
+    context active request.
+    """
 
     def __getattr__(self, name):
         if name == '__members__':
-            return [x for x in dir(thread_locals.request) if not
+            return [x for x in dir(local.request) if not
                     x.startswith('_')]
-        return getattr(thread_locals.request, name)
+        return getattr(local.request, name)
 
     def __setattr__(self, name, value):
-        return setattr(thread_locals.request, name, value)
-
-
-threaded_request = ThreadedRequest()
+        return setattr(local.request, name, value)
 
 
 class Response(BaseResponse):
@@ -128,7 +98,7 @@ class TemplateResponse(Response):
     def __init__(self, template_name, **values):
         from coolmagic import helpers
         values.update(
-            request=thread_locals.request,
+            request=local.request,
             h=helpers
         )
         template = template_env.get_template(template_name)
