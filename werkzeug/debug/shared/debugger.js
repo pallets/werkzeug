@@ -123,7 +123,7 @@ $(document).ready(function() {
       $('.output', $(this).parent()).text('--- screen cleared ---');
       return false;
     }
-    else if (e.keyCode == 38 || e.keyCode == 40) {
+    else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
       var parent = $(this).parent();
       var tb = $('input[@name="tb"]', parent).attr('value');
       var frame = $('input[@name="frame"]', parent).attr('value');
