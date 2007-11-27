@@ -27,7 +27,7 @@ Documentation regarding the Werkzeug modules and Werkzeug as such.
 
 - `Debugging System <debug.txt>`_ - interactive debugger
 
-- `Package Templates <bootstrapping.txt>`_ - getting started
+- `Package Templates <bootstrap.txt>`_ - getting started
   quickly.
 
 
