@@ -95,7 +95,7 @@ all_by_module = {
                              'FileStorage', 'url_unquote_plus',
                              'url_unquote', 'get_current_url', 'redirect',
                              'lazy_property', 'MultiDict', 'url_decode'],
-    'werkzeug.http':        ['Accept', 'CacheControl', 'pare_accept_header',
+    'werkzeug.http':        ['Accept', 'CacheControl', 'parse_accept_header',
                              'parse_cache_control_header',
                              'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest',
