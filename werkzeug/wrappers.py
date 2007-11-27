@@ -14,11 +14,12 @@ import tempfile
 import urlparse
 from Cookie import SimpleCookie
 from warnings import warn
-from werkzeug.constants import HTTP_STATUS_CODES
+from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
+     parse_accept_header, parse_cache_control_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
-     Headers, lazy_property, environ_property, get_current_url, \
-     create_environ, url_encode, run_wsgi_app, parse_accept_header, \
-     get_host, cookie_date, escape, _empty_stream
+     Headers, EnvironHeaders, lazy_property, environ_property, \
+     get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
+     cookie_date, escape, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -187,17 +188,22 @@ class BaseRequest(object):
         return result
     cookies = lazy_property(cookies)
 
+    def headers(self):
+        """The headers from the WSGI environ."""
+        return EnvironHeaders(self.environ)
+    headers = lazy_property(headers)
+
     def accept_mimetypes(self):
         """List of mimetypes this client supports."""
         if not 'HTTP_ACCEPT' in self.environ:
-            return []
+            return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT'])
     accept_mimetypes = lazy_property(accept_mimetypes)
 
     def accept_charsets(self):
         """list of charsets this client supports."""
         if not 'HTTP_ACCEPT_CHARSET' in self.environ:
-            return []
+            return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT_CHARSET'])
     accept_charsets = lazy_property(accept_charsets)
 
@@ -208,16 +214,22 @@ class BaseRequest(object):
         `accept_charset`.
         """
         if not 'HTTP_ACCEPT_ENCODING' in self.environ:
-            return []
+            return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT_ENCODING'])
     accept_encodings = lazy_property(accept_encodings)
 
     def accept_languages(self):
         """List of languages this client accepts."""
         if not 'HTTP_ACCEPT_LANGUAGE' in self.environ:
-            return []
+            return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT_LANGUAGE'])
     accept_languages = lazy_property(accept_languages)
+
+    def cache_control(self):
+        """A `CacheControl` object for the incoming cache control headers."""
+        if not 'HTTP_CACHE_CONTROL' in self.environ:
+            return CacheControl(None)
+        return parse_cache_control_header(self.environ['HTTP_CACHE_CONTROL'])
 
     def path(self):
         """Requested path."""
@@ -322,6 +334,7 @@ class BaseResponse(object):
         else:
             self.status = status
         self._cookies = None
+        self.cache_control = CacheControl(())
 
     def from_app(cls, app, environ, buffered=False):
         """
@@ -422,6 +435,8 @@ class BaseResponse(object):
         if self._cookies is not None:
             for morsel in self._cookies.values():
                 headers.append(('Set-Cookie', morsel.output(header='')))
+        if self.cache_control:
+            headers.append(('Cache-Control', str(self.cache_control)))
         return headers
     header_list = property(header_list, doc=header_list.__doc__)
 

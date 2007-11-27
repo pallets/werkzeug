@@ -40,7 +40,8 @@
         In production environments static data is usually served by a
         lightweight webserver like lighttpd or nginx.  But during development
         it makes no sense to install another service on the computer so the
-        `SharedDataMiddleware` can serve static files in your WSGI application.
+        `SharedDataMiddleware` can serve static files in your WSGI
+        application.
 
     **Unicode aware data processing**
 
@@ -87,13 +88,15 @@ all_by_module = {
     'werkzeug.testapp':     ['test_app'],
     'werkzeug.utils':       ['escape', 'create_environ', 'url_quote',
                              'environ_property', 'cookie_date', 'http_date',
-                             'url_encode', 'url_quote_plus',
+                             'url_encode', 'url_quote_plus', 'Headers',
                              'CombinedMultiDict', 'run_wsgi_app',
                              'get_host', 'SharedDataMiddleware',
                              'url_unquote_plus', 'ClosingIterator',
-                             'Headers', 'parse_accept_header',
                              'url_unquote', 'get_current_url', 'redirect',
                              'lazy_property', 'MultiDict', 'url_decode'],
+    'werkzeug.http':        ['Accept', 'CacheControl', 'pare_accept_header',
+                             'parse_cache_control_header',
+                             'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest',
                              'BaseReporterStream']
 }

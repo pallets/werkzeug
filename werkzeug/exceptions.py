@@ -35,7 +35,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug.utils import escape
-from werkzeug.constants import HTTP_STATUS_CODES
+from werkzeug.http import HTTP_STATUS_CODES
 
 
 class HTTPException(Exception):

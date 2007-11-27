@@ -28,7 +28,6 @@ except NameError:
 
 _empty_stream = StringIO('')
 
-_accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 
 
@@ -405,23 +404,23 @@ class Headers(object):
     def getlist(self, key):
         ikey = key.lower()
         result = []
-        for k, v in self._list:
+        for k, v in self:
             if k.lower() == ikey:
                 result.append(v)
         return result
 
     def iteritems(self, lower=False):
-        for key, value in self._list:
+        for key, value in self:
             if lower:
                 key = key.lower()
             yield key, value
 
     def iterkeys(self, lower=False):
-        for key, _ in self.iterlists(lower):
+        for key, _ in self.iteritems(lower):
             yield key
 
     def itervalues(self):
-        for _, value in self.iterlists():
+        for _, value in self.iteritems():
             yield value
 
     def keys(self, lower=False):
@@ -444,11 +443,11 @@ class Headers(object):
     remove = __delitem__
 
     def __contains__(self, key):
-        key = key.lower()
-        for k, v in self._list:
-            if k.lower() == key:
-                return True
-        return False
+        try:
+            self[key]
+        except KeyError:
+            return False
+        return True
 
     has_key = __contains__
 
@@ -486,11 +485,42 @@ class Headers(object):
     def copy(self):
         return self.__class__(self._list)
 
+    def __copy__(self):
+        return self.copy()
+
     def __repr__(self):
         return '%s(%r)' % (
             self.__class__.__name__,
-            self._list
+            list(self)
         )
+
+
+class EnvironHeaders(Headers):
+    """
+    Read only version of the headers from wsgi environment.
+    """
+
+    def __init__(self, environ):
+        self.environ = environ
+
+    def __eq__(self, other):
+        return self is other
+
+    def __getitem__(self, key):
+        return self.environ['HTTP_' + key.upper().replace('-', '_')]
+
+    def __iter__(self):
+        for key, value in self.environ.iteritems():
+            if key.startswith('HTTP_'):
+                yield key[5:].replace('_', '-').title(), value
+
+    def copy(self):
+        raise TypeError('cannot create %r copies' % self.__class__.__name__)
+
+    def _immutable(self, *a, **kw):
+        raise TypeError('%r is immutable' % self.__class__.__name__)
+    remove = __delitem__ = add = clear = set = __setitem__ = _immutable
+    del _immutable
 
 
 class SharedDataMiddleware(object):
@@ -668,26 +698,6 @@ def format_string(string, context):
             x = type(string)(x)
         return x
     return _format_re.sub(lookup_arg, string)
-
-
-def parse_accept_header(value):
-    """
-    Parses an HTTP Accept-* header.  This does not implement a complete valid
-    algorithm but one that supports at least value and quality extraction.
-
-    Returns a list of ``(value, quality)`` tuples sorted by the quality.
-    """
-    result = []
-    for match in _accept_re.finditer(value):
-        quality = match.group(2)
-        if not quality:
-            quality = 1
-        else:
-            quality = max(min(float(quality), 1), 0)
-        result.append((quality, match.group(1)))
-    result.sort()
-    result.reverse()
-    return [(b, a) for a, b in result]
 
 
 def url_decode(s, charset='utf-8'):

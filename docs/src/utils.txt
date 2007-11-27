@@ -295,13 +295,6 @@ Helper Functions
                 # calculate something important here
                 return 42
 
-`parse_accept_header(value)`
-    Parses an HTTP Accept-* header.  This does not implement a complete
-    valid algorithm but one that supports at least value and quality
-    extraction.
-
-    Returns a list of ``(value, quality)`` tuples sorted by the quality.
-
 `get_host(environ)`
     Return the real host for the given WSGI enviornment.  This takes care
     of the `X-Forwarded-Host` header.
