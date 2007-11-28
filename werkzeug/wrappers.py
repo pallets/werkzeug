@@ -12,6 +12,10 @@
 import cgi
 import tempfile
 import urlparse
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import new as md5
 from Cookie import SimpleCookie
 from warnings import warn
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
@@ -19,7 +23,7 @@ from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, lazy_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
-     cookie_date, escape, _empty_stream
+     cookie_date, http_date, escape, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -335,6 +339,8 @@ class BaseResponse(object):
             self.status = status
         self._cookies = None
         self.cache_control = CacheControl(())
+        if conditional_request is None:
+            conditional_request = self.conditional_request
 
     def from_app(cls, app, environ, buffered=False):
         """
@@ -440,6 +446,18 @@ class BaseResponse(object):
         return headers
     header_list = property(header_list, doc=header_list.__doc__)
 
+    def is_streamed(self):
+        """
+        If the request is streamed (the response is not a sequence) this
+        property is `True`.
+        """
+        try:
+            len(self.response)
+        except TypeError:
+            return False
+        return True
+    is_streamed = property(is_streamed, doc=is_streamed.__doc__)
+
     def fix_headers(self, environ):
         """
         This is automatically called right before the response is started
@@ -451,6 +469,37 @@ class BaseResponse(object):
                 get_current_url(environ, host_only=True),
                 self.headers['Location']
             )
+
+    def make_conditional(self, request_or_environ):
+        """
+        Make the response conditional to the request.  This method works best
+        if an etag was defined for the response already.  The `add_etag`
+        method can be used to do that.  If called without etag just the date
+        header is set.
+
+        This does nothing if the request method in the request or enviorn is
+        anything but GET.
+        """
+        if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
+            return
+        environ = getattr(request_or_environ, 'environ', request_or_environ)
+        self.headers['Date'] = http_date()
+        if 'etag' in self.headers:
+            if_none_match = environ.get('HTTP_IF_NONE_MATCH')
+            last_modified = self.headers.get('last-modified')
+            if_modified_since = environ.get('HTTP_IF_MODIFIED_SINCE')
+            # we only set the status code because the request object removes
+            # contents for 304 responses automatically on `__call__`
+            if if_none_match and if_none_match == self.headers['etag'] or \
+               if_modified_since == last_modified:
+                self.status_code = 304
+
+    def add_etag(self, overwrite=False):
+        """Add an etag for the current response if there is none yet."""
+        if not overwrite and 'etag' in self.headers:
+            return
+        etag = md5(self.response_body).hexdigest()
+        self.headers['ETag'] = etag
 
     def close(self):
         """Close the wrapped response if possible."""

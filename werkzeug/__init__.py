@@ -80,6 +80,7 @@ import sys
 
 
 all_by_module = {
+    'werkzeug':             ['exceptions', 'routing', 'script'],
     'werkzeug.debug':       ['DebuggedApplication'],
     'werkzeug.local':       ['Local', 'LocalManager'],
     'werkzeug.templates':   ['Template'],
