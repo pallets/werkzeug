@@ -339,8 +339,6 @@ class BaseResponse(object):
             self.status = status
         self._cookies = None
         self.cache_control = CacheControl(())
-        if conditional_request is None:
-            conditional_request = self.conditional_request
 
     def from_app(cls, app, environ, buffered=False):
         """
