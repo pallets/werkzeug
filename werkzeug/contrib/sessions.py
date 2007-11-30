@@ -92,6 +92,7 @@ class Session(dict):
         return oncall
 
     __setitem__ = call_with_modification(dict.__setitem__)
+    __delitem__ = call_with_modification(dict.__delitem__)
     clear = call_with_modification(dict.clear)
     pop = call_with_modification(dict.pop)
     popitem = call_with_modification(dict.popitem)

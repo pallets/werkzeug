@@ -108,7 +108,6 @@ def test_response():
     # set cookie
     response = BaseResponse()
     response.set_cookie('foo', 'bar', 60, 0, '/blub', 'example.org', False)
-    print response.header_list
     assert response.header_list == [
         ('Content-Type', 'text/plain; charset=utf-8'),
         ('Set-Cookie', 'foo=bar; Domain=example.org; expires=Thu, '

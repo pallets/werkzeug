@@ -167,10 +167,6 @@ class CacheControl(dict):
     proxy_revalidate = cache_property('proxy-revalidate', None, bool)
     s_maxage = cache_property('s-maxage', None, None)
 
-    # make cache property a staticmethod so that subclasses of
-    # `CacheControl` can use it for new properties.
-    cache_property = staticmethod(cache_property)
-
     def __init__(self, values=(), on_update=None):
         self.on_update = on_update
         if values is None:
@@ -179,6 +175,28 @@ class CacheControl(dict):
         else:
             dict.__init__(self, values)
             self.provided = True
+
+    def calls_update(f):
+        def oncall(self, *args, **kw):
+            rv = f(self, *args, **kw)
+            if self.on_update is not None:
+                self.on_update(self)
+            return rv
+        try:
+            oncall.__name__ = f.__name__
+            oncall.__module__ = f.__module__
+            oncall.__doc__ = f.__doc__
+        except:
+            pass
+        return oncall
+
+    __setitem__ = calls_update(dict.__setitem__)
+    __delitem__ = calls_update(dict.__delitem__)
+    clear = calls_update(dict.clear)
+    pop = calls_update(dict.pop)
+    popitem = calls_update(dict.popitem)
+    setdefault = calls_update(dict.setdefault)
+    update = calls_update(dict.update)
 
     def _get_cache_value(self, key, default, type):
         """Used internally be the accessor properties."""
@@ -207,8 +225,7 @@ class CacheControl(dict):
                 self[key] = value
             else:
                 self.pop(key, None)
-        if self.on_update is not None:
-            self.on_update(self)
+    _set_cache_value = calls_update(_set_cache_value)
 
     def to_header(self):
         """Convert the stored values into a cache control header."""
@@ -231,6 +248,11 @@ class CacheControl(dict):
             self.__class__.__name__,
             dict.__repr__(self)
         )
+
+    # make cache property a staticmethod so that subclasses of
+    # `CacheControl` can use it for new properties.
+    cache_property = staticmethod(cache_property)
+    del calls_update
 
 
 def parse_accept_header(value):
