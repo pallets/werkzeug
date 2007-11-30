@@ -337,8 +337,6 @@ class BaseResponse(object):
             self.status_code = status
         else:
             self.status = status
-        self._cookies = None
-        self.cache_control = CacheControl(())
 
     def from_app(cls, app, environ, buffered=False):
         """
@@ -359,6 +357,18 @@ class BaseResponse(object):
     status_code = property(_get_status_code, _set_status_code,
                            'Get the HTTP Status code as number')
     del _get_status_code, _set_status_code
+
+    def cache_control(self):
+        def on_update(cache_control):
+            if not cache_control and 'cache-control' in self.headers:
+                del self.headers['cache-control']
+            elif cache_control:
+                self.headers['Cache-Control'] = cache_control.to_header()
+        value = self.headers.get('Cache-Control')
+        if value is not None:
+            value = parse_cache_control_header(value)
+        return CacheControl(value, on_update)
+    cache_control = lazy_property(cache_control)
 
     def write(self, data):
         """If we have a buffered response this writes to the buffer."""
@@ -400,48 +410,36 @@ class BaseResponse(object):
                 yield str(item)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
-                   path='/', domain=None, secure=None):
+                   path='/', domain=None, secure=None, httponly=False):
         """Set a new cookie."""
         try:
             key = str(key)
         except UnicodeError:
             raise TypeError('invalid key %r' % key)
-        if self._cookies is None:
-            self._cookies = SimpleCookie()
+        c = SimpleCookie()
         if isinstance(value, unicode):
             value = value.encode(self.charset)
-        self._cookies[key] = value
+        c[key] = value
         if expires is not None:
             if not isinstance(expires, basestring):
                 expires = cookie_date(expires)
-            self._cookies[key]['expires'] = expires
+            c[key]['expires'] = expires
         for k, v in (('path', path), ('domain', domain), ('secure', secure),
-                     ('max-age', max_age)):
-            if v is not None:
-                self._cookies[key][k] = v
+                     ('max-age', max_age), ('HttpOnly', httponly)):
+            if v is not None and v is not False:
+                c[key][k] = str(v)
+        self.headers.add('Set-Cookie', c[key].output(header='').lstrip())
 
-    def delete_cookie(self, key):
+    def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie."""
-        if self._cookies is None:
-            self._cookies = SimpleCookie()
-        if key not in self._cookies:
-            self._cookies[key] = ''
-        self._cookies[key]['max-age'] = 0
-        self._cookies[key]['expires'] = 0
+        self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
 
     def header_list(self):
         """
-        The complete header list including headers set by the request object
-        internally which are not part of the `headers` instance (such as the
-        cookie headers).
+        This returns the headers in the target charset as list.  It's used in
+        __call__ to get the headers for the response.
         """
-        headers = self.headers.to_list(self.charset)
-        if self._cookies is not None:
-            for morsel in self._cookies.values():
-                headers.append(('Set-Cookie', morsel.output(header='')))
-        if self.cache_control:
-            headers.append(('Cache-Control', str(self.cache_control)))
-        return headers
+        return self.headers.to_list(self.charset)
     header_list = property(header_list, doc=header_list.__doc__)
 
     def is_streamed(self):

@@ -171,7 +171,8 @@ class CacheControl(dict):
     # `CacheControl` can use it for new properties.
     cache_property = staticmethod(cache_property)
 
-    def __init__(self, values=()):
+    def __init__(self, values=(), on_update=None):
+        self.on_update = on_update
         if values is None:
             dict.__init__(self)
             self.provided = False
@@ -206,6 +207,8 @@ class CacheControl(dict):
                 self[key] = value
             else:
                 self.pop(key, None)
+        if self.on_update is not None:
+            self.on_update(self)
 
     def to_header(self):
         """Convert the stored values into a cache control header."""

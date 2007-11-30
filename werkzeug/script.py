@@ -141,7 +141,7 @@ def print_usage(actions):
 
 def analyse_action(func):
     """Analyse a function."""
-    description = inspect.getdoc(func)
+    description = inspect.getdoc(func) or 'undocumented action'
     arguments = []
     args, varargs, kwargs, defaults = inspect.getargspec(func)
     if varargs or kwargs:

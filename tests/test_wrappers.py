@@ -111,8 +111,6 @@ def test_response():
     print response.header_list
     assert response.header_list == [
         ('Content-Type', 'text/plain; charset=utf-8'),
-        # the leading whitespace is an implementation detail right now.  we
-        # test for it though to keep the test simple.
-        ('Set-Cookie', ' foo=bar; Domain=example.org; expires=Thu, '
-         '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; secure')
+        ('Set-Cookie', 'foo=bar; Domain=example.org; expires=Thu, '
+         '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub')
     ]
