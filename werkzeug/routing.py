@@ -843,7 +843,10 @@ class MapAdapter(object):
         """
         self.map.update()
         method = method or self.default_method
-        values = values or {}
+        if values:
+            values = dict([(k, v) for k, v in values.items() if v is not None])
+        else:
+            values = {}
 
         for rule in self.map._rules_by_endpoint.get(endpoint) or ():
             if rule.suitable_for(values, method):

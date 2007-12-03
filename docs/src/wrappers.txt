@@ -285,7 +285,7 @@ Methods
     - `path` limits the cookie to a given path, per default it will span
       the whole domain.
 
-`delete_cookie(key)`
+`delete_cookie(key, path='/', domain=None)`
     Deletes the cookie with the given key. Fails silently if the key doesn’t exist.
 
 `iter_encoded(charset=None)`
@@ -310,9 +310,7 @@ Members
     headers set currently.
 
 `header_list`
-    The complete header list including headers set by the request object
-    internally which are not part of the `headers` instance (such as the
-    cookie headers).
+    The complete header list as read only copy in the charset of the response.
 
 `response`
     The current response object.  This always is an iterable.

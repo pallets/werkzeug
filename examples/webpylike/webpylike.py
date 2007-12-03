@@ -60,7 +60,7 @@ class WebPyApp(object):
                     if req.method not in ('GET', 'HEAD', 'POST',
                                           'DELETE', 'PUT'):
                         raise NotImplemented()
-                    resp = getattr(view, req.method)()
+                    resp = getattr(view, req.method)(*match.groups())
                     break
             else:
                 raise NotFound()
