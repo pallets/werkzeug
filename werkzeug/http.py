@@ -79,7 +79,7 @@ HTTP_STATUS_CODES = {
 class Accept(list):
     """
     Subclass of a list for easier access to the accept values.  Sorted
-    by quality.
+    by quality, best first.
     """
 
     def __init__(self, values=()):
@@ -90,6 +90,7 @@ class Accept(list):
             self.provided = True
             values = [(a, b) for b, a in values]
             values.sort()
+            values.reverse()
             list.__init__(self, [(a, b) for b, a in values])
 
     def __getitem__(self, key):
