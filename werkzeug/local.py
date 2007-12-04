@@ -75,6 +75,9 @@ class Local(object):
             __lock=Lock()
         )
 
+    def __iter__(self):
+        return self.__dict__['__storage'].iteritems()
+
     def __getattr__(self, name):
         self.__dict__['__lock'].acquire()
         try:
