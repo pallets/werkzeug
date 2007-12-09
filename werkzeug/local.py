@@ -78,6 +78,10 @@ class Local(object):
     def __iter__(self):
         return self.__dict__['__storage'].iteritems()
 
+    def __call__(self, proxy):
+        """Create a proxy for a name."""
+        return LocalProxy(self, proxy)
+
     def __getattr__(self, name):
         self.__dict__['__lock'].acquire()
         try:
@@ -123,7 +127,13 @@ class LocalManager(object):
     """
 
     def __init__(self, locals=None):
-        self.locals = locals and list(locals) or []
+        if locals is None:
+            self.locals = []
+        else:
+            try:
+                self.locals = list(locals)
+            except TypeError:
+                self.locals = [locals]
 
     def get_ident(self):
         """Returns the current identifier for this context."""
@@ -152,6 +162,28 @@ class LocalManager(object):
             return ClosingIterator(app(environ, start_response),
                                    self.cleanup)
         return application
+
+    def middleware(self, func):
+        """
+        Like `make_middleware` but for decorating functions.  Example
+        usage::
+
+            @manager.middleware
+            def application(environ, start_response):
+                ...
+
+        The difference to `make_middleware` is that the function passed
+        will have all the arguments copied from the inner application
+        (name, docstring, module).
+        """
+        new_func = self.make_middleware(func)
+        try:
+            new_func.__name__ = func.__name__
+            new_func.__doc__ = func.__doc__
+            new_func.__module__ = func.__module__
+        except:
+            pass
+        return new_func
 
     def __repr__(self):
         return '<%s storages: %d>' % (
@@ -186,37 +218,40 @@ class LocalProxy(object):
     def __current_object(self):
         try:
             return getattr(self.__local, self.__name__)
-        except:
+        except AttributeError:
             raise RuntimeError('no object bound to %s' % self.__name__)
     __current_object = property(__current_object)
 
     def __dict__(self):
-        return self.__current_object.__dict__
+        try:
+            return self.__current_object.__dict__
+        except RuntimeError:
+            return AttributeError('__dict__')
     __dict__ = property(__dict__)
 
     def __repr__(self):
         try:
             obj = self.__current_object
-        except:
+        except RuntimeError:
             return '<%s unbound>' % self.__class__.__name__
         return repr(obj)
 
     def __nonzero__(self):
         try:
             return bool(self.__current_object)
-        except:
+        except RuntimeError:
             return False
 
     def __unicode__(self):
         try:
             return unicode(self.__current_oject)
-        except:
+        except RuntimeError:
             return repr(self)
 
     def __dir__(self):
         try:
             return dir(self.__current_object)
-        except:
+        except RuntimeError:
             return []
 
     def __getattr__(self, name):

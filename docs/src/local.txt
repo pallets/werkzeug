@@ -76,11 +76,56 @@ The following methods exist:
     Manually clean up the data in the locals for this context.  Call this at
     the end of the request or use `make_middleware()`.
 
-`make_middleware(application)`
+`make_middleware(app)`
     Encapsulate the application and call `cleanup()` at the end of a request.
+
+`middleware()`
+    Like `make_middleware` but works as decorator.  The main difference is
+    that the returned object will have the original docstring etc.
+
+    .. sourcecode:: python
+
+        @manager.middleware
+        def application(environ, start_response):
+            ...
 
 `get_ident()`
     Return the context identifier the local objects use internally for this
     context.  You cannot override this method to change the behavior but use
     it to link other context local objects (such as SQLAlchemy's scoped
     sessions) to the werkzeug locals.
+
+
+Proxies
+=======
+
+Werkzeug can also create proxy objects for you.  A proxy object forwards nearly
+all operations to an object bound to an object on a local.  This is for example
+useful if you want a global request object:
+
+.. sourcecode:: python
+
+    from werkzeug import Local
+    local = Local()
+    request = local('request')
+    user = local('user')
+
+Whenever you access anything on user it will forward the operation to the object
+`local.user`.  This affects all operations except of any sort of assignment.
+
+Keep in mind that the repr is also forwarded so if you want to find out if you
+are dealing with a proxy you can do an isinstance check:
+
+.. sourcecode:: pycon
+
+    >>> from werkzeug import LocalProxy
+    >>> isinstance(request, LocalProxy)
+    True
+
+You can also create proxy objects by hand:
+
+.. sourcecode:: python
+
+    from werkzeug import Local, LocalProxy
+    local = Local()
+    request = LocalProxy(local, 'request')
