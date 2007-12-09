@@ -680,6 +680,22 @@ class Map(object):
         for rulefactory in rules or ():
             self.add(rulefactory)
 
+    def is_endpoint_expecting(self, endpoint, *arguments):
+        """
+        Iterate over all rules and check if the endpoint expects
+        the arguments provided.  This is for example useful if you have
+        some URLs that expect a language code and others that do not and
+        you want to wrap the builder a bit so that the current language
+        code is automatically added if not provided but endpoints expect
+        it.
+        """
+        self.update()
+        arguments = set(arguments)
+        for rule in self._rules_by_endpoint[endpoint]:
+            if arguments.issubset(rule.arguments):
+                return True
+        return False
+
     def iter_rules(self, endpoint=None):
         """Iterate over all rules or the rules of an endpoint."""
         if endpoint is not None:
