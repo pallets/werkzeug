@@ -164,6 +164,20 @@ Members
 `accept_languages`
     List of langauges this client accepts.
 
+`remote_addr`
+    The remote address for the user that created this request.  If the
+    class variable `is_behind_proxy` is set to `True` (either by subclassing
+    the process or overriding this variable on the instance) it will try
+    to get the value from the `X_HTTP_FORWARDED_FOR` header.  Keep in mind
+    that this is disabled by default because unless you are really behind
+    a proxy this is a security problem.
+
+`access_route`
+    If you are behind a proxy server this will list all the ips that take
+    place in the request.  The end user ip is the first one in the list, the
+    last proxy server is the last item in the list.  This also works if the
+    `is_behind_proxy` class variable is set to `False`.
+
 
 Response
 ========

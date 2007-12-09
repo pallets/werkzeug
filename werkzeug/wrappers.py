@@ -67,6 +67,7 @@ class BaseRequest(object):
     Base Request class.
     """
     charset = 'utf-8'
+    is_behind_proxy = False
 
     def __init__(self, environ, populate_request=True):
         self.environ = environ
@@ -280,6 +281,26 @@ class BaseRequest(object):
     query_string = environ_property('QUERY_STRING', '', read_only=True)
     remote_addr = environ_property('REMOTE_ADDR', read_only=True)
     method = environ_property('REQUEST_METHOD', 'GET', read_only=True)
+
+    def access_route(self):
+        """
+        If an forwarded header exists this is a list of all ip addresses
+        from the client ip to the last proxy server.
+        """
+        if 'HTTP_X_FORWARDED_FOR' in self.environ:
+            addr = self.environ['HTTP_X_FORWARDED_FOR'].split(',')
+            return [x.strip() for x in addr]
+        elif 'REMOTE_ADDR' in self.environ:
+            return [self.environ['REMOTE_ADDR']]
+        return []
+    access_route = lazy_property(access_route)
+
+    def remote_addr(self):
+        """The remote address of the client."""
+        if self.is_behind_proxy and self.access_route:
+            return self.access_route[0]
+        return self.environ.get('REMOTE_ADDR')
+    remote_addr = property(remote_addr)
 
     def is_xhr(self):
         """
