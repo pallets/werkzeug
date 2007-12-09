@@ -130,17 +130,18 @@ Here a list of converters that come with Werkzeug:
     data since they could insert arbitrary python code in the parameters
     part.
 
-    The advantage of this method is that you can access variables defined
-    outside of the url definition:
+    As a matter of fact this is a legal definition and sets fixed_digits
+    to 2:
 
     .. sourcecode:: python
 
-        PICTURE_ID_LENGTH = 4
-
         map = Map([
-            Rule('/picture/<int(fixed_digits=PICTURE_ID_LENGTH):id>.png',
+            Rule('/picture/<int(fixed_digits=1 + 1):id>.png',
                  endpoint='view_image')
         ])
+
+    However evaluating python expressions as currently an implementation
+    detail and might be unavailable in the future.
 
 Map Options
 ===========
