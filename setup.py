@@ -9,7 +9,7 @@ from setuptools import setup, Feature
 
 setup(
     name='Werkzeug',
-    version='0.1',
+    version='0.2',
     url='http://werkzeug.pocoo.org/',
     download_url='http://trac.pocoo.org/repos/werkzeug/trunk',
     license='BSD',
