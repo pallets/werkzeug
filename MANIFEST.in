@@ -1,4 +1,3 @@
 include Makefile CHANGES LICENSE AUTHORS TODO ez_setup.py
-recursive-include werkzeug templates/*
-recursive-include werkzeug debug/shared/*
+recursive-include werkzeug.debug shared/*
 recursive-include tests *

@@ -17,7 +17,6 @@ try:
 except ImportError:
     from md5 import new as md5
 from Cookie import SimpleCookie
-from warnings import warn
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \

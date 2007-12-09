@@ -1,8 +1,0 @@
-"""
-    $MODULE
-    ${'~' * len(MODULE)}
-
-$make_textblock(4, 79, DOCSTRING)
-
-    :copyright: $datetime.now().year by $AUTHOR.
-"""

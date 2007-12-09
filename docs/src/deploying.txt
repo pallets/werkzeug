@@ -1,0 +1,114 @@
+===========================
+Deploying WSGI Applications
+===========================
+
+The best thing about WSGI is that there are so many gateways for productive
+usage.  If you want to switch from Apache2 with mod_wsgi to lighttpd with
+FastCGI it's a matter of a few minutes.  If you want to distribute your
+application on a usb stick for presentation you can bundle everything into
+an executable using py2exe and the builtin wsgiref module.
+
+The following list shows the most often used server configurations and how
+you can serve your WSGI applications.
+
+
+Generic Gateways
+================
+
+The following gateways are webserver agnostic and will work with any webserver
+out there that suppors the underlaying interface:
+
+
+`FastCGI`
+    For FastCGI two well known python libraries exist.  One is implemented in
+    python and handles pretty every FastCGI configuration.  It's called `flup`_
+    and supports also some other interfaces beside FastCGI.  The other one is
+    called `python-fastcgi`_ and is implemented in C.  However the latter has a
+    much smaller featureset.
+
+`SCGI`
+    Simple protocol with the same benefits of FastCGI (persistent interpreters).
+    Like `FastCGI` this is supported by `flup`_.
+
+`CGI`
+    CGI is know to work on every major webserver out there but has the
+    disadvantage of being slow.  With Python 2.5 onwards you can use wsgiref
+    as CGI gateway, in older Python versions you can either install wsgiref
+    yourself or use the CGI wrapper code from the `PEP 333`_.
+
+
+Apache Centric Gateways
+=======================
+
+The following gateways are either written especially for the Apache webserver
+or work best with it.
+
+`mod_wsgi`
+    The without a doubt best deployment platform for the apache webserver is
+    `mod_wsgi`_.  Even though it's an apache module there are also ways to switch
+    the underlaying interpreter into another user context.  This allows you to
+    mass host python applications like you would do with suexec/suphp.
+
+`mod_python`
+    For long time mod_python was the preferred way to deploy python applications
+    on the apache webserver and frameworks like django still recommend this setup.
+    However some bugs in mod_python make it hard to deploy WSGI applications,
+    especially the undefined behavior of SCRIPT_NAME which makes routing hard.
+
+    If you want to use mod_python or have to use it, you can try the mod_python
+    WSGI wrapper from this `blog post about mod_python and wsgi`_.
+
+`AJP`
+    AJP is the Protocol used by Tomcat.  `flup`_ provides ways to talk it.
+
+
+Example Configuration
+=====================
+
+Here a small example configuration for Apache and mod_wsgi:
+
+.. sourcecode:: python
+
+    from yourapplicaiton import YourWSGIApplication
+
+    # mod_wsgi just wants an object called "application" it will use
+    # for dispatching.  pretty simple huh?
+    application = YourWSGIApplication(configuration='probably', goes='here')
+    
+Save it as "yourapplication.wsgi" and then add this to your virtual host config:
+
+.. sourcecode:: apache
+
+    WSGIScriptAlias / /path/to/yourapplication.wsgi/
+
+(Note the trailing slash).  Or if you want to have the application in a subfolder:
+
+.. sourcecode:: apache
+
+    WSGIScriptAlias /foo /path/to/yourapplication.wsgi
+
+(Without the trailing slash).  Detailed usage examples for the WSGI gateways usually
+come with the gateways or can be found in their wikis.
+
+
+Selecting the Best Gateway
+==========================
+
+Selecting the best gateway is mainly a matter of what you have available on your
+server and how your application is written.  Some applications might not be thread
+safe, others work better with threads etc.
+
+The following channels on freenode deal a lot with WSGI and you might be able to
+find some help there:
+
+- ``#wsgi``
+- ``#pylons``
+- ``#pocoo``
+- ``#pythonpaste``
+
+
+.. _flup: http://cheeseshop.python.org/pypi/flup
+.. _python-fastcgi: http://cheeseshop.python.org/pypi/python-fastcgi
+.. _PEP 333: http://www.python.org/dev/peps/pep-0333/
+.. _mod_wsgi: http://code.google.com/p/modwsgi/
+.. _blog post about mod_python and wsgi: http://www.aminus.org/blogs/index.php/fumanchu/2005/11/06/wsgi_wrapper_for_mod_python

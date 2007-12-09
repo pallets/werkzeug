@@ -15,7 +15,7 @@ setup(
     license='BSD',
     author='Armin Ronacher',
     author_email='armin.ronacher@active-4.com',
-    description='WSGI Utility Collection -- formal successor of Colubrid',
+    description='The Swiss Army knife of Python web development',
     long_description=getdoc(werkzeug),
     zip_safe=False,
     classifiers=[
@@ -30,6 +30,9 @@ setup(
     ],
     scripts=['werkzeug-bootstrap'],
     packages=['werkzeug', 'werkzeug.debug'],
+    package_data={
+        'werkzeug.debug': ['shared/*']
+    },
     features={
         'contrib': Feature('optional contribute addon modules',
             standard=True,

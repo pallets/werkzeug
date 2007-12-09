@@ -1,0 +1,16 @@
+=============
+API Stability
+=============
+
+Werkzeug has not yet reached 1.0 and as a matter of fact some things might
+change over the time.  The following modules will very likely change in
+one of the next release versions:
+
+`werkzeug.routing`
+    Currently the path converter does not sort properly and we will change
+    the way sorting works there.  Try to avoid path as much as possible
+    for the time being.
+
+`werkzeug.contrib`
+    The community contributed modules are yet undocumented and we expect
+    some upcoming changes there.
