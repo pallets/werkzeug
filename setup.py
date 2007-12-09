@@ -28,7 +28,6 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    scripts=['werkzeug-bootstrap'],
     packages=['werkzeug', 'werkzeug.debug'],
     package_data={
         'werkzeug.debug': ['shared/*']

@@ -25,6 +25,8 @@ Documentation regarding the Werkzeug modules and Werkzeug as such.
 - `Utilities <utils.txt>`_ - useful things like multi value dicts,
   a data structure for headers etc.
 
+- `Context Locals <local.txt>`_ - WSGI centric version of thread.local
+
 - `Debugging System <debug.txt>`_ - interactive debugger
 
 - `API Stability <api_stability.txt>`_ - API stability
