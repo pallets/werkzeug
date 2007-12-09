@@ -82,7 +82,7 @@ import sys
 all_by_module = {
     'werkzeug':             ['exceptions', 'routing', 'script'],
     'werkzeug.debug':       ['DebuggedApplication'],
-    'werkzeug.local':       ['Local', 'LocalManager'],
+    'werkzeug.local':       ['Local', 'LocalManager', 'LocalProxy'],
     'werkzeug.templates':   ['Template'],
     'werkzeug.serving':     ['run_simple'],
     'werkzeug.test':        ['Client'],
