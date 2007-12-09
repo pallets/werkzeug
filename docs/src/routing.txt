@@ -102,6 +102,11 @@ Here a list of converters that come with Werkzeug:
 `path`
     Matches everything including a slash. No further configuration.
 
+    .. admonition:: There be Dragons
+
+        Important note.  The path converter is known to not sort properly.
+        as of werkzeug 0.1 we don't recommend using it because the next
+        werkzeug release will have new sorting semantics for `path`.
 
 `int`
     This converter only accepts integer values.
