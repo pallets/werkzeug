@@ -3,7 +3,7 @@
     werkzeug
     ~~~~~~~~
 
-    Werkzeug is the Swiss Army® knife of Python web development.
+    Werkzeug is the Swiss Army(r) knife of Python web development.
 
     It provides useful classes and functions for any WSGI application take
     make life much easier.  All of the provided classes are independed from
