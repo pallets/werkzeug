@@ -28,5 +28,5 @@ template.
 
 Werkzeug itself does not tell you how you should develop applications but
 the documentation often speaks of view functions that work rougly the same.
-The idea of a view function is that it's caled with a request object (and
-optionally some parameters form an URL rule) and returns a response object.
+The idea of a view function is that it's called with a request object (and
+optionally some parameters from an URL rule) and returns a response object.
