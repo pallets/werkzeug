@@ -23,7 +23,8 @@ def index(request, page):
     """Show the index page or any an offset of it."""
     days = []
     days_found = set()
-    pagination = Pagination(Entry.query, PER_PAGE, page, 'index')
+    query = Entry.query.order_by(Entry.pub_date.desc())
+    pagination = Pagination(query, PER_PAGE, page, 'index')
     for entry in pagination.entries:
         day = date(*entry.pub_date.timetuple()[:3])
         if day not in days_found:
