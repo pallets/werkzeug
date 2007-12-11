@@ -60,7 +60,7 @@ def parse_creole(request, markup):
     # XXX: ugly hack, generate() doesn't set that thread local properly,
     # just __call__ does, which calls render() which we are not intersted
     # in ...  adapt if creole changes or mail author
-    from creoleparse.core import element_store
+    from creoleparser.core import element_store
     element_store.d = {}
     return Parser(dialect=Creole10(
         wiki_links_base_url=request.url_root,
