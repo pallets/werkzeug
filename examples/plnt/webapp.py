@@ -14,7 +14,7 @@ from werkzeug import SharedDataMiddleware, ClosingIterator
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.routing import RequestRedirect
 from plnt.utils import Request, local, local_manager, url_map, endpoints
-from plnt.database import metadata
+from plnt.database import Session, metadata
 
 # import the views module because it contains setup code
 import plnt.views
