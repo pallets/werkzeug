@@ -25,7 +25,7 @@ def sync():
     Performs a synchronization. Articles that are already syncronized aren't
     touched anymore.
     """
-    for blog in Blog.query.filter_by(disabled=False).all():
+    for blog in Blog.query.all():
         # parse the feed. feedparser.parse will never given an exception
         # but the bozo bit might be defined.
         feed = feedparser.parse(blog.feed_url)

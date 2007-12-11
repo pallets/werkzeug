@@ -10,7 +10,7 @@
 """
 from os import path
 from sqlalchemy import create_engine
-from werkzeug import SharedDataMiddleware, append_slash_redirect
+from werkzeug import SharedDataMiddleware, ClosingIterator
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.routing import RequestRedirect
 from plnt.utils import Request, local, local_manager, url_map, endpoints
@@ -48,7 +48,8 @@ class Plnt(object):
             response = endpoints[endpoint](request, **values)
         except (RequestRedirect, HTTPException), e:
             response = e
-        return response(environ, start_response)
+        return ClosingIterator(response(environ, start_response),
+                               Session.remove)
 
     def __call__(self, environ, start_response):
         return self._dispatch(environ, start_response)
