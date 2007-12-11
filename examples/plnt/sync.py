@@ -87,7 +87,7 @@ def sync():
             # convert the time tuples to datetime objects.
             pub_date = datetime(*pub_date[:6])
             updated = datetime(*updated[:6])
-            if old_entry and updated <= old_entry.updated:
+            if old_entry and updated <= old_entry.last_update:
                 continue
 
             # create a new entry object based on the data collected or
