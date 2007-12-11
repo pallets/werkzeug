@@ -454,3 +454,15 @@ Helper Functions
     the python interpreter and a list of installed eggs when called.  This
     is useful to test a middleware (when you need an application) or a WSGI
     server (installation).
+
+`responder(func)`
+    Decorates a function so that the return value is evaluated as WSGI
+    application.  This is useful if you want to return response objects:
+
+    .. sourcecode:: python
+
+        from werkzeug import BaseResponse, responder
+
+        @responder
+        def application(environ, start_response):
+            return BaseResponse('Hello World!')

@@ -91,11 +91,12 @@ all_by_module = {
                              'environ_property', 'cookie_date', 'http_date',
                              'url_encode', 'url_quote_plus', 'Headers',
                              'EnvironHeaders', 'CombinedMultiDict',
-                             'run_wsgi_app', 'get_host',
+                             'run_wsgi_app', 'get_host', 'responder',
                              'SharedDataMiddleware', 'ClosingIterator',
                              'FileStorage', 'url_unquote_plus',
                              'url_unquote', 'get_current_url', 'redirect',
-                             'lazy_property', 'MultiDict', 'url_decode'],
+                             'append_slash_redirect', 'lazy_property',
+                             'MultiDict', 'url_decode'],
     'werkzeug.http':        ['Accept', 'CacheControl', 'parse_accept_header',
                              'parse_cache_control_header',
                              'HTTP_STATUS_CODES'],
@@ -124,9 +125,9 @@ class _AutoModule(ModuleType):
 
 old_module = sys.modules['werkzeug']
 new_module = sys.modules['werkzeug'] = _AutoModule('werkzeug')
-new_module.__dict__.update(
-    __file__=__file__,
-    __path__=__path__,
-    __doc__=__doc__,
-    __all__=tuple(object_origins)
-)
+new_module.__dict__.update({
+    '__file__': __file__,
+    '__path__': __path__,
+    '__doc__':  __doc__,
+    '__all__':  tuple(object_origins)
+})

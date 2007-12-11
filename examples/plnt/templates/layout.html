@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+  "http://www.w3.org/TR/html4/strict.dtd">
+<title>Plnt Planet</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('shared', file='style.css') }}">
+
+<div class="header">
+  <h1>Plnt Planet</h1>
+  <blockquote>This is the Plnt Planet Werkzeug Example Application</blockquote>
+</div>
+
+<ul class="navigation">
+  <li><a href="{{ url_for('index') }}">Planet</a></li>
+  <li><a href="{{ url_for('about') }}">About</a></li>
+</ul>
+
+<div class="contents">
+{% block body %}{% endblock %}
+</div>
+
+<div class="footer">
+  <p>This is a Plnt Planet, an example planet application written using
+  <a href="http://werkzeug.pocoo.org/">Werkzeug</a>.</p>
+</div>

@@ -70,10 +70,10 @@ def get_ident():
 class Local(object):
 
     def __init__(self):
-        self.__dict__.update(
-            __storage={},
-            __lock=Lock()
-        )
+        self.__dict__.update({
+            '__storage':    {},
+            '__lock':       Lock()
+        })
 
     def __iter__(self):
         return self.__dict__['__storage'].iteritems()
@@ -159,8 +159,7 @@ class LocalManager(object):
         request end.
         """
         def application(environ, start_response):
-            return ClosingIterator(app(environ, start_response),
-                                   self.cleanup)
+            return ClosingIterator(app(environ, start_response), self.cleanup)
         return application
 
     def middleware(self, func):

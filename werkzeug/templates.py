@@ -368,10 +368,13 @@ class Context(object):
             return rv.encode(self.encoding, self.errors)
         return rv
 
-    def __getitem__(self, key):
+    def get(self, key, default=None):
         if key in self._namespace:
             return self._namespace[key]
-        return getattr(builtins, key, undefined)
+        return getattr(builtins, key, default)
+
+    def __getitem__(self, key):
+        return self.get(key, undefined)
 
     def __setitem__(self, key, value):
         self._namespace[key] = value

@@ -1,0 +1,133 @@
+body {
+    font-family: 'Luxi Sans', 'Lucida Sans', 'Verdana', sans-serif;
+    margin: 1em;
+    padding: 0;
+    background-color: #BDE1EC;
+    color: #0B2B35;
+}
+
+a {
+    color: #50ACC4;
+}
+
+a:hover {
+    color: #0B2B35;
+}
+
+div.header {
+    display: block;
+    margin: -1em -1em 0 -1em;
+    padding: 1em;
+    background-color: #0B2B35;
+    color: white;
+}
+
+div.header h1 {
+    font-family: 'Georgia', serif;
+    margin: 0;
+    font-size: 1.8em;
+}
+
+div.header blockquote {
+    margin: 0;
+    padding: 0.5em 0 0 1em;
+    font-size: 0.9em;
+}
+
+div.footer {
+    margin: 1em -1em -1em -1em;
+    padding: 0.5em;
+    color: #F3F7F8;
+    background-color: #1F6070;
+}
+
+div.footer p {
+    margin: 0;
+    padding: 0;
+    font-size: 0.8em;
+    text-align: right;
+}
+
+ul.navigation {
+    float: right;
+    padding: 0.7em 1em 0.7em 1em;
+    background-color: #F3F7F8;
+    border: 1px solid #85CADB;
+    border-right-color: #50ACC4;
+    border-bottom-color: #50ACC4;
+    list-style: none;
+}
+
+ul.navigation li {
+    padding: 0.3em 0 0.3em 0;
+}
+
+ul.navigation li a {
+    color: #0B2B35;
+}
+
+ul.navigation li a:hover {
+    color: #50ACC4;
+}
+
+div.pagination {
+    margin: 0.5em 0 0.5em 0;
+    padding: 0.7em;
+    text-align: center;
+    max-width: 50em;
+    background-color: white;
+    border: 1px solid #B1CDD4;
+}
+
+div.day, div.page {
+    max-width: 50em;
+    background-color: white;
+    border: 1px solid #50ACC4;
+    margin: 1em 0 1em 0;
+    padding: 0.7em;
+}
+
+div.day h2, div.page h2 {
+    margin: 0 0 0.5em 0;
+    padding: 0;
+    color: black;
+    font-size: 1.7em;
+}
+
+div.page p {
+    margin: 0.7em 1em 0.7em 1em;
+    line-height: 1.5em;
+}
+
+div.day div.entry {
+    margin: 0.5em 0.25em 0.5em 1em;
+    padding: 1em;
+    background-color: #F3F7F8;
+    border: 1px solid #85CADB;
+    border-left-color: #50ACC4;
+    border-top-color: #50ACC4;
+}
+
+div.day div.entry h3 {
+    margin: 0;
+    padding: 0;
+}
+
+div.day div.entry h3 a {
+    color: #1C6D81;
+    text-decoration: none;
+}
+
+div.day div.entry p.meta {
+    color: #666;
+    font-size: 0.85em;
+    margin: 0.3em 0 0.6em 0;
+}
+
+div.day div.entry p.meta a {
+    color: #666;
+}
+
+div.day div.entry div.text {
+    padding: 0 0 0 0.5em;
+}
