@@ -3,9 +3,9 @@
     plnt.sync
     ~~~~~~~~~
 
-    Does the synchronization.
+    Does the synchronization.  Called by "manage-plnt.py sync"
 
-    :copyright: Copyright 2007 by Armin Ronacher.
+    :copyright: 2007 by Benjamin Wiegand, Marian Sigler, Armin Ronacher.
     :license: BSD.
 """
 import sys
@@ -25,7 +25,7 @@ def sync():
     Performs a synchronization. Articles that are already syncronized aren't
     touched anymore.
     """
-    for blog in Blog.query.all():
+    for blog in Blog.query.filter_by(disabled=False).all():
         # parse the feed. feedparser.parse will never given an exception
         # but the bozo bit might be defined.
         feed = feedparser.parse(blog.feed_url)
