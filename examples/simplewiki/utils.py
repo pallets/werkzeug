@@ -13,7 +13,7 @@ import difflib
 from os import path
 from genshi import Stream
 from genshi.template import TemplateLoader
-from creoleparser import Parser, Creole10
+from creoleparser import Parser, Creole10, element_store as creole_element_store
 from werkzeug import BaseRequest, BaseResponse, Local, LocalManager, \
      url_encode, url_quote, redirect, lazy_property
 
@@ -57,6 +57,10 @@ def generate_template(template_name, **context):
 
 def parse_creole(request, markup):
     """Parse some creole markup and create a genshi stream."""
+    # XXX: ugly hack, generate() doesn't set that thread local properly,
+    # just __call__ does, which calls render() which we are not intersted
+    # in ...  adapt if creole changes or mail author
+    creole_element_store.d = {}
     return Parser(dialect=Creole10(
         wiki_links_base_url=request.url_root,
         wiki_links_space_char='_',
