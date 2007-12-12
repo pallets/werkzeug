@@ -22,6 +22,9 @@ Documentation regarding the Werkzeug modules and Werkzeug as such.
 
 - `Mini Templates <templates.txt>`_ - minimal templating system
 
+- `Management Script Utilities <script.txt>`_ - tools to write simple
+  management scripts.
+
 - `Utilities <utils.txt>`_ - useful things like multi value dicts,
   a data structure for headers etc.
 

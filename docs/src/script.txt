@@ -1,0 +1,104 @@
+===========================
+Management Script Utilities
+===========================
+
+Most of the time you have recurring tasks while writing an application such
+as starting up an interactive python interpreter with some prefilled imports,
+starting the development server, initializing the database or something
+similar.
+
+For that purpose werkzeug provides the `werkzeug.script` module which helps
+you writing such scripts.
+
+
+Basic Usage
+===========
+
+The following snippet is roughly the same in every werkzeug script:
+
+.. sourcecode:: python
+
+    #!/usr/bin/env python
+    # -*- coding: utf-8 -*-
+    from werkzeug import script
+
+    # actions go here
+
+    if __name__ == '__main__':
+        script.run()
+
+Starting this script now does nothing because no actions are defined.
+An action is a function in the same module starting with "action_" which
+takes a number of arguments where every argument has a default.  The
+type of the default value specifies the type of the argument.
+
+Arguments can then be passed by position or using ``--name=value`` from
+the shell.
+
+Because a runserver and shell command is pretty common there are two
+factory functions that create such commands:
+
+.. sourcecode:: python
+
+    def make_app():
+        from yourapplication import YourApplication
+        return YourApplication(...)
+
+    action_runserver = script.make_runserver(make_app, use_reloader=True)
+    action_shell = script.make_shell(lambda: {'app': make_app()})
+
+
+Writing Actions
+===============
+
+Writing new action functions is pretty straight forward.  All you have to
+do is to name the function "action_COMMAND" and it will be available as
+"./manage.py COMMAND".  The docstring of the function is used for the
+help screen and all arguments must have defaults the run function can
+inspect.  As a matter of fact you cannot use "*args" or "**kwargs"
+constructs.
+
+**Note**: Some of those limitations will disappear over the time, for the
+time being you should use dummy defaults.
+
+An additional feature is the definition of tuples as defaults.  The first
+item in the tuple could be a short name for the command and the second
+the default value:
+
+.. sourcecode:: python
+
+    def action_add_user(username=('u', ''), password=('p', '')):
+        """Docstring goes here."""
+        ...
+
+
+Action Discovery
+================
+
+Per default the run function looks up variables in the current locals.  That
+means if no arguments are provided it implicitly assumes this call:
+
+.. sourcecode:: python
+
+    script.run(locals(), 'action_')
+
+If you don't want to use a action discovery you can set the prefix to an empty
+string and pass a dict with functions:
+
+.. sourecode:: python
+
+    script.run(dict(
+        runserver=script.make_runserver(make_app, use_reloader=True),
+        shell=script.make_shell(lambda: {'app': make_app()}),
+        initdb=on_initdb
+    ), '')
+
+
+Example Scripts
+===============
+
+In the Werkzeug `example folder`_ there are some ``./manage-APP.py`` scripts
+using `werkzeug.script`.
+
+
+.. _example folder: http://dev.pocoo.org/projects/werkzeug/browser/examples
