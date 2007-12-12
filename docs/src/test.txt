@@ -16,7 +16,7 @@ Werkzeug provides an object called `Client` which you can pass a WSGI
 application (and optionally a response wrapper) which you can use to send
 virtual requests to the application.
 
-A response wrapper is a function taht takes three arguments: the application
+A response wrapper is a callable that takes three arguments: the application
 iterator, the status and finally a list of headers.  The default response
 wrapper returns a tuple.  Because response objects have the same signature
 you can use them as response wrapper, ideally by subclassing them and hooking
