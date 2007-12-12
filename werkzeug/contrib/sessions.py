@@ -38,7 +38,7 @@ except ImportError:
     from sha import new as sha1
 from cPickle import dump, load, HIGHEST_PROTOCOL
 from Cookie import SimpleCookie, Morsel
-from werkzeug.utils import ClosingIterator
+from werkzeug.utils import ClosingIterator, cookie_date
 
 
 _sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')
