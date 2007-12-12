@@ -548,8 +548,12 @@ class SharedDataMiddleware(object):
             fp.close()
 
     def __call__(self, environ, start_response):
-        path = '/'.join([''] + [x for x in environ.get('PATH_INFO', '').
-                                strip('/').split() if x != '..'])
+        cleaned_path = environ.get('PATH_INFO', '').strip('/')
+        for sep in os.sep, os.altsep:
+            if sep and sep != '/':
+                cleaned_path = cleaned_path.replace(sep, '/')
+        path = '/'.join([''] + [x for x in cleaned_path.split('/')
+                                if x and x != '..'])
         for search_path, file_path in self.exports.iteritems():
             if search_path == path and os.path.isfile(file_path):
                 return self.serve_file(file_path, start_response)
@@ -873,6 +877,42 @@ def redirect(location, code=302):
         ((escape(location),) * 2), code, mimetype='text/html')
     response.headers['Location'] = location
     return response
+
+
+def append_slash_redirect(environ, code=301):
+    """
+    Redirect to the same URL but with a slash appended.  The behavior
+    of this function is undefined if the path ends with a slash already.
+    """
+    new_path = environ['PATH_INFO'].strip('/') + '/'
+    query_string = environ['QUERY_STRING']
+    if query_string:
+        new_path += '?' + query_string
+    if not new_path.startswith('/'):
+        new_path = '/' + new_path
+    return redirect(new_path)
+
+
+def responder(f):
+    """
+    Marks a function as responder.  Decorate a function with it and it
+    will automatically call the return value as WSGI application.
+
+    Example::
+
+        @responder
+        def application(environ, start_response):
+            return Response('Hello World!')
+    """
+    def wrapper(environ, start_response):
+        return f(environ, start_response)(environ, start_response)
+    try:
+        wrapper.__name__ = f.__name__
+        wrapper.__module__ = f.__module__
+        wrapper.__doc__ = f.__doc__
+    except:
+        pass
+    return wrapper
 
 
 def create_environ(path='/', base_url=None, query_string=None, method='GET',

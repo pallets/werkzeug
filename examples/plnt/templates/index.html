@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block body %}
+  {% for day in days %}
+  <div class="day">
+    <h2>{{ day.date.strftime('%d %B %Y') }}</h2>
+    {%- for entry in day.entries %}
+    <div class="entry">
+      <h3><a href="{{ entry.url|e }}">{{ entry.title }}</a></h3>
+      <p class="meta">by <a href="{{ entry.blog.url|e }}">{{ entry.blog.name|e }}</a>
+                      at {{ entry.pub_date.strftime('%H:%m') }}</p>
+      <div class="text">{{ entry.text }}</div>
+    </div>
+    {%- endfor %}
+  </div>
+  {%- endfor %}
+
+  {% if pagination.pages > 1 %}
+  <div class="pagination">
+    {%- if pagination.has_previous %}<a href="{{ pagination.previous }}">&laquo; Previous</a>
+    {%- else %}<span class="inactive">&laquo; Previous</span>{% endif %}
+    | {{ pagination.page }} |
+    {% if pagination.has_next %}<a href="{{ pagination.next }}">Next &raquo;</a>
+    {%- else %}<span class="inactive">Next &raquo;</span>{% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

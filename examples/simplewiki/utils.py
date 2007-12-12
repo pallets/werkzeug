@@ -57,6 +57,11 @@ def generate_template(template_name, **context):
 
 def parse_creole(request, markup):
     """Parse some creole markup and create a genshi stream."""
+    # XXX: ugly hack, generate() doesn't set that thread local properly,
+    # just __call__ does, which calls render() which we are not intersted
+    # in ...  adapt if creole changes or mail author
+    from creoleparser.core import element_store
+    element_store.d = {}
     return Parser(dialect=Creole10(
         wiki_links_base_url=request.url_root,
         wiki_links_space_char='_',

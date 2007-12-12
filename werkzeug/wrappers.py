@@ -482,7 +482,7 @@ class BaseResponse(object):
         """
         if 'Location' in self.headers:
             self.headers['Location'] = urlparse.urljoin(
-                get_current_url(environ, host_only=True),
+                get_current_url(environ, root_only=True),
                 self.headers['Location']
             )
 
