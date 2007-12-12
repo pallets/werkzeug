@@ -98,7 +98,7 @@ means if no arguments are provided it implicitly assumes this call:
 If you don't want to use a action discovery you can set the prefix to an empty
 string and pass a dict with functions:
 
-.. sourecode:: python
+.. sourcecode:: python
 
     script.run(dict(
         runserver=script.make_runserver(make_app, use_reloader=True),
