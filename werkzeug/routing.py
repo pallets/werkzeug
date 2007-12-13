@@ -132,7 +132,7 @@ def get_converter(map, name, args):
         raise LookupError('the converter %r does not exist' % name)
     if args:
         storage = type('_Storage', (), {'__getitem__': lambda s, x: x})()
-        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
+        args, kwargs = eval(u'(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
     else:
         args = ()
         kwargs = {}
