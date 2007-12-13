@@ -108,6 +108,14 @@ Here a list of converters that come with Werkzeug:
         as of werkzeug 0.1 we don't recommend using it because the next
         werkzeug release will have new sorting semantics for `path`.
 
+`any`
+    Matches one of the items provided.  Items can either be python
+    identifiers or unicode strings:
+
+    .. sourcecode:: python
+
+        Rule('/<any(about, help, imprint, u'class'):page_name>')
+
 `int`
     This converter only accepts integer values.
 

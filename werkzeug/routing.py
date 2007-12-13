@@ -580,7 +580,7 @@ class UnicodeConverter(BaseConverter):
         self.regex = '[^/]' + length
 
 
-class EnumConverter(BaseConverter):
+class AnyConverter(BaseConverter):
     """
     Matches multiple items from a given set.
     """
@@ -896,7 +896,7 @@ class MapAdapter(object):
 DEFAULT_CONVERTERS = {
     'default':          UnicodeConverter,
     'string':           UnicodeConverter,
-    'enum':             EnumConverter,
+    'any':              AnyConverter,
     'path':             PathConverter,
     'int':              IntegerConverter,
     'float':            FloatConverter
