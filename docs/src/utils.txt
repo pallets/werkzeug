@@ -333,9 +333,6 @@ Helper Functions
 `escape(s, quote=False)`
     SGML/XML escape an unicode object or string.
 
-`get_current_url(environ)`
-    Return the absolute, canonical URL for the current request.
-
 `lazy_property(func)`
     A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result
@@ -355,7 +352,7 @@ Helper Functions
     Return the real host for the given WSGI enviornment.  This takes care
     of the `X-Forwarded-Host` header.
 
-`get_current_url(environ, root=only=False, strip_querystring=False, host_only=False)`
+`get_current_url(environ, root_only=False, strip_querystring=False, host_only=False)`
     This method allows you to recreate the full URL for the current request or
     parts of it.  Here an example:
 

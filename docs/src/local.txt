@@ -42,7 +42,7 @@ Here a simple example how you can use werkzeug.local:
     application = local_manager.make_middleware(application)
 
 Now what this code does is binding request to `local.request`.  Every other
-piece of code executed after this assignment in the same context can savely
+piece of code executed after this assignment in the same context can safely
 access local.request and will get the same request object.  The
 `make_middleware` method on the local manager ensures that everything is
 cleaned up after the request.
