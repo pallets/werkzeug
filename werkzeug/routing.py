@@ -580,6 +580,16 @@ class UnicodeConverter(BaseConverter):
         self.regex = '[^/]' + length
 
 
+class EnumConverter(BaseConverter):
+    """
+    Matches multiple items from a given set.
+    """
+
+    def __init__(self, map, *items):
+        BaseConverter.__init__(self, map)
+        self.regex = '(?:%s)' % '|'.join(map(re.escape, items))
+
+
 class PathConverter(BaseConverter):
     """
     Matches a whole path (including slashes)
@@ -886,6 +896,7 @@ class MapAdapter(object):
 DEFAULT_CONVERTERS = {
     'default':          UnicodeConverter,
     'string':           UnicodeConverter,
+    'enum':             EnumConverter,
     'path':             PathConverter,
     'int':              IntegerConverter,
     'float':            FloatConverter

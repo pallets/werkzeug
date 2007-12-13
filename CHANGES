@@ -2,6 +2,13 @@ Werkzeug Changelog
 ==================
 
 
+Version 0.2
+-----------
+(codename to be selected, release date to be announced)
+
+- Added `EnumConverter` to the routing system.
+
+
 Version 0.1
 -----------
 (codename Wictorinoxger, release Dec 9th 2007)
