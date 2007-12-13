@@ -587,7 +587,7 @@ class EnumConverter(BaseConverter):
 
     def __init__(self, map, *items):
         BaseConverter.__init__(self, map)
-        self.regex = '(?:%s)' % '|'.join(map(re.escape, items))
+        self.regex = '(?:%s)' % '|'.join([re.escape(x) for x in items])
 
 
 class PathConverter(BaseConverter):
