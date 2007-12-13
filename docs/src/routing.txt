@@ -116,6 +116,8 @@ Here a list of converters that come with Werkzeug:
 
         Rule('/<any(about, help, imprint, u'class'):page_name>')
 
+    **new in Werkzeug 0.2**
+
 `int`
     This converter only accepts integer values.
 
