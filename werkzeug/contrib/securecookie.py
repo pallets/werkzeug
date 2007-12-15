@@ -76,7 +76,8 @@ try:
 except ImportError:
     from sha import new as sha1
 import urllib
-from time import time
+from datetime import datetime
+from time import time, mktime
 from random import Random
 from cPickle import loads, dumps, UnpicklingError
 from werkzeug import url_quote_plus, url_unquote_plus
@@ -124,10 +125,22 @@ class SecureCookie(ModificationTrackingDict):
         return sha1('%s|%s' % (Random(secret_key).random(), time())). \
                     hexdigest()[:5]
 
-    def serialize(self):
-        """Serialize the secure cookie into a string."""
+    def serialize(self, expires=None):
+        """
+        Serialize the secure cookie into a string.
+        
+        If expires is provided, the session will be automatically invalidated
+        after expiration when you unseralize it. This provides better
+        protection against session cookie theft.
+        """
         if self.secret_key is None:
             raise RuntimeError('no secret key defined')
+        if expires:
+            if isinstance(expires, datetime):
+                expires = expires.utctimetuple()
+            elif isinstance(expires, (int, long, float)):
+                expires = gmtime(expires)
+            self['_expires'] = int(mktime(expires))
         result = []
         salt = self.new_salt(self.secret_key)
         hash = sha1(self.secret_key + '|' + salt)
@@ -167,6 +180,11 @@ class SecureCookie(ModificationTrackingDict):
             if items is not None and client_hash == hash.hexdigest():
                 for key, value in items.iteritems():
                     items[key] = pickle_unquote(value)
+                if '_expires' in items:
+                    if time() > items['_expires']:
+                        items = ()
+                    else:
+                        del items['_expires']
             else:
                 items = ()
         return cls(items, secret_key, False)
