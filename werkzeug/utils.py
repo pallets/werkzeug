@@ -829,7 +829,7 @@ def cookie_date(expires, _date_delim='-'):
     """
     if isinstance(expires, datetime):
         expires = expires.utctimetuple()
-    elif isinstance(expires, (int, long)):
+    elif isinstance(expires, (int, long, float)):
         expires = gmtime(expires)
 
     return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
