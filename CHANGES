@@ -2,6 +2,14 @@ Werkzeug Changelog
 ==================
 
 
+Version 0.2
+-----------
+(codename to be selected, release date to be announced)
+
+- Added `AnyConverter` to the routing system.
+- Added `werkzeug.contrib.securecookie`
+
+
 Version 0.1
 -----------
 (codename Wictorinoxger, release Dec 9th 2007)

@@ -132,7 +132,7 @@ def get_converter(map, name, args):
         raise LookupError('the converter %r does not exist' % name)
     if args:
         storage = type('_Storage', (), {'__getitem__': lambda s, x: x})()
-        args, kwargs = eval('(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
+        args, kwargs = eval(u'(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
     else:
         args = ()
         kwargs = {}
@@ -580,6 +580,16 @@ class UnicodeConverter(BaseConverter):
         self.regex = '[^/]' + length
 
 
+class AnyConverter(BaseConverter):
+    """
+    Matches multiple items from a given set.
+    """
+
+    def __init__(self, map, *items):
+        BaseConverter.__init__(self, map)
+        self.regex = '(?:%s)' % '|'.join([re.escape(x) for x in items])
+
+
 class PathConverter(BaseConverter):
     """
     Matches a whole path (including slashes)
@@ -886,6 +896,7 @@ class MapAdapter(object):
 DEFAULT_CONVERTERS = {
     'default':          UnicodeConverter,
     'string':           UnicodeConverter,
+    'any':              AnyConverter,
     'path':             PathConverter,
     'int':              IntegerConverter,
     'float':            FloatConverter
