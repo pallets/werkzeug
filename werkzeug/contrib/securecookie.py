@@ -68,7 +68,7 @@ r"""
             return response(environ, start_response)
 
 
-    :copyright: 2007 by Armin Ronacher.
+    :copyright: 2007 by Armin Ronacher, Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 """
 try:
