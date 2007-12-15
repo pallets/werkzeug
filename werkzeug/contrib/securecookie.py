@@ -128,7 +128,7 @@ class SecureCookie(ModificationTrackingDict):
     def serialize(self, expires=None):
         """
         Serialize the secure cookie into a string.
-        
+
         If expires is provided, the session will be automatically invalidated
         after expiration when you unseralize it. This provides better
         protection against session cookie theft.
