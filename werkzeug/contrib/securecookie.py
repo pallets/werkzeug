@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
     werkzeug.contrib.securecookie
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -32,6 +32,40 @@
 
     Keep in mind that the values will be visible in the cookie so do not
     store data in a cookie you don't want the user to see.
+
+    Application Integration
+    =======================
+
+    If you are using the werkzeug request objects you could integrate the
+    secure cookie into your application like this::
+
+        from werkzeug import BaseRequest, lazy_property
+        from werkzeug.contrib.securecookie import SecureCookie
+
+        # don' use this key but a different one.  you could just use
+        # os.unrandom(20) to get something random
+        SECRET_KEY = '\xfa\xdd\xb8z\xae\xe0}4\x8b\xea'
+
+        class Request(BaseRequest):
+
+            @lazy_property
+            def client_session(self):
+                data = self.cookies.get('session_data')
+                if not data:
+                    return SecureCookie(secret_key=SECRET_KEY)
+                return SecureCookie.unserialize(data, SECRET_KEY)
+
+        def application(environ, start_response):
+            request = Request(environ, start_response)
+
+            # get a resonse object here
+            ...
+
+            if request.client_session.should_save:
+                session_data = request.client_session.serialize()
+                response.set_cookie('session_data', session_data)
+            return response(environ, start_response)
+
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
@@ -67,8 +101,8 @@ class SecureCookie(ModificationTrackingDict):
     """
     __slots__ = ModificationTrackingDict.__slots__ + ('secret_key', 'new')
 
-    def __init__(self, data, secret_key, new=True):
-        ModificationTrackingDict.__init__(self, data)
+    def __init__(self, data=None, secret_key, new=True):
+        ModificationTrackingDict.__init__(self, data or ())
         self.secret_key = secret_key
         self.new = new
 
