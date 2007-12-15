@@ -147,7 +147,7 @@ class SecureCookie(ModificationTrackingDict):
         """Load the secure cookie from a serialized string."""
         try:
             salt, client_hash, data = string.split('?', 2)
-        except IndexError:
+        except (ValueError, IndexError):
             items = ()
         else:
             items = {}
