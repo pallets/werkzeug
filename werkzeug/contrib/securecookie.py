@@ -64,7 +64,7 @@ r"""
             if request.client_session.should_save:
                 session_data = request.client_session.serialize()
                 response.set_cookie('session_data', session_data,
-                                    http_only=True)
+                                    httponly=True)
             return response(environ, start_response)
 
 
@@ -189,19 +189,22 @@ class SecureCookie(ModificationTrackingDict):
                 items = ()
         return cls(items, secret_key, False)
     unserialize = classmethod(unserialize)
-    
+
     def load_cookie(cls, request, key='session', secret_key=None):
-        """ 
-        Loads a SecureCookie from a cookie in request. If the cookie is not set, a new
-        SecureCookie instanced is returned. 
+        """
+        Loads a SecureCookie from a cookie in request. If the cookie is not
+        set, a new SecureCookie instanced is returned.
         """
         data = request.cookies.get(key)
         if not data:
             return SecureCookie(secret_key=secret_key)
         return SecureCookie.unserialize(data, secret_key)
     load_cookie = classmethod(load_cookie)
-    
-    def save_cookie(self, response, key='session', expires=None, max_age=None, path='/', domain=None, secure=None, httponly=False):
+
+    def save_cookie(self, response, key='session', expires=None, max_age=None,
+                    path='/', domain=None, secure=None, httponly=False):
         """ Saves the SecureCookie in a cookie on response. """
         data = self.serialize(expires=expires)
-        response.set_cookie(key, data, expires=expires, max_age=max_age, path=path, domain=domain, secure=secure, httponly=httponly)   
+        response.set_cookie(key, data, expires=expires, max_age=max_age,
+                            path=path, domain=domain, secure=secure,
+                            httponly=httponly)
