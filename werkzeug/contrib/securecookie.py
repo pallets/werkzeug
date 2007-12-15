@@ -145,6 +145,8 @@ class SecureCookie(ModificationTrackingDict):
 
     def unserialize(cls, string, secret_key):
         """Load the secure cookie from a serialized string."""
+        if isinstance(string, unicode):
+            string = string.encode('utf-8', 'ignore')
         try:
             salt, client_hash, data = string.split('?', 2)
         except (ValueError, IndexError):
