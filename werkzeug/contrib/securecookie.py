@@ -24,10 +24,14 @@
     Loading from that string again:
 
         >>> x = SecureCookie.unserialize(value, "deadbeef")
+        >>> x["baz"]
+        (1, 2, 3)
 
-    If someone modifies the cookie and the checksum is wrong the
-    unserialize method will fail silently and return a new empty
-    `SecureCookie` object.
+    If someone modifies the cookie and the checksum is wrong the unserialize
+    method will fail silently and return a new empty `SecureCookie` object.
+
+    Keep in mind that the values will be visible in the cookie so do not
+    store data in a cookie you don't want the user to see.
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
