@@ -44,38 +44,31 @@ from werkzeug.utils import ClosingIterator, cookie_date
 _sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')
 
 
-class Session(dict):
-    """
-    Subclass of a dict that keeps track of direct object changes.  Changes
-    in mutable structures are not tracked, for those you have to set
-    `modified` to `True` by hand.
-    """
+class ModificationTrackingDict(dict):
+    __slots__ = ('modified',)
 
-    __slots__ = ('modified', 'sid', 'new')
-
-    def __init__(self, data, sid, new=False):
-        dict.__init__(self, data)
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
         self.modified = False
-        self.sid = sid
-        self.new = new
 
     def __repr__(self):
         return '<%s %s%s>' % (
             self.__class__.__name__,
-            dict.__repr__(self),
-            self.should_save and '*' or ''
+            dict.__repr__(self)
         )
 
-    def should_save(self):
-        """True if the session should be saved."""
-        return self.modified or self.new
-    should_save = property(should_save)
-
     def copy(self):
-        """Create a flat copy of the session."""
-        result = self.__class__(dict(self), self.sid, self.new)
-        result.modified = self.modified
+        """Create a flat copy of the dict."""
+        missing = object()
+        result = object.__new__(self.__class__)
+        for name in self.__slots__:
+            val = getattr(self, name, missing)
+            if val is not missing:
+                setattr(result, name, val)
         return result
+
+    def __copy__(self):
+        return self.copy()
 
     def call_with_modification(f):
         def oncall(self, *args, **kw):
@@ -99,6 +92,32 @@ class Session(dict):
     setdefault = call_with_modification(dict.setdefault)
     update = call_with_modification(dict.update)
     del call_with_modification
+
+
+class Session(ModificationTrackingDict):
+    """
+    Subclass of a dict that keeps track of direct object changes.  Changes
+    in mutable structures are not tracked, for those you have to set
+    `modified` to `True` by hand.
+    """
+    __slots__ = ModificationTrackingDict.__slots__ + ('sid', 'new')
+
+    def __init__(self, data, sid, new=False):
+        ModificationTrackingDict.__init__(self, data)
+        self.sid = sid
+        self.new = new
+
+    def __repr__(self):
+        return '<%s %s%s>' % (
+            self.__class__.__name__,
+            dict.__repr__(self),
+            self.should_save and '*' or ''
+        )
+
+    def should_save(self):
+        """True if the session should be saved."""
+        return self.modified or self.new
+    should_save = property(should_save)
 
 
 class SessionStore(object):
