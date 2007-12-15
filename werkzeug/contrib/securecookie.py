@@ -58,12 +58,13 @@ r"""
         def application(environ, start_response):
             request = Request(environ, start_response)
 
-            # get a resonse object here
-            ...
+            # get a response object here
+            response = ...
 
             if request.client_session.should_save:
                 session_data = request.client_session.serialize()
-                response.set_cookie('session_data', session_data)
+                response.set_cookie('session_data', session_data,
+                                    http_only=True)
             return response(environ, start_response)
 
 
@@ -84,7 +85,7 @@ from werkzeug.contrib.sessions import ModificationTrackingDict
 
 def pickle_quote(value):
     """Pickle and url encode a value."""
-    return urllib.quote_plus(dumps(value))
+    return urllib.quote_plus(dumps(value, 1))
 
 
 def pickle_unquote(string):
@@ -101,7 +102,7 @@ class SecureCookie(ModificationTrackingDict):
     """
     __slots__ = ModificationTrackingDict.__slots__ + ('secret_key', 'new')
 
-    def __init__(self, data=None, secret_key, new=True):
+    def __init__(self, data=None, secret_key=None, new=True):
         ModificationTrackingDict.__init__(self, data or ())
         self.secret_key = secret_key
         self.new = new
@@ -125,6 +126,8 @@ class SecureCookie(ModificationTrackingDict):
 
     def serialize(self):
         """Serialize the secure cookie into a string."""
+        if self.secret_key is None:
+            raise RuntimeError('no secret key defined')
         result = []
         salt = self.new_salt(self.secret_key)
         hash = sha1(self.secret_key + '|' + salt)
@@ -156,6 +159,7 @@ class SecureCookie(ModificationTrackingDict):
                     break
                 key, value = item.split('=', 1)
                 items[url_unquote_plus(key)] = value
+
             # no parsing error and the hash looks okay, we can now
             # sercurely unpickle our cookie.
             if items is not None and client_hash == hash.hexdigest():
