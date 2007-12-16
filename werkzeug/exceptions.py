@@ -47,6 +47,9 @@ class HTTPException(Exception):
     code = None
     description = None
 
+    def __init__(self):
+        Exception.__init__(self)
+
     def name(self):
         """The status name."""
         return HTTP_STATUS_CODES[self.code]

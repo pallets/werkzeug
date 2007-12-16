@@ -28,6 +28,9 @@ Documentation regarding the Werkzeug modules and Werkzeug as such.
 - `Test Utilities <test.txt>`_ - send requests to your application
   from the python interpreter or unittests.
 
+- `HTTP Exceptions <exceptions.txt>`_ - exception classes that work
+  like response objects for non 200 HTTP status codes.
+
 - `Utilities <utils.txt>`_ - useful things like multi value dicts,
   a data structure for headers etc.
 
