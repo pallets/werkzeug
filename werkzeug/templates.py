@@ -169,6 +169,11 @@ def transform(node, filename):
         node.filename = filename
         if node.__class__ in (ast.Printnl, ast.Print):
             node.dest = ast.Name('__context')
+        elif node.__class__ is ast.Const and isinstance(node.value, str):
+            try:
+                node.value.decode('ascii')
+            except UnicodeError:
+                node.value = node.value.decode('utf-8')
         nodes.extend(node.getChildNodes())
     return root
 
@@ -192,6 +197,8 @@ class Parser(object):
         raise TemplateSyntaxError(msg, self.filename, self.lineno)
 
     def parse_python(self, expr, type='exec'):
+        if isinstance(expr, unicode):
+            expr = '\xef\xbb\xbf' + expr.encode('utf-8')
         try:
             node = parse(expr, type)
         except SyntaxError, e:
@@ -399,7 +406,7 @@ class Template(object):
                  errors='strict', unicode_mode=True):
         if isinstance(source, str):
             source = source.decode(encoding, errors)
-        node = Parser(tokenize('\n'.join(source.splitlines()),
+        node = Parser(tokenize(u'\n'.join(source.splitlines()),
                                filename), filename).parse()
         self.code = ModuleCodeGenerator(transform(node, filename)).getCode()
         self.filename = filename
