@@ -201,10 +201,11 @@ class SecureCookie(ModificationTrackingDict):
         return SecureCookie.unserialize(data, secret_key)
     load_cookie = classmethod(load_cookie)
 
-    def save_cookie(self, response, key='session', expires=None, max_age=None,
-                    path='/', domain=None, secure=None, httponly=False):
+    def save_cookie(self, response, key='session', expires=None,
+                    session_expires=None, max_age=None, path='/', domain=None,
+                    secure=None, httponly=False):
         """ Saves the SecureCookie in a cookie on response. """
-        data = self.serialize(expires=expires)
+        data = self.serialize(session_expires or expires)
         response.set_cookie(key, data, expires=expires, max_age=max_age,
                             path=path, domain=domain, secure=secure,
                             httponly=httponly)
