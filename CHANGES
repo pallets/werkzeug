@@ -8,6 +8,8 @@ Version 0.2
 
 - Added `AnyConverter` to the routing system.
 - Added `werkzeug.contrib.securecookie`
+- Exceptions have a ``get_response()`` method that return a resposne object
+- fixed the path ordering bug (#293), thanks Thomas Johansson
 
 
 Version 0.1
