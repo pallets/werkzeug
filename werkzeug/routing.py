@@ -70,6 +70,7 @@ import sys
 import re
 from urlparse import urljoin
 from urllib import quote
+from itertools import izip
 
 from werkzeug.utils import url_encode, redirect, format_string
 from werkzeug.exceptions import NotFound
@@ -326,6 +327,7 @@ class Rule(RuleFactory):
             self.arguments = set()
         self._converters = {}
         self._regex = None
+        self._weights = []
 
     def get_rules(self, map):
         yield self
@@ -352,11 +354,13 @@ class Rule(RuleFactory):
             if converter is None:
                 regex_parts.append(re.escape(variable))
                 self._trace.append((False, variable))
+                self._weights.append(len(variable))
             else:
                 convobj = get_converter(map, converter, arguments)
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))
+                self._weights.append(convobj.weight)
                 self.arguments.add(str(variable))
                 if convobj.is_greedy:
                     self.greediness += 1
@@ -466,6 +470,13 @@ class Rule(RuleFactory):
 
     def match_compare(self, other):
         """Compare this object with another one for matching"""
+        for sw, ow in izip(self._weights, other._weights):
+            if sw > ow:
+                return -1
+            elif sw < ow:
+                return 1        
+        if len(self._weights) > len(other._weights):
+            return -1
         if not other.arguments and self.arguments:
             return 1
         elif other.arguments and not self.arguments:
@@ -547,6 +558,7 @@ class BaseConverter(object):
     """
     regex = '[^/]+'
     is_greedy = False
+    weight = 100
 
     def __init__(self, map):
         self.map = map
@@ -594,8 +606,9 @@ class PathConverter(BaseConverter):
     """
     Matches a whole path (including slashes)
     """
-    regex = '[^/].*'
+    regex = '[^/].*?'
     is_greedy = True
+    weight = 50
 
 
 class NumberConverter(BaseConverter):
