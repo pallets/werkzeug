@@ -77,3 +77,33 @@ def test_greedy():
     assert adapter.build('foo', {}) == '/foo'
     assert adapter.build('bar', {'bar': 'blub'}) == '/blub'
     assert adapter.build('bar', {'bar': 'blub', 'blub': 'bar'}) == '/blub/bar'
+
+def test_path():
+    map = Map([
+        Rule('/', defaults={'name': 'FrontPage'}, endpoint='page'),
+        Rule('/Special', endpoint='special'),
+        Rule('/<int:year>', endpoint='year'),
+        Rule('/<path:name>', endpoint='page'),
+        Rule('/<path:name>/edit', endpoint='editpage'),
+        Rule('/<path:name>/silly/<path:name2>', endpoint='sillypage'),
+        Rule('/<path:name>/silly/<path:name2>/edit', endpoint='editsillypage'),
+        Rule('/Talk:<path:name>', endpoint='talk'),
+        Rule('/User:<username>', endpoint='user'),
+        Rule('/User:<username>/<path:name>', endpoint='userpage'),
+        Rule('/Files/<path:file>', endpoint='files'),
+    ])
+    adapter = map.bind('example.org', '/')
+
+    assert adapter.match('/') == ('page', {'name':'FrontPage'})
+    raises(RequestRedirect, lambda: adapter.match('/FrontPage'))
+    assert adapter.match('/Special') == ('special', {})
+    assert adapter.match('/2007') == ('year', {'year':2007})
+    assert adapter.match('/Some/Page') == ('page', {'name':'Some/Page'})
+    assert adapter.match('/Some/Page/edit') == ('editpage', {'name':'Some/Page'})
+    assert adapter.match('/Foo/silly/bar') == ('sillypage', {'name':'Foo', 'name2':'bar'})
+    assert adapter.match('/Foo/silly/bar/edit') == ('editsillypage', {'name':'Foo', 'name2':'bar'})
+    assert adapter.match('/Talk:Foo/Bar') == ('talk', {'name':'Foo/Bar'})
+    assert adapter.match('/User:thomas') == ('user', {'username':'thomas'})
+    assert adapter.match('/User:thomas/projects/werkzeug') == ('userpage', {'username':'thomas', 'name':'projects/werkzeug'})
+    assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == ('files', {'file':'downloads/werkzeug/0.2.zip'})
+    
