@@ -35,6 +35,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug.utils import escape
+from werkzeug.wrappers import BaseResponse
 from werkzeug.http import HTTP_STATUS_CODES
 
 
@@ -56,6 +57,7 @@ class HTTPException(Exception):
         return self.description
 
     def get_body(self, environ):
+        """Get the HTML body."""
         return (
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
             '<title>%(code)s %(name)s</title>\n'
@@ -68,14 +70,17 @@ class HTTPException(Exception):
         }
 
     def get_headers(self, environ):
+        """Get a list of headers."""
         return [('Content-Type', 'text/html')]
 
+    def get_response(self, environ):
+        """Get a response object."""
+        headers = self.get_headers(environ)
+        return BaseResponse(self.get_body(environ), self.code, headers)
+
     def __call__(self, environ, start_response):
-        status = '%d %s' % (self.code, self.name)
-        start_response(status, self.get_headers(environ))
-        if environ['REQUEST_METHOD'] == 'HEAD':
-            return ()
-        return [self.get_body(environ)]
+        response = self.get_response(environ)
+        return response(environ, start_response)
 
 
 class BadRequest(HTTPException):
