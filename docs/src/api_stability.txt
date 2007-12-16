@@ -14,3 +14,12 @@ one of the next release versions:
 `werkzeug.contrib`
     The community contributed modules are yet undocumented and we expect
     some upcoming changes there.
+
+
+Backwards Incompatible Changes
+==============================
+
+`0.2`
+    -   the `BaseReporterStream` is now part of the contrib module, the
+        new module is `werkzeug.contrib.reporterstream`.  Starting with
+        `0.3` the old import will not work any longer.
