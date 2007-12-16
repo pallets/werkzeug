@@ -536,76 +536,24 @@ class BaseResponse(object):
         return resp
 
 
-class BaseReporterStream(object):
-    """
-    This class can be used to wrap `wsgi.input` in order to get informed about
-    changes of the stream.
-
-    Usage::
-
-        from random import randrange
-
-        class ReporterStream(BaseReporterStream):
-
-            def __init__(self, environ):
-                super(ReporterStream, self).__init__(environ, 1024 * 16)
-                self.transport_id = randrange(0, 100000)
-
-            def processed(self):
-                s = self.environ['my.session.service']
-                s.store['upload/%s' % self.transport_id] = (self.pos, self.length)
-                s.flush()
-
-
-    And before accessing `request.form` or similar attributes add the stream:
-
-        stream = ReporterStream(environ)
-        environ['wsgi.input'] = stream
-    """
-
-    def __init__(self, environ, threshold):
-        self.threshold = threshold
-        self.length = int(environ.get('CONTENT_LENGTH') or 0)
-        self.pos = 0
-        self.environ = environ
-        self._stream = environ['wsgi.input']
-
-    def processed(self):
-        """Called after pos has changed for threshold or a line was read."""
-
-    def read(self, size=None):
-        length = self.length
-        threshold = self.threshold
-        buffer = []
-
-        if size is None:
-            while self.pos < length:
-                step = min(threshold, length - self.pos)
-                data = self._stream.read(step)
-                self.pos += step
-                self.processed()
-                buffer.append(data)
-        else:
-            read = 0
-            while read < size:
-                step = min(threshold, length - self.pos)
-                step = min(step, size)
-                data = self._stream.read(step)
-                self.pos += step
-                read += step
-                self.processed()
-                buffer.append(data)
-
-        return ''.join(buffer)
-
-    def readline(self, *args):
-        line = self._stream.readline(*args)
-        self.pos += len(line)
-        self.processed()
-        return line
-
-    def readlines(self, hint=None):
-        result = []
-        while self.pos < self.length:
-            result.append(self.readline())
-        return result
+# TODO: backwards compatibility interface.  goes away with werkzeug 0.3
+try:
+    from werkzeug.contrib.reporterstream import BaseReporterStream
+except ImportError:
+    class BaseReporterStream(object):
+        def __new__(*args, **kw):
+            raise RuntimeError('base reporter stream is now part of the '
+                               'contrib package.  In order to use it install '
+                               'werkzeug with the contrib package enabled '
+                               'and import it from '
+                               'werkzeug.contrib.reporterstream')
+else:
+    class BaseReporterStream(BaseReporterStream):
+        def __init__(self, environ, threshold):
+            from warnings import warn
+            warn(DeprecationWarning('BaseReporterStream is now part of '
+                                    'the werkzeug contrib module.  Import '
+                                    'it from werkzeug.contrib.reporterstream'
+                                    '.  As of werkzeug 0.3 this will be'
+                                    'required.'))
+            super(BaseReporterStream, self).__init__(environ, threshold)
