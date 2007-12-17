@@ -44,7 +44,7 @@ factory functions that create such commands:
         from yourapplication import YourApplication
         return YourApplication(...)
 
-    action_runserver = script.make_runserver(make_app, use_reloader=True)
+    action_runserver = script.make_runserver(make_app, reloader=True)
     action_shell = script.make_shell(lambda: {'app': make_app()})
 
 
@@ -54,14 +54,15 @@ Using The Scripts
 The script from above can be used like this from the shell now::
 
     $ ./manage.py --help
-    $ ./manage.py runserver localhost 8080 --use-debugger yes
+    $ ./manage.py runserver localhost 8080 --debugger --no-reloader
     $ ./manage.py runserver -p 4000
     $ ./manage.py shell
 
 As you can see it's possible to pass parameters as positional argument
-or as named parameter, pretty much like python function calls.  Unfortunately
-it's yet impossible to omit the argument for boolean options when passed
-as named parameter.
+or as named parameter, pretty much like python function calls.
+
+With Werkzeug 0.1 calling of boolean arguments worked a bit different
+there you had to call ``--use-reloader yes``.
 
 
 Writing Actions
@@ -101,7 +102,7 @@ string and pass a dict with functions:
 .. sourcecode:: python
 
     script.run(dict(
-        runserver=script.make_runserver(make_app, use_reloader=True),
+        runserver=script.make_runserver(make_app, reloader=True),
         shell=script.make_shell(lambda: {'app': make_app()}),
         initdb=on_initdb
     ), '')

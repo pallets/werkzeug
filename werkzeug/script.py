@@ -180,7 +180,7 @@ def analyse_action(func):
     return func, description, arguments
 
 
-def make_shell(init_func=lambda: {}, banner=None, use_ipython=True):
+def make_shell(init_func=lambda: {}, banner=None, ipython=True):
     """
     Returns an action callback that spawns a new interactive
     python shell.
@@ -190,7 +190,7 @@ def make_shell(init_func=lambda: {}, banner=None, use_ipython=True):
     def action(use_ipython=use_ipython):
         """Start a new interactive python session."""
         namespace = init_func()
-        if use_ipython:
+        if ipython:
             try:
                 import IPython
             except ImportError:
@@ -205,20 +205,19 @@ def make_shell(init_func=lambda: {}, banner=None, use_ipython=True):
 
 
 def make_runserver(app_factory, hostname='localhost', port=5000,
-                   use_reloader=False, use_debugger=False, use_evalex=True,
+                   reloader=False, debugger=False, evalex=True,
                    threaded=False, processes=1):
     """
     Returns an action callback that spawns a new wsgiref server.
     """
     def action(hostname=('h', hostname), port=('p', port),
-               use_reloader=use_reloader, use_debugger=use_debugger,
-               use_evalex=use_evalex, threaded=threaded, processes=processes):
+               use_reloader=reloader, use_debugger=use_debugger,
+               use_evalex=evalex, threaded=threaded, processes=processes):
         """Start a new development server."""
         from werkzeug.serving import run_simple
         app = app_factory()
-        if use_debugger:
+        if debugger:
             from werkzeug.debug import DebuggedApplication
             app = DebuggedApplication(app, use_evalex)
-        run_simple(hostname, port, app, use_reloader, None, threaded,
-                   processes)
+        run_simple(hostname, port, app, reloader, None, threaded, processes)
     return action
