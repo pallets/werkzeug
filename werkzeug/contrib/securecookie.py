@@ -75,6 +75,7 @@ try:
     from hashlib import sha1
 except ImportError:
     from sha import new as sha1
+from binascii import Error as BinASCIIError
 from datetime import datetime
 from time import time, mktime
 from random import Random
@@ -92,7 +93,7 @@ def pickle_unquote(string):
     """URL decode a string and load it into pickle"""
     try:
         return loads(string.decode('base64'))
-    except UnpicklingError:
+    except (UnpicklingError, BinASCIIError):
         return None
 
 
