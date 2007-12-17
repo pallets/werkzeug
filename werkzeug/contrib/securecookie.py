@@ -39,7 +39,7 @@ r"""
     If you are using the werkzeug request objects you could integrate the
     secure cookie into your application like this::
 
-        from werkzeug import BaseRequest, lazy_property
+        from werkzeug import BaseRequest, cached_property
         from werkzeug.contrib.securecookie import SecureCookie
 
         # don' use this key but a different one.  you could just use
@@ -48,7 +48,7 @@ r"""
 
         class Request(BaseRequest):
 
-            @lazy_property
+            @cached_property
             def client_session(self):
                 data = self.cookies.get('session_data')
                 if not data:

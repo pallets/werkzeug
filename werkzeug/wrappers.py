@@ -20,7 +20,7 @@ from Cookie import SimpleCookie
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
-     Headers, EnvironHeaders, lazy_property, environ_property, \
+     Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, http_date, escape, _empty_stream
 
@@ -149,14 +149,14 @@ class BaseRequest(object):
                 value = value.decode(self.charset, 'ignore')
                 items.append((key, value))
         return MultiDict(items)
-    args = lazy_property(args)
+    args = cached_property(args)
 
     def data(self):
         """
         This reads the buffered incoming data from the client into the string.
         """
         return self.stream.read()
-    data = lazy_property(data)
+    data = cached_property(data)
 
     def form(self):
         """
@@ -168,19 +168,19 @@ class BaseRequest(object):
         if not hasattr(self, '_form'):
             self._load_post_data()
         return self._form
-    form = lazy_property(form)
+    form = cached_property(form)
 
     def values(self):
         """combined multi dict for `args` and `form`"""
         return CombinedMultiDict([self.args, self.form])
-    values = lazy_property(values)
+    values = cached_property(values)
 
     def files(self):
         """File uploads."""
         if not hasattr(self, '_files'):
             self._load_post_data()
         return self._files
-    files = lazy_property(files)
+    files = cached_property(files)
 
     def cookies(self):
         """Stored Cookies."""
@@ -190,26 +190,26 @@ class BaseRequest(object):
         for key, value in cookie.iteritems():
             result[key] = value.value.decode(self.charset, 'ignore')
         return result
-    cookies = lazy_property(cookies)
+    cookies = cached_property(cookies)
 
     def headers(self):
         """The headers from the WSGI environ."""
         return EnvironHeaders(self.environ)
-    headers = lazy_property(headers)
+    headers = cached_property(headers)
 
     def accept_mimetypes(self):
         """List of mimetypes this client supports."""
         if not 'HTTP_ACCEPT' in self.environ:
             return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT'])
-    accept_mimetypes = lazy_property(accept_mimetypes)
+    accept_mimetypes = cached_property(accept_mimetypes)
 
     def accept_charsets(self):
         """list of charsets this client supports."""
         if not 'HTTP_ACCEPT_CHARSET' in self.environ:
             return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT_CHARSET'])
-    accept_charsets = lazy_property(accept_charsets)
+    accept_charsets = cached_property(accept_charsets)
 
     def accept_encodings(self):
         """
@@ -220,14 +220,14 @@ class BaseRequest(object):
         if not 'HTTP_ACCEPT_ENCODING' in self.environ:
             return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT_ENCODING'])
-    accept_encodings = lazy_property(accept_encodings)
+    accept_encodings = cached_property(accept_encodings)
 
     def accept_languages(self):
         """List of languages this client accepts."""
         if not 'HTTP_ACCEPT_LANGUAGE' in self.environ:
             return Accept(None)
         return parse_accept_header(self.environ['HTTP_ACCEPT_LANGUAGE'])
-    accept_languages = lazy_property(accept_languages)
+    accept_languages = cached_property(accept_languages)
 
     def cache_control(self):
         """A `CacheControl` object for the incoming cache control headers."""
@@ -239,38 +239,38 @@ class BaseRequest(object):
         """Requested path."""
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
         return path.decode(self.charset, 'ignore')
-    path = lazy_property(path)
+    path = cached_property(path)
 
     def script_root(self):
         """The root path of the script."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
         return path.decode(self.charset, 'ignore')
-    script_root = lazy_property(script_root)
+    script_root = cached_property(script_root)
 
     def url(self):
         """The reconstructed current URL"""
         return get_current_url(self.environ)
-    url = lazy_property(url)
+    url = cached_property(url)
 
     def base_url(self):
         """Like `url` but without the querystring"""
         return get_current_url(self.environ, strip_querystring=True)
-    base_url = lazy_property(base_url)
+    base_url = cached_property(base_url)
 
     def url_root(self):
         """The full URL root (with hostname), this is the application root."""
         return get_current_url(self.environ, True)
-    url_root = lazy_property(url_root)
+    url_root = cached_property(url_root)
 
     def host_url(self):
         """Just the host with scheme."""
         return get_current_url(self.environ, host_only=True)
-    host_url = lazy_property(host_url)
+    host_url = cached_property(host_url)
 
     def host(self):
         """Just the host including the port if available."""
         return get_host(self.environ)
-    host = lazy_property(host)
+    host = cached_property(host)
 
     def is_secure(self):
         """True if the request is secure."""
@@ -292,7 +292,7 @@ class BaseRequest(object):
         elif 'REMOTE_ADDR' in self.environ:
             return [self.environ['REMOTE_ADDR']]
         return []
-    access_route = lazy_property(access_route)
+    access_route = cached_property(access_route)
 
     def remote_addr(self):
         """The remote address of the client."""
@@ -388,7 +388,7 @@ class BaseResponse(object):
         if value is not None:
             value = parse_cache_control_header(value)
         return CacheControl(value, on_update)
-    cache_control = lazy_property(cache_control)
+    cache_control = cached_property(cache_control)
 
     def write(self, data):
         """If we have a buffered response this writes to the buffer."""

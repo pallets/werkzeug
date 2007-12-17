@@ -26,3 +26,5 @@ Backwards Incompatible Changes
     -   `RequestRedirect` uses now a 301 status code.  Previously a 302
         status code was used incorrectly.  If you want to continue using
         this code use ``response = redirect(e.new_url, 302)``.
+    -   `lazy_property` is now called `cached_property`.  The alias for
+        the old name will disappear in Werkzeug 0.3.

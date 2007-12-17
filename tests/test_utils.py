@@ -159,13 +159,13 @@ def test_headers():
     assert b.getlist('foo') == ['bar']
 
 
-def test_lazy_property():
+def test_cached_property():
     foo = []
     class A(object):
         def prop(self):
             foo.append(42)
             return 42
-        prop = lazy_property(prop)
+        prop = cached_property(prop)
 
     a = A()
     p = a.prop
@@ -178,7 +178,7 @@ def test_lazy_property():
         def prop(self):
             foo.append(42)
             return 42
-        prop = lazy_property(prop, name='propval')
+        prop = cached_property(prop, name='propval')
 
     a = A()
     p = a.prop

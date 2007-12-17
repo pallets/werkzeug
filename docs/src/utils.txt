@@ -333,7 +333,7 @@ Helper Functions
 `escape(s, quote=False)`
     SGML/XML escape an unicode object or string.
 
-`lazy_property(func)`
+`cached_property(func)`
     A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result
     and than that calculated result is used the next time you access
@@ -343,10 +343,15 @@ Helper Functions
 
         class Foo(object):
 
-            @lazy_property
+            @cached_property
             def foo(self):
                 # calculate something important here
                 return 42
+
+    *Renamed in Werkzeug 0.2*.  In previous versions this was called
+    `lazy_property` but as it turned out the name is misleading.  0.2
+    will allow both names but starting with 0.3 you have to use the
+    new name exclusively.
 
 `get_host(environ)`
     Return the real host for the given WSGI enviornment.  This takes care

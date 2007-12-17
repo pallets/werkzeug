@@ -637,7 +637,7 @@ class ClosingIterator(object):
             callback()
 
 
-class lazy_property(object):
+class cached_property(object):
     """
     Descriptor implementing a "lazy property", i.e. the function
     calculating the property value is called only once.
@@ -654,6 +654,15 @@ class lazy_property(object):
         value = self.func(obj)
         setattr(obj, self.__name__, value)
         return value
+
+
+def lazy_property(func, name=None, doc=None):
+    """Backwards compatibility interface."""
+    from warnings import warn
+    warn(DeprecationWarning('lazy_property is now called cached_property '
+                            'because it reflects the purpose better.  With '
+                            'Werkzeug 0.3 the old name will be unavailable'))
+    return cached_property(func, name, doc)
 
 
 class environ_property(object):

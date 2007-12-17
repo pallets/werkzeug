@@ -12,7 +12,7 @@ import re
 from os import path
 from jinja import Environment, FileSystemLoader
 from werkzeug import BaseRequest as Request, BaseResponse as Response, \
-     Local, LocalManager, url_encode, url_quote, lazy_property
+     Local, LocalManager, url_encode, url_quote, cached_property
 from werkzeug.routing import Map, Rule
 
 
@@ -104,7 +104,7 @@ class Pagination(object):
         self.page = page
         self.endpoint = endpoint
 
-    @lazy_property
+    @cached_property
     def entries(self):
         return self.query.offset((self.page - 1) * self.per_page) \
                          .limit(self.per_page).all()
@@ -113,5 +113,5 @@ class Pagination(object):
     has_next = property(lambda x: x.page < x.pages)
     previous = property(lambda x: url_for(x.endpoint, page=x.page - 1))
     next = property(lambda x: url_for(x.endpoint, page=x.page + 1))
-    count = lazy_property(lambda x: x.query.count())
+    count = cached_property(lambda x: x.query.count())
     pages = property(lambda x: max(0, x.count - 1) // x.per_page + 1)
