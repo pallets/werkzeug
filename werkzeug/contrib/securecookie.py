@@ -79,9 +79,13 @@ from binascii import Error as BinASCIIError
 from datetime import datetime
 from time import time, mktime
 from random import Random
-from cPickle import loads, dumps, UnpicklingError
+from cPickle import loads, dumps
 from werkzeug import url_quote_plus, url_unquote_plus
 from werkzeug.contrib.sessions import ModificationTrackingDict, generate_key
+
+
+class UnquoteError(Exception):
+    pass
 
 
 def pickle_quote(value):
@@ -93,8 +97,10 @@ def pickle_unquote(string):
     """URL decode a string and load it into pickle"""
     try:
         return loads(string.decode('base64'))
-    except (UnpicklingError, BinASCIIError):
-        return None
+    # unfortunately pickle can cause pretty every error here.
+    # if we get one we catch it and convert it into an UnquoteError
+    except Exception, e:
+        raise UnquoteError(str(e))
 
 
 class SecureCookie(ModificationTrackingDict):
@@ -184,13 +190,17 @@ class SecureCookie(ModificationTrackingDict):
             # sercurely unpickle our cookie.
             client_hash = base64_hash.decode('base64')
             if items is not None and client_hash == hash.digest():
-                for key, value in items.iteritems():
-                    items[key] = pickle_unquote(value)
-                if '_expires' in items:
-                    if time() > items['_expires']:
-                        items = ()
-                    else:
-                        del items['_expires']
+                try:
+                    for key, value in items.iteritems():
+                        items[key] = pickle_unquote(value)
+                except UnquoteError:
+                    items = ()
+                else:
+                    if '_expires' in items:
+                        if time() > items['_expires']:
+                            items = ()
+                        else:
+                            del items['_expires']
             else:
                 items = ()
         return cls(items, secret_key, False)
