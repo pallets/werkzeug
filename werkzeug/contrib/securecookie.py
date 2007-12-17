@@ -79,7 +79,7 @@ from binascii import Error as BinASCIIError
 from datetime import datetime
 from time import time, mktime
 from random import Random
-from cPickle import loads, dumps
+from cPickle import loads, dumps, HIGHEST_PROTOCOL
 from werkzeug import url_quote_plus, url_unquote_plus
 from werkzeug.contrib.sessions import ModificationTrackingDict, generate_key
 
@@ -90,7 +90,12 @@ class UnquoteError(Exception):
 
 def pickle_quote(value):
     """Pickle and url encode a value."""
-    return dumps(value, 1).encode('base64').strip()
+    result = None
+    for protocol in xrange(HIGHEST_PROTOCOL + 1):
+        data = ''.join(dumps(value, protocol).encode('base64').splitlines()).strip()
+        if result is None or len(result) > len(data):
+            result = data
+    return result
 
 
 def pickle_unquote(string):
