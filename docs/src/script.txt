@@ -44,7 +44,7 @@ factory functions that create such commands:
         from yourapplication import YourApplication
         return YourApplication(...)
 
-    action_runserver = script.make_runserver(make_app, reloader=True)
+    action_runserver = script.make_runserver(make_app, use_reloader=True)
     action_shell = script.make_shell(lambda: {'app': make_app()})
 
 
@@ -102,7 +102,7 @@ string and pass a dict with functions:
 .. sourcecode:: python
 
     script.run(dict(
-        runserver=script.make_runserver(make_app, reloader=True),
+        runserver=script.make_runserver(make_app, use_reloader=True),
         shell=script.make_shell(lambda: {'app': make_app()}),
         initdb=on_initdb
     ), '')

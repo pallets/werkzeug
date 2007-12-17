@@ -106,4 +106,3 @@ def test_path():
     assert adapter.match('/User:thomas') == ('user', {'username':'thomas'})
     assert adapter.match('/User:thomas/projects/werkzeug') == ('userpage', {'username':'thomas', 'name':'projects/werkzeug'})
     assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == ('files', {'file':'downloads/werkzeug/0.2.zip'})
-    
