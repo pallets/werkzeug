@@ -73,7 +73,7 @@ from urllib import quote
 from itertools import izip
 
 from werkzeug.utils import url_encode, redirect, format_string
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import HTTPException, NotFound
 try:
     set
 except NameError:
@@ -147,20 +147,22 @@ class RoutingException(Exception):
     """
 
 
-class RequestRedirect(RoutingException):
+class RequestRedirect(HTTPException, RoutingException):
     """
     Raise if the map requests a redirect. This is for example the case if
     `strict_slashes` are activated and an url that requires a leading slash.
 
     The attribute `new_url` contains the absolute desitination url.
     """
+    code = 301
 
     def __init__(self, new_url):
-        self.new_url = new_url
         RoutingException.__init__(self, new_url)
+        HTTPException.__init__(self)
+        self.new_url = new_url
 
-    def __call__(self, environ, start_response):
-        return redirect(self.new_url)(environ, start_response)
+    def get_response(self, environ):
+        return redirect(self.new_url, 301)
 
 
 class RequestSlash(RoutingException):

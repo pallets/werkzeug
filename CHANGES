@@ -10,9 +10,11 @@ Version 0.2
 - Added `werkzeug.contrib.securecookie`
 - Exceptions have a ``get_response()`` method that return a resposne object
 - fixed the path ordering bug (#293), thanks Thomas Johansson
-- BaseReporterStream is now part of the werkzeug contrib module.  With
+- `BaseReporterStream` is now part of the werkzeug contrib module.  With
   Werkzeug 0.3 onwards you will have to import it from there.
-- added DispatcherMiddleware.
+- added `DispatcherMiddleware`.
+- `RequestRedirect` is now a subclass of `HTTPException` and uses a
+  301 status code instead of 302.
 
 
 Version 0.1

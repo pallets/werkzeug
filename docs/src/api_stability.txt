@@ -23,3 +23,6 @@ Backwards Incompatible Changes
     -   the `BaseReporterStream` is now part of the contrib module, the
         new module is `werkzeug.contrib.reporterstream`.  Starting with
         `0.3` the old import will not work any longer.
+    -   `RequestRedirect` uses now a 301 status code.  Previously a 302
+        status code was used incorrectly.  If you want to continue using
+        this code use ``response = redirect(e.new_url, 302)``.
