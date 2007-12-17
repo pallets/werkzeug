@@ -476,8 +476,8 @@ class Rule(RuleFactory):
             if sw > ow:
                 return -1
             elif sw < ow:
-                return 1        
-        if len(self._weights) > len(other._weights):
+                return 1
+        if len(self._weights) < len(other._weights):
             return -1
         if not other.arguments and self.arguments:
             return 1

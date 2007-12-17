@@ -15,6 +15,8 @@ Version 0.2
 - added `DispatcherMiddleware`.
 - `RequestRedirect` is now a subclass of `HTTPException` and uses a
   301 status code instead of 302.
+- `url_encode` and `url_decode` can optionally treat keys as unicode strings
+  now too.
 
 
 Version 0.1

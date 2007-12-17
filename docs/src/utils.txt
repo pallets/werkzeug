@@ -317,12 +317,20 @@ that class.
 Helper Functions
 ================
 
-`url_decode(s, charset='utf-8')`
-    parse a querystring and return it as `MultiDict`.
+`url_decode(s, charset='utf-8', decode_keys=False)`
+    parse a querystring and return it as `MultiDict`.  Per default only values
+    are decoded into unicode strings.  If you set `decode_keys` to ``True``
+    the same will happen for keys.
 
-`url_encode(s, charset='utf-8')`
+    *decode_keys is new in Werkzeug 0.2*
+
+`url_encode(s, charset='utf-8', encode_keys=False)`
     URL encode a dict/`MultiDict`.  If a value is `None` it will not
-    appear in the result string.
+    appear in the result string. Per default only values are encoded into
+    the target charset strings.  If you set `encode_keys` to ``True``
+    You can use unicode keys too.
+
+    *encode_keys is new in Werkzeug 0.2*
 
 `url_quote(s, charset='utf-8')`
     URL encode a single string with a given encoding.

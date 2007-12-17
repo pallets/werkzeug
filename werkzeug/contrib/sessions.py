@@ -29,9 +29,10 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import os
 from os import path, unlink
 from time import time
-from random import Random
+from random import Random, random
 try:
     from hashlib import sha1
 except ImportError:
@@ -42,6 +43,16 @@ from werkzeug.utils import ClosingIterator, cookie_date
 
 
 _sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')
+
+
+def _urandom():
+    if hasattr(os, 'urandom'):
+        return os.urandom(30)
+    return random()
+
+
+def generate_key(salt=None):
+    return sha1('%s%s%s' % (salt, time(), _urandom())).hexdigest()
 
 
 class ModificationTrackingDict(dict):
@@ -138,8 +149,7 @@ class SessionStore(object):
 
     def generate_key(self, salt=None):
         """Simple function that generates a new session key."""
-        return sha1('%s|%s|%s' % (Random(salt).random(), time(),
-                                  salt)).hexdigest()
+        return generate_key(salt)
 
     def new(self):
         """Generate a new session."""

@@ -741,18 +741,20 @@ def format_string(string, context):
     return _format_re.sub(lookup_arg, string)
 
 
-def url_decode(s, charset='utf-8'):
+def url_decode(s, charset='utf-8', decode_keys=False):
     """
     Parse a querystring and return it as `MultiDict`.
     """
     tmp = []
     for key, values in cgi.parse_qs(str(s)).iteritems():
         for value in values:
+            if decode_keys:
+                key = key.decode(charset, 'ignore')
             tmp.append((key, value.decode(charset, 'ignore')))
     return MultiDict(tmp)
 
 
-def url_encode(obj, charset='utf-8'):
+def url_encode(obj, charset='utf-8', encode_keys=False):
     """Urlencode a dict/MultiDict."""
     if obj is None:
         items = []
@@ -764,6 +766,10 @@ def url_encode(obj, charset='utf-8'):
         items = obj
     tmp = []
     for key, values in items:
+        if encode_keys and isinstance(key, unicode):
+            key = key.encode(charset)
+        else:
+            key = str(key)
         for value in values:
             if value is None:
                 continue
