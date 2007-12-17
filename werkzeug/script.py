@@ -20,6 +20,7 @@
 import sys
 import inspect
 import getopt
+from os.path import basename
 try:
     set = set
 except NameError:
@@ -73,9 +74,11 @@ def run(namespace=None, action_prefix='action_'):
         real_arg = arg.replace('-', '_')
         converter = converters[option_type]
         if shortcut:
-            formatstring += shortcut + ':'
+            formatstring += shortcut
+            if not isinstance(default, bool):
+                formatstring += ':'
             key_to_arg['-' + shortcut] = real_arg
-        long_options.append(arg + '=')
+        long_options.append(isinstance(default, bool) and arg or arg + '=')
         key_to_arg['--' + arg] = real_arg
         key_to_arg[idx] = real_arg
         conv[real_arg] = converter
@@ -102,11 +105,19 @@ def run(namespace=None, action_prefix='action_'):
         arg = key_to_arg[key]
         if arg in specified_arguments:
             fail('Argument \'%s\' is specified twice' % arg)
+        if arg.startswith('no_'):
+            value = 'no'
+        elif not value:
+            value = 'yes'
         try:
             arguments[arg] = conv[arg](value)
         except ValueError:
             fail('Invalid value for \'%s\': %s' % (key, value))
 
+    newargs = {}
+    for k,v in arguments.iteritems():
+        newargs[k.startswith('no_') and k[3:] or k] = v
+    arguments = newargs
     return func(**arguments)
 
 
@@ -120,8 +131,8 @@ def print_usage(actions):
     """Print the usage information.  (Help screen)"""
     actions = actions.items()
     actions.sort()
-    print 'usage: %s <action> [<options>]' % sys.argv[0]
-    print '       %s --help' % sys.argv[0]
+    print 'usage: %s <action> [<options>]' % basename(sys.argv[0])
+    print '       %s --help' % basename(sys.argv[0])
     print
     print 'actions:'
     for name, (func, doc, arguments) in actions:
@@ -130,12 +141,16 @@ def print_usage(actions):
             print '    %s' % line
         if arguments:
             print
-        for arg, shortcut, default, type in arguments:
-            print '    %-30s%-10s%s' % (
-                (shortcut and '-%s, ' % shortcut or '') + '--' + arg,
-                type,
-                default
-            )
+        for arg, shortcut, default, argtype in arguments:
+            if isinstance(default, bool):
+                print '    %s' % (
+                    (shortcut and '-%s, ' % shortcut or '') + '--' + arg
+                )
+            else:
+                print '    %-30s%-10s%s' % (
+                    (shortcut and '-%s, ' % shortcut or '') + '--' + arg,
+                    argtype, default
+                )
         print
 
 
@@ -158,6 +173,8 @@ def analyse_action(func):
         else:
             shortcut, default = definition
         argument_type = argument_types[type(default)]
+        if isinstance(default, bool) and default is True:
+            arg = 'no-' + arg
         arguments.append((arg.replace('_', '-'), shortcut,
                           default, argument_type))
     return func, description, arguments
