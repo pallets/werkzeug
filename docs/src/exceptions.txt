@@ -66,7 +66,7 @@ The following error classes exists in Werkzeug:
     basic auth.
 
 *403* `Forbidden`
-    Raise if the user doesn't ahve the permission for the requested resource
+    Raise if the user doesn't have the permission for the requested resource
     but was authenticated.
 
 *404* `NotFound`
