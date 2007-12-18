@@ -17,6 +17,7 @@ Version 0.2
   301 status code instead of 302.
 - `url_encode` and `url_decode` can optionally treat keys as unicode strings
   now too.
+- `werkzeug.script` has a different caller format for boolean arguments now.
 
 
 Version 0.1

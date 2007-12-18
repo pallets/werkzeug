@@ -187,10 +187,10 @@ def make_shell(init_func=lambda: {}, banner=None, use_ipython=True):
     """
     if banner is None:
         banner = 'Interactive Werkzeug Shell'
-    def action(use_ipython=use_ipython):
+    def action(ipython=use_ipython):
         """Start a new interactive python session."""
         namespace = init_func()
-        if use_ipython:
+        if ipython:
             try:
                 import IPython
             except ImportError:
@@ -211,14 +211,13 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
     Returns an action callback that spawns a new wsgiref server.
     """
     def action(hostname=('h', hostname), port=('p', port),
-               use_reloader=use_reloader, use_debugger=use_debugger,
-               use_evalex=use_evalex, threaded=threaded, processes=processes):
+               reloader=use_reloader, debugger=use_debugger,
+               evalex=use_evalex, threaded=threaded, processes=processes):
         """Start a new development server."""
         from werkzeug.serving import run_simple
         app = app_factory()
-        if use_debugger:
+        if debugger:
             from werkzeug.debug import DebuggedApplication
-            app = DebuggedApplication(app, use_evalex)
-        run_simple(hostname, port, app, use_reloader, None, threaded,
-                   processes)
+            app = DebuggedApplication(app, evalex)
+        run_simple(hostname, port, app, reloader, None, threaded, processes)
     return action
