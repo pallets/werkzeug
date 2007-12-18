@@ -158,7 +158,6 @@ class RequestRedirect(HTTPException, RoutingException):
 
     def __init__(self, new_url):
         RoutingException.__init__(self, new_url)
-        HTTPException.__init__(self)
         self.new_url = new_url
 
     def get_response(self, environ):
