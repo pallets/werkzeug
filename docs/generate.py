@@ -47,7 +47,6 @@ FULL_TEMPLATE = e.from_string('''\
 <body>
   <div id="content">
     {% if file_id == 'index' %}
-      <div id="jinjalogo"></div>
       <h2 class="subheading plain">{{ title }}</h2>
     {% else %}
       <h1 class="heading"><span>Werkzeug</span></h1>

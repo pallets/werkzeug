@@ -11,6 +11,9 @@ Documentation regarding the Werkzeug modules and Werkzeug as such.
 
 - `Installing Werkzeug <installation.txt>`_
 
+- `Tutorial <tutorial.txt>`_ - getting started with Werkzeug by
+  implementing a simple tinyurl clone.
+
 - `Important Terms <terms.txt>`_ - read this before reading the
   Werkzeug documentation.
 

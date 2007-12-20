@@ -958,6 +958,19 @@ def responder(f):
     return wrapper
 
 
+def import_string(import_name):
+    """Import an object or module from a string."""
+    if ':' in import_name:
+        module, obj = import_name.split(':', 1)
+    elif '.' in import_name:
+        items = import_name.split('.')
+        module = '.'.join(items[:-1])
+        obj = items[-1]
+    else:
+        return __import__(import_name)
+    return getattr(__import__(module, None, None, [obj]), obj)
+
+
 def create_environ(path='/', base_url=None, query_string=None, method='GET',
                    input_stream=None, content_type=None, content_length=0,
                    errors_stream=None, multithread=False,

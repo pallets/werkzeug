@@ -43,7 +43,7 @@ converters = {
 }
 
 
-def run(namespace=None, action_prefix='action_'):
+def run(namespace=None, action_prefix='action_', args=None):
     """
     Run the script.  Participating actions are looked up in the callers
     namespace if no namespace is given, otherwise in the dict provided.
@@ -53,12 +53,10 @@ def run(namespace=None, action_prefix='action_'):
     """
     if namespace is None:
         namespace = sys._getframe(1).f_locals
-    actions = {}
-    for key, value in namespace.iteritems():
-        if key.startswith(action_prefix):
-            actions[key[len(action_prefix):]] = analyse_action(value)
+    actions = find_actions(namespace, action_prefix)
 
-    args = sys.argv[1:]
+    if args is None:
+        args = sys.argv[1:]
     if not args or args[0] in ('-h', '--help'):
         return print_usage(actions)
     elif args[0] not in actions:
@@ -115,7 +113,7 @@ def run(namespace=None, action_prefix='action_'):
             fail('Invalid value for \'%s\': %s' % (key, value))
 
     newargs = {}
-    for k,v in arguments.iteritems():
+    for k, v in arguments.iteritems():
         newargs[k.startswith('no_') and k[3:] or k] = v
     arguments = newargs
     return func(**arguments)
@@ -125,6 +123,15 @@ def fail(message, code=-1):
     """Fail with an error."""
     print >> sys.stderr, 'Error:', message
     sys.exit(code)
+
+
+def find_actions(namespace, action_prefix):
+    """Find all the actions in the namespace."""
+    actions = {}
+    for key, value in namespace.iteritems():
+        if key.startswith(action_prefix):
+            actions[key[len(action_prefix):]] = analyse_action(value)
+    return actions
 
 
 def print_usage(actions):

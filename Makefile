@@ -9,10 +9,7 @@
 #
 
 documentation:
-	@(cd docs; ./generate.py)
-
-webpage:
-	@(cd ../www; ./generate.py)
+	@(cd docs; python ./generate.py)
 
 test:
 	@(cd tests; py.test $(TESTS))
