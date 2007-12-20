@@ -8,7 +8,7 @@ applications are `Jinja`_ for the templates, `SQLAlchemy`_ for the database
 layer and of course Werkzeug for the WSGI layer.
 
 The reasons why we've decided on these libraries for the tutorial application
-is that we want to stick to some of the design decisions django took in the
+is that we want to stick to some of the design decisions Django took in the
 past.  One of them is using view functions and not Rails/pylons-like
 controllers with action methods, the other one is designer friendly templates.
 
@@ -45,7 +45,7 @@ hold our management utilities later.
 Part 1: The WSGI Application
 ============================
 
-Unlike django or other frameworks Werkzeug sticks to the WSGI layer.  There is
+Unlike Django or other frameworks Werkzeug sticks to the WSGI layer.  There is
 no fancy magic that implements the central WSGI application for you.  As a
 result of that the first thing you will do every time you write a Werkzeug
 application is implementing this basic WSGI application object.  This can now
@@ -104,7 +104,7 @@ The next five imports are not yet working because we don't have the utils
 module written yet.  However we should cover some of the objects already.  The
 `Session` object pulled from there is not a PHP-like session object but a
 SQLAlchemy database session object.  Basically a database session object keeps
-track of yet uncommited objects for the database.  Unlike django an
+track of yet uncommited objects for the database.  Unlike Django an
 instanciated SQLAlchemy model is already tracked by the session!  The metadata
 object is also an SQLAlchemy thing which is used to keep track of tables.  We
 can use the metadata object to easily create all tables for the database and
@@ -118,7 +118,7 @@ The `local_manager` object ensures that all local objects it keeps track of
 are properly deleted at the end of the request.
 
 The last thing we import from there is the url map which holds the URL routing
-information.  If you know django you can compare that to the url patterns you
+information.  If you know Django you can compare that to the url patterns you
 specify in the ``urls.py`` module, if you have used PHP so far it's comparable
 with some sort of builtin "mod_rewrite".
 
@@ -227,14 +227,14 @@ determine the current context as werkzeug local does and use the database
 engine of the current application.
 
 If we don't plan to add support for multiple instance of the application in
-the same python interpreter we can also simplify that code by not lookup up
+the same python interpreter we can also simplify that code by not looking up
 the application on the current local object but somewhere else.  This approach
-is for example used by django but makes it impossible to combine multiple such
+is for example used by Django but makes it impossible to combine multiple such
 applications.
 
 The rest of the module is code we will use in our views.  Basically the idea
 there is to use decorators to specify the rule for a view function rather than
-a central ``urls.py`` file like you could do in django or a ``.htaccess`` for
+a central ``urls.py`` file like you could do in Django or a ``.htaccess`` for
 URL rewrites like you would do in PHP.  This is **one** way to do it and there
 are countless of other ways to handle rule definitions.
 
@@ -396,11 +396,11 @@ Part 4: The View Functions
 ==========================
 
 Now after some playing with SQLAlchemy we can go back to Werkzeug and start
-creating our view functions.  The term view function is derived from django
+creating our view functions.  The term view function is derived from Django
 which also calls the functions that render templates "view functions".  So
 our example is MTV (Model, View, Template) and not MVC (Model, View,
 Controller).  They are probably the same but it's a lot easier to use the
-django way of naming those things.
+Django way of naming those things.
 
 For the beginning we just create an view function for new URLs and a function
 that displays a message about a new link.  All that code goes into our yet
@@ -529,7 +529,7 @@ Part 5: The Templates
 =====================
 
 We have decided to use Jinja templates in this example.  If you are used to
-django templates you should feel at home, if you have worked with PHP so far
+Django templates you should feel at home, if you have worked with PHP so far
 you can compare the Jinja templates with smarty.  If you have used PHP as
 templating language so far you should have a look at `Mako`_ for your next
 project.
@@ -548,7 +548,7 @@ For simplicity we will use HTML 4 in our templates.  If you have already
 some experience with XHTML you can adopt the templates to XHTML.  But keep
 in mind that the example stylesheet from below does not work with XHTML.
 
-One of the cool things Jinja inherited from django is template inheritance.
+One of the cool things Jinja inherited from Django is template inheritance.
 Template inheritance means that we can put often used elements into a base
 template and fill in placeholders.  For example all the doctype and HTML base
 frame goes into a file called ``templates/layout.html``:
