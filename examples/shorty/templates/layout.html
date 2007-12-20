@@ -1,0 +1,17 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Shorty</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', file='style.css') }}">
+</head>
+<body>
+  <h1><a href="{{ url_for('new') }}">Shorty</a></h1>
+  <div class="body">{% block body %}{% endblock %}</div>
+  <div class="footer">
+    <a href="{{ url_for('new') }}">new</a> |
+    <a href="{{ url_for('list') }}">list</a> |
+    use shorty for good, not for evil
+  </div>
+</body>
+</html>

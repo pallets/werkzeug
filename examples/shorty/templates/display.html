@@ -1,0 +1,8 @@
+{% extends 'layout.html' %}
+{% block body %}
+  <h2>Shortened URL</h2>
+  <p>
+    The URL {{ url.target|urlize(40, true) }}
+    was shortened to {{ url.short_url|urlize }}.
+  </p>
+{% endblock %}

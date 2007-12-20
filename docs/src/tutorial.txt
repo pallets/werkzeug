@@ -10,12 +10,13 @@ layer and of course Werkzeug for the WSGI layer.
 The reasons why we've decided on these libraries for the tutorial application
 is that we want to stick to some of the design decisions Django took in the
 past.  One of them is using view functions and not Rails/pylons-like
-controllers with action methods, the other one is designer friendly templates.
+controller classes with action methods, the other one is designer friendly
+templates.
 
 In the Werkzeug `example folder`_ are a couple of applications that use other
 template engines too so you may want to have a look at them.
 
-Another disclaimer: This tutorial requires Python 2.4
+Small disclaimer: This tutorial requires Python 2.4.
 
 .. _Jinja: http://jinja.pocoo.org/
 .. _SQLAlchemy: http://sqlalchemy.org/
@@ -45,19 +46,21 @@ hold our management utilities later.
 Part 1: The WSGI Application
 ============================
 
-Unlike Django or other frameworks Werkzeug sticks to the WSGI layer.  There is
-no fancy magic that implements the central WSGI application for you.  As a
-result of that the first thing you will do every time you write a Werkzeug
-application is implementing this basic WSGI application object.  This can now
-either be a function or, even better, a callable class.
+Unlike Django or other frameworks Werkzeug operates directly on the WSGI
+layer.  There is no fancy magic that implements the central WSGI application
+for you.  As a result of that the first thing you will do every time you write
+a Werkzeug application is implementing this basic WSGI application object.
+This can now either be a function or, even better, a callable class.
 
-A callable class has a huge advantage over a function.  For one you can pass
+A callable class has a huge advantages over a function.  For one you can pass
 it some configuration parameters and furthermore you can use inline WSGI
 middlewares.  Inline WSGI middlewares are basically middlewares applied
-"inside" of our application object.  This for example affects middlewares that
-are essential for our application.
+"inside" of our application object.  This is a good idea for middlewares that
+are essential for the application (session middlewares, serving of media
+files etc.).
 
-Here the initial code for our ``shorty/application.py`` file:
+Here the initial code for our ``shorty/application.py`` file which implements
+the WSGI application:
 
 .. sourcecode:: python
 
@@ -93,15 +96,15 @@ Here the initial code for our ``shorty/application.py`` file:
 
 That's a lot of code for the beginning!  Let's go through it step by step.
 First we have a couple of imports:  From SQLAlchemy we import a factory
-function that creates a new database engine for us.  A database engine pretty
-much holds a pool of connections for us.  The next few imports pull some
-objects into the namespace werkzeug provides.  Those are a request object, a
-special iterator that helps us cleaning up stuff at the request end, a helper
+function that creates a new database engine for us.  A database engine holds
+a pool of connections for us and manages them.  The next few imports pull some
+objects into the namespace Werkzeug provides: a request object, a special
+iterator class that helps us cleaning up stuff at the request end, a helper
 function that imports objects based on a string and finally the base class for
 all HTTP exceptions.
 
-The next five imports are not yet working because we don't have the utils
-module written yet.  However we should cover some of the objects already.  The
+The next five imports are not working because we don't have the utils module
+written yet.  However we should cover some of the objects already.  The
 `Session` object pulled from there is not a PHP-like session object but a
 SQLAlchemy database session object.  Basically a database session object keeps
 track of yet uncommited objects for the database.  Unlike Django an
