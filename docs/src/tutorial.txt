@@ -2,10 +2,10 @@
 Werkzeug Tutorial
 =================
 
-Welcome to the Werkzeug tutoria in which we will create a tinyurl clone that
-stores URLs in a database.  The libraries we will use for this applications
-are `Jinja`_ for the templates, `SQLAlchemy`_ for the database layer and of
-course Werkzeug for the WSGI layer.
+Welcome to the Werkzeug 0.2 tutorial in which we will create a tinyurl clone
+that stores URLs in a database.  The libraries we will use for this
+applications are `Jinja`_ for the templates, `SQLAlchemy`_ for the database
+layer and of course Werkzeug for the WSGI layer.
 
 The reasons why we've decided on these libraries for the tutorial application
 is that we want to stick to some of the design decisions django took in the
