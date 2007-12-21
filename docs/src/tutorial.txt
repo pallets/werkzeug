@@ -853,7 +853,7 @@ Now add a template ``templates/not_found.html`` and you're done:
       <h2>Page Not Found</h2>
       <p>
         The page you have requested does not exist on this server.  What about
-        <a href="{{ url_for('new') }}">adding a new URL</a>?
+        <a href="{{ url_for('new') }}">adding a new URL</a>?
       </p>
     {% endblock %}
 

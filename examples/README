@@ -65,3 +65,23 @@ find in real life :-)
 
     Per default a few python related blogs are added to the database, you
     can add more in a python shell by playing with the `Blog` model.
+
+`shorty`
+    A tinyurl clone for the Werkzeug 0.2 tutorial.
+
+    Requirements:
+    -   SQLAlchemy
+    -   Jinja
+
+    You can obtain all packages in the Cheeseshop via easy_install.
+
+    Usage::
+
+        ./manage-plnt.py initdb
+        ./manage-plnt.py runserver
+
+    The WSGI application is called `shorty.application.Shorty` which, like the
+    simple wiki, accepts a database URI as first argument.
+
+    The source code of the application is explained in detail in the Werkzeug
+    tutorial.
