@@ -64,9 +64,10 @@ class Response(BaseResponse):
             # set the cookie for the browser if it is not there:
             if request.cookie_name not in request.cookies:
                 self.set_cookie(request.cookie_name, request.session.sid)
-    
+
         # go on with normal response business
         return BaseResponse.__call__(self, environ, start_response)
+
 
 class TemplateNotFound(IOError):
     """
@@ -108,14 +109,15 @@ class TemplateLoader(object):
             raise TypeError('name of template required')
         return self.get_template(template_name).render(*args, **kwargs)
 
+
 class GenshiTemplateLoader(TemplateLoader):
     """
     A unified interface for loading Genshi templates. Actually a quite thin
     wrapper for Genshi's TemplateLoader.
 
     It sets some defaults that differ from the Genshi loader, most notably
-    auto_reload is active. All imporant options can be passed through to 
-    Genshi. 
+    auto_reload is active. All imporant options can be passed through to
+    Genshi.
     The default output type is 'html', but can be adjusted easily by changing
     the `output_type` attribute.
     """
@@ -136,7 +138,7 @@ class GenshiTemplateLoader(TemplateLoader):
         kwargs.pop('default_encoding', None)
 
         # now, all arguments are clean, pass them on
-        self.loader = GenshiLoader(search_path, default_encoding=encoding, 
+        self.loader = GenshiLoader(search_path, default_encoding=encoding,
                 auto_reload=reload_template, **kwargs)
 
         # the default output is HTML but can be overridden easily
@@ -151,7 +153,7 @@ class GenshiTemplateLoader(TemplateLoader):
             # catch the exception raised by Genshi, convert it into a werkzeug
             # exception (for the sake of consistency)
             raise TemplateNotFound(template_name)
-    
+
     def render_to_string(self, template_name, context=None):
         """Load and render a template into an unicode string"""
         # create an empty context if no context was specified
