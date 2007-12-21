@@ -12,8 +12,7 @@ from datetime import datetime
 from sqlalchemy import Table, Column, Integer, String, DateTime, \
      ForeignKey, MetaData, join
 from sqlalchemy.orm import relation, create_session, scoped_session
-from simplewiki.utils import get_application, get_request, local_manager, \
-     parse_creole
+from simplewiki.utils import application, local_manager, parse_creole
 
 
 # create a global metadata
@@ -28,10 +27,7 @@ def new_db_session():
     application.  If there is no application bound to the context it
     raises an exception.
     """
-    app = get_application()
-    if app is None:
-        raise RuntimeError('no application bound to this context')
-    return create_session(app.database_engine, autoflush=True,
+    return create_session(application.database_engine, autoflush=True,
                           transactional=True)
 
 
@@ -72,13 +68,9 @@ class Revision(object):
         self.change_note = change_note
         self.timestamp = timestamp or datetime.utcnow()
 
-    def render(self, request=None):
+    def render(self):
         """Render the page text into a genshi stream."""
-        if request is None:
-            request = get_request()
-            if request is None:
-                raise RuntimeError('rendering requires request context')
-        return parse_creole(request, self.text)
+        return parse_creole(self.text)
 
     def __repr__(self):
         return '<%s %r:%r>' % (

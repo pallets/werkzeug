@@ -27,27 +27,23 @@ template_loader = TemplateLoader(TEMPLATE_PATH, auto_reload=True,
 # context locals.  these two objects are use by the application to
 # bind objects to the current context.  A context is defined as the
 # current thread and the current greenlet if there is greenlet support.
-# the `get_request` and `get_application` functions look up the request
-# and application objects from this local manager.
 local = Local()
 local_manager = LocalManager([local])
+request = local('request')
+application = local('application')
 
-
-def get_request():
-    """Get the current active request or None."""
-    return getattr(local, 'request', None)
-
-
-def get_application():
-    """Get the current active application or None."""
-    return getattr(local, 'application', None)
+# create a new creole parser
+creole_parser = Parser(dialect=Creole10(
+    wiki_links_base_url='',
+    wiki_links_path_func=lambda page_name: href(page_name),
+    wiki_links_space_char='_',
+    no_wiki_monospace=True,
+    use_additions=True
+))
 
 
 def generate_template(template_name, **context):
     """Load and generate a template."""
-    request = get_request()
-    if request:
-        context['request'] = request
     context.update(
         href=href,
         format_datetime=format_datetime
@@ -55,19 +51,9 @@ def generate_template(template_name, **context):
     return template_loader.load(template_name).generate(**context)
 
 
-def parse_creole(request, markup):
+def parse_creole(markup):
     """Parse some creole markup and create a genshi stream."""
-    # XXX: ugly hack, generate() doesn't set that thread local properly,
-    # just __call__ does, which calls render() which we are not intersted
-    # in ...  adapt if creole changes or mail author
-    from creoleparser.core import element_store
-    element_store.d = {}
-    return Parser(dialect=Creole10(
-        wiki_links_base_url=request.url_root,
-        wiki_links_space_char='_',
-        no_wiki_monospace=True,
-        use_additions=True
-    )).generate(markup)
+    return creole_parser.generate(markup)
 
 
 def href(*args, **kw):
@@ -75,7 +61,6 @@ def href(*args, **kw):
     Simple function for URL generation.  Position arguments are used for the
     URL path and keyword arguments are used for the url parameters.
     """
-    request = get_request()
     result = [(request and request.script_root or '') + '/']
     for idx, arg in enumerate(args):
         result.append((idx and '/' or '') + url_quote(arg))

@@ -23,10 +23,11 @@ find in real life :-)
 
     Requirements:
     -   SQLAlchemy
-    -   creoleparser
+    -   Creoleparser >= 0.3.3
     -   genshi
 
-    You can obtain all packages in the Cheeseshop via easy_install.
+    You can obtain all packages in the Cheeseshop via easy_install.  You have
+    to have at least version 0.3.3 of Creoleparser.
 
     Usage::
 
