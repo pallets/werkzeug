@@ -68,7 +68,7 @@ class Response(BaseResponse):
         # go on with normal response business
         return BaseResponse.__call__(self, environ, start_response)
 
-class TemplateNotFound(IOError, LookupError):
+class TemplateNotFound(IOError):
     """
     A template was not found by the template loader.
     """
@@ -101,9 +101,67 @@ class TemplateLoader(object):
         return Response(self.render_to_string(*args, **kwargs))
 
     def render_to_string(self, *args, **kwargs):
-        """Load and render a tempalte into a unicode string."""
+        """Load and render a template into a unicode string."""
         try:
             template_name, args = args[0], args[1:]
         except IndexError:
             raise TypeError('name of template required')
         return self.get_template(template_name).render(*args, **kwargs)
+
+class GenshiTemplateLoader(TemplateLoader):
+    """
+    A unified interface for loading Genshi templates. Actually a quite thin
+    wrapper for Genshi's TemplateLoader.
+
+    It sets some defaults that differ from the Genshi loader, most notably
+    auto_reload is active. All imporant options can be passed through to 
+    Genshi. 
+    The default output type is 'html', but can be adjusted easily by changing
+    the `output_type` attribute.
+    """
+    def __init__(self, search_path, encoding='utf-8', **kwargs):
+        TemplateLoader.__init__(self, search_path, encoding)
+        # import Genshi here, because we don't want a general Genshi
+        # dependency, only a local one
+        from genshi.template import TemplateLoader as GenshiLoader
+        from genshi.template.loader import TemplateNotFound
+        from genshi.template.eval import UndefinedError
+
+        self.not_found_exception = TemplateNotFound
+        self.undefined_variable = UndefinedError
+        # set auto_reload to True per default
+        reload_template = kwargs.pop('auto_reload', True)
+        # get rid of default_encoding as this template loaders overwrites it
+        # with the value of encoding
+        kwargs.pop('default_encoding', None)
+
+        # now, all arguments are clean, pass them on
+        self.loader = GenshiLoader(search_path, default_encoding=encoding, 
+                auto_reload=reload_template, **kwargs)
+
+        # the default output is HTML but can be overridden easily
+        self.output_type = 'html'
+        self.encoding = encoding
+
+    def get_template(self, template_name):
+        """Get the template which is at the given name"""
+        try:
+            return self.loader.load(template_name, encoding=self.encoding)
+        except self.not_found_exception, e:
+            # catch the exception raised by Genshi, convert it into a werkzeug
+            # exception (for the sake of consistency)
+            raise TemplateNotFound(template_name)
+    
+    def render_to_string(self, template_name, context=None):
+        """Load and render a template into an unicode string"""
+        # create an empty context if no context was specified
+        context = context or {}
+        tmpl = self.get_template(template_name)
+        try:
+            # render the template into a unicode string (None means unicode)
+            return tmpl.\
+                generate(**context).\
+                render(self.output_type, encoding=None)
+        except self.undefined_variable, e:
+            # catch Genshi's UndefiedError and replace it
+            raise LookupError(e.msg)
