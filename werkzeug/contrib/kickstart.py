@@ -6,6 +6,18 @@
     This module provides some simple shortcuts to make using Werkzeug
     simpler for small scripts.
 
+    These improvements include predefied Request and Response objects as well
+    as a pre-defined Application object which all can be customized in child
+    classes of course. The Request and Reponse objects handle URL generation
+    as well as sessions via the werkzeug.contrib.sessions and is purely
+    optional.
+
+    There is also some integration of template engines. The template loaders
+    are of course not neccessary to use the template engines in Werkzeug, but
+    they provide a common interface. Currently supported template engines
+    include Werkzeug's minitmpl an Genshi. Support for other engines can be
+    added in a trivial way. These loaders provide a template interface similar
+    to the one that Django uses.
 
     :copyright: 2007 by Marek Kubica, Armin Ronacher.
     :license: BSD, see LICENSE for more details.
@@ -73,16 +85,50 @@ class Response(BaseResponse):
         return BaseResponse.__call__(self, environ, start_response)
 
 
+class Processor(object):
+    """
+    A request and response processor - it is what Django calls a middleware,
+    but Werkzeug also includes straight-foward support for real WSGI
+    middlewares, so another name was chosen.
+
+    The code of this processor is derived from the example in the Werkzeug
+    trac, called `Request and Response Processor
+    <http://dev.pocoo.org/projects/werkzeug/wiki/RequestResponseProcessor>`_
+    """
+
+    def process_request(self, request):
+        return request
+
+    def process_response(self, request, response):
+        return response
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        """
+        process_view() is called just before the Application calls the
+        function specified by view_func.
+
+        If this returns None, the Application processes the next Processor,
+        and if it returns something else (like a Response instance), that
+        will be returned without any further processing.
+        """
+        return None
+
+    def process_exception(self, request, exception):
+        return None
+
+
 class Application(object):
     """
     A generic WSGI application which can be used to start with Werkzeug in an
     easy, straightforward way.
     """
 
-    def __init__(self, name, url_map, session=False):
+    def __init__(self, name, url_map, session=False, processors=None):
         # save the name and the URL-map, as it'll be needed later on
         self.name = name
         self.url_map = url_map
+        # save the list of processors if supplied
+        self.processors = processors or []
         # create an instance of the storage
         if session:
             self.store = session
@@ -90,20 +136,51 @@ class Application(object):
             self.store = None
 
     def __call__(self, environ, start_response):
+        # create a request - with or without session support
         if self.store is not None:
             request = Request(environ, self.url_map,
                 session_store=self.store, cookie_name='%s_sid' % self.name)
         else:
             request = Request(environ, self.url_map)
 
+        # apply the request processors
+        for processor in self.processors:
+            request = processor.process_request(request)
+
         try:
+            # find the callback to which the URL is mapped
             callback, args = request.url_adapter.match(request.path)
         except (HTTPException, RequestRedirect), e:
             response = e
         else:
-            response = callback(request, **args)
+            # check all view processors
+            for processor in self.processors:
+                action = processor.process_view(request, callback, (), args)
+                if action is not None:
+                    # it is overriding the default behaviour, this is
+                    # short-circuiting the processing, so it returns here
+                    return action(environ, start_response)
 
+            try:
+                response = callback(request, **args)
+            except Exception, exception:
+                # the callback raised some exception, need to process that
+                for processor in reversed(self.processors):
+                    # filter it through the exception processor
+                    action = processor.process_exception(request, exception)
+                    if action is not None:
+                        # the exception processor returned some action
+                        return action(environ, start_response)
+                # still not handled by a exception processor, so re-raise
+                raise
+
+        # apply the response processors
+        for processor in reversed(self.processors):
+            response = processor.process_response(request, response)
+
+        # return the completely processed response
         return response(environ, start_response)
+
 
     def config_session(self, store, expiration='session'):
         """
