@@ -14,7 +14,8 @@ from os import path
 from werkzeug.wrappers import BaseRequest, BaseResponse
 from werkzeug.templates import Template
 
-__all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader']
+__all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader',
+        'GenshiTemplateLoader']
 
 
 class Request(BaseRequest):
@@ -69,7 +70,7 @@ class Response(BaseResponse):
         return BaseResponse.__call__(self, environ, start_response)
 
 
-class TemplateNotFound(IOError):
+class TemplateNotFound(IOError, LookupError):
     """
     A template was not found by the template loader.
     """
@@ -127,10 +128,8 @@ class GenshiTemplateLoader(TemplateLoader):
         # dependency, only a local one
         from genshi.template import TemplateLoader as GenshiLoader
         from genshi.template.loader import TemplateNotFound
-        from genshi.template.eval import UndefinedError
 
         self.not_found_exception = TemplateNotFound
-        self.undefined_variable = UndefinedError
         # set auto_reload to True per default
         reload_template = kwargs.pop('auto_reload', True)
         # get rid of default_encoding as this template loaders overwrites it
@@ -159,11 +158,7 @@ class GenshiTemplateLoader(TemplateLoader):
         # create an empty context if no context was specified
         context = context or {}
         tmpl = self.get_template(template_name)
-        try:
-            # render the template into a unicode string (None means unicode)
-            return tmpl.\
-                generate(**context).\
-                render(self.output_type, encoding=None)
-        except self.undefined_variable, e:
-            # catch Genshi's UndefiedError and replace it
-            raise LookupError(e.msg)
+        # render the template into a unicode string (None means unicode)
+        return tmpl.\
+            generate(**context).\
+            render(self.output_type, encoding=None)
