@@ -13,9 +13,12 @@
 from os import path
 from werkzeug.wrappers import BaseRequest, BaseResponse
 from werkzeug.templates import Template
+from werkzeug.exceptions import HTTPException
+from werkzeug.routing import RequestRedirect
+from werkzeug.contrib.sessions import FilesystemSessionStore
 
 __all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader',
-        'GenshiTemplateLoader']
+        'GenshiTemplateLoader', 'Application']
 
 
 class Request(BaseRequest):
@@ -68,6 +71,49 @@ class Response(BaseResponse):
 
         # go on with normal response business
         return BaseResponse.__call__(self, environ, start_response)
+
+
+class Application(object):
+    """
+    A generic WSGI application which can be used to start with Werkzeug in an
+    easy, straightforward way.
+    """
+
+    def __init__(self, name, url_map, session=False):
+        # save the name and the URL-map, as it'll be needed later on
+        self.name = name
+        self.url_map = url_map
+        # create an instance of the storage
+        if session:
+            self.store = session
+        else:
+            self.store = None
+
+    def __call__(self, environ, start_response):
+        if self.store is not None:
+            request = Request(environ, self.url_map,
+                session_store=self.store, cookie_name='%s_sid' % self.name)
+        else:
+            request = Request(environ, self.url_map)
+
+        try:
+            callback, args = request.url_adapter.match(request.path)
+        except (HTTPException, RequestRedirect), e:
+            response = e
+        else:
+            response = callback(request, **args)
+
+        return response(environ, start_response)
+
+    def config_session(self, store, expiration='session'):
+        """
+        Configures the setting for cookies. You can also disable cookies by
+        setting store to None.
+        """
+        self.store = store
+        # expiration=session is the default anyway
+        # TODO: add settings to define the expiration date, the domain, the
+        # path any maybe the secure parameter.
 
 
 class TemplateNotFound(IOError, LookupError):
