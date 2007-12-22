@@ -76,6 +76,10 @@ The following error classes exists in Werkzeug:
     Raise if the server used a method the resource does not handle.  For
     example `POST` if the resource is view only.  Especially useful for REST.
 
+*406* `Not acceptable`
+    Raise if the server cant return any content conforming to the
+    `Accept` headers of the client.
+
 *408* `RequestTimeout`
     Raise to signalize a timeout.
 

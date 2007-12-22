@@ -126,9 +126,33 @@ class NotFound(HTTPException):
 class MethodNotAllowed(HTTPException):
     code = 405
 
+    def __init__(self, valid_methods=None):
+        """
+        takes an optional list of valid http methods
+        starting with werkzeug 0.3 the list will be mandatory
+        """
+        HTTPException.__init__(self)
+        self.valid_methods = valid_methods
+
+    def get_headers(self, environ):
+        headers = HTTPException.get_headers(self, environ)
+        if self.valid_methods:
+            headers.append(('Allow', ', '.join(self.valid_methods)))
+        return headers
+
     def get_description(self, environ):
         m = escape(environ.get('REQUEST_METHOD', 'GET'))
         return '<p>The method %s is not allowed for the requeste URL.</p>' % m
+
+
+class NotAcceptable(HTTPException):
+    code = 406
+
+    description = (
+        '<p>The resource identified by the request is only capable of generating response entities '
+        'which have content characteristics not acceptable '
+        'according to the accept headers sent in the request.</p>'
+        )
 
 
 class RequestTimeout(HTTPException):
@@ -215,7 +239,7 @@ class BadGateway(HTTPException):
 class ServiceUnavailable(HTTPException):
     code = 503
     description = (
-        '<p>The serer is temporarily unabel to service your request due to '
+        '<p>The server is temporarily unable to service your request due to '
         'maintenance downtime or capacity problems.  Please try again '
         'later.</p>'
     )
