@@ -161,7 +161,10 @@ class Client(object):
         if environ_overrides:
             environ.update(environ_overrides)
         rv = run_wsgi_app(self.application, environ)
-        return self.response_wrapper(*rv)
+        response = self.response_wrapper(*rv)
+        if hasattr(response, 'test_client_callback'):
+            response.test_client_callback(self, environ)
+        return response
 
     def get(self, *args, **kw):
         """Like open but method is enforced to GET"""
