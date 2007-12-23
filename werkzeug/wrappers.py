@@ -16,13 +16,32 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
-from Cookie import SimpleCookie
+from Cookie import BaseCookie, Morsel
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, http_date, escape, _empty_stream
+
+
+class _ExtendedMorsel(Morsel):
+    """
+    Subclass of regular morsels for simpler usage and support of the
+    nonstandard but useful http only header.
+    """
+    _reserved = {'httponly': 'HttpOnly'}
+    _reserved.update(Morsel._reserved)
+
+    def __init__(self, name, value):
+        Morsel.__init__(self)
+        self.set(name, value, value)
+
+    def OutputString(self, attrs=None):
+        result = Morsel.OutputString(self, attrs)
+        if self.get('httponly'):
+            result += '; HttpOnly'
+        return result
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -184,7 +203,7 @@ class BaseRequest(object):
 
     def cookies(self):
         """Stored Cookies."""
-        cookie = SimpleCookie()
+        cookie = BaseCookie()
         cookie.load(self.environ.get('HTTP_COOKIE', ''))
         result = {}
         for key, value in cookie.iteritems():
@@ -440,19 +459,18 @@ class BaseResponse(object):
             key = str(key)
         except UnicodeError:
             raise TypeError('invalid key %r' % key)
-        c = SimpleCookie()
         if isinstance(value, unicode):
             value = value.encode(self.charset)
-        c[key] = value
+        morsel = _ExtendedMorsel(key, value)
         if expires is not None:
             if not isinstance(expires, basestring):
                 expires = cookie_date(expires)
-            c[key]['expires'] = expires
+            morsel['expires'] = expires
         for k, v in (('path', path), ('domain', domain), ('secure', secure),
-                     ('max-age', max_age), ('HttpOnly', httponly)):
+                     ('max-age', max_age), ('httponly', httponly)):
             if v is not None and v is not False:
-                c[key][k] = str(v)
-        self.headers.add('Set-Cookie', c[key].output(header='').lstrip())
+                morsel[k] = str(v)
+        self.headers.add('Set-Cookie', morsel.output(header='').lstrip())
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie."""
