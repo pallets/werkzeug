@@ -68,57 +68,56 @@ def get_ident():
 
 
 class Local(object):
+    __slots__ = ('__storage__', '__lock__')
 
     def __init__(self):
-        self.__dict__.update({
-            '__storage':    {},
-            '__lock':       Lock()
-        })
+        object.__setattr__(self, '__storage__', {})
+        object.__setattr__(self, '__lock__', Lock())
 
     def __iter__(self):
-        return self.__dict__['__storage'].iteritems()
+        return self.__storage__.iteritems()
 
     def __call__(self, proxy):
         """Create a proxy for a name."""
         return LocalProxy(self, proxy)
 
     def __getattr__(self, name):
-        self.__dict__['__lock'].acquire()
+        self.__lock__.acquire()
         try:
             ident = get_ident()
-            if ident not in self.__dict__['__storage']:
+            if ident not in self.__storage__:
                 raise AttributeError(name)
             try:
-                return self.__dict__['__storage'][ident][name]
+                return self.__storage__[ident][name]
             except KeyError:
                 raise AttributeError(name)
         finally:
-            self.__dict__['__lock'].release()
+            self.__lock__.release()
 
     def __setattr__(self, name, value):
-        self.__dict__['__lock'].acquire()
+        self.__lock__.acquire()
         try:
             ident = get_ident()
-            storage = self.__dict__['__storage']
+            storage = self.__storage__
             if ident in storage:
                 storage[ident][name] = value
             else:
                 storage[ident] = {name: value}
         finally:
-            self.__dict__['__lock'].release()
+            self.__lock__.release()
 
     def __delattr__(self, name):
-        self.__dict__['__lock'].acquire()
+        self.__lock__.acquire()
         try:
             ident = get_ident()
-            if ident not in self.__dict__['__storage']:
+            if ident not in self.__storage__:
                 raise AttributeError(name)
             try:
-                del self.__dict__['__storage'][ident][name]
+                del self.__storage__[ident][name]
             except KeyError:
                 raise AttributeError(name)
         finally:
-            self.__dict__['__lock'].release()
+            self.__lock__.release()
 
 
 class LocalManager(object):
@@ -146,12 +145,7 @@ class LocalManager(object):
         """
         ident = self.get_ident()
         for local in self.locals:
-            d = local.__dict__
-            d['__lock'].acquire()
-            try:
-                d['__storage'].pop(ident, None)
-            finally:
-                d['__lock'].release()
+            local.__storage__.pop(ident, None)
 
     def make_middleware(self, app):
         """
