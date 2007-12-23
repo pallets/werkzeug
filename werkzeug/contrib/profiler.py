@@ -75,8 +75,8 @@ class ProfilerMiddleware(object):
         return [body]
 
 
-def make_profiler_action(app_factory, hostname='localhost', port=5000,
-                         threaded=False, processes=1):
+def make_action(app_factory, hostname='localhost', port=5000,
+                threaded=False, processes=1):
     """
     Return a new callback for werkzeug scripts that starts a local server
     for profiling.
