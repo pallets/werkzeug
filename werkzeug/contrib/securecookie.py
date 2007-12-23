@@ -77,7 +77,7 @@ except ImportError:
     from sha import new as sha1
 from binascii import Error as BinASCIIError
 from datetime import datetime
-from time import time, mktime
+from time import time, mktime, gmtime
 from random import Random
 from cPickle import loads, dumps, HIGHEST_PROTOCOL
 from werkzeug import url_quote_plus, url_unquote_plus
