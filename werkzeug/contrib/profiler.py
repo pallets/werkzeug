@@ -73,3 +73,18 @@ class ProfilerMiddleware(object):
         self._stream.write('-' * 80 + '\n\n')
 
         return [body]
+
+
+def make_profiler_action(app_factory, hostname='localhost', port=5000,
+                         threaded=False, processes=1):
+    """
+    Return a new callback for werkzeug scripts that starts a local server
+    for profiling.
+    """
+    def action(hostname=('h', hostname), port=('p', port),
+               threaded=threaded, processes=processes):
+        """Start a new development server."""
+        from werkzeug.serving import run_simple
+        app = app_factory()
+        run_simple(hostname, port, app, False, None, threaded, processes)
+    return action
