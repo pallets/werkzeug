@@ -432,6 +432,10 @@ class Headers(object):
     def items(self, lower=False):
         return list(self.iteritems(lower))
 
+    def extend(self, seq):
+        for key, value in seq:
+            self.add(key, value)
+
     def __delitem__(self, key):
         key = key.lower()
         new = []
@@ -519,7 +523,8 @@ class EnvironHeaders(Headers):
 
     def _immutable(self, *a, **kw):
         raise TypeError('%r is immutable' % self.__class__.__name__)
-    remove = __delitem__ = add = clear = set = __setitem__ = _immutable
+    remove = __delitem__ = add = clear = extend = set = __setitem__ = \
+        _immutable
     del _immutable
 
 

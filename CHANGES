@@ -23,6 +23,7 @@ Version 0.2
 - added is_* properties to request objects
 - added `empty()` method to routing rules
 - added `werkzeug.contrib.profiler`
+- added `extends` to `Headers`
 
 
 Version 0.1
