@@ -16,32 +16,12 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
-from Cookie import BaseCookie, Morsel
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
-     cookie_date, http_date, escape, _empty_stream
-
-
-class _ExtendedMorsel(Morsel):
-    """
-    Subclass of regular morsels for simpler usage and support of the
-    nonstandard but useful http only header.
-    """
-    _reserved = {'httponly': 'HttpOnly'}
-    _reserved.update(Morsel._reserved)
-
-    def __init__(self, name, value):
-        Morsel.__init__(self)
-        self.set(name, value, value)
-
-    def OutputString(self, attrs=None):
-        result = Morsel.OutputString(self, attrs)
-        if self.get('httponly'):
-            result += '; HttpOnly'
-        return result
+     cookie_date, parse_cookie, dump_cookie, http_date, escape, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -203,12 +183,7 @@ class BaseRequest(object):
 
     def cookies(self):
         """Stored Cookies."""
-        cookie = BaseCookie()
-        cookie.load(self.environ.get('HTTP_COOKIE', ''))
-        result = {}
-        for key, value in cookie.iteritems():
-            result[key] = value.value.decode(self.charset, 'ignore')
-        return result
+        return parse_cookie(environ, self.charset)
     cookies = cached_property(cookies)
 
     def headers(self):
@@ -455,22 +430,9 @@ class BaseResponse(object):
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None, httponly=False):
         """Set a new cookie."""
-        try:
-            key = str(key)
-        except UnicodeError:
-            raise TypeError('invalid key %r' % key)
-        if isinstance(value, unicode):
-            value = value.encode(self.charset)
-        morsel = _ExtendedMorsel(key, value)
-        if expires is not None:
-            if not isinstance(expires, basestring):
-                expires = cookie_date(expires)
-            morsel['expires'] = expires
-        for k, v in (('path', path), ('domain', domain), ('secure', secure),
-                     ('max-age', max_age), ('httponly', httponly)):
-            if v is not None and v is not False:
-                morsel[k] = str(v)
-        self.headers.add('Set-Cookie', morsel.output(header='').lstrip())
+        self.headers.add('Set-Cookie', dump_cookie(key, value, max_age,
+                         expires, path, domain, secure, httponly,
+                         self.charset))
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie."""

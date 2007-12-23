@@ -14,6 +14,7 @@ import sys
 import cgi
 import urllib
 import urlparse
+from Cookie import BaseCookie, Morsel
 from time import asctime, gmtime, time
 from datetime import datetime
 from cStringIO import StringIO
@@ -29,6 +30,25 @@ except NameError:
 _empty_stream = StringIO('')
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
+
+
+class _ExtendedMorsel(Morsel):
+    """
+    Subclass of regular morsels for simpler usage and support of the
+    nonstandard but useful http only header.
+    """
+    _reserved = {'httponly': 'HttpOnly'}
+    _reserved.update(Morsel._reserved)
+
+    def __init__(self, name, value):
+        Morsel.__init__(self)
+        self.set(name, value, value)
+
+    def OutputString(self, attrs=None):
+        result = Morsel.OutputString(self, attrs)
+        if self.get('httponly'):
+            result += '; HttpOnly'
+        return result
 
 
 class MultiDict(dict):
@@ -894,6 +914,39 @@ def cookie_date(expires, _date_delim='-'):
         expires.tm_min,
         expires.tm_sec
     )
+
+
+def parse_cookie(header, charset='utf-8'):
+    """Parse a cookie.  Either from a string or WSGI environ."""
+    if isinstance(header, dict):
+        header = header.get('HTTP_COOKIE', '')
+    cookie = BaseCookie()
+    cookie.load(header)
+    result = {}
+    for key, value in cookie.iteritems():
+        result[key] = value.value.decode(charset, 'ignore')
+    return result
+
+
+def dump_cookie(key, value='', max_age=None, expires=None, path='/',
+                domain=None, secure=None, httponly=False, charset='utf-8'):
+    """Creates a new Set-Cookie header without that 'Set-Cookie'"""
+    try:
+        key = str(key)
+    except UnicodeError:
+        raise TypeError('invalid key %r' % key)
+    if isinstance(value, unicode):
+        value = value.encode(charset)
+    morsel = _ExtendedMorsel(key, value)
+    if expires is not None:
+        if not isinstance(expires, basestring):
+            expires = cookie_date(expires)
+        morsel['expires'] = expires
+    for k, v in (('path', path), ('domain', domain), ('secure', secure),
+                 ('max-age', max_age), ('httponly', httponly)):
+        if v is not None and v is not False:
+            morsel[k] = str(v)
+    return morsel.output(header='').lstrip()
 
 
 def http_date(timestamp):
