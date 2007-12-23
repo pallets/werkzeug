@@ -432,8 +432,10 @@ class Headers(object):
     def items(self, lower=False):
         return list(self.iteritems(lower))
 
-    def extend(self, seq):
-        for key, value in seq:
+    def extend(self, iterable):
+        if isinstance(iterable, dict):
+            iterable = iterable.iteritems()
+        for key, value in iterable:
             self.add(key, value)
 
     def __delitem__(self, key):
