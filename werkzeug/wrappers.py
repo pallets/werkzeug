@@ -311,6 +311,10 @@ class BaseRequest(object):
         return self.environ.get('X_REQUESTED_WITH') == 'XmlHttpRequest'
     is_xhr = property(is_xhr, doc=is_xhr.__doc__)
 
+    is_multithread = environ_property('wsgi.multithread')
+    is_multiprocess = environ_property('wsgi.multiprocess')
+    is_run_once = environ_property('wsgi.run_once')
+
 
 class BaseResponse(object):
     """

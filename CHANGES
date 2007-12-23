@@ -20,6 +20,8 @@ Version 0.2
 - `werkzeug.script` has a different caller format for boolean arguments now.
 - renamed `lazy_property` to `cached_property`.
 - added `import_string`.
+- added is_* properties to request objects
+- added `empty()` method to routing rules
 
 
 Version 0.1

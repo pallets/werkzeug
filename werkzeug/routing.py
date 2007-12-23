@@ -330,6 +330,11 @@ class Rule(RuleFactory):
         self._regex = None
         self._weights = []
 
+    def empty(self):
+        """Return an unbound copy of this rule."""
+        return Rule(self.rule, self.defaults, self.subdomain, self.methods,
+                    self.build_only, self.endpoint, self.strict_slashes)
+
     def get_rules(self, map):
         yield self
 

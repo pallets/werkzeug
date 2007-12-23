@@ -92,6 +92,22 @@ Members
 `is_secure`
     True if this is an https request.
 
+`is_multithread`
+    True if this request was created in an multithreaded environment.
+
+    *new in Werkzeug 0.2*
+
+`is_multiprocess`
+    True if this request was created in an forking environment.
+
+    *new in Werkzeug 0.2*
+
+`is_run_once`
+    True if this request was created on the command line, a CGI script
+    or a similar environment.
+
+    *new in Werkzeug 0.2*
+
 `method`
     The request method. `GET`, `POST` etc.
 
