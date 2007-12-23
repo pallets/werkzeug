@@ -97,6 +97,7 @@ all_by_module = {
                              'url_unquote', 'get_current_url', 'redirect',
                              'append_slash_redirect', 'lazy_property',
                              'cached_property', 'MultiDict', 'import_string',
+                             'dump_cookie', 'parse_cookie',
                              'DispatcherMiddleware'],
     'werkzeug.http':        ['Accept', 'CacheControl', 'parse_accept_header',
                              'parse_cache_control_header',

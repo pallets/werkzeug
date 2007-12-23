@@ -24,6 +24,7 @@ Version 0.2
 - added `empty()` method to routing rules
 - added `werkzeug.contrib.profiler`
 - added `extends` to `Headers`
+- added `dump_cookie` and `parse_cookie`
 
 
 Version 0.1

@@ -171,6 +171,12 @@ Changes to `MultiDict`:
     ...yield all values for a key, not only the first one! `iterkeys` can
     of corse yield multiple keys with the same name analog to that.
 
+`extend`
+    Extend these headers with a dict or an iterable yielding keys and
+    values.
+
+    *new in Werkzeug 0.2*
+
 
 EnvironHeaders
 ==============
@@ -396,6 +402,18 @@ Helper Functions
     datetime object or a timetuple.  All times in UTC.
 
     Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
+
+`parse_cookie(header)`
+    Pass it an WSGI enviorn or cookie header and it will return the cookie
+    values as python dict
+
+    *new in Werkzeug 0.2*
+
+`dump_cookie(key, ...)`
+    Creates a new ``Set-Cookie`` header without the ``Set-Cookie`` header key.
+    Takes the same arguments as the `set_cookie` method of the response object.
+
+    *new in Werkzeug 0.2*
 
 `parse_accept_header(value)`
     Parse an HTTP Accept-* header and return a new `Accept` object.
