@@ -183,7 +183,7 @@ class BaseRequest(object):
 
     def cookies(self):
         """Stored Cookies."""
-        return parse_cookie(environ, self.charset)
+        return parse_cookie(self.environ, self.charset)
     cookies = cached_property(cookies)
 
     def headers(self):
