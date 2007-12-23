@@ -10,10 +10,14 @@
 """
 import sys
 try:
-    from cProfile import Profile
+    try:
+        from cProfile import Profile
+    except ImportError:
+        from profile import Profile
+    from pstats import Stats
+    available = True
 except ImportError:
-    from profile import Profile
-from pstats import Stats
+    available = False
 
 
 class MergeStream(object):
@@ -43,6 +47,9 @@ class ProfilerMiddleware(object):
 
     def __init__(self, app, stream=sys.stdout,
                  sort_by=('time', 'calls'), restrictions=()):
+        if not available:
+            raise RuntimeError('the profiler is not available because '
+                               'profile or pstat is not installed.')
         self._app = app
         self._stream = stream
         self._sort_by = sort_by
