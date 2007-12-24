@@ -5,16 +5,15 @@ from py.test import raises
 
 def response(content, mimetype):
     return TestResponse(
-            status=200,
-            response=content,
-            mimetype=mimetype,
-            )
+        status=200,
+        response=content,
+        mimetype=mimetype,
+    )
 
 @responder
 def application(environ, start_response):
     request = BaseRequest(environ)
     return response('This is a Test.', 'text/plain')
-
 
 def test_json():
     resp = response('{ "a": 1}', 'application/json')
@@ -41,9 +40,3 @@ def test_lxml_fail():
             '<html><head><title>Test</title></head></html>',
             'text/plain')
     raises(AttributeError, 'resp.lxml')
-
-def test_response():
-    client = Client(application, response_wrapper=TestResponse)
-    resp = client.get('/')
-    assert resp.werkzeug_request.path == '/'
-

@@ -13,7 +13,7 @@
 """
 
 
-from werkzeug import BaseResponse, cached_property, import_string, environ_property
+from werkzeug import BaseResponse, cached_property, import_string
 
 
 class TestResponse(BaseResponse):
@@ -25,12 +25,6 @@ class TestResponse(BaseResponse):
         BaseResponse.__init__(self, *k, **kw)
         self.content_type = self.headers['Content-Type']
         self.mimetype = self.content_type.split(';')[0].strip()
-
-    def test_client_callback(self, client, environ):
-        self.client = client
-        self.environ = environ
-
-    werkzeug_request = environ_property('werkzeug.request')
 
     def xml(self):
         """
