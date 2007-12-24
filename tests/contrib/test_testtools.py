@@ -16,7 +16,7 @@ def application(environ, start_response):
     return response('This is a Test.', 'text/plain')
 
 
-def test_json(): 
+def test_json():
     resp = response('{ "a": 1}', 'application/json')
     assert resp.json == {'a': 1}
 
@@ -26,19 +26,19 @@ def test_json_fail():
 
 def test_lxml_html():
     resp = response(
-            '<html><head><title>Test</title></head></html>', 
+            '<html><head><title>Test</title></head></html>',
             'text/html')
     assert resp.lxml.xpath('//text()') == ['Test']
 
 def test_lxml_xml():
     resp = response(
-            '<html><head><title>Test</title></head></html>', 
+            '<html><head><title>Test</title></head></html>',
             'application/xml')
     assert resp.lxml.xpath('//text()') == ['Test']
-    
+
 def test_lxml_fail():
     resp = response(
-            '<html><head><title>Test</title></head></html>', 
+            '<html><head><title>Test</title></head></html>',
             'text/plain')
     raises(AttributeError, 'resp.lxml')
 
