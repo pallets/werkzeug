@@ -20,11 +20,13 @@ Version 0.2
 - `werkzeug.script` has a different caller format for boolean arguments now.
 - renamed `lazy_property` to `cached_property`.
 - added `import_string`.
-- added is_* properties to request objects
-- added `empty()` method to routing rules
-- added `werkzeug.contrib.profiler`
-- added `extends` to `Headers`
-- added `dump_cookie` and `parse_cookie`
+- added is_* properties to request objects.
+- added `empty()` method to routing rules.
+- added `werkzeug.contrib.profiler`.
+- added `extends` to `Headers`.
+- added `dump_cookie` and `parse_cookie`.
+- added `as_tuple` to the `Client`.
+- added `werkzeug.contrib.testtools`.
 
 
 Version 0.1
