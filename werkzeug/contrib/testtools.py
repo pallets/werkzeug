@@ -1,13 +1,13 @@
 """
     werkzeug.contrib.testtools
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
+
     This Module implements a extended wrappers for simplified Testing
 
     `TestResponse`
-        a response wrapper wich adds various cached attributes for 
+        a response wrapper wich adds various cached attributes for
         simplified assertions on various contenttypes
-    
+
     :copyright: 2007 by Ronny Pfannschmidt.
     :license: BSD, see LICENSE for more details.
 """
@@ -24,7 +24,7 @@ class TestResponse(BaseResponse):
         BaseResponse.__init__(self, *k, **kw)
         self.content_type = self.headers['Content-Type']
         self.mimetype = self.content_type.split(';')[0].strip()
-    
+
     def test_client_callback(self, client, environ):
         self.client = client
         self.environ = environ
@@ -64,7 +64,7 @@ class TestResponse(BaseResponse):
             raise AttributeError(
                 'Not a HTML/XML response (Content-Type: %s)'
                 % self.mimetype)
-        
+
         from lxml import etree
         try:
             from lxml.html import fromstring
@@ -88,4 +88,3 @@ class TestResponse(BaseResponse):
         from simplejson import loads
         return loads(self.response_body)
     json = cached_property(json)
-
