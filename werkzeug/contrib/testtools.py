@@ -18,6 +18,7 @@ from werkzeug import BaseResponse, cached_property, import_string, environ_prope
 
 class TestResponse(BaseResponse):
     """
+    Pass this to `werkzeug.test.Client` for easier unittesting.
     """
 
     def __init__(self, *k, **kw):
@@ -75,7 +76,6 @@ class TestResponse(BaseResponse):
         else:
             return etree.XML(self.response_body)
     lxml = cached_property(lxml)
-
 
     def json(self):
         """
