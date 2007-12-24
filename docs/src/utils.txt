@@ -347,6 +347,12 @@ Helper Functions
 `escape(s, quote=False)`
     SGML/XML escape an unicode object or string.
 
+`unescape(s, quote=False)`
+    SGML/XML unescape an unicode object or string.  This is the reversal
+    of `escape` and *not* an universal entity resolution.
+
+    *new in Werkzeug 0.2*
+
 `cached_property(func)`
     A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result

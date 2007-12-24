@@ -27,6 +27,7 @@ Version 0.2
 - added `dump_cookie` and `parse_cookie`.
 - added `as_tuple` to the `Client`.
 - added `werkzeug.contrib.testtools`.
+- added `werkzeug.unescape`
 
 
 Version 0.1

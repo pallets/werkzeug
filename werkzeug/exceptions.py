@@ -142,7 +142,7 @@ class MethodNotAllowed(HTTPException):
 
     def get_description(self, environ):
         m = escape(environ.get('REQUEST_METHOD', 'GET'))
-        return '<p>The method %s is not allowed for the requeste URL.</p>' % m
+        return '<p>The method %s is not allowed for the requested URL.</p>' % m
 
 
 class NotAcceptable(HTTPException):

@@ -846,6 +846,14 @@ def url_unquote_plus(s, charset='utf-8'):
 escape = cgi.escape
 
 
+def unescape(s, quote=False):
+    """Reversal of escape."""
+    s = s.replace('&lt;', '<').replace('&gt;', '>')
+    if quote:
+        s = s.replace('&quot;', '"')
+    return s.replace('&amp;', '&')
+
+
 def get_host(environ):
     """
     Return the real host for the given environment.
