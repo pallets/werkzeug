@@ -40,7 +40,7 @@ class TestResponse(BaseResponse):
                 'Not a XML response (Content-Type: %s)'
                 % self.mimetype)
         for module in [
-                'xml.etree.ElemenTree',
+                'xml.etree.ElementTree',
                 'ElementTree',
                 'elementtree.ElementTree']:
             try:
