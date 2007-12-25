@@ -14,19 +14,32 @@ controller classes with action methods, the other one is designer friendly
 templates.
 
 In the Werkzeug `example folder`_ are a couple of applications that use other
-template engines too so you may want to have a look at them.
+template engines too so you may want to have a look at them.  There is also
+the sourcecode of this application.
+
+To install the required libraries you can use `easy_install`::
+
+    sudo easy_install Jinja
+    sudo easy_install SQLAlchemy
+
+If you're on windows omit the "sudo", if you're on OS X you can check if the
+libraries are also available in port or on Linux you can check out your
+package manager for packages called ``python-jinja`` / ``python-sqlalchemy``.
+
+If you're curious you can check out the `online demo`_ of the application.
 
 Small disclaimer: This tutorial requires Python 2.4.
 
 .. _Jinja: http://jinja.pocoo.org/
 .. _SQLAlchemy: http://sqlalchemy.org/
-.. _example folder: http://dev.pocoo.org/projects/werkzeug/browser/examples
+.. _example folder: http://dev.pocoo.org/projects/werkzeug/browser/example
+.. _online demo: http://werkzeug.pocoo.org/e/shorty/
 
 
 Part 0: The Folder Structure
 ============================
 
-Before we can get stated we have to create a python package for our Werkzeug
+Before we can get started we have to create a python package for our Werkzeug
 application and the folders for the templates and static files.
 
 This tutorial application is called `shorty` and the initial directory layout
@@ -52,7 +65,7 @@ for you.  As a result of that the first thing you will do every time you write
 a Werkzeug application is implementing this basic WSGI application object.
 This can now either be a function or, even better, a callable class.
 
-A callable class has a huge advantages over a function.  For one you can pass
+A callable class has huge advantages vs. a function.  For one you can pass
 it some configuration parameters and furthermore you can use inline WSGI
 middlewares.  Inline WSGI middlewares are basically middlewares applied
 "inside" of our application object.  This is a good idea for middlewares that
@@ -596,7 +609,7 @@ And we can inherit from this base template in our ``templates/new.html``:
 
 If you're wondering about the comment between the two input elements, this is
 a neat trick to keep the templates clean but not create whitespace between
-those two.  I've prepared a stylesheet you can use which depends on not having
+those two.  We've prepared a stylesheet you can use which depends on not having
 a whitespace there.
 
 And then a second template for the display page (``templates/display.html``):
@@ -651,7 +664,7 @@ But how do we tell our application that we want it to share the static folder
 from our application package as ``/static``?.  Fortunately that's pretty
 simple because Werkzeug provides a WSGI middleware for that.  Now there are
 two ways to hook that middleware in.  One way is to wrap the whole application
-in that middleware (I really don't recommend this one) and the other is to
+in that middleware (We really don't recommend this one) and the other is to
 just wrap the dispatching function (much better because we don't lose the
 reference to the application object).  So head back to the ``application.py``
 and do some code refactoring there.
@@ -666,9 +679,9 @@ static files:
 
     STATIC_PATH = path.join(path.dirname(__file__), 'static')
 
-I personally would put the path calculation into the ``utils.py`` file because
-we already calculate the path to the templates there.  But it doesn't really
-matter and for simplicity we can leave it in the application module.
+It's maybe better to put the path calculation into the ``utils.py`` file
+because we already calculate the path to the templates there.  But it doesn't
+really matter and for simplicity we can leave it in the application module.
 
 So how do we wrap our dispatching function?  In theory we just have to say
 ``self.__call__ = wrap(self.__call__)`` but unfortunately that doesn't work in
