@@ -25,7 +25,9 @@
     constructor on the other hand is not an stream object but an iterator::
 
         def foo(stream):
-            stream.write("something")
+            stream.write("some")
+            stream.write("thing")
+            stream.flush()
             stream.write("otherthing")
         iterator = IterIO(foo)
         print iterator.next()       # prints something
