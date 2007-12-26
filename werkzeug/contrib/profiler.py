@@ -45,13 +45,13 @@ class ProfilerMiddleware(object):
     Simple profiler middleware
     """
 
-    def __init__(self, app, stream=sys.stdout,
+    def __init__(self, app, stream=None,
                  sort_by=('time', 'calls'), restrictions=()):
         if not available:
             raise RuntimeError('the profiler is not available because '
                                'profile or pstat is not installed.')
         self._app = app
-        self._stream = stream
+        self._stream = stream or sys.stdout
         self._sort_by = sort_by
         self._restrictions = restrictions
 
@@ -83,7 +83,8 @@ class ProfilerMiddleware(object):
 
 
 def make_action(app_factory, hostname='localhost', port=5000,
-                threaded=False, processes=1):
+                threaded=False, processes=1, stream=None,
+                sort_by=('time', 'calls'), restrictions=()):
     """
     Return a new callback for werkzeug scripts that starts a local server
     for profiling.
@@ -92,6 +93,6 @@ def make_action(app_factory, hostname='localhost', port=5000,
                threaded=threaded, processes=processes):
         """Start a new development server."""
         from werkzeug.serving import run_simple
-        app = app_factory()
+        app = ProfilerMiddleware(app_factory(), stream, sort_by, restrictions)
         run_simple(hostname, port, app, False, None, threaded, processes)
     return action

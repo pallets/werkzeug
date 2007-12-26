@@ -50,21 +50,21 @@ try:
     get_current_greenlet = greenlet.getcurrent
     del greenlet
 except (RuntimeError, ImportError):
-    get_current_greenlet = lambda: None
+    get_current_greenlet = int
 try:
-    from thread import get_ident as get_current_thread
-    from threading import Lock
+    from thread import get_ident as get_current_thread, allocate_lock
 except ImportError:
-    from dummy_thread import get_ident as get_current_thread
-    from dummy_threading import Lock
+    from dummy_thread import get_ident as get_current_thread, allocate_lock
 from werkzeug.utils import ClosingIterator
 
 
-def get_ident():
-    """
-    Return a unique number for the current greenlet in the current thread.
-    """
-    return hash((get_current_thread(), get_current_greenlet()))
+# get the best ident function.  if greenlets are not installed we can
+# savely just use the builtin thread function and save a python methodcall
+# and the cost of caculating a hash.
+if get_current_greenlet is int:
+    get_ident = get_current_thread
+else:
+    get_ident = lambda: hash((get_current_thread(), get_current_greenlet()))
 
 
 class Local(object):
@@ -72,7 +72,7 @@ class Local(object):
 
     def __init__(self):
         object.__setattr__(self, '__storage__', {})
-        object.__setattr__(self, '__lock__', Lock())
+        object.__setattr__(self, '__lock__', allocate_lock())
 
     def __iter__(self):
         return self.__storage__.iteritems()
@@ -84,11 +84,8 @@ class Local(object):
     def __getattr__(self, name):
         self.__lock__.acquire()
         try:
-            ident = get_ident()
-            if ident not in self.__storage__:
-                raise AttributeError(name)
             try:
-                return self.__storage__[ident][name]
+                return self.__storage__[get_ident()][name]
             except KeyError:
                 raise AttributeError(name)
         finally:
@@ -109,11 +106,8 @@ class Local(object):
     def __delattr__(self, name):
         self.__lock__.acquire()
         try:
-            ident = get_ident()
-            if ident not in self.__storage__:
-                raise AttributeError(name)
             try:
-                del self.__storage__[ident][name]
+                del self.__storage__[get_ident()][name]
             except KeyError:
                 raise AttributeError(name)
         finally:

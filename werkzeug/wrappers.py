@@ -506,6 +506,14 @@ class BaseResponse(object):
         if hasattr(self.response, 'close'):
             self.response.close()
 
+    def freeze(self):
+        """
+        Call this method if you want to make your response object ready for
+        pickeling.  This buffers the generator if there is one and sets the
+        e-tag.
+        """
+        self.add_etag()
+
     def __call__(self, environ, start_response):
         """Process this response as WSGI application."""
         self.fix_headers(environ)
