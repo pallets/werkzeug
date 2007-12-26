@@ -328,6 +328,23 @@ Methods
     and should fix common mistakes in headers.  For example location
     headers are joined with the root URL here.
 
+`add_etag()`
+    Generates and md5 etag for the response body.
+
+    *new in Werkzeug 0.2*
+
+`make_conditional(request_or_environ)`
+    Pass it an environment or request object to make the response object
+    conditional for the request.  This does not set the etag, you have to do
+    that on your own.  If the request headers indicate that the response body
+    is already cached on the client the status code is set to 304.
+
+`freeze()`
+    Freezes the response object and sets the etag.  After that call it's safe
+    to pickle and unpickle the response object (for example for caching)
+
+    *new in Werkzeug 0.2*
+
 `close()`
     Close the wrapped response object if there is anything to close.
 

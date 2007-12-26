@@ -28,6 +28,7 @@ Version 0.2
 - added `as_tuple` to the `Client`.
 - added `werkzeug.contrib.testtools`.
 - added `werkzeug.unescape`
+- added `BaseResponse.freeze`
 
 
 Version 0.1
