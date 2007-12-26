@@ -896,7 +896,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     return ''.join(tmp)
 
 
-def cookie_date(expires, _date_delim='-'):
+def cookie_date(expires=None, _date_delim='-'):
     """
     Formats the time to ensure compatibility with Netscape's cookie standard.
 
@@ -905,7 +905,9 @@ def cookie_date(expires, _date_delim='-'):
 
     Outputs a string in the format 'Wdy, DD-Mon-YYYY HH:MM:SS GMT'.
     """
-    if isinstance(expires, datetime):
+    if expires is None:
+        expires = gmtime()
+    elif isinstance(expires, datetime):
         expires = expires.utctimetuple()
     elif isinstance(expires, (int, long, float)):
         expires = gmtime(expires)
@@ -957,7 +959,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     return morsel.output(header='').lstrip()
 
 
-def http_date(timestamp):
+def http_date(timestamp=None):
     """
     Formats the time to match the RFC1123 date format.
 

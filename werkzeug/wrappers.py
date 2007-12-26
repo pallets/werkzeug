@@ -480,9 +480,9 @@ class BaseResponse(object):
         This does nothing if the request method in the request or enviorn is
         anything but GET.
         """
+        environ = getattr(request_or_environ, 'environ', request_or_environ)
         if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
             return
-        environ = getattr(request_or_environ, 'environ', request_or_environ)
         self.headers['Date'] = http_date()
         if 'etag' in self.headers:
             if_none_match = environ.get('HTTP_IF_NONE_MATCH')
@@ -490,8 +490,8 @@ class BaseResponse(object):
             if_modified_since = environ.get('HTTP_IF_MODIFIED_SINCE')
             # we only set the status code because the request object removes
             # contents for 304 responses automatically on `__call__`
-            if if_none_match and if_none_match == self.headers['etag'] or \
-               if_modified_since == last_modified:
+            if (if_none_match and if_none_match == self.headers['etag']) or \
+               (if_modified_since and if_modified_since == last_modified):
                 self.status_code = 304
 
     def add_etag(self, overwrite=False):
