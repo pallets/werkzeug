@@ -29,6 +29,7 @@ Version 0.2
 - added `werkzeug.contrib.testtools`.
 - added `werkzeug.unescape`
 - added `BaseResponse.freeze`
+- added `werkzeug.contrib.atom`
 
 
 Version 0.1

@@ -45,6 +45,11 @@ _par_re = re.compile(r'\n{2,}')
 _entity_re = re.compile(r'&([^;]+);')
 _striptags_re = re.compile(r'(<!--.*-->|<[^>]*>)')
 
+from htmlentitydefs import name2codepoint
+html_entities = name2codepoint.copy()
+html_entities['apos'] = 39
+del name2codepoint
+
 
 def expose(url_rule, endpoint=None, **kwargs):
     """Expose this function to the web layer."""
