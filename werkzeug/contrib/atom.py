@@ -33,6 +33,7 @@ class AtomFeed(object):
     """
     A helper class that creates ATOM feeds.
     """
+    default_generator = ('Werkzeug', None, None)
 
     def __init__(self, title=None, entries=None, **kwargs):
         """
@@ -105,7 +106,7 @@ class AtomFeed(object):
         self.subtitle_type = kwargs.get('subtitle_type')
         self.generator = kwargs.get('generator')
         if self.generator is None:
-            self.generator = ('Werkzeug', None, None)
+            self.generator = self.default_generator
         self.links = kwargs.get('links', [])
         self.entries = entries and list(entries) or []
 
