@@ -6,7 +6,7 @@
     This module provides a class called `AtomFeed` which can be used
     to generate Atom feeds.
 
-    :copyright: Copyright 2007 by Armin Ronacher.
+    :copyright: Copyright 2007 by Armin Ronacher, Marian Sigler.
     :license: GNU GPL.
 """
 from datetime import datetime
