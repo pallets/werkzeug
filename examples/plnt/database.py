@@ -48,7 +48,6 @@ class Blog(object):
         self.name = name
         self.url = url
         self.feed_url = feed_url
-        self.disabled = False
         self.description = description
 
     def __repr__(self):

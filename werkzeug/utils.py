@@ -619,7 +619,7 @@ class DispatcherMiddleware(object):
                 app = self.mounts[script]
                 break
             items = script.split('/')
-            script = items[:-1].join('/')
+            script = '/'.join(items[:-1])
             path_info = '/%s%s' % (items[-1], path_info)
         else:
             app = self.mapping.get(script, self.app)
