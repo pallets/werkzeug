@@ -622,9 +622,9 @@ class DispatcherMiddleware(object):
             script = '/'.join(items[:-1])
             path_info = '/%s%s' % (items[-1], path_info)
         else:
-            app = self.mapping.get(script, self.app)
+            app = self.mounts.get(script, self.app)
         original_script_name = environ.get('SCRIPT_NAME', '')
-        environ['SCRIPT_NAME'] = original_script_name + script_name
+        environ['SCRIPT_NAME'] = original_script_name + script
         environ['PATH_INFO'] = path_info
         return app(environ, start_response)
 
