@@ -379,7 +379,7 @@ class Rule(RuleFactory):
             method_re = '|'.join([re.escape(x) for x in self.methods])
 
         if not self.build_only:
-            regex = r'^%s%s\(%s\)$' % (
+            regex = r'^%s%s\((?:%s)\)$' % (
                 u''.join(regex_parts),
                 (not self.is_leaf or not self.strict_slashes) and \
                     '(?<!/)(?P<__suffix__>/?)' or '',
