@@ -17,7 +17,7 @@ from werkzeug.wrappers import BaseResponse
 def _make_text_block(name, content, content_type=None):
     """Helper function for the builder that creates an XML text block."""
     if content_type == 'xhtml':
-        return u'<%s type="xhtml">%s</%s>\n' % (name, content, anem)
+        return u'<%s type="xhtml">%s</%s>\n' % (name, content, name)
     if not content_type:
         return u'<%s>%s</%s>\n' % (name, escape(content), name)
     return u'<%s type="%s">%s</%s>\n' % (name, content_type,
