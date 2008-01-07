@@ -14,10 +14,14 @@ from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
 
 
+XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
+
+
 def _make_text_block(name, content, content_type=None):
     """Helper function for the builder that creates an XML text block."""
     if content_type == 'xhtml':
-        return u'<%s type="xhtml">%s</%s>\n' % (name, content, name)
+        return u'<%s type="xhtml"><div xmlns="%s">%s</div></%s>\n' % \
+               (name, XHTML_NAMESPACE, content, name)
     if not content_type:
         return u'<%s>%s</%s>\n' % (name, escape(content), name)
     return u'<%s type="%s">%s</%s>\n' % (name, content_type,
