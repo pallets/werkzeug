@@ -1017,8 +1017,8 @@ def responder(f):
         def application(environ, start_response):
             return Response('Hello World!')
     """
-    def wrapper(environ, start_response):
-        return f(environ, start_response)(environ, start_response)
+    def wrapper(*args):
+        return f(*args)(*args[-2:])
     try:
         wrapper.__name__ = f.__name__
         wrapper.__module__ = f.__module__
