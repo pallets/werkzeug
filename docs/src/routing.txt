@@ -461,7 +461,7 @@ dispatching process roughly works the same all the time there is a special
     }
 
     def application(environ, start_response):
-        urls = Map.bind_to_environ(environ)
+        urls = url_map.bind_to_environ(environ)
         try:
             response = urls.dispatch(lambda e, v: views[e](environ, **v),
                                      environ.get('PATH_INFO') or '/',
