@@ -32,6 +32,8 @@ Version 0.2
 - added `werkzeug.contrib.atom`
 - the HTTPExceptions accept an argument `description` now which overrides the
   default description.
+- the `MapAdapter` has a default for path info now.  If you use
+  `bind_to_environ` you don't have to pass the path later.
 
 
 Version 0.1

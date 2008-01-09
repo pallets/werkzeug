@@ -9,6 +9,7 @@
 """
 from py.test import raises
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect
+from werkzeug.utils import create_environ
 
 
 def test_basic_routing():
@@ -23,6 +24,27 @@ def test_basic_routing():
     assert adapter.match('/bar/') == ('bar', {})
     raises(RequestRedirect, lambda: adapter.match('/bar'))
     raises(NotFound, lambda: adapter.match('/blub'))
+
+
+test_environ_defaults = '''
+>>> from werkzeug.routing import Map, Rule
+>>> from werkzeug import create_environ
+>>> environ = create_environ("/foo")
+>>> environ["PATH_INFO"]
+'/foo'
+>>> m = Map([Rule("/foo", endpoint="foo"), Rule("/bar", endpoint="bar")])
+>>> a = m.bind_to_environ(environ)
+>>> a.match("/foo")
+('foo', {})
+>>> a.match()
+('foo', {})
+>>> a.match("/bar")
+('bar', {})
+>>> a.match("/bars")
+Traceback (most recent call last):
+  ...
+NotFound: 404 Not Found
+'''
 
 
 def test_basic_building():
@@ -77,6 +99,7 @@ def test_greedy():
     assert adapter.build('foo', {}) == '/foo'
     assert adapter.build('bar', {'bar': 'blub'}) == '/blub'
     assert adapter.build('bar', {'bar': 'blub', 'blub': 'bar'}) == '/blub/bar'
+
 
 def test_path():
     map = Map([

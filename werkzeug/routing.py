@@ -750,7 +750,7 @@ class Map(object):
         return self.add(rule)
 
     def bind(self, server_name, script_name=None, subdomain=None,
-             url_scheme='http', default_method='GET'):
+             url_scheme='http', default_method='GET', path_info=None):
         """
         Return a new map adapter for this request.
         """
@@ -759,7 +759,7 @@ class Map(object):
         if script_name is None:
             script_name = '/'
         return MapAdapter(self, server_name, script_name, subdomain,
-                          url_scheme, default_method)
+                          url_scheme, path_info, default_method)
 
     def bind_to_environ(self, environ, server_name=None, subdomain=None,
                         calculate_subdomain=False):
@@ -775,6 +775,8 @@ class Map(object):
         in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
         subdomain will be ``'staging.dev'``.
         """
+        if hasattr(environ, 'environ'):
+            environ = environ.environ
         if server_name is None:
             if 'HTTP_HOST' in environ:
                 server_name = environ['HTTP_HOST']
@@ -788,12 +790,14 @@ class Map(object):
             real_server_name = server_name.split(':', 1)[0].split('.')
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
-                raise ValueError('the server name provided (%r) does not match the '
-                                 'server name from the WSGI environment (%r)' %
+                raise ValueError('the server name provided (%r) does not '
+                                 'match the server name from the WSGI '
+                                 'environment (%r)' %
                                  (environ['SERVER_NAME'], server_name))
             subdomain = '.'.join(filter(None, cur_server_name[:offset]))
-        return Map.bind(self, server_name, environ.get('SCRIPT_NAME'), subdomain,
-                        environ['wsgi.url_scheme'], environ['REQUEST_METHOD'])
+        return Map.bind(self, server_name, environ.get('SCRIPT_NAME'),
+                        subdomain, environ['wsgi.url_scheme'],
+                        environ['REQUEST_METHOD'], environ.get('PATH_INFO'))
 
     def update(self):
         """
@@ -814,7 +818,7 @@ class MapAdapter(object):
     """
 
     def __init__(self, map, server_name, script_name, subdomain,
-                 url_scheme, default_method):
+                 url_scheme, path_info, default_method):
         self.map = map
         self.server_name = server_name
         if not script_name.endswith('/'):
@@ -822,6 +826,7 @@ class MapAdapter(object):
         self.script_name = script_name
         self.subdomain = subdomain
         self.url_scheme = url_scheme
+        self.path_info = path_info or u''
         self.default_method = default_method
 
     def dispatch(self, view_func, path_info, method=None):
@@ -837,7 +842,7 @@ class MapAdapter(object):
             return e
         return view_func(endpoint, args)
 
-    def match(self, path_info, method=None):
+    def match(self, path_info=None, method=None):
         """
         Match a given path_info, script_name and subdomain against the
         known rules. If the subdomain is not given it defaults to the
@@ -845,6 +850,8 @@ class MapAdapter(object):
         don't define it anywhere you can safely ignore it.
         """
         self.map.update()
+        if path_info is None:
+            path_info = self.path_info
         if not isinstance(path_info, unicode):
             path_info = path_info.decode(self.map.charset, 'ignore')
         path = u'%s|/%s(%s)' % (

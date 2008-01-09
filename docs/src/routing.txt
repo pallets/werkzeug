@@ -323,12 +323,17 @@ URLs for the current request.
 
 There are basically two ways to bind a request:
 
-`bind(server_name, script_name=None, subdomain=None, url_scheme='http')`
+`bind(server_name, script_name=None, subdomain=None, url_scheme='http', path_info=None)`
     Return a new `MapAdapter` with the details specified to the call. Note
     that `script_name` will default to ``'/'`` if not further specified
     or `None`. The `server_name` at least is a requirement because the HTTP
     RFC requires absolute URLs for redirects and so all redirect exceptions
     raised by Werkzeug will contain the full canonical URL.
+
+    **new in Werkzeug 0.2**: if no path_info is passed to match() it will
+    use the default path info passed to bind.  While this doesn't really make
+    sense for manual bind calls, it's useful if you bind a map to a WSGI
+    environment which already contains the path info.
 
     `subdomain` will default to the `default_subdomain` for this map if not
     defined. If there is no `default_subdomain` you cannot use the subdomain
@@ -347,6 +352,11 @@ There are basically two ways to bind a request:
     Example: `server_name` is ``'example.com'`` and the `SERVER_NAME`
     in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
     subdomain will be ``'staging.dev'``.
+
+    **new in Werkzeug 0.2**: if the object passed as environ as an environ
+    attribute, the value of this attribute is used instead.  This allows
+    you to pass request objects.  Additionally `PATH_INFO` is now passed
+    to the `bind()` method too.
 
 
 Matching URLs
@@ -402,6 +412,14 @@ And here what happens on redirect and missing URLs:
         raise NotFound(path_info)
     werkzeug.routing.NotFound: /missing
 
+The second parameter to the `match` method can be a string that specifies
+which HTTP method is used for matching.  If not defined, `GET` is assumed.
+Rules may match differently for different methods.
+
+**new in Werkzeug 0.2** if the path info is not passed to the match
+method the default path info of the map is used (defaults to the root
+URL if not defined explicitly).
+
 Building URLs
 -------------
 
@@ -423,7 +441,7 @@ URLs:
     '/'
     >>> urls.build("downloads/show", {'download_id': 42})
     '/downloads/42'
-    >>> urls.build("downloads/show", {'download_id': 42}, True)
+    >>> urls.build("downloads/show", {'download_id': 42}, force_external=True)
     'http://example.com/downloads/42'
 
 Because URLs cannot contain non ASCII data you will always get bytestrings
@@ -439,6 +457,10 @@ URL querystring parameters:
     '/?q=My+Searchstring'
 
 If a rule does not exist when building a `BuildError` exception is raised.
+
+**new in Werkzeug 0.2**: The build method accepts an argument called
+`method` which allows you to specify the method you want to have an URL
+builded for if you have different methods for the same endpoint specified.
 
 
 Dispatching
