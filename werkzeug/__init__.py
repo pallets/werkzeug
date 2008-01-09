@@ -80,7 +80,9 @@ import sys
 
 
 all_by_module = {
-    'werkzeug':             ['exceptions', 'routing', 'script'],
+    # XXX: the following autoimport breaks on python2.4 for unknown
+    # reasons.  it looks like something triggers an infinite loop.
+    ##'werkzeug':             ['exceptions', 'routing', 'script'],
     'werkzeug.debug':       ['DebuggedApplication'],
     'werkzeug.local':       ['Local', 'LocalManager', 'LocalProxy'],
     'werkzeug.templates':   ['Template'],

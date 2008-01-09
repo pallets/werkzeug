@@ -47,8 +47,10 @@ class HTTPException(Exception):
     code = None
     description = None
 
-    def __init__(self):
-        Exception.__init__(self)
+    def __init__(self, description=None):
+        Exception.__init__(self, '%d %s' % (self.code, self.name))
+        if description is not None:
+            self.description = description
 
     def name(self):
         """The status name."""
@@ -126,12 +128,12 @@ class NotFound(HTTPException):
 class MethodNotAllowed(HTTPException):
     code = 405
 
-    def __init__(self, valid_methods=None):
+    def __init__(self, valid_methods=None, description=None):
         """
         takes an optional list of valid http methods
         starting with werkzeug 0.3 the list will be mandatory
         """
-        HTTPException.__init__(self)
+        HTTPException.__init__(self, description)
         self.valid_methods = valid_methods
 
     def get_headers(self, environ):
@@ -149,9 +151,10 @@ class NotAcceptable(HTTPException):
     code = 406
 
     description = (
-        '<p>The resource identified by the request is only capable of generating response entities '
-        'which have content characteristics not acceptable '
-        'according to the accept headers sent in the request.</p>'
+        '<p>The resource identified by the request is only capable of '
+        'generating response entities which have content characteristics '
+        'not acceptable according to the accept headers sent in the '
+        'request.</p>'
         )
 
 
