@@ -28,8 +28,23 @@ except NameError:
 
 
 _empty_stream = StringIO('')
+_logger = None
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
+
+
+def _log(type, message, *args, **kwargs):
+    """Log into the internal werkzeug logger."""
+    global _logger
+    if _logger is None:
+        import logging
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s '
+                                               '%(message)s'))
+        _logger = logging.getLogger('werkzeug')
+        _logger.addHandler(handler)
+    getattr(_logger, type)(message, *args, **kwargs)
 
 
 class _ExtendedMorsel(Morsel):

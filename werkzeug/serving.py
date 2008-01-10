@@ -21,6 +21,7 @@ import socket
 import sys
 import time
 import thread
+from werkzeug.utils import _log
 from wsgiref.simple_server import ServerHandler, WSGIRequestHandler, \
      WSGIServer
 from SocketServer import ThreadingMixIn, ForkingMixIn
@@ -53,6 +54,20 @@ class BaseRequestHandler(WSGIRequestHandler):
         self.raw_requestline = self.rfile.readline()
         if self.parse_request():
             self.get_handler().run(self.server.get_app())
+
+    def log_request(self, code='-', size='-'):
+        _log('info', '%s - - [%s] %s %s\n',
+            self.address_string(),
+            self.requestline,
+            code,
+            size
+        )
+
+    def log_error(self, format, *args):
+        _log('error', 'Error:\n%s', format % args)
+
+    def log_message(self, format, *args):
+        _log('info', format, args)
 
 
 def make_server(host, port, app=None, threaded=False, processes=1):

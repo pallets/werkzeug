@@ -494,11 +494,13 @@ class BaseResponse(object):
                (if_modified_since and if_modified_since == last_modified):
                 self.status_code = 304
 
-    def add_etag(self, overwrite=False):
+    def add_etag(self, overwrite=False, weak=False):
         """Add an etag for the current response if there is none yet."""
         if not overwrite and 'etag' in self.headers:
             return
-        etag = md5(self.response_body).hexdigest()
+        etag = '"%s"' % md5(self.response_body).hexdigest()
+        if weak:
+            etag = 'W/' + etag
         self.headers['ETag'] = etag
 
     def close(self):

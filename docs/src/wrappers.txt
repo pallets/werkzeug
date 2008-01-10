@@ -328,8 +328,11 @@ Methods
     and should fix common mistakes in headers.  For example location
     headers are joined with the root URL here.
 
-`add_etag()`
-    Generates and md5 etag for the response body.
+`add_etag(overwrite=False, weak=False)`
+    Generates and md5 etag for the response body.  Per default this method
+    does nothing if an etag is already set.  If you set `overwrite` to
+    `True` it will overwrite the etag.  If `weak` is `True` the etag is prefixed
+    with "W/" indicating a weak entity tag.
 
     *new in Werkzeug 0.2*
 
