@@ -514,7 +514,7 @@ class BaseResponse(object):
         """Add an etag for the current response if there is none yet."""
         if not overwrite and 'etag' in self.headers:
             return
-        self.set_tag(generate_etag(self.response_body), weak)
+        self.set_etag(generate_etag(self.response_body), weak)
 
     def set_etag(self, etag, weak=False):
         """Set the etag, and override the old one if there was one."""
