@@ -378,9 +378,15 @@ class BaseResponse(object):
     from_app = classmethod(from_app)
 
     def _get_status_code(self):
-        return int(self.status.split(None, 1)[0])
+        try:
+            return int(self.status.split(None, 1)[0])
+        except ValueError:
+            return 0
     def _set_status_code(self, code):
-        self.status = '%d %s' % (code, HTTP_STATUS_CODES[code].upper())
+        try:
+            self.status = '%d %s' % (code, HTTP_STATUS_CODES[code].upper())
+        except KeyError:
+            self.status = '%d UNKNOWN' % code
     status_code = property(_get_status_code, _set_status_code,
                            'Get the HTTP Status code as number')
     del _get_status_code, _set_status_code
@@ -499,8 +505,7 @@ class BaseResponse(object):
         if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
             return
         self.headers['Date'] = http_date()
-        etag, weak = unquote_etag(self.headers.get('etag'))
-        if not is_resource_modified(environ, etag, None,
+        if not is_resource_modified(environ, self.headers.get('etag'), None,
                                     self.headers.get('last-modified')):
             self.status_code = 304
         return self
@@ -509,7 +514,21 @@ class BaseResponse(object):
         """Add an etag for the current response if there is none yet."""
         if not overwrite and 'etag' in self.headers:
             return
-        self.headers['Etag'] = generate_etag(self.response_body, weak)
+        self.set_tag(generate_etag(self.response_body), weak)
+
+    def set_etag(self, etag, weak=False):
+        """Set the etag, and override the old one if there was one."""
+        etag = '"%s"' % etag
+        if weak:
+            etag = 'w/' + etag
+        self.headers['ETag'] = etag
+
+    def get_etag(self):
+        """
+        Return a tuple in the form ``(etag, is_weak)``.  If there is no
+        ETag the return value is ``(None, None)``.
+        """
+        return unquote_etag(self.headers('ETag'))
 
     def close(self):
         """Close the wrapped response if possible."""

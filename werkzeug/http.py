@@ -292,6 +292,12 @@ class ETags(object):
             return True
         return etag in self._strong
 
+    def contains_raw(self, etag):
+        etag, weak = unquote_etag(etag)
+        if weak:
+            return self.contains_weak(etag)
+        return self.contains(etag)
+
     def to_header(self):
         if self.star_tag:
             return '*'
@@ -400,12 +406,9 @@ def parse_etags(value):
     return ETags(strong, weak)
 
 
-def generate_etag(data, weak=False):
+def generate_etag(data):
     """Generate an etag for some data."""
-    etag = '"%s"' % md5(data).hexdigest()
-    if weak:
-        etag = 'W/' + etag
-    return etag
+    return md5(data).hexdigest()
 
 
 def parse_date(value):
@@ -443,6 +446,6 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
     if etag:
         if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
         if if_none_match:
-            unmodified = etag in if_none_match
+            unmodified = if_none_match.contains_raw(etag)
 
     return not unmodified
