@@ -361,8 +361,24 @@ def parse_cache_control_header(value):
     return CacheControl(result)
 
 
+def unquote_etag(etag):
+    """Unquote a single etag.  Return a ``(etag, weak)`` tuple."""
+    if not etag:
+        return None, None
+    etag = etag.strip()
+    weak = False
+    if etag[:2] in ('w/', 'W/'):
+        weak = True
+        etag = etag[2:]
+    if etag[:1] == etag[-1:] == '"':
+        etag = etag[1:-1]
+    return etag, weak
+
+
 def parse_etags(value):
     """Parse and etag header.  Returns an `ETagSet`."""
+    if not value:
+        return ETags()
     strong = []
     weak = []
     end = len(value)
@@ -386,7 +402,7 @@ def parse_etags(value):
 
 def generate_etag(data, weak=False):
     """Generate an etag for some data."""
-    etag = '"%s"' % md5(self.response_body).hexdigest()
+    etag = '"%s"' % md5(data).hexdigest()
     if weak:
         etag = 'W/' + etag
     return etag
@@ -406,3 +422,27 @@ def parse_date(value):
         t = rfc822.parsedate_tz(value)
         if t is not None:
             return datetime.utcfromtimestamp(rfc822.mktime_tz(t))
+
+
+def is_resource_modified(environ, etag=None, data=None, last_modified=None):
+    """Convenience method for conditional requests."""
+    if etag is None and data is not None:
+        etag = generate_etag(data)
+    elif data is not None:
+        raise TypeError('both data and etag given')
+    if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
+        return False
+
+    unmodified = False
+    if isinstance(last_modified, basestring):
+        last_modified = parse_date(last_modified)
+    modified_since = parse_date(environ.get('HTTP_IF_MODIFIED_SINCE'))
+
+    if modified_since and last_modified and last_modified <= modified_since:
+        unmodified = True
+    if etag:
+        if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
+        if if_none_match:
+            unmodified = etag in if_none_match
+
+    return not unmodified

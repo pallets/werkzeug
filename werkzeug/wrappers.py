@@ -14,7 +14,7 @@ import tempfile
 import urlparse
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
-     parse_date, generate_etag
+     parse_date, generate_etag, is_resource_modified, unquote_etag
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -491,25 +491,19 @@ class BaseResponse(object):
 
         It does not remove the body of the response because that's something
         the `__call__` function does for us automatically.
+
+        Returns self so that you can do ``return resp.make_conditional(req)``
+        but modifies the object in-place.
         """
         environ = getattr(request_or_environ, 'environ', request_or_environ)
         if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
             return
         self.headers['Date'] = http_date()
-        last_modified = parse_date(self.headers.get('last-modified'))
-        if_modified_since = parse_date(environ.get('HTTP_IF_MODIFIED_SINCE'))
-        if if_modified_since and last_modified and \
-           last_modified <= if_modified_since:
-            want_304 = True
-
-        etag = self.headers['etag']
-        if etag:
-            if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
-            if if_none_match:
-                want_304 = etag in if_none_match
-
-        if want_304:
+        etag, weak = unquote_etag(self.headers.get('etag'))
+        if not is_resource_modified(environ, etag, None,
+                                    self.headers.get('last-modified')):
             self.status_code = 304
+        return self
 
     def add_etag(self, overwrite=False, weak=False):
         """Add an etag for the current response if there is none yet."""

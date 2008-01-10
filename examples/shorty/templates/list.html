@@ -6,7 +6,7 @@
     <li><a href="{{ url.short_url|e }}">{{ url.uid|e }}</a> &raquo;
         <small>{{ url.target|urlize(38, true) }}</small></li>
   {%- else %}
-    <li><em>no URls shortened yet</em></li>
+    <li><em>no URLs shortened yet</em></li>
   {%- endfor %}
   </ul>
   <div class="pagination">

@@ -103,7 +103,8 @@ all_by_module = {
                              'DispatcherMiddleware'],
     'werkzeug.http':        ['Accept', 'CacheControl', 'ETags', 'parse_etags',
                              'parse_date', 'parse_cache_control_header',
-                             'parse_accept_header', 'HTTP_STATUS_CODES'],
+                             'is_resource_modified', 'parse_accept_header',
+                             'unquote_etag', 'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest',
                              'BaseReporterStream']
 }
