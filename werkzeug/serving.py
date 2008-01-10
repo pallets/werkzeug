@@ -137,7 +137,7 @@ def restart_with_reloader():
     but running the reloader thread.
     """
     while 1:
-        print '* Restarting with reloader...'
+        _log('info', ' * Restarting with reloader...')
         args = [sys.executable] + sys.argv
         if sys.platform == 'win32':
             args = ['"%s"' % arg for arg in args]
@@ -178,10 +178,11 @@ def run_simple(hostname, port, application, use_reloader=False,
             pass
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        print '* Running on http://%s:%d/' % (hostname or '0.0.0.0', port)
+        display_hostname = hostname or '127.0.0.1'
+        _log('info', ' * Running on http://%s:%d/', display_hostname, port)
     if use_reloader:
-        # Create and destroy a socket so that any exceptions are raised before we
-        # spawn a separate Python interpreter and loose this ability.
+        # Create and destroy a socket so that any exceptions are raised before
+        # we spawn a separate Python interpreter and loose this ability.
         test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))

@@ -38,7 +38,10 @@ def _log(type, message, *args, **kwargs):
     global _logger
     if _logger is None:
         import logging
+        handler = logging.StreamHandler()
         _logger = logging.getLogger('werkzeug')
+        _logger.addHandler(handler)
+        _logger.setLevel(logging.INFO)
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
 
