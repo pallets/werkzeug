@@ -101,9 +101,9 @@ all_by_module = {
                              'cached_property', 'MultiDict', 'import_string',
                              'dump_cookie', 'parse_cookie', 'unescape',
                              'DispatcherMiddleware'],
-    'werkzeug.http':        ['Accept', 'CacheControl', 'parse_accept_header',
-                             'parse_cache_control_header',
-                             'HTTP_STATUS_CODES'],
+    'werkzeug.http':        ['Accept', 'CacheControl', 'ETags', 'parse_etags',
+                             'parse_date', 'parse_cache_control_header',
+                             'parse_accept_header', 'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest',
                              'BaseReporterStream']
 }

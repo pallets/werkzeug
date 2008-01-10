@@ -3,24 +3,32 @@
     werkzeug.http
     ~~~~~~~~~~~~~
 
-    Various WSGI related helper functions and classes.
-
+    Various HTTP related helper functions and classes.
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import re
+import rfc822
+from datetime import datetime
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import new as md5
 try:
     set = set
+    frozenset = frozenset
 except NameError:
-    from sets import Set as set
-import re
+    from sets import Set as set, ImmutableSet as frozenset
 
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
 _token_chars = set("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                    '^_`abcdefghijklmnopqrstuvwxyz|~')
 _token = '[%s]' % ''.join(_token_chars).replace('-', '\\-')
-_cachecontrol_re = re.compile(r'(%s+)(?:=(?:(%s+|".*?")))?' % (_token, _token))
+_cachecontrol_re = re.compile(r'(%s+)(?:=(?:(%s+|".*?")))?' %
+                              (_token, _token))
+_etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
 
 HTTP_STATUS_CODES = {
@@ -250,10 +258,69 @@ class CacheControl(dict):
             dict.__repr__(self)
         )
 
-    # make cache property a staticmethod so that subclasses of
+    # make cache_property a staticmethod so that subclasses of
     # `CacheControl` can use it for new properties.
     cache_property = staticmethod(cache_property)
     del calls_update
+
+
+class ETags(object):
+    """
+    A set that can be used to check if one etag is present in a collection
+    of etags.
+    """
+
+    def __init__(self, strong_etags=None, weak_etags=None, star_tag=False):
+        self._strong = frozenset(not star_tag and strong_etags or ())
+        self._weak = frozenset(weak_etags or ())
+        self.star_tag = star_tag
+
+    def as_set(self, include_weak=False):
+        rv = set(self._strong)
+        if include_weak:
+            rv.update(self._weak)
+        return rv
+
+    def is_weak(self, etag):
+        return etag in self._weak
+
+    def contains_weak(self, etag):
+        return self.is_weak(etag) or self.contains(etag)
+
+    def contains(self, etag):
+        if self.star_tag:
+            return True
+        return etag in self._strong
+
+    def to_header(self):
+        if self.star_tag:
+            return '*'
+        return ', '.join(['"%s"' % item for item in self.as_set(True)])
+
+    def __call__(self, etag=None, data=None, include_weak=False):
+        if [etag, data].count(None) != 1:
+            raise TypeError('either tag or data required, but at least one')
+        if etag is None:
+            etag = generate_etag(data)
+        if include_weak:
+            if etag in self._weak:
+                return True
+        return etag in self._strong
+
+    def __nonzero__(self):
+        return bool(self.star_tag or self._strong)
+
+    def __str__(self):
+        return self.to_header()
+
+    def __iter__(self):
+        return iter(self._strong)
+
+    def __contains__(self, etag):
+        return self.contains(etag)
+
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, str(self))
 
 
 def parse_accept_header(value):
@@ -264,6 +331,8 @@ def parse_accept_header(value):
     Returns a new `Accept` object (basicly a list of ``(value, quality)``
     tuples sorted by the quality with some additional accessor methods)
     """
+    if not value:
+        return Accept(None)
     result = []
     for match in _accept_re.finditer(value):
         quality = match.group(2)
@@ -281,6 +350,8 @@ def parse_cache_control_header(value):
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
     """
+    if not value:
+        return CacheControl(None)
     result = {}
     for match in _cachecontrol_re.finditer(value):
         name, value = match.group(1, 2)
@@ -288,3 +359,50 @@ def parse_cache_control_header(value):
             value = value[1:-1]
         result[name] = value
     return CacheControl(result)
+
+
+def parse_etags(value):
+    """Parse and etag header.  Returns an `ETagSet`."""
+    strong = []
+    weak = []
+    end = len(value)
+    pos = 0
+    while pos < end:
+        match = _etag_re.match(value, pos)
+        if match is None:
+            break
+        is_weak, quoted, raw = match.groups()
+        if raw == '*':
+            return ETags(star_tag=True)
+        elif quoted:
+            raw = quoted
+        if is_weak:
+            weak.append(raw)
+        else:
+            strong.append(raw)
+        pos = match.end()
+    return ETags(strong, weak)
+
+
+def generate_etag(data, weak=False):
+    """Generate an etag for some data."""
+    etag = '"%s"' % md5(self.response_body).hexdigest()
+    if weak:
+        etag = 'W/' + etag
+    return etag
+
+
+def parse_date(value):
+    """
+    Parse one of the following date formats into a datetime object::
+
+        Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+        Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+        Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+
+    If parsing fails the return value is `None`.
+    """
+    if value:
+        t = rfc822.parsedate_tz(value)
+        if t is not None:
+            return datetime.utcfromtimestamp(rfc822.mktime_tz(t))

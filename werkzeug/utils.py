@@ -38,13 +38,8 @@ def _log(type, message, *args, **kwargs):
     global _logger
     if _logger is None:
         import logging
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s '
-                                               '%(message)s'))
         _logger = logging.getLogger('werkzeug')
-        _logger.addHandler(handler)
-    getattr(_logger, type)(message, *args, **kwargs)
+    getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
 
 class _ExtendedMorsel(Morsel):

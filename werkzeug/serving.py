@@ -56,7 +56,7 @@ class BaseRequestHandler(WSGIRequestHandler):
             self.get_handler().run(self.server.get_app())
 
     def log_request(self, code='-', size='-'):
-        _log('info', '%s - - [%s] %s %s\n',
+        _log('info', '%s -- [%s] %s %s',
             self.address_string(),
             self.requestline,
             code,
@@ -64,7 +64,7 @@ class BaseRequestHandler(WSGIRequestHandler):
         )
 
     def log_error(self, format, *args):
-        _log('error', 'Error:\n%s', format % args)
+        _log('error', 'Error: %s', format % args)
 
     def log_message(self, format, *args):
         _log('info', format, args)

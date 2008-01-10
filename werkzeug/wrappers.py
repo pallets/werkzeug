@@ -12,12 +12,9 @@
 import cgi
 import tempfile
 import urlparse
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import new as md5
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
-     parse_accept_header, parse_cache_control_header
+     parse_accept_header, parse_cache_control_header, parse_etags, \
+     parse_date, generate_etag
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -193,16 +190,12 @@ class BaseRequest(object):
 
     def accept_mimetypes(self):
         """List of mimetypes this client supports."""
-        if not 'HTTP_ACCEPT' in self.environ:
-            return Accept(None)
-        return parse_accept_header(self.environ['HTTP_ACCEPT'])
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT'))
     accept_mimetypes = cached_property(accept_mimetypes)
 
     def accept_charsets(self):
         """list of charsets this client supports."""
-        if not 'HTTP_ACCEPT_CHARSET' in self.environ:
-            return Accept(None)
-        return parse_accept_header(self.environ['HTTP_ACCEPT_CHARSET'])
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'))
     accept_charsets = cached_property(accept_charsets)
 
     def accept_encodings(self):
@@ -211,23 +204,39 @@ class BaseRequest(object):
         compression encodings such as gzip.  For charsets have a look at
         `accept_charset`.
         """
-        if not 'HTTP_ACCEPT_ENCODING' in self.environ:
-            return Accept(None)
-        return parse_accept_header(self.environ['HTTP_ACCEPT_ENCODING'])
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_ENCODING'))
     accept_encodings = cached_property(accept_encodings)
 
     def accept_languages(self):
         """List of languages this client accepts."""
-        if not 'HTTP_ACCEPT_LANGUAGE' in self.environ:
-            return Accept(None)
-        return parse_accept_header(self.environ['HTTP_ACCEPT_LANGUAGE'])
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_LANGUAGE'))
     accept_languages = cached_property(accept_languages)
 
     def cache_control(self):
         """A `CacheControl` object for the incoming cache control headers."""
-        if not 'HTTP_CACHE_CONTROL' in self.environ:
-            return CacheControl(None)
-        return parse_cache_control_header(self.environ['HTTP_CACHE_CONTROL'])
+        cache_control = self.environ.get('HTTP_CACHE_CONTROL')
+        return parse_cache_control_header(cache_control)
+    cache_control = cached_property(cache_control)
+
+    def if_match(self):
+        """An object containing all the etags in the `If-Match` header."""
+        return parse_etags(self.environ.get('HTTP_IF_MATCH'))
+    if_match = cached_property(if_match)
+
+    def if_none_match(self):
+        """An object containing all the etags in the `If-None-Match` header."""
+        return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
+    if_none_match = cached_property(if_none_match)
+
+    def if_modified_since(self):
+        """The parsed `If-Modified-Since` header as datetime object."""
+        return parse_date(self.environ.get('HTTP_IF_MODIFIED_SINCE'))
+    if_modified_since = cached_property(if_modified_since)
+
+    def if_unmodified_since(self):
+        """The parsed `If-Unmodified-Since` header as datetime object."""
+        return parse_date(self.environ.get('HTTP_IF_UNMODIFIED_SINCE'))
+    if_unmodified_since = cached_property(if_unmodified_since)
 
     def path(self):
         """Requested path."""
@@ -478,30 +487,35 @@ class BaseResponse(object):
         header is set.
 
         This does nothing if the request method in the request or enviorn is
-        anything but GET.
+        anything but GET or HEAD.
+
+        It does not remove the body of the response because that's something
+        the `__call__` function does for us automatically.
         """
         environ = getattr(request_or_environ, 'environ', request_or_environ)
         if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
             return
         self.headers['Date'] = http_date()
-        if 'etag' in self.headers:
-            if_none_match = environ.get('HTTP_IF_NONE_MATCH')
-            last_modified = self.headers.get('last-modified')
-            if_modified_since = environ.get('HTTP_IF_MODIFIED_SINCE')
-            # we only set the status code because the request object removes
-            # contents for 304 responses automatically on `__call__`
-            if (if_none_match and if_none_match == self.headers['etag']) or \
-               (if_modified_since and if_modified_since == last_modified):
-                self.status_code = 304
+        last_modified = parse_date(self.headers.get('last-modified'))
+        if_modified_since = parse_date(environ.get('HTTP_IF_MODIFIED_SINCE'))
+        if if_modified_since and last_modified and \
+           last_modified <= if_modified_since:
+            want_304 = True
+
+        etag = self.headers['etag']
+        if etag:
+            if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
+            if if_none_match:
+                want_304 = etag in if_none_match
+
+        if want_304:
+            self.status_code = 304
 
     def add_etag(self, overwrite=False, weak=False):
         """Add an etag for the current response if there is none yet."""
         if not overwrite and 'etag' in self.headers:
             return
-        etag = '"%s"' % md5(self.response_body).hexdigest()
-        if weak:
-            etag = 'W/' + etag
-        self.headers['ETag'] = etag
+        self.headers['Etag'] = generate_etag(self.response_body, weak)
 
     def close(self):
         """Close the wrapped response if possible."""
