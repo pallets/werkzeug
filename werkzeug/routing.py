@@ -888,6 +888,16 @@ class MapAdapter(object):
             return rule.endpoint, rv
         raise NotFound()
 
+    def test(self, path_info=None, method=None):
+        """Test if a rule would match."""
+        try:
+            self.match(path_info, method)
+        except RequestRedirect:
+            pass
+        except NotFound:
+            return False
+        return True
+
     def build(self, endpoint, values=None, method=None, force_external=False):
         """
         Build a new url hostname relative to the current one. If you

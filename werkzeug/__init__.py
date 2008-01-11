@@ -80,9 +80,6 @@ import sys
 
 
 all_by_module = {
-    # XXX: the following autoimport breaks on python2.4 for unknown
-    # reasons.  it looks like something triggers an infinite loop.
-    ##'werkzeug':             ['exceptions', 'routing', 'script'],
     'werkzeug.debug':       ['DebuggedApplication'],
     'werkzeug.local':       ['Local', 'LocalManager', 'LocalProxy'],
     'werkzeug.templates':   ['Template'],
@@ -109,6 +106,8 @@ all_by_module = {
                              'BaseReporterStream']
 }
 
+attribute_modules = ['exceptions', 'routing', 'script']
+
 
 object_origins = {}
 for module, items in all_by_module.iteritems():
@@ -116,7 +115,7 @@ for module, items in all_by_module.iteritems():
         object_origins[item] = module
 
 
-class _AutoModule(ModuleType):
+class module(ModuleType):
     """Automatically import objects from the modules."""
 
     def __getattr__(self, name):
@@ -125,11 +124,16 @@ class _AutoModule(ModuleType):
             for extra_name in all_by_module[module.__name__]:
                 setattr(self, extra_name, getattr(module, extra_name))
             return getattr(module, name)
+        elif name in attribute_modules:
+            __import__('werkzeug.' + name)
         return ModuleType.__getattribute__(self, name)
 
 
+# keep a reference to this module so that it's not garbage collected
 old_module = sys.modules['werkzeug']
-new_module = sys.modules['werkzeug'] = _AutoModule('werkzeug')
+
+# setup the new module and patch it into the dict of loaded modules
+new_module = sys.modules['werkzeug'] = module('werkzeug')
 new_module.__dict__.update({
     '__file__': __file__,
     '__path__': __path__,
