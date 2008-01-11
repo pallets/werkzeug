@@ -677,6 +677,65 @@ class ClosingIterator(object):
             callback()
 
 
+class Href(object):
+    """
+    Implements a callable that constructs URLs with the given base. The
+    function can be called with any number of positional and keyword
+    arguments which than are used to assemble the URL.  Works with URLs
+    and posix paths.
+
+    Positional arguments are appended as individual segments to
+    the path of the URL:
+
+    >>> href = Href('/foo')
+    >>> href('bar', 23)
+    '/foo/bar/23'
+    >>> href('foo', bar=23)
+    '/foo/foo?bar=23'
+
+    If any of the arguments (positional or keyword) evaluates to `None` it
+    will be skipped.  If no keyword arguments are given the last argument
+    can be a `dict` or `MultiDict` (or any other dict subclass), otherwise
+    the keyword arguments are used for the query parameters, cutting off
+    the first trailing underscore of the parameter name:
+
+    >>> href(is_=42)
+    '/foo?is=42'
+
+    Accessing attributes on the href object creates a new href object with
+    the attribute name as prefix:
+
+    >>> bar_href = href.bar
+    >>> bar_href("blub")
+    /foo/bar/blub
+    """
+
+    def __init__(self, base='./', charset='utf-8'):
+        if not base:
+            base = './'
+        elif not base.endswith('/'):
+            base += '/'
+        self.base = base
+        self.charset = charset
+
+    def __getattr__(self, name):
+        return Href(urlparse.urljoin(self.base, name), self.charset)
+
+    def __call__(self, *path, **query):
+        if not query:
+            if path and isinstance(path[-1], dict):
+                query = path[-1]
+                path = path[:-1]
+            else:
+                query = dict([(k.endswith('_') and k[:-1] or k, v)
+                              for k, v in query.iteritems()])
+        path = '/'.join(url_quote(x, self.charset) for x in path
+                        if x is not None).lstrip('/')
+        if query:
+            path += '?' + query
+        return urlparse.urljoin(self.base, path)
+
+
 class cached_property(object):
     """
     Descriptor implementing a "lazy property", i.e. the function

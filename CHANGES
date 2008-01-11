@@ -36,6 +36,7 @@ Version 0.2
   `bind_to_environ` you don't have to pass the path later.
 - the wsgiref subclass werkzeug uses for the dev server does not use direct
   sys.stderr logging any more but a logger called "werkzeug".
+- implemented `Href`.
 
 
 Version 0.1
