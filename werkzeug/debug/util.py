@@ -229,7 +229,7 @@ def get_frame_info(tb, context_lines=7, simple=False):
     pre_context, post_context = [], []
     context_line = raw_context_line = context_lineno = None
     try:
-        if not loader is None and hasattr(loader, 'get_source')
+        if not loader is None and hasattr(loader, 'get_source'):
             source = loader.get_source(modname) or ''
         else:
             source = file(fn).read()
