@@ -829,7 +829,7 @@ class MapAdapter(object):
         self.path_info = path_info or u''
         self.default_method = default_method
 
-    def dispatch(self, view_func, path_info, method=None):
+    def dispatch(self, view_func, path_info=None, method=None):
         """
         Does the complete dispatching process.  `view_func` is called with
         the endpoint and a dict with the values for the view.  It should
