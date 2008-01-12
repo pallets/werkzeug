@@ -324,10 +324,11 @@ class BaseResponse(object):
     Base response class.
     """
     charset = 'utf-8'
+    default_status = 200
     default_mimetype = 'text/plain'
 
-    def __init__(self, response=None, status=200, headers=None, mimetype=None,
-                 content_type=None):
+    def __init__(self, response=None, status=None, headers=None,
+                 mimetype=None, content_type=None):
         """
         Response can be any kind of iterable or string.  If it's a string it's
         considered being an iterable with one item which is the string passed.
@@ -360,6 +361,8 @@ class BaseResponse(object):
             content_type = mimetype
         if content_type is not None:
             self.headers['Content-Type'] = content_type
+        if status is None:
+            status = self.default_status
         if isinstance(status, (int, long)):
             self.status_code = status
         else:
