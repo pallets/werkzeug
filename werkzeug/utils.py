@@ -13,7 +13,6 @@ import os
 import sys
 import cgi
 import urllib
-import pkgutil
 import urlparse
 from Cookie import BaseCookie, Morsel
 from time import asctime, gmtime, time
@@ -1114,6 +1113,25 @@ def import_string(import_name):
     return getattr(__import__(module, None, None, [obj]), obj)
 
 
+def _iter_modules(path):
+    import pkgutil
+    if hasattr(pkgutil, 'iter_modules'):
+        for importer, modname, ispkg in pkgutil.iter_modules(path):
+            yield modname, ispkg
+        return
+    from inspect import getmodulename
+    from pydoc import ispackage
+    found = set()
+    for path in path:
+        for filename in os.listdir(path):
+            p = os.path.join(path, filename)
+            modname = getmodulename(filename)
+            if modname and modname != '__init__':
+                if modname not in found:
+                    found.add(modname)
+                    yield modname, ispackage(modname)
+
+
 def find_modules(import_path, include_packages=False):
     """
     Find all the modules below a package.  This can be useful to automatically
@@ -1125,7 +1143,7 @@ def find_modules(import_path, include_packages=False):
     if path is None:
         raise ValueError('%r is not a package' % import_path)
     basename = module.__name__ + '.'
-    for importer, modname, ispkg in pkgutil.iter_modules(path):
+    for modname, ispkg in _iter_modules(path):
         if ispkg and not include_packages:
             continue
         yield basename + modname
