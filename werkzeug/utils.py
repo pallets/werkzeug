@@ -13,6 +13,7 @@ import os
 import sys
 import cgi
 import urllib
+import pkgutil
 import urlparse
 from Cookie import BaseCookie, Morsel
 from time import asctime, gmtime, time
@@ -1111,6 +1112,23 @@ def import_string(import_name):
     else:
         return __import__(import_name)
     return getattr(__import__(module, None, None, [obj]), obj)
+
+
+def find_modules(import_path, include_packages=False):
+    """
+    Find all the modules below a package.  This can be useful to automatically
+    import all views / controllers so that their metaclasses / function
+    decorators have a chance to register themselves on the application.
+    """
+    module = import_string(import_path)
+    path = getattr(module, '__path__', None)
+    if path is None:
+        raise ValueError('%r is not a package' % import_path)
+    basename = module.__name__ + '.'
+    for importer, modname, ispkg in pkgutil.iter_modules(path):
+        if ispkg and not include_packages:
+            continue
+        yield basename + modname
 
 
 def create_environ(path='/', base_url=None, query_string=None, method='GET',

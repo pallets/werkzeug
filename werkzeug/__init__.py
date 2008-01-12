@@ -97,7 +97,7 @@ all_by_module = {
                              'append_slash_redirect', 'lazy_property',
                              'cached_property', 'MultiDict', 'import_string',
                              'dump_cookie', 'parse_cookie', 'unescape',
-                             'Href', 'DispatcherMiddleware'],
+                             'Href', 'DispatcherMiddleware', 'find_modules'],
     'werkzeug.http':        ['Accept', 'CacheControl', 'ETags', 'parse_etags',
                              'parse_date', 'parse_cache_control_header',
                              'is_resource_modified', 'parse_accept_header',

@@ -37,6 +37,7 @@ Version 0.2
 - the wsgiref subclass werkzeug uses for the dev server does not use direct
   sys.stderr logging any more but a logger called "werkzeug".
 - implemented `Href`.
+- implemented `find_modules`
 
 
 Version 0.1
