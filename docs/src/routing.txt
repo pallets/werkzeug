@@ -3,11 +3,12 @@ Routing System
 ==============
 
 When it comes to combining multiple controller or view functions (however
-you want to call them) you need a dispatcher. A simple way would be
-applying regular expression tests on the ``PATH_INFO`` and call registered
-callback functions that return the value then.
+you want to call them), you need a dispatcher.  A simple way would be
+applying regular expression tests on ``PATH_INFO`` and call registered
+callback functions that return the value.
 
-Werkzeug provides a much more powerful system, similar to `routes`_.
+Werkzeug provides a much more powerful system, similar to `Routes`_.
+
 
 Quickstart
 ==========
@@ -38,49 +39,51 @@ Here a simple example which could be the URL definition for a blog:
         start_response('200 OK', [('Content-Type', 'text/plain')])
         return ['Rule points to %r with arguments %r' % (endpoint, args)]
 
-So what does that do? First of all we create a new `Map` which stores a
-bunch of URL rules. Then we pass it a list of `Rule` objects.
+So what does that do?  First of all we create a new `Map` which stores a
+bunch of URL rules.  Then we pass it a list of `Rule` objects.
 
 Each `Rule` object is instantiated with a string that represents a rule and
 an endpoint which will be the alias for what view the rule represents.
-Multiple rules can have the same endpoint but should have different
-arguments to allow URL construction.
+Multiple rules can have the same endpoint but should have different arguments
+to allow URL construction.
 
-The format for the URL rules is straightforward but explained in detail below.
+The format for the URL rules is straightforward, but explained in detail below.
 
 Inside the WSGI application we bind the map to the current request which will
-return a new `MapAdapter`. This map adapter can then be used to match or
+return a new `MapAdapter`.  This map adapter can then be used to match or
 build domains for the current request.
 
 The `match` method can then either return a tuple in the form
 ``(endpoint, args)`` or raise one of the two exceptions `NotFound` or
-`RequestRedirect`. The first one is raised if there is no URL matching the
+`RequestRedirect`.  The first one is raised if there is no URL matching the
 current request, the latter if a rule was found that redirects to another
-rule. This for example happens if a user visits ``/feeds`` but only ``/feeds/``
+rule.  This, for example, happens if a user visits `/feeds` but only `/feeds/`
 is matching.
 
 Both of the exceptions are valid responses.  The `NotFound` exception is
-the same exception as the `NotFound` exception from the http exceptions
+the same exception as the `NotFound` exception from the HTTP exceptions
 module.
 
-The redirect test can be disabled but it's a good idea to keep it activated
+The redirect test can be disabled, but it's a good idea to keep it activated
 because it helps you create unique URLs.
+
 
 Rule Format
 ===========
 
-Rule strings basically are just normal url paths with placeholders in the
-format ``<converter(arguments):name>`` where converter and the arguments
-are optional. If no converter is defined the `default` converter is used
-which means `string` in the normal configuration.
+Rule strings basically are just normal URL paths with placeholders in the
+format ``<converter(arguments):name>``, where converter and the arguments
+are optional.  If no converter is defined, the `default` converter is used
+(which means `string` in the normal configuration).
 
-URL rules that end with a slash are branch URLs, others are leaves. If you
-have `strict_slashes` enabled which is the default, all branch URLs that
-are visited without a trailing slash will trigger a redirect to the same
-URL with that slash appended.
+URL rules that end with a slash are branch URLs, others are leaves.  If you
+have `strict_slashes` enabled (which is the default), all branch URLs that are
+visited without a trailing slash will trigger a redirect to the same URL with
+that slash appended.
 
 The list of converters can be extended, the default converters are explained
 below.
+
 
 Builtin Converters
 ==================
@@ -88,60 +91,56 @@ Builtin Converters
 Here a list of converters that come with Werkzeug:
 
 `string`
-    This converter is the default converter and accepts any string but
-    only one one path segment. Thus the string can not include a slash.
+    This converter is the default converter and accepts any string, but
+    only one path segment.  Thus, the string can not include a slash.
 
     Supported arguments:
 
-    - `minlength` - the minimum length of the string. must be greater
-      than 1.
+    - `minlength` - the minimum length of the string.  Must be greater than 1.
     - `maxlength` - the maximum length of the string.
     - `length` - the exact length of that string.
 
 
 `path`
-    Matches everything including a slash. No further configuration.
+    Matches everything including a slash.  No further configuration.
 
     .. admonition:: There be Dragons
 
         Important note.  The path converter is known to not sort properly.
-        as of werkzeug 0.1 we don't recommend using it because the next
-        werkzeug release will have new sorting semantics for `path`.
+        As of werkzeug 0.1, we don't recommend using it because the next
+        Werkzeug release will have new sorting semantics for `path`.
 
 `any`
-    Matches one of the items provided.  Items can either be python
+    Matches one of the items provided.  Items can either be Python
     identifiers or unicode strings:
 
     .. sourcecode:: python
 
         Rule('/<any(about, help, imprint, u'class'):page_name>')
 
-    **new in Werkzeug 0.2**
+    **New in Werkzeug 0.2**
 
 `int`
     This converter only accepts integer values.
 
     Supported arguments:
 
-    - `fixed_digits` - the number of fixed digits in the URL. If you
-      set this to ``4`` for example, the application will only match
-      if the url looks like ``/0001/``. The default is
-      variable length.
+    - `fixed_digits` - the number of fixed digits in the URL.  If you set this
+      to ``4``, for example, the application will only match if the URL looks
+      like ``/0001/``.  The default is variable length.
     - `min` - the minimal value.
     - `max` - the maximal value.
 
 `float`
-    Like `int` but it returns and takes a floating point number.
+    Like `int`, but it takes and returns a floating point number.
 
 .. admonition:: Important
 
-    Werkzeug evaluates converter arguments as if they are python method
-    calls. Thus you should **never** create rules from user submitted
-    data since they could insert arbitrary python code in the parameters
-    part.
+    Werkzeug evaluates converter arguments as if they are Python method calls.
+    Thus, you should **never** create rules from user submitted data since
+    they could insert arbitrary Python code in the parameters part.
 
-    As a matter of fact this is a legal definition and sets fixed_digits
-    to 2:
+    As a matter of fact this is a legal definition and sets fixed_digits to 2:
 
     .. sourcecode:: python
 
@@ -150,54 +149,56 @@ Here a list of converters that come with Werkzeug:
                  endpoint='view_image')
         ])
 
-    However evaluating python expressions as currently an implementation
+    However, evaluating Python expressions is currently an implementation
     detail and might be unavailable in the future.
+
 
 Map Options
 ===========
 
 Some of the configuration values are only stored on the `Map` instance since
-those affect all rules. Other are just defaults and can be overridden for
-each rule. Note that you have to specify all arguments beside the `rules`
+those affect all rules.  Others are just defaults and can be overridden for
+each rule.  Note that you have to specify all arguments beside the `rules`
 as keywords arguments!
 
 `rules`
-    First argument; can be positional argument. A sequence of rules or
-    rule factories for this map.
+    First argument; can be positional argument.  A sequence of rules or rule
+    factories for this map.
 
 `default_subdomain`
-    The default subdomain. If no subdomain is defined this is used. The
-    default value is no subdomain. This only takes effect if subdomains
-    are in use.
+    The default subdomain.  If no subdomain is defined, this one is used.  The
+    default value is no subdomain.  This only takes effect if subdomains are
+    in use.
 
 `charset`
-    The charset for all URLs. Defaults to `ascii`.
+    The charset for all URLs.  Defaults to `ascii`.
 
 `strict_slashes`
-    If this is enable werkzeug will take care of trailing slashes, otherwise
-    those are stripped before matching. Default is enabled.
+    If this is enabled, Werkzeug will take care of trailing slashes. Otherwise
+    those are stripped before matching.  Default is enabled.
 
 `redirect_defaults`
-    If there are defaults (explained below) and you don't want redirecting
+    If there are defaults (explained below) and you don't want redirecting,
     you can disable this rule.
 
 `converters`
     A dict of additional converters.
 
+
 Rule Options
 ============
 
-There are some options for `Rule` that change the way it behaves. Note that
-beside the rule string itself all arguments *must* be keyword arguments in
+There are some options for `Rule` that change the way it behaves.  Note that
+besides the rule string itself all arguments *must* be keyword arguments in
 order to not break the application on Werkzeug upgrades.
 
 `string`
     The first argument which is the rule format as explained above.
 
 `endpoint`
-    The endpoint for this rule. This can be anything. A reference to a
-    function, a string, a number etc. The preferred way is using a string
-    as endpoint because you'll use the endpoint for url generation.
+    The endpoint for this rule.  This can be anything; a reference to a
+    function, a string, a number etc.  The preferred way is using a string as
+    endpoint because you'll use the endpoint for URL generation.
 
 `defaults`
     An optional dict with defaults for other rules with the same endpoint.
@@ -210,14 +211,14 @@ order to not break the application on Werkzeug upgrades.
             Rule('/all/<int:page_number>', endpoint='all_entries')
         ])
 
-    If a user now visits ``http://example.com/all/1`` he will be redirected
-    to ``http://example.com/all/``. If `redirect_defaults` is disabled on
-    the `Map` instance this will only affect the URL generation.
+    If a user now visits ``http://example.com/all/1`` he will be redirected to
+    ``http://example.com/all/``.  If `redirect_defaults` is disabled on the
+    `Map` instance, this will only affect URL generation.
 
 `subdomain`
-    The subdomain rule string for this rule. If not specified the rule only
-    matches for the `default_subdomain` of the map. If the map is not bound
-    to a subdomain this feature is disabled.
+    The subdomain rule string for this rule.  If not specified, the rule only
+    matches for the `default_subdomain` of the map.  If the map is not bound
+    to a subdomain, this feature is disabled.
 
     Can be useful if you want to have user profiles on different subdomains
     and all subdomains are forwarded to your application:
@@ -230,31 +231,32 @@ order to not break the application on Werkzeug upgrades.
         ])
 
 `methods`
-    A sequence of http methods this rule applies to. If not specified, all
-    methods are allowed. For example this can be useful if you want different
-    endpoints for `POST` and `GET`.
+    A sequence of HTTP methods this rule applies to.  If not specified, all
+    methods are allowed.  For example, this can be useful if you want
+    different endpoints for `GET` and `POST`.
 
 `strict_slashes`
-    Override the `Map` setting for `strict_slashes` only for this rule. If
-    not specified the `Map` setting is used.
+    Override the `Map` setting for `strict_slashes` only for this rule.  If
+    not specified, the `Map` setting is used.
 
 `build_only`
-    Set this to true and the rule will never match but will create a URL
-    that can be build. This is useful if you have resources on a subdomain
-    or folder that are not handled by the WSGI application (like static data)
+    Set this to `True` and the rule will never match but will create a URL
+    that can be built.  This is useful if you have resources on a subdomain
+    or folder that are not handled by the WSGI application (like static data).
+
 
 Rule Factories
 ==============
 
-As soon as you have more complex URL setups it's a good idea to use the
-rule factories provided. They automate some of the repetitive tasks. They
-also allow you to span rules over multiple python modules and combining
-them to one map.
+As soon as you have more complex URL setups it's a good idea to use the rule
+factories provided.  They automate some of the repetitive tasks.  They also
+allow you to span rules over multiple Python modules and combining them to one
+map.
 
 `Subdomain`
-    All URLs provided by this factory have the subdomain set to a
-    specific domain. For example if you want to use the subdomain for
-    the current language this can be a good setup:
+    All URLs provided by this factory have the subdomain set to a specific
+    domain.  For example, if you want to use the subdomain for the current
+    language, this can be a good setup:
 
     .. sourcecode:: python
 
@@ -269,12 +271,12 @@ them to one map.
             ])
         ])
 
-    All the rules except of the ``'#select_language'`` endpoint will now
-    listen on a two letter long subdomain that helds the language code
-    for the current request.
+    All the rules except for the ``'#select_language'`` endpoint will now
+    listen on a two letter long subdomain that helds the language code for the
+    current request.
 
 `Submount`
-    Like `Subdomain` but prefixes the URL rule with a given string:
+    Like `Subdomain`, but prefixes the URL rule with a given string:
 
     .. sourcecode:: python
 
@@ -292,7 +294,7 @@ them to one map.
 
 `EndpointPrefix`
     Prefixes all endpoints (which must be strings for this factory) with
-    another string. This can be useful for the blog example above:
+    another string.  This can be useful in the blog example above:
 
     .. sourcecode:: python
 
@@ -306,80 +308,79 @@ them to one map.
             ])])
         ])
 
+
 Matching and Building
 =====================
 
-Once the URLs are set up you usually want to connect your map with the views
-or controllers or something similar. There are also ways to generate URLs
-by their endpoint and provided parameters.
+Once the URLs are set up, you usually want to connect your map with the views
+or controllers or something similar.  There are also ways to generate URLs by
+their endpoint and provided parameters.
 
 Binding a Map to a Request
 --------------------------
 
-Because Werkzeug routing is subdomain and aware you have to bind the map to
-maybe changing request variables. This process is called `binding` and returns
-a new object which is called an `MapAdapter` that knows how to match and build
-URLs for the current request.
+Because Werkzeug routing is subdomain-aware, you have to bind the map to
+possibly changing request variables.  This process is called "binding" and
+returns a new object which is called a `MapAdapter` that knows how to match
+and build URLs for the current request.
 
 There are basically two ways to bind a request:
 
 `bind(server_name, script_name=None, subdomain=None, url_scheme='http', path_info=None)`
-    Return a new `MapAdapter` with the details specified to the call. Note
-    that `script_name` will default to ``'/'`` if not further specified
-    or `None`. The `server_name` at least is a requirement because the HTTP
-    RFC requires absolute URLs for redirects and so all redirect exceptions
-    raised by Werkzeug will contain the full canonical URL.
+    Return a new `MapAdapter` with the details specified to the call.  Note
+    that `script_name` will default to ``'/'`` if not further specified or
+    `None`.  The `server_name` at least is a requirement because the HTTP RFC
+    requires absolute URLs for redirects and so all redirect exceptions raised
+    by Werkzeug will contain the full canonical URL.
 
-    **new in Werkzeug 0.2**: if no path_info is passed to match() it will
-    use the default path info passed to bind.  While this doesn't really make
-    sense for manual bind calls, it's useful if you bind a map to a WSGI
+    **New in Werkzeug 0.2:** If no `path_info` is passed to `match` it
+    will use the default path info passed to bind.  While this doesn't really
+    make sense for manual bind calls, it's useful if you bind a map to a WSGI
     environment which already contains the path info.
 
     `subdomain` will default to the `default_subdomain` for this map if not
-    defined. If there is no `default_subdomain` you cannot use the subdomain
+    defined.  If there is no `default_subdomain` you cannot use the subdomain
     feature.
 
 `bind_to_environ(environ, server_name=None, subdomain=None)`
-    Like `bind` but you can pass it an WSGI environment and it will fetch
-    the information from that directory. Note that because of limitations in
-    the protocol there is no way to get the current subdomain and real
-    `server_name` from the environment. If you don't provide it, Werkzeug
-    will use `SERVER_NAME` and `SERVER_PORT` (or `HTTP_HOST` if provided)
-    as used `server_name` with disabled subdomain feature.
+    Like `bind`, but you can pass it a WSGI environment and it will fetch the
+    information from that directory.  Note that because of limitations in the
+    protocol there is no way to get the current subdomain and real
+    `server_name` from the environment.  If you don't provide it, Werkzeug
+    will use `SERVER_NAME` and `SERVER_PORT` (or `HTTP_HOST`, if provided) as
+    `server_name` with disabled subdomain feature.
 
-    If `subdomain` is `None` but an environment and a server name is
-    provided it will calculate the current subdomain automatically.
-    Example: `server_name` is ``'example.com'`` and the `SERVER_NAME`
-    in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
-    subdomain will be ``'staging.dev'``.
+    If `subdomain` is `None` but an environment and a server name is provided,
+    it will calculate the current subdomain automatically.  Example:
+    `server_name` is ``'example.com'`` and the `SERVER_NAME` in the WSGI
+    `environ` is ``'staging.dev.example.com'``, the calculated subdomain will
+    be ``'staging.dev'``.
 
-    **new in Werkzeug 0.2**: if the object passed as environ as an environ
-    attribute, the value of this attribute is used instead.  This allows
-    you to pass request objects.  Additionally `PATH_INFO` is now passed
-    to the `bind()` method too.
-
+    **New in Werkzeug 0.2:**  If the object passed as `environ` is an
+    `environ` attribute, the value of this attribute is used instead.  This
+    allows you to pass request objects.  Additionally, `PATH_INFO` is now
+    passed to the `bind` method, too.
 
 Matching URLs
 -------------
 
-Once you have a `MapAdapter` object you can use the `match` method provided
-to match a given `PATH_INFO` against the map adapter. The usage is simple:
-you just pass the `adapter.match` method the current path info as well as
-the method (which defaults to `GET`). The following things can then happen:
+Once you have a `MapAdapter` object you can use its `match` method to match a
+given `PATH_INFO` against the map adapter.  The usage is simple: You just pass
+the current path info as well as the HTTP method (which defaults to `GET`) to
+the `adapter.match` method.  The following things can happen then:
 
-- you receive a `NotFound` exception that indicates that no URL is matching.
+- You receive a `NotFound` exception that indicates that no URL is matching.
   A `NotFound` exception is also a valid response object.
 
-- you receive a `RequestRedirect` exception with a `new_url` attribute. This
+- You receive a `RequestRedirect` exception with a `new_url` attribute.  This
   exception is used to notify you about a request Werkzeug requests by your
-  WSGI application. This is for example the case if you request ``/foo``
+  WSGI application.  This is, for example, the case when you request ``/foo``,
   although the correct URL is ``/foo/``.  You can use the `RequestRedirect`
   instance as response object.
 
-- you get a tuple in the form ``(endpoint, arguments)`` when there is a
-  match.
+- You get a tuple in the form ``(endpoint, arguments)`` when there is a match.
 
-Here a small example for matching:
+Here is a small example for matching:
 
 .. sourcecode:: pycon
 
@@ -395,7 +396,7 @@ Here a small example for matching:
     >>> urls.match("/downloads/42")
     ('downloads/show', {'download_id': 42})
 
-And here what happens on redirect and missing URLs:
+And here is what happens on redirect and missing URLs:
 
 .. sourcecode:: pycon
 
@@ -416,23 +417,23 @@ The second parameter to the `match` method can be a string that specifies
 which HTTP method is used for matching.  If not defined, `GET` is assumed.
 Rules may match differently for different methods.
 
-**new in Werkzeug 0.2** if the path info is not passed to the match
-method the default path info of the map is used (defaults to the root
-URL if not defined explicitly).
+**New in Werkzeug 0.2:** If the path info is not passed to the match method,
+the default path info of the map is used (defaults to the root URL, if not
+defined explicitly).
 
 Building URLs
 -------------
 
-Building URLs works pretty much the other way round. Instead of `match`
-you call `build` and pass it the endpoint and a dict of arguments for the
+Building URLs works pretty much the other way round.  Instead of `match` you
+call `build` and pass it the endpoint and a dict of arguments for the
 placeholders.
 
-The `build` function also accepts a third argument (`force_external`)
-which, if you set it to `True` will force external URLs. Per default external
-URLs (include the server name) will only be used if the target URL is on a
-different subdomain.
+The `build` method also accepts a third argument (`force_external`) which, if
+set to `True`, will force external URLs (which include the server name).  Per
+default, external URLs will only be used if the target URL is on a different
+subdomain.
 
-With the same map as in the example above this code generates some target
+With the same map as in the example above, this code generates some target
 URLs:
 
 .. sourcecode:: pycon
@@ -444,37 +445,37 @@ URLs:
     >>> urls.build("downloads/show", {'download_id': 42}, force_external=True)
     'http://example.com/downloads/42'
 
-Because URLs cannot contain non ASCII data you will always get bytestrings
-back. Non ASCII characters are urlencoded with the charset defined on the
+Because URLs cannot contain non-ASCII data, you will always get byte strings
+back.  Non-ASCII characters are URL-encoded with the charset defined on the
 map instance.
 
-Additional values are converted to unicode and appended to the URL as
-URL querystring parameters:
+Additional values are converted to unicode and appended to the URL as URL
+query string parameters:
 
 .. sourcecode:: pycon
 
     >>> urls.build("index", {'q': 'My Searchstring'})
     '/?q=My+Searchstring'
 
-If a rule does not exist when building a `BuildError` exception is raised.
+If a rule does not exist when building, a `BuildError` exception is raised.
 
-**new in Werkzeug 0.2**: The build method accepts an argument called
-`method` which allows you to specify the method you want to have an URL
-builded for if you have different methods for the same endpoint specified.
+**New in Werkzeug 0.2:** The `build` method accepts an argument called
+`method`, which allows you to specify the method you want to have an URL built
+for (if you have different methods for the same endpoint specified).
 
 
 Dispatching
 ===========
 
-The usual way to bind endpoints to controllers / view functions is a dict
-or using (simplified) import paths as endpoint names.  Because the
-dispatching process roughly works the same all the time there is a special
-`dispatch` method:
+The usual way to bind endpoints to controllers/view functions is a dict or
+using (simplified) import paths as endpoint names.  Because the dispatching
+process roughly works the same all the time, there is a special `dispatch`
+method:
 
 .. sourcecode:: python
 
-    from werkzeug.routing import Map
     from werkzeug.exceptions import HTTPException
+    from werkzeug.routing import Map
 
     url_map = Map(...)
     views = {
@@ -493,20 +494,20 @@ dispatching process roughly works the same all the time there is a special
         return response(environ, start_response)
 
 
-**Important Note**: the function passed to dispatch has to return a response
+**Important Note:** The function passed to `dispatch` has to return a response
 object or a WSGI application that already did the view processing.  That means
 you should not return a response that has not processed the client data or
-will raise a `HTTPException`.  Otherwise the try/except block is bypassed
-becaue the execution will happen in the server itself.
+will raise a `HTTPException`.  Otherwise the `try`/`except` block is bypassed
+because the execution will happen on the server itself.
 
 
 Custom Converters
 =================
 
-You can easily add custom converters. The only thing you have to do is to
-subclass `BaseConverter` and pass that new converter to the map. A converter
-has to provide two public methods: `to_python` and `to_url` and a member that
-represents a regular expression. Here is a small example:
+You can easily add custom converters.  The only thing you have to do is to
+subclass `BaseConverter` and pass that new converter to the map.  A converter
+has to provide two public methods: `to_python` and `to_url`, as well as a
+member that represents a regular expression.  Here is a small example:
 
 .. sourcecode:: python
 
@@ -535,7 +536,7 @@ represents a regular expression. Here is a small example:
         Rule('/vote/<bool(randomify=True):foo>', endpoint='foo')
     ], converters={'bool': BooleanConverter})
 
-If you want that converter to be the default converter name it ``'default'``.
+If you want that converter to be the default converter, name it ``'default'``.
 
 
-.. _routes: http://routes.groovie.org/
+.. _Routes: http://routes.groovie.org/

@@ -3,9 +3,10 @@ How WSGI Works
 ==============
 
 New to Werkzeug or even `WSGI`_? This part of the documentation covers the
-low level parts of Werkzeug that are in fact just plain WSGI.
+low-level parts of Werkzeug that are in fact just plain WSGI.
 
 .. _WSGI: http://www.python.org/dev/peps/pep-0333/
+
 
 What is WSGI?
 =============
@@ -13,39 +14,40 @@ What is WSGI?
 Basically WSGI is an interface between web servers and web applications.
 We'll explain the mechanics of WSGI below, but to sum it up WSGI lets you
 develop rich web application without the need to know about your server
-environment. A WSGI application runs on standalone servers, on any
-webserver out there, via `mod_python`, `FastCGI`, `CGI`, basically everything
-that runs Python.
+environment.  A WSGI application runs on standalone servers, on any
+webserver out there, via `mod_python`, `FastCGI`, `SCGI`, `CGI`, basically
+everything that runs Python.
 
 But there's much more; WSGI is more than just HTTP! You and other developers
 can extend WSGI by adding new features to it, filtering input or output,
-adding rich debugging systems, automatically send e-mails to your mailer
-as soon as an unhandled application error occurs. You can add session
-features to it etc.
+adding rich debugging systems, automatically send e-mails to your mailer as
+soon as an unhandled application error occurs. You can add session features to
+it etc.
 
-There are few things you cannot do with WSGI, and Werkzeug itself is just
-a tiny wrapper around WSGI, thus you don't lose any functionally unlike some
-other implementations that abstract more. If you don't require all the power
-of WSGI you can choose a higher level implementation like Django.
+There are few things you cannot do with WSGI, and Werkzeug itself is just a
+tiny wrapper around WSGI, thus you don't lose any functionally unlike some
+other implementations that abstract more.  If you don't require all the power
+of WSGI you can choose a higher-level implementation like Django.
+
 
 Writing a WSGI Application
 ==========================
 
-The first part is about how to use WSGI without Werkzeug. You can read
+The first part is about how to use WSGI without Werkzeug.  You can read
 the PEP (:pep:333) that defines it, but we'll do a very brief summary:
 
-- a WSGI application is just a callable object that is passed an
-  `environ` - a dict that contains request data, and a `start_response`
-  function that is called to start sending the response.
+- A WSGI application is just a callable object that is passed an `environ` -
+  a dict that contains request data, and a `start_response` function that is
+  called to start sending the response.
 
-  In order to send data to the server all you have to do is to call
+  In order to send data to the server, all you have to do is to call
   `start_response` and return an iterable.
 
 - `environ` is a plain old CGI environment (contains values like `PATH_INFO`)
-  in form of a python dict with some extensions like `wsgi.input` that
+  in form of a Python dict with some extensions like `wsgi.input` that
   represent the input stream.
 
-- middlewares (we'll cover them later) can add additional data to the
+- Middlewares (we'll cover them later) can add additional data to the
   `environ`.
 
 So, here's a simple application:
@@ -56,12 +58,12 @@ So, here's a simple application:
         start_response('200 OK', [('Content-Type', 'text/html')])
         return ['Hello World!']
 
-Now you have an application, but how can you start it? From Python 2.5,
-the stdlib contains a WSGI server called `wsgiref`, for Python 2.4 and lower
-you have to install that on your own. There are also other standalone
-implementations which you can find online at `wsgi.org`_.
+Now you have an application, but how can you start it? From Python 2.5, the
+stdlib contains a WSGI server called `wsgiref`; for Python 2.4 and lower you
+have to install that on your own.  There are also other standalone
+implementations which you can find at `wsgi.org`_.
 
-So to start the application as standalone server all you have to do is adding
+To start the application as standalone server, all you have to do is adding
 this start hook to the file:
 
 .. sourcecode:: python
@@ -74,9 +76,9 @@ this start hook to the file:
 When you now start the application you will see ``Hello World!`` on
 ``http://localhost:5000/``.
 
-The `__name__` hook is a good idea so that you can use the module for other modules
-like flup (provides a bridge to Apache and other webservers via FastCGI and
-similar protocols) without altering the code.
+The `__name__` hook is a good idea so that you can use the module for other
+modules like flup (provides a bridge to Apache and other webservers via
+FastCGI and similar protocols) without altering the code.
 
 .. _wsgi.org: http://www.wsgi.org/
 
@@ -84,8 +86,8 @@ similar protocols) without altering the code.
 Adding Interactive Elements
 ===========================
 
-Let's extend the example from above so that we say ``Hello John`` if the
-user visits ``http://localhost:5000/?name=John``:
+Let's extend the example from above so that we say ``Hello John`` if the user
+visits ``http://localhost:5000/?name=John``:
 
 .. sourcecode:: python
 
@@ -102,15 +104,15 @@ Basically we just combined the python CGI module with our WSGI application.
 That Sucks!
 ===========
 
-Indeed it does. It's neither fun to work with nor does it look clean and
-simple. And that's where utilities like Werkzeug come into play. Werkzeug
-for example lets you easily create unicode aware applications (in fact it
+Indeed it does.  It's neither fun to work with nor does it look clean and
+simple.  And that's where utilities like Werkzeug come into play. Werkzeug,
+for example, lets you easily create unicode-aware applications (in fact it
 forces you to use unicode internally) and avoid repetitive work.
 
 In this example we want to connect `/` with an index function and `/about`
-with an about function, both returning different content. To keep the
-example simple we just want to use a dict that maps to that and take advantage
-or some of the Werkzeug features:
+with an about function, both returning different content.  To keep the example
+simple we just want to use a dict that maps to that and take advantage or some
+of the Werkzeug features:
 
 .. sourcecode:: python
 
@@ -160,11 +162,11 @@ or some of the Werkzeug features:
             resp = views[req.path](req)
         return resp(environ, start_response)
 
-Alright. That's quite a lot of code but let's go step by step through it.
+Alright. That's quite a lot of code but let's go through it step-by-step.
 
-The first thing we do is importing the stuff we use. In that example we need
-the `escape` function from the `cgi` module that SGML escapes strings. This
-is required to avoid XSS attacks to the application. The next import gives
+The first thing we do is importing the stuff we use.  In that example we need
+the `escape` function from the `cgi` module that SGML escapes strings.  This
+is required to avoid XSS attacks to the application.  The next import gives
 us the `BaseRequest` and `BaseResponse` objects we then subclass so that we
 can extend them later in one go if we want extra features.
 
@@ -174,12 +176,12 @@ the others are bound to urls in the `views` dict.
 
 The WSGI application itself just creates a request object and looks up the
 callbacks or proceeds with the `not_found` function if there is no matching
-URL. The return value of the response is then called as WSGI application.
+URL.  The return value of the response is then called as WSGI application.
 
-Because `Response` objects behave like WSGI applications this is possible.
+This is possible because `Response` objects behave like WSGI applications.
 
-Of course this example is still bad code, in real applications you would use
-one of the template engines that are available for Python. But for the simple
+Of course, this example is still bad code; in real applications you would use
+one of the template engines that are available for Python.  But for the simple
 example that should be enough.
 
 
@@ -187,8 +189,8 @@ Debugging It
 ============
 
 You probably have had a typo in one of the examples above. In that case you
-don't have to use the error output from the wsgiref server. There are some
-excellent debugging systems for WSGI, one of them is shipped with werkzeug
+don't have to use the error output from the `wsgiref` server. There are some
+excellent debugging systems for WSGI, and one of them is shipped with Werkzeug
 and explained in the `debug system`_ docs.
 
 .. _debug system: debug.txt

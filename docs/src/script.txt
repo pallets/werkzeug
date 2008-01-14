@@ -2,19 +2,19 @@
 Management Script Utilities
 ===========================
 
-Most of the time you have recurring tasks while writing an application such
-as starting up an interactive python interpreter with some prefilled imports,
+Most of the time you have recurring tasks while writing an application such as
+starting up an interactive Python interpreter with some prefilled imports,
 starting the development server, initializing the database or something
 similar.
 
-For that purpose werkzeug provides the `werkzeug.script` module which helps
+For that purpose Werkzeug provides the `werkzeug.script` module which helps
 you writing such scripts.
 
 
 Basic Usage
 ===========
 
-The following snippet is roughly the same in every werkzeug script:
+The following snippet is roughly the same in every Werkzeug script:
 
 .. sourcecode:: python
 
@@ -27,15 +27,15 @@ The following snippet is roughly the same in every werkzeug script:
     if __name__ == '__main__':
         script.run()
 
-Starting this script now does nothing because no actions are defined.
-An action is a function in the same module starting with ``"action_"``
-which takes a number of arguments where every argument has a default.  The
-type of the default value specifies the type of the argument.
+Starting this script now does nothing because no actions are defined yet.  An
+action is a function in the same module starting with ``"action_"`` which
+takes a number of arguments where every argument has a default.  The type of
+the default value specifies the type of the argument.
 
-Arguments can then be passed by position or using ``--name=value`` from
-the shell.
+Arguments can then be passed by position or using ``--name=value`` from the
+shell.
 
-Because a runserver and shell command is pretty common there are two
+Because a `runserver` and `shell` command is pretty common, there are two
 factory functions that create such commands:
 
 .. sourcecode:: python
@@ -58,26 +58,26 @@ The script from above can be used like this from the shell now::
     $ ./manage.py runserver -p 4000
     $ ./manage.py shell
 
-As you can see it's possible to pass parameters as positional argument
-or as named parameter, pretty much like python function calls.
+As you can see it's possible to pass parameters as positional arguments
+or as named parameters, pretty much like Python function calls.
 
-With Werkzeug 0.1 calling of boolean arguments worked a bit different
-there you had to call ``--use-reloader yes``.
+With Werkzeug 0.1, calling of boolean arguments worked a bit different, so you
+had to call ``--use-reloader yes``.
 
 
 Writing Actions
 ===============
 
-Writing new action functions is pretty straight forward.  All you have to
-do is to name the function "action_COMMAND" and it will be available as
-"./manage.py COMMAND".  The docstring of the function is used for the
-help screen and all arguments must have defaults the run function can
+Writing new action functions is pretty straightforward.  All you have to do is
+to name the function `action_COMMAND` and it will be available as
+`./manage.py COMMAND`.  The docstring of the function is used for the help
+screen and all arguments must have defaults which the `run` function can
 inspect.  As a matter of fact you cannot use ``*args`` or ``**kwargs``
 constructs.
 
-An additional feature is the definition of tuples as defaults.  The first
-item in the tuple could be a short name for the command and the second
-the default value:
+An additional feature is the definition of tuples as defaults.  The first item
+in the tuple could be a short name for the command and the second the default
+value:
 
 .. sourcecode:: python
 
@@ -89,15 +89,15 @@ the default value:
 Action Discovery
 ================
 
-Per default the run function looks up variables in the current locals.  That
-means if no arguments are provided it implicitly assumes this call:
+Per default, the `run` function looks up variables in the current locals.
+That means if no arguments are provided, it implicitly assumes this call:
 
 .. sourcecode:: python
 
     script.run(locals(), 'action_')
 
-If you don't want to use a action discovery you can set the prefix to an empty
-string and pass a dict with functions:
+If you don't want to use an action discovery, you can set the prefix to an
+empty string and pass a dict with functions:
 
 .. sourcecode:: python
 

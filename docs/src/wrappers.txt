@@ -9,8 +9,8 @@ Request
 =======
 
 When a page is requested, you create a request object that contains metadata
-about the request. You can then pass the request object as argument to the view
-functions or use it inside the application callable.
+about the request.  You can then pass the request object as argument to the
+view functions or use it inside the application callable.
 
 .. sourcecode:: python
 
@@ -34,12 +34,11 @@ Class Methods
 -------------
 
 `from_values(path, base_url, query_string, **options)`
-    Create a new request object based on the values provided.  If
-    environ is given missing values are filled from there.  This method
-    is useful for small scripts when you need to simulate a request
-    from an url.  Do not use this method for unittesting, there is a
-    full featured client object in `werkzeug.test` that allows to create
-    multipart requests etc.
+    Create a new request object based on the values provided.  If environ is
+    given missing values are filled from there.  This method is useful for
+    small scripts when you need to simulate a request from an URL.  Do not use
+    this method for unittesting, there is a full featured client object in
+    `werkzeug.test` that allows to create multipart requests etc.
 
     This accepts the same options as the `create_environ` function from the
     utils module and additionally an `environ` parameter that can contain
@@ -66,13 +65,12 @@ Members
 
 `path`
     The current path requested, relative to the position where the WSGI
-    application is mounted (`PATH_INFO`). It will contain a leading slash
-    and will be at least a string with a single slash when accessing the
-    URL root.
+    application is mounted (`PATH_INFO`).  It will contain a leading slash and
+    will be at least a string with a single slash when accessing the URL root.
 
 `script_root`
-    The root path for the script (`SCRIPT_NAME`).  Does not contain a
-    trailing slash.
+    The root path for the script (`SCRIPT_NAME`).  Does not contain a trailing
+    slash.
 
 `url`
     The full URL for the current request.
@@ -90,81 +88,81 @@ Members
     The current hostname, without scheme.
 
 `is_secure`
-    True if this is an https request.
+    True if this is an HTTPS request.
 
 `is_multithread`
-    True if this request was created in an multithreaded environment.
+    True if this request was created in a multithreaded environment.
 
-    *new in Werkzeug 0.2*
+    *New in Werkzeug 0.2*
 
 `is_multiprocess`
-    True if this request was created in an forking environment.
+    True if this request was created in a forking environment.
 
-    *new in Werkzeug 0.2*
+    *New in Werkzeug 0.2*
 
 `is_run_once`
-    True if this request was created on the command line, a CGI script
-    or a similar environment.
+    True if this request was created on the command line, a CGI script or a
+    similar environment.
 
-    *new in Werkzeug 0.2*
+    *New in Werkzeug 0.2*
 
 `method`
-    The request method. `GET`, `POST` etc.
+    The request method.  `GET`, `POST` etc.
 
 `args`
-    A dictionary-like object containing all given HTTP GET parameters.
-    See the `MultiDict` documentation in the `utils`_ section.
+    A dictionary-like object containing all given HTTP GET parameters.  See
+    the `MultiDict` documentation in the `utils`_ section.
 
 `form`
-    A dictionary-like object containing all given HTTP POST parameters.
-    See the `MultiDict` documentation in the `utils`_ section.
+    A dictionary-like object containing all given HTTP POST parameters.  See
+    the `MultiDict` documentation in the `utils`_ section.
 
-    This dict does not contain uploaded files, see `files` therefore.
+    This dict does not contain uploaded files, see `files` regarding that.
 
 `values`
-    An immutable dictionary-like object containing both the `args`
-    and `form` values. See the `CombinedMultiDict` documentation in
-    the `utils`_ section.
+    An immutable dictionary-like object containing both the `args` and `form`
+    values.  See the `CombinedMultiDict` documentation in the `utils`_
+    section.
 
 `cookies`
     A dictionary with the submitted cookie values.
 
 `files`
-    A dictionary-like object containing all uploaded files. Each key in
-    `files` is the name from the ``<input type="file" name="" />``. Each
-    value in `files` is a werkzeug `FieldStorage` object with the following
+    A dictionary-like object containing all uploaded files.  Each key in
+    `files` is the name from the ``<input type="file" name="" />``.  Each
+    value in `files` is a Werkzeug `FieldStorage` object with the following
     members:
 
     - `filename` - The name of the uploaded file, as a Python string.
     - `type` - The content type of the uploaded file.
     - `data` - The raw content of the uploaded file.
-    - `read()` - reads from the stream
+    - `read()` - Read from the stream.
 
-    Note that `files` will only contain data if the request method was
-    POST and the ``<form>`` that posted to the request had
-    ``enctype="multipart/form-data"``. Otherwise, it will be empty.
+    Note that `files` will only contain data if the request method was POST
+    and the ``<form>`` that posted to the request had
+    ``enctype="multipart/form-data"``.  It will be empty otherwise.
 
-    See the `MultiDict` documentation in the `utils`_ section for more
-    details about the used data structure.
+    See the `MultiDict` documentation in the `utils`_ section for more details
+    about the used data structure.
 
 `environ`
     The WSGI environment used to create the request object.
 
 `stream`
     The buffered stream with incoming data from the webbrowser if the
-    submitted data was not multipart or urlencoded form data.
+    submitted data was not multipart or URL-encoded form data.
 
 `input_stream`
     The input stream provided by the client.  Used internally by the form
     data parser.  Reading from this stream must never be mixed with
-    accessing `stream`, `data`, `files`, or `form` because then it is not
+    accessing `stream`, `data`, `files`, or `form`, because then it's not
     guaranteed that more data is requested from the client than expected.
     Never read beyond ``environ['CONTENT_LENGTH']``.
 
 `data`
-    Accessing this the first time reads the whole `stream` and stores it.
-    Keep in mind that this does not read the whole wsgi input stream like
-    django does.
+    Accessing this the first time reads the whole `stream` and stores it. Keep
+    in mind that this does not read the whole WSGI input stream like Django
+    does.
 
 `accept_mimetypes``
     List of mimetypes this client supports.
@@ -178,30 +176,30 @@ Members
     `accept_encodings` contains compression encodings such as gzip.
 
 `accept_languages`
-    List of langauges this client accepts.
+    List of languages this client accepts.
 
 `remote_addr`
-    The remote address for the user that created this request.  If the
-    class variable `is_behind_proxy` is set to `True` (either by subclassing
-    the process or overriding this variable on the instance) it will try
-    to get the value from the `X_HTTP_FORWARDED_FOR` header.  Keep in mind
-    that this is disabled by default because unless you are really behind
-    a proxy this is a security problem.
+    The remote address for the user that created this request.  If the class
+    variable `is_behind_proxy` is set to `True` (either by subclassing the
+    process or overriding this variable on the instance) it will try to get
+    the value from the `X_HTTP_FORWARDED_FOR` header.  Keep in mind that this
+    is disabled by default because unless you are really behind a proxy this
+    is a security problem.
 
 `access_route`
-    If you are behind a proxy server this will list all the ips that take
-    place in the request.  The end user ip is the first one in the list, the
-    last proxy server is the last item in the list.  This also works if the
-    `is_behind_proxy` class variable is set to `False`.
+    If you are behind a proxy server this will list all the IP addresses that
+    take place in the request.  The end user IP address is the first one in
+    the list, the last proxy server is the last item in the list.  This also
+    works if the `is_behind_proxy` class variable is set to `False`.
 
 
 Response
 ========
 
-The response object is the opposite of the request object. It wraps the
-`start_response` function. In order to keep the interface extensible it
-has the same signature as a normal WSGI callable, thus it takes the
-`environ` as first argument.
+The response object is the opposite of the request object.  It wraps the
+`start_response` function.  In order to keep the interface extensible it has
+the same signature as a normal WSGI callable, thus it takes the `environ` as
+first argument.
 
 You can use that as replacement for `start_response` and returning an
 iterable:
@@ -217,30 +215,31 @@ iterable:
         resp = Response(u'<h1>Hello World</h1>', mimetype='text/html')
         return resp(environ, start_response)
 
-Ideally all data is stored internally as `unicode`. Bytestrings passed to
-the object will be returned unchanged in order to support binary data.
+Ideally all data is stored internally as `unicode`. Byte strings passed to the
+object will be returned unchanged in order to support binary data.
 
 The following members exist:
 
 `charset`
-    Override this to change the internal charset. This is always a very good
+    Override this to change the internal charset.  This is always a very good
     idea because the default is `ascii`.
 
 `default_mimetype`
-    The used mimetype if no other is defined. Default is ``text/plain``.
+    The used mimetype if no other is defined.  Default is ``text/plain``.
 
 Usage
 -----
 
-There are multiple ways to use the response object. The constructor accepts
+There are multiple ways to use the response object.  The constructor accepts
 the following arguments:
 
 `response`
-    Can be an iterator or a string or None. If it's an iterator, it should
+    Can be an iterator or a string or `None`.  If it's an iterator, it should
     return strings (`unicode`/`str`), and those strings will be joined
     together to form the content of the response.
 
-    If you pass it an iterable it's used for direct data submission (streaming):
+    If you pass it an iterable it's used for direct data submission
+    (streaming):
 
     .. sourcecode:: python
 
@@ -255,24 +254,24 @@ the following arguments:
     render after each iteration.
 
 `status`
-    The status number of the response. Defaults to `200`. Note that those
+    The status number of the response.  Defaults to `200`.  Note that those
     can either be strings or integers.
 
 `headers`
-    Either `None`, a list or dict of headers or a werkzeug `Headers` instance.
+    Either `None`, a list or dict of headers or a Werkzeug `Headers` instance.
     See the `Headers` documentation in the `utils`_ section.
 
 `mimetype`
-    The mimetype of the response. If there is no `charset` definition in
-    that mimetype and the mimetype is a text mimetype it will automatically
-    append the charset of the response object. The default mimetype is
+    The mimetype of the response.  If there is no `charset` definition in that
+    mimetype and the mimetype is a text mimetype, it will automatically append
+    the charset of the response object. The default mimetype is
     ``'text/plain'``.
 
 `content_type`
     Most of the time `mimetype` and `content_type` work the same.  The
     difference affects only 'text' mimetypes.  If the mimetype passed with
-    `mimetype` is a mimetype starting with `text/` it gets a charset
-    parameter added  with the charset of the response object.  In constrast
+    `mimetype` is a mimetype starting with `text/`, it gets a charset
+    parameter added with the charset of the response object.  In constrast,
     the `content_type` parameter is always added as header unmodified.
 
 
@@ -295,46 +294,45 @@ Methods
     If the response object was created not by passing it an iterable but
     either a string, list or nothing it will be created in file-like mode.
 
-    This means that you can write data to the internal buffer, it doesn't
-    mean that you directly pass the data to the webserver, if you want to
-    do that you should use a generator and pass that to the response
-    object.
+    This means that you can write data to the internal buffer, it doesn't mean
+    that you directly pass the data to the webserver, if you want to do that
+    you should use a generator and pass that to the response object.
 
 `set_cookie(key, value='', max_age=None, expires=None, path='/', domain=None, secure=None)`
 
-    Sets a cookie. The parameters are the same as in the cookie Morsel object
-    in the Python standard library but it accepts unicode data too:
+    Sets a cookie. The parameters are the same as in the cookie `Morsel`
+    object in the Python standard library but it accepts unicode data, too:
 
-    - `max_age` should be a number of seconds, or None (default) if the
+    - `max_age` should be a number of seconds, or `None` (default) if the
        cookie should last only as long as the client’s browser session.
-    - `expires` should be a `datetime` object or unix timestamp.
-    - Use `domain` if you want to set a cross-domain cookie. For example,
+    - `expires` should be a `datetime` object or UNIX timestamp.
+    - Use `domain` if you want to set a cross-domain cookie.  For example,
       ``domain=".example.com"`` will set a cookie that is readable by the
-      domain ``www.example.com``, ``foo.example.com`` etc. Otherwise, a
+      domain ``www.example.com``, ``foo.example.com`` etc.  Otherwise, a
       cookie will only be readable by the domain that set it.
     - `path` limits the cookie to a given path, per default it will span
       the whole domain.
 
 `delete_cookie(key, path='/', domain=None)`
-    Deletes the cookie with the given key. Fails silently if the key doesn’t exist.
+    Deletes the cookie with the given key.  Fails silently if the key doesn’t exist.
 
 `iter_encoded(charset=None)`
     Iterate over the response encoded with the encoding specified.  If no
     encoding is given the encoding from the class is used.  Note that
-    this does not encode data that is already encoded into a bytestring.
+    this does not encode data that is already encoded into a byte string.
 
 `fix_headers(environ)`
-    This is automatically called right before the response is started
-    and should fix common mistakes in headers.  For example location
-    headers are joined with the root URL here.
+    This is automatically called right before the response is started and
+    should fix common mistakes in headers.  For example, location headers are
+    joined with the root URL here.
 
 `add_etag(overwrite=False, weak=False)`
-    Generates and md5 etag for the response body.  Per default this method
-    does nothing if an etag is already set.  If you set `overwrite` to
-    `True` it will overwrite the etag.  If `weak` is `True` the etag is prefixed
-    with "W/" indicating a weak entity tag.
+    Generates and MD5 etag for the response body.  Per default, this method
+    does nothing if an etag is already set.  If you set `overwrite` to `True`
+    it will overwrite the etag.  If `weak` is `True` the etag is prefixed with
+    "W/" indicating a weak entity tag.
 
-    *new in Werkzeug 0.2*
+    *New in Werkzeug 0.2*
 
 `make_conditional(request_or_environ)`
     Pass it an environment or request object to make the response object
@@ -346,7 +344,7 @@ Methods
     Freezes the response object and sets the etag.  After that call it's safe
     to pickle and unpickle the response object (for example for caching)
 
-    *new in Werkzeug 0.2*
+    *New in Werkzeug 0.2*
 
 `close()`
     Close the wrapped response object if there is anything to close.
@@ -366,9 +364,9 @@ Members
     The current response object.  This always is an iterable.
 
 `response_body`
-    The string representation of the request body.  Whenever you access
-    this property the request iterable is encoded and flattened.  This
-    can lead to unwanted behavior if you stream big data.
+    The string representation of the request body.  Whenever you access this
+    property the request iterable is encoded and flattened.  This can lead to
+    unwanted behavior if you stream big data.
 
 `status`
     The status string.  For example ``'200 OK'``.

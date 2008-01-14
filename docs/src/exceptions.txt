@@ -3,7 +3,7 @@ HTTP Exceptions
 ===============
 
 The `werkzeug.exceptions` module implements a number of Python exceptions you
-can raise from within your views to trigger a standard non 200 response.
+can raise from within your views to trigger a standard, non-200 response.
 
 
 Usage Example
@@ -26,18 +26,18 @@ Usage Example
             return e
 
 
-As you can see from this example those exceptions are callable WSGI
-applications.  Because of Python 2.3 / 2.4 compatibility those do not
-extend from the response objects but only from the python exception class.
+As you can see from this example, those exceptions are callable WSGI
+applications.  Because of Python 2.3/2.4 compatibility, those do not extend
+from the response objects, but only from the Python exception class.
 
-As a matter of fact they are not werkzeug response objects.  However you
+As a matter of fact they are not Werkzeug response objects.  However, you
 can get a response object by calling ``get_response()`` on a HTTP exception.
 
 Keep in mind that you have to pass an environment to ``get_response()``
 because some errors fetch additional information from the WSGI environment.
 
-If you want to hook in a different exception page to say, an 404 status code,
-you can add a second except for a specific subclass of an error:
+If you want to hook in a different exception page to, say, an 404 status code,
+you can add a second `except` statement for a specific subclass of an error:
 
 .. sourcecode:: python
 
@@ -55,11 +55,11 @@ you can add a second except for a specific subclass of an error:
 Error Classes
 =============
 
-The following error classes exists in Werkzeug:
+The following error classes exist in Werkzeug:
 
 *400* `BadRequest`
-    Raise if the browser send something to the application the application
-    or server cannot handle.
+    Raise if the browser sent something to the application the application or
+    server cannot handle.
 
 *401* `Unauthorized`
     Raise if the user is not authorized.  Also used if you want to use HTTP
@@ -74,15 +74,15 @@ The following error classes exists in Werkzeug:
 
 *405* `MethodNotAllowed`
     Raise if the server used a method the resource does not handle.  For
-    example `POST` if the resource is view only.  Especially useful for REST.
+    example, `POST` if the resource is view only.  Especially useful for REST.
 
     The first argument for this exception should be a list of allowed methods.
-    Strictly speaking the response would be invalid if you don't provide valid
-    methods in the header which you can do with that list.
+    Strictly speaking, the response would be invalid if you don't provide
+    valid methods in the header, which is what you can do with that list.
 
-*406* `Not acceptable`
-    Raise if the server cant return any content conforming to the
-    `Accept` headers of the client.
+*406* `NotAcceptable`
+    Raise if the server can't return any content conforming to the `Accept`
+    headers of the client.
 
 *408* `RequestTimeout`
     Raise to signalize a timeout.
@@ -91,46 +91,46 @@ The following error classes exists in Werkzeug:
     Raise if a resource existed previously and went away without new location.
 
 *411* `LengthRequired`
-    Raise if the browser submitted data but no ``Content-Length`` header which
+    Raise if the browser submitted data but no `Content-Length` header which
     is required for the kind of processing the server does.
 
 *412* `PreconditionFailed` 
-    Status code used in combination with ``If-Match``, ``If-None-Match``, or
-    ``If-Unmodified-Since``.
+    Status code used in combination with `If-Match`, `If-None-Match`, or
+    `If-Unmodified-Since`.
 
 *413* `RequestEntityTooLarge`
     The status code one should return if the data submitted exceeded a given
     limit.
 
 *414* `RequestURITooLarge`
-    Like *413* but for too long URLs.
+    Like *413*, but for too long URLs.
 
 *415* `UnsupportedMediaType`
     The status code returned if the server is unable to handle the media type
     the client transmitted.
 
 *500* `InternalServerError`
-    Raise if an internal server error occoured.  This is a good fallback if an
-    unknown error occoured in the dispatcher.
+    Raise if an internal server error occured.  This is a good fallback if an
+    unknown error occured in the dispatcher.
 
 *501* `NotImplemented`
     Raise if the application does not support the action requested by the
     browser.
 
 *502* `BadGateway`
-    If you do proxing in your application you should return this status code
+    If you do proxing in your application, you should return this status code
     if you received an invalid response from the upstream server it accessed
     in attempting to fulfill the request.
 
 *503* `ServiceUnavailable`
-    Status code you should return if a service is temporarily unavailable.
+    The status code you should return if a service is temporarily unavailable.
 
 
 Custom Errors
 =============
 
 As you can see from the list above not all status codes are available as
-errors.  Especially redirects and ather non 200 status codes that represent
+errors.  Especially redirects and other non-200 status codes that represent
 do not represent errors are missing.  For redirects you can use the `redirect`
 function from the utilities.
 
@@ -145,8 +145,8 @@ If you want to add an error yourself you can subclass `HTTPException`:
         description = '<p>Payment required.</p>'
 
 This is the minimal code you need for your own exception.  If you want to
-add more logic to the errors you can override the `get_description()`,
-`get_body()`, `get_headers()` and `get_response()` methods.  In any case
+add more logic to the errors, you can override the `get_description()`,
+`get_body()`, `get_headers()`, and `get_response()` methods.  In any case,
 you should have a look at the sourcecode of the exceptions module.
 
 **New in Werkzeug 0.2** You can override the default description in the
@@ -156,4 +156,4 @@ allowed methods as first argument).
 
 .. sourcecode:: python
 
-    raise BadRequest('Request failed because the X parameter was not present')
+    raise BadRequest('Request failed because the X parameter was not present.')

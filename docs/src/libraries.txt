@@ -2,12 +2,12 @@
 Other Libraries
 ===============
 
-Because Werkzeug is just a thin layer over WSGI it's very easy to use WSGI
-middlewares together with Werkzeug powered applications. It's also possible
-to just use small parts of Werkzeug like the URL mapper etc with complete
+Because Werkzeug is just a thin layer over WSGI, it's very easy to use WSGI
+middlewares together with Werkzeug-powered applications. It's also possible
+to just use small parts of Werkzeug like the URL mapper etc. with complete
 different implementations or frameworks.
 
-Here a small list of libraries you may want to try out
+Here a small list of libraries you may want to try out.
 
 
 Database Layers
@@ -16,9 +16,9 @@ Database Layers
 If you want to use relational databases in your application.
 
 `SQLAlchemy <http://www.sqlalchemy.org/>`_
-    SQLAlchemy is a great database layer and object relational mapper
-    that let you construct SQL Queries using Python expressions. It also
-    provides connection pools and plays nice with the WSGI standard.
+    SQLAlchemy is a great database layer and object relational mapper that
+    lets you construct SQL queries using Python expressions.  It also provides
+    connection pools and plays nicely with the WSGI standard.
 
 
 Template Engines
@@ -27,17 +27,18 @@ Template Engines
 Bigger applications deserve something better than minitmpl :)
 
 `Genshi <http://genshi.edgewall.org/>`_
-    If you like XML template engines check out Genshi. Ass-kicking
+    If you like XML template engines, check out Genshi.  Ass-kicking
     template engine, but unfortunately not the fastest.
 
 `Mako <http://www.makotemplates.org/>`_
-    The fastest designer friendly template engine for Python. Similar
-    to ERB in terms of the syntax but with a powerful template inheritance
-    system and multiple namespaces.
+    The fastest designer friendly template engine for Python.  Similar
+    to ERB `<http://www.ruby-doc.org/stdlib/libdoc/erb/rdoc/>`_ in terms of
+    syntax, but with a powerful template inheritance system and multiple
+    namespaces.
 
 `Jinja <http://jinja.pocoo.org/>`_
-    Sandboxes, django/smarty like template engine but with inline
-    expressions that let you execute a subset of python expressions in
+    Sandboxed, Django-/Smarty-like template engine, but with inline
+    expressions that let you execute a subset of Python expressions in
     your templates.
 
 
@@ -48,31 +49,31 @@ Here some form validation packages for WSGI applications:
 
 `Newforms Extracted <http://code.google.com/p/newforms-extracted/>`_
     This is a project to extract Django's newforms and make that package
-    usable by other projects, since Django doesn't seem interested in
-    making this code framework independent.
+    usable by other projects, since Django doesn't seem interested in making
+    this code framework independent.
 
 `FormEncode <http://formencode.org/>`_
-    FormEncode is a validation and form generation package. The validation can
-    be used separately from the form generation. The validation works on
-    compound data structures, with all parts being nestable. It is separate
+    FormEncode is a validation and form generation package.  The validation
+    can be used separately from the form generation.  The validation works on
+    compound data structures, with all parts being nestable.  It is separate
     from HTTP or any other input mechanism.
 
 
 Tools and Utilities
 ===================
 
-Something's missing? Check here first
+Something's missing? Check here first:
 
 `wsgitools <http://subdivi.de/~helmut/wsgitools/>`_
     Various small WSGI utilities like a minimal traceback or auth
-    middleware. It also includes an SCGI server.
+    middleware.  It also includes an SCGI server.
 
 `paste <http://pythonpaste.org/>`_
-    Many tools for use with WSGI; dispatching, composition, simple
+    Many tools for use with WSGI: dispatching, composition, simple
     applications (e.g., file serving), and more.
 
-`routes <http://routes.groovie.org/>`_
-    port of the rails url mapping system.
+`Routes <http://routes.groovie.org/>`_
+    A port of the Rails URL mapping system.
 
 You can find a more complete list on the `wsgi.org`_ webpage.
 

@@ -2,62 +2,61 @@
 Organizing Code
 ===============
 
-Werkzeug doesn't limit you in what you do; thus there is no general rule
-where to locate your modules, what to do with your data etc.
+Werkzeug doesn't limit you in what you do; thus there is no general rule where
+to locate your modules, what to do with your data etc.
 
-However there is a general pattern which is used in many web applications,
+However, there is a general pattern which is used in many web applications,
 the "Model View Controller" pattern (`MVC`), which makes sense for many
 applications.
 
 The idea is that you have "models" in one file, the "views" in another and the
-"controllers" in the third file or folder. The Django framework came up with a
-new idea of naming those components which is called "Model Template View"
+"controllers" in the third file or folder.  The Django framework came up with
+a new idea of naming those components which is called "Model Template View"
 (`MTV`) which probably makes more sense for web applications although it means
-nearly the same. We will use the latter naming in this file.
+nearly the same.  We will use the latter naming in this file.
 
 So here is what those terms mean:
 
 Model
-    A model is an abstraction to your data. For example if you have a database
-    you can use the excellent `SQLAlchemy`_ library that maps database tables
-    to classes or just provides a thin layer that lets you write your own
-    classes.
+    A model is an abstraction of your data.  For example if you have a
+    database you can use the excellent `SQLAlchemy`_ library that maps
+    database tables to classes or just provides a thin layer that lets you
+    write your own classes.
 
 Template
     The templates contain the actual HTML markup with placeholders for data
-    passed to them. Although there is a `minimal template language
+    passed to them.  Although there is a `minimal template language
     <minitmpl.txt>`_ in the Werkzeug package we don't recommend using it for
-    larger applications since there are many good and powerful template
-    engines out there that support debugging, template inheritance, XML
-    output etc.
+    larger applications.  There are many good and powerful template engines
+    out there that support debugging, template inheritance, XML output etc.
 
     The integrated templating language is a good idea if you have one or two
-    templates and don't want to install one of the big template engines but
-    is not suitable for more complex tasks!
+    templates and don't want to install one of the big template engines, but
+    it is not suitable for more complex tasks!
 
 View
-    The view is the code that processes data, connecting model with template,
-    and then outputs the result. This is the part where Werkzeug helps you.
+    The view is the code that processes data, connects the model with
+    templates, and then outputs the result. This is the part where Werkzeug
+    helps you.
 
-.. _SQLAlchemy: http://www.sqlalchemy.org/
 
 Entry Point
 ===========
 
 There should be one central file that provides the WSGI application and
-dispatches the requests. It's also a good idea to assemble the final URL map
+dispatches the requests.  It's also a good idea to assemble the final URL map
 there if you use the Werkzeug `routing system`_.
 
-It's a good idea to call the file something like ``main.py`` or
-``application.py`` and locate it in the root of the package. This is what it
+It's also a good idea to call the file something like ``main.py`` or
+``application.py`` and locate it in the root of the package.  This is what it
 *could* look like:
 
 .. sourcecode:: python
 
+    from werkzeug.exceptions import HTTPException
+    from werkzeug.routing import RequestRedirect
     from mypackage.urls import map, not_found
     from mypackage.utils import Request, Response
-    from werkzeug.routing import RequestRedirect
-    from werkzeug.exceptions import HTTPException
 
     def application(environ, start_response):
         urls = map.bind_to_environ(environ)
@@ -73,35 +72,36 @@ It's a good idea to call the file something like ``main.py`` or
             resp = e
         return resp(environ, start_response)
 
-You can even further simplify the dispatching by using `urls.dispatch` as
-explained on the routing page.
+You can even further simplify the dispatching by using ``urls.dispatch`` as
+explained in the routing documentation.
 
 This will look for the controller functions in `mypackage.views.module`.
-If the URL is configured with an endpoint of ``'static/index'`` the module
+If the URL is configured with an endpoint of ``'static/index'``, the module
 `mypackage.views.static` is loaded and `index(req)` is called.
 
-The URL rule parameters are passed to the function as keyword argument then.
+The URL rule parameters are passed to the function as keyword arguments then.
 
 **Note**: This is just one idea of how things can look like. This doesn't
-necessarily have to represent your application. You can for example save
-the request object in a thread local storage or have your views as methods
+necessarily have to represent your application.  You can, for example, save
+the request object in a thread-local storage or have your views as methods
 of a controller class you instantiate with the request as argument for each
-incoming request. You can also use other request objects or no request object
+incoming request.  You can also use other request objects or no request object
 at all etc.
+
 
 Utils
 =====
 
 If we continue the example above we need an utils module with the request and
-response objects. This would also contain other utilities and a bridge to a
-template engine. In this example we will use the `Jinja`_ as template engine -
-basically because it's something we use too - but you can of course use any
+response objects.  This would also contain other utilities and a bridge to a
+template engine.  In this example we will use the `Jinja`_ template engine -
+basically because it's something we use, too - but you can of course use any
 template engine:
 
 .. sourcecode:: python
 
-    from werkzeug import BaseRequest, BaseResponse
     from jinja import Environment, PackageLoader
+    from werkzeug import BaseRequest, BaseResponse
 
     env = Environment(loader=PackageLoader('mypackage', 'templates'))
 
@@ -124,21 +124,22 @@ template engine:
             output = tmpl.render(values)
             super(TemplateResponse, self).__init__(output, mimetype='text/html')
 
-**Note**: templates in this example are saved in the `templates` folder inside
-the `mypackage` package. The way template loading and rendering works depends on
-the template engine, have a look at the template engine's documentation regarding
-that.
+**Note**: Templates in this example are saved in the `templates` folder inside
+the `mypackage` package.  The way template loading and rendering works depends
+on the template engine, so have a look at it's documentation regarding that.
 
-We just subclass request and response for our needs and provide a second response
-subclass that is used to render templates. It's used in the example view below.
+We just subclass request and response classes for our needs and provide a
+second response subclass that is used to render templates.  It's used in the
+example view below.
 
-`req.url_for` can be used to get an URL to another view.
+``req.url_for`` can be used to get an URL to another view.
+
 
 URLs
 ====
 
-Because we use the Werkzeug URL routing system in this example and the URLs are
-stored in `urls.py` we need that file:
+Because we use the Werkzeug URL routing system in this example and the URLs
+are stored in `urls.py`, we need that file:
 
 .. sourcecode:: python
 
@@ -150,11 +151,12 @@ stored in `urls.py` we need that file:
 
 This is just one small URL rule for one view.
 
+
 View
 ====
 
-Here is the view defined above. It must be saved in `myprojects/views/static.py` as
-defined above:
+Here is the view defined above.  It must be saved in
+`myprojects/views/static.py` as defined above:
 
 .. sourcecode:: python
 
@@ -163,25 +165,27 @@ defined above:
     def index(req):
         return TemplateResponse('index.html', title='Welcome')
 
+
 Models and Templates
 ====================
 
-Models and templates are out of the scope for this documentation but you should
-get an idea how you can organize your WSGI application built with the help of
-Werkzeug.
+Models and templates are out of the scope for this documentation, but you
+should have gotten an idea on how you can organize your WSGI application built
+with the help of Werkzeug.
 
 
 Generating Boilerplate Code
 ===========================
 
 Getting the application started is usually a quite boring process because you
-write the same code again and again. Because of that Werkzeug comes with a
+write the same code again and again.  Because of that, Werkzeug comes with a
 tiny script that can generate a package structure from a package template.
 
 Have a look at the `bootstrap`_ documentation for more information about
 this topic.
 
 
+.. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _routing system: routing.txt
 .. _Jinja: http://jinja.pocoo.org/
 .. _bootstrap: bootstrap.txt

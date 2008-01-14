@@ -2,33 +2,33 @@
 Werkzeug Tutorial
 =================
 
-Welcome to the Werkzeug 0.2 tutorial in which we will create a tinyurl clone
+Welcome to the Werkzeug 0.2 tutorial in which we will create a TinyURL clone
 that stores URLs in a database.  The libraries we will use for this
 applications are `Jinja`_ for the templates, `SQLAlchemy`_ for the database
-layer and of course Werkzeug for the WSGI layer.
+layer and, of course, Werkzeug for the WSGI layer.
 
 The reasons why we've decided on these libraries for the tutorial application
 is that we want to stick to some of the design decisions Django took in the
-past.  One of them is using view functions and not Rails/pylons-like
+past.  One of them is using view functions and not Rails-/Pylons-like
 controller classes with action methods, the other one is designer friendly
 templates.
 
 In the Werkzeug `example folder`_ are a couple of applications that use other
-template engines too so you may want to have a look at them.  There is also
-the sourcecode of this application.
+template engines, too, so you may want to have a look at them.  There is also
+the source code of this application.
 
-To install the required libraries you can use `easy_install`::
+You can use `easy_install` to install the required libraries::
 
     sudo easy_install Jinja
     sudo easy_install SQLAlchemy
 
-If you're on windows omit the "sudo", if you're on OS X you can check if the
-libraries are also available in port or on Linux you can check out your
-package manager for packages called ``python-jinja`` / ``python-sqlalchemy``.
+If you're on Windows, omit the "sudo"; if you're on OS X, you can check if the
+libraries are also available in port; or on Linux, you can check out your
+package manager for packages called ``python-jinja``/``python-sqlalchemy``.
 
 If you're curious you can check out the `online demo`_ of the application.
 
-Small disclaimer: This tutorial requires Python 2.4.
+Small disclaimer: This tutorial requires Python 2.4 or later.
 
 .. _Jinja: http://jinja.pocoo.org/
 .. _SQLAlchemy: http://sqlalchemy.org/
@@ -39,7 +39,7 @@ Small disclaimer: This tutorial requires Python 2.4.
 Part 0: The Folder Structure
 ============================
 
-Before we can get started we have to create a python package for our Werkzeug
+Before we can get started we have to create a Python package for our Werkzeug
 application and the folders for the templates and static files.
 
 This tutorial application is called `shorty` and the initial directory layout
@@ -52,14 +52,14 @@ we will use looks like this::
         static/
 
 The ``__init__.py`` and ``manage.py`` files should be empty for the time
-being.   The first one makes ``shorty`` a python package, the second one will
+being.   The first one makes ``shorty`` a Python package, the second one will
 hold our management utilities later.
 
 
 Part 1: The WSGI Application
 ============================
 
-Unlike Django or other frameworks Werkzeug operates directly on the WSGI
+Unlike Django or other frameworks, Werkzeug operates directly on the WSGI
 layer.  There is no fancy magic that implements the central WSGI application
 for you.  As a result of that the first thing you will do every time you write
 a Werkzeug application is implementing this basic WSGI application object.
@@ -80,6 +80,7 @@ the WSGI application:
     from sqlalchemy import create_engine
     from werkzeug import BaseRequest, ClosingIterator
     from werkzeug.exceptions import HTTPException
+
     from shorty.utils import Session, metadata, local, local_manager, url_map
     from shorty import views
     import shorty.models
@@ -120,7 +121,7 @@ The next five imports are not working because we don't have the utils module
 written yet.  However we should cover some of the objects already.  The
 `Session` object pulled from there is not a PHP-like session object but a
 SQLAlchemy database session object.  Basically a database session object keeps
-track of yet uncommited objects for the database.  Unlike Django an
+track of yet uncommited objects for the database.  Unlike Django, an
 instanciated SQLAlchemy model is already tracked by the session!  The metadata
 object is also an SQLAlchemy thing which is used to keep track of tables.  We
 can use the metadata object to easily create all tables for the database and
@@ -133,10 +134,10 @@ and we can use this to implicitly pass objects around in a thread-safe way.
 The `local_manager` object ensures that all local objects it keeps track of
 are properly deleted at the end of the request.
 
-The last thing we import from there is the url map which holds the URL routing
+The last thing we import from there is the URL map which holds the URL routing
 information.  If you know Django you can compare that to the url patterns you
 specify in the ``urls.py`` module, if you have used PHP so far it's comparable
-with some sort of builtin "mod_rewrite".
+with some sort of built-in "mod_rewrite".
 
 We import our views module which holds the view functions and then we import
 the models module which holds all of our models.  Even if it looks like we
@@ -167,7 +168,7 @@ request object by passing the environment to the `BaseRequest` constructor.
 Once again we bind the application to the local object, this time, however,
 we have to do this, otherwise things will break soon.
 
-Then we create a new url map adapter by binding the url map to the current
+Then we create a new URL map adapter by binding the URL map to the current
 WSGI environment.  This basically looks at the environment of the incoming
 request information and fetches the information from the environment it
 requires.  This is for example the name of the server for external URLs, the
@@ -175,9 +176,9 @@ location of the script so that it can generate absolute paths if we use the
 URL builder.  We also bind the adapter to the local object so that we can
 use it for URL generation in the utils module.
 
-After that we have a try/except that catches HTTP exceptions that could occur
-while matching or in the view function.  When the adapter does not find a
-valid endpoint for our current request it will raise a `NotFound` exception
+After that we have a `try`/`except` that catches HTTP exceptions that could
+occur while matching or in the view function.  When the adapter does not find
+a valid endpoint for our current request it will raise a `NotFound` exception
 which we can use like a response object.  And endpoint is basically the name
 of the function we want to handle our request with.  We just get the
 function with the name of the endpoint and pass it the request and the URL
@@ -299,7 +300,7 @@ it into the `manage.py` file you have created in the beginning:
 we won't cover it here, most of the code should be self explaining anyway.
 
 What's important is that you should be able to run ``python manage.py shell``
-to get an interactive python interpreter without traceback.  If you get an
+to get an interactive Python interpreter without traceback.  If you get an
 exception check the line number and compare your code with the code we have
 in the code boxes above.
 

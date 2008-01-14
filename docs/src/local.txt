@@ -2,31 +2,31 @@
 Context Locals
 ==============
 
-Sooner or later you have some things you want to have in every single view
-or helper function or whatever.  In PHP the way to go are global variables.
-However that is not possible in WSGI applications without a major drawback:
-As soon as you operate on the global namespace your application is not thread
-safe any longer.
+Sooner or later you have some things you want to have in every single view or
+helper function or whatever.  In PHP, the way to go are global variables.
+However, that is not possible in WSGI applications without a major drawback:
+As soon as you operate on the global namespace your application is not
+thread-safe any longer.
 
-The python standard library comes with a utility called "thread locals".  A
-thread local is an global object where you can put stuff on and get back later
-in a thread safe way.  That means whenver you set or get an object to / from
-a thread local object the thread local object checks in which thread you are
-and delivers the correct value.
+The Python standard library comes with an utility called "thread-locals".  A
+thread-local is a global object you can put stuff on and get back from it
+later in a thread-safe way.  That means whenever you set or get an object
+to/from a thread-local object, the thread-local object checks in which thread
+you are and delivers the correct value.
 
-This however has a few disadvantages.  For example beside threads there are
+This has a few disadvantages, though.  For example beside threads there are
 other ways to handle concurrency in Python.  A very popular approach are
-greenlets.  And also if every request gets its own thread is not guaranteed
-in WSGI.  It could be that a request is reusing a thread from before and data
-is left in the thread local object.
+`greenlets`_.  And also if every request gets its own thread, it is not
+guaranteed in WSGI.  It could be that a request is reusing a thread from
+before and data is left in the thread-local object.
 
-`werkzeug.local` is filling this gap.
+`werkzeug.local` fills this gap.
 
 
 Nutshell
 ========
 
-Here a simple example how you can use werkzeug.local:
+Here is a simple example on how you can use `werkzeug.local`:
 
 .. sourcecode:: python
 
@@ -37,15 +37,15 @@ Here a simple example how you can use werkzeug.local:
 
     def application(environ, start_response):
         local.request = request = Request(environ)
-        ...
+        # ...
 
     application = local_manager.make_middleware(application)
 
-Now what this code does is binding request to `local.request`.  Every other
-piece of code executed after this assignment in the same context can safely
-access local.request and will get the same request object.  The
-`make_middleware` method on the local manager ensures that everything is
-cleaned up after the request.
+What this code does is binding request to `local.request`.  Every other piece
+of code executed after this assignment in the same context can safely access
+`local.request` and will get the same request object.  The `make_middleware`
+method on the local manager ensures that everything is cleaned up after the
+request.
 
 The same context means the same greenlet (if you're using greenlets) in the
 same thread and same process.
@@ -65,10 +65,10 @@ available.
 Manager Objects
 ===============
 
-Local objects cannot manage themselves, for that you need a local manager.
-You can pass a local manager multiple locals or add additionals later by
-appending them to `manager.locals` and everytime the manager cleans up it
-will clean up all the data left in the locals for this context.
+Local objects cannot manage themselves. For that you need a local manager.
+You can pass a local manager multiple locals or add them later by appending
+them to `manager.locals`.  Everytime the manager cleans up it, will clean up
+all the data left in the locals for this context.
 
 The following methods exist:
 
@@ -80,20 +80,20 @@ The following methods exist:
     Encapsulate the application and call `cleanup()` at the end of a request.
 
 `middleware()`
-    Like `make_middleware` but works as decorator.  The main difference is
+    Like `make_middleware`, but works as decorator.  The main difference is
     that the returned object will have the original docstring etc.
 
     .. sourcecode:: python
 
         @manager.middleware
         def application(environ, start_response):
-            ...
+            # ...
 
 `get_ident()`
     Return the context identifier the local objects use internally for this
     context.  You cannot override this method to change the behavior but use
     it to link other context local objects (such as SQLAlchemy's scoped
-    sessions) to the werkzeug locals.
+    sessions) to the Werkzeug locals.
 
 
 Proxies
@@ -110,11 +110,12 @@ useful if you want a global request object:
     request = local('request')
     user = local('user')
 
-Whenever you access anything on user it will forward the operation to the object
-`local.user`.  This affects all operations except of any sort of assignment.
+Whenever you access anything on `user` it will forward the operation to the
+object `local.user`.  This affects all operations except of any sort of
+assignment.
 
-Keep in mind that the repr is also forwarded so if you want to find out if you
-are dealing with a proxy you can do an isinstance check:
+Keep in mind that ``repr()`` is also forwarded, so if you want to find out if
+you are dealing with a proxy you can do an ``isinstance()`` check:
 
 .. sourcecode:: pycon
 
@@ -129,3 +130,6 @@ You can also create proxy objects by hand:
     from werkzeug import Local, LocalProxy
     local = Local()
     request = LocalProxy(local, 'request')
+
+
+.. _greenlets: http://codespeak.net/py/dist/greenlet.html

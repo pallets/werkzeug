@@ -2,23 +2,23 @@
 Test Utilities
 ==============
 
-Quite often you want to unittest your application or just check the output
-from an interactive python session.  In theory that is pretty simple because
+Quite often you want to unit-test your application or just check the output
+from an interactive Python session.  In theory that is pretty simple because
 you can fake a WSGI environment and call the application with a dummy
-start_response and iterate over the application iterator but there are
+`start_response` and iterate over the application iterator, but there are
 argumentably better ways to interact with an application.
 
 
 Diving In
 =========
 
-Werkzeug provides an object called `Client` which you can pass a WSGI
-application (and optionally a response wrapper) which you can use to send
-virtual requests to the application.
+Werkzeug provides a `Client` object which you can pass a WSGI application (and
+optionally a response wrapper) which you can use to send virtual requests to
+the application.
 
 A response wrapper is a callable that takes three arguments: the application
 iterator, the status and finally a list of headers.  The default response
-wrapper returns a tuple.  Because response objects have the same signature
+wrapper returns a tuple.  Because response objects have the same signature,
 you can use them as response wrapper, ideally by subclassing them and hooking
 in test functionality.
 
@@ -35,7 +35,7 @@ in test functionality.
     ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
      '  "http://www.w3.org/TR/html4/loose.dtd">']
 
-Or here without wrapper defined:
+Or without a wrapper defined:
 
 .. sourcecode:: python
 
@@ -61,14 +61,14 @@ The following functions are available:
     module with some additions.
     
     The first parameter should be the path of the request which defaults to
-    '/'.  The second one can either be a absolute path (in that case the url
-    host is localhost:80) or a full path to the request with scheme,
-    netloc port and the path to the script.
+    '/'.  The second one can either be an absolute path (in that case the URL
+    host is `localhost:80`) or a full path to the request with scheme, netloc
+    port and the path to the script.
     
-    If the `path` contains a query string it will be used, even if the
-    `query_string` parameter was given.  If it does not contain one
-    the `query_string` parameter is used as querystring.  In that case
-    it can either be a dict, MultiDict or string.
+    If `path` contains a query string it will be used, even if the
+    `query_string` parameter was given.  If it does not contain one, the
+    `query_string` parameter is used as query string.  In that case it can
+    either be a dict, `MultiDict` or string.
 
     The following options exist:
 
@@ -76,54 +76,53 @@ The following functions are available:
         The request method.  Defaults to `GET`
 
     `input_stream`
-        The input stream.  Defaults to an empty read only stream.
+        The input stream.  Defaults to an empty read-only stream.
 
     `data`
         The data you want to transmit.  You can set this to a string and
         define a content type instead of specifying an input stream.
         Additionally you can pass a dict with the form data.  The values
-        could then be strings (no unicode objects!) which are then url
-        encoded or file objects.
+        could then be strings (not unicode objects!), which are then
+        URL-encoded, or file objects.
 
         A file object for this method is either a file descriptor with
         an additional `name` attribute (like a file descriptor returned
-        by the `open` / `file` function), a tuple in the form
+        by the `open`/`file` function), a tuple in the form
         ``(fd, filename, mimetype)`` (all arguments except fd optional)
-        or as dict with those keys and values.
+        or a dict with those keys and values.
 
         Additionally you can instanciate the `werkzeug.test.File` object
         (or a subclass of it) and pass it as value.
 
     `content_type`
-        The content type for this request.  Default is an empty content
-        type.
+        The content type for this request.  Default is an empty content type.
 
     `content_length`
         The value for the content length header.  Defaults to 0.
 
     `errors_stream`
-        The wsgi.errors stream.  Defaults to `sys.stderr`.
+        The `wsgi.errors` stream.  Defaults to `sys.stderr`.
 
     `multithread`
-        The multithreaded flag for the WSGI Environment.  Defaults to `False`.
+        The multithreaded flag for the WSGI environment.  Defaults to `False`.
 
     `multiprocess`
-        The multiprocess flag for the WSGI Environment.  Defaults to `False`.
+        The multiprocess flag for the WSGI environment.  Defaults to `False`.
 
     `run_once`
-        The run_once flag for the WSGI Environment.  Defaults to `False`.
+        The `run_once` flag for the WSGI environment.  Defaults to `False`.
 
 `get(...)`
-    Like `open()` but enforces `GET` as method.
+    Like `open()`, but enforces `GET` as method.
 
 `post(...)`
-    Like `open()` but enforces `POST` as method.
+    Like `open()`, but enforces `POST` as method.
 
 `head(...)`
-    Like `open()` but enforces `HEAD` as method.
+    Like `open()`, but enforces `HEAD` as method.
 
 `put(...)`
-    Like `open()` but enforces `PUT` as method.
+    Like `open()`, but enforces `PUT` as method.
 
 `delete(...)`
-    Like `open()` but enforces `DELETE` as method.
+    Like `open()`, but enforces `DELETE` as method.
