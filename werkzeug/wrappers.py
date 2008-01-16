@@ -117,8 +117,8 @@ class BaseRequest(object):
                             # fix stupid IE bug (IE6 sends the whole path)
                             if fn[1:3] == ':\\':
                                 fn = fn.split('\\')[-1]
-                            files.append((key, FileStorage(key, fn, item.type,
-                                          item.length, item.file)))
+                            files.append((key, FileStorage(item.file, fn,
+                                          key, item.type, item.length)))
                         else:
                             post.append((key, item.value.decode(self.charset,
                                                                 'ignore')))
@@ -164,7 +164,7 @@ class BaseRequest(object):
         if not hasattr(self, '_form'):
             self._load_post_data()
         return self._form
-    form = cached_property(form)
+    form = property(form, doc=form.__doc__)
 
     def values(self):
         """combined multi dict for `args` and `form`"""
@@ -176,7 +176,7 @@ class BaseRequest(object):
         if not hasattr(self, '_files'):
             self._load_post_data()
         return self._files
-    files = cached_property(files)
+    files = property(files, doc=files.__doc__)
 
     def cookies(self):
         """Stored Cookies."""
@@ -545,6 +545,9 @@ class BaseResponse(object):
         e-tag.
         """
         self.add_etag()
+        # access response body so that wrapper generators are converted into
+        # a list if there was already an etag.
+        self.response_body
 
     def __call__(self, environ, start_response):
         """Process this response as WSGI application."""

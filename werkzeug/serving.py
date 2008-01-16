@@ -70,7 +70,8 @@ class BaseRequestHandler(WSGIRequestHandler):
         _log('info', format, args)
 
 
-def make_server(host, port, app=None, threaded=False, processes=1):
+def make_server(host, port, app=None, threaded=False, processes=1,
+                request_handler=BaseRequestHandler):
     """
     Create a new wsgiref server that is either threaded, or forks
     or just processes one request after another.
@@ -79,20 +80,19 @@ def make_server(host, port, app=None, threaded=False, processes=1):
         raise ValueError("cannot have a multithreaded and "
                          "multi process server.")
     elif threaded:
-        class handler(BaseRequestHandler):
+        class request_handler(request_handler):
             multithreaded = True
         class server(ThreadingMixIn, WSGIServer):
             pass
     elif processes > 1:
-        class handler(BaseRequestHandler):
+        class request_handler(request_handler):
             multiprocess = True
             max_children = processes - 1
         class server(ForkingMixIn, WSGIServer):
             pass
     else:
-        handler = BaseRequestHandler
         server = WSGIServer
-    srv = server((host, port), handler)
+    srv = server((host, port), request_handler)
     srv.set_app(app)
     return srv
 
@@ -165,13 +165,14 @@ def run_with_reloader(main_func, extra_watch):
 
 
 def run_simple(hostname, port, application, use_reloader=False,
-               extra_files=None, threaded=False, processes=1):
+               extra_files=None, threaded=False, processes=1,
+               request_handler=BaseRequestHandler):
     """
     Start an application using wsgiref and with an optional reloader.
     """
     def inner():
         srv = make_server(hostname, port, application, threaded,
-                          processes)
+                          processes, request_handler)
         try:
             srv.serve_forever()
         except KeyboardInterrupt:

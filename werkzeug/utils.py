@@ -349,12 +349,13 @@ class FileStorage(object):
     Represents an uploaded file.
     """
 
-    def __init__(self, name, filename, content_type, content_length, stream):
+    def __init__(self, stream=_empty_stream, filename=None, name=None,
+                 content_type='application/octet-stream', content_length=-1):
         self.name = name
-        self.filename = filename
+        self.stream = stream
+        self.filename = filename or getattr(stream, 'name', None)
         self.content_type = content_type
         self.content_length = content_length
-        self.stream = stream
 
     def save(self, dst, buffer_size=16384):
         """
@@ -414,6 +415,24 @@ class Headers(object):
         elif defaults is not None:
             self._list[:] = defaults
 
+    def linked(cls, headerlist):
+        """
+        Create a new `Headers` object that uses the list of headers passed as
+        internal storage:
+
+        >>> headerlist = [('Content-Length', '40')]
+        >>> headers = Headers.linked(headerlist)
+        >>> headers.add('Content-Type', 'text/html')
+        >>> headerlist
+        [('Content-Length', '40'), ('Content-Type', 'text/html')]
+
+        *new in Werkzeug 0.2*
+        """
+        headers = object.__new__(cls)
+        headers._list = headerlist
+        return headers
+    linked = classmethod(linked)
+
     def __getitem__(self, key):
         ikey = key.lower()
         for k, v in self._list:
@@ -428,17 +447,28 @@ class Headers(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get(self, key, default=None):
+    def get(self, key, default=None, type=None):
         try:
-            return self[key]
+            rv = self[key]
         except KeyError:
             return default
+        if type is None:
+            return rv
+        try:
+            return type(rv)
+        except ValueError:
+            return default
 
-    def getlist(self, key):
+    def getlist(self, key, type=None):
         ikey = key.lower()
         result = []
         for k, v in self:
             if k.lower() == ikey:
+                if type is not None:
+                    try:
+                        v = type(v)
+                    except ValueError:
+                        continue
                 result.append(v)
         return result
 
@@ -541,6 +571,11 @@ class EnvironHeaders(Headers):
 
     def __init__(self, environ):
         self.environ = environ
+
+    def linked(cls, environ):
+        """For interface compatibility with `Headers`."""
+        return cls(environ)
+    linked = classmethod(linked)
 
     def __eq__(self, other):
         return self is other
@@ -724,8 +759,7 @@ class Href(object):
     def __call__(self, *path, **query):
         if not query:
             if path and isinstance(path[-1], dict):
-                query = path[-1]
-                path = path[:-1]
+                query, path = path[-1], path[:-1]
             else:
                 query = dict([(k.endswith('_') and k[:-1] or k, v)
                               for k, v in query.iteritems()])
@@ -915,7 +949,39 @@ def url_unquote_plus(s, charset='utf-8'):
     return urllib.unquote_plus(s).decode(charset, 'ignore')
 
 
-escape = cgi.escape
+def url_fix(s, charset='utf-8'):
+    """
+    Sometimes you get an URL by a user that just isn't a real URL because
+    it contains unsafe characters like ' ' and so on.  This function can fix
+    some of the problems in a similar way browsers handle data entered by the
+    user:
+
+    >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)')
+    'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+
+    :param charset: The target charset for the URL if the url was given as
+                    unicode string.
+    """
+    if isinstance(s, unicode):
+        s = s.encode(charset, 'ignore')
+    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
+    path = urllib.quote(path, '/%')
+    qs = urllib.quote_plus(qs, ':&=')
+    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+
+
+def escape(s, quote=None):
+    """
+    Replace special characters "&", "<" and ">" to HTML-safe sequences.  If the
+    optional flag `quote` is `True`, the quotation mark character (") is also
+    translated.
+    """
+    if not isinstance(s, basestring):
+        s = unicode(s)
+    s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    if quote:
+        s = s.replace('"', "&quot;")
+    return s
 
 
 def unescape(s, quote=False):
@@ -1132,11 +1198,15 @@ def _iter_modules(path):
                     yield modname, ispackage(modname)
 
 
-def find_modules(import_path, include_packages=False):
+def find_modules(import_path, include_packages=False, recursive=False):
     """
     Find all the modules below a package.  This can be useful to automatically
     import all views / controllers so that their metaclasses / function
     decorators have a chance to register themselves on the application.
+
+    Packages are not returned unless `include_packages` is `True`.  This can
+    also recursively list modules but in that case it will import all the
+    packages to get the correct load path of that module.
     """
     module = import_string(import_path)
     path = getattr(module, '__path__', None)
@@ -1144,9 +1214,15 @@ def find_modules(import_path, include_packages=False):
         raise ValueError('%r is not a package' % import_path)
     basename = module.__name__ + '.'
     for modname, ispkg in _iter_modules(path):
-        if ispkg and not include_packages:
-            continue
-        yield basename + modname
+        modname = basename + modname
+        if ispkg:
+            if include_packages:
+                yield modname
+            if recursive:
+                for item in find_modules(modname, include_packages, True):
+                    yield item
+        else:
+            yield modname
 
 
 def create_environ(path='/', base_url=None, query_string=None, method='GET',
