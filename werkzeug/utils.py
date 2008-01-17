@@ -636,6 +636,7 @@ class SharedDataMiddleware(object):
             if resource_exists(package, path):
                 return posixpath.basename(path), \
                        lambda: resource_stream(package, path)
+            return None, None
         return loader
 
     def get_directory_loader(self, directory):
@@ -643,6 +644,7 @@ class SharedDataMiddleware(object):
             path = os.path.join(directory, path)
             if os.path.isfile(path):
                 return os.path.basename(path), lambda: open(path, 'rb')
+            return None, None
         return loader
 
     def __call__(self, environ, start_response):
