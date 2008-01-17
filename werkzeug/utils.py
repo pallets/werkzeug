@@ -600,53 +600,85 @@ class EnvironHeaders(Headers):
 
 class SharedDataMiddleware(object):
     """
-    Redirects calls to an folder with static data.
+    Redirects calls to a folder with static data, a static file or package
+    data.
     """
 
     def __init__(self, app, exports, disallow=None):
         self.app = app
-        self.exports = exports
-        self.disallow = disallow
+        self.exports = {}
+        for key, value in exports.iteritems():
+            if isinstance(value, tuple):
+                loader = self.get_package_loader(*value)
+            elif isinstance(value, basestring):
+                if os.path.isfile(value):
+                    loader = self.get_file_loader(value)
+                else:
+                    loader = self.get_directory_loader(value)
+            else:
+                raise TypeError('unknown def %r' % value)
+            self.exports[key] = loader
+        if disallow is not None:
+            from fnmatch import fnmatch
+            self.is_allowed = lambda x: not fnmatch(x, disallow)
 
-    def serve_file(self, filename, start_response):
-        from mimetypes import guess_type
-        guessed_type = guess_type(filename)
-        mime_type = guessed_type[0] or 'text/plain'
-        expiry = asctime(gmtime(time() + 3600))
-        start_response('200 OK', [('Content-Type', mime_type),
-                                  ('Cache-Control', 'public'),
-                                  ('Expires', expiry)])
-        fp = file(filename, 'rb')
-        try:
-            return [fp.read()]
-        finally:
-            fp.close()
+    def is_allowed(self, filename):
+        return True
+
+    def get_file_loader(self, filename):
+        return lambda x: os.path.basename(filename), \
+                         lambda: open(filename, 'rb')
+
+    def get_package_loader(self, package, package_path):
+        from pkg_resources import resource_exists, resource_stream
+        def loader(path):
+            path = posixpath.join(package_path, path)
+            if resource_exists(package, path):
+                return posixpath.basename(path), \
+                       lambda: resource_stream(package, path)
+        return loader
+
+    def get_directory_loader(self, directory):
+        def loader(path):
+            path = os.path.join(directory, path)
+            if os.path.isfile(path):
+                return os.path.basename(path), lambda: open(path, 'rb')
+        return loader
 
     def __call__(self, environ, start_response):
+        # sanitize the path for non unix systems
         cleaned_path = environ.get('PATH_INFO', '').strip('/')
         for sep in os.sep, os.altsep:
             if sep and sep != '/':
                 cleaned_path = cleaned_path.replace(sep, '/')
         path = '/'.join([''] + [x for x in cleaned_path.split('/')
                                 if x and x != '..'])
-        for search_path, file_path in self.exports.iteritems():
-            if search_path == path and os.path.isfile(file_path):
-                return self.serve_file(file_path, start_response)
+        stream_maker = None
+        for search_path, loader in self.exports.iteritems():
+            if search_path == path:
+                real_filename, stream_maker = loader.load(None)
+                if stream_maker is not None:
+                    break
             if not search_path.endswith('/'):
                 search_path += '/'
             if path.startswith(search_path):
-                real_path = os.path.join(file_path, path[len(search_path):])
-                if os.path.exists(real_path) and os.path.isfile(real_path):
-                    if self.disallow:
-                        from fnmatch import fnmatch
-                        for pattern in self.disallow:
-                            if fnmatch(real_path, pattern):
-                                break
-                        else:
-                            return self.serve_file(real_path, start_response)
-                    else:
-                        return self.serve_file(real_path, start_response)
-        return self.app(environ, start_response)
+                real_filename, stream_maker = loader(path[len(search_path):])
+                if stream_maker is not None:
+                    break
+        if stream_maker is None or not self.is_allowed(real_filename):
+            return self.app(environ, start_response)
+        from mimetypes import guess_type
+        guessed_type = guess_type(real_filename)
+        mime_type = guessed_type[0] or 'text/plain'
+        expiry = asctime(gmtime(time() + 3600))
+        start_response('200 OK', [('Content-Type', mime_type),
+                                  ('Cache-Control', 'public'),
+                                  ('Expires', expiry)])
+        stream = stream_maker()
+        try:
+            return [stream.read()]
+        finally:
+            stream.close()
 
 
 class DispatcherMiddleware(object):
