@@ -414,12 +414,19 @@ class ServiceUnavailable(HTTPException):
     )
 
 
-default_exceptions = {}
-for exception in HTTPException.__subclasses__():
-    if exception.__module__ == 'werkzeug.exceptions' and \
-       exception.code is not None:
-        default_exceptions[exception.code] = exception
-del exception
+def _find_exceptions():
+    rv = {}
+    for name, obj in globals().iteritems():
+        try:
+            if issubclass(obj, HTTPException) and obj.code is not None:
+                rv[obj.code] = obj
+        except TypeError:
+            continue
+    return rv
+
+
+default_exceptions = _find_exceptions()
+del _find_exceptions
 
 
 class Aborter(object):
