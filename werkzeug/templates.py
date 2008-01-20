@@ -111,6 +111,7 @@ import sys
 import re
 import __builtin__ as builtins
 from compiler import ast, parse
+from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 from werkzeug import utils
@@ -130,6 +131,8 @@ undefined = type('UndefinedType', (object,), {
     '__repr__': lambda x: 'Undefined',
     '__str__':  lambda x: ''
 })()
+runtime_vars = dict.fromkeys(('Undefined', '__to_unicode', '__context',
+                              '__write', '__write_many'))
 
 
 def call_stmt(func, args, lineno):
@@ -353,7 +356,7 @@ class Context(object):
         self._buffer = []
         self._write = self._buffer.append
         _extend = self._buffer.extend
-        self._namespace.update(
+        self.runtime = dict(
             Undefined=undefined,
             __to_unicode=self.to_unicode,
             __context=self,
@@ -375,19 +378,28 @@ class Context(object):
             return rv.encode(self.encoding, self.errors)
         return rv
 
-    def get(self, key, default=None):
-        if key in self._namespace:
-            return self._namespace[key]
-        return getattr(builtins, key, default)
-
     def __getitem__(self, key):
-        return self.get(key, undefined)
+        try:
+            return self._namespace[key]
+        except KeyError:
+            return getattr(builtins, key, undefined)
 
     def __setitem__(self, key, value):
         self._namespace[key] = value
 
     def __delitem__(self, key):
         del self._namespace[key]
+
+
+class TemplateCodeGenerator(ModuleCodeGenerator):
+
+    def __init__(self, node, filename):
+        ModuleCodeGenerator.__init__(self, transform(node, filename))
+
+    def _nameOp(self, prefix, name):
+        if name in runtime_vars:
+            return self.emit(prefix + '_GLOBAL', name)
+        return ModuleCodeGenerator._nameOp(self, prefix, name)
 
 
 class Template(object):
@@ -408,7 +420,7 @@ class Template(object):
             source = source.decode(encoding, errors)
         node = Parser(tokenize(u'\n'.join(source.splitlines()),
                                filename), filename).parse()
-        self.code = ModuleCodeGenerator(transform(node, filename)).getCode()
+        self.code = TemplateCodeGenerator(node, filename).getCode()
         self.filename = filename
         self.encoding = encoding
         self.errors = errors
@@ -433,7 +445,7 @@ class Template(object):
         ns = self.default_context.copy()
         ns.update(*args, **kwargs)
         context = Context(ns, self.encoding, self.errors)
-        exec self.code in {}, context
+        exec self.code in context.runtime, context
         return context.get_value(self.unicode_mode)
 
     def substitute(self, *args, **kwargs):

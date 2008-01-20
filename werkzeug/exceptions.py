@@ -418,7 +418,7 @@ def _find_exceptions():
     rv = {}
     for name, obj in globals().iteritems():
         try:
-            if issubclass(obj, HTTPException) and obj.code is not None:
+            if getattr(obj, 'code', None) is not None:
                 rv[obj.code] = obj
         except TypeError:
             continue
