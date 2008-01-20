@@ -133,7 +133,7 @@ class SecureCookie(ModificationTrackingDict):
 
     def should_save(self):
         """True if the session should be saved."""
-        return self.modified or self.new
+        return self.modified
     should_save = property(should_save)
 
     def new_salt(self, secret_key):

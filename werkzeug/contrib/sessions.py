@@ -38,8 +38,7 @@ try:
 except ImportError:
     from sha import new as sha1
 from cPickle import dump, load, HIGHEST_PROTOCOL
-from Cookie import SimpleCookie, Morsel
-from werkzeug.utils import ClosingIterator, cookie_date
+from werkzeug.utils import ClosingIterator, dump_cookie, load_cookie
 
 
 _sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')
@@ -127,7 +126,7 @@ class Session(ModificationTrackingDict):
 
     def should_save(self):
         """True if the session should be saved."""
-        return self.modified or self.new
+        return self.modified
     should_save = property(should_save)
 
 
@@ -231,7 +230,8 @@ class SessionMiddleware(object):
 
     def __init__(self, app, store, cookie_name='session_id',
                  cookie_age=None, cookie_path=None, cookie_domain=None,
-                 cookie_secure=None, environ_key='werkzeug.session'):
+                 cookie_secure=None, cookie_httponly=False,
+                 environ_key='werkzeug.session'):
         self.app = app
         self.store = store
         self.cookie_name = cookie_name
@@ -239,32 +239,27 @@ class SessionMiddleware(object):
         self.cookie_path = cookie_path
         self.cookie_domain = cookie_domain
         self.cookie_secure = cookie_secure
+        self.cookie_httponly = cookie_httponly
         self.environ_key = environ_key
 
     def __call__(self, environ, start_response):
-        cookie = SimpleCookie(environ.get('HTTP_COOKIE', ''))
-        morsel = cookie.get(self.cookie_name, None)
-        if morsel is None:
+        cookie = load_cookie(environ.get('HTTP_COOKIE', ''))
+        sid = cookie.get(self.cookie_name, None)
+        if sid is None:
             session = self.store.new()
         else:
-            session = self.store.get(morsel.value)
+            session = self.store.get(sid)
         environ[self.environ_key] = session
 
         def injecting_start_response(status, headers, exc_info=None):
             if session.should_save:
-                morsel = Morsel()
-                morsel.key = self.cookie_name
-                morsel.coded_value = session.sid
+                expires = None
                 if self.cookie_age is not None:
-                    morsel['max-age'] = self.cookie_age
-                    morsel['expires'] = cookie_date(time() + self.cookie_age)
-                if self.cookie_domain is not None:
-                    morsel['domain'] = self.cookie_domain
-                if self.cookie_path is not None:
-                    morsel['path'] = self.cookie_path
-                if self.cookie_secure is not None:
-                    morsel['secure'] = self.cookie_secure
-                headers.append(tuple(str(morsel).split(':', 1)))
+                    expires = time() + self.cookie_age
+                headers.append('Set-Cookie', dump_cookie(self.cookie_name,
+                               self.cookie_age, expires, self.cookie_path,
+                               self.cookie_domain, self.cookie_secure,
+                               self.cookie_httponly))
             return start_response(status, headers, exc_info)
         return ClosingIterator(self.app(environ, injecting_start_response),
                                lambda: self.store.save_if_modified(session))
