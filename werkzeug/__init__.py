@@ -99,7 +99,7 @@ all_by_module = {
                              'cached_property', 'MultiDict', 'import_string',
                              'dump_cookie', 'parse_cookie', 'unescape',
                              'format_string', 'Href', 'DispatcherMiddleware',
-                             'find_modules'],
+                             'find_modules', 'header_property'],
     'werkzeug.http':        ['Accept', 'CacheControl', 'ETags', 'parse_etags',
                              'parse_date', 'parse_cache_control_header',
                              'is_resource_modified', 'parse_accept_header',
@@ -107,7 +107,9 @@ all_by_module = {
                              'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest', 'Request',
                              'Response', 'AcceptMixin', 'ETagRequestMixin',
-                             'ETagResponseMixin', 'BaseReporterStream']
+                             'ETagResponseMixin', 'ResponseStreamMixin',
+                             'CommonResponseDescriptorsMixin',
+                             'BaseReporterStream']
 }
 
 attribute_modules = ['exceptions', 'routing', 'script']

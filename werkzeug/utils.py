@@ -832,7 +832,62 @@ def lazy_property(func, name=None, doc=None):
     return cached_property(func, name, doc)
 
 
-class environ_property(object):
+class DictAccessorProperty(object):
+    """
+    Baseclass for `environ_property` and `header_property`.
+    """
+
+    def __init__(self, name, default=None, load_func=None, dump_func=None,
+                 read_only=False, default_factory=None, doc=None):
+        self.name = name
+        if default_factory is None:
+            if default is not None:
+                default_factory = lambda: default
+            else:
+                default_factory = lambda: None
+        self.default_factory = default_factory
+        self.load_func = load_func
+        self.dump_func = dump_func
+        self.read_only = read_only
+        self.__doc__ = doc
+
+    def lookup(self):
+        raise NotImplementedError()
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        storage = self.lookup(obj)
+        if self.name not in storage:
+            return self.default_factory()
+        rv = storage[self.name]
+        if self.load_func is not None:
+            try:
+                rv = self.load_func(rv)
+            except (ValueError, TypeError):
+                rv = self.default_factory()
+        return rv
+
+    def __set__(self, obj, value):
+        if self.read_only:
+            raise AttributeError('read only property')
+        if self.dump_func is not None:
+            value = self.dump_func(value)
+        self.lookup(obj)[self.name] = value
+
+    def __delete__(self, obj):
+        if self.read_only:
+            raise AttributeError('read only property')
+        self.lookup(obj).pop(self.name, None)
+
+    def __repr__(self):
+        return '<%s %s>' % (
+            self.__class__.__name__,
+            self.name
+        )
+
+
+class environ_property(DictAccessorProperty):
     """
     Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an
@@ -854,40 +909,27 @@ class environ_property(object):
     `read_only` to False it will block set/delete.
     """
 
-    def __init__(self, name, default=None, convert=None, read_only=False,
-                 doc=None):
-        self.name = name
-        self.default = default
-        self.convert = convert
-        self.read_only = read_only
-        self.__doc__ = doc
+    def lookup(self, obj):
+        return obj.environ
 
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        rv = obj.environ.get(self.name, self.default)
-        if rv is self.default or self.convert is None:
-            return rv
-        try:
-            return self.convert(rv)
-        except (ValueError, TypeError):
-            return self.default
 
-    def __set__(self, obj, value):
-        if self.read_only:
-            raise AttributeError('read only property')
-        obj.environ[self.name] = value
+class header_property(DictAccessorProperty):
+    """
+    Like `environ_property` but for headers.
+    """
 
-    def __delete__(self, obj):
-        if self.read_only:
-            raise AttributeError('read only property')
-        obj.environ.pop(self.name, None)
+    def lookup(self, obj):
+        return obj.headers
 
-    def __repr__(self):
-        return '<%s %s>' % (
-            self.__class__.__name__,
-            self.name
-        )
+
+def get_content_type(mimetype, charset):
+    """Return the full content type string with charset for a mimetype."""
+    if mimetype.startswith('text/') or \
+       mimetype == 'application/xml' or \
+       (mimetype.startswith('application/') and
+        mimetype.endswith('+xml')):
+        mimetype += '; charset=' + charset
+    return mimetype
 
 
 def format_string(string, context):

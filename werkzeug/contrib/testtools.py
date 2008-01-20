@@ -11,7 +11,7 @@
     :copyright: 2007 by Ronny Pfannschmidt.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug import BaseResponse, cached_property, import_string
+from werkzeug import Response, cached_property, import_string
 
 
 class ContentAccessors(object):
@@ -41,8 +41,8 @@ class ContentAccessors(object):
         except ImportError:
             fromstring = etree.HTML
         if self.mimetype=='text/html':
-            return fromstring(self.response_body)
-        return etree.XML(self.response_body)
+            return fromstring(self.data)
+        return etree.XML(self.data)
     lxml = cached_property(lxml)
 
     def json(self):
@@ -50,16 +50,11 @@ class ContentAccessors(object):
         if 'json' not in self.mimetype:
             raise AttributeError('Not a JSON response')
         from simplejson import loads
-        return loads(self.response_body)
+        return loads(self.data)
     json = cached_property(json)
 
 
-class TestResponse(BaseResponse, ContentAccessors):
+class TestResponse(Response, ContentAccessors):
     """
     Pass this to `werkzeug.test.Client` for easier unittesting.
     """
-
-    def __init__(self, *k, **kw):
-        BaseResponse.__init__(self, *k, **kw)
-        self.content_type = self.headers['Content-Type']
-        self.mimetype = self.content_type.split(';')[0].strip()

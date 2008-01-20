@@ -195,8 +195,8 @@ def test_environ_property():
         string = environ_property('string')
         missing = environ_property('missing', 'spam')
         read_only = environ_property('number', read_only=True)
-        number = environ_property('number', convert=int)
-        broken_number = environ_property('broken_number', convert=int)
+        number = environ_property('number', load_func=int)
+        broken_number = environ_property('broken_number', load_func=int)
 
     a = A()
     assert a.string == 'abc'

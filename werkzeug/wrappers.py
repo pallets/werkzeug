@@ -14,11 +14,13 @@ import tempfile
 import urlparse
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
-     parse_date, generate_etag, is_resource_modified, unquote_etag
+     parse_date, generate_etag, is_resource_modified, unquote_etag, \
+     quote_etag
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
-     cookie_date, parse_cookie, dump_cookie, http_date, escape, _empty_stream
+     cookie_date, parse_cookie, dump_cookie, http_date, escape, \
+     header_property, get_content_type, _empty_stream
 
 
 class _StorageHelper(cgi.FieldStorage):
@@ -306,8 +308,8 @@ class BaseResponse(object):
         if content_type is None:
             if mimetype is None and 'Content-Type' not in self.headers:
                 mimetype = self.default_mimetype
-            if mimetype is not None and mimetype.startswith('text/'):
-                mimetype += '; charset=' + self.charset
+            if mimetype is not None:
+                mimetype = get_content_type(mimetype, self.charset)
             content_type = mimetype
         if content_type is not None:
             self.headers['Content-Type'] = content_type
@@ -346,6 +348,10 @@ class BaseResponse(object):
 
     def write(self, data):
         """If we have a buffered response this writes to the buffer."""
+        from warnings import warn
+        warn(DeprecationWarning('response.write() will go away in Werkzeug '
+                                '0.3.  Use the new response.stream available '
+                                'on `Response`.'))
         if not isinstance(self.response, list):
             raise RuntimeError('cannot write to a streamed response.')
         self.response.append(data)
@@ -354,7 +360,7 @@ class BaseResponse(object):
         """Write lines."""
         self.write(''.join(lines))
 
-    def _get_response_body(self):
+    def _get_data(self):
         """
         The string representation of the request body.  Whenever you access
         this property the request iterable is encoded and flattened.  This
@@ -363,12 +369,21 @@ class BaseResponse(object):
         if not isinstance(self.response, list):
             self.response = list(self.response)
         return ''.join(self.iter_encoded())
-    def _set_response_body(self, value):
+    def _set_data(self, value):
         """Set a new string as response body."""
         self.response = [value]
-    response_body = property(_get_response_body, _set_response_body,
-                             doc=_get_response_body.__doc__)
-    del _get_response_body, _set_response_body
+    data = property(_get_data, _set_data, doc=_get_data.__doc__)
+
+    def _deprecated(f):
+        def proxy(*args, **kwargs):
+            from warnings import warn
+            warn(DeprecationWarning('response_body is now called data'))
+            return f(*args, **kwargs)
+        return proxy
+    response_body = property(_deprecated(_get_data), _deprecated(_set_data),
+                             doc='**deprecated**\ncalled `data` now. '
+                             'Will go away in Werkzeug 0.3')
+    del _get_data, _set_data, _deprecated
 
     def iter_encoded(self, charset=None):
         """
@@ -438,9 +453,7 @@ class BaseResponse(object):
         e-tag.
         """
         self.add_etag()
-        # access response body so that wrapper generators are converted into
-        # a list if there was already an etag.
-        self.response_body
+        BaseResponse.data.__get__(self)
 
     def __call__(self, environ, start_response):
         """Process this response as WSGI application."""
@@ -565,30 +578,121 @@ class ETagResponseMixin(object):
 
     def add_etag(self, overwrite=False, weak=False):
         """Add an etag for the current response if there is none yet."""
-        if not overwrite and 'etag' in self.headers:
-            return
-        self.set_etag(generate_etag(self.response_body), weak)
+        if overwrite or 'etag' not in self.headers:
+            self.set_etag(generate_etag(self.data), weak)
 
     def set_etag(self, etag, weak=False):
         """Set the etag, and override the old one if there was one."""
-        etag = '"%s"' % etag
-        if weak:
-            etag = 'w/' + etag
-        self.headers['ETag'] = etag
+        self.headers['ETag'] = quote_etag(etag, weak)
 
     def get_etag(self):
         """
         Return a tuple in the form ``(etag, is_weak)``.  If there is no
         ETag the return value is ``(None, None)``.
         """
-        return unquote_etag(self.headers('ETag'))
+        return unquote_etag(self.headers.get('ETag'))
+
+
+class ResponseStream(object):
+    """
+    A file descriptor like object used by the `ResponseStreamMixin` to
+    represent the body of the stream.  It directly pushes into the response
+    iterable of the response object.
+    """
+
+    closed = False
+    mode = 'wb'
+
+    def __init__(self, response):
+        self.response = response
+
+    def write(self, value):
+        if self.closed:
+            raise ValueError('I/O operation on closed file')
+        buf = self.response.response
+        if not isinstance(buf, list):
+            self.response.response = buf = list(self.response.response)
+        buf.append(value)
+
+    def writelines(self, seq):
+        for item in seq:
+            self.write(item)
+
+    def close(self):
+        self.closed = True
+
+    def flush(self):
+        if self.closed:
+            raise ValueError('I/O operation on closed file')
+
+    def isatty(self):
+        if self.closed:
+            raise ValueError('I/O operation on closed file')
+        return False
+
+    def encoding(self):
+        return self.response.charset
+    encoding = property(encoding)
+
+
+class ResponseStreamMixin(object):
+    """
+    Mixin for `BaseRequest` subclasses.  Classes that inherit from this mixin
+    will automatically get a `stream` property that provides a write-only
+    interface to the response iterable.
+    """
+
+    def stream(self):
+        return ResponseStream(self)
+    stream = cached_property(stream)
+
+
+class CommonResponseDescriptorsMixin(object):
+    """
+    A mixin for `BaseResponse` subclasses.  Response objects that mix this
+    class in will automatically get descriptors for a couple of HTTP headers
+    with automatic type conversion.
+    """
+
+    _load_list = lambda x: [y.strip() for y in x.split(',')]
+    _dump_list = lambda x: ', '.join(map(str, x))
+
+    def _get_mimetype(self):
+        """The mimetype (content type without charset etc.)"""
+        ct = self.headers.get('Content-Type')
+        if ct:
+            return ct.split(';')[0].strip()
+
+    def _set_mimetype(self, value):
+        self.headers['Content-Type'] = get_content_type(value, self.charset)
+
+    mimetype = property(_get_mimetype, _set_mimetype,
+                        doc=_get_mimetype.__doc__)
+    location = header_property('Location')
+    age = header_property('Age', None, parse_date, http_date)
+    allow = header_property('Allow', None, _load_list, _dump_list,
+                            default_factory=list)
+    content_type = header_property('Content-Type')
+    content_length = header_property('Content-Length', 0, int, str)
+    content_encoding = header_property('Content-Encoding')
+    content_language = header_property('Content-Language', None, _load_list,
+                                       _dump_list, default_factory=list)
+    date = header_property('Date', None, parse_date, http_date)
+    expires = header_property('Expires', None, parse_date, http_date)
+    last_modified = header_property('Last-Modified', None, parse_date,
+                                    http_date)
+    vary = header_property('Vary', None, _load_list, _dump_list,
+                           default_factory=list)
+
+    del _load_list, _dump_list, _get_mimetype, _set_mimetype
 
 
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin):
     """Full featured request object."""
 
 
-class Response(BaseResponse, ETagResponseMixin):
+class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
+               CommonResponseDescriptorsMixin):
     """Full featured response object."""
 
 
