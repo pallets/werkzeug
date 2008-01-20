@@ -157,6 +157,116 @@ class Accept(list):
     best = property(best)
 
 
+class HeaderSet(object):
+    """
+    Similar to the `ETagSet` class this implements a set like structure.
+    Unlike `ETagSet` this is case insensitive and used for vary, allow, and
+    content-language headers.
+    """
+
+    def __init__(self, headers=None, on_update=None):
+        self._headers = list(headers or ())
+        self._set = set([x.lower() for x in self._headers])
+        self.on_update = on_update
+
+    def add(self, header):
+        self.extend((header,))
+
+    def remove(self, header):
+        key = header.lower()
+        if key not in self._set:
+            raise IndexError(header)
+        self._set.remove(key)
+        for idx, key in enumerate(self._headers):
+            if key.lower() == header:
+                del self._headers[idx]
+                break
+        if self.on_update is not None:
+            self.on_update(self)
+
+    def extend(self, iterable):
+        inserted_any = False
+        for header in iterable:
+            key = header.lower()
+            if key not in self._set:
+                self._headers.append(header)
+                self._set.add(key)
+                inserted_any = True
+        if inserted_any and self.on_update is not None:
+            self.on_update(self)
+
+    def discard(self, header):
+        try:
+            return self.remove(header)
+        except IndexError:
+            pass
+
+    def find(self, header):
+        header = header.lower()
+        for idx, item in enumerate(self._headers):
+            if item.lower() == header:
+                return idx
+        return -1
+
+    def index(self, header):
+        rv = self.find(header)
+        if rv < 0:
+            raise IndexError(header)
+        return rv
+
+    def clear(self):
+        self._set.clear()
+        del self._headers[:]
+        if self.on_update is not None:
+            self.on_update(self)
+
+    def as_set(self, preserve_casing=False):
+        if preserve_casing:
+            return set(self._headers)
+        return set(self._set)
+
+    def to_header(self):
+        return ', '.join(self._headers)
+
+    def __getitem__(self, idx):
+        return self._headers[idx]
+
+    def __delitem__(self, idx):
+        rv = self._headers.pop(idx)
+        self._set.remove(rv.lower())
+        if self.on_update is not None:
+            self.on_update(self)
+
+    def __setitem__(self, idx, value):
+        old = self._headers[idx]
+        self._set.remove(old.lower())
+        self._headers[idx] = value
+        self._set.add(value.lower())
+        if self.on_update is not None:
+            self.on_update(self)
+
+    def __contains__(self, header):
+        return header.lower() in self._set
+
+    def __len__(self):
+        return len(self._set)
+
+    def __iter__(self):
+        return iter(self._headers)
+
+    def __nonzero__(self):
+        return bool(self._set)
+
+    def __str__(self):
+        return self.to_header()
+
+    def __repr__(self):
+        return '%s(%r)' % (
+            self.__class__.__name__,
+            self._headers
+        )
+
+
 class CacheControl(dict):
     """
     Wrapper around a dict for cache control headers.
@@ -358,21 +468,32 @@ def parse_accept_header(value):
     return Accept(result)
 
 
-def parse_cache_control_header(value):
+def parse_cache_control_header(value, on_update=None):
     """
     Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
     """
     if not value:
-        return CacheControl(None)
+        return CacheControl(None, on_update)
     result = {}
     for match in _cachecontrol_re.finditer(value):
         name, value = match.group(1, 2)
         if value and value[0] == value[-1] == '"':
             value = value[1:-1]
         result[name] = value
-    return CacheControl(result)
+    return CacheControl(result, on_update)
+
+
+def parse_set_header(value, on_update=None):
+    """
+    Parse a set like header and return a `HeaderSet` object.  The return
+    value is an object that treats the items case insensitive and keeps the
+    order of the items.
+    """
+    if not value:
+        return HeaderSet(None, on_update)
+    return HeaderSet([x.strip() for x in value.split(',')], on_update)
 
 
 def quote_etag(etag, weak=False):

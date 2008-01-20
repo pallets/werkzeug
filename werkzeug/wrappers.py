@@ -23,10 +23,11 @@
 import cgi
 import tempfile
 import urlparse
+from datetime import datetime, timedelta
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
-     quote_etag
+     quote_etag, parse_set_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -671,17 +672,19 @@ class ETagResponseMixin(object):
     """
 
     def cache_control(self):
-        """A cache control object for the response."""
+        """
+        The Cache-Control general-header field is used to specify directives
+        that MUST be obeyed by all caching mechanisms along the
+        request/response chain.
+        """
         def on_update(cache_control):
             if not cache_control and 'cache-control' in self.headers:
                 del self.headers['cache-control']
             elif cache_control:
                 self.headers['Cache-Control'] = cache_control.to_header()
-        value = self.headers.get('Cache-Control')
-        if value is not None:
-            value = parse_cache_control_header(value)
-        return CacheControl(value, on_update)
-    cache_control = cached_property(cache_control)
+        return parse_cache_control_header(self.headers.get('cache-control'),
+                                          on_update)
+    cache_control = property(cache_control, doc=cache_control.__doc__)
 
     def make_conditional(self, request_or_environ):
         """
@@ -787,9 +790,6 @@ class CommonResponseDescriptorsMixin(object):
     with automatic type conversion.
     """
 
-    _load_list = lambda x: [y.strip() for y in x.split(',')]
-    _dump_list = lambda x: ', '.join(map(str, x))
-
     def _get_mimetype(self):
         """The mimetype (content type without charset etc.)"""
         ct = self.headers.get('Content-Type')
@@ -799,25 +799,103 @@ class CommonResponseDescriptorsMixin(object):
     def _set_mimetype(self, value):
         self.headers['Content-Type'] = get_content_type(value, self.charset)
 
-    mimetype = property(_get_mimetype, _set_mimetype,
-                        doc=_get_mimetype.__doc__)
-    location = header_property('Location')
-    age = header_property('Age', None, parse_date, http_date)
-    allow = header_property('Allow', None, _load_list, _dump_list,
-                            default_factory=list)
-    content_type = header_property('Content-Type')
-    content_length = header_property('Content-Length', 0, int, str)
-    content_encoding = header_property('Content-Encoding')
-    content_language = header_property('Content-Language', None, _load_list,
-                                       _dump_list, default_factory=list)
-    date = header_property('Date', None, parse_date, http_date)
-    expires = header_property('Expires', None, parse_date, http_date)
-    last_modified = header_property('Last-Modified', None, parse_date,
-                                    http_date)
-    vary = header_property('Vary', None, _load_list, _dump_list,
-                           default_factory=list)
+    mimetype = property(_get_mimetype, _set_mimetype, doc='''
+        The mimetype (content type without charset etc.)''')
+    location = header_property('Location', doc='''
+        The Location response-header field is used to redirect the recipient
+        to a location other than the Request-URI for completion of the request
+        or identification of a new resource.''')
+    age = header_property('Age', None, parse_date, http_date, doc='''
+        The Age response-header field conveys the sender's estimate of the
+        amount of time since the response (or its revalidation) was
+        generated at the origin server.
 
-    del _load_list, _dump_list, _get_mimetype, _set_mimetype
+        Age values are non-negative decimal integers, representing time in
+        seconds.''')
+    content_type = header_property('Content-Type', doc='''
+        The Content-Type entity-header field indicates the media type of the
+        entity-body sent to the recipient or, in the case of the HEAD method,
+        the media type that would have been sent had the request been a GET.
+    ''')
+    content_length = header_property('Content-Length', 0, int, str, doc='''
+        The Content-Length entity-header field indicates the size of the
+        entity-body, in decimal number of OCTETs, sent to the recipient or,
+        in the case of the HEAD method, the size of the entity-body that would
+        have been sent had the request been a GET.''')
+    content_location = header_property('Content-Location', doc='''
+        The Content-Location entity-header field MAY be used to supply the
+        resource location for the entity enclosed in the message when that
+        entity is accessible from a location separate from the requested
+        resource's URI.''')
+    content_encoding = header_property('Content-Encoding', doc='''
+        The Content-Encoding entity-header field is used as a modifier to the
+        media-type.  When present, its value indicates what additional content
+        codings have been applied to the entity-body, and thus what decoding
+        mechanisms must be applied in order to obtain the media-type
+        referenced by the Content-Type header field.''')
+    date = header_property('Date', None, parse_date, http_date, doc='''
+        The Date general-header field represents the date and time at which
+        the message was originated, having the same semantics as orig-date
+        in RFC 822.''')
+    expires = header_property('Expires', None, parse_date, http_date, doc='''
+        The Expires entity-header field gives the date/time after which the
+        response is considered stale. A stale cache entry may not normally be
+        returned by a cache.''')
+    last_modified = header_property('Last-Modified', None, parse_date,
+                                    http_date, doc='''
+        The Last-Modified entity-header field indicates the date and time at
+        which the origin server believes the variant was last modified.''')
+
+    def _get_retry_after(self):
+        value = self.headers.get('retry-after')
+        if value is None:
+            return
+        elif value.isdigit():
+            return datetime.utcnow() + timedelta(seconds=int(value))
+        return parse_date(value)
+    def _set_retry_after(self, value):
+        if isinstance(value, datetime):
+            value = http_date(value)
+        else:
+            value = str(value)
+        self.headers['Retry-After'] = value
+
+    retry_after = property(_get_retry_after, _set_retry_after, doc='''
+        The Retry-After response-header field can be used with a 503 (Service
+        Unavailable) response to indicate how long the service is expected
+        to be unavailable to the requesting client.
+
+        Time in seconds until expiration or date.''')
+
+    def _set_property(name, doc=None):
+        def fget(self):
+            def on_update(header_set):
+                if not header_set and name in self.headers:
+                    del self.headers[name]
+                elif header_set:
+                    self.headers[name] = header_set.to_header()
+            return parse_set_header(self.headers.get(name), on_update)
+        return property(fget, doc)
+
+    vary = _set_property('Vary', doc='''
+         The Vary field value indicates the set of request-header fields that
+         fully determines, while the response is fresh, whether a cache is
+         permitted to use the response to reply to a subsequent request
+         without revalidation.''')
+    content_language = _set_property('Content-Language', doc='''
+         The Content-Language entity-header field describes the natural
+         language(s) of the intended audience for the enclosed entity.  Note
+         that this might not be equivalent to all the languages used within
+         the entity-body.''')
+    allow = _set_property('Allow', doc='''
+        The Allow entity-header field lists the set of methods supported
+        by the resource identified by the Request-URI. The purpose of this
+        field is strictly to inform the recipient of valid methods
+        associated with the resource. An Allow header field MUST be
+        present in a 405 (Method Not Allowed) response.''')
+
+    del _set_property, _get_mimetype, _set_mimetype, _get_retry_after, \
+        _set_retry_after
 
 
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin):

@@ -966,7 +966,7 @@ class Href(object):
                 query, path = path[-1], path[:-1]
             else:
                 query = dict([(k.endswith('_') and k[:-1] or k, v)
-                              for k, v in query.iteritems()])
+                              for k, v in query.items()])
         path = '/'.join(url_quote(x, self.charset) for x in path
                         if x is not None).lstrip('/')
         if query:
@@ -1019,14 +1019,9 @@ class _DictAccessorProperty(object):
     """
 
     def __init__(self, name, default=None, load_func=None, dump_func=None,
-                 read_only=False, default_factory=None, doc=None):
+                 read_only=False, doc=None):
         self.name = name
-        if default_factory is None:
-            if default is not None:
-                default_factory = lambda: default
-            else:
-                default_factory = lambda: None
-        self.default_factory = default_factory
+        self.default = default
         self.load_func = load_func
         self.dump_func = dump_func
         self.read_only = read_only
@@ -1040,13 +1035,13 @@ class _DictAccessorProperty(object):
             return self
         storage = self.lookup(obj)
         if self.name not in storage:
-            return self.default_factory()
+            return self.default
         rv = storage[self.name]
         if self.load_func is not None:
             try:
                 rv = self.load_func(rv)
             except (ValueError, TypeError):
-                rv = self.default_factory()
+                rv = self.default
         return rv
 
     def __set__(self, obj, value):
@@ -1509,7 +1504,7 @@ def import_string(import_name, silent=False):
         else:
             return __import__(import_name)
         return getattr(__import__(module, None, None, [obj]), obj)
-    except ImportError:
+    except (ImportError, AttributeError):
         if not silent:
             raise
 

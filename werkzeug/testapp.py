@@ -13,11 +13,12 @@ try:
     import pkg_resources
 except ImportError:
     pkg_resources = None
+from werkzeug.utils import responder
 from werkzeug.templates import Template
-from werkzeug.wrappers import BaseRequest as Request
+from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 
 
-LOGO = '''\
+logo = Response('''\
 R0lGODlhoACgAOMIAAEDACwpAEpCAGdgAJaKAM28AOnVAP3rAP//////////////////////////
 /////yH5BAEKAAgALAAAAACgAKAAAAT+EMlJq704680R+F0ojmRpnuj0rWnrvnB8rbRs33gu0bzu
 /0AObxgsGn3D5HHJbCUFyqZ0ukkSDlAidctNFg7gbI9LZlrBaHGtzAae0eloe257w9EDOX2fst/x
@@ -51,7 +52,9 @@ Eaco77lNDGXBM0ECYB/+s7nKFdwSF5hgXumQeEZ7amRg39RHy3zIjyRCykQh8Zo2iviRKyTDn/zx
 PPa8A2l0p1kNqPXEVRm1AOs1oAGZU596t6SOR2mcBOco1srWtkaVrMUzIErrKri85keKqRQYX9VX
 0/eAUK1hrSu6HMEX3Qh2sCh0q0D2CtnUqS4hj62sE/zaDs2Sg7MBS6xnQeooc2R2tC9YrKpEi9pL
 XfYXp20tDCpSP8rKlrD4axprb9u1Df5hSbz9QU0cRpfgnkiIzwKucd0wsEHlLpe5yHXuc6FrNelO
-l7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs='''
+l7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs='''.decode('base64'),
+    mimetype='image/png')
+
 
 TEMPLATE = Template(ur'''\
 <%py
@@ -185,19 +188,17 @@ TEMPLATE = Template(ur'''\
 
 
 def test_app(environ, start_response):
+    """Simple test application that dumps the environment."""
     req = Request(environ, populate_request=False)
     if req.args.get('resource') == 'logo':
-        image = LOGO.decode('base64')
-        start_response('200 OK', [('Content-Type', 'image/gif'),
-                                  ('Content-Length', str(len(image)))])
-        return [image]
-    start_response('200 OK', [('Content-Type', 'text/html; charset=utf-8')])
+        return logo
     eggs = None
     if pkg_resources is not None:
         eggs = list(pkg_resources.working_set)
         eggs.sort(lambda a, b: cmp(a.project_name.lower(),
                                    b.project_name.lower()))
-    return [TEMPLATE.render(req=req, eggs=eggs)]
+    return Response(TEMPLATE.render(req=req, eggs=eggs), mimetype='text/html')
+test_app = responder(test_app)
 
 
 if __name__ == '__main__':
