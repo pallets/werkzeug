@@ -3,7 +3,9 @@
     werkzeug.utils
     ~~~~~~~~~~~~~~
 
-    Various utils.
+    This module implements various utilities for WSGI applciations.  Most of
+    them are used by the request and response wrappers but espeically for
+    middleware development it makes sense to use them without the wrappers.
 
     :copyright: 2007 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
@@ -32,9 +34,19 @@ _logger = None
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 
+from htmlentitydefs import name2codepoint
+_entity_re = re.compile(r'&([^;]+);')
+_html_entities = name2codepoint.copy()
+_html_entities['apos'] = 39
+del name2codepoint
+
 
 def _log(type, message, *args, **kwargs):
-    """Log into the internal werkzeug logger."""
+    """
+    Log into the internal werkzeug logger.
+
+    :internal:
+    """
     global _logger
     if _logger is None:
         import logging
@@ -49,6 +61,8 @@ class _ExtendedMorsel(Morsel):
     """
     Subclass of regular morsels for simpler usage and support of the
     nonstandard but useful http only header.
+
+    :internal:
     """
     _reserved = {'httponly': 'HttpOnly'}
     _reserved.update(Morsel._reserved)
@@ -66,11 +80,39 @@ class _ExtendedMorsel(Morsel):
 
 class MultiDict(dict):
     """
-    A dict that takes a list of multiple values as only argument
-    in order to store multiple values per key.
+    A `MultiDict` is a dictionary subclass customized to deal with multiple
+    values for the same key which is for example used by the parsing functions
+    in the wrappers.  This is necessary because some HTML form elements pass
+    multiple values for the same key.
+
+    `MultiDict` implements the all standard dictionary methods.  Internally,
+    it saves all values for a key as a list, but the standard dict access
+    methods will only return the first value for a key. If you want to gain
+    access to the other values too you have to use the `list` methods as
+    explained below.
+
+    Basic Usage:
+
+    >>> d = MultiDict([('a', 'b'), ('a', 'c')])
+    >>> d
+    MultiDict([('a', 'b'), ('a', 'c')])
+    >>> d['a']
+    'b'
+    >>> d.getlist('a')
+    ['b', 'c']
+    >>> 'a' in d
+    True
+
+    It behaves like a normal dict thus all dict functions will only return the
+    first value when multiple values for one key are found.
     """
 
     def __init__(self, mapping=()):
+        """
+        A `MultiDict` can be constructed from an iterable of ``(key, value)``
+        tuples, a dict, a `MultiDict` or with Werkzeug 0.2 onwards some
+        keyword parameters.
+        """
         if isinstance(mapping, MultiDict):
             dict.__init__(self, [(k, v[:]) for k, v in mapping.lists()])
         elif isinstance(mapping, dict):
@@ -92,6 +134,8 @@ class MultiDict(dict):
         """
         Return the first data value for this key;
         raises KeyError if not found.
+
+        :raise KeyError: if the key does not exist
         """
         return dict.__getitem__(self, key)[0]
 
@@ -102,9 +146,18 @@ class MultiDict(dict):
     def get(self, key, default=None, type=None):
         """
         Return the default value if the requested data doesn't exist.
-        Additionally you can pass it a type function that is used as
-        converter.  That function should either conver the value or
-        raise a `ValueError`.
+        If `type` is provided and is a callable it should convert the value,
+        return it or raise a `ValueError` if that is not possible.  In this
+        case the function will return the default as if the value was not
+        found.
+
+        Example:
+
+        >>> d = MultiDict(foo='42', bar='blub')
+        >>> d.get('foo', type=int)
+        42
+        >>> d.get('bar', -1, type=int)
+        -1
         """
         try:
             rv = self[key]
@@ -115,7 +168,14 @@ class MultiDict(dict):
         return rv
 
     def getlist(self, key, type=None):
-        """Return an empty list if the requested data doesn't exist"""
+        """
+        Return the list of items for a given key. If that key is not in the
+        `MultiDict`, the return value will be an empty list.  Just as `get`
+        `getlist` accepts a `type` parameter.  All items will be converted
+        with the callable defined there.
+
+        :return: list
+        """
         try:
             rv = dict.__getitem__(self, key)
         except KeyError:
@@ -182,9 +242,11 @@ class MultiDict(dict):
 
     def to_dict(self, flat=True):
         """
-        Returns the contents as simple dict.  If `flat` is `True` the
-        resulting dict will only have the first item present, if `flat`
-        is `False` all values will be lists.
+        Return the contents as regular dict.  If `flat` is `True` the returned
+        dict will only have the first item present, if `flat` is `False` all
+        values will be returned as lists.
+
+        :return: dict
         """
         if flat:
             return dict(self.iteritems())
@@ -224,8 +286,21 @@ class MultiDict(dict):
 
 class CombinedMultiDict(MultiDict):
     """
-    Pass it multiple multidicts to create a new read only
-    dict which resolves items from the passed dicts.
+    A read only `MultiDict` decorator that you can pass multiple `MultiDict`
+    instances as sequence and it will combine the return values of all wrapped
+    dicts:
+
+    >>> from werkzeug import MultiDict, CombinedMultiDict
+    >>> post = MultiDict([('foo', 'bar')])
+    >>> get = MultiDict([('blub', 'blah')])
+    >>> combined = CombinedMultiDict([get, post])
+    >>> combined['foo']
+    'bar'
+    >>> combined['blub']
+    'blah'
+
+    This works for all read operations and will raise a `TypeError` for
+    methods that usually change data which isn't possible.
     """
 
     def __init__(self, dicts=None):
@@ -346,11 +421,26 @@ class CombinedMultiDict(MultiDict):
 
 class FileStorage(object):
     """
-    Represents an uploaded file.
+    The `FileStorage` object is a thin wrapper over incoming files.  It is
+    used by the request object to represent uploaded files.  All the
+    attributes of the wrapper stream are proxied by the file storage so
+    it's possible to do ``storage.read()`` instead of the long form
+    ``storage.stream.read()``.
     """
 
     def __init__(self, stream=_empty_stream, filename=None, name=None,
                  content_type='application/octet-stream', content_length=-1):
+        """
+        Creates a new `FileStorage` object.  The constructor looked different
+        for Werkzeug 0.1 but there the object was only used internally.
+
+        :param stream: the input stream for uploaded file.  Usually this
+                       points to a temporary file.
+        :param filename: The filename of the file on the client.
+        :param name: the name of the form field
+        :param content_type: the content type of the file
+        :param content_length: the content length of the file.
+        """
         self.name = name
         self.stream = stream
         self.filename = filename or getattr(stream, 'name', None)
@@ -360,9 +450,9 @@ class FileStorage(object):
     def save(self, dst, buffer_size=16384):
         """
         Save the file to a destination path or file object.  If the
-        destination is a file object you have to close it yourself after the call.
-        The buffer size is the number of bytes held in the memory during the copy
-        process.  It defaults to 16KB.
+        destination is a file object you have to close it yourself after the
+        call.  The buffer size is the number of bytes held in the memory
+        during the copy process.  It defaults to 16KB.
         """
         from shutil import copyfileobj
         if isinstance(dst, basestring):
@@ -384,7 +474,7 @@ class FileStorage(object):
         return bool(self.filename and self.content_length)
 
     def __len__(self):
-        return self.content_length
+        return max(self.content_length, 0)
 
     def __iter__(self):
         return iter(self.readline, '')
@@ -401,9 +491,19 @@ class Headers(object):
     """
     An object that stores some headers.  It has a dict like interface
     but is ordered and can store keys multiple times.
+
+    This data structure is useful if you want a nicer way to handle WSGI
+    headers which are stored as tuples in a list.
     """
 
     def __init__(self, defaults=None):
+        """
+        Create a new `Headers` object based on a list or dict of headers which
+        are used as default values.  This does not reuse the list passed to
+        the constructor for internal usage.  To create a `Headers` object that
+        uses as internal storage the list or list-like object provided it's
+        possible to use the `linked` classmethod.
+        """
         self._list = []
         if isinstance(defaults, dict):
             for key, value in defaults.iteritems():
@@ -426,7 +526,7 @@ class Headers(object):
         >>> headerlist
         [('Content-Length', '40'), ('Content-Type', 'text/html')]
 
-        *new in Werkzeug 0.2*
+        :return: new linked `Headers` object.
         """
         headers = object.__new__(cls)
         headers._list = headerlist
@@ -448,6 +548,22 @@ class Headers(object):
         return not self.__eq__(other)
 
     def get(self, key, default=None, type=None):
+        """
+        Return the default value if the requested data doesn't exist.
+        If `type` is provided and is a callable it should convert the value,
+        return it or raise a `ValueError` if that is not possible.  In this
+        case the function will return the default as if the value was not
+        found.
+
+        Example:
+
+        >>> d = Headers([('Content-Length', '42')])
+        >>> d.get('Content-Length', type=int)
+        42
+
+        If a headers object is bound you must notadd unicode strings
+        because no encoding takes place.
+        """
         try:
             rv = self[key]
         except KeyError:
@@ -460,6 +576,14 @@ class Headers(object):
             return default
 
     def getlist(self, key, type=None):
+        """
+        Return the list of items for a given key. If that key is not in the
+        `MultiDict`, the return value will be an empty list.  Just as `get`
+        `getlist` accepts a `type` parameter.  All items will be converted
+        with the callable defined there.
+
+        :return: list
+        """
         ikey = key.lower()
         result = []
         for k, v in self:
@@ -541,7 +665,12 @@ class Headers(object):
     __setitem__ = set
 
     def to_list(self, charset='utf-8'):
-        """Create a str only list of the headers."""
+        """
+        Convert the headers into a list and converts the unicode header items
+        to the specified charset.
+
+        :return: list
+        """
         result = []
         for k, v in self:
             if isinstance(v, unicode):
@@ -566,7 +695,7 @@ class Headers(object):
 
 class EnvironHeaders(Headers):
     """
-    Read only version of the headers from wsgi environment.
+    Read only version of the headers from a WSGI environment.
     """
 
     def __init__(self, environ):
@@ -600,8 +729,32 @@ class EnvironHeaders(Headers):
 
 class SharedDataMiddleware(object):
     """
-    Redirects calls to a folder with static data, a static file or package
-    data.
+    A WSGI middleware that provides static content for development
+    environments or simple server setups. Usage is quite simple::
+
+        import os
+        from werkzeug import SharedDataMiddleware
+
+        app = SharedDataMiddleware(app, {
+            '/shared': os.path.join(os.path.dirname(__file__), 'shared')
+        })
+
+    The contents of the folder ``./shared`` will now be available on
+    ``http://example.com/shared/``.  This is pretty useful during development
+    because a standalone media server is not required.  One can also mount
+    files on the root folder and still continue to use the application because
+    the shared data middleware forwards all unhandled requests to the
+    application, even if the requests are below one of the shared folders.
+
+    If `pkg_resources` is available you can also tell the middleware to serve
+    files from package data::
+
+        app = SharedDataMiddleware(app, {
+            '/shared': ('myapplication', 'shared_files')
+        })
+
+    This will then serve the ``shared_files`` folder in the `myapplication`
+    python package.
     """
 
     def __init__(self, app, exports, disallow=None):
@@ -686,7 +839,12 @@ class SharedDataMiddleware(object):
 class DispatcherMiddleware(object):
     """
     Allows one to mount middlewares or application in a WSGI application.
-    This is useful if you want to combine multiple WSGI applications.
+    This is useful if you want to combine multiple WSGI applications::
+
+        app = DispatcherMiddleware(app, {
+            '/app2':        app2,
+            '/app3':        app3
+        })
     """
 
     def __init__(self, app, mounts=None):
@@ -713,12 +871,24 @@ class DispatcherMiddleware(object):
 
 class ClosingIterator(object):
     """
-    A class that wraps an iterator (which can have a close method) and
-    adds a close method for the callback and the iterator.
+    The WSGI specification requires that all middlewares and gateways respect the
+    `close` callback of an iterator.  Because it is useful to add another close
+    action to a returned iterator and adding a custom iterator is a boring task
+    this class can be used for that::
 
-    Usage::
+        return ClosingIterator(app(environ, start_response), [cleanup_session,
+                                                              cleanup_locals])
 
-        return ClosingIterator(iter, [list, of, callbacks])
+    If there is just one close function it can be bassed instead of the list.
+
+    A closing iterator is non needed if the application uses response objects
+    and finishes the processing if the resonse is started::
+
+        try:
+            return response(environ, start_response)
+        finally:
+            cleanup_session()
+            cleanup_locals()
     """
 
     def __init__(self, iterable, callbacks=None):
@@ -806,8 +976,17 @@ class Href(object):
 
 class cached_property(object):
     """
-    Descriptor implementing a "lazy property", i.e. the function
-    calculating the property value is called only once.
+    A decorator that converts a function into a lazy property. The
+    function wrapped is called the first time to retrieve the result
+    and than that calculated result is used the next time you access
+    the value::
+
+        class Foo(object):
+
+            @cached_property
+            def foo(self):
+                # calculate something important here
+                return 42
     """
 
     def __init__(self, func, name=None, doc=None):
@@ -832,9 +1011,11 @@ def lazy_property(func, name=None, doc=None):
     return cached_property(func, name, doc)
 
 
-class DictAccessorProperty(object):
+class _DictAccessorProperty(object):
     """
     Baseclass for `environ_property` and `header_property`.
+
+    :internal:
     """
 
     def __init__(self, name, default=None, load_func=None, dump_func=None,
@@ -887,7 +1068,7 @@ class DictAccessorProperty(object):
         )
 
 
-class environ_property(DictAccessorProperty):
+class environ_property(_DictAccessorProperty):
     """
     Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an
@@ -913,7 +1094,7 @@ class environ_property(DictAccessorProperty):
         return obj.environ
 
 
-class header_property(DictAccessorProperty):
+class header_property(_DictAccessorProperty):
     """
     Like `environ_property` but for headers.
     """
@@ -923,7 +1104,12 @@ class header_property(DictAccessorProperty):
 
 
 def get_content_type(mimetype, charset):
-    """Return the full content type string with charset for a mimetype."""
+    """
+    Return the full content type string with charset for a mimetype.
+
+    If the mimetype represents text the charset will be appended as charset
+    parameter, otherwise the mimetype is returned unchanged.
+    """
     if mimetype.startswith('text/') or \
        mimetype == 'application/xml' or \
        (mimetype.startswith('application/') and
@@ -952,7 +1138,9 @@ def format_string(string, context):
 
 def url_decode(s, charset='utf-8', decode_keys=False):
     """
-    Parse a querystring and return it as `MultiDict`.
+    Parse a querystring and return it as `MultiDict`.  Per default only values
+    are decoded into unicode strings.  If `decode_keys` is set to ``True`` the
+    same will happen for keys.
     """
     tmp = []
     for key, values in cgi.parse_qs(str(s)).iteritems():
@@ -964,7 +1152,12 @@ def url_decode(s, charset='utf-8', decode_keys=False):
 
 
 def url_encode(obj, charset='utf-8', encode_keys=False):
-    """Urlencode a dict/MultiDict."""
+    """
+    URL encode a dict/`MultiDict`.  If a value is `None` it will not appear in
+    the result string.  Per default only values are encoded into the target
+    charset strings.  If `encode_keys` is set to ``True`` unicode keys are
+    supported too.
+    """
     if obj is None:
         items = []
     elif isinstance(obj, MultiDict):
@@ -1061,16 +1254,34 @@ def escape(s, quote=None):
 
 
 def unescape(s, quote=False):
-    """Reversal of escape."""
-    s = s.replace('&lt;', '<').replace('&gt;', '>')
-    if quote:
-        s = s.replace('&quot;', '"')
-    return s.replace('&amp;', '&')
+    """
+    The reverse function of `escape`.  This unescapes all the HTML entities,
+    not only the XML entities inserted by `escape`.
+
+    *new in Werkzeug 0.2*
+    """
+    def handle_match(m):
+        name = m.group(1)
+        if name in html_entities:
+            return unichr(html_entities[name])
+        if name[:2] in ('#x', '#X'):
+            try:
+                return unichr(int(name[2:], 16))
+            except ValueError:
+                return u''
+        elif name.startswith('#'):
+            try:
+                return unichr(int(name[1:]))
+            except ValueError:
+                return u''
+        return u''
+    return _entity_re.sub(handle_match, s)
 
 
 def get_host(environ):
     """
-    Return the real host for the given environment.
+    Return the real host for the given WSGI enviornment.  This takes care
+    of the `X-Forwarded-Host` header.
     """
     if 'HTTP_X_FORWARDED_HOST' in environ:
         return environ['HTTP_X_FORWARDED_HOST']
@@ -1086,7 +1297,18 @@ def get_host(environ):
 def get_current_url(environ, root_only=False, strip_querystring=False,
                     host_only=False):
     """
-    Recreate the URL of the current request.
+    A handy helper function that recreates the full URL for the current
+    request or parts of it.  Here an example:
+
+    >>> env = create_environ("/?param=foo", "http://localhost/script")
+    >>> get_current_url(env)
+    'http://localhost/script/?param=foo'
+    >>> get_current_url(env, root_only=True)
+    'http://localhost/script/'
+    >>> get_current_url(env, host_only=True)
+    'http://localhost/'
+    >>> get_current_url(env, strip_querystring=True)
+    'http://localhost/script/'
     """
     tmp = [environ['wsgi.url_scheme'], '://']
     cat = tmp.append
@@ -1115,9 +1337,10 @@ def cookie_date(expires=None, _date_delim='-'):
     Formats the time to ensure compatibility with Netscape's cookie standard.
 
     Accepts a floating point number expressed in seconds since the epoc in, a
-    datetime object or a timetuple.  All times in UTC.
+    datetime object or a timetuple.  All times in UTC.  The `parse_date`
+    function in `werkzeug.http` can be used to parse such a date.
 
-    Outputs a string in the format 'Wdy, DD-Mon-YYYY HH:MM:SS GMT'.
+    Outputs a string in the format ``Wdy, DD-Mon-YYYY HH:MM:SS GMT``.
     """
     if expires is None:
         expires = gmtime()
@@ -1154,7 +1377,28 @@ def parse_cookie(header, charset='utf-8'):
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=None, httponly=False, charset='utf-8'):
-    """Creates a new Set-Cookie header without that 'Set-Cookie'"""
+    """
+    Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
+    The parameters are the same as in the cookie Morsel object in the
+    Python standard library but it accepts unicode data too:
+
+    :param max_age: should be a number of seconds, or `None` (default) if
+                    the cookie should last only as long as the client's
+                    browser session.
+    :param expires: should be a `datetime` object or unix timestamp.
+    :param path: limits the cookie to a given path, per default it will
+                 span the whole domain.
+    :param domain: Use this if you want to set a cross-domain cookie. For
+                   example, ``domain=".example.com"`` will set a cookie
+                   that is readable by the domain ``www.example.com``,
+                   ``foo.example.com`` etc. Otherwise, a cookie will only
+                   be readable by the domain that set it.
+    :param secure: The cookie will only be available via HTTPS
+    :param httponly: disallow JavaScript to access the cookie.  This is an
+                     extension to the cookie standard and probably not
+                     supported by all browsers.
+    :param charset: the encoding for unicode values.
+    """
     try:
         key = str(key)
     except UnicodeError:
@@ -1178,9 +1422,10 @@ def http_date(timestamp=None):
     Formats the time to match the RFC1123 date format.
 
     Accepts a floating point number expressed in seconds since the epoc in, a
-    datetime object or a timetuple.  All times in UTC.
+    datetime object or a timetuple.  All times in UTC.  The `parse_date`
+    function in `werkzeug.http` can be used to parse such a date.
 
-    Outputs a string in the format 'Wdy, DD Mon YYYY HH:MM:SS GMT'.
+    Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
     """
     return cookie_date(timestamp, ' ')
 
@@ -1243,7 +1488,17 @@ def responder(f):
 
 
 def import_string(import_name, silent=False):
-    """Import an object or module from a string."""
+    """
+    Imports an object based on a string.  This use useful if you want to use
+    import paths as endpoints or something similar.  An import path can
+    be specified either in dotted notation (``xml.sax.saxutils.escape``)
+    or with a colon as object delimiter (``xml.sax.saxutils:escape``).
+
+    If the `silent` is True the return value will be `None` if the import
+    fails.
+
+    :return: imported object
+    """
     try:
         if ':' in import_name:
             module, obj = import_name.split(':', 1)
@@ -1287,6 +1542,8 @@ def find_modules(import_path, include_packages=False, recursive=False):
     Packages are not returned unless `include_packages` is `True`.  This can
     also recursively list modules but in that case it will import all the
     packages to get the correct load path of that module.
+
+    :return: generator
     """
     module = import_string(import_path)
     path = getattr(module, '__path__', None)
@@ -1312,9 +1569,41 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
     """
     Create a new WSGI environ dict based on the values passed.  The first
     parameter should be the path of the request which defaults to '/'.
-    The second one can either be a absolute path (in that case the url
+    The second one can either be a absolute path (in that case the URL
     host is localhost:80) or a full path to the request with scheme,
     netloc port and the path to the script.
+
+    If the `path` contains a query string it will be used, even if the
+    `query_string` parameter was given.  If it does not contain one
+    the `query_string` parameter is used as querystring.  In that case
+    it can either be a dict, MultiDict or string.
+
+    The following options exist:
+
+    `method`
+        The request method.  Defaults to `GET`
+
+    `input_stream`
+        The input stream.  Defaults to an empty read only stream.
+
+    `content_type`
+        The content type for this request.  Default is an empty content
+        type.
+
+    `content_length`
+        The value for the content length header.  Defaults to 0.
+
+    `errors_stream`
+        The wsgi.errors stream.  Defaults to `sys.stderr`.
+
+    `multithread`
+        The multithreaded flag for the WSGI Environment.  Defaults to `False`.
+
+    `multiprocess`
+        The multiprocess flag for the WSGI Environment.  Defaults to `False`.
+
+    `run_once`
+        The run_once flag for the WSGI Environment.  Defaults to `False`.
     """
     if base_url is not None:
         scheme, netloc, script_name, qs, fragment = urlparse.urlsplit(base_url)

@@ -3,8 +3,19 @@
     werkzeug.wrappers
     ~~~~~~~~~~~~~~~~~
 
-    This module provides simple wrappers around `environ`,
-    `start_response` and `wsgi.input`.
+    The wrappers are simple request and response objects which you can
+    subclass to do whatever you want them to do.  The request object contains
+    the information transmitted by the client (webbrowser) and the response
+    object contains all the information sent back to the browser.
+
+    An important detail is that the request object is created with the WSGI
+    environ and will act as high-level proxy whereas the response object is an
+    actual WSGI application.
+
+    Like everything else in Werkzeug these objects will work correctly with
+    unicode data.  Incoming form data parsed by the response object will be
+    decoded into an unicode object if possible and if it makes sense.
+
 
     :copyright: 2007 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
@@ -61,7 +72,24 @@ class _StorageHelper(cgi.FieldStorage):
 
 class BaseRequest(object):
     """
-    Base Request class.
+    Very basic request object.  This does not implement advanced stuff like
+    entity tag parsing or cache controls.  The request object is created with
+    the WSGI environment as first argument and will add itself to the WSGI
+    environment as ``'werkzeug.request'`` unless it's created with
+    `populate_request` set to False.
+
+    There are a couple of mixins available that add additional functionality
+    to the request object, there is also a class called `Request` which
+    subclasses `BaseRequest` and all the important mixins.
+
+    It's a good idea to create a custom subclass of the `BaseRequest` and add
+    missing functionality either via mixins or direct implementation.  Here
+    an example for such subclasses::
+
+        from werkzeug import BaseRequest, ETagRequestMixin
+
+        class Request(BaseRequest, ETagRequestMixin):
+            pass
     """
     charset = 'utf-8'
     is_behind_proxy = False
@@ -74,12 +102,22 @@ class BaseRequest(object):
 
     def from_values(cls, path='/', base_url=None, query_string=None, **options):
         """
-        Create a new request object based on the values provided.  If
-        environ is given missing values are filled from there.  This method
-        is useful for small scripts when you need to simulate a request
-        from an url.  Do not use this method for unittesting, there is a
-        full featured client object in `werkzeug.test` that allows to create
-        multipart requests etc.
+        Create a new request object based on the values provided.  If environ
+        is given missing values are filled from there.  This method is useful
+        for small scripts when you need to simulate a request from an URL.  Do
+        not use this method for unittesting, there is a full featured client
+        object in `werkzeug.test` that allows to create multipart requests
+        etc.
+
+        This accepts the same options as the `create_environ` function from the
+        utils module and additionally an `environ` parameter that can contain
+        values which will override the values from dict returned by
+        `create_environ`.
+
+        Additionally a dict passed to `query_string` will be encoded in the
+        request class charset.
+
+        :return: request object
         """
         if isinstance(query_string, dict):
             query_string = url_encode(query_string, cls.charset)
@@ -93,14 +131,25 @@ class BaseRequest(object):
     from_values = classmethod(from_values)
 
     def _get_file_stream(self):
-        """Called to get a stream for the file upload.
+        """
+        Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
-        and `seek()` methods that is both writeable and readable."""
+        and `seek()` methods that is both writeable and readable.
+
+        The default implementation returns a temporary file.
+        """
         return tempfile.TemporaryFile('w+b')
 
     def _load_post_data(self):
-        """Method used internally to retrieve submitted data."""
+        """
+        Method used internally to retrieve submitted data.  After calling
+        this sets `_form` and `_files` on the request object to multi dicts
+        filled with the incoming form data.  As a matter of fact the input
+        stream will be empty afterwards.
+
+        :internal:
+        """
         self._data_stream = _empty_stream
         post = []
         files = []
@@ -130,7 +179,8 @@ class BaseRequest(object):
     def stream(self):
         """
         The parsed stream if the submitted data was not multipart or
-        urlencoded form data.
+        urlencoded form data.  This stream is the stream left by the CGI
+        module after parsing.  This is *not* the WSGI input stream.
         """
         if self._data_stream is None:
             self._load_post_data()
@@ -139,7 +189,7 @@ class BaseRequest(object):
     input_stream = environ_property('wsgi.input', 'The WSGI input stream.')
 
     def args(self):
-        """URL parameters"""
+        """The parsed URL parameters as `MultiDict`."""
         items = []
         qs = self.environ.get('QUERY_STRING', '')
         for key, values in cgi.parse_qs(qs, True).iteritems():
@@ -152,6 +202,8 @@ class BaseRequest(object):
     def data(self):
         """
         This reads the buffered incoming data from the client into the string.
+        Usually it's a bad idea to access `data` because a client could send
+        dozens of megabytes or more to cause memory problems on the server.
         """
         return self.stream.read()
     data = cached_property(data)
@@ -169,35 +221,57 @@ class BaseRequest(object):
     form = property(form, doc=form.__doc__)
 
     def values(self):
-        """combined multi dict for `args` and `form`"""
+        """Combined multi dict for `args` and `form`"""
         return CombinedMultiDict([self.args, self.form])
     values = cached_property(values)
 
     def files(self):
-        """File uploads."""
+        """
+        A `MultiDict` containing all uploaded files.  Each key in
+        `files` is the name from the ``<input type="file" name="" />``.  Each
+        value in `files` is a Werkzeug `FieldStorage` object with the
+        following members:
+
+        - `filename` - The name of the uploaded file, as a Python string.
+        - `type` - The content type of the uploaded file.
+        - `data` - The raw content of the uploaded file.
+        - `read()` - Read from the stream.
+
+        Note that `files` will only contain data if the request method was POST
+        and the ``<form>`` that posted to the request had
+        ``enctype="multipart/form-data"``.  It will be empty otherwise.
+
+        The files retreived will be kept in temporary files, you can store
+        them somewhere else using `shutil` or the convenient `save` method on
+        a `FieldStorage`.
+        """
         if not hasattr(self, '_files'):
             self._load_post_data()
         return self._files
     files = property(files, doc=files.__doc__)
 
     def cookies(self):
-        """Stored Cookies."""
+        """The retreived cookie values as regular dictionary."""
         return parse_cookie(self.environ, self.charset)
     cookies = cached_property(cookies)
 
     def headers(self):
-        """The headers from the WSGI environ."""
+        """The headers from the WSGI environ as immutable `EnvironHeaders`."""
         return EnvironHeaders(self.environ)
     headers = cached_property(headers)
 
     def path(self):
-        """Requested path."""
+        """
+        Requested path as unicode.  This works a bit like the regular path
+        info in the WSGI environment but will always include a leading slash,
+        even if the URL root is accessed.
+        """
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
         return path.decode(self.charset, 'ignore')
     path = cached_property(path)
 
     def script_root(self):
-        """The root path of the script."""
+        """The root path of the script without the trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
         return path.decode(self.charset, 'ignore')
     script_root = cached_property(script_root)
@@ -256,7 +330,7 @@ class BaseRequest(object):
         True if the request was triggered via an JavaScript XMLHttpRequest.
         This only works with libraries that support the X-Requested-With
         header and set it to "XMLHttpRequest".  Libraries that do that are
-        prototype, jQuery and Mochikit.
+        prototype, jQuery and Mochikit and probably some more.
         """
         return self.environ.get('X_REQUESTED_WITH') == 'XmlHttpRequest'
     is_xhr = property(is_xhr, doc=is_xhr.__doc__)
@@ -273,7 +347,37 @@ class BaseRequest(object):
 
 class BaseResponse(object):
     """
-    Base response class.
+    Base response class.  The most important fact about a response object is
+    that it's a regular WSGI application.  It's initialized with a couple of
+    response parameters (headers, body, status code etc.) and will start a
+    valid WSGI response when called with the environ and start response
+    callable.
+
+    Because it's a WSGI application itself processing usually ends before the
+    actual response is sent to the server.  This helps debugging systems
+    because they can catch all the exceptions before responses are started.
+
+    Here a small example WSGI application that takes advantage of the
+    response objects::
+
+        from werkzeug import BaseResponse as Response
+
+        def index():
+            return Response('Index page')
+
+        def application(environ, start_response):
+            path = environ.get('PATH_INFO') or '/'
+            if path == '/':
+                response = index()
+            else:
+                response = Response('Not Found', status=404)
+            return response(environ, start_response)
+
+    Like `BaseRequest` which object is lacking a lot of functionality
+    implemented in mixins.  This gives you a better control about the actual
+    API of your response objects, so you can create subclasses and add custom
+    functionality.  A full featured response object is available as `Response`
+    which implements a couple of useful mixins.
     """
     charset = 'utf-8'
     default_status = 200
@@ -343,11 +447,16 @@ class BaseResponse(object):
         except KeyError:
             self.status = '%d UNKNOWN' % code
     status_code = property(_get_status_code, _set_status_code,
-                           'Get the HTTP Status code as number')
+                           'The HTTP Status code as number')
     del _get_status_code, _set_status_code
 
     def write(self, data):
-        """If we have a buffered response this writes to the buffer."""
+        """
+        **deprecated**
+
+        Use `response.stream` now, if you are using a `BaseResponse` subclass
+        and mix the `ResponseStreamMixin` in.
+        """
         from warnings import warn
         warn(DeprecationWarning('response.write() will go away in Werkzeug '
                                 '0.3.  Use the new response.stream available '
@@ -357,7 +466,11 @@ class BaseResponse(object):
         self.response.append(data)
 
     def writelines(self, lines):
-        """Write lines."""
+        """
+        **deprecated**
+
+        :see: `write`
+        """
         self.write(''.join(lines))
 
     def _get_data(self):
@@ -370,20 +483,20 @@ class BaseResponse(object):
             self.response = list(self.response)
         return ''.join(self.iter_encoded())
     def _set_data(self, value):
-        """Set a new string as response body."""
         self.response = [value]
     data = property(_get_data, _set_data, doc=_get_data.__doc__)
 
-    def _deprecated(f):
+    def _deprecate_data(f):
         def proxy(*args, **kwargs):
             from warnings import warn
             warn(DeprecationWarning('response_body is now called data'))
             return f(*args, **kwargs)
         return proxy
-    response_body = property(_deprecated(_get_data), _deprecated(_set_data),
+    response_body = property(_deprecate_data(_get_data),
+                             _deprecate_data(_set_data),
                              doc='**deprecated**\ncalled `data` now. '
                              'Will go away in Werkzeug 0.3')
-    del _get_data, _set_data, _deprecated
+    del _get_data, _set_data, _deprecate_data
 
     def iter_encoded(self, charset=None):
         """
@@ -400,13 +513,26 @@ class BaseResponse(object):
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None, httponly=False):
-        """Set a new cookie."""
+        """
+        Sets a cookie. The parameters are the same as in the cookie `Morsel`
+        object in the Python standard library but it accepts unicode data too:
+
+        - `max_age` should be a number of seconds, or `None` (default) if the
+           cookie should last only as long as the client’s browser session.
+        - `expires` should be a `datetime` object or UNIX timestamp.
+        - Use `domain` if you want to set a cross-domain cookie.  For example,
+          ``domain=".example.com"`` will set a cookie that is readable by the
+          domain ``www.example.com``, ``foo.example.com`` etc.  Otherwise, a
+          cookie will only be readable by the domain that set it.
+        - `path` limits the cookie to a given path, per default it will span
+          the whole domain.
+        """
         self.headers.add('Set-Cookie', dump_cookie(key, value, max_age,
                          expires, path, domain, secure, httponly,
                          self.charset))
 
     def delete_cookie(self, key, path='/', domain=None):
-        """Delete a cookie."""
+        """Delete a cookie.  Fails silently if key doesn't exist."""
         self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
 
     def header_list(self):
@@ -419,8 +545,10 @@ class BaseResponse(object):
 
     def is_streamed(self):
         """
-        If the request is streamed (the response is not a sequence) this
-        property is `True`.
+        If the response is streamed (the response is not a sequence) this
+        property is `True`.  In this case streamed means that there is no
+        information about the number of iterations.  This is usully `True`
+        if a generator is passed to the response object.
         """
         try:
             len(self.response)
@@ -471,8 +599,9 @@ class BaseResponse(object):
 
 class AcceptMixin(object):
     """
-    A mixin for classes with an `environ` attribute to retreive all
-    the HTTP accept headers as descriptors.
+    A mixin for classes with an `environ` attribute to get and all the HTTP
+    accept headers as `Accept` objects.  This can be mixed in request objects
+    or any other object that has a WSGI environ available as `environ`.
     """
 
     def accept_mimetypes(self):
@@ -481,7 +610,7 @@ class AcceptMixin(object):
     accept_mimetypes = cached_property(accept_mimetypes)
 
     def accept_charsets(self):
-        """list of charsets this client supports."""
+        """List of charsets this client supports."""
         return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'))
     accept_charsets = cached_property(accept_charsets)
 
@@ -502,7 +631,9 @@ class AcceptMixin(object):
 
 class ETagRequestMixin(object):
     """
-    Add etag and cache descriptors to a request object.
+    Add entity tag and cache descriptors to a request object or object with
+    an WSGI environment available as `environ`.  This not only provides
+    access to etags but also to the cache control header.
     """
 
     def cache_control(self):
@@ -535,7 +666,8 @@ class ETagRequestMixin(object):
 class ETagResponseMixin(object):
     """
     Adds extra functionality to a response object for etag and cache
-    handling.
+    handling.  This mixin requires an object with at least a `headers`
+    object that implements a dict like interface similar to `Headers`.
     """
 
     def cache_control(self):
@@ -643,6 +775,7 @@ class ResponseStreamMixin(object):
     """
 
     def stream(self):
+        """The response iterable as write-only stream."""
         return ResponseStream(self)
     stream = cached_property(stream)
 
@@ -688,15 +821,26 @@ class CommonResponseDescriptorsMixin(object):
 
 
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin):
-    """Full featured request object."""
+    """
+    Full featured request object implementing the following mixins:
+
+    - `AcceptMixin` for accept header parsing
+    - `ETagRequestMixin` for etag and cache control handling
+    """
 
 
 class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
                CommonResponseDescriptorsMixin):
-    """Full featured response object."""
+    """
+    Full featured response object implementing the following mixins:
+
+    - `ETagResponseMixin` for etag and cache control handling
+    - `ResponseStreamMixin` to add support for the `stream` property
+    - `CommonResponseDescriptorsMixin` for various HTTP descriptors
+    """
 
 
-# TODO: backwards compatibility interface.  goes away with werkzeug 0.3
+# XXX: backwards compatibility interface.  goes away with werkzeug 0.3
 try:
     from werkzeug.contrib.reporterstream import BaseReporterStream
 except ImportError:

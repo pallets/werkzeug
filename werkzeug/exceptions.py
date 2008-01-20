@@ -92,7 +92,9 @@ from werkzeug.http import HTTP_STATUS_CODES
 
 class HTTPException(Exception):
     """
-    Baseclass for all HTTP exceptions.
+    Baseclass for all HTTP exceptions.  This exception can be called as WSGI
+    application to render a default error page or you can catch the subclasses
+    of it independently and render nicer error messages.
     """
 
     code = None
