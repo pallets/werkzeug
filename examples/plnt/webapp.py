@@ -10,10 +10,9 @@
 """
 from os import path
 from sqlalchemy import create_engine
-from werkzeug import SharedDataMiddleware, ClosingIterator
+from werkzeug import SharedDataMiddleware, ClosingIterator, Request
 from werkzeug.exceptions import HTTPException, NotFound
-from werkzeug.routing import RequestRedirect
-from plnt.utils import Request, local, local_manager, url_map, endpoints
+from plnt.utils import local, local_manager, url_map, endpoints
 from plnt.database import Session, metadata
 
 # import the views module because it contains setup code
@@ -46,7 +45,7 @@ class Plnt(object):
         try:
             endpoint, values = adapter.match(request.path)
             response = endpoints[endpoint](request, **values)
-        except (RequestRedirect, HTTPException), e:
+        except HTTPException, e:
             response = e
         return ClosingIterator(response(environ, start_response),
                                Session.remove)

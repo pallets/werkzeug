@@ -11,8 +11,8 @@
 import re
 from os import path
 from jinja import Environment, FileSystemLoader
-from werkzeug import BaseRequest as Request, BaseResponse as Response, \
-     Local, LocalManager, url_encode, url_quote, cached_property
+from werkzeug import Response, Local, LocalManager, url_encode, \
+     url_quote, cached_property
 from werkzeug.routing import Map, Rule
 
 

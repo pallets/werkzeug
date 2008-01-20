@@ -211,12 +211,15 @@ def get_frame_info(tb, context_lines=7, simple=False):
     variables = tb.tb_frame.f_locals
 
     # get filename
-    fn = tb.tb_frame.f_globals.get('__file__')
-    if not fn:
-        fn = os.path.realpath(inspect.getsourcefile(tb) or
-                              inspect.getfile(tb))
-    if fn[-4:] in ('.pyc', '.pyo'):
-        fn = fn[:-1]
+    if simple:
+        fn = tb.tb_frame.f_code.co_filename
+    else:
+        fn = tb.tb_frame.f_globals.get('__file__')
+        if not fn:
+            fn = os.path.realpath(inspect.getsourcefile(tb) or
+                                  inspect.getfile(tb))
+        if fn[-4:] in ('.pyc', '.pyo'):
+            fn = fn[:-1]
 
     # module name
     modname = tb.tb_frame.f_globals.get('__name__')

@@ -5,6 +5,16 @@ Documentation Overview
 Welcome to the Werkzeug documentation.
 
 
+.. admonition:: Note
+
+    The documentation reflects the status of Werkzeug 0.2 as of
+    HG revision `7ed8e75a17bc`.  Currently we do some code cleanup
+    in the mercurial repository, if you are using newer revisions
+    of Werkzeug you should participate in ``#pocoo`` to not miss
+    the latest changes.  Documentation will be update before the
+    release.
+
+
 Reference
 =========
 

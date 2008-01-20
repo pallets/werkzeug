@@ -189,7 +189,7 @@ table.vars td.value {
     white-space: -pre-wrap;      /* Opera 4-6 ?? */
     white-space: -o-pre-wrap;    /* Opera 7 ?? */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
-    _white-space: pre;          /* IE only hack to re-specify in addition to word-wrap  */
+    _white-space: pre;           /* IE only hack to re-specify in addition to word-wrap  */
 }
 
 pre.output {
@@ -197,6 +197,8 @@ pre.output {
     color: #fff;
     padding: 4px;
     border: 1px solid #666;
+    max-height: 350px;
+    overflow: auto;
 }
 
 table.vars {

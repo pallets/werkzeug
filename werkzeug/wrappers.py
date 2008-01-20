@@ -188,56 +188,6 @@ class BaseRequest(object):
         return EnvironHeaders(self.environ)
     headers = cached_property(headers)
 
-    def accept_mimetypes(self):
-        """List of mimetypes this client supports."""
-        return parse_accept_header(self.environ.get('HTTP_ACCEPT'))
-    accept_mimetypes = cached_property(accept_mimetypes)
-
-    def accept_charsets(self):
-        """list of charsets this client supports."""
-        return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'))
-    accept_charsets = cached_property(accept_charsets)
-
-    def accept_encodings(self):
-        """
-        List of encodings this client accepts.  Encodings in a HTTP term are
-        compression encodings such as gzip.  For charsets have a look at
-        `accept_charset`.
-        """
-        return parse_accept_header(self.environ.get('HTTP_ACCEPT_ENCODING'))
-    accept_encodings = cached_property(accept_encodings)
-
-    def accept_languages(self):
-        """List of languages this client accepts."""
-        return parse_accept_header(self.environ.get('HTTP_ACCEPT_LANGUAGE'))
-    accept_languages = cached_property(accept_languages)
-
-    def cache_control(self):
-        """A `CacheControl` object for the incoming cache control headers."""
-        cache_control = self.environ.get('HTTP_CACHE_CONTROL')
-        return parse_cache_control_header(cache_control)
-    cache_control = cached_property(cache_control)
-
-    def if_match(self):
-        """An object containing all the etags in the `If-Match` header."""
-        return parse_etags(self.environ.get('HTTP_IF_MATCH'))
-    if_match = cached_property(if_match)
-
-    def if_none_match(self):
-        """An object containing all the etags in the `If-None-Match` header."""
-        return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
-    if_none_match = cached_property(if_none_match)
-
-    def if_modified_since(self):
-        """The parsed `If-Modified-Since` header as datetime object."""
-        return parse_date(self.environ.get('HTTP_IF_MODIFIED_SINCE'))
-    if_modified_since = cached_property(if_modified_since)
-
-    def if_unmodified_since(self):
-        """The parsed `If-Unmodified-Since` header as datetime object."""
-        return parse_date(self.environ.get('HTTP_IF_UNMODIFIED_SINCE'))
-    if_unmodified_since = cached_property(if_unmodified_since)
-
     def path(self):
         """Requested path."""
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
@@ -275,11 +225,6 @@ class BaseRequest(object):
         return get_host(self.environ)
     host = cached_property(host)
 
-    def is_secure(self):
-        """True if the request is secure."""
-        return self.environ['wsgi.url_scheme'] == 'https'
-    is_secure = property(is_secure, doc=is_secure.__doc__)
-
     query_string = environ_property('QUERY_STRING', '', read_only=True)
     remote_addr = environ_property('REMOTE_ADDR', read_only=True)
     method = environ_property('REQUEST_METHOD', 'GET', read_only=True)
@@ -313,6 +258,11 @@ class BaseRequest(object):
         """
         return self.environ.get('X_REQUESTED_WITH') == 'XmlHttpRequest'
     is_xhr = property(is_xhr, doc=is_xhr.__doc__)
+
+    def is_secure(self):
+        """True if the request is secure."""
+        return self.environ['wsgi.url_scheme'] == 'https'
+    is_secure = property(is_secure, doc=is_secure.__doc__)
 
     is_multithread = environ_property('wsgi.multithread')
     is_multiprocess = environ_property('wsgi.multiprocess')
@@ -393,18 +343,6 @@ class BaseResponse(object):
     status_code = property(_get_status_code, _set_status_code,
                            'Get the HTTP Status code as number')
     del _get_status_code, _set_status_code
-
-    def cache_control(self):
-        def on_update(cache_control):
-            if not cache_control and 'cache-control' in self.headers:
-                del self.headers['cache-control']
-            elif cache_control:
-                self.headers['Cache-Control'] = cache_control.to_header()
-        value = self.headers.get('Cache-Control')
-        if value is not None:
-            value = parse_cache_control_header(value)
-        return CacheControl(value, on_update)
-    cache_control = cached_property(cache_control)
 
     def write(self, data):
         """If we have a buffered response this writes to the buffer."""
@@ -488,6 +426,118 @@ class BaseResponse(object):
                 self.headers['Location']
             )
 
+    def close(self):
+        """Close the wrapped response if possible."""
+        if hasattr(self.response, 'close'):
+            self.response.close()
+
+    def freeze(self):
+        """
+        Call this method if you want to make your response object ready for
+        pickeling.  This buffers the generator if there is one and sets the
+        e-tag.
+        """
+        self.add_etag()
+        # access response body so that wrapper generators are converted into
+        # a list if there was already an etag.
+        self.response_body
+
+    def __call__(self, environ, start_response):
+        """Process this response as WSGI application."""
+        self.fix_headers(environ)
+        if environ['REQUEST_METHOD'] == 'HEAD':
+            resp = ()
+        elif 100 <= self.status_code < 200 or self.status_code in (204, 304):
+            self.headers['Content-Length'] = 0
+            resp = ()
+        else:
+            resp = self.iter_encoded()
+        start_response(self.status, self.header_list)
+        return resp
+
+
+class AcceptMixin(object):
+    """
+    A mixin for classes with an `environ` attribute to retreive all
+    the HTTP accept headers as descriptors.
+    """
+
+    def accept_mimetypes(self):
+        """List of mimetypes this client supports."""
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT'))
+    accept_mimetypes = cached_property(accept_mimetypes)
+
+    def accept_charsets(self):
+        """list of charsets this client supports."""
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'))
+    accept_charsets = cached_property(accept_charsets)
+
+    def accept_encodings(self):
+        """
+        List of encodings this client accepts.  Encodings in a HTTP term are
+        compression encodings such as gzip.  For charsets have a look at
+        `accept_charset`.
+        """
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_ENCODING'))
+    accept_encodings = cached_property(accept_encodings)
+
+    def accept_languages(self):
+        """List of languages this client accepts."""
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_LANGUAGE'))
+    accept_languages = cached_property(accept_languages)
+
+
+class ETagRequestMixin(object):
+    """
+    Add etag and cache descriptors to a request object.
+    """
+
+    def cache_control(self):
+        """A `CacheControl` object for the incoming cache control headers."""
+        cache_control = self.environ.get('HTTP_CACHE_CONTROL')
+        return parse_cache_control_header(cache_control)
+    cache_control = cached_property(cache_control)
+
+    def if_match(self):
+        """An object containing all the etags in the `If-Match` header."""
+        return parse_etags(self.environ.get('HTTP_IF_MATCH'))
+    if_match = cached_property(if_match)
+
+    def if_none_match(self):
+        """An object containing all the etags in the `If-None-Match` header."""
+        return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
+    if_none_match = cached_property(if_none_match)
+
+    def if_modified_since(self):
+        """The parsed `If-Modified-Since` header as datetime object."""
+        return parse_date(self.environ.get('HTTP_IF_MODIFIED_SINCE'))
+    if_modified_since = cached_property(if_modified_since)
+
+    def if_unmodified_since(self):
+        """The parsed `If-Unmodified-Since` header as datetime object."""
+        return parse_date(self.environ.get('HTTP_IF_UNMODIFIED_SINCE'))
+    if_unmodified_since = cached_property(if_unmodified_since)
+
+
+class ETagResponseMixin(object):
+    """
+    Adds extra functionality to a response object for etag and cache
+    handling.
+    """
+
+    def cache_control(self):
+        """A cache control object for the response."""
+        def on_update(cache_control):
+            if not cache_control and 'cache-control' in self.headers:
+                del self.headers['cache-control']
+            elif cache_control:
+                self.headers['Cache-Control'] = cache_control.to_header()
+        value = self.headers.get('Cache-Control')
+        if value is not None:
+            value = parse_cache_control_header(value)
+        return CacheControl(value, on_update)
+    cache_control = cached_property(cache_control)
+
     def make_conditional(self, request_or_environ):
         """
         Make the response conditional to the request.  This method works best
@@ -533,34 +583,13 @@ class BaseResponse(object):
         """
         return unquote_etag(self.headers('ETag'))
 
-    def close(self):
-        """Close the wrapped response if possible."""
-        if hasattr(self.response, 'close'):
-            self.response.close()
 
-    def freeze(self):
-        """
-        Call this method if you want to make your response object ready for
-        pickeling.  This buffers the generator if there is one and sets the
-        e-tag.
-        """
-        self.add_etag()
-        # access response body so that wrapper generators are converted into
-        # a list if there was already an etag.
-        self.response_body
+class Request(BaseRequest, AcceptMixin, ETagRequestMixin):
+    """Full featured request object."""
 
-    def __call__(self, environ, start_response):
-        """Process this response as WSGI application."""
-        self.fix_headers(environ)
-        if environ['REQUEST_METHOD'] == 'HEAD':
-            resp = ()
-        elif 100 <= self.status_code < 200 or self.status_code in (204, 304):
-            self.headers['Content-Length'] = 0
-            resp = ()
-        else:
-            resp = self.iter_encoded()
-        start_response(self.status, self.header_list)
-        return resp
+
+class Response(BaseResponse, ETagResponseMixin):
+    """Full featured response object."""
 
 
 # TODO: backwards compatibility interface.  goes away with werkzeug 0.3

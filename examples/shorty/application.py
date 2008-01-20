@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from werkzeug import BaseRequest, SharedDataMiddleware, ClosingIterator
+from werkzeug import Request, SharedDataMiddleware, ClosingIterator
 from werkzeug.exceptions import HTTPException, NotFound
 from shorty.utils import STATIC_PATH, Session, local, local_manager, \
      metadata, url_map
@@ -23,10 +23,10 @@ class Shorty(object):
 
     def dispatch(self, environ, start_response):
         local.application = self
-        request = BaseRequest(environ)
+        request = Request(environ)
         local.url_adapter = adapter = url_map.bind_to_environ(environ)
         try:
-            endpoint, values = adapter.match(request.path)
+            endpoint, values = adapter.match()
             handler = getattr(views, endpoint)
             response = handler(request, **values)
         except NotFound, e:

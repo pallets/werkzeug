@@ -367,6 +367,16 @@ def parse_cache_control_header(value):
     return CacheControl(result)
 
 
+def quote_etag(etag, weak=False):
+    """Quote an etag."""
+    if '"' in etag:
+        raise ValueError('invalid etag')
+    etag = '"%s"' % etag
+    if weak:
+        etag = 'w/' + etag
+    return etag
+
+
 def unquote_etag(etag):
     """Unquote a single etag.  Return a ``(etag, weak)`` tuple."""
     if not etag:

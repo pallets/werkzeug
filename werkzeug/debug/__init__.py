@@ -115,7 +115,9 @@ class DebuggedApplication(object):
 
     def format_exception(self, exc_info):
         """Format a text/plain traceback."""
-        return self.create_debug_context({}, exc_info, True).plaintb
+        return self.create_debug_context({
+            'wsgi.run_once':    True
+        }, exc_info, True).plaintb + '\n'
 
     def create_debug_context(self, environ, exc_info, simple=False):
         exception_type, exception_value, tb = exc_info
@@ -225,33 +227,32 @@ class InteractiveDebugger(code.InteractiveInterpreter):
         self.middleware = middleware
         self.globals = frame.f_globals
         code.InteractiveInterpreter.__init__(self, frame.f_locals)
-        self.prompt = '>>> '
+        self.more = False
         self.buffer = []
 
     def runsource(self, source):
+        if isinstance(source, unicode):
+            source = source.encode('utf-8')
+        source = source.rstrip() + '\n'
         ThreadedStream.push()
-        prompt = self.prompt
+        prompt = self.more and '... ' or '>>> '
         try:
             source_to_eval = ''.join(self.buffer + [source])
             if code.InteractiveInterpreter.runsource(self,
                source_to_eval, '<debugger>', 'single'):
-                self.prompt = '... '
+                self.more = True
                 self.buffer.append(source)
             else:
-                self.prompt = '>>> '
+                self.more = False
                 del self.buffer[:]
         finally:
-            source = source.encode('utf-8')
             return prompt + source + ThreadedStream.fetch()
 
     def runcode(self, code):
         try:
             exec code in self.globals, self.locals
         except:
-            self.showtraceback()
-
-    def showtraceback(self):
-        self.write(self.middleware.format_exception(sys.exc_info()))
+            self.write(self.middleware.format_exception(sys.exc_info()))
 
     def write(self, data):
         sys.stdout.write(data)

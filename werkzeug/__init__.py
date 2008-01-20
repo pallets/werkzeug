@@ -105,8 +105,9 @@ all_by_module = {
                              'is_resource_modified', 'parse_accept_header',
                              'quote_etag', 'unquote_etag',
                              'HTTP_STATUS_CODES'],
-    'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest',
-                             'BaseReporterStream']
+    'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest', 'Request',
+                             'Response', 'AcceptMixin', 'ETagRequestMixin',
+                             'ETagResponseMixin', 'BaseReporterStream']
 }
 
 attribute_modules = ['exceptions', 'routing', 'script']

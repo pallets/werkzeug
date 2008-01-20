@@ -2,10 +2,11 @@ from os import path
 from urlparse import urlparse
 from random import sample, randrange
 from jinja import Environment, FileSystemLoader
-from werkzeug import BaseResponse, Local, LocalManager, cached_property
+from werkzeug import Response, Local, LocalManager, cached_property
 from werkzeug.routing import Map, Rule
 from sqlalchemy import MetaData
 from sqlalchemy.orm import create_session, scoped_session
+
 
 TEMPLATE_PATH = path.join(path.dirname(__file__), 'templates')
 STATIC_PATH = path.join(path.dirname(__file__), 'static')
@@ -23,6 +24,7 @@ Session = scoped_session(lambda: create_session(application.database_engine,
                          transactional=True), local_manager.get_ident)
 jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_PATH))
 
+
 def expose(rule, **kw):
     def decorate(f):
         kw['endpoint'] = f.__name__
@@ -35,14 +37,15 @@ def url_for(endpoint, _external=False, **values):
 jinja_env.globals['url_for'] = url_for
 
 def render_template(template, **context):
-    return BaseResponse(jinja_env.get_template(template).render(**context),
-                        mimetype='text/html')
+    return Response(jinja_env.get_template(template).render(**context),
+                    mimetype='text/html')
 
 def validate_url(url):
     return urlparse(url)[0] in ALLOWED_SCHEMES
 
 def get_random_uid():
     return ''.join(sample(URL_CHARS, randrange(3, 9)))
+
 
 class Pagination(object):
 

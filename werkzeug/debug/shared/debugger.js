@@ -73,7 +73,8 @@ function sendCommand(tb, frame, cmd, output) {
     frame:  frame,
     code:   cmd + '\n'
   }, function(data) {
-    output.append($('<div/>').text(data));
+    var x = output.append($('<div>').text(data))[0];
+    x.scrollTop = x.scrollHeight;
   });
 }
 
