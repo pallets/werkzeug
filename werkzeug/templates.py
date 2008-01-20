@@ -233,16 +233,20 @@ class Parser(object):
                 elif name == 'if':
                     add(self.parse_if(args))
                 else:
-                    self.fail('unknown directive %S' % name)
+                    self.fail('unknown directive %s' % name)
         if needle:
             self.fail('unexpected end of template')
         return ast.Stmt(result, lineno=start_lineno)
 
     def parse_loop(self, args, type):
         rv = self.parse_python('%s %s: pass' % (type, args), 'exec').nodes[0]
-        tag, value, rv.body = self.parse(('end' + type,))
+        tag, value, rv.body = self.parse(('end' + type, 'else'))
         if value:
-            self.fail('unexpected data after end' + type)
+            self.fail('unexpected data after ' + tag)
+        if tag == 'else':
+            tag, value, rv.else_ = self.parse(('end' + type,))
+            if value:
+                self.fail('unexpected data after else')
         return rv
 
     def parse_if(self, args):
