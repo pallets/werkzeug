@@ -3,9 +3,17 @@
     werkzeug.http
     ~~~~~~~~~~~~~
 
-    Various HTTP related helper functions and classes.
+    Werkzeug comes with a bunch of utilties that help Werkzeug to deal with
+    HTTP data.  Most of the classes and functions provided by this module are
+    used by the wrappers, but they are useful on their own too, especially if
+    the response and request objects are not used.
 
-    :copyright: 2007 by Armin Ronacher.
+    This covers some of the more HTTP centric features of WSGI, some other
+    utilities such as cookie handling are documented in the `werkzeug.utils`
+    module.
+
+
+    :copyright: 2007-2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 import re

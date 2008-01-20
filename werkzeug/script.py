@@ -1,22 +1,117 @@
 # -*- coding: utf-8 -*-
-"""
+r'''
     werkzeug.script
     ~~~~~~~~~~~~~~~
 
-    This module provides classes that simplifies the creation of shell
-    scripts.  The `Script` class is very basic and does not contain any
-    default actions.  The `ManagementScript` class however includes some
-    common actions such as running a WSGI server and starting a python
-    shell.
+    Most of the time you have recurring tasks while writing an application
+    such as starting up an interactive python interpreter with some prefilled
+    imports, starting the development server, initializing the database or
+    something similar.
 
-    This module is quite magical because it uses frame introspection to
-    locate the action callbacks.  You should only use it for small
-    manage scripts and similar things.
+    For that purpose werkzeug provides the `werkzeug.script` module which
+    helps you writing such scripts.
+
+
+    Basic Usage
+    -----------
+
+    The following snippet is roughly the same in every werkzeug script::
+
+        #!/usr/bin/env python
+        # -*- coding: utf-8 -*-
+        from werkzeug import script
+
+        # actions go here
+
+        if __name__ == '__main__':
+            script.run()
+
+    Starting this script now does nothing because no actions are defined.
+    An action is a function in the same module starting with ``"action_"``
+    which takes a number of arguments where every argument has a default.  The
+    type of the default value specifies the type of the argument.
+
+    Arguments can then be passed by position or using ``--name=value`` from
+    the shell.
+
+    Because a runserver and shell command is pretty common there are two
+    factory functions that create such commands::
+
+        def make_app():
+            from yourapplication import YourApplication
+            return YourApplication(...)
+
+        action_runserver = script.make_runserver(make_app, use_reloader=True)
+        action_shell = script.make_shell(lambda: {'app': make_app()})
+
+
+    Using The Scripts
+    -----------------
+
+    The script from above can be used like this from the shell now::
+
+        $ ./manage.py --help
+        $ ./manage.py runserver localhost 8080 --debugger --no-reloader
+        $ ./manage.py runserver -p 4000
+        $ ./manage.py shell
+
+    As you can see it's possible to pass parameters as positional argument
+    or as named parameter, pretty much like python function calls.
+
+    With Werkzeug 0.1 calling of boolean arguments worked a bit different
+    there you had to call ``--use-reloader yes``.
+
+
+    Writing Actions
+    ---------------
+
+    Writing new action functions is pretty straight forward.  All you have to
+    do is to name the function "action_COMMAND" and it will be available as
+    "./manage.py COMMAND".  The docstring of the function is used for the
+    help screen and all arguments must have defaults the run function can
+    inspect.  As a matter of fact you cannot use ``*args`` or ``**kwargs``
+    constructs.
+
+    An additional feature is the definition of tuples as defaults.  The first
+    item in the tuple could be a short name for the command and the second
+    the default value::
+
+        def action_add_user(username=('u', ''), password=('p', '')):
+            """Docstring goes here."""
+            ...
+
+
+    Action Discovery
+    ----------------
+
+    Per default the run function looks up variables in the current locals.  That
+    means if no arguments are provided it implicitly assumes this call::
+
+        script.run(locals(), 'action_')
+
+    If you don't want to use a action discovery you can set the prefix to an empty
+    string and pass a dict with functions::
+
+        script.run(dict(
+            runserver=script.make_runserver(make_app, use_reloader=True),
+            shell=script.make_shell(lambda: {'app': make_app()}),
+            initdb=on_initdb
+        ), '')
+
+
+    Example Scripts
+    ---------------
+
+    In the Werkzeug `examples`_ there are some ``./manage-APP.py`` scripts
+    using `werkzeug.script`.
+
+
+    .. _examples: http://dev.pocoo.org/projects/werkzeug/browser/examples
 
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
-"""
+'''
 import sys
 import inspect
 import getopt

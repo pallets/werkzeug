@@ -3,7 +3,45 @@
     werkzeug.test
     ~~~~~~~~~~~~~
 
-    Helper module for unittests.
+    Quite often you want to unittest your application or just check the output
+    from an interactive python session.  In theory that is pretty simple because
+    you can fake a WSGI environment and call the application with a dummy
+    start_response and iterate over the application iterator but there are
+    argumentably better ways to interact with an application.
+
+    Werkzeug provides an object called `Client` which you can pass a WSGI
+    application (and optionally a response wrapper) which you can use to send
+    virtual requests to the application.
+
+    A response wrapper is a callable that takes three arguments: the application
+    iterator, the status and finally a list of headers.  The default response
+    wrapper returns a tuple.  Because response objects have the same signature
+    you can use them as response wrapper, ideally by subclassing them and hooking
+    in test functionality.
+
+    >>> from werkzeug import Client, BaseResponse, test_app
+    >>> c = Client(test_app, BaseResponse)
+    >>> resp = c.get('/')
+    >>> resp.status_code
+    200
+    >>> resp.headers
+    Headers([('Content-Type', 'text/html; charset=utf-8')])
+    >>> resp.response_body.splitlines()[:2]
+    ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
+     '  "http://www.w3.org/TR/html4/loose.dtd">']
+
+    Or here without wrapper defined:
+
+    >>> from werkzeug import Client, test_app
+    >>> c = Client(test_app)
+    >>> app_iter, status, headers = c.get('/')
+    >>> status
+    '200 OK'
+    >>> headers
+    [('Content-Type', 'text/html; charset=utf-8')]
+    >>> ''.join(app_iter).splitlines()[:2]
+    ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
+     '  "http://www.w3.org/TR/html4/loose.dtd">']
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
@@ -116,10 +154,63 @@ class Client(object):
              multiprocess=False, run_once=False, environ_overrides=None,
              as_tuple=False):
         """
-        Open a page for the application.  This function takes similar
-        arguments as the `create_environ` method from the utils module.  If
-        the first argument is an environ or request object it is used as
-        the environment for the request.
+        Takes the same arguments as the `create_environ` function from the utility
+        module with some additions.
+
+        The first parameter should be the path of the request which defaults to
+        '/'.  The second one can either be a absolute path (in that case the url
+        host is localhost:80) or a full path to the request with scheme,
+        netloc port and the path to the script.
+
+        If the `path` contains a query string it will be used, even if the
+        `query_string` parameter was given.  If it does not contain one
+        the `query_string` parameter is used as querystring.  In that case
+        it can either be a dict, MultiDict or string.
+
+        The following options exist:
+
+        `method`
+            The request method.  Defaults to `GET`
+
+        `input_stream`
+            The input stream.  Defaults to an empty read only stream.
+
+        `data`
+            The data you want to transmit.  You can set this to a string and
+            define a content type instead of specifying an input stream.
+            Additionally you can pass a dict with the form data.  The values
+            could then be strings (no unicode objects!) which are then url
+            encoded or file objects.
+
+            A file object for this method is either a file descriptor with
+            an additional `name` attribute (like a file descriptor returned
+            by the `open` / `file` function), a tuple in the form
+            ``(fd, filename, mimetype)`` (all arguments except fd optional)
+            or as dict with those keys and values.
+
+            Additionally you can instanciate the `werkzeug.test.File` object
+            (or a subclass of it) and pass it as value.
+
+        `content_type`
+            The content type for this request.  Default is an empty content
+            type.
+
+        `content_length`
+            The value for the content length header.  Defaults to 0.
+
+        `errors_stream`
+            The wsgi.errors stream.  Defaults to `sys.stderr`.
+
+        `multithread`
+            The multithreaded flag for the WSGI Environment.  Defaults to
+            `False`.
+
+        `multiprocess`
+            The multiprocess flag for the WSGI Environment.  Defaults to
+            `False`.
+
+        `run_once`
+            The run_once flag for the WSGI Environment.  Defaults to `False`.
         """
         if input_stream is None and data and method in ('PUT', 'POST'):
             need_multipart = False

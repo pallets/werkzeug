@@ -3,67 +3,90 @@
     werkzeug.routing
     ~~~~~~~~~~~~~~~~
 
-    An extensible URL mapper.
+    When it comes to combining multiple controller or view functions (however
+    you want to call them) you need a dispatcher.  A simple way would be
+    applying regular expression tests on the ``PATH_INFO`` and call registered
+    callback functions that return the value then.
 
-    Map creation::
+    This module implements a much more powerful system than simple regular
+    expression matching because it can also convert values in the URLs and
+    build URLs.
 
-        >>> m = Map([
-        ...     # Static URLs
-        ...     Rule('/', endpoint='static/index'),
-        ...     Rule('/about', endpoint='static/about'),
-        ...     Rule('/help', endpoint='static/help'),
-        ...     # Knowledge Base
-        ...     Subdomain('kb', [
-        ...         Rule('/', endpoint='kb/index'),
-        ...         Rule('/browse/', endpoint='kb/browse'),
-        ...         Rule('/browse/<int:id>/', endpoint='kb/browse'),
-        ...         Rule('/browse/<int:id>/<int:page>', endpoint='kb/browse')
-        ...     ])
-        ... ], default_subdomain='www')
+    Here a simple example that creates an URL map for an application with
+    two subdomains (www and kb) and some URL rules::
 
-    URL building::
+        m = Map([
+            # Static URLs
+            Rule('/', endpoint='static/index'),
+            Rule('/about', endpoint='static/about'),
+            Rule('/help', endpoint='static/help'),
 
-        >>> c = m.bind('example.com', '/')
-        >>> c.build("kb/browse", dict(id=42))
-        'http://kb.example.com/browse/42/'
-        >>> c.build("kb/browse", dict())
-        'http://kb.example.com/browse/'
-        >>> c.build("kb/browse", dict(id=42, page=3))
-        'http://kb.example.com/browse/42/3'
-        >>> c.build("static/about")
-        u'/about'
-        >>> c.build("static/about", subdomain="kb")
-        'http://www.example.com/about'
-        >>> c.build("static/index", force_external=True)
-        'http://www.example.com/'
+            # Knowledge Base
+            Subdomain('kb', [
+                Rule('/', endpoint='kb/index'),
+                Rule('/browse/', endpoint='kb/browse'),
+                Rule('/browse/<int:id>/', endpoint='kb/browse'),
+                Rule('/browse/<int:id>/<int:page>', endpoint='kb/browse')
+            ])
+        ], default_subdomain='www')
 
-    URL matching::
+    If the application doesn't use subdomains it's perfectly fine to not set
+    the default subdomain and use the `Subdomain` rule factory.  The endpoint
+    in the rules can be anything, for example import paths or unique
+    identitifers.  The WSGI application can use those endpoints to get the
+    handler for that URL.  It doesn't have to be a string at all but it's
+    recommended.
 
-        >>> c = m.bind('example.com', '/')
-        >>> c.match("/")
-        ('static/index', {})
-        >>> c.match("/about")
-        ('static/about', {})
-        >>> c = m.bind('example.com', '/', 'kb')
-        >>> c.match("/", subdomain="kb")
-        ('kb/index', {})
-        >>> c.match("/browse/42/23", subdomain="kb")
-        ('kb/browse', {'id': 42, 'page': 23})
+    Now it's possible to create a URL adapter for one of the subdomains and
+    build URLs:
 
-    Exceptions::
+    >>> c = m.bind('example.com')
+    >>> c.build("kb/browse", dict(id=42))
+    'http://kb.example.com/browse/42/'
+    >>> c.build("kb/browse", dict())
+    'http://kb.example.com/browse/'
+    >>> c.build("kb/browse", dict(id=42, page=3))
+    'http://kb.example.com/browse/42/3'
+    >>> c.build("static/about")
+    u'/about'
+    >>> c.build("static/about", subdomain="kb")
+    'http://www.example.com/about'
+    >>> c.build("static/index", force_external=True)
+    'http://www.example.com/'
 
-        >>> m.match("/browse/42", subdomain="kb")
-        Traceback (most recent call last):
-        ...
-        werkzeug.routing.RequestRedirect: http://kb.example.com/browse/42/
-        >>> m.match("/missing", subdomain="kb")
-        Traceback (most recent call last):
-        ...
-        werkzeug.routing.NotFound: /missing
-        >>> m.match("/missing", subdomain="kb")
+    The first argument to bind is the server name *without* the subdomain.
+    Per default it will assume that the script is mounted on the root, but
+    often that's not the case so you can provide the real mount point as
+    second argument:
+
+    >>> c = m.bind('example.com', '/applications/example')
+
+    The third argument can be the subdomain, if not given the default
+    subdomain is used.  For more details about binding have a look at the
+    documentation of the `MapAdapter`.
+
+    And here is how you can match URLs:
+
+    >>> c = m.bind('example.com')
+    >>> c.match("/")
+    ('static/index', {})
+    >>> c.match("/about")
+    ('static/about', {})
+    >>> c = m.bind('example.com', '/', 'kb')
+    >>> c.match("/")
+    ('kb/index', {})
+    >>> c.match("/browse/42/23")
+    ('kb/browse', {'id': 42, 'page': 23})
+
+    If matching fails you get a `NotFound` exception, if the rule thinks
+    it's a good idea to redirect (for example because the URL was defined
+    to have a slash at the end but the request was missing that slash) it
+    will raise a `RequestRedirect` exception.  Both are subclasses of the
+    `HTTPException` so you can use those errors as responses in the
+    application.
 
 
-    :copyright: 2007 by Armin Ronacher, Leif K-Brooks.
+    :copyright: 2007-2008 by Armin Ronacher, Leif K-Brooks.
     :license: BSD, see LICENSE for more details.
 """
 import sys
@@ -98,6 +121,8 @@ def parse_rule(rule):
     Parse a rule and return it as generator. Each iteration yields tuples in the
     form ``(converter, arguments, variable)``. If the converter is `None` it's a
     static url part, otherwise it's a dynamic one.
+
+    :internal:
     """
     pos = 0
     end = len(rule)
@@ -128,6 +153,8 @@ def get_converter(map, name, args):
     """
     Create a new converter for the given arguments or raise
     exception if the converter does not exist.
+
+    :internal:
     """
     if not name in map.converters:
         raise LookupError('the converter %r does not exist' % name)
@@ -144,6 +171,8 @@ class RoutingException(Exception):
     """
     Special exceptions that require the application to redirect, notifies him
     about missing urls etc.
+
+    :internal:
     """
 
 
@@ -170,21 +199,22 @@ class RequestSlash(RoutingException):
     """
 
 
-class BuildError(RoutingException, LookupError):
+class BuildError(RoutingException, NotFound, LookupError):
     """
     Raised if the build system cannot find a URL for an endpoint with the
     values provided.
     """
 
     def __init__(self, endpoint, values):
-        LookupError.__init__(self, endpoint)
+        LookupError.__init__(self, endpoint, values)
         self.endpoint = endpoint
         self.values = values
 
 
 class ValidationError(ValueError):
     """
-    Validation error.
+    Validation error.  If a rule converter raises this exception the rule
+    does not match the current URL and the next URL is tried.
     """
 
 
@@ -199,7 +229,22 @@ class RuleFactory(object):
 
 class Subdomain(RuleFactory):
     """
-    Collects rules for a given subdomain.
+    All URLs provided by this factory have the subdomain set to a
+    specific domain. For example if you want to use the subdomain for
+    the current language this can be a good setup::
+
+        map = Map([
+            Rule('/', endpoint='#select_language'),
+            Subdomain('<string(length=2):lang_code>', [
+                Rule('/', endpoint='index'),
+                Rule('/about', endpoint='about'),
+                Rule('/help', endpoint='help')
+            ])
+        ])
+
+    All the rules except of the ``'#select_language'`` endpoint will now
+    listen on a two letter long subdomain that helds the language code
+    for the current request.
     """
 
     def __init__(self, subdomain, rules):
@@ -215,7 +260,17 @@ class Subdomain(RuleFactory):
 
 class Submount(RuleFactory):
     """
-    Collects rules for a given path.
+    Like `Subdomain` but prefixes the URL rule with a given string::
+
+        map = Map([
+            Rule('/', endpoint='index'),
+            Submount('/blog', [
+                Rule('/', endpoint='blog/index'),
+                Rule('/entry/<entry_slug>', endpoint='blog/show')
+            ])
+        ])
+
+    Now the rule ``'blog/show'`` matches ``/blog/entry/<entry_slug>``.
     """
 
     def __init__(self, path, rules):
@@ -231,7 +286,16 @@ class Submount(RuleFactory):
 
 class EndpointPrefix(RuleFactory):
     """
-    Prefixes all endpoints with a given string.
+    Prefixes all endpoints (which must be strings for this factory) with
+    another string. This can be useful for sub applications::
+
+        map = Map([
+            Rule('/', endpoint='index'),
+            EndpointPrefix('blog/', [Submount('/blog', [
+                Rule('/', endpoint='index'),
+                Rule('/entry/<entry_slug>', endpoint='show')
+            ])])
+        ])
     """
 
     def __init__(self, prefix, rules):
@@ -262,6 +326,8 @@ class RuleTemplateFactory(RuleFactory):
     """
     A factory that fills in template variables into rules.  Used by
     `RuleTemplate` internally.
+
+    :internal:
     """
 
     def __init__(self, rules, context):
@@ -296,7 +362,69 @@ class RuleTemplateFactory(RuleFactory):
 
 class Rule(RuleFactory):
     """
-    Represents one url pattern.
+    A Rule represents one URL pattern.  There are some options for `Rule` that
+    change the way it behaves and are passed to the `Rule` constructor.  Note
+    that beside the rule-string all arguments *must* be keyword arguments in
+    order to not break the application on Werkzeug upgrades.
+
+    `string`
+        Rule strings basically are just normal URL paths with placeholders in
+        the format ``<converter(arguments):name>`` where the converter and the
+        arguments are optional.  If no converter is defined the `default`
+        converter is used which means `string` in the normal configuration.
+
+        URL rules that end with a slash are branch URLs, others are leaves.
+        If you have `strict_slashes` enabled (which is the default), all
+        branch URLs that are matched without a trailing slash will trigger a
+        redirect to the same URL with the missing slash appended.
+
+        The converters are defined on the `Map`.
+
+    `endpoint`
+        The endpoint for this rule. This can be anything. A reference to a
+        function, a string, a number etc.  The preferred way is using a string
+        as because the endpoint is used for URL generation.
+
+    `defaults`
+        An optional dict with defaults for other rules with the same endpoint.
+        This is a bit tricky but useful if you want to have unique URLs::
+
+            map = Map([
+                Rule('/all/', defaults={'page': 1}, endpoint='all_entries'),
+                Rule('/all/page/<int:page>', endpoint='all_entries')
+            ])
+
+        If a user now visits ``http://example.com/all/page/1`` he will be
+        redirected to ``http://example.com/all/``.  If `redirect_defaults` is
+        disabled on the `Map` instance this will only affect the URL
+        generation.
+
+    `subdomain`
+        The subdomain rule string for this rule. If not specified the rule
+        only matches for the `default_subdomain` of the map.  If the map is
+        not bound to a subdomain this feature is disabled.
+
+        Can be useful if you want to have user profiles on different subdomains
+        and all subdomains are forwarded to your application::
+
+            map = Map([
+                Rule('/', subdomain='<username>', endpoint='user/homepage'),
+                Rule('/stats', subdomain='<username>', endpoint='user/stats')
+            ])
+
+    `methods`
+        A sequence of http methods this rule applies to. If not specified, all
+        methods are allowed. For example this can be useful if you want different
+        endpoints for `POST` and `GET`.
+
+    `strict_slashes`
+        Override the `Map` setting for `strict_slashes` only for this rule. If
+        not specified the `Map` setting is used.
+
+    `build_only`
+        Set this to true and the rule will never match but will create a URL
+        that can be build. This is useful if you have resources on a subdomain
+        or folder that are not handled by the WSGI application (like static data)
     """
 
     def __init__(self, string, defaults=None, subdomain=None, methods=None,
@@ -331,7 +459,10 @@ class Rule(RuleFactory):
         self._weights = []
 
     def empty(self):
-        """Return an unbound copy of this rule."""
+        """
+        Return an unbound copy of this rule.  This can be useful if you want
+        to reuse an already bound URL for another map.
+        """
         return Rule(self.rule, self.defaults, self.subdomain, self.methods,
                     self.build_only, self.endpoint, self.strict_slashes)
 
@@ -342,6 +473,8 @@ class Rule(RuleFactory):
         """
         Bind the url to a map and create a regular expression based on
         the information from the rule itself and the defaults from the map.
+
+        :internal:
         """
         if self.map is not None:
             raise RuntimeError('url rule %r already bound to map %r' %
@@ -394,6 +527,8 @@ class Rule(RuleFactory):
 
         If the rule matches a dict with the converted values is returned,
         otherwise the return value is `None`.
+
+        :internal:
         """
         if not self.build_only:
             m = self._regex.search(path)
@@ -426,6 +561,8 @@ class Rule(RuleFactory):
         """
         Assembles the relative url for that rule and the subdomain.
         If building doesn't work for some reasons `None` is returned.
+
+        :internal:
         """
         tmp = []
         processed = set(self.arguments)
@@ -449,13 +586,21 @@ class Rule(RuleFactory):
         return subdomain, url
 
     def provides_defaults_for(self, rule):
-        """Check if this rule has defaults for a given rule."""
+        """
+        Check if this rule has defaults for a given rule.
+
+        :internal:
+        """
         return not self.build_only and self.defaults is not None and \
                self.endpoint == rule.endpoint and self != rule and \
                self.arguments == rule.arguments
 
     def suitable_for(self, values, method):
-        """Check if the dict of values has enough data for url generation."""
+        """
+        Check if the dict of values has enough data for url generation.
+
+        :internal:
+        """
         if self.methods is not None and method not in self.methods:
             return False
 
@@ -475,7 +620,11 @@ class Rule(RuleFactory):
         return True
 
     def match_compare(self, other):
-        """Compare this object with another one for matching"""
+        """
+        Compare this object with another one for matching.
+
+        :internal:
+        """
         for sw, ow in izip(self._weights, other._weights):
             if sw > ow:
                 return -1
@@ -504,7 +653,11 @@ class Rule(RuleFactory):
         return 1
 
     def build_compare(self, other):
-        """Compare this object with another one for building."""
+        """
+        Compare this object with another one for building.
+
+        :internal:
+        """
         if not other.arguments and self.arguments:
             return -1
         elif other.arguments and not self.arguments:
@@ -580,8 +733,15 @@ class BaseConverter(object):
 
 class UnicodeConverter(BaseConverter):
     """
-    The default converter for all URL parts. Matches one string without a
-    slash in the part. Can also check for the length of that string.
+    This converter is the default converter and accepts any string but
+    only one one path segment.  Thus the string can not include a slash.
+
+    Supported arguments:
+
+    - `minlength` - the minimum length of the string. must be greater
+      than 1.
+    - `maxlength` - the maximum length of the string.
+    - `length` - the exact length of that string.
     """
 
     def __init__(self, map, minlength=1, maxlength=None, length=None):
@@ -612,7 +772,10 @@ class AnyConverter(BaseConverter):
 
 class PathConverter(BaseConverter):
     """
-    Matches a whole path (including slashes)
+    Matches one of the items provided.  Items can either be python
+    identifiers or unicode strings::
+
+        Rule('/<any(about, help, imprint, u"class"):page_name>')
     """
     regex = '[^/].*?'
     is_greedy = True
@@ -622,6 +785,8 @@ class PathConverter(BaseConverter):
 class NumberConverter(BaseConverter):
     """
     Baseclass for `IntegerConverter` and `FloatConverter`.
+
+    :internal:
     """
 
     def __init__(self, map, fixed_digits=0, min=None, max=None):
@@ -648,7 +813,18 @@ class NumberConverter(BaseConverter):
 
 class IntegerConverter(NumberConverter):
     """
-    Only accepts integers.
+    This converter only accepts integer values::
+
+        Rule('/page/<int:page>')
+
+    Supported arguments:
+
+    - `fixed_digits` - the number of fixed digits in the URL. If you
+      set this to ``4`` for example, the application will only match
+      if the url looks like ``/0001/``.  The default is
+      variable length.
+    - `min` - the minimal value.
+    - `max` - the maximal value.
     """
     regex = r'\d+'
     num_convert = int
@@ -656,7 +832,14 @@ class IntegerConverter(NumberConverter):
 
 class FloatConverter(NumberConverter):
     """
-    Only accepts floats and integers.
+    This converter only accepts floating point values::
+
+        Rule('/probability/<float:probability>')
+
+    Supported arguments:
+
+    - `min` - the minimal value.
+    - `max` - the maximal value.
     """
     regex = r'\d+\.\d+'
     num_convert = float
@@ -667,7 +850,7 @@ class FloatConverter(NumberConverter):
 
 class Map(object):
     """
-    The base class for all the url maps.
+    A class that collects URL rules.
     """
 
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
@@ -752,7 +935,21 @@ class Map(object):
     def bind(self, server_name, script_name=None, subdomain=None,
              url_scheme='http', default_method='GET', path_info=None):
         """
-        Return a new map adapter for this request.
+        Return a new `MapAdapter` with the details specified to the call.
+        Note that `script_name` will default to ``'/'`` if not further
+        specified or `None`.  The `server_name` at least is a requirement
+        because the HTTP RFC requires absolute URLs for redirects and so all
+        redirect exceptions raised by Werkzeug will contain the full canonical
+        URL.
+
+        **new in Werkzeug 0.2**: if no path_info is passed to match() it will
+        use the default path info passed to bind.  While this doesn't really
+        make sense for manual bind calls, it's useful if you bind a map to a
+        WSGI environment which already contains the path info.
+
+        `subdomain` will default to the `default_subdomain` for this map if
+        no defined. If there is no `default_subdomain` you cannot use the
+        subdomain feature.
         """
         if subdomain is None:
             subdomain = self.default_subdomain
@@ -764,16 +961,24 @@ class Map(object):
     def bind_to_environ(self, environ, server_name=None, subdomain=None,
                         calculate_subdomain=False):
         """
-        Like `bind` but the required information are pulled from the
-        WSGI environment provided where possible. For some information
-        this won't work (subdomains), if you want that feature you have
-        to provide the subdomain with the `subdomain` variable.
+        Like `bind` but you can pass it an WSGI environment and it will fetch
+        the information from that directory.  Note that because of limitations
+        in the protocol there is no way to get the current subdomain and real
+        `server_name` from the environment.  If you don't provide it, Werkzeug
+        will use `SERVER_NAME` and `SERVER_PORT` (or `HTTP_HOST` if provided)
+        as used `server_name` with disabled subdomain feature.
 
         If `subdomain` is `None` but an environment and a server name is
         provided it will calculate the current subdomain automatically.
         Example: `server_name` is ``'example.com'`` and the `SERVER_NAME`
         in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
         subdomain will be ``'staging.dev'``.
+
+        **new in Werkzeug 0.2**: if the object passed as environ as an environ
+        attribute, the value of this attribute is used instead.  This allows
+        you to pass request objects.  Additionally `PATH_INFO` added as a
+        default ot the `MapAdapter` so that you don't have to pass the path
+        info to the match method.
         """
         if hasattr(environ, 'environ'):
             environ = environ.environ
@@ -844,10 +1049,28 @@ class MapAdapter(object):
 
     def match(self, path_info=None, method=None):
         """
-        Match a given path_info, script_name and subdomain against the
-        known rules. If the subdomain is not given it defaults to the
-        default subdomain of the map which is usally `www`. Thus if you
-        don't define it anywhere you can safely ignore it.
+        The usage is simple: you just pass the match method the current path
+        info as well as the method (which defaults to `GET`).  The following
+        things can then happen:
+
+        - you receive a `NotFound` exception that indicates that no URL is
+          matching.  A `NotFound` exception is also a WSGI application you
+          can call to get a default page not found page (happens to be the
+          same object as `werkzeug.exceptions.NotFound`)
+
+        - you receive a `RequestRedirect` exception with a `new_url`
+          attribute.  This exception is used to notify you about a request
+          Werkzeug requests by your WSGI application.  This is for example the
+          case if you request ``/foo`` although the correct URL is ``/foo/``
+          You can use the `RequestRedirect` instance as response-like object
+          similar to all other subclasses of `HTTPException`.
+
+        - you get a tuple in the form ``(endpoint, arguments)`` when there is
+          a match.
+
+        If the path info is not passed to the match method the default path
+        info of the map is used (defaults to the root URL if not defined
+        explicitly).
         """
         self.map.update()
         if path_info is None:
@@ -889,7 +1112,10 @@ class MapAdapter(object):
         raise NotFound()
 
     def test(self, path_info=None, method=None):
-        """Test if a rule would match."""
+        """
+        Test if a rule would match.  Works like `match` but returns `True` if
+        the URL matches, or `False` if it does not exist.
+        """
         try:
             self.match(path_info, method)
         except RequestRedirect:
@@ -900,10 +1126,43 @@ class MapAdapter(object):
 
     def build(self, endpoint, values=None, method=None, force_external=False):
         """
-        Build a new url hostname relative to the current one. If you
-        reference a resource on another subdomain the hostname is added
-        automatically. You can force external urls by setting
-        `force_external` to `True`.
+        Building URLs works pretty much the other way round.  Instead of
+        `match` you call `build` and pass it the endpoint and a dict of
+        arguments for the placeholders.
+
+        The `build` function also accepts an argument called `force_external`
+        which, if you set it to `True` will force external URLs. Per default
+        external URLs (include the server name) will only be used if the
+        target URL is on a
+        different subdomain.
+
+        With the same map as in the example above this code generates some
+        target URLs:
+
+        >>> urls.build("index", {})
+        '/'
+        >>> urls.build("downloads/show", {'id': 42})
+        '/downloads/42'
+        >>> urls.build("downloads/show", {'id': 42}, force_external=True)
+        'http://example.com/downloads/42'
+
+        Because URLs cannot contain non ASCII data you will always get
+        bytestrings back.  Non ASCII characters are urlencoded with the
+        charset defined on the map instance.
+
+        Additional values are converted to unicode and appended to the URL as
+        URL querystring parameters:
+
+        >>> urls.build("index", {'q': 'My Searchstring'})
+        '/?q=My+Searchstring'
+
+        If a rule does not exist when building a `BuildError` exception is
+        raised.
+
+        **new in Werkzeug 0.2**: The build method accepts an argument called
+        `method` which allows you to specify the method you want to have an
+        URL builded for if you have different methods for the same endpoint
+        specified.
         """
         self.map.update()
         method = method or self.default_method
@@ -931,6 +1190,7 @@ class MapAdapter(object):
         ))
 
 
+#: the default converter mapping for the map.
 DEFAULT_CONVERTERS = {
     'default':          UnicodeConverter,
     'string':           UnicodeConverter,
