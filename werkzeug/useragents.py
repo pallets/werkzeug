@@ -34,6 +34,10 @@ class UserAgentParser(object):
     )]
     browsers = [(re.compile(r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)' % regex),
                  name) for regex, name in (
+        ('googlebot', 'google'),
+        ('msnbot', 'msn'),
+        ('yahoo', 'yahoo'),
+        ('ask jeeves', 'ask'),
         (r'aol|america\s+online\s+browser', 'aol'),
         (r'msie|microsoft\s+internet\s+explorer', 'msie'),
         ('firefox|firebird|phoenix|iceweasel', 'firefox'),
