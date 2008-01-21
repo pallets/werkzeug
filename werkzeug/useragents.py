@@ -18,20 +18,20 @@ class UserAgentParser(object):
     """
     A simple user agent parser.
     """
-    platforms = [
-        (re.compile(r'darwin|macos|os\s*x'), 'macos'),
-        (re.compile('win'), 'windows'),
-        (re.compile(r'x11|lin(\b|ux)?'), 'linux'),
-        (re.compile('(sun|i86)os'), 'solaris'),
-        (re.compile('iphone'), 'iphone'),
-        (re.compile(r'nintendo\s+wii'), 'wii'),
-        (re.compile('irix'), 'irix'),
-        (re.compile('hp-?ux'), 'hpux'),
-        (re.compile('aix'), 'aix'),
-        (re.compile('sco|unix_sv'), 'sco'),
-        (re.compile('bsd'), 'bsd'),
-        (re.compile('amiga'), 'amiga')
-    ]
+    platforms = [(re.compile(regex, re.I), name) for regex, name in (
+        (r'darwin|mac|os\s*x', 'macos'),
+        ('win', 'windows'),
+        (r'x11|lin(\b|ux)?', 'linux'),
+        ('(sun|i86)os', 'solaris'),
+        ('iphone', 'iphone'),
+        (r'nintendo\s+wii', 'wii'),
+        ('irix', 'irix'),
+        ('hp-?ux', 'hpux'),
+        ('aix', 'aix'),
+        ('sco|unix_sv', 'sco'),
+        ('bsd', 'bsd'),
+        ('amiga', 'amiga')
+    )]
     browsers = [(re.compile(r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)' % regex),
                  name) for regex, name in (
         (r'aol|america\s+online\s+browser', 'aol'),
@@ -93,16 +93,26 @@ class UserAgent(object):
     -   `version`, the version of the browser
     -   `language`, the language of the browser
     """
-    _parser = UserAgentParser()
+    _parse = UserAgentParser()
 
     def __init__(self, environ_or_string):
         if isinstance(environ_or_string, dict):
             environ_or_string = environ_or_string.get('HTTP_USER_AGENT', '')
-        self.user_agent = environ_or_string
-        self.__dict__.update(self._parser(environ_or_string))
+        self.string = environ_or_string
+        self.__dict__.update(self._parse(environ_or_string))
 
     def to_header(self):
-        return self.user_agent
+        return self.string
 
     def __str__(self):
-        return self.user_agent
+        return self.string
+
+    def __nonzero__(self):
+        return bool(self.browser)
+
+    def __repr__(self):
+        return '<%s %r/%s>' % (
+            self.__class__.__name__,
+            self.browser,
+            self.version
+        )
