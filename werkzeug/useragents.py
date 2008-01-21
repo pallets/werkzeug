@@ -18,7 +18,7 @@ class UserAgentParser(object):
     """
     A simple user agent parser.
     """
-    platforms = [(re.compile(regex, re.I), name) for regex, name in (
+    platforms = re.compile('|'.join(['(?P<%s>%s)' % i[::-1] for i in (
         (r'darwin|mac|os\s*x', 'macos'),
         ('win', 'windows'),
         (r'x11|lin(\b|ux)?', 'linux'),
@@ -31,9 +31,8 @@ class UserAgentParser(object):
         ('sco|unix_sv', 'sco'),
         ('bsd', 'bsd'),
         ('amiga', 'amiga')
-    )]
-    browsers = [(re.compile(r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)' % regex),
-                 name) for regex, name in (
+    )]), re.I)
+    browsers = re.compile('(?:' + '|'.join([r'(?P<%s>%s)' % i[::-1] for i in (
         ('googlebot', 'google'),
         ('msnbot', 'msn'),
         ('yahoo', 'yahoo'),
@@ -46,31 +45,35 @@ class UserAgentParser(object):
         ('opera', 'opera'),
         ('camino', 'camino'),
         ('konqueror', 'konqueror'),
-        ('k-meleon', 'k-meleon'),
+        ('k-meleon', 'kmeleon'),
         ('netscape', 'netscape'),
         (r'playstation\s+portable', 'psp'),
         (r'playstation\s*3', 'ps3'),
         ('lynx', 'lynx')
-    )]
+    )]) + r')[/\sa-z(]*(?P<__version__>\d+[.\da-z]+)?(?i)')
     lang = re.compile(
         r'(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|'
         r'(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)'
     )
-    del regex, name
+    del i
 
     def __call__(self, user_agent):
-        for regex, name in self.platforms:
-            if regex.search(user_agent) is not None:
-                platform = name
-                break
+        match = self.platforms.search(user_agent)
+        if match is not None:
+            for name, value in match.groupdict().iteritems():
+                if value:
+                    platform = name
+                    break
         else:
             platform = None
-        for regex, name in self.browsers:
-            match = regex.search(user_agent)
-            if match is not None:
-                browser = name
-                version = match.group(1) or None
-                break
+        match = self.browsers.search(user_agent)
+        if match is not None:
+            groups = match.groupdict()
+            version = groups.pop('__version__')
+            for name, value in groups.iteritems():
+                if value:
+                    browser = name
+                    break
         else:
             browser = version = None
         match = self.lang.search(user_agent)
