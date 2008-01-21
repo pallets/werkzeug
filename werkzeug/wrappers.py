@@ -17,7 +17,7 @@
     decoded into an unicode object if possible and if it makes sense.
 
 
-    :copyright: 2007 by Armin Ronacher, Georg Brandl.
+    :copyright: 2007-2008 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
 """
 import cgi
@@ -91,6 +91,10 @@ class BaseRequest(object):
 
         class Request(BaseRequest, ETagRequestMixin):
             pass
+
+    Request objects should be considered *read only*.  Even though the object
+    doesn't enforce read only access everywhere you should never modify any
+    data on the object itself unless you know exactly what you are doing.
     """
     charset = 'utf-8'
     is_behind_proxy = False
@@ -664,6 +668,20 @@ class ETagRequestMixin(object):
     if_unmodified_since = cached_property(if_unmodified_since)
 
 
+class UserAgentMixin(object):
+    """
+    Adds a `user_agent` attribute to the request object which contains the
+    parsed user agent of the browser that triggered the request as `UserAgent`
+    object.
+    """
+
+    def user_agent(self):
+        """The current user agent."""
+        from werkzeug.useragents import UserAgent
+        return UserAgent(self.environ)
+    user_agent = cached_property(user_agent)
+
+
 class ETagResponseMixin(object):
     """
     Adds extra functionality to a response object for etag and cache
@@ -898,12 +916,14 @@ class CommonResponseDescriptorsMixin(object):
         _set_retry_after
 
 
-class Request(BaseRequest, AcceptMixin, ETagRequestMixin):
+class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
+              UserAgentMixin):
     """
     Full featured request object implementing the following mixins:
 
     - `AcceptMixin` for accept header parsing
     - `ETagRequestMixin` for etag and cache control handling
+    - `UserAgentMixin` for user agent introspection
     """
 
 

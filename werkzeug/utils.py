@@ -7,7 +7,7 @@
     them are used by the request and response wrappers but espeically for
     middleware development it makes sense to use them without the wrappers.
 
-    :copyright: 2007 by Armin Ronacher, Georg Brandl.
+    :copyright: 2007-2008 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
 """
 import re

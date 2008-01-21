@@ -104,7 +104,7 @@ r"""
     .. _ltipl20.py: http://lfw.org/python/Itpl20.py
 
 
-    :copyright: 2006 by Armin Ronacher, Ka-Ping Yee.
+    :copyright: 2006-2008 by Armin Ronacher, Ka-Ping Yee.
     :license: BSD License.
 """
 import sys

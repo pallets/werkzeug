@@ -38,6 +38,8 @@ Version 0.2
   sys.stderr logging any more but a logger called "werkzeug".
 - implemented `Href`.
 - implemented `find_modules`
+- refactored request and response objects into base objects, mixins and
+  full featured subclasses that implement all mixins.
 
 
 Version 0.1

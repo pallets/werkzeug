@@ -100,6 +100,7 @@ all_by_module = {
                              'dump_cookie', 'parse_cookie', 'unescape',
                              'format_string', 'Href', 'DispatcherMiddleware',
                              'find_modules', 'header_property'],
+    'werkzeug.useragents':  ['UserAgent'],
     'werkzeug.http':        ['Accept', 'CacheControl', 'ETags', 'parse_etags',
                              'parse_date', 'parse_cache_control_header',
                              'is_resource_modified', 'parse_accept_header',
@@ -109,7 +110,7 @@ all_by_module = {
                              'Response', 'AcceptMixin', 'ETagRequestMixin',
                              'ETagResponseMixin', 'ResponseStreamMixin',
                              'CommonResponseDescriptorsMixin',
-                             'BaseReporterStream']
+                             'UserAgentMixin', 'BaseReporterStream']
 }
 
 attribute_modules = ['exceptions', 'routing', 'script']
