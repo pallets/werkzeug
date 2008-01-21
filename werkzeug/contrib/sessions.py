@@ -38,7 +38,7 @@ try:
 except ImportError:
     from sha import new as sha1
 from cPickle import dump, load, HIGHEST_PROTOCOL
-from werkzeug.utils import ClosingIterator, dump_cookie, load_cookie
+from werkzeug.utils import ClosingIterator, dump_cookie, parse_cookie
 
 
 _sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')
@@ -243,7 +243,7 @@ class SessionMiddleware(object):
         self.environ_key = environ_key
 
     def __call__(self, environ, start_response):
-        cookie = load_cookie(environ.get('HTTP_COOKIE', ''))
+        cookie = parse_cookie(environ.get('HTTP_COOKIE', ''))
         sid = cookie.get(self.cookie_name, None)
         if sid is None:
             session = self.store.new()
