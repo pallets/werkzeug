@@ -851,6 +851,13 @@ class CommonResponseDescriptorsMixin(object):
         codings have been applied to the entity-body, and thus what decoding
         mechanisms must be applied in order to obtain the media-type
         referenced by the Content-Type header field.''')
+    content_md5 = header_property('Content-MD5', doc='''
+         The Content-MD5 entity-header field, as defined in RFC 1864, is an
+         MD5 digest of the entity-body for the purpose of providing an
+         end-to-end message integrity check (MIC) of the entity-body.  (Note:
+         a MIC is good for detecting accidental modification of the
+         entity-body in transit, but is not proof against malicious attacks.)
+        ''')
     date = header_property('Date', None, parse_date, http_date, doc='''
         The Date general-header field represents the date and time at which
         the message was originated, having the same semantics as orig-date

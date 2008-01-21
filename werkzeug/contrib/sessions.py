@@ -256,10 +256,10 @@ class SessionMiddleware(object):
                 expires = None
                 if self.cookie_age is not None:
                     expires = time() + self.cookie_age
-                headers.append('Set-Cookie', dump_cookie(self.cookie_name,
-                               self.cookie_age, expires, self.cookie_path,
-                               self.cookie_domain, self.cookie_secure,
-                               self.cookie_httponly))
+                headers.append(('Set-Cookie', dump_cookie(self.cookie_name,
+                                self.cookie_age, expires, self.cookie_path,
+                                self.cookie_domain, self.cookie_secure,
+                                self.cookie_httponly)))
             return start_response(status, headers, exc_info)
         return ClosingIterator(self.app(environ, injecting_start_response),
                                lambda: self.store.save_if_modified(session))

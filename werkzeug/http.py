@@ -521,7 +521,7 @@ def unquote_etag(etag):
 
 
 def parse_etags(value):
-    """Parse and etag header.  Returns an `ETagSet`."""
+    """Parse and etag header.  Returns an `ETags` object."""
     if not value:
         return ETags()
     strong = []
