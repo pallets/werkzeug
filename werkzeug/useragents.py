@@ -49,7 +49,8 @@ class UserAgentParser(object):
         ('netscape', 'netscape'),
         (r'playstation\s+portable', 'psp'),
         (r'playstation\s*3', 'ps3'),
-        ('lynx', 'lynx')
+        ('lynx', 'lynx'),
+        ('links', 'links')
     )]) + r')[/\sa-z(]*(?P<__version__>\d+[.\da-z]+)?(?i)')
     lang = re.compile(
         r'(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|'
