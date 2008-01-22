@@ -447,6 +447,9 @@ class BaseResponse(object):
 
             # convert any WSGI application into a request object
             response = MyResponseClass.force_type(response, environ)
+
+        This is especially useful if you want to post-process responses in
+        the main dispatcher and use functionality provided by your subclass.
         """
         if not isinstance(response, BaseResponse):
             if environ is None:
@@ -455,6 +458,7 @@ class BaseResponse(object):
             response = cls(*run_wsgi_app(response, environ))
         response.__class__ = cls
         return response
+    force_type = classmethod(force_type)
 
     def from_app(cls, app, environ, buffered=False):
         """

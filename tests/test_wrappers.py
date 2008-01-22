@@ -116,6 +116,31 @@ def test_base_response():
     ]
 
 
+def test_type_forcing():
+    def wsgi_application(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return ['Hello World!']
+    base_response = BaseResponse('Hello World!', content_type='text/html')
+
+    class SpecialResponse(Response):
+        def foo(self):
+            return 42
+
+    # good enough for this simple application, but don't ever use that in
+    # real world examples!
+    fake_env = {}
+
+    for orig_resp in wsgi_application, base_response:
+        response = SpecialResponse.force_type(orig_resp, fake_env)
+        assert response.__class__ is SpecialResponse
+        assert response.foo() == 42
+        assert response.data == 'Hello World!'
+        assert response.content_type == 'text/html'
+
+    # without env, no arbitrary conversion
+    raises(TypeError, "SpecialResponse.force_type(wsgi_application)")
+
+
 def test_accept_mixin():
     request = Request({
         'HTTP_ACCEPT':  'text/xml,application/xml,application/xhtml+xml,'
