@@ -382,11 +382,14 @@ class Context(object):
             return rv.encode(self.encoding, self.errors)
         return rv
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, default=undefined):
         try:
             return self._namespace[key]
         except KeyError:
-            return getattr(builtins, key, undefined)
+            return getattr(builtins, key, default)
+
+    def get(self, key, default=None):
+        return self.__getitem__(key, default)
 
     def __setitem__(self, key, value):
         self._namespace[key] = value

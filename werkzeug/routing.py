@@ -92,10 +92,9 @@
 import sys
 import re
 from urlparse import urljoin
-from urllib import quote
 from itertools import izip
 
-from werkzeug.utils import url_encode, redirect, format_string
+from werkzeug.utils import url_encode, url_quote, redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound
 try:
     set
@@ -728,7 +727,7 @@ class BaseConverter(object):
         return value
 
     def to_url(self, value):
-        return quote(unicode(value).encode(self.map.charset))
+        return url_quote(value, self.map.charset)
 
 
 class UnicodeConverter(BaseConverter):

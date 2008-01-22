@@ -1180,23 +1180,23 @@ def url_encode(obj, charset='utf-8', encode_keys=False):
     return '&'.join(tmp)
 
 
-def url_quote(s, charset='utf-8'):
+def url_quote(s, charset='utf-8', safe='/:'):
     """
     URL encode a single string with a given encoding.
     """
     if isinstance(s, unicode):
         s = s.encode(charset)
-    return urllib.quote(s)
+    return urllib.quote(s, safe=safe)
 
 
-def url_quote_plus(s, charset='utf-8'):
+def url_quote_plus(s, charset='utf-8', safe=''):
     """
     URL encode a single string with the given encoding and convert
     whitespace to "+".
     """
     if isinstance(s, unicode):
         s = s.encode(charset)
-    return urllib.quote_plus(s)
+    return urllib.quote_plus(s, safe=safe)
 
 
 def url_unquote(s, charset='utf-8'):
