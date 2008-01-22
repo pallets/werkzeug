@@ -17,6 +17,7 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
+from itertools import izip
 from time import time
 from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 
@@ -42,6 +43,9 @@ class BaseCache(object):
 
     def get_many(self, *keys):
         return [self.get(key) for key in keys]
+
+    def get_dict(self, *keys):
+        return dict(izip(keys, self.get_many(keys)))
 
     def set(self, key, value, timeout=None):
         pass
