@@ -8,6 +8,7 @@
     :license: BSD license.
 """
 import pickle
+from py.test import raises
 from datetime import datetime, timedelta
 from werkzeug.wrappers import *
 from werkzeug.utils import MultiDict

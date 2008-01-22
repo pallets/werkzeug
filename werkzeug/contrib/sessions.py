@@ -249,13 +249,19 @@ class SessionMiddleware(object):
     """
 
     def __init__(self, app, store, cookie_name='session_id',
-                 cookie_age=None, cookie_path='/', cookie_domain=None,
-                 cookie_secure=None, cookie_httponly=False,
-                 environ_key='werkzeug.session'):
+                 cookie_age=None, cookie_expires=None, cookie_path='/',
+                 cookie_domain=None, cookie_secure=None,
+                 cookie_httponly=False, environ_key='werkzeug.session'):
+        """
+        The cookie parameters are the same as for the `dump_cookie` function
+        just prefixed with "cookie_".  Additionally "max_age" is "cookie_age"
+        for backwards compatibility.
+        """
         self.app = app
         self.store = store
         self.cookie_name = cookie_name
         self.cookie_age = cookie_age
+        self.cookie_expires = cookie_expires
         self.cookie_path = cookie_path
         self.cookie_domain = cookie_domain
         self.cookie_secure = cookie_secure
@@ -275,9 +281,10 @@ class SessionMiddleware(object):
             if session.should_save:
                 self.store.save(session)
                 headers.append(('Set-Cookie', dump_cookie(self.cookie_name,
-                                session.sid, self.cookie_age, None,
-                                self.cookie_path, self.cookie_domain,
-                                self.cookie_secure, self.cookie_httponly)))
+                                session.sid, self.cookie_age,
+                                self.cookie_expires, self.cookie_path,
+                                self.cookie_domain, self.cookie_secure,
+                                self.cookie_httponly)))
             return start_response(status, headers, exc_info)
         return ClosingIterator(self.app(environ, injecting_start_response),
                                lambda: self.store.save_if_modified(session))

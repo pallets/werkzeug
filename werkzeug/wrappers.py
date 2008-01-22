@@ -383,6 +383,11 @@ class BaseResponse(object):
     API of your response objects, so you can create subclasses and add custom
     functionality.  A full featured response object is available as `Response`
     which implements a couple of useful mixins.
+
+    To enforce a new type of already existing responses you can use the
+    `force_type` method.  This is useful if you're working with different
+    subclasses of response objects and you want to post process them with a
+    know interface.
     """
     charset = 'utf-8'
     default_status = 200
@@ -450,6 +455,9 @@ class BaseResponse(object):
 
         This is especially useful if you want to post-process responses in
         the main dispatcher and use functionality provided by your subclass.
+
+        Keep in mind that this will modify response objects in place if
+        possible!
         """
         if not isinstance(response, BaseResponse):
             if environ is None:

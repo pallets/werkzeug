@@ -1383,7 +1383,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
 
     :param max_age: should be a number of seconds, or `None` (default) if
                     the cookie should last only as long as the client's
-                    browser session.
+                    browser session.  Additionally `timedelta` objects
+                    are accepted too.
     :param expires: should be a `datetime` object or unix timestamp.
     :param path: limits the cookie to a given path, per default it will
                  span the whole domain.
