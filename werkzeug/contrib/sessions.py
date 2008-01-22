@@ -24,6 +24,24 @@
     time of the files.  It sessions are stored in the database the new()
     method should add an expiration timestamp for the session.
 
+    For better flexibility it's recommended to not use the middleware but the
+    store and session object directly in the application dispatching::
+
+        session_store = FilesystemSessionStore()
+
+        def application(environ, start_response):
+            request = Request(environ)
+            sid = request.cookie.get('cookie_name')
+            if sid is None:
+                request.session = session_store.new()
+            else:
+                request.session = session_store.get(sid)
+            response = get_the_response_object(request)
+            if request.session.should_save:
+                session_store.save(request.session)
+                response.set_cookie('cookie_name', request.session.sid)
+            return response(environ, start_response)
+
 
     :copyright: 2007 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.

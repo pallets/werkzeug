@@ -429,6 +429,33 @@ class BaseResponse(object):
         else:
             self.status = status
 
+    def force_type(cls, response, environ=None):
+        """
+        Enforce that the WSGI response is a response object of the current
+        type.  Werkzeug will use the `BaseResponse` internally in many
+        situations like the exceptions.  If you call `get_response` on an
+        exception you will get back a regular `BaseResponse` object, even if
+        you are using a custom subclass.
+
+        This method can enforce a given response type, and it will also
+        convert arbitrary WSGI callables into response objects if an environ
+        is provided::
+
+            # convert a Werkzeug response object into an instance of the
+            # MyResponseClass subclass.
+            response = MyResponseClass.force_type(response)
+
+            # convert any WSGI application into a request object
+            response = MyResponseClass.force_type(response, environ)
+        """
+        if not isinstance(response, BaseResponse):
+            if environ is None:
+                raise TypeError('cannot convert WSGI application into '
+                                'response objects without an environ')
+            response = cls(*run_wsgi_app(response, environ))
+        response.__class__ = cls
+        return response
+
     def from_app(cls, app, environ, buffered=False):
         """
         Create a new response object from an application output.  This works
