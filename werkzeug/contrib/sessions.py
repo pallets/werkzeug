@@ -255,6 +255,7 @@ class SessionMiddleware(object):
 
         def injecting_start_response(status, headers, exc_info=None):
             if session.should_save:
+                self.store.save(session)
                 headers.append(('Set-Cookie', dump_cookie(self.cookie_name,
                                 session.sid, self.cookie_age, None,
                                 self.cookie_path, self.cookie_domain,
