@@ -18,7 +18,7 @@ import urllib
 import urlparse
 from Cookie import BaseCookie, Morsel
 from time import asctime, gmtime, time
-from datetime import datetime
+from datetime import datetime, timedelta
 from cStringIO import StringIO
 try:
     set
@@ -1371,7 +1371,8 @@ def parse_cookie(header, charset='utf-8'):
 
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
-                domain=None, secure=None, httponly=False, charset='utf-8'):
+                domain=None, secure=None, httponly=False, charset='utf-8',
+                sync_expires=True):
     """
     Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
@@ -1393,6 +1394,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                      extension to the cookie standard and probably not
                      supported by all browsers.
     :param charset: the encoding for unicode values.
+    :param sync_expires: automatically set expires if max_age is defined
+                         but expires not.
     """
     try:
         key = str(key)
@@ -1401,10 +1404,14 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     if isinstance(value, unicode):
         value = value.encode(charset)
     morsel = _ExtendedMorsel(key, value)
+    if isinstance(max_age, timedelta):
+        max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
         if not isinstance(expires, basestring):
             expires = cookie_date(expires)
         morsel['expires'] = expires
+    elif max_age is not None and sync_expires:
+        morsel['expires'] = cookie_date(time() + max_age)
     for k, v in (('path', path), ('domain', domain), ('secure', secure),
                  ('max-age', max_age), ('httponly', httponly)):
         if v is not None and v is not False:

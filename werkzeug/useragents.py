@@ -124,3 +124,9 @@ class UserAgent(object):
             self.browser,
             self.version
         )
+
+
+# conceptionally this belongs in this module but because we want to lazily
+# load the user agent module (which happens in wrappers.py) we have to import
+# it afterwards
+from werkzeug.wrappers import UserAgentMixin

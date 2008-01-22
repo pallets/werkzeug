@@ -126,7 +126,7 @@ class Session(ModificationTrackingDict):
 
     def should_save(self):
         """True if the session should be saved."""
-        return self.modified
+        return self.modified or self.new
     should_save = property(should_save)
 
 
@@ -229,7 +229,7 @@ class SessionMiddleware(object):
     """
 
     def __init__(self, app, store, cookie_name='session_id',
-                 cookie_age=None, cookie_path=None, cookie_domain=None,
+                 cookie_age=None, cookie_path='/', cookie_domain=None,
                  cookie_secure=None, cookie_httponly=False,
                  environ_key='werkzeug.session'):
         self.app = app
@@ -253,13 +253,10 @@ class SessionMiddleware(object):
 
         def injecting_start_response(status, headers, exc_info=None):
             if session.should_save:
-                expires = None
-                if self.cookie_age is not None:
-                    expires = time() + self.cookie_age
                 headers.append(('Set-Cookie', dump_cookie(self.cookie_name,
-                                self.cookie_age, expires, self.cookie_path,
-                                self.cookie_domain, self.cookie_secure,
-                                self.cookie_httponly)))
+                                session.sid, self.cookie_age, None,
+                                self.cookie_path, self.cookie_domain,
+                                self.cookie_secure, self.cookie_httponly)))
             return start_response(status, headers, exc_info)
         return ClosingIterator(self.app(environ, injecting_start_response),
                                lambda: self.store.save_if_modified(session))
