@@ -170,7 +170,7 @@ class HeaderSet(object):
         self.on_update = on_update
 
     def add(self, header):
-        self.extend((header,))
+        self.update((header,))
 
     def remove(self, header):
         key = header.lower()
@@ -184,7 +184,7 @@ class HeaderSet(object):
         if self.on_update is not None:
             self.on_update(self)
 
-    def extend(self, iterable):
+    def update(self, iterable):
         inserted_any = False
         for header in iterable:
             key = header.lower()

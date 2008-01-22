@@ -837,7 +837,7 @@ class CommonResponseDescriptorsMixin(object):
         entity-body sent to the recipient or, in the case of the HEAD method,
         the media type that would have been sent had the request been a GET.
     ''')
-    content_length = header_property('Content-Length', 0, int, str, doc='''
+    content_length = header_property('Content-Length', None, int, str, doc='''
         The Content-Length entity-header field indicates the size of the
         entity-body, in decimal number of OCTETs, sent to the recipient or,
         in the case of the HEAD method, the size of the entity-body that would
@@ -881,7 +881,11 @@ class CommonResponseDescriptorsMixin(object):
             return datetime.utcnow() + timedelta(seconds=int(value))
         return parse_date(value)
     def _set_retry_after(self, value):
-        if isinstance(value, datetime):
+        if value is None:
+            if 'retry-after' in self.headers:
+                del self.headers['retry-after']
+            return
+        elif isinstance(value, datetime):
             value = http_date(value)
         else:
             value = str(value)

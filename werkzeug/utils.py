@@ -72,8 +72,9 @@ class _ExtendedMorsel(Morsel):
         self.set(name, value, value)
 
     def OutputString(self, attrs=None):
-        result = Morsel.OutputString(self, attrs)
-        if self.get('httponly'):
+        httponly = self.pop('httponly', False)
+        result = Morsel.OutputString(self, attrs).rstrip('\t ;')
+        if httponly:
             result += '; HttpOnly'
         return result
 
@@ -322,7 +323,7 @@ class CombinedMultiDict(MultiDict):
             if key in d:
                 if type is not None:
                     try:
-                        type(d[key])
+                        return type(d[key])
                     except ValueError:
                         continue
                 return d[key]
@@ -967,8 +968,8 @@ class Href(object):
             else:
                 query = dict([(k.endswith('_') and k[:-1] or k, v)
                               for k, v in query.items()])
-        path = '/'.join(url_quote(x, self.charset) for x in path
-                        if x is not None).lstrip('/')
+        path = '/'.join([url_quote(x, self.charset) for x in path
+                         if x is not None]).lstrip('/')
         if query:
             path += '?' + query
         return urlparse.urljoin(self.base, path)
@@ -1240,7 +1241,9 @@ def escape(s, quote=None):
     optional flag `quote` is `True`, the quotation mark character (") is also
     translated.
     """
-    if not isinstance(s, basestring):
+    if s is None:
+        return ''
+    elif not isinstance(s, basestring):
         s = unicode(s)
     s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
     if quote:
@@ -1257,8 +1260,8 @@ def unescape(s, quote=False):
     """
     def handle_match(m):
         name = m.group(1)
-        if name in html_entities:
-            return unichr(html_entities[name])
+        if name in _html_entities:
+            return unichr(_html_entities[name])
         if name[:2] in ('#x', '#X'):
             try:
                 return unichr(int(name[2:], 16))

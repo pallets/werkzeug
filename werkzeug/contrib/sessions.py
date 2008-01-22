@@ -225,7 +225,9 @@ class SessionMiddleware(object):
     the WSGI environ.  It automatically sets cookies and restores sessions.
 
     However a middleware is not the preferred solution because it won't be as
-    fast as sessions managed by the application itself.
+    fast as sessions managed by the application itself and will put a key into
+    the WSGI environment only relevant for the application which is against
+    the concept of WSGI.
     """
 
     def __init__(self, app, store, cookie_name='session_id',

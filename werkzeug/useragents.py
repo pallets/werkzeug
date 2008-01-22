@@ -32,26 +32,29 @@ class UserAgentParser(object):
         ('bsd', 'bsd'),
         ('amiga', 'amiga')
     )]), re.I)
-    browsers = re.compile('(?:' + '|'.join([r'(?P<%s>%s)' % i[::-1] for i in (
+    browsers = [(i[1], re.compile(r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)' %
+                                  i[0])) for i in (
         ('googlebot', 'google'),
         ('msnbot', 'msn'),
         ('yahoo', 'yahoo'),
         ('ask jeeves', 'ask'),
         (r'aol|america\s+online\s+browser', 'aol'),
-        (r'msie|microsoft\s+internet\s+explorer', 'msie'),
+        ('opera', 'opera'),
         ('firefox|firebird|phoenix|iceweasel', 'firefox'),
         ('galeon', 'galeon'),
-        ('webkit|safari', 'safari'),
-        ('opera', 'opera'),
+        ('safari', 'safari'),
+        ('webkit', 'webkit'),
         ('camino', 'camino'),
         ('konqueror', 'konqueror'),
         ('k-meleon', 'kmeleon'),
         ('netscape', 'netscape'),
+        (r'msie|microsoft\s+internet\s+explorer', 'msie'),
         (r'playstation\s+portable', 'psp'),
         (r'playstation\s*3', 'ps3'),
         ('lynx', 'lynx'),
-        ('links', 'links')
-    )]) + r')[/\sa-z(]*(?P<__version__>\d+[.\da-z]+)?(?i)')
+        ('links', 'links'),
+        ('seamonkey|mozilla', 'seamonkey')
+    )]
     lang = re.compile(
         r'(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|'
         r'(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)'
@@ -67,14 +70,12 @@ class UserAgentParser(object):
                     break
         else:
             platform = None
-        match = self.browsers.search(user_agent)
-        if match is not None:
-            groups = match.groupdict()
-            version = groups.pop('__version__')
-            for name, value in groups.iteritems():
-                if value:
-                    browser = name
-                    break
+        for name, regex in self.browsers:
+            match = regex.search(user_agent)
+            if match is not None:
+                version = match.group(1)
+                browser = name
+                break
         else:
             browser = version = None
         match = self.lang.search(user_agent)

@@ -7,9 +7,12 @@
     :license: BSD license.
 """
 import sys
+from datetime import datetime
 from os import path
 from py.test import raises
 from werkzeug.utils import *
+from werkzeug.wrappers import BaseResponse
+from werkzeug.http import parse_date
 from werkzeug.test import Client
 
 
@@ -106,15 +109,25 @@ def test_multidict():
     popped = md.popitemlist()
     assert popped in [('b', [2]), ('c', [3])]
 
+    # type conversion
+    md = MultiDict({'a': '4', 'b': ['2', '3']})
+    assert md.get('a', type=int) == 4
+    assert md.getlist('b', type=int) == [2, 3]
+
 
 def test_combined_multidict():
-    d1 = MultiDict([('foo', 1)])
-    d2 = MultiDict([('bar', 2)])
+    d1 = MultiDict([('foo', '1')])
+    d2 = MultiDict([('bar', '2'), ('bar', '3')])
     d = CombinedMultiDict([d1, d2])
 
     # lookup
-    assert d['foo'] == 1
-    assert d['bar'] == 2
+    assert d['foo'] == '1'
+    assert d['bar'] == '2'
+    assert d.getlist('bar') == ['2', '3']
+
+    # type lookup
+    assert d.get('foo', type=int) == 1
+    assert d.getlist('bar', type=int) == [2, 3]
 
     # get key errors for missing stuff
     raises(KeyError, 'd["missing"]')
@@ -150,6 +163,10 @@ def test_headers():
     assert headers.getlist('x-bar') == ['1', '2']
     assert headers.get('x-Bar') == '1'
     assert headers.get('Content-Type') == 'text/plain'
+
+    # type conversion
+    assert headers.get('x-bar', type=int) == 1
+    assert headers.getlist('x-bar', type=int) == [1, 2]
 
     # copying
     a = Headers([('foo', 'bar')])
@@ -197,6 +214,7 @@ def test_environ_property():
         read_only = environ_property('number', read_only=True)
         number = environ_property('number', load_func=int)
         broken_number = environ_property('broken_number', load_func=int)
+        date = environ_property('date', None, parse_date, http_date)
 
     a = A()
     assert a.string == 'abc'
@@ -204,6 +222,9 @@ def test_environ_property():
     raises(AttributeError, 'a.read_only = "something"')
     assert a.number == 42
     assert a.broken_number == None
+    assert a.date is None
+    a.date = datetime(2008, 1, 22, 10, 0, 0, 0)
+    assert a.environ['date'] == 'Tue, 22 Jan 2008 10:00:00 GMT'
 
 
 def test_quoting():
@@ -212,12 +233,20 @@ def test_quoting():
     assert url_quote_plus('foo bar') == 'foo+bar'
     assert url_unquote_plus('foo+bar') == 'foo bar'
     assert url_encode({'a': None, 'b': 'foo bar'}) == 'b=foo+bar'
+    assert url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)') == \
+           'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
 
 def test_escape():
+    assert escape(None) == ''
+    assert escape(42) == '42'
     assert escape('<>') == '&lt;&gt;'
     assert escape('"foo"') == '"foo"'
     assert escape('"foo"', True) == '&quot;foo&quot;'
+
+
+def test_unescape():
+    assert unescape('&lt;&auml;&gt;') == u'<ä>'
 
 
 def test_create_environ():
@@ -289,3 +318,47 @@ test_get_current_url = '''
 >>> x(env, strip_querystring=True)
 'http://example.org/blub/foo'
 '''
+
+
+def test_dates():
+    assert cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
+    assert cookie_date(datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
+    assert http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
+    assert http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'
+
+
+def test_cookies():
+    assert parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
+                        'c762809248d4beed; a=42') == {
+        'CP':           u'null*',
+        'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
+        'a':            u'42',
+        'dismiss-top':  u'6'
+    }
+    assert set(dump_cookie('foo', 'bar baz blub', 360, httponly=True,
+                           sync_expires=False).split('; ')) == \
+           set(['HttpOnly', 'Max-Age=360', 'Path=/', 'foo=bar baz blub'])
+
+
+def test_responder():
+    def foo(environ, start_response):
+        return BaseResponse('Test')
+    client = Client(responder(foo), BaseResponse)
+    response = client.get('/')
+    assert response.status_code == 200
+    assert response.data == 'Test'
+
+
+def test_import_string():
+    import cgi
+    assert import_string('cgi.escape') is cgi.escape
+    assert import_string('cgi:escape') is cgi.escape
+    assert import_string('XXXXXXXXXXXX', True) is None
+    assert import_string('cgi.XXXXXXXXXXXX', True) is None
+    raises(ImportError, "import_string('XXXXXXXXXXXXXXXX')")
+    raises(AttributeError, "import_string('cgi.XXXXXXXXXX')")
+
+
+def test_find_modules():
+    assert list(find_modules('werkzeug.debug')) == ['werkzeug.debug.render',
+                                                    'werkzeug.debug.util']
