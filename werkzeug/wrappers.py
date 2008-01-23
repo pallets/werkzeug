@@ -463,7 +463,7 @@ class BaseResponse(object):
             if environ is None:
                 raise TypeError('cannot convert WSGI application into '
                                 'response objects without an environ')
-            response = cls(*run_wsgi_app(response, environ))
+            response = BaseResponse(*run_wsgi_app(response, environ))
         response.__class__ = cls
         return response
     force_type = classmethod(force_type)
