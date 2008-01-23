@@ -17,7 +17,7 @@ from plnt.database import Blog, Entry, Session
 from plnt.utils import strip_tags, nl2p
 
 
-HTML_MIMETYPES = set(['text/html', 'application/xml+xhtml'])
+HTML_MIMETYPES = set(['text/html', 'application/xhtml+xml'])
 
 
 def sync():
