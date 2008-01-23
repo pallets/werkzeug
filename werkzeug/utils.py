@@ -1132,14 +1132,17 @@ def format_string(string, context):
     return _format_re.sub(lookup_arg, string)
 
 
-def url_decode(s, charset='utf-8', decode_keys=False):
+def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True):
     """
     Parse a querystring and return it as `MultiDict`.  Per default only values
     are decoded into unicode strings.  If `decode_keys` is set to ``True`` the
     same will happen for keys.
+
+    Per default a missing value for a key will default to an empty key.  If
+    you don't want that behavior you can set `include_empty` to `False`.
     """
     tmp = []
-    for key, values in cgi.parse_qs(str(s)).iteritems():
+    for key, values in cgi.parse_qs(str(s), include_empty).iteritems():
         for value in values:
             if decode_keys:
                 key = key.decode(charset, 'ignore')
