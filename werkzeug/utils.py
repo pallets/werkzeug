@@ -21,12 +21,12 @@ from time import asctime, gmtime, time
 from datetime import datetime, timedelta
 from cStringIO import StringIO
 try:
-    set
+    set = set
 except NameError:
     from sets import Set as set
 
     def reversed(item):
-        return tuple(item)[::-1]
+        return item[::-1]
 
 
 _empty_stream = StringIO('')
@@ -38,6 +38,16 @@ from htmlentitydefs import name2codepoint
 _entity_re = re.compile(r'&([^;]+);')
 _html_entities = name2codepoint.copy()
 _html_entities['apos'] = 39
+_html_empty_elements = set([
+    'area', 'base', 'basefont', 'br', 'col', 'frame', 'hr', 'img', 'input',
+    'isindex', 'link', 'meta', 'param'
+])
+_html_boolean_attributes = set([
+    'selected', 'checked', 'compact', 'declare', 'defer', 'disabled', 'ismap',
+    'multiple', 'nohref', 'noresize', 'noshade', 'nowrap'
+])
+_html_plaintext_elements = set(['textarea'])
+_html_cdata_sections = set(['script', 'style'])
 del name2codepoint
 
 
@@ -497,7 +507,7 @@ class Headers(object):
     headers which are stored as tuples in a list.
     """
 
-    def __init__(self, defaults=None):
+    def __init__(self, defaults=None, _list=None):
         """
         Create a new `Headers` object based on a list or dict of headers which
         are used as default values.  This does not reuse the list passed to
@@ -505,7 +515,9 @@ class Headers(object):
         uses as internal storage the list or list-like object provided it's
         possible to use the `linked` classmethod.
         """
-        self._list = []
+        if _list is None:
+            _list = []
+        self._list = _list
         if isinstance(defaults, dict):
             for key, value in defaults.iteritems():
                 if isinstance(value, (tuple, list)):
@@ -529,9 +541,7 @@ class Headers(object):
 
         :return: new linked `Headers` object.
         """
-        headers = object.__new__(cls)
-        headers._list = headerlist
-        return headers
+        return cls(_list=headerlist)
     linked = classmethod(linked)
 
     def __getitem__(self, key):
@@ -703,8 +713,8 @@ class EnvironHeaders(Headers):
         self.environ = environ
 
     def linked(cls, environ):
-        """For interface compatibility with `Headers`."""
-        return cls(environ)
+        raise TypeError('%r object is always linked to environment, '
+                        'no separate initializer' % self.__class__.__name__)
     linked = classmethod(linked)
 
     def __eq__(self, other):
@@ -1099,6 +1109,45 @@ class header_property(_DictAccessorProperty):
         return obj.headers
 
 
+class _HTMLBuilder(object):
+    """Helper object for HTML generation."""
+
+    def __init__(self, dialect='html'):
+        self._dialect = dialect
+
+    def __getattr__(self, tag):
+        tag = tag.lower()
+        def creator(*children, **arguments):
+            buffer = ['<' + tag]
+            write = buffer.append
+            for key, value in arguments.iteritems():
+                if value is None:
+                    continue
+                if key.endswith('_'):
+                    key = key[:-1]
+                if key in _html_boolean_attributes:
+                    value = self._dialect == 'xhtml' and '="%s"' % key or ''
+                else:
+                    value = '="%s"' % escape(value, True)
+                write(' ' + key + value)
+            if not children and tag in _html_empty_elements:
+                write(self._dialect == 'xhtml' and ' />' or '>')
+                return ''.join(buffer)
+            write('>')
+            if tag in _html_plaintext_elements:
+                children = map(escape, children)
+            elif tag in _html_cdata_sections and self._dialect == 'xhtml':
+                children = ['/*<![CDATA[*/'] + list(children) + ['/*]]>*/']
+            buffer.extend(children)
+            write('</%s>' % tag)
+            return ''.join(buffer)
+        return creator
+
+
+html = _HTMLBuilder('html')
+xhtml = _HTMLBuilder('xhtml')
+
+
 def get_content_type(mimetype, charset):
     """
     Return the full content type string with charset for a mimetype.
@@ -1243,6 +1292,8 @@ def escape(s, quote=None):
     Replace special characters "&", "<" and ">" to HTML-safe sequences.  If the
     optional flag `quote` is `True`, the quotation mark character (") is also
     translated.
+
+    There is a special handling for `None` which escapes to an empty string.
     """
     if s is None:
         return ''
