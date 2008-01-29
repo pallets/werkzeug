@@ -34,22 +34,6 @@ _logger = None
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 
-from htmlentitydefs import name2codepoint
-_entity_re = re.compile(r'&([^;]+);')
-_html_entities = name2codepoint.copy()
-_html_entities['apos'] = 39
-_html_empty_elements = set([
-    'area', 'base', 'basefont', 'br', 'col', 'frame', 'hr', 'img', 'input',
-    'isindex', 'link', 'meta', 'param'
-])
-_html_boolean_attributes = set([
-    'selected', 'checked', 'compact', 'declare', 'defer', 'disabled', 'ismap',
-    'multiple', 'nohref', 'noresize', 'noshade', 'nowrap'
-])
-_html_plaintext_elements = set(['textarea'])
-_html_cdata_sections = set(['script', 'style'])
-del name2codepoint
-
 
 def _log(type, message, *args, **kwargs):
     """
@@ -1109,15 +1093,57 @@ class header_property(_DictAccessorProperty):
         return obj.headers
 
 
-class _HTMLBuilder(object):
-    """Helper object for HTML generation."""
+class HTMLBuilder(object):
+    """
+    Helper object for HTML generation.
 
-    def __init__(self, dialect='html'):
+    Per default there are two instances of that class.  The html one, and the
+    xhtml one for those two dialects.  The class uses keyword parameters and
+    positional parameters to generate small snippets of HTML.
+
+    Keyword parameters are converted to XML/SGML attributes, positional
+    arguments are used as children.  Because Python accepts positional
+    arguments before keyword arguments it's a good idea to use a list with the
+    star-syntax for some children:
+
+    >>> html.p(class_='foo', *[html.a('foo', href='foo.html'), ' ',
+    ...                        html.a('bar', href='bar.html')])
+    '<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
+
+    This class works around some browser limitations and can not be used for
+    arbitrary SGML/XML generation.  For that purpose lxml and similar
+    libraries exist.
+
+    Calling the builder escapes the string passed:
+
+    >>> html.p(html("<foo>"))
+    '<p>&lt;foo&gt;</p>'
+    """
+
+    from htmlentitydefs import name2codepoint
+    _entity_re = re.compile(r'&([^;]+);')
+    _entities = name2codepoint.copy()
+    _entities['apos'] = 39
+    _empty_elements = set([
+        'area', 'base', 'basefont', 'br', 'col', 'frame', 'hr', 'img',
+        'input', 'isindex', 'link', 'meta', 'param'
+    ])
+    _boolean_attributes = set([
+        'selected', 'checked', 'compact', 'declare', 'defer', 'disabled',
+        'ismap', 'multiple', 'nohref', 'noresize', 'noshade', 'nowrap'
+    ])
+    _plaintext_elements = set(['textarea'])
+    _c_like_cdata = set(['script', 'style'])
+    del name2codepoint
+
+    def __init__(self, dialect):
         self._dialect = dialect
 
+    def __call__(self, s):
+        return escape(s)
+
     def __getattr__(self, tag):
-        tag = tag.lower()
-        def creator(*children, **arguments):
+        def proxy(*children, **arguments):
             buffer = ['<' + tag]
             write = buffer.append
             for key, value in arguments.iteritems():
@@ -1125,27 +1151,35 @@ class _HTMLBuilder(object):
                     continue
                 if key.endswith('_'):
                     key = key[:-1]
-                if key in _html_boolean_attributes:
+                if key in self._boolean_attributes:
                     value = self._dialect == 'xhtml' and '="%s"' % key or ''
                 else:
                     value = '="%s"' % escape(value, True)
                 write(' ' + key + value)
-            if not children and tag in _html_empty_elements:
+            if not children and tag in self._empty_elements:
                 write(self._dialect == 'xhtml' and ' />' or '>')
                 return ''.join(buffer)
             write('>')
-            if tag in _html_plaintext_elements:
-                children = map(escape, children)
-            elif tag in _html_cdata_sections and self._dialect == 'xhtml':
-                children = ['/*<![CDATA[*/'] + list(children) + ['/*]]>*/']
-            buffer.extend(children)
-            write('</%s>' % tag)
+            children_as_string = ''.join(children)
+            if children_as_string:
+                if tag in self._plaintext_elements:
+                    children_as_string = escape(children_as_string)
+                elif tag in self._c_like_cdata and self._dialect == 'xhtml':
+                    children_as_string = '/*<![CDATA[*/%s/*]]>*/' % \
+                                         children_as_string
+            buffer.extend((children_as_string, '</%s>' % tag))
             return ''.join(buffer)
-        return creator
+        return proxy
+
+    def __repr__(self):
+        return '<%s for %r>' % (
+            self.__class__.__name__,
+            self._dialect
+        )
 
 
-html = _HTMLBuilder('html')
-xhtml = _HTMLBuilder('xhtml')
+html = HTMLBuilder('html')
+xhtml = HTMLBuilder('xhtml')
 
 
 def get_content_type(mimetype, charset):
@@ -1314,8 +1348,8 @@ def unescape(s, quote=False):
     """
     def handle_match(m):
         name = m.group(1)
-        if name in _html_entities:
-            return unichr(_html_entities[name])
+        if name in HTMLBuilder._entities:
+            return unichr(HTMLBuilder_entities[name])
         if name[:2] in ('#x', '#X'):
             try:
                 return unichr(int(name[2:], 16))
