@@ -16,7 +16,7 @@ import sys
 import cgi
 import urllib
 import urlparse
-from Cookie import BaseCookie, Morsel
+from Cookie import BaseCookie, Morsel, CookieError
 from time import asctime, gmtime, time
 from datetime import datetime, timedelta
 from cStringIO import StringIO
@@ -61,9 +61,10 @@ class _ExtendedMorsel(Morsel):
     _reserved = {'httponly': 'HttpOnly'}
     _reserved.update(Morsel._reserved)
 
-    def __init__(self, name, value):
+    def __init__(self, name=None, value=None):
         Morsel.__init__(self)
-        self.set(name, value, value)
+        if name is not None:
+            self.set(name, value, value)
 
     def OutputString(self, attrs=None):
         httponly = self.pop('httponly', False)
@@ -71,6 +72,20 @@ class _ExtendedMorsel(Morsel):
         if httponly:
             result += '; HttpOnly'
         return result
+
+    def set(self, *args, **kwargs):
+        try:
+            Morsel.set(self, *args, **kwargs)
+        except CookieError:
+            pass
+
+
+class _ExtendedCookie(BaseCookie):
+
+    def _BaseCookie__set(self, key, real_value, coded_value):
+        morsel = self.get(key, _ExtendedMorsel())
+        morsel.set(key, real_value, coded_value)
+        dict.__setitem__(self, key, morsel)
 
 
 class MultiDict(dict):
@@ -1453,11 +1468,17 @@ def parse_cookie(header, charset='utf-8'):
     """Parse a cookie.  Either from a string or WSGI environ."""
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
-    cookie = BaseCookie()
+    cookie = _ExtendedCookie()
     cookie.load(header)
     result = {}
+
+    # decode to unicode and skip broken items.  Our extended morsel
+    # and extended cookie will catch CookieErrors and convert them to
+    # `None` items which we have to skip here.
     for key, value in cookie.iteritems():
-        result[key] = value.value.decode(charset, 'ignore')
+        if value.value is not None:
+            result[key] = value.value.decode(charset, 'ignore')
+
     return result
 
 
