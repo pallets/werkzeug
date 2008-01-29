@@ -33,6 +33,7 @@ _empty_stream = StringIO('')
 _logger = None
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
+_entity_re = re.compile(r'&([^;]+);')
 
 
 def _log(type, message, *args, **kwargs):
@@ -1364,7 +1365,7 @@ def unescape(s, quote=False):
     def handle_match(m):
         name = m.group(1)
         if name in HTMLBuilder._entities:
-            return unichr(HTMLBuilder_entities[name])
+            return unichr(HTMLBuilder._entities[name])
         if name[:2] in ('#x', '#X'):
             try:
                 return unichr(int(name[2:], 16))
