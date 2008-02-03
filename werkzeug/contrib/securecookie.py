@@ -193,21 +193,20 @@ class SecureCookie(ModificationTrackingDict):
 
             # no parsing error and the hash looks okay, we can now
             # sercurely unpickle our cookie.
-            client_hash = base64_hash.decode('base64')
-            if items is not None and client_hash == hash.digest():
-                try:
-                    for key, value in items.iteritems():
-                        items[key] = pickle_unquote(value)
-                except UnquoteError:
-                    items = ()
-                else:
-                    if '_expires' in items:
-                        if time() > items['_expires']:
-                            items = ()
-                        else:
-                            del items['_expires']
-            else:
-                items = ()
+            if items is not None:
+                client_hash = base64_hash.decode('base64')
+                if client_hash == hash.digest():
+                    try:
+                        for key, value in items.iteritems():
+                            items[key] = pickle_unquote(value)
+                    except UnquoteError:
+                        items = ()
+                    else:
+                        if '_expires' in items:
+                            if time() > items['_expires']:
+                                items = ()
+                            else:
+                                del items['_expires']
         return cls(items, secret_key, False)
     unserialize = classmethod(unserialize)
 

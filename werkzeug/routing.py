@@ -198,7 +198,7 @@ class RequestSlash(RoutingException):
     """
 
 
-class BuildError(RoutingException, NotFound, LookupError):
+class BuildError(RoutingException, LookupError):
     """
     Raised if the build system cannot find a URL for an endpoint with the
     values provided.
