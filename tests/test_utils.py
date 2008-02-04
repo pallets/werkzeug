@@ -16,6 +16,13 @@ from werkzeug.http import parse_date
 from werkzeug.test import Client
 
 
+def test_import_patch():
+    import werkzeug
+    from werkzeug import __all__ as public_methods
+    for name in public_methods:
+        getattr(werkzeug, name)
+
+
 def test_multidict():
     md = MultiDict()
     assert isinstance(md, dict)
@@ -338,6 +345,7 @@ def test_cookies():
     assert set(dump_cookie('foo', 'bar baz blub', 360, httponly=True,
                            sync_expires=False).split('; ')) == \
            set(['HttpOnly', 'Max-Age=360', 'Path=/', 'foo=bar baz blub'])
+    assert parse_cookie('fo234{=bar blub=Blah') == {'blub': 'Blah'}
 
 
 def test_responder():

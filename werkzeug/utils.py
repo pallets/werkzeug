@@ -24,7 +24,6 @@ try:
     set = set
 except NameError:
     from sets import Set as set
-
     def reversed(item):
         return item[::-1]
 
@@ -74,18 +73,22 @@ class _ExtendedMorsel(Morsel):
             result += '; HttpOnly'
         return result
 
-    def set(self, *args, **kwargs):
-        try:
-            Morsel.set(self, *args, **kwargs)
-        except CookieError:
-            pass
-
 
 class _ExtendedCookie(BaseCookie):
+    """
+    Form of the base cookie that doesn't raise a `CookieError` for
+    malformed keys.  This has the advantage that broken cookies submitted
+    by nonstandard browsers don't cause the cookie to be empty.
+
+    :internal:
+    """
 
     def _BaseCookie__set(self, key, real_value, coded_value):
         morsel = self.get(key, _ExtendedMorsel())
-        morsel.set(key, real_value, coded_value)
+        try:
+            morsel.set(key, real_value, coded_value)
+        except CookieError:
+            pass
         dict.__setitem__(self, key, morsel)
 
 

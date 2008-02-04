@@ -85,6 +85,11 @@
     `HTTPException` so you can use those errors as responses in the
     application.
 
+    If matching succeeded but the URL rule was incompatible to the given
+    method (for example there were only rules for `GET` and `HEAD` and
+    routing system tried to match a `POST` request) a `MethodNotAllowed`
+    method is raised.
+
 
     :copyright: 2007-2008 by Armin Ronacher, Leif K-Brooks.
     :license: BSD, see LICENSE for more details.
@@ -413,9 +418,12 @@ class Rule(RuleFactory):
             ])
 
     `methods`
-        A sequence of http methods this rule applies to. If not specified, all
+        A sequence of http methods this rule applies to.  If not specified, all
         methods are allowed. For example this can be useful if you want different
-        endpoints for `POST` and `GET`.
+        endpoints for `POST` and `GET`.  If methods are defined and the path
+        matches but the method matched against is not in this list or in the
+        list of another rule for that path the error raised is of the type
+        `MethodNotAllowed` rather than `NotFound`.
 
     `strict_slashes`
         Override the `Map` setting for `strict_slashes` only for this rule. If

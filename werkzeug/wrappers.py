@@ -714,6 +714,11 @@ class UserAgentMixin(object):
     object.
     """
 
+    # this class actually belongs to a different module.  For more details
+    # have a look at `werkzeug.useragents`.  On the bottom of that module is
+    # a small comment that explains it.
+    __module__ = 'werkzeug.useragents'
+
     def user_agent(self):
         """The current user agent."""
         from werkzeug.useragents import UserAgent
