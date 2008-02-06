@@ -100,6 +100,11 @@ class BaseRequest(object):
     is_behind_proxy = False
 
     def __init__(self, environ, populate_request=True):
+        """
+        Per default the request object will be added to the WSGI enviornment
+        as `werkzeug.request` to support the debugging system.  If you don't
+        want that, set `populate_request` to `False`.
+        """
         self.environ = environ
         if populate_request:
             self.environ['werkzeug.request'] = self
@@ -234,21 +239,7 @@ class BaseRequest(object):
         """
         A `MultiDict` containing all uploaded files.  Each key in
         `files` is the name from the ``<input type="file" name="" />``.  Each
-        value in `files` is a Werkzeug `FieldStorage` object with the
-        following members:
-
-        - `filename` - The name of the uploaded file, as a Python string.
-        - `type` - The content type of the uploaded file.
-        - `data` - The raw content of the uploaded file.
-        - `read()` - Read from the stream.
-
-        Note that `files` will only contain data if the request method was POST
-        and the ``<form>`` that posted to the request had
-        ``enctype="multipart/form-data"``.  It will be empty otherwise.
-
-        The files retreived will be kept in temporary files, you can store
-        them somewhere else using `shutil` or the convenient `save` method on
-        a `FieldStorage`.
+        value in `files` is a Werkzeug `FileStorage` object.
         """
         if not hasattr(self, '_files'):
             self._load_post_data()
@@ -621,10 +612,8 @@ class BaseResponse(object):
     def freeze(self):
         """
         Call this method if you want to make your response object ready for
-        pickeling.  This buffers the generator if there is one and sets the
-        e-tag.
+        pickeling.  This buffers the generator if there is one.
         """
-        self.add_etag()
         BaseResponse.data.__get__(self)
 
     def __call__(self, environ, start_response):
@@ -791,6 +780,16 @@ class ETagResponseMixin(object):
         """
         return unquote_etag(self.headers.get('ETag'))
 
+    def freeze(self, no_etag=False):
+        """
+        Call this method if you want to make your response object ready for
+        pickeling.  This buffers the generator if there is one.  This also
+        sets the etag unless `no_etag` is set to `True`.
+        """
+        if not no_etag:
+            self.add_etag()
+        super(ETagResponseMixin, self).freeze()
+
 
 class ResponseStream(object):
     """
@@ -950,7 +949,7 @@ class CommonResponseDescriptorsMixin(object):
                 elif header_set:
                     self.headers[name] = header_set.to_header()
             return parse_set_header(self.headers.get(name), on_update)
-        return property(fget, doc)
+        return property(fget, doc=doc)
 
     vary = _set_property('Vary', doc='''
          The Vary field value indicates the set of request-header fields that

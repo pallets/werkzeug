@@ -13,7 +13,6 @@ try:
     import pkg_resources
 except ImportError:
     pkg_resources = None
-from werkzeug.utils import responder
 from werkzeug.templates import Template
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 
@@ -191,14 +190,16 @@ def test_app(environ, start_response):
     """Simple test application that dumps the environment."""
     req = Request(environ, populate_request=False)
     if req.args.get('resource') == 'logo':
-        return logo
-    eggs = None
-    if pkg_resources is not None:
-        eggs = list(pkg_resources.working_set)
-        eggs.sort(lambda a, b: cmp(a.project_name.lower(),
-                                   b.project_name.lower()))
-    return Response(TEMPLATE.render(req=req, eggs=eggs), mimetype='text/html')
-test_app = responder(test_app)
+        response = logo
+    else:
+        eggs = None
+        if pkg_resources is not None:
+            eggs = list(pkg_resources.working_set)
+            eggs.sort(lambda a, b: cmp(a.project_name.lower(),
+                                       b.project_name.lower()))
+        response = Response(TEMPLATE.render(req=req, eggs=eggs),
+                            mimetype='text/html')
+    return response(environ, start_response)
 
 
 if __name__ == '__main__':

@@ -116,14 +116,7 @@ of the Werkzeug features:
 
 .. sourcecode:: python
 
-    from cgi import escape
-    from werkzeug import BaseRequest, BaseResponse
-
-    class Request(BaseRequest):
-        pass
-
-    class Response(BaseResponse):
-        pass
+    from werkzeug import Request, Response, escape
 
     def index(req):
         return Response(u'''<h1>Index Page</h1>
@@ -162,13 +155,16 @@ of the Werkzeug features:
             resp = views[req.path](req)
         return resp(environ, start_response)
 
+    if __name__ == '__main__':
+        from werkzeug import run_simple
+        run_simple('localhost', 5000, application)
+
 Alright. That's quite a lot of code but let's go through it step-by-step.
 
 The first thing we do is importing the stuff we use.  In that example we need
-the `escape` function from the `cgi` module that SGML escapes strings.  This
-is required to avoid XSS attacks to the application.  The next import gives
-us the `BaseRequest` and `BaseResponse` objects we then subclass so that we
-can extend them later in one go if we want extra features.
+the `escape` function that XML/SGML escapes strings.  This is required to
+avoid XSS attacks to the application.  Then we need the `Request` and
+`Response` objects which ecapsulate the WSGI environ and responses.
 
 Then we define a bunch of callback functions that just return HTML responses.
 One of them - `not_found` - is called when we don't have a matching URL,

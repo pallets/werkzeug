@@ -100,7 +100,7 @@ the WSGI application:
             request = BaseRequest(environ)
             local.url_adapter = adapter = url_map.bind_to_environ(environ)
             try:
-                endpoint, values = adapter.match(request.path)
+                endpoint, values = adapter.match()
                 handler = getattr(views, endpoint)
                 response = handler(request, **values)
             except HTTPException, e:

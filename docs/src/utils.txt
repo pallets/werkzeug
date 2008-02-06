@@ -6,501 +6,175 @@ Werkzeug comes with a bunch of utilties that can be useful for WSGI
 applications.  Most of the classes provided by this module are used by the
 wrappers, you can however use them without the wrappers, too.
 
-
-MultiDict
-=========
-
-A `MultiDict` is a dictionary subclass customized to deal with multiple values
-for the same key which is for example used by the parsing functions in the
-wrappers.  This is necessary because some HTML form elements pass multiple
-values for the same key.
-
-`MultiDict` implements the all standard dictionary methods. Internally, it
-saves all values for a key as a list, but the standard dict access methods
-will only return the first value for a key.  If you want to gain access to the
-other values, too, you have to use the `list` methods as explained below.
-
-You can construct a `MultiDict` from a list of ``(key, value)`` tuples, a dict
-or another `MultiDict`.
-
-Basic Usage:
-
-.. sourcecode:: pycon
-
-    >>> from werkzeug import MultiDict
-    >>> d = MultiDict([('a', 'b'), ('a', 'c')])
-    >>> d
-    MultiDict([('a', 'b'), ('a', 'c')])
-    >>> d['a']
-    'b'
-    >>> d.getlist('a')
-    ['b', 'c']
-    >>> 'a' in d
-    True
-
-It behaves like a normal dict thus all dict functions will only return the
-first value when multiple values for one key are found.
-
-The following additional functions exist that are used to get or set the other
-values for a key:
-
-`getlist`
-    Return the list of items for a given key.  If that key is not in the
-    `MultiDict`, the return value will be an empty list.
-
-`setlist`
-    Remove the old values for a key and add new ones.  Note that the list you
-    pass the values in will be shallow-copied before it is inserted in the
-    dictionary.
-    
-    .. sourcecode:: pycon
-    
-        >>> multidict.setlist('foo', ['1', '2'])
-        >>> multidict['foo']
-        '1'
-        >>> multidict.getlist('foo')
-        ['1', '2']
-
-`setlistdefault`
-    Like `setdefault`, but sets multiple values.
-
-`lists`
-    Like `items`, but the values will be lists with all the values for a key.
-
-`listvalues`
-    Like `values`, but it will return lists for all values instead of only the
-    first value.
-
-`iterlists`
-    Like `lists`, but returns an iterator.
-
-`iterlistvalues`
-    Like `itervalues`, but it will yield lists for all values instead of only
-    the first value.
-
-`poplist`
-    Like `pop` for normal dicts; pops all the values for a key and removes the
-    key from the dict.
-
-`popitemlist`
-    Like `popitem` for normal dicts; pops all the values for a key, removes
-    the key from the dict and then returns a tuple in the form
-    ``(key, values)``.
-
-Also notable: `update` adds values and does not replace existing ones.
-
-Because `MultiDict` usually holds user-submitted data, you often have to
-convert incoming data to integers etc.  The `get` and `getlist` functions
-accept a type argument which can point to a function that converts the value
-or raises an `ValueError` which is catched.  This makes the following pieces
-of code roughly equivalent:
-
-.. sourcecode:: python
-
-    try:
-        page = int(multidict['key'])
-    except (ValueError, KeyError):
-        page = default
-
-    page = multidict.get('key', type=int)
-
-
-CombinedMultiDict
-=================
-
-A read-only `MultiDict` decorator that you can pass multiple `MultiDict`
-instances as sequence and it will combine the return values of all wrapped
-dicts:
-
-.. sourcecode:: pycon
-
-    >>> from werkzeug import MultiDict, CombinedMultiDict
-    >>> post = MultiDict([('foo', 'bar')])
-    >>> get = MultiDict([('blub', 'blah')])
-    >>> combined = CombinedMultiDict([get, post])
-    >>> combined['foo']
-    'bar'
-    >>> combined['blub']
-    'blah'
-
-This works for all read operations and will raise a `TypeError` for methods
-that want to change data (which isn't possible).
-
-
-Headers
-=======
-
-Another useful class is `Headers`.  It behaves similar to a `MultiDict` but it
-stores the values in a different way.  In fact it's not a dict at all but more
-of a list because the values are stored both sorted and unhashed.
-
-This data structure is useful if you want a nicer way to handle WSGI headers
-which are stored as tuples in a list.
-
-Changes to `MultiDict`:
-
-`iterlistvalues` and `listvalues` are missing because `itervalues` and
-`values` work completely different.
-
-`add`
-    Add a new value to a key (e.g. ``foo.add('Content-Type', 'text/plain')``).
-
-`__iter__`
-    Yield ``(key, value)`` tuples.
-
-`set` / `__setitem__`
-    Remove all old keys and add a new value. 
-
-`to_list`
-    Convert the headers into a list and convert the unicode headers to the
-    specified charset. The  charset parameter is obligatory (e.g.
-    ``foo.to_list('utf-8')``).
-
-`getlist`
-    Return a list of all values for a given key.
-
-`setlist`
-    Add a list of values to a given key.  Removes all old values for this key
-    first.
-
-`addlist`
-    Add a list of values to the headers for this key.
-
-`itervalues` and similar methods...
-    ...yield all values for a key, not only the first one!  `iterkeys` can of
-    course yield multiple keys with the same name analog to that.
-
-`extend`
-    Extend these headers with a dict or an iterable yielding keys and values.
-
-    *New in Werkzeug 0.2*
-
-
-EnvironHeaders
-==============
-
-Works like `Headers` but is read-only and constructed from a WSGI enviornment.
-It gives a nicer access to the client headers that become part of the WSGI
-environment.  All methods that would modify the header list raise a
-`TypeError`.
-
-
-FileStorage
-===========
-
-The `FileStorage` object is a thin wrapper over incoming files.  It has the
-following attributes and methods:
-
-`name`
-    The name of the form field which represents the data.
-
-`filename`
-    The incoming filename.
-
-`content_type`
-    The mimetype of the file.  E.g. ``'text/html'``.
-
-`content_length / len()`
-    The expected length of the file.
-
-`read([bytes])`
-    Read `bytes` or all of the incoming file. Note that the default wrappers
-    store the incoming data on the filesystem rather than the RAM.  Thus you
-    should keep in mind that reading without an maxmimum length can easily
-    break your application if the user-submitted data is too big.
-
-`readline() / readlines() / __iter__`
-    Behave like the methods of any other file object.
-
-`stream`
-    Gives you access to the underlaying stream.  Note that the exact methods
-    of this stream and its type is not strictly specified.  In most situations
-    it will be a `TemporaryFile` object.
-
-`save(dst[, buffer_size]<)`
-    Because uploaded files inside a `FileStorage` are kept in temporary files
-    without filenames, you often have to copy the files over to a new location
-    on the file system.  This method is able to save the file content to a new
-    stream or file on the file system (just pass it a filename in that case)
-    without consuming all the memory.  If you have more memory available you
-    can raise the buffer size to speed up the process.  The default buffer
-    size is ``16384`` (16 KB).
-
-
-SharedDataMiddleware
-====================
-
-A WSGI middleware that provides static content for development environments
-or simple server setups.  Usage is quite simple:
-
-.. sourcecode:: python
-
-    import os
-    from werkzeug import SharedDataMiddleware
-
-    app = SharedDataMiddleware(app, {
-        '/shared': os.path.join(os.path.dirname(__file__), 'shared')
-    })
-
-The contents of the folder ``./shared`` will now be available on
-``http://example.com/shared/``.  This is pretty useful if you don't want to
-start a standalone media server or something like that.  You can also mount a
-files on the root folder and still continue to use your application because
-the shared data middleware forwards all unhandled requests to the application,
-even if they are below one of the shared folders.
-
-
-ClosingIterator
+Data Structures
 ===============
 
-The WSGI specification requires that all middlewares and gateways respect the
-`close` callback of an iterator.  Because you often want to add another close
-action to a returned iterator you have to create a new iterator class that has
-such a close method.
+.. class:: werkzeug.utils.MultiDict
 
-Because this is a very common task you can use the `ClosingIterator` to add
-more close methods to an iterable:
+    The following additional methods exist that are used to get or set the
+    other values for a key or convert:
 
-.. sourcecode:: python
+    .. def:: werkzeug.utils.MultiDict.get
+    .. def:: werkzeug.utils.MultiDict.getlist
+    .. def:: werkzeug.utils.MultiDict.setlist
+    .. def:: werkzeug.utils.MultiDict.setlistdefault
 
-    return ClosingIterator(app(environ, start_response), [cleanup_session,
-                                                          cleanup_locals])
+    These functions work like the functions with the same name without
+    list.  Unlike the regular dict functions those operate on all the
+    values as lists, not only on the first one:
 
-If you just have one close function you can pass it directly without wrapping
-it in a list/tuple.
+    `lists`, `listvalues`, `iterlists`, `iterlistvalues`, `poplist`,
+    and `popitemlist`.
 
-
-Accept
-======
-
-An `Accept` object is just a list subclass for lists of ``(value, quality)``
-tuples.  It is automatically sorted by quality and provides the following
-access methods and members:
-
-`provided`
-    `True` if the `Accept` object was created from a list, `False` if the
-    initial value was `None`.  This is used by the request wrappers to keep
-    the information if the header was present or not.
-
-`best`
-    The best value (does not return a tuple!).
-
-`__getitem__(key)`
-    Beside index lookup (getting item n) you can also pass it a string to
-    get the quality for the item.  If the item is not in the list, the
-    returned quality is ``0``.
-
-`find(key)` / `index(key)`
-    Works like their list equivalents but you can also look up by the value
-    and not only the tuple.
-
-`values()`
-    Returns a list with all the values.
-
-`itervalues()`
-    Returns a generator for all the values.
+    Also notable: `update` adds values and does not replace existing ones.
 
 
-CacheControl
+.. class:: werkzeug.utils.CombinedMultiDict
+
+.. class:: werkzeug.utils.Headers
+
+    .. def:: werkzeug.utils.Headers.__init__
+    .. def:: werkzeug.utils.Headers.linked
+    .. def:: werkzeug.utils.Headers.get
+    .. def:: werkzeug.utils.Headers.getlist
+    .. def:: werkzeug.utils.Headers.add
+    .. def:: werkzeug.utils.Headers.set
+    .. def:: werkzeug.utils.Headers.extend
+    .. def:: werkzeug.utils.Headers.clear
+    .. def:: werkzeug.utils.Headers.to_list
+    .. def:: werkzeug.utils.Headers.__contains__
+    .. def:: werkzeug.utils.Headers.__iter__
+
+    All the other dict functions such as `iterkeys` are available and
+    work the same.
+
+
+.. class:: werkzeug.utils.EnvironHeaders
+
+
+Working with HTTP Headers
+=========================
+
+.. class:: werkzeug.http.Accept
+
+    `provided`
+        `True` if the `Accept` object was created from a list, `False` if the
+        initial value was `None`.  This is used by the request wrappers to
+        keep the information if the header was present or not.
+
+    `best`
+        The best value (does not return a tuple!).
+
+    .. def:: werkzeug.http.Accept.__getitem__
+    .. def:: werkzeug.http.Accept.find
+    .. def:: werkzeug.http.Accept.values
+    .. def:: werkzeug.http.Accept.itervalues
+
+.. def:: werkzeug.http.parse_accept_header
+
+.. class:: werkzeug.http.CacheControl
+.. def:: werkzeug.http.parse_cache_control_header
+
+.. class:: werkzeug.http.HeaderSet
+
+    .. def:: werkzeug.http.HeaderSet.add
+    .. def:: werkzeug.http.HeaderSet.remove
+    .. def:: werkzeug.http.HeaderSet.update
+    .. def:: werkzeug.http.HeaderSet.discard
+    .. def:: werkzeug.http.HeaderSet.find
+    .. def:: werkzeug.http.HeaderSet.index
+    .. def:: werkzeug.http.HeaderSet.clear
+    .. def:: werkzeug.http.HeaderSet.as_set
+    .. def:: werkzeug.http.HeaderSet.to_header
+
+.. def:: werkzeug.http.parse_set_header
+
+.. class:: werkzeug.useragents.UserAgent
+
+.. def:: werkzeug.http.parse_date
+
+.. class:: werkzeug.http.ETags
+
+    .. def:: werkzeug.http.ETags.is_weak
+    .. def:: werkzeug.http.ETags.contains_weak
+    .. def:: werkzeug.http.ETags.contains
+    .. def:: werkzeug.http.ETags.contains_raw
+    .. def:: werkzeug.http.ETags.as_set
+    .. def:: werkzeug.http.ETags.to_header
+
+.. def:: werkzeug.http.parse_etags
+.. def:: werkzeug.http.quote_etag
+.. def:: werkzeug.http.unquote_etag
+.. def:: werkzeug.http.generate_etag
+.. def:: werkzeug.http.is_resource_modified
+
+
+URL Helpers
+===========
+
+.. def:: werkzeug.utils.url_decode
+.. def:: werkzeug.utils.url_encode
+.. def:: werkzeug.utils.url_quote
+.. def:: werkzeug.utils.url_quote_plus
+.. def:: werkzeug.utils.url_unquote
+.. def:: werkzeug.utils.url_unquote_plus
+.. def:: werkzeug.utils.url_fix
+.. class:: werkzeug.utils.Href
+
+
+HTML Helpers
 ============
 
-Subclass of a dict that stores values for a Cache-Control header.  It has
-accesors for all the cache-control directives specified in RFC 2616.  The 
-class does not differentiate between request and response directives.
+.. def:: werkzeug.utils.escape
+.. def:: werkzeug.utils.unescape
+.. class:: werkzeug.utils.HTMLBuilder
 
-Because the cache-control directives in the HTTP header use dashes the
-python descriptors use underscores for that.
 
-To get a header of the `CacheControl` object again you can convert the
-object into a string or call the `to_header()` function.  If you plan
-to subclass it and add your own items have a look at the sourcecode for
-that class.
+WSGI Helpers
+============
+
+.. class:: werkzeug.utils.ClosingIterator
+.. class:: werkzeug.utils.SharedDataMiddleware
+.. class:: werkzeug.utils.FileStorage
+
+    `name`
+        The name of the form field which represents the data.
+
+    `filename`
+        The incoming filename.
+
+    `content_type`
+        The mimetype of the file.  E.g. ``'text/html'``.
+
+    `content_length / len()`
+        The expected length of the file.
+
+    `stream`
+        Gives you access to the underlaying stream.  Note that the exact
+        methods of this stream and its type is not strictly specified.  In
+        most situations it will be a `TemporaryFile` object.
+
+    .. def:: werkzeug.utils.FileStorage.__init__
+    .. def:: werkzeug.utils.FileStorage.save
+
+.. def:: werkzeug.utils.get_host
+.. def:: werkzeug.utils.get_current_url
+.. def:: werkzeug.utils.responder
+.. def:: werkzeug.utils.create_environ
+.. def:: werkzeug.utils.run_wsgi_app
 
 
 Helper Functions
 ================
 
-`url_decode(s, charset='utf-8', decode_keys=False)`
-    parse a querystring and return it as `MultiDict`.  Per default only values
-    are decoded into unicode strings.  If you set `decode_keys` to `True`, the
-    same will happen for keys.
-
-    *`decode_keys` is new in Werkzeug 0.2*
-
-`url_encode(s, charset='utf-8', encode_keys=False)`
-    URL encode a dict/`MultiDict`.  If a value is `None` it will not appear in
-    the result string.  Per default, only values are encoded into the target
-    charset strings.  If you set `encode_keys` to `True`, you can use unicode
-    keys, too.
-
-    *`encode_keys` is new in Werkzeug 0.2*
-
-`url_quote(s, charset='utf-8')`
-    URL-encode a single string with a given encoding.
-
-`url_unquote(s, charset='utf-8')`
-    URL-decode a single string with a given decoding.
-
-`escape(s, quote=False)`
-    SGML-/XML-escape an unicode object or string.
-
-`unescape(s, quote=False)`
-    SGML-/XML-unescape an unicode object or string.  This is the reversal of
-    `escape` and *not* an universal entity resolution.
-
-    *New in Werkzeug 0.2*
-
-`cached_property(func)`
-    A decorator that converts a function into a lazy property.  The function
-    wrapped is called the first time to retrieve the result and then that
-    calculated result is used the next time you access the value.
-
-    .. sourcecode:: python
-
-        class Foo(object):
-
-            @cached_property
-            def foo(self):
-                # calculate something important here
-                return 42
-
-    *Renamed in Werkzeug 0.2*.  In previous versions this was called
-    `lazy_property`, but as it turned out the name is misleading.  0.2 will
-    allow both names but starting with 0.3 you have to use the new name
-    exclusively.
-
-`get_host(environ)`
-    Return the real host for the given WSGI enviornment.  This takes care of
-    the `X-Forwarded-Host` header.
-
-`get_current_url(environ, root_only=False, strip_querystring=False, host_only=False)`
-    This method allows you to recreate the full URL for the current request or
-    parts of it.  An example:
-
-    .. sourcecode:: pycon
-
-        >>> env = create_environ("/?param=foo", "http://localhost/script")
-        >>> get_current_url(env)
-        'http://localhost/script/?param=foo'
-        >>> get_current_url(env, root_only=True)
-        'http://localhost/script/'
-        >>> get_current_url(env, host_only=True)
-        'http://localhost/'
-        >>> get_current_url(env, strip_querystring=True)
-        'http://localhost/script/'
-
-`cookie_date(expires)`
-    Formats the time to ensure compatibility with Netscape's cookie standard.
-
-    Accepts a floating point number expressed in seconds since the epoc in, a
-    datetime object or a timetuple.  All times in UTC.
-
-    Outputs a string in the format ``Wdy, DD-Mon-YYYY HH:MM:SS GMT``.
-
-`http_date(timestamp)`
-    Formats the time to match the RFC1123 date format.
-
-    Accepts a floating point number expressed in seconds since the epoc in, a
-    datetime object or a timetuple.  All times in UTC.
-
-    Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
-
-`parse_cookie(header)`
-    Pass it an WSGI environ or cookie header and it will return the cookie
-    values as Python dict.
-
-    *New in Werkzeug 0.2*
-
-`dump_cookie(key, ...)`
-    Creates a new ``Set-Cookie`` header without the ``Set-Cookie`` header key.
-    Takes the same arguments as the `set_cookie` method of the response
-    object.
-
-    *New in Werkzeug 0.2*
-
-`parse_accept_header(value)`
-    Parse an HTTP `Accept-*` header and return a new `Accept` object.
-
-`parse_cache_control_header(value)`
-    Parse a new `Cache-Control` header and return a new `CacheControl` object.
-
-`redirect(location, code=302)`
-    Return a response object (a WSGI application) that, if called, redirects
-    the client to the target location.  Supported codes are 301, 302, 303,
-    305, and 307.  300 is not supported because it's not a real redirect and
-    304 because it's the answer for a request with a request with defined
-    `If-Modified-Since` headers.
-
-`import_string(import_path)`
-    Imports an object based on a string.  This use useful if you want to use
-    import paths as endpoints or something similar.  An import path can be
-    specified either in dotted notation (``xml.sax.saxutils.escape``) or with
-    a colon as object delimiter (``xml.sax.saxutils:escape``).
-
-    *New in Werkzeug 0.2*
-
-`create_environ(path='/', base_url=None, query_string=None, **options)`
-    Create a new WSGI environ dict based on the values passed.  The first
-    parameter should be the path of the request which defaults to '/'. The
-    second one can either be a absolute path (in that case the URL host is
-    `localhost:80`) or a full path to the request with scheme, netloc port and
-    the path to the script.
-    
-    If `path` contains a query string it will be used, even if the
-    `query_string` parameter was given.  If it does not contain one, the
-    `query_string` parameter is used as query string.  In that case it can
-    either be a dict, `MultiDict` or string.
-
-    The following options exist:
-
-    `method`
-        The request method.  Defaults to `GET`
-
-    `input_stream`
-        The input stream.  Defaults to an empty read-only stream.
-
-    `content_type`
-        The content type for this request.  Default is an empty content type.
-
-    `content_length`
-        The value for the content length header.  Defaults to 0.
-
-    `errors_stream`
-        The `wsgi.errors` stream.  Defaults to `sys.stderr`.
-
-    `multithread`
-        The multithreaded flag for the WSGI environment.  Defaults to `False`.
-
-    `multiprocess`
-        The multiprocess flag for the WSGI environment.  Defaults to `False`.
-
-    `run_once`
-        The `run_once` flag for the WSGI environment.  Defaults to `False`.
-
-`run_wsgi_app(app, environ, buffered=False)`
-    Return a tuple in the form (app_iter, status, headers) of the application
-    output.  This works best if you pass it an application that returns a
-    generator all the time.
-
-    Sometimes applications may use the `write()` callable returned by the
-    `start_response` function.  This tries to resolve such edge cases
-    automatically.  But if you don't get the expected output you should set
-    `buffered` to `True` which enforces buffering.
-
-`test_app(environ, start_response)`
-    A small WSGI application that shows the WSGI environ, information about
-    the Python interpreter and a list of installed eggs when called.  This is
-    useful to test a middleware (when you need an application) or a WSGI
-    server (installation).
-
-`responder(func)`
-    Decorates a function so that the return value is evaluated as WSGI
-    application.  This is useful if you want to return response objects:
-
-    .. sourcecode:: python
-
-        from werkzeug import BaseResponse, responder
-
-        @responder
-        def application(environ, start_response):
-            return BaseResponse('Hello World!')
+.. def:: werkzeug.utils.cached_property
+.. def:: werkzeug.utils.environ_property
+.. def:: werkzeug.utils.header_property
+.. def:: werkzeug.utils.cookie_date
+.. def:: werkzeug.utils.http_date
+.. def:: werkzeug.utils.parse_cookie
+.. def:: werkzeug.utils.dump_cookie
+.. def:: werkzeug.utils.append_slash_redirect
+.. def:: werkzeug.utils.import_string
+.. def:: werkzeug.utils.find_modules
+.. def:: werkzeug.testapp.test_app

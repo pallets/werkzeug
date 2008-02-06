@@ -3,45 +3,63 @@
     werkzeug.local
     ~~~~~~~~~~~~~~
 
-    Special class to manage request local objects as globals.  This is a
-    wrapper around `py.magic.greenlet.getcurrent` if available and
-    `threading.currentThread`.
+    Sooner or later you have some things you want to have in every single view
+    or helper function or whatever.  In PHP the way to go are global
+    variables.  However that is not possible in WSGI applications without a
+    major drawback:  As soon as you operate on the global namespace your
+    application is not thread safe any longer.
 
-    Use it like this::
+    The python standard library comes with a utility called "thread locals".
+    A thread local is an global object where you can put stuff on and get back
+    later in a thread safe way.  That means whenver you set or get an object
+    to / from a thread local object the thread local object checks in which
+    thread you are and delivers the correct value.
 
-        from werkzeug import Local, LocalManager, ClosingIterator
+    This however has a few disadvantages.  For example beside threads there
+    are other ways to handle concurrency in Python.  A very popular approach
+    are greenlets.  And also if every request gets its own thread is not
+    guaranteed in WSGI.  It could be that a request is reusing a thread from
+    before and data is left in the thread local object.
 
-        local = Local()
-        local_manager = LocalManager([local])
 
-        def view(request):
-            return Response('...')
+    Nutshell
+    --------
 
-        def application(environ, start_response):
-            request = Request(environ)
-            local.request = request
-            response = view(request)
-            return ClosingIterator(response(environ, start_response),
-                                   local_manager.cleanup)
-
-    Additionally you can use the `make_middleware` middleware factory to
-    accomplish the same::
-
-        from werkzeug import Local, LocalManager, ClosingIterator
+    Here a simple example how you can use werkzeug.local::
 
         local = Local()
         local_manager = LocalManager([local])
 
-        def view(request):
-            return Response('...')
-
         def application(environ, start_response):
-            request = Request(environ)
-            local.request = request
-            return view(request)(environ, start_response)
+            local.request = request = Request(environ)
+            ...
 
         application = local_manager.make_middleware(application)
 
+    Now what this code does is binding request to `local.request`.  Every
+    other piece of code executed after this assignment in the same context can
+    safely access local.request and will get the same request object.  The
+    `make_middleware` method on the local manager ensures that everything is
+    cleaned up after the request.
+
+    The same context means the same greenlet (if you're using greenlets) in
+    the same thread and same process.
+
+    If a request object is not yet set on the local object and you try to
+    access it you will get an `AttributeError`.  You can use `getattr` to avoid
+    that::
+
+        def get_request():
+            return getattr(local, 'request', None)
+
+    This will try to get the request or return `None` if the request is not
+    (yet?) available.
+
+    Note that local objects cannot manage themselves, for that you need a local
+    manager.  You can pass a local manager multiple locals or add additionals
+    later by appending them to `manager.locals` and everytime the manager
+    cleans up it will clean up all the data left in the locals for this
+    context.
 
     :copyright: 2007-2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
@@ -117,7 +135,10 @@ class Local(object):
 
 class LocalManager(object):
     """
-    Manages local objects.
+    Local objects cannot manage themselves. For that you need a local manager.
+    You can pass a local manager multiple locals or add them later by
+    appending them to `manager.locals`.  Everytime the manager cleans up it,
+    will clean up all the data left in the locals for this context.
     """
 
     def __init__(self, locals=None):
@@ -130,13 +151,18 @@ class LocalManager(object):
                 self.locals = [locals]
 
     def get_ident(self):
-        """Returns the current identifier for this context."""
+        """
+        Return the context identifier the local objects use internally for
+        this context.  You cannot override this method to change the behavior
+        but use it to link other context local objects (such as SQLAlchemy's
+        scoped sessions) to the Werkzeug locals.
+        """
         return get_ident()
 
     def cleanup(self):
         """
-        Call this at the request end to clean up all data stored for
-        the current greenlet / thread.
+        Manually clean up the data in the locals for this context.  Call this
+        at the end of the request or use `make_middleware()`.
         """
         ident = self.get_ident()
         for local in self.locals:
@@ -188,10 +214,10 @@ class LocalProxy(object):
 
     Example usage::
 
-        from werkzeug import Local, LocalProxy
+        from werkzeug import Local
         l = Local()
-        request = LocalProxy(l, "request")
-        user = LocalProxy(l, "user")
+        request = l('request')
+        user = l('user')
 
     Whenever something is bound to l.user / l.request the proxy objects
     will forward all operations.  If no object is bound a `RuntimeError`

@@ -3,8 +3,8 @@ r"""
     werkzeug.templates
     ~~~~~~~~~~~~~~~~~~
 
-    A very simple Python "Template Engine". In fact it just recognizes
-    PHP like blocks and executes the code in them::
+    This template engine recognizes ASP/PHP like blocks and executes the code
+    in them::
 
         t = Template('<% for u in users %>${u['username']}\n<% endfor %>')
         t.render(users=[{'username': 'John'},
@@ -30,7 +30,9 @@ r"""
     Syntax Elements
     ---------------
 
-    Printing Variables::
+    Printing Variables:
+
+    .. sourcecode:: text
 
         $variable
         $variable.attribute[item](some, function)(calls)
@@ -39,19 +41,25 @@ r"""
     Keep in mind that the print statement adds a newline after the call or
     a whitespace if it ends with a comma.
 
-    For Loops::
+    For Loops:
+
+    .. sourcecode:: text
 
         <% for item in seq %>
             ...
         <% endfor %>
 
-    While Loops::
+    While Loops:
+
+    .. sourcecode:: text
 
         <% while expression %>
             <%py break / continue %>
         <% endwhile %>
 
-    If Conditions::
+    If Conditions:
+
+    .. sourcecode:: text
 
         <% if expression %>
             ...
@@ -61,7 +69,9 @@ r"""
             ...
         <% endif %>
 
-    Python Expressions::
+    Python Expressions:
+
+    .. sourcecode:: text
 
         <%py
             ...
@@ -72,14 +82,18 @@ r"""
         %>
 
     Note on python expressions:  You cannot start a loop in a python block
-    and continue it in another one.  This example does *not* work::
+    and continue it in another one.  This example does *not* work:
+
+    .. sourcecode:: text
 
         <%python
             for item in seq:
         %>
             ...
 
-    Comments::
+    Comments:
+
+    .. sourcecode:: text
 
         <%#
             This is a comment
@@ -92,16 +106,13 @@ r"""
     If you try to access a missing variable you will get back an `Undefined`
     object.  You can iterate over such an object or print it and it won't
     fail.  However every other operation will raise an error.  To test if a
-    variable is undefined you can use this expression::
+    variable is undefined you can use this expression:
+
+    .. sourcecode:: text
 
         <% if variable is Undefined %>
             ...
         <% endif %>
-
-    Copyright notice: The `parse_data` method uses the string interpolation
-    algorithm by Ka-Ping Yee which originally was part of `ltpl20.py`_
-
-    .. _ltipl20.py: http://lfw.org/python/Itpl20.py
 
 
     :copyright: 2006-2008 by Armin Ronacher, Ka-Ping Yee.
@@ -115,6 +126,12 @@ from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 from werkzeug import utils
+
+
+# Copyright notice: The `parse_data` method uses the string interpolation
+# algorithm by Ka-Ping Yee which originally was part of `ltpl20.py`_
+#
+# .. _ltipl20.py: http://lfw.org/python/Itpl20.py
 
 
 token_re = re.compile('%s|%s|%s(?i)' % (
@@ -435,6 +452,7 @@ class Template(object):
 
     def from_file(cls, file, encoding='utf-8', errors='strict',
                   unicode_mode=True):
+        """Load a template from a file."""
         close = False
         if isinstance(file, basestring):
             f = open(file, 'r')
@@ -449,6 +467,11 @@ class Template(object):
     from_file = classmethod(from_file)
 
     def render(self, *args, **kwargs):
+        """
+        This function accepts either a dict or some keyword arguments which
+        will then be the context the template is evaluated in.  The return
+        value will be the rendered template.
+        """
         ns = self.default_context.copy()
         ns.update(*args, **kwargs)
         context = Context(ns, self.encoding, self.errors)

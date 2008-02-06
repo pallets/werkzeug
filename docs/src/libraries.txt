@@ -20,6 +20,19 @@ If you want to use relational databases in your application.
     lets you construct SQL queries using Python expressions.  It also provides
     connection pools and plays nicely with the WSGI standard.
 
+`Elixir <http://elixir.ematia.de/>`_
+    Elixir is a declarative layer on top of the SQLAlchemy library.  It is a
+    fairly thin wrapper, which provides the ability to create simple Python
+    classes that map directly to relational database tables (this pattern is
+    often referred to as the Active Record design pattern), providing many of
+    the benefits of traditional databases without losing the convenience of
+    Python objects.
+
+`Storm <https://storm.canonical.com/>`_
+    Storm is an object-relational mapper (ORM) for Python developed at
+    Canonical.  It has been in development for more than a year for use in
+    Canonical projects such as Launchpad, and has been released as an
+    open-source product.
 
 Template Engines
 ================
@@ -47,6 +60,12 @@ Form Validation
 
 Here some form validation packages for WSGI applications:
 
+`What The Forms <http://dev.simplecodes.com/projects/wtforms>`_
+    WTForms is a HTTP/HTML forms handling library, written in Python.  It
+    handles definition, validation and rendering in a flexible and i18n
+    friendly way. It heavily reduces boilerplate and is completely unicode
+    aware.
+
 `Newforms Extracted <http://code.google.com/p/newforms-extracted/>`_
     This is a project to extract Django's newforms and make that package
     usable by other projects, since Django doesn't seem interested in making
@@ -68,7 +87,7 @@ Something's missing? Check here first:
     Various small WSGI utilities like a minimal traceback or auth
     middleware.  It also includes an SCGI server.
 
-`paste <http://pythonpaste.org/>`_
+`Paste <http://pythonpaste.org/>`_
     Many tools for use with WSGI: dispatching, composition, simple
     applications (e.g., file serving), and more.
 

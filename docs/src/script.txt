@@ -2,67 +2,8 @@
 Management Script Utilities
 ===========================
 
-Most of the time you have recurring tasks while writing an application such as
-starting up an interactive Python interpreter with some prefilled imports,
-starting the development server, initializing the database or something
-similar.
 
-For that purpose Werkzeug provides the `werkzeug.script` module which helps
-you writing such scripts.
-
-
-Basic Usage
-===========
-
-The following snippet is roughly the same in every Werkzeug script:
-
-.. sourcecode:: python
-
-    #!/usr/bin/env python
-    # -*- coding: utf-8 -*-
-    from werkzeug import script
-
-    # actions go here
-
-    if __name__ == '__main__':
-        script.run()
-
-Starting this script now does nothing because no actions are defined yet.  An
-action is a function in the same module starting with ``"action_"`` which
-takes a number of arguments where every argument has a default.  The type of
-the default value specifies the type of the argument.
-
-Arguments can then be passed by position or using ``--name=value`` from the
-shell.
-
-Because a `runserver` and `shell` command is pretty common, there are two
-factory functions that create such commands:
-
-.. sourcecode:: python
-
-    def make_app():
-        from yourapplication import YourApplication
-        return YourApplication(...)
-
-    action_runserver = script.make_runserver(make_app, use_reloader=True)
-    action_shell = script.make_shell(lambda: {'app': make_app()})
-
-
-Using The Scripts
-=================
-
-The script from above can be used like this from the shell now::
-
-    $ ./manage.py --help
-    $ ./manage.py runserver localhost 8080 --debugger --no-reloader
-    $ ./manage.py runserver -p 4000
-    $ ./manage.py shell
-
-As you can see it's possible to pass parameters as positional arguments
-or as named parameters, pretty much like Python function calls.
-
-With Werkzeug 0.1, calling of boolean arguments worked a bit different, so you
-had to call ``--use-reloader yes``.
+.. module:: werkzeug.script
 
 
 Writing Actions
@@ -77,9 +18,7 @@ constructs.
 
 An additional feature is the definition of tuples as defaults.  The first item
 in the tuple could be a short name for the command and the second the default
-value:
-
-.. sourcecode:: python
+value::
 
     def action_add_user(username=('u', ''), password=('p', '')):
         """Docstring goes here."""
@@ -90,16 +29,12 @@ Action Discovery
 ================
 
 Per default, the `run` function looks up variables in the current locals.
-That means if no arguments are provided, it implicitly assumes this call:
-
-.. sourcecode:: python
+That means if no arguments are provided, it implicitly assumes this call::
 
     script.run(locals(), 'action_')
 
 If you don't want to use an action discovery, you can set the prefix to an
-empty string and pass a dict with functions:
-
-.. sourcecode:: python
+empty string and pass a dict with functions::
 
     script.run(dict(
         runserver=script.make_runserver(make_app, use_reloader=True),

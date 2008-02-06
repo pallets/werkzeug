@@ -94,8 +94,8 @@ HTTP_STATUS_CODES = {
 
 class Accept(list):
     """
-    Subclass of a list for easier access to the accept values.  Sorted
-    by quality, best first.
+    An `Accept` object is just a list subclass for lists of
+    ``(value, quality)`` tuples.  It is automatically sorted by quality.
     """
 
     def __init__(self, values=()):
@@ -110,6 +110,11 @@ class Accept(list):
             list.__init__(self, [(a, b) for b, a in values])
 
     def __getitem__(self, key):
+        """
+        Beside index lookup (getting item n) you can also pass it a string to
+        get the quality for the item.  If the item is not in the list, the
+        returned quality is ``0``.
+        """
         if isinstance(key, basestring):
             for value in self:
                 if value[0] == key:
@@ -127,7 +132,7 @@ class Accept(list):
         )
 
     def index(self, key):
-        """Get the position of en entry or raise IndexError."""
+        """Get the position of en entry or raise `IndexError`."""
         rv = self.find(key)
         if rv < 0:
             raise IndexError(key)
@@ -143,7 +148,7 @@ class Accept(list):
         return list.find(self, key)
 
     def values(self):
-        """Just the values, not the qualities."""
+        """Return a list of the values, not the qualities."""
         return [x[1] for x in self]
 
     def itervalues(self):
@@ -159,9 +164,16 @@ class Accept(list):
 
 class HeaderSet(object):
     """
-    Similar to the `ETagSet` class this implements a set like structure.
-    Unlike `ETagSet` this is case insensitive and used for vary, allow, and
+    Similar to the `ETags` class this implements a set like structure.
+    Unlike `ETags` this is case insensitive and used for vary, allow, and
     content-language headers.
+
+    If not constructed using the `parse_set_header` function the instanciation
+    works like this:
+
+    >>> hs = HeaderSet(['foo', 'bar', 'baz'])
+    >>> hs
+    HeaderSet(['foo', 'bar', 'baz'])
     """
 
     def __init__(self, headers=None, on_update=None):
@@ -170,9 +182,14 @@ class HeaderSet(object):
         self.on_update = on_update
 
     def add(self, header):
+        """Add a new header to the set."""
         self.update((header,))
 
     def remove(self, header):
+        """
+        Remove a layer from the set.  This raises an `IndexError` if the
+        header is not in the set.
+        """
         key = header.lower()
         if key not in self._set:
             raise IndexError(header)
@@ -185,6 +202,7 @@ class HeaderSet(object):
             self.on_update(self)
 
     def update(self, iterable):
+        """Add all the headers from the iterable to the set."""
         inserted_any = False
         for header in iterable:
             key = header.lower()
@@ -196,12 +214,14 @@ class HeaderSet(object):
             self.on_update(self)
 
     def discard(self, header):
+        """Like remove but ignores errors."""
         try:
             return self.remove(header)
         except IndexError:
             pass
 
     def find(self, header):
+        """Return the index of the header in the set or return -1 if not found."""
         header = header.lower()
         for idx, item in enumerate(self._headers):
             if item.lower() == header:
@@ -209,23 +229,30 @@ class HeaderSet(object):
         return -1
 
     def index(self, header):
+        """Return the index of the headerin the set or raise an `IndexError`."""
         rv = self.find(header)
         if rv < 0:
             raise IndexError(header)
         return rv
 
     def clear(self):
+        """Clear the set."""
         self._set.clear()
         del self._headers[:]
         if self.on_update is not None:
             self.on_update(self)
 
     def as_set(self, preserve_casing=False):
+        """
+        Return the set as real python set structure.  When calling this all
+        the items are converted to lowercase and the ordering is lost.
+        """
         if preserve_casing:
             return set(self._headers)
         return set(self._set)
 
     def to_header(self):
+        """Convert the header set into an HTTP header string."""
         return ', '.join(self._headers)
 
     def __getitem__(self, idx):
@@ -269,7 +296,23 @@ class HeaderSet(object):
 
 class CacheControl(dict):
     """
-    Wrapper around a dict for cache control headers.
+    Subclass of a dict that stores values for a Cache-Control header.  It has
+    accesors for all the cache-control directives specified in RFC 2616.  The
+    class does not differentiate between request and response directives.
+
+    Because the cache-control directives in the HTTP header use dashes the
+    python descriptors use underscores for that.
+
+    To get a header of the `CacheControl` object again you can convert the
+    object into a string or call the `to_header()` function.  If you plan
+    to subclass it and add your own items have a look at the sourcecode for
+    that class.
+
+    The following attributes are exposed:
+
+    `no_cache`, `no_store`, `max_age`, `max_stale`, `min_fresh`,
+    `no_transform`, `only_if_cached`, `public`, `private`, `must_revalidate`,
+    `proxy_revalidate`, and `s_maxage`
     """
 
     def cache_property(key, default, type):
@@ -394,29 +437,42 @@ class ETags(object):
         self.star_tag = star_tag
 
     def as_set(self, include_weak=False):
+        """
+        Convert the `ETags` object into a python set.  Per default all the
+        weak etags are not part of this set.
+        """
         rv = set(self._strong)
         if include_weak:
             rv.update(self._weak)
         return rv
 
     def is_weak(self, etag):
+        """Check if an etag is weak."""
         return etag in self._weak
 
     def contains_weak(self, etag):
+        """Check if an etag is part of the set including weak and strong tags."""
         return self.is_weak(etag) or self.contains(etag)
 
     def contains(self, etag):
+        """Check if an etag is part of the set ignoring weak tags."""
         if self.star_tag:
             return True
         return etag in self._strong
 
     def contains_raw(self, etag):
+        """
+        When passed a quoted tag it will check if this tag is part of the set.
+        If the tag is weak it is checked against weak and strong tags, otherwise
+        weak only.
+        """
         etag, weak = unquote_etag(etag)
         if weak:
             return self.contains_weak(etag)
         return self.contains(etag)
 
     def to_header(self):
+        """Convert the etags set into a HTTP header string."""
         if self.star_tag:
             return '*'
         return ', '.join(['"%s"' % item for item in self.as_set(True)])
@@ -552,7 +608,9 @@ def generate_etag(data):
 
 def parse_date(value):
     """
-    Parse one of the following date formats into a datetime object::
+    Parse one of the following date formats into a datetime object:
+
+    .. sourcecode:: text
 
         Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
         Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
