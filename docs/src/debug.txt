@@ -19,9 +19,9 @@ Usage:
 
     application = DebuggedApplication(application, evalex=True)
     
-    run_simple('localhost', 4000, application)
+    run_simple('localhost', 5000, application)
 
-This code spawns a debugging server on `localhost:4000` with the debugger
+This code spawns a debugging server on `localhost:5000` with the debugger
 enabled.  If you set `evalex` to `False`, the debugger is disabled.
 
 .. warning::

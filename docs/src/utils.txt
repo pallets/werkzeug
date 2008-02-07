@@ -108,6 +108,11 @@ Working with HTTP Headers
 .. def:: werkzeug.http.generate_etag
 .. def:: werkzeug.http.is_resource_modified
 
+`HTTP_STATUS_CODES`
+    A dict of status code -> default status message pairs.  This is used
+    by the wrappers and other places where a integer status code is expanded
+    to a string throughout Werkzeug.
+
 
 URL Helpers
 ===========
@@ -135,6 +140,7 @@ WSGI Helpers
 
 .. class:: werkzeug.utils.ClosingIterator
 .. class:: werkzeug.utils.SharedDataMiddleware
+.. class:: werkzeug.utils.DispatcherMiddleware
 .. class:: werkzeug.utils.FileStorage
 
     `name`
@@ -174,6 +180,7 @@ Helper Functions
 .. def:: werkzeug.utils.http_date
 .. def:: werkzeug.utils.parse_cookie
 .. def:: werkzeug.utils.dump_cookie
+.. def:: werkzeug.utils.redirect
 .. def:: werkzeug.utils.append_slash_redirect
 .. def:: werkzeug.utils.import_string
 .. def:: werkzeug.utils.find_modules

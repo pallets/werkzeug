@@ -6,11 +6,6 @@ Werkzeug has not yet reached 1.0 and as a matter of fact some things might
 change over time.  The following modules will very likely change in one of
 the next release versions:
 
-`werkzeug.routing`
-    Currently the path converter does not sort properly and we will change
-    the way sorting works there.  Try to avoid `path` as much as possible
-    for the time being.
-
 `werkzeug.contrib`
     The community-contributed modules are yet undocumented and we expect
     some upcoming changes there.
@@ -28,3 +23,5 @@ Backwards Incompatible Changes
         this 302 code, use ``response = redirect(e.new_url, 302)``.
     -   `lazy_property` is now called `cached_property`.  The alias for
         the old name will disappear in Werkzeug 0.3.
+    -   `match` can now raise `MethodNotAllowed` if configured for
+        methods and there was no method for that request.

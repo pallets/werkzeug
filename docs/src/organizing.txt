@@ -53,20 +53,17 @@ It's also a good idea to call the file something like ``main.py`` or
 
 .. sourcecode:: python
 
+    from werkzeug import Request, Response, import_string
     from werkzeug.exceptions import HTTPException
     from werkzeug.routing import RequestRedirect
-    from mypackage.urls import map, not_found
-    from mypackage.utils import Request, Response
+    from mypackage.urls import url_map
 
     def application(environ, start_response):
-        urls = map.bind_to_environ(environ)
-        req = Request(environ, urls)
+        url_adapter = map.bind_to_environ(environ)
+        req = Request(environ)
         try:
-            endpoint, args = urls.match(req.path)
-            module, func = endpoint.split('/', 1)
-            mod = __import__('mypackage.views.' + module, None,
-                             None, [''])
-            view = getattr(mod, func)
+            endpoint, values = url_adapter.match()
+            view = import_string('mypackage.views.' + endpoint)
             resp = view(req, **args)
         except (RequestRedirect, HTTPException), e:
             resp = e
@@ -76,7 +73,7 @@ You can even further simplify the dispatching by using ``urls.dispatch`` as
 explained in the routing documentation.
 
 This will look for the controller functions in `mypackage.views.module`.
-If the URL is configured with an endpoint of ``'static/index'``, the module
+If the URL is configured with an endpoint of ``'static.index'``, the module
 `mypackage.views.static` is loaded and `index(req)` is called.
 
 The URL rule parameters are passed to the function as keyword arguments then.
@@ -101,28 +98,16 @@ template engine:
 .. sourcecode:: python
 
     from jinja import Environment, PackageLoader
-    from werkzeug import BaseRequest, BaseResponse
+    from werkzeug import Response
 
     env = Environment(loader=PackageLoader('mypackage', 'templates'))
-
-    class Request(BaseRequest):
-
-        def __init__(self, environ, urls):
-            self.environ = environ
-            self.urls = urls
-
-        def url_for(self, endpoint, **values):
-            return self.urls.build(endpoint, values)
-
-    class Response(BaseResponse):
-        pass
 
     class TemplateResponse(Response):
 
         def __init__(self, template_name, **values):
             tmpl = env.get_template(template_name)
             output = tmpl.render(values)
-            super(TemplateResponse, self).__init__(output, mimetype='text/html')
+            Response.__init__(self, output, mimetype='text/html')
 
 **Note**: Templates in this example are saved in the `templates` folder inside
 the `mypackage` package.  The way template loading and rendering works depends
@@ -131,8 +116,6 @@ on the template engine, so have a look at it's documentation regarding that.
 We just subclass request and response classes for our needs and provide a
 second response subclass that is used to render templates.  It's used in the
 example view below.
-
-``req.url_for`` can be used to get an URL to another view.
 
 
 URLs
@@ -145,8 +128,8 @@ are stored in `urls.py`, we need that file:
 
     from werkzeug.routing import Map, Rule
 
-    map = Map([
-        Rule('/', 'static/index')
+    url_map = Map([
+        Rule('/', 'static.index')
     ])
 
 This is just one small URL rule for one view.

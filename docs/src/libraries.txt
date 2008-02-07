@@ -94,6 +94,14 @@ Something's missing? Check here first:
 `Routes <http://routes.groovie.org/>`_
     A port of the Rails URL mapping system.
 
+`Python OpenID <http://openidenabled.com/python-openid/>`_
+    The OpenID library with batteries included.
+
+`AuthKit <http://authkit.org/>`_
+    WSGI Authentication and Authorization Tools.  Built in support for
+    HTTP basic, HTTP digest, form, cookie and OpenID authentication methods
+    plus others.
+
 You can find a more complete list on the `wsgi.org`_ webpage.
 
 

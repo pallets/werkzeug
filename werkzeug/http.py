@@ -246,6 +246,10 @@ class HeaderSet(object):
         """
         Return the set as real python set structure.  When calling this all
         the items are converted to lowercase and the ordering is lost.
+
+        If `preserve_casing` is `True` the items in the set returned will
+        have the original case like in the `HeaderSet`, otherwise they will
+        be lowercase.
         """
         if preserve_casing:
             return set(self._headers)

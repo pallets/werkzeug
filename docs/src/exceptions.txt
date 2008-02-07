@@ -55,6 +55,11 @@ a proxy WSGI exception and raise that::
     abort(404)
     abort(Response('Hello World'))
 
+If you want to use this functionality with custom excetions you can
+create an instance of the aborter class:
+
+.. class:: werkzeug.exceptions.Aborter
+
 
 Custom Errors
 =============

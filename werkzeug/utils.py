@@ -217,6 +217,7 @@ class MultiDict(dict):
         ['1', '2']
         dict.__setitem__(self, key, list(new_list))
         """
+        dict.__setitem__(self, key, list(new_list))
 
     def setdefault(self, key, default=None):
         if key not in self:
@@ -1135,9 +1136,9 @@ class HTMLBuilder(object):
     """
     Helper object for HTML generation.
 
-    Per default there are two instances of that class.  The html one, and the
-    xhtml one for those two dialects.  The class uses keyword parameters and
-    positional parameters to generate small snippets of HTML.
+    Per default there are two instances of that class.  The `html` one, and
+    the `xhtml` one for those two dialects.  The class uses keyword parameters
+    and positional parameters to generate small snippets of HTML.
 
     Keyword parameters are converted to XML/SGML attributes, positional
     arguments are used as children.  Because Python accepts positional
@@ -1377,7 +1378,7 @@ def escape(s, quote=None):
     return s
 
 
-def unescape(s, quote=False):
+def unescape(s):
     """
     The reverse function of `escape`.  This unescapes all the HTML entities,
     not only the XML entities inserted by `escape`.
