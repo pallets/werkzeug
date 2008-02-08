@@ -245,11 +245,11 @@ Applikation funktioniert.  Der folgende Code landet in der Datei
     def url_for(endpoint, _external=False, **values):
         return local.url_adapter.build(endpoint, values, force_external=_external)
 
-Als Erstes importieren wir wieder eine Menge, dann erstellen wir die lokalen
+Als Erstes importieren wir wieder eine Menge, dann erstellen wir das local-Objekt
 Objekte und den Manager dafür, die wir bereits im vorherigen Abschnitt besprochen
-haben.  Neu ist hier dass der Aufruf eines lokalen Objekts mit einem String ein
+haben.  Neu ist hier dass der Aufruf eines local-Objekts mit einem String ein
 Proxy-Objekt zurückgibt.  Dieses zeigt stets auf die gleichnamigen Attribute des
-lokalen Objekts. Beispielsweise verweist nun `application` dauerhaft auf
+local-Objekts. Beispielsweise verweist nun `application` dauerhaft auf
 `local.application`.  Wenn du jedoch darauf zugreifst, aber kein Objekt an
 `local.application` gebunden ist, erhältst du einen `RuntimeError`.
 
@@ -258,12 +258,12 @@ eine Werkzeug-Anwendung einzubinden.  Wir erstellen ein Metadaten-Objekt
 für all unsere Tabellen sowie eine "scoped session" über die
 `scoped_session`-Factory-Funktion.  Dadurch wird SQLAlchemy angewiesen, praktisch
 denselben Algorithmus zur Ermittlung des aktuellen Kontextes zu verwenden, wie es
-auch Werkzeug für die lokalen Objekte tut, und die Datenbank-Engine der aktuellen
+auch Werkzeug für die local-Objekte tut, und die Datenbank-Engine der aktuellen
 Applikation zu benutzen.
 
 Wenn wir nicht vorhaben, mehrere Instanzen der Applikation in derselben Instanz
 des Python-Interpreters zu unterstützen, können wir den Code einfach halten, indem
-wir nicht über das aktuelle lokale Objekt auf die Applikation zugreifen, sondern
+wir nicht über das aktuelle local-Objekt auf die Applikation zugreifen, sondern
 einen anderen Weg nehmen.  Dieser Ansatz wird etwa von Django verfolgt, macht es
 allerdings unmöglich, mehrere solcher Applikationen zu kombinieren.
 
