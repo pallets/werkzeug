@@ -279,20 +279,23 @@ URLs anhand des Endpunktes zu generieren.  Wir werden sie später in den Views a
 auch unserem Model verwenden.
 
 
-Intermission: And Now to Something Completely Different
-=======================================================
+Zwischenschritt: Und nun etwas komplett anderes
+===============================================
 
-Now that we have finished the foundation for the application we could relax
-and do something completely different: management scripts.  Most of the time
-you do similar tasks while developing.  One of them is firing up a
-development server (If you're used to PHP: Werkzeug does not rely on Apache
-for development, it's perfectly fine and also recommended to use the wsgiref
-server that comes with python for development purposes), starting a python
-interpreter to play with the database models, initializing the database etc.
+Da wir nun das Grundgerüst für unsere Anwendung fertig gestellt haben, können
+wir jetzt erst einmal relaxen und uns etwas komplett anderem zuwenden:
+Verwaltungs-Skripte.  Während der Entwicklung erledigt man häufig immer
+wiederkehrende Aufgaben, wie zum Beispiel das Starten eines Entwicklungs-Servers
+(Im Gegensatz zu PHP benötigt Werkzeug keinen Apache Server.  Der in Python
+integrierte wsgiref Server ist völlig ausreichend ist für die Entwicklung
+auf jeden Fall empfehlenswert), das Starten eines Python Interpreters um
+mit den Datenbank Objekten herum zu spielen, oder die Datenbank zu
+initialisieren, etc.
 
-Werkzeug makes it incredible easy to write such management scripts.  The
-following piece of code implements a fully featured management script.  Put
-it into the `manage.py` file you have created in the beginning:
+Werkzeug macht es zum Glück unglaublich einfach solche Verwaltungs-Skripts zu
+schreiben. Der folgende Code implemenitert einen voll funktionsfähigen
+Verwaltungs Skript und gehört in die `manage.py` Datei welche du am Anfang
+erstellt hast:
 
 .. sourcecode:: python
 
@@ -314,17 +317,19 @@ it into the `manage.py` file you have created in the beginning:
 
     script.run()
 
-`werkzeug.script` is explained in detail in the `script documentation`_ and
-we won't cover it here, most of the code should be self explaining anyway.
+`werkzeug.script` ist genauer in der `Script Dokumentation`_ beschrieben,
+und da der Großteil des Codes sowieso verständlich sein sollte, werden wir
+hier nicht näher darauf eingehen.
 
-What's important is that you should be able to run ``python manage.py shell``
-to get an interactive Python interpreter without traceback.  If you get an
-exception check the line number and compare your code with the code we have
-in the code boxes above.
+Es ist aber wichtig, dass du ``python manage.py shell`` ausführen kannst um
+eine interaktive Python Shell zu starten. Solltest du ein Traceback bekommen,
+kontrolliere bitte die betreffende Code-Zeile und vergleiche sie mit dem
+entsprechenden Code in dieser Anleitung.
 
-Now that the script system is running we can start writing our database models.
+Sobald der Skript läuft, können wir mit dem Schreiben der Datenbank Modelle
+beginnen.
 
-.. _script documentation: script.txt
+.. _Script Dokumentation: script.txt
 
 
 Part 3: Database Models
