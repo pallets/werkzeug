@@ -182,43 +182,42 @@ dort ein neues Request-Objekt um nicht direkt mit dem environ Arbeiten zu
 müssen und dann binden wir die Anwendung and das local Objekt für den
 aktuellen Kontext.
 
-Dann erstellen wir einen URL adapter indem wir die URL map an das aktuelle
+Dann erstellen wir einen URL Adapter indem wir die URL map an das aktuelle
 WSGI environment binden.  Der Adapter weiß dann wie die aktuelle URL
 aussieht, wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir
 dann nutzen um URLs zu bauen oder eben den aktuellen Request zu matchen.
 Wir binden diesen Adapter auch an das local Objekt damit wir im utils
 Modul auf diesen Zugreifen können.
 
-.. admonition:: Hinweis
+Danach kommt ein `try`/`except` Konstruct das HTTP Fehler abfängt die
+während dem Matchen oder in einer View Funktion auftreten können.  Wenn
+der Adapter keinen Endpoint für die aktuelle URL findet wird er eine
+`NotFound` Exception werfen, die wir wie ein Response Objekt aufrufen
+können.  Der Endpoint ist in unserem Fall der Name der Funktion im view
+Modul, die wir aufrufen möchten.  Wir suchen uns einfach mit `getattr`
+die Funktion nach dem Namen heraus und rufen sie mit dem Request Objekt
+und den URL Werten auf.
 
-    Der Rest des Dokumentes wurde noch nicht übersetzt.
+Am Schluss rufen wir dann das gewonnene Response Objekt (oder die Exception)
+als WSGI Anwendung auf und übergeben den Rückgabewert dieser Funktion an
+den `ClosingIterator` zusammen mit zwei Funktionen fürs Aufräumen.  Dies
+schließt die SQLAlchemy Session und leert das local Objekt für diesen
+Request.
 
-After that we have a `try`/`except` that catches HTTP exceptions that could
-occur while matching or in the view function.  When the adapter does not find
-a valid endpoint for our current request it will raise a `NotFound` exception
-which we can use like a response object.  And endpoint is basically the name
-of the function we want to handle our request with.  We just get the
-function with the name of the endpoint and pass it the request and the URL
-values.
-
-At the end of the function we call the response object as WSGI application
-and pass the return value of this function (which will be an iterable) to
-the closing iterator class along with our cleanup callbacks (which remove
-the current SQLAlchemy session and clean up the data left in the local
-objects).
-
-As next step create two empty files ``shorty/views.py`` and
-``shorty/models.py`` so that our imports work.  We will fill the modules with
-useful code later.
+Nun müssen wir zwei leere Dateien ``shorty/views.py`` und
+``shorty/models.py`` erstellen, damit die Imports nicht fehlschalgen.
+Den tatsächlichen Code für diese Module werden wir ein wenig später
+erstellen.
 
 
-Part 2: The Utilities
+Teil 2: Die Utilities
 =====================
 
-Now we have basically finished the WSGI application itself but we have to add
-some more code into our utiliy module so that the imports work.  For the time
-being we just add the objects which we need for the application to work.  All
-the following code goes into the ``shorty/utils.py`` file:
+Nun haben wir die eigentliche WSGI-Applikation fertiggestellt, aber wir
+müssen das Utility-Modul noch um Code ergänzen, damit die Importe klappen.
+Fürs Erste fügen wir nur die Objekte hinzu, die wir brauchen, damit die
+Applikation funktioniert.  Der folgende Code landet in der Datei
+``shorty/utils.py``:
 
 .. sourcecode:: python
 
@@ -246,36 +245,38 @@ the following code goes into the ``shorty/utils.py`` file:
     def url_for(endpoint, _external=False, **values):
         return local.url_adapter.build(endpoint, values, force_external=_external)
 
-First we again import a bunch of stuff, then we create the local objects and
-the local manager we already discussed in the section above.  The new thing
-here is that calling a local object with a string returns a proxy object.  This
-returned proxy object always points to the attribute with that name on the
-local object.  For example `application` now points to `local.application`
-all the time.  If you, however, try to do something with it and there is
-no object bound to `local.application` you will get a `RuntimeError`.
+Als Erstes importieren wir wieder eine Menge, dann erstellen wir die lokalen
+Objekte und den Manager dafür, die wir bereits im vorherigen Abschnitt besprochen
+haben.  Neu ist hier dass der Aufruf eines lokalen Objekts mit einem String ein
+Proxy-Objekt zurückgibt.  Dieses zeigt stets auf die gleichnamigen Attribute des
+lokalen Objekts. Beispielsweise verweist nun `application` dauerhaft auf
+`local.application`.  Wenn du jedoch darauf zugreifst, aber kein Objekt an
+`local.application` gebunden ist, erhältst du einen `RuntimeError`.
 
-The next three lines are basically everything we need to get SQLAlchemy 0.4
-or higher running in a Werkzeug application.  We create a new metadata for all
-of our tables and then a new scoped session using the `scoped_session` factory
-function.  This basically tells SQLAlchemy to use the same algorithm to
-determine the current context as werkzeug local does and use the database
-engine of the current application.
+Die folgenden drei Zeilen sind im Prinzip alles um SQLAlchemy 0.4 oder höher in
+eine Werkzeug-Anwendung einzubinden.  Wir erstellen ein Metadaten-Objekt
+für all unsere Tabellen sowie eine "scoped session" über die
+`scoped_session`-Factory-Funktion.  Dadurch wird SQLAlchemy angewiesen, praktisch
+denselben Algorithmus zur Ermittlung des aktuellen Kontextes zu verwenden, wie es
+auch Werkzeug für die lokalen Objekte tut, und die Datenbank-Engine der aktuellen
+Applikation zu benutzen.
 
-If we don't plan to add support for multiple instances of the application in
-the same python interpreter we can also simplify that code by not looking up
-the application on the current local object but somewhere else.  This approach
-is for example used by Django but makes it impossible to combine multiple such
-applications.
+Wenn wir nicht vorhaben, mehrere Instanzen der Applikation in derselben Instanz
+des Python-Interpreters zu unterstützen, können wir den Code einfach halten, indem
+wir nicht über das aktuelle lokale Objekt auf die Applikation zugreifen, sondern
+einen anderen Weg nehmen.  Dieser Ansatz wird etwa von Django verfolgt, macht es
+allerdings unmöglich, mehrere solcher Applikationen zu kombinieren.
 
-The rest of the module is code we will use in our views.  Basically the idea
-there is to use decorators to specify the URL dispatching rule for a view
-function rather than a central ``urls.py`` file like you could do in Django
-or a ``.htaccess`` for URL rewrites like you would do in PHP.  This is
-**one** way to do it and there are countless of other ways to handle rule
-definitions.
+Der restliche Code des Moduls wird für unsere Views benutzt.  Die Idee besteht
+darin, Dekoratoren zu benutzen, um die URL-Dispatching-Regeln für View-Funktionen
+festzulegen, anstatt ein zentrales Modul ``urls.py`` zu verwenden, wie es Django
+tut, oder über eine ``.htaccess``-Datei URLs umzuschreiben, wie man es in PHP
+machen würde.  Dies ist **eine** Möglichkeit, dies zu tun, und es gibt unzählige
+andere Wege der Handhabung von URL-Regeldefinitionen.
 
-The `url_for` function, which we have there too, provides a simple way to
-generate URLs by endpoint.  We will use it in the views and our model later.
+Die Funktion `url_for`, die wir ebenfalls definieren, bietet einen einfachen Weg,
+URLs anhand des Endpunktes zu generieren.  Wir werden sie später in den Views als
+auch unserem Model verwenden.
 
 
 Intermission: And Now to Something Completely Different
