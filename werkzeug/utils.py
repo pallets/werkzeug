@@ -215,7 +215,6 @@ class MultiDict(dict):
         '1'
         >>> multidict.getlist('foo')
         ['1', '2']
-        dict.__setitem__(self, key, list(new_list))
         """
         dict.__setitem__(self, key, list(new_list))
 

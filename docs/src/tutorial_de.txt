@@ -2,55 +2,58 @@
 Werkzeug Tutorial
 =================
 
-.. admonition:: Translations
+.. admonition:: Hinweis
 
-    This tutorial is available in the following languages:
+    Dies ist die Deutsche Übersetzung des `Tutorials <tutorial.txt>`_.  Auf
+    Grund der Tatsache, dass die Entwicklung rum um Werkzeug nie still steht
+    und sich Verbesserungen an der Libraries auch auf das Tutorial auswirken
+    ist die Originalversion möglicherweise aktueller.
 
-    -   **English**
-    -   `Deutsch <tutorial_de.txt>`_
+Willkommen zum Werkzeug 0.2 Tutorial.  In diesem Tutorial werden wir einen
+kleinen TinyURL Klon programmieren, der die URLs in einer Datenbank speichert.
+Die verwendeten Libraries für diese Anwendung sind `Jinja`_ für die Templates,
+`SQLAlchemy`_ für die Datenbank und natürlich Werkzeug für WSGI.
 
-Welcome to the Werkzeug 0.2 tutorial in which we will create a TinyURL clone
-that stores URLs in a database.  The libraries we will use for this
-applications are `Jinja`_ for the templates, `SQLAlchemy`_ for the database
-layer and, of course, Werkzeug for the WSGI layer.
+Der Grund warum wir uns hier für diese Libraries entschieden haben ist, dass
+wir einen Django-ähnlichen Grundaufbau nachstellen wollen.  Zum Beispiel
+view-Funktionen und nicht Rails-/Pylons-ähnliche Controller-Klassen mit
+action-Methoden oder Designer-freundliche Templates.
 
-The reasons why we've decided on these libraries for the tutorial application
-is that we want to stick to some of the design decisions Django took in the
-past.  One of them is using view functions and not Rails-/Pylons-like
-controller classes with action methods, the other one is designer friendly
-templates.
+Im Werkzeug `Beispiel-Ordner`_ befinden sich einige Anwendungen die andere
+Konzepte, Template Engines etc. verfolgen.  Dort findet sich auch der
+Quellcode dieser Anwendung.
 
-In the Werkzeug `example folder`_ are a couple of applications that use other
-template engines, too, so you may want to have a look at them.  There is also
-the source code of this application.
-
-You can use `easy_install` to install the required libraries::
+Du kannst SQLAlchemy verwenden um Jinja und SQLAlchemy zu installieren
+sollest du diese Libraries noch nicht besitzen::
 
     sudo easy_install Jinja
     sudo easy_install SQLAlchemy
 
-If you're on Windows, omit the "sudo"; if you're on OS X, you can check if the
-libraries are also available in port; or on Linux, you can check out your
-package manager for packages called ``python-jinja``/``python-sqlalchemy``.
+Sofern du auf einem Windows Computer mit Administratorrechten arbeitest
+kannst du das "sudo" fallen lassen.  Als OS X Benutzer könntest du die
+Libraries auch via port installieren, Linux Benutzer finden diese Pakete
+möglicherweise auch im Packagemanager.
 
-If you're curious you can check out the `online demo`_ of the application.
+Wenn du neugirig bist kannst du auch die `Online Demo`_ der Anwendung
+ansehen.
 
-Small disclaimer: This tutorial requires Python 2.4 or later.
+Noch ein kleiner Hinweis: Dieses Tutorial erfordert Python 2.4.
 
 .. _Jinja: http://jinja.pocoo.org/
 .. _SQLAlchemy: http://sqlalchemy.org/
-.. _example folder: http://dev.pocoo.org/projects/werkzeug/browser/example
-.. _online demo: http://werkzeug.pocoo.org/e/shorty/
+.. _Beispiel-Ordner: http://dev.pocoo.org/projects/werkzeug/browser/example
+.. _Online Demo: http://werkzeug.pocoo.org/e/shorty/
 
 
-Part 0: The Folder Structure
-============================
+Teil 0: Die Ordnerstruktur
+==========================
 
-Before we can get started we have to create a Python package for our Werkzeug
-application and the folders for the templates and static files.
+Bevor wir beginnen können müssen wir ein Python Paket für unsere Werkzeug
+Anwendung erstellen.  Dort werden wir dann die Anwendung, die Templates
+und die statischen Dateien ablegen.
 
-This tutorial application is called `shorty` and the initial directory layout
-we will use looks like this::
+Die Anwendung dieses Tutorials nennen wir `shorty` und die Struktur für
+unsere Anwendung sieht etwa so aus::
 
     manage.py
     shorty/
@@ -58,31 +61,28 @@ we will use looks like this::
         templates/
         static/
 
-The ``__init__.py`` and ``manage.py`` files should be empty for the time
-being.   The first one makes ``shorty`` a Python package, the second one will
-hold our management utilities later.
+Die ``__init__.py`` und ``manage.py`` Dateien lassen wir für die Moment einmal
+leer.  Die erste dieser Dateien macht den ``shorty`` Order ein Python Package
+und die zweite werden wir später für unsere Verwaltungsfunktionen nutzen.
 
 
-Part 1: The WSGI Application
-============================
+Teil 1: Die WSGI Anwendung
+==========================
 
-Unlike Django or other frameworks, Werkzeug operates directly on the WSGI
-layer.  There is no fancy magic that implements the central WSGI application
-for you.  As a result of that the first thing you will do every time you write
-a Werkzeug application is implementing this basic WSGI application object.
-This can now either be a function or, even better, a callable class.
+Im Gegensatz zu Django oder ähnlichen Frameworks arbeitet Werkzeug direkt
+auf der WSGI Schicht.  Es gibt keine schicke Magie, die die zentrale WSGI
+Anwendung für uns implementiert.  Das bedeutet, dass wir als erstes eben
+diese WSGI Anwendung programmieren müssen.  Diese WSGI Anwendung ist entweder
+eine Funktion, oder noch besser, eine Klasse mit einer ``__call__`` Methode.
 
-A callable class has huge advantages over a function.  For one you can pass
-it some configuration parameters and furthermore you can use inline WSGI
-middlewares.  Inline WSGI middlewares are basically middlewares applied
-"inside" of our application object.  This is a good idea for middlewares that
-are essential for the application (session middlewares, serving of media
-files etc.).
+Eine aufrufbare Klasse hat große Vorteile gegenüber einer Funktion.  Zum
+einen kann man Konfigurationsparameter direkt an den Konstruktor übergeben,
+zum anderen können wir WSGI Middlewares innerhalb der WSGI Anwendung
+hinzufügen.  Das ist nützlich für Middlewares, die essenziell für die
+Funktion der Anwendung sind (zB eine session-Middleware).
 
-Here the initial code for our ``shorty/application.py`` file which implements
-the WSGI application:
-
-.. sourcecode:: python
+Hier zunächst einmal der Quellcode für unsere ``shorty/application.py``
+Datei, in die wir die WSGI Anwendung packen::
 
     from sqlalchemy import create_engine
     from werkzeug import Request, ClosingIterator
@@ -115,72 +115,83 @@ the WSGI application:
             return ClosingIterator(response(environ, start_response),
                                    [session.remove, local_manager.cleanup])
 
-That's a lot of code for the beginning!  Let's go through it step by step.
-First we have a couple of imports:  From SQLAlchemy we import a factory
-function that creates a new database engine for us.  A database engine holds
-a pool of connections for us and manages them.  The next few imports pull some
-objects into the namespace Werkzeug provides: a request object, a special
-iterator class that helps us cleaning up stuff at the request end and finally
-the base class for all HTTP exceptions.
+Hui, ziemlich für Code für den Anfang.  Gehen wir mal Schritt für Schritt
+durch den Quellcode.  Zunächst einmal haben wir einige Imports:  Aus dem
+sqlalchemy Paket holen wir uns eine factory-Funktion die eine neue
+Datenbank-Engine für uns erstellt die einen Connectionpool besitzt.  Die
+nächsten paar Imports holen einige Objekte in den Namensraum die uns
+Werkzeug zur Verfügung stellt: ein Request Objekt, ein spezieller
+Iterator der uns hilft am ende eines Requests einige Dinge aufzuräumen,
+eine schließlich die Basisklasse für alle HTTP Exceptions.
 
-The next five imports are not working because we don't have the utils module
-written yet.  However we should cover some of the objects already.  The
-`session` object pulled from there is not a PHP-like session object but a
-SQLAlchemy database session object.  Basically a database session object keeps
-track of yet uncommited objects for the database.  Unlike Django, an
-instanciated SQLAlchemy model is already tracked by the session!  The metadata
-object is also an SQLAlchemy thing which is used to keep track of tables.  We
-can use the metadata object to easily create all tables for the database and
-SQLAlchemy uses it to look up foreign keys and similar stuff.
+Die nächsten fünf Imports funktionieren noch nicht, weil wir das `utils`
+Modul noch nicht erstellt haben.  Aber wir werden trotzdem schon ein wenig
+über diese Objekte sprechen.  Das `session` Objekt ist nicht ein PHP
+ähnliches session array, sondern eine SQLAlchemy Datenbank Session.  Alle
+Datenbank Modelle, die im Kontext eines Requests erstellt werden sind auf
+diesem Objekt zwischengespeichert so dass man Änderungen mit einem Schlag 
+zum Server senden kann.  Im Gegensatz zu Django wird ein instanziertes
+Datenbank Modell automatisch von der Session verwaltet und ist in dieser
+Session ein Singleton.  Es kann also niemals zwei Instanzen des selben
+Datenbankeintrages in einer Session geben.  Das metadata Objekt ist auch
+von SQLAlchemy und speichert die Informationen über die Datenbank Tabellen.
+Es stellt zum Beispiel eine Funktion bereit um alle definierten Tabellen
+zu erstellen.
 
-The `local` object is basically a thread local object created in the utility
-module for us.  Every attribute on this object is bound to the current request
-and we can use this to implicitly pass objects around in a thread-safe way.
+Das `local` Objekt ist ein Kontext-lokales Objekt erstellt vom utility
+Modul.  Attributzugriffe auf dieses Objekt sind zum aktuellen Request
+gebunden dh, jeder Request bekommt verschiedene Objekte zurück und kann
+verschiedene ablegen ohne Threading Probleme zu bewirken.  Der
+`local_manager` wird genutzt um am Ende des Requests alle auf dem `local`
+Objekt gespeicherten Daten wieder freizugeben.
 
-The `local_manager` object ensures that all local objects it keeps track of
-are properly deleted at the end of the request.
+Der letzte Import von dort ist die URL map die alle URL Routen verwaltet.
+Solltest du bereits mit Django gearbeitet haben ist dies vergleichbar mit
+den Regular expressions im ``urls.py`` Modul.  Solltest du PHP kennen ist
+die URL map ähnlich einem eingebauten mod_rewrite.
 
-The last thing we import from there is the URL map which holds the URL routing
-information.  If you know Django you can compare that to the url patterns you
-specify in the ``urls.py`` module, if you have used PHP so far it's comparable
-with some sort of built-in "mod_rewrite".
+Zusätzlich importieren wir hier unser `views` modul, dass die view-Funktionen
+besitzt und dann das `models` Modul, dass unsere Models speichert.  Auch wenn
+es so aussieht, als ob wir diesen Import nicht nutzen ist er wichtig.  Nur
+dadurch werden unsere Tabellen auf dem metadata Objekt registriert.
 
-We import our views module which holds the view functions and then we import
-the models module which holds all of our models.  Even if it looks like we
-don't use that import it's there so that all the tables are registered on the
-metadata properly.
+Schauen wir also auf die Anwendungsklasse.  Der Konstrutor dieser Klasse nimmt
+die Datenbank-URI entgegen die vereinfacht gesagt den Typ der Datenbank und
+die Verbindungsdaten enthält.  Für SQLite das wäre zum Beispiel
+``sqlite:////tmp/shorty.db`` (die vier Slashes sind **kein** Tippfehler).
 
-So let's have a look at the application class.  The constructor of this class
-takes a database URI which is basically the type of the database and the login
-credentials or location of the database.  For SQLite this is for example
-``'sqlite:////tmp/shorty.db'`` (note that these are **four** slashes).
+Im Konstruktor erstellen wir auch gleich eine Datenbank-Engine für diese
+URI und aktivieren das automatische Umwandeln von Bytestrings nach Unicode.
+Das ist nützlich weil sowohl Jinja als auch Werkzeug intern immer Unicode
+verwenden.
 
-In the constructor we create a database engine for that database URI and use
-the `convert_unicode` parameter to tell SQLAlchemy that our strings are all
-unicode objects.
+Weiters binden wir die Anwendung gleich mal an das `local` Objekt.  Das ist
+eigentlich nicht wirklich nötig aber nützlich wenn wir mit der Anwendung in
+der Python Shell spielen wollen.  Damit werden direkt nach dem instanzieren
+der Anwendung die Datenbank Funktionen funktionieren.  Wenn wir das nicht tun
+wird der Python Interpreter einen Fehler werfen wenn außerhalb eines Requests
+versucht wird eine SQLAlchemy Session zu erstellen.
 
-Another thing we do here is binding the application to the local object.  This
-is not really required but useful if we want to play with the application in
-a python shell.  On application instanciation we have it bound to the current
-thread and all the database functions will work as expected.  If we don't do
-that Werkzeug will complain that it's unable to find the database when it's
-creating a session for SQLAlchemy.
+Die `init_database` Methode können wir später im Management Script verwenden
+um alle Datenbank-Tabellen zu erstellen die wir verwenden.
 
-The `init_database` function defined below can be used to create all the
-tables we use.
+Und nun zur eigentlichen WSGI Anwendung, der `__call__` Methode.  Dort
+passiert das sogenannte "Request Dispatching" also das weiterleiten von
+eingenden Anfragen zu den richtigen Funktionen.  Als erste Erstellen wir
+dort ein neues Request-Objekt um nicht direkt mit dem environ Arbeiten zu
+müssen und dann binden wir die Anwendung and das local Objekt für den
+aktuellen Kontext.
 
-And then comes the request dispatching function.  In there we create a new
-request object by passing the environment to the `Request` constructor.
-Once again we bind the application to the local object, this time, however,
-we have to do this, otherwise things will break soon.
+Dann erstellen wir einen URL adapter indem wir die URL map an das aktuelle
+WSGI environment binden.  Der Adapter weiß dann wie die aktuelle URL
+aussieht, wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir
+dann nutzen um URLs zu bauen oder eben den aktuellen Request zu matchen.
+Wir binden diesen Adapter auch an das local Objekt damit wir im utils
+Modul auf diesen Zugreifen können.
 
-Then we create a new URL map adapter by binding the URL map to the current
-WSGI environment.  This basically looks at the environment of the incoming
-request information and fetches the information from the environment it
-requires.  This is for example the name of the server for external URLs, the
-location of the script so that it can generate absolute paths if we use the
-URL builder.  We also bind the adapter to the local object so that we can
-use it for URL generation in the utils module.
+.. admonition:: Hinweis
+
+    Der Rest des Dokumentes wurde noch nicht übersetzt.
 
 After that we have a `try`/`except` that catches HTTP exceptions that could
 occur while matching or in the view function.  When the adapter does not find
