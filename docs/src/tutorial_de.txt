@@ -466,8 +466,8 @@ in unsere jetzt noch leere ``views.py``-Datei:
             url = request.form.get('url')
             alias = request.form.get('alias')
             if not validate_url(url):
-                error = "Entschuldigung, aber ich kann die angegebene URL nicht    
-            kürzen."    
+                error = u"Entschuldigung, aber ich kann die angegebene " \
+                        u"URL nicht kürzen."    
         elif alias:
                 if len(alias) > 140:
                     error = 'Dein Alias ist zu lang'
@@ -623,8 +623,8 @@ und der HTML-Rahmen in die Datei ``templates/layout.html``:
       <h1><a href="{{ url_for('new') }}">Shorty</a></h1>
       <div class="body">{% block body %}{% endblock %}</div>
       <div class="footer">
-        <a href="{{ url_for('new') }}">new</a> |
-        <a href="{{ url_for('list') }}">list</a> |
+        <a href="{{ url_for('new') }}">Neu</a> |
+        <a href="{{ url_for('list') }}">Liste</a> |
         Benutze Shorty für Gutes, nicht für Böses
       </div>
     </body>
@@ -645,7 +645,8 @@ Und wir können von diesem Template in unserer ``templates/new.html`` erben:
         <p><input type="text" id="alias" name="alias">{#
          #}<input type="submit" id="submit" value="Mach!"></p>
         <p><input type="checkbox" name="private" id="private">
-           <label for="private">mache diese URL privat, also zeige sie nicht auf der Liste</label></p>
+           <label for="private">mache diese URL privat, also zeige sie
+             nicht auf der Liste</label></p>
       </form>
     {% endblock %}
 
@@ -765,7 +766,8 @@ erstellen werden:
 
 .. sourcecode:: html+jinja
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', file='style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',
+      file='style.css') }}">
 
 Das geht natürlich in den `<head>`-Tag, wo zur Zeit nur der Titel ist.
 
@@ -867,8 +869,9 @@ Und schließlich das Template:
             }}">&laquo; Vorherige</a>
         {%- else %}<span class="inactive">&laquo; Vorherige</span>{% endif %}
         | {{ pagination.page }} |
-        {% if pagination.has_next %}<a href="{{ pagination.next }}">N&aauml;chste &raquo;</a>
-        {%- else %}<span class="inactive">N&aauml;chste &raquo;</span>{% endif %}
+        {% if pagination.has_next %}<a href="{{ pagination.next
+          }}">Nächste &raquo;</a>
+        {%- else %}<span class="inactive">Nächste &raquo;</span>{% endif %}
       </div>
     {% endblock %}
 
@@ -915,7 +918,8 @@ Jetzt fügst du noch ``templates/not_found.html`` hinzu und du bist fertig:
       <h2>Seite nicht gefunden</h2>
       <p>
         Die aufgerufene Seite existiert nicth auf dem Server.  Vielleicht
-        willst du eine <a href="{{ url_for('new') }}">neue URL hinzufügen</a>?
+        willst du eine <a href="{{ url_for('new') }}">neue URL
+        hinzufügen</a>?
       </p>
     {% endblock %}
 
