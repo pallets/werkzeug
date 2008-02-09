@@ -1,0 +1,27 @@
+<h2>$escape(server.name)</h2>
+<p>
+  Take me back to <a href="$url_for('serverlist')">the server list</a>.
+</p>
+<dl class="serverinfo">
+  <dt>Map</dt>
+  <dd>$escape(server.map)</dd>
+  <dt>Gametype</dt>
+  <dd>$server.gametype</dd>
+  <dt>Number of players</dt>
+  <dd>$server.player_count</dd>
+  <dt>Maximum number of players</dt>
+  <dd>$server.max_players</dd>
+  <% if server.progression >= 0 %>
+    <dt>Game progression</dt>
+    <dd>$server.progression%</dd>
+  <% endif %>
+</dl>
+<% if server.players %>
+  <h3>Players</h3>
+  <ul class="players">
+  <% for player in server.players %>
+    <li><a href="$url_for('search', user=player.name)">$escape(player.name)</a>
+        <small>($player.score)</small></li>
+  <% endfor %>
+  </ul>
+<% endif %>

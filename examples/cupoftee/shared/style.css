@@ -1,0 +1,107 @@
+body {
+    font-family: 'Trebuchet MS', sans-serif;
+    background-color: #aaa;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    margin: 0;
+    padding: 0.5em;
+    font-size: 2em;
+    background-color: #d00;
+    border-bottom: 4px solid #a00;
+    color: white;
+}
+
+h1 a {
+    color: white;
+    text-decoration: none;
+}
+
+h1 a:hover {
+    background-color: #a00;
+    color: white;
+}
+
+div.contents {
+    background-color: white;
+    margin: 0 0 1em 0;
+    padding: 1em;
+    width: 50em;
+    border-right: 4px solid #777;
+    border-bottom: 4px solid #777;
+}
+
+a {
+    color: #a00;
+}
+
+a:hover {
+    color: #d00;
+}
+
+table.servers {
+    border-collapse: collapse;
+    border: 2px solid #ddd;
+    margin: 1em 0 0.5em 0;
+    width: 100%;
+}
+
+table.servers thead th {
+    background-color: #ddd;
+    padding: 0.3em;
+}
+
+table.servers tbody td,
+table.servers tbody th {
+    padding: 0.3em;
+    border-top: 1px solid #ddd;
+    font-size: 0.9em;
+}
+
+table.servers tbody th {
+    text-align: left;
+}
+
+table.servers tbody td {
+    text-align: center;
+}
+
+table.servers tbody tr:hover {
+    background-color: #f2f2f2;
+}
+
+dl dt {
+    font-weight: bold;
+}
+
+div.players {
+    font-size: 11px;
+}
+
+div.players a {
+    padding: 0 0.2em 0 0.2em;
+    text-decoration: none;
+}
+
+div.players a:hover {
+    background-color: #eee;
+}
+
+h2, h3 {
+    margin: 0.5em 0 0.5em 0;
+}
+
+ul.players a {
+    color: #d00;
+    text-decoration: none;
+}
+
+ul.players a:hover {
+    text-decoration: underline;
+}
+
+ul.players small {
+    color: #888;
+}

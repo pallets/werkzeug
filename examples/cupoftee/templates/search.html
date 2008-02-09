@@ -1,0 +1,36 @@
+<h2>Nick Search</h2>
+<% if not user %>
+<form action="$url_for('search')" method="get">
+  <p>
+    You have to enter a nickname.
+  </p>
+  <p>
+    <input type="text" name="user" value="" size="30">
+    <input type="submit" value="Search">
+  </p>
+  <p>
+    Take me <a href="$url_for('serverlist')">back to the server list</a>.
+  </p>
+</form>
+<% else %>
+<% if results %>
+  <p>
+    The nickname "$escape(user)" is currently playing on the
+    following ${len(results) == 1 and 'server' or 'servers'}:
+  </p>
+  <ul>
+  <% for server in results %>
+    <li><a href="$url_for('server', id=server.id)">$escape(server.name)</a></li>
+  <% endfor %>
+  </ul>
+<% else %>
+  <p>
+    The nickname "$escape(user)" is currently not playing.
+  </p>
+<% endif %>
+<p>
+  You can <a href="$url_for('search', user=self.user)">bookmark this link</a>
+  to search for "$escape(user)" quickly or <a href="$url_for('serverlist')">return
+  to the server list</a>.
+</p>
+<% endif %>
