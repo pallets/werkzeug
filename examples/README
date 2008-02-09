@@ -86,3 +86,11 @@ find in real life :-)
 
     The source code of the application is explained in detail in the Werkzeug
     tutorial.
+
+`cupoftee`
+    A `teewars <http://www.teewars.com/>`_ server browser.  This application
+    works best in a non forking environment and won't work for CGI.
+
+    Usage::
+
+        ./manage-cupoftee.py runserver
