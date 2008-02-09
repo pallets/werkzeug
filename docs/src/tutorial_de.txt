@@ -855,7 +855,7 @@ Und schließlich das Template:
 
     {% extends 'layout.html' %}
     {% block body %}
-      <h2>List of URLs</h2>
+      <h2>URL Liste</h2>
       <ul>
       {%- for url in pagination.entries %}
         <li><a href="{{ url.short_url|e }}">{{ url.uid|e }}</a> &raquo;
