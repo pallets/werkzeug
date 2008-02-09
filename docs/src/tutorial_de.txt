@@ -6,15 +6,15 @@ Werkzeug Tutorial
 
     Dies ist die Deutsche Übersetzung des `Tutorials <tutorial.txt>`_.  Auf
     Grund der Tatsache, dass die Entwicklung rum um Werkzeug nie still steht
-    und sich Verbesserungen an der Libraries auch auf das Tutorial auswirken
+    und sich Verbesserungen an der Bibliotheken auch auf das Tutorial auswirken
     ist die Originalversion möglicherweise aktueller.
 
 Willkommen zum Werkzeug 0.2 Tutorial.  In diesem Tutorial werden wir einen
 kleinen TinyURL Klon programmieren, der die URLs in einer Datenbank speichert.
-Die verwendeten Libraries für diese Anwendung sind `Jinja`_ für die Templates,
+Die verwendeten Bibliotheken für diese Anwendung sind `Jinja`_ für die Templates,
 `SQLAlchemy`_ für die Datenbank und natürlich Werkzeug für WSGI.
 
-Der Grund warum wir uns hier für diese Libraries entschieden haben ist, dass
+Der Grund warum wir uns hier für diese Bibliotheken entschieden haben ist, dass
 wir einen Django-ähnlichen Grundaufbau nachstellen wollen.  Zum Beispiel
 view-Funktionen und nicht Rails-/Pylons-ähnliche Controller-Klassen mit
 action-Methoden oder Designer-freundliche Templates.
@@ -24,14 +24,14 @@ Konzepte, Template Engines etc. verfolgen.  Dort findet sich auch der
 Quellcode dieser Anwendung.
 
 Du kannst SQLAlchemy verwenden um Jinja und SQLAlchemy zu installieren
-sollest du diese Libraries noch nicht besitzen::
+sollest du diese Bibliotheken noch nicht besitzen::
 
     sudo easy_install Jinja
     sudo easy_install SQLAlchemy
 
 Sofern du auf einem Windows Computer mit Administratorrechten arbeitest
 kannst du das "sudo" fallen lassen.  Als OS X Benutzer könntest du die
-Libraries auch via port installieren, Linux Benutzer finden diese Pakete
+Bibliotheken auch via port installieren, Linux Benutzer finden diese Pakete
 möglicherweise auch im Packagemanager.
 
 Wenn du neugirig bist kannst du auch die `Online Demo`_ der Anwendung
@@ -279,8 +279,8 @@ URLs anhand des Endpunktes zu generieren.  Wir werden sie später in den Views a
 auch unserem Model verwenden.
 
 
-Zwischenschritt: Und nun etwas komplett anderes
-===============================================
+Unterbrechung: Und nun etwas komplett anderes
+=============================================
 
 Da wir nun das Grundgerüst für unsere Anwendung fertig gestellt haben, können
 wir jetzt erst einmal relaxen und uns etwas komplett anderem zuwenden:
@@ -331,12 +331,11 @@ beginnen.
 
 .. _Script Dokumentation: script.txt
 
+Teil 3: Datenbank Models
+========================
 
-Part 3: Database Models
-=======================
-
-Now we can create the models.  Because the application is pretty simple we
-just have one model and table:
+Jetzt können wir die Models erstellen. Da die Anwendung ziemlich einfach ist,
+haben wir nur ein Model und eine Tabelle:
 
 .. sourcecode:: python
 
@@ -373,15 +372,17 @@ just have one model and table:
 
     session.mapper(URL, url_table)
 
-This module is pretty straightforward.  We import all the stuff we need from
-SQLAlchemy and create a table.  Then we add a class for this table and we map
-them both together.  For detailed explanations regarding SQLAlchemy you should
-have a look at the `excellent tutorial`_.
 
-In the constructor we generate a unique ID until we find an id which is still
-free to use.
-What's missing is the `get_random_uid` function we have to add to the utils
-module:
+Dieses Modul ist gut überschaubar.  Wir importieren alles, was wir von
+SQLAlchemy benötigen und erstellen die Tabelle. Dann fügen wir eine Klasse für
+diese Tabelle hinzu und verbinden beide miteinander. Für eine detailiertere
+Erklärung bezüglich SQLAlchemy solltest du dir das `exzellente Tutorial`_
+anschauen.
+
+In dem Konstruktor generieren wir solange eine einzigartige ID bis wir eine
+finden, die noch nicht belegt ist.
+Die `get_random_uid`-Funktion fehlt - wir müssen sie noch in unser utils-Modul
+hinzufügen:
 
 .. sourcecode:: python
 
@@ -391,15 +392,15 @@ module:
     def get_random_uid():
         return ''.join(sample(URL_CHARS, randrange(3, 9)))
 
-Once that is done we can use ``python manage.py initdb`` to initialize the
-database and play around with the stuff using ``python manage.py shell``:
+Wenn das getan ist können wir ``python manage.py initdb`` ausführen, um die
+Datenbank zu erstellen und ``python manage.py shell`` um damit herumzuspielen:
 
 .. sourcecode:: pycon
 
     Interactive Werkzeug Shell
     >>> from shorty.models import session, URL
 
-Now we can add some URLs to the database:
+Jetzt können wir einige URLs zu der Datenbank hinzufügen:
 
 .. sourcecode:: pycon
 
@@ -407,18 +408,19 @@ Now we can add some URLs to the database:
     >>> URL.query.all()
     []
     >>> session.commit()
-    >>> URL.query.all()
-    [<URL '5cFbsk'>, <URL 'mpugsT'>]
+>>> URL.query.all()
+[<URL '5cFbsk        [<URL '5cFbsk'>, <URL 'mpugsT'>]
 
-As you can see we have to commit in order to send the urls to the database.
-Let's create a private item with a custom uid:
+Wie du sehen kannst müssen wir ``sessino.commit()`` aufrufen um die Änderungen
+in der Datenbank zu speichern.
+Lasst uns ein privates Element mit einer eigenen UID erstellen:
 
 .. sourcecode:: pycon
 
     >>> URL('http://werkzeug.pocoo.org/', False, 'werkzeug-webpage')
     >>> session.commit()
 
-And query them all:
+Und alle abfragen:
 
 .. sourcecode:: pycon
 
@@ -429,25 +431,25 @@ And query them all:
     >>> URL.query.get('werkzeug-webpage')
     <URL 'werkzeug-webpage'>
 
-Now that we have some data in the database and we are somewhat familiar with
-the way SQLAlchemy works, it's time to create our views.
+Jetzt, da wir einige Daten in der Datenbank haben und wir ungefähr wissen auf
+welche Weise SQLAlchemy funktioniert, ist es Zeit unsere Views zu erstellen.
 
-.. _excellent tutorial: http://www.sqlalchemy.org/docs/04/ormtutorial.html
+.. _exzellente Tutorial: http://www.sqlalchemy.org/docs/04/ormtutorial.html
 
 
-Part 4: The View Functions
-==========================
+Teil 4: Die View-Funktionen
+===========================
 
-Now after some playing with SQLAlchemy we can go back to Werkzeug and start
-creating our view functions.  The term "view function" is derived from Django
-which also calls the functions that render templates "view functions".  So
-our example is MTV (Model, View, Template) and not MVC (Model, View,
-Controller).  They are probably the same but it's a lot easier to use the
-Django way of naming those things.
+Nachdem wir mit SQLAlchemy herumgespielt haben, können wir zurück zu Werkzeug
+gehen und damit anfangen unsere Viewfunktionen zu erstellen.  Das Wort
+"Viewfunktion" kommt von Django, welches die Funktionen, die die Templates
+wiedergibt "Viewfunktionen" nennt. Deshalb ist unser Beispiel MTV (Model, View,
+Template) und nicht etwa MVC (Model, View, Controller). Sie meinen dasselbe,
+aber es ist viel einfacher die Djangobenennung zu nutzen.
 
-For the beginning we just create a view function for new URLs and a function
-that displays a message about a new link.  All that code goes into our still
-empty ``views.py`` file:
+Zum Anfang erstellen wir einfach eine Viewfunktion für neue URLs und eine
+Funktion, die eine Nachricht über einen neuen Link darstellt.  Das ganze geht
+in unsere jetzt noch leere ``views.py``-Datei:
 
 .. sourcecode:: python
 
@@ -464,14 +466,15 @@ empty ``views.py`` file:
             url = request.form.get('url')
             alias = request.form.get('alias')
             if not validate_url(url):
-                error = "I'm sorry but you cannot shorten this URL."
-            elif alias:
+                error = "Entschuldigung, aber ich kann die angegebene URL nicht    
+            kürzen."    
+        elif alias:
                 if len(alias) > 140:
-                    error = 'Your alias is too long'
+                    error = 'Dein Alias ist zu lang'
                 elif '/' in alias:
-                    error = 'Your alias might not include a slash'
+                    error = 'Dein Alias darf keinen Slash beinhalten'
                 elif URL.query.get(alias):
-                    error = 'The alias you have requested exists already'
+                    error = 'Der angegeben Alias existiert bereits'
             if not error:
                 uid = URL(url, 'private' not in request.form, alias).uid
                 session.commit()
@@ -497,47 +500,54 @@ empty ``views.py`` file:
     def list(request, page):
         pass
 
-Quite a lot of code again, but most of it is just plain old form validation.
-Basically we specify two functions: `new` and `display` and
-decorate them with our `expose` decorator from the utils.  This decorator
-adds a new URL rule to the map by passing all parameters to the constructor
-of a rule object and setting the endpoint to the name of the function.  So we
-can easily build URLs to those functions by using their name as endpoint.
+Wieder einmal ziemlich viel Code, aber das meiste ist normale Formvalidierung.
+Wir erstellen zwei Funktionen: `new` und `display` und dekorieren sie
+mit unserem `expose`-Dekorator von den Utils.  Dieser Dekorator fügt eine neue
+URL-Rule zur Map hinzu, indem er alle Parameter zum Konstruktor eines
+Ruleobjekts und setzt den Endpunkt zum Name der Funktion.  Damit können wir
+einfach URLs erzeugen zu den Funktionen durch die Nutzung ihrer Funktionsnamen
+als Endpunkt.
 
-Keep in mind that this is not necessarily a good idea for bigger applications.
-In such cases it's encouraged to use the full import name with a common prefix
-as endpoint or something similar.  Otherwise it becomes pretty confusing.
+Denke daran, dass dieser Code nicht unbedingt eine gute Idee für größere
+Anwendungen ist.  In solchen Fällen ist es besser den vollen Importnamen mit
+einem allgemeinen Prefix oder etwas Ähnliches als Endpunkt zu nutzen.  Sonst
+wird es ziemlich verwirrend.
 
-The form validation in the `new` method is pretty straightforward.  We check
-if the current method is `POST`, if yes we get the data from the request and
-validate it.  If there is no error we create a new `URL` object, commit it to
-the database and redirect to the display page.
+Die Formvalidierung in der `new`-Methode ist ziemlich simpel.  Wir
+kontrollieren, ob die aktuelle Methode `POST` ist, falls ja nehmen wir die
+Daten von dem Request und validieren sie.  Wenn dort keine Error auftritt
+erstellen wir ein neues `URL`-Objekt, übergeben es der Datenbank und leiten auf
+die Anzeige-Seite um.
 
-The `display` function is not much more complex.  The URL rule expects a
-parameter called `uid`, which the function accepts.  Then we look up the URL
-rule with the given uid and render a template by passing the URL object to it.
+Die `display`-Funktion ist nicht viel komplexer. Die URL-Rule erwartet einen
+`uid`-Parameter, welchen die Funktion akzeptiert.  Danach schauen wir in der
+URL-Rule mit der gegebenen UID und geben das Template aus indem wir das
+URL-Objekt ihm übergeben.
 
-If the URL does not exist we raise a `NotFound` exception which displays a
-generic "404 Page Not Found" page.  We can later replace it by a custom error
-page by catching that exception before the generic `HTTPException` in
-our WSGI application.
+Wenn die URL nicht existiert, werfen wir eine `NotFound`-Exception, welche eine
+statische "404 Seite nicht gefunden"-Seite anzeigt. Wir können diese später mit
+einer speziellen Errorseite ersetzen indem wir die Exception auffangen bevor
+die `HTTPException` geworfen wird.
 
-The `link` view function is used by our models in the `short_url` property
-and is the short URL we provide.  So if the URL uid is ``foobar`` the URL
-will be available as ``http://localhost:5000/u/foobar``.
+Die `link`-Viewfunktion wird von unseren Models in der `short_url`-Eigenschaft
+genutzt und ist die kurze URL, die wir vermitteln.  Wenn also die URL-UID
+``foobar`` ist, wird die URL unter ``http://localhost:5000/u/foobar`` erreichbar
+sein.
 
-The `list` view function has not yet been written, we will do that later.  But
-what's important is that this function takes a URL parameter which is
-optional.  The first decorator tells Werkzeug that if just ``/page/`` is
-requested it will assume that the page equals 1.  Even more important is the
-fact that Werkzeug also normalizes the URLs.  So if you requested ``/page`` or
-``/page/1``, you will be redirected to ``/page/`` in both cases.
-This makes Google happy and comes for free.  If you don't like that behavior,
-you can also disable it.
+Die `list`-Viewfunktion wurde noch nicht geschrieben, das machen wir später.
+Aber was wichtig ist, ist, dass die Funktion einen optionalen URL-Parameter
+nimmt. Der erste Dekorator sagt Werkzeug, dass wenn einfach nur ``/page/``
+aufgerufen wird, die erste Seite angezeigt wird (da der Parameter `page`
+standardmäßig auf 1 gesetzt wird). 
+Wichtiger ist die Tatsache, dass Werkzeug URLs normalisiert.  Wenn du also
+``/page`` oder ``/page/1`` aufrufst, wirst du zu ``/page/`` in beiden Fällen
+umgeleitet.  Das macht Google glücklich und geschieht automatisch. Wenn du dieses
+Verhalten nicht magst, kannst du es abschalten.
 
-And again we have imported two objects from the utils module that
-don't exist yet.  One of those should render a jinja template into a response
-object, the other one validates a URL.  So let's add those to ``utils.py``:
+Und wieder einmal müssen wir zwei Objekte aus dem Utils-Modul importieren, die
+jetzt noch nicht existieren.  Eine von diesen soll ein Jinja-Template in ein
+Response-Objekt ausgeben, das andere prüft eine URL.  Lasst uns also diese zu
+``utils.py`` hinzufügen.
 
 .. sourcecode:: python
 
@@ -558,45 +568,48 @@ object, the other one validates a URL.  So let's add those to ``utils.py``:
     def validate_url(url):
         return urlparse(url)[0] in ALLOWED_SCHEMES
 
-That's it, basically.  The validation function checks if our URL looks like an
-HTTP or FTP URL.  We do this whitelisting to ensure nobody submits any
-dangerous JavaScript or similar URLs.  The `render_template` function is not
-much more complicated either, it basically looks up a template on the file
-system in the `templates` folder and renders it as response.
+Im Grunde ist es das. Die Validierungsfunktion checkt, ob deine URL wie eine
+HTTP oder FTP URL aussiehen muss.  Wir machen dies, um uns zu versichern,
+dass niemand eingefährliches JavaScript oder ähnliche URLs abschickt.  Die
+`render_template`-Funktion ist auch nicht viel komplizierter, es schaut nach einem
+Template im Dateisystem im `templates`-Ordner und gibt es als Response aus.
 
-Another thing we do here is passing the `url_for` function into the global
-template context so that we can build URLs in the templates too.
+Eine andere Sache, die wir hier machen ist, dass wir die `url_for`-Funktion in
+den globalen Templatecontext packen, sodass wir URLs auch in den Templates
+erstellen können.
 
-Now that we have our first two view functions it's time to add the templates.
+Da wir jetzt unsere beiden ersten View-Funktionen haben, ist es Zeit, die
+Templates hinzuzufügen.
 
-
-Part 5: The Templates
+Teil 5: Die Templates
 =====================
 
-We have decided to use Jinja templates in this example.  If you are used to
-Django templates you should feel at home, if you have worked with PHP so far
-you can compare the Jinja templates with smarty.  If you have used PHP as
-templating language until now you should have a look at `Mako`_ for your next
-project.
+Wir haben beschlossen Jinja-Templates in diesem Beispiel zu nutzen.  Wenn
+du weißt, wie man Django-Templates nutzt, sollte es dir bekannt vorkommen, wenn
+du bis jetzt mit PHP gearbeitet hast, kannst du Jinja-Templates mit Smarty
+vergleichen.  Wenn du bis jetzt PHP als Templatesprache genutzt hast, solltest
+du für dein nächstes Projekt mal in `Mako`_ schauen.
 
-**Security Warning**: We are using Jinja here which is a text based template
-engine.  As a matter of fact, Jinja has no idea what it is dealing with, so
-if you want to create HTML template it's your responsibility to escape *all*
-values that might include, at some point, any of the following characters: ``>``,
-``<`` or ``&``.  Inside attributes you also have to escape double quotes.
-You can use the jinja ``|e`` filter for basic escapes, if you pass it `true`
-as argument it will also escape quotes (``|e(true)``).  As you can see from
-the examples below we don't escape URLs.  The reason is that we won't have
-any ampersands in the URL and as such it's safe to omit it.
+**Sicherheits Warnung**: Wir nutzen hier Jinja, welches ein textbasierendes
+Template-Engine ist. Aufgrund der Tatsache, dass Jinja nicht weiß, womit
+es arbeitet, musst du wenn du HTML-Templates erstellst, *alle* Werte escapen,
+die irgendwann, an irgendeinem Punkt, irgendeinen von den folgenden Zeichen
+enhtalten können: ``>``, ``<`` oder ``&``. Innerhalb von Attributen musst du
+außerdem Anführungszeichen escapen.
+Du kannst Jinjas ``|e``-Filter für normales Escaping benutzen, wenn du `true`
+as Argument übergibst escaped es außerdem Anführungszeichen (``|e(true)``).
+Wie du in den Beispielen unterhalb sehen kannst, escapen wir die  URLs nicht.
+Der Grund dafür ist, dass wir keine Kaufmannsund in der URL haben und deshalb
+ist es sicher, es wegzulassen.
 
-For simplicity we will use HTML 4 in our templates.  If you have already
-some experience with XHTML you can adopt the templates to XHTML.  But keep
-in mind that the example stylesheet from below does not work with XHTML.
+Zwecks Einfachheit werden wir HTML 4 in unseren Templates nutzen.  Wenn du etwas
+Erfahrung mit XHTML hast, kannst du sie in XHTML schreiben.  Aber beachte, dass
+das Beispielstylesheet unten nicht mit XHTML funktioniert.
 
-One of the cool things Jinja inherited from Django is template inheritance.
-Template inheritance means that we can put often used elements into a base
-template and fill in placeholders.  For example all the doctype and HTML base
-frame goes into a file called ``templates/layout.html``:
+Eine coole Sache, die Jinja von Django geerbt hat, ist Templatevererbung.
+Templatevererbung bedeutet, dass wir oftgenutzte Elemente in ein Basistemplate
+legen können und es mit Platzhaltern füllen.  Beispielsweise geht der Doctype
+und der HTML-Rahmen in die Datei ``templates/layout.html``:
 
 .. sourcecode:: html+jinja
 
@@ -612,94 +625,97 @@ frame goes into a file called ``templates/layout.html``:
       <div class="footer">
         <a href="{{ url_for('new') }}">new</a> |
         <a href="{{ url_for('list') }}">list</a> |
-        use shorty for good, not for evil
+        Benutze Shorty für Gutes, nicht für Böses
       </div>
     </body>
     </html>
 
-And we can inherit from this base template in our ``templates/new.html``:
+Und wir können von diesem Template in unserer ``templates/new.html`` erben:
 
 .. sourcecode:: html+jinja
 
     {% extends 'layout.html' %}
     {% block body %}
-      <h2>Create a Shorty-URL!</h2>
+      <h2>Erstelle eine Shorty-URL!</h2>
       {% if error %}<div class="error">{{ error }}</div>{% endif -%}
       <form action="" method="post">
-        <p>Enter the URL you want to shorten</p>
+        <p>Gebe die URL an, die du kürzen willst</p>
         <p><input type="text" name="url" id="url" value="{{ url|e(true) }}"></p>
-        <p>Optionally you can give the URL a memorable name</p>
+        <p>Optional kannst du der URL einen merkbaren Namen geben</p>
         <p><input type="text" id="alias" name="alias">{#
-         #}<input type="submit" id="submit" value="Do!"></p>
+         #}<input type="submit" id="submit" value="Mach!"></p>
         <p><input type="checkbox" name="private" id="private">
-           <label for="private">make this URL private, so don't list it</label></p>
+           <label for="private">mache diese URL privat, also zeige sie nicht auf der Liste</label></p>
       </form>
     {% endblock %}
 
-If you're wondering about the comment between the two input elements, this is
-a neat trick to keep the templates clean but not create whitespace between
-those two.  We've prepared a stylesheet you can use which depends on not having
-a whitespace there.
+Wenn du dich über das Kommentar zwischen den Beiden Inputelementen wunderst,
+das ist ein sauberer Trick die Templates sauber zu halten aber keine
+Leerzeichen zwischen beide zu setzen.  Wir haben ein Stylesheet vorbereitet,
+welches dort keine Leerzeichen erwartet.
 
-And then a second template for the display page (``templates/display.html``):
+Und dann ein zweites Template für die Anzeige-Seite
+(``templates/display.html``):
 
 .. sourcecode:: html+jinja
 
     {% extends 'layout.html' %}
     {% block body %}
-      <h2>Shortened URL</h2>
+      <h2>Verkürzte URL</h2>
       <p>
-        The URL {{ url.target|urlize(40, true) }}
-        was shortened to {{ url.short_url|urlize }}.
+        Die URL {{ url.target|urlize(40, true) }}
+        wurde gekürzt zu {{ url.short_url|urlize }}.
       </p>
     {% endblock %}
 
-The `urlize` filter is provided by Jinja and translates a URL(s) in a
-text into clickable links.  If you pass it an integer it will shorten the
-captions of those links to that number of characters, passing it true as
-second parameter adds a `nofollow` flag.
+Der `urlize`-Filter ist von Jinja und übersetzt eine URL(s) in einem Text in
+einen klickbaren Link.  Wenn du ihm einen Integer übergibst, wird er die
+Beschreibung dieser Links auf die Nummer der Zeichen setzen, indem man true als
+zweiten Parameter übergibt, fügt man ein `nofollow`-Flag hinzu.
 
-Now that we have our first two templates it's time to fire up the server and
-look at those part of the application that work already: adding new URLs and
-getting redirected.
+Da wir jetzt unsere ersten beiden Templates haben ist es Zeit den Server zu
+starten und auf den Teil der Anwendung zu schauen, der bereits funktioniert:
+neue URLs hinzufügen und weitergeleitet zu werden.
 
+Zwischenschritt: Das Design hinzufügen
+======================================
 
-Intermission: Adding The Design
-===============================
+Jetzt ist es Zeit etwas anderes zu machen: ein Design hinzufügen.
+Designelemente sind normalerweise in statischen CSS Stylesheets. Also müssen
+wir einige statische Dateien irgendwo hinlegen.  Aber das ist ein wenig
+kompliziert.  Wenn du mit bis jetzt mit PHP gearbeitet hast, wirst du gemerkt
+haben, dass dort nichts ist, das die URL zum Dateisystempfad übersetzt und auf
+die statischen Dateien direkt von der URL zugreifen.  Du musst dem Webserver
+oder unserem Entwicklungsserver explizit sagen, dass es einen Pfad gibt, der
+die statischen Dateien beinhaltet.
 
-Now it's time to do something different: adding a design.  Design elements are
-usually in static CSS stylesheets so we have to put some static files
-somewhere.  But that's a little big tricky.  If you have worked with PHP so
-far you have probably noticed that there is no such thing as translating the
-URL to filesystem paths and accessing static files right from the URL.  You
-have to explicitly tell the webserver or our development server that some
-path holds static files.
+Django empfiehlt eine seperate Subdomain und einen eigenen Server für die
+statischen Dateien, was eine schrecklich gute Idee für eine große Ladeumgebung
+ist, aber zu viel des Guten für diese simple Anwendung.
 
-Django even recommends a separate subdomain and standalone server for the
-static files which is a terrible good idea for heavy load environments but
-somewhat of an overkill for that simple application.
-
-So here is the deal: We let our application host the static files, but in
-production mode you should probably tell the apache to serve those files by
-using an `Alias` directive in the apache config:
+Hier also folgendes Vorgehen: Wir lassen unsere Anwendung die statischen Dateien
+hosten, aber im Produktionsmodus solltest du dem Apachen sagen, dass er diese
+Dateien hosten soll, mit Hilfe der `Alias`-Direktive in der
+Apachekonfiguration:
 
 .. sourcecode:: apache
 
     Alias /static /path/to/static/files
 
-This will be a lot faster.
+Das ist um vieles schneller.
 
-But how do we tell our application that we want it to share the static folder
-from our application package as ``/static``?.  Fortunately that's pretty
-simple because Werkzeug provides a WSGI middleware for that.  Now there are
-two ways to hook that middleware in.  One way is to wrap the whole application
-in that middleware (we really don't recommend this one) and the other is to
-just wrap the dispatching function (much better because we don't lose the
-reference to the application object).  So head back to ``application.py``
-and do some code refactoring there.
+Aber wie sagen wir unserer Anwendung, dass wir sie mit dem statischen
+Dateienordner von unserem Anwendungpaket als ``/static`` teilen wollen?
+Glücklicherweise ist das ziemlich einfach, weil Werkzeug dafür eine
+WSGI-Middleware liefert.  Jetzt gibt es zwei Möglichkeiten diese Middleware zu
+integrieren.  Ein Weg ist, die ganze Anwendung in diese Middleware zu wrappen
+(diesen Weg empfehlen wir wirklich nicht) und der andere ist, die
+Ausführungsfunktion zu wrappen (viel besser, weil wir die Referenz zu dem
+Anwendungsobjekt nicht verlieren).  Also gehen wir zurück zu
+``application.py`` und verändern den Code ein wenig.
 
-First of all you have to add a new import and calculate the path to the
-static files:
+Als erstes musst du einen neuen Import hinzufügen und den Pfad zu den
+statischen Dateien kalkulieren.
 
 .. sourcecode:: python
 
@@ -708,22 +724,23 @@ static files:
 
     STATIC_PATH = path.join(path.dirname(__file__), 'static')
 
-It may be better to put the path calculation into the ``utils.py`` file
-because we already calculate the path to the templates there.  But it doesn't
-really matter and for simplicity we can leave it in the application module.
+Es wäre besser, die Pfadkalkulation in die ``utils.py``-Datei zu packen, weil
+wir den Templatepfad bereits dort kalkuliert haben.  Aber das interessiert
+nicht wirklich und wegen der Einfachheit können wir es im Anwendungsmodul
+lassen.
 
-So how do we wrap our dispatching function?  In theory we just have to say
-``self.__call__ = wrap(self.__call__)`` but unfortunately that doesn't work in
-python.  But it's not much harder.  Just rename `__call__` to `dispatch` and
-add a new `__call__` method:
+Wie können wir also die Ausführungsfunktion wrappen?  Theoretisch müssen wir
+einfach ``self.__call__ = (self.__call__)`` sagen, aber leider klappt das
+nicht in Python.  Es ist aber nicht viel schwieriger.  Benenne einfach
+`__call__` in `dispatch` um und füge eine neue `__call__`-Methode hinzu:
 
 .. sourcecode:: python
 
         def __call__(self, environ, start_response):
             return self.dispatch(environ, start_response)
 
-Now we can go into our `__init__` function and hook in the middleware by
-wrapping the `dispatch` method:
+Jetzt können wir in unsere `__init__`-Funktion gehen und die Middleware
+zuschalten indem wir die `dispatch`-Methode wrappen:
 
 .. sourcecode:: python
 
@@ -731,43 +748,45 @@ wrapping the `dispatch` method:
             '/static':  STATIC_PATH
         })
 
-Now that wasn't that hard.  This way you can now hook in WSGI middlewares
-inside the application class!
+Das war jetzt nicht schwer.  Mit diesem Weg können wir WSGI-Middlewares in der
+Anwendungsklasse einhaken!
 
-Another good idea now is to tell our `url_map` in the utils module the
-location of our static files by adding a rule.  This way we can generate URLs
-to the static files in the templates:
+Eine andere gute Idee ist, unserer `url_map` im Utils-Modul den Ort unserer
+statischen Dateien mitzuteilen indem wir eine Regel hinzufügen.  Auf diesem Weg
+können wir URLs zu den statischen Dateien in den Templates generieren:
 
 .. sourcecode:: python
 
     url_map = Map([Rule('/static/<file>', endpoint='static', build_only=True)])
 
-Now we can open our ``templates/layout.html`` file again and add a link to the
-stylesheet ``style.css``, which we are going to create afterwards:
+Jetzt können wir unsere ``templates/layout.html``-Datei wieder öffnen und
+einen Link zu dem ``style.css``-Stylesheet hinzufügen, welches wir danach
+erstellen werden:
 
 .. sourcecode:: html+jinja
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', file='style.css') }}">
 
-This of course goes into the `<head>` tag where currently just the title is.
+Das geht natürlich in den `<head>`-Tag, wo zur Zeit nur der Titel ist.
 
-You can now design a nice layout for it or use the `example stylesheet`_ if
-you want.  In both cases the file you have to create is called
-``static/style.css``
+Du kannst jetzt ein nettes Layout für es designen oder nutze das
+`Beispielstylesheet`_ wenn du willst.  In beiden Fällen musst du es in die
+Datei ``static/style.css`` packen.
 
 .. _Mako: http://www.makotemplates.org/
-.. _example stylesheet: http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css
+.. _Beispielstylesheet: http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css
 
 
-Part 6: Listing Public URLs
-===========================
+Teil 6: Öffentliche URLs auflisten
+==================================
 
-Now we want to list all of the public URLs on the list page.  That shouldn't
-be a big problem but we will have to do some sort of pagination.  Because if
-we print all URLs at once we have sooner or later an endless page that takes
-minutes to load.
+Jetzt wollen wir alle öffentlichen URLs auf der Listseite auflisten.  Das
+sollte kein großes Problem sein, aber wir wollen auch eine Art Seitenumbruch
+haben.  Da wir alle URLs auf einmal ausgeben, haben wir früher oder später eine
+endlose Seite, die Minuten zum Laden benötigt.
 
-So let's start by adding a `Pagination` class into our utils module:
+Lasst uns also mit dem Hinzufügen eine `Pagination`-Klasse in unser Utils-Modul
+beginnen:
 
 .. sourcecode:: python
 
@@ -796,18 +815,19 @@ So let's start by adding a `Pagination` class into our utils module:
         next = property(lambda x: url_for(x.endpoint, page=x.page + 1))
         pages = property(lambda x: max(0, x.count - 1) // x.per_page + 1)
 
-This is a very simple class that does most of the pagination for us.  We
-can pass at an unexecuted SQLAlchemy query, the number of items per page,
-the current page and the endpoint, which will be used for URL generation.  The
-`cached_property` decorator you see works pretty much like the normal
-`property` decorator, just that it memorizes the result.  We won't cover
-that class in detail but basically the idea is that accessing
-`pagination.entries` returns the items for the current page and that the
-other properties return meaningful values so that we can use them in the
-template.
+Dies ist eine sehr einfache Klasse, die das meiste der Seitenumbrüche für uns
+übernimmt.  Wir können ihr einen unausgeführten SQLAlchemy-Abfrage(Query)
+übergeben, die Anzahl der Elemente pro Seite, die aktuelle Seite und den
+Endpunkt, welcher für die URL-Generation benutzt wird.  Der
+`cached_property`-Dekorator funktioniert, wie du siehst, fast genau so wie der
+normale `property`-Dekorator, mit der Ausnahme, dass er sich das Ergebnis merkt.
+Wir werden diese Klasse nicht genau besprechen aber das Grundprinzip ist, dass ein
+Zugriff auf `pagination.entries` die Elemente für die aktuelle Seite ausgibt und
+dass die anderen Eigenschaften Werte zurückgeben, sodass wir sie im Template
+nutzen können.
 
-Now we can import the `Pagination` class into our views module and add some
-code to the `list` function:
+Jetzt können wir die `Pagination`-Klasse in unser Viewsmodul importieren und
+etwas Code zu der `list`-Funktion hinzufügen:
 
 .. sourcecode:: python
 
@@ -822,12 +842,12 @@ code to the `list` function:
             raise NotFound()
         return render_template('list.html', pagination=pagination)
 
-The if condition in this function basically ensures that status code 404 is
-returned if we are not on the first page and there aren't any entries to display
-(Accessing something like ``/list/42`` without entries on that page and not
-returning a 404 status code would be considered bad style.)
+Die If-Bedingung in dieser Funktion versichert, dass ein 404 Statuscode
+zurückgegeben wird, wenn wir nicht auf der ersten Seite sind und es keine
+Einträge zum Anzeige gibt (etwas wie ``/list/42`` aufrufen ohne Einträge auf
+dieser Seite und keinen 404 Errorcode zurückzugeben, wäre schlechter Stil).
 
-And finally the template:
+Und schließlich das Template:
 
 .. sourcecode:: html+jinja
 
@@ -839,75 +859,76 @@ And finally the template:
         <li><a href="{{ url.short_url|e }}">{{ url.uid|e }}</a> &raquo;
             <small>{{ url.target|urlize(38, true) }}</small></li>
       {%- else %}
-        <li><em>no URls shortened yet</em></li>
+        <li><em>keine URLs bis jetzt gekürzt</em></li>
       {%- endfor %}
       </ul>
       <div class="pagination">
         {%- if pagination.has_previous %}<a href="{{ pagination.previous
-            }}">&laquo; Previous</a>
-        {%- else %}<span class="inactive">&laquo; Previous</span>{% endif %}
+            }}">&laquo; Vorherige</a>
+        {%- else %}<span class="inactive">&laquo; Vorherige</span>{% endif %}
         | {{ pagination.page }} |
-        {% if pagination.has_next %}<a href="{{ pagination.next }}">Next &raquo;</a>
-        {%- else %}<span class="inactive">Next &raquo;</span>{% endif %}
+        {% if pagination.has_next %}<a href="{{ pagination.next }}">N&aauml;chste &raquo;</a>
+        {%- else %}<span class="inactive">N&aauml;chste &raquo;</span>{% endif %}
       </div>
     {% endblock %}
 
 
-Bonus: Styling 404 Error Pages
-==============================
+Bonus: 404 Errorseiten stylen
+=============================
 
-Now that we've finished our application we can do some small improvements such
-as custom 404 error pages.  That's pretty simple.  The first thing we have to
-do is creating a new function called `not_found` in the view that renders a
-template:
+Jetzt, da wir unsere Anwendung fertiggestellt haben, können wir kleine
+Verbersserungen machen wie spezielle 404 Errorseiten.  Das ist ziemlich
+einfach.  Das erste, was wir machen müssen, ist eine neue Funktion namens
+`nout_found` in den Views zu erstellen, welche ein Template ausgibt:
 
 .. sourcecode:: python
 
     def not_found(request):
         return render_template('not_found.html')
 
-Then we have to go into our application module and import the `NotFound`
-exception:
+Dann müssen wir in unser Anwendungsmodul gehen und die `NotFound`-Exception
+importieren:
 
 .. sourcecode:: python
 
     from werkzeug import NotFound
 
-Finally we have to catch it and translate it into a response.  This except
-block goes right **before** the except block of the `HTTPException`:
+Schließilch müssen wir sie auffangen und sie in eine Response umwandeln.
+Dieser except-Block kommt **vor** den except-Bock von der `HTTPException`:
 
 .. sourcecode:: python
 
     try:
-        # this stays the same
+        # das bleibt das gleiche
     except NotFound, e:
         response = views.not_found(request)
         response.status_code = 404
     except HTTPException, e:
-        # this stays the same
+        # das bleibt das gleiche
 
-Now add a template ``templates/not_found.html`` and you're done:
+Jetzt fügst du noch ``templates/not_found.html`` hinzu und du bist fertig:
 
 .. sourcecode:: html+jinja
     
     {% extends 'layout.html' %}
     {% block body %}
-      <h2>Page Not Found</h2>
+      <h2>Seite nicht gefunden</h2>
       <p>
-        The page you have requested does not exist on this server.  What about
-        <a href="{{ url_for('new') }}">adding a new URL</a>?
+        Die aufgerufene Seite existiert nicth auf dem Server.  Vielleicht
+        willst du eine <a href="{{ url_for('new') }}">neue URL hinzufügen</a>?
       </p>
     {% endblock %}
 
 
-Outro
-=====
+Abschluss
+=========
 
-This tutorial covers everything you need to get started with Werkzeug,
-SQLAlchemy and Jinja and should help you find the best solution for your
-application.  For some more complex examples that also use different setups
-and ideas for dispatching have a look at the `examples folder`_.
+Dieses Tutorial behandelt alles, was du brauchst um mit Werkzeug, SQLAlchemy
+und Jinja anzufangen und sollte dir helfen die beste Lösung für deine
+Anwendung zu finden.  Für einige größere Beispiele, die außerdem einen anderen
+Aufbau und Ideen zum Ausführen benutzen, solltest du mal einen Blick auf
+den `Beispielordner`_ werfen.
 
-Have fun with Werkzeug!
+Hab Spaß mit Werkzeug!
 
-.. _examples folder: http://dev.pocoo.org/projects/werkzeug/browser/examples
+.. _Beispielordner: http://dev.pocoo.org/projects/werkzeug/browser/examples
