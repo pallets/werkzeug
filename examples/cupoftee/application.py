@@ -1,0 +1,107 @@
+# -*- coding: utf-8 -*-
+"""
+    cupoftee.application
+    ~~~~~~~~~~~~~~~~~~~~
+
+    The WSGI appliction for the cup of tee browser.
+
+    :copyright: Copyright 2008 by Armin Ronacher.
+    :license: GNU GPL.
+"""
+import time
+from os import path
+from threading import Thread
+from cupoftee.network import ServerBrowser
+from werkzeug import Request, Response, Template, SharedDataMiddleware
+from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.routing import Map, Rule
+
+
+templates = path.join(path.dirname(__file__), 'templates')
+pages = {}
+url_map = Map([Rule('/shared/<file>', endpoint='shared')])
+
+
+def make_app():
+    return SharedDataMiddleware(Cup('master.teewars.com', 8300), {
+        '/shared':  path.join(path.dirname(__file__), 'shared')
+    })
+
+
+class PageMeta(type):
+
+    def __init__(cls, name, bases, d):
+        type.__init__(cls, name, bases, d)
+        if d.get('url_rule') is not None:
+            pages[cls.identifier] = cls
+            url_map.add(Rule(cls.url_rule, endpoint=cls.identifier,
+                             **cls.url_arguments))
+
+    identifier = property(lambda x: x.__name__.lower())
+
+
+class Page(object):
+    __metaclass__ = PageMeta
+    url_arguments = {}
+
+    def __init__(self, cup, request, url_adapter):
+        self.cup = cup
+        self.request = request
+        self.url_adapter = url_adapter
+
+    def url_for(self, endpoint, **values):
+        return self.url_adapter.build(endpoint, values)
+
+    def process(self):
+        pass
+
+    def render_template(self, template=None):
+        if template is None:
+            template = self.__class__.identifier + '.html'
+        context = dict(self.__dict__)
+        context.update(url_for=self.url_for, self=self)
+        body_tmpl = Template.from_file(path.join(templates, template))
+        layout_tmpl = Template.from_file(path.join(templates, 'layout.html'))
+        context['body'] = body_tmpl.render(context)
+        return layout_tmpl.render(context)
+
+    def get_response(self):
+        return Response(self.render_template(), mimetype='text/html')
+
+
+class Cup(object):
+
+    def __init__(self, *master_addr):
+        self.master = ServerBrowser(master_addr)
+        self.updater = Thread(None, self.update_master)
+        self.updater.setDaemon(True)
+        self.updater.start()
+
+    def update_master(self):
+        wait = 300
+        while 1:
+            time.sleep(wait)
+            if self.master.sync():
+                wait = 300
+            else:
+                wait = 60
+
+    def dispatch_request(self, request):
+        url_adapter = url_map.bind_to_environ(request.environ)
+        try:
+            endpoint, values = url_adapter.match()
+            page = pages[endpoint](self, request, url_adapter)
+            response = page.process(**values)
+        except NotFound, e:
+            page = MissingPage(self, request, url_adapter)
+            response = page.process()
+        except HTTPException, e:
+            return e
+        return response or page.get_response()
+
+    def __call__(self, environ, start_response):
+        request = Request(environ)
+        return self.dispatch_request(request)(environ, start_response)
+
+
+from cupoftee.pages import MissingPage

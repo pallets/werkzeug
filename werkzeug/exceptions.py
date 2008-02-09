@@ -4,7 +4,7 @@
     ~~~~~~~~~~~~~~~~~~~
 
     This module implements a number of Python exceptions you can raise from
-    within your views to trigger a standard non 200 response::
+    within your views to trigger a standard non 200 response.
 
 
     Usage Example
@@ -52,34 +52,6 @@
                 return not_found(request)
             except HTTPException, e:
                 return e
-
-    Custom Errors
-    -------------
-
-    As you can see from the list above not all status codes are available as
-    errors.  Especially redirects and ather non 200 status codes that
-    represent do not represent errors are missing.  For redirects you can use
-    the `redirect` function from the utilities.
-
-    If you want to add an error yourself you can subclass `HTTPException`::
-
-        from werkzeug.exceptions import HTTPException
-
-        class PaymentRequred(HTTPException):
-            code = 402
-            description = '<p>Payment required.</p>'
-
-    This is the minimal code you need for your own exception.  If you want to
-    add more logic to the errors you can override the `get_description()`,
-    `get_body()`, `get_headers()` and `get_response()` methods.  In any case
-    you should have a look at the sourcecode of the exceptions module.
-
-    **New in Werkzeug 0.2** You can override the default description in the
-    constructor with the `description` parameter (it's the first argument for
-    all exceptions except of the `MethodNotAllowed` which accepts a list of
-    allowed methods as first argument)::
-
-        raise BadRequest('Request failed because X was not present')
 
 
     :copyright: 2007 by Armin Ronacher.
@@ -137,6 +109,7 @@ class HTTPException(Exception):
         return BaseResponse(self.get_body(environ), self.code, headers)
 
     def __call__(self, environ, start_response):
+        """Call the exception as WSGI application."""
         response = self.get_response(environ)
         return response(environ, start_response)
 
@@ -156,7 +129,7 @@ class _ProxyException(HTTPException):
 
 class BadRequest(HTTPException):
     """
-    *400* `BadRequest`
+    *400* `Bad Request`
 
     Raise if the browser send something to the application the application
     or server cannot handle.
@@ -202,7 +175,7 @@ class Forbidden(HTTPException):
 
 class NotFound(HTTPException):
     """
-    *404* `NotFound`
+    *404* `Not Found`
 
     Raise if a resource does not exist and never existed.
     """
@@ -216,7 +189,7 @@ class NotFound(HTTPException):
 
 class MethodNotAllowed(HTTPException):
     """
-    *405* `MethodNotAllowed`
+    *405* `Method Not Allowed`
 
     Raise if the server used a method the resource does not handle.  For
     example `POST` if the resource is view only.  Especially useful for REST.
@@ -248,7 +221,7 @@ class MethodNotAllowed(HTTPException):
 
 class NotAcceptable(HTTPException):
     """
-    *406* `Not acceptable`
+    *406* `Not Acceptable`
 
     Raise if the server cant return any content conforming to the
     `Accept` headers of the client.
@@ -265,7 +238,7 @@ class NotAcceptable(HTTPException):
 
 class RequestTimeout(HTTPException):
     """
-    *408* `RequestTimeout`
+    *408* `Request Timeout`
 
     Raise to signalize a timeout.
     """
@@ -292,7 +265,7 @@ class Gone(HTTPException):
 
 class LengthRequired(HTTPException):
     """
-    *411* `LengthRequired`
+    *411* `Length Required`
 
     Raise if the browser submitted data but no ``Content-Length`` header which
     is required for the kind of processing the server does.
@@ -306,7 +279,7 @@ class LengthRequired(HTTPException):
 
 class PreconditionFailed(HTTPException):
     """
-    *412* `PreconditionFailed`
+    *412* `Precondition Failed`
 
     Status code used in combination with ``If-Match``, ``If-None-Match``, or
     ``If-Unmodified-Since``.
@@ -320,7 +293,7 @@ class PreconditionFailed(HTTPException):
 
 class RequestEntityTooLarge(HTTPException):
     """
-    *413* `RequestEntityTooLarge`
+    *413* `Request Entity Too Large`
 
     The status code one should return if the data submitted exceeded a given
     limit.
@@ -333,7 +306,7 @@ class RequestEntityTooLarge(HTTPException):
 
 class RequestURITooLarge(HTTPException):
     """
-    *414* `RequestURITooLarge`
+    *414* `Request URI Too Large`
 
     Like *413* but for too long URLs.
     """
@@ -346,7 +319,7 @@ class RequestURITooLarge(HTTPException):
 
 class UnsupportedMediaType(HTTPException):
     """
-    *415* `UnsupportedMediaType`
+    *415* `Unsupported Media Type`
 
     The status code returned if the server is unable to handle the media type
     the client transmitted.
@@ -360,7 +333,7 @@ class UnsupportedMediaType(HTTPException):
 
 class InternalServerError(HTTPException):
     """
-    *500* `InternalServerError`
+    *500* `Internal Server Error`
 
     Raise if an internal server error occoured.  This is a good fallback if an
     unknown error occoured in the dispatcher.
@@ -375,7 +348,7 @@ class InternalServerError(HTTPException):
 
 class NotImplemented(HTTPException):
     """
-    *501* `NotImplemented`
+    *501* `Not Implemented`
 
     Raise if the application does not support the action requested by the
     browser.
@@ -389,7 +362,7 @@ class NotImplemented(HTTPException):
 
 class BadGateway(HTTPException):
     """
-    *502* `BadGateway`
+    *502* `Bad Gateway`
 
     If you do proxing in your application you should return this status code
     if you received an invalid response from the upstream server it accessed
@@ -404,7 +377,7 @@ class BadGateway(HTTPException):
 
 class ServiceUnavailable(HTTPException):
     """
-    *503* `ServiceUnavailable`
+    *503* `Service Unavailable`
 
     Status code you should return if a service is temporarily unavailable.
     """

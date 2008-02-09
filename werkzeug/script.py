@@ -48,65 +48,17 @@ r'''
     Using The Scripts
     -----------------
 
-    The script from above can be used like this from the shell now::
+    The script from above can be used like this from the shell now:
+
+    .. sourcecode:: text
 
         $ ./manage.py --help
         $ ./manage.py runserver localhost 8080 --debugger --no-reloader
         $ ./manage.py runserver -p 4000
         $ ./manage.py shell
 
-    As you can see it's possible to pass parameters as positional argument
-    or as named parameter, pretty much like python function calls.
-
-    With Werkzeug 0.1 calling of boolean arguments worked a bit different
-    there you had to call ``--use-reloader yes``.
-
-
-    Writing Actions
-    ---------------
-
-    Writing new action functions is pretty straight forward.  All you have to
-    do is to name the function "action_COMMAND" and it will be available as
-    "./manage.py COMMAND".  The docstring of the function is used for the
-    help screen and all arguments must have defaults the run function can
-    inspect.  As a matter of fact you cannot use ``*args`` or ``**kwargs``
-    constructs.
-
-    An additional feature is the definition of tuples as defaults.  The first
-    item in the tuple could be a short name for the command and the second
-    the default value::
-
-        def action_add_user(username=('u', ''), password=('p', '')):
-            """Docstring goes here."""
-            ...
-
-
-    Action Discovery
-    ----------------
-
-    Per default the run function looks up variables in the current locals.  That
-    means if no arguments are provided it implicitly assumes this call::
-
-        script.run(locals(), 'action_')
-
-    If you don't want to use a action discovery you can set the prefix to an empty
-    string and pass a dict with functions::
-
-        script.run(dict(
-            runserver=script.make_runserver(make_app, use_reloader=True),
-            shell=script.make_shell(lambda: {'app': make_app()}),
-            initdb=on_initdb
-        ), '')
-
-
-    Example Scripts
-    ---------------
-
-    In the Werkzeug `examples`_ there are some ``./manage-APP.py`` scripts
-    using `werkzeug.script`.
-
-
-    .. _examples: http://dev.pocoo.org/projects/werkzeug/browser/examples
+    As you can see it's possible to pass parameters as positional arguments
+    or as named parameters, pretty much like Python function calls.
 
 
     :copyright: 2007-2008 by Armin Ronacher.

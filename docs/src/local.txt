@@ -2,134 +2,34 @@
 Context Locals
 ==============
 
-Sooner or later you have some things you want to have in every single view or
-helper function or whatever.  In PHP, the way to go are global variables.
-However, that is not possible in WSGI applications without a major drawback:
-As soon as you operate on the global namespace your application is not
-thread-safe any longer.
-
-The Python standard library comes with an utility called "thread-locals".  A
-thread-local is a global object you can put stuff on and get back from it
-later in a thread-safe way.  That means whenever you set or get an object
-to/from a thread-local object, the thread-local object checks in which thread
-you are and delivers the correct value.
-
-This has a few disadvantages, though.  For example beside threads there are
-other ways to handle concurrency in Python.  A very popular approach are
-`greenlets`_.  And also if every request gets its own thread, it is not
-guaranteed in WSGI.  It could be that a request is reusing a thread from
-before and data is left in the thread-local object.
-
-`werkzeug.local` fills this gap.
+.. module:: werkzeug.local
 
 
-Nutshell
-========
+Objects
+=======
 
-Here is a simple example on how you can use `werkzeug.local`:
+.. class:: werkzeug.local.LocalManager
 
-.. sourcecode:: python
+    .. def:: werkzeug.local.LocalManager.cleanup
+    .. def:: werkzeug.local.LocalManager.make_middleware
+    .. def:: werkzeug.local.LocalManager.middleware
+    .. def:: werkzeug.local.LocalManager.get_ident
 
-    from werkzeug import Local, LocalManager
+.. class:: werkzeug.local.LocalProxy
 
-    local = Local()
-    local_manager = LocalManager([local])
+    Keep in mind that ``repr()`` is also forwarded, so if you want to find
+    out if you are dealing with a proxy you can do an ``isinstance()`` check:
 
-    def application(environ, start_response):
-        local.request = request = Request(environ)
-        # ...
+    .. sourcecode:: pycon
 
-    application = local_manager.make_middleware(application)
+        >>> from werkzeug import LocalProxy
+        >>> isinstance(request, LocalProxy)
+        True
 
-What this code does is binding request to `local.request`.  Every other piece
-of code executed after this assignment in the same context can safely access
-`local.request` and will get the same request object.  The `make_middleware`
-method on the local manager ensures that everything is cleaned up after the
-request.
-
-The same context means the same greenlet (if you're using greenlets) in the
-same thread and same process.
-
-If a request object is not yet set on the local object and you try to access
-it you will get an `AttributeError`.  You can use `getattr` to avoid that:
-
-.. sourcecode:: python
-
-    def get_request():
-        return getattr(local, 'request', None)
-
-This will try to get the request or return `None` if the request is not (yet?)
-available.
-
-
-Manager Objects
-===============
-
-Local objects cannot manage themselves. For that you need a local manager.
-You can pass a local manager multiple locals or add them later by appending
-them to `manager.locals`.  Everytime the manager cleans up it, will clean up
-all the data left in the locals for this context.
-
-The following methods exist:
-
-`cleanup()`
-    Manually clean up the data in the locals for this context.  Call this at
-    the end of the request or use `make_middleware()`.
-
-`make_middleware(app)`
-    Encapsulate the application and call `cleanup()` at the end of a request.
-
-`middleware()`
-    Like `make_middleware`, but works as decorator.  The main difference is
-    that the returned object will have the original docstring etc.
+    You can also create proxy objects by hand:
 
     .. sourcecode:: python
 
-        @manager.middleware
-        def application(environ, start_response):
-            # ...
-
-`get_ident()`
-    Return the context identifier the local objects use internally for this
-    context.  You cannot override this method to change the behavior but use
-    it to link other context local objects (such as SQLAlchemy's scoped
-    sessions) to the Werkzeug locals.
-
-
-Proxies
-=======
-
-Werkzeug can also create proxy objects for you.  A proxy object forwards nearly
-all operations to an object bound to an object on a local.  This is for example
-useful if you want a global request object:
-
-.. sourcecode:: python
-
-    from werkzeug import Local
-    local = Local()
-    request = local('request')
-    user = local('user')
-
-Whenever you access anything on `user` it will forward the operation to the
-object `local.user`.  This affects all operations except of any sort of
-assignment.
-
-Keep in mind that ``repr()`` is also forwarded, so if you want to find out if
-you are dealing with a proxy you can do an ``isinstance()`` check:
-
-.. sourcecode:: pycon
-
-    >>> from werkzeug import LocalProxy
-    >>> isinstance(request, LocalProxy)
-    True
-
-You can also create proxy objects by hand:
-
-.. sourcecode:: python
-
-    from werkzeug import Local, LocalProxy
-    local = Local()
-    request = LocalProxy(local, 'request')
-
-
-.. _greenlets: http://codespeak.net/py/dist/greenlet.html
+        from werkzeug import Local, LocalProxy
+        local = Local()
+        request = LocalProxy(local, 'request')

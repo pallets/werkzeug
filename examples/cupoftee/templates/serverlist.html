@@ -1,0 +1,53 @@
+<h2>Server List</h2>
+<p>
+  Currently <strong>$len(players)</strong> players are playing on
+  <strong>$len(servers)</strong> servers.  This list was last synced on
+  <strong>$cup.master.last_sync.strftime('%d %B %Y at %H:%M UTC')</strong>.
+</p>
+<table class="servers">
+  <thead>
+    <tr>
+      <th>$self.order_link('name', 'Name')</th>
+      <th>$self.order_link('map', 'Map')</th>
+      <th>$self.order_link('gametype', 'Gametype')</th>
+      <th>$self.order_link('players', 'Players')</th>
+      <th>$self.order_link('progression', 'Progression')</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% for server in servers %>
+    <tr>
+      <th><a href="$url_for('server', id=server.id)">$escape(server.name)</a></th>
+      <td>$escape(server.map)</td>
+      <td>$server.gametype</td>
+      <td>$server.player_count / $server.max_players</td>
+      <td>${server.progression >= 0 and '%d%%' % server.progression or '?'}</td>
+    </tr>
+    <% endfor %>
+  </tbody>
+</table>
+<h2>Players online</h2>
+<p>
+  The following map represents the users playing currently.  The bigger their name
+  the higher their score in the current game.  Clicking on the name takes you to
+  the detail page of the server for some more information.
+</p>
+<div class="players">
+<% for player in players %>
+  <a href="$url_for('server', id=player.server.id)" title="score: $player.score"
+     style="font-size: $player.size%">$escape(player.name)</a>
+<% endfor %>
+</div>
+<h2>Find User</h2>
+<p>
+  Find a user by username.  The result page contains a link you can bookmark to
+  find your buddy easily.  Because currently there is no central user database
+  users can appear on multiple servers for too generic usernames (like the
+  default "nameless tee" user).
+</p>
+<form action="$url_for('search')" method="get">
+  <p>
+    <input type="text" name="user" value="" size="30">
+    <input type="submit" value="Search">
+  </p>
+</form>

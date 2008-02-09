@@ -9,147 +9,24 @@ dependency or full blown template engine system.
 It it however not recommended to use this template system for anything else
 than simple content generation.
 
+.. module:: werkzeug.templates
 
-Usage
-=====
+The Template Class
+==================
 
-In the application you can pass the `Template` class a string with the
-template code and then call `render()` (or `substituate()` for compatibility
-with `string.Template`) with either a dict or some keyword arguments to render
-the template:
+.. class:: werkzeug.templates.Template
 
-.. sourcecode:: python
+    .. def:: werkzeug.templates.Template.render
+    .. def:: werkzeug.templates.Template.from_file
 
-    from werkzeug import Template
+    Besides the normal global functions and objects, the following functions
+    are added to every namespace: `escape`, `url_encode`, `url_quote`, and
+    `url_quote_plus`.  You can change those by subclassing `Template` and
+    overriding the `default_context` dict::
 
-    tmpl = Template(u'''\
-    <h1>$escape(title)</h1>
-    <ul>
-    <% for href, caption in links %>
-      <li><a href="$escape(href)">$escape(caption)</a></li>
-    <% endfor %>
-    </ul>''')
-
-    print tmpl.render(
-        title='Foo',
-        links=[
-            ('/', 'Index'),
-            ('/about', 'About')
-        ]
-    )
-
-This will then generate this:
-
-.. sourcecode:: html
-
-    <h1>Foo</h1>
-    <ul>
-      <li><a href="/">Index</a></li>
-      <li><a href="/about">About</a></li>
-    </ul>
-
-You can also create templates from files:
-
-.. sourcecode:: python
-
-    t = Template.from_file('filename.html')
-
-This also improves the error messages because then the Python traceback system
-is able to locate the source for the error messages.
-
-
-Template Syntax
-===============
-
-The syntax elements are a mixture of Django, Genshi text and mod_python
-templates and used internally in Werkzeug components.
-
-We do not recommend using this template engine in a real environment because
-it is quite slow and does not provide any advanced features.  For simple
-applications (like in CGI scripts) this can however be sufficient.
-
-Printing Variables::
-
-    $variable
-    $variable.attribute[item](some, function)(calls)
-    ${expression} or <%py print expression %>
-
-Keep in mind that the `print` statement adds a newline after the call or a
-whitespace if it ends with a comma.
-
-For loops::
-
-    <% for item in seq %>
-        ...
-    <% endfor %>
-
-While loops::
-
-    <% while expression %>
-        <%py break / continue %>
-    <% endwhile %>
-
-If conditions::
-
-    <% if expression %>
-        ...
-    <% elif expression %>
-        ...
-    <% else %>
-        ...
-    <% endif %>
-
-Python expressions::
-
-    <%py
-        ...
-    %>
-
-    <%python
-        ...
-    %>
-
-Note on Python expressions:  You cannot start a loop in a Python block and
-continue it in another one.  This example does *not* work::
-
-    <%python
-        for item in seq:
-    %>
-        ...
-
-Comments::
-
-    <%#
-        This is a comment
-    %>
-
-
-Missing Variables
-=================
-
-If you try to access a missing variable you will get back an `Undefined`
-object.  You can iterate over such an object or print it and it won't fail.
-However, every other operation will raise an error.  To test if a variable is
-undefined, you can use this expression::
-
-    <% if variable is Undefined %>
-        ...
-    <% endif %>
-
-
-Global Functions
-================
-
-Besides the normal global functions and objects, the following functions are
-added to every namespace: `escape`, `url_encode`, `url_quote`, and
-`url_quote_plus`.  You can change those by subclassing `Template` and
-overriding the `default_context` dict:
-
-.. sourcecode:: python
-
-    class MyTemplate(Template):
-        default_namespace = {
-            'ueber_func':       ueber_func
-        }
-        # Now add the old functions, too, because they are useful.
-        default_namespace.update(Template.default_namespace)
+        class MyTemplate(Template):
+            default_namespace = {
+                'ueber_func':       ueber_func
+            }
+            # Now add the old functions, too, because they are useful.
+            default_namespace.update(Template.default_namespace)

@@ -193,7 +193,10 @@ class SecureCookie(ModificationTrackingDict):
 
             # no parsing error and the hash looks okay, we can now
             # sercurely unpickle our cookie.
-            client_hash = base64_hash.decode('base64')
+            try:
+                client_hash = base64_hash.decode('base64')
+            except Exception:
+                items = client_hash = None
             if items is not None and client_hash == hash.digest():
                 try:
                     for key, value in items.iteritems():

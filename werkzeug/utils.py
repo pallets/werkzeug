@@ -24,7 +24,6 @@ try:
     set = set
 except NameError:
     from sets import Set as set
-
     def reversed(item):
         return item[::-1]
 
@@ -74,18 +73,22 @@ class _ExtendedMorsel(Morsel):
             result += '; HttpOnly'
         return result
 
-    def set(self, *args, **kwargs):
-        try:
-            Morsel.set(self, *args, **kwargs)
-        except CookieError:
-            pass
-
 
 class _ExtendedCookie(BaseCookie):
+    """
+    Form of the base cookie that doesn't raise a `CookieError` for
+    malformed keys.  This has the advantage that broken cookies submitted
+    by nonstandard browsers don't cause the cookie to be empty.
+
+    :internal:
+    """
 
     def _BaseCookie__set(self, key, real_value, coded_value):
         morsel = self.get(key, _ExtendedMorsel())
-        morsel.set(key, real_value, coded_value)
+        try:
+            morsel.set(key, real_value, coded_value)
+        except CookieError:
+            pass
         dict.__setitem__(self, key, morsel)
 
 
@@ -202,7 +205,17 @@ class MultiDict(dict):
         return result
 
     def setlist(self, key, new_list):
-        """Set new values for an key."""
+        """
+        Remove the old values for a key and add new ones.  Note that the list
+        you pass the values in will be shallow-copied before it is inserted in
+        the dictionary.
+
+        >>> multidict.setlist('foo', ['1', '2'])
+        >>> multidict['foo']
+        '1'
+        >>> multidict.getlist('foo')
+        ['1', '2']
+        """
         dict.__setitem__(self, key, list(new_list))
 
     def setdefault(self, key, default=None):
@@ -213,6 +226,7 @@ class MultiDict(dict):
         return default
 
     def setlistdefault(self, key, default_list=()):
+        """Like `setdefault` but sets multiple values."""
         if key not in self:
             default_list = list(default_list)
             dict.__setitem__(self, key, default_list)
@@ -439,7 +453,7 @@ class FileStorage(object):
     ``storage.stream.read()``.
     """
 
-    def __init__(self, stream=_empty_stream, filename=None, name=None,
+    def __init__(self, stream=None, filename=None, name=None,
                  content_type='application/octet-stream', content_length=-1):
         """
         Creates a new `FileStorage` object.  The constructor looked different
@@ -453,7 +467,7 @@ class FileStorage(object):
         :param content_length: the content length of the file.
         """
         self.name = name
-        self.stream = stream
+        self.stream = stream or _empty_stream
         self.filename = filename or getattr(stream, 'name', None)
         self.content_type = content_type
         self.content_length = content_length
@@ -631,6 +645,10 @@ class Headers(object):
         return list(self.iteritems(lower))
 
     def extend(self, iterable):
+        """
+        Extend the headers with a dict or an iterable yielding keys and
+        values.
+        """
         if isinstance(iterable, dict):
             iterable = iterable.iteritems()
         for key, value in iterable:
@@ -647,6 +665,7 @@ class Headers(object):
     remove = __delitem__
 
     def __contains__(self, key):
+        """Check if a key is present."""
         try:
             self[key]
         except KeyError:
@@ -656,6 +675,7 @@ class Headers(object):
     has_key = __contains__
 
     def __iter__(self):
+        """Yield ``(key, value)`` tuples."""
         return iter(self._list)
 
     def add(self, key, value):
@@ -706,7 +726,9 @@ class Headers(object):
 
 class EnvironHeaders(Headers):
     """
-    Read only version of the headers from a WSGI environment.
+    Read only version of the headers from a WSGI environment.  This
+    provides the same interface as `Headers` and is constructed from
+    a WSGI environment.
     """
 
     def __init__(self, environ):
@@ -1113,9 +1135,9 @@ class HTMLBuilder(object):
     """
     Helper object for HTML generation.
 
-    Per default there are two instances of that class.  The html one, and the
-    xhtml one for those two dialects.  The class uses keyword parameters and
-    positional parameters to generate small snippets of HTML.
+    Per default there are two instances of that class.  The `html` one, and
+    the `xhtml` one for those two dialects.  The class uses keyword parameters
+    and positional parameters to generate small snippets of HTML.
 
     Keyword parameters are converted to XML/SGML attributes, positional
     arguments are used as children.  Because Python accepts positional
@@ -1355,12 +1377,10 @@ def escape(s, quote=None):
     return s
 
 
-def unescape(s, quote=False):
+def unescape(s):
     """
     The reverse function of `escape`.  This unescapes all the HTML entities,
     not only the XML entities inserted by `escape`.
-
-    *new in Werkzeug 0.2*
     """
     def handle_match(m):
         name = m.group(1)
@@ -1489,7 +1509,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     """
     Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
-    Python standard library but it accepts unicode data too:
+    Python standard library but it accepts unicode data too.
 
     :param max_age: should be a number of seconds, or `None` (default) if
                     the cookie should last only as long as the client's

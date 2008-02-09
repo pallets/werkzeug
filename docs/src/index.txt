@@ -5,54 +5,39 @@ Documentation Overview
 Welcome to the Werkzeug documentation.
 
 
-.. admonition:: Note
-
-    The documentation reflects the status of Werkzeug 0.2 as of
-    HG revision `7ed8e75a17bc`.  Currently we do some code cleanup
-    in the mercurial repository, if you are using newer revisions
-    of Werkzeug you should participate in ``#pocoo`` to not miss
-    the latest changes.  Documentation will be update before the
-    release.
-
-
 Reference
 =========
 
-Documentation regarding the Werkzeug modules and Werkzeug as such.
+Documentation regarding the Werkzeug modules:
 
 - `Installing Werkzeug <installation.txt>`_
 
-- `Tutorial <tutorial.txt>`_ - getting started with Werkzeug by
-  implementing a simple `TinyURL`_ clone.
+- `Important Terms <terms.txt>`_ --- read this before reading the
+  documentation
 
-- `Important Terms <terms.txt>`_ - read this before reading the
-  Werkzeug documentation.
+- `Tutorial <tutorial.txt>`_ --- getting started with Werkzeug
 
-- `Wrappers <wrappers.txt>`_ - wrap `environ` and `start_response`
-  in request/response objects.
+- `Wrappers <wrappers.txt>`_ --- request and response objects
 
-- `Routing System <routing.txt>`_ - a powerful URL dispatcher
-  and builder.
+- `Routing System <routing.txt>`_ --- a powerful URL dispatcher
+  and builder
 
-- `Mini Templates <templates.txt>`_ - a minimal templating system.
+- `Mini Templates <templates.txt>`_ --- a minimal templating system
 
-- `Management Script Utilities <script.txt>`_ - tools to write simple
-  management scripts.
+- `Management Script Utilities <script.txt>`_ --- tools to write simple
+  management scripts
 
-- `Test Utilities <test.txt>`_ - send requests to your application
-  from the Python interpreter or unit tests.
+- `Test Utilities <test.txt>`_ --- unittest support tools
 
-- `HTTP Exceptions <exceptions.txt>`_ - exception classes that work
-  like response objects for non-200 HTTP status codes.
+- `HTTP Exceptions <exceptions.txt>`_ --- exceptions for HTTP
 
-- `Utilities <utils.txt>`_ - useful things like multi value dicts,
-  a data structure for headers etc.
+- `Utilities <utils.txt>`_ --- useful classes and functions
 
-- `Context Locals <local.txt>`_ - a WSGI centric version of `thread.local`.
+- `Context Locals <local.txt>`_ --- a WSGI centric version of `thread.local`.
 
-- `Debugging System <debug.txt>`_ - an interactive debugger.
+- `Debugging System <debug.txt>`_ --- an interactive debugger.
 
-- `API Stability <api_stability.txt>`_ - API stability
+- `API Stability <api_stability.txt>`_ --- API stability
 
 
 General Development Information
@@ -62,18 +47,18 @@ This part of the documentation mainly explains how to develop WSGI
 applications.  This is also interesting if you don't want to use
 Werkzeug but other WSGI utilities; the ideas are the same.
 
-- `Serving WSGI Applications <serving.txt>`_ - serving WSGI applications.
+- `Serving WSGI Applications <serving.txt>`_ --- serving WSGI applications.
 
-- `How WSGI Works <wsgihowto.txt>`_ - short introduction to WSGI and
+- `How WSGI Works <wsgihowto.txt>`_ --- short introduction to WSGI and
   Werkzeug.
 
-- `Organizing Code <organizing.txt>`_ - gives you an idea how you can
+- `Organizing Code <organizing.txt>`_ --- gives you an idea how you can
   organize your code when using Werkzeug.
 
-- `Other Libraries <libraries.txt>`_ - links to other libraries you
+- `Other Libraries <libraries.txt>`_ --- links to other libraries you
   can use with Werkzeug.
 
-- `Deploying WSGI Applications <deploying.txt>`_ - ready for production?
+- `Deploying WSGI Applications <deploying.txt>`_ --- ready for production?
   This page covers all the details you have to know to deploy your
   application on various webservers.
 

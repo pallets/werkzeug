@@ -40,6 +40,8 @@ Version 0.2
 - implemented `find_modules`
 - refactored request and response objects into base objects, mixins and
   full featured subclasses that implement all mixins.
+- werkzeug's routing raises `MethodNotAllowed` now if it matches a
+  rule but for a different method.
 
 
 Version 0.1

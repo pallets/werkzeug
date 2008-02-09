@@ -24,7 +24,8 @@ Here a simple example which could be the URL definition for a blog:
         Rule('/<int:year>/', endpoint='blog/archive'),
         Rule('/<int:year>/<int:month>/', endpoint='blog/archive'),
         Rule('/<int:year>/<int:month>/<int:day>/', endpoint='blog/archive'),
-        Rule('/<int:year>/<int:month>/<int:day>/<slug>', endpoint='blog/show_post'),
+        Rule('/<int:year>/<int:month>/<int:day>/<slug>',
+             endpoint='blog/show_post'),
         Rule('/about', endpoint='blog/about_me'),
         Rule('/feeds/', endpoint='blog/feeds'),
         Rule('/feeds/<feed_name>.rss', endpoint='blog/show_feed')
@@ -388,13 +389,13 @@ Here is a small example for matching:
     >>> m = Map([
     ...     Rule('/', endpoint='index'),
     ...     Rule('/downloads/', endpoint='downloads/index'), 
-    ...     Rule('/downloads/<int:download_id>', endpoint='downloads/show')
+    ...     Rule('/downloads/<int:id>', endpoint='downloads/show')
     ... ])
     >>> urls = m.bind("example.com", "/")
     >>> urls.match("/", "GET")
     ('index', {})
     >>> urls.match("/downloads/42")
-    ('downloads/show', {'download_id': 42})
+    ('downloads/show', {'id': 42})
 
 And here is what happens on redirect and missing URLs:
 
@@ -402,15 +403,11 @@ And here is what happens on redirect and missing URLs:
 
     >>> urls.match("/downloads")
     Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-      File "werkzeug/routing.py", line 660, in match
-        path_info.lstrip('/')
+      ...
     werkzeug.routing.RequestRedirect: http://example.com/downloads/
     >>> urls.match("/missing")
     Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-      File "werkzeug/routing.py", line 676, in match
-        raise NotFound(path_info)
+      ...
     werkzeug.routing.NotFound: /missing
 
 The second parameter to the `match` method can be a string that specifies
@@ -440,9 +437,9 @@ URLs:
 
     >>> urls.build("index", {})
     '/'
-    >>> urls.build("downloads/show", {'download_id': 42})
+    >>> urls.build("downloads/show", {'id': 42})
     '/downloads/42'
-    >>> urls.build("downloads/show", {'download_id': 42}, force_external=True)
+    >>> urls.build("downloads/show", {'id': 42}, force_external=True)
     'http://example.com/downloads/42'
 
 Because URLs cannot contain non-ASCII data, you will always get byte strings

@@ -2,377 +2,281 @@
 Wrappers
 ========
 
-The wrappers are simple request and response objects which you can subclass to
-do whatever you want them to do.
 
-Request
-=======
+.. module:: werkzeug.wrappers
 
-When a page is requested, you create a request object that contains metadata
-about the request.  You can then pass the request object as argument to the
-view functions or use it inside the application callable.
+Base Wrappers
+=============
 
-.. sourcecode:: python
+These objects implement a common set of operations.  They are missing fancy
+addon functionality like user agent parsing or etag handling.  These features
+are available by mixing in various mixin classes or using `Request` and
+`Response`.
 
-    from werkzeug import BaseRequest
+.. class:: werkzeug.wrappers.BaseRequest
 
-    class Request(BaseRequest):
-        charset = 'utf-8'
+    **Creating Request Objects**
 
-    def application(environ, start_response):
-        req = Request(environ)
-        start_response('200 OK', [('Content-Type', 'text/plain')])
-        yield 'Hello %s!' % req.args.get('subject', 'World')
+    .. def:: werkzeug.wrappers.BaseRequest.__init__
+    .. def:: werkzeug.wrappers.BaseRequest.from_values
 
-All incoming data is decoded into unicode objects automatically so you don't
-have to care about that.
+    **Properties**
 
-The request object will store itself as ``'werkzeug.request'`` in the WSGI
-environment.
+    `path`
+        The current path requested, relative to the position where the WSGI
+        application is mounted (`PATH_INFO`).  It will contain a leading slash and
+        will be at least a string with a single slash when accessing the URL root.
 
-Class Methods
--------------
+    `script_root`
+        The root path for the script (`SCRIPT_NAME`).  Does not contain a trailing
+        slash.
 
-`from_values(path, base_url, query_string, **options)`
-    Create a new request object based on the values provided.  If environ is
-    given missing values are filled from there.  This method is useful for
-    small scripts when you need to simulate a request from an URL.  Do not use
-    this method for unittesting, there is a full featured client object in
-    `werkzeug.test` that allows to create multipart requests etc.
+    `url`
+        The full URL for the current request.
 
-    This accepts the same options as the `create_environ` function from the
-    utils module and additionally an `environ` parameter that can contain
-    values which will override the values from dict returned by
-    `create_environ`.
+    `base_url`
+        The current full URL without the query string.
 
-    Additionally a dict passed to `query_string` will be encoded in the
-    request class charset.
+    `url_root`
+        The current URL up to the script root.
 
+    `host_url`
+        The current URL for the host.
 
-Methods
--------
+    `host`
+        The current hostname, without scheme.
 
-`_get_file_stream()`
-    This method is called whenever the form data parser needs a read and
-    write stream for the incoming data.  Per default this returns a stream
-    that points to a temporary file.  If you want to override this method
-    keep in mind that the stream object returned must support read *and*
-    write operations.
+    `is_secure`
+        True if this is an HTTPS request.
 
+    `is_multithread`
+        True if this request was created in a multithreaded environment.
 
-Members
--------
+    `is_multiprocess`
+        True if this request was created in a forking environment.
 
-`path`
-    The current path requested, relative to the position where the WSGI
-    application is mounted (`PATH_INFO`).  It will contain a leading slash and
-    will be at least a string with a single slash when accessing the URL root.
+    `is_run_once`
+        True if this request was created on the command line, a CGI script or a
+        similar environment.
 
-`script_root`
-    The root path for the script (`SCRIPT_NAME`).  Does not contain a trailing
-    slash.
+    `is_xhr`
+        True if the request was triggered via an JavaScript XMLHttpRequest.
+        This only works with libraries that support the X-Requested-With
+        header and set it to "XMLHttpRequest".  Libraries that do that are
+        prototype, jQuery and Mochikit and probably some more.
 
-`url`
-    The full URL for the current request.
+    `method`
+        The request method.  `GET`, `POST` etc.
 
-`base_url`
-    The current full URL without the query string.
+    `args`
+        A dictionary-like object containing all given HTTP GET parameters.  See
+        the `MultiDict` documentation in the `utils`_ section.
 
-`url_root`
-    The current URL up to the script root.
+    `form`
+        A dictionary-like object containing all given HTTP POST parameters.  See
+        the `MultiDict` documentation in the `utils`_ section.
 
-`host_url`
-    The current URL for the host.
+        This dict does not contain uploaded files, see `files` regarding that.
 
-`host`
-    The current hostname, without scheme.
+    `values`
+        An immutable dictionary-like object containing both the `args` and `form`
+        values.  See the `CombinedMultiDict` documentation in the `utils`_
+        section.
 
-`is_secure`
-    True if this is an HTTPS request.
+    `cookies`
+        A dictionary with the submitted cookie values.
 
-`is_multithread`
-    True if this request was created in a multithreaded environment.
+    `files`
+        A dictionary-like object containing all uploaded files.  Each key in
+        `files` is the name from the ``<input type="file" name="" />``.  Each
+        value in `files` is a Werkzeug `FileStorage` object with the following
+        members:
 
-    *New in Werkzeug 0.2*
+        - `filename` - The name of the uploaded file, as a Python string.
+        - `type` - The content type of the uploaded file.
+        - `data` - The raw content of the uploaded file.
+        - `read()` - Read from the stream.
 
-`is_multiprocess`
-    True if this request was created in a forking environment.
+        Note that `files` will only contain data if the request method was POST
+        and the ``<form>`` that posted to the request had
+        ``enctype="multipart/form-data"``.  It will be empty otherwise.
 
-    *New in Werkzeug 0.2*
+        See the `MultiDict` / `FileStorage` documentation in the `utils`_
+        section for more details about the used data structure.
 
-`is_run_once`
-    True if this request was created on the command line, a CGI script or a
-    similar environment.
-
-    *New in Werkzeug 0.2*
+    `environ`
+        The WSGI environment used to create the request object.
 
-`method`
-    The request method.  `GET`, `POST` etc.
+    `stream`
+        The buffered stream with incoming data from the webbrowser if the
+        submitted data was not multipart or URL-encoded form data.
 
-`args`
-    A dictionary-like object containing all given HTTP GET parameters.  See
-    the `MultiDict` documentation in the `utils`_ section.
+    `input_stream`
+        The input stream provided by the client.  Used internally by the form
+        data parser.  Reading from this stream must never be mixed with
+        accessing `stream`, `data`, `files`, or `form`, because then it's not
+        guaranteed that more data is requested from the client than expected.
+        Never read beyond ``environ['CONTENT_LENGTH']``.
 
-`form`
-    A dictionary-like object containing all given HTTP POST parameters.  See
-    the `MultiDict` documentation in the `utils`_ section.
+    `data`
+        Accessing this the first time reads the whole `stream` and stores it. Keep
+        in mind that this does not read the whole WSGI input stream like Django
+        does.
 
-    This dict does not contain uploaded files, see `files` regarding that.
+    `remote_addr`
+        The remote address for the user that created this request.  If the class
+        variable `is_behind_proxy` is set to `True` (either by subclassing the
+        process or overriding this variable on the instance) it will try to get
+        the value from the `X_HTTP_FORWARDED_FOR` header.  Keep in mind that this
+        is disabled by default because unless you are really behind a proxy this
+        is a security problem.
 
-`values`
-    An immutable dictionary-like object containing both the `args` and `form`
-    values.  See the `CombinedMultiDict` documentation in the `utils`_
-    section.
+    `access_route`
+        If you are behind a proxy server this will list all the IP addresses that
+        take place in the request.  The end user IP address is the first one in
+        the list, the last proxy server is the last item in the list.  This also
+        works if the `is_behind_proxy` class variable is set to `False`.
 
-`cookies`
-    A dictionary with the submitted cookie values.
 
-`files`
-    A dictionary-like object containing all uploaded files.  Each key in
-    `files` is the name from the ``<input type="file" name="" />``.  Each
-    value in `files` is a Werkzeug `FieldStorage` object with the following
-    members:
+.. class:: werkzeug.wrappers.BaseResponse
 
-    - `filename` - The name of the uploaded file, as a Python string.
-    - `type` - The content type of the uploaded file.
-    - `data` - The raw content of the uploaded file.
-    - `read()` - Read from the stream.
+    **Creating Response Objects**
 
-    Note that `files` will only contain data if the request method was POST
-    and the ``<form>`` that posted to the request had
-    ``enctype="multipart/form-data"``.  It will be empty otherwise.
+    .. def:: werkzeug.wrappers.BaseResponse.__init__
+    .. def:: werkzeug.wrappers.BaseResponse.force_type
+    .. def:: werkzeug.wrappers.BaseResponse.from_app
 
-    See the `MultiDict` documentation in the `utils`_ section for more details
-    about the used data structure.
+    **Properties**
 
-`environ`
-    The WSGI environment used to create the request object.
+    `response`
+        The application iterator.  If constructed from a string this will
+        be a list, otherwise the object provided as application iterator.
 
-`stream`
-    The buffered stream with incoming data from the webbrowser if the
-    submitted data was not multipart or URL-encoded form data.
+    `headers`
+        A `Headers` object representing the response headers.
 
-`input_stream`
-    The input stream provided by the client.  Used internally by the form
-    data parser.  Reading from this stream must never be mixed with
-    accessing `stream`, `data`, `files`, or `form`, because then it's not
-    guaranteed that more data is requested from the client than expected.
-    Never read beyond ``environ['CONTENT_LENGTH']``.
+    `status`
+        The response status as string.
 
-`data`
-    Accessing this the first time reads the whole `stream` and stores it. Keep
-    in mind that this does not read the whole WSGI input stream like Django
-    does.
+    `status_code`
+        The response status as integer.
 
-`accept_mimetypes``
-    List of mimetypes this client supports.
+    `data`
+        When accessed the response iterator is buffered and, encoded and
+        returned as bytestring.
 
-`accept_charsets`
-    List of charsets this client supports.
+    `header_list`
+        Read only list that contains the current list for the headers in
+        the response encoding.
 
-`accept_encodings`
-    List of encodings this client accepts.  Do not mix this up with
-    `accept_charset` which contains character encodings whereas
-    `accept_encodings` contains compression encodings such as gzip.
+    `is_streamed`
+        If the response is streamed (the response is not a sequence) this
+        property is `True`.  In this case streamed means that there is no
+        information about the number of iterations.  This is usully `True`
+        if a generator is passed to the response object.
 
-`accept_languages`
-    List of languages this client accepts.
+        This is useful for checking before applying some sort of post
+        filtering that should not take place for streamed responses.
 
-`remote_addr`
-    The remote address for the user that created this request.  If the class
-    variable `is_behind_proxy` is set to `True` (either by subclassing the
-    process or overriding this variable on the instance) it will try to get
-    the value from the `X_HTTP_FORWARDED_FOR` header.  Keep in mind that this
-    is disabled by default because unless you are really behind a proxy this
-    is a security problem.
+    **Methods**
 
-`access_route`
-    If you are behind a proxy server this will list all the IP addresses that
-    take place in the request.  The end user IP address is the first one in
-    the list, the last proxy server is the last item in the list.  This also
-    works if the `is_behind_proxy` class variable is set to `False`.
+    .. def:: werkzeug.wrappers.BaseResponse.iter_encoded
+    .. def:: werkzeug.wrappers.BaseResponse.set_cookie
+    .. def:: werkzeug.wrappers.BaseResponse.delete_cookie
+    .. def:: werkzeug.wrappers.BaseResponse.fix_headers
+    .. def:: werkzeug.wrappers.BaseResponse.close
+    .. def:: werkzeug.wrappers.BaseResponse.freeze
+    .. def:: werkzeug.wrappers.BaseResponse.__call__
 
 
-Response
-========
+Mixin Classes
+=============
 
-The response object is the opposite of the request object.  It wraps the
-`start_response` function.  In order to keep the interface extensible it has
-the same signature as a normal WSGI callable, thus it takes the `environ` as
-first argument.
+Werkzeug also provides helper mixins for various HTTP related functionality
+such as etags, cache control, user agents etc.  When subclassing you can
+mix those classes in to extend the functionality of the `BaseRequest` or
+`BaseResponse` object.  Here a small example for a request object that
+parses accept headers::
 
-You can use that as replacement for `start_response` and returning an
-iterable:
+    from werkzeug import BaseRequest, AcceptMixin
 
-.. sourcecode:: python
+    class Request(BaseRequest, AcceptMixin):
+        pass
 
-    from werkzeug import BaseResponse
+The `Request` and `Response` classes subclass the `BaseRequest` and
+`BaseResponse` classes and implement all the mixins Werkzeug provides:
 
-    class Response(BaseResponse):
-        charset = 'utf-8'
+.. class:: werkzeug.wrappers.Request
+.. class:: werkzeug.wrappers.Response
 
-    def application(environ, start_response):
-        resp = Response(u'<h1>Hello World</h1>', mimetype='text/html')
-        return resp(environ, start_response)
+.. class:: werkzeug.wrappers.AcceptMixin
 
-Ideally all data is stored internally as `unicode`. Byte strings passed to the
-object will be returned unchanged in order to support binary data.
+    .. property:: werkzeug.wrappers.AcceptMixin.accept_mimetypes
+    .. property:: werkzeug.wrappers.AcceptMixin.accept_charsets
+    .. property:: werkzeug.wrappers.AcceptMixin.accept_encodings
+    .. property:: werkzeug.wrappers.AcceptMixin.accept_languages
 
-The following members exist:
+    All this properties store `Accept` objects as documented in the
+    `utils`_ section.
 
-`charset`
-    Override this to change the internal charset.  This is always a very good
-    idea because the default is `ascii`.
 
-`default_mimetype`
-    The used mimetype if no other is defined.  Default is ``text/plain``.
+.. class:: werkzeug.wrappers.ETagRequestMixin
 
-Usage
------
+    .. property:: werkzeug.wrappers.ETagRequestMixin.cache_control
+    .. property:: werkzeug.wrappers.ETagRequestMixin.if_match
+    .. property:: werkzeug.wrappers.ETagRequestMixin.if_none_match
+    .. property:: werkzeug.wrappers.ETagRequestMixin.if_modified_since
+    .. property:: werkzeug.wrappers.ETagRequestMixin.if_unmodified_since
 
-There are multiple ways to use the response object.  The constructor accepts
-the following arguments:
+    All the used data structures are documented in the `utils`_ section.
 
-`response`
-    Can be an iterator or a string or `None`.  If it's an iterator, it should
-    return strings (`unicode`/`str`), and those strings will be joined
-    together to form the content of the response.
 
-    If you pass it an iterable it's used for direct data submission
-    (streaming):
+.. class:: werkzeug.wrappers.ETagResponseMixin
 
-    .. sourcecode:: python
+    .. property:: werkzeug.wrappers.ETagResponseMixin.cache_control
+    .. def:: werkzeug.wrappers.ETagResponseMixin.make_conditional
+    .. def:: werkzeug.wrappers.ETagResponseMixin.add_etag
+    .. def:: werkzeug.wrappers.ETagResponseMixin.set_etag
+    .. def:: werkzeug.wrappers.ETagResponseMixin.get_etag
+    .. def:: werkzeug.wrappers.ETagResponseMixin.freeze
 
-        def my_view(...):
-            def wrapped():
-                for item in range(100):
-                    yield str(item) + ' '
-                    time.sleep(0.1)
-            return Response(wrapped, mimetype='text/html')
 
-    This will then take 10 seconds to submit all data but the browser will
-    render after each iteration.
+.. class:: werkzeug.wrappers.ResponseStreamMixin
 
-`status`
-    The status number of the response.  Defaults to `200`.  Note that those
-    can either be strings or integers.
+    .. property:: werkzeug.wrappers.ResponseStreamMixin.stream
 
-`headers`
-    Either `None`, a list or dict of headers or a Werkzeug `Headers` instance.
-    See the `Headers` documentation in the `utils`_ section.
 
-`mimetype`
-    The mimetype of the response.  If there is no `charset` definition in that
-    mimetype and the mimetype is a text mimetype, it will automatically append
-    the charset of the response object. The default mimetype is
-    ``'text/plain'``.
+.. class:: werkzeug.wrappers.CommonResponseDescriptorsMixin
 
-`content_type`
-    Most of the time `mimetype` and `content_type` work the same.  The
-    difference affects only 'text' mimetypes.  If the mimetype passed with
-    `mimetype` is a mimetype starting with `text/`, it gets a charset
-    parameter added with the charset of the response object.  In constrast,
-    the `content_type` parameter is always added as header unmodified.
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.mimetype
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.location
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.age
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.content_type
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.content_length
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.content_location
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.content_encoding
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.content_language
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.content_md5
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.date
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.expires
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.last_modified
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.retry_after
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.vary
+    .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.allow
 
 
-Class Methods
--------------
+Note on File Uploads
+====================
 
-`from_app(app, environ, buffered=False)`
-    Create a new response object from an application output.  This works
-    best if you pass it an application that returns a generator all the
-    time.  Sometimes applications may use the `write()` callable returned
-    by the `start_response` function.  This tries to resolve such edge
-    cases automatically.  But if you don't get the expected output you
-    should set `buffered` to `True` which enforces buffering.
+File uploads are a tricky thing in general.  Per default all the file uploads
+go into temporary files on the filesystem and not the memory of the current
+process to avoid high memory usage.  You could also change that to store the
+data somewhere else by implementing an object that implements the python IO
+protocol (see `StringIO`) for both writing and reading.
 
+Then you have to subclass a request object and override `_get_file_stream`:
 
-Methods
--------
-
-`write(data)` / `writelines(lines)`
-    If the response object was created not by passing it an iterable but
-    either a string, list or nothing it will be created in file-like mode.
-
-    This means that you can write data to the internal buffer, it doesn't mean
-    that you directly pass the data to the webserver, if you want to do that
-    you should use a generator and pass that to the response object.
-
-`set_cookie(key, value='', max_age=None, expires=None, path='/', domain=None, secure=None)`
-
-    Sets a cookie. The parameters are the same as in the cookie `Morsel`
-    object in the Python standard library but it accepts unicode data, too:
-
-    - `max_age` should be a number of seconds, or `None` (default) if the
-       cookie should last only as long as the client’s browser session.
-    - `expires` should be a `datetime` object or UNIX timestamp.
-    - Use `domain` if you want to set a cross-domain cookie.  For example,
-      ``domain=".example.com"`` will set a cookie that is readable by the
-      domain ``www.example.com``, ``foo.example.com`` etc.  Otherwise, a
-      cookie will only be readable by the domain that set it.
-    - `path` limits the cookie to a given path, per default it will span
-      the whole domain.
-
-`delete_cookie(key, path='/', domain=None)`
-    Deletes the cookie with the given key.  Fails silently if the key doesn’t exist.
-
-`iter_encoded(charset=None)`
-    Iterate over the response encoded with the encoding specified.  If no
-    encoding is given the encoding from the class is used.  Note that
-    this does not encode data that is already encoded into a byte string.
-
-`fix_headers(environ)`
-    This is automatically called right before the response is started and
-    should fix common mistakes in headers.  For example, location headers are
-    joined with the root URL here.
-
-`add_etag(overwrite=False, weak=False)`
-    Generates and MD5 etag for the response body.  Per default, this method
-    does nothing if an etag is already set.  If you set `overwrite` to `True`
-    it will overwrite the etag.  If `weak` is `True` the etag is prefixed with
-    "W/" indicating a weak entity tag.
-
-    *New in Werkzeug 0.2*
-
-`make_conditional(request_or_environ)`
-    Pass it an environment or request object to make the response object
-    conditional for the request.  This does not set the etag, you have to do
-    that on your own.  If the request headers indicate that the response body
-    is already cached on the client the status code is set to 304.
-
-`freeze()`
-    Freezes the response object and sets the etag.  After that call it's safe
-    to pickle and unpickle the response object (for example for caching)
-
-    *New in Werkzeug 0.2*
-
-`close()`
-    Close the wrapped response object if there is anything to close.
-
-
-Members
--------
-
-`headers`
-    A `Headers` instance from the `utils`_ module that represents the
-    headers set currently.
-
-`header_list`
-    The complete header list as read only copy in the charset of the response.
-
-`response`
-    The current response object.  This always is an iterable.
-
-`response_body`
-    The string representation of the request body.  Whenever you access this
-    property the request iterable is encoded and flattened.  This can lead to
-    unwanted behavior if you stream big data.
-
-`status`
-    The status string.  For example ``'200 OK'``.
-
-`status_code`
-    The status code.  For example ``200``.
+.. def:: werkzeug.wrappers.BaseRequest._get_file_stream
 
 
 .. _utils: utils.txt

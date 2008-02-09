@@ -2,6 +2,13 @@
 Werkzeug Tutorial
 =================
 
+.. admonition:: Translations
+
+    This tutorial is available in the following languages:
+
+    -   **English**
+    -   `Deutsch <tutorial_de.txt>`_
+
 Welcome to the Werkzeug 0.2 tutorial in which we will create a TinyURL clone
 that stores URLs in a database.  The libraries we will use for this
 applications are `Jinja`_ for the templates, `SQLAlchemy`_ for the database
@@ -78,10 +85,10 @@ the WSGI application:
 .. sourcecode:: python
 
     from sqlalchemy import create_engine
-    from werkzeug import BaseRequest, ClosingIterator
+    from werkzeug import Request, ClosingIterator
     from werkzeug.exceptions import HTTPException
 
-    from shorty.utils import Session, metadata, local, local_manager, url_map
+    from shorty.utils import session, metadata, local, local_manager, url_map
     from shorty import views
     import shorty.models
 
@@ -97,29 +104,28 @@ the WSGI application:
 
         def __call__(self, environ, start_response):
             local.application = self
-            request = BaseRequest(environ)
+            request = Request(environ)
             local.url_adapter = adapter = url_map.bind_to_environ(environ)
             try:
-                endpoint, values = adapter.match(request.path)
+                endpoint, values = adapter.match()
                 handler = getattr(views, endpoint)
                 response = handler(request, **values)
             except HTTPException, e:
                 response = e
             return ClosingIterator(response(environ, start_response),
-                                   [Session.remove, local_manager.cleanup])
+                                   [session.remove, local_manager.cleanup])
 
 That's a lot of code for the beginning!  Let's go through it step by step.
 First we have a couple of imports:  From SQLAlchemy we import a factory
 function that creates a new database engine for us.  A database engine holds
 a pool of connections for us and manages them.  The next few imports pull some
 objects into the namespace Werkzeug provides: a request object, a special
-iterator class that helps us cleaning up stuff at the request end, a helper
-function that imports objects based on a string and finally the base class for
-all HTTP exceptions.
+iterator class that helps us cleaning up stuff at the request end and finally
+the base class for all HTTP exceptions.
 
 The next five imports are not working because we don't have the utils module
 written yet.  However we should cover some of the objects already.  The
-`Session` object pulled from there is not a PHP-like session object but a
+`session` object pulled from there is not a PHP-like session object but a
 SQLAlchemy database session object.  Basically a database session object keeps
 track of yet uncommited objects for the database.  Unlike Django, an
 instanciated SQLAlchemy model is already tracked by the session!  The metadata
@@ -164,7 +170,7 @@ The `init_database` function defined below can be used to create all the
 tables we use.
 
 And then comes the request dispatching function.  In there we create a new
-request object by passing the environment to the `BaseRequest` constructor.
+request object by passing the environment to the `Request` constructor.
 Once again we bind the application to the local object, this time, however,
 we have to do this, otherwise things will break soon.
 
@@ -215,7 +221,7 @@ the following code goes into the ``shorty/utils.py`` file:
     application = local('application')
 
     metadata = MetaData()
-    Session = scoped_session(lambda: create_session(application.database_engine,
+    session = scoped_session(lambda: create_session(application.database_engine,
                              transactional=True), local_manager.get_ident)
 
     url_map = Map()
@@ -319,7 +325,7 @@ just have one model and table:
 
     from datetime import datetime
     from sqlalchemy import Table, Column, String, Boolean, DateTime
-    from shorty.utils import Session, metadata, url_for, get_random_uid
+    from shorty.utils import session, metadata, url_for, get_random_uid
 
     url_table = Table('urls', metadata,
         Column('uid', String(140), primary_key=True),
@@ -348,7 +354,7 @@ just have one model and table:
         def __repr__(self):
             return '<URL %r>' % self.uid
 
-    Session.mapper(URL, url_table)
+    session.mapper(URL, url_table)
 
 This module is pretty straightforward.  We import all the stuff we need from
 SQLAlchemy and create a table.  Then we add a class for this table and we map
@@ -374,7 +380,7 @@ database and play around with the stuff using ``python manage.py shell``:
 .. sourcecode:: pycon
 
     Interactive Werkzeug Shell
-    >>> from shorty.models import Session, URL
+    >>> from shorty.models import session, URL
 
 Now we can add some URLs to the database:
 
@@ -383,7 +389,7 @@ Now we can add some URLs to the database:
     >>> urls = [URL('http://example.org/'), URL('http://localhost:5000/')]
     >>> URL.query.all()
     []
-    >>> Session.commit()
+    >>> session.commit()
     >>> URL.query.all()
     [<URL '5cFbsk'>, <URL 'mpugsT'>]
 
@@ -393,7 +399,7 @@ Let's create a private item with a custom uid:
 .. sourcecode:: pycon
 
     >>> URL('http://werkzeug.pocoo.org/', False, 'werkzeug-webpage')
-    >>> Session.commit()
+    >>> session.commit()
 
 And query them all:
 
@@ -430,7 +436,7 @@ empty ``views.py`` file:
 
     from werkzeug import redirect
     from werkzeug.exceptions import NotFound
-    from shorty.utils import Session, render_template, expose, validate_url, \
+    from shorty.utils import session, render_template, expose, validate_url, \
          url_for
     from shorty.models import URL
 
@@ -451,7 +457,7 @@ empty ``views.py`` file:
                     error = 'The alias you have requested exists already'
             if not error:
                 uid = URL(url, 'private' not in request.form, alias).uid
-                Session.commit()
+                session.commit()
                 return redirect(url_for('display', uid=uid))
         return render_template('new.html', error=error, url=url)
 
@@ -520,6 +526,7 @@ object, the other one validates a URL.  So let's add those to ``utils.py``:
 
     for os import path    
     from urlparse import urlparse
+    from werkzeug import Response
     from jinja import Environment, FileSystemLoader
 
     ALLOWED_SCHEMES = frozenset(['http', 'https', 'ftp', 'ftps'])
@@ -528,8 +535,8 @@ object, the other one validates a URL.  So let's add those to ``utils.py``:
     jinja_env.globals['url_for'] = url_for
 
     def render_template(template, **context):
-        return BaseResponse(jinja_env.get_template(template).render(**context),
-                            mimetype='text/html')
+        return Response(jinja_env.get_template(template).render(**context),
+                        mimetype='text/html')
 
     def validate_url(url):
         return urlparse(url)[0] in ALLOWED_SCHEMES

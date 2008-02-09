@@ -16,7 +16,7 @@ import re
 
 class UserAgentParser(object):
     """
-    A simple user agent parser.
+    A simple user agent parser.  Used by the `UserAgent`.
     """
     platforms = re.compile('|'.join(['(?P<%s>%s)' % i[::-1] for i in (
         (r'darwin|mac|os\s*x', 'macos'),
@@ -49,8 +49,6 @@ class UserAgentParser(object):
         ('k-meleon', 'kmeleon'),
         ('netscape', 'netscape'),
         (r'msie|microsoft\s+internet\s+explorer', 'msie'),
-        (r'playstation\s+portable', 'psp'),
-        (r'playstation\s*3', 'ps3'),
         ('lynx', 'lynx'),
         ('links', 'links'),
         ('seamonkey|mozilla', 'seamonkey')
@@ -83,12 +81,7 @@ class UserAgentParser(object):
             language = match.group(1) or match.group(2)
         else:
             language = None
-        return {
-            'platform':     platform,
-            'browser':      browser,
-            'version':      version,
-            'language':     language
-        }
+        return platform, browser, version, language
 
 
 class UserAgent(object):
@@ -97,6 +90,7 @@ class UserAgent(object):
     string and you can inspect some of the details from the user agent
     string via the attributes.  The following attribute exist:
 
+    -   `string`, the raw user agent string
     -   `platform`, the browser platform
     -   `browser`, the name of the browser
     -   `version`, the version of the browser
@@ -108,7 +102,8 @@ class UserAgent(object):
         if isinstance(environ_or_string, dict):
             environ_or_string = environ_or_string.get('HTTP_USER_AGENT', '')
         self.string = environ_or_string
-        self.__dict__.update(self._parse(environ_or_string))
+        self.platform, self.browser, self.version, self.language = \
+            self._parse(environ_or_string)
 
     def to_header(self):
         return self.string
@@ -129,5 +124,7 @@ class UserAgent(object):
 
 # conceptionally this belongs in this module but because we want to lazily
 # load the user agent module (which happens in wrappers.py) we have to import
-# it afterwards
+# it afterwards.  The class itself has the module set to this module so
+# pickle, inspect and similar modules treat the object as if it was really
+# implemented here.
 from werkzeug.wrappers import UserAgentMixin

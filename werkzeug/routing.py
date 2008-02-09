@@ -85,6 +85,11 @@
     `HTTPException` so you can use those errors as responses in the
     application.
 
+    If matching succeeded but the URL rule was incompatible to the given
+    method (for example there were only rules for `GET` and `HEAD` and
+    routing system tried to match a `POST` request) a `MethodNotAllowed`
+    method is raised.
+
 
     :copyright: 2007-2008 by Armin Ronacher, Leif K-Brooks.
     :license: BSD, see LICENSE for more details.
@@ -95,7 +100,7 @@ from urlparse import urljoin
 from itertools import izip
 
 from werkzeug.utils import url_encode, url_quote, redirect, format_string
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 try:
     set
 except NameError:
@@ -198,16 +203,17 @@ class RequestSlash(RoutingException):
     """
 
 
-class BuildError(RoutingException, NotFound, LookupError):
+class BuildError(RoutingException, LookupError):
     """
     Raised if the build system cannot find a URL for an endpoint with the
     values provided.
     """
 
-    def __init__(self, endpoint, values):
-        LookupError.__init__(self, endpoint, values)
+    def __init__(self, endpoint, values, method):
+        LookupError.__init__(self, endpoint, values, method)
         self.endpoint = endpoint
         self.values = values
+        self.method = method
 
 
 class ValidationError(ValueError):
@@ -412,9 +418,12 @@ class Rule(RuleFactory):
             ])
 
     `methods`
-        A sequence of http methods this rule applies to. If not specified, all
+        A sequence of http methods this rule applies to.  If not specified, all
         methods are allowed. For example this can be useful if you want different
-        endpoints for `POST` and `GET`.
+        endpoints for `POST` and `GET`.  If methods are defined and the path
+        matches but the method matched against is not in this list or in the
+        list of another rule for that path the error raised is of the type
+        `MethodNotAllowed` rather than `NotFound`.
 
     `strict_slashes`
         Override the `Map` setting for `strict_slashes` only for this rule. If
@@ -441,10 +450,7 @@ class Rule(RuleFactory):
         if methods is None:
             self.methods = None
         else:
-            self.methods = m = []
-            for method in methods:
-                m.append(method.upper())
-            self.methods.sort(lambda a, b: cmp(len(b), len(a)))
+            self.methods = set([x.upper() for x in methods])
         self.endpoint = endpoint
         self.greediness = 0
 
@@ -505,17 +511,11 @@ class Rule(RuleFactory):
         if not self.is_leaf:
             self._trace.append((False, '/'))
 
-        if self.methods is None:
-            method_re = '[^>]*'
-        else:
-            method_re = '|'.join([re.escape(x) for x in self.methods])
-
         if not self.build_only:
-            regex = r'^%s%s\((?:%s)\)$' % (
+            regex = r'^%s%s$' % (
                 u''.join(regex_parts),
                 (not self.is_leaf or not self.strict_slashes) and \
-                    '(?<!/)(?P<__suffix__>/?)' or '',
-                method_re
+                    '(?<!/)(?P<__suffix__>/?)' or ''
             )
             self._regex = re.compile(regex, re.UNICODE)
 
@@ -1076,11 +1076,9 @@ class MapAdapter(object):
             path_info = self.path_info
         if not isinstance(path_info, unicode):
             path_info = path_info.decode(self.map.charset, 'ignore')
-        path = u'%s|/%s(%s)' % (
-            self.subdomain,
-            path_info.lstrip('/'),
-            (method or self.default_method).upper()
-        )
+        method = (method or self.default_method).upper()
+        path = u'%s|/%s' % (self.subdomain, path_info.lstrip('/'))
+        have_match_for = set()
         for rule in self.map._rules:
             try:
                 rv = rule.match(path)
@@ -1093,6 +1091,9 @@ class MapAdapter(object):
                     path_info.lstrip('/')
                 )))
             if rv is None:
+                continue
+            if rule.methods is not None and method not in rule.methods:
+                have_match_for.update(rule.methods)
                 continue
             if self.map.redirect_defaults:
                 for r in self.map._rules_by_endpoint[rule.endpoint]:
@@ -1108,6 +1109,8 @@ class MapAdapter(object):
                             path.lstrip('/')
                         )))
             return rule.endpoint, rv
+        if have_match_for:
+            raise MethodNotAllowed(valid_methods=list(have_match_for))
         raise NotFound()
 
     def test(self, path_info=None, method=None):
@@ -1176,7 +1179,7 @@ class MapAdapter(object):
                 if rv is not None:
                     break
         else:
-            raise BuildError(endpoint, values)
+            raise BuildError(endpoint, values, method)
         subdomain, path = rv
         if not force_external and subdomain == self.subdomain:
             return str(urljoin(self.script_name, path.lstrip('/')))
