@@ -11,7 +11,7 @@ setup(
     name='Werkzeug',
     version='0.2',
     url='http://werkzeug.pocoo.org/',
-    download_url='http://trac.pocoo.org/repos/werkzeug/trunk',
+    download_url='http://dev.pocoo.org/hg/werkzeug-main',
     license='BSD',
     author='Armin Ronacher',
     author_email='armin.ronacher@active-4.com',

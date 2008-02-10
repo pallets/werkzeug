@@ -4,7 +4,7 @@
     ~~~~~~~~~~~~~~~~~~~~~~~
 
     This module implements a `IterIO` that converts an iterator into a stream
-    object and the other way round.  Converting streams into interators
+    object and the other way round.  Converting streams into iterators
     requires the `greenlet`_ module.
 
 
