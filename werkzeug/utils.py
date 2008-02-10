@@ -979,24 +979,25 @@ class Href(object):
 
     >>> bar_href = href.bar
     >>> bar_href("blub")
-    /foo/bar/blub
+    '/foo/bar/blub'
     """
 
     def __init__(self, base='./', charset='utf-8'):
         if not base:
             base = './'
-        elif not base.endswith('/'):
-            base += '/'
         self.base = base
         self.charset = charset
 
     def __getattr__(self, name):
         if name[:2] == '__':
             raise AttributeError(name)
-        return Href(urlparse.urljoin(self.base, name), self.charset)
+        base = self.base
+        if base[-1:] != '/':
+            base += '/'
+        return Href(urlparse.urljoin(base, name), self.charset)
 
     def __call__(self, *path, **query):
-        if not query:
+        if query:
             if path and isinstance(path[-1], dict):
                 query, path = path[-1], path[:-1]
             else:
@@ -1004,9 +1005,14 @@ class Href(object):
                               for k, v in query.items()])
         path = '/'.join([url_quote(x, self.charset) for x in path
                          if x is not None]).lstrip('/')
+        rv = self.base
+        if path:
+            if not rv.endswith('/'):
+                rv += '/'
+            rv = urlparse.urljoin(rv, path)
         if query:
-            path += '?' + query
-        return urlparse.urljoin(self.base, path)
+            rv += '?' + url_encode(query, self.charset)
+        return str(rv)
 
 
 class cached_property(object):
@@ -1314,6 +1320,8 @@ def url_quote(s, charset='utf-8', safe='/:'):
     """
     if isinstance(s, unicode):
         s = s.encode(charset)
+    elif not isinstance(s, str):
+        s = str(s)
     return urllib.quote(s, safe=safe)
 
 
@@ -1324,6 +1332,8 @@ def url_quote_plus(s, charset='utf-8', safe=''):
     """
     if isinstance(s, unicode):
         s = s.encode(charset)
+    elif not isinstance(s, str):
+        s = str(s)
     return urllib.quote_plus(s, safe=safe)
 
 

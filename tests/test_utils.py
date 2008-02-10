@@ -244,6 +244,9 @@ def test_quoting():
            'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
 
+test_href_tool = '>>> from werkzeug import Href\n\n' + Href.__doc__
+
+
 def test_escape():
     assert escape(None) == ''
     assert escape(42) == '42'
@@ -370,3 +373,19 @@ def test_import_string():
 def test_find_modules():
     assert list(find_modules('werkzeug.debug')) == ['werkzeug.debug.render',
                                                     'werkzeug.debug.util']
+
+
+def test_html_builder():
+    assert html.p('Hello World') == '<p>Hello World</p>'
+    assert html.a('Test', href='#') == '<a href="#">Test</a>'
+    assert html.br() == '<br>'
+    assert xhtml.br() == '<br />'
+    assert html.img(src='foo') == '<img src="foo">'
+    assert xhtml.img(src='foo') == '<img src="foo" />'
+    assert html.html(
+        html.head(
+            html.title('foo'),
+            html.script(type='text/javascript')
+        )
+    ) == '<html><head><title>foo</title><script type="text/javascript">' \
+         '</script></head></html>'
