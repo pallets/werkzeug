@@ -991,6 +991,8 @@ class Href(object):
         self.charset = charset
 
     def __getattr__(self, name):
+        if name[:2] == '__':
+            raise AttributeError(name)
         return Href(urlparse.urljoin(self.base, name), self.charset)
 
     def __call__(self, *path, **query):
@@ -1181,6 +1183,8 @@ class HTMLBuilder(object):
         return escape(s)
 
     def __getattr__(self, tag):
+        if tag[:2] == '__':
+            raise AttributeError(tag)
         def proxy(*children, **arguments):
             buffer = ['<' + tag]
             write = buffer.append
