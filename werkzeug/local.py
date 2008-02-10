@@ -10,14 +10,14 @@
     application is not thread safe any longer.
 
     The python standard library comes with a utility called "thread locals".
-    A thread local is an global object where you can put stuff on and get back
-    later in a thread safe way.  That means whenver you set or get an object
+    A thread local is a global object where you can put stuff on and get back
+    later in a thread safe way.  That means whenever you set or get an object
     to / from a thread local object the thread local object checks in which
     thread you are and delivers the correct value.
 
     This however has a few disadvantages.  For example beside threads there
     are other ways to handle concurrency in Python.  A very popular approach
-    are greenlets.  And also if every request gets its own thread is not
+    are greenlets.  Also, whether every request gets its own thread is not
     guaranteed in WSGI.  It could be that a request is reusing a thread from
     before and data is left in the thread local object.
 
