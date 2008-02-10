@@ -142,7 +142,7 @@ TEMPLATE = Template(ur'''\
       <h1>WSGI Information</h1>
       <p>
         This page displays all available information about the WSGI server and
-        the underlaying Python interpreter that are available.
+        the underlying Python interpreter that are available.
       </p>
       <h2 id="python-interpreter">Python Interpreter</h2>
       <table>

@@ -3,8 +3,8 @@
     werkzeug.utils
     ~~~~~~~~~~~~~~
 
-    This module implements various utilities for WSGI applciations.  Most of
-    them are used by the request and response wrappers but espeically for
+    This module implements various utilities for WSGI applications.  Most of
+    them are used by the request and response wrappers but especially for
     middleware development it makes sense to use them without the wrappers.
 
     :copyright: 2007-2008 by Armin Ronacher, Georg Brandl.
