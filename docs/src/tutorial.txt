@@ -267,8 +267,8 @@ The `url_for` function, which we have there too, provides a simple way to
 generate URLs by endpoint.  We will use it in the views and our model later.
 
 
-Intermission: And Now to Something Completely Different
-=======================================================
+Intermission: And Now For Something Completely Different
+========================================================
 
 Now that we have finished the foundation for the application we could relax
 and do something completely different: management scripts.  Most of the time
