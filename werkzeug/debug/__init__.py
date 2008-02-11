@@ -20,7 +20,7 @@ from werkzeug.utils import url_decode
 
 
 try:
-    system_exceptions = (GeneratorExist,)
+    system_exceptions = (GeneratorExit,)
 except NameError:
     system_exceptions = ()
 system_exceptions += (SystemExit, KeyboardInterrupt)
