@@ -317,7 +317,35 @@ def test_run_wsgi_app():
     assert app_iter.next() == '2'
     assert app_iter.next() == '3'
     raises(StopIteration, app_iter.next)
+
+    got_close = []
+    class CloseIter(object):
+        def __init__(self):
+            self.iterated = False
+        def __iter__(self):
+            return self
+        def close(self):
+            got_close.append(None)
+        def next(self):
+            if self.iterated:
+                raise StopIteration()
+            self.iterated = True
+            return 'bar'
+
+    def bar(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return CloseIter()
+
+    app_iter, status, headers = run_wsgi_app(bar, {})
+    assert status == '200 OK'
+    assert headers == [('Content-Type', 'text/plain')]
+    assert app_iter.next() == 'bar'
+    raises(StopIteration, app_iter.next)
     app_iter.close()
+
+    assert run_wsgi_app(bar, {}, True)[0] == ['bar']
+
+    assert len(got_close) == 2
 
 
 def test_date_funcs():

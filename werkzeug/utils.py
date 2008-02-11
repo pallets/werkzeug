@@ -1813,7 +1813,7 @@ def run_wsgi_app(app, environ, buffered=False):
     """
     Return a tuple in the form (app_iter, status, headers) of the application
     output.  This works best if you pass it an application that returns a
-    generator all the time.
+    iterator all the time.
 
     Sometimes applications may use the `write()` callable returned
     by the `start_response` function.  This tries to resolve such edge
@@ -1833,11 +1833,11 @@ def run_wsgi_app(app, environ, buffered=False):
         return buffer.append
 
     app_iter = app(environ, start_response)
-    close_func = getattr(app_iter, 'close', None)
 
     # when buffering we emit the close call early and conver the
     # application iterator into a regular list
     if buffered:
+        close_func = getattr(app_iter, 'close', None)
         try:
             app_iter = list(app_iter)
         finally:
@@ -1853,7 +1853,8 @@ def run_wsgi_app(app, environ, buffered=False):
             buffer.append(app_iter.next())
         if buffer:
             app_iter = chain(buffer, app_iter)
-        if close_func is not None:
-            app_iter = ClosingIterator(app_iter, close_func)
+            close_func = getattr(app_iter, 'close', None)
+            if close_func is not None:
+                app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], response[1]
