@@ -52,7 +52,7 @@ def _log(type, message, *args, **kwargs):
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
 
-def _patch_func(old, new):
+def _patch_wrapper(old, new):
     """
     Helper function that forwards all the function details to the
     decorated function.
@@ -1642,7 +1642,7 @@ def responder(f):
         def application(environ, start_response):
             return Response('Hello World!')
     """
-    return _patch_func(f, lambda *a: f(*a)(*a[-2:]))
+    return _patch_wrapper(f, lambda *a: f(*a)(*a[-2:]))
 
 
 def import_string(import_name, silent=False):
