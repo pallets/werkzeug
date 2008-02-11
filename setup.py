@@ -52,7 +52,6 @@ is installable via `easy_install` with ``easy_install Werkzeug==dev``.
 """
 import os
 import ez_setup
-from inspect import getdoc
 ez_setup.use_setuptools()
 
 from setuptools import setup, Feature
