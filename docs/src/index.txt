@@ -37,6 +37,8 @@ Documentation regarding the Werkzeug modules:
 
 - `Debugging System <debug.txt>`_ --- an interactive debugger.
 
+- `Serving Applications <serving.txt>`_ --- serving WSGI applications.
+
 - `API Stability <api_stability.txt>`_ --- API stability
 
 
@@ -46,8 +48,6 @@ General Development Information
 This part of the documentation mainly explains how to develop WSGI
 applications.  This is also interesting if you don't want to use
 Werkzeug but other WSGI utilities; the ideas are the same.
-
-- `Serving WSGI Applications <serving.txt>`_ --- serving WSGI applications.
 
 - `How WSGI Works <wsgihowto.txt>`_ --- short introduction to WSGI and
   Werkzeug.
