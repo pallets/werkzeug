@@ -70,70 +70,24 @@ TEMPLATE = Template(ur'''\
   <head>
     <title>WSGI Information</title>
     <style type="text/css">
-      body {
-        font-family: sans-serif;
-        background-color: #333;
-        text-align: center;
-        margin: 1em;
-        padding: 0;
-      }
-
-      #logo {
-        float: right;
-        padding: 10px;
-      }
-
-      div.box {
-        text-align: left;
-        width: 45em;
-        padding: 1em;
-        margin: 0 auto 0 auto;
-        border: 1px solid black;
-        background-color: white;
-      }
-
-      h1 {
-        color: #444;
-        font-size: 2em;
-        margin: 0 0 1em 0;
-        font-family: 'Georgia', serif;
-      }
-
-      h2 {
-        color: #333;
-        font-size: 1.4em;
-        margin: 1em 0 0.5em 0;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        border: 1px solid #ccc;
-      }
-
-      table th {
-        background-color: #555;
-        color: white;
-        font-size: 0.7em;
-        font-weight: normal;
-        width: 18em;
-        padding: 0.5em 0 0.1em 0.5em;
-        vertical-align: top;
-      }
-
-      table td {
-        border: 1px solid #ccc;
-        padding: 0.1em 0 0.1em 0.5em;
-      }
-
-      table td code {
-        font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans', monospace;
-        font-size: 0.7em;
-      }
-
-      ul li {
-        line-height: 1.5em;
-      }
+      body      { font-family: sans-serif; background-color: #333;
+                  text-align: center; margin: 1em; padding: 0; }
+      #logo     { float: right; padding: 10px; }
+      div.box   { text-align: left; width: 45em; padding: 1em;
+                  margin: 0 auto 0 auto; border: 1px solid black;
+                  background-color: white; }
+      h1        { color: #444; font-size: 2em; margin: 0 0 1em 0;
+                  font-family: 'Georgia', serif; }
+      h2        { color: #333; font-size: 1.4em; margin: 1em 0 0.5em 0; }
+      table     { width: 100%; border-collapse: collapse;
+                  border: 1px solid #ccc; }
+      table th  { background-color: #555; color: white; font-size: 0.7em;
+                  font-weight: normal; width: 18em; vertical-align: top;
+                  padding: 0.5em 0 0.1em 0.5em; }
+      table td  { border: 1px solid #ccc; padding: 0.1em 0 0.1em 0.5em; }
+      table td code { font-family: 'Consolas', 'Monaco',
+                  'Bitstream Vera Sans', monospace; font-size: 0.7em; }
+      ul li     { line-height: 1.5em; }
     </style>
   </head>
   <body>
@@ -183,7 +137,7 @@ TEMPLATE = Template(ur'''\
     </div>
   </body>
 </html>
-''', unicode_mode=False)
+''')
 
 
 def test_app(environ, start_response):

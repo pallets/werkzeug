@@ -51,6 +51,7 @@ HTTP_STATUS_CODES = {
     205:    'Reset Content',
     206:    'Partial Content',
     207:    'Multi Status',
+    226:    'IM Used',              # see RFC 3229
     300:    'Multiple Choices',
     301:    'Moved Permanently',
     302:    'Found',
@@ -60,7 +61,7 @@ HTTP_STATUS_CODES = {
     307:    'Temporary Redirect',
     400:    'Bad Request',
     401:    'Unauthorized',
-    402:    'Payment Required', # unused
+    402:    'Payment Required',     # unused
     403:    'Forbidden',
     404:    'Not Found',
     405:    'Method Not Allowed',
@@ -80,7 +81,7 @@ HTTP_STATUS_CODES = {
     423:    'Locked',
     424:    'Failed Dependency',
     426:    'Upgrade Required',
-    449:    'Retry With', # propritary MS extension
+    449:    'Retry With',           # propritary MS extension
     500:    'Internal Server Error',
     501:    'Not Implemented',
     502:    'Bad Gateway',

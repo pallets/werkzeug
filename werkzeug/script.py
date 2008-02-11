@@ -273,5 +273,6 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
         if debugger:
             from werkzeug.debug import DebuggedApplication
             app = DebuggedApplication(app, evalex)
-        run_simple(hostname, port, app, reloader, None, threaded, processes)
+        run_simple(hostname, port, app, reloader, None, 1, threaded,
+                   processes)
     return action

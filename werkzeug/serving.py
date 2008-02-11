@@ -46,61 +46,71 @@ import socket
 import sys
 import time
 import thread
+from itertools import chain
 from werkzeug.utils import _log
-from wsgiref.simple_server import ServerHandler, WSGIRequestHandler, \
-     WSGIServer
+try:
+    from wsgiref.simple_server import ServerHandler, WSGIRequestHandler, \
+         WSGIServer
+    have_wsgiref = True
+except ImportError:
+    have_wsgiref = False
 from SocketServer import ThreadingMixIn, ForkingMixIn
 
 
-class BaseRequestHandler(WSGIRequestHandler):
-    """
-    Subclass of the normal request handler that thinks it is
-    threaded or something like that. The default wsgiref handler
-    has wrong information so we need this class.
-    """
-    multithreaded = False
-    multiprocess = False
-    _handler_class = None
+if have_wsgiref:
+    class BaseRequestHandler(WSGIRequestHandler):
+        """
+        Subclass of the normal request handler that thinks it is
+        threaded or something like that. The default wsgiref handler
+        has wrong information so we need this class.
+        """
+        multithreaded = False
+        multiprocess = False
+        _handler_class = None
 
-    def get_handler(self):
-        handler = self._handler_class
-        if handler is None:
-            class handler(ServerHandler):
-                wsgi_multithread = self.multithreaded
-                wsgi_multiprocess = self.multiprocess
-            self._handler_class = handler
+        def get_handler(self):
+            handler = self._handler_class
+            if handler is None:
+                class handler(ServerHandler):
+                    wsgi_multithread = self.multithreaded
+                    wsgi_multiprocess = self.multiprocess
+                self._handler_class = handler
 
-        rv = handler(self.rfile, self.wfile, self.get_stderr(),
-                     self.get_environ())
-        rv.request_handler = self
-        return rv
+            rv = handler(self.rfile, self.wfile, self.get_stderr(),
+                         self.get_environ())
+            rv.request_handler = self
+            return rv
 
-    def handle(self):
-        self.raw_requestline = self.rfile.readline()
-        if self.parse_request():
-            self.get_handler().run(self.server.get_app())
+        def handle(self):
+            self.raw_requestline = self.rfile.readline()
+            if self.parse_request():
+                self.get_handler().run(self.server.get_app())
 
-    def log_request(self, code='-', size='-'):
-        _log('info', '%s -- [%s] %s %s',
-            self.address_string(),
-            self.requestline,
-            code,
-            size
-        )
+        def log_request(self, code='-', size='-'):
+            _log('info', '%s -- [%s] %s %s',
+                self.address_string(),
+                self.requestline,
+                code,
+                size
+            )
 
-    def log_error(self, format, *args):
-        _log('error', 'Error: %s', format % args)
+        def log_error(self, format, *args):
+            _log('error', 'Error: %s', format % args)
 
-    def log_message(self, format, *args):
-        _log('info', format, args)
+        def log_message(self, format, *args):
+            _log('info', format, args)
 
 
 def make_server(host, port, app=None, threaded=False, processes=1,
-                request_handler=BaseRequestHandler):
+                request_handler=None):
     """
     Create a new wsgiref server that is either threaded, or forks
     or just processes one request after another.
     """
+    if not have_wsgiref:
+        raise RuntimeError('All the Werkzeug serving features require '
+                           'an installed wsgiref library.')
+    request_handler = request_handler or BaseRequestHandler
     if threaded and processes > 1:
         raise ValueError("cannot have a multithreaded and "
                          "multi process server.")
@@ -122,38 +132,44 @@ def make_server(host, port, app=None, threaded=False, processes=1,
     return srv
 
 
-def reloader_loop(extra_files):
+def reloader_loop(extra_files=None, interval=1):
     """When this function is run from the main thread, it will force other
     threads to exit when any modules currently loaded change.
 
+    Copyright notice.  This function is based on the autoreload.py from
+    the CherryPy trac which originated from WSGIKit which is now dead.
+
     :param extra_files: a list of additional files it should watch.
     """
+    def iter_module_files():
+        for module in sys.modules.values():
+            filename = getattr(module, '__file__', None)
+            if filename:
+                while not os.path.isfile(filename):
+                    filename = os.path.dirname(filename)
+                    if not filename:
+                        break
+                else:
+                    if filename[-4:] in ('.pyc', '.pyo'):
+                        filename = filename[:-1]
+                    yield filename
+
     mtimes = {}
-    while True:
-        for filename in filter(None, [getattr(module, '__file__', None)
-                                      for module in sys.modules.values()] +
-                                     extra_files):
-            while not os.path.isfile(filename):
-                filename = os.path.dirname(filename)
-                if not filename:
-                    break
-            if not filename:
-                continue
-
-            if filename[-4:] in ('.pyc', '.pyo'):
-                filename = filename[:-1]
-
+    while 1:
+        for filename in chain(iter_module_files(), extra_files or ()):
             try:
                 mtime = os.stat(filename).st_mtime
             except OSError:
                 continue
 
-            if filename not in mtimes:
+            old_time = mtimes.get(filename)
+            if old_time is None:
                 mtimes[filename] = mtime
                 continue
-            if mtime > mtimes[filename]:
+            elif mtime > old_time:
+                _log('info', ' * Detected change in %r, reloading' % filename)
                 sys.exit(3)
-        time.sleep(1)
+        time.sleep(interval)
 
 
 def restart_with_reloader():
@@ -173,14 +189,14 @@ def restart_with_reloader():
             return exit_code
 
 
-def run_with_reloader(main_func, extra_watch):
+def run_with_reloader(main_func, extra_files=None, interval=1):
     """
     Run the given function in an independent python interpreter.
     """
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         thread.start_new_thread(main_func, ())
         try:
-            reloader_loop(extra_watch)
+            reloader_loop(extra_files, interval)
         except KeyboardInterrupt:
             return
     try:
@@ -190,10 +206,29 @@ def run_with_reloader(main_func, extra_watch):
 
 
 def run_simple(hostname, port, application, use_reloader=False,
-               extra_files=None, threaded=False, processes=1,
-               request_handler=BaseRequestHandler):
+               extra_files=None, reloader_interval=1, threaded=False,
+               processes=1, request_handler=None):
     """
-    Start an application using wsgiref and with an optional reloader.
+    Start an application using wsgiref and with an optional reloader.  This
+    wraps `wsgiref` to fix the wrong default reporting of the multithreaded
+    WSGI variable and adds optional multithreading and fork support.
+
+    :param hostname: The host for the application.  eg: ``'localhost'``
+    :param port: The port for the server.  eg: ``8080``
+    :param application: the WSGI application to execute
+    :param use_reloader: should the server automatically restart the python
+                         process if modules were changed?
+    :param extra_files: a list of files the reloader should listen for
+                        additionally to the modules.  For example configuration
+                        files.
+    :param reloader_interval: the interval for the reloader in seconds.
+    :param threaded: should the process handle each request in a separate
+                     thread?
+    :param processes: number of processes to spawn.
+    :param request_handler: optional parameter that can be used to replace
+                            the default wsgiref request handler.  Have a look
+                            at the `werkzeug.serving` sourcecode for more
+                            details.
     """
     def inner():
         srv = make_server(hostname, port, application, threaded,
@@ -213,6 +248,6 @@ def run_simple(hostname, port, application, use_reloader=False,
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))
         test_socket.close()
-        run_with_reloader(inner, extra_files or [])
+        run_with_reloader(inner, extra_files, reloader_interval)
     else:
         inner()
