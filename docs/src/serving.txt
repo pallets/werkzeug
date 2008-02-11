@@ -34,6 +34,8 @@ application:
 You can also pass it the `extra_files` keyword argument with a list of
 additional files (like configuration files) you want to observe.
 
+.. def:: werkzeug.serving.run_simple
+
 
 .. _wsgiref: http://cheeseshop.python.org/pypi/wsgiref
 .. _Cheeseshop: http://pypi.python.org/
