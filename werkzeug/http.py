@@ -31,8 +31,8 @@ except NameError:
 
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
-_token_chars = set("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                   '^_`abcdefghijklmnopqrstuvwxyz|~')
+_token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         '^_`abcdefghijklmnopqrstuvwxyz|~')
 _token = '[%s]' % ''.join(_token_chars).replace('-', '\\-')
 _cachecontrol_re = re.compile(r'(%s+)(?:=(?:(%s+|".*?")))?' %
                               (_token, _token))
