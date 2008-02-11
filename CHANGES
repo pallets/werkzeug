@@ -4,7 +4,7 @@ Werkzeug Changelog
 
 Version 0.2
 -----------
-(codename to be selected, release date to be announced)
+(codename Faustkeil, estimated release date Feb 14th 2008)
 
 - Added `AnyConverter` to the routing system.
 - Added `werkzeug.contrib.securecookie`
@@ -40,8 +40,10 @@ Version 0.2
 - implemented `find_modules`
 - refactored request and response objects into base objects, mixins and
   full featured subclasses that implement all mixins.
+- added simple user agent parser
 - werkzeug's routing raises `MethodNotAllowed` now if it matches a
   rule but for a different method.
+- many fixes and small improvements
 
 
 Version 0.1
