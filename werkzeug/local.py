@@ -74,7 +74,7 @@ try:
     from thread import get_ident as get_current_thread, allocate_lock
 except ImportError:
     from dummy_thread import get_ident as get_current_thread, allocate_lock
-from werkzeug.utils import ClosingIterator
+from werkzeug.utils import ClosingIterator, _patch_func
 
 
 # get the best ident function.  if greenlets are not installed we can
@@ -190,14 +190,7 @@ class LocalManager(object):
         will have all the arguments copied from the inner application
         (name, docstring, module).
         """
-        new_func = self.make_middleware(func)
-        try:
-            new_func.__name__ = func.__name__
-            new_func.__doc__ = func.__doc__
-            new_func.__module__ = func.__module__
-        except:
-            pass
-        return new_func
+        return _patch_func(func, self.make_middleware(func))
 
     def __repr__(self):
         return '<%s storages: %d>' % (

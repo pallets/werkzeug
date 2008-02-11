@@ -18,7 +18,8 @@ class UserAgentParser(object):
     """
     A simple user agent parser.  Used by the `UserAgent`.
     """
-    platforms = re.compile('|'.join(['(?P<%s>%s)' % i[::-1] for i in (
+
+    platforms = (
         (r'darwin|mac|os\s*x', 'macos'),
         ('win', 'windows'),
         (r'x11|lin(\b|ux)?', 'linux'),
@@ -31,9 +32,8 @@ class UserAgentParser(object):
         ('sco|unix_sv', 'sco'),
         ('bsd', 'bsd'),
         ('amiga', 'amiga')
-    )]), re.I)
-    browsers = [(i[1], re.compile(r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)' %
-                                  i[0])) for i in (
+    )
+    browsers = (
         ('googlebot', 'google'),
         ('msnbot', 'msn'),
         ('yahoo', 'yahoo'),
@@ -52,12 +52,19 @@ class UserAgentParser(object):
         ('lynx', 'lynx'),
         ('links', 'links'),
         ('seamonkey|mozilla', 'seamonkey')
-    )]
-    lang = re.compile(
+    )
+
+    _browser_version_re = r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)'
+    _language_re = re.compile(
         r'(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|'
         r'(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)'
     )
-    del i
+
+    def __init__(self):
+        self.platforms = re.compile(r'|'.join(['(?P<%s>%s)' % (b, a) for a, b
+                                    in self.platforms]), re.I)
+        self.browsers = [(b, re.compile(self._browser_version_re % a))
+                         for a, b in self.browsers]
 
     def __call__(self, user_agent):
         match = self.platforms.search(user_agent)
@@ -76,7 +83,7 @@ class UserAgentParser(object):
                 break
         else:
             browser = version = None
-        match = self.lang.search(user_agent)
+        match = self._language_re.search(user_agent)
         if match is not None:
             language = match.group(1) or match.group(2)
         else:
@@ -96,14 +103,14 @@ class UserAgent(object):
     -   `version`, the version of the browser
     -   `language`, the language of the browser
     """
-    _parse = UserAgentParser()
+    _parser = UserAgentParser()
 
     def __init__(self, environ_or_string):
         if isinstance(environ_or_string, dict):
             environ_or_string = environ_or_string.get('HTTP_USER_AGENT', '')
         self.string = environ_or_string
         self.platform, self.browser, self.version, self.language = \
-            self._parse(environ_or_string)
+            self._parser(environ_or_string)
 
     def to_header(self):
         return self.string

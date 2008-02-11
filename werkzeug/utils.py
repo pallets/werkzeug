@@ -16,6 +16,7 @@ import sys
 import cgi
 import urllib
 import urlparse
+from itertools import chain
 from Cookie import BaseCookie, Morsel, CookieError
 from time import asctime, gmtime, time
 from datetime import datetime, timedelta
@@ -49,6 +50,21 @@ def _log(type, message, *args, **kwargs):
         _logger.addHandler(handler)
         _logger.setLevel(logging.INFO)
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
+
+
+def _patch_func(old, new):
+    """
+    Helper function that forwards all the function details to the
+    decorated function.
+    """
+    try:
+        new.__name__ = old.__name__
+        new.__module__ = old.__module__
+        new.__doc__ = old.__doc__
+        new.__dict__ = old.__dict__
+    except AttributeError:
+        pass
+    return new
 
 
 class _ExtendedMorsel(Morsel):
@@ -1626,15 +1642,7 @@ def responder(f):
         def application(environ, start_response):
             return Response('Hello World!')
     """
-    def wrapper(*args):
-        return f(*args)(*args[-2:])
-    try:
-        wrapper.__name__ = f.__name__
-        wrapper.__module__ = f.__module__
-        wrapper.__doc__ = f.__doc__
-    except:
-        pass
-    return wrapper
+    return _patch_func(f, lambda *a: f(*a)(*a[-2:]))
 
 
 def import_string(import_name, silent=False):
@@ -1811,9 +1819,10 @@ def run_wsgi_app(app, environ, buffered=False):
     by the `start_response` function.  This tries to resolve such edge
     cases automatically.  But if you don't get the expected output you
     should set `buffered` to `True` which enforces buffering.
+
+    If passed an invalid WSGI application the behavior of this function is
+    undefined.  Never pass non-conforming WSGI applications to this function.
     """
-    # TODO: only read until a response is set, then return a closing
-    # iterator that yields the buffer first and then the data.
     response = []
     buffer = []
 
@@ -1824,13 +1833,27 @@ def run_wsgi_app(app, environ, buffered=False):
         return buffer.append
 
     app_iter = app(environ, start_response)
+    close_func = getattr(app_iter, 'close', None)
 
-    if buffered or buffer or not response:
+    # when buffering we emit the close call early and conver the
+    # application iterator into a regular list
+    if buffered:
         try:
-            buffer.extend(app_iter)
+            app_iter = list(app_iter)
         finally:
-            if hasattr(app_iter, 'close'):
-                app_iter.close()
-        app_iter = buffer
+            if close_func is not None:
+                close_func()
+
+    # otherwise we iterate the application iter until we have
+    # a response, chain the already received data with the already
+    # collected data and wrap it in a new `ClosingIterator` if
+    # we have a close callable.
+    else:
+        while not response:
+            buffer.append(app_iter.next())
+        if buffer:
+            app_iter = chain(buffer, app_iter)
+        if close_func is not None:
+            app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], response[1]

@@ -303,6 +303,23 @@ def test_shared_data_middleware():
     assert ''.join(app_iter).strip() == 'NOT FOUND'
 
 
+def test_run_wsgi_app():
+    def foo(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        yield '1'
+        yield '2'
+        yield '3'
+
+    app_iter, status, headers = run_wsgi_app(foo, {})
+    assert status == '200 OK'
+    assert headers == [('Content-Type', 'text/plain')]
+    assert app_iter.next() == '1'
+    assert app_iter.next() == '2'
+    assert app_iter.next() == '3'
+    raises(StopIteration, app_iter.next)
+    app_iter.close()
+
+
 def test_date_funcs():
     assert http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
     assert cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
