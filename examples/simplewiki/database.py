@@ -33,7 +33,7 @@ def new_db_session():
 
 # and create a new global session factory.  Calling this object gives
 # you the current active session
-Session = scoped_session(new_db_session, local_manager.get_ident)
+session = scoped_session(new_db_session, local_manager.get_ident)
 
 
 # our database tables.
@@ -117,11 +117,11 @@ class RevisionedPage(Page, Revision):
 
 
 # setup mappers
-Session.mapper(Revision, revision_table)
-Session.mapper(Page, page_table, properties=dict(
+session.mapper(Revision, revision_table)
+session.mapper(Page, page_table, properties=dict(
     revisions=relation(Revision, backref='page',
                        order_by=Revision.revision_id.desc())
 ))
-Session.mapper(RevisionedPage, join(page_table, revision_table), properties=dict(
+session.mapper(RevisionedPage, join(page_table, revision_table), properties=dict(
     page_id=[page_table.c.page_id, revision_table.c.page_id],
 ))

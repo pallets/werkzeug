@@ -15,15 +15,15 @@
 from difflib import unified_diff
 from simplewiki.utils import Response, generate_template, parse_creole, \
      href, redirect, format_datetime
-from simplewiki.database import RevisionedPage, Page, Revision, Session
+from simplewiki.database import RevisionedPage, Page, Revision, session
 
 
 def on_show(request, page_name):
     """Displays the page the user requests."""
-    revision_id = request.args.get('rev')
+    revision_id = request.args.get('rev', type=int)
     query = RevisionedPage.query.filter_by(name=page_name)
-    if revision_id and revision_id.isdigit():
-        query = query.filter_by(revision_id=int(revision_id))
+    if revision_id:
+        query = query.filter_by(revision_id=revision_id)
         revision_requested = True
     else:
         query = query.order_by(RevisionedPage.revision_id.desc())
@@ -60,7 +60,7 @@ def on_edit(request, page_name):
             if page is None:
                 page = Page(page_name)
             revision = Revision(page, text, change_note)
-            Session().commit()
+            session.commit()
             return redirect(href(page.name))
 
     return Response(generate_template('action_edit.html',
@@ -160,7 +160,7 @@ def on_revert(request, page_name):
                                               change_note or '')
                     revision = Revision(page, old_revision.text,
                                         change_note)
-                    Session().commit()
+                    session.commit()
                     return redirect(href(page_name))
 
     return Response(generate_template('action_revert.html',

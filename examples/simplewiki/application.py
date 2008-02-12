@@ -14,7 +14,7 @@ from os import path
 from sqlalchemy import create_engine
 from werkzeug import ClosingIterator, SharedDataMiddleware, redirect
 from simplewiki.utils import Request, Response, local, local_manager, href
-from simplewiki.database import Session, metadata
+from simplewiki.database import session, metadata
 from simplewiki import actions
 from simplewiki.specialpages import pages, page_not_found
 
@@ -59,7 +59,6 @@ class SimpleWiki(object):
         # current context and instanciating the database session.
         self.bind_to_context()
         request = Request(environ)
-        request.db_session = Session()
         request.bind_to_context()
 
         # get the current action from the url and normalize the page name
@@ -91,7 +90,7 @@ class SimpleWiki(object):
 
         # make sure the session is removed properly
         return ClosingIterator(response(environ, start_response),
-                               Session.remove)
+                               session.remove)
 
     def __call__(self, environ, start_response):
         """Just forward a WSGI call to the first internal middleware."""

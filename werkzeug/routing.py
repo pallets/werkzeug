@@ -782,7 +782,10 @@ class UnicodeConverter(BaseConverter):
 
 class AnyConverter(BaseConverter):
     """
-    Matches multiple items from a given set.
+    Matches one of the items provided.  Items can either be Python
+    identifiers or unicode strings::
+
+        Rule('/<any(about, help, imprint, u"class"):page_name>')
     """
 
     def __init__(self, map, *items):
