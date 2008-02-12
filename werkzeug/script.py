@@ -61,7 +61,7 @@ r'''
     or as named parameters, pretty much like Python function calls.
 
 
-    :copyright: 2007-2008 by Armin Ronacher.
+    :copyright: 2007-2008 by Armin Ronacher, Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 '''
 import sys

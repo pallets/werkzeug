@@ -14,6 +14,6 @@
 
 
     :copyright: 2007-2008 by Marek Kubica, Marian Sigler, Armin Ronacher,
-                Leif K-Brooks, Ronny Pfannschmid.
+                Leif K-Brooks, Ronny Pfannschmid, Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 """

@@ -91,7 +91,8 @@
     method is raised.
 
 
-    :copyright: 2007-2008 by Armin Ronacher, Leif K-Brooks.
+    :copyright: 2007-2008 by Armin Ronacher, Leif K-Brooks,
+                             Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 """
 import sys
