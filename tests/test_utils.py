@@ -199,17 +199,17 @@ def test_cached_property():
 
     foo = []
     class A(object):
-        def prop(self):
+        def _prop(self):
             foo.append(42)
             return 42
-        prop = cached_property(prop, name='propval')
+        prop = cached_property(_prop, name='prop')
+        del _prop
 
     a = A()
     p = a.prop
     q = a.prop
-    r = a.propval
-    assert p == q == r == 42
-    assert foo == [42, 42]
+    assert p == q == 42
+    assert foo == [42]
 
 
 def test_environ_property():

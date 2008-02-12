@@ -226,10 +226,16 @@ class ValidationError(ValueError):
 
 class RuleFactory(object):
     """
-    An object that produces Rules when given a Map.
+    As soon as you have more complex URL setups it's a good idea to use rule
+    factories to avoid repetitive tasks.  Some of them are builtin, others can
+    be added by subclassing `RuleFactory` and overriding `get_rules`.
     """
 
     def get_rules(self, map):
+        """
+        Subclasses of `RuleFactory` have to override this method and return
+        an iterable of rules.
+        """
         raise NotImplementedError()
 
 
@@ -239,7 +245,7 @@ class Subdomain(RuleFactory):
     specific domain. For example if you want to use the subdomain for
     the current language this can be a good setup::
 
-        map = Map([
+        url_map = Map([
             Rule('/', endpoint='#select_language'),
             Subdomain('<string(length=2):lang_code>', [
                 Rule('/', endpoint='index'),
@@ -268,7 +274,7 @@ class Submount(RuleFactory):
     """
     Like `Subdomain` but prefixes the URL rule with a given string::
 
-        map = Map([
+        url_map = Map([
             Rule('/', endpoint='index'),
             Submount('/blog', [
                 Rule('/', endpoint='blog/index'),
@@ -295,7 +301,7 @@ class EndpointPrefix(RuleFactory):
     Prefixes all endpoints (which must be strings for this factory) with
     another string. This can be useful for sub applications::
 
-        map = Map([
+        url_map = Map([
             Rule('/', endpoint='index'),
             EndpointPrefix('blog/', [Submount('/blog', [
                 Rule('/', endpoint='index'),
@@ -319,6 +325,20 @@ class RuleTemplate(object):
     """
     Returns copies of the rules wrapped and expands string templates in
     the endpoint, rule, defaults or subdomain sections.
+
+    Here a small example for such a rule template::
+
+        from werkzeug.routing import Map, Rule, RuleTemplate
+
+        resource = RuleTemplate([
+            Rule('/$name/', endpoint='$name.list'),
+            Rule('/$name/<int:id>', endpoint='$name.show')
+        ])
+
+        url_map = Map([resource(name='user'), resource(name='page')])
+
+    When a rule template is called the keyword arguments are used to
+    replace the placeholders in all the string parameters.
     """
 
     def __init__(self, rules):
@@ -395,7 +415,7 @@ class Rule(RuleFactory):
         An optional dict with defaults for other rules with the same endpoint.
         This is a bit tricky but useful if you want to have unique URLs::
 
-            map = Map([
+            url_map = Map([
                 Rule('/all/', defaults={'page': 1}, endpoint='all_entries'),
                 Rule('/all/page/<int:page>', endpoint='all_entries')
             ])
@@ -413,7 +433,7 @@ class Rule(RuleFactory):
         Can be useful if you want to have user profiles on different subdomains
         and all subdomains are forwarded to your application::
 
-            map = Map([
+            url_map = Map([
                 Rule('/', subdomain='<username>', endpoint='user/homepage'),
                 Rule('/stats', subdomain='<username>', endpoint='user/stats')
             ])
@@ -850,33 +870,30 @@ class FloatConverter(NumberConverter):
 
 class Map(object):
     """
-    A class that collects URL rules.
+    The map class stores all the URL rules and some configuration
+    parameters.  Some of the configuration values are only stored on the
+    `Map` instance since those affect all rules, others are just defaults
+    and can be overridden for each rule.  Note that you have to specify all
+    arguments beside the `rules` as keywords arguments!
     """
 
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
                  converters=None):
         """
-        `rules`
-            sequence of url rules for this map.
+        Initializes the new URL map.
 
-        `default_subdomain`
-            The default subdomain for rules without a subdomain defined.
-
-        `charset`
-            charset of the url. defaults to ``"utf-8"``
-
-        `strict_slashes`
-            Take care of trailing slashes.
-
-        `redirect_defaults`
-            This will redirect to the default rule if it wasn't visited
-            that way. This helps creating unique urls.
-
-        `converters`
-            A dict of converters that adds additional converters to the
-            list of converters. If you redefine one converter this will
-            override the original one.
+        :param rules: sequence of url rules for this map.
+        :param default_subdomain: The default subdomain for rules without a
+                                  subdomain defined.
+        :param charset: charset of the url. defaults to ``"utf-8"``
+        :param strict_slashes: Take care of trailing slashes.
+        :param redirect_defaults: This will redirect to the default rule if it
+                                  wasn't visited that way. This helps creating
+                                  unique URLs.
+        :param converters: A dict of converters that adds additional converters
+                           to the list of converters. If you redefine one
+                           converter this will override the original one.
         """
         self._rules = []
         self._rules_by_endpoint = {}
@@ -942,10 +959,10 @@ class Map(object):
         redirect exceptions raised by Werkzeug will contain the full canonical
         URL.
 
-        **new in Werkzeug 0.2**: if no path_info is passed to match() it will
-        use the default path info passed to bind.  While this doesn't really
-        make sense for manual bind calls, it's useful if you bind a map to a
-        WSGI environment which already contains the path info.
+        If no path_info is passed to match() it will use the default path
+        info passed to bind.  While this doesn't really make sense for
+        manual bind calls, it's useful if you bind a map to a WSGI
+        environment which already contains the path info.
 
         `subdomain` will default to the `default_subdomain` for this map if
         no defined. If there is no `default_subdomain` you cannot use the
@@ -974,11 +991,11 @@ class Map(object):
         in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
         subdomain will be ``'staging.dev'``.
 
-        **new in Werkzeug 0.2**: if the object passed as environ as an environ
-        attribute, the value of this attribute is used instead.  This allows
-        you to pass request objects.  Additionally `PATH_INFO` added as a
-        default ot the `MapAdapter` so that you don't have to pass the path
-        info to the match method.
+        If the object passed as environ as an environ attribute, the value of
+        this attribute is used instead.  This allows you to pass request
+        objects.  Additionally `PATH_INFO` added as a default ot the
+        `MapAdapter` so that you don't have to pass the path info to the
+        match method.
         """
         if hasattr(environ, 'environ'):
             environ = environ.environ
@@ -1034,18 +1051,46 @@ class MapAdapter(object):
         self.path_info = path_info or u''
         self.default_method = default_method
 
-    def dispatch(self, view_func, path_info=None, method=None):
+    def dispatch(self, view_func, path_info=None, method=None,
+                 catch_http_exceptions=False):
         """
         Does the complete dispatching process.  `view_func` is called with
         the endpoint and a dict with the values for the view.  It should
         look up the view function, call it, and return a response object
-        or WSGI application.  http exceptions are not catched.
+        or WSGI application.  http exceptions are not catched by default
+        so that applications can display nicer error messages by just
+        catching them by hand.  If you want to stick with the default
+        error messages you can pass it ``catch_http_exceptions=True`` and
+        it will catch the http exceptions.
+
+        Here a small example for the dispatch usage::
+
+            from werkzeug import Request, Response, responder
+            from werkzeug.routing import Map, Rule
+
+            def on_index(request):
+                return Response('Hello from the index')
+
+            url_map = Map([Rule('/', endpoint='index')])
+            views = {'index': on_index}
+
+            @responder
+            def application(environ, start_response):
+                request = Request(environ)
+                urls = url_map.bind_to_environ(environ)
+                return urls.dispatch(lambda e, v: views[e](request, **v),
+                                     catch_http_exceptions=True)
         """
         try:
             endpoint, args = self.match(path_info, method)
         except RequestRedirect, e:
-            return e
-        return view_func(endpoint, args)
+            return e.get_response()
+        try:
+            return view_func(endpoint, args)
+        except HTTPException, e:
+            if catch_http_exceptions:
+                return e.get_response()
+            raise
 
     def match(self, path_info=None, method=None):
         """
@@ -1057,6 +1102,10 @@ class MapAdapter(object):
           matching.  A `NotFound` exception is also a WSGI application you
           can call to get a default page not found page (happens to be the
           same object as `werkzeug.exceptions.NotFound`)
+
+        - you receive a `MethodNotAllowed` exception that indicates that there
+          is a match for this URL but non for the current request method.
+          This is useful for RESTful applications.
 
         - you receive a `RequestRedirect` exception with a `new_url`
           attribute.  This exception is used to notify you about a request
@@ -1071,6 +1120,35 @@ class MapAdapter(object):
         If the path info is not passed to the match method the default path
         info of the map is used (defaults to the root URL if not defined
         explicitly).
+
+        All of the exceptions raised are subclasses of `HTTPException` so they
+        can be used as WSGI responses.  The will all render generic error or
+        redirect pages.
+
+        Here is a small example for matching:
+
+        >>> from werkzeug.routing import Map, Rule
+        >>> m = Map([
+        ...     Rule('/', endpoint='index'),
+        ...     Rule('/downloads/', endpoint='downloads/index'), 
+        ...     Rule('/downloads/<int:id>', endpoint='downloads/show')
+        ... ])
+        >>> urls = m.bind("example.com", "/")
+        >>> urls.match("/", "GET")
+        ('index', {})
+        >>> urls.match("/downloads/42")
+        ('downloads/show', {'id': 42})
+
+        And here is what happens on redirect and missing URLs:
+
+        >>> urls.match("/downloads")
+        Traceback (most recent call last):
+          ...
+        werkzeug.routing.RequestRedirect: http://example.com/downloads/
+        >>> urls.match("/missing")
+        Traceback (most recent call last):
+          ...
+        werkzeug.routing.NotFound: /missing
         """
         self.map.update()
         if path_info is None:
@@ -1162,10 +1240,9 @@ class MapAdapter(object):
         If a rule does not exist when building a `BuildError` exception is
         raised.
 
-        **new in Werkzeug 0.2**: The build method accepts an argument called
-        `method` which allows you to specify the method you want to have an
-        URL builded for if you have different methods for the same endpoint
-        specified.
+        The build method accepts an argument called `method` which allows you
+        to specify the method you want to have an URL builded for if you have
+        different methods for the same endpoint specified.
         """
         self.map.update()
         method = method or self.default_method

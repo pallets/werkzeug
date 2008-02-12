@@ -69,17 +69,15 @@ class UserAgentParser(object):
     def __call__(self, user_agent):
         match = self.platforms.search(user_agent)
         if match is not None:
-            for name, value in match.groupdict().iteritems():
+            for platform, value in match.groupdict().iteritems():
                 if value:
-                    platform = name
                     break
         else:
             platform = None
-        for name, regex in self.browsers:
+        for browser, regex in self.browsers:
             match = regex.search(user_agent)
             if match is not None:
                 version = match.group(1)
-                browser = name
                 break
         else:
             browser = version = None

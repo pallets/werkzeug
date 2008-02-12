@@ -54,7 +54,7 @@
                 return e
 
 
-    :copyright: 2007 by Armin Ronacher.
+    :copyright: 2007-2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug.utils import escape
@@ -398,8 +398,6 @@ def _find_exceptions():
         except TypeError:
             continue
     return rv
-
-
 default_exceptions = _find_exceptions()
 del _find_exceptions
 
@@ -427,6 +425,5 @@ class Aborter(object):
         if code not in self.mapping:
             raise LookupError('no exception for %r' % code)
         raise self.mapping[code](*args, **kwargs)
-
 
 abort = Aborter()

@@ -151,7 +151,7 @@ class BaseRequest(object):
         """
         return tempfile.TemporaryFile('w+b')
 
-    def _load_post_data(self):
+    def _load_form_data(self):
         """
         Method used internally to retrieve submitted data.  After calling
         this sets `_form` and `_files` on the request object to multi dicts
@@ -161,7 +161,7 @@ class BaseRequest(object):
         :internal:
         """
         self._data_stream = _empty_stream
-        post = []
+        form = []
         files = []
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
             storage = _StorageHelper(self.environ, self._get_file_stream)
@@ -176,14 +176,14 @@ class BaseRequest(object):
                         if getattr(item, 'filename', None) is not None:
                             fn = item.filename.decode(self.charset, 'ignore')
                             # fix stupid IE bug (IE6 sends the whole path)
-                            if fn[1:3] == ':\\':
+                            if fn[1:3] == ':\\' or fn[:2] == '\\\\':
                                 fn = fn.split('\\')[-1]
                             files.append((key, FileStorage(item.file, fn,
                                           key, item.type, item.length)))
                         else:
-                            post.append((key, item.value.decode(self.charset,
+                            form.append((key, item.value.decode(self.charset,
                                                                 'ignore')))
-        self._form = MultiDict(post)
+        self._form = MultiDict(form)
         self._files = MultiDict(files)
 
     def stream(self):
@@ -193,7 +193,7 @@ class BaseRequest(object):
         module after parsing.  This is *not* the WSGI input stream.
         """
         if self._data_stream is None:
-            self._load_post_data()
+            self._load_form_data()
         return self._data_stream
     stream = property(stream, doc=stream)
     input_stream = environ_property('wsgi.input', 'The WSGI input stream.')
@@ -226,7 +226,7 @@ class BaseRequest(object):
         uses a dict internally and loses the ordering.
         """
         if not hasattr(self, '_form'):
-            self._load_post_data()
+            self._load_form_data()
         return self._form
     form = property(form, doc=form.__doc__)
 
@@ -242,7 +242,7 @@ class BaseRequest(object):
         value in `files` is a Werkzeug `FileStorage` object.
         """
         if not hasattr(self, '_files'):
-            self._load_post_data()
+            self._load_form_data()
         return self._files
     files = property(files, doc=files.__doc__)
 
@@ -297,9 +297,10 @@ class BaseRequest(object):
         return get_host(self.environ)
     host = cached_property(host)
 
-    query_string = environ_property('QUERY_STRING', '', read_only=True)
-    remote_addr = environ_property('REMOTE_ADDR', read_only=True)
-    method = environ_property('REQUEST_METHOD', 'GET', read_only=True)
+    query_string = environ_property('QUERY_STRING', '', read_only=True, doc=
+        '''The URL parameters as raw bytestring.''')
+    method = environ_property('REQUEST_METHOD', 'GET', read_only=True, doc=
+        '''The transmission method. (For example ``'GET'`` or ``'POST'``).''')
 
     def access_route(self):
         """
@@ -321,24 +322,24 @@ class BaseRequest(object):
         return self.environ.get('REMOTE_ADDR')
     remote_addr = property(remote_addr)
 
-    def is_xhr(self):
-        """
+    is_xhr = property(lambda x: x.environ.get('X_REQUESTED_WITH') ==
+                      'XmlHttpRequest', doc='''
         True if the request was triggered via an JavaScript XMLHttpRequest.
         This only works with libraries that support the X-Requested-With
         header and set it to "XMLHttpRequest".  Libraries that do that are
-        prototype, jQuery and Mochikit and probably some more.
-        """
-        return self.environ.get('X_REQUESTED_WITH') == 'XmlHttpRequest'
-    is_xhr = property(is_xhr, doc=is_xhr.__doc__)
-
-    def is_secure(self):
-        """True if the request is secure."""
-        return self.environ['wsgi.url_scheme'] == 'https'
-    is_secure = property(is_secure, doc=is_secure.__doc__)
-
-    is_multithread = environ_property('wsgi.multithread')
-    is_multiprocess = environ_property('wsgi.multiprocess')
-    is_run_once = environ_property('wsgi.run_once')
+        prototype, jQuery and Mochikit and probably some more.''')
+    is_secure = property(lambda x: x.environ['wsgi.url_scheme'] == 'https',
+                         doc='`True` if the request is secure.')
+    is_multithread = environ_property('wsgi.multithread', doc='''
+        boolean that is `True` if the application is served by
+        a multithreaded WSGI server.''')
+    is_multiprocess = environ_property('wsgi.multiprocess', doc='''
+        boolean that is `True` if the application is served by
+        a WSGI server that spawns multiple processes.''')
+    is_run_once = environ_property('wsgi.run_once', doc='''
+        boolean that is `True` if the application will be executed only
+        once in a process lifetime.  This is the case for CGI for example,
+        but it's not guaranteed that the exeuction only happens one time.''')
 
 
 class BaseResponse(object):

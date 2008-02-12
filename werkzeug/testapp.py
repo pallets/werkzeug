@@ -6,7 +6,7 @@
     Provide a small test application that can be used to test a WSGI server
     and check it for WSGI compliance.
 
-    :copyright: Copyright 2007 by Armin Ronacher.
+    :copyright: Copyright 2007-2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug.templates import Template
