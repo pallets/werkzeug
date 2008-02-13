@@ -47,7 +47,7 @@ Features
 Development Version
 -------------------
 
-The `Werkzeug tip <http://dev.pocoo.org/hg/werkzeug-main/archive/tip.zip#egg=Werkzeug-dev`
+The `Werkzeug tip <http://dev.pocoo.org/hg/werkzeug-main/archive/tip.zip#egg=Werkzeug-dev>`_
 is installable via `easy_install` with ``easy_install Werkzeug==dev``.
 """
 import os
