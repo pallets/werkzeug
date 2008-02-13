@@ -1,0 +1,631 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Wrappers // Werkzeug Documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="pygments.css">
+  <link rel="stylesheet" type="text/css" media="print" href="print.css">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1><a href="index.html"><span>Werkzeug</span></a></h1>
+      <p><span>The Swiss Army Knife For Python Web Developers</span></p>
+    </div>
+    <div class="body">
+      <h2>Wrappers</h2>
+      
+      <div class="toc">
+        <h4>Table of Contents</h4>
+        <ul><li><a class="reference" href="#base-wrappers" id="id1" name="id1">Base Wrappers</a></li>
+<li><a class="reference" href="#mixin-classes" id="id2" name="id2">Mixin Classes</a></li>
+<li><a class="reference" href="#note-on-file-uploads" id="id3" name="id3">Note on File Uploads</a></li>
+</ul>
+      </div>
+      
+      <p>The wrappers are simple request and response objects which you can
+subclass to do whatever you want them to do.  The request object contains
+the information transmitted by the client (webbrowser) and the response
+object contains all the information sent back to the browser.</p>
+<p>An important detail is that the request object is created with the WSGI
+environ and will act as high-level proxy whereas the response object is an
+actual WSGI application.</p>
+<p>Like everything else in Werkzeug these objects will work correctly with
+unicode data.  Incoming form data parsed by the response object will be
+decoded into an unicode object if possible and if it makes sense.</p>
+<p>You can import all these objects directly from <cite>werkzeug</cite>.</p>
+<div class="section">
+<h3 id="base-wrappers">Base Wrappers</h3>
+<p>These objects implement a common set of operations.  They are missing fancy
+addon functionality like user agent parsing or etag handling.  These features
+are available by mixing in various mixin classes or using <cite>Request</cite> and
+<cite>Response</cite>.</p>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.BaseRequest">BaseRequest</cite></dt>
+<dd><p class="first">Very basic request object.  This does not implement advanced stuff like
+entity tag parsing or cache controls.  The request object is created with
+the WSGI environment as first argument and will add itself to the WSGI
+environment as <tt class="docutils literal"><span class="pre">'werkzeug.request'</span></tt> unless it&#8217;s created with
+<cite>populate_request</cite> set to False.</p>
+<p>There are a couple of mixins available that add additional functionality
+to the request object, there is also a class called <cite>Request</cite> which
+subclasses <cite>BaseRequest</cite> and all the important mixins.</p>
+<p>It&#8217;s a good idea to create a custom subclass of the <cite>BaseRequest</cite> and add
+missing functionality either via mixins or direct implementation.  Here
+an example for such subclasses:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">ETagRequestMixin</span>
+
+<span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="n">BaseRequest</span><span class="p">,</span> <span class="n">ETagRequestMixin</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+<p>Request objects should be considered <em>read only</em>.  Even though the object
+doesn&#8217;t enforce read only access everywhere you should never modify any
+data on the object itself unless you know exactly what you are doing.</p>
+<p><strong>Creating Request Objects</strong></p>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseRequest.__init__">__init__</cite> <tt class="func-signature docutils literal"><span class="pre">(environ,</span> <span class="pre">populate_request=True)</span></tt></dt>
+<dd>Per default the request object will be added to the WSGI enviornment
+as <cite>werkzeug.request</cite> to support the debugging system.  If you don&#8217;t
+want that, set <cite>populate_request</cite> to <cite>False</cite>.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseRequest.from_values">from_values</cite> <tt class="func-signature docutils literal"><span class="pre">(path='/',</span> <span class="pre">base_url=None,</span> <span class="pre">query_string=None,</span> <span class="pre">**options)</span></tt></dt>
+<dd><p class="first">Create a new request object based on the values provided.  If environ
+is given missing values are filled from there.  This method is useful
+for small scripts when you need to simulate a request from an URL.  Do
+not use this method for unittesting, there is a full featured client
+object in <cite>werkzeug.test</cite> that allows to create multipart requests
+etc.</p>
+<p>This accepts the same options as the <cite>create_environ</cite> function from the
+utils module and additionally an <cite>environ</cite> parameter that can contain
+values which will override the values from dict returned by
+<cite>create_environ</cite>.</p>
+<p>Additionally a dict passed to <cite>query_string</cite> will be encoded in the
+request class charset.</p>
+<p class="last"><strong>returns</strong>: request object</p>
+</dd>
+</dl>
+<p><strong>Properties</strong></p>
+<dl class="last">
+<dt><cite>path</cite></dt>
+<dd>The current path requested, relative to the position where the WSGI
+application is mounted (<cite>PATH_INFO</cite>).  It will contain a leading slash and
+will be at least a string with a single slash when accessing the URL root.</dd>
+<dt><cite>script_root</cite></dt>
+<dd>The root path for the script (<cite>SCRIPT_NAME</cite>).  Does not contain a trailing
+slash.</dd>
+<dt><cite>url</cite></dt>
+<dd>The full URL for the current request.</dd>
+<dt><cite>base_url</cite></dt>
+<dd>The current full URL without the query string.</dd>
+<dt><cite>url_root</cite></dt>
+<dd>The current URL up to the script root.</dd>
+<dt><cite>host_url</cite></dt>
+<dd>The current URL for the host.</dd>
+<dt><cite>host</cite></dt>
+<dd>The current hostname, without scheme.</dd>
+<dt><cite>is_secure</cite></dt>
+<dd>True if this is an HTTPS request.</dd>
+<dt><cite>is_multithread</cite></dt>
+<dd>True if this request was created in a multithreaded environment.</dd>
+<dt><cite>is_multiprocess</cite></dt>
+<dd>True if this request was created in a forking environment.</dd>
+<dt><cite>is_run_once</cite></dt>
+<dd>True if this request was created on the command line, a CGI script or a
+similar environment.</dd>
+<dt><cite>is_xhr</cite></dt>
+<dd>True if the request was triggered via an JavaScript XMLHttpRequest.
+This only works with libraries that support the X-Requested-With
+header and set it to &#8220;XMLHttpRequest&#8221;.  Libraries that do that are
+prototype, jQuery and Mochikit and probably some more.</dd>
+<dt><cite>method</cite></dt>
+<dd>The request method.  <cite>GET</cite>, <cite>POST</cite> etc.</dd>
+<dt><cite>args</cite></dt>
+<dd>A dictionary-like object containing all given HTTP GET parameters.  See
+the <cite>MultiDict</cite> documentation in the <a class="reference" href="utils.html">utils</a> section.</dd>
+<dt><cite>form</cite></dt>
+<dd><p class="first">A dictionary-like object containing all given HTTP POST parameters.  See
+the <cite>MultiDict</cite> documentation in the <a class="reference" href="utils.html">utils</a> section.</p>
+<p class="last">This dict does not contain uploaded files, see <cite>files</cite> regarding that.</p>
+</dd>
+<dt><cite>values</cite></dt>
+<dd>An immutable dictionary-like object containing both the <cite>args</cite> and <cite>form</cite>
+values.  See the <cite>CombinedMultiDict</cite> documentation in the <a class="reference" href="utils.html">utils</a>
+section.</dd>
+<dt><cite>cookies</cite></dt>
+<dd>A dictionary with the submitted cookie values.</dd>
+<dt><cite>files</cite></dt>
+<dd><p class="first">A dictionary-like object containing all uploaded files.  Each key in
+<cite>files</cite> is the name from the <tt class="docutils literal"><span class="pre">&lt;input</span> <span class="pre">type=&quot;file&quot;</span> <span class="pre">name=&quot;&quot;</span> <span class="pre">/&gt;</span></tt>.  Each
+value in <cite>files</cite> is a Werkzeug <cite>FileStorage</cite> object with the following
+members:</p>
+<ul class="simple">
+<li><cite>filename</cite> - The name of the uploaded file, as a Python string.</li>
+<li><cite>type</cite> - The content type of the uploaded file.</li>
+<li><cite>data</cite> - The raw content of the uploaded file.</li>
+<li><cite>read()</cite> - Read from the stream.</li>
+</ul>
+<p>Note that <cite>files</cite> will only contain data if the request method was POST
+and the <tt class="docutils literal"><span class="pre">&lt;form&gt;</span></tt> that posted to the request had
+<tt class="docutils literal"><span class="pre">enctype=&quot;multipart/form-data&quot;</span></tt>.  It will be empty otherwise.</p>
+<p class="last">See the <cite>MultiDict</cite> / <cite>FileStorage</cite> documentation in the <a class="reference" href="utils.html">utils</a>
+section for more details about the used data structure.</p>
+</dd>
+<dt><cite>environ</cite></dt>
+<dd>The WSGI environment used to create the request object.</dd>
+<dt><cite>stream</cite></dt>
+<dd>The buffered stream with incoming data from the webbrowser if the
+submitted data was not multipart or URL-encoded form data.</dd>
+<dt><cite>input_stream</cite></dt>
+<dd>The input stream provided by the client.  Used internally by the form
+data parser.  Reading from this stream must never be mixed with
+accessing <cite>stream</cite>, <cite>data</cite>, <cite>files</cite>, or <cite>form</cite>, because then it&#8217;s not
+guaranteed that more data is requested from the client than expected.
+Never read beyond <tt class="docutils literal"><span class="pre">environ['CONTENT_LENGTH']</span></tt>.</dd>
+<dt><cite>data</cite></dt>
+<dd>Accessing this the first time reads the whole <cite>stream</cite> and stores it. Keep
+in mind that this does not read the whole WSGI input stream like Django
+does.</dd>
+<dt><cite>remote_addr</cite></dt>
+<dd>The remote address for the user that created this request.  If the class
+variable <cite>is_behind_proxy</cite> is set to <cite>True</cite> (either by subclassing the
+process or overriding this variable on the instance) it will try to get
+the value from the <cite>X_HTTP_FORWARDED_FOR</cite> header.  Keep in mind that this
+is disabled by default because unless you are really behind a proxy this
+is a security problem.</dd>
+<dt><cite>access_route</cite></dt>
+<dd>If you are behind a proxy server this will list all the IP addresses that
+take place in the request.  The end user IP address is the first one in
+the list, the last proxy server is the last item in the list.  This also
+works if the <cite>is_behind_proxy</cite> class variable is set to <cite>False</cite>.</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.BaseResponse">BaseResponse</cite></dt>
+<dd><p class="first">Base response class.  The most important fact about a response object is
+that it&#8217;s a regular WSGI application.  It&#8217;s initialized with a couple of
+response parameters (headers, body, status code etc.) and will start a
+valid WSGI response when called with the environ and start response
+callable.</p>
+<p>Because it&#8217;s a WSGI application itself processing usually ends before the
+actual response is sent to the server.  This helps debugging systems
+because they can catch all the exceptions before responses are started.</p>
+<p>Here a small example WSGI application that takes advantage of the
+response objects:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">BaseResponse</span> <span class="k">as</span> <span class="n">Response</span>
+
+<span class="k">def</span> <span class="nf">index</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="s">&#39;Index page&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;PATH_INFO&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="s">&#39;/&#39;</span>
+    <span class="k">if</span> <span class="n">path</span> <span class="o">==</span> <span class="s">&#39;/&#39;</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">index</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="s">&#39;Not Found&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mf">404</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
+</pre></div>
+<p>Like <cite>BaseRequest</cite> which object is lacking a lot of functionality
+implemented in mixins.  This gives you a better control about the actual
+API of your response objects, so you can create subclasses and add custom
+functionality.  A full featured response object is available as <cite>Response</cite>
+which implements a couple of useful mixins.</p>
+<p>To enforce a new type of already existing responses you can use the
+<cite>force_type</cite> method.  This is useful if you&#8217;re working with different
+subclasses of response objects and you want to post process them with a
+know interface.</p>
+<p><strong>Creating Response Objects</strong></p>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.__init__">__init__</cite> <tt class="func-signature docutils literal"><span class="pre">(response=None,</span> <span class="pre">status=None,</span> <span class="pre">headers=None,</span> <span class="pre">mimetype=None,</span> <span class="pre">content_type=None)</span></tt></dt>
+<dd><p class="first">Response can be any kind of iterable or string.  If it&#8217;s a string it&#8217;s
+considered being an iterable with one item which is the string passed.
+headers can be a list of tuples or a <cite>Headers</cite> object.</p>
+<p class="last">Special note for <cite>mimetype</cite> and <cite>content_type</cite>.  For most mime types
+<cite>mimetype</cite> and <cite>content_type</cite> work the same, the difference affects
+only &#8216;text&#8217; mimetypes.  If the mimetype passed with <cite>mimetype</cite> is a
+mimetype starting with <cite>text/</cite> it becomes a charset parameter defined
+with the charset of the response object.  In constrast the
+<cite>content_type</cite> parameter is always added as header unmodified.</p>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.force_type">force_type</cite> <tt class="func-signature docutils literal"><span class="pre">(response,</span> <span class="pre">environ=None)</span></tt></dt>
+<dd><p class="first">Enforce that the WSGI response is a response object of the current
+type.  Werkzeug will use the <cite>BaseResponse</cite> internally in many
+situations like the exceptions.  If you call <cite>get_response</cite> on an
+exception you will get back a regular <cite>BaseResponse</cite> object, even if
+you are using a custom subclass.</p>
+<p>This method can enforce a given response type, and it will also
+convert arbitrary WSGI callables into response objects if an environ
+is provided:</p>
+<div class="syntax"><pre><span class="c"># convert a Werkzeug response object into an instance of the</span>
+<span class="c"># MyResponseClass subclass.</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">MyResponseClass</span><span class="o">.</span><span class="n">force_type</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+<span class="c"># convert any WSGI application into a request object</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">MyResponseClass</span><span class="o">.</span><span class="n">force_type</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">environ</span><span class="p">)</span>
+</pre></div>
+<p>This is especially useful if you want to post-process responses in
+the main dispatcher and use functionality provided by your subclass.</p>
+<p class="last">Keep in mind that this will modify response objects in place if
+possible!</p>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.from_app">from_app</cite> <tt class="func-signature docutils literal"><span class="pre">(app,</span> <span class="pre">environ,</span> <span class="pre">buffered=False)</span></tt></dt>
+<dd>Create a new response object from an application output.  This works
+best if you pass it an application that returns a generator all the
+time.  Sometimes applications may use the <cite>write()</cite> callable returned
+by the <cite>start_response</cite> function.  This tries to resolve such edge
+cases automatically.  But if you don&#8217;t get the expected output you
+should set <cite>buffered</cite> to <cite>True</cite> which enforces buffering.</dd>
+</dl>
+<p><strong>Properties</strong></p>
+<dl>
+<dt><cite>response</cite></dt>
+<dd>The application iterator.  If constructed from a string this will
+be a list, otherwise the object provided as application iterator.</dd>
+<dt><cite>headers</cite></dt>
+<dd>A <cite>Headers</cite> object representing the response headers.</dd>
+<dt><cite>status</cite></dt>
+<dd>The response status as string.</dd>
+<dt><cite>status_code</cite></dt>
+<dd>The response status as integer.</dd>
+<dt><cite>data</cite></dt>
+<dd>When accessed the response iterator is buffered and, encoded and
+returned as bytestring.</dd>
+<dt><cite>header_list</cite></dt>
+<dd>Read only list that contains the current list for the headers in
+the response encoding.</dd>
+<dt><cite>is_streamed</cite></dt>
+<dd><p class="first">If the response is streamed (the response is not a sequence) this
+property is <cite>True</cite>.  In this case streamed means that there is no
+information about the number of iterations.  This is usully <cite>True</cite>
+if a generator is passed to the response object.</p>
+<p class="last">This is useful for checking before applying some sort of post
+filtering that should not take place for streamed responses.</p>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.iter_encoded">iter_encoded</cite> <tt class="func-signature docutils literal"><span class="pre">(charset=None)</span></tt></dt>
+<dd>Iter the response encoded with the encoding specified.  If no
+encoding is given the encoding from the class is used.  Note that
+this does not encode data that is already a bytestring.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.set_cookie">set_cookie</cite> <tt class="func-signature docutils literal"><span class="pre">(key,</span> <span class="pre">value='',</span> <span class="pre">max_age=None,</span> <span class="pre">expires=None,</span> <span class="pre">path='/',</span> <span class="pre">domain=None,</span> <span class="pre">secure=None,</span> <span class="pre">httponly=False)</span></tt></dt>
+<dd><p class="first">Sets a cookie. The parameters are the same as in the cookie <cite>Morsel</cite>
+object in the Python standard library but it accepts unicode data too:</p>
+<ul class="last">
+<li><dl class="first">
+<dt><cite>max_age</cite> should be a number of seconds, or <cite>None</cite> (default) if the</dt>
+<dd><p class="first last">cookie should last only as long as the client’s browser session.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><cite>expires</cite> should be a <cite>datetime</cite> object or UNIX timestamp.</p>
+</li>
+<li><p class="first">Use <cite>domain</cite> if you want to set a cross-domain cookie.  For example,
+<tt class="docutils literal"><span class="pre">domain=&quot;.example.com&quot;</span></tt> will set a cookie that is readable by the
+domain <tt class="docutils literal"><span class="pre">www.example.com</span></tt>, <tt class="docutils literal"><span class="pre">foo.example.com</span></tt> etc.  Otherwise, a
+cookie will only be readable by the domain that set it.</p>
+</li>
+<li><p class="first"><cite>path</cite> limits the cookie to a given path, per default it will span
+the whole domain.</p>
+</li>
+</ul>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.delete_cookie">delete_cookie</cite> <tt class="func-signature docutils literal"><span class="pre">(key,</span> <span class="pre">path='/',</span> <span class="pre">domain=None)</span></tt></dt>
+<dd>Delete a cookie.  Fails silently if key doesn&#8217;t exist.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.fix_headers">fix_headers</cite> <tt class="func-signature docutils literal"><span class="pre">(environ)</span></tt></dt>
+<dd>This is automatically called right before the response is started
+and should fix common mistakes in headers.  For example location
+headers are joined with the root URL here.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.close">close</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd>Close the wrapped response if possible.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseResponse.freeze">freeze</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd>Call this method if you want to make your response object ready for
+pickeling.  This buffers the generator if there is one.</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.wrappers.BaseResponse.__call__">__call__</cite> <tt class="func-signature docutils literal"><span class="pre">(environ,</span> <span class="pre">start_response)</span></tt></dt>
+<dd>Process this response as WSGI application.</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h3 id="mixin-classes">Mixin Classes</h3>
+<p>Werkzeug also provides helper mixins for various HTTP related functionality
+such as etags, cache control, user agents etc.  When subclassing you can
+mix those classes in to extend the functionality of the <cite>BaseRequest</cite> or
+<cite>BaseResponse</cite> object.  Here a small example for a request object that
+parses accept headers:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">AcceptMixin</span>
+
+<span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="n">BaseRequest</span><span class="p">,</span> <span class="n">AcceptMixin</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+<p>The <cite>Request</cite> and <cite>Response</cite> classes subclass the <cite>BaseRequest</cite> and
+<cite>BaseResponse</cite> classes and implement all the mixins Werkzeug provides:</p>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.Request">Request</cite></dt>
+<dd><p class="first">Full featured request object implementing the following mixins:</p>
+<ul class="last simple">
+<li><cite>AcceptMixin</cite> for accept header parsing</li>
+<li><cite>ETagRequestMixin</cite> for etag and cache control handling</li>
+<li><cite>UserAgentMixin</cite> for user agent introspection</li>
+</ul>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.Response">Response</cite></dt>
+<dd><p class="first">Full featured response object implementing the following mixins:</p>
+<ul class="last simple">
+<li><cite>ETagResponseMixin</cite> for etag and cache control handling</li>
+<li><cite>ResponseStreamMixin</cite> to add support for the <cite>stream</cite> property</li>
+<li><cite>CommonResponseDescriptorsMixin</cite> for various HTTP descriptors</li>
+</ul>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.AcceptMixin">AcceptMixin</cite></dt>
+<dd><p class="first">A mixin for classes with an <cite>environ</cite> attribute to get and all the HTTP
+accept headers as <cite>Accept</cite> objects.  This can be mixed in request objects
+or any other object that has a WSGI environ available as <cite>environ</cite>.</p>
+<dl>
+<dt><cite id="werkzeug.wrappers.AcceptMixin.accept_mimetypes">accept_mimetypes</cite></dt>
+<dd>List of mimetypes this client supports.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.AcceptMixin.accept_charsets">accept_charsets</cite></dt>
+<dd>List of charsets this client supports.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.AcceptMixin.accept_encodings">accept_encodings</cite></dt>
+<dd>List of encodings this client accepts.  Encodings in a HTTP term are
+compression encodings such as gzip.  For charsets have a look at
+<cite>accept_charset</cite>.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.AcceptMixin.accept_languages">accept_languages</cite></dt>
+<dd>List of languages this client accepts.</dd>
+</dl>
+<p class="last">All this properties store <cite>Accept</cite> objects as documented in the
+<a class="reference" href="utils.html">utils</a> section.</p>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.ETagRequestMixin">ETagRequestMixin</cite></dt>
+<dd><p class="first">Add entity tag and cache descriptors to a request object or object with
+an WSGI environment available as <cite>environ</cite>.  This not only provides
+access to etags but also to the cache control header.</p>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagRequestMixin.cache_control">cache_control</cite></dt>
+<dd>A <cite>CacheControl</cite> object for the incoming cache control headers.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagRequestMixin.if_match">if_match</cite></dt>
+<dd>An object containing all the etags in the <cite>If-Match</cite> header.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagRequestMixin.if_none_match">if_none_match</cite></dt>
+<dd>An object containing all the etags in the <cite>If-None-Match</cite> header.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagRequestMixin.if_modified_since">if_modified_since</cite></dt>
+<dd>The parsed <cite>If-Modified-Since</cite> header as datetime object.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagRequestMixin.if_unmodified_since">if_unmodified_since</cite></dt>
+<dd>The parsed <cite>If-Unmodified-Since</cite> header as datetime object.</dd>
+</dl>
+<p class="last">All the used data structures are documented in the <a class="reference" href="utils.html">utils</a> section.</p>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.ETagResponseMixin">ETagResponseMixin</cite></dt>
+<dd><p class="first">Adds extra functionality to a response object for etag and cache
+handling.  This mixin requires an object with at least a <cite>headers</cite>
+object that implements a dict like interface similar to <cite>Headers</cite>.</p>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagResponseMixin.cache_control">cache_control</cite></dt>
+<dd>The Cache-Control general-header field is used to specify directives
+that MUST be obeyed by all caching mechanisms along the
+request/response chain.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagResponseMixin.make_conditional">make_conditional</cite> <tt class="func-signature docutils literal"><span class="pre">(request_or_environ)</span></tt></dt>
+<dd><p class="first">Make the response conditional to the request.  This method works best
+if an etag was defined for the response already.  The <cite>add_etag</cite>
+method can be used to do that.  If called without etag just the date
+header is set.</p>
+<p>This does nothing if the request method in the request or enviorn is
+anything but GET or HEAD.</p>
+<p>It does not remove the body of the response because that&#8217;s something
+the <cite>__call__</cite> function does for us automatically.</p>
+<p class="last">Returns self so that you can do <tt class="docutils literal"><span class="pre">return</span> <span class="pre">resp.make_conditional(req)</span></tt>
+but modifies the object in-place.</p>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagResponseMixin.add_etag">add_etag</cite> <tt class="func-signature docutils literal"><span class="pre">(overwrite=False,</span> <span class="pre">weak=False)</span></tt></dt>
+<dd>Add an etag for the current response if there is none yet.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagResponseMixin.set_etag">set_etag</cite> <tt class="func-signature docutils literal"><span class="pre">(etag,</span> <span class="pre">weak=False)</span></tt></dt>
+<dd>Set the etag, and override the old one if there was one.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.ETagResponseMixin.get_etag">get_etag</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd>Return a tuple in the form <tt class="docutils literal"><span class="pre">(etag,</span> <span class="pre">is_weak)</span></tt>.  If there is no
+ETag the return value is <tt class="docutils literal"><span class="pre">(None,</span> <span class="pre">None)</span></tt>.</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.wrappers.ETagResponseMixin.freeze">freeze</cite> <tt class="func-signature docutils literal"><span class="pre">(no_etag=False)</span></tt></dt>
+<dd>Call this method if you want to make your response object ready for
+pickeling.  This buffers the generator if there is one.  This also
+sets the etag unless <cite>no_etag</cite> is set to <cite>True</cite>.</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.ResponseStreamMixin">ResponseStreamMixin</cite></dt>
+<dd><p class="first">Mixin for <cite>BaseRequest</cite> subclasses.  Classes that inherit from this mixin
+will automatically get a <cite>stream</cite> property that provides a write-only
+interface to the response iterable.</p>
+<dl class="last">
+<dt><cite id="werkzeug.wrappers.ResponseStreamMixin.stream">stream</cite></dt>
+<dd>The response iterable as write-only stream.</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin">CommonResponseDescriptorsMixin</cite></dt>
+<dd><p class="first">A mixin for <cite>BaseResponse</cite> subclasses.  Response objects that mix this
+class in will automatically get descriptors for a couple of HTTP headers
+with automatic type conversion.</p>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.mimetype">mimetype</cite></dt>
+<dd>The mimetype (content type without charset etc.)</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.location">location</cite></dt>
+<dd>The Location response-header field is used to redirect the recipient
+to a location other than the Request-URI for completion of the request
+or identification of a new resource.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.age">age</cite></dt>
+<dd><p class="first">The Age response-header field conveys the sender&#8217;s estimate of the
+amount of time since the response (or its revalidation) was
+generated at the origin server.</p>
+<p class="last">Age values are non-negative decimal integers, representing time in
+seconds.</p>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.content_type">content_type</cite></dt>
+<dd>The Content-Type entity-header field indicates the media type of the
+entity-body sent to the recipient or, in the case of the HEAD method,
+the media type that would have been sent had the request been a GET.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.content_length">content_length</cite></dt>
+<dd>The Content-Length entity-header field indicates the size of the
+entity-body, in decimal number of OCTETs, sent to the recipient or,
+in the case of the HEAD method, the size of the entity-body that would
+have been sent had the request been a GET.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.content_location">content_location</cite></dt>
+<dd>The Content-Location entity-header field MAY be used to supply the
+resource location for the entity enclosed in the message when that
+entity is accessible from a location separate from the requested
+resource&#8217;s URI.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.content_encoding">content_encoding</cite></dt>
+<dd>The Content-Encoding entity-header field is used as a modifier to the
+media-type.  When present, its value indicates what additional content
+codings have been applied to the entity-body, and thus what decoding
+mechanisms must be applied in order to obtain the media-type
+referenced by the Content-Type header field.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.content_language">content_language</cite></dt>
+<dd>The Content-Language entity-header field describes the natural
+language(s) of the intended audience for the enclosed entity.  Note
+that this might not be equivalent to all the languages used within
+the entity-body.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.content_md5">content_md5</cite></dt>
+<dd>The Content-MD5 entity-header field, as defined in RFC 1864, is an
+MD5 digest of the entity-body for the purpose of providing an
+end-to-end message integrity check (MIC) of the entity-body.  (Note:
+a MIC is good for detecting accidental modification of the
+entity-body in transit, but is not proof against malicious attacks.)</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.date">date</cite></dt>
+<dd>The Date general-header field represents the date and time at which
+the message was originated, having the same semantics as orig-date
+in RFC 822.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.expires">expires</cite></dt>
+<dd>The Expires entity-header field gives the date/time after which the
+response is considered stale. A stale cache entry may not normally be
+returned by a cache.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.last_modified">last_modified</cite></dt>
+<dd>The Last-Modified entity-header field indicates the date and time at
+which the origin server believes the variant was last modified.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.retry_after">retry_after</cite></dt>
+<dd><p class="first">The Retry-After response-header field can be used with a 503 (Service
+Unavailable) response to indicate how long the service is expected
+to be unavailable to the requesting client.</p>
+<p class="last">Time in seconds until expiration or date.</p>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.vary">vary</cite></dt>
+<dd>The Vary field value indicates the set of request-header fields that
+fully determines, while the response is fresh, whether a cache is
+permitted to use the response to reply to a subsequent request
+without revalidation.</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.wrappers.CommonResponseDescriptorsMixin.allow">allow</cite></dt>
+<dd>The Allow entity-header field lists the set of methods supported
+by the resource identified by the Request-URI. The purpose of this
+field is strictly to inform the recipient of valid methods
+associated with the resource. An Allow header field MUST be
+present in a 405 (Method Not Allowed) response.</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h3 id="note-on-file-uploads">Note on File Uploads</h3>
+<p>File uploads are a tricky thing in general.  Per default all the file uploads
+go into temporary files on the filesystem and not the memory of the current
+process to avoid high memory usage.  You could also change that to store the
+data somewhere else by implementing an object that implements the python IO
+protocol (see <cite>StringIO</cite>) for both writing and reading.</p>
+<p>Then you have to subclass a request object and override <cite>_get_file_stream</cite>:</p>
+<dl>
+<dt><cite id="werkzeug.wrappers.BaseRequest._get_file_stream">_get_file_stream</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd><p class="first">Called to get a stream for the file upload.</p>
+<p>This must provide a file-like class with <cite>read()</cite>, <cite>readline()</cite>
+and <cite>seek()</cite> methods that is both writeable and readable.</p>
+<p class="last">The default implementation returns a temporary file.</p>
+</dd>
+</dl>
+</div>
+
+      <div style="clear:both"></div>
+    </div>
+    <div class="footer">
+      Werkzeug is a <a href="http://pocoo.org/">Pocoo</a> project licensed under the
+      BSD license.
+    </div>
+  </div>
+</body>
+</html>

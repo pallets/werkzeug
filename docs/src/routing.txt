@@ -7,7 +7,9 @@ you want to call them), you need a dispatcher.  A simple way would be
 applying regular expression tests on ``PATH_INFO`` and call registered
 callback functions that return the value.
 
-Werkzeug provides a much more powerful system, similar to `Routes`_.
+Werkzeug provides a much more powerful system, similar to `Routes`_.  All the
+objects mentioned on this page must be imported from `werkzeug.routing`, not
+from `werkzeug`!
 
 
 Quickstart

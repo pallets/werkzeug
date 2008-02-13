@@ -7,9 +7,11 @@ scripts where you just want to generate some HTML and don't want another
 dependency or full blown template engine system.
 
 It it however not recommended to use this template system for anything else
-than simple content generation.
+than simple content generation.  The `Template` class can be directly imported
+from the `werkzeug` module.
 
 .. module:: werkzeug.templates
+
 
 The Template Class
 ==================

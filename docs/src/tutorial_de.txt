@@ -399,8 +399,8 @@ Jetzt können wir einige URLs zu der Datenbank hinzufügen:
     >>> URL.query.all()
     []
     >>> session.commit()
->>> URL.query.all()
-[<URL '5cFbsk        [<URL '5cFbsk'>, <URL 'mpugsT'>]
+    >>> URL.query.all()
+    [<URL '5cFbsk'>, <URL 'mpugsT'>]
 
 Wie du sehen kannst, müssen wir ``session.commit()`` aufrufen, um die Änderungen
 in der Datenbank zu speichern.  Nun erstellen wir ein privates Element mit einer

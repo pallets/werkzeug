@@ -1,0 +1,11 @@
+div.header, ul.navigation, div.aside, a.underthehood {
+    display: none;
+}
+
+div.page, div.withaside, div.contents {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    float: none;
+    border: none;
+}

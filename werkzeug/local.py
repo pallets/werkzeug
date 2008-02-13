@@ -27,6 +27,8 @@
 
     Here a simple example how you can use werkzeug.local::
 
+        from werkzeug import Local, LocalManager
+
         local = Local()
         local_manager = LocalManager([local])
 
@@ -60,6 +62,7 @@
     later by appending them to `manager.locals` and everytime the manager
     cleans up it will clean up all the data left in the locals for this
     context.
+
 
     :copyright: 2007-2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.

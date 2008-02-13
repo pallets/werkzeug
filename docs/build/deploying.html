@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Deploying WSGI Applications // Werkzeug Documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="pygments.css">
+  <link rel="stylesheet" type="text/css" media="print" href="print.css">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1><a href="index.html"><span>Werkzeug</span></a></h1>
+      <p><span>The Swiss Army Knife For Python Web Developers</span></p>
+    </div>
+    <div class="body">
+      <h2>Deploying WSGI Applications</h2>
+      
+      <div class="toc">
+        <h4>Table of Contents</h4>
+        <ul><li><a class="reference" href="#generic-gateways" id="id1" name="id1">Generic Gateways</a></li>
+<li><a class="reference" href="#apache-centric-gateways" id="id2" name="id2">Apache Centric Gateways</a></li>
+<li><a class="reference" href="#example-configuration" id="id3" name="id3">Example Configuration</a></li>
+<li><a class="reference" href="#selecting-the-best-gateway" id="id4" name="id4">Selecting the Best Gateway</a></li>
+</ul>
+      </div>
+      
+      <p>The best thing about WSGI is that there are so many gateways for productive
+usage.  If you want to switch from <a class="reference" href="http://httpd.apache.org/">Apache</a> 2 with <a class="reference" href="http://code.google.com/p/modwsgi/">mod_wsgi</a> to <a class="reference" href="http://www.lighttpd.net/">lighttpd</a>
+with <a class="reference" href="http://www.fastcgi.com/">FastCGI</a>, it&#8217;s a matter of a few minutes.  If you want to distribute
+your application on an USB stick for presentation, you can bundle everything
+into an executable using <a class="reference" href="http://www.py2exe.org/">py2exe</a> and the built-in <cite>wsgiref</cite> module.</p>
+<p>The following list shows the most often used server configurations and how
+you can serve your WSGI applications.</p>
+<div class="section">
+<h3 id="generic-gateways">Generic Gateways</h3>
+<p>The following gateways are webserver agnostic and will work with any webserver
+out there that suppors the underlaying interface:</p>
+<dl>
+<dt><cite>FastCGI</cite></dt>
+<dd>For FastCGI, two well known python libraries exist.  One is implemented in
+Python and handles pretty every FastCGI configuration.  It&#8217;s called <a class="reference" href="http://cheeseshop.python.org/pypi/flup">flup</a>
+and supports also some other interfaces besides FastCGI.  The other one is
+called <a class="reference" href="http://cheeseshop.python.org/pypi/python-fastcgi">python-fastcgi</a> and is implemented in C.  However, the latter has
+a much smaller feature set.</dd>
+<dt><cite>SCGI</cite></dt>
+<dd><a class="reference" href="http://www.mems-exchange.org/software/scgi/">SCGI</a> is a simple protocol with the same benefits of FastCGI (persistent
+interpreters).  Like <cite>FastCGI</cite>, this is supported by <a class="reference" href="http://cheeseshop.python.org/pypi/flup">flup</a>.</dd>
+<dt><cite>CGI</cite></dt>
+<dd>CGI is known to work on every major webserver out there, but has the
+disadvantage of being slow.  With Python 2.5 and onwards, you can use
+<cite>wsgiref</cite> as CGI gateway. In older Python versions, you can either install
+<cite>wsgiref</cite> yourself or use the CGI wrapper code from <a class="reference" href="http://www.python.org/dev/peps/pep-0333/">PEP 333</a>.</dd>
+</dl>
+</div>
+<div class="section">
+<h3 id="apache-centric-gateways">Apache Centric Gateways</h3>
+<p>The following gateways are either written especially for the Apache webserver
+or work best with it.</p>
+<dl>
+<dt><cite>mod_wsgi</cite></dt>
+<dd>Without doubt the best deployment platform for the Apache webserver is
+<a class="reference" href="http://code.google.com/p/modwsgi/">mod_wsgi</a>.  Even though it&#8217;s an Apache module, there are also ways to
+switch the underlaying interpreter into another user context.  This allows
+you to mass host Python applications like you would do with
+<cite>suexec</cite>/<cite>suphp</cite>.</dd>
+<dt><cite>mod_python</cite></dt>
+<dd><p class="first">For a long time, <a class="reference" href="http://www.modpython.org/">mod_python</a> was the preferred way to deploy Python
+applications on the Apache webserver, and frameworks like <a class="reference" href="http://www.djangoproject.com/">Django</a> still
+recommend this setup.  However, some bugs in mod_python make it hard to
+deploy WSGI applications, especially the undefined behavior of
+<cite>SCRIPT_NAME</cite> makes routing hard.</p>
+<p class="last">If you want to use mod_python or have to use it, you can try the
+mod_python WSGI wrapper from this <a class="reference" href="http://www.aminus.org/blogs/index.php/fumanchu/2005/11/06/wsgi_wrapper_for_mod_python">blog post about mod_python and WSGI</a>.</p>
+</dd>
+<dt><cite>AJP</cite></dt>
+<dd><a class="reference" href="http://tomcat.apache.org/connectors-doc/ajp/ajpv13a.html">AJP</a> is the Apache JServ Protocol and is used by Tomcat.  <a class="reference" href="http://cheeseshop.python.org/pypi/flup">flup</a>
+provides ways to talk it.</dd>
+</dl>
+</div>
+<div class="section">
+<h3 id="example-configuration">Example Configuration</h3>
+<p>Here is a small example configuration for Apache and mod_wsgi:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">yourapplicaiton</span> <span class="k">import</span> <span class="n">YourWSGIApplication</span>
+
+<span class="c"># mod_wsgi just wants an object called `application` it will use</span>
+<span class="c"># for dispatching.  Pretty simple, huh?</span>
+<span class="n">application</span> <span class="o">=</span> <span class="n">YourWSGIApplication</span><span class="p">(</span><span class="n">configuration</span><span class="o">=</span><span class="s">&#39;probably&#39;</span><span class="p">,</span> <span class="n">goes</span><span class="o">=</span><span class="s">&#39;here&#39;</span><span class="p">)</span>
+</pre></div>
+<p>Save it as <cite>yourapplication.wsgi</cite> and add this to your virtual host config:</p>
+<div class="syntax"><pre><span class="nb">WSGIScriptAlias</span> / <span class="sx">/path/to/yourapplication.wsgi/</span>
+</pre></div>
+<p>(Note the trailing slash).  Or, if you want to have the application in a
+subfolder:</p>
+<div class="syntax"><pre><span class="nb">WSGIScriptAlias</span> <span class="sx">/foo</span> <span class="sx">/path/to/yourapplication.wsgi</span>
+</pre></div>
+<p>(Without the trailing slash).  Detailed usage examples for the WSGI gateways
+usually come with the gateways or can be found in their wikis.</p>
+</div>
+<div class="section">
+<h3 id="selecting-the-best-gateway">Selecting the Best Gateway</h3>
+<p>Selecting the best gateway is mainly a matter of what you have available on
+your server and how your application is written.  Some applications might not
+be thread safe, others work better with threads etc.</p>
+<p>The following IRC channels on <a class="reference" href="http://freenode.net/">freenode</a> deal a lot with WSGI and you might
+be able to find some help there:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">#wsgi</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">#pylons</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">#pocoo</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">#pythonpaste</span></tt></li>
+</ul>
+</div>
+
+      <div style="clear:both"></div>
+    </div>
+    <div class="footer">
+      Werkzeug is a <a href="http://pocoo.org/">Pocoo</a> project licensed under the
+      BSD license.
+    </div>
+  </div>
+</body>
+</html>

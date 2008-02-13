@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>API Stability // Werkzeug Documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="pygments.css">
+  <link rel="stylesheet" type="text/css" media="print" href="print.css">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1><a href="index.html"><span>Werkzeug</span></a></h1>
+      <p><span>The Swiss Army Knife For Python Web Developers</span></p>
+    </div>
+    <div class="body">
+      <h2>API Stability</h2>
+      
+      <div class="toc">
+        <h4>Table of Contents</h4>
+        <ul><li><a class="reference" href="#backwards-incompatible-changes" id="id1" name="id1">Backwards Incompatible Changes</a></li>
+</ul>
+      </div>
+      
+      <p>Werkzeug has not yet reached 1.0 and as a matter of fact some things might
+change over time.  The following modules will very likely change in one of
+the next release versions:</p>
+<dl>
+<dt><cite>werkzeug.contrib</cite></dt>
+<dd>The community-contributed modules are yet undocumented and we expect
+some upcoming changes there.</dd>
+</dl>
+<div class="section">
+<h3 id="backwards-incompatible-changes">Backwards Incompatible Changes</h3>
+<dl>
+<dt><cite>0.2</cite></dt>
+<dd><ul class="first last simple">
+<li>The <cite>BaseReporterStream</cite> is now part of the contrib module, the
+new module is <cite>werkzeug.contrib.reporterstream</cite>.  Starting with
+<cite>0.3</cite>, the old import will not work any longer.</li>
+<li><cite>RequestRedirect</cite> now uses a 301 status code.  Previously a 302
+status code was used incorrectly.  If you want to continue using
+this 302 code, use <tt class="docutils literal"><span class="pre">response</span> <span class="pre">=</span> <span class="pre">redirect(e.new_url,</span> <span class="pre">302)</span></tt>.</li>
+<li><cite>lazy_property</cite> is now called <cite>cached_property</cite>.  The alias for
+the old name will disappear in Werkzeug 0.3.</li>
+<li><cite>match</cite> can now raise <cite>MethodNotAllowed</cite> if configured for
+methods and there was no method for that request.</li>
+</ul>
+</dd>
+</dl>
+</div>
+
+      <div style="clear:both"></div>
+    </div>
+    <div class="footer">
+      Werkzeug is a <a href="http://pocoo.org/">Pocoo</a> project licensed under the
+      BSD license.
+    </div>
+  </div>
+</body>
+</html>

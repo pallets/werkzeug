@@ -1,0 +1,573 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Routing System // Werkzeug Documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="pygments.css">
+  <link rel="stylesheet" type="text/css" media="print" href="print.css">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1><a href="index.html"><span>Werkzeug</span></a></h1>
+      <p><span>The Swiss Army Knife For Python Web Developers</span></p>
+    </div>
+    <div class="body">
+      <h2>Routing System</h2>
+      
+      <div class="toc">
+        <h4>Table of Contents</h4>
+        <ul><li><a class="reference" href="#quickstart" id="id1" name="id1">Quickstart</a></li>
+<li><a class="reference" href="#rule-format" id="id2" name="id2">Rule Format</a></li>
+<li><a class="reference" href="#builtin-converters" id="id3" name="id3">Builtin Converters</a></li>
+<li><a class="reference" href="#maps-rules-and-adapters" id="id4" name="id4">Maps, Rules and Adapters</a></li>
+<li><a class="reference" href="#rule-factories" id="id5" name="id5">Rule Factories</a></li>
+<li><a class="reference" href="#rule-templates" id="id6" name="id6">Rule Templates</a></li>
+<li><a class="reference" href="#custom-converters" id="id7" name="id7">Custom Converters</a></li>
+</ul>
+      </div>
+      
+      <p>When it comes to combining multiple controller or view functions (however
+you want to call them), you need a dispatcher.  A simple way would be
+applying regular expression tests on <tt class="docutils literal"><span class="pre">PATH_INFO</span></tt> and call registered
+callback functions that return the value.</p>
+<p>Werkzeug provides a much more powerful system, similar to <a class="reference" href="http://routes.groovie.org/">Routes</a>.  All the
+objects mentioned on this page must be imported from <cite>werkzeug.routing</cite>, not
+from <cite>werkzeug</cite>!</p>
+<div class="section">
+<h3 id="quickstart">Quickstart</h3>
+<p>Here a simple example which could be the URL definition for a blog:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">NotFound</span><span class="p">,</span> <span class="n">RequestRedirect</span>
+
+<span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/index&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&lt;int:year&gt;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/archive&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&lt;int:year&gt;/&lt;int:month&gt;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/archive&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&lt;int:year&gt;/&lt;int:month&gt;/&lt;int:day&gt;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/archive&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&lt;int:year&gt;/&lt;int:month&gt;/&lt;int:day&gt;/&lt;slug&gt;&#39;</span><span class="p">,</span>
+         <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/show_post&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/about&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/about_me&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/feeds/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/feeds&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/feeds/&lt;feed_name&gt;.rss&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/show_feed&#39;</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
+    <span class="n">urls</span> <span class="o">=</span> <span class="n">url_map</span><span class="o">.</span><span class="n">bind_to_environ</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">endpoint</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">urls</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">e</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
+    <span class="n">start_response</span><span class="p">(</span><span class="s">&#39;200 OK&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="s">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s">&#39;text/plain&#39;</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="p">[</span><span class="s">&#39;Rule points to </span><span class="si">%r</span><span class="s"> with arguments </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">args</span><span class="p">)]</span>
+</pre></div>
+<p>So what does that do?  First of all we create a new <cite>Map</cite> which stores a
+bunch of URL rules.  Then we pass it a list of <cite>Rule</cite> objects.</p>
+<p>Each <cite>Rule</cite> object is instantiated with a string that represents a rule and
+an endpoint which will be the alias for what view the rule represents.
+Multiple rules can have the same endpoint but should have different arguments
+to allow URL construction.</p>
+<p>The format for the URL rules is straightforward, but explained in detail below.</p>
+<p>Inside the WSGI application we bind the url_map to the current request which will
+return a new <cite>MapAdapter</cite>.  This url_map adapter can then be used to match or
+build domains for the current request.</p>
+<p>The <cite>match</cite> method can then either return a tuple in the form
+<tt class="docutils literal"><span class="pre">(endpoint,</span> <span class="pre">args)</span></tt> or raise one of the three exceptions <cite>NotFound</cite>,
+<cite>MethodNotAllowed</cite>, or <cite>RequestRedirect</cite>.  For more details about those
+exceptions have a look at the documentation of the <cite>match</cite> method.</p>
+</div>
+<div class="section">
+<h3 id="rule-format">Rule Format</h3>
+<p>Rule strings basically are just normal URL paths with placeholders in the
+format <tt class="docutils literal"><span class="pre">&lt;converter(arguments):name&gt;</span></tt>, where converter and the arguments
+are optional.  If no converter is defined, the <cite>default</cite> converter is used
+(which means <cite>string</cite> in the normal configuration).</p>
+<p>URL rules that end with a slash are branch URLs, others are leaves.  If you
+have <cite>strict_slashes</cite> enabled (which is the default), all branch URLs that are
+visited without a trailing slash will trigger a redirect to the same URL with
+that slash appended.</p>
+<p>The list of converters can be extended, the default converters are explained
+below.</p>
+</div>
+<div class="section">
+<h3 id="builtin-converters">Builtin Converters</h3>
+<p>Here a list of converters that come with Werkzeug:</p>
+<dl>
+<dt><cite>string</cite></dt>
+<dd><p class="first">This converter is the default converter and accepts any string but
+only one one path segment.  Thus the string can not include a slash.</p>
+<p>Supported arguments:</p>
+<ul class="last simple">
+<li><cite>minlength</cite> - the minimum length of the string. must be greater
+than 1.</li>
+<li><cite>maxlength</cite> - the maximum length of the string.</li>
+<li><cite>length</cite> - the exact length of that string.</li>
+</ul>
+</dd>
+<dt><cite>path</cite></dt>
+<dd><p class="first">Matches one of the items provided.  Items can either be python
+identifiers or unicode strings:</p>
+<div class="syntax"><pre><span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&lt;any(about, help, imprint, u&quot;class&quot;):page_name&gt;&#39;</span><span class="p">)</span>
+</pre></div>
+</dd>
+<dt><cite>any</cite></dt>
+<dd><p class="first">Matches one of the items provided.  Items can either be Python
+identifiers or unicode strings:</p>
+<div class="syntax"><pre><span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&lt;any(about, help, imprint, u&quot;class&quot;):page_name&gt;&#39;</span><span class="p">)</span>
+</pre></div>
+</dd>
+<dt><cite>int</cite></dt>
+<dd><p class="first">This converter only accepts integer values:</p>
+<div class="syntax"><pre><span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/page/&lt;int:page&gt;&#39;</span><span class="p">)</span>
+</pre></div>
+<p>Supported arguments:</p>
+<ul class="last simple">
+<li><cite>fixed_digits</cite> - the number of fixed digits in the URL. If you
+set this to <tt class="docutils literal"><span class="pre">4</span></tt> for example, the application will only match
+if the url looks like <tt class="docutils literal"><span class="pre">/0001/</span></tt>.  The default is
+variable length.</li>
+<li><cite>min</cite> - the minimal value.</li>
+<li><cite>max</cite> - the maximal value.</li>
+</ul>
+</dd>
+<dt><cite>float</cite></dt>
+<dd><p class="first">This converter only accepts floating point values:</p>
+<div class="syntax"><pre><span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/probability/&lt;float:probability&gt;&#39;</span><span class="p">)</span>
+</pre></div>
+<p>Supported arguments:</p>
+<ul class="last simple">
+<li><cite>min</cite> - the minimal value.</li>
+<li><cite>max</cite> - the maximal value.</li>
+</ul>
+</dd>
+</dl>
+<div class="admonition-important admonition">
+<p class="first admonition-title">Important</p>
+<p>Werkzeug evaluates converter arguments as if they are Python method calls.
+Thus, you should <strong>never</strong> create rules from user submitted data since
+they could insert arbitrary Python code in the parameters part.</p>
+<p>As a matter of fact this is a legal definition and sets fixed_digits to 2:</p>
+<div class="syntax"><pre><span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/picture/&lt;int(fixed_digits=1 + 1):id&gt;.png&#39;</span><span class="p">,</span>
+         <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;view_image&#39;</span><span class="p">)</span>
+<span class="p">])</span>
+</pre></div>
+<p class="last">However, evaluating Python expressions is currently an implementation
+detail and might be unavailable in the future.</p>
+</div>
+</div>
+<div class="section">
+<h3 id="maps-rules-and-adapters">Maps, Rules and Adapters</h3>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.Map">Map</cite></dt>
+<dd><p class="first">The map class stores all the URL rules and some configuration
+parameters.  Some of the configuration values are only stored on the
+<cite>Map</cite> instance since those affect all rules, others are just defaults
+and can be overridden for each rule.  Note that you have to specify all
+arguments beside the <cite>rules</cite> as keywords arguments!</p>
+<dl>
+<dt><cite id="werkzeug.routing.Map.__init__">__init__</cite> <tt class="func-signature docutils literal"><span class="pre">(rules=None,</span> <span class="pre">default_subdomain='',</span> <span class="pre">charset='utf-8',</span> <span class="pre">strict_slashes=True,</span> <span class="pre">redirect_defaults=True,</span> <span class="pre">converters=None)</span></tt></dt>
+<dd><p class="first">Initializes the new URL map.</p>
+<dl class="last">
+<dt>Parameters</dt>
+<dd><p class="first"><strong>rules</strong>: sequence of url rules for this map.</p>
+<p><strong>default_subdomain</strong>: The default subdomain for rules without a
+subdomain defined.</p>
+<p><strong>charset</strong>: charset of the url. defaults to <tt class="docutils literal"><span class="pre">&quot;utf-8&quot;</span></tt></p>
+<p><strong>strict_slashes</strong>: Take care of trailing slashes.</p>
+<p><strong>redirect_defaults</strong>: This will redirect to the default rule if it
+wasn&#8217;t visited that way. This helps creating
+unique URLs.</p>
+<p class="last"><strong>converters</strong>: A dict of converters that adds additional converters
+to the list of converters. If you redefine one
+converter this will override the original one.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.routing.Map.is_endpoint_expecting">is_endpoint_expecting</cite> <tt class="func-signature docutils literal"><span class="pre">(endpoint,</span> <span class="pre">*arguments)</span></tt></dt>
+<dd>Iterate over all rules and check if the endpoint expects
+the arguments provided.  This is for example useful if you have
+some URLs that expect a language code and others that do not and
+you want to wrap the builder a bit so that the current language
+code is automatically added if not provided but endpoints expect
+it.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.routing.Map.iter_rules">iter_rules</cite> <tt class="func-signature docutils literal"><span class="pre">(endpoint=None)</span></tt></dt>
+<dd>Iterate over all rules or the rules of an endpoint.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.routing.Map.add">add</cite> <tt class="func-signature docutils literal"><span class="pre">(rulefactory)</span></tt></dt>
+<dd>Add a new rule or factory to the map and bind it.  Requires that the
+rule is not bound to another map.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.routing.Map.bind">bind</cite> <tt class="func-signature docutils literal"><span class="pre">(server_name,</span> <span class="pre">script_name=None,</span> <span class="pre">subdomain=None,</span> <span class="pre">url_scheme='http',</span> <span class="pre">default_method='GET',</span> <span class="pre">path_info=None)</span></tt></dt>
+<dd><p class="first">Return a new <cite>MapAdapter</cite> with the details specified to the call.
+Note that <cite>script_name</cite> will default to <tt class="docutils literal"><span class="pre">'/'</span></tt> if not further
+specified or <cite>None</cite>.  The <cite>server_name</cite> at least is a requirement
+because the HTTP RFC requires absolute URLs for redirects and so all
+redirect exceptions raised by Werkzeug will contain the full canonical
+URL.</p>
+<p>If no path_info is passed to match() it will use the default path
+info passed to bind.  While this doesn&#8217;t really make sense for
+manual bind calls, it&#8217;s useful if you bind a map to a WSGI
+environment which already contains the path info.</p>
+<p class="last"><cite>subdomain</cite> will default to the <cite>default_subdomain</cite> for this map if
+no defined. If there is no <cite>default_subdomain</cite> you cannot use the
+subdomain feature.</p>
+</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.routing.Map.bind_to_environ">bind_to_environ</cite> <tt class="func-signature docutils literal"><span class="pre">(environ,</span> <span class="pre">server_name=None,</span> <span class="pre">subdomain=None,</span> <span class="pre">calculate_subdomain=False)</span></tt></dt>
+<dd><p class="first">Like <cite>bind</cite> but you can pass it an WSGI environment and it will fetch
+the information from that directory.  Note that because of limitations
+in the protocol there is no way to get the current subdomain and real
+<cite>server_name</cite> from the environment.  If you don&#8217;t provide it, Werkzeug
+will use <cite>SERVER_NAME</cite> and <cite>SERVER_PORT</cite> (or <cite>HTTP_HOST</cite> if provided)
+as used <cite>server_name</cite> with disabled subdomain feature.</p>
+<p>If <cite>subdomain</cite> is <cite>None</cite> but an environment and a server name is
+provided it will calculate the current subdomain automatically.
+Example: <cite>server_name</cite> is <tt class="docutils literal"><span class="pre">'example.com'</span></tt> and the <cite>SERVER_NAME</cite>
+in the wsgi <cite>environ</cite> is <tt class="docutils literal"><span class="pre">'staging.dev.example.com'</span></tt> the calculated
+subdomain will be <tt class="docutils literal"><span class="pre">'staging.dev'</span></tt>.</p>
+<p class="last">If the object passed as environ as an environ attribute, the value of
+this attribute is used instead.  This allows you to pass request
+objects.  Additionally <cite>PATH_INFO</cite> added as a default ot the
+<cite>MapAdapter</cite> so that you don&#8217;t have to pass the path info to the
+match method.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.MapAdapter">MapAdapter</cite></dt>
+<dd><p class="first">Retured by <cite>Map.bind</cite> or <cite>Map.bind_to_environ</cite> and does the
+URL matching and building based on runtime information.</p>
+<dl>
+<dt><cite id="werkzeug.routing.MapAdapter.match">match</cite> <tt class="func-signature docutils literal"><span class="pre">(path_info=None,</span> <span class="pre">method=None)</span></tt></dt>
+<dd><p class="first">The usage is simple: you just pass the match method the current path
+info as well as the method (which defaults to <cite>GET</cite>).  The following
+things can then happen:</p>
+<ul class="simple">
+<li>you receive a <cite>NotFound</cite> exception that indicates that no URL is
+matching.  A <cite>NotFound</cite> exception is also a WSGI application you
+can call to get a default page not found page (happens to be the
+same object as <cite>werkzeug.exceptions.NotFound</cite>)</li>
+<li>you receive a <cite>MethodNotAllowed</cite> exception that indicates that there
+is a match for this URL but non for the current request method.
+This is useful for RESTful applications.</li>
+<li>you receive a <cite>RequestRedirect</cite> exception with a <cite>new_url</cite>
+attribute.  This exception is used to notify you about a request
+Werkzeug requests by your WSGI application.  This is for example the
+case if you request <tt class="docutils literal"><span class="pre">/foo</span></tt> although the correct URL is <tt class="docutils literal"><span class="pre">/foo/</span></tt>
+You can use the <cite>RequestRedirect</cite> instance as response-like object
+similar to all other subclasses of <cite>HTTPException</cite>.</li>
+<li>you get a tuple in the form <tt class="docutils literal"><span class="pre">(endpoint,</span> <span class="pre">arguments)</span></tt> when there is
+a match.</li>
+</ul>
+<p>If the path info is not passed to the match method the default path
+info of the map is used (defaults to the root URL if not defined
+explicitly).</p>
+<p>All of the exceptions raised are subclasses of <cite>HTTPException</cite> so they
+can be used as WSGI responses.  The will all render generic error or
+redirect pages.</p>
+<p>Here is a small example for matching:</p>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+<span class="gp">... </span>    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/downloads/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;downloads/index&#39;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/downloads/&lt;int:id&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;downloads/show&#39;</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s">&quot;example.com&quot;</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="s">&quot;GET&quot;</span><span class="p">)</span>
+<span class="go">(&#39;index&#39;, {})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;/downloads/42&quot;</span><span class="p">)</span>
+<span class="go">(&#39;downloads/show&#39;, {&#39;id&#39;: 42})</span>
+</pre></div>
+<p>And here is what happens on redirect and missing URLs:</p>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;/downloads&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">werkzeug.routing.RequestRedirect</span>: <span class="n-Identifier">http://example.com/downloads/</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;/missing&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">werkzeug.routing.NotFound</span>: <span class="n-Identifier">/missing</span>
+</pre></div>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.routing.MapAdapter.test">test</cite> <tt class="func-signature docutils literal"><span class="pre">(path_info=None,</span> <span class="pre">method=None)</span></tt></dt>
+<dd>Test if a rule would match.  Works like <cite>match</cite> but returns <cite>True</cite> if
+the URL matches, or <cite>False</cite> if it does not exist.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.routing.MapAdapter.dispatch">dispatch</cite> <tt class="func-signature docutils literal"><span class="pre">(view_func,</span> <span class="pre">path_info=None,</span> <span class="pre">method=None,</span> <span class="pre">catch_http_exceptions=False)</span></tt></dt>
+<dd><p class="first">Does the complete dispatching process.  <cite>view_func</cite> is called with
+the endpoint and a dict with the values for the view.  It should
+look up the view function, call it, and return a response object
+or WSGI application.  http exceptions are not catched by default
+so that applications can display nicer error messages by just
+catching them by hand.  If you want to stick with the default
+error messages you can pass it <tt class="docutils literal"><span class="pre">catch_http_exceptions=True</span></tt> and
+it will catch the http exceptions.</p>
+<p>Here a small example for the dispatch usage:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">responder</span>
+<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
+
+<span class="k">def</span> <span class="nf">on_index</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="s">&#39;Hello from the index&#39;</span><span class="p">)</span>
+
+<span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span><span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">)])</span>
+<span class="n">views</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;index&#39;</span><span class="p">:</span> <span class="n">on_index</span><span class="p">}</span>
+
+<span class="nd">@responder</span>
+<span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
+    <span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
+    <span class="n">urls</span> <span class="o">=</span> <span class="n">url_map</span><span class="o">.</span><span class="n">bind_to_environ</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">urls</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">views</span><span class="p">[</span><span class="n">e</span><span class="p">](</span><span class="n">request</span><span class="p">,</span> <span class="o">**</span><span class="n">v</span><span class="p">),</span>
+                         <span class="n">catch_http_exceptions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.routing.MapAdapter.build">build</cite> <tt class="func-signature docutils literal"><span class="pre">(endpoint,</span> <span class="pre">values=None,</span> <span class="pre">method=None,</span> <span class="pre">force_external=False)</span></tt></dt>
+<dd><p class="first">Building URLs works pretty much the other way round.  Instead of
+<cite>match</cite> you call <cite>build</cite> and pass it the endpoint and a dict of
+arguments for the placeholders.</p>
+<p>The <cite>build</cite> function also accepts an argument called <cite>force_external</cite>
+which, if you set it to <cite>True</cite> will force external URLs. Per default
+external URLs (include the server name) will only be used if the
+target URL is on a
+different subdomain.</p>
+<p>With the same map as in the example above this code generates some
+target URLs:</p>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="p">{})</span>
+<span class="go">&#39;/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="s">&quot;downloads/show&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="mf">42</span><span class="p">})</span>
+<span class="go">&#39;/downloads/42&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="s">&quot;downloads/show&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="mf">42</span><span class="p">},</span> <span class="n">force_external</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">&#39;http://example.com/downloads/42&#39;</span>
+</pre></div>
+<p>Because URLs cannot contain non ASCII data you will always get
+bytestrings back.  Non ASCII characters are urlencoded with the
+charset defined on the map instance.</p>
+<p>Additional values are converted to unicode and appended to the URL as
+URL querystring parameters:</p>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;q&#39;</span><span class="p">:</span> <span class="s">&#39;My Searchstring&#39;</span><span class="p">})</span>
+<span class="go">&#39;/?q=My+Searchstring&#39;</span>
+</pre></div>
+<p>If a rule does not exist when building a <cite>BuildError</cite> exception is
+raised.</p>
+<p class="last">The build method accepts an argument called <cite>method</cite> which allows you
+to specify the method you want to have an URL builded for if you have
+different methods for the same endpoint specified.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.Rule">Rule</cite></dt>
+<dd><p class="first">A Rule represents one URL pattern.  There are some options for <cite>Rule</cite> that
+change the way it behaves and are passed to the <cite>Rule</cite> constructor.  Note
+that beside the rule-string all arguments <em>must</em> be keyword arguments in
+order to not break the application on Werkzeug upgrades.</p>
+<dl>
+<dt><cite>string</cite></dt>
+<dd><p class="first">Rule strings basically are just normal URL paths with placeholders in
+the format <tt class="docutils literal"><span class="pre">&lt;converter(arguments):name&gt;</span></tt> where the converter and the
+arguments are optional.  If no converter is defined the <cite>default</cite>
+converter is used which means <cite>string</cite> in the normal configuration.</p>
+<p>URL rules that end with a slash are branch URLs, others are leaves.
+If you have <cite>strict_slashes</cite> enabled (which is the default), all
+branch URLs that are matched without a trailing slash will trigger a
+redirect to the same URL with the missing slash appended.</p>
+<p class="last">The converters are defined on the <cite>Map</cite>.</p>
+</dd>
+<dt><cite>endpoint</cite></dt>
+<dd>The endpoint for this rule. This can be anything. A reference to a
+function, a string, a number etc.  The preferred way is using a string
+as because the endpoint is used for URL generation.</dd>
+<dt><cite>defaults</cite></dt>
+<dd><p class="first">An optional dict with defaults for other rules with the same endpoint.
+This is a bit tricky but useful if you want to have unique URLs:</p>
+<div class="syntax"><pre><span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/all/&#39;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;page&#39;</span><span class="p">:</span> <span class="mf">1</span><span class="p">},</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;all_entries&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/all/page/&lt;int:page&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;all_entries&#39;</span><span class="p">)</span>
+<span class="p">])</span>
+</pre></div>
+<p class="last">If a user now visits <tt class="docutils literal"><span class="pre">http://example.com/all/page/1</span></tt> he will be
+redirected to <tt class="docutils literal"><span class="pre">http://example.com/all/</span></tt>.  If <cite>redirect_defaults</cite> is
+disabled on the <cite>Map</cite> instance this will only affect the URL
+generation.</p>
+</dd>
+<dt><cite>subdomain</cite></dt>
+<dd><p class="first">The subdomain rule string for this rule. If not specified the rule
+only matches for the <cite>default_subdomain</cite> of the map.  If the map is
+not bound to a subdomain this feature is disabled.</p>
+<p>Can be useful if you want to have user profiles on different subdomains
+and all subdomains are forwarded to your application:</p>
+<div class="syntax"><pre><span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">subdomain</span><span class="o">=</span><span class="s">&#39;&lt;username&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;user/homepage&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/stats&#39;</span><span class="p">,</span> <span class="n">subdomain</span><span class="o">=</span><span class="s">&#39;&lt;username&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;user/stats&#39;</span><span class="p">)</span>
+<span class="p">])</span>
+</pre></div>
+</dd>
+<dt><cite>methods</cite></dt>
+<dd>A sequence of http methods this rule applies to.  If not specified, all
+methods are allowed. For example this can be useful if you want different
+endpoints for <cite>POST</cite> and <cite>GET</cite>.  If methods are defined and the path
+matches but the method matched against is not in this list or in the
+list of another rule for that path the error raised is of the type
+<cite>MethodNotAllowed</cite> rather than <cite>NotFound</cite>.</dd>
+<dt><cite>strict_slashes</cite></dt>
+<dd>Override the <cite>Map</cite> setting for <cite>strict_slashes</cite> only for this rule. If
+not specified the <cite>Map</cite> setting is used.</dd>
+<dt><cite>build_only</cite></dt>
+<dd>Set this to true and the rule will never match but will create a URL
+that can be build. This is useful if you have resources on a subdomain
+or folder that are not handled by the WSGI application (like static data)</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.routing.Rule.empty">empty</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd>Return an unbound copy of this rule.  This can be useful if you want
+to reuse an already bound URL for another map.</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.routing.Rule.bind">bind</cite> <tt class="func-signature docutils literal"><span class="pre">(map)</span></tt></dt>
+<dd>Bind the url to a map and create a regular expression based on
+the information from the rule itself and the defaults from the map.</dd>
+</dl>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h3 id="rule-factories">Rule Factories</h3>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.RuleFactory">RuleFactory</cite></dt>
+<dd><p class="first">As soon as you have more complex URL setups it&#8217;s a good idea to use rule
+factories to avoid repetitive tasks.  Some of them are builtin, others can
+be added by subclassing <cite>RuleFactory</cite> and overriding <cite>get_rules</cite>.</p>
+<dl class="last">
+<dt><cite id="werkzeug.routing.RuleFactory.get_rules">get_rules</cite> <tt class="func-signature docutils literal"><span class="pre">(map)</span></tt></dt>
+<dd>Subclasses of <cite>RuleFactory</cite> have to override this method and return
+an iterable of rules.</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.Subdomain">Subdomain</cite></dt>
+<dd><p class="first">All URLs provided by this factory have the subdomain set to a
+specific domain. For example if you want to use the subdomain for
+the current language this can be a good setup:</p>
+<div class="syntax"><pre><span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;#select_language&#39;</span><span class="p">),</span>
+    <span class="n">Subdomain</span><span class="p">(</span><span class="s">&#39;&lt;string(length=2):lang_code&gt;&#39;</span><span class="p">,</span> <span class="p">[</span>
+        <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">),</span>
+        <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/about&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;about&#39;</span><span class="p">),</span>
+        <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/help&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;help&#39;</span><span class="p">)</span>
+    <span class="p">])</span>
+<span class="p">])</span>
+</pre></div>
+<p class="last">All the rules except of the <tt class="docutils literal"><span class="pre">'#select_language'</span></tt> endpoint will now
+listen on a two letter long subdomain that helds the language code
+for the current request.</p>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.Submount">Submount</cite></dt>
+<dd><p class="first">Like <cite>Subdomain</cite> but prefixes the URL rule with a given string:</p>
+<div class="syntax"><pre><span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">),</span>
+    <span class="n">Submount</span><span class="p">(</span><span class="s">&#39;/blog&#39;</span><span class="p">,</span> <span class="p">[</span>
+        <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/index&#39;</span><span class="p">),</span>
+        <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/entry/&lt;entry_slug&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/show&#39;</span><span class="p">)</span>
+    <span class="p">])</span>
+<span class="p">])</span>
+</pre></div>
+<p class="last">Now the rule <tt class="docutils literal"><span class="pre">'blog/show'</span></tt> matches <tt class="docutils literal"><span class="pre">/blog/entry/&lt;entry_slug&gt;</span></tt>.</p>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.EndpointPrefix">EndpointPrefix</cite></dt>
+<dd><p class="first">Prefixes all endpoints (which must be strings for this factory) with
+another string. This can be useful for sub applications:</p>
+<div class="syntax"><pre><span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">),</span>
+    <span class="n">EndpointPrefix</span><span class="p">(</span><span class="s">&#39;blog/&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">Submount</span><span class="p">(</span><span class="s">&#39;/blog&#39;</span><span class="p">,</span> <span class="p">[</span>
+        <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">),</span>
+        <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/entry/&lt;entry_slug&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;show&#39;</span><span class="p">)</span>
+    <span class="p">])])</span>
+<span class="p">])</span>
+</pre></div>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h3 id="rule-templates">Rule Templates</h3>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.routing.RuleTemplate">RuleTemplate</cite></dt>
+<dd><p class="first">Returns copies of the rules wrapped and expands string templates in
+the endpoint, rule, defaults or subdomain sections.</p>
+<p>Here a small example for such a rule template:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">RuleTemplate</span>
+
+<span class="n">resource</span> <span class="o">=</span> <span class="n">RuleTemplate</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/$name/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;$name.list&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/$name/&lt;int:id&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;$name.show&#39;</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span><span class="n">resource</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;user&#39;</span><span class="p">),</span> <span class="n">resource</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;page&#39;</span><span class="p">)])</span>
+</pre></div>
+<p class="last">When a rule template is called the keyword arguments are used to
+replace the placeholders in all the string parameters.</p>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h3 id="custom-converters">Custom Converters</h3>
+<p>You can easily add custom converters.  The only thing you have to do is to
+subclass <cite>BaseConverter</cite> and pass that new converter to the url_map.  A converter
+has to provide two public methods: <cite>to_python</cite> and <cite>to_url</cite>, as well as a
+member that represents a regular expression.  Here is a small example:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">randrange</span>
+<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">Map</span><span class="p">,</span> <span class="n">BaseConverter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">class</span> <span class="nc">BooleanConverter</span><span class="p">(</span><span class="n">BaseConverter</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url_map</span><span class="p">,</span> <span class="n">randomify</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BooleanConverter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">url_map</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">randomify</span> <span class="o">=</span> <span class="n">randomify</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regex</span> <span class="o">=</span> <span class="s">&#39;(?:yes|no|maybe)&#39;</span>
+
+    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s">&#39;maybe&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomify</span><span class="p">:</span>
+                <span class="k">return</span> <span class="ow">not</span> <span class="n">randrange</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">==</span> <span class="s">&#39;yes&#39;</span>
+
+    <span class="k">def</span> <span class="nf">to_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="ow">and</span> <span class="s">&#39;yes&#39;</span> <span class="ow">or</span> <span class="s">&#39;no&#39;</span>
+
+<span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/vote/&lt;bool:werkzeug_rocks&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;vote&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/vote/&lt;bool(randomify=True):foo&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+<span class="p">],</span> <span class="n">converters</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;bool&#39;</span><span class="p">:</span> <span class="n">BooleanConverter</span><span class="p">})</span>
+</pre></div>
+<p>If you want that converter to be the default converter, name it <tt class="docutils literal"><span class="pre">'default'</span></tt>.</p>
+</div>
+
+      <div style="clear:both"></div>
+    </div>
+    <div class="footer">
+      Werkzeug is a <a href="http://pocoo.org/">Pocoo</a> project licensed under the
+      BSD license.
+    </div>
+  </div>
+</body>
+</html>

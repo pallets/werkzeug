@@ -4,6 +4,10 @@ HTTP Exceptions
 
 .. module:: werkzeug.exceptions
 
+All the exceptions must be imported from the `werkzeug.exceptions` module
+unless you are using the `abort` callable which is available in `werkzeug`
+too.
+
 
 Error Classes
 =============

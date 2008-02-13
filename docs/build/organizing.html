@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Organizing Code // Werkzeug Documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="pygments.css">
+  <link rel="stylesheet" type="text/css" media="print" href="print.css">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1><a href="index.html"><span>Werkzeug</span></a></h1>
+      <p><span>The Swiss Army Knife For Python Web Developers</span></p>
+    </div>
+    <div class="body">
+      <h2>Organizing Code</h2>
+      
+      <div class="toc">
+        <h4>Table of Contents</h4>
+        <ul><li><a class="reference" href="#entry-point" id="id1" name="id1">Entry Point</a></li>
+<li><a class="reference" href="#utils" id="id2" name="id2">Utils</a></li>
+<li><a class="reference" href="#urls" id="id3" name="id3">URLs</a></li>
+<li><a class="reference" href="#view" id="id4" name="id4">View</a></li>
+<li><a class="reference" href="#models-and-templates" id="id5" name="id5">Models and Templates</a></li>
+</ul>
+      </div>
+      
+      <p>Werkzeug doesn&#8217;t limit you in what you do; thus there is no general rule where
+to locate your modules, what to do with your data etc.</p>
+<p>However, there is a general pattern which is used in many web applications,
+the &#8220;Model View Controller&#8221; pattern (<cite>MVC</cite>), which makes sense for many
+applications.</p>
+<p>The idea is that you have &#8220;models&#8221; in one file, the &#8220;views&#8221; in another and the
+&#8220;controllers&#8221; in the third file or folder.  The Django framework came up with
+a new idea of naming those components which is called &#8220;Model Template View&#8221;
+(<cite>MTV</cite>) which probably makes more sense for web applications although it means
+nearly the same.  We will use the latter naming in this file.</p>
+<p>So here is what those terms mean:</p>
+<dl>
+<dt>Model</dt>
+<dd>A model is an abstraction of your data.  For example if you have a
+database you can use the excellent <a class="reference" href="http://www.sqlalchemy.org/">SQLAlchemy</a> library that maps
+database tables to classes or just provides a thin layer that lets you
+write your own classes.</dd>
+<dt>Template</dt>
+<dd><p class="first">The templates contain the actual HTML markup with placeholders for data
+passed to them.  Although there is a <a class="reference" href="minitmpl.html">minimal template language</a> in the Werkzeug package we don&#8217;t recommend using it for
+larger applications.  There are many good and powerful template engines
+out there that support debugging, template inheritance, XML output etc.</p>
+<p class="last">The integrated templating language is a good idea if you have one or two
+templates and don&#8217;t want to install one of the big template engines, but
+it is not suitable for more complex tasks!</p>
+</dd>
+<dt>View</dt>
+<dd>The view is the code that processes data, connects the model with
+templates, and then outputs the result. This is the part where Werkzeug
+helps you.</dd>
+</dl>
+<div class="section">
+<h3 id="entry-point">Entry Point</h3>
+<p>There should be one central file that provides the WSGI application and
+dispatches the requests.  It&#8217;s also a good idea to assemble the final URL map
+there if you use the Werkzeug <a class="reference" href="routing.html">routing system</a>.</p>
+<p>It&#8217;s also a good idea to call the file something like <tt class="docutils literal"><span class="pre">main.py</span></tt> or
+<tt class="docutils literal"><span class="pre">application.py</span></tt> and locate it in the root of the package.  This is what it
+<em>could</em> look like:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">import_string</span>
+<span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">HTTPException</span>
+<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">RequestRedirect</span>
+<span class="k">from</span> <span class="nn">mypackage.urls</span> <span class="k">import</span> <span class="n">url_map</span>
+
+<span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
+    <span class="n">url_adapter</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">bind_to_environ</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">endpoint</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">url_adapter</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+        <span class="n">view</span> <span class="o">=</span> <span class="n">import_string</span><span class="p">(</span><span class="s">&#39;mypackage.views.&#39;</span> <span class="o">+</span> <span class="n">endpoint</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">view</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">RequestRedirect</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">),</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">e</span>
+    <span class="k">return</span> <span class="n">resp</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
+</pre></div>
+<p>You can even further simplify the dispatching by using <tt class="docutils literal"><span class="pre">urls.dispatch</span></tt> as
+explained in the routing documentation.</p>
+<p>This will look for the controller functions in <cite>mypackage.views.module</cite>.
+If the URL is configured with an endpoint of <tt class="docutils literal"><span class="pre">'static.index'</span></tt>, the module
+<cite>mypackage.views.static</cite> is loaded and <cite>index(req)</cite> is called.</p>
+<p>The URL rule parameters are passed to the function as keyword arguments then.</p>
+<p><strong>Note</strong>: This is just one idea of how things can look like. This doesn&#8217;t
+necessarily have to represent your application.  You can, for example, save
+the request object in a thread-local storage or have your views as methods
+of a controller class you instantiate with the request as argument for each
+incoming request.  You can also use other request objects or no request object
+at all etc.</p>
+</div>
+<div class="section">
+<h3 id="utils">Utils</h3>
+<p>If we continue the example above we need an utils module with the request and
+response objects.  This would also contain other utilities and a bridge to a
+template engine.  In this example we will use the <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> template engine -
+basically because it&#8217;s something we use, too - but you can of course use any
+template engine:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">jinja</span> <span class="k">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">PackageLoader</span>
+<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Response</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">PackageLoader</span><span class="p">(</span><span class="s">&#39;mypackage&#39;</span><span class="p">,</span> <span class="s">&#39;templates&#39;</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">TemplateResponse</span><span class="p">(</span><span class="n">Response</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_name</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
+        <span class="n">tmpl</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">template_name</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">Response</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&#39;text/html&#39;</span><span class="p">)</span>
+</pre></div>
+<p><strong>Note</strong>: Templates in this example are saved in the <cite>templates</cite> folder inside
+the <cite>mypackage</cite> package.  The way template loading and rendering works depends
+on the template engine, so have a look at it&#8217;s documentation regarding that.</p>
+<p>We just subclass request and response classes for our needs and provide a
+second response subclass that is used to render templates.  It&#8217;s used in the
+example view below.</p>
+</div>
+<div class="section">
+<h3 id="urls">URLs</h3>
+<p>Because we use the Werkzeug URL routing system in this example and the URLs
+are stored in <cite>urls.py</cite>, we need that file:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
+
+<span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;static.index&#39;</span><span class="p">)</span>
+<span class="p">])</span>
+</pre></div>
+<p>This is just one small URL rule for one view.</p>
+</div>
+<div class="section">
+<h3 id="view">View</h3>
+<p>Here is the view defined above.  It must be saved in
+<cite>myprojects/views/static.py</cite> as defined above:</p>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">myproject.utils</span> <span class="k">import</span> <span class="n">TemplateResponse</span>
+
+<span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">TemplateResponse</span><span class="p">(</span><span class="s">&#39;index.html&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Welcome&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section">
+<h3 id="models-and-templates">Models and Templates</h3>
+<p>Models and templates are out of the scope for this documentation, but you
+should have gotten an idea on how you can organize your WSGI application built
+with the help of Werkzeug.</p>
+</div>
+
+      <div style="clear:both"></div>
+    </div>
+    <div class="footer">
+      Werkzeug is a <a href="http://pocoo.org/">Pocoo</a> project licensed under the
+      BSD license.
+    </div>
+  </div>
+</body>
+</html>

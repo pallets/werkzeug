@@ -2,8 +2,9 @@
 Wrappers
 ========
 
-
 .. module:: werkzeug.wrappers
+
+You can import all these objects directly from `werkzeug`.
 
 Base Wrappers
 =============

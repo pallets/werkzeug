@@ -6,6 +6,9 @@ Werkzeug comes with a bunch of utilties that can be useful for WSGI
 applications.  Most of the classes provided by this module are used by the
 wrappers, you can however use them without the wrappers, too.
 
+All the utilities can be directly imported from the `werkzeug` module.
+
+
 Data Structures
 ===============
 
