@@ -58,7 +58,7 @@ from setuptools import setup, Feature
 
 setup(
     name='Werkzeug',
-    version='0.2',
+    version='0.3',
     url='http://werkzeug.pocoo.org/',
     download_url='http://werkzeug.pocoo.org/download',
     license='BSD',

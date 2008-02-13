@@ -2,9 +2,14 @@ Werkzeug Changelog
 ==================
 
 
+Version 0.3
+-----------
+(codename to be selected, release date somewhere around May 2008)
+
+
 Version 0.2
 -----------
-(codename Faustkeil, estimated release date Feb 14th 2008)
+(codename Faustkeil, released Feb 14th 2008)
 
 - Added `AnyConverter` to the routing system.
 - Added `werkzeug.contrib.securecookie`
