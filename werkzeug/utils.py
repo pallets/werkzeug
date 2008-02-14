@@ -860,7 +860,7 @@ class SharedDataMiddleware(object):
         stream_maker = None
         for search_path, loader in self.exports.iteritems():
             if search_path == path:
-                real_filename, stream_maker = loader.load(None)
+                real_filename, stream_maker = loader(None)
                 if stream_maker is not None:
                     break
             if not search_path.endswith('/'):
