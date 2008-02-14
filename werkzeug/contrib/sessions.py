@@ -254,8 +254,9 @@ class SessionMiddleware(object):
                  cookie_httponly=False, environ_key='werkzeug.session'):
         """
         The cookie parameters are the same as for the `dump_cookie` function
-        just prefixed with "cookie_".  Additionally "max_age" is "cookie_age"
-        for backwards compatibility.
+        just prefixed with "cookie_".  Additionally "max_age" is called
+        "cookie_age" and not "cookie_max_age" because of backwards
+        compatibility.
         """
         self.app = app
         self.store = store
