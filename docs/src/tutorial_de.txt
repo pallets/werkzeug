@@ -9,38 +9,47 @@ Werkzeug Tutorial
     Library wirken sich oft auch auf das Tutorial aus -- deshalb ist die
     Originalversion möglicherweise aktueller.
 
-Willkommen zum Tutorial für Werkzeug 0.2.  In diesem Tutorial werden wir einen
-kleinen TinyURL-Klon programmieren, der die URLs in einer Datenbank speichert.
-Die verwendeten Libraries für diese Anwendung sind `Jinja`_ für die Templates,
-`SQLAlchemy`_ für die Datenbank und natürlich Werkzeug für WSGI.
+Willkommen zum Tutorial für Werkzeug 0.2.  Wir werden einen einfachen
+`TinyURL`_-Klon programmieren, der die URLs in einer Datenbank speichert.  Die
+Die verwendeten Bibliotheken für diese Anwendung sind `Jinja`_ für die
+Templates, `SQLAlchemy`_ für die Datenbank-Anbindung und natürlich Werkzeug
+für WSGI.
 
-Wir haben uns hier für diese Libraries entschieden, weil wir einen
-Django-ähnlichen Grundaufbau nachstellen wollen, zum Beispiel view-Funktionen
-und nicht Rails/Pylons-ähnliche Controller-Klassen mit action-Methoden oder
-Designer-freundliche Templates.
+Wir haben uns hier für diese Komponenten entschieden, weil wir einen
+`Django`_-ähnlichen Grundaufbau nachstellen wollen.  Dazu zählen wir zum
+Beispiel View-Funktionen anstelle der in `Rails`_ und `Pylons`_ gängigen
+Controller-Klassen mit Action-Methoden, sowie designerfreundliche Templates.
 
-In Werkzeugs `Beispiel-Ordner`_ befinden sich einige Anwendungen die andere
-Konzepte, Template Engines etc. verfolgen.  Dort liegt auch der Quellcode dieser
-Anwendung.
+In Werkzeugs `Beispiel-Ordner`_ befinden sich einige Anwendungen, die andere
+Konzepte verfolgen, Template-Engines einsetzen etc.  Dort liegt auch der
+Quellcode der Anwendung, die wir in diesem Tutorial erstellen werden.
 
-Du kannst easy_install verwenden, um Jinja und SQLAlchemy zu installieren,
-solltest du diese Libraries noch nicht besitzen::
+Du kannst `easy_install`_ verwenden, um Jinja und SQLAlchemy zu installieren,
+falls diese nicht bereits installiert sind::
 
     sudo easy_install Jinja
     sudo easy_install SQLAlchemy
 
-Diese Befehle funktionieren auch auf einem Windows-Computer (mit
-Administratorrechten), allerdings musst du das "sudo" weglassen.  Als OS
-X-Benutzer könntest du die Libraries auch via port installieren, Linux-Benutzer
-finden diese Pakete möglicherweise auch in ihrem Paketmanager.
+Diese Befehle funktionieren auch auf einem Windows-System (mit
+Administratorrechten), sofern die `setuptools` installiert sind, allerdings
+musst du das `sudo` weglassen.  Als OS X-Benutzer könntest du die Libraries
+auch via port installieren, Linux-Benutzer finden diese Pakete möglicherweise
+auch in ihrem Paketmanager.
 
-Wenn du neugierig bist, kannst du auch die `Online-Demo`_ der Anwendung ansehen.
+Wenn du neugierig bist, kannst du dir auch die `Online-Demo`_ der Anwendung
+ansehen.
 
 Noch ein kleiner Hinweis: Dieses Tutorial erfordert Python 2.4.
 
+.. _TinyURL: http://tinyurl.com/
+.. _Django: http://www.djangoproject.com/
 .. _Jinja: http://jinja.pocoo.org/
 .. _SQLAlchemy: http://sqlalchemy.org/
+.. _Rails: http://www.rubyonrails.org/
+.. _Pylons: http://pylonshq.com/
 .. _Beispiel-Ordner: http://dev.pocoo.org/projects/werkzeug/browser/example
+.. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
+.. _setuptools: http://pypi.python.org/pypi/setuptools
 .. _Online-Demo: http://werkzeug.pocoo.org/e/shorty/
 
 
@@ -48,7 +57,7 @@ Teil 0: Die Ordnerstruktur
 ==========================
 
 Bevor wir beginnen können, müssen wir ein Python-Paket für unsere
-Werkzeug-Anwendung erstellen.  Dort werden wir dann die Anwendung, die Templates
+Werkzeug-Anwendung erstellen.  Dort werden wir die Anwendung, die Templates
 und die statischen Dateien ablegen.
 
 Die Anwendung dieses Tutorials nennen wir `shorty` und die Struktur für unsere
@@ -57,12 +66,13 @@ Anwendung sieht etwa so aus::
     manage.py
     shorty/
         __init__.py
-        templates/
         static/
+        templates/
 
 Die Dateien ``__init__.py`` und ``manage.py`` lassen wir für den Moment einmal
-leer.  Die erste dieser Dateien macht aus dem Ordner ``shorty`` ein Python-Paket
-und die zweite werden wir später für unsere Verwaltungsfunktionen nutzen.
+leer.  Die erste dieser Dateien macht aus dem Ordner ``shorty`` ein
+Python-Paket, die zweite werden wir später für unsere Verwaltungsfunktionen
+nutzen.
 
 
 Teil 1: Die WSGI-Anwendung
@@ -70,18 +80,18 @@ Teil 1: Die WSGI-Anwendung
 
 Im Gegensatz zu Django oder ähnlichen Frameworks arbeitet Werkzeug direkt auf
 der WSGI-Schicht.  Es gibt keine schicke Magie, die die zentrale WSGI-Anwendung
-für uns implementiert.  Das bedeutet, dass wir als erstes eben diese
-WSGI-Anwendung programmieren müssen.  Eine WSGI-Anwendung ist entweder eine
-Funktion, oder noch besser, eine Klasse mit einer Methode ``__call__``.
+für uns implementiert.  Das bedeutet, dass wir als Erstes eben diese
+programmieren müssen.  Eine WSGI-Anwendung ist eine Funktion oder, noch besser,
+eine Klasse mit einer Methode ``__call__``.
 
-Eine aufrufbare Klasse hat große Vorteile gegenüber einer Funktion: Zum einen
+Eine aufrufbare Klasse hat große Vorteile gegenüber einer Funktion: Zum Einen
 kann man Konfigurationsparameter direkt an den Konstruktor übergeben, zum
-anderen können wir WSGI Middlewares innerhalb der WSGI Anwendung hinzufügen.
+Anderen können wir WSGI-Middlewares innerhalb der WSGI-Anwendung hinzufügen.
 Das ist nützlich für Middlewares, die entscheidend für die Funktion der
-Anwendung sind (z.B. eine session-Middleware).
+Anwendung sind (z.B. eine Session-Middleware).
 
-Hier zunächst einmal der Quellcode für unsere ``shorty/application.py``
-Datei, in die wir die WSGI Anwendung packen::
+Hier zunächst einmal der Quellcode für unsere Datei ``shorty/application.py``,
+in der wir die WSGI-Anwendung ablegen::
 
     from sqlalchemy import create_engine
     from werkzeug import Request, ClosingIterator
@@ -114,27 +124,28 @@ Datei, in die wir die WSGI Anwendung packen::
             return ClosingIterator(response(environ, start_response),
                                    [session.remove, local_manager.cleanup])
 
-Ziemlich für Code für den Anfang...  Gehen wir mal Schritt für Schritt durch den
-Quellcode.  Zunächst einmal haben wir einige Imports: Aus dem Paket `sqlalchemy`
-holen wir uns eine Factory-Funktion, die eine neue Datenbank-Engine für uns
-erstellt, die einen Connection-Pool besitzt.  Die nächsten paar Imports holen
-einige Objekte in den Namensraum, die uns Werkzeug zur Verfügung stellt: ein
-Request-Objekt, ein spezieller Iterator, der uns hilft am Ende eines Requests
-einige Dinge aufzuräumen, eine schließlich die Basisklasse für alle
+Ziemlich viel für Code für den Anfang ... gehen wir ihn mal Schritt für Schritt
+durch.  Zunächst sehen wir einige Imports: Aus dem Paket `sqlalchemy` holen wir
+uns eine Factory-Funktion, die eine neue Datenbank-Engine für uns erstellt, die
+wiederum einen Connection-Pool bereithält.  Die nächsten Imports holen einige
+Objekte in den Namensraum, die uns Werkzeug zur Verfügung stellt: ein
+Request-Objekt; ein spezieller Iterator, der uns hilft am Ende eines Requests
+einige Dinge aufzuräumen; und schließlich die Basisklasse für alle
 HTTP-Exceptions.
 
 Die nächsten fünf Imports funktionieren noch nicht, weil wir das `utils`-Modul
-noch nicht erstellt haben.  Aber wir werden trotzdem schon ein wenig über diese
-Objekte sprechen.  Das Objekt `session` ist nicht ein PHP-ähnliches session
-array, sondern eine Datenbank-Session von SQLAlchemy.  Alle Datenbank-Models,
-die im Kontext eines Requests erstellt werden sind auf diesem Objekt
-zwischengespeichert so dass man Änderungen mit einem Schlag zum Server senden
-kann.  Im Gegensatz zu Django wird ein instantiiertes Datenbank-Model
-automatisch von der Session verwaltet und ist in dieser Session ein Singleton.
-Es kann also niemals zwei Instanzen des selben Datenbankeintrages in einer
-Session geben.  Das Objekt `metadata` ist auch von SQLAlchemy und speichert
-Informationen über die Datenbanktabellen.  Es stellt zum Beispiel eine Funktion
-bereit, um alle definierten Tabellen in der Datenbank zu erstellen.
+noch nicht erstellt haben.  Doch wir werden trotzdem schon ein wenig über diese
+Objekte sprechen.  Das Objekt `session` ist kein aus PHP bekanntes
+Session-Array, sondern eine Datenbank-Session von SQLAlchemy.  Alle
+Datenbank-Models, die im Kontext eines Requests erstellt werden, sind auf
+diesem Objekt zwischengespeichert, so dass man Änderungen mit einem Schlag zum
+Server senden kann.  Im Gegensatz zu Django wird ein instantiiertes
+Datenbank-Model automatisch von der Session verwaltet und ist in dieser Session
+ein Singleton.  Es kann also niemals zwei Instanzen des selben
+Datenbankeintrags in einer Session geben.  Das Objekt `metadata` stammt
+ebenfalls aus SQLAlchemy und speichert Informationen über die Tabellen der
+Datenbank.  Es stellt zum Beispiel eine Funktion bereit, die alle im Model
+definierten Tabellen in der Datenbank erstellt.
 
 Das Objekt `local` ist ein kontext-lokales Objekt, erstellt vom Modul `utility`.
 Attributzugriffe auf dieses Objekt sind an den aktuellen Request gebunden,
@@ -143,59 +154,62 @@ Objekte ablegen, ohne Threadingprobleme zu bekommen.  Der `local_manager` wird
 genutzt, um am Ende des Requests alle auf dem `local`-Objekt gespeicherten Daten
 wieder freizugeben.
 
-Der letzte Import von dort ist die URL-Map die alle URL-Routen verwaltet.
+Der letzte Import von dort ist die URL-Map, die alle URL-Routen verwaltet.
 Solltest du bereits mit Django gearbeitet haben, ist dies vergleichbar mit den
-regulären Ausdrücken in der jeweiligen ``urls.py``.  Solltest du PHP kennen, ist
-die URL-Map ähnlich einem eingebauten `mod_rewrite`.
+regulären Ausdrücken in der jeweiligen ``urls.py``.  Kennst du PHP, ist die
+URL-Map ähnlich einem eingebauten `mod_rewrite`.
 
-Zusätzlich importieren wir hier unser `views`-Modul, das die view-Funktionen
-besitzt und dann das `models`-Modul, dass unsere Models speichert.  Auch wenn es
-so aussieht, als ob wir diesen Import nicht nutzen, ist er wichtig.  Nur dadurch
-werden unsere Tabellen auf dem metadata-Objekt registriert.
+Zusätzlich importieren wir hier unser `views`-Modul, das die View-Funktionen
+enthält, sowie das `models`-Modul, in welchem unsere Models definiert sind.
+Auch wenn es so aussieht, als ob wir diesen Import nicht nutzen, ist er
+wichtig.  Nur dadurch werden unsere Tabellen auf dem `metadata`-Objekt
+registriert.
 
-Schauen wir also auf die Anwendungsklasse.  Der Konstruktor dieser Klasse nimmt
-die Datenbank-URI entgegen, die -- einfach gesagt -- den Typ der Datenbank und
-die Verbindungsdaten enthält.  Für SQLite das wäre zum Beispiel
+Schauen wir auf die Anwendungsklasse.  Der Konstruktor dieser Klasse nimmt die
+Datenbank-URI entgegen, die -- einfach gesagt -- den Typ der Datenbank und die
+Verbindungsdaten enthält.  Für SQLite das wäre zum Beispiel
 ``sqlite:////tmp/shorty.db`` (die vier Slashes sind **kein** Tippfehler).
 
 Im Konstruktor erstellen wir auch gleich eine Datenbank-Engine für diese URI und
 aktivieren das automatische Umwandeln von Bytestrings nach Unicode.  Das ist
 nützlich, weil sowohl Jinja als auch Werkzeug intern nur Unicode verwenden.
 
-Des weiteren binden wir die Anwendung gleich mal an das `local`-Objekt.  Das ist
+Des Weiteren binden wir die Anwendung an das `local`-Objekt.  Das ist
 eigentlich nicht nötig, aber nützlich, wenn wir mit der Anwendung in der
 Python-Shell spielen wollen.  Damit werden direkt nach dem Instantiieren der
 Anwendung die Datenbankfunktionen testen.  Wenn wir das nicht tun, wird der
 Python-Interpreter einen Fehler werfen, wenn außerhalb eines Requests versucht
-wird, eine SQLAlchemy Session zu erstellen.
+wird, eine SQLAlchemy-Session zu erstellen.
 
 Die Methode `init_database` können wir später im Managementscript verwenden, um
-alle Datenbank-Tabellen zu erstellen, die wir verwenden.
+alle Tabellen zu erstellen, die wir definiert haben.
 
-Und nun zur eigentlichen WSGI-Anwendung, der `__call__`-Methode.  Dort passiert
-das so genannte "Request Dispatching", also das Weiterleiten von eingehenden
-Anfragen zu den richtigen Funktionen.  Als erstes erstellen wir dort ein neues
-Request-Objekt, um nicht direkt mit dem `environ` arbeiten zu müssen, dann
-binden wir die Anwendung an das `local`-Objekt für den aktuellen Kontext.
+Nun zur eigentlichen WSGI-Anwendung, der `__call__`-Methode.  Dort passiert das
+so genannte "Request Dispatching", also das Weiterleiten von eingehenden
+Anfragen zu den richtigen Funktionen.  Als Erstes erstellen wir dort ein neues
+Request-Objekt, um nicht direkt mit `environ`, dem Dictionary mit den
+Umgebungsvariablen, arbeiten zu müssen.  Dann binden wir die Anwendung an das
+`local`-Objekt für den aktuellen Kontext.
 
-Dann erstellen wir einen URL-Adapter, indem wir die URL-Map an das aktuelle
-WSGI-Environment binden.  Der Adapter weiß dann, wie die aktuelle URL aussieht,
-wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir nutzen, um URLs
-zu bauen oder eben den aktuellen Request zu matchen.  Wir binden diesen Adapter
-auch an das local-Objekt, damit wir im utils-Modul auf ihn zugreifen können.
+Anschließend erstellen wir einen URL-Adapter, indem wir die URL-Map an die
+aktuelle WSGI-Umgebung binden.  Der Adapter weiß dann, wie die aktuelle URL
+aussieht, wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir
+nutzen, um URLs zu erzeugen oder gegen den aktuellen Request zu matchen.  Wir
+binden diesen Adapter auch an das `local`-Objekt, damit wir im `utils`-Modul
+auf ihn zugreifen können.
 
 Danach kommt ein `try`/`except`-Konstrukt, das HTTP-Fehler abfängt, die während
-dem Matchen oder in einer View-Funktion auftreten können.  Wenn der Adapter
+des Matchings oder in einer View-Funktion auftreten können.  Wenn der Adapter
 keinen Endpoint für die aktuelle URL findet, wird er eine `NotFound`-Exception
 werfen, die wir wie ein Response Objekt aufrufen können.  Der Endpoint ist in
-unserem Fall der Name der Funktion im view-Modul, die wir aufrufen möchten.  Wir
-suchen uns einfach mit `getattr` die Funktion dem Namen nach heraus und rufen
-sie mit dem Request-Objekt und den URL-Werten auf.
+unserem Fall der Name der Funktion im `views`-Modul, die wir aufrufen möchten.
+Wir suchen uns einfach mit `getattr` die Funktion dem Namen nach heraus und
+rufen sie mit dem Request-Objekt und den URL-Werten auf.
 
 Am Schluss rufen wir das gewonnene Response-Objekt (oder die Exception) als
 WSGI-Anwendung auf und übergeben den Rückgabewert dieser Funktion an den
-`ClosingIterator` zusammen mit zwei Funktionen fürs Aufräumen.  Dies schließt
-die SQLAlchemy-Session und leert das local-Objekt für diesen Request.
+`ClosingIterator`, zusammen mit zwei Funktionen fürs Aufräumen.  Dies schließt
+die SQLAlchemy-Session und leert das `local`-Objekt für diesen Request.
 
 Nun müssen wir zwei leere Dateien ``shorty/views.py`` und ``shorty/models.py``
 erstellen, damit die Imports nicht fehlschlagen.  Den tatsächlichen Code für
@@ -212,10 +226,10 @@ funktioniert.  Der folgende Code landet in der Datei ``shorty/utils.py``:
 
 .. sourcecode:: python
 
-    from werkzeug import Local, LocalManager
-    from werkzeug.routing import Map, Rule
     from sqlalchemy import MetaData
     from sqlalchemy.orm import create_session, scoped_session
+    from werkzeug import Local, LocalManager
+    from werkzeug.routing import Map, Rule
 
     local = Local()
     local_manager = LocalManager([local])
@@ -236,25 +250,25 @@ funktioniert.  Der folgende Code landet in der Datei ``shorty/utils.py``:
     def url_for(endpoint, _external=False, **values):
         return local.url_adapter.build(endpoint, values, force_external=_external)
 
-Als erstes importieren wir wieder eine Menge, dann erstellen wir das
-local-Objekt und den Manager dafür, wie bereits im vorherigen Abschnitt
-besprochen.  Neu ist hier, dass der Aufruf eines local-Objekts mit einem String
-ein Proxy-Objekt zurück gibt.  Dieses zeigt stets auf die gleichnamigen
-Attribute des local-Objekts. Beispielsweise verweist nun `application` dauerhaft
-auf `local.application`.  Wenn du jedoch darauf zugreifst, aber kein Objekt an
-`local.application` gebunden ist, erhältst du einen `RuntimeError`.
+Zunächst importieren wir wieder eine Menge, dann erstellen wir das
+`local`-Objekt und den Manager dafür, wie bereits im vorherigen Abschnitt
+besprochen.  Neu ist hier, dass der Aufruf eines `local`-Objekts mit einem
+String ein Proxy-Objekt zurück gibt.  Dieses zeigt stets auf die gleichnamigen
+Attribute des `local`-Objekts.  Beispielsweise verweist nun `application`
+dauerhaft auf `local.application`.  Wenn du jedoch darauf zugreifst und kein
+Objekt an `local.application` gebunden ist, erhältst du einen `RuntimeError`.
 
 Die folgenden drei Zeilen sind im Prinzip alles, um SQLAlchemy 0.4 oder höher in
 eine Werkzeug-Anwendung einzubinden.  Wir erstellen ein Metadaten-Objekt für all
 unsere Tabellen sowie eine "scoped session" über die
 `scoped_session`-Factory-Funktion.  Dadurch wird SQLAlchemy angewiesen,
 praktisch denselben Algorithmus zur Ermittlung des aktuellen Kontextes zu
-verwenden, wie es auch Werkzeug für die local-Objekte tut, und die
+verwenden, wie es auch Werkzeug für die `local`-Objekte tut, und die
 Datenbank-Engine der aktuellen Applikation zu benutzen.
 
 Wenn wir nicht vorhaben, mehrere Instanzen der Applikation in derselben Instanz
 des Python-Interpreters zu unterstützen, können wir den Code einfach halten,
-indem wir nicht über das aktuelle local-Objekt auf die Applikation zugreifen,
+indem wir nicht über das aktuelle `local`-Objekt auf die Applikation zugreifen,
 sondern einen anderen Weg nehmen.  Dieser Ansatz wird etwa von Django verfolgt,
 macht es allerdings unmöglich, mehrere solcher Applikationen zu kombinieren.
 
@@ -276,17 +290,16 @@ Unterbrechung: Und nun etwas komplett anderes
 
 Da wir nun das Grundgerüst für unsere Anwendung fertig gestellt haben, können
 wir jetzt erst einmal relaxen und uns etwas komplett anderem zuwenden: den
-Verwaltungs-Skripten.  Während der Entwicklung erledigt man häufig immer
+Verwaltungs-Scripts.  Während der Entwicklung erledigt man häufig immer
 wiederkehrende Aufgaben, wie zum Beispiel das Starten eines Entwicklungs-Servers
-(im Gegensatz zu PHP benötigt Werkzeug keinen Apache-Server, der in Python
+(im Gegensatz zu PHP benötigt Werkzeug keinen Apache-Server; der in Python
 integrierte `wsgiref`-Server ist völlig ausreichend und für die Entwicklung auf
-jeden Fall empfehlenswert), das Starten eines Python-Interpreters, um mit den
-Datenbankobjekten herumzuspielen oder die Datenbank zu initialisieren, etc.
+jeden Fall empfehlenswert), das Starten eines Python-Interpreters (um mit den
+Datenbankobjekten herumzuspielen oder die Datenbank zu initialisieren) etc.
 
-Werkzeug macht es zum Glück unglaublich einfach, solche Verwaltungs-Skripte zu
-schreiben. Der folgende Code implementiert ein voll funktionsfähiges
-Verwaltungs-Skript und gehört in die `manage.py`-Datei, welche du am Anfang
-erstellt hast:
+Werkzeug macht es unglaublich einfach, solche Verwaltungs-Scripts zu schreiben.
+Der folgende Code implementiert ein voll funktionsfähiges Verwaltungs-Script
+und gehört in die `manage.py`-Datei, welche du am Anfang erstellt hast:
 
 .. sourcecode:: python
 
@@ -309,21 +322,21 @@ erstellt hast:
     script.run()
 
 `werkzeug.script` ist genauer in der `Script-Dokumentation`_ beschrieben, und da
-der Großteil des Codes sowieso verständlich sein sollte, werden wir hier nicht
-näher darauf eingehen.
+der Großteil des Codes verständlich sein sollte, werden wir hier nicht näher
+darauf eingehen.
 
 Es ist aber wichtig, dass du ``python manage.py shell`` ausführen kannst, um
-eine interaktive Python Shell zu starten.  Solltest du ein Traceback bekommen,
-kontrolliere bitte die betreffende Code-Zeile und vergleiche sie mit dem
-entsprechenden Code in dieser Anleitung.
+eine interaktive Python-Shell zu starten.  Solltest du einen Traceback
+bekommen, kontrolliere bitte die darin genannte Code-Zeile und vergleiche sie
+mit dem entsprechenden Code in dieser Anleitung.
 
-Sobald das Skript läuft, können wir mit dem Schreiben der Datenbank-Models
+Sobald das Script läuft, können wir mit dem Schreiben der Datenbank-Models
 beginnen.
 
 .. _Script-Dokumentation: script.txt
 
 
-Teil 3: Datenbank Models
+Teil 3: Datenbank-Models
 ========================
 
 Jetzt können wir die Models erstellen.  Da die Anwendung ziemlich einfach ist,
@@ -349,7 +362,7 @@ haben wir nur ein Model und eine Tabelle:
             self.public = public
             self.added = added or datetime.utcnow()
             if not uid:
-                while 1:
+                while True:
                     uid = get_random_uid()
                     if not URL.query.get(uid):
                         break
@@ -366,18 +379,19 @@ haben wir nur ein Model und eine Tabelle:
 
 
 Dieses Modul ist gut überschaubar.  Wir importieren alles, was wir von
-SQLAlchemy benötigen und erstellen die Tabelle.  Dann fügen wir eine Klasse für
-diese Tabelle hinzu und verbinden beide miteinander.  Für eine detailliertere
-Erklärung bezüglich SQLAlchemy solltest du dir das `exzellente Tutorial`_
-anschauen.
+SQLAlchemy benötigen, und erstellen die Tabelle.  Dann fügen wir eine Klasse
+für diese Tabelle hinzu und verbinden beide miteinander.  Für eine
+detailliertere Erklärung bezüglich SQLAlchemy solltest du dir das
+`exzellente Tutorial`_ anschauen.
 
-In dem Konstruktor generieren wir solange eine eindeutige ID, bis wir eine
-finden, die noch nicht belegt ist.  Die `get_random_uid`-Funktion fehlt -- wir
-müssen sie noch in unser utils-Modul hinzufügen:
+Im Konstruktor generieren wir solange eine eindeutige ID, bis wir eine finden,
+die noch nicht belegt ist.  Die `get_random_uid`-Funktion fehlt -- wir müssen
+sie noch in unser `utils`-Modul einfügen:
 
 .. sourcecode:: python
 
     from random import sample, randrange
+
     URL_CHARS = 'abcdefghijkmpqrstuvwxyzABCDEFGHIJKLMNPQRST23456789'
 
     def get_random_uid():
@@ -404,14 +418,14 @@ Jetzt können wir einige URLs zu der Datenbank hinzufügen:
 
 Wie du sehen kannst, müssen wir ``session.commit()`` aufrufen, um die Änderungen
 in der Datenbank zu speichern.  Nun erstellen wir ein privates Element mit einer
-eigenen UID erstellen:
+eigenen UID:
 
 .. sourcecode:: pycon
 
     >>> URL('http://werkzeug.pocoo.org/', False, 'werkzeug-webpage')
     >>> session.commit()
 
-Und alle abfragen:
+Dann fragen wir alle ab:
 
 .. sourcecode:: pycon
 
@@ -422,8 +436,8 @@ Und alle abfragen:
     >>> URL.query.get('werkzeug-webpage')
     <URL 'werkzeug-webpage'>
 
-Jetzt, da wir einige Daten in der Datenbank haben und wir ungefähr wissen auf
-welche Weise SQLAlchemy funktioniert, ist es Zeit unsere Views zu erstellen.
+Jetzt haben wir einige Datensätze in der Datenbank und wissen ungefähr, auf
+welche Weise SQLAlchemy funktioniert.  Zeit, unsere Views zu erstellen.
 
 .. _exzellente Tutorial: http://www.sqlalchemy.org/docs/04/ormtutorial.html
 
@@ -432,15 +446,16 @@ Teil 4: Die View-Funktionen
 ===========================
 
 Nachdem wir mit SQLAlchemy herumgespielt haben, können wir zurück zu Werkzeug
-gehen und anfangen, unsere Viewfunktionen zu erstellen.  Das Wort "Viewfunktion"
-kommt von Django, das die Funktionen, die die Templates wiedergibt,
-"Viewfunktionen" nennt.  Deshalb ist unser Beispiel MVT (Model, View, Template)
-und nicht etwa MVC (Model, View, Controller).  Die beiden Bezeichnungen bedeuten
-dasselbe, aber es ist viel einfacher, dieselbe Benennung wie Django zu nutzen.
+gehen und anfangen, unsere View-Funktionen zu erstellen.  Der Begriff
+"View-Funktion" kommt von Django. Dort werden die Funktionen, die Templates
+befüllen und ausgeben, so genannt.  Deshalb ist unser Beispiel eine Umsetzung
+von MVT (Model, View, Template) und nicht etwa MVC (Model, View, Controller).
+Die beiden Bezeichnungen bedeuten dasselbe, aber es ist viel einfacher,
+dieselbe Benennung wie Django zu nutzen.
 
-Zum Anfang erstellen wir einfach eine Viewfunktion für neue URLs und eine
-Funktion, die eine Nachricht über einen neuen Link darstellt.  Das ganze geht in
-unsere noch leere ``views.py``-Datei:
+Als Anfang erstellen wir einfach eine View-Funktion für neue URLs und eine
+Funktion, die eine Nachricht über einen neuen Link darstellt.  Das wird der
+Inhalt unserer noch leeren ``views.py``-Datei:
 
 .. sourcecode:: python
 
@@ -491,54 +506,54 @@ unsere noch leere ``views.py``-Datei:
     def list(request, page):
         pass
 
-Wieder einmal ziemlich viel Code, aber das meiste ist normale Formvalidierung.
-Wir erstellen zwei Funktionen, `new` und `display`, und dekorieren sie mit
-unserem `expose`-Dekorator von den Utils.  Dieser Dekorator fügt eine neue
-URL-Rule zur Map hinzu, indem er alle Parameter zum Konstruktor eines
-Ruleobjekts übergibt und den Endpoint auf den Namen der Funktion setzt.  Damit
-können wir einfach URLs zu den Funktionen erzeugen -- wir nutzen ihre
-Funktionsnamen als Endpoint.
+Wieder einmal ziemlich viel Code, aber das meiste ist normale
+Formularvalidierung.  Wir erstellen zwei Funktionen, `new` und `display`, und
+dekorieren sie mit unserem `expose`-Dekorator aus dem `utils`-Modul.  Dieser
+Dekorator fügt eine neue Regel zur URL-Map hinzu, indem er alle Parameter zum
+Konstruktor eines Rule-Objekts übergibt und den Endpoint auf den Namen der
+Funktion setzt.  Damit können wir einfach URLs zu den Funktionen erzeugen --
+wir nutzen ihre Funktionsnamen als Endpoint.
 
 Denke daran, dass dieser Code nicht unbedingt eine gute Idee für größere
 Anwendungen ist.  In solchen Fällen ist es besser, den vollen Importnamen mit
 einem allgemeinen Prefix oder etwas Ähnlichem als Endpoint zu nutzen.  Sonst
 wird es ziemlich verwirrend.
 
-Die Formvalidierung in der `new`-Methode ist ziemlich simpel.  Wir
-kontrollieren, ob die aktuelle Methode `POST` ist, falls ja nehmen wir die Daten
-vom Request und validieren sie.  Wenn dort kein Fehler auftritt, erstellen wir
-ein neues `URL`-Objekt, übergeben es der Datenbank und leiten auf die
-Anzeige-Seite um.
+Die Formularvalidierung in der `new`-Methode ist ziemlich simpel.  Wir
+kontrollieren, ob die aktuelle HTTP-Methode `POST` ist.  Falls ja nehmen wir
+die Daten vom Request und validieren sie.  Wenn dort kein Fehler auftritt,
+erstellen wir ein neues `URL`-Objekt, übergeben es der Datenbank und leiten auf
+die Anzeige-Seite um.
 
-Die `display`-Funktion ist nicht viel komplizierter. Die URL-Rule erwartet einen
-`uid`-Parameter, welchen die Funktion akzeptiert.  Danach schauen wir in der
-URL-Rule mit der gegebenen UID und geben das Template aus, indem wir das
-URL-Objekt ihm übergeben.
+Die `display`-Funktion ist nicht viel komplizierter.  Die URL-Rule erwartet
+einen `uid`-Parameter, welchen die Funktion entsprechend akzeptiert.  Danach
+holen wir das `URL`-Objekt mit der angegebenen UID und geben das Template aus,
+dem wir wiederum das `URL`-Objekt übergeben.
 
 Wenn die URL nicht existiert, werfen wir eine `NotFound`-Exception, welche eine
-statische "404 Seite nicht gefunden"-Seite anzeigt. Wir können diese später mit
-einer speziellen Errorseite ersetzen, indem wir die Exception auffangen, bevor
-die `HTTPException` geworfen wird.
+statische "404 Seite nicht gefunden"-Seite anzeigt.  Wir können diese später
+mit einer speziellen Fehlerseite ersetzen, indem wir die Exception auffangen,
+bevor die `HTTPException` geworfen wird.
 
-Die `link`-Viewfunktion wird von unseren Models in der `short_url`-Eigenschaft
+Die View-Funktion `link` wird von unseren Models in der `short_url`-Eigenschaft
 genutzt und ist die kurze URL, die wir vermitteln.  Wenn also die URL-UID
-``foobar`` ist, wird die URL unter ``http://localhost:5000/u/foobar`` erreichbar
-sein.
+``foobar`` ist, wird die URL unter ``http://localhost:5000/u/foobar``
+erreichbar sein.
 
-Die `list`-Viewfunktion wurde noch nicht geschrieben, das machen wir später.
+Die View-Funktion `list` wurde noch nicht geschrieben, das machen wir später.
 Wichtig ist allerdings, dass die Funktion einen optionalen URL-Parameter
-akzeptiert.  Der erste Dekorator sagt Werkzeug, dass für den Requestpfad
-``/page/`` die erste Seite angezeigt wird (da der Parameter `page` standardmäßig
-auf 1 gesetzt wird).  Wichtiger ist die Tatsache, dass Werkzeug URLs
-normalisiert.  Wenn du also ``/page`` oder ``/page/1`` aufrufst, wirst du in
-beiden Fällen zu ``/page/`` umgeleitet.  Das macht Google glücklich und
-geschieht automatisch.  Wenn du dieses Verhalten nicht magst, kannst du es
+akzeptiert.  Der erste Dekorator sagt Werkzeug, dass für den Request-Pfad
+``/page/`` die erste Seite angezeigt wird (da der Parameter `page`
+standardmäßig auf 1 gesetzt wird).  Wichtiger ist die Tatsache, dass Werkzeug
+URLs normalisiert.  Wenn du also ``/page`` oder ``/page/1`` aufrufst, wirst du
+in beiden Fällen zu ``/page/`` umgeleitet.  Das geschieht automatisch und macht
+Google glücklich.  Wenn du dieses Verhalten nicht magst, kannst du es
 abschalten.
 
-Und wieder einmal müssen wir zwei Objekte aus dem Utils-Modul importieren, die
-jetzt noch nicht existieren.  Eine von diesen soll ein Jinja-Template in ein
-Response-Objekt ausgeben, das andere prüft eine URL.  Fügen wir also diese zu
-``utils.py`` hinzu:
+Und wieder einmal müssen wir zwei Objekte aus dem `utils`-Modul importieren,
+die jetzt noch nicht existieren.  Eines von diesen soll ein Jinja-Template in
+ein Response-Objekt verwandeln, das andere prüft eine URL.  Fügen wir also
+diese zu ``utils.py`` hinzu:
 
 .. sourcecode:: python
 
@@ -566,9 +581,8 @@ niemand potentiell gefährliches JavaScript oder ähnliche URLs abschickt.  Die
 einem Template im Dateisystem im `templates`-Ordner und gibt es als Response
 aus.
 
-Eine andere Sache, die wir hier machen ist, dass wir die `url_for`-Funktion in
-den globalen Templatecontext packen, sodass wir URLs auch in den Templates
-erstellen können.
+Weiterhin fürgen wir die `url_for`-Funktion in den globalen Kontext des
+Templates ein, so dass wir auch in Templates URLs erzeugen können.
 
 Da wir jetzt unsere beiden ersten View-Funktionen haben, ist es Zeit, die
 Templates hinzuzufügen.
@@ -577,31 +591,31 @@ Templates hinzuzufügen.
 Teil 5: Die Templates
 =====================
 
-Wir haben beschlossen, Jinja-Templates in diesem Beispiel zu nutzen.  Wenn du
+Wir haben beschlossen, in diesem Beispiel Jinja-Templates zu nutzen.  Wenn du
 weißt, wie man Django-Templates nutzt, sollte es dir bekannt vorkommen; wenn du
 bis jetzt mit PHP gearbeitet hast, kannst du Jinja-Templates mit Smarty
 vergleichen.  Wenn du bis jetzt PHP als Templatesprache genutzt hast, solltest
-du für dein nächstes Projekt mal `Mako`_ anschauen.
+du für dein nächstes Projekt mal `Mako`_ ansehen.
 
 **Sicherheitswarnung**: Wir nutzen hier Jinja, welches eine textbasierte
 Template-Engine ist.  Da Jinja nicht weiß, womit es arbeitet, musst du, wenn du
-HTML-Templates erstellst, *alle* Werte escapen, die irgendwann, an irgendeinem
-Punkt, irgendeines der folgenden Zeichen enthalten können: ``>``, ``<`` oder
-``&``.  Innerhalb von Attributen musst du außerdem Anführungszeichen escapen.
-Du kannst Jinjas ``|e``-Filter für normales Escaping benutzen, wenn du `true` as
-Argument übergibst escaped es außerdem Anführungszeichen (``|e(true)``).  Wie du
-in den Beispielen unterhalb sehen kannst, escapen wir die URLs nicht.  Der Grund
-dafür ist, dass wir keine ``&`` in den URLs haben und deshalb ist es sicher,
-Escaping wegzulassen.
+HTML-Templates erstellst, *alle* Werte maskieren, die irgendwann an
+irgendeinem Punkt irgendeines der folgenden Zeichen enthalten können: ``>``,
+``<`` oder ``&``.  Innerhalb von Attributen musst du außerdem Anführungszeichen
+maskieren.  Du kannst Jinjas ``|e``-Filter für normales Escaping benutzen.
+Wenn du `true` als Argument übergibst, maskiert es außerdem Anführungszeichen
+(``|e(true)``).  Wie du in den Beispielen unterhalb sehen kannst, maskieren wir
+die URLs nicht.  Der Grund dafür ist, dass wir keine ``&`` in den URLs haben
+und deshalb ist es sicher, auf Escaping zu verzichten.
 
-Zwecks Einfachheit werden wir HTML 4 in unseren Templates nutzen.  Wenn du etwas
-Erfahrung mit XHTML hast, kannst du sie in XHTML schreiben.  Aber beachte, dass
-das Beispielstylesheet unten nicht mit XHTML funktioniert.
+Der Einfachheit halber werden wir HTML 4 in unseren Templates nutzen.  Wenn du
+etwas Erfahrung mit XHTML hast, kannst du sie in XHTML schreiben.  Aber beachte,
+dass das Beispiel-Stylesheet unten nicht mit XHTML funktioniert.
 
 Eine coole Sache, die Jinja von Django übernommen hat, ist Templatevererbung.
-Templatevererbung bedeutet, dass wir oft genutzte Stücke in ein Basistemplate
-legen und es mit Platzhaltern füllen können.  Beispielsweise landen der Doctype
-und der HTML-Rahmen in der Datei ``templates/layout.html``:
+Das bedeutet, dass wir oft genutzte Stücke in ein Basistemplate auslagern und
+es mit Platzhaltern füllen können.  Beispielsweise landen der Doctype und der
+HTML-Rahmen in der Datei ``templates/layout.html``:
 
 .. sourcecode:: html+jinja
 
@@ -622,7 +636,7 @@ und der HTML-Rahmen in der Datei ``templates/layout.html``:
     </body>
     </html>
 
-Und wir können von diesem Template in unserer ``templates/new.html`` erben:
+Von diesem Template können wir in unserer ``templates/new.html`` erben:
 
 .. sourcecode:: html+jinja
 
@@ -643,12 +657,11 @@ Und wir können von diesem Template in unserer ``templates/new.html`` erben:
     {% endblock %}
 
 Wenn du dich über den Kommentar zwischen den beiden `input`-Elementen wunderst,
-das ist ein sauberer Trick, die Templates sauber zu halten, aber keine
-Leerzeichen zwischen beide Elemente zu setzen.  Wir haben ein Stylesheet
-vorbereitet, welches dort keine Leerzeichen erwartet.
+das ist ein sauberer Trick, die Templates sauber zu halten ohne Leerzeichen
+zwischen beide Elemente zu setzen.  Wir haben ein Stylesheet vorbereitet,
+welches dort keine Leerzeichen erwartet.
 
-Und dann ein zweites Template für die Anzeige-Seite
-(``templates/display.html``):
+Ein zweites Template für die Anzeige-Seite (``templates/display.html``):
 
 .. sourcecode:: html+jinja
 
@@ -661,10 +674,10 @@ Und dann ein zweites Template für die Anzeige-Seite
       </p>
     {% endblock %}
 
-Jinjas `urlize`-Filter übersetzt eine URL(s) in einem Text in einen klickbaren
+Jinjas `urlize`-Filter übersetzt eine URL in einem Text in einen klickbaren
 Link.  Wenn du ihm einen Integer übergibst, wird er den angezeigten Text auf
-diese Anzahl Zeichen kürzen; wenn du true als zweiten Parameter übergibst, wird
-ein `nofollow`-Flag hinzugefügt.
+diese Anzahl Zeichen kürzen; wenn du `true` als zweiten Parameter übergibst,
+wird ein `nofollow`-Flag hinzugefügt.
 
 Da wir jetzt unsere ersten beiden Templates fertig haben, ist es Zeit, den
 Server zu starten und auf den Teil der Anwendung zu schauen, der bereits
@@ -675,13 +688,13 @@ Zwischenschritt: Das Design hinzufügen
 ======================================
 
 Jetzt ist es Zeit, etwas anderes zu machen: ein Design hinzufügen.
-Designelemente sind normalerweise in statischen CSS Stylesheets.  Also müssen
-wir einige statische Dateien irgendwo hinlegen -- aber das ist ein wenig
-kompliziert.  Wenn du mit bis jetzt mit PHP gearbeitet hast, wirst du gemerkt
-haben, dass es hier nichts gibt, was eine URL zum Dateisystempfad übersetzt und
-so auf statischen Dateien direkt zugreift.  Du musst dem Webserver oder unserem
-Entwicklungsserver explizit sagen, dass es einen Pfad gibt, der die statischen
-Dateien beinhaltet.
+Designelemente sind normalerweise in statischen CSS-Stylesheets definiert.
+Also müssen wir einige statische Dateien irgendwo ablegen -- aber das ist ein
+wenig kompliziert.  Wenn du mit bis jetzt mit PHP gearbeitet hast, wirst du
+gemerkt haben, dass es hier nichts gibt, was eine URL zum Dateisystempfad
+übersetzt und so direkt auf statische Dateien zugreift.  Du musst dem Webserver
+oder unserem Entwicklungsserver explizit sagen, dass es einen Pfad gibt, der
+die statischen Dateien beinhaltet.
 
 Django empfiehlt eine separate Subdomain und einen eigenen Server für die
 statischen Dateien, was eine sehr gute Idee für Umgebungen mit hoher Serverlast
@@ -689,8 +702,8 @@ ist, aber zu viel des Guten für diese simple Anwendung.
 
 Hier also folgendes Vorgehen: Wir lassen unsere Anwendung die statischen Dateien
 ausliefern, aber im Produktionsmodus solltest du dem Apachen mitteilen, dass er
-diese Dateien selbst ausliefern soll, mit Hilfe der `Alias`-Direktive in der
-Apachekonfiguration:
+diese Dateien selbst ausliefern soll.  Das geschieht mit Hilfe der
+`Alias`-Direktive in der Konfiguration von Apache:
 
 .. sourcecode:: apache
 
@@ -698,17 +711,17 @@ Apachekonfiguration:
 
 Das ist um einiges schneller.
 
-Aber wie sagen wir unserer Anwendung, dass sie den Ordner mit statischen Dateien
+Und wie sagen wir unserer Anwendung, dass sie den Ordner mit statischen Dateien
 als ``/static`` verfügbar machen soll?  Glücklicherweise ist das ziemlich
-einfach, weil Werkzeug dafür eine WSGI-Middleware liefert.  Jetzt gibt es zwei
-Möglichkeiten, diese Middleware zu integrieren: Ein Weg ist, die ganze Anwendung
-in diese Middleware zu wrappen (diesen Weg empfehlen wir wirklich nicht) und der
-andere ist, die Ausführungsfunktion zu wrappen (viel besser, weil wir die
-Referenz zu dem Anwendungsobjekt nicht verlieren).  Also gehen wir zurück zu
-``application.py`` und verändern den Code ein wenig.
+einfach, da Werkzeug dafür eine WSGI-Middleware liefert.  Es gibt zwei
+Möglichkeiten, diese zu integrieren: Entweder wrappen wir die ganze Anwendung
+in diese Middleware (diesen Weg empfehlen wir wirklich nicht) oder wir wrappen
+nur die Ausführungsfunktion (viel besser, weil wir die Referenz auf das
+Anwendungsobjekt nicht verlieren).  Also gehen wir zurück zur
+``application.py`` und passen den Code ein wenig an.
 
-Als erstes musst du einen neuen Import hinzufügen und den Pfad zu den statischen
-Dateien ermitteln.
+Als Erstes musst du einen neuen Import hinzufügen und den Pfad zu den
+statischen Dateien ermitteln:
 
 .. sourcecode:: python
 
@@ -717,13 +730,14 @@ Dateien ermitteln.
 
     STATIC_PATH = path.join(path.dirname(__file__), 'static')
 
-Es wäre besser, die Pfad-Manipulation in die ``utils.py``-Datei zu packen, weil
-wir den Templatepfad bereits dort ermittelt haben.  Aber das interessiert nicht
-wirklich, und wegen der Einfachheit können wir es im Anwendungsmodul lassen.
+Es wäre besser, die Pfad-Manipulation in die ``utils.py``-Datei zu verschieben,
+weil wir den Template-Pfad bereits dort ermittelt haben.  Aber das ist nicht
+wirklich von Interesse, und wegen der Einfachheit können wir es im
+Anwendungsmodul lassen.
 
 Wie können wir also die Ausführungsfunktion wrappen?  Theoretisch müssen wir
-einfach ``self.__call__ = wrap(self.__call__)`` sagen, aber leider klappt das
-nicht in Python.  Es ist aber nicht viel schwieriger.  Benenne einfach
+einfach ``self.__call__ = wrap(self.__call__)`` schreiben, doch leider klappt
+das so nicht in Python.  Es ist aber nicht viel schwieriger:  Benenne einfach
 `__call__` in `dispatch` um und füge eine neue `__call__`-Methode hinzu:
 
 .. sourcecode:: python
@@ -732,7 +746,7 @@ nicht in Python.  Es ist aber nicht viel schwieriger.  Benenne einfach
             return self.dispatch(environ, start_response)
 
 Jetzt können wir in unsere `__init__`-Funktion gehen und die Middleware
-zuschalten, indem wir die `dispatch`-"Methode" erstellen:
+zuschalten, indem wir die `dispatch`-Methode einschieben:
 
 .. sourcecode:: python
 
@@ -743,16 +757,17 @@ zuschalten, indem wir die `dispatch`-"Methode" erstellen:
 Das war jetzt nicht schwer.  Mit diesem Weg können wir WSGI-Middlewares in der
 Anwendungsklasse einhaken!
 
-Eine andere gute Idee ist es, unserer `url_map` im Utils-Modul den Ort unserer
-statischen Dateien mitzuteilen, indem wir eine Regel hinzufügen.  Auf diesem Weg
-können wir URLs zu den statischen Dateien in den Templates generieren:
+Eine andere gute Idee ist es, unserer `url_map` im `utils`-Modul den Ort
+unserer statischen Dateien mitzuteilen, indem wir eine Regel hinzufügen.  Auf
+diesem Weg können wir URLs zu den statischen Dateien in den Templates
+generieren:
 
 .. sourcecode:: python
 
     url_map = Map([Rule('/static/<file>', endpoint='static', build_only=True)])
 
 Jetzt können wir unsere ``templates/layout.html``-Datei wieder öffnen und einen
-Link zu dem ``style.css``-Stylesheet hinzufügen, welches wir danach erstellen
+Link zum ``style.css``-Stylesheet hinzufügen, welches wir danach erstellen
 werden:
 
 .. sourcecode:: html+jinja
@@ -760,13 +775,15 @@ werden:
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',
       file='style.css') }}">
 
-Das geht natürlich in den `<head>`-Tag, wo zur Zeit nur der Titel ist.
+Das geht natürlich in den `<head>`-Tag, wo zur Zeit nur der Titel festgelegt
+ist.
 
-Du kannst jetzt ein nettes Layout designen oder das `Beispielstylesheet`_
-nutzen.  In beiden Fällen musst du es in die Datei ``static/style.css`` packen.
+Du kannst jetzt ein nettes Layout gestalten oder das `Beispiel-Stylesheet`_
+nutzen.  In beiden Fällen musst du es in die Datei ``static/style.css``
+einfügen.
 
 .. _Mako: http://www.makotemplates.org/
-.. _Beispielstylesheet: http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css
+.. _Beispiel-Stylesheet: http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css
 
 
 Teil 6: Öffentliche URLs auflisten
@@ -774,10 +791,11 @@ Teil 6: Öffentliche URLs auflisten
 
 Jetzt wollen wir alle öffentlichen URLs auf der "List"-Seite auflisten.  Das
 sollte kein großes Problem sein, aber wir wollen auch eine Art Seitenumbruch
-haben.  Da wir alle URLs auf einmal ausgeben, haben wir früher oder später eine
-endlose Seite, die Minuten zum Laden benötigt.
+haben.  Da wir alle URLs auf einmal ausgeben, haben wir früher oder später
+eine endlose Seite, die Minuten zum Laden benötigt.
 
-Beginnen wir also mit dem Hinzufügen eine `Pagination`-Klasse in unser Utils-Modul:
+Beginnen wir also mit dem Hinzufügen einer `Pagination`-Klasse zu unserem
+`utils`-Modul:
 
 .. sourcecode:: python
 
@@ -865,12 +883,12 @@ Und schließlich das Template:
     {% endblock %}
 
 
-Bonus: 404 Errorseiten stylen
-=============================
+Bonus: 404-Fehlerseiten gestalten
+=================================
 
 Jetzt, da wir unsere Anwendung fertig gestellt haben, können wir kleine
 Verbesserungen vornehmen, zum Beispiel eigene 404-Fehlerseiten.  Das ist
-ziemlich einfach.  Das erste, was wir machen müssen, ist eine neue Funktion
+ziemlich einfach.  Das Erste, was wir machen müssen, ist eine neue Funktion
 namens `not_found` in den Views zu erstellen, welche ein Template ausgibt:
 
 .. sourcecode:: python
@@ -878,7 +896,7 @@ namens `not_found` in den Views zu erstellen, welche ein Template ausgibt:
     def not_found(request):
         return render_template('not_found.html')
 
-Dann müssen wir in unser Anwendungsmodul gehen und die `NotFound`-Exception
+Dann müssen wir in unser Anwendungsmodul wechseln und die `NotFound`-Exception
 importieren:
 
 .. sourcecode:: python
@@ -906,7 +924,7 @@ Jetzt noch ``templates/not_found.html`` hinzufügen und du bist fertig:
     {% block body %}
       <h2>Seite nicht gefunden</h2>
       <p>
-        Die aufgerufene Seite existiert nicth auf dem Server.  Vielleicht
+        Die aufgerufene Seite existiert nicht auf dem Server.  Vielleicht
         willst du eine <a href="{{ url_for('new') }}">neue URL
         hinzufügen</a>?
       </p>
@@ -922,6 +940,6 @@ zu finden.  Für einige größere Beispiele, die außerdem einen anderen Aufbau 
 Ideen zum Ausführen benutzen, solltest du mal einen Blick auf den
 `Beispielordner`_ werfen.
 
-Viel Spaß mit Werkzeug!
+In diesem Sinne: Viel Spaß mit Werkzeug!
 
 .. _Beispielordner: http://dev.pocoo.org/projects/werkzeug/browser/examples

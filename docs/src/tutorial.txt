@@ -9,37 +9,44 @@ Werkzeug Tutorial
     -   **English**
     -   `Deutsch <tutorial_de.txt>`_
 
-Welcome to the Werkzeug 0.2 tutorial in which we will create a TinyURL clone
+Welcome to the Werkzeug 0.2 tutorial in which we will create a `TinyURL`_ clone
 that stores URLs in a database.  The libraries we will use for this
 applications are `Jinja`_ for the templates, `SQLAlchemy`_ for the database
 layer and, of course, Werkzeug for the WSGI layer.
 
 The reasons why we've decided on these libraries for the tutorial application
-is that we want to stick to some of the design decisions Django took in the
-past.  One of them is using view functions and not Rails-/Pylons-like
-controller classes with action methods, the other one is designer friendly
-templates.
+is that we want to stick to some of the design decisions `Django`_ took in the
+past.  One of them is using view functions instead of controller classes with
+action methods, which is common in `Rails`_ and `Pylons`_, the other one is
+designer-friendly templates.
 
-In the Werkzeug `example folder`_ are a couple of applications that use other
+The Werkzeug `example folder`_ contains a couple of applications that use other
 template engines, too, so you may want to have a look at them.  There is also
 the source code of this application.
 
-You can use `easy_install` to install the required libraries::
+You can use `easy_install`_ to install the required libraries::
 
     sudo easy_install Jinja
     sudo easy_install SQLAlchemy
 
-If you're on Windows, omit the "sudo"; if you're on OS X, you can check if the
-libraries are also available in port; or on Linux, you can check out your
-package manager for packages called ``python-jinja``/``python-sqlalchemy``.
+If you're on Windows, omit the "sudo" (and make sure, `setuptools`_ is
+installed); if you're on OS X, you can check if the libraries are also
+available in port; or on Linux, you can check out your package manager for
+packages called ``python-jinja`` and ``python-sqlalchemy``.
 
-If you're curious you can check out the `online demo`_ of the application.
+If you're curious, check out the `online demo`_ of the application.
 
 Small disclaimer: This tutorial requires Python 2.4 or later.
 
+.. _TinyURL: http://tinyurl.com/
+.. _Django: http://www.djangoproject.com/
 .. _Jinja: http://jinja.pocoo.org/
 .. _SQLAlchemy: http://sqlalchemy.org/
+.. _Rails: http://www.rubyonrails.org/
+.. _Pylons: http://pylonshq.com/
 .. _example folder: http://dev.pocoo.org/projects/werkzeug/browser/example
+.. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
+.. _setuptools: http://pypi.python.org/pypi/setuptools
 .. _online demo: http://werkzeug.pocoo.org/e/shorty/
 
 
@@ -211,10 +218,10 @@ the following code goes into the ``shorty/utils.py`` file:
 
 .. sourcecode:: python
 
-    from werkzeug import Local, LocalManager
-    from werkzeug.routing import Map, Rule
     from sqlalchemy import MetaData
     from sqlalchemy.orm import create_session, scoped_session
+    from werkzeug import Local, LocalManager
+    from werkzeug.routing import Map, Rule
 
     local = Local()
     local_manager = LocalManager([local])
@@ -341,7 +348,7 @@ just have one model and table:
             self.public = public
             self.added = added or datetime.utcnow()
             if not uid:
-                while 1:
+                while True:
                     uid = get_random_uid()
                     if not URL.query.get(uid):
                         break
@@ -369,6 +376,7 @@ module:
 .. sourcecode:: python
 
     from random import sample, randrange
+
     URL_CHARS = 'abcdefghijkmpqrstuvwxyzABCDEFGHIJKLMNPQRST23456789'
 
     def get_random_uid():
