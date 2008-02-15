@@ -34,7 +34,7 @@ all_by_module = {
                              'SharedDataMiddleware', 'ClosingIterator',
                              'FileStorage', 'url_unquote_plus', 'url_decode',
                              'url_unquote', 'get_current_url', 'redirect',
-                             'append_slash_redirect', 'lazy_property',
+                             'append_slash_redirect',
                              'cached_property', 'MultiDict', 'import_string',
                              'dump_cookie', 'parse_cookie', 'unescape',
                              'format_string', 'Href', 'DispatcherMiddleware',
@@ -45,12 +45,14 @@ all_by_module = {
                              'parse_date', 'parse_cache_control_header',
                              'is_resource_modified', 'parse_accept_header',
                              'parse_set_header', 'quote_etag', 'unquote_etag',
-                             'HeaderSet', 'HTTP_STATUS_CODES'],
+                             'parse_list_header', 'parse_dict_header',
+                             'HeaderSet', 'parse_authorization_header',
+                             'Authorization', 'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest', 'Request',
                              'Response', 'AcceptMixin', 'ETagRequestMixin',
                              'ETagResponseMixin', 'ResponseStreamMixin',
                              'CommonResponseDescriptorsMixin',
-                             'UserAgentMixin', 'BaseReporterStream']
+                             'UserAgentMixin', 'AuthorizationMixin']
 }
 
 attribute_modules = ['exceptions', 'routing', 'script']

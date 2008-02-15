@@ -18,6 +18,7 @@
 """
 import re
 import rfc822
+from urllib2 import parse_http_list as _parse_list_header
 from datetime import datetime
 try:
     from hashlib import md5
@@ -33,9 +34,6 @@ except NameError:
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
 _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
-_token = '[%s]' % ''.join(_token_chars).replace('-', '\\-')
-_cachecontrol_re = re.compile(r'(%s+)(?:=(?:(%s+|".*?")))?' %
-                              (_token, _token))
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
 
@@ -508,6 +506,88 @@ class ETags(object):
         return '<%s %r>' % (self.__class__.__name__, str(self))
 
 
+class Authorization(dict):
+    """
+    Represents an `Authorization` header sent by the client.  You should not
+    create this kind of object yourself but use it when it's returned by the
+    `parse_authorization_header` function.
+    """
+
+    def __init__(self, auth_type, data=None):
+        dict.__init__(self, data or {})
+        self.type = auth_type
+
+    username = property(lambda x: x.get('username'), doc='''
+        The username transmitted.  This is set for both basic and digest
+        auth all the time.''')
+    password = property(lambda x: x.get('password'), doc='''
+        When the authentication type is basic this is the password
+        transmitted by the client, else `None`.''')
+    realm = property(lambda x: x.get('realm'), doc='''
+        This is the server realm send back for digest auth.  For HTTP
+        digest auth.''')
+    nonce = property(lambda x: x.get('nonce'), doc='''
+        The nonce the server send for digest auth, send back by the client.
+        A nonce should be unique for every 401 response for HTTP digest
+        auth.''')
+    uri = property(lambda x: x.get('uri'), doc='''
+        The URI from Request-URI of the Request-Line; duplicated because
+        proxies are allowed to change the Request-Line in transit.  HTTP
+        digest auth only.''')
+    nc = property(lambda x: x.get('nc'), doc='''
+        The nonce count value transmitted by clients if a qop-header is
+        also transmitted.  HTTP digest auth only.''')
+    cnonce = property(lambda x: x.get('cnonce'), doc='''
+        If the server sent a qop-header in the ``WWW-Authenticate``
+        header, the client has to provide this value for HTTP digest auth.
+        See the RFC for more details.''')
+    response = property(lambda x: x.get('response'), doc='''
+        A string of 32 hex digits computed as defined in RFC 2617, which
+        proves that the user knows a password.  Digest auth only.''')
+    opaque = property(lambda x: x.get('opaque'), doc='''
+        The opaque header from the server returned unchanged by the client.
+        It is recommended that this string be base64 or hexadecimal data.
+        Digest auth only.''')
+    qop = property(lambda x: x.get('qop'), doc='''
+        Indicates what "quality of protection" the client has applied to
+        the message for HTTP digest auth.''')
+
+
+def parse_list_header(value):
+    """
+    Parse lists as described by RFC 2068 Section 2.
+
+    In particular, parse comma-separated lists where the elements of
+    the list may include quoted-strings.  A quoted-string could
+    contain a comma.  A non-quoted string could have quotes in the
+    middle.  Quotes are removed automatically after parsing.
+    """
+    result = []
+    for item in _parse_list_header(value):
+        if item[:1] == item[-1:] == '"':
+            item = item[1:-1]
+        result.append(item)
+    return result
+
+
+def parse_dict_header(value):
+    """
+    Parse lists of key, value paits as described by RFC 2068 Section 2 and
+    convert them into a python dict.  If there is no value for a key it will
+    be `None`.
+    """
+    result = {}
+    for item in _parse_list_header(value):
+        if '=' not in item:
+            result[item] = None
+            continue
+        name, value = item.split('=', 1)
+        if value[:1] == value[-1:] == '"':
+            value = value[1:-1]
+        result[name] = value
+    return result
+
+
 def parse_accept_header(value):
     """
     Parses an HTTP Accept-* header.  This does not implement a complete valid
@@ -537,13 +617,7 @@ def parse_cache_control_header(value, on_update=None):
     """
     if not value:
         return CacheControl(None, on_update)
-    result = {}
-    for match in _cachecontrol_re.finditer(value):
-        name, value = match.group(1, 2)
-        if value and value[0] == value[-1] == '"':
-            value = value[1:-1]
-        result[name] = value
-    return CacheControl(result, on_update)
+    return CacheControl(parse_dict_header(value), on_update)
 
 
 def parse_set_header(value, on_update=None):
@@ -554,7 +628,40 @@ def parse_set_header(value, on_update=None):
     """
     if not value:
         return HeaderSet(None, on_update)
-    return HeaderSet([x.strip() for x in value.split(',')], on_update)
+    return HeaderSet(parse_dict_header(value), on_update)
+
+
+def parse_authorization_header(value):
+    """
+    Parse an HTTP basic/digest authorization header transmitted by the web
+    browser.  The return value is either `None` if the header was invalid or
+    not given, otherwise an `Authorization` object.
+    """
+    if not value:
+        return
+    try:
+        auth_type, auth_info = value.split(None, 1)
+        auth_type = auth_type.lower()
+    except ValueError:
+        return
+    if auth_type == 'basic':
+        try:
+            username, password = auth_info.decode('base64').split(':', 1)
+        except Exception, e:
+            return
+        return Authorization('basic', {'username': username,
+                                       'password': password})
+    elif auth_type == 'digest':
+        required_keys = ('username', 'realm', 'nonce', 'uri', 'nc', 'cnonce',
+                         'response')
+        auth_map = dict.fromkeys(required_keys + ('opaque', 'qop'))
+        for key, value in parse_dict_header(auth_info):
+            if key in auth_map:
+                auth_map[key] = value
+        for key in required_keys:
+            if auth_map[key] is None:
+                return
+        return Authorization('digest', auth_map)
 
 
 def quote_etag(etag, weak=False):

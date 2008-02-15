@@ -6,6 +6,11 @@ Version 0.3
 -----------
 (codename to be selected, release date somewhere around May 2008)
 
+- added `Authorization` and `AuthorizationMixin`
+- added `parse_list_header`
+- added `parse_dict_header`
+- added `parse_authorization_header`
+
 
 Version 0.2
 -----------

@@ -27,7 +27,7 @@ from datetime import datetime, timedelta
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
-     quote_etag, parse_set_header
+     quote_etag, parse_set_header, parse_authorization_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -486,29 +486,6 @@ class BaseResponse(object):
                            'The HTTP Status code as number')
     del _get_status_code, _set_status_code
 
-    def write(self, data):
-        """
-        **deprecated**
-
-        Use `response.stream` now, if you are using a `BaseResponse` subclass
-        and mix the `ResponseStreamMixin` in.
-        """
-        from warnings import warn
-        warn(DeprecationWarning('response.write() will go away in Werkzeug '
-                                '0.3.  Use the new response.stream available '
-                                'on `Response`.'), stacklevel=2)
-        if not isinstance(self.response, list):
-            raise RuntimeError('cannot write to a streamed response.')
-        self.response.append(data)
-
-    def writelines(self, lines):
-        """
-        **deprecated**
-
-        :see: `write`
-        """
-        self.write(''.join(lines))
-
     def _get_data(self):
         """
         The string representation of the request body.  Whenever you access
@@ -521,19 +498,7 @@ class BaseResponse(object):
     def _set_data(self, value):
         self.response = [value]
     data = property(_get_data, _set_data, doc=_get_data.__doc__)
-
-    def _deprecate_data(f):
-        def proxy(*args, **kwargs):
-            from warnings import warn
-            warn(DeprecationWarning('response_body is now called data'),
-                 stacklevel=2)
-            return f(*args, **kwargs)
-        return proxy
-    response_body = property(_deprecate_data(_get_data),
-                             _deprecate_data(_set_data),
-                             doc='**deprecated**\ncalled `data` now. '
-                             'Will go away in Werkzeug 0.3')
-    del _get_data, _set_data, _deprecate_data
+    del _get_data, _set_data
 
     def iter_encoded(self, charset=None):
         """
@@ -715,6 +680,19 @@ class UserAgentMixin(object):
         from werkzeug.useragents import UserAgent
         return UserAgent(self.environ)
     user_agent = cached_property(user_agent)
+
+
+class AuthorizationMixin(object):
+    """
+    Adds an `authorization` property that represents the parsed value of
+    the `Authorization` header as `Authorization` object.
+    """
+
+    def authorization(self):
+        """The `Authorization` object in parsed form."""
+        header = self.environ.get('HTTP_AUTHORIZATION')
+        return parse_authorization_header(header)
+    authorization = cached_property(authorization)
 
 
 class ETagResponseMixin(object):
@@ -975,13 +953,14 @@ class CommonResponseDescriptorsMixin(object):
 
 
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
-              UserAgentMixin):
+              UserAgentMixin, AuthorizationMixin):
     """
     Full featured request object implementing the following mixins:
 
     - `AcceptMixin` for accept header parsing
     - `ETagRequestMixin` for etag and cache control handling
     - `UserAgentMixin` for user agent introspection
+    - `AuthorizationMixin` for http auth handling
     """
 
 
@@ -994,26 +973,3 @@ class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
     - `ResponseStreamMixin` to add support for the `stream` property
     - `CommonResponseDescriptorsMixin` for various HTTP descriptors
     """
-
-
-# XXX: backwards compatibility interface.  goes away with werkzeug 0.3
-try:
-    from werkzeug.contrib.reporterstream import BaseReporterStream
-except ImportError:
-    class BaseReporterStream(object):
-        def __new__(*args, **kw):
-            raise RuntimeError('base reporter stream is now part of the '
-                               'contrib package.  In order to use it install '
-                               'werkzeug with the contrib package enabled '
-                               'and import it from '
-                               'werkzeug.contrib.reporterstream')
-else:
-    class BaseReporterStream(BaseReporterStream):
-        def __init__(self, environ, threshold):
-            from warnings import warn
-            warn(DeprecationWarning('BaseReporterStream is now part of '
-                                    'the werkzeug contrib module.  Import '
-                                    'it from werkzeug.contrib.reporterstream'
-                                    '.  As of werkzeug 0.3 this will be'
-                                    'required.'), stacklevel=2)
-            super(BaseReporterStream, self).__init__(environ, threshold)
