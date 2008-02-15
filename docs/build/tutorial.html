@@ -41,26 +41,27 @@
 <li><a class="reference" href="tutorial_de.html">Deutsch</a></li>
 </ul>
 </div>
-<p>Welcome to the Werkzeug 0.2 tutorial in which we will create a TinyURL clone
+<p>Welcome to the Werkzeug 0.2 tutorial in which we will create a <a class="reference" href="http://tinyurl.com/">TinyURL</a> clone
 that stores URLs in a database.  The libraries we will use for this
 applications are <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> for the templates, <a class="reference" href="http://sqlalchemy.org/">SQLAlchemy</a> for the database
 layer and, of course, Werkzeug for the WSGI layer.</p>
 <p>The reasons why we&#8217;ve decided on these libraries for the tutorial application
-is that we want to stick to some of the design decisions Django took in the
-past.  One of them is using view functions and not Rails-/Pylons-like
-controller classes with action methods, the other one is designer friendly
-templates.</p>
-<p>In the Werkzeug <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/example">example folder</a> are a couple of applications that use other
+is that we want to stick to some of the design decisions <a class="reference" href="http://www.djangoproject.com/">Django</a> took in the
+past.  One of them is using view functions instead of controller classes with
+action methods, which is common in <a class="reference" href="http://www.rubyonrails.org/">Rails</a> and <a class="reference" href="http://pylonshq.com/">Pylons</a>, the other one is
+designer-friendly templates.</p>
+<p>The Werkzeug <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/example">example folder</a> contains a couple of applications that use other
 template engines, too, so you may want to have a look at them.  There is also
 the source code of this application.</p>
-<p>You can use <cite>easy_install</cite> to install the required libraries:</p>
+<p>You can use <a class="reference" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> to install the required libraries:</p>
 <div class="syntax"><pre><span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">Jinja</span>
 <span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">SQLAlchemy</span>
 </pre></div>
-<p>If you&#8217;re on Windows, omit the &#8220;sudo&#8221;; if you&#8217;re on OS X, you can check if the
-libraries are also available in port; or on Linux, you can check out your
-package manager for packages called <tt class="docutils literal"><span class="pre">python-jinja</span></tt>/<tt class="docutils literal"><span class="pre">python-sqlalchemy</span></tt>.</p>
-<p>If you&#8217;re curious you can check out the <a class="reference" href="http://werkzeug.pocoo.org/e/shorty/">online demo</a> of the application.</p>
+<p>If you&#8217;re on Windows, omit the &#8220;sudo&#8221; (and make sure, <a class="reference" href="http://pypi.python.org/pypi/setuptools">setuptools</a> is
+installed); if you&#8217;re on OS X, you can check if the libraries are also
+available in port; or on Linux, you can check out your package manager for
+packages called <tt class="docutils literal"><span class="pre">python-jinja</span></tt> and <tt class="docutils literal"><span class="pre">python-sqlalchemy</span></tt>.</p>
+<p>If you&#8217;re curious, check out the <a class="reference" href="http://werkzeug.pocoo.org/e/shorty/">online demo</a> of the application.</p>
 <p>Small disclaimer: This tutorial requires Python 2.4 or later.</p>
 <div class="section">
 <h3 id="part-0-the-folder-structure">Part 0: The Folder Structure</h3>
@@ -201,10 +202,10 @@ useful code later.</p>
 some more code into our utiliy module so that the imports work.  For the time
 being we just add the objects which we need for the application to work.  All
 the following code goes into the <tt class="docutils literal"><span class="pre">shorty/utils.py</span></tt> file:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
-<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
-<span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">MetaData</span>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">MetaData</span>
 <span class="k">from</span> <span class="nn">sqlalchemy.orm</span> <span class="k">import</span> <span class="n">create_session</span><span class="p">,</span> <span class="n">scoped_session</span>
+<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
+<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
 
 <span class="n">local</span> <span class="o">=</span> <span class="n">Local</span><span class="p">()</span>
 <span class="n">local_manager</span> <span class="o">=</span> <span class="n">LocalManager</span><span class="p">([</span><span class="n">local</span><span class="p">])</span>
@@ -312,7 +313,7 @@ just have one model and table:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">public</span> <span class="o">=</span> <span class="n">public</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">added</span> <span class="o">=</span> <span class="n">added</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">uid</span><span class="p">:</span>
-            <span class="k">while</span> <span class="mf">1</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
                 <span class="n">uid</span> <span class="o">=</span> <span class="n">get_random_uid</span><span class="p">()</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">URL</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uid</span><span class="p">):</span>
                     <span class="k">break</span>
@@ -336,6 +337,7 @@ free to use.
 What&#8217;s missing is the <cite>get_random_uid</cite> function we have to add to the utils
 module:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">sample</span><span class="p">,</span> <span class="n">randrange</span>
+
 <span class="n">URL_CHARS</span> <span class="o">=</span> <span class="s">&#39;abcdefghijkmpqrstuvwxyzABCDEFGHIJKLMNPQRST23456789&#39;</span>
 
 <span class="k">def</span> <span class="nf">get_random_uid</span><span class="p">():</span>

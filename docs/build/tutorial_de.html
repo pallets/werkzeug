@@ -23,12 +23,12 @@
 <li><a class="reference" href="#teil-1-die-wsgi-anwendung" id="id2" name="id2">Teil 1: Die WSGI-Anwendung</a></li>
 <li><a class="reference" href="#teil-2-die-utilities" id="id3" name="id3">Teil 2: Die Utilities</a></li>
 <li><a class="reference" href="#unterbrechung-und-nun-etwas-komplett-anderes" id="id4" name="id4">Unterbrechung: Und nun etwas komplett anderes</a></li>
-<li><a class="reference" href="#teil-3-datenbank-models" id="id5" name="id5">Teil 3: Datenbank Models</a></li>
+<li><a class="reference" href="#teil-3-datenbank-models" id="id5" name="id5">Teil 3: Datenbank-Models</a></li>
 <li><a class="reference" href="#teil-4-die-view-funktionen" id="id6" name="id6">Teil 4: Die View-Funktionen</a></li>
 <li><a class="reference" href="#teil-5-die-templates" id="id7" name="id7">Teil 5: Die Templates</a></li>
 <li><a class="reference" href="#zwischenschritt-das-design-hinzuf-gen" id="id8" name="id8">Zwischenschritt: Das Design hinzufügen</a></li>
 <li><a class="reference" href="#teil-6-ffentliche-urls-auflisten" id="id9" name="id9">Teil 6: Öffentliche URLs auflisten</a></li>
-<li><a class="reference" href="#bonus-404-errorseiten-stylen" id="id10" name="id10">Bonus: 404 Errorseiten stylen</a></li>
+<li><a class="reference" href="#bonus-404-fehlerseiten-gestalten" id="id10" name="id10">Bonus: 404-Fehlerseiten gestalten</a></li>
 <li><a class="reference" href="#abschluss" id="id11" name="id11">Abschluss</a></li>
 </ul>
       </div>
@@ -40,59 +40,63 @@ Entwicklung rund um Werkzeug steht nie still, und Verbesserungen an der
 Library wirken sich oft auch auf das Tutorial aus &#8211; deshalb ist die
 Originalversion möglicherweise aktueller.</p>
 </div>
-<p>Willkommen zum Tutorial für Werkzeug 0.2.  In diesem Tutorial werden wir einen
-kleinen TinyURL-Klon programmieren, der die URLs in einer Datenbank speichert.
-Die verwendeten Libraries für diese Anwendung sind <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> für die Templates,
-<a class="reference" href="http://sqlalchemy.org/">SQLAlchemy</a> für die Datenbank und natürlich Werkzeug für WSGI.</p>
-<p>Wir haben uns hier für diese Libraries entschieden, weil wir einen
-Django-ähnlichen Grundaufbau nachstellen wollen, zum Beispiel view-Funktionen
-und nicht Rails/Pylons-ähnliche Controller-Klassen mit action-Methoden oder
-Designer-freundliche Templates.</p>
-<p>In Werkzeugs <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/example">Beispiel-Ordner</a> befinden sich einige Anwendungen die andere
-Konzepte, Template Engines etc. verfolgen.  Dort liegt auch der Quellcode dieser
-Anwendung.</p>
-<p>Du kannst easy_install verwenden, um Jinja und SQLAlchemy zu installieren,
-solltest du diese Libraries noch nicht besitzen:</p>
+<p>Willkommen zum Tutorial für Werkzeug 0.2.  Wir werden einen einfachen
+<a class="reference" href="http://tinyurl.com/">TinyURL</a>-Klon programmieren, der die URLs in einer Datenbank speichert.  Die
+Die verwendeten Bibliotheken für diese Anwendung sind <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> für die
+Templates, <a class="reference" href="http://sqlalchemy.org/">SQLAlchemy</a> für die Datenbank-Anbindung und natürlich Werkzeug
+für WSGI.</p>
+<p>Wir haben uns hier für diese Komponenten entschieden, weil wir einen
+<a class="reference" href="http://www.djangoproject.com/">Django</a>-ähnlichen Grundaufbau nachstellen wollen.  Dazu zählen wir zum
+Beispiel View-Funktionen anstelle der in <a class="reference" href="http://www.rubyonrails.org/">Rails</a> und <a class="reference" href="http://pylonshq.com/">Pylons</a> gängigen
+Controller-Klassen mit Action-Methoden, sowie designerfreundliche Templates.</p>
+<p>In Werkzeugs <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/example">Beispiel-Ordner</a> befinden sich einige Anwendungen, die andere
+Konzepte verfolgen, Template-Engines einsetzen etc.  Dort liegt auch der
+Quellcode der Anwendung, die wir in diesem Tutorial erstellen werden.</p>
+<p>Du kannst <a class="reference" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> verwenden, um Jinja und SQLAlchemy zu installieren,
+falls diese nicht bereits installiert sind:</p>
 <div class="syntax"><pre><span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">Jinja</span>
 <span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">SQLAlchemy</span>
 </pre></div>
-<p>Diese Befehle funktionieren auch auf einem Windows-Computer (mit
-Administratorrechten), allerdings musst du das &#8220;sudo&#8221; weglassen.  Als OS
-X-Benutzer könntest du die Libraries auch via port installieren, Linux-Benutzer
-finden diese Pakete möglicherweise auch in ihrem Paketmanager.</p>
-<p>Wenn du neugierig bist, kannst du auch die <a class="reference" href="http://werkzeug.pocoo.org/e/shorty/">Online-Demo</a> der Anwendung ansehen.</p>
+<p>Diese Befehle funktionieren auch auf einem Windows-System (mit
+Administratorrechten), sofern die <cite>setuptools</cite> installiert sind, allerdings
+musst du das <cite>sudo</cite> weglassen.  Als OS X-Benutzer könntest du die Libraries
+auch via port installieren, Linux-Benutzer finden diese Pakete möglicherweise
+auch in ihrem Paketmanager.</p>
+<p>Wenn du neugierig bist, kannst du dir auch die <a class="reference" href="http://werkzeug.pocoo.org/e/shorty/">Online-Demo</a> der Anwendung
+ansehen.</p>
 <p>Noch ein kleiner Hinweis: Dieses Tutorial erfordert Python 2.4.</p>
 <div class="section">
 <h3 id="teil-0-die-ordnerstruktur">Teil 0: Die Ordnerstruktur</h3>
 <p>Bevor wir beginnen können, müssen wir ein Python-Paket für unsere
-Werkzeug-Anwendung erstellen.  Dort werden wir dann die Anwendung, die Templates
+Werkzeug-Anwendung erstellen.  Dort werden wir die Anwendung, die Templates
 und die statischen Dateien ablegen.</p>
 <p>Die Anwendung dieses Tutorials nennen wir <cite>shorty</cite> und die Struktur für unsere
 Anwendung sieht etwa so aus:</p>
 <div class="syntax"><pre><span class="n">manage</span><span class="o">.</span><span class="n">py</span>
 <span class="n">shorty</span><span class="o">/</span>
     <span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
-    <span class="n">templates</span><span class="o">/</span>
     <span class="n">static</span><span class="o">/</span>
+    <span class="n">templates</span><span class="o">/</span>
 </pre></div>
 <p>Die Dateien <tt class="docutils literal"><span class="pre">__init__.py</span></tt> und <tt class="docutils literal"><span class="pre">manage.py</span></tt> lassen wir für den Moment einmal
-leer.  Die erste dieser Dateien macht aus dem Ordner <tt class="docutils literal"><span class="pre">shorty</span></tt> ein Python-Paket
-und die zweite werden wir später für unsere Verwaltungsfunktionen nutzen.</p>
+leer.  Die erste dieser Dateien macht aus dem Ordner <tt class="docutils literal"><span class="pre">shorty</span></tt> ein
+Python-Paket, die zweite werden wir später für unsere Verwaltungsfunktionen
+nutzen.</p>
 </div>
 <div class="section">
 <h3 id="teil-1-die-wsgi-anwendung">Teil 1: Die WSGI-Anwendung</h3>
 <p>Im Gegensatz zu Django oder ähnlichen Frameworks arbeitet Werkzeug direkt auf
 der WSGI-Schicht.  Es gibt keine schicke Magie, die die zentrale WSGI-Anwendung
-für uns implementiert.  Das bedeutet, dass wir als erstes eben diese
-WSGI-Anwendung programmieren müssen.  Eine WSGI-Anwendung ist entweder eine
-Funktion, oder noch besser, eine Klasse mit einer Methode <tt class="docutils literal"><span class="pre">__call__</span></tt>.</p>
-<p>Eine aufrufbare Klasse hat große Vorteile gegenüber einer Funktion: Zum einen
+für uns implementiert.  Das bedeutet, dass wir als Erstes eben diese
+programmieren müssen.  Eine WSGI-Anwendung ist eine Funktion oder, noch besser,
+eine Klasse mit einer Methode <tt class="docutils literal"><span class="pre">__call__</span></tt>.</p>
+<p>Eine aufrufbare Klasse hat große Vorteile gegenüber einer Funktion: Zum Einen
 kann man Konfigurationsparameter direkt an den Konstruktor übergeben, zum
-anderen können wir WSGI Middlewares innerhalb der WSGI Anwendung hinzufügen.
+Anderen können wir WSGI-Middlewares innerhalb der WSGI-Anwendung hinzufügen.
 Das ist nützlich für Middlewares, die entscheidend für die Funktion der
-Anwendung sind (z.B. eine session-Middleware).</p>
-<p>Hier zunächst einmal der Quellcode für unsere <tt class="docutils literal"><span class="pre">shorty/application.py</span></tt>
-Datei, in die wir die WSGI Anwendung packen:</p>
+Anwendung sind (z.B. eine Session-Middleware).</p>
+<p>Hier zunächst einmal der Quellcode für unsere Datei <tt class="docutils literal"><span class="pre">shorty/application.py</span></tt>,
+in der wir die WSGI-Anwendung ablegen:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">create_engine</span>
 <span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">ClosingIterator</span>
 <span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">HTTPException</span>
@@ -124,76 +128,80 @@ Datei, in die wir die WSGI Anwendung packen:</p>
         <span class="k">return</span> <span class="n">ClosingIterator</span><span class="p">(</span><span class="n">response</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">),</span>
                                <span class="p">[</span><span class="n">session</span><span class="o">.</span><span class="n">remove</span><span class="p">,</span> <span class="n">local_manager</span><span class="o">.</span><span class="n">cleanup</span><span class="p">])</span>
 </pre></div>
-<p>Ziemlich für Code für den Anfang...  Gehen wir mal Schritt für Schritt durch den
-Quellcode.  Zunächst einmal haben wir einige Imports: Aus dem Paket <cite>sqlalchemy</cite>
-holen wir uns eine Factory-Funktion, die eine neue Datenbank-Engine für uns
-erstellt, die einen Connection-Pool besitzt.  Die nächsten paar Imports holen
-einige Objekte in den Namensraum, die uns Werkzeug zur Verfügung stellt: ein
-Request-Objekt, ein spezieller Iterator, der uns hilft am Ende eines Requests
-einige Dinge aufzuräumen, eine schließlich die Basisklasse für alle
+<p>Ziemlich viel für Code für den Anfang ... gehen wir ihn mal Schritt für Schritt
+durch.  Zunächst sehen wir einige Imports: Aus dem Paket <cite>sqlalchemy</cite> holen wir
+uns eine Factory-Funktion, die eine neue Datenbank-Engine für uns erstellt, die
+wiederum einen Connection-Pool bereithält.  Die nächsten Imports holen einige
+Objekte in den Namensraum, die uns Werkzeug zur Verfügung stellt: ein
+Request-Objekt; ein spezieller Iterator, der uns hilft am Ende eines Requests
+einige Dinge aufzuräumen; und schließlich die Basisklasse für alle
 HTTP-Exceptions.</p>
 <p>Die nächsten fünf Imports funktionieren noch nicht, weil wir das <cite>utils</cite>-Modul
-noch nicht erstellt haben.  Aber wir werden trotzdem schon ein wenig über diese
-Objekte sprechen.  Das Objekt <cite>session</cite> ist nicht ein PHP-ähnliches session
-array, sondern eine Datenbank-Session von SQLAlchemy.  Alle Datenbank-Models,
-die im Kontext eines Requests erstellt werden sind auf diesem Objekt
-zwischengespeichert so dass man Änderungen mit einem Schlag zum Server senden
-kann.  Im Gegensatz zu Django wird ein instantiiertes Datenbank-Model
-automatisch von der Session verwaltet und ist in dieser Session ein Singleton.
-Es kann also niemals zwei Instanzen des selben Datenbankeintrages in einer
-Session geben.  Das Objekt <cite>metadata</cite> ist auch von SQLAlchemy und speichert
-Informationen über die Datenbanktabellen.  Es stellt zum Beispiel eine Funktion
-bereit, um alle definierten Tabellen in der Datenbank zu erstellen.</p>
+noch nicht erstellt haben.  Doch wir werden trotzdem schon ein wenig über diese
+Objekte sprechen.  Das Objekt <cite>session</cite> ist kein aus PHP bekanntes
+Session-Array, sondern eine Datenbank-Session von SQLAlchemy.  Alle
+Datenbank-Models, die im Kontext eines Requests erstellt werden, sind auf
+diesem Objekt zwischengespeichert, so dass man Änderungen mit einem Schlag zum
+Server senden kann.  Im Gegensatz zu Django wird ein instantiiertes
+Datenbank-Model automatisch von der Session verwaltet und ist in dieser Session
+ein Singleton.  Es kann also niemals zwei Instanzen des selben
+Datenbankeintrags in einer Session geben.  Das Objekt <cite>metadata</cite> stammt
+ebenfalls aus SQLAlchemy und speichert Informationen über die Tabellen der
+Datenbank.  Es stellt zum Beispiel eine Funktion bereit, die alle im Model
+definierten Tabellen in der Datenbank erstellt.</p>
 <p>Das Objekt <cite>local</cite> ist ein kontext-lokales Objekt, erstellt vom Modul <cite>utility</cite>.
 Attributzugriffe auf dieses Objekt sind an den aktuellen Request gebunden,
 d.h. jeder Request bekommt ein anderes Objekt zurück und kann verschiedene
 Objekte ablegen, ohne Threadingprobleme zu bekommen.  Der <cite>local_manager</cite> wird
 genutzt, um am Ende des Requests alle auf dem <cite>local</cite>-Objekt gespeicherten Daten
 wieder freizugeben.</p>
-<p>Der letzte Import von dort ist die URL-Map die alle URL-Routen verwaltet.
+<p>Der letzte Import von dort ist die URL-Map, die alle URL-Routen verwaltet.
 Solltest du bereits mit Django gearbeitet haben, ist dies vergleichbar mit den
-regulären Ausdrücken in der jeweiligen <tt class="docutils literal"><span class="pre">urls.py</span></tt>.  Solltest du PHP kennen, ist
-die URL-Map ähnlich einem eingebauten <cite>mod_rewrite</cite>.</p>
-<p>Zusätzlich importieren wir hier unser <cite>views</cite>-Modul, das die view-Funktionen
-besitzt und dann das <cite>models</cite>-Modul, dass unsere Models speichert.  Auch wenn es
-so aussieht, als ob wir diesen Import nicht nutzen, ist er wichtig.  Nur dadurch
-werden unsere Tabellen auf dem metadata-Objekt registriert.</p>
-<p>Schauen wir also auf die Anwendungsklasse.  Der Konstruktor dieser Klasse nimmt
-die Datenbank-URI entgegen, die &#8211; einfach gesagt &#8211; den Typ der Datenbank und
-die Verbindungsdaten enthält.  Für SQLite das wäre zum Beispiel
+regulären Ausdrücken in der jeweiligen <tt class="docutils literal"><span class="pre">urls.py</span></tt>.  Kennst du PHP, ist die
+URL-Map ähnlich einem eingebauten <cite>mod_rewrite</cite>.</p>
+<p>Zusätzlich importieren wir hier unser <cite>views</cite>-Modul, das die View-Funktionen
+enthält, sowie das <cite>models</cite>-Modul, in welchem unsere Models definiert sind.
+Auch wenn es so aussieht, als ob wir diesen Import nicht nutzen, ist er
+wichtig.  Nur dadurch werden unsere Tabellen auf dem <cite>metadata</cite>-Objekt
+registriert.</p>
+<p>Schauen wir auf die Anwendungsklasse.  Der Konstruktor dieser Klasse nimmt die
+Datenbank-URI entgegen, die &#8211; einfach gesagt &#8211; den Typ der Datenbank und die
+Verbindungsdaten enthält.  Für SQLite das wäre zum Beispiel
 <tt class="docutils literal"><span class="pre">sqlite:////tmp/shorty.db</span></tt> (die vier Slashes sind <strong>kein</strong> Tippfehler).</p>
 <p>Im Konstruktor erstellen wir auch gleich eine Datenbank-Engine für diese URI und
 aktivieren das automatische Umwandeln von Bytestrings nach Unicode.  Das ist
 nützlich, weil sowohl Jinja als auch Werkzeug intern nur Unicode verwenden.</p>
-<p>Des weiteren binden wir die Anwendung gleich mal an das <cite>local</cite>-Objekt.  Das ist
+<p>Des Weiteren binden wir die Anwendung an das <cite>local</cite>-Objekt.  Das ist
 eigentlich nicht nötig, aber nützlich, wenn wir mit der Anwendung in der
 Python-Shell spielen wollen.  Damit werden direkt nach dem Instantiieren der
 Anwendung die Datenbankfunktionen testen.  Wenn wir das nicht tun, wird der
 Python-Interpreter einen Fehler werfen, wenn außerhalb eines Requests versucht
-wird, eine SQLAlchemy Session zu erstellen.</p>
+wird, eine SQLAlchemy-Session zu erstellen.</p>
 <p>Die Methode <cite>init_database</cite> können wir später im Managementscript verwenden, um
-alle Datenbank-Tabellen zu erstellen, die wir verwenden.</p>
-<p>Und nun zur eigentlichen WSGI-Anwendung, der <cite>__call__</cite>-Methode.  Dort passiert
-das so genannte &#8220;Request Dispatching&#8221;, also das Weiterleiten von eingehenden
-Anfragen zu den richtigen Funktionen.  Als erstes erstellen wir dort ein neues
-Request-Objekt, um nicht direkt mit dem <cite>environ</cite> arbeiten zu müssen, dann
-binden wir die Anwendung an das <cite>local</cite>-Objekt für den aktuellen Kontext.</p>
-<p>Dann erstellen wir einen URL-Adapter, indem wir die URL-Map an das aktuelle
-WSGI-Environment binden.  Der Adapter weiß dann, wie die aktuelle URL aussieht,
-wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir nutzen, um URLs
-zu bauen oder eben den aktuellen Request zu matchen.  Wir binden diesen Adapter
-auch an das local-Objekt, damit wir im utils-Modul auf ihn zugreifen können.</p>
+alle Tabellen zu erstellen, die wir definiert haben.</p>
+<p>Nun zur eigentlichen WSGI-Anwendung, der <cite>__call__</cite>-Methode.  Dort passiert das
+so genannte &#8220;Request Dispatching&#8221;, also das Weiterleiten von eingehenden
+Anfragen zu den richtigen Funktionen.  Als Erstes erstellen wir dort ein neues
+Request-Objekt, um nicht direkt mit <cite>environ</cite>, dem Dictionary mit den
+Umgebungsvariablen, arbeiten zu müssen.  Dann binden wir die Anwendung an das
+<cite>local</cite>-Objekt für den aktuellen Kontext.</p>
+<p>Anschließend erstellen wir einen URL-Adapter, indem wir die URL-Map an die
+aktuelle WSGI-Umgebung binden.  Der Adapter weiß dann, wie die aktuelle URL
+aussieht, wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir
+nutzen, um URLs zu erzeugen oder gegen den aktuellen Request zu matchen.  Wir
+binden diesen Adapter auch an das <cite>local</cite>-Objekt, damit wir im <cite>utils</cite>-Modul
+auf ihn zugreifen können.</p>
 <p>Danach kommt ein <cite>try</cite>/<cite>except</cite>-Konstrukt, das HTTP-Fehler abfängt, die während
-dem Matchen oder in einer View-Funktion auftreten können.  Wenn der Adapter
+des Matchings oder in einer View-Funktion auftreten können.  Wenn der Adapter
 keinen Endpoint für die aktuelle URL findet, wird er eine <cite>NotFound</cite>-Exception
 werfen, die wir wie ein Response Objekt aufrufen können.  Der Endpoint ist in
-unserem Fall der Name der Funktion im view-Modul, die wir aufrufen möchten.  Wir
-suchen uns einfach mit <cite>getattr</cite> die Funktion dem Namen nach heraus und rufen
-sie mit dem Request-Objekt und den URL-Werten auf.</p>
+unserem Fall der Name der Funktion im <cite>views</cite>-Modul, die wir aufrufen möchten.
+Wir suchen uns einfach mit <cite>getattr</cite> die Funktion dem Namen nach heraus und
+rufen sie mit dem Request-Objekt und den URL-Werten auf.</p>
 <p>Am Schluss rufen wir das gewonnene Response-Objekt (oder die Exception) als
 WSGI-Anwendung auf und übergeben den Rückgabewert dieser Funktion an den
-<cite>ClosingIterator</cite> zusammen mit zwei Funktionen fürs Aufräumen.  Dies schließt
-die SQLAlchemy-Session und leert das local-Objekt für diesen Request.</p>
+<cite>ClosingIterator</cite>, zusammen mit zwei Funktionen fürs Aufräumen.  Dies schließt
+die SQLAlchemy-Session und leert das <cite>local</cite>-Objekt für diesen Request.</p>
 <p>Nun müssen wir zwei leere Dateien <tt class="docutils literal"><span class="pre">shorty/views.py</span></tt> und <tt class="docutils literal"><span class="pre">shorty/models.py</span></tt>
 erstellen, damit die Imports nicht fehlschlagen.  Den tatsächlichen Code für
 diese Module werden wir ein wenig später erstellen.</p>
@@ -204,10 +212,10 @@ diese Module werden wir ein wenig später erstellen.</p>
 das Utility-Modul noch um Code ergänzen, damit die Imports klappen.  Fürs Erste
 fügen wir nur die Objekte hinzu, die wir brauchen, damit die Applikation
 funktioniert.  Der folgende Code landet in der Datei <tt class="docutils literal"><span class="pre">shorty/utils.py</span></tt>:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
-<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
-<span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">MetaData</span>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">MetaData</span>
 <span class="k">from</span> <span class="nn">sqlalchemy.orm</span> <span class="k">import</span> <span class="n">create_session</span><span class="p">,</span> <span class="n">scoped_session</span>
+<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
+<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
 
 <span class="n">local</span> <span class="o">=</span> <span class="n">Local</span><span class="p">()</span>
 <span class="n">local_manager</span> <span class="o">=</span> <span class="n">LocalManager</span><span class="p">([</span><span class="n">local</span><span class="p">])</span>
@@ -228,23 +236,23 @@ funktioniert.  Der folgende Code landet in der Datei <tt class="docutils literal
 <span class="k">def</span> <span class="nf">url_for</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">local</span><span class="o">.</span><span class="n">url_adapter</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">force_external</span><span class="o">=</span><span class="n">_external</span><span class="p">)</span>
 </pre></div>
-<p>Als erstes importieren wir wieder eine Menge, dann erstellen wir das
-local-Objekt und den Manager dafür, wie bereits im vorherigen Abschnitt
-besprochen.  Neu ist hier, dass der Aufruf eines local-Objekts mit einem String
-ein Proxy-Objekt zurück gibt.  Dieses zeigt stets auf die gleichnamigen
-Attribute des local-Objekts. Beispielsweise verweist nun <cite>application</cite> dauerhaft
-auf <cite>local.application</cite>.  Wenn du jedoch darauf zugreifst, aber kein Objekt an
-<cite>local.application</cite> gebunden ist, erhältst du einen <cite>RuntimeError</cite>.</p>
+<p>Zunächst importieren wir wieder eine Menge, dann erstellen wir das
+<cite>local</cite>-Objekt und den Manager dafür, wie bereits im vorherigen Abschnitt
+besprochen.  Neu ist hier, dass der Aufruf eines <cite>local</cite>-Objekts mit einem
+String ein Proxy-Objekt zurück gibt.  Dieses zeigt stets auf die gleichnamigen
+Attribute des <cite>local</cite>-Objekts.  Beispielsweise verweist nun <cite>application</cite>
+dauerhaft auf <cite>local.application</cite>.  Wenn du jedoch darauf zugreifst und kein
+Objekt an <cite>local.application</cite> gebunden ist, erhältst du einen <cite>RuntimeError</cite>.</p>
 <p>Die folgenden drei Zeilen sind im Prinzip alles, um SQLAlchemy 0.4 oder höher in
 eine Werkzeug-Anwendung einzubinden.  Wir erstellen ein Metadaten-Objekt für all
 unsere Tabellen sowie eine &#8220;scoped session&#8221; über die
 <cite>scoped_session</cite>-Factory-Funktion.  Dadurch wird SQLAlchemy angewiesen,
 praktisch denselben Algorithmus zur Ermittlung des aktuellen Kontextes zu
-verwenden, wie es auch Werkzeug für die local-Objekte tut, und die
+verwenden, wie es auch Werkzeug für die <cite>local</cite>-Objekte tut, und die
 Datenbank-Engine der aktuellen Applikation zu benutzen.</p>
 <p>Wenn wir nicht vorhaben, mehrere Instanzen der Applikation in derselben Instanz
 des Python-Interpreters zu unterstützen, können wir den Code einfach halten,
-indem wir nicht über das aktuelle local-Objekt auf die Applikation zugreifen,
+indem wir nicht über das aktuelle <cite>local</cite>-Objekt auf die Applikation zugreifen,
 sondern einen anderen Weg nehmen.  Dieser Ansatz wird etwa von Django verfolgt,
 macht es allerdings unmöglich, mehrere solcher Applikationen zu kombinieren.</p>
 <p>Der restliche Code des Moduls wird für unsere Views benutzt.  Die Idee besteht
@@ -262,16 +270,15 @@ Views als auch unserem Model verwenden.</p>
 <h3 id="unterbrechung-und-nun-etwas-komplett-anderes">Unterbrechung: Und nun etwas komplett anderes</h3>
 <p>Da wir nun das Grundgerüst für unsere Anwendung fertig gestellt haben, können
 wir jetzt erst einmal relaxen und uns etwas komplett anderem zuwenden: den
-Verwaltungs-Skripten.  Während der Entwicklung erledigt man häufig immer
+Verwaltungs-Scripts.  Während der Entwicklung erledigt man häufig immer
 wiederkehrende Aufgaben, wie zum Beispiel das Starten eines Entwicklungs-Servers
-(im Gegensatz zu PHP benötigt Werkzeug keinen Apache-Server, der in Python
+(im Gegensatz zu PHP benötigt Werkzeug keinen Apache-Server; der in Python
 integrierte <cite>wsgiref</cite>-Server ist völlig ausreichend und für die Entwicklung auf
-jeden Fall empfehlenswert), das Starten eines Python-Interpreters, um mit den
-Datenbankobjekten herumzuspielen oder die Datenbank zu initialisieren, etc.</p>
-<p>Werkzeug macht es zum Glück unglaublich einfach, solche Verwaltungs-Skripte zu
-schreiben. Der folgende Code implementiert ein voll funktionsfähiges
-Verwaltungs-Skript und gehört in die <cite>manage.py</cite>-Datei, welche du am Anfang
-erstellt hast:</p>
+jeden Fall empfehlenswert), das Starten eines Python-Interpreters (um mit den
+Datenbankobjekten herumzuspielen oder die Datenbank zu initialisieren) etc.</p>
+<p>Werkzeug macht es unglaublich einfach, solche Verwaltungs-Scripts zu schreiben.
+Der folgende Code implementiert ein voll funktionsfähiges Verwaltungs-Script
+und gehört in die <cite>manage.py</cite>-Datei, welche du am Anfang erstellt hast:</p>
 <div class="syntax"><pre><span class="c">#!/usr/bin/env python</span>
 <span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">script</span>
 
@@ -291,17 +298,17 @@ erstellt hast:</p>
 <span class="n">script</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 <p><cite>werkzeug.script</cite> ist genauer in der <a class="reference" href="script.html">Script-Dokumentation</a> beschrieben, und da
-der Großteil des Codes sowieso verständlich sein sollte, werden wir hier nicht
-näher darauf eingehen.</p>
+der Großteil des Codes verständlich sein sollte, werden wir hier nicht näher
+darauf eingehen.</p>
 <p>Es ist aber wichtig, dass du <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">shell</span></tt> ausführen kannst, um
-eine interaktive Python Shell zu starten.  Solltest du ein Traceback bekommen,
-kontrolliere bitte die betreffende Code-Zeile und vergleiche sie mit dem
-entsprechenden Code in dieser Anleitung.</p>
-<p>Sobald das Skript läuft, können wir mit dem Schreiben der Datenbank-Models
+eine interaktive Python-Shell zu starten.  Solltest du einen Traceback
+bekommen, kontrolliere bitte die darin genannte Code-Zeile und vergleiche sie
+mit dem entsprechenden Code in dieser Anleitung.</p>
+<p>Sobald das Script läuft, können wir mit dem Schreiben der Datenbank-Models
 beginnen.</p>
 </div>
 <div class="section">
-<h3 id="teil-3-datenbank-models">Teil 3: Datenbank Models</h3>
+<h3 id="teil-3-datenbank-models">Teil 3: Datenbank-Models</h3>
 <p>Jetzt können wir die Models erstellen.  Da die Anwendung ziemlich einfach ist,
 haben wir nur ein Model und eine Tabelle:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
@@ -322,7 +329,7 @@ haben wir nur ein Model und eine Tabelle:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">public</span> <span class="o">=</span> <span class="n">public</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">added</span> <span class="o">=</span> <span class="n">added</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">uid</span><span class="p">:</span>
-            <span class="k">while</span> <span class="mf">1</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
                 <span class="n">uid</span> <span class="o">=</span> <span class="n">get_random_uid</span><span class="p">()</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">URL</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uid</span><span class="p">):</span>
                     <span class="k">break</span>
@@ -338,14 +345,15 @@ haben wir nur ein Model und eine Tabelle:</p>
 <span class="n">session</span><span class="o">.</span><span class="n">mapper</span><span class="p">(</span><span class="n">URL</span><span class="p">,</span> <span class="n">url_table</span><span class="p">)</span>
 </pre></div>
 <p>Dieses Modul ist gut überschaubar.  Wir importieren alles, was wir von
-SQLAlchemy benötigen und erstellen die Tabelle.  Dann fügen wir eine Klasse für
-diese Tabelle hinzu und verbinden beide miteinander.  Für eine detailliertere
-Erklärung bezüglich SQLAlchemy solltest du dir das <a class="reference" href="http://www.sqlalchemy.org/docs/04/ormtutorial.html">exzellente Tutorial</a>
-anschauen.</p>
-<p>In dem Konstruktor generieren wir solange eine eindeutige ID, bis wir eine
-finden, die noch nicht belegt ist.  Die <cite>get_random_uid</cite>-Funktion fehlt &#8211; wir
-müssen sie noch in unser utils-Modul hinzufügen:</p>
+SQLAlchemy benötigen, und erstellen die Tabelle.  Dann fügen wir eine Klasse
+für diese Tabelle hinzu und verbinden beide miteinander.  Für eine
+detailliertere Erklärung bezüglich SQLAlchemy solltest du dir das
+<a class="reference" href="http://www.sqlalchemy.org/docs/04/ormtutorial.html">exzellente Tutorial</a> anschauen.</p>
+<p>Im Konstruktor generieren wir solange eine eindeutige ID, bis wir eine finden,
+die noch nicht belegt ist.  Die <cite>get_random_uid</cite>-Funktion fehlt &#8211; wir müssen
+sie noch in unser <cite>utils</cite>-Modul einfügen:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">sample</span><span class="p">,</span> <span class="n">randrange</span>
+
 <span class="n">URL_CHARS</span> <span class="o">=</span> <span class="s">&#39;abcdefghijkmpqrstuvwxyzABCDEFGHIJKLMNPQRST23456789&#39;</span>
 
 <span class="k">def</span> <span class="nf">get_random_uid</span><span class="p">():</span>
@@ -366,11 +374,11 @@ Datenbank zu erstellen und <tt class="docutils literal"><span class="pre">python
 </pre></div>
 <p>Wie du sehen kannst, müssen wir <tt class="docutils literal"><span class="pre">session.commit()</span></tt> aufrufen, um die Änderungen
 in der Datenbank zu speichern.  Nun erstellen wir ein privates Element mit einer
-eigenen UID erstellen:</p>
+eigenen UID:</p>
 <div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">URL</span><span class="p">(</span><span class="s">&#39;http://werkzeug.pocoo.org/&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;werkzeug-webpage&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
 </pre></div>
-<p>Und alle abfragen:</p>
+<p>Dann fragen wir alle ab:</p>
 <div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">URL</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 <span class="go">[&lt;URL &#39;werkzeug-webpage&#39;&gt;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">URL</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
@@ -378,20 +386,21 @@ eigenen UID erstellen:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">URL</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;werkzeug-webpage&#39;</span><span class="p">)</span>
 <span class="go">&lt;URL &#39;werkzeug-webpage&#39;&gt;</span>
 </pre></div>
-<p>Jetzt, da wir einige Daten in der Datenbank haben und wir ungefähr wissen auf
-welche Weise SQLAlchemy funktioniert, ist es Zeit unsere Views zu erstellen.</p>
+<p>Jetzt haben wir einige Datensätze in der Datenbank und wissen ungefähr, auf
+welche Weise SQLAlchemy funktioniert.  Zeit, unsere Views zu erstellen.</p>
 </div>
 <div class="section">
 <h3 id="teil-4-die-view-funktionen">Teil 4: Die View-Funktionen</h3>
 <p>Nachdem wir mit SQLAlchemy herumgespielt haben, können wir zurück zu Werkzeug
-gehen und anfangen, unsere Viewfunktionen zu erstellen.  Das Wort &#8220;Viewfunktion&#8221;
-kommt von Django, das die Funktionen, die die Templates wiedergibt,
-&#8220;Viewfunktionen&#8221; nennt.  Deshalb ist unser Beispiel MVT (Model, View, Template)
-und nicht etwa MVC (Model, View, Controller).  Die beiden Bezeichnungen bedeuten
-dasselbe, aber es ist viel einfacher, dieselbe Benennung wie Django zu nutzen.</p>
-<p>Zum Anfang erstellen wir einfach eine Viewfunktion für neue URLs und eine
-Funktion, die eine Nachricht über einen neuen Link darstellt.  Das ganze geht in
-unsere noch leere <tt class="docutils literal"><span class="pre">views.py</span></tt>-Datei:</p>
+gehen und anfangen, unsere View-Funktionen zu erstellen.  Der Begriff
+&#8220;View-Funktion&#8221; kommt von Django. Dort werden die Funktionen, die Templates
+befüllen und ausgeben, so genannt.  Deshalb ist unser Beispiel eine Umsetzung
+von MVT (Model, View, Template) und nicht etwa MVC (Model, View, Controller).
+Die beiden Bezeichnungen bedeuten dasselbe, aber es ist viel einfacher,
+dieselbe Benennung wie Django zu nutzen.</p>
+<p>Als Anfang erstellen wir einfach eine View-Funktion für neue URLs und eine
+Funktion, die eine Nachricht über einen neuen Link darstellt.  Das wird der
+Inhalt unserer noch leeren <tt class="docutils literal"><span class="pre">views.py</span></tt>-Datei:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">redirect</span>
 <span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">NotFound</span>
 <span class="k">from</span> <span class="nn">shorty.utils</span> <span class="k">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">expose</span><span class="p">,</span> <span class="n">validate_url</span><span class="p">,</span> \
@@ -439,47 +448,47 @@ unsere noch leere <tt class="docutils literal"><span class="pre">views.py</span>
 <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">page</span><span class="p">):</span>
     <span class="k">pass</span>
 </pre></div>
-<p>Wieder einmal ziemlich viel Code, aber das meiste ist normale Formvalidierung.
-Wir erstellen zwei Funktionen, <cite>new</cite> und <cite>display</cite>, und dekorieren sie mit
-unserem <cite>expose</cite>-Dekorator von den Utils.  Dieser Dekorator fügt eine neue
-URL-Rule zur Map hinzu, indem er alle Parameter zum Konstruktor eines
-Ruleobjekts übergibt und den Endpoint auf den Namen der Funktion setzt.  Damit
-können wir einfach URLs zu den Funktionen erzeugen &#8211; wir nutzen ihre
-Funktionsnamen als Endpoint.</p>
+<p>Wieder einmal ziemlich viel Code, aber das meiste ist normale
+Formularvalidierung.  Wir erstellen zwei Funktionen, <cite>new</cite> und <cite>display</cite>, und
+dekorieren sie mit unserem <cite>expose</cite>-Dekorator aus dem <cite>utils</cite>-Modul.  Dieser
+Dekorator fügt eine neue Regel zur URL-Map hinzu, indem er alle Parameter zum
+Konstruktor eines Rule-Objekts übergibt und den Endpoint auf den Namen der
+Funktion setzt.  Damit können wir einfach URLs zu den Funktionen erzeugen &#8211;
+wir nutzen ihre Funktionsnamen als Endpoint.</p>
 <p>Denke daran, dass dieser Code nicht unbedingt eine gute Idee für größere
 Anwendungen ist.  In solchen Fällen ist es besser, den vollen Importnamen mit
 einem allgemeinen Prefix oder etwas Ähnlichem als Endpoint zu nutzen.  Sonst
 wird es ziemlich verwirrend.</p>
-<p>Die Formvalidierung in der <cite>new</cite>-Methode ist ziemlich simpel.  Wir
-kontrollieren, ob die aktuelle Methode <cite>POST</cite> ist, falls ja nehmen wir die Daten
-vom Request und validieren sie.  Wenn dort kein Fehler auftritt, erstellen wir
-ein neues <cite>URL</cite>-Objekt, übergeben es der Datenbank und leiten auf die
-Anzeige-Seite um.</p>
-<p>Die <cite>display</cite>-Funktion ist nicht viel komplizierter. Die URL-Rule erwartet einen
-<cite>uid</cite>-Parameter, welchen die Funktion akzeptiert.  Danach schauen wir in der
-URL-Rule mit der gegebenen UID und geben das Template aus, indem wir das
-URL-Objekt ihm übergeben.</p>
+<p>Die Formularvalidierung in der <cite>new</cite>-Methode ist ziemlich simpel.  Wir
+kontrollieren, ob die aktuelle HTTP-Methode <cite>POST</cite> ist.  Falls ja nehmen wir
+die Daten vom Request und validieren sie.  Wenn dort kein Fehler auftritt,
+erstellen wir ein neues <cite>URL</cite>-Objekt, übergeben es der Datenbank und leiten auf
+die Anzeige-Seite um.</p>
+<p>Die <cite>display</cite>-Funktion ist nicht viel komplizierter.  Die URL-Rule erwartet
+einen <cite>uid</cite>-Parameter, welchen die Funktion entsprechend akzeptiert.  Danach
+holen wir das <cite>URL</cite>-Objekt mit der angegebenen UID und geben das Template aus,
+dem wir wiederum das <cite>URL</cite>-Objekt übergeben.</p>
 <p>Wenn die URL nicht existiert, werfen wir eine <cite>NotFound</cite>-Exception, welche eine
-statische &#8220;404 Seite nicht gefunden&#8221;-Seite anzeigt. Wir können diese später mit
-einer speziellen Errorseite ersetzen, indem wir die Exception auffangen, bevor
-die <cite>HTTPException</cite> geworfen wird.</p>
-<p>Die <cite>link</cite>-Viewfunktion wird von unseren Models in der <cite>short_url</cite>-Eigenschaft
+statische &#8220;404 Seite nicht gefunden&#8221;-Seite anzeigt.  Wir können diese später
+mit einer speziellen Fehlerseite ersetzen, indem wir die Exception auffangen,
+bevor die <cite>HTTPException</cite> geworfen wird.</p>
+<p>Die View-Funktion <cite>link</cite> wird von unseren Models in der <cite>short_url</cite>-Eigenschaft
 genutzt und ist die kurze URL, die wir vermitteln.  Wenn also die URL-UID
-<tt class="docutils literal"><span class="pre">foobar</span></tt> ist, wird die URL unter <tt class="docutils literal"><span class="pre">http://localhost:5000/u/foobar</span></tt> erreichbar
-sein.</p>
-<p>Die <cite>list</cite>-Viewfunktion wurde noch nicht geschrieben, das machen wir später.
+<tt class="docutils literal"><span class="pre">foobar</span></tt> ist, wird die URL unter <tt class="docutils literal"><span class="pre">http://localhost:5000/u/foobar</span></tt>
+erreichbar sein.</p>
+<p>Die View-Funktion <cite>list</cite> wurde noch nicht geschrieben, das machen wir später.
 Wichtig ist allerdings, dass die Funktion einen optionalen URL-Parameter
-akzeptiert.  Der erste Dekorator sagt Werkzeug, dass für den Requestpfad
-<tt class="docutils literal"><span class="pre">/page/</span></tt> die erste Seite angezeigt wird (da der Parameter <cite>page</cite> standardmäßig
-auf 1 gesetzt wird).  Wichtiger ist die Tatsache, dass Werkzeug URLs
-normalisiert.  Wenn du also <tt class="docutils literal"><span class="pre">/page</span></tt> oder <tt class="docutils literal"><span class="pre">/page/1</span></tt> aufrufst, wirst du in
-beiden Fällen zu <tt class="docutils literal"><span class="pre">/page/</span></tt> umgeleitet.  Das macht Google glücklich und
-geschieht automatisch.  Wenn du dieses Verhalten nicht magst, kannst du es
+akzeptiert.  Der erste Dekorator sagt Werkzeug, dass für den Request-Pfad
+<tt class="docutils literal"><span class="pre">/page/</span></tt> die erste Seite angezeigt wird (da der Parameter <cite>page</cite>
+standardmäßig auf 1 gesetzt wird).  Wichtiger ist die Tatsache, dass Werkzeug
+URLs normalisiert.  Wenn du also <tt class="docutils literal"><span class="pre">/page</span></tt> oder <tt class="docutils literal"><span class="pre">/page/1</span></tt> aufrufst, wirst du
+in beiden Fällen zu <tt class="docutils literal"><span class="pre">/page/</span></tt> umgeleitet.  Das geschieht automatisch und macht
+Google glücklich.  Wenn du dieses Verhalten nicht magst, kannst du es
 abschalten.</p>
-<p>Und wieder einmal müssen wir zwei Objekte aus dem Utils-Modul importieren, die
-jetzt noch nicht existieren.  Eine von diesen soll ein Jinja-Template in ein
-Response-Objekt ausgeben, das andere prüft eine URL.  Fügen wir also diese zu
-<tt class="docutils literal"><span class="pre">utils.py</span></tt> hinzu:</p>
+<p>Und wieder einmal müssen wir zwei Objekte aus dem <cite>utils</cite>-Modul importieren,
+die jetzt noch nicht existieren.  Eines von diesen soll ein Jinja-Template in
+ein Response-Objekt verwandeln, das andere prüft eine URL.  Fügen wir also
+diese zu <tt class="docutils literal"><span class="pre">utils.py</span></tt> hinzu:</p>
 <div class="syntax"><pre><span class="k">for</span> <span class="n">os</span> <span class="k">import</span> <span class="nn">path</span>
 <span class="k">from</span> <span class="nn">urlparse</span> <span class="k">import</span> <span class="n">urlparse</span>
 <span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Response</span>
@@ -503,36 +512,35 @@ niemand potentiell gefährliches JavaScript oder ähnliche URLs abschickt.  Die
 <cite>render_template</cite>-Funktion ist auch nicht viel komplizierter, sie schaut nach
 einem Template im Dateisystem im <cite>templates</cite>-Ordner und gibt es als Response
 aus.</p>
-<p>Eine andere Sache, die wir hier machen ist, dass wir die <cite>url_for</cite>-Funktion in
-den globalen Templatecontext packen, sodass wir URLs auch in den Templates
-erstellen können.</p>
+<p>Weiterhin fürgen wir die <cite>url_for</cite>-Funktion in den globalen Kontext des
+Templates ein, so dass wir auch in Templates URLs erzeugen können.</p>
 <p>Da wir jetzt unsere beiden ersten View-Funktionen haben, ist es Zeit, die
 Templates hinzuzufügen.</p>
 </div>
 <div class="section">
 <h3 id="teil-5-die-templates">Teil 5: Die Templates</h3>
-<p>Wir haben beschlossen, Jinja-Templates in diesem Beispiel zu nutzen.  Wenn du
+<p>Wir haben beschlossen, in diesem Beispiel Jinja-Templates zu nutzen.  Wenn du
 weißt, wie man Django-Templates nutzt, sollte es dir bekannt vorkommen; wenn du
 bis jetzt mit PHP gearbeitet hast, kannst du Jinja-Templates mit Smarty
 vergleichen.  Wenn du bis jetzt PHP als Templatesprache genutzt hast, solltest
-du für dein nächstes Projekt mal <a class="reference" href="http://www.makotemplates.org/">Mako</a> anschauen.</p>
+du für dein nächstes Projekt mal <a class="reference" href="http://www.makotemplates.org/">Mako</a> ansehen.</p>
 <p><strong>Sicherheitswarnung</strong>: Wir nutzen hier Jinja, welches eine textbasierte
 Template-Engine ist.  Da Jinja nicht weiß, womit es arbeitet, musst du, wenn du
-HTML-Templates erstellst, <em>alle</em> Werte escapen, die irgendwann, an irgendeinem
-Punkt, irgendeines der folgenden Zeichen enthalten können: <tt class="docutils literal"><span class="pre">&gt;</span></tt>, <tt class="docutils literal"><span class="pre">&lt;</span></tt> oder
-<tt class="docutils literal"><span class="pre">&amp;</span></tt>.  Innerhalb von Attributen musst du außerdem Anführungszeichen escapen.
-Du kannst Jinjas <tt class="docutils literal"><span class="pre">|e</span></tt>-Filter für normales Escaping benutzen, wenn du <cite>true</cite> as
-Argument übergibst escaped es außerdem Anführungszeichen (<tt class="docutils literal"><span class="pre">|e(true)</span></tt>).  Wie du
-in den Beispielen unterhalb sehen kannst, escapen wir die URLs nicht.  Der Grund
-dafür ist, dass wir keine <tt class="docutils literal"><span class="pre">&amp;</span></tt> in den URLs haben und deshalb ist es sicher,
-Escaping wegzulassen.</p>
-<p>Zwecks Einfachheit werden wir HTML 4 in unseren Templates nutzen.  Wenn du etwas
-Erfahrung mit XHTML hast, kannst du sie in XHTML schreiben.  Aber beachte, dass
-das Beispielstylesheet unten nicht mit XHTML funktioniert.</p>
+HTML-Templates erstellst, <em>alle</em> Werte maskieren, die irgendwann an
+irgendeinem Punkt irgendeines der folgenden Zeichen enthalten können: <tt class="docutils literal"><span class="pre">&gt;</span></tt>,
+<tt class="docutils literal"><span class="pre">&lt;</span></tt> oder <tt class="docutils literal"><span class="pre">&amp;</span></tt>.  Innerhalb von Attributen musst du außerdem Anführungszeichen
+maskieren.  Du kannst Jinjas <tt class="docutils literal"><span class="pre">|e</span></tt>-Filter für normales Escaping benutzen.
+Wenn du <cite>true</cite> als Argument übergibst, maskiert es außerdem Anführungszeichen
+(<tt class="docutils literal"><span class="pre">|e(true)</span></tt>).  Wie du in den Beispielen unterhalb sehen kannst, maskieren wir
+die URLs nicht.  Der Grund dafür ist, dass wir keine <tt class="docutils literal"><span class="pre">&amp;</span></tt> in den URLs haben
+und deshalb ist es sicher, auf Escaping zu verzichten.</p>
+<p>Der Einfachheit halber werden wir HTML 4 in unseren Templates nutzen.  Wenn du
+etwas Erfahrung mit XHTML hast, kannst du sie in XHTML schreiben.  Aber beachte,
+dass das Beispiel-Stylesheet unten nicht mit XHTML funktioniert.</p>
 <p>Eine coole Sache, die Jinja von Django übernommen hat, ist Templatevererbung.
-Templatevererbung bedeutet, dass wir oft genutzte Stücke in ein Basistemplate
-legen und es mit Platzhaltern füllen können.  Beispielsweise landen der Doctype
-und der HTML-Rahmen in der Datei <tt class="docutils literal"><span class="pre">templates/layout.html</span></tt>:</p>
+Das bedeutet, dass wir oft genutzte Stücke in ein Basistemplate auslagern und
+es mit Platzhaltern füllen können.  Beispielsweise landen der Doctype und der
+HTML-Rahmen in der Datei <tt class="docutils literal"><span class="pre">templates/layout.html</span></tt>:</p>
 <div class="syntax"><pre><span class="cp">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;</span>
 <span class="cp"> &quot;http://www.w3.org/TR/html4/strict.dtd&quot;&gt;</span>
 <span class="nt">&lt;html&gt;</span>
@@ -550,7 +558,7 @@ und der HTML-Rahmen in der Datei <tt class="docutils literal"><span class="pre">
 <span class="nt">&lt;/body&gt;</span>
 <span class="nt">&lt;/html&gt;</span>
 </pre></div>
-<p>Und wir können von diesem Template in unserer <tt class="docutils literal"><span class="pre">templates/new.html</span></tt> erben:</p>
+<p>Von diesem Template können wir in unserer <tt class="docutils literal"><span class="pre">templates/new.html</span></tt> erben:</p>
 <div class="syntax"><pre><span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;layout.html&#39;</span> <span class="cp">%}</span>
 <span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}</span>
   <span class="nt">&lt;h2&gt;</span>Erstelle eine Shorty-URL!<span class="nt">&lt;/h2&gt;</span>
@@ -568,11 +576,10 @@ und der HTML-Rahmen in der Datei <tt class="docutils literal"><span class="pre">
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
 <p>Wenn du dich über den Kommentar zwischen den beiden <cite>input</cite>-Elementen wunderst,
-das ist ein sauberer Trick, die Templates sauber zu halten, aber keine
-Leerzeichen zwischen beide Elemente zu setzen.  Wir haben ein Stylesheet
-vorbereitet, welches dort keine Leerzeichen erwartet.</p>
-<p>Und dann ein zweites Template für die Anzeige-Seite
-(<tt class="docutils literal"><span class="pre">templates/display.html</span></tt>):</p>
+das ist ein sauberer Trick, die Templates sauber zu halten ohne Leerzeichen
+zwischen beide Elemente zu setzen.  Wir haben ein Stylesheet vorbereitet,
+welches dort keine Leerzeichen erwartet.</p>
+<p>Ein zweites Template für die Anzeige-Seite (<tt class="docutils literal"><span class="pre">templates/display.html</span></tt>):</p>
 <div class="syntax"><pre><span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;layout.html&#39;</span> <span class="cp">%}</span>
 <span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}</span>
   <span class="nt">&lt;h2&gt;</span>Verkürzte URL<span class="nt">&lt;/h2&gt;</span>
@@ -582,10 +589,10 @@ vorbereitet, welches dort keine Leerzeichen erwartet.</p>
   <span class="nt">&lt;/p&gt;</span>
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
-<p>Jinjas <cite>urlize</cite>-Filter übersetzt eine URL(s) in einem Text in einen klickbaren
+<p>Jinjas <cite>urlize</cite>-Filter übersetzt eine URL in einem Text in einen klickbaren
 Link.  Wenn du ihm einen Integer übergibst, wird er den angezeigten Text auf
-diese Anzahl Zeichen kürzen; wenn du true als zweiten Parameter übergibst, wird
-ein <cite>nofollow</cite>-Flag hinzugefügt.</p>
+diese Anzahl Zeichen kürzen; wenn du <cite>true</cite> als zweiten Parameter übergibst,
+wird ein <cite>nofollow</cite>-Flag hinzugefügt.</p>
 <p>Da wir jetzt unsere ersten beiden Templates fertig haben, ist es Zeit, den
 Server zu starten und auf den Teil der Anwendung zu schauen, der bereits
 funktioniert: neue URLs hinzufügen und weitergeleitet werden.</p>
@@ -593,78 +600,83 @@ funktioniert: neue URLs hinzufügen und weitergeleitet werden.</p>
 <div class="section">
 <h3 id="zwischenschritt-das-design-hinzuf-gen">Zwischenschritt: Das Design hinzufügen</h3>
 <p>Jetzt ist es Zeit, etwas anderes zu machen: ein Design hinzufügen.
-Designelemente sind normalerweise in statischen CSS Stylesheets.  Also müssen
-wir einige statische Dateien irgendwo hinlegen &#8211; aber das ist ein wenig
-kompliziert.  Wenn du mit bis jetzt mit PHP gearbeitet hast, wirst du gemerkt
-haben, dass es hier nichts gibt, was eine URL zum Dateisystempfad übersetzt und
-so auf statischen Dateien direkt zugreift.  Du musst dem Webserver oder unserem
-Entwicklungsserver explizit sagen, dass es einen Pfad gibt, der die statischen
-Dateien beinhaltet.</p>
+Designelemente sind normalerweise in statischen CSS-Stylesheets definiert.
+Also müssen wir einige statische Dateien irgendwo ablegen &#8211; aber das ist ein
+wenig kompliziert.  Wenn du mit bis jetzt mit PHP gearbeitet hast, wirst du
+gemerkt haben, dass es hier nichts gibt, was eine URL zum Dateisystempfad
+übersetzt und so direkt auf statische Dateien zugreift.  Du musst dem Webserver
+oder unserem Entwicklungsserver explizit sagen, dass es einen Pfad gibt, der
+die statischen Dateien beinhaltet.</p>
 <p>Django empfiehlt eine separate Subdomain und einen eigenen Server für die
 statischen Dateien, was eine sehr gute Idee für Umgebungen mit hoher Serverlast
 ist, aber zu viel des Guten für diese simple Anwendung.</p>
 <p>Hier also folgendes Vorgehen: Wir lassen unsere Anwendung die statischen Dateien
 ausliefern, aber im Produktionsmodus solltest du dem Apachen mitteilen, dass er
-diese Dateien selbst ausliefern soll, mit Hilfe der <cite>Alias</cite>-Direktive in der
-Apachekonfiguration:</p>
+diese Dateien selbst ausliefern soll.  Das geschieht mit Hilfe der
+<cite>Alias</cite>-Direktive in der Konfiguration von Apache:</p>
 <div class="syntax"><pre><span class="nb">Alias</span> <span class="sx">/static</span> <span class="sx">/path/to/static/files</span>
 </pre></div>
 <p>Das ist um einiges schneller.</p>
-<p>Aber wie sagen wir unserer Anwendung, dass sie den Ordner mit statischen Dateien
+<p>Und wie sagen wir unserer Anwendung, dass sie den Ordner mit statischen Dateien
 als <tt class="docutils literal"><span class="pre">/static</span></tt> verfügbar machen soll?  Glücklicherweise ist das ziemlich
-einfach, weil Werkzeug dafür eine WSGI-Middleware liefert.  Jetzt gibt es zwei
-Möglichkeiten, diese Middleware zu integrieren: Ein Weg ist, die ganze Anwendung
-in diese Middleware zu wrappen (diesen Weg empfehlen wir wirklich nicht) und der
-andere ist, die Ausführungsfunktion zu wrappen (viel besser, weil wir die
-Referenz zu dem Anwendungsobjekt nicht verlieren).  Also gehen wir zurück zu
-<tt class="docutils literal"><span class="pre">application.py</span></tt> und verändern den Code ein wenig.</p>
-<p>Als erstes musst du einen neuen Import hinzufügen und den Pfad zu den statischen
-Dateien ermitteln.</p>
+einfach, da Werkzeug dafür eine WSGI-Middleware liefert.  Es gibt zwei
+Möglichkeiten, diese zu integrieren: Entweder wrappen wir die ganze Anwendung
+in diese Middleware (diesen Weg empfehlen wir wirklich nicht) oder wir wrappen
+nur die Ausführungsfunktion (viel besser, weil wir die Referenz auf das
+Anwendungsobjekt nicht verlieren).  Also gehen wir zurück zur
+<tt class="docutils literal"><span class="pre">application.py</span></tt> und passen den Code ein wenig an.</p>
+<p>Als Erstes musst du einen neuen Import hinzufügen und den Pfad zu den
+statischen Dateien ermitteln:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
 <span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">SharedDataMiddleware</span>
 
 <span class="n">STATIC_PATH</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&#39;static&#39;</span><span class="p">)</span>
 </pre></div>
-<p>Es wäre besser, die Pfad-Manipulation in die <tt class="docutils literal"><span class="pre">utils.py</span></tt>-Datei zu packen, weil
-wir den Templatepfad bereits dort ermittelt haben.  Aber das interessiert nicht
-wirklich, und wegen der Einfachheit können wir es im Anwendungsmodul lassen.</p>
+<p>Es wäre besser, die Pfad-Manipulation in die <tt class="docutils literal"><span class="pre">utils.py</span></tt>-Datei zu verschieben,
+weil wir den Template-Pfad bereits dort ermittelt haben.  Aber das ist nicht
+wirklich von Interesse, und wegen der Einfachheit können wir es im
+Anwendungsmodul lassen.</p>
 <p>Wie können wir also die Ausführungsfunktion wrappen?  Theoretisch müssen wir
-einfach <tt class="docutils literal"><span class="pre">self.__call__</span> <span class="pre">=</span> <span class="pre">wrap(self.__call__)</span></tt> sagen, aber leider klappt das
-nicht in Python.  Es ist aber nicht viel schwieriger.  Benenne einfach
+einfach <tt class="docutils literal"><span class="pre">self.__call__</span> <span class="pre">=</span> <span class="pre">wrap(self.__call__)</span></tt> schreiben, doch leider klappt
+das so nicht in Python.  Es ist aber nicht viel schwieriger:  Benenne einfach
 <cite>__call__</cite> in <cite>dispatch</cite> um und füge eine neue <cite>__call__</cite>-Methode hinzu:</p>
 <div class="syntax"><pre><span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
 </pre></div>
 <p>Jetzt können wir in unsere <cite>__init__</cite>-Funktion gehen und die Middleware
-zuschalten, indem wir die <cite>dispatch</cite>-&#8220;Methode&#8221; erstellen:</p>
+zuschalten, indem wir die <cite>dispatch</cite>-Methode einschieben:</p>
 <div class="syntax"><pre><span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span> <span class="o">=</span> <span class="n">SharedDataMiddleware</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">,</span> <span class="p">{</span>
     <span class="s">&#39;/static&#39;</span><span class="p">:</span>  <span class="n">STATIC_PATH</span>
 <span class="p">})</span>
 </pre></div>
 <p>Das war jetzt nicht schwer.  Mit diesem Weg können wir WSGI-Middlewares in der
 Anwendungsklasse einhaken!</p>
-<p>Eine andere gute Idee ist es, unserer <cite>url_map</cite> im Utils-Modul den Ort unserer
-statischen Dateien mitzuteilen, indem wir eine Regel hinzufügen.  Auf diesem Weg
-können wir URLs zu den statischen Dateien in den Templates generieren:</p>
+<p>Eine andere gute Idee ist es, unserer <cite>url_map</cite> im <cite>utils</cite>-Modul den Ort
+unserer statischen Dateien mitzuteilen, indem wir eine Regel hinzufügen.  Auf
+diesem Weg können wir URLs zu den statischen Dateien in den Templates
+generieren:</p>
 <div class="syntax"><pre><span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span><span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/static/&lt;file&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;static&#39;</span><span class="p">,</span> <span class="n">build_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)])</span>
 </pre></div>
 <p>Jetzt können wir unsere <tt class="docutils literal"><span class="pre">templates/layout.html</span></tt>-Datei wieder öffnen und einen
-Link zu dem <tt class="docutils literal"><span class="pre">style.css</span></tt>-Stylesheet hinzufügen, welches wir danach erstellen
+Link zum <tt class="docutils literal"><span class="pre">style.css</span></tt>-Stylesheet hinzufügen, welches wir danach erstellen
 werden:</p>
 <div class="syntax"><pre><span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">url_for</span><span class="o">(</span><span class="s1">&#39;static&#39;</span><span class="o">,</span>
   <span class="nv">file</span><span class="o">=</span><span class="s1">&#39;style.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
 </pre></div>
-<p>Das geht natürlich in den <cite>&lt;head&gt;</cite>-Tag, wo zur Zeit nur der Titel ist.</p>
-<p>Du kannst jetzt ein nettes Layout designen oder das <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css">Beispielstylesheet</a>
-nutzen.  In beiden Fällen musst du es in die Datei <tt class="docutils literal"><span class="pre">static/style.css</span></tt> packen.</p>
+<p>Das geht natürlich in den <cite>&lt;head&gt;</cite>-Tag, wo zur Zeit nur der Titel festgelegt
+ist.</p>
+<p>Du kannst jetzt ein nettes Layout gestalten oder das <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css">Beispiel-Stylesheet</a>
+nutzen.  In beiden Fällen musst du es in die Datei <tt class="docutils literal"><span class="pre">static/style.css</span></tt>
+einfügen.</p>
 </div>
 <div class="section">
 <h3 id="teil-6-ffentliche-urls-auflisten">Teil 6: Öffentliche URLs auflisten</h3>
 <p>Jetzt wollen wir alle öffentlichen URLs auf der &#8220;List&#8221;-Seite auflisten.  Das
 sollte kein großes Problem sein, aber wir wollen auch eine Art Seitenumbruch
-haben.  Da wir alle URLs auf einmal ausgeben, haben wir früher oder später eine
-endlose Seite, die Minuten zum Laden benötigt.</p>
-<p>Beginnen wir also mit dem Hinzufügen eine <cite>Pagination</cite>-Klasse in unser Utils-Modul:</p>
+haben.  Da wir alle URLs auf einmal ausgeben, haben wir früher oder später
+eine endlose Seite, die Minuten zum Laden benötigt.</p>
+<p>Beginnen wir also mit dem Hinzufügen einer <cite>Pagination</cite>-Klasse zu unserem
+<cite>utils</cite>-Modul:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">cached_property</span>
 
 <span class="k">class</span> <span class="nc">Pagination</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -742,15 +754,15 @@ dieser Seite nicht mit einem 404 zu quittieren, wäre schlechter Stil).</p>
 </pre></div>
 </div>
 <div class="section">
-<h3 id="bonus-404-errorseiten-stylen">Bonus: 404 Errorseiten stylen</h3>
+<h3 id="bonus-404-fehlerseiten-gestalten">Bonus: 404-Fehlerseiten gestalten</h3>
 <p>Jetzt, da wir unsere Anwendung fertig gestellt haben, können wir kleine
 Verbesserungen vornehmen, zum Beispiel eigene 404-Fehlerseiten.  Das ist
-ziemlich einfach.  Das erste, was wir machen müssen, ist eine neue Funktion
+ziemlich einfach.  Das Erste, was wir machen müssen, ist eine neue Funktion
 namens <cite>not_found</cite> in den Views zu erstellen, welche ein Template ausgibt:</p>
 <div class="syntax"><pre><span class="k">def</span> <span class="nf">not_found</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s">&#39;not_found.html&#39;</span><span class="p">)</span>
 </pre></div>
-<p>Dann müssen wir in unser Anwendungsmodul gehen und die <cite>NotFound</cite>-Exception
+<p>Dann müssen wir in unser Anwendungsmodul wechseln und die <cite>NotFound</cite>-Exception
 importieren:</p>
 <div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">NotFound</span>
 </pre></div>
@@ -769,7 +781,7 @@ except-Block kommt <strong>vor</strong> den except-Bock mit <cite>HTTPException<
 <span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}</span>
   <span class="nt">&lt;h2&gt;</span>Seite nicht gefunden<span class="nt">&lt;/h2&gt;</span>
   <span class="nt">&lt;p&gt;</span>
-    Die aufgerufene Seite existiert nicth auf dem Server.  Vielleicht
+    Die aufgerufene Seite existiert nicht auf dem Server.  Vielleicht
     willst du eine <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">url_for</span><span class="o">(</span><span class="s1">&#39;new&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>neue URL
     hinzufügen<span class="nt">&lt;/a&gt;</span>?
   <span class="nt">&lt;/p&gt;</span>
@@ -783,7 +795,7 @@ und Jinja anzufangen und sollte dir helfen, die beste Lösung für deine Anwendu
 zu finden.  Für einige größere Beispiele, die außerdem einen anderen Aufbau und
 Ideen zum Ausführen benutzen, solltest du mal einen Blick auf den
 <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">Beispielordner</a> werfen.</p>
-<p>Viel Spaß mit Werkzeug!</p>
+<p>In diesem Sinne: Viel Spaß mit Werkzeug!</p>
 </div>
 
       <div style="clear:both"></div>

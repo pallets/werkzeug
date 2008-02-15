@@ -58,6 +58,11 @@ Data Structures
 Working with HTTP Headers
 =========================
 
+.. def:: werkzeug.http.parse_set_header
+.. def:: werkzeug.http.parse_list_header
+.. def:: werkzeug.http.parse_dict_header
+.. def:: werkzeug.http.dump_header
+
 .. class:: werkzeug.http.Accept
 
     `provided`
@@ -110,6 +115,37 @@ Working with HTTP Headers
 .. def:: werkzeug.http.unquote_etag
 .. def:: werkzeug.http.generate_etag
 .. def:: werkzeug.http.is_resource_modified
+
+.. class:: werkzeug.http.Authorization
+
+    .. def:: werkzeug.http.WWWAuthenticate.to_header
+    .. property:: werkzeug.http.Authorization.username
+    .. property:: werkzeug.http.Authorization.password
+    .. property:: werkzeug.http.Authorization.realm
+    .. property:: werkzeug.http.Authorization.nonce
+    .. property:: werkzeug.http.Authorization.uri
+    .. property:: werkzeug.http.Authorization.nc
+    .. property:: werkzeug.http.Authorization.cnonce
+    .. property:: werkzeug.http.Authorization.response
+    .. property:: werkzeug.http.Authorization.opaque
+    .. property:: werkzeug.http.Authorization.qop
+
+.. class:: werkzeug.http.WWWAuthenticate
+
+    .. def:: werkzeug.http.WWWAuthenticate.set_basic
+    .. def:: werkzeug.http.WWWAuthenticate.set_digest
+    .. def:: werkzeug.http.WWWAuthenticate.to_header
+    .. property:: werkzeug.http.WWWAuthenticate.type
+    .. property:: werkzeug.http.WWWAuthenticate.realm
+    .. property:: werkzeug.http.WWWAuthenticate.stale
+    .. property:: werkzeug.http.WWWAuthenticate.domain
+    .. property:: werkzeug.http.WWWAuthenticate.nonce
+    .. property:: werkzeug.http.WWWAuthenticate.opaque
+    .. property:: werkzeug.http.WWWAuthenticate.algorithm
+    .. property:: werkzeug.http.WWWAuthenticate.qop
+
+.. def:: werkzeug.http.parse_authorization_header
+.. def:: werkzeug.http.parse_www_authenticate_header
 
 `HTTP_STATUS_CODES`
     A dict of status code -> default status message pairs.  This is used

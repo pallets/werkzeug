@@ -227,6 +227,34 @@ a WSGI environment.</dd>
 <div class="section">
 <h3 id="working-with-http-headers">Working with HTTP Headers</h3>
 <dl>
+<dt><cite id="werkzeug.http.parse_set_header">parse_set_header</cite> <tt class="func-signature docutils literal"><span class="pre">(value,</span> <span class="pre">on_update=None)</span></tt></dt>
+<dd>Parse a set like header and return a <cite>HeaderSet</cite> object.  The return
+value is an object that treats the items case insensitive and keeps the
+order of the items.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.parse_list_header">parse_list_header</cite> <tt class="func-signature docutils literal"><span class="pre">(value)</span></tt></dt>
+<dd><p class="first">Parse lists as described by RFC 2068 Section 2.</p>
+<p class="last">In particular, parse comma-separated lists where the elements of
+the list may include quoted-strings.  A quoted-string could
+contain a comma.  A non-quoted string could have quotes in the
+middle.  Quotes are removed automatically after parsing.</p>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.parse_dict_header">parse_dict_header</cite> <tt class="func-signature docutils literal"><span class="pre">(value)</span></tt></dt>
+<dd>Parse lists of key, value paits as described by RFC 2068 Section 2 and
+convert them into a python dict.  If there is no value for a key it will
+be <cite>None</cite>.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.dump_header">dump_header</cite> <tt class="func-signature docutils literal"><span class="pre">(iterable)</span></tt></dt>
+<dd>Dump an HTTP header again.  This is the reversal of <cite>parse_list_header</cite>,
+<cite>parse_set_header</cite> and <cite>parse_dict_header</cite>.  This also quotes strings
+that include an equals sign unless you pass it as dict of key, value
+pairs.</dd>
+</dl>
+<dl>
 <dt><strong>class</strong> <cite id="werkzeug.http.Accept">Accept</cite></dt>
 <dd><p class="first">An <cite>Accept</cite> object is just a list subclass for lists of
 <tt class="docutils literal"><span class="pre">(value,</span> <span class="pre">quality)</span></tt> tuples.  It is automatically sorted by quality.</p>
@@ -426,6 +454,148 @@ weak etags are not part of this set.</dd>
 <dl>
 <dt><cite id="werkzeug.http.is_resource_modified">is_resource_modified</cite> <tt class="func-signature docutils literal"><span class="pre">(environ,</span> <span class="pre">etag=None,</span> <span class="pre">data=None,</span> <span class="pre">last_modified=None)</span></tt></dt>
 <dd>Convenience method for conditional requests.</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.http.Authorization">Authorization</cite></dt>
+<dd><p class="first">Represents an <cite>Authorization</cite> header sent by the client.  You should not
+create this kind of object yourself but use it when it&#8217;s returned by the
+<cite>parse_authorization_header</cite> function.</p>
+<p>This object is a dict subclass and can be altered by setting dict items
+but it should be considered immutable as it&#8217;s returned by the client and
+not meant for modifications.</p>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.to_header">to_header</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd>Convert the stored values into a WWW-Authenticate header.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.username">username</cite></dt>
+<dd>The username transmitted.  This is set for both basic and digest
+auth all the time.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.password">password</cite></dt>
+<dd>When the authentication type is basic this is the password
+transmitted by the client, else <cite>None</cite>.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.realm">realm</cite></dt>
+<dd>This is the server realm send back for digest auth.  For HTTP
+digest auth.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.nonce">nonce</cite></dt>
+<dd>The nonce the server send for digest auth, send back by the client.
+A nonce should be unique for every 401 response for HTTP digest
+auth.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.uri">uri</cite></dt>
+<dd>The URI from Request-URI of the Request-Line; duplicated because
+proxies are allowed to change the Request-Line in transit.  HTTP
+digest auth only.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.nc">nc</cite></dt>
+<dd>The nonce count value transmitted by clients if a qop-header is
+also transmitted.  HTTP digest auth only.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.cnonce">cnonce</cite></dt>
+<dd>If the server sent a qop-header in the <tt class="docutils literal"><span class="pre">WWW-Authenticate</span></tt>
+header, the client has to provide this value for HTTP digest auth.
+See the RFC for more details.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.response">response</cite></dt>
+<dd>A string of 32 hex digits computed as defined in RFC 2617, which
+proves that the user knows a password.  Digest auth only.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.Authorization.opaque">opaque</cite></dt>
+<dd>The opaque header from the server returned unchanged by the client.
+It is recommended that this string be base64 or hexadecimal data.
+Digest auth only.</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.http.Authorization.qop">qop</cite></dt>
+<dd>Indicates what &#8220;quality of protection&#8221; the client has applied to
+the message for HTTP digest auth.</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.http.WWWAuthenticate">WWWAuthenticate</cite></dt>
+<dd><p class="first">Provides simple access to <cite>WWW-Authenticate</cite> headers.</p>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.set_basic">set_basic</cite> <tt class="func-signature docutils literal"><span class="pre">(realm='authentication</span> <span class="pre">required')</span></tt></dt>
+<dd>Clear the auth info and enable basic auth.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.set_digest">set_digest</cite> <tt class="func-signature docutils literal"><span class="pre">(realm,</span> <span class="pre">nonce,</span> <span class="pre">qop=('auth',),</span> <span class="pre">opaque=None,</span> <span class="pre">algorithm=None,</span> <span class="pre">stale=False)</span></tt></dt>
+<dd>Clear the auth info and enable digest auth.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.to_header">to_header</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd>Convert the stored values into a WWW-Authenticate header.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.type">type</cite></dt>
+<dd>The type of the auth machanism.  HTTP currently specifies
+<cite>Basic</cite> and <cite>Digest</cite>.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.realm">realm</cite></dt>
+<dd>A string to be displayed to users so they know which username and
+password to use.  This string should contain at least the name of
+the host performing the authentication and might additionally
+indicate the collection of users who might have access.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.stale">stale</cite></dt>
+<dd>A flag, indicating that the previous request from the client was
+rejected because the nonce value was stale.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.domain">domain</cite></dt>
+<dd>A list of URIs that define the protection space.  If a URI is an
+absolte path, it is relative to the canonical root URL of the
+server being accessed.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.nonce">nonce</cite></dt>
+<dd>A server-specified data string which should be uniquely generated
+each time a 401 response is made.  It is recommended that this
+string be base64 or hexadecimal data.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.opaque">opaque</cite></dt>
+<dd>A string of data, specified by the server, which should be returned
+by the client unchanged in the Authorization header of subsequent
+requests with URIs in the same protection space.  It is recommended
+that this string be base64 or hexadecimal data.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.WWWAuthenticate.algorithm">algorithm</cite></dt>
+<dd>A string indicating a pair of algorithms used to produce the digest
+and a checksum.  If this is not present it is assumed to be &#8220;MD5&#8221;.
+If the algorithm is not understood, the challenge should be ignored
+(and a different one used, if there is more than one).</dd>
+</dl>
+<dl class="last">
+<dt><cite id="werkzeug.http.WWWAuthenticate.qop">qop</cite></dt>
+<dd>A set of quality-of-privacy modifies such as auth and auth-int.</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.parse_authorization_header">parse_authorization_header</cite> <tt class="func-signature docutils literal"><span class="pre">(value)</span></tt></dt>
+<dd>Parse an HTTP basic/digest authorization header transmitted by the web
+browser.  The return value is either <cite>None</cite> if the header was invalid or
+not given, otherwise an <cite>Authorization</cite> object.</dd>
+</dl>
+<dl>
+<dt><cite id="werkzeug.http.parse_www_authenticate_header">parse_www_authenticate_header</cite> <tt class="func-signature docutils literal"><span class="pre">(value,</span> <span class="pre">on_update=None)</span></tt></dt>
+<dd>Parse an HTTP WWW-Authenticate header into a <cite>WWWAuthenticate</cite> object.</dd>
 </dl>
 <dl>
 <dt><cite>HTTP_STATUS_CODES</cite></dt>

@@ -500,6 +500,10 @@ class Authorization(dict):
     Represents an `Authorization` header sent by the client.  You should not
     create this kind of object yourself but use it when it's returned by the
     `parse_authorization_header` function.
+
+    This object is a dict subclass and can be altered by setting dict items
+    but it should be considered immutable as it's returned by the client and
+    not meant for modifications.
     """
 
     def __init__(self, auth_type, data=None):
@@ -604,13 +608,13 @@ class WWWAuthenticate(_UpdateDict):
             self.to_header()
         )
 
-    def auth_property(name):
+    def auth_property(name, doc=None):
         def _set_value(self, value):
             if value is None:
                 self.pop(name, None)
             else:
                 self[name] = str(value)
-        return property(lambda x: x.get(name), _set_value)
+        return property(lambda x: x.get(name), _set_value, doc=doc)
 
     def _set_property(name, doc=None):
         def fget(self):
@@ -622,13 +626,34 @@ class WWWAuthenticate(_UpdateDict):
             return parse_set_header(self.get(name), on_update)
         return property(fget, doc=doc)
 
-    type = auth_property('__auth_type__')
-    realm = auth_property('realm')
-    domain = _set_property('domain')
-    nonce = auth_property('nonce')
-    opaque = auth_property('opaque')
-    algorithm = auth_property('algorithm')
-    qop = _set_property('qop')
+    type = auth_property('__auth_type__', doc='''
+        The type of the auth machanism.  HTTP currently specifies
+        `Basic` and `Digest`.''')
+    realm = auth_property('realm', doc='''
+        A string to be displayed to users so they know which username and
+        password to use.  This string should contain at least the name of
+        the host performing the authentication and might additionally
+        indicate the collection of users who might have access.''')
+    domain = _set_property('domain', doc='''
+        A list of URIs that define the protection space.  If a URI is an
+        absolte path, it is relative to the canonical root URL of the
+        server being accessed.''')
+    nonce = auth_property('nonce', doc='''
+        A server-specified data string which should be uniquely generated
+        each time a 401 response is made.  It is recommended that this
+        string be base64 or hexadecimal data.''')
+    opaque = auth_property('opaque', doc='''
+        A string of data, specified by the server, which should be returned
+        by the client unchanged in the Authorization header of subsequent
+        requests with URIs in the same protection space.  It is recommended
+        that this string be base64 or hexadecimal data.''')
+    algorithm = auth_property('algorithm', doc='''
+        A string indicating a pair of algorithms used to produce the digest
+        and a checksum.  If this is not present it is assumed to be "MD5".
+        If the algorithm is not understood, the challenge should be ignored
+        (and a different one used, if there is more than one).''')
+    qop = _set_property('qop', doc='''
+        A set of quality-of-privacy modifies such as auth and auth-int.''')
 
     def _get_stale(self):
         val = self.get('stale')
@@ -639,7 +664,9 @@ class WWWAuthenticate(_UpdateDict):
             self.pop('stale', None)
         else:
             self['stale'] = value and 'TRUE' or 'FALSE'
-    stale = property(_get_stale, _set_stale)
+    stale = property(_get_stale, _set_stale, doc='''
+        A flag, indicating that the previous request from the client was
+        rejected because the nonce value was stale.''')
     del _get_stale, _set_stale
 
     # make auth_property a staticmethod so that subclasses of
