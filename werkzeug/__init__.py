@@ -47,12 +47,15 @@ all_by_module = {
                              'parse_set_header', 'quote_etag', 'unquote_etag',
                              'parse_list_header', 'parse_dict_header',
                              'HeaderSet', 'parse_authorization_header',
-                             'Authorization', 'HTTP_STATUS_CODES'],
+                             'parse_www_authenticate_header',
+                             'WWWAuthenticate', 'Authorization',
+                             'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest', 'Request',
                              'Response', 'AcceptMixin', 'ETagRequestMixin',
                              'ETagResponseMixin', 'ResponseStreamMixin',
                              'CommonResponseDescriptorsMixin',
-                             'UserAgentMixin', 'AuthorizationMixin']
+                             'UserAgentMixin', 'AuthorizationMixin',
+                             'WWWAuthenticateMixin']
 }
 
 attribute_modules = ['exceptions', 'routing', 'script']

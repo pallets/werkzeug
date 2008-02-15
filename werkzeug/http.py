@@ -563,7 +563,7 @@ class WWWAuthenticate(_UpdateDict):
                    algorithm=None, stale=False):
         """Clear the auth info and enable digest auth."""
         d = {
-            '__auth_type__':    'digest'
+            '__auth_type__':    'digest',
             'realm':            realm,
             'nonce':            nonce,
             'qop':              dump_header(qop)
