@@ -119,6 +119,7 @@ _rule_re = re.compile(r'''
     (?P<variable>[a-zA-Z][a-zA-Z0-9_]*)         # variable name
     >
 ''', re.VERBOSE)
+_simple_rule_re = re.compile(r'<([^>]+)>')
 
 
 def parse_rule(rule):
@@ -454,10 +455,31 @@ class Rule(RuleFactory):
         Set this to true and the rule will never match but will create a URL
         that can be build. This is useful if you have resources on a subdomain
         or folder that are not handled by the WSGI application (like static data)
+
+    `redirect_to`
+        If given this must be either a string or callable.  In case of a
+        callable it's called with the values of the url as keyword arguments
+        and has to return the target for the redirect, otherwise it has to be
+        a string with placeholders in rule syntax::
+
+            def foo_with_slug(id):
+                # ask the database for the slug for the old id.  this of
+                # course has nothing to do with werkzeug.
+                return '/foo/' + Foo.get_slug_for_id(id)
+
+            url_map = Map([
+                Rule('/foo/<slug>', endpoint='foo'),
+                Rule('/some/old/url/<slug>', redirect_to='/foo/<id>'),
+                Rule('/other/old/url/<int:id>', redirect_to=foo_with_slug)
+            ])
+
+        When the rule is matched the routing system will raise a
+        `RequestRedirect` exception with the target for the redirect.
     """
 
     def __init__(self, string, defaults=None, subdomain=None, methods=None,
-                 build_only=False, endpoint=None, strict_slashes=None):
+                 build_only=False, endpoint=None, strict_slashes=None,
+                 redirect_to=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
         self.rule = string
@@ -474,6 +496,7 @@ class Rule(RuleFactory):
             self.methods = set([x.upper() for x in methods])
         self.endpoint = endpoint
         self.greediness = 0
+        self.redirect_to = redirect_to
 
         self._trace = []
         if defaults is not None:
@@ -490,7 +513,8 @@ class Rule(RuleFactory):
         to reuse an already bound URL for another map.
         """
         return Rule(self.rule, self.defaults, self.subdomain, self.methods,
-                    self.build_only, self.endpoint, self.strict_slashes)
+                    self.build_only, self.endpoint, self.strict_slashes,
+                    self.redirect_to)
 
     def get_rules(self, map):
         yield self
@@ -1190,6 +1214,21 @@ class MapAdapter(object):
                             self.script_name[:-1],
                             path.lstrip('/')
                         )))
+            if rule.redirect_to is not None:
+                if isinstance(rule.redirect_to, basestring):
+                    def _handle_match(match):
+                        value = rv[match.group(1)]
+                        return rule._converters[match.group(1)].to_url(value)
+                    redirect_url = _simple_rule_re.sub(_handle_match,
+                                                       rule.redirect_to)
+                else:
+                    redirect_url = rule.redirect_to(**rv)
+                raise RequestRedirect(str(urljoin('%s://%s%s%s' % (
+                    self.url_scheme,
+                    self.subdomain and self.subdomain + '.' or '',
+                    self.server_name,
+                    self.script_name
+                ), redirect_url)))
             return rule.endpoint, rv
         if have_match_for:
             raise MethodNotAllowed(valid_methods=list(have_match_for))
