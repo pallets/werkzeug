@@ -16,6 +16,7 @@ import sys
 import cgi
 import urllib
 import urlparse
+import posixpath
 from itertools import chain
 from Cookie import BaseCookie, Morsel, CookieError
 from time import asctime, gmtime, time

@@ -389,16 +389,18 @@ class ServiceUnavailable(HTTPException):
     )
 
 
+default_exceptions = {}
+__all__ = ['HTTPException']
+
 def _find_exceptions():
-    rv = {}
     for name, obj in globals().iteritems():
         try:
             if getattr(obj, 'code', None) is not None:
-                rv[obj.code] = obj
+                default_exceptions[obj.code] = obj
+                __all__.append(obj.__name__)
         except TypeError:
             continue
-    return rv
-default_exceptions = _find_exceptions()
+_find_exceptions()
 del _find_exceptions
 
 

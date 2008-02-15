@@ -496,7 +496,7 @@ class BaseResponse(object):
         from warnings import warn
         warn(DeprecationWarning('response.write() will go away in Werkzeug '
                                 '0.3.  Use the new response.stream available '
-                                'on `Response`.'))
+                                'on `Response`.'), stacklevel=2)
         if not isinstance(self.response, list):
             raise RuntimeError('cannot write to a streamed response.')
         self.response.append(data)
@@ -525,7 +525,8 @@ class BaseResponse(object):
     def _deprecate_data(f):
         def proxy(*args, **kwargs):
             from warnings import warn
-            warn(DeprecationWarning('response_body is now called data'))
+            warn(DeprecationWarning('response_body is now called data'),
+                 stacklevel=2)
             return f(*args, **kwargs)
         return proxy
     response_body = property(_deprecate_data(_get_data),
@@ -1014,5 +1015,5 @@ else:
                                     'the werkzeug contrib module.  Import '
                                     'it from werkzeug.contrib.reporterstream'
                                     '.  As of werkzeug 0.3 this will be'
-                                    'required.'))
+                                    'required.'), stacklevel=2)
             super(BaseReporterStream, self).__init__(environ, threshold)
