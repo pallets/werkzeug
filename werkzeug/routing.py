@@ -458,23 +458,28 @@ class Rule(RuleFactory):
 
     `redirect_to`
         If given this must be either a string or callable.  In case of a
-        callable it's called with the values of the url as keyword arguments
-        and has to return the target for the redirect, otherwise it has to be
-        a string with placeholders in rule syntax::
+        callable it's called with the url adapter that triggered the match and
+        the values of the URL as keyword arguments and has to return the target
+        for the redirect, otherwise it has to be a string with placeholders in
+        rule syntax::
 
-            def foo_with_slug(id):
+            def foo_with_slug(adapter, id):
                 # ask the database for the slug for the old id.  this of
                 # course has nothing to do with werkzeug.
-                return '/foo/' + Foo.get_slug_for_id(id)
+                return 'foo/' + Foo.get_slug_for_id(id)
 
             url_map = Map([
                 Rule('/foo/<slug>', endpoint='foo'),
-                Rule('/some/old/url/<slug>', redirect_to='/foo/<id>'),
+                Rule('/some/old/url/<slug>', redirect_to='foo/<slug>'),
                 Rule('/other/old/url/<int:id>', redirect_to=foo_with_slug)
             ])
 
         When the rule is matched the routing system will raise a
         `RequestRedirect` exception with the target for the redirect.
+
+        Keep in mind that the URL will be joined against the URL root of the
+        script so don't use a leading slash on the target URL unless you
+        really mean root of that domain.
     """
 
     def __init__(self, string, defaults=None, subdomain=None, methods=None,
@@ -1222,7 +1227,7 @@ class MapAdapter(object):
                     redirect_url = _simple_rule_re.sub(_handle_match,
                                                        rule.redirect_to)
                 else:
-                    redirect_url = rule.redirect_to(**rv)
+                    redirect_url = rule.redirect_to(self, **rv)
                 raise RequestRedirect(str(urljoin('%s://%s%s%s' % (
                     self.url_scheme,
                     self.subdomain and self.subdomain + '.' or '',
