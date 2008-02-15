@@ -27,7 +27,8 @@ from datetime import datetime, timedelta
 from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
-     quote_etag, parse_set_header, parse_authorization_header
+     quote_etag, parse_set_header, parse_authorization_header, \
+     parse_www_authenticate_header
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -952,6 +953,22 @@ class CommonResponseDescriptorsMixin(object):
         _set_retry_after
 
 
+class WWWAuthenticateMixin(object):
+    """
+    Adds a `www_authenticate` property.
+    """
+
+    def www_authenticate(self):
+        def on_update(www_auth):
+            if not www_auth and 'www-authenticate' in self.headers:
+                del self.headers['www-authenticate']
+            elif www_auth:
+                self.headers['WWW-Authenticate'] = www_auth.to_header()
+        header = self.headers.get('www-authenticate')
+        return parse_www_authenticate_header(header, on_update)
+    www_authenticate = property(www_authenticate)
+
+
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
               UserAgentMixin, AuthorizationMixin):
     """
@@ -965,11 +982,13 @@ class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
 
 
 class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
-               CommonResponseDescriptorsMixin):
+               CommonResponseDescriptorsMixin,
+               WWWAuthenticateMixin):
     """
     Full featured response object implementing the following mixins:
 
     - `ETagResponseMixin` for etag and cache control handling
     - `ResponseStreamMixin` to add support for the `stream` property
     - `CommonResponseDescriptorsMixin` for various HTTP descriptors
+    - `WWWAuthenticateMixin` for HTTP authentication support
     """

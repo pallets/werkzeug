@@ -29,6 +29,7 @@ try:
     frozenset = frozenset
 except NameError:
     from sets import Set as set, ImmutableSet as frozenset
+from werkzeug.utils import _patch_wrapper
 
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
@@ -89,6 +90,32 @@ HTTP_STATUS_CODES = {
     507:    'Insufficient Storage',
     510:    'Not Extended'
 }
+
+
+class _UpdateDict(dict):
+    """
+    A dict that calls `on_update` on modifications.
+    """
+
+    def __init__(self, data, on_update):
+        dict.__init__(self, data)
+        self.on_update = on_update
+
+    def calls_update(f):
+        def oncall(self, *args, **kw):
+            rv = f(self, *args, **kw)
+            if self.on_update is not None:
+                self.on_update(self)
+            return rv
+        return _patch_wrapper(f, oncall)
+
+    __setitem__ = calls_update(dict.__setitem__)
+    __delitem__ = calls_update(dict.__delitem__)
+    clear = calls_update(dict.clear)
+    pop = calls_update(dict.pop)
+    popitem = calls_update(dict.popitem)
+    setdefault = calls_update(dict.setdefault)
+    update = calls_update(dict.update)
 
 
 class Accept(list):
@@ -297,7 +324,7 @@ class HeaderSet(object):
         )
 
 
-class CacheControl(dict):
+class CacheControl(_UpdateDict):
     """
     Subclass of a dict that stores values for a Cache-Control header.  It has
     accesors for all the cache-control directives specified in RFC 2616.  The
@@ -341,35 +368,8 @@ class CacheControl(dict):
     s_maxage = cache_property('s-maxage', None, None)
 
     def __init__(self, values=(), on_update=None):
-        self.on_update = on_update
-        if values is None:
-            dict.__init__(self)
-            self.provided = False
-        else:
-            dict.__init__(self, values)
-            self.provided = True
-
-    def calls_update(f):
-        def oncall(self, *args, **kw):
-            rv = f(self, *args, **kw)
-            if self.on_update is not None:
-                self.on_update(self)
-            return rv
-        try:
-            oncall.__name__ = f.__name__
-            oncall.__module__ = f.__module__
-            oncall.__doc__ = f.__doc__
-        except:
-            pass
-        return oncall
-
-    __setitem__ = calls_update(dict.__setitem__)
-    __delitem__ = calls_update(dict.__delitem__)
-    clear = calls_update(dict.clear)
-    pop = calls_update(dict.pop)
-    popitem = calls_update(dict.popitem)
-    setdefault = calls_update(dict.setdefault)
-    update = calls_update(dict.update)
+        _UpdateDict.__init__(self, values or (), on_update)
+        self.provided = values is not None
 
     def _get_cache_value(self, key, default, type):
         """Used internally be the accessor properties."""
@@ -398,34 +398,23 @@ class CacheControl(dict):
                 self[key] = value
             else:
                 self.pop(key, None)
-    _set_cache_value = calls_update(_set_cache_value)
 
     def to_header(self):
         """Convert the stored values into a cache control header."""
-        items = []
-        for key, value in self.iteritems():
-            if value is None:
-                items.append(key)
-            else:
-                value = str(value)
-                if not set(value).issubset(_token_chars):
-                    value = '"%s"' % value.replace('"', "'")
-                items.append('%s=%s' % (key, value))
-        return ', '.join(items)
+        return dump_header(self)
 
     def __str__(self):
         return self.to_header()
 
     def __repr__(self):
-        return '%s(%s)' % (
+        return '<%s %r>' % (
             self.__class__.__name__,
-            dict.__repr__(self)
+            self.to_header()
         )
 
     # make cache_property a staticmethod so that subclasses of
     # `CacheControl` can use it for new properties.
     cache_property = staticmethod(cache_property)
-    del calls_update
 
 
 class ETags(object):
@@ -553,6 +542,132 @@ class Authorization(dict):
         the message for HTTP digest auth.''')
 
 
+class WWWAuthenticate(_UpdateDict):
+    """
+    Provides simple access to `WWW-Authenticate` headers.
+    """
+
+    def __init__(self, auth_type=None, values=None, on_update=None):
+        _UpdateDict.__init__(self, values or (), on_update)
+        if auth_type:
+            self['__auth_type__'] = auth_type
+
+    def set_basic(self, realm):
+        """Clear the auth info and enable basic auth."""
+        dict.clear(self)
+        dict.update(self, {'__auth_type__': 'basic', 'realm': realm})
+        if self.on_update:
+            self.on_update(self)
+
+    def set_digest(self, realm, nonce, qop=('auth',), opaque=None,
+                   algorithm=None, stale=False):
+        """Clear the auth info and enable digest auth."""
+        d = {
+            '__auth_type__':    'digest'
+            'realm':            realm,
+            'nonce':            nonce,
+            'qop':              dump_header(qop)
+        }
+        if stale:
+            d['stale'] = 'TRUE'
+        if opaque is not None:
+            d['opaque'] = opaque
+        if algorithm is not None:
+            d['algorithm'] = algorithm
+        dict.clear(self)
+        dict.update(self, d)
+        if self.on_update:
+            self.on_update(self)
+
+    def to_header(self):
+        """Convert the stored values into a WWW-Authenticate header."""
+        d = dict(self)
+        auth_type = d.pop('__auth_type__', None) or 'basic'
+        return '%s %s' % (auth_type.title(), dump_header(d))
+
+    def __str__(self):
+        return self.to_header()
+
+    def __repr__(self):
+        return '<%s %r>' % (
+            self.__class__.__name__,
+            self.to_header()
+        )
+
+    def auth_property(name):
+        def _set_value(self, value):
+            if value is None:
+                self.pop(name, None)
+            else:
+                self[name] = str(value)
+        return property(lambda x: x.get(name), _set_value)
+
+    def _set_property(name, doc=None):
+        def fget(self):
+            def on_update(header_set):
+                if not header_set and name in self:
+                    del self.headers[name]
+                elif header_set:
+                    self[name] = header_set.to_header()
+            return parse_set_header(self.get(name), on_update)
+        return property(fget, doc=doc)
+
+    type = auth_property('__auth_type__')
+    realm = auth_property('realm')
+    domain = _set_property('domain')
+    nonce = auth_property('nonce')
+    opaque = auth_property('opaque')
+    algorithm = auth_property('algorithm')
+    qop = _set_property('qop')
+
+    def _get_stale(self):
+        val = self.get('stale')
+        if val is not None:
+            return val.lower() == 'true'
+    def _set_stale(self, value):
+        if value is None:
+            self.pop('stale', None)
+        else:
+            self['stale'] = value and 'TRUE' or 'FALSE'
+    stale = property(_get_stale, _set_stale)
+    del _get_stale, _set_stale
+
+    # make auth_property a staticmethod so that subclasses of
+    # `WWWAuthenticate` can use it for new properties.
+    auth_property = staticmethod(auth_property)
+    del _set_property
+
+
+def quote_header_value(value, extra_chars=''):
+    """
+    Quote a header value if necessary.
+    """
+    token_chars = _token_chars | set(extra_chars)
+    value = str(value)
+    if not set(value).issubset(token_chars):
+        value = '"%s"' % value.replace('"', "'")
+    return value
+
+
+def dump_header(iterable):
+    """
+    Dump an HTTP header again.  This is the reversal of `parse_list_header`,
+    `parse_set_header` and `parse_dict_header`.  This also quotes strings
+    that include an equals sign unless you pass it as dict of key, value
+    pairs.
+    """
+    if isinstance(iterable, dict):
+        items = []
+        for key, value in iterable.iteritems():
+            if value is None:
+                items.append(key)
+            else:
+                items.append('%s=%s' % (key, quote_header_value(value)))
+    else:
+        items = [quote_header_value(x) for x in iterable]
+    return ', '.join(items)
+
+
 def parse_list_header(value):
     """
     Parse lists as described by RFC 2068 Section 2.
@@ -652,16 +767,27 @@ def parse_authorization_header(value):
         return Authorization('basic', {'username': username,
                                        'password': password})
     elif auth_type == 'digest':
-        required_keys = ('username', 'realm', 'nonce', 'uri', 'nc', 'cnonce',
-                         'response')
-        auth_map = dict.fromkeys(required_keys + ('opaque', 'qop'))
-        for key, value in parse_dict_header(auth_info):
-            if key in auth_map:
-                auth_map[key] = value
-        for key in required_keys:
-            if auth_map[key] is None:
+        auth_map = parse_dict_header(auth_info)
+        for key in 'username', 'realm', 'nonce', 'uri', 'nc', 'cnonce', \
+                   'response':
+            if not key in auth_map:
                 return
         return Authorization('digest', auth_map)
+
+
+def parse_www_authenticate_header(value, on_update=None):
+    """
+    Parse an HTTP WWW-Authenticate header into a `WWWAuthenticate` object.
+    """
+    if not value:
+        return WWWAuthenticate(on_update=on_update)
+    try:
+        auth_type, auth_info = value.split(None, 1)
+        auth_type = auth_type.lower()
+    except (ValueError, AttributeError):
+        return WWWAuthenticate(value.lower(), on_update=on_update)
+    return WWWAuthenticate(auth_type, parse_dict_header(auth_info),
+                           on_update)
 
 
 def quote_etag(etag, weak=False):
