@@ -562,7 +562,7 @@ class WWWAuthenticate(_UpdateDict):
         if auth_type:
             self['__auth_type__'] = auth_type
 
-    def set_basic(self, realm):
+    def set_basic(self, realm='authentication required'):
         """Clear the auth info and enable basic auth."""
         dict.clear(self)
         dict.update(self, {'__auth_type__': 'basic', 'realm': realm})
