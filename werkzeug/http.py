@@ -537,9 +537,19 @@ class Authorization(dict):
         The opaque header from the server returned unchanged by the client.
         It is recommended that this string be base64 or hexadecimal data.
         Digest auth only.''')
-    qop = property(lambda x: x.get('qop'), doc='''
+
+    def qop(self):
+        """
         Indicates what "quality of protection" the client has applied to
-        the message for HTTP digest auth.''')
+        the message for HTTP digest auth.
+        """
+        def on_update(header_set):
+            if not header_set and name in self:
+                del self['qop']
+            elif header_set:
+                self['qop'] = header_set.to_header()
+        return parse_set_header(self.get('qop'), on_update)
+    qop = property(qop, doc=qop.__doc__)
 
 
 class WWWAuthenticate(_UpdateDict):
@@ -606,7 +616,7 @@ class WWWAuthenticate(_UpdateDict):
         def fget(self):
             def on_update(header_set):
                 if not header_set and name in self:
-                    del self.headers[name]
+                    del self[name]
                 elif header_set:
                     self[name] = header_set.to_header()
             return parse_set_header(self.get(name), on_update)
