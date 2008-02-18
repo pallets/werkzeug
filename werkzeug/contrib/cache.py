@@ -118,7 +118,7 @@ class MemcachedCache(BaseCache):
 
     def __init__(self, servers, default_timeout=300):
         BaseCache.__init__(self, default_timeout)
-        self._client = memcache.Client(servers)
+        self._client = memcache.Client(map(str, servers))
 
     def get(self, key):
         return self._client.get(key)
