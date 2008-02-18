@@ -24,7 +24,7 @@ from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 
 have_memcache = True
 try:
-    from cmemcache import memcache
+    import cmemcache import memcache
 except ImportError:
     try:
         import memcache
