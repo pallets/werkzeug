@@ -13,6 +13,7 @@
     :copyright: 2007-2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import os
 try:
     from hashlib import md5
 except ImportError:
@@ -116,7 +117,7 @@ class MemcachedCache(BaseCache):
     """A cache that uses memcached as backend."""
 
     def __init__(self, servers, default_timeout=300):
-        BaseClient.__init__(self, default_timeout)
+        BaseCache.__init__(self, default_timeout)
         self._client = memcache.Client(servers)
 
     def get(self, key):
