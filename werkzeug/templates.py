@@ -6,7 +6,7 @@ r"""
     This template engine recognizes ASP/PHP like blocks and executes the code
     in them::
 
-        t = Template('<% for u in users %>${u['username']}\n<% endfor %>')
+        t = Template('<% for u in users %>${u["username"]}\n<% endfor %>')
         t.render(users=[{'username': 'John'},
                         {'username': 'Jane'}])
 

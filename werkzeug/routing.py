@@ -614,16 +614,17 @@ class Rule(RuleFactory):
         :internal:
         """
         tmp = []
+        add = tmp.append
         processed = set(self.arguments)
         for is_dynamic, data in self._trace:
             if is_dynamic:
                 try:
-                    tmp.append(self._converters[data].to_url(values[data]))
+                    add(self._converters[data].to_url(values[data]))
                 except ValidationError:
                     return
                 processed.add(data)
             else:
-                tmp.append(data)
+                add(data)
         subdomain, url = (u''.join(tmp)).split('|', 1)
 
         query_vars = {}
@@ -1298,7 +1299,7 @@ class MapAdapter(object):
         else:
             values = {}
 
-        for rule in self.map._rules_by_endpoint.get(endpoint) or ():
+        for rule in self.map._rules_by_endpoint.get(endpoint, ()):
             if rule.suitable_for(values, method):
                 rv = rule.build(values)
                 if rv is not None:

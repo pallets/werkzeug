@@ -96,7 +96,7 @@ class AtomFeed(object):
         Everywhere where a list is demanded, any iterable can be used.
         """
         self.title = title
-        self.title_type = kwargs.get('title_type')
+        self.title_type = kwargs.get('title_type', 'text')
         self.url = kwargs.get('url')
         self.feed_url = kwargs.get('feed_url', self.url)
         self.id = kwargs.get('id', self.feed_url)
