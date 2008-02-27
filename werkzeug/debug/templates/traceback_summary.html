@@ -1,11 +1,23 @@
 <div class="traceback">
-  <% if include_title %>
-    <h3>Traceback <em>(most recent call last)</em>:</h3>
+  <% if traceback.is_syntax_error %>
+    <% if include_title %>
+      <h3>Syntax Error</h3>
+    <% endif %>
+    <ul>
+    <% for frame in traceback.frames %>
+      <li>$frame.render()</li>
+    <% endfor %>
+    </ul>
+    <pre>$escape(traceback.exception)</pre>
+  <% else %>
+    <% if include_title %>
+      <h3>Traceback <em>(most recent call last)</em>:</h3>
+    <% endif %>
+    <ul>
+    <% for frame in traceback.frames %>
+      <li>$frame.render()</li>
+    <% endfor %>
+    </ul>
+    <blockquote>$escape(traceback.exception)</blockquote>
   <% endif %>
-  <ul>
-  <% for frame in traceback.frames %>
-    <li>$frame.render()</li>
-  <% endfor %>
-  </ul>
-  <blockquote>$escape(traceback.exception)</blockquote>
 </div>

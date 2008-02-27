@@ -73,8 +73,7 @@ class DebugReprGenerator(object):
         return proxy
 
     list_repr = _sequence_repr_maker('[', ']', list)
-    tuple_repr = _sequence_repr_maker('[', ']', tuple)
-    dict_repr = _sequence_repr_maker('[', ']', dict)
+    tuple_repr = _sequence_repr_maker('(', ')', tuple)
     set_repr = _sequence_repr_maker('set([', '])', set)
     frozenset_repr = _sequence_repr_maker('frozenset([', '])', frozenset)
     if deque is not None:

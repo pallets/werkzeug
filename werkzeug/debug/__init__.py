@@ -36,6 +36,7 @@ class DebuggedApplication(object):
         self.evalex = evalex
         self.console = Console()
         self.frames = {}
+        self.tracebacks = {}
         self.request_key = request_key
         self.console_path = console_path
 
@@ -52,6 +53,7 @@ class DebuggedApplication(object):
             traceback = get_current_traceback()
             for frame in traceback.frames:
                 self.frames[frame.id] = frame
+            self.tracebacks[traceback.id] = traceback
 
             try:
                 start_response('500 INTERNAL SERVER ERROR', [

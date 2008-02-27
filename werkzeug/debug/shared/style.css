@@ -1,6 +1,8 @@
 body         { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                'Verdana', sans-serif; background-color: #AFC1C4; color: #000;
                text-align: center; margin: 1em; padding: 0; font-size: 15px; }
+a            { color: #11557C; }
+a:hover      { color: #177199; }
 pre, code    { font-family: 'Consolas', 'Deja Vu Sans Mono',
                 'Bitstream Vera Sans Mono', monospace; font-size: 13px; }
 
@@ -17,8 +19,11 @@ h2           { font-size: 16px; margin: 1.3em 0 0.0 0; padding: 5px;
                background-color: #11557C; color: white; }
 h2 em        { font-style: normal; color: #A5D6D9; font-weight: normal; }
 
-div.traceback { background-color: #eee!important; border: 1px solid #ccc;
-                margin: 0 0 1em 0; padding: 0.4em; }
+div.traceback, div.plain { background-color: #eee!important; border: 1px solid #ccc;
+                           margin: 0 0 1em 0; padding: 10px; }
+div.plain p      { margin: 0; }
+div.plain pre    { margin: 10px 0 0 0; padding: 4px; background-color: #333;
+                   border: 1px solid #111; color: white; }
 div.traceback h3 { font-size: 1em; margin: 0 0 0.8em 0; }
 div.traceback ul { list-style: none; margin: 0; padding: 0 0 0 1em; }
 div.traceback h4 { font-size: 13px; font-weight: normal; margin: 0.7em 0 0.1em 0; }
@@ -40,7 +45,8 @@ div.traceback img:hover { background-color: #ddd; cursor: pointer; }
 div.traceback pre:hover img { display: block; }
 
 div.traceback pre.console { background-color: #fafafa; color: black; padding: 5px;
-                            margin: 3px 0 0 0; cursor: default!important }
+                            margin: 3px 0 0 0; cursor: default!important;
+                            max-height: 400px; overflow: auto; }
 div.traceback pre.console form { color: #555; }
 div.traceback pre.console input { background-color: #fafafa; color: #555;
                                   width: 90%; font-family: 'Consolas', 'Deja Vu Sans Mono',
@@ -57,3 +63,8 @@ a.toggle { text-decoration: none; background-repeat: no-repeat;
            background-image: url(./__debugger__?resource=more.png); }
 a.toggle:hover { background-color: #444; }
 a.open { background-image: url(./__debugger__?resource=less.png); }
+
+pre.console div.traceback { margin: 5px 0 5px 25px; white-space: normal; }
+pre.console div.traceback h3 { background-color: #555; color: white;
+                               margin: -10px -10px 5px -10px; padding: 5px; }
+pre.console div.traceback pre:hover { background-color: #ccc; cursor: default; }

@@ -29,7 +29,7 @@ except NameError:
     pass
 
 
-def get_current_traceback(ignore_system_exceptions=False):
+def get_current_traceback(ignore_system_exceptions=False, skip=0):
     """
     Get the current exception info as `Traceback` object.  Per default calling
     this method will reraise system exceptions such as generator exit, system
@@ -39,6 +39,8 @@ def get_current_traceback(ignore_system_exceptions=False):
     exc_type, exc_value, tb = sys.exc_info()
     if exc_type in system_exceptions:
         raise
+    for x in xrange(skip):
+        tb = tb.tb_next
     return Traceback(exc_type, exc_value, tb)
 
 
@@ -59,6 +61,11 @@ class Traceback(object):
         while tb:
             self.frames.append(Frame(exc_type, exc_value, tb))
             tb = tb.tb_next
+
+    def is_syntax_error(self):
+        """Is it a syntax error?"""
+        return isinstance(self.exc_value, SyntaxError)
+    is_syntax_error = property(is_syntax_error)
 
     def exception(self):
         """String representation of the exception."""
@@ -81,9 +88,11 @@ class Traceback(object):
         """Render the Full HTML page with the traceback info."""
         return render_template('traceback_full.html', traceback=self)
 
-    def render_plaintext(self):
-        """Render a plaintext traceback (like the traceback module)."""
-        return ''
+    def plaintext(self):
+        return render_template('traceback_plaintext.html', traceback=self)
+    plaintext = cached_property(plaintext)
+
+    id = property(lambda x: id(x))
 
 
 class Frame(object):
@@ -95,12 +104,11 @@ class Frame(object):
         self.locals = tb.tb_frame.f_locals
         self.globals = tb.tb_frame.f_globals
 
-        fn = tb.tb_frame.f_globals.get('__file__')
-        if not fn:
-            fn = os.path.realpath(inspect.getsourcefile(tb) or
-                                  inspect.getfile(tb))
+        fn = inspect.getsourcefile(tb) or inspect.getfile(tb)
         if fn[-4:] in ('.pyo', '.pyc'):
             fn = fn[:-1]
+        if fn != '<debugger>':
+            fn = os.path.realpath(fn)
         self.filename = fn
         self.module = self.globals.get('__name__')
         self.loader = self.globals.get('__loader__')

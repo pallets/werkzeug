@@ -12,20 +12,23 @@
       <h1>$escape(traceback.exception_type)</h1>
       <div class="detail">
         <p class="errormsg">$escape(traceback.exception)</p>
-        <p class="location">
-          <cite>"$escape(traceback.frames[-1].filename)"</cite>, line
-          <em>$traceback.frames[-1].lineno</em>, in
-          <code>$escape(traceback.frames[-1].function_name)</code>
+      </div>
+      <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+      $traceback.render_summary(include_title=False)
+      <div class="plain">
+        <p>
+          This is the Copy/Paste friendly version of the traceback.  You can also
+          paste this traceback into the public lodgeit pastebin:
+          <a href="javascript:dumpThis()">create paste</a>
         </p>
+        <pre>$escape(traceback.plaintext)</pre>
       </div>
       <div class="explanation">
         The debugger cought an exception in your WSGI application.  You can now
-        look at the traceback which lead to the error.  If you have JavaScript
-        enabled you can also click on the buttons that appear on mouse-over to
-        open a python shell for that frame or view the sourcecode of that module.
+        look at the traceback which lead to the error.  <span class="nojavascript">
+        If you enable JavaScript you can also use additional features such as code
+        execution, automatic pasting of the exceptions and much more.</span>
       </div>
-      <h2>Traceback <em>(most recent call last)</em></h2>
-      $traceback.render_summary(include_title=False)
       <div class="footer">
         Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
         friendly Werkzeug powered traceback interpreter.
@@ -33,3 +36,11 @@
     </div>
   </body>
 </html>
+<!-- Plain Traceback:
+
+<%py
+  import re
+  print re.sub('-{2,}', '-', traceback.plaintext)
+%>
+
+-->

@@ -61,7 +61,8 @@ class ThreadedStream(object):
             return _displayhook(obj)
         # stream._write bypasses escaping as debug_repr is
         # already generating HTML for us.
-        stream._write(debug_repr(obj))
+        if obj is not None:
+            stream._write(debug_repr(obj))
     displayhook = staticmethod(displayhook)
 
     def __setattr__(self, name, value):
@@ -74,7 +75,7 @@ class ThreadedStream(object):
         if name == '__members__':
             return dir(sys.__stdout__)
         try:
-            stream = local.stream
+            stream = _local.stream
         except AttributeError:
             stream = sys.__stdout__
         return getattr(stream, name)
@@ -116,8 +117,17 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         try:
             exec code in self.globals, self.locals
         except:
-            from werkzeug.debug.tbtools import get_current_traceback
-            self.write(get_current_traceback().render_summary())
+            self.showtraceback()
+
+    def showtraceback(self):
+        from werkzeug.debug.tbtools import get_current_traceback
+        tb = get_current_traceback(skip=1)
+        sys.stdout._write(tb.render_summary())
+
+    def showsyntaxerror(self, filename=None):
+        from werkzeug.debug.tbtools import get_current_traceback
+        tb = get_current_traceback(skip=3)
+        sys.stdout._write(tb.render_summary())
 
     def write(self, data):
         sys.stdout.write(data)

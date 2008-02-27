@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+<% for frame in traceback.frames %>
+  File "$frame.filename", line $frame.lineno, in $frame.function_name
+    $frame.current_line.strip()
+<% endfor %>
+$traceback.exception
