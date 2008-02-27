@@ -1,0 +1,11 @@
+<div class="traceback">
+  <% if include_title %>
+    <h3>Traceback <em>(most recent call last)</em>:</h3>
+  <% endif %>
+  <ul>
+  <% for frame in traceback.frames %>
+    <li>$frame.render()</li>
+  <% endfor %>
+  </ul>
+  <blockquote>$escape(traceback.exception)</blockquote>
+</div>

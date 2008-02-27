@@ -30,6 +30,11 @@ except NameError:
 RegexType = type(re.compile(''))
 
 
+def debug_repr(obj):
+    """Creates a debug repr of an object as HTML unicode string."""
+    return DebugReprGenerator().repr(obj)
+
+
 def _add_subclass_info(inner, obj, base):
     if isinstance(base, tuple):
         for base in base:
@@ -43,117 +48,127 @@ def _add_subclass_info(inner, obj, base):
     return '%s%s(%s)' % (module, obj.__class__.__name__, inner)
 
 
-def _sequence_repr_maker(left, right, base=object(), limit=5):
-    def proxy(obj):
-        buf = [left]
+class DebugReprGenerator(object):
+
+    def __init__(self):
+        self._stack = []
+
+    def _sequence_repr_maker(left, right, base=object(), limit=8):
+        def proxy(self, obj, recursive):
+            if recursive:
+                return _add_subclass_info(left + '...' + right, obj, base)
+            buf = [left]
+            have_extended_section = False
+            for idx, item in enumerate(obj):
+                if idx:
+                    buf.append(', ')
+                if idx == limit:
+                    buf.append('<span class="extended">')
+                    have_extended_section = True
+                buf.append(self.repr(item))
+            if have_extended_section:
+                buf.append('</span>')
+            buf.append(right)
+            return _add_subclass_info(u''.join(buf), obj, base)
+        return proxy
+
+    list_repr = _sequence_repr_maker('[', ']', list)
+    tuple_repr = _sequence_repr_maker('[', ']', tuple)
+    dict_repr = _sequence_repr_maker('[', ']', dict)
+    set_repr = _sequence_repr_maker('set([', '])', set)
+    frozenset_repr = _sequence_repr_maker('frozenset([', '])', frozenset)
+    if deque is not None:
+        deque_repr = _sequence_repr_maker('<span class="module">collections.'
+                                          '</span>deque([', '])', deque)
+    del _sequence_repr_maker
+
+    def regex_repr(self, obj):
+        pattern = repr(obj.pattern).decode('string-escape', 'ignore')
+        if pattern[:1] == 'u':
+            pattern = 'ur' + pattern[1:]
+        else:
+            pattern = 'r' + pattern
+        return u're.compile(<span class="string regex">%s</span>)' % pattern
+
+    def string_repr(self, obj, limit=70):
+        buf = ['<span class="string">']
+        escaped = escape(obj)
+        a = repr(escaped[:limit])
+        b = repr(escaped[limit:])
+        if isinstance(obj, unicode):
+            buf.append('u')
+            a = a[1:]
+            b = b[1:]
+        if b != "''":
+            buf.extend((a[:-1], '<span class="extended">', b[1:], '</span>'))
+        else:
+            buf.append(a)
+        buf.append('</span>')
+        return _add_subclass_info(u''.join(buf), obj, (str, unicode))
+
+    def dict_repr(self, d, recursive, limit=5):
+        if recursive:
+            return _add_subclass_info(u'{...}', d, dict)
+        buf = ['{']
         have_extended_section = False
-        for idx, item in enumerate(obj):
+        for idx, (key, value) in enumerate(d.iteritems()):
             if idx:
                 buf.append(', ')
             if idx == limit - 1:
                 buf.append('<span class="extended">')
                 have_extended_section = True
-            buf.append(debug_repr(item))
+            buf.append('<span class="pair"><span class="key">%s</span>: '
+                       '<span class="value">%s</span></span>' %
+                       (self.repr(key), self.repr(value)))
         if have_extended_section:
             buf.append('</span>')
-        buf.append(right)
-        return _add_subclass_info(u''.join(buf), obj, base)
-    return proxy
+        buf.append('}')
+        return _add_subclass_info(u''.join(buf), d, dict)
 
+    def object_repr(self, obj):
+        return u'<span class="object">%s</span>' % \
+               escape(repr(obj).decode('utf-8', 'replace'))
 
-list_repr = _sequence_repr_maker('[', ']', list)
-tuple_repr = _sequence_repr_maker('[', ']', tuple)
-dict_repr = _sequence_repr_maker('[', ']', dict)
-set_repr = _sequence_repr_maker('set([', '])', set)
-frozenset_repr = _sequence_repr_maker('frozenset([', '])', frozenset)
-
-if deque is not None:
-    deque_repr = _sequence_repr_maker('<span class="module">collections.'
-                                      '</span>deque([', '])', deque)
-
-
-def regex_repr(obj):
-    pattern = repr(obj.pattern).decode('string-escape', 'ignore')
-    if pattern[:1] == 'u':
-        pattern = 'ur' + pattern[1:]
-    else:
-        pattern = 'r' + pattern
-    return u're.compile(<span class="string regex">%s</span>)' % pattern
-
-
-def string_repr(obj, limit=70):
-    buf = ['<span class="string">']
-    escaped = escape(obj)
-    a = repr(escaped[:limit])
-    b = repr(escaped[limit:])
-    if isinstance(obj, unicode):
-        buf.append('u')
-        a = a[1:]
-        b = b[1:]
-    if b != "''":
-        buf.extend((a[:-1], '<span class="extended">', b[1:], '</span>'))
-    else:
-        buf.append(a)
-    buf.append('</span>')
-    return _add_subclass_info(u''.join(buf), obj, (str, unicode))
-
-
-def dict_repr(d, limit=5):
-    buf = ['{']
-    have_extended_section = False
-    for idx, (key, value) in enumerate(d.iteritems()):
-        if idx:
-            buf.append(', ')
-        if idx == limit - 1:
-            buf.append('<span class="extended">')
-            have_extended_section = True
-        buf.append('<span class="pair"><span class="key">%s</span>: '
-                   '<span class="value">%s</span></span>' % (debug_repr(key),
-                                                             debug_repr(value)))
-    if have_extended_section:
-        buf.append('</span>')
-    buf.append('}')
-    return _add_subclass_info(u''.join(buf), d, dict)
-
-
-def object_repr(obj, limit=80):
-    rv = repr(obj).decode('utf-8', 'replace')
-    try:
-        debug_info = '<span class="extended">%s</span>' % dict_repr(obj.__dict__)
-    except:
-        debug_info = ''
-    if rv[-1:] in '>)]}':
-        rv = escape(rv[:-1]) + ' ' + debug_info + escape(rv[-1])
-    else:
-        rv = escape(rv) + debug_info
-    return u'<span class="object">%s</span>' % rv
-
-
-def debug_repr(obj):
-    try:
+    def dispatch_repr(self, obj, recursive):
         if isinstance(obj, (int, long, float, complex)):
             return u'<span class="number">%r</span>' % obj
         if isinstance(obj, basestring):
-            return string_repr(obj)
+            return self.string_repr(obj)
         if isinstance(obj, RegexType):
-            return regex_repr(obj)
+            return self.regex_repr(obj)
         if isinstance(obj, list):
-            return list_repr(obj)
+            return self.list_repr(obj, recursive)
         if isinstance(obj, tuple):
-            return tuple_repr(obj)
+            return self.tuple_repr(obj, recursive)
         if isinstance(obj, set):
-            return set_repr(obj)
+            return self.set_repr(obj, recursive)
         if isinstance(obj, frozenset):
-            return frozenset_repr(obj)
+            return self.frozenset_repr(obj, recursive)
         if isinstance(obj, dict):
-            return dict_repr(obj)
+            return self.dict_repr(obj, recursive)
         if deque is not None and isinstance(obj, deque):
-            return deque_repr(obj)
-        return object_repr(obj)
-    except:
+            return self.deque_repr(obj, recursive)
+        return self.object_repr(obj)
+
+    def fallback_repr(self):
         try:
             info = ''.join(format_exception_only(*sys.exc_info()[:2]))
         except:
             info = '?'
         return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' \
                u'</span>' % escape(info.decode('utf-8', 'ignore').strip())
+
+    def repr(self, obj):
+        recursive = False
+        for item in self._stack:
+            if item is obj:
+                recursive = True
+                break
+        self._stack.append(obj)
+        try:
+            try:
+                return self.dispatch_repr(obj, recursive)
+            except:
+                return self.fallback_repr()
+        finally:
+            self._stack.pop()

@@ -1,276 +1,59 @@
-body {
-    font-family: 'Arial', sans-serif;
-    font-size: 15px;
-    margin: 0;
-    padding: 1.3em;
-    background-color: #07131d;
-}
+body         { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
+               'Verdana', sans-serif; background-color: #AFC1C4; color: #000;
+               text-align: center; margin: 1em; padding: 0; font-size: 15px; }
+pre, code    { font-family: 'Consolas', 'Deja Vu Sans Mono',
+                'Bitstream Vera Sans Mono', monospace; font-size: 13px; }
 
-* {
-    margin: 0;
-    padding: 0;
-}
+div.debugger { text-align: left; padding: 12px; margin: auto;
+               border: 1px solid #aaa; background-color: white; }
+h1           { color: #11557C; font-size: 30px; margin: 0 0 0.3em 0; }
+div.detail p { margin: 0 0 8px 13px; font-size: 14px; }
+div.explanation { margin: 13px; font-size: 11px; }
+div.footer   { background-color: #E3EFF1; font-size: 0.8em; text-align: right;
+               padding: 6px 8px 6px 0; margin: 30px -12px -12px -12px;
+               color: #86989B; }
 
-#footer {
-    margin: 1em;
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    color: #eee;
-    text-align: right;
-}
+h2           { font-size: 16px; margin: 1.3em 0 0.0 0; padding: 5px;
+               background-color: #11557C; color: white; }
+h2 em        { font-style: normal; color: #A5D6D9; font-weight: normal; }
 
-#footer .arthur {
-    font-weight: bold;
-}
+div.traceback { background-color: #eee!important; border: 1px solid #ccc;
+                margin: 0 0 1em 0; padding: 0.4em; }
+div.traceback h3 { font-size: 1em; margin: 0 0 0.8em 0; }
+div.traceback ul { list-style: none; margin: 0; padding: 0 0 0 1em; }
+div.traceback h4 { font-size: 13px; font-weight: normal; margin: 0.7em 0 0.1em 0; }
+div.traceback pre { margin: 0; padding: 5px 0 3px 15px;
+                    background-color: #ccc; border-top: 1px solid #aaa;
+                    border-left: 1px solid #aaa; border-right: 1px solid #fafafa;
+                    border-bottom: 1px solid #fafafa;
+                    white-space: pre-wrap;       /* css-3 should we be so lucky... */
+                    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                    white-space: -pre-wrap;      /* Opera 4-6 ?? */
+                    white-space: -o-pre-wrap;    /* Opera 7 ?? */
+                    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+                    _white-space: pre;           /* IE only hack to re-specify in
+                                                    addition to word-wrap  */ }
+div.traceback pre:hover { background-color: #fafafa; color: black; cursor: pointer; }
+div.traceback blockquote { margin: 1em 0 0 0; padding: 0; }
+div.traceback img { float: right; padding: 2px; margin: -3px 2px 0 0; display: none; }
+div.traceback img:hover { background-color: #ddd; cursor: pointer; }
+div.traceback pre:hover img { display: block; }
 
-.traceback_wrapper {
-    margin: 1em;
-    border: 1px solid #1b3042;
-    background-color: #F6F6F6;
-}
+div.traceback pre.console { background-color: #fafafa; color: black; padding: 5px;
+                            margin: 3px 0 0 0; cursor: default!important }
+div.traceback pre.console form { color: #555; }
+div.traceback pre.console input { background-color: #fafafa; color: #555;
+                                  width: 90%; font-family: 'Consolas', 'Deja Vu Sans Mono',
+                                  'Bitstream Vera Sans Mono', monospace; font-size: 13px;
+                                  border: none!important; }
 
-h1 {
-    background-color: #1b3042;
-    font-size: 24px;
-    color: #FFFFFF;
-    padding: 0.3em;
-    margin: 0 0 0.2em 0;
-}
-
-h2 {
-    background-color: #3F7CA4;
-    font-size: 16px;
-    color: #FFFFFF;
-    padding: 0.3em;
-    margin: 1em 0 0.2em 0;
-    clear: both;
-}
-
-h2.tb {
-    cursor: pointer;
-}
-
-h2.tb span {
-    display: none;
-    color: #d2f2f3;
-    font-weight: normal;
-}
-
-h2.tb:hover span {
-    display: inline;
-}
-
-h3 {
-    font-size: 14px;
-    padding: 0;
-}
-
-h3.fn {
-    margin-top: 0.8em;
-    clear: both;
-    font-weight: normal;
-}
-
-h3.fn em {
-    font-style: normal;
-    font-weight: bold;
-}
-
-h3.fn tt {
-    color: #444;
-    font-size: 0.9em;
-    font-family: 'Arial', sans-serif;
-}
-
-a {
-    color: #333;
-}
-
-a.eval, a.locals {
-    display: block;
-    float: right;
-    margin: -12px 0 0 8px;
-    font-size: 12px;
-    color: #333;
-    text-decoration: none;
-}
-
-a.eval:hover, a.locals:hover {
-    color: black;
-    background-color: #ccc;
-}
-
-p.text {
-    padding: 0.4em 1em 0.4em 1em;
-}
-
-p.errormsg {
-    padding: 0.1em 0.5em 0.1em 0.5em;
-    font-size: 16px;
-}
-
-p.errorline {
-    padding: 0.1em 0.5em 0.1em 2em;
-    font-size: 15px;
-}
-
-div.frame {
-    margin: 0 2em 0 1em;
-}
-
-table.code {
-    margin: 0.4em 0 0 0.5em;
-    background-color: #eee;
-    width: 100%;
-    font-family: monospace;
-    font-size: 13px;
-    border: 1px solid #ccc;
-    border-collapse: collapse;
-    cursor: pointer;
-}
-
-table.code td.lineno {
-    width: 42px;
-    text-align: right;
-    padding: 0 5px 0 0;
-    color: #444;
-    background-color: #ddd;
-    font-weight: bold;
-    border-right: 1px solid #888;
-}
-
-table.code td.code {
-    background-color: #f6f6f6;
-    padding: 1px 0 1px 5px;
-    white-space: pre;
-}
-
-table.code tr.cur td.code {
-    background-color: #fff;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
-    white-space: pre;
-}
-
-table.code tr.cur td.lineno {
-    background-color: #bbb;
-    border: 1px solid #999;
-}
-
-pre.plain {
-    margin: 0.5em 1em 1em 1em;
-    padding: 0.5em;
-    border:1px solid #999999;
-    background-color: #FFFFFF;
-    font-family: monospace;
-    font-size: 13px;
-}
-
-form.exec_code {
-    display: block;
-    width: 100%;
-    margin: 0.3em 1em 0.3em 1em;
-}
-
-form.exec_code input.input {
-    width: 100%;
-    height: 1.5em;
-    border: 1px solid #999999;
-    font-family: monospace;
-    font-size: 13px;
-}
-
-form.exec_code pre.output,
-table.vars td.value {
-    font-family: monospace;
-    font-size: 13px;
-    white-space: pre-wrap;       /* css-3 should we be so lucky... */
-    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-    white-space: -pre-wrap;      /* Opera 4-6 ?? */
-    white-space: -o-pre-wrap;    /* Opera 7 ?? */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
-    _white-space: pre;           /* IE only hack to re-specify in addition to word-wrap  */
-}
-
-pre.output {
-    background-color: #222;
-    color: #fff;
-    padding: 4px;
-    border: 1px solid #666;
-    max-height: 350px;
-    overflow: auto;
-}
-
-table.vars {
-    margin: 0.3em 1.5em 0.3em 1.5em;
-    border-collapse: collapse;
-    font-size: 13px;
-    width: 99%;
-}
-
-table.vars td {
-    font-family: 'Bitstream Vera Sans Mono', 'Courier New', monospace;
-    padding: 0.3em;
-    border: 1px solid #ddd;
-    vertical-align: top;
-    background-color: white;
-}
-
-table.vars .name {
-    font-style: italic;
-}
-
-table.vars .value {
-    color: #555;
-}
-
-table.vars th {
-    padding: 0.2em;
-    border: 1px solid #ddd;
-    background-color: #f2f2f2;
-    text-align: left;
-}
-
-#plain {
-    display: none;
-}
-
-dl dt {
-    padding: 0.2em 0 0.2em 1em;
-    font-weight: bold;
-    cursor: pointer;
-    background-color: #ddd;
-    border-top: 1px solid #ccc;
-}
-
-dl dt:hover {
-    background-color: #bbb;
-    color: white;
-}
-
-dl dd {
-    padding: 0 0 0 2em;
-    background-color: #eee;
-}
-
-span.p-kw {
-    font-weight: bold;
-    color: #1d6170;
-}
-
-span.p-cmt {
-    color: #7bbc2e;
-}
-
-span.p-str {
-    color: #ab7219;
-}
-
-span.p-num {
-    color: #3f7719;
-    font-weight: bold;
-}
-
-span.p-op {
-    color: black;
-}
+span.string { color: #30799B; }
+span.number { color: #9C1A1C; }
+span.object { color: #485F6E; }
+span.extended { opacity: 0.5; }
+span.extended:hover { opacity: 1; }
+a.toggle { text-decoration: none; background-repeat: no-repeat;
+           background-position: center center;
+           background-image: url(./__debugger__?resource=more.png); }
+a.toggle:hover { background-color: #444; }
+a.open { background-image: url(./__debugger__?resource=less.png); }

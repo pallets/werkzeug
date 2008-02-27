@@ -12,17 +12,23 @@ import sys
 import code
 from cgi import escape
 from werkzeug.local import Local
-from werkzeug.utils.repr import debug_repr
+from werkzeug.debug.repr import debug_repr
 
 
 _local = Local()
 
 
-class HTMLStringIO(object):
+class HTMLStringO(object):
+    """A StringO version that HTML escapes on write."""
 
     def __init__(self):
         self._buffer = []
         self._write = self._buffer.append
+
+    def reset(self):
+        val = ''.join(self._buffer)
+        del self._buffer[:]
+        return val
 
     def write(self, x):
         self._write(escape(x))
@@ -37,7 +43,7 @@ class ThreadedStream(object):
     def push():
         if sys.stdout is sys.__stdout__:
             sys.stdout = ThreadedStream()
-        _local.stream = HTMLStringIO()
+        _local.stream = HTMLStringO()
     push = staticmethod(push)
 
     def fetch():
@@ -45,8 +51,7 @@ class ThreadedStream(object):
             stream = _local.stream
         except AttributeError:
             return ''
-        stream.reset()
-        return stream.read()
+        return stream.reset()
     fetch = staticmethod(fetch)
 
     def displayhook(obj):
@@ -54,6 +59,8 @@ class ThreadedStream(object):
             stream = _local.stream
         except AttributeError:
             return _displayhook(obj)
+        # stream._write bypasses escaping as debug_repr is
+        # already generating HTML for us.
         stream._write(debug_repr(obj))
     displayhook = staticmethod(displayhook)
 
@@ -81,7 +88,7 @@ _displayhook = sys.displayhook
 sys.displayhook = ThreadedStream.displayhook
 
 
-class _InteractiveConsole(code.InteractiveInterpreter, object):
+class _InteractiveConsole(code.InteractiveInterpreter):
 
     def __init__(self, globals, locals):
         code.InteractiveInterpreter.__init__(self, locals)
@@ -90,8 +97,6 @@ class _InteractiveConsole(code.InteractiveInterpreter, object):
         self.buffer = []
 
     def runsource(self, source):
-        if isinstance(source, unicode):
-            source = source.encode('utf-8')
         source = source.rstrip() + '\n'
         ThreadedStream.push()
         prompt = self.more and '... ' or '>>> '
@@ -119,17 +124,19 @@ class _InteractiveConsole(code.InteractiveInterpreter, object):
 
     def exec_expr(self, code):
         rv = self.runsource(code)
-        if isinstance(rv, unicode):
-            return rv.encode('utf-8')
+        if isinstance(rv, str):
+            return rv.decode('utf-8', 'ignore')
         return rv
 
 
 class Console(object):
     """An interactive console."""
 
-    def __init__(self, globals, locals=None):
+    def __init__(self, globals=None, locals=None):
         if locals is None:
             locals = {}
+        if globals is None:
+            globals = {}
         self._ipy = _InteractiveConsole(globals, locals)
 
     def eval(self, code):

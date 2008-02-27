@@ -10,11 +10,13 @@
 """
 import re
 import os
+import sys
 import inspect
 import traceback
 import codecs
-from werkzeug.utils import lazy_property
+from werkzeug.utils import cached_property
 from werkzeug.debug.console import Console
+from werkzeug.debug.utils import render_template
 
 _coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
 _line_re = re.compile(r'^(.*?)$(?m)')
@@ -46,18 +48,42 @@ class Traceback(object):
     def __init__(self, exc_type, exc_value, tb):
         self.exc_type = exc_type
         self.exc_value = exc_value
+        if not isinstance(exc_type, str):
+            exception_type = exc_type.__name__
+            if exc_type.__module__ not in ('__builtin__', 'exceptions'):
+                exception_type = exc_type.__module__ + '.' + exception_type
+        else:
+            exception_type = exc_type
+        self.exception_type = exception_type
         self.frames = []
         while tb:
             self.frames.append(Frame(exc_type, exc_value, tb))
             tb = tb.tb_next
 
-    def render_summary(self):
+    def exception(self):
+        """String representation of the exception."""
+        buf = traceback.format_exception_only(self.exc_type, self.exc_value)
+        return ''.join(buf).strip().decode('utf-8', 'replace')
+    exception = property(exception)
+
+    def log(self, logfile=None):
+        """Log the ASCII traceback into a file object."""
+        if logfile is None:
+            logfile = sys.stderr
+        logfile.write(self.render_plaintext().encode('utf-8', 'replace'))
+
+    def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
-        raise NotImplementedError()
+        return render_template('traceback_summary.html', traceback=self,
+                               include_title=include_title)
 
     def render_full(self):
-        """Like render_summary but for the big exceptions."""
-        raise NotImplementedError()
+        """Render the Full HTML page with the traceback info."""
+        return render_template('traceback_full.html', traceback=self)
+
+    def render_plaintext(self):
+        """Render a plaintext traceback (like the traceback module)."""
+        return ''
 
 
 class Frame(object):
@@ -73,11 +99,15 @@ class Frame(object):
         if not fn:
             fn = os.path.realpath(inspect.getsourcefile(tb) or
                                   inspect.getfile(tb))
-            if fn[-4:] in ('.pyo', '.pyc'):
-                fn = fn[:-1]
+        if fn[-4:] in ('.pyo', '.pyc'):
+            fn = fn[:-1]
         self.filename = fn
         self.module = self.globals.get('__name__')
         self.loader = self.globals.get('__loader__')
+
+    def render(self):
+        """Render a single frame in a traceback."""
+        return render_template('frame.html', frame=self)
 
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
@@ -125,8 +155,17 @@ class Frame(object):
             charset = 'utf-8'
 
         return source.decode(charset, 'replace').splitlines()
-    sourcelines = lazy_property(sourcelines)
+    sourcelines = cached_property(sourcelines)
+
+    def current_line(self):
+        try:
+            return self.sourcelines[self.lineno - 1]
+        except IndexError:
+            return u''
+    current_line = property(current_line)
 
     def console(self):
         return Console(self.globals, self.locals)
-    console = lazy_property(console)
+    console = cached_property(console)
+
+    id = property(lambda x: id(x))
