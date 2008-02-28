@@ -10,9 +10,11 @@
 """
 import sys
 import code
+from types import CodeType
 from cgi import escape
 from werkzeug.local import Local
-from werkzeug.debug.repr import debug_repr
+from werkzeug.debug.repr import debug_repr, dump, helper
+from werkzeug.debug.utils import render_template
 
 
 _local = Local()
@@ -23,12 +25,16 @@ class HTMLStringO(object):
 
     def __init__(self):
         self._buffer = []
-        self._write = self._buffer.append
 
     def reset(self):
         val = ''.join(self._buffer)
         del self._buffer[:]
         return val
+
+    def _write(self, x):
+        if isinstance(x, str):
+            x = x.decode('utf-8', 'replace')
+        self._buffer.append(x)
 
     def write(self, x):
         self._write(escape(x))
@@ -89,13 +95,45 @@ _displayhook = sys.displayhook
 sys.displayhook = ThreadedStream.displayhook
 
 
+class _ConsoleLoader(object):
+
+    def __init__(self):
+        self._storage = {}
+
+    def register(self, code, source):
+        self._storage[code.co_code] = source
+        # register code objects of wrapped functions too.
+        for var in code.co_consts:
+            if isinstance(var, CodeType):
+                self._storage[var.co_code] = source
+
+    def get_source_by_code(self, code):
+        try:
+            return self._storage[code.co_code]
+        except KeyError:
+            pass
+
+
+def _wrap_compiler(console):
+    compile = console.compile
+    def func(source, filename, symbol):
+        code = compile(source, filename, symbol)
+        console.loader.register(code, source)
+        return code
+    return func
+
+
 class _InteractiveConsole(code.InteractiveInterpreter):
 
     def __init__(self, globals, locals):
         code.InteractiveInterpreter.__init__(self, locals)
-        self.globals = globals
+        self.globals = dict(globals)
+        self.globals['dump'] = dump
+        self.globals['help'] = helper
+        self.globals['__loader__'] = self.loader = _ConsoleLoader()
         self.more = False
         self.buffer = []
+        self.compile = _wrap_compiler(self)
 
     def runsource(self, source):
         source = source.rstrip() + '\n'
@@ -111,7 +149,8 @@ class _InteractiveConsole(code.InteractiveInterpreter):
                 self.more = False
                 del self.buffer[:]
         finally:
-            return prompt + source + ThreadedStream.fetch()
+            output = ThreadedStream.fetch()
+        return prompt + source + output
 
     def runcode(self, code):
         try:
@@ -126,17 +165,11 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
     def showsyntaxerror(self, filename=None):
         from werkzeug.debug.tbtools import get_current_traceback
-        tb = get_current_traceback(skip=3)
+        tb = get_current_traceback(skip=4)
         sys.stdout._write(tb.render_summary())
 
     def write(self, data):
         sys.stdout.write(data)
-
-    def exec_expr(self, code):
-        rv = self.runsource(code)
-        if isinstance(rv, str):
-            return rv.decode('utf-8', 'ignore')
-        return rv
 
 
 class Console(object):

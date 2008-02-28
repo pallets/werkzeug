@@ -6,7 +6,7 @@ $(function() {
     //
     // Add an interactive console
     //
-    $('<img src="./__debugger__?resource=console.png">')
+    var consoleBtn = $('<img src="./__debugger__?resource=console.png">')
       .attr('title', 'Open an interactive python shell in this frame')
       .click(function() {
         if (!frameConsole) {
@@ -53,7 +53,12 @@ $(function() {
     $('<img src="./__debugger__?resource=inspect.png">')
       .attr('title', 'Show table of local variables')
       .click(function() {
-
+        var console = $('pre.console', $(this).parent().parent());
+        if (!console.is(':visible'))
+          consoleBtn.click();
+        var form = $('form', console);
+        $('input', form).val('dump()');
+        form.submit();
       })
       .prependTo(target);
 

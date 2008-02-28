@@ -68,3 +68,13 @@ pre.console div.traceback { margin: 5px 0 5px 25px; white-space: normal; }
 pre.console div.traceback h3 { background-color: #555; color: white;
                                margin: -10px -10px 5px -10px; padding: 5px; }
 pre.console div.traceback pre:hover { background-color: #ccc; cursor: default; }
+
+pre.console div.box { margin: 5px 0 5px 25px; white-space: normal;
+                      border: 1px solid #ddd; }
+pre.console div.box h3 { background-color: #555; color: white;
+                         margin: 0; padding: 5px; }
+pre.console div.box div.repr { padding: 8px; background-color: white; }
+pre.console div.box table { margin-top: 6px; }
+pre.console div.box pre.help { background-color: white; font-size: 12px; }
+pre.console div.box pre.help:hover { cursor: default; }
+pre.console table tr { vertical-align: top; }

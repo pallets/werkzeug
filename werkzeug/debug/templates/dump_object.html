@@ -1,0 +1,14 @@
+<div class="box">
+  <h3>$escape(title)</h3>
+  <% if repr %>
+    <div class="repr">$repr</div>
+  <% endif %>
+  <table>
+  <% for key, value in attributes %>
+    <tr>
+      <th>$escape(key)</th>
+      <td>$value</td>
+    </tr>
+  <% endfor %>
+  </table>
+</div>

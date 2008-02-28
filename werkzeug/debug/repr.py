@@ -15,6 +15,7 @@
 """
 import sys
 import re
+from types import InstanceType
 from traceback import format_exception_only
 try:
     from collections import deque
@@ -25,14 +26,57 @@ try:
     set
 except NameError:
     from sets import Set as set, ImmutableSet as frozenset
+from werkzeug.debug.utils import render_template
 
 
-RegexType = type(re.compile(''))
+missing = object()
+_paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
+RegexType = type(_paragraph_re)
 
 
 def debug_repr(obj):
     """Creates a debug repr of an object as HTML unicode string."""
     return DebugReprGenerator().repr(obj)
+
+
+def dump(obj=missing):
+    """
+    Print the object details to stdout._write (for the interactive
+    console of the web debugger.
+    """
+    gen = DebugReprGenerator()
+    if obj is missing:
+        rv = gen.dump_locals(sys._getframe(1).f_locals)
+    else:
+        rv = gen.dump_object(obj)
+    sys.stdout._write(rv)
+
+
+class _Helper(object):
+    """
+    Displays an HTML version of the normal help, for the interactive debugger
+    only because it requirse a patched sys.stdout.
+    """
+
+    def __call__(self, topic=None):
+        sys.stdout._write(self.get_help(topic))
+
+    def get_help(self, topic):
+        title = text = None
+        if topic is not None:
+            import pydoc
+            pydoc.help(topic)
+            rv = sys.stdout.reset().decode('utf-8', 'ignore')
+            paragraphs = _paragraph_re.split(rv)
+            if len(paragraphs) > 1:
+                title = paragraphs[0]
+                text = '\n\n'.join(paragraphs[1:])
+            else:
+                title = 'Help'
+                text = paragraphs[0]
+        return render_template('help_command.html', title=title, text=text)
+
+helper = _Helper()
 
 
 def _add_subclass_info(inner, obj, base):
@@ -129,6 +173,8 @@ class DebugReprGenerator(object):
                escape(repr(obj).decode('utf-8', 'replace'))
 
     def dispatch_repr(self, obj, recursive):
+        if obj is helper:
+            return helper.get_help(None)
         if isinstance(obj, (int, long, float, complex)):
             return u'<span class="number">%r</span>' % obj
         if isinstance(obj, basestring):
@@ -171,3 +217,19 @@ class DebugReprGenerator(object):
                 return self.fallback_repr()
         finally:
             self._stack.pop()
+
+    def dump_object(self, obj):
+        attributes = []
+        for key in dir(obj):
+            try:
+                attributes.append((key, self.repr(getattr(obj, key))))
+            except:
+                pass
+        title = 'Details for ' + object.__repr__(obj)[1:-1]
+        return render_template('dump_object.html', attributes=attributes,
+                               title=title, repr=self.repr(obj))
+
+    def dump_locals(self, d):
+        attributes = [(key, self.repr(value)) for key, value in d.items()]
+        return render_template('dump_object.html', attributes=attributes,
+                               title='Local variables in frame', repr=None)

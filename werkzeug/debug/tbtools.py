@@ -77,7 +77,8 @@ class Traceback(object):
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
-        logfile.write(self.render_plaintext().encode('utf-8', 'replace'))
+        tb = self.plaintext.encode('utf-8', 'replace').rstrip() + '\n'
+        logfile.write(tb)
 
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
@@ -112,6 +113,7 @@ class Frame(object):
         self.filename = fn
         self.module = self.globals.get('__name__')
         self.loader = self.globals.get('__loader__')
+        self.code = tb.tb_frame.f_code
 
     def render(self):
         """Render a single frame in a traceback."""
@@ -123,16 +125,20 @@ class Frame(object):
             if isinstance(code, unicode):
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
-        if mode == 'exec':
-            exec code in self.globals, self.locals
-        return eval(code, self.globals, self.locals)
+        if mode != 'exec':
+            return eval(code, self.globals, self.locals)
+        exec code in self.globals, self.locals
 
     def sourcelines(self):
         """The sourcecode of the file as list of unicode strings."""
         # get sourcecode from loader or file
-        if self.loader is not None and hasattr(self.loader, 'get_source'):
-            source = self.loader.get_source(self.module) or ''
-        else:
+        source = None
+        if self.loader is not None:
+            if hasattr(self.loader, 'get_source'):
+                source = self.loader.get_source(self.module)
+            elif hasattr(self.loader, 'get_source_by_code'):
+                source = self.loader.get_source_by_code(self.code)
+        if source is None:
             try:
                 f = file(self.filename)
             except IOError:
@@ -141,6 +147,10 @@ class Frame(object):
                 source = f.read()
             finally:
                 f.close()
+
+        # already unicode?  return right away
+        if isinstance(source, unicode):
+            return source.splitlines()
 
         # yes. it should be ascii, but we don't want to reject too many
         # characters in the debugger if something breaks
