@@ -219,15 +219,27 @@ class DebugReprGenerator(object):
             self._stack.pop()
 
     def dump_object(self, obj):
-        attributes = []
-        for key in dir(obj):
-            try:
-                attributes.append((key, self.repr(getattr(obj, key))))
-            except:
-                pass
-        title = 'Details for ' + object.__repr__(obj)[1:-1]
-        return render_template('dump_object.html', attributes=attributes,
-                               title=title, repr=self.repr(obj))
+        repr = items = None
+        if isinstance(obj, dict):
+            title = 'Contents of'
+            items = []
+            for key, value in obj.iteritems():
+                if not isinstance(key, basestring):
+                    items = None
+                    break
+                items.append((key, self.repr(value)))
+        if items is None:
+            items = []
+            repr = self.repr(obj)
+            for key in dir(obj):
+                try:
+                    items.append((key, self.repr(getattr(obj, key))))
+                except:
+                    pass
+            title = 'Details for'
+        title += ' ' + object.__repr__(obj)[1:-1]
+        return render_template('dump_object.html', items=items,
+                               title=title, repr=repr)
 
     def dump_locals(self, d):
         attributes = [(key, self.repr(value)) for key, value in d.items()]
