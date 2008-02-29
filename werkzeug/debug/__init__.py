@@ -50,7 +50,7 @@ class DebuggedApplication(object):
             for item in app_iter:
                 yield item
         except:
-            traceback = get_current_traceback()
+            traceback = get_current_traceback(skip=1)
             for frame in traceback.frames:
                 self.frames[frame.id] = frame
             self.tracebacks[traceback.id] = traceback
@@ -82,6 +82,9 @@ class DebuggedApplication(object):
         return Response('{"url": "http://paste.pocoo.org/show/%d/", "id": %d}'
                         % (paste_id, paste_id), mimetype='application/json')
 
+    def get_source(self, request, frame):
+        return Response(frame.render_source(), mimetype='text/html')
+
     def get_resource(self, request, filename):
         filename = join(dirname(__file__), 'shared', filename)
         if isfile(filename):
@@ -99,14 +102,16 @@ class DebuggedApplication(object):
         if self.evalex and request.path == self.console_path:
             response = self.handle_console(request)
         elif request.path.rstrip('/').endswith('/__debugger__'):
-            resource = request.args.get('resource')
+            cmd = request.args.get('cmd')
+            arg = request.args.get('f')
             traceback = self.tracebacks.get(request.args.get('tb', type=int))
             frame = self.frames.get(request.args.get('frm', type=int))
-            cmd = request.args.get('cmd')
-            if resource is not None:
-                response = self.get_resource(request, resource)
+            if cmd == 'resource' and arg:
+                response = self.get_resource(request, arg)
             elif cmd == 'paste' and traceback is not None:
                 response = self.paste_traceback(request, traceback)
+            elif cmd == 'source' and frame:
+                response = self.get_source(request, frame)
             elif self.evalex and cmd is not None and frame is not None:
                 response = self.execute_command(request, cmd, frame)
         return response(environ, start_response)

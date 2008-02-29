@@ -3,8 +3,8 @@ body         { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                text-align: center; margin: 1em; padding: 0; font-size: 15px; }
 a            { color: #11557C; }
 a:hover      { color: #177199; }
-pre, code    { font-family: 'Consolas', 'Deja Vu Sans Mono',
-                'Bitstream Vera Sans Mono', monospace; font-size: 13px; }
+pre, code, table.source { font-family: 'Consolas', 'Deja Vu Sans Mono',
+                          'Bitstream Vera Sans Mono', monospace; font-size: 13px; }
 
 div.debugger { text-align: left; padding: 12px; margin: auto;
                border: 1px solid #aaa; background-color: white; }
@@ -30,13 +30,14 @@ div.traceback h4 { font-size: 13px; font-weight: normal; margin: 0.7em 0 0.1em 0
 div.traceback pre { margin: 0; padding: 5px 0 3px 15px;
                     background-color: #ccc; border-top: 1px solid #aaa;
                     border-left: 1px solid #aaa; border-right: 1px solid #fafafa;
-                    border-bottom: 1px solid #fafafa;
-                    white-space: pre-wrap;       /* css-3 should we be so lucky... */
-                    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-                    white-space: -pre-wrap;      /* Opera 4-6 ?? */
-                    white-space: -o-pre-wrap;    /* Opera 7 ?? */
-                    word-wrap: break-word;       /* Internet Explorer 5.5+ */
-                    _white-space: pre;           /* IE only hack to re-specify in
+                    border-bottom: 1px solid #fafafa; }
+div.traceback pre,
+div.box table.source { white-space: pre-wrap;       /* css-3 should we be so lucky... */
+                       white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                       white-space: -pre-wrap;      /* Opera 4-6 ?? */
+                       white-space: -o-pre-wrap;    /* Opera 7 ?? */
+                       word-wrap: break-word;       /* Internet Explorer 5.5+ */
+                       _white-space: pre;           /* IE only hack to re-specify in
                                                     addition to word-wrap  */ }
 div.traceback pre:hover { background-color: #fafafa; color: black; cursor: pointer; }
 div.traceback blockquote { margin: 1em 0 0 0; padding: 0; }
@@ -78,3 +79,10 @@ pre.console div.box table { margin-top: 6px; }
 pre.console div.box pre.help { background-color: white; font-size: 12px; }
 pre.console div.box pre.help:hover { cursor: default; }
 pre.console table tr { vertical-align: top; }
+div.box table.source { background-color: #fafafa; font-size: 12px; border: 1px solid #ccc;
+                       border-collapse: collapse; width: 100%; }
+div.box table.source td { border-top: 1px solid #eee; border-bottom: 1px solid #ccc;
+                          padding: 4px 0 4px 10px; }
+div.box table.source td.lineno { color: #999; padding-right: 10px; width: 1px; }
+div.box table.source tr.in-frame { background-color: #D6EEFF; }
+div.box table.source tr.current { background-color: white; }

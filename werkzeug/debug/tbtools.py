@@ -20,6 +20,7 @@ from werkzeug.debug.utils import render_template
 
 _coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
 _line_re = re.compile(r'^(.*?)$(?m)')
+_funcdef_re = re.compile(r'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
 UTF8_COOKIE = '\xef\xbb\xbf'
 
 system_exceptions = (SystemExit, KeyboardInterrupt)
@@ -42,6 +43,26 @@ def get_current_traceback(ignore_system_exceptions=False, skip=0):
     for x in xrange(skip):
         tb = tb.tb_next
     return Traceback(exc_type, exc_value, tb)
+
+
+class Line(object):
+    """Helper for the source renderer."""
+    __slots__ = ('lineno', 'code', 'in_frame', 'current')
+
+    def __init__(self, lineno, code):
+        self.lineno = lineno
+        self.code = code
+        self.in_frame = False
+        self.current = False
+
+    def classes(self):
+        rv = ['line']
+        if self.in_frame:
+            rv.append('in-frame')
+        if self.current:
+            rv.append('current')
+        return rv
+    classes = property(classes)
 
 
 class Traceback(object):
@@ -126,6 +147,29 @@ class Frame(object):
     def render(self):
         """Render a single frame in a traceback."""
         return render_template('frame.html', frame=self)
+
+    def render_source(self):
+        """Render the sourcecode."""
+        lines = [Line(idx + 1, x) for idx, x in enumerate(self.sourcelines)]
+
+        # find function definition and mark lines
+        if hasattr(self.code, 'co_firstlineno'):
+            lineno = self.code.co_firstlineno - 1
+            while lineno > 0:
+                if _funcdef_re.match(lines[lineno].code):
+                    break
+                lineno -= 1
+            offset = len(inspect.getblock([x.code + '\n' for x in lines[lineno:]]))
+            for line in lines[lineno:lineno + offset]:
+                line.in_frame = True
+
+        # mark current line
+        try:
+            lines[self.lineno - 1].current = True
+        except IndexError:
+            pass
+
+        return render_template('source.html', frame=self, lines=lines)
 
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
