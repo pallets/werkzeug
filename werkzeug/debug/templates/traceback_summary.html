@@ -15,7 +15,7 @@
     <% endif %>
     <ul>
     <% for frame in traceback.frames %>
-      <li>$frame.render()</li>
+      <li<% if frame.info %> title="$escape(frame.info, True)"<% endif %>>$frame.render()</li>
     <% endfor %>
     </ul>
     <blockquote>$escape(traceback.exception)</blockquote>

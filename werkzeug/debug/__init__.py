@@ -43,7 +43,8 @@ class DebuggedApplication(object):
     """
 
     def __init__(self, app, evalex=False, request_key='werkzeug.request',
-                 console_path='/console', console_init_func=dict):
+                 console_path='/console', console_init_func=dict,
+                 show_hidden_frames=False):
         self.app = app
         self.evalex = evalex
         self.frames = {}
@@ -51,6 +52,7 @@ class DebuggedApplication(object):
         self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
+        self.show_hidden_frames = show_hidden_frames
 
     def debug_application(self, environ, start_response):
         """Run the application and conserve the traceback frames."""
@@ -59,7 +61,8 @@ class DebuggedApplication(object):
             for item in app_iter:
                 yield item
         except:
-            traceback = get_current_traceback(skip=1)
+            traceback = get_current_traceback(skip=1, show_hidden_frames=
+                                              self.show_hidden_frames)
             for frame in traceback.frames:
                 self.frames[frame.id] = frame
             self.tracebacks[traceback.id] = traceback

@@ -30,7 +30,8 @@ except NameError:
     pass
 
 
-def get_current_traceback(ignore_system_exceptions=False, skip=0):
+def get_current_traceback(ignore_system_exceptions=False,
+                          show_hidden_frames=False, skip=0):
     """
     Get the current exception info as `Traceback` object.  Per default calling
     this method will reraise system exceptions such as generator exit, system
@@ -42,7 +43,10 @@ def get_current_traceback(ignore_system_exceptions=False, skip=0):
         raise
     for x in xrange(skip):
         tb = tb.tb_next
-    return Traceback(exc_type, exc_value, tb)
+    tb = Traceback(exc_type, exc_value, tb)
+    if not show_hidden_frames:
+        tb.filter_hidden_frames()
+    return tb
 
 
 class Line(object):
@@ -78,10 +82,40 @@ class Traceback(object):
         else:
             exception_type = exc_type
         self.exception_type = exception_type
+
+        # we only add frames to the list that are not hidden.  This follows
+        # the the magic variables as defined by paste.exceptions.collector
         self.frames = []
         while tb:
             self.frames.append(Frame(exc_type, exc_value, tb))
             tb = tb.tb_next
+
+    def filter_hidden_frames(self):
+        """Remove the frames according to the paste spec."""
+        new_frames = []
+        hidden = False
+        for frame in self.frames:
+            hide = frame.hide
+            if hide in ('before', 'before_and_this'):
+                new_frames = []
+                hidden = False
+                if hide == 'before_and_this':
+                    continue
+            elif hide in ('reset', 'reset_and_this'):
+                hidden = False
+                if hide == 'reset_and_this':
+                    continue
+            elif hide in ('after', 'after_and_this'):
+                hidden = True
+                if hide == 'after_and_this':
+                    continue
+            elif hide or hidden:
+                continue
+            new_frames.append(frame)
+
+        # if the last frame is missing something went terrible wrong :(
+        if self.frames[-1] in new_frames:
+            self.frames[:] = new_frames
 
     def is_syntax_error(self):
         """Is it a syntax error?"""
@@ -144,6 +178,16 @@ class Frame(object):
         self.module = self.globals.get('__name__')
         self.loader = self.globals.get('__loader__')
         self.code = tb.tb_frame.f_code
+
+        # support for paste's traceback extensions
+        self.hide = self.locals.get('__traceback_hide__', False)
+        info = self.locals.get('__traceback_info__')
+        if info is not None:
+            try:
+                info = unicode(info)
+            except UnicodeError:
+                info = str(info).decode('utf-8', 'replace')
+        self.info = info
 
     def render(self):
         """Render a single frame in a traceback."""
