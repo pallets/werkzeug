@@ -21,12 +21,12 @@
       <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
       $traceback.render_summary(include_title=False)
       <div class="plain">
-        <form action="http://paste.pocoo.org/" method="paste">
+        <form action="http://paste.pocoo.org/" method="post">
           <p>
             <input type="hidden" name="language" value="pytb">
             This is the Copy/Paste friendly version of the traceback.  <span
             class="pastemessage">You can also paste this traceback into the public
-            lodgeit pastebin: <input type="submit" value="create paste">
+            lodgeit pastebin: <input type="submit" value="create paste"></span>
           </p>
           <textarea cols="50" rows="10" name="code" readonly>$escape(traceback.plaintext)</textarea>
         </form>

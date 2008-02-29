@@ -101,15 +101,15 @@ class _ConsoleLoader(object):
         self._storage = {}
 
     def register(self, code, source):
-        self._storage[code.co_code] = source
+        self._storage[id(code)] = source
         # register code objects of wrapped functions too.
         for var in code.co_consts:
             if isinstance(var, CodeType):
-                self._storage[var.co_code] = source
+                self._storage[id(var)] = source
 
     def get_source_by_code(self, code):
         try:
-            return self._storage[code.co_code]
+            return self._storage[id(code)]
         except KeyError:
             pass
 
