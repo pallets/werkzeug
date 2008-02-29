@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="./__debugger__?resource=style.css" type="text/css">
     <script type="text/javascript" src="./__debugger__?resource=jquery.js"></script>
     <script type="text/javascript" src="./__debugger__?resource=debugger.js"></script>
+    <script type="text/javascript">
+      var TRACEBACK = $traceback.id;
+    </script>
   </head>
   <body>
     <div class="debugger">
@@ -17,9 +20,9 @@
       $traceback.render_summary(include_title=False)
       <div class="plain">
         <p>
-          This is the Copy/Paste friendly version of the traceback.  You can also
-          paste this traceback into the public lodgeit pastebin:
-          <a href="javascript:dumpThis()">create paste</a>
+          This is the Copy/Paste friendly version of the traceback.  <span
+          class="pastemessage">You can also paste this traceback into the public
+          lodgeit pastebin: <a href="javascript:dumpThis()">create paste</a>.</span>
         </p>
         <pre>$escape(traceback.plaintext)</pre>
       </div>

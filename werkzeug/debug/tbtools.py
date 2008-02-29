@@ -80,6 +80,14 @@ class Traceback(object):
         tb = self.plaintext.encode('utf-8', 'replace').rstrip() + '\n'
         logfile.write(tb)
 
+    def paste(self):
+        """Create a paste and return the paste id."""
+        from xmlrpclib import ServerProxy
+        srv = ServerProxy('http://paste.pocoo.org/xmlrpc/')
+        return srv.pastes.newPaste('pytb', self.plaintext)
+        return '{"url": "http://paste.pocoo.org/show/%d/", "id": %d}' % \
+               (paste_id, paste_id)
+
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
         return render_template('traceback_summary.html', traceback=self,

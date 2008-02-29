@@ -77,6 +77,11 @@ class DebuggedApplication(object):
     def execute_command(self, request, command, frame):
         return Response(frame.console.eval(command), mimetype='text/html')
 
+    def paste_traceback(self, request, traceback):
+        paste_id = traceback.paste()
+        return Response('{"url": "http://paste.pocoo.org/show/%d/", "id": %d}'
+                        % (paste_id, paste_id), mimetype='application/json')
+
     def get_resource(self, request, filename):
         filename = join(dirname(__file__), 'shared', filename)
         if isfile(filename):
@@ -95,10 +100,13 @@ class DebuggedApplication(object):
             response = self.handle_console(request)
         elif request.path.rstrip('/').endswith('/__debugger__'):
             resource = request.args.get('resource')
-            frame = self.frames.get(request.args.get('frame', type=int))
+            traceback = self.tracebacks.get(request.args.get('tb', type=int))
+            frame = self.frames.get(request.args.get('frm', type=int))
             cmd = request.args.get('cmd')
             if resource is not None:
                 response = self.get_resource(request, resource)
+            elif cmd == 'paste' and traceback is not None:
+                response = self.paste_traceback(request, traceback)
             elif self.evalex and cmd is not None and frame is not None:
                 response = self.execute_command(request, cmd, frame)
         return response(environ, start_response)

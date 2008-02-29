@@ -18,7 +18,7 @@ $(function() {
           var form = $('<form>&gt;&gt;&gt; </form>')
             .submit(function() {
               var cmd = command.val();
-              $.get('./__debugger__', {cmd: cmd, frame: frameID}, function(data) {
+              $.get('./__debugger__', {cmd: cmd, frm: frameID}, function(data) {
                 var tmp = $('<div>').html(data);
                 $('span.extended', tmp).each(function() {
                   var hidden = $(this).wrap('<span>').hide();
@@ -94,3 +94,17 @@ $(function() {
           'mouse-over the frame you want to debug and click on the console ' +
           'icon on the right side.');
 });
+
+function dumpThis() {
+  $.ajax({
+    dataType:     'json',
+    url:          './__debugger__',
+    data:         {tb: TRACEBACK, cmd: 'paste'},
+    success:      function(data) {
+      console.log(data);
+      $('div.plain span.pastemessage')
+        .removeClass('pastemessage')
+        .text('Paste created: ')
+        .append($('<a>#' + data.id + '</a>').attr('href', data.url));
+  }});
+};
