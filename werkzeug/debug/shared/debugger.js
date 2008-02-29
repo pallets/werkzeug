@@ -49,10 +49,10 @@ $(function() {
             .replaceWith(data);
           if (!sourceView.is(':visible'))
             sourceView.slideDown('fast', function() {
-              document.location.href = '#current-line';
+              focusSourceBlock();
             });
           else
-            document.location.href = '#current-line';
+            focusSourceBlock();
         });
         return false;
       })
@@ -168,4 +168,19 @@ function openShell(consoleNode, target, frameID) {
   return consoleNode.slideDown('fast', function() {
     command.focus();
   });
+}
+
+/**
+ * Focus the current block in the source view.
+ */
+function focusSourceBlock() {
+  var tmp, line = $('table.source tr.current');
+  for (var i = 0; i < 7; i++) {
+    tmp = line.prev();
+    if (!(tmp && tmp.is('.in-frame')))
+      break
+    line = tmp;
+  }
+  var container = $('div.sourceview')[0];
+  container.scrollTop = line.offset().top - container.offsetTop;
 }

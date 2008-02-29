@@ -120,7 +120,7 @@ def _wrap_compiler(console):
         code = compile(source, filename, symbol)
         console.loader.register(code, source)
         return code
-    return func
+    console.compile = func
 
 
 class _InteractiveConsole(code.InteractiveInterpreter):
@@ -133,7 +133,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         self.globals['__loader__'] = self.loader = _ConsoleLoader()
         self.more = False
         self.buffer = []
-        self.compile = _wrap_compiler(self)
+        _wrap_compiler(self)
 
     def runsource(self, source):
         source = source.rstrip() + '\n'
