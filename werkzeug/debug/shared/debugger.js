@@ -1,13 +1,17 @@
 $(function() {
   var sourceView = null;
   $('div.traceback div.frame').each(function() {
-    var target = $('pre', this), frameConsole = null, table = null,
+    var target = $('pre', this)
+        .click(function() {
+          sourceButton.click();
+        }),
+        frameConsole = null, table = null,
         source = null, frameID = this.id.substring(6);
 
     /**
      * Add an interactive console
      */
-    var consoleBtn = $('<img src="./__debugger__?cmd=resource&f=console.png">')
+    $('<img src="./__debugger__?cmd=resource&f=console.png">')
       .attr('title', 'Open an interactive python shell in this frame')
       .click(function() {
         if (!frameConsole) {
@@ -74,12 +78,13 @@ $(function() {
     /**
      * Show sourcecode
      */
-    $('<img src="./__debugger__?cmd=resource&f=source.png">')
+    var sourceButton = $('<img src="./__debugger__?cmd=resource&f=source.png">')
       .attr('title', 'Display the sourcecode for this frame')
       .click(function() {
         if (!sourceView)
           $('h2', sourceView =
-            $('<div class="box"><h2>View Source</h2><table>')
+            $('<div class="box"><h2>View Source</h2><div class="sourceview">' +
+              '<table></table></div>')
               .insertBefore('div.explanation'))
             .css('cursor', 'pointer')
             .click(function() {
