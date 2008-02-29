@@ -112,7 +112,7 @@ $(function() {
  */
 function openShell(consoleNode, target, frameID) {
   if (consoleNode)
-    return consoleNode.slideDown('fast');
+    return consoleNode.slideToggle('fast');
   consoleNode = $('<pre class="console">')
     .appendTo(target.parent())
     .hide()
