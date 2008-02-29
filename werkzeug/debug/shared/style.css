@@ -49,7 +49,7 @@ div.traceback img { float: right; padding: 2px; margin: -3px 2px 0 0; display: n
 div.traceback img:hover { background-color: #ddd; cursor: pointer; }
 div.traceback pre:hover img { display: block; }
 
-pre.console { background-color: #fafafa; color: black; padding: 5px;
+pre.console { background-color: #fafafa!important; color: black; padding: 5px;
               margin: 3px 0 0 0; cursor: default!important;
               max-height: 400px; overflow: auto; }
 pre.console form { color: #555; }
