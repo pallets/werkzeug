@@ -1,10 +1,12 @@
-body         { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
+body, input  { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                'Verdana', sans-serif; background-color: #AFC1C4; color: #000;
                text-align: center; margin: 1em; padding: 0; font-size: 15px; }
+input        { background-color: #fff; margin: 0; text-align: left; }
 a            { color: #11557C; }
 a:hover      { color: #177199; }
-pre, code, table.source { font-family: 'Consolas', 'Deja Vu Sans Mono',
-                          'Bitstream Vera Sans Mono', monospace; font-size: 13px; }
+pre, code, table.source,
+textarea     { font-family: 'Consolas', 'Deja Vu Sans Mono',
+               'Bitstream Vera Sans Mono', monospace; font-size: 13px; }
 
 div.debugger { text-align: left; padding: 12px; margin: auto;
                border: 1px solid #aaa; background-color: white; }
@@ -22,8 +24,10 @@ h2 em        { font-style: normal; color: #A5D6D9; font-weight: normal; }
 div.traceback, div.plain { background-color: #eee!important; border: 1px solid #ccc;
                            margin: 0 0 1em 0; padding: 10px; }
 div.plain p      { margin: 0; }
-div.plain pre    { margin: 10px 0 0 0; padding: 4px; background-color: #333;
-                   border: 1px solid #111; color: white; }
+div.plain textarea,
+div.plain pre { margin: 10px 0 0 0; padding: 4px; background-color: #333;
+                border: 1px solid #111; color: white; }
+div.plain textarea { width: 99%; height: 300px; }
 div.traceback h3 { font-size: 1em; margin: 0 0 0.8em 0; }
 div.traceback ul { list-style: none; margin: 0; padding: 0 0 0 1em; }
 div.traceback h4 { font-size: 13px; font-weight: normal; margin: 0.7em 0 0.1em 0; }
@@ -45,14 +49,14 @@ div.traceback img { float: right; padding: 2px; margin: -3px 2px 0 0; display: n
 div.traceback img:hover { background-color: #ddd; cursor: pointer; }
 div.traceback pre:hover img { display: block; }
 
-div.traceback pre.console { background-color: #fafafa; color: black; padding: 5px;
-                            margin: 3px 0 0 0; cursor: default!important;
-                            max-height: 400px; overflow: auto; }
-div.traceback pre.console form { color: #555; }
-div.traceback pre.console input { background-color: #fafafa; color: #555;
-                                  width: 90%; font-family: 'Consolas', 'Deja Vu Sans Mono',
-                                  'Bitstream Vera Sans Mono', monospace; font-size: 13px;
-                                  border: none!important; }
+pre.console { background-color: #fafafa; color: black; padding: 5px;
+              margin: 3px 0 0 0; cursor: default!important;
+              max-height: 400px; overflow: auto; }
+pre.console form { color: #555; }
+pre.console input { background-color: #fafafa; color: #555;
+                    width: 90%; font-family: 'Consolas', 'Deja Vu Sans Mono',
+                    'Bitstream Vera Sans Mono', monospace; font-size: 13px;
+                     border: none!important; }
 
 span.string { color: #30799B; }
 span.number { color: #9C1A1C; }
@@ -61,9 +65,9 @@ span.extended { opacity: 0.5; }
 span.extended:hover { opacity: 1; }
 a.toggle { text-decoration: none; background-repeat: no-repeat;
            background-position: center center;
-           background-image: url(./__debugger__?resource=more.png); }
+           background-image: url(./__debugger__?cmd=resource&f=more.png); }
 a.toggle:hover { background-color: #444; }
-a.open { background-image: url(./__debugger__?resource=less.png); }
+a.open { background-image: url(./__debugger__?cmd=resource&f=less.png); }
 
 pre.console div.traceback { margin: 5px 0 5px 25px; white-space: normal; }
 pre.console div.traceback h3 { background-color: #555; color: white;
@@ -79,11 +83,11 @@ pre.console div.box table { margin-top: 6px; }
 pre.console div.box pre.help { background-color: white; font-size: 12px; }
 pre.console div.box pre.help:hover { cursor: default; }
 pre.console table tr { vertical-align: top; }
-div.box table.source { background-color: #fafafa; font-size: 12px; border: 1px solid #ccc;
+div.box table.source { background-color: #fafafa; font-size: 12px;
                        border-collapse: collapse; width: 100%; }
-div.box table.source td { border-top: 1px solid #eee; border-bottom: 1px solid #ccc;
-                          padding: 4px 0 4px 10px; }
+div.box table.source td { border-top: 1px solid #eee; padding: 4px 0 4px 10px; }
 div.box table.source td.lineno { color: #999; padding-right: 10px; width: 1px; }
 div.box table.source tr.in-frame { background-color: #D6EEFF; }
 div.box table.source tr.current { background-color: white; }
-div.sourceview { max-height: 400px; overflow: auto; }
+div.sourceview { max-height: 400px; overflow: auto; border: 1px solid #ccc; }
+div.console { border: 1px solid #ccc; padding: 4px; background-color: #fafafa; }

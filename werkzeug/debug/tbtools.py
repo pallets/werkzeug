@@ -114,9 +114,10 @@ class Traceback(object):
         return render_template('traceback_summary.html', traceback=self,
                                include_title=include_title)
 
-    def render_full(self):
+    def render_full(self, evalex=False):
         """Render the Full HTML page with the traceback info."""
-        return render_template('traceback_full.html', traceback=self)
+        return render_template('traceback_full.html', traceback=self,
+                               evalex=evalex)
 
     def plaintext(self):
         return render_template('traceback_plaintext.html', traceback=self)
@@ -159,7 +160,8 @@ class Frame(object):
                 if _funcdef_re.match(lines[lineno].code):
                     break
                 lineno -= 1
-            offset = len(inspect.getblock([x.code + '\n' for x in lines[lineno:]]))
+            offset = len(inspect.getblock([x.code + '\n' for x
+                                           in lines[lineno:]]))
             for line in lines[lineno:lineno + offset]:
                 line.in_frame = True
 

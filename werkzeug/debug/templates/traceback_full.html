@@ -7,7 +7,9 @@
     <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=jquery.js"></script>
     <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
-      var TRACEBACK = $traceback.id;
+      var TRACEBACK = $traceback.id,
+          CONSOLE_MODE = false,
+          EVALEX = ${evalex and 'true' or 'false'};
     </script>
   </head>
   <body>
@@ -19,18 +21,22 @@
       <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
       $traceback.render_summary(include_title=False)
       <div class="plain">
-        <p>
-          This is the Copy/Paste friendly version of the traceback.  <span
-          class="pastemessage">You can also paste this traceback into the public
-          lodgeit pastebin: <a href="javascript:dumpThis()">create paste</a>.</span>
-        </p>
-        <pre>$escape(traceback.plaintext)</pre>
+        <form action="http://paste.pocoo.org/" method="paste">
+          <p>
+            <input type="hidden" name="language" value="pytb">
+            This is the Copy/Paste friendly version of the traceback.  <span
+            class="pastemessage">You can also paste this traceback into the public
+            lodgeit pastebin: <input type="submit" value="create paste">
+          </p>
+          <textarea cols="50" rows="10" name="code" readonly>$escape(traceback.plaintext)</textarea>
+        </form>
       </div>
       <div class="explanation">
         The debugger cought an exception in your WSGI application.  You can now
         look at the traceback which lead to the error.  <span class="nojavascript">
         If you enable JavaScript you can also use additional features such as code
-        execution, automatic pasting of the exceptions and much more.</span>
+        execution (if the evalex feature is enabled), automatic pasting of the
+        exceptions and much more.</span>
       </div>
       <div class="footer">
         Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
