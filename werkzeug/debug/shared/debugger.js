@@ -13,6 +13,7 @@ $(function() {
           frameConsole = $('<pre class="console">')
             .appendTo(target.parent())
             .hide()
+          var historyPos = 0, history = [''];
           var output = $('<div class="output">[console ready]</div>')
             .appendTo(frameConsole);
           var form = $('<form>&gt;&gt;&gt; </form>')
@@ -32,12 +33,38 @@ $(function() {
                       }));
                 });
                 output.append(tmp);
+                command.focus();
+                var old = history.pop();
+                history.push(cmd);
+                if (typeof old != 'undefined')
+                  history.push(old);
+                historyPos = history.length - 1;
               });
               command.val('');
               return false;
             }).
             appendTo(frameConsole);
-          var command = $('<input type="text">').appendTo(form);
+          var command = $('<input type="text">')
+            .appendTo(form)
+            .keypress(function(e) {
+              if (e.charCode == 100 && e.ctrlKey) {
+                output.text('--- screen cleared ---');
+                return false;
+              }
+              else if (e.charCode == 0 && e.keyCode == 38) {
+                if (historyPos > 0)
+                  historyPos--;
+                command.val(history[historyPos]);
+                return false;
+              }
+              else if (e.charCode == 0 && e.keyCode == 40) {
+                if (historyPos < history.length - 1)
+                  historyPos++;
+                command.val(history[historyPos]);
+                return false;
+              }
+            });
+            
           frameConsole.slideDown('fast', function() {
             command.focus();
           });
