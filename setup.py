@@ -79,7 +79,7 @@ setup(
     ],
     packages=['werkzeug', 'werkzeug.debug'],
     package_data={
-        'werkzeug.debug': ['shared/*']
+        'werkzeug.debug': ['shared/*', 'templates/*']
     },
     features={
         'contrib': Feature('optional contribute addon modules',
