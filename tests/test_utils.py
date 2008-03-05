@@ -416,8 +416,10 @@ def test_import_string():
 
 
 def test_find_modules():
-    assert list(find_modules('werkzeug.debug')) == ['werkzeug.debug.render',
-                                                    'werkzeug.debug.util']
+    assert list(find_modules('werkzeug.debug')) == \
+        ['werkzeug.debug.console', 'werkzeug.debug.render',
+         'werkzeug.debug.repr', 'werkzeug.debug.tbtools',
+         'werkzeug.debug.util', 'werkzeug.debug.utils']
 
 
 def test_html_builder():

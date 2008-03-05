@@ -232,6 +232,14 @@ class LocalProxy(object):
             raise RuntimeError('no object bound to %s' % self.__name__)
     __current_object = property(__current_object)
 
+    def _get_current_object(self):
+        """
+        Return the current object.  This is useful if you want the real object
+        behind the proxy at a time for performance reasons or because you want
+        to pass the object into a different context.
+        """
+        return self.__current_object
+
     def __dict__(self):
         try:
             return self.__current_object.__dict__

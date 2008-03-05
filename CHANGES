@@ -12,6 +12,7 @@ Version 0.3
 - added `parse_dict_header`
 - added `parse_authorization_header`
 - added `parse_www_authenticate_header`
+- added `_get_current_object` method to `LocalProxy` objects
 
 
 Version 0.2

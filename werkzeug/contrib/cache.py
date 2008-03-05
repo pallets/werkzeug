@@ -25,9 +25,11 @@ from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 have_memcache = True
 try:
     import cmemcache as memcache
+    is_cmemcache = True
 except ImportError:
     try:
         import memcache
+        is_cmemcache = False
     except ImportError:
         have_memcache = False
 
@@ -62,6 +64,12 @@ class BaseCache(object):
 
     def clear(self):
         pass
+
+    def inc(self, key, delta=1):
+        self.set(key, (self.get(key) or 0) + delta)
+
+    def dec(self, key, delta=1):
+        self.set(key, (self.get(key) or 0) - delta)
 
 
 class NullCache(BaseCache):
@@ -118,7 +126,19 @@ class MemcachedCache(BaseCache):
 
     def __init__(self, servers, default_timeout=300):
         BaseCache.__init__(self, default_timeout)
-        self._client = memcache.Client(map(str, servers))
+        if not have_memcache:
+            raise RuntimeError('no memcache module found')
+
+        # cmemcache has a bug that debuglog is not defined for the
+        # client.  Whenever pickle fails you get a weird AttributError.
+        if is_cmemcache:
+            self._client = memcache.Client(map(str, servers))
+            try:
+                self._client.debuglog = lambda *a: None
+            except:
+                pass
+        else:
+            self._client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
 
     def get(self, key):
         return self._client.get(key)
@@ -129,26 +149,51 @@ class MemcachedCache(BaseCache):
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         self._client.add(key, value, timeout)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         self._client.set(key, value, timeout)
 
     def set_many(self, mapping, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        self._client.set_multi(mapping, timeout)
+        new_mapping = {}
+        for key, value in mapping.iteritems():
+            if isinstance(key, unicode):
+                key = key.encode('utf-8')
+            new_mapping[key] = value
+        self._client.set_multi(new_mapping, timeout)
 
     def delete(self, key):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         self._client.delete(key)
 
     def delete_many(self, *keys):
+        keys = list(keys)
+        for idx, key in enumerate(keys)
+            if isinstance(key, unicode):
+                keys[idx] = key.encode('utf-8')
         self._client.delete_multi(keys)
 
     def clear(self):
         self._client.flush_all()
+
+    def inc(self, key, delta=1):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
+        self._client.incr(key, key, delta)
+
+    def dec(self, key, delta=1):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
+        self._client.decr(key, key, delta)
 
 
 class FileSystemCache(BaseCache):
