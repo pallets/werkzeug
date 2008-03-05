@@ -45,7 +45,7 @@ class BaseCache(object):
     delete = get
 
     def get_many(self, *keys):
-        return [self.get(key) for key in keys]
+        return map(self.get, keys)
 
     def get_dict(self, *keys):
         return dict(izip(keys, self.get_many(keys)))
