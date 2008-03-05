@@ -177,7 +177,7 @@ class MemcachedCache(BaseCache):
 
     def delete_many(self, *keys):
         keys = list(keys)
-        for idx, key in enumerate(keys)
+        for idx, key in enumerate(keys):
             if isinstance(key, unicode):
                 keys[idx] = key.encode('utf-8')
         self._client.delete_multi(keys)
