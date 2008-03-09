@@ -141,6 +141,8 @@ class MemcachedCache(BaseCache):
             self._client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
 
     def get(self, key):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         return self._client.get(key)
 
     def get_many(self, *keys):
