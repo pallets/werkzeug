@@ -314,8 +314,8 @@ class LocalProxy(object):
     __divmod__ = lambda x, o: x.__current_object.__divmod__(o)
     __pow__ = lambda x, o: x.__current_object ** o
     __lshift__ = lambda x, o: x.__current_object << o
-    __rshift__ = lambda x, o: x.__current_bject >> o
-    __and__ = lambda x, o: x.__current_obejct & o
+    __rshift__ = lambda x, o: x.__current_object >> o
+    __and__ = lambda x, o: x.__current_object & o
     __xor__ = lambda x, o: x.__current_object ^ o
     __or__ = lambda x, o: x.__current_object | o
     __div__ = lambda x, o: x.__current_object.__div__(o)
