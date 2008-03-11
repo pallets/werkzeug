@@ -14,6 +14,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import re
 try:
     from hashlib import md5
 except ImportError:
@@ -121,8 +122,19 @@ class SimpleCache(BaseCache):
         self._cache.pop(key, None)
 
 
+_test_memcached_key = re.compile(r'[^\x00-\x21\xff]{1,250}$').match
+
 class MemcachedCache(BaseCache):
-    """A cache that uses memcached as backend."""
+    """
+    A cache that uses memcached as backend.
+
+    Implementation notes:  This cache backend works around some limitations in
+    memcached to simplify the interface.  For example unicode keys are encoded
+    to utf-8 on the fly.  Methods such as `get_dict` return the keys in the
+    same format as passed.  Furthermore all get methods silently ignore key
+    errors to not cause problems when untrusted user data is passed to the get
+    methods which is often the case in web applications.
+    """
 
     def __init__(self, servers, default_timeout=300):
         BaseCache.__init__(self, default_timeout)
@@ -143,10 +155,36 @@ class MemcachedCache(BaseCache):
     def get(self, key):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
-        return self._client.get(key)
+        # memcached doesn't support keys longer than that.  Because often
+        # checks for so long keys can occour because it's tested from user
+        # submitted data etc we fail silently for getting.
+        if _test_memcached_key(key):
+            return self._client.get(key)
 
-    def get_many(self, *keys):
-        return self._client.get_multi(*keys)
+    def get_dict(self, *keys):
+        key_mapping = {}
+        have_encoded_keys = False
+        for idx, key in enumerate(keys):
+            if isinstance(key, unicode):
+                encoded_key = key.encode('utf-8')
+                have_encoded_keys = True
+            else:
+                encoded_key = key
+            if _test_memcached_key(key):
+                key_mapping[encoded_key] = key
+        # the keys call here is important because otherwise cmemcache
+        # does ugly things.  What exaclty I don't know, i think it does
+        # Py_DECREF but quite frankly i don't care.
+        d = rv = self._client.get_multi(key_mapping.keys())
+        if have_encoded_keys:
+            rv = {}
+            for key, value in d.iteritems():
+                rv[key_mapping[key]] = value
+        if len(rv) < len(keys):
+            for key in keys:
+                if key not in rv:
+                    rv[key] = None
+        return rv
 
     def add(self, key, value, timeout=None):
         if timeout is None:
@@ -161,6 +199,10 @@ class MemcachedCache(BaseCache):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
         self._client.set(key, value, timeout)
+
+    def get_many(self, *keys):
+        d = self.get_dict(*keys)
+        return [d[key] for key in keys]
 
     def set_many(self, mapping, timeout=None):
         if timeout is None:
