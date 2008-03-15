@@ -44,6 +44,29 @@ All the exceptions implement this common interface:
     .. def:: werkzeug.exceptions.HTTPException.__call__
 
 
+Special HTTP Exceptions
+=======================
+
+Starting with Werkzeug 0.3 some of the builtin classes raise exceptions that
+look like regular python exceptions (eg `KeyError`) but are `BadRequest`
+HTTP exceptions at the same time.  This decision was made to simplify a
+common pattern where you want to abort if the client tampered with the
+submitted form data in a way that the application can't recover properly and
+should abort with ``400 BAD REQUEST``.
+
+Assuming the application catches all HTTP exceptions and reacts to them
+properly a view function could do the following savely and doesn't have to
+check if the keys exist::
+
+    def new_post(request):
+        post = Post(title=request.form['title'], body=request.form['body'])
+        post.save()
+        return redirect(post.url)
+
+If `title` or `body` are missing in the form a `MultiDict.KeyError` will be
+raised which behaves like a `KeyError` but also a `BadRequest` exception.
+
+
 Simple Aborting
 ===============
 

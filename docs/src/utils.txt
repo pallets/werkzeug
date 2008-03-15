@@ -100,6 +100,9 @@ Working with HTTP Headers
 .. class:: werkzeug.useragents.UserAgent
 
 .. def:: werkzeug.http.parse_date
+.. def:: werkzeug.utils.cookie_date
+.. def:: werkzeug.utils.http_date
+.. def:: werkzeug.utils.parse_form_data
 
 .. class:: werkzeug.http.ETags
 
@@ -215,8 +218,6 @@ Helper Functions
 .. def:: werkzeug.utils.cached_property
 .. def:: werkzeug.utils.environ_property
 .. def:: werkzeug.utils.header_property
-.. def:: werkzeug.utils.cookie_date
-.. def:: werkzeug.utils.http_date
 .. def:: werkzeug.utils.parse_cookie
 .. def:: werkzeug.utils.dump_cookie
 .. def:: werkzeug.utils.redirect
