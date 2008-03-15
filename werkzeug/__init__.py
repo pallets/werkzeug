@@ -39,7 +39,7 @@ all_by_module = {
                              'dump_cookie', 'parse_cookie', 'unescape',
                              'format_string', 'Href', 'DispatcherMiddleware',
                              'find_modules', 'header_property', 'html',
-                             'xhtml'],
+                             'xhtml', 'parse_form_data'],
     'werkzeug.useragents':  ['UserAgent'],
     'werkzeug.http':        ['Accept', 'CacheControl', 'ETags', 'parse_etags',
                              'parse_date', 'parse_cache_control_header',

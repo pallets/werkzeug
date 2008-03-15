@@ -57,6 +57,7 @@
     :copyright: 2007-2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import sys
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
 from werkzeug.http import HTTP_STATUS_CODES
@@ -139,6 +140,20 @@ class BadRequest(HTTPException):
         '<p>The browser (or proxy) sent a request that this server could '
         'not understand.</p>'
     )
+
+    def wrap(cls, exception, name=None):
+        """
+        This method returns a new subclass of the exception provided that
+        also is a subclass of `BadRequest`.
+        """
+        class newcls(cls, exception):
+            def __init__(self, arg=None, description=None):
+                cls.__init__(self, description)
+                exception.__init__(self, arg)
+        newcls.__module__ = sys._getframe(1).f_globals.get('__name__')
+        newcls.__name__ = name or cls.__name__ + exception.__name__
+        return newcls
+    wrap = classmethod(wrap)
 
 
 class Unauthorized(HTTPException):
@@ -402,6 +417,11 @@ def _find_exceptions():
             continue
 _find_exceptions()
 del _find_exceptions
+
+
+#: raised by the request functions if they were unable to decode the
+#: incomding data properly.
+HTTPUnicodeError = BadRequest.wrap(UnicodeError)
 
 
 class Aborter(object):

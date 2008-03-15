@@ -72,7 +72,7 @@ def encode_multipart(values):
         if isinstance(value, File):
             lines.extend((
                 '--' + boundary,
-                'Content-Dispotion: form-data; name="%s"; filename="%s"' %
+                'Content-Disposition: form-data; name="%s"; filename="%s"' %
                     (key, value.filename),
                 'Content-Type: ' + value.mimetype,
                 '',
@@ -81,7 +81,7 @@ def encode_multipart(values):
         else:
             lines.extend((
                 '--' + boundary,
-                'Content-Dispotion: form-data; name="%s"' % key,
+                'Content-Disposition: form-data; name="%s"' % key,
                 '',
                 value
             ))

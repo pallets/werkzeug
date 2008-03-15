@@ -68,6 +68,18 @@ def _patch_wrapper(old, new):
     return new
 
 
+def _decode_unicode(value, charset, errors):
+    """
+    Like the regular decode function but this one raises an
+    `HTTPUnicodeError` if errors is `strict`.
+    """
+    try:
+        return value.decode(charset, errors)
+    except UnicodeError, e:
+        from werkzeug.exceptions import HTTPUnicodeError
+        raise HTTPUnicodeError(str(e))
+
+
 class _ExtendedMorsel(Morsel):
     """
     Subclass of regular morsels for simpler usage and support of the
@@ -89,6 +101,36 @@ class _ExtendedMorsel(Morsel):
         if httponly:
             result += '; HttpOnly'
         return result
+
+
+class _StorageHelper(cgi.FieldStorage):
+    """
+    Helper class used by `parse_form_data` to parse submitted file and
+    form data.  Don't use this class directly.  This also defines a simple
+    repr that prints just the filename as the default repr reads the
+    complete data of the stream.
+    """
+
+    FieldStorageClass = cgi.FieldStorage
+
+    def __init__(self, environ, stream_factory):
+        if stream_factory is not None:
+            self.make_file = lambda binary=None: stream_factory()
+        cgi.FieldStorage.__init__(self,
+            fp=environ['wsgi.input'],
+            environ={
+                'REQUEST_METHOD':   environ['REQUEST_METHOD'],
+                'CONTENT_TYPE':     environ['CONTENT_TYPE'],
+                'CONTENT_LENGTH':   environ['CONTENT_LENGTH']
+            },
+            keep_blank_values=True
+        )
+
+    def __repr__(self):
+        return '<%s %r>' % (
+            self.__class__.__name__,
+            self.name
+        )
 
 
 class _ExtendedCookie(BaseCookie):
@@ -138,6 +180,11 @@ class MultiDict(dict):
     first value when multiple values for one key are found.
     """
 
+    #: the key error this class raises.  Because of circular dependencies
+    #: with the http exception module this class is created at the end of
+    #: this module.
+    KeyError = None
+
     def __init__(self, mapping=()):
         """
         A `MultiDict` can be constructed from an iterable of ``(key, value)``
@@ -168,7 +215,10 @@ class MultiDict(dict):
 
         :raise KeyError: if the key does not exist
         """
-        return dict.__getitem__(self, key)[0]
+        try:
+            return dict.__getitem__(self, key)[0]
+        except KeyError, e:
+            raise self.KeyError(str(e))
 
     def __setitem__(self, key, value):
         """Set an item as list."""
@@ -357,7 +407,7 @@ class CombinedMultiDict(MultiDict):
         for d in self.dicts:
             if key in d:
                 return d[key]
-        raise KeyError(key)
+        raise self.KeyError(key)
 
     def get(self, key, default=None, type=None):
         for d in self.dicts:
@@ -538,6 +588,11 @@ class Headers(object):
     headers which are stored as tuples in a list.
     """
 
+    #: the key error this class raises.  Because of circular dependencies
+    #: with the http exception module this class is created at the end of
+    #: this module.
+    KeyError = None
+
     def __init__(self, defaults=None, _list=None):
         """
         Create a new `Headers` object based on a list or dict of headers which
@@ -580,7 +635,7 @@ class Headers(object):
         for k, v in self._list:
             if k.lower() == ikey:
                 return v
-        raise KeyError(key)
+        raise self.KeyError(key)
 
     def __eq__(self, other):
         return other.__class__ is self.__class__ and \
@@ -1238,6 +1293,43 @@ html = HTMLBuilder('html')
 xhtml = HTMLBuilder('xhtml')
 
 
+def parse_form_data(environ, stream_factory=None, charset='utf-8',
+                    errors='ignore'):
+    """
+    Parse the form data in the environ and return it as tuple in the form
+    ``(stream, form, files)``.  You should only call this method if the
+    transport method is `POST` or `PUT`.
+
+    If the mimetype of the data transmitted is `multipart/form-data` the
+    files multidict will be filled with `FileStorage` objects.  If the
+    mimetype is unknow the input stream is wrapped and returned as first
+    argument, else the stream is empty.
+    """
+    stream = _empty_stream
+    form = []
+    files = []
+    storage = _StorageHelper(environ, stream_factory)
+    if storage.file:
+        stream = storage.file
+    if storage.list is not None:
+        for key in storage.keys():
+            values = storage[key]
+            if not isinstance(values, list):
+                values = [values]
+            for item in values:
+                if getattr(item, 'filename', None) is not None:
+                    fn = _decode_unicode(item.filename, charset, errors)
+                    # fix stupid IE bug (IE6 sends the whole path)
+                    if fn[1:3] == ':\\' or fn[:2] == '\\\\':
+                        fn = fn.split('\\')[-1]
+                    files.append((key, FileStorage(item.file, fn, key,
+                                  item.type, item.length)))
+                else:
+                    form.append((key, _decode_unicode(item.value,
+                                 charset, errors)))
+    return stream, MultiDict(form), MultiDict(files)
+
+
 def get_content_type(mimetype, charset):
     """
     Return the full content type string with charset for a mimetype.
@@ -1271,7 +1363,8 @@ def format_string(string, context):
     return _format_re.sub(lookup_arg, string)
 
 
-def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True):
+def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
+               errors='ignore'):
     """
     Parse a querystring and return it as `MultiDict`.  Per default only values
     are decoded into unicode strings.  If `decode_keys` is set to ``True`` the
@@ -1279,13 +1372,17 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True):
 
     Per default a missing value for a key will default to an empty key.  If
     you don't want that behavior you can set `include_empty` to `False`.
+
+    Per default encoding errors are ignore.  If you want a different behavior
+    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
+    `HTTPUnicodeError` is raised.
     """
     tmp = []
     for key, values in cgi.parse_qs(str(s), include_empty).iteritems():
         for value in values:
             if decode_keys:
-                key = key.decode(charset, 'ignore')
-            tmp.append((key, value.decode(charset, 'ignore')))
+                key = _decode_unicode(key, charset, errors)
+            tmp.append((key, _decode_unicode(value, charset, errors)))
     return MultiDict(tmp)
 
 
@@ -1345,19 +1442,27 @@ def url_quote_plus(s, charset='utf-8', safe=''):
     return urllib.quote_plus(s, safe=safe)
 
 
-def url_unquote(s, charset='utf-8'):
+def url_unquote(s, charset='utf-8', errors='ignore'):
     """
     URL decode a single string with a given decoding.
+
+    Per default encoding errors are ignore.  If you want a different behavior
+    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
+    `HTTPUnicodeError` is raised.
     """
-    return urllib.unquote(s).decode(charset, 'ignore')
+    return _decode_unicode(urllib.unquote(s), charset, errors)
 
 
-def url_unquote_plus(s, charset='utf-8'):
+def url_unquote_plus(s, charset='utf-8', errors='ignore'):
     """
     URL decode a single string with the given decoding and decode
     a "+" to whitespace.
+
+    Per default encoding errors are ignore.  If you want a different behavior
+    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
+    `HTTPUnicodeError` is raised.
     """
-    return urllib.unquote_plus(s).decode(charset, 'ignore')
+    return _decode_unicode(urllib.unquote_plus(s), charset, errors)
 
 
 def url_fix(s, charset='utf-8'):
@@ -1495,20 +1600,22 @@ def cookie_date(expires=None, _date_delim='-'):
 
     return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
         ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[expires.tm_wday],
-        expires.tm_mday,
-        _date_delim,
+        expires.tm_mday, _date_delim,
         ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
          'Oct', 'Nov', 'Dec')[expires.tm_mon - 1],
-        _date_delim,
-        str(expires.tm_year),
-        expires.tm_hour,
-        expires.tm_min,
-        expires.tm_sec
+        _date_delim, str(expires.tm_year), expires.tm_hour,
+        expires.tm_min, expires.tm_sec
     )
 
 
-def parse_cookie(header, charset='utf-8'):
-    """Parse a cookie.  Either from a string or WSGI environ."""
+def parse_cookie(header, charset='utf-8', errors='ignore'):
+    """
+    Parse a cookie.  Either from a string or WSGI environ.
+
+    Per default encoding errors are ignore.  If you want a different behavior
+    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
+    `HTTPUnicodeError` is raised.
+    """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
     cookie = _ExtendedCookie()
@@ -1520,7 +1627,7 @@ def parse_cookie(header, charset='utf-8'):
     # `None` items which we have to skip here.
     for key, value in cookie.iteritems():
         if value.value is not None:
-            result[key] = value.value.decode(charset, 'ignore')
+            result[key] = _decode_unicode(value.value, charset, errors)
 
     return result
 
@@ -1850,3 +1957,12 @@ def run_wsgi_app(app, environ, buffered=False):
                 app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], response[1]
+
+
+def _create_key_errors():
+    """Create new key errors and attach them to the classes."""
+    from werkzeug.exceptions import BadRequest
+    for cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
+        cls.KeyError = BadRequest.wrap(KeyError, cls.__name__ + '.KeyError')
+_create_key_errors()
+del _create_key_errors

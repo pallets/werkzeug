@@ -13,6 +13,13 @@ Version 0.3
 - added `parse_authorization_header`
 - added `parse_www_authenticate_header`
 - added `_get_current_object` method to `LocalProxy` objects
+- added `parse_form_data`
+- `MultiDict`, `CombinedMultiDict`, `Headers`, and `EnvironHeaders` raise
+  special key errors now that are subclasses of `BadRequest` so if you
+  don't catch them they give meaningful HTTP responses.
+- added support for alternative encoding error handling and the new
+  `HTTPUnicodeError` which (if not cought) behaves like a `BadRequest`.
+- adde `BadRequest.wrap`.
 
 
 Version 0.2

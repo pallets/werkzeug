@@ -225,20 +225,17 @@ class LocalProxy(object):
         object.__setattr__(self, '_LocalProxy__local', local)
         object.__setattr__(self, '__name__', name)
 
-    def __current_object(self):
-        try:
-            return getattr(self.__local, self.__name__)
-        except AttributeError:
-            raise RuntimeError('no object bound to %s' % self.__name__)
-    __current_object = property(__current_object)
-
     def _get_current_object(self):
         """
         Return the current object.  This is useful if you want the real object
         behind the proxy at a time for performance reasons or because you want
         to pass the object into a different context.
         """
-        return self.__current_object
+        try:
+            return getattr(self.__local, self.__name__)
+        except AttributeError:
+            raise RuntimeError('no object bound to %s' % self.__name__)
+    __current_object = property(_get_current_object)
 
     def __dict__(self):
         try:

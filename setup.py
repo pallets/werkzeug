@@ -60,7 +60,6 @@ setup(
     name='Werkzeug',
     version='0.3',
     url='http://werkzeug.pocoo.org/',
-    download_url='http://werkzeug.pocoo.org/download',
     license='BSD',
     author='Armin Ronacher',
     author_email='armin.ronacher@active-4.com',

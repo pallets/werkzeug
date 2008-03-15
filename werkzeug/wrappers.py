@@ -20,7 +20,6 @@
     :copyright: 2007-2008 by Armin Ronacher, Georg Brandl.
     :license: BSD, see LICENSE for more details.
 """
-import cgi
 import tempfile
 import urlparse
 from datetime import datetime, timedelta
@@ -33,43 +32,8 @@ from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, get_content_type, _empty_stream
-
-
-class _StorageHelper(cgi.FieldStorage):
-    """
-    Helper class used by `BaseRequest` to parse submitted file and
-    form data. Don't use this class directly.
-    """
-
-    FieldStorageClass = cgi.FieldStorage
-
-    def __init__(self, environ, get_stream):
-        self.get_stream = get_stream
-        cgi.FieldStorage.__init__(self,
-            fp=environ['wsgi.input'],
-            environ={
-                'REQUEST_METHOD':   environ['REQUEST_METHOD'],
-                'CONTENT_TYPE':     environ['CONTENT_TYPE'],
-                'CONTENT_LENGTH':   environ['CONTENT_LENGTH']
-            },
-            keep_blank_values=True
-        )
-
-    def make_file(self, binary=None):
-        return self.get_stream()
-
-    def __repr__(self):
-        """
-        A repr that doesn't read the file.  In theory that code is never
-        triggered, but if we debug werkzeug itself it could be that
-        werkzeug fetches the debug info for a _StorageHelper.  The default
-        repr reads the whole file which causes problems in the debug view.
-        """
-        return '<%s %r>' % (
-            self.__class__.__name__,
-            self.name
-        )
+     header_property, parse_form_data, get_content_type, url_decode, \
+     _empty_stream, _decode_unicode
 
 
 class BaseRequest(object):
@@ -98,6 +62,7 @@ class BaseRequest(object):
     data on the object itself unless you know exactly what you are doing.
     """
     charset = 'utf-8'
+    encoding_errors = 'ignore'
     is_behind_proxy = False
 
     def __init__(self, environ, populate_request=True):
@@ -161,31 +126,12 @@ class BaseRequest(object):
 
         :internal:
         """
-        self._data_stream = _empty_stream
-        form = []
-        files = []
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
-            storage = _StorageHelper(self.environ, self._get_file_stream)
-            if storage.file:
-                self._data_stream = storage.file
-            if storage.list is not None:
-                for key in storage.keys():
-                    values = storage[key]
-                    if not isinstance(values, list):
-                        values = [values]
-                    for item in values:
-                        if getattr(item, 'filename', None) is not None:
-                            fn = item.filename.decode(self.charset, 'ignore')
-                            # fix stupid IE bug (IE6 sends the whole path)
-                            if fn[1:3] == ':\\' or fn[:2] == '\\\\':
-                                fn = fn.split('\\')[-1]
-                            files.append((key, FileStorage(item.file, fn,
-                                          key, item.type, item.length)))
-                        else:
-                            form.append((key, item.value.decode(self.charset,
-                                                                'ignore')))
-        self._form = MultiDict(form)
-        self._files = MultiDict(files)
+            data = parse_form_data(self.environ, self._get_file_stream,
+                                   self.charset, self.encoding_errors)
+        else:
+            data = (_empty_stream, MultiDict(), MultiDict())
+        self._data_stream, self._form, self._files = data
 
     def stream(self):
         """
@@ -201,13 +147,8 @@ class BaseRequest(object):
 
     def args(self):
         """The parsed URL parameters as `MultiDict`."""
-        items = []
-        qs = self.environ.get('QUERY_STRING', '')
-        for key, values in cgi.parse_qs(qs, True).iteritems():
-            for value in values:
-                value = value.decode(self.charset, 'ignore')
-                items.append((key, value))
-        return MultiDict(items)
+        return url_decode(self.environ.get('QUERY_STRING', ''), self.charset,
+                          errors=self.encoding_errors)
     args = cached_property(args)
 
     def data(self):
@@ -264,13 +205,13 @@ class BaseRequest(object):
         even if the URL root is accessed.
         """
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
-        return path.decode(self.charset, 'ignore')
+        return _decode_unicode(path, self.charset, self.encoding_errors)
     path = cached_property(path)
 
     def script_root(self):
         """The root path of the script without the trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
-        return path.decode(self.charset, 'ignore')
+        return _decode_unicode(path, self.charset, self.encoding_errors)
     script_root = cached_property(script_root)
 
     def url(self):
