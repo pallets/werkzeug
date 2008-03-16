@@ -58,6 +58,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
+from werkzeug.utils import escape
 from werkzeug._internal import HTTP_STATUS_CODES
 
 
@@ -104,6 +105,11 @@ class HTTPException(Exception):
 
     def get_response(self, environ):
         """Get a response object."""
+        # lazyly imported for various reasons.  For one can use the exceptions
+        # with custom responses (testing exception instances against types) and
+        # so we don't ever have to import the wrappers, but also because there
+        # are ciruclar dependencies when bootstrapping the module.
+        from werkzeug.wrappers import BaseResponse
         headers = self.get_headers(environ)
         return BaseResponse(self.get_body(environ), self.code, headers)
 
@@ -115,7 +121,7 @@ class HTTPException(Exception):
 
 class _ProxyException(HTTPException):
     """
-    An http exception that expands renders a WSGI application on error.
+    An HTTP exception that expands renders a WSGI application on error.
     """
 
     def __init__(self, response):
@@ -447,8 +453,3 @@ class Aborter(object):
         raise self.mapping[code](*args, **kwargs)
 
 abort = Aborter()
-
-
-# moved to bottom because of circular dependencies to werkzeug.wrappers
-from werkzeug.utils import escape
-from werkzeug.wrappers import BaseResponse

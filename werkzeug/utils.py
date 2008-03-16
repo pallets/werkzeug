@@ -27,8 +27,8 @@ except NameError:
     def reversed(item):
         return item[::-1]
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
-     _empty_stream, _ExtendedCookie, _ExtendedMorsel, _StorageHelper, \
-     _DictAccessorProperty
+     _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
+     _StorageHelper, _DictAccessorProperty
 
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
@@ -1617,25 +1617,6 @@ def import_string(import_name, silent=False):
     except (ImportError, AttributeError):
         if not silent:
             raise
-
-
-def _iter_modules(path):
-    import pkgutil
-    if hasattr(pkgutil, 'iter_modules'):
-        for importer, modname, ispkg in pkgutil.iter_modules(path):
-            yield modname, ispkg
-        return
-    from inspect import getmodulename
-    from pydoc import ispackage
-    found = set()
-    for path in path:
-        for filename in os.listdir(path):
-            p = os.path.join(path, filename)
-            modname = getmodulename(filename)
-            if modname and modname != '__init__':
-                if modname not in found:
-                    found.add(modname)
-                    yield modname, ispackage(modname)
 
 
 def find_modules(import_path, include_packages=False, recursive=False):

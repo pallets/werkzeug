@@ -113,6 +113,25 @@ def _decode_unicode(value, charset, errors):
         raise HTTPUnicodeError(str(e))
 
 
+def _iter_modules(path):
+    import pkgutil
+    if hasattr(pkgutil, 'iter_modules'):
+        for importer, modname, ispkg in pkgutil.iter_modules(path):
+            yield modname, ispkg
+        return
+    from inspect import getmodulename
+    from pydoc import ispackage
+    found = set()
+    for path in path:
+        for filename in os.listdir(path):
+            p = os.path.join(path, filename)
+            modname = getmodulename(filename)
+            if modname and modname != '__init__':
+                if modname not in found:
+                    found.add(modname)
+                    yield modname, ispackage(modname)
+
+
 class _ExtendedMorsel(Morsel):
     """
     Subclass of regular morsels for simpler usage and support of the
