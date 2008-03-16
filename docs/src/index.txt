@@ -17,6 +17,9 @@ Documentation regarding the Werkzeug modules:
 
 - `Tutorial <tutorial.txt>`_ --- getting started with Werkzeug
 
+- `Unicode <unicode.txt>`_ --- short introduction into unicode in python
+  and how Werkzeug encodes and decodes data.
+
 - `Wrappers <wrappers.txt>`_ --- request and response objects
 
 - `Routing System <routing.txt>`_ --- a powerful URL dispatcher

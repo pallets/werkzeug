@@ -126,6 +126,7 @@ from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 from werkzeug import utils
+from werkzeug._internal import _decode_unicode
 
 
 # Copyright notice: The `parse_data` method uses the string interpolation
@@ -390,7 +391,7 @@ class Context(object):
 
     def to_unicode(self, value):
         if isinstance(value, str):
-            return value.decode(self.encoding, self.errors)
+            return _decode_unicode(value, self.encoding, self.errors)
         return unicode(value)
 
     def get_value(self, as_unicode=True):
@@ -441,7 +442,7 @@ class Template(object):
     def __init__(self, source, filename='<template>', encoding='utf-8',
                  errors='strict', unicode_mode=True):
         if isinstance(source, str):
-            source = source.decode(encoding, errors)
+            source = _decode_unicode(source, encoding, errors)
         node = Parser(tokenize(u'\n'.join(source.splitlines()),
                                filename), filename).parse()
         self.code = TemplateCodeGenerator(node, filename).getCode()
@@ -458,7 +459,7 @@ class Template(object):
             f = open(file, 'r')
             close = True
         try:
-            data = f.read().decode(encoding, errors)
+            data = _decode_unicode(f.read(), encoding, errors)
         finally:
             if close:
                 f.close()

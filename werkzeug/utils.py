@@ -19,7 +19,7 @@ import urlparse
 import posixpath
 from itertools import chain
 from time import asctime, gmtime, time
-from datetime import datetime, timedelta
+from datetime import timedelta
 try:
     set = set
 except NameError:
@@ -28,7 +28,7 @@ except NameError:
         return item[::-1]
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
-     _StorageHelper, _DictAccessorProperty
+     _StorageHelper, _DictAccessorProperty, _dump_date
 
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
@@ -103,10 +103,9 @@ class MultiDict(dict):
 
         :raise KeyError: if the key does not exist
         """
-        try:
+        if key in self:
             return dict.__getitem__(self, key)[0]
-        except KeyError, e:
-            raise self.KeyError(str(e))
+        raise self.KeyError(key)
 
     def __setitem__(self, key, value):
         """Set an item as list."""
@@ -439,12 +438,10 @@ class FileStorage(object):
         during the copy process.  It defaults to 16KB.
         """
         from shutil import copyfileobj
+        close_dst = False
         if isinstance(dst, basestring):
             dst = file(dst, 'wb')
             close_dst = True
-        else:
-            close_dst = False
-
         try:
             copyfileobj(self.stream, dst, buffer_size)
         finally:
@@ -1241,14 +1238,12 @@ def url_encode(obj, charset='utf-8', encode_keys=False):
     charset strings.  If `encode_keys` is set to ``True`` unicode keys are
     supported too.
     """
-    if obj is None:
-        items = []
-    elif isinstance(obj, MultiDict):
+    if isinstance(obj, MultiDict):
         items = obj.lists()
     elif isinstance(obj, dict):
         items = [(key, [value]) for key, value in obj.iteritems()]
     else:
-        items = obj
+        items = obj or ()
     tmp = []
     for key, values in items:
         if encode_keys and isinstance(key, unicode):
@@ -1361,16 +1356,13 @@ def unescape(s):
         name = m.group(1)
         if name in HTMLBuilder._entities:
             return unichr(HTMLBuilder._entities[name])
-        if name[:2] in ('#x', '#X'):
-            try:
+        try:
+            if name[:2] in ('#x', '#X'):
                 return unichr(int(name[2:], 16))
-            except ValueError:
-                return u''
-        elif name.startswith('#'):
-            try:
+            elif name.startswith('#'):
                 return unichr(int(name[1:]))
-            except ValueError:
-                return u''
+        except ValueError:
+            pass
         return u''
     return _entity_re.sub(handle_match, s)
 
@@ -1407,29 +1399,23 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     >>> get_current_url(env, strip_querystring=True)
     'http://localhost/script/'
     """
-    tmp = [environ['wsgi.url_scheme'], '://']
+    tmp = [environ['wsgi.url_scheme'], '://', get_host(environ)]
     cat = tmp.append
-    cat(get_host(environ))
-
     if host_only:
         return ''.join(tmp) + '/'
-
     cat(urllib.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
     if root_only:
         cat('/')
     else:
-        cat(urllib.quote('/' + environ.get('PATH_INFO', '') \
-                  .lstrip('/')))
-
+        cat(urllib.quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
         if not strip_querystring:
             qs = environ.get('QUERY_STRING')
             if qs:
                 cat('?' + qs)
-
     return ''.join(tmp)
 
 
-def cookie_date(expires=None, _date_delim='-'):
+def cookie_date(expires=None):
     """
     Formats the time to ensure compatibility with Netscape's cookie standard.
 
@@ -1439,21 +1425,7 @@ def cookie_date(expires=None, _date_delim='-'):
 
     Outputs a string in the format ``Wdy, DD-Mon-YYYY HH:MM:SS GMT``.
     """
-    if expires is None:
-        expires = gmtime()
-    elif isinstance(expires, datetime):
-        expires = expires.utctimetuple()
-    elif isinstance(expires, (int, long, float)):
-        expires = gmtime(expires)
-
-    return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
-        ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[expires.tm_wday],
-        expires.tm_mday, _date_delim,
-        ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-         'Oct', 'Nov', 'Dec')[expires.tm_mon - 1],
-        _date_delim, str(expires.tm_year), expires.tm_hour,
-        expires.tm_min, expires.tm_sec
-    )
+    return _dump_date(expires, '-')
 
 
 def parse_cookie(header, charset='utf-8', errors='ignore'):
@@ -1540,7 +1512,7 @@ def http_date(timestamp=None):
 
     Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
     """
-    return cookie_date(timestamp, ' ')
+    return _dump_date(timestamp, ' ')
 
 
 def redirect(location, code=302):
@@ -1789,6 +1761,6 @@ def run_wsgi_app(app, environ, buffered=False):
 
 
 # create all the special key errors not that the classes are defined.
-from werkzeug.exceptions import HTTPUnicodeError, BadRequest
+from werkzeug.exceptions import BadRequest
 for _cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
     _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')

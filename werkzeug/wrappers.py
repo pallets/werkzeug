@@ -60,6 +60,10 @@ class BaseRequest(object):
     Request objects should be considered *read only*.  Even though the object
     doesn't enforce read only access everywhere you should never modify any
     data on the object itself unless you know exactly what you are doing.
+
+    Per default the request object will assume all the text data is `utf-8`
+    encoded.  Please refer to `the unicode chapter <unicode.txt>_` for more
+    details about customizing the behavior.
     """
     charset = 'utf-8'
     encoding_errors = 'ignore'
@@ -322,6 +326,10 @@ class BaseResponse(object):
     `force_type` method.  This is useful if you're working with different
     subclasses of response objects and you want to post process them with a
     know interface.
+
+    Per default the request object will assume all the text data is `utf-8`
+    encoded.  Please refer to `the unicode chapter <unicode.txt>_` for more
+    details about customizing the behavior.
     """
     charset = 'utf-8'
     default_status = 200

@@ -11,6 +11,8 @@
 import cgi
 from cStringIO import StringIO
 from Cookie import BaseCookie, Morsel, CookieError
+from time import asctime, gmtime, time
+from datetime import datetime
 
 
 _logger = None
@@ -107,9 +109,16 @@ def _decode_unicode(value, charset, errors):
     Like the regular decode function but this one raises an
     `HTTPUnicodeError` if errors is `strict`.
     """
+    fallback = None
+    if errors.startswith('fallback:'):
+        fallback = errors[9:]
+        errors = 'strict'
     try:
         return value.decode(charset, errors)
     except UnicodeError, e:
+        if fallback is not None:
+            return value.decode(fallback, 'ignore')
+        from werkzeug.exceptions import HTTPUnicodeError
         raise HTTPUnicodeError(str(e))
 
 
@@ -132,13 +141,23 @@ def _iter_modules(path):
                     yield modname, ispackage(modname)
 
 
-class _ExtendedMorsel(Morsel):
-    """
-    Subclass of regular morsels for simpler usage and support of the
-    nonstandard but useful http only header.
+def _dump_date(d, delim):
+    if d is None:
+        d = gmtime()
+    elif isinstance(d, datetime):
+        d = d.utctimetuple()
+    elif isinstance(d, (int, long, float)):
+        d = gmtime(d)
+    return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
+        ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[d.tm_wday],
+        d.tm_mday, delim,
+        ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+         'Oct', 'Nov', 'Dec')[d.tm_mon - 1],
+        delim, str(d.tm_year), d.tm_hour, d.tm_min, d.tm_sec
+    )
 
-    :internal:
-    """
+
+class _ExtendedMorsel(Morsel):
     _reserved = {'httponly': 'HttpOnly'}
     _reserved.update(Morsel._reserved)
 
@@ -190,8 +209,6 @@ class _ExtendedCookie(BaseCookie):
     Form of the base cookie that doesn't raise a `CookieError` for
     malformed keys.  This has the advantage that broken cookies submitted
     by nonstandard browsers don't cause the cookie to be empty.
-
-    :internal:
     """
 
     def _BaseCookie__set(self, key, real_value, coded_value):
@@ -206,8 +223,6 @@ class _ExtendedCookie(BaseCookie):
 class _DictAccessorProperty(object):
     """
     Baseclass for `environ_property` and `header_property`.
-
-    :internal:
     """
 
     def __init__(self, name, default=None, load_func=None, dump_func=None,
@@ -218,9 +233,6 @@ class _DictAccessorProperty(object):
         self.dump_func = dump_func
         self.read_only = read_only
         self.__doc__ = doc
-
-    def lookup(self):
-        raise NotImplementedError()
 
     def __get__(self, obj, type=None):
         if obj is None:
