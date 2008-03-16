@@ -58,9 +58,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-from werkzeug.utils import escape
-from werkzeug.wrappers import BaseResponse
-from werkzeug.http import HTTP_STATUS_CODES
+from werkzeug._internal import HTTP_STATUS_CODES
 
 
 class HTTPException(Exception):
@@ -421,7 +419,7 @@ del _find_exceptions
 
 #: raised by the request functions if they were unable to decode the
 #: incomding data properly.
-HTTPUnicodeError = BadRequest.wrap(UnicodeError)
+HTTPUnicodeError = BadRequest.wrap(UnicodeError, 'HTTPUnicodeError')
 
 
 class Aborter(object):
@@ -449,3 +447,8 @@ class Aborter(object):
         raise self.mapping[code](*args, **kwargs)
 
 abort = Aborter()
+
+
+# moved to bottom because of circular dependencies to werkzeug.wrappers
+from werkzeug.utils import escape
+from werkzeug.wrappers import BaseResponse

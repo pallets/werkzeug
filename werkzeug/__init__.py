@@ -58,7 +58,7 @@ all_by_module = {
                              'WWWAuthenticateMixin']
 }
 
-attribute_modules = ['exceptions', 'routing', 'script']
+attribute_modules = dict.fromkeys(['exceptions', 'routing', 'script'])
 
 
 object_origins = {}

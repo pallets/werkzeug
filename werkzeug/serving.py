@@ -47,7 +47,6 @@ import sys
 import time
 import thread
 from itertools import chain
-from werkzeug.utils import _log
 try:
     from wsgiref.simple_server import ServerHandler, WSGIRequestHandler, \
          WSGIServer
@@ -55,6 +54,7 @@ try:
 except ImportError:
     have_wsgiref = False
 from SocketServer import ThreadingMixIn, ForkingMixIn
+from werkzeug._internal import _log
 
 
 if have_wsgiref:

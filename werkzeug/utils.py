@@ -18,137 +18,21 @@ import urllib
 import urlparse
 import posixpath
 from itertools import chain
-from Cookie import BaseCookie, Morsel, CookieError
 from time import asctime, gmtime, time
 from datetime import datetime, timedelta
-from cStringIO import StringIO
 try:
     set = set
 except NameError:
     from sets import Set as set
     def reversed(item):
         return item[::-1]
+from werkzeug._internal import _patch_wrapper, _decode_unicode, \
+     _empty_stream, _ExtendedCookie, _ExtendedMorsel, _StorageHelper, \
+     _DictAccessorProperty
 
-
-_empty_stream = StringIO('')
-_logger = None
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 _entity_re = re.compile(r'&([^;]+);')
-
-
-def _log(type, message, *args, **kwargs):
-    """
-    Log into the internal werkzeug logger.
-
-    :internal:
-    """
-    global _logger
-    if _logger is None:
-        import logging
-        handler = logging.StreamHandler()
-        _logger = logging.getLogger('werkzeug')
-        _logger.addHandler(handler)
-        _logger.setLevel(logging.INFO)
-    getattr(_logger, type)(message.rstrip(), *args, **kwargs)
-
-
-def _patch_wrapper(old, new):
-    """
-    Helper function that forwards all the function details to the
-    decorated function.
-    """
-    try:
-        new.__name__ = old.__name__
-        new.__module__ = old.__module__
-        new.__doc__ = old.__doc__
-        new.__dict__ = old.__dict__
-    except AttributeError:
-        pass
-    return new
-
-
-def _decode_unicode(value, charset, errors):
-    """
-    Like the regular decode function but this one raises an
-    `HTTPUnicodeError` if errors is `strict`.
-    """
-    try:
-        return value.decode(charset, errors)
-    except UnicodeError, e:
-        from werkzeug.exceptions import HTTPUnicodeError
-        raise HTTPUnicodeError(str(e))
-
-
-class _ExtendedMorsel(Morsel):
-    """
-    Subclass of regular morsels for simpler usage and support of the
-    nonstandard but useful http only header.
-
-    :internal:
-    """
-    _reserved = {'httponly': 'HttpOnly'}
-    _reserved.update(Morsel._reserved)
-
-    def __init__(self, name=None, value=None):
-        Morsel.__init__(self)
-        if name is not None:
-            self.set(name, value, value)
-
-    def OutputString(self, attrs=None):
-        httponly = self.pop('httponly', False)
-        result = Morsel.OutputString(self, attrs).rstrip('\t ;')
-        if httponly:
-            result += '; HttpOnly'
-        return result
-
-
-class _StorageHelper(cgi.FieldStorage):
-    """
-    Helper class used by `parse_form_data` to parse submitted file and
-    form data.  Don't use this class directly.  This also defines a simple
-    repr that prints just the filename as the default repr reads the
-    complete data of the stream.
-    """
-
-    FieldStorageClass = cgi.FieldStorage
-
-    def __init__(self, environ, stream_factory):
-        if stream_factory is not None:
-            self.make_file = lambda binary=None: stream_factory()
-        cgi.FieldStorage.__init__(self,
-            fp=environ['wsgi.input'],
-            environ={
-                'REQUEST_METHOD':   environ['REQUEST_METHOD'],
-                'CONTENT_TYPE':     environ['CONTENT_TYPE'],
-                'CONTENT_LENGTH':   environ['CONTENT_LENGTH']
-            },
-            keep_blank_values=True
-        )
-
-    def __repr__(self):
-        return '<%s %r>' % (
-            self.__class__.__name__,
-            self.name
-        )
-
-
-class _ExtendedCookie(BaseCookie):
-    """
-    Form of the base cookie that doesn't raise a `CookieError` for
-    malformed keys.  This has the advantage that broken cookies submitted
-    by nonstandard browsers don't cause the cookie to be empty.
-
-    :internal:
-    """
-
-    def _BaseCookie__set(self, key, real_value, coded_value):
-        morsel = self.get(key, _ExtendedMorsel())
-        try:
-            morsel.set(key, real_value, coded_value)
-        except CookieError:
-            pass
-        dict.__setitem__(self, key, morsel)
 
 
 class MultiDict(dict):
@@ -1131,58 +1015,6 @@ class cached_property(object):
         return value
 
 
-class _DictAccessorProperty(object):
-    """
-    Baseclass for `environ_property` and `header_property`.
-
-    :internal:
-    """
-
-    def __init__(self, name, default=None, load_func=None, dump_func=None,
-                 read_only=False, doc=None):
-        self.name = name
-        self.default = default
-        self.load_func = load_func
-        self.dump_func = dump_func
-        self.read_only = read_only
-        self.__doc__ = doc
-
-    def lookup(self):
-        raise NotImplementedError()
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        storage = self.lookup(obj)
-        if self.name not in storage:
-            return self.default
-        rv = storage[self.name]
-        if self.load_func is not None:
-            try:
-                rv = self.load_func(rv)
-            except (ValueError, TypeError):
-                rv = self.default
-        return rv
-
-    def __set__(self, obj, value):
-        if self.read_only:
-            raise AttributeError('read only property')
-        if self.dump_func is not None:
-            value = self.dump_func(value)
-        self.lookup(obj)[self.name] = value
-
-    def __delete__(self, obj):
-        if self.read_only:
-            raise AttributeError('read only property')
-        self.lookup(obj).pop(self.name, None)
-
-    def __repr__(self):
-        return '<%s %s>' % (
-            self.__class__.__name__,
-            self.name
-        )
-
-
 class environ_property(_DictAccessorProperty):
     """
     Maps request attributes to environment variables. This works not only
@@ -1975,10 +1807,7 @@ def run_wsgi_app(app, environ, buffered=False):
     return app_iter, response[0], response[1]
 
 
-def _create_key_errors():
-    """Create new key errors and attach them to the classes."""
-    from werkzeug.exceptions import BadRequest
-    for cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
-        cls.KeyError = BadRequest.wrap(KeyError, cls.__name__ + '.KeyError')
-_create_key_errors()
-del _create_key_errors
+# create all the special key errors not that the classes are defined.
+from werkzeug.exceptions import HTTPUnicodeError, BadRequest
+for _cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
+    _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')

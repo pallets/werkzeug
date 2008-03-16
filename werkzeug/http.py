@@ -29,93 +29,13 @@ try:
     frozenset = frozenset
 except NameError:
     from sets import Set as set, ImmutableSet as frozenset
-from werkzeug.utils import _patch_wrapper
+from werkzeug._internal import _patch_wrapper, _UpdateDict, HTTP_STATUS_CODES
 
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
 _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
-
-
-HTTP_STATUS_CODES = {
-    100:    'Continue',
-    101:    'Switching Protocols',
-    102:    'Processing',
-    200:    'OK',
-    201:    'Created',
-    202:    'Accepted',
-    203:    'Non Authoritative Information',
-    204:    'No Content',
-    205:    'Reset Content',
-    206:    'Partial Content',
-    207:    'Multi Status',
-    226:    'IM Used',              # see RFC 3229
-    300:    'Multiple Choices',
-    301:    'Moved Permanently',
-    302:    'Found',
-    303:    'See Other',
-    304:    'Not Modified',
-    305:    'Use Proxy',
-    307:    'Temporary Redirect',
-    400:    'Bad Request',
-    401:    'Unauthorized',
-    402:    'Payment Required',     # unused
-    403:    'Forbidden',
-    404:    'Not Found',
-    405:    'Method Not Allowed',
-    406:    'Not Acceptable',
-    407:    'Proxy Authentication Required',
-    408:    'Request Timeout',
-    409:    'Conflict',
-    410:    'Gone',
-    411:    'Length Required',
-    412:    'Precondition Failed',
-    413:    'Request Entity Too Large',
-    414:    'Request URI Too Long',
-    415:    'Unsupported Media Type',
-    416:    'Requested Range Not Satisfiable',
-    417:    'Expectation Failed',
-    422:    'Unprocessable Entity',
-    423:    'Locked',
-    424:    'Failed Dependency',
-    426:    'Upgrade Required',
-    449:    'Retry With',           # propritary MS extension
-    500:    'Internal Server Error',
-    501:    'Not Implemented',
-    502:    'Bad Gateway',
-    503:    'Service Unavailable',
-    504:    'Gateway Timeout',
-    505:    'HTTP Version Not Supported',
-    507:    'Insufficient Storage',
-    510:    'Not Extended'
-}
-
-
-class _UpdateDict(dict):
-    """
-    A dict that calls `on_update` on modifications.
-    """
-
-    def __init__(self, data, on_update):
-        dict.__init__(self, data)
-        self.on_update = on_update
-
-    def calls_update(f):
-        def oncall(self, *args, **kw):
-            rv = f(self, *args, **kw)
-            if self.on_update is not None:
-                self.on_update(self)
-            return rv
-        return _patch_wrapper(f, oncall)
-
-    __setitem__ = calls_update(dict.__setitem__)
-    __delitem__ = calls_update(dict.__delitem__)
-    clear = calls_update(dict.clear)
-    pop = calls_update(dict.pop)
-    popitem = calls_update(dict.popitem)
-    setdefault = calls_update(dict.setdefault)
-    update = calls_update(dict.update)
 
 
 class Accept(list):

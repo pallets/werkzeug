@@ -32,8 +32,8 @@ from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, parse_form_data, get_content_type, url_decode, \
-     _empty_stream, _decode_unicode
+     header_property, parse_form_data, get_content_type, url_decode
+from werkzeug._internal import _empty_stream, _decode_unicode
 
 
 class BaseRequest(object):
