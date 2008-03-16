@@ -62,7 +62,7 @@ class BaseRequest(object):
     data on the object itself unless you know exactly what you are doing.
 
     Per default the request object will assume all the text data is `utf-8`
-    encoded.  Please refer to `the unicode chapter <unicode.txt>_` for more
+    encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
     details about customizing the behavior.
     """
     charset = 'utf-8'
@@ -328,7 +328,7 @@ class BaseResponse(object):
     know interface.
 
     Per default the request object will assume all the text data is `utf-8`
-    encoded.  Please refer to `the unicode chapter <unicode.txt>_` for more
+    encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
     details about customizing the behavior.
     """
     charset = 'utf-8'

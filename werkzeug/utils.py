@@ -63,9 +63,9 @@ class MultiDict(dict):
     It behaves like a normal dict thus all dict functions will only return the
     first value when multiple values for one key are found.
 
-    From Werkzeug 0.3 onwards, whenever the `KeyError` raised by this class is
-    also a subclass of the `BadRequest` HTTP exception and will render a page
-    for a ``400 BAD REQUEST`` if not catched.
+    From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
+    subclass of the `BadRequest` HTTP exception and will render a page for a
+    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
     """
 
     #: the key error this class raises.  Because of circular dependencies
@@ -281,9 +281,9 @@ class CombinedMultiDict(MultiDict):
     This works for all read operations and will raise a `TypeError` for
     methods that usually change data which isn't possible.
 
-    From Werkzeug 0.3 onwards, whenever the `KeyError` raised by this class is
-    also a subclass of the `BadRequest` HTTP exception and will render a page
-    for a ``400 BAD REQUEST`` if not catched.
+    From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
+    subclass of the `BadRequest` HTTP exception and will render a page for a
+    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
     """
 
     def __init__(self, dicts=None):
@@ -476,9 +476,9 @@ class Headers(object):
     This data structure is useful if you want a nicer way to handle WSGI
     headers which are stored as tuples in a list.
 
-    From Werkzeug 0.3 onwards, whenever the `KeyError` raised by this class is
-    also a subclass of the `BadRequest` HTTP exception and will render a page
-    for a ``400 BAD REQUEST`` if not catched.
+    From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
+    subclass of the `BadRequest` HTTP exception and will render a page for a
+    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
     """
 
     #: the key error this class raises.  Because of circular dependencies
@@ -695,9 +695,9 @@ class EnvironHeaders(Headers):
     provides the same interface as `Headers` and is constructed from
     a WSGI environment.
 
-    From Werkzeug 0.3 onwards, whenever the `KeyError` raised by this class is
-    also a subclass of the `BadRequest` HTTP exception and will render a page
-    for a ``400 BAD REQUEST`` if not catched.
+    From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
+    subclass of the `BadRequest` HTTP exception and will render a page for a
+    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
     """
 
     def __init__(self, environ):

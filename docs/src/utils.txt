@@ -95,8 +95,6 @@ Working with HTTP Headers
     .. def:: werkzeug.http.HeaderSet.as_set
     .. def:: werkzeug.http.HeaderSet.to_header
 
-.. def:: werkzeug.http.parse_set_header
-
 .. class:: werkzeug.useragents.UserAgent
 
 .. def:: werkzeug.http.parse_date
