@@ -42,7 +42,7 @@ class CoolMagicApplication(object):
         for endpoint, (func, rule, extra) in exported_views.iteritems():
             if rule is not None:
                 rules.append(Rule(rule, endpoint=endpoint, **extra))
-                self.views[endpoint] = func
+            self.views[endpoint] = func
         self.url_map = Map(rules)
 
     def __call__(self, environ, start_response):
@@ -52,7 +52,7 @@ class CoolMagicApplication(object):
             endpoint, args = urls.match(req.path)
             resp = self.views[endpoint](**args)
         except NotFound, e:
-            resp = self.views['static.not_found'](**args)
+            resp = self.views['static.not_found']()
         except (HTTPException, RequestRedirect), e:
             resp = e
         return resp(environ, start_response)
