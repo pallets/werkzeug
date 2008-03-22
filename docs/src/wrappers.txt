@@ -220,6 +220,10 @@ The `Request` and `Response` classes subclass the `BaseRequest` and
     All this properties store `Accept` objects as documented in the
     `utils`_ section.
 
+.. class:: werkzeug.wrappers.AuthorizationMixin
+
+    .. property:: werkzeug.wrappers.AuthorizationMixin.authorization
+
 
 .. class:: werkzeug.wrappers.ETagRequestMixin
 
@@ -264,6 +268,10 @@ The `Request` and `Response` classes subclass the `BaseRequest` and
     .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.retry_after
     .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.vary
     .. property:: werkzeug.wrappers.CommonResponseDescriptorsMixin.allow
+
+.. class:: werkzeug.wrappers.WWWAuthenticateMixin
+
+    .. property:: werkzeug.wrappers.WWWAuthenticateMixin.www_authenticate
 
 
 Note on File Uploads

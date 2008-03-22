@@ -904,10 +904,11 @@ class CommonResponseDescriptorsMixin(object):
 
 class WWWAuthenticateMixin(object):
     """
-    Adds a `www_authenticate` property.
+    Adds a `www_authenticate` property to a response object.
     """
 
     def www_authenticate(self):
+        """The ``WWW-Authenticate`` header in a parsed form."""
         def on_update(www_auth):
             if not www_auth and 'www-authenticate' in self.headers:
                 del self.headers['www-authenticate']

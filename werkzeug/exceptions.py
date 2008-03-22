@@ -58,7 +58,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-from werkzeug.utils import escape
 from werkzeug._internal import HTTP_STATUS_CODES
 
 
@@ -453,3 +452,7 @@ class Aborter(object):
         raise self.mapping[code](*args, **kwargs)
 
 abort = Aborter()
+
+
+# imported here because of circular dependencies of werkzeug.utils
+from werkzeug.utils import escape

@@ -532,7 +532,7 @@ object, the other one validates a URL.  So let's add those to ``utils.py``:
 
 .. sourcecode:: python
 
-    for os import path    
+    from os import path    
     from urlparse import urlparse
     from werkzeug import Response
     from jinja import Environment, FileSystemLoader

@@ -17,6 +17,8 @@ Objects
 
 .. class:: werkzeug.local.LocalProxy
 
+    .. def:: werkzeug.local.LocalProxy._get_current_object
+
     Keep in mind that ``repr()`` is also forwarded, so if you want to find
     out if you are dealing with a proxy you can do an ``isinstance()`` check:
 

@@ -474,7 +474,7 @@ Inhalt unserer noch leeren ``views.py``-Datei:
             if not validate_url(url):
                 error = u"Entschuldigung, aber ich kann die angegebene " \
                         u"URL nicht kürzen."    
-        elif alias:
+            elif alias:
                 if len(alias) > 140:
                     error = 'Dein Alias ist zu lang'
                 elif '/' in alias:
@@ -557,7 +557,7 @@ diese zu ``utils.py`` hinzu:
 
 .. sourcecode:: python
 
-    for os import path    
+    from os import path    
     from urlparse import urlparse
     from werkzeug import Response
     from jinja import Environment, FileSystemLoader
