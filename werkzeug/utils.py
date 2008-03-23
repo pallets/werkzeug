@@ -29,6 +29,7 @@ except NameError:
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
      _StorageHelper, _DictAccessorProperty, _dump_date
+from werkzeug.http import generate_etag
 
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
@@ -828,14 +829,16 @@ class SharedDataMiddleware(object):
         guessed_type = guess_type(real_filename)
         mime_type = guessed_type[0] or 'text/plain'
         expiry = asctime(gmtime(time() + 3600))
-        start_response('200 OK', [('Content-Type', mime_type),
-                                  ('Cache-Control', 'public'),
-                                  ('Expires', expiry)])
         stream = stream_maker()
         try:
-            return [stream.read()]
+            data = stream.read()
         finally:
             stream.close()
+        start_response('200 OK', [('Content-Type', mime_type),
+                                  ('Cache-Control', 'public'),
+                                  ('Expires', expiry),
+                                  ('ETag', generate_etag(data))])
+        return [data]
 
 
 class DispatcherMiddleware(object):
