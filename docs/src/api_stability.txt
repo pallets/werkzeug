@@ -14,6 +14,9 @@ the next release versions:
 Backwards Incompatible Changes
 ==============================
 
+`0.3`
+    -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.
+
 `0.2`
     -   The `BaseReporterStream` is now part of the contrib module, the
         new module is `werkzeug.contrib.reporterstream`.  Starting with
@@ -25,3 +28,9 @@ Backwards Incompatible Changes
         the old name will disappear in Werkzeug 0.3.
     -   `match` can now raise `MethodNotAllowed` if configured for
         methods and there was no method for that request.
+    -   The `response_body` attribute on the response object is now called
+        `data`.  With Werkzeug 0.3 the old name will not work any longer.
+    -   The file-like methods on the response object are deprecated.  If
+        you want to use the response object as file like object use the
+        `Response` class or a subclass of `BaseResponse` and mix the new
+        `ResponseStreamMixin` class and use `response.stream`.

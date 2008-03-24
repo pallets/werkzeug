@@ -26,6 +26,12 @@ class HTMLStringO(object):
     def __init__(self):
         self._buffer = []
 
+    def isatty(self):
+        return False
+
+    def close(self):
+        pass
+
     def reset(self):
         val = ''.join(self._buffer)
         del self._buffer[:]

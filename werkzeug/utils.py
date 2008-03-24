@@ -655,7 +655,11 @@ class Headers(object):
         """remove all header tuples for key and add
         a new one
         """
-        self.remove(key)
+        lc_key = key.lower()
+        for idx, (old_key, old_value) in enumerate(self._list):
+            if old_key.lower() == lc_key:
+                self._list[idx] = (key, value)
+                return
         self.add(key, value)
 
     __setitem__ = set

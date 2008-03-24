@@ -146,7 +146,7 @@ class BaseRequest(object):
         if self._data_stream is None:
             self._load_form_data()
         return self._data_stream
-    stream = property(stream, doc=stream)
+    stream = property(stream, doc=stream.__doc__)
     input_stream = environ_property('wsgi.input', 'The WSGI input stream.')
 
     def args(self):
@@ -183,9 +183,22 @@ class BaseRequest(object):
 
     def files(self):
         """
-        A `MultiDict` containing all uploaded files.  Each key in
+        `MultiDict` object containing all uploaded files.  Each key in
         `files` is the name from the ``<input type="file" name="" />``.  Each
-        value in `files` is a Werkzeug `FileStorage` object.
+        value in `files` is a Werkzeug `FileStorage` object with the following
+        members:
+
+        - `filename` - The name of the uploaded file, as a Python string.
+        - `type` - The content type of the uploaded file.
+        - `data` - The raw content of the uploaded file.
+        - `read()` - Read from the stream.
+
+        Note that `files` will only contain data if the request method was POST
+        and the ``<form>`` that posted to the request had
+        ``enctype="multipart/form-data"``.  It will be empty otherwise.
+
+        See the `MultiDict` / `FileStorage` documentation for more details about
+        the used data structure.
         """
         if not hasattr(self, '_files'):
             self._load_form_data()
@@ -501,6 +514,9 @@ class BaseResponse(object):
         property is `True`.  In this case streamed means that there is no
         information about the number of iterations.  This is usully `True`
         if a generator is passed to the response object.
+
+        This is useful for checking before applying some sort of post
+        filtering that should not take place for streamed responses.
         """
         try:
             len(self.response)
