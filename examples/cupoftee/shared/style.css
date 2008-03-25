@@ -1,107 +1,112 @@
 body {
-    font-family: 'Trebuchet MS', sans-serif;
-    background-color: #aaa;
+    font-family: 'Verdana', sans-serif;
+    background: #2b93ad;
     margin: 0;
     padding: 0;
+    font-size: 15px;
+    text-align: center;
 }
 
 h1 {
+    font-size: 0;
     margin: 0;
-    padding: 0.5em;
-    font-size: 2em;
-    background-color: #d00;
-    border-bottom: 4px solid #a00;
+    padding: 10px 0 0 10px;
+    height: 124px;
+    line-height: 100px;
+    background: url(header.png);
     color: white;
 }
 
 h1 a {
-    color: white;
-    text-decoration: none;
-}
-
-h1 a:hover {
-    background-color: #a00;
-    color: white;
+    display: block;
+    margin: 0 auto 0 auto;
+    height: 90px;
+    width: 395px;
+    background: url(logo.png);
 }
 
 div.contents {
-    background-color: white;
-    margin: 0 0 1em 0;
-    padding: 1em;
-    width: 50em;
-    border-right: 4px solid #777;
-    border-bottom: 4px solid #777;
+    background: white url(content.png) repeat-x;
+    margin: -8px auto 0 auto;
+    text-align: left;
+    padding: 15px;
+    width: 800px;
+}
+
+div.contents a {
+    margin: 0 5px 0 5px;
+}
+
+div.footer {
+    width: 814px;
+    margin: 0 auto 0 auto;
+    background: #1a6f96;
+    padding: 8px;
+    font-size: 10px;
+    color: white;
+}
+
+div.footer a {
+    color: #79b9d7;
 }
 
 a {
-    color: #a00;
+    color: #1a6f96;
+    text-decoration: none;
 }
 
 a:hover {
-    color: #d00;
+    color: #ffb735;
 }
 
-table.servers {
-    border-collapse: collapse;
-    border: 2px solid #ddd;
-    margin: 1em 0 0.5em 0;
+h2 {
+    margin: 0 0 0.5em 0;
+    padding: 0 0 0.1em 0;
+    color: #ffb735;
+    font-size: 2em;
+    border-bottom: 1px solid #ccc;
+}
+
+h3 {
+    margin: 1em 0 0.7em 0;
+    color: #ffb735;
+    font-size: 1.5em;
+}
+
+table {
     width: 100%;
+    border-collapse: collapse;
+    border: 3px solid #79b9d7;
 }
 
-table.servers thead th {
-    background-color: #ddd;
-    padding: 0.3em;
+table td, table th {
+    border: 1px solid #79b9d7;
+    padding: 3px 6px 3px 6px;
+    font-weight: normal;
+    text-align: center;
+    font-size: 13px;
 }
 
-table.servers tbody td,
-table.servers tbody th {
-    padding: 0.3em;
-    border-top: 1px solid #ddd;
-    font-size: 0.9em;
-}
-
-table.servers tbody th {
+table th {
+    background: #f2f8fb;
     text-align: left;
 }
 
-table.servers tbody td {
+table thead th {
+    font-weight: bold;
+    background-color: #79b9d7;
     text-align: center;
 }
 
-table.servers tbody tr:hover {
-    background-color: #f2f2f2;
-}
-
-dl dt {
-    font-weight: bold;
+table thead th a {
+    color: white;
 }
 
 div.players {
     font-size: 11px;
 }
 
-div.players a {
-    padding: 0 0.2em 0 0.2em;
-    text-decoration: none;
-}
-
-div.players a:hover {
-    background-color: #eee;
-}
-
-h2, h3 {
-    margin: 0.5em 0 0.5em 0;
-}
-
-ul.players a {
-    color: #d00;
-    text-decoration: none;
-}
-
-ul.players a:hover {
-    text-decoration: underline;
-}
-
-ul.players small {
-    color: #888;
+dl dt {
+    font-weight: bold;
+    padding: 5px 0 0 0;
 }

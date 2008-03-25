@@ -23,7 +23,7 @@ url_map = Map([Rule('/shared/<file>', endpoint='shared')])
 
 
 def make_app():
-    return SharedDataMiddleware(Cup('master.teewars.com', 8300), {
+    return SharedDataMiddleware(Cup(), {
         '/shared':  path.join(path.dirname(__file__), 'shared')
     })
 
@@ -71,8 +71,8 @@ class Page(object):
 
 class Cup(object):
 
-    def __init__(self, *master_addr):
-        self.master = ServerBrowser(master_addr)
+    def __init__(self):
+        self.master = ServerBrowser()
         self.updater = Thread(None, self.update_master)
         self.updater.setDaemon(True)
         self.updater.start()

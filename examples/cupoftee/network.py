@@ -14,7 +14,7 @@ from math import log
 from datetime import datetime
 
 
-GAMETYPES = dict(zip(range(3), ('dm', 'tdm', 'ctf')))
+GAMETYPES = dict(enumerate(('dm', 'tdm', 'ctf')))
 
 
 class ServerError(Exception):
@@ -35,20 +35,31 @@ class Syncable(object):
 
 class ServerBrowser(Syncable):
 
-    def __init__(self, addr):
-        self.addr = addr
+    def __init__(self):
         self.servers = {}
         while not self.sync():
             time.sleep(5)
 
     def _sync(self):
+        to_delete = set(self.servers)
+        for x in xrange(1, 17):
+            addr = ('master%d.teeworlds.com' % x, 8300)
+            try:
+                self._sync_master(addr, to_delete)
+            except (socket.error, socket.timeout, IOError):
+                continue
+        for server_id in to_delete:
+            self.servers.pop(server_id, None)
+        if not self.servers:
+            raise IOError('no servers found')
+
+    def _sync_master(self, addr, to_delete):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(5)
-        s.sendto('\x20\x00\x00\x00\x00\x48\xff\xff\xff\xffreqt', self.addr)
+        s.sendto('\x20\x00\x00\x00\x00\x48\xff\xff\xff\xffreqt', addr)
         data = s.recvfrom(1024)[0][14:]
         s.close()
 
-        to_delete = set(self.servers)
         for n in xrange(0, len(data) / 6):
             addr = ('.'.join(map(str, map(ord, data[n * 6:n * 6 + 4]))),
                     ord(data[n * 6 + 5]) * 256 + ord(data[n * 6 + 4]))
@@ -62,9 +73,6 @@ class ServerBrowser(Syncable):
                 except ServerError:
                     pass
             to_delete.discard(server_id)
-
-        for server_id in to_delete:
-            self.servers.pop(server_id, None)
 
 
 class Server(Syncable):

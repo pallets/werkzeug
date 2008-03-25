@@ -157,8 +157,8 @@ def test_headers():
 
     # list conversion
     assert headers.to_list() == [
-        ('X-Foo', 'bar'),
-        ('Content-Type', 'foo/bar')
+        ('Content-Type', 'foo/bar'),
+        ('X-Foo', 'bar')
     ]
 
     # defaults
@@ -419,7 +419,7 @@ def test_find_modules():
     assert list(find_modules('werkzeug.debug')) == \
         ['werkzeug.debug.console', 'werkzeug.debug.render',
          'werkzeug.debug.repr', 'werkzeug.debug.tbtools',
-         'werkzeug.debug.util', 'werkzeug.debug.utils']
+         'werkzeug.debug.utils']
 
 
 def test_html_builder():
