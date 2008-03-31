@@ -281,8 +281,8 @@ class BaseRequest(object):
         return self.environ.get('REMOTE_ADDR')
     remote_addr = property(remote_addr)
 
-    is_xhr = property(lambda x: x.environ.get('X_REQUESTED_WITH', '').lower() ==
-                      'xmlhttprequest', doc='''
+    is_xhr = property(lambda x: x.environ.get('HTTP_X_REQUESTED_WITH', '')
+                      .lower() == 'xmlhttprequest', doc='''
         True if the request was triggered via an JavaScript XMLHttpRequest.
         This only works with libraries that support the X-Requested-With
         header and set it to "XMLHttpRequest".  Libraries that do that are
