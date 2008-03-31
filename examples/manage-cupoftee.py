@@ -8,10 +8,12 @@
     :copyright: 2008 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from cupoftee import make_app
 from werkzeug import script
 
 
+def make_app():
+    from cupoftee import make_app
+    return make_app('/tmp/cupoftee.db')
 action_runserver = script.make_runserver(make_app)
 
 script.run()

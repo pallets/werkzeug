@@ -12,6 +12,7 @@ import time
 import socket
 from math import log
 from datetime import datetime
+from cupoftee.utils import unicodecmp
 
 
 GAMETYPES = dict(enumerate(('dm', 'tdm', 'ctf')))
@@ -35,10 +36,9 @@ class Syncable(object):
 
 class ServerBrowser(Syncable):
 
-    def __init__(self):
-        self.servers = {}
-        while not self.sync():
-            time.sleep(5)
+    def __init__(self, cup):
+        self.cup = cup
+        self.servers = cup.db.setdefault('servers', dict)
 
     def _sync(self):
         to_delete = set(self.servers)
@@ -52,6 +52,7 @@ class ServerBrowser(Syncable):
             self.servers.pop(server_id, None)
         if not self.servers:
             raise IOError('no servers found')
+        self.cup.db.sync()
 
     def _sync_master(self, addr, to_delete):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -69,7 +70,7 @@ class ServerBrowser(Syncable):
                     continue
             else:
                 try:
-                    self.servers[server_id] = Server(addr, self, server_id)
+                    self.servers[server_id] = Server(addr, server_id)
                 except ServerError:
                     pass
             to_delete.discard(server_id)
@@ -77,10 +78,10 @@ class ServerBrowser(Syncable):
 
 class Server(Syncable):
 
-    def __init__(self, addr, master, server_id):
+    def __init__(self, addr, server_id):
         self.addr = addr
         self.id = server_id
-        self.master = master
+        self.players = []
         if not self.sync():
             raise ServerError('server not responding in time')
 
@@ -95,12 +96,33 @@ class Server(Syncable):
         self.gametype_id, self.flags, self.progression, player_count, \
             self.max_players = map(int, bits[3:8])
         self.gametype = GAMETYPES.get(self.gametype_id, 'unknown')
-        self.players = []
+
+        # sync the player stats
+        players = dict((p.name, p) for p in self.players)
         for i in xrange(player_count):
-            self.players.append(Player(self, bits[8 + i * 2].decode('latin1'),
-                                       int(bits[8 + i * 2 + 1])))
+            name = bits[8 + i * 2].decode('latin1')
+            score = int(bits[9 + i * 2])
+
+            # update existing player
+            if name in players:
+                player = players.pop(name)
+                player.score = score
+            # add new player
+            else:
+                self.players.append(Player(self, name, score))
+        # delete players that left
+        for player in players.itervalues():
+            try:
+                self.players.remove(player)
+            except:
+                pass
+
+        # sort the player list and count them
         self.players.sort(key=lambda x: -x.score)
         self.player_count = len(self.players)
+
+    def __cmp__(self, other):
+        return unicodecmp(self.name, other.name)
 
 
 class Player(object):

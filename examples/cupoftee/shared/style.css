@@ -30,7 +30,7 @@ div.contents {
     margin: -8px auto 0 auto;
     text-align: left;
     padding: 15px;
-    width: 800px;
+    max-width: 1000px;
 }
 
 div.contents a {
@@ -38,7 +38,7 @@ div.contents a {
 }
 
 div.footer {
-    width: 814px;
+    max-width: 1014px;
     margin: 0 auto 0 auto;
     background: #1a6f96;
     padding: 8px;
@@ -100,6 +100,16 @@ table thead th {
 
 table thead th a {
     color: white;
+}
+
+table thead th a.up {
+    background: url(up.png) no-repeat right;
+    padding-right: 20px;
+}
+
+table thead th a.down {
+    background: url(down.png) no-repeat right;
+    padding-right: 20px;
 }
 
 div.players {

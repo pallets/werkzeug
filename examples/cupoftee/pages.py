@@ -12,24 +12,27 @@ import operator
 from werkzeug import redirect
 from werkzeug.exceptions import NotFound
 from cupoftee.application import Page
+from cupoftee.utils import unicodecmp
 
 
 class ServerList(Page):
     url_rule = '/'
 
     def order_link(self, name, title):
+        cls = ''
         link = '?order_by=' + name
         desc = False
         if name == self.order_by:
             desc = not self.order_desc
+            cls = ' class="%s"' % (desc and 'down' or 'up')
         if desc:
             link += '&amp;dir=desc'
-        return '<a href="%s">%s</a>' % (link, title)
+        return '<a href="%s"%s>%s</a>' % (link, cls, title)
 
     def process(self):
         self.order_by = self.request.args.get('order_by') or 'name'
         sort_func = {
-            'name':         lambda x: x.name.lower(),
+            'name':         lambda x: x,
             'map':          lambda x: x.map,
             'gametype':     lambda x: x.gametype,
             'players':      lambda x: x.player_count,
@@ -46,10 +49,8 @@ class ServerList(Page):
         else:
             self.order_desc = False
 
-        self.players = []
-        for server in self.servers:
-            self.players.extend(server.players)
-        self.players.sort(key=lambda x: x.name.lower())
+        self.players = reduce(lambda a, b: a + b.players, self.servers, [])
+        self.players.sort(lambda a, b: unicodecmp(a.name, b.name))
 
 
 class Server(Page):

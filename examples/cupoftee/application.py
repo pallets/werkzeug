@@ -11,6 +11,7 @@
 import time
 from os import path
 from threading import Thread
+from cupoftee.db import Database
 from cupoftee.network import ServerBrowser
 from werkzeug import Request, Response, Template, SharedDataMiddleware
 from werkzeug.exceptions import HTTPException, NotFound
@@ -22,8 +23,8 @@ pages = {}
 url_map = Map([Rule('/shared/<file>', endpoint='shared')])
 
 
-def make_app():
-    return SharedDataMiddleware(Cup(), {
+def make_app(database, interval=60):
+    return SharedDataMiddleware(Cup(database), {
         '/shared':  path.join(path.dirname(__file__), 'shared')
     })
 
@@ -71,20 +72,22 @@ class Page(object):
 
 class Cup(object):
 
-    def __init__(self):
-        self.master = ServerBrowser()
+    def __init__(self, database, interval=120):
+        self.interval = interval
+        self.db = Database(database)
+        self.master = ServerBrowser(self)
         self.updater = Thread(None, self.update_master)
         self.updater.setDaemon(True)
         self.updater.start()
 
     def update_master(self):
-        wait = 300
+        wait = self.interval
         while 1:
             time.sleep(wait)
             if self.master.sync():
-                wait = 300
+                wait = self.interval
             else:
-                wait = 60
+                wait = self.interval // 2
 
     def dispatch_request(self, request):
         url_adapter = url_map.bind_to_environ(request.environ)
