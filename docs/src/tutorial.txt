@@ -862,7 +862,7 @@ exception:
 
 .. sourcecode:: python
 
-    from werkzeug import NotFound
+    from werkzeug.exceptions import NotFound
 
 Finally we have to catch it and translate it into a response.  This except
 block goes right **before** the except block of the `HTTPException`:

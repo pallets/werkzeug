@@ -825,10 +825,7 @@ class AnyConverter(BaseConverter):
 
 class PathConverter(BaseConverter):
     """
-    Matches one of the items provided.  Items can either be python
-    identifiers or unicode strings::
-
-        Rule('/<any(about, help, imprint, u"class"):page_name>')
+    Like the default string converter, but it also matches slashes.
     """
     regex = '[^/].*?'
     is_greedy = True

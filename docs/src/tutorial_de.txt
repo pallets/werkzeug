@@ -901,7 +901,7 @@ importieren:
 
 .. sourcecode:: python
 
-    from werkzeug import NotFound
+    from werkzeug.exceptions import NotFound
 
 Schließlich müssen wir sie auffangen und in eine Response umwandeln.  Dieser
 except-Block kommt **vor** den except-Bock mit `HTTPException`:
