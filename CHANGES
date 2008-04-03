@@ -20,7 +20,8 @@ Version 0.3
 - added support for alternative encoding error handling and the new
   `HTTPUnicodeError` which (if not cought) behaves like a `BadRequest`.
 - adde `BadRequest.wrap`.
-- added ETag-support to the SharedDataMiddleware.
+- added ETag-support to the SharedDataMiddleware and added an option
+  to disable caching.
 
 
 Version 0.2

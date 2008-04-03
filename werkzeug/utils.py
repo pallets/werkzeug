@@ -764,9 +764,10 @@ class SharedDataMiddleware(object):
     python package.
     """
 
-    def __init__(self, app, exports, disallow=None):
+    def __init__(self, app, exports, disallow=None, cache=True):
         self.app = app
         self.exports = {}
+        self.cache = cache
         for key, value in exports.iteritems():
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
@@ -838,10 +839,11 @@ class SharedDataMiddleware(object):
             data = stream.read()
         finally:
             stream.close()
-        start_response('200 OK', [('Content-Type', mime_type),
-                                  ('Cache-Control', 'public'),
-                                  ('Expires', expiry),
-                                  ('ETag', generate_etag(data))])
+        headers = [('Content-Type', mime_type), ('Cache-Control', 'public')]
+        if self.cache:
+            headers += [('Expires', expiry), ('ETag', generate_etag(data))]
+
+        start_response('200 OK', headers)
         return [data]
 
 
