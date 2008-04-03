@@ -54,10 +54,9 @@ If you just want the latest features and use them
     
     sudo easy_install Werkzeug==dev
 
-This will install a Werkzeug egg containing the latest mercurial trunk code
-in your Python installation's `site-packages` directory. Every time the
-command is run, the sources are updated from mercurial the mercurial
-repository.
+This will install a Werkzeug egg containing the latest mercurial tip in
+your Python installation's `site-packages` directory. Every time the
+command is run, the sources are updated from the mercurial repository.
 
 
 Documentation
