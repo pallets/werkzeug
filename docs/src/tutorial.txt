@@ -135,7 +135,7 @@ written yet.  However we should cover some of the objects already.  The
 `session` object pulled from there is not a PHP-like session object but a
 SQLAlchemy database session object.  Basically a database session object keeps
 track of yet uncommited objects for the database.  Unlike Django, an
-instanciated SQLAlchemy model is already tracked by the session!  The metadata
+instantiated SQLAlchemy model is already tracked by the session!  The metadata
 object is also an SQLAlchemy thing which is used to keep track of tables.  We
 can use the metadata object to easily create all tables for the database and
 SQLAlchemy uses it to look up foreign keys and similar stuff.
@@ -192,7 +192,7 @@ use it for URL generation in the utils module.
 After that we have a `try`/`except` that catches HTTP exceptions that could
 occur while matching or in the view function.  When the adapter does not find
 a valid endpoint for our current request it will raise a `NotFound` exception
-which we can use like a response object.  And endpoint is basically the name
+which we can use like a response object.  An endpoint is basically the name
 of the function we want to handle our request with.  We just get the
 function with the name of the endpoint and pass it the request and the URL
 values.
@@ -667,8 +667,8 @@ have to explicitly tell the webserver or our development server that some
 path holds static files.
 
 Django even recommends a separate subdomain and standalone server for the
-static files which is a terrible good idea for heavy load environments but
-somewhat of an overkill for that simple application.
+static files which is a terribly good idea for heavily loaded environments but
+somewhat of an overkill for this simple application.
 
 So here is the deal: We let our application host the static files, but in
 production mode you should probably tell the apache to serve those files by
