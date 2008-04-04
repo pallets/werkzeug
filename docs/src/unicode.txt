@@ -42,7 +42,7 @@ Unicode in HTTP
 ===============
 
 The problem with unicode is that HTTP does not know what unicode is.  HTTP
-is limited to bytes but this is not a big problem as Werkzeug deocdes and
+is limited to bytes but this is not a big problem as Werkzeug decodes and
 encodes for us automatically all incoming and outgoing data.  Basically what
 this means is that data sent from the browser to the web application is per
 default decoded from an utf-8 bytestring into a `unicode` string.  Data sent
@@ -60,6 +60,9 @@ a text file from the file system looks like this::
         text = f.decode('utf-8')    # assuming the file is utf-8 encoded
     finally:
         f.close()
+
+There is also the codecs module which provides an open function that decodes
+automatically from the given encoding.
 
 Error Handling
 ==============
@@ -88,11 +91,11 @@ argument that behaves like the `errors` parameter of the builtin string method
 Unlike the regular python decoding Werkzeug does not raise an
 `UnicodeDecodeError` if the decoding failed but an `HTTPUnicodeError` which
 is a direct subclass of `UnicodeError` and the `BadRequest` HTTP exception. 
-The reason is that if this exception is not cought by the application but
+The reason is that if this exception is not caught by the application but
 a catch-all for HTTP exceptions exists a default `400 BAD REQUEST` error
 page is displayed.
 
-There is an additional error handling available which is a Werkzeug extension
+There is additional error handling available which is a Werkzeug extension
 to the regular codec error handling which is called `fallback`.  Often you
 want to use utf-8 but support latin1 as legacy encoding too if decoding
 failed.  For this case you can use the `fallback` error handling.  For
