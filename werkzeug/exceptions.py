@@ -219,10 +219,8 @@ class MethodNotAllowed(HTTPException):
     code = 405
 
     def __init__(self, valid_methods=None, description=None):
-        """
-        takes an optional list of valid http methods
-        starting with werkzeug 0.3 the list will be mandatory
-        """
+        """Takes an optional list of valid http methods
+        starting with werkzeug 0.3 the list will be mandatory."""
         HTTPException.__init__(self, description)
         self.valid_methods = valid_methods
 

@@ -56,9 +56,8 @@ class Accept(list):
             list.__init__(self, [(a, b) for b, a in values])
 
     def __getitem__(self, key):
-        """
-        Beside index lookup (getting item n) you can also pass it a string to
-        get the quality for the item.  If the item is not in the list, the
+        """Beside index lookup (getting item n) you can also pass it a string
+        to get the quality for the item.  If the item is not in the list, the
         returned quality is ``0``.
         """
         if isinstance(key, basestring):
@@ -132,10 +131,8 @@ class HeaderSet(object):
         self.update((header,))
 
     def remove(self, header):
-        """
-        Remove a layer from the set.  This raises an `IndexError` if the
-        header is not in the set.
-        """
+        """Remove a layer from the set.  This raises an `IndexError` if the
+        header is not in the set."""
         key = header.lower()
         if key not in self._set:
             raise IndexError(header)
@@ -189,9 +186,8 @@ class HeaderSet(object):
             self.on_update(self)
 
     def as_set(self, preserve_casing=False):
-        """
-        Return the set as real python set structure.  When calling this all
-        the items are converted to lowercase and the ordering is lost.
+        """Return the set as real python set structure.  When calling this
+        all the items are converted to lowercase and the ordering is lost.
 
         If `preserve_casing` is `True` the items in the set returned will
         have the original case like in the `HeaderSet`, otherwise they will
@@ -245,10 +241,9 @@ class HeaderSet(object):
 
 
 class CacheControl(_UpdateDict):
-    """
-    Subclass of a dict that stores values for a Cache-Control header.  It has
-    accesors for all the cache-control directives specified in RFC 2616.  The
-    class does not differentiate between request and response directives.
+    """Subclass of a dict that stores values for a Cache-Control header.  It
+    has accesors for all the cache-control directives specified in RFC 2616.
+    The class does not differentiate between request and response directives.
 
     Because the cache-control directives in the HTTP header use dashes the
     python descriptors use underscores for that.
@@ -262,14 +257,11 @@ class CacheControl(_UpdateDict):
 
     `no_cache`, `no_store`, `max_age`, `max_stale`, `min_fresh`,
     `no_transform`, `only_if_cached`, `public`, `private`, `must_revalidate`,
-    `proxy_revalidate`, and `s_maxage`
-    """
+    `proxy_revalidate`, and `s_maxage`"""
 
     def cache_property(key, default, type):
-        """
-        Return a new property object for a cache header.  Useful if you
-        want to add support for a cache extension in a subclass.
-        """
+        """Return a new property object for a cache header.  Useful if you
+        want to add support for a cache extension in a subclass."""
         return property(lambda x: x._get_cache_value(key, default, type),
                         lambda x, v: x._set_cache_value(key, v, type),
                         'accessor for %r' % key)
@@ -349,10 +341,8 @@ class ETags(object):
         self.star_tag = star_tag
 
     def as_set(self, include_weak=False):
-        """
-        Convert the `ETags` object into a python set.  Per default all the
-        weak etags are not part of this set.
-        """
+        """Convert the `ETags` object into a python set.  Per default all the
+        weak etags are not part of this set."""
         rv = set(self._strong)
         if include_weak:
             rv.update(self._weak)
@@ -373,11 +363,9 @@ class ETags(object):
         return etag in self._strong
 
     def contains_raw(self, etag):
-        """
-        When passed a quoted tag it will check if this tag is part of the set.
-        If the tag is weak it is checked against weak and strong tags, otherwise
-        weak only.
-        """
+        """When passed a quoted tag it will check if this tag is part of the
+        set.  If the tag is weak it is checked against weak and strong tags,
+        otherwise weak only."""
         etag, weak = unquote_etag(etag)
         if weak:
             return self.contains_weak(etag)
@@ -463,10 +451,8 @@ class Authorization(dict):
         Digest auth only.''')
 
     def qop(self):
-        """
-        Indicates what "quality of protection" the client has applied to
-        the message for HTTP digest auth.
-        """
+        """Indicates what "quality of protection" the client has applied to
+        the message for HTTP digest auth."""
         def on_update(header_set):
             if not header_set and name in self:
                 del self['qop']
@@ -596,9 +582,7 @@ class WWWAuthenticate(_UpdateDict):
 
 
 def quote_header_value(value, extra_chars=''):
-    """
-    Quote a header value if necessary.
-    """
+    """Quote a header value if necessary."""
     token_chars = _token_chars | set(extra_chars)
     value = str(value)
     if not set(value).issubset(token_chars):
@@ -607,11 +591,10 @@ def quote_header_value(value, extra_chars=''):
 
 
 def dump_header(iterable):
-    """
-    Dump an HTTP header again.  This is the reversal of `parse_list_header`,
-    `parse_set_header` and `parse_dict_header`.  This also quotes strings
-    that include an equals sign unless you pass it as dict of key, value
-    pairs.
+    """Dump an HTTP header again.  This is the reversal of
+    `parse_list_header`, `parse_set_header` and `parse_dict_header`.  This
+    also quotes strings that include an equals sign unless you pass it as dict
+    of key, value pairs.
     """
     if isinstance(iterable, dict):
         items = []
@@ -626,8 +609,7 @@ def dump_header(iterable):
 
 
 def parse_list_header(value):
-    """
-    Parse lists as described by RFC 2068 Section 2.
+    """Parse lists as described by RFC 2068 Section 2.
 
     In particular, parse comma-separated lists where the elements of
     the list may include quoted-strings.  A quoted-string could
@@ -643,8 +625,7 @@ def parse_list_header(value):
 
 
 def parse_dict_header(value):
-    """
-    Parse lists of key, value paits as described by RFC 2068 Section 2 and
+    """Parse lists of key, value paits as described by RFC 2068 Section 2 and
     convert them into a python dict.  If there is no value for a key it will
     be `None`.
     """
@@ -661,12 +642,12 @@ def parse_dict_header(value):
 
 
 def parse_accept_header(value):
-    """
-    Parses an HTTP Accept-* header.  This does not implement a complete valid
-    algorithm but one that supports at least value and quality extraction.
+    """Parses an HTTP Accept-* header.  This does not implement a complete
+    valid algorithm but one that supports at least value and quality
+    extraction.
 
     Returns a new `Accept` object (basicly a list of ``(value, quality)``
-    tuples sorted by the quality with some additional accessor methods)
+    tuples sorted by the quality with some additional accessor methods).
     """
     if not value:
         return Accept(None)
@@ -682,8 +663,7 @@ def parse_accept_header(value):
 
 
 def parse_cache_control_header(value, on_update=None):
-    """
-    Parse a cache control header.  The RFC differs between response and
+    """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
     """
@@ -693,8 +673,7 @@ def parse_cache_control_header(value, on_update=None):
 
 
 def parse_set_header(value, on_update=None):
-    """
-    Parse a set like header and return a `HeaderSet` object.  The return
+    """Parse a set like header and return a `HeaderSet` object.  The return
     value is an object that treats the items case insensitive and keeps the
     order of the items.
     """
@@ -704,8 +683,7 @@ def parse_set_header(value, on_update=None):
 
 
 def parse_authorization_header(value):
-    """
-    Parse an HTTP basic/digest authorization header transmitted by the web
+    """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
     not given, otherwise an `Authorization` object.
     """
@@ -733,9 +711,8 @@ def parse_authorization_header(value):
 
 
 def parse_www_authenticate_header(value, on_update=None):
-    """
-    Parse an HTTP WWW-Authenticate header into a `WWWAuthenticate` object.
-    """
+    """Parse an HTTP WWW-Authenticate header into a `WWWAuthenticate`
+    object."""
     if not value:
         return WWWAuthenticate(on_update=on_update)
     try:
@@ -802,8 +779,7 @@ def generate_etag(data):
 
 
 def parse_date(value):
-    """
-    Parse one of the following date formats into a datetime object:
+    """Parse one of the following date formats into a datetime object:
 
     .. sourcecode:: text
 

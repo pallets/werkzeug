@@ -75,10 +75,9 @@ class MultiDict(dict):
     KeyError = None
 
     def __init__(self, mapping=()):
-        """
-        A `MultiDict` can be constructed from an iterable of ``(key, value)``
-        tuples, a dict, a `MultiDict` or with Werkzeug 0.2 onwards some
-        keyword parameters.
+        """A `MultiDict` can be constructed from an iterable of
+        ``(key, value)`` tuples, a dict, a `MultiDict` or with Werkzeug 0.2
+        onwards some keyword parameters.
         """
         if isinstance(mapping, MultiDict):
             dict.__init__(self, [(k, v[:]) for k, v in mapping.lists()])
@@ -98,8 +97,7 @@ class MultiDict(dict):
             dict.__init__(self, tmp)
 
     def __getitem__(self, key):
-        """
-        Return the first data value for this key;
+        """Return the first data value for this key;
         raises KeyError if not found.
 
         :raise KeyError: if the key does not exist
@@ -113,8 +111,7 @@ class MultiDict(dict):
         dict.__setitem__(self, key, [value])
 
     def get(self, key, default=None, type=None):
-        """
-        Return the default value if the requested data doesn't exist.
+        """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
         return it or raise a `ValueError` if that is not possible.  In this
         case the function will return the default as if the value was not
@@ -137,8 +134,7 @@ class MultiDict(dict):
         return rv
 
     def getlist(self, key, type=None):
-        """
-        Return the list of items for a given key. If that key is not in the
+        """Return the list of items for a given key. If that key is not in the
         `MultiDict`, the return value will be an empty list.  Just as `get`
         `getlist` accepts a `type` parameter.  All items will be converted
         with the callable defined there.
@@ -160,8 +156,7 @@ class MultiDict(dict):
         return result
 
     def setlist(self, key, new_list):
-        """
-        Remove the old values for a key and add new ones.  Note that the list
+        """Remove the old values for a key and add new ones.  Note that the list
         you pass the values in will be shallow-copied before it is inserted in
         the dictionary.
 
@@ -190,9 +185,8 @@ class MultiDict(dict):
         return default_list
 
     def items(self):
-        """
-        Return a list of (key, value) pairs, where value is the last item in
-        the list associated with the key.
+        """Return a list of (key, value) pairs, where value is the last item
+        in the list associated with the key.
         """
         return [(key, self[key]) for key in self.iterkeys()]
 
@@ -221,10 +215,9 @@ class MultiDict(dict):
         return self.__class__(self)
 
     def to_dict(self, flat=True):
-        """
-        Return the contents as regular dict.  If `flat` is `True` the returned
-        dict will only have the first item present, if `flat` is `False` all
-        values will be returned as lists.
+        """Return the contents as regular dict.  If `flat` is `True` the
+        returned dict will only have the first item present, if `flat` is
+        `False` all values will be returned as lists.
 
         :return: dict
         """
@@ -370,8 +363,7 @@ class CombinedMultiDict(MultiDict):
         return self.__class__(self.dicts[:])
 
     def to_dict(self, flat=True):
-        """
-        Returns the contents as simple dict.  If `flat` is `True` the
+        """Returns the contents as simple dict.  If `flat` is `True` the
         resulting dict will only have the first item present, if `flat`
         is `False` all values will be lists.
         """
@@ -414,9 +406,7 @@ class FileStorage(object):
 
     def __init__(self, stream=None, filename=None, name=None,
                  content_type='application/octet-stream', content_length=-1):
-        """
-        Creates a new `FileStorage` object.  The constructor looked different
-        for Werkzeug 0.1 but there the object was only used internally.
+        """Creates a new `FileStorage` object.
 
         :param stream: the input stream for uploaded file.  Usually this
                        points to a temporary file.
@@ -432,8 +422,7 @@ class FileStorage(object):
         self.content_length = content_length
 
     def save(self, dst, buffer_size=16384):
-        """
-        Save the file to a destination path or file object.  If the
+        """Save the file to a destination path or file object.  If the
         destination is a file object you have to close it yourself after the
         call.  The buffer size is the number of bytes held in the memory
         during the copy process.  It defaults to 16KB.
@@ -488,12 +477,11 @@ class Headers(object):
     KeyError = None
 
     def __init__(self, defaults=None, _list=None):
-        """
-        Create a new `Headers` object based on a list or dict of headers which
-        are used as default values.  This does not reuse the list passed to
-        the constructor for internal usage.  To create a `Headers` object that
-        uses as internal storage the list or list-like object provided it's
-        possible to use the `linked` classmethod.
+        """Create a new `Headers` object based on a list or dict of headers
+        which are used as default values.  This does not reuse the list passed
+        to the constructor for internal usage.  To create a `Headers` object
+        that uses as internal storage the list or list-like object provided
+        it's possible to use the `linked` classmethod.
         """
         if _list is None:
             _list = []
@@ -509,9 +497,8 @@ class Headers(object):
             self._list[:] = defaults
 
     def linked(cls, headerlist):
-        """
-        Create a new `Headers` object that uses the list of headers passed as
-        internal storage:
+        """Create a new `Headers` object that uses the list of headers passed
+        as internal storage:
 
         >>> headerlist = [('Content-Length', '40')]
         >>> headers = Headers.linked(headerlist)
@@ -539,8 +526,7 @@ class Headers(object):
         return not self.__eq__(other)
 
     def get(self, key, default=None, type=None):
-        """
-        Return the default value if the requested data doesn't exist.
+        """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
         return it or raise a `ValueError` if that is not possible.  In this
         case the function will return the default as if the value was not
@@ -567,8 +553,7 @@ class Headers(object):
             return default
 
     def getlist(self, key, type=None):
-        """
-        Return the list of items for a given key. If that key is not in the
+        """Return the list of items for a given key. If that key is not in the
         `MultiDict`, the return value will be an empty list.  Just as `get`
         `getlist` accepts a `type` parameter.  All items will be converted
         with the callable defined there.
@@ -611,8 +596,7 @@ class Headers(object):
         return list(self.iteritems(lower))
 
     def extend(self, iterable):
-        """
-        Extend the headers with a dict or an iterable yielding keys and
+        """Extend the headers with a dict or an iterable yielding keys and
         values.
         """
         if isinstance(iterable, dict):
@@ -666,9 +650,8 @@ class Headers(object):
     __setitem__ = set
 
     def to_list(self, charset='utf-8'):
-        """
-        Convert the headers into a list and converts the unicode header items
-        to the specified charset.
+        """Convert the headers into a list and converts the unicode header
+        items to the specified charset.
 
         :return: list
         """
@@ -1149,8 +1132,7 @@ xhtml = HTMLBuilder('xhtml')
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
                     errors='ignore'):
-    """
-    Parse the form data in the environ and return it as tuple in the form
+    """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
     transport method is `POST` or `PUT`.
 
@@ -1185,8 +1167,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
 
 
 def get_content_type(mimetype, charset):
-    """
-    Return the full content type string with charset for a mimetype.
+    """Return the full content type string with charset for a mimetype.
 
     If the mimetype represents text the charset will be appended as charset
     parameter, otherwise the mimetype is returned unchanged.
@@ -1200,8 +1181,7 @@ def get_content_type(mimetype, charset):
 
 
 def format_string(string, context):
-    """
-    String-template format a string::
+    """String-template format a string::
 
         >>> format_string('$foo and ${foo}s', dict(foo=42))
         '42 and 42s'
@@ -1219,10 +1199,9 @@ def format_string(string, context):
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
                errors='ignore'):
-    """
-    Parse a querystring and return it as `MultiDict`.  Per default only values
-    are decoded into unicode strings.  If `decode_keys` is set to ``True`` the
-    same will happen for keys.
+    """Parse a querystring and return it as `MultiDict`.  Per default only
+    values are decoded into unicode strings.  If `decode_keys` is set to
+    ``True`` the same will happen for keys.
 
     Per default a missing value for a key will default to an empty key.  If
     you don't want that behavior you can set `include_empty` to `False`.
@@ -1241,9 +1220,8 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
 
 
 def url_encode(obj, charset='utf-8', encode_keys=False):
-    """
-    URL encode a dict/`MultiDict`.  If a value is `None` it will not appear in
-    the result string.  Per default only values are encoded into the target
+    """URL encode a dict/`MultiDict`.  If a value is `None` it will not appear
+    in the result string.  Per default only values are encoded into the target
     charset strings.  If `encode_keys` is set to ``True`` unicode keys are
     supported too.
     """
@@ -1272,9 +1250,7 @@ def url_encode(obj, charset='utf-8', encode_keys=False):
 
 
 def url_quote(s, charset='utf-8', safe='/:'):
-    """
-    URL encode a single string with a given encoding.
-    """
+    """URL encode a single string with a given encoding."""
     if isinstance(s, unicode):
         s = s.encode(charset)
     elif not isinstance(s, str):
@@ -1283,8 +1259,7 @@ def url_quote(s, charset='utf-8', safe='/:'):
 
 
 def url_quote_plus(s, charset='utf-8', safe=''):
-    """
-    URL encode a single string with the given encoding and convert
+    """URL encode a single string with the given encoding and convert
     whitespace to "+".
     """
     if isinstance(s, unicode):
@@ -1295,8 +1270,7 @@ def url_quote_plus(s, charset='utf-8', safe=''):
 
 
 def url_unquote(s, charset='utf-8', errors='ignore'):
-    """
-    URL decode a single string with a given decoding.
+    """URL decode a single string with a given decoding.
 
     Per default encoding errors are ignore.  If you want a different behavior
     you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
@@ -1306,8 +1280,7 @@ def url_unquote(s, charset='utf-8', errors='ignore'):
 
 
 def url_unquote_plus(s, charset='utf-8', errors='ignore'):
-    """
-    URL decode a single string with the given decoding and decode
+    """URL decode a single string with the given decoding and decode
     a "+" to whitespace.
 
     Per default encoding errors are ignore.  If you want a different behavior
@@ -1318,8 +1291,7 @@ def url_unquote_plus(s, charset='utf-8', errors='ignore'):
 
 
 def url_fix(s, charset='utf-8'):
-    """
-    Sometimes you get an URL by a user that just isn't a real URL because
+    """Sometimes you get an URL by a user that just isn't a real URL because
     it contains unsafe characters like ' ' and so on.  This function can fix
     some of the problems in a similar way browsers handle data entered by the
     user:
@@ -1339,10 +1311,9 @@ def url_fix(s, charset='utf-8'):
 
 
 def escape(s, quote=None):
-    """
-    Replace special characters "&", "<" and ">" to HTML-safe sequences.  If the
-    optional flag `quote` is `True`, the quotation mark character (") is also
-    translated.
+    """Replace special characters "&", "<" and ">" to HTML-safe sequences.  If
+    the optional flag `quote` is `True`, the quotation mark character (") is
+    also translated.
 
     There is a special handling for `None` which escapes to an empty string.
     """
@@ -1357,9 +1328,8 @@ def escape(s, quote=None):
 
 
 def unescape(s):
-    """
-    The reverse function of `escape`.  This unescapes all the HTML entities,
-    not only the XML entities inserted by `escape`.
+    """The reverse function of `escape`.  This unescapes all the HTML
+    entities, not only the XML entities inserted by `escape`.
     """
     def handle_match(m):
         name = m.group(1)
@@ -1377,8 +1347,7 @@ def unescape(s):
 
 
 def get_host(environ):
-    """
-    Return the real host for the given WSGI enviornment.  This takes care
+    """Return the real host for the given WSGI enviornment.  This takes care
     of the `X-Forwarded-Host` header.
     """
     if 'HTTP_X_FORWARDED_HOST' in environ:
@@ -1394,8 +1363,7 @@ def get_host(environ):
 
 def get_current_url(environ, root_only=False, strip_querystring=False,
                     host_only=False):
-    """
-    A handy helper function that recreates the full URL for the current
+    """A handy helper function that recreates the full URL for the current
     request or parts of it.  Here an example:
 
     >>> env = create_environ("/?param=foo", "http://localhost/script")
@@ -1425,8 +1393,8 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
 
 
 def cookie_date(expires=None):
-    """
-    Formats the time to ensure compatibility with Netscape's cookie standard.
+    """Formats the time to ensure compatibility with Netscape's cookie
+    standard.
 
     Accepts a floating point number expressed in seconds since the epoc in, a
     datetime object or a timetuple.  All times in UTC.  The `parse_date`
@@ -1438,8 +1406,7 @@ def cookie_date(expires=None):
 
 
 def parse_cookie(header, charset='utf-8', errors='ignore'):
-    """
-    Parse a cookie.  Either from a string or WSGI environ.
+    """Parse a cookie.  Either from a string or WSGI environ.
 
     Per default encoding errors are ignore.  If you want a different behavior
     you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
@@ -1464,8 +1431,7 @@ def parse_cookie(header, charset='utf-8', errors='ignore'):
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=None, httponly=False, charset='utf-8',
                 sync_expires=True):
-    """
-    Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
+    """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data too.
 
@@ -1512,8 +1478,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
 
 
 def http_date(timestamp=None):
-    """
-    Formats the time to match the RFC1123 date format.
+    """Formats the time to match the RFC1123 date format.
 
     Accepts a floating point number expressed in seconds since the epoc in, a
     datetime object or a timetuple.  All times in UTC.  The `parse_date`
@@ -1525,12 +1490,11 @@ def http_date(timestamp=None):
 
 
 def redirect(location, code=302):
-    """
-    Return a response object (a WSGI application) that, if called, redirects
-    the client to the target location.  Supported codes are 301, 302, 303,
-    305, and 307.  300 is not supported because it's not a real redirect and
-    304 because it's the answer for a request with a request with defined
-    If-Modified-Since headers.
+    """Return a response object (a WSGI application) that, if called,
+    redirects the client to the target location.  Supported codes are 301,
+    302, 303, 305, and 307.  300 is not supported because it's not a real
+    redirect and 304 because it's the answer for a request with a request
+    with defined If-Modified-Since headers.
     """
     assert code in (301, 302, 303, 305, 307)
     from werkzeug.wrappers import BaseResponse
@@ -1546,8 +1510,7 @@ def redirect(location, code=302):
 
 
 def append_slash_redirect(environ, code=301):
-    """
-    Redirect to the same URL but with a slash appended.  The behavior
+    """Redirect to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
     """
     new_path = environ['PATH_INFO'].strip('/') + '/'
@@ -1560,8 +1523,7 @@ def append_slash_redirect(environ, code=301):
 
 
 def responder(f):
-    """
-    Marks a function as responder.  Decorate a function with it and it
+    """Marks a function as responder.  Decorate a function with it and it
     will automatically call the return value as WSGI application.
 
     Example::
@@ -1574,9 +1536,8 @@ def responder(f):
 
 
 def import_string(import_name, silent=False):
-    """
-    Imports an object based on a string.  This use useful if you want to use
-    import paths as endpoints or something similar.  An import path can
+    """Imports an object based on a string.  This use useful if you want to
+    use import paths as endpoints or something similar.  An import path can
     be specified either in dotted notation (``xml.sax.saxutils.escape``)
     or with a colon as object delimiter (``xml.sax.saxutils:escape``).
 
@@ -1601,10 +1562,10 @@ def import_string(import_name, silent=False):
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
-    """
-    Find all the modules below a package.  This can be useful to automatically
-    import all views / controllers so that their metaclasses / function
-    decorators have a chance to register themselves on the application.
+    """Find all the modules below a package.  This can be useful to
+    automatically import all views / controllers so that their metaclasses /
+    function decorators have a chance to register themselves on the
+    application.
 
     Packages are not returned unless `include_packages` is `True`.  This can
     also recursively list modules but in that case it will import all the
@@ -1633,12 +1594,11 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
                    input_stream=None, content_type=None, content_length=0,
                    errors_stream=None, multithread=False,
                    multiprocess=False, run_once=False):
-    """
-    Create a new WSGI environ dict based on the values passed.  The first
-    parameter should be the path of the request which defaults to '/'.
-    The second one can either be a absolute path (in that case the URL
-    host is localhost:80) or a full path to the request with scheme,
-    netloc port and the path to the script.
+    """Create a new WSGI environ dict based on the values passed.  The first
+    parameter should be the path of the request which defaults to '/'.  The
+    second one can either be a absolute path (in that case the host is
+    localhost:80) or a full path to the request with scheme, netloc port and
+    the path to the script.
 
     If the `path` contains a query string it will be used, even if the
     `query_string` parameter was given.  If it does not contain one
@@ -1719,10 +1679,9 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
 
 
 def run_wsgi_app(app, environ, buffered=False):
-    """
-    Return a tuple in the form (app_iter, status, headers) of the application
-    output.  This works best if you pass it an application that returns a
-    iterator all the time.
+    """Return a tuple in the form (app_iter, status, headers) of the
+    application output.  This works best if you pass it an application that
+    returns a iterator all the time.
 
     Sometimes applications may use the `write()` callable returned
     by the `start_response` function.  This tries to resolve such edge

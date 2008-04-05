@@ -91,13 +91,11 @@ converters = {
 
 
 def run(namespace=None, action_prefix='action_', args=None):
-    """
-    Run the script.  Participating actions are looked up in the callers
+    """Run the script.  Participating actions are looked up in the callers
     namespace if no namespace is given, otherwise in the dict provided.
     Only items that start with action_prefix are processed as actions.  If
     you want to use all items in the namespace provided as actions set
-    action_prefix to an empty string.
-    """
+    action_prefix to an empty string."""
     if namespace is None:
         namespace = sys._getframe(1).f_locals
     actions = find_actions(namespace, action_prefix)
@@ -235,10 +233,8 @@ def analyse_action(func):
 
 
 def make_shell(init_func=lambda: {}, banner=None, use_ipython=True):
-    """
-    Returns an action callback that spawns a new interactive
-    python shell.
-    """
+    """Returns an action callback that spawns a new interactive
+    python shell."""
     if banner is None:
         banner = 'Interactive Werkzeug Shell'
     def action(ipython=use_ipython):
@@ -261,9 +257,7 @@ def make_shell(init_func=lambda: {}, banner=None, use_ipython=True):
 def make_runserver(app_factory, hostname='localhost', port=5000,
                    use_reloader=False, use_debugger=False, use_evalex=True,
                    threaded=False, processes=1):
-    """
-    Returns an action callback that spawns a new wsgiref server.
-    """
+    """Returns an action callback that spawns a new wsgiref server."""
     def action(hostname=('h', hostname), port=('p', port),
                reloader=use_reloader, debugger=use_debugger,
                evalex=use_evalex, threaded=threaded, processes=processes):

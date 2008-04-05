@@ -74,11 +74,7 @@ HTTP_STATUS_CODES = {
 
 
 def _log(type, message, *args, **kwargs):
-    """
-    Log into the internal werkzeug logger.
-
-    :internal:
-    """
+    """Log into the internal werkzeug logger."""
     global _logger
     if _logger is None:
         import logging
@@ -90,10 +86,8 @@ def _log(type, message, *args, **kwargs):
 
 
 def _patch_wrapper(old, new):
-    """
-    Helper function that forwards all the function details to the
-    decorated function.
-    """
+    """Helper function that forwards all the function details to the
+    decorated function."""
     try:
         new.__name__ = old.__name__
         new.__module__ = old.__module__
@@ -105,10 +99,8 @@ def _patch_wrapper(old, new):
 
 
 def _decode_unicode(value, charset, errors):
-    """
-    Like the regular decode function but this one raises an
-    `HTTPUnicodeError` if errors is `strict`.
-    """
+    """Like the regular decode function but this one raises an
+    `HTTPUnicodeError` if errors is `strict`."""
     fallback = None
     if errors.startswith('fallback:'):
         fallback = errors[9:]
@@ -123,6 +115,7 @@ def _decode_unicode(value, charset, errors):
 
 
 def _iter_modules(path):
+    """Iterate over all modules in a package."""
     import pkgutil
     if hasattr(pkgutil, 'iter_modules'):
         for importer, modname, ispkg in pkgutil.iter_modules(path):
@@ -142,6 +135,7 @@ def _iter_modules(path):
 
 
 def _dump_date(d, delim):
+    """Used for `http_date` and `cookie_date`."""
     if d is None:
         d = gmtime()
     elif isinstance(d, datetime):

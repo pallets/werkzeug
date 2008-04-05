@@ -103,8 +103,7 @@ if have_wsgiref:
 
 def make_server(host, port, app=None, threaded=False, processes=1,
                 request_handler=None):
-    """
-    Create a new wsgiref server that is either threaded, or forks
+    """Create a new wsgiref server that is either threaded, or forks
     or just processes one request after another.
     """
     if not have_wsgiref:
@@ -173,8 +172,7 @@ def reloader_loop(extra_files=None, interval=1):
 
 
 def restart_with_reloader():
-    """
-    Spawn a new Python interpreter with the same arguments as this one,
+    """Spawn a new Python interpreter with the same arguments as this one,
     but running the reloader thread.
     """
     while 1:
@@ -190,9 +188,7 @@ def restart_with_reloader():
 
 
 def run_with_reloader(main_func, extra_files=None, interval=1):
-    """
-    Run the given function in an independent python interpreter.
-    """
+    """Run the given function in an independent python interpreter."""
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         thread.start_new_thread(main_func, ())
         try:
@@ -208,8 +204,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
 def run_simple(hostname, port, application, use_reloader=False,
                extra_files=None, reloader_interval=1, threaded=False,
                processes=1, request_handler=None):
-    """
-    Start an application using wsgiref and with an optional reloader.  This
+    """Start an application using wsgiref and with an optional reloader.  This
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
 

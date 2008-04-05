@@ -468,8 +468,7 @@ class Template(object):
     from_file = classmethod(from_file)
 
     def render(self, *args, **kwargs):
-        """
-        This function accepts either a dict or some keyword arguments which
+        """This function accepts either a dict or some keyword arguments which
         will then be the context the template is evaluated in.  The return
         value will be the rendered template.
         """
