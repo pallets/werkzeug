@@ -171,7 +171,8 @@ class Frame(object):
         fn = inspect.getsourcefile(tb) or inspect.getfile(tb)
         if fn[-4:] in ('.pyo', '.pyc'):
             fn = fn[:-1]
-        if fn != '<debugger>':
+        # if it's a file on the file system resolve the real filename.
+        if os.path.isfile(fn):
             fn = os.path.realpath(fn)
         self.filename = fn
         self.module = self.globals.get('__name__')
