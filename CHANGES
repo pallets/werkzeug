@@ -25,6 +25,7 @@ Version 0.3
   to disable caching.
 - fixed `is_xhr` on the request objects.
 - fixed error handling of the url adapter's `dispatch` method. (#318)
+- fixed bug with `SharedDataMiddleware`.
 
 
 Version 0.2
