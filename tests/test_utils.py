@@ -436,3 +436,8 @@ def test_html_builder():
         )
     ) == '<html><head><title>foo</title><script type="text/javascript">' \
          '</script></head></html>'
+
+
+def test_shareddatamiddleware_get_file_loader():
+    app = SharedDataMiddleware(None, {})
+    assert callable(app.get_file_loader('foo'))

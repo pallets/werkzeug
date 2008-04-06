@@ -764,8 +764,8 @@ class SharedDataMiddleware(object):
         return True
 
     def get_file_loader(self, filename):
-        return lambda x: os.path.basename(filename), \
-                         lambda: open(filename, 'rb')
+        return lambda x: (os.path.basename(filename), \
+                          lambda: open(filename, 'rb'))
 
     def get_package_loader(self, package, package_path):
         from pkg_resources import resource_exists, resource_stream
