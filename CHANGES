@@ -26,6 +26,7 @@ Version 0.3
 - fixed `is_xhr` on the request objects.
 - fixed error handling of the url adapter's `dispatch` method. (#318)
 - fixed bug with `SharedDataMiddleware`.
+- fixed `Accept.values`.
 
 
 Version 0.2
