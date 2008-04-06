@@ -34,14 +34,11 @@ def format_iso8601(obj):
 
 
 class AtomFeed(object):
-    """
-    A helper class that creates ATOM feeds.
-    """
+    """A helper class that creates Atom feeds."""
     default_generator = ('Werkzeug', None, None)
 
     def __init__(self, title=None, entries=None, **kwargs):
-        """
-        Create an atom feed.
+        """Create an Atom feed.
 
         :Parameters:
           title
@@ -219,13 +216,10 @@ class AtomFeed(object):
 
 
 class FeedEntry(object):
-    """
-    Represents a single entry in a feed.
-    """
+    """Represents a single entry in a feed."""
 
     def __init__(self, title=None, content=None, **kwargs):
-        """
-        Holds an atom feed entry.
+        """Holds an Atom feed entry.
 
         :Parameters:
           title

@@ -18,8 +18,7 @@ from werkzeug.debug.utils import render_template
 
 
 class _ConsoleFrame(object):
-    """
-    Helper class so that we can reuse the frame console code for the
+    """Helper class so that we can reuse the frame console code for the
     standalone console.
     """
 
@@ -29,8 +28,7 @@ class _ConsoleFrame(object):
 
 
 class DebuggedApplication(object):
-    """
-    Enables debugging support for a given application::
+    """Enables debugging support for a given application::
 
         from werkzeug.debug import DebuggedApplication
         from myapp import app

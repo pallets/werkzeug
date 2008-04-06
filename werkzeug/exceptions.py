@@ -76,6 +76,20 @@ class HTTPException(Exception):
         if description is not None:
             self.description = description
 
+    def wrap(cls, exception, name=None):
+        """
+        This method returns a new subclass of the exception provided that
+        also is a subclass of `BadRequest`.
+        """
+        class newcls(cls, exception):
+            def __init__(self, arg=None, description=None):
+                cls.__init__(self, description)
+                exception.__init__(self, arg)
+        newcls.__module__ = sys._getframe(1).f_globals.get('__name__')
+        newcls.__name__ = name or cls.__name__ + exception.__name__
+        return newcls
+    wrap = classmethod(wrap)
+
     def name(self):
         """The status name."""
         return HTTP_STATUS_CODES[self.code]
@@ -143,20 +157,6 @@ class BadRequest(HTTPException):
         '<p>The browser (or proxy) sent a request that this server could '
         'not understand.</p>'
     )
-
-    def wrap(cls, exception, name=None):
-        """
-        This method returns a new subclass of the exception provided that
-        also is a subclass of `BadRequest`.
-        """
-        class newcls(cls, exception):
-            def __init__(self, arg=None, description=None):
-                cls.__init__(self, description)
-                exception.__init__(self, arg)
-        newcls.__module__ = sys._getframe(1).f_globals.get('__name__')
-        newcls.__name__ = name or cls.__name__ + exception.__name__
-        return newcls
-    wrap = classmethod(wrap)
 
 
 class Unauthorized(HTTPException):

@@ -40,8 +40,7 @@ def debug_repr(obj):
 
 
 def dump(obj=missing):
-    """
-    Print the object details to stdout._write (for the interactive
+    """Print the object details to stdout._write (for the interactive
     console of the web debugger.
     """
     gen = DebugReprGenerator()
@@ -53,9 +52,8 @@ def dump(obj=missing):
 
 
 class _Helper(object):
-    """
-    Displays an HTML version of the normal help, for the interactive debugger
-    only because it requirse a patched sys.stdout.
+    """Displays an HTML version of the normal help, for the interactive
+    debugger only because it requirse a patched sys.stdout.
     """
 
     def __call__(self, topic=None):

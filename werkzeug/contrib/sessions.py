@@ -149,8 +149,7 @@ class Session(ModificationTrackingDict):
 
 
 class SessionStore(object):
-    """
-    Baseclass for all session stores.  The Werkzeug contrib module does not
+    """Baseclass for all session stores.  The Werkzeug contrib module does not
     implement any useful stores beside the filesystem store, application
     developers are encouraged to create their own stores.
     """
@@ -184,17 +183,15 @@ class SessionStore(object):
         """Delete a session."""
 
     def get(self, sid):
-        """
-        Get a session for this sid or a new session object.  This method has
-        to check if the session key is valid and create a new session if it
+        """Get a session for this sid or a new session object.  This method
+        has to check if the session key is valid and create a new session if
         that wasn't the case.
         """
         return self.session_class({}, sid, True)
 
 
 class FilesystemSessionStore(SessionStore):
-    """
-    Simple example session store that saves session on the filesystem like
+    """Simple example session store that saves session on the filesystem like
     PHP does.
     """
 
@@ -238,9 +235,9 @@ class FilesystemSessionStore(SessionStore):
 
 
 class SessionMiddleware(object):
-    """
-    A simple middleware that puts the session object of a store provided into
-    the WSGI environ.  It automatically sets cookies and restores sessions.
+    """A simple middleware that puts the session object of a store provided
+    into the WSGI environ.  It automatically sets cookies and restores
+    sessions.
 
     However a middleware is not the preferred solution because it won't be as
     fast as sessions managed by the application itself and will put a key into
@@ -252,10 +249,9 @@ class SessionMiddleware(object):
                  cookie_age=None, cookie_expires=None, cookie_path='/',
                  cookie_domain=None, cookie_secure=None,
                  cookie_httponly=False, environ_key='werkzeug.session'):
-        """
-        The cookie parameters are the same as for the `dump_cookie` function
-        just prefixed with "cookie_".  Additionally "max_age" is called
-        "cookie_age" and not "cookie_max_age" because of backwards
+        """The cookie parameters are the same as for the `dump_cookie`
+        function just prefixed with "cookie_".  Additionally "max_age" is
+        called "cookie_age" and not "cookie_max_age" because of backwards
         compatibility.
         """
         self.app = app

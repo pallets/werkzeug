@@ -93,5 +93,5 @@ new_module.__dict__.update({
     '__file__': __file__,
     '__path__': __path__,
     '__doc__':  __doc__,
-    '__all__':  tuple(object_origins)
+    '__all__':  tuple(object_origins) + tuple(attribute_modules)
 })

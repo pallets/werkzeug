@@ -109,8 +109,7 @@ def pickle_unquote(string):
 
 
 class SecureCookie(ModificationTrackingDict):
-    """
-    Represents a secure cookie.  You can subclass this class and provide
+    """Represents a secure cookie.  You can subclass this class and provide
     an alternative hash method.  The import thing is that the hash method
     is a function with a similar interface to the hashlib.  Required
     methods are update() and digest().
@@ -141,8 +140,7 @@ class SecureCookie(ModificationTrackingDict):
         return generate_key()[:4]
 
     def serialize(self, expires=None):
-        """
-        Serialize the secure cookie into a string.
+        """Serialize the secure cookie into a string.
 
         If expires is provided, the session will be automatically invalidated
         after expiration when you unseralize it. This provides better
@@ -215,8 +213,7 @@ class SecureCookie(ModificationTrackingDict):
     unserialize = classmethod(unserialize)
 
     def load_cookie(cls, request, key='session', secret_key=None):
-        """
-        Loads a SecureCookie from a cookie in request. If the cookie is not
+        """Loads a SecureCookie from a cookie in request. If the cookie is not
         set, a new SecureCookie instanced is returned.
         """
         data = request.cookies.get(key)

@@ -21,8 +21,7 @@ except ImportError:
 
 
 class MergeStream(object):
-    """
-    A object that redirects `write` calls to multiple streams.
+    """An object that redirects `write` calls to multiple streams.
     Use this to log to both `sys.stdout` and a file::
 
         f = file('profiler.log')
@@ -41,9 +40,7 @@ class MergeStream(object):
 
 
 class ProfilerMiddleware(object):
-    """
-    Simple profiler middleware
-    """
+    """Simple profiler middleware."""
 
     def __init__(self, app, stream=None,
                  sort_by=('time', 'calls'), restrictions=()):
@@ -85,9 +82,8 @@ class ProfilerMiddleware(object):
 def make_action(app_factory, hostname='localhost', port=5000,
                 threaded=False, processes=1, stream=None,
                 sort_by=('time', 'calls'), restrictions=()):
-    """
-    Return a new callback for werkzeug scripts that starts a local server
-    for profiling.
+    """Return a new callback for werkzeug scripts that starts a local
+    server for profiling.
     """
     def action(hostname=('h', hostname), port=('p', port),
                threaded=threaded, processes=processes):

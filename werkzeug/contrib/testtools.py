@@ -8,6 +8,7 @@
         a response wrapper wich adds various cached attributes for
         simplified assertions on various contenttypes
 
+
     :copyright: 2007 by Ronny Pfannschmidt.
     :license: BSD, see LICENSE for more details.
 """
@@ -15,6 +16,10 @@ from werkzeug import Response, cached_property, import_string
 
 
 class ContentAccessors(object):
+    """
+    A mixin class for response objects that provides a couple of useful
+    accessors for unittesting.
+    """
 
     def xml(self):
         """Get an etree if possible."""
@@ -55,6 +60,4 @@ class ContentAccessors(object):
 
 
 class TestResponse(Response, ContentAccessors):
-    """
-    Pass this to `werkzeug.test.Client` for easier unittesting.
-    """
+    """Pass this to `werkzeug.test.Client` for easier unittesting."""

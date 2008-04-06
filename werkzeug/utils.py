@@ -1714,7 +1714,8 @@ def run_wsgi_app(app, environ, buffered=False):
     return app_iter, response[0], response[1]
 
 
-# create all the special key errors not that the classes are defined.
+# create all the special key errors now that the classes are defined.
 from werkzeug.exceptions import BadRequest
 for _cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
     _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')
+del _cls, BadRequest

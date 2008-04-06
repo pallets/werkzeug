@@ -19,30 +19,29 @@
     added in a trivial way. These loaders provide a template interface similar
     to the one that Django uses.
 
-    :copyright: 2007 by Marek Kubica, Armin Ronacher.
+    :copyright: 2007-2008 by Marek Kubica, Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 from os import path
-from werkzeug.wrappers import BaseRequest, BaseResponse
+from werkzeug.wrappers import Request as RequestBase, Response as ResponseBase
 from werkzeug.templates import Template
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RequestRedirect
 from werkzeug.contrib.sessions import FilesystemSessionStore
 
 __all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader',
-        'GenshiTemplateLoader', 'Application']
+           'GenshiTemplateLoader', 'Application']
 
 
-class Request(BaseRequest):
-    """
-    A handy subclass of the base request that adds a URL builder.
+class Request(RequestBase):
+    """A handy subclass of the base request that adds a URL builder.
     It when supplied a session store, it is also able to handle sessions.
     """
 
     def __init__(self, environ, url_map,
             session_store=None, cookie_name=None):
         # call the parent for initialization
-        BaseRequest.__init__(self, environ)
+        RequestBase.__init__(self, environ)
         # create an adapter
         self.url_adapter = url_map.bind_to_environ(environ)
         # create all stuff for sessions
@@ -61,7 +60,7 @@ class Request(BaseRequest):
         return self.url_adapter.build(callback, values)
 
 
-class Response(BaseResponse):
+class Response(ResponseBase):
     """
     A subclass of base response which sets the default mimetype to text/html.
     It the `Request` that came in is using Werkzeug sessions, this class
@@ -82,14 +81,13 @@ class Response(BaseResponse):
                 self.set_cookie(request.cookie_name, request.session.sid)
 
         # go on with normal response business
-        return BaseResponse.__call__(self, environ, start_response)
+        return ResponseBase.__call__(self, environ, start_response)
 
 
 class Processor(object):
-    """
-    A request and response processor - it is what Django calls a middleware,
-    but Werkzeug also includes straight-foward support for real WSGI
-    middlewares, so another name was chosen.
+    """A request and response processor - it is what Django calls a
+    middleware, but Werkzeug also includes straight-foward support for real
+    WSGI middlewares, so another name was chosen.
 
     The code of this processor is derived from the example in the Werkzeug
     trac, called `Request and Response Processor
@@ -103,8 +101,7 @@ class Processor(object):
         return response
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        """
-        process_view() is called just before the Application calls the
+        """process_view() is called just before the Application calls the
         function specified by view_func.
 
         If this returns None, the Application processes the next Processor,
@@ -118,9 +115,8 @@ class Processor(object):
 
 
 class Application(object):
-    """
-    A generic WSGI application which can be used to start with Werkzeug in an
-    easy, straightforward way.
+    """A generic WSGI application which can be used to start with Werkzeug in
+    an easy, straightforward way.
     """
 
     def __init__(self, name, url_map, session=False, processors=None):
@@ -235,8 +231,7 @@ class TemplateLoader(object):
 
 
 class GenshiTemplateLoader(TemplateLoader):
-    """
-    A unified interface for loading Genshi templates. Actually a quite thin
+    """A unified interface for loading Genshi templates. Actually a quite thin
     wrapper for Genshi's TemplateLoader.
 
     It sets some defaults that differ from the Genshi loader, most notably
@@ -282,6 +277,6 @@ class GenshiTemplateLoader(TemplateLoader):
         context = context or {}
         tmpl = self.get_template(template_name)
         # render the template into a unicode string (None means unicode)
-        return tmpl.\
-            generate(**context).\
+        return tmpl. \
+            generate(**context). \
             render(self.output_type, encoding=None)
