@@ -93,7 +93,7 @@ class Accept(list):
 
     def values(self):
         """Return a list of the values, not the qualities."""
-        return [x[1] for x in self]
+        return [x[0] for x in self]
 
     def itervalues(self):
         """Iterate over all values."""
