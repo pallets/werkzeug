@@ -91,8 +91,9 @@ class Server(Syncable):
         s.sendto('\xff\xff\xff\xff\xff\xff\xff\xff\xff\xffgief', self.addr)
         bits = s.recvfrom(1024)[0][14:].split('\x00')
         s.close()
-        self.version, server_name, self.map = bits[:3]
+        self.version, server_name, map_name = bits[:3]
         self.name = server_name.decode('latin1')
+        self.map = map_name.decode('latin1')
         self.gametype_id, self.flags, self.progression, player_count, \
             self.max_players = map(int, bits[3:8])
         self.gametype = GAMETYPES.get(self.gametype_id, 'unknown')
