@@ -37,8 +37,7 @@ from werkzeug._internal import _empty_stream, _decode_unicode
 
 
 class BaseRequest(object):
-    """
-    Very basic request object.  This does not implement advanced stuff like
+    """Very basic request object.  This does not implement advanced stuff like
     entity tag parsing or cache controls.  The request object is created with
     the WSGI environment as first argument and will add itself to the WSGI
     environment as ``'werkzeug.request'`` unless it's created with
@@ -292,10 +291,9 @@ class BaseRequest(object):
 
 
 class BaseResponse(object):
-    """
-    Base response class.  The most important fact about a response object is
-    that it's a regular WSGI application.  It's initialized with a couple of
-    response parameters (headers, body, status code etc.) and will start a
+    """Base response class.  The most important fact about a response object
+    is that it's a regular WSGI application.  It's initialized with a couple
+    of response parameters (headers, body, status code etc.) and will start a
     valid WSGI response when called with the environ and start response
     callable.
 
@@ -543,8 +541,7 @@ class BaseResponse(object):
 
 
 class AcceptMixin(object):
-    """
-    A mixin for classes with an `environ` attribute to get and all the HTTP
+    """A mixin for classes with an `environ` attribute to get and all the HTTP
     accept headers as `Accept` objects.  This can be mixed in request objects
     or any other object that has a WSGI environ available as `environ`.
     """
@@ -573,8 +570,7 @@ class AcceptMixin(object):
 
 
 class ETagRequestMixin(object):
-    """
-    Add entity tag and cache descriptors to a request object or object with
+    """Add entity tag and cache descriptors to a request object or object with
     an WSGI environment available as `environ`.  This not only provides
     access to etags but also to the cache control header.
     """
@@ -607,8 +603,7 @@ class ETagRequestMixin(object):
 
 
 class UserAgentMixin(object):
-    """
-    Adds a `user_agent` attribute to the request object which contains the
+    """Adds a `user_agent` attribute to the request object which contains the
     parsed user agent of the browser that triggered the request as `UserAgent`
     object.
     """
@@ -626,8 +621,7 @@ class UserAgentMixin(object):
 
 
 class AuthorizationMixin(object):
-    """
-    Adds an `authorization` property that represents the parsed value of
+    """Adds an `authorization` property that represents the parsed value of
     the `Authorization` header as `Authorization` object.
     """
 
@@ -639,8 +633,7 @@ class AuthorizationMixin(object):
 
 
 class ETagResponseMixin(object):
-    """
-    Adds extra functionality to a response object for etag and cache
+    """Adds extra functionality to a response object for etag and cache
     handling.  This mixin requires an object with at least a `headers`
     object that implements a dict like interface similar to `Headers`.
     """
@@ -711,8 +704,7 @@ class ETagResponseMixin(object):
 
 
 class ResponseStream(object):
-    """
-    A file descriptor like object used by the `ResponseStreamMixin` to
+    """A file descriptor like object used by the `ResponseStreamMixin` to
     represent the body of the stream.  It directly pushes into the response
     iterable of the response object.
     """
@@ -753,10 +745,9 @@ class ResponseStream(object):
 
 
 class ResponseStreamMixin(object):
-    """
-    Mixin for `BaseRequest` subclasses.  Classes that inherit from this mixin
-    will automatically get a `stream` property that provides a write-only
-    interface to the response iterable.
+    """Mixin for `BaseRequest` subclasses.  Classes that inherit from this
+    mixin will automatically get a `stream` property that provides a
+    write-only interface to the response iterable.
     """
 
     def stream(self):
@@ -766,8 +757,7 @@ class ResponseStreamMixin(object):
 
 
 class CommonResponseDescriptorsMixin(object):
-    """
-    A mixin for `BaseResponse` subclasses.  Response objects that mix this
+    """A mixin for `BaseResponse` subclasses.  Response objects that mix this
     class in will automatically get descriptors for a couple of HTTP headers
     with automatic type conversion.
     """
@@ -892,9 +882,7 @@ class CommonResponseDescriptorsMixin(object):
 
 
 class WWWAuthenticateMixin(object):
-    """
-    Adds a `www_authenticate` property to a response object.
-    """
+    """Adds a `www_authenticate` property to a response object."""
 
     def www_authenticate(self):
         """The ``WWW-Authenticate`` header in a parsed form."""
@@ -910,8 +898,7 @@ class WWWAuthenticateMixin(object):
 
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
               UserAgentMixin, AuthorizationMixin):
-    """
-    Full featured request object implementing the following mixins:
+    """Full featured request object implementing the following mixins:
 
     - `AcceptMixin` for accept header parsing
     - `ETagRequestMixin` for etag and cache control handling
@@ -923,8 +910,7 @@ class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
 class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
                CommonResponseDescriptorsMixin,
                WWWAuthenticateMixin):
-    """
-    Full featured response object implementing the following mixins:
+    """Full featured response object implementing the following mixins:
 
     - `ETagResponseMixin` for etag and cache control handling
     - `ResponseStreamMixin` to add support for the `stream` property

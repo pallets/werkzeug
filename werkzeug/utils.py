@@ -37,8 +37,7 @@ _entity_re = re.compile(r'&([^;]+);')
 
 
 class MultiDict(dict):
-    """
-    A `MultiDict` is a dictionary subclass customized to deal with multiple
+    """A `MultiDict` is a dictionary subclass customized to deal with multiple
     values for the same key which is for example used by the parsing functions
     in the wrappers.  This is necessary because some HTML form elements pass
     multiple values for the same key.
@@ -258,8 +257,7 @@ class MultiDict(dict):
 
 
 class CombinedMultiDict(MultiDict):
-    """
-    A read only `MultiDict` decorator that you can pass multiple `MultiDict`
+    """A read only `MultiDict` decorator that you can pass multiple `MultiDict`
     instances as sequence and it will combine the return values of all wrapped
     dicts:
 
@@ -396,8 +394,7 @@ class CombinedMultiDict(MultiDict):
 
 
 class FileStorage(object):
-    """
-    The `FileStorage` object is a thin wrapper over incoming files.  It is
+    """The `FileStorage` object is a thin wrapper over incoming files.  It is
     used by the request object to represent uploaded files.  All the
     attributes of the wrapper stream are proxied by the file storage so
     it's possible to do ``storage.read()`` instead of the long form
@@ -459,8 +456,7 @@ class FileStorage(object):
 
 
 class Headers(object):
-    """
-    An object that stores some headers.  It has a dict like interface
+    """An object that stores some headers.  It has a dict like interface
     but is ordered and can store keys multiple times.
 
     This data structure is useful if you want a nicer way to handle WSGI
@@ -678,8 +674,7 @@ class Headers(object):
 
 
 class EnvironHeaders(Headers):
-    """
-    Read only version of the headers from a WSGI environment.  This
+    """Read only version of the headers from a WSGI environment.  This
     provides the same interface as `Headers` and is constructed from
     a WSGI environment.
 
@@ -718,8 +713,7 @@ class EnvironHeaders(Headers):
 
 
 class SharedDataMiddleware(object):
-    """
-    A WSGI middleware that provides static content for development
+    """A WSGI middleware that provides static content for development
     environments or simple server setups. Usage is quite simple::
 
         import os
@@ -831,8 +825,7 @@ class SharedDataMiddleware(object):
 
 
 class DispatcherMiddleware(object):
-    """
-    Allows one to mount middlewares or application in a WSGI application.
+    """Allows one to mount middlewares or application in a WSGI application.
     This is useful if you want to combine multiple WSGI applications::
 
         app = DispatcherMiddleware(app, {
@@ -864,11 +857,10 @@ class DispatcherMiddleware(object):
 
 
 class ClosingIterator(object):
-    """
-    The WSGI specification requires that all middlewares and gateways respect the
-    `close` callback of an iterator.  Because it is useful to add another close
-    action to a returned iterator and adding a custom iterator is a boring task
-    this class can be used for that::
+    """The WSGI specification requires that all middlewares and gateways
+    respect the `close` callback of an iterator.  Because it is useful to add
+    another close action to a returned iterator and adding a custom iterator
+    is a boring task this class can be used for that::
 
         return ClosingIterator(app(environ, start_response), [cleanup_session,
                                                               cleanup_locals])
@@ -911,8 +903,7 @@ class ClosingIterator(object):
 
 
 class Href(object):
-    """
-    Implements a callable that constructs URLs with the given base. The
+    """Implements a callable that constructs URLs with the given base. The
     function can be called with any number of positional and keyword
     arguments which than are used to assemble the URL.  Works with URLs
     and posix paths.
@@ -977,8 +968,7 @@ class Href(object):
 
 
 class cached_property(object):
-    """
-    A decorator that converts a function into a lazy property. The
+    """A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result
     and than that calculated result is used the next time you access
     the value::
@@ -1005,8 +995,7 @@ class cached_property(object):
 
 
 class environ_property(_DictAccessorProperty):
-    """
-    Maps request attributes to environment variables. This works not only
+    """Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an
     environ attribute:
 
@@ -1031,17 +1020,14 @@ class environ_property(_DictAccessorProperty):
 
 
 class header_property(_DictAccessorProperty):
-    """
-    Like `environ_property` but for headers.
-    """
+    """Like `environ_property` but for headers."""
 
     def lookup(self, obj):
         return obj.headers
 
 
 class HTMLBuilder(object):
-    """
-    Helper object for HTML generation.
+    """Helper object for HTML generation.
 
     Per default there are two instances of that class.  The `html` one, and
     the `xhtml` one for those two dialects.  The class uses keyword parameters

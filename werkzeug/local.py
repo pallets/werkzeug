@@ -138,11 +138,10 @@ class Local(object):
 
 
 class LocalManager(object):
-    """
-    Local objects cannot manage themselves. For that you need a local manager.
-    You can pass a local manager multiple locals or add them later by
-    appending them to `manager.locals`.  Everytime the manager cleans up it,
-    will clean up all the data left in the locals for this context.
+    """Local objects cannot manage themselves. For that you need a local
+    manager.  You can pass a local manager multiple locals or add them later
+    by appending them to `manager.locals`.  Everytime the manager cleans up
+    it, will clean up all the data left in the locals for this context.
     """
 
     def __init__(self, locals=None):
@@ -201,8 +200,7 @@ class LocalManager(object):
 
 
 class LocalProxy(object):
-    """
-    Acts as a proxy for a werkzeug local.  Forwards all operations to
+    """Acts as a proxy for a werkzeug local.  Forwards all operations to
     a proxied object.  The only operations not supported for forwarding
     are right handed operands and any kind of assignment.
 

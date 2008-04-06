@@ -56,8 +56,7 @@ from werkzeug.utils import create_environ, run_wsgi_app
 
 
 def encode_multipart(values):
-    """
-    Encode a dict of values (can either be strings or file descriptors)
+    """Encode a dict of values (can either be strings or file descriptors)
     into a multipart encoded string.  The filename is taken from the `.name`
     attribute of the file descriptor.  Because StringIOs do not provide
     this attribute it will generate a random filename in that case.
@@ -90,8 +89,7 @@ def encode_multipart(values):
 
 
 class File(object):
-    """
-    Wraps a file descriptor or any other stream so that `encode_multipart`
+    """Wraps a file descriptor or any other stream so that `encode_multipart`
     can get the mimetype and filename from it.
     """
 
@@ -126,13 +124,10 @@ class File(object):
 
 
 class Client(object):
-    """
-    This class allows to send requests to a wrapped application.
-    """
+    """This class allows to send requests to a wrapped application."""
 
     def __init__(self, application, response_wrapper=None):
-        """
-        The response wrapper can be a class or factory function that takes
+        """The response wrapper can be a class or factory function that takes
         three arguments: app_iter, status and headers.  The default response
         wrapper just returns a tuple.
 
@@ -153,9 +148,8 @@ class Client(object):
              content_length=0, errors_stream=None, multithread=False,
              multiprocess=False, run_once=False, environ_overrides=None,
              as_tuple=False):
-        """
-        Takes the same arguments as the `create_environ` function from the utility
-        module with some additions.
+        """Takes the same arguments as the `create_environ` function from the
+        utility module with some additions.
 
         The first parameter should be the path of the request which defaults to
         '/'.  The second one can either be a absolute path (in that case the url

@@ -428,8 +428,7 @@ class TemplateCodeGenerator(ModuleCodeGenerator):
 
 
 class Template(object):
-    """
-    Represents a simple text based template.  It's a good idea to load such
+    """Represents a simple text based template.  It's a good idea to load such
     templates from files on the file system to get better debug output.
     """
     default_context = {
@@ -479,4 +478,5 @@ class Template(object):
         return context.get_value(self.unicode_mode)
 
     def substitute(self, *args, **kwargs):
+        """For API compatibility with `string.Template`."""
         return self.render(*args, **kwargs)

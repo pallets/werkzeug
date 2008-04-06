@@ -56,7 +56,9 @@ all_by_module = {
                              'ETagResponseMixin', 'ResponseStreamMixin',
                              'CommonResponseDescriptorsMixin',
                              'UserAgentMixin', 'AuthorizationMixin',
-                             'WWWAuthenticateMixin']
+                             'WWWAuthenticateMixin'],
+    # the undocumented easteregg ;-)
+    'werkzeug._internal':   ['_easteregg']
 }
 
 attribute_modules = dict.fromkeys(['exceptions', 'routing', 'script'])

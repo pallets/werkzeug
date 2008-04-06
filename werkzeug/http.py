@@ -39,8 +39,7 @@ _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
 
 class Accept(list):
-    """
-    An `Accept` object is just a list subclass for lists of
+    """An `Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by quality.
     """
 
@@ -108,8 +107,7 @@ class Accept(list):
 
 
 class HeaderSet(object):
-    """
-    Similar to the `ETags` class this implements a set like structure.
+    """Similar to the `ETags` class this implements a set like structure.
     Unlike `ETags` this is case insensitive and used for vary, allow, and
     content-language headers.
 
@@ -330,8 +328,7 @@ class CacheControl(_UpdateDict):
 
 
 class ETags(object):
-    """
-    A set that can be used to check if one etag is present in a collection
+    """A set that can be used to check if one etag is present in a collection
     of etags.
     """
 
@@ -404,10 +401,9 @@ class ETags(object):
 
 
 class Authorization(dict):
-    """
-    Represents an `Authorization` header sent by the client.  You should not
-    create this kind of object yourself but use it when it's returned by the
-    `parse_authorization_header` function.
+    """Represents an `Authorization` header sent by the client.  You should
+    not create this kind of object yourself but use it when it's returned by
+    the `parse_authorization_header` function.
 
     This object is a dict subclass and can be altered by setting dict items
     but it should be considered immutable as it's returned by the client and
@@ -463,9 +459,7 @@ class Authorization(dict):
 
 
 class WWWAuthenticate(_UpdateDict):
-    """
-    Provides simple access to `WWW-Authenticate` headers.
-    """
+    """Provides simple access to `WWW-Authenticate` headers."""
 
     def __init__(self, auth_type=None, values=None, on_update=None):
         _UpdateDict.__init__(self, values or (), on_update)

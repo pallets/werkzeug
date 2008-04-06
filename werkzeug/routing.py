@@ -200,8 +200,7 @@ class RequestSlash(RoutingException):
 
 
 class BuildError(RoutingException, LookupError):
-    """
-    Raised if the build system cannot find a URL for an endpoint with the
+    """Raised if the build system cannot find a URL for an endpoint with the
     values provided.
     """
 
@@ -213,15 +212,13 @@ class BuildError(RoutingException, LookupError):
 
 
 class ValidationError(ValueError):
-    """
-    Validation error.  If a rule converter raises this exception the rule
+    """Validation error.  If a rule converter raises this exception the rule
     does not match the current URL and the next URL is tried.
     """
 
 
 class RuleFactory(object):
-    """
-    As soon as you have more complex URL setups it's a good idea to use rule
+    """As soon as you have more complex URL setups it's a good idea to use rule
     factories to avoid repetitive tasks.  Some of them are builtin, others can
     be added by subclassing `RuleFactory` and overriding `get_rules`.
     """
@@ -233,8 +230,7 @@ class RuleFactory(object):
 
 
 class Subdomain(RuleFactory):
-    """
-    All URLs provided by this factory have the subdomain set to a
+    """All URLs provided by this factory have the subdomain set to a
     specific domain. For example if you want to use the subdomain for
     the current language this can be a good setup::
 
@@ -264,8 +260,7 @@ class Subdomain(RuleFactory):
 
 
 class Submount(RuleFactory):
-    """
-    Like `Subdomain` but prefixes the URL rule with a given string::
+    """Like `Subdomain` but prefixes the URL rule with a given string::
 
         url_map = Map([
             Rule('/', endpoint='index'),
@@ -290,8 +285,7 @@ class Submount(RuleFactory):
 
 
 class EndpointPrefix(RuleFactory):
-    """
-    Prefixes all endpoints (which must be strings for this factory) with
+    """Prefixes all endpoints (which must be strings for this factory) with
     another string. This can be useful for sub applications::
 
         url_map = Map([
@@ -315,8 +309,7 @@ class EndpointPrefix(RuleFactory):
 
 
 class RuleTemplate(object):
-    """
-    Returns copies of the rules wrapped and expands string templates in
+    """Returns copies of the rules wrapped and expands string templates in
     the endpoint, rule, defaults or subdomain sections.
 
     Here a small example for such a rule template::
@@ -342,8 +335,7 @@ class RuleTemplate(object):
 
 
 class RuleTemplateFactory(RuleFactory):
-    """
-    A factory that fills in template variables into rules.  Used by
+    """A factory that fills in template variables into rules.  Used by
     `RuleTemplate` internally.
 
     :internal:
@@ -380,11 +372,10 @@ class RuleTemplateFactory(RuleFactory):
 
 
 class Rule(RuleFactory):
-    """
-    A Rule represents one URL pattern.  There are some options for `Rule` that
-    change the way it behaves and are passed to the `Rule` constructor.  Note
-    that beside the rule-string all arguments *must* be keyword arguments in
-    order to not break the application on Werkzeug upgrades.
+    """A Rule represents one URL pattern.  There are some options for `Rule`
+    that change the way it behaves and are passed to the `Rule` constructor.
+    Note that beside the rule-string all arguments *must* be keyword arguments
+    in order to not break the application on Werkzeug upgrades.
 
     `string`
         Rule strings basically are just normal URL paths with placeholders in
@@ -763,8 +754,7 @@ class BaseConverter(object):
 
 
 class UnicodeConverter(BaseConverter):
-    """
-    This converter is the default converter and accepts any string but
+    """This converter is the default converter and accepts any string but
     only one one path segment.  Thus the string can not include a slash.
 
     Supported arguments:
@@ -792,8 +782,7 @@ class UnicodeConverter(BaseConverter):
 
 
 class AnyConverter(BaseConverter):
-    """
-    Matches one of the items provided.  Items can either be Python
+    """Matches one of the items provided.  Items can either be Python
     identifiers or unicode strings::
 
         Rule('/<any(about, help, imprint, u"class"):page_name>')
@@ -805,17 +794,14 @@ class AnyConverter(BaseConverter):
 
 
 class PathConverter(BaseConverter):
-    """
-    Like the default string converter, but it also matches slashes.
-    """
+    """Like the default string converter, but it also matches slashes."""
     regex = '[^/].*?'
     is_greedy = True
     weight = 50
 
 
 class NumberConverter(BaseConverter):
-    """
-    Baseclass for `IntegerConverter` and `FloatConverter`.
+    """Baseclass for `IntegerConverter` and `FloatConverter`.
 
     :internal:
     """
@@ -843,8 +829,7 @@ class NumberConverter(BaseConverter):
 
 
 class IntegerConverter(NumberConverter):
-    """
-    This converter only accepts integer values::
+    """This converter only accepts integer values::
 
         Rule('/page/<int:page>')
 
@@ -862,8 +847,7 @@ class IntegerConverter(NumberConverter):
 
 
 class FloatConverter(NumberConverter):
-    """
-    This converter only accepts floating point values::
+    """This converter only accepts floating point values::
 
         Rule('/probability/<float:probability>')
 
@@ -880,8 +864,7 @@ class FloatConverter(NumberConverter):
 
 
 class Map(object):
-    """
-    The map class stores all the URL rules and some configuration
+    """The map class stores all the URL rules and some configuration
     parameters.  Some of the configuration values are only stored on the
     `Map` instance since those affect all rules, others are just defaults
     and can be overridden for each rule.  Note that you have to specify all
@@ -1040,8 +1023,7 @@ class Map(object):
 
 
 class MapAdapter(object):
-    """
-    Retured by `Map.bind` or `Map.bind_to_environ` and does the
+    """Retured by `Map.bind` or `Map.bind_to_environ` and does the
     URL matching and building based on runtime information.
     """
 
