@@ -1067,16 +1067,19 @@ class MapAdapter(object):
                 urls = url_map.bind_to_environ(environ)
                 return urls.dispatch(lambda e, v: views[e](request, **v),
                                      catch_http_exceptions=True)
+
+        Keep in mind that this method might return exception objects too, so
+        use `Response.force_type` to get a response object.
         """
         try:
-            endpoint, args = self.match(path_info, method)
-        except RequestRedirect, e:
-            return e.get_response()
-        try:
+            try:
+                endpoint, args = self.match(path_info, method)
+            except RequestRedirect, e:
+                return e
             return view_func(endpoint, args)
         except HTTPException, e:
             if catch_http_exceptions:
-                return e.get_response()
+                return e
             raise
 
     def match(self, path_info=None, method=None):

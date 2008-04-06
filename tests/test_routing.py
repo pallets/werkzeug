@@ -8,6 +8,7 @@
     :license: BSD license.
 """
 from py.test import raises
+from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect
 from werkzeug.utils import create_environ
 
@@ -129,3 +130,26 @@ def test_path():
     assert adapter.match('/User:thomas') == ('user', {'username':'thomas'})
     assert adapter.match('/User:thomas/projects/werkzeug') == ('userpage', {'username':'thomas', 'name':'projects/werkzeug'})
     assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == ('files', {'file':'downloads/werkzeug/0.2.zip'})
+
+
+def test_dispatch():
+    env = create_environ('/')
+    map = Map([
+        Rule('/', endpoint='root'),
+        Rule('/foo/', endpoint='foo')
+    ])
+    adapter = map.bind_to_environ(env)
+
+    raise_this = None
+    def view_func(endpoint, values):
+        if raise_this is not None:
+            raise raise_this
+        return Response(repr((endpoint, values)))
+    dispatch = lambda p, q=False: Response.force_type(adapter.dispatch(view_func, p,
+                                                      catch_http_exceptions=q), env)
+
+    assert dispatch('/').data == "('root', {})"
+    assert dispatch('/foo').status_code == 301
+    raise_this = NotFound()
+    raises(NotFound, lambda: dispatch('/bar'))
+    assert dispatch('/bar', True).status_code == 404
