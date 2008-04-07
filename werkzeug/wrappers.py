@@ -391,7 +391,7 @@ class BaseResponse(object):
             # MyResponseClass subclass.
             response = MyResponseClass.force_type(response)
 
-            # convert any WSGI application into a request object
+            # convert any WSGI application into a response object
             response = MyResponseClass.force_type(response, environ)
 
         This is especially useful if you want to post-process responses in
