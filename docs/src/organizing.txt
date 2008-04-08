@@ -64,7 +64,7 @@ It's also a good idea to call the file something like ``main.py`` or
         try:
             endpoint, values = url_adapter.match()
             view = import_string('mypackage.views.' + endpoint)
-            resp = view(req, **args)
+            resp = view(req, **values)
         except (RequestRedirect, HTTPException), e:
             resp = e
         return resp(environ, start_response)
