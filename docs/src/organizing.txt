@@ -59,7 +59,7 @@ It's also a good idea to call the file something like ``main.py`` or
     from mypackage.urls import url_map
 
     def application(environ, start_response):
-        url_adapter = map.bind_to_environ(environ)
+        url_adapter = url_map.bind_to_environ(environ)
         req = Request(environ)
         try:
             endpoint, values = url_adapter.match()
