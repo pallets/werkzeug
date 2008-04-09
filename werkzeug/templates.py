@@ -136,7 +136,7 @@ from werkzeug._internal import _decode_unicode
 
 
 token_re = re.compile('%s|%s(?s)' % (
-    r'[uU]?[rR]?("""|\'\'\')((?<!\\)\\\1|.)*\1',
+    r'[uU]?[rR]?("""|\'\'\')((?<!\\)\\\1|.)*?\1',
     PseudoToken
 ))
 directive_re = re.compile(r'(?<!\\)<%(?:(#)|(py(?:thon)?\b)|'
