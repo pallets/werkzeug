@@ -135,9 +135,8 @@ from werkzeug._internal import _decode_unicode
 # .. _ltipl20.py: http://lfw.org/python/Itpl20.py
 
 
-token_re = re.compile('%s|%s|%s(?i)' % (
-    r'[uU]?[rR]?"""([^"\\]*(?:\\.[^"\\]*)*)"""',
-    r"[uU]?[rR]?'''([^'\\]*(?:\\.[^'\\]*)*)'''",
+token_re = re.compile('%s|%s(?s)' % (
+    r'[uU]?[rR]?("""|\'\'\')((?<!\\)\\\1|.)*\1',
     PseudoToken
 ))
 directive_re = re.compile(r'(?<!\\)<%(?:(#)|(py(?:thon)?\b)|'
@@ -442,6 +441,8 @@ class Template(object):
                  errors='strict', unicode_mode=True):
         if isinstance(source, str):
             source = _decode_unicode(source, encoding, errors)
+        if isinstance(filename, unicode):
+            filename = filename.encode('utf-8')
         node = Parser(tokenize(u'\n'.join(source.splitlines()),
                                filename), filename).parse()
         self.code = TemplateCodeGenerator(node, filename).getCode()
