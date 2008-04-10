@@ -118,5 +118,5 @@ def test_etags():
 def test_parse_date():
     assert parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(1994, 11, 6, 8, 49, 37)
     assert parse_date('Sunday, 06-Nov-94 08:49:37 GMT') == datetime(1994, 11, 6, 8, 49, 37)
-    assert parse_date(' Sun Nov  6 08:49:37 1994') == datetime(1994, 11, 6, 7, 49, 37)
+    assert parse_date(' Sun Nov  6 08:49:37 1994') == datetime(1994, 11, 6, 8, 49, 37)
     assert parse_date('foo') is None

@@ -787,8 +787,11 @@ def parse_date(value):
     If parsing fails the return value is `None`.
     """
     if value:
-        t = rfc822.parsedate_tz(value)
+        t = rfc822.parsedate_tz(value.strip())
         if t is not None:
+            # if no timezone is part of the string we assume UTC
+            if t[-1] is None:
+                t = t[:-1] + (0,)
             return datetime.utcfromtimestamp(rfc822.mktime_tz(t))
 
 
