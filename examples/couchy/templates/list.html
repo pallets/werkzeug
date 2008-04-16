@@ -1,0 +1,19 @@
+{% extends 'layout.html' %}
+{% block body %}
+  <h2>List of URLs</h2>
+  <ul>
+  {%- for url in pagination.entries %}
+    <li><a href="{{ url.short_url|e }}">{{ url.id|e }}</a> &raquo;
+        <small>{{ url.target|urlize(38, true) }}</small></li>
+  {%- else %}
+    <li><em>no URLs shortened yet</em></li>
+  {%- endfor %}
+  </ul>
+  <div class="pagination">
+    {%- if pagination.has_previous %}<a href="{{ pagination.previous }}">&laquo; Previous</a>
+    {%- else %}<span class="inactive">&laquo; Previous</span>{% endif %}
+    | {{ pagination.page }} |
+    {% if pagination.has_next %}<a href="{{ pagination.next }}">Next &raquo;</a>
+    {%- else %}<span class="inactive">Next &raquo;</span>{% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,108 @@
+body {
+    background-color: #333;
+    font-family: 'Lucida Sans', 'Verdana', sans-serif;
+    font-size: 16px;
+    margin: 3em 0 3em 0;
+    padding: 0;
+    text-align: center;
+}
+
+a {
+    color: #0C4850;
+}
+
+a:hover {
+    color: #1C818F;
+}
+
+h1 {
+    width: 500px;
+    background-color: #24C0CE;
+    text-align: center;
+    font-size: 3em;
+    margin: 0 auto 0 auto;
+    padding: 0;
+}
+
+h1 a {
+    display: block;
+    padding: 0.3em;
+    color: #fff;
+    text-decoration: none;
+}
+
+h1 a:hover {
+    color: #ADEEF7;
+    background-color: #0E8A96;
+}
+
+div.footer {
+    margin: 0 auto 0 auto;
+    font-size: 13px;
+    text-align: right;
+    padding: 10px;
+    width: 480px;
+    background-color: #004C63;
+    color: white;
+}
+
+div.footer a {
+    color: #A0E9FF;
+}
+
+div.body {
+    margin: 0 auto 0 auto;
+    padding: 20px;
+    width: 460px;
+    background-color: #98CE24;
+    color: black;
+}
+
+div.body h2 {
+    margin: 0 0 0.5em 0;
+    text-align: center;
+}
+
+div.body input {
+    margin: 0.2em 0 0.2em 0;
+    font-family: 'Lucida Sans', 'Verdana', sans-serif;
+    font-size: 20px;
+    background-color: #CCEB98;
+    color: black;
+}
+
+div.body #url {
+    width: 400px;
+}
+
+div.body #alias {
+    width: 300px;
+    margin-right: 10px;
+}
+
+div.body #submit {
+    width: 90px;
+}
+
+div.body p {
+    margin: 0;
+    padding: 0.2em 0 0.2em 0;
+}
+
+div.body ul {
+    margin: 1em 0 1em 0;
+    padding: 0;
+    list-style: none;
+}
+
+div.error {
+    margin: 1em 0 1em 0;
+    border: 2px solid #AC0202;
+    background-color: #9E0303;
+    font-weight: bold;
+    color: white;
+}
+
+div.pagination {
+    font-size: 13px;
+}

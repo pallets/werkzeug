@@ -1,0 +1,8 @@
+{% extends 'layout.html' %}
+{% block body %}
+  <h2>Page Not Found</h2>
+  <p>
+    The page you have requested does not exist on this server.  What about
+    <a href="{{ url_for('new') }}">adding a new URL</a>?
+  </p>
+{% endblock %}

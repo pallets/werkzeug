@@ -1,0 +1,8 @@
+couchy README
+
+Requirements :
+- python 2.4 & sup
+- werkzeug : http://werkzeug.pocoo.org
+- jinja : http://jinja.pocoo.org
+- couchdb 0.72 & above : http://www.couchdb.org
+- couchdb-python 0.3 & above : http://code.google.com/p/couchdb-python
