@@ -33,7 +33,7 @@
     If the application doesn't use subdomains it's perfectly fine to not set
     the default subdomain and use the `Subdomain` rule factory.  The endpoint
     in the rules can be anything, for example import paths or unique
-    identitifers.  The WSGI application can use those endpoints to get the
+    identifiers.  The WSGI application can use those endpoints to get the
     handler for that URL.  It doesn't have to be a string at all but it's
     recommended.
 

@@ -372,7 +372,10 @@ class ETags(object):
         """Convert the etags set into a HTTP header string."""
         if self.star_tag:
             return '*'
-        return ', '.join(['"%s"' % item for item in self.as_set(True)])
+        return ', '.join(
+            ['"%s"' % x for x in self._strong] +
+            ['w/"%s"' % x for x in self._weak]
+        )
 
     def __call__(self, etag=None, data=None, include_weak=False):
         if [etag, data].count(None) != 1:
@@ -673,7 +676,7 @@ def parse_set_header(value, on_update=None):
     """
     if not value:
         return HeaderSet(None, on_update)
-    return HeaderSet(parse_dict_header(value), on_update)
+    return HeaderSet(parse_list_header(value), on_update)
 
 
 def parse_authorization_header(value):
@@ -784,8 +787,11 @@ def parse_date(value):
     If parsing fails the return value is `None`.
     """
     if value:
-        t = rfc822.parsedate_tz(value)
+        t = rfc822.parsedate_tz(value.strip())
         if t is not None:
+            # if no timezone is part of the string we assume UTC
+            if t[-1] is None:
+                t = t[:-1] + (0,)
             return datetime.utcfromtimestamp(rfc822.mktime_tz(t))
 
 

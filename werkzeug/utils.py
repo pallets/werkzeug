@@ -695,12 +695,17 @@ class EnvironHeaders(Headers):
         return self is other
 
     def __getitem__(self, key):
-        return self.environ['HTTP_' + key.upper().replace('-', '_')]
+        key = key.upper().replace('-', '_')
+        if key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+            return self.environ[key]
+        return self.environ['HTTP_' + key]
 
     def __iter__(self):
         for key, value in self.environ.iteritems():
             if key.startswith('HTTP_'):
                 yield key[5:].replace('_', '-').title(), value
+            elif key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+                yield key.replace('_', '-').title(), value
 
     def copy(self):
         raise TypeError('cannot create %r copies' % self.__class__.__name__)

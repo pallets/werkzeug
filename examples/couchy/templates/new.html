@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+{% block body %}
+  <h2>Create a Shorty-URL!</h2>
+  {% if error %}<div class="error">{{ error }}</div>{% endif -%}
+  <form action="" method="post">
+    <p>Enter the URL you want to shorten</p>
+    <p><input type="text" name="url" id="url" value="{{ url|e(true) }}"></p>
+    <p>Optionally you can give the URL a memorable name</p>
+    <p><input type="text" id="alias" name="alias">{#
+     #}<input type="submit" id="submit" value="Do!"></p>
+    <p><input type="checkbox" name="private" id="private">
+       <label for="private">make this URL private, so don't list it</label></p>
+  </form>
+{% endblock %}
