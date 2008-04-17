@@ -1310,6 +1310,8 @@ def escape(s, quote=None):
     """
     if s is None:
         return ''
+    elif hasattr(s, '__html__'):
+        return s.__html__()
     elif not isinstance(s, basestring):
         s = unicode(s)
     s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
