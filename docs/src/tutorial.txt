@@ -44,7 +44,7 @@ Small disclaimer: This tutorial requires Python 2.4 or later.
 .. _SQLAlchemy: http://sqlalchemy.org/
 .. _Rails: http://www.rubyonrails.org/
 .. _Pylons: http://pylonshq.com/
-.. _example folder: http://dev.pocoo.org/projects/werkzeug/browser/example
+.. _example folder: http://dev.pocoo.org/projects/werkzeug/browser/examples
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _setuptools: http://pypi.python.org/pypi/setuptools
 .. _online demo: http://werkzeug.pocoo.org/e/shorty/
