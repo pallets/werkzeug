@@ -28,6 +28,9 @@ Version 0.3
 - fixed bug with `SharedDataMiddleware`.
 - fixed `Accept.values`.
 - `EnvironHeaders` contain content-type and content-length now
+- `url_encode` accepts treats lists and tuples in dicts passed to it
+  as multiple values for the same key so that one doesn't have to pass
+  a `MultiDict` to the function.
 
 
 Version 0.2

@@ -1219,7 +1219,11 @@ def url_encode(obj, charset='utf-8', encode_keys=False):
     if isinstance(obj, MultiDict):
         items = obj.lists()
     elif isinstance(obj, dict):
-        items = [(key, [value]) for key, value in obj.iteritems()]
+        items = []
+        for key, value in obj.iteritems():
+            if not isinstance(value, (tuple, list)):
+                value = [value]
+            items.append((key, value))
     else:
         items = obj or ()
     tmp = []
@@ -1233,11 +1237,6 @@ def url_encode(obj, charset='utf-8', encode_keys=False):
                 continue
             elif isinstance(value, unicode):
                 value = value.encode(charset)
-            elif isinstance(value, (list, tuple)):
-                for v in value:
-                    tmp.append('%s=%s' % (urllib.quote(key),
-                                          urllib.quote_plus(v)))
-                continue
             else:
                 value = str(value)
             tmp.append('%s=%s' % (urllib.quote(key),
