@@ -1301,7 +1301,7 @@ def url_fix(s, charset='utf-8'):
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 
-def escape(s, quote=None):
+def escape(s, quote=False):
     """Replace special characters "&", "<" and ">" to HTML-safe sequences.  If
     the optional flag `quote` is `True`, the quotation mark character (") is
     also translated.
