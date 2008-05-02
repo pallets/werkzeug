@@ -63,11 +63,11 @@ und die statischen Dateien ablegen.
 Die Anwendung dieses Tutorials nennen wir `shorty` und die Struktur für unsere
 Anwendung sieht etwa so aus::
 
-manage.py
-shorty/
-__init__.py
-static/
-templates/
+    manage.py
+    shorty/
+        __init__.py
+        static/
+        templates/
 
 Die Dateien ``__init__.py`` und ``manage.py`` lassen wir für den Moment einmal
 leer.  Die erste dieser Dateien macht aus dem Ordner ``shorty`` ein
@@ -82,149 +82,149 @@ Im Gegensatz zu Django oder ähnlichen Frameworks arbeitet Werkzeug direkt auf
 der WSGI-Schicht.  Es gibt keine schicke Magie, die die zentrale WSGI-Anwendung
 für uns implementiert.  Das bedeutet, dass wir als Erstes eben diese
 programmieren müssen.  Eine WSGI-Anwendung ist eine Funktion oder, noch besser,
-              eine Klasse mit einer Methode ``__call__``.
+eine Klasse mit einer Methode ``__call__``.
 
-              Eine aufrufbare Klasse hat große Vorteile gegenüber einer Funktion: Zum Einen
-              kann man Konfigurationsparameter direkt an den Konstruktor übergeben, zum
-              Anderen können wir WSGI-Middlewares innerhalb der WSGI-Anwendung hinzufügen.
-              Das ist nützlich für Middlewares, die entscheidend für die Funktion der
-              Anwendung sind (z.B. eine Session-Middleware).
+Eine aufrufbare Klasse hat große Vorteile gegenüber einer Funktion: Zum Einen
+kann man Konfigurationsparameter direkt an den Konstruktor übergeben, zum
+Anderen können wir WSGI-Middlewares innerhalb der WSGI-Anwendung hinzufügen.
+Das ist nützlich für Middlewares, die entscheidend für die Funktion der
+Anwendung sind (z.B. eine Session-Middleware).
 
-              Hier zunächst einmal der Quellcode für unsere Datei ``shorty/application.py``,
-              in der wir die WSGI-Anwendung ablegen::
+Hier zunächst einmal der Quellcode für unsere Datei ``shorty/application.py``,
+in der wir die WSGI-Anwendung ablegen::
 
-              from sqlalchemy import create_engine
-              from werkzeug import Request, ClosingIterator
-              from werkzeug.exceptions import HTTPException
+    from sqlalchemy import create_engine
+    from werkzeug import Request, ClosingIterator
+    from werkzeug.exceptions import HTTPException
 
-              from shorty.utils import session, metadata, local, local_manager, url_map
-              from shorty import views
-              import shorty.models
+    from shorty.utils import session, metadata, local, local_manager, url_map
+    from shorty import views
+    import shorty.models
 
 
-              class Shorty(object):
+    class Shorty(object):
 
-                  def __init__(self, db_uri):
-    local.application = self
-    self.database_engine = create_engine(db_uri, convert_unicode=True)
+        def __init__(self, db_uri):
+            local.application = self
+            self.database_engine = create_engine(db_uri, convert_unicode=True)
 
-    def init_database(self):
-        metadata.create_all(self.database_engine)
+        def init_database(self):
+            metadata.create_all(self.database_engine)
 
         def __call__(self, environ, start_response):
-    local.application = self
-    request = Request(environ)
-    local.url_adapter = adapter = url_map.bind_to_environ(environ)
-    try:
-    endpoint, values = adapter.match()
-    handler = getattr(views, endpoint)
-    response = handler(request, **values)
-    except HTTPException, e:
-    response = e
-    return ClosingIterator(response(environ, start_response),
-            [session.remove, local_manager.cleanup])
+            local.application = self
+            request = Request(environ)
+            local.url_adapter = adapter = url_map.bind_to_environ(environ)
+            try:
+                endpoint, values = adapter.match()
+                handler = getattr(views, endpoint)
+                response = handler(request, **values)
+            except HTTPException, e:
+                response = e
+            return ClosingIterator(response(environ, start_response),
+                                   [session.remove, local_manager.cleanup])
 
-    Ziemlich viel für Code für den Anfang ... gehen wir ihn mal Schritt für Schritt
-    durch.  Zunächst sehen wir einige Imports: Aus dem Paket `sqlalchemy` holen wir
-    uns eine Factory-Funktion, die eine neue Datenbank-Engine für uns erstellt, die
-    wiederum einen Connection-Pool bereithält.  Die nächsten Imports holen einige
-    Objekte in den Namensraum, die uns Werkzeug zur Verfügung stellt: ein
-    Request-Objekt; ein spezieller Iterator, der uns hilft am Ende eines Requests
-    einige Dinge aufzuräumen; und schließlich die Basisklasse für alle
-    HTTP-Exceptions.
+Ziemlich viel für Code für den Anfang ... gehen wir ihn mal Schritt für Schritt
+durch.  Zunächst sehen wir einige Imports: Aus dem Paket `sqlalchemy` holen wir
+uns eine Factory-Funktion, die eine neue Datenbank-Engine für uns erstellt, die
+wiederum einen Connection-Pool bereithält.  Die nächsten Imports holen einige
+Objekte in den Namensraum, die uns Werkzeug zur Verfügung stellt: ein
+Request-Objekt; ein spezieller Iterator, der uns hilft am Ende eines Requests
+einige Dinge aufzuräumen; und schließlich die Basisklasse für alle
+HTTP-Exceptions.
 
-    Die nächsten fünf Imports funktionieren noch nicht, weil wir das `utils`-Modul
-    noch nicht erstellt haben.  Doch wir werden trotzdem schon ein wenig über diese
-    Objekte sprechen.  Das Objekt `session` ist kein aus PHP bekanntes
-    Session-Array, sondern eine Datenbank-Session von SQLAlchemy.  Alle
-    Datenbank-Models, die im Kontext eines Requests erstellt werden, sind auf
-    diesem Objekt zwischengespeichert, so dass man Änderungen mit einem Schlag zum
-    Server senden kann.  Im Gegensatz zu Django wird ein instantiiertes
-    Datenbank-Model automatisch von der Session verwaltet und ist in dieser Session
-    ein Singleton.  Es kann also niemals zwei Instanzen des selben
-    Datenbankeintrags in einer Session geben.  Das Objekt `metadata` stammt
-    ebenfalls aus SQLAlchemy und speichert Informationen über die Tabellen der
-    Datenbank.  Es stellt zum Beispiel eine Funktion bereit, die alle im Model
-    definierten Tabellen in der Datenbank erstellt.
+Die nächsten fünf Imports funktionieren noch nicht, weil wir das `utils`-Modul
+noch nicht erstellt haben.  Doch wir werden trotzdem schon ein wenig über diese
+Objekte sprechen.  Das Objekt `session` ist kein aus PHP bekanntes
+Session-Array, sondern eine Datenbank-Session von SQLAlchemy.  Alle
+Datenbank-Models, die im Kontext eines Requests erstellt werden, sind auf
+diesem Objekt zwischengespeichert, so dass man Änderungen mit einem Schlag zum
+Server senden kann.  Im Gegensatz zu Django wird ein instantiiertes
+Datenbank-Model automatisch von der Session verwaltet und ist in dieser Session
+ein Singleton.  Es kann also niemals zwei Instanzen des selben
+Datenbankeintrags in einer Session geben.  Das Objekt `metadata` stammt
+ebenfalls aus SQLAlchemy und speichert Informationen über die Tabellen der
+Datenbank.  Es stellt zum Beispiel eine Funktion bereit, die alle im Model
+definierten Tabellen in der Datenbank erstellt.
 
-    Das Objekt `local` ist ein kontext-lokales Objekt, erstellt vom Modul `utility`.
-    Attributzugriffe auf dieses Objekt sind an den aktuellen Request gebunden,
-    d.h. jeder Request bekommt ein anderes Objekt zurück und kann verschiedene
-    Objekte ablegen, ohne Threadingprobleme zu bekommen.  Der `local_manager` wird
-    genutzt, um am Ende des Requests alle auf dem `local`-Objekt gespeicherten Daten
-    wieder freizugeben.
+Das Objekt `local` ist ein kontext-lokales Objekt, erstellt vom Modul `utility`.
+Attributzugriffe auf dieses Objekt sind an den aktuellen Request gebunden,
+d.h. jeder Request bekommt ein anderes Objekt zurück und kann verschiedene
+Objekte ablegen, ohne Threadingprobleme zu bekommen.  Der `local_manager` wird
+genutzt, um am Ende des Requests alle auf dem `local`-Objekt gespeicherten Daten
+wieder freizugeben.
 
-    Der letzte Import von dort ist die URL-Map, die alle URL-Routen verwaltet.
-    Solltest du bereits mit Django gearbeitet haben, ist dies vergleichbar mit den
-    regulären Ausdrücken in der jeweiligen ``urls.py``.  Kennst du PHP, ist die
-    URL-Map ähnlich einem eingebauten `mod_rewrite`.
+Der letzte Import von dort ist die URL-Map, die alle URL-Routen verwaltet.
+Solltest du bereits mit Django gearbeitet haben, ist dies vergleichbar mit den
+regulären Ausdrücken in der jeweiligen ``urls.py``.  Kennst du PHP, ist die
+URL-Map ähnlich einem eingebauten `mod_rewrite`.
 
-    Zusätzlich importieren wir hier unser `views`-Modul, das die View-Funktionen
-    enthält, sowie das `models`-Modul, in welchem unsere Models definiert sind.
-    Auch wenn es so aussieht, als ob wir diesen Import nicht nutzen, ist er
-    wichtig.  Nur dadurch werden unsere Tabellen auf dem `metadata`-Objekt
-    registriert.
+Zusätzlich importieren wir hier unser `views`-Modul, das die View-Funktionen
+enthält, sowie das `models`-Modul, in welchem unsere Models definiert sind.
+Auch wenn es so aussieht, als ob wir diesen Import nicht nutzen, ist er
+wichtig.  Nur dadurch werden unsere Tabellen auf dem `metadata`-Objekt
+registriert.
 
-    Schauen wir auf die Anwendungsklasse.  Der Konstruktor dieser Klasse nimmt die
-    Datenbank-URI entgegen, die -- einfach gesagt -- den Typ der Datenbank und die
-    Verbindungsdaten enthält.  Für SQLite das wäre zum Beispiel
-    ``sqlite:////tmp/shorty.db`` (die vier Slashes sind **kein** Tippfehler).
+Schauen wir auf die Anwendungsklasse.  Der Konstruktor dieser Klasse nimmt die
+Datenbank-URI entgegen, die -- einfach gesagt -- den Typ der Datenbank und die
+Verbindungsdaten enthält.  Für SQLite das wäre zum Beispiel
+``sqlite:////tmp/shorty.db`` (die vier Slashes sind **kein** Tippfehler).
 
-    Im Konstruktor erstellen wir auch gleich eine Datenbank-Engine für diese URI und
-    aktivieren das automatische Umwandeln von Bytestrings nach Unicode.  Das ist
-    nützlich, weil sowohl Jinja als auch Werkzeug intern nur Unicode verwenden.
+Im Konstruktor erstellen wir auch gleich eine Datenbank-Engine für diese URI und
+aktivieren das automatische Umwandeln von Bytestrings nach Unicode.  Das ist
+nützlich, weil sowohl Jinja als auch Werkzeug intern nur Unicode verwenden.
 
-    Des Weiteren binden wir die Anwendung an das `local`-Objekt.  Das ist
-    eigentlich nicht nötig, aber nützlich, wenn wir mit der Anwendung in der
-    Python-Shell spielen wollen.  Damit werden direkt nach dem Instantiieren der
-    Anwendung die Datenbankfunktionen testen.  Wenn wir das nicht tun, wird der
-    Python-Interpreter einen Fehler werfen, wenn außerhalb eines Requests versucht
-    wird, eine SQLAlchemy-Session zu erstellen.
+Des Weiteren binden wir die Anwendung an das `local`-Objekt.  Das ist
+eigentlich nicht nötig, aber nützlich, wenn wir mit der Anwendung in der
+Python-Shell spielen wollen.  Damit werden direkt nach dem Instantiieren der
+Anwendung die Datenbankfunktionen testen.  Wenn wir das nicht tun, wird der
+Python-Interpreter einen Fehler werfen, wenn außerhalb eines Requests versucht
+wird, eine SQLAlchemy-Session zu erstellen.
 
-    Die Methode `init_database` können wir später im Managementscript verwenden, um
-    alle Tabellen zu erstellen, die wir definiert haben.
+Die Methode `init_database` können wir später im Managementscript verwenden, um
+alle Tabellen zu erstellen, die wir definiert haben.
 
-    Nun zur eigentlichen WSGI-Anwendung, der `__call__`-Methode.  Dort passiert das
-    so genannte "Request Dispatching", also das Weiterleiten von eingehenden
-    Anfragen zu den richtigen Funktionen.  Als Erstes erstellen wir dort ein neues
-    Request-Objekt, um nicht direkt mit `environ`, dem Dictionary mit den
-    Umgebungsvariablen, arbeiten zu müssen.  Dann binden wir die Anwendung an das
-    `local`-Objekt für den aktuellen Kontext.
+Nun zur eigentlichen WSGI-Anwendung, der `__call__`-Methode.  Dort passiert das
+so genannte "Request Dispatching", also das Weiterleiten von eingehenden
+Anfragen zu den richtigen Funktionen.  Als Erstes erstellen wir dort ein neues
+Request-Objekt, um nicht direkt mit `environ`, dem Dictionary mit den
+Umgebungsvariablen, arbeiten zu müssen.  Dann binden wir die Anwendung an das
+`local`-Objekt für den aktuellen Kontext.
 
-    Anschließend erstellen wir einen URL-Adapter, indem wir die URL-Map an die
-    aktuelle WSGI-Umgebung binden.  Der Adapter weiß dann, wie die aktuelle URL
-    aussieht, wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir
-    nutzen, um URLs zu erzeugen oder gegen den aktuellen Request zu matchen.  Wir
-    binden diesen Adapter auch an das `local`-Objekt, damit wir im `utils`-Modul
-    auf ihn zugreifen können.
+Anschließend erstellen wir einen URL-Adapter, indem wir die URL-Map an die
+aktuelle WSGI-Umgebung binden.  Der Adapter weiß dann, wie die aktuelle URL
+aussieht, wo die Anwendung eingebunden ist etc.  Diesen Adapter können wir
+nutzen, um URLs zu erzeugen oder gegen den aktuellen Request zu matchen.  Wir
+binden diesen Adapter auch an das `local`-Objekt, damit wir im `utils`-Modul
+auf ihn zugreifen können.
 
-    Danach kommt ein `try`/`except`-Konstrukt, das HTTP-Fehler abfängt, die während
-    des Matchings oder in einer View-Funktion auftreten können.  Wenn der Adapter
-    keinen Endpoint für die aktuelle URL findet, wird er eine `NotFound`-Exception
-    werfen, die wir wie ein Response Objekt aufrufen können.  Der Endpoint ist in
-    unserem Fall der Name der Funktion im `views`-Modul, die wir aufrufen möchten.
-    Wir suchen uns einfach mit `getattr` die Funktion dem Namen nach heraus und
-    rufen sie mit dem Request-Objekt und den URL-Werten auf.
+Danach kommt ein `try`/`except`-Konstrukt, das HTTP-Fehler abfängt, die während
+des Matchings oder in einer View-Funktion auftreten können.  Wenn der Adapter
+keinen Endpoint für die aktuelle URL findet, wird er eine `NotFound`-Exception
+werfen, die wir wie ein Response Objekt aufrufen können.  Der Endpoint ist in
+unserem Fall der Name der Funktion im `views`-Modul, die wir aufrufen möchten.
+Wir suchen uns einfach mit `getattr` die Funktion dem Namen nach heraus und
+rufen sie mit dem Request-Objekt und den URL-Werten auf.
 
-    Am Schluss rufen wir das gewonnene Response-Objekt (oder die Exception) als
-    WSGI-Anwendung auf und übergeben den Rückgabewert dieser Funktion an den
-    `ClosingIterator`, zusammen mit zwei Funktionen fürs Aufräumen.  Dies schließt
-    die SQLAlchemy-Session und leert das `local`-Objekt für diesen Request.
+Am Schluss rufen wir das gewonnene Response-Objekt (oder die Exception) als
+WSGI-Anwendung auf und übergeben den Rückgabewert dieser Funktion an den
+`ClosingIterator`, zusammen mit zwei Funktionen fürs Aufräumen.  Dies schließt
+die SQLAlchemy-Session und leert das `local`-Objekt für diesen Request.
 
-    Nun müssen wir zwei leere Dateien ``shorty/views.py`` und ``shorty/models.py``
-    erstellen, damit die Imports nicht fehlschlagen.  Den tatsächlichen Code für
-    diese Module werden wir ein wenig später erstellen.
+Nun müssen wir zwei leere Dateien ``shorty/views.py`` und ``shorty/models.py``
+erstellen, damit die Imports nicht fehlschlagen.  Den tatsächlichen Code für
+diese Module werden wir ein wenig später erstellen.
 
 
-    Teil 2: Die Utilities
-    =====================
+Teil 2: Die Utilities
+=====================
 
-    Nun haben wir die eigentliche WSGI-Applikation fertig gestellt, aber wir müssen
-    das Utility-Modul noch um Code ergänzen, damit die Imports klappen.  Fürs Erste
-    fügen wir nur die Objekte hinzu, die wir brauchen, damit die Applikation
-    funktioniert.  Der folgende Code landet in der Datei ``shorty/utils.py``:
+Nun haben wir die eigentliche WSGI-Applikation fertig gestellt, aber wir müssen
+das Utility-Modul noch um Code ergänzen, damit die Imports klappen.  Fürs Erste
+fügen wir nur die Objekte hinzu, die wir brauchen, damit die Applikation
+funktioniert.  Der folgende Code landet in der Datei ``shorty/utils.py``:
 
-    .. sourcecode:: python
+.. sourcecode:: python
 
     from sqlalchemy import MetaData
     from sqlalchemy.orm import create_session, scoped_session
@@ -232,163 +232,163 @@ programmieren müssen.  Eine WSGI-Anwendung ist eine Funktion oder, noch besser,
     from werkzeug.routing import Map, Rule
 
     local = Local()
-local_manager = LocalManager([local])
+    local_manager = LocalManager([local])
     application = local('application')
 
     metadata = MetaData()
-session = scoped_session(lambda: create_session(application.database_engine,
-            transactional=True), local_manager.get_ident)
+    session = scoped_session(lambda: create_session(application.database_engine,
+                             transactional=True), local_manager.get_ident)
 
-url_map = Map()
+    url_map = Map()
     def expose(rule, **kw):
         def decorate(f):
-    kw['endpoint'] = f.__name__
-    url_map.add(Rule(rule, **kw))
-    return f
-    return decorate
+            kw['endpoint'] = f.__name__
+            url_map.add(Rule(rule, **kw))
+            return f
+        return decorate
 
     def url_for(endpoint, _external=False, **values):
         return local.url_adapter.build(endpoint, values, force_external=_external)
 
-        Zunächst importieren wir wieder eine Menge, dann erstellen wir das
-        `local`-Objekt und den Manager dafür, wie bereits im vorherigen Abschnitt
-        besprochen.  Neu ist hier, dass der Aufruf eines `local`-Objekts mit einem
-        String ein Proxy-Objekt zurück gibt.  Dieses zeigt stets auf die gleichnamigen
-        Attribute des `local`-Objekts.  Beispielsweise verweist nun `application`
-        dauerhaft auf `local.application`.  Wenn du jedoch darauf zugreifst und kein
-        Objekt an `local.application` gebunden ist, erhältst du einen `RuntimeError`.
+Zunächst importieren wir wieder eine Menge, dann erstellen wir das
+`local`-Objekt und den Manager dafür, wie bereits im vorherigen Abschnitt
+besprochen.  Neu ist hier, dass der Aufruf eines `local`-Objekts mit einem
+String ein Proxy-Objekt zurück gibt.  Dieses zeigt stets auf die gleichnamigen
+Attribute des `local`-Objekts.  Beispielsweise verweist nun `application`
+dauerhaft auf `local.application`.  Wenn du jedoch darauf zugreifst und kein
+Objekt an `local.application` gebunden ist, erhältst du einen `RuntimeError`.
 
-        Die folgenden drei Zeilen sind im Prinzip alles, um SQLAlchemy 0.4 oder höher in
-        eine Werkzeug-Anwendung einzubinden.  Wir erstellen ein Metadaten-Objekt für all
-        unsere Tabellen sowie eine "scoped session" über die
-        `scoped_session`-Factory-Funktion.  Dadurch wird SQLAlchemy angewiesen,
-        praktisch denselben Algorithmus zur Ermittlung des aktuellen Kontextes zu
-        verwenden, wie es auch Werkzeug für die `local`-Objekte tut, und die
-        Datenbank-Engine der aktuellen Applikation zu benutzen.
+Die folgenden drei Zeilen sind im Prinzip alles, um SQLAlchemy 0.4 oder höher in
+eine Werkzeug-Anwendung einzubinden.  Wir erstellen ein Metadaten-Objekt für all
+unsere Tabellen sowie eine "scoped session" über die
+`scoped_session`-Factory-Funktion.  Dadurch wird SQLAlchemy angewiesen,
+praktisch denselben Algorithmus zur Ermittlung des aktuellen Kontextes zu
+verwenden, wie es auch Werkzeug für die `local`-Objekte tut, und die
+Datenbank-Engine der aktuellen Applikation zu benutzen.
 
-        Wenn wir nicht vorhaben, mehrere Instanzen der Applikation in derselben Instanz
-        des Python-Interpreters zu unterstützen, können wir den Code einfach halten,
-        indem wir nicht über das aktuelle `local`-Objekt auf die Applikation zugreifen,
-        sondern einen anderen Weg nehmen.  Dieser Ansatz wird etwa von Django verfolgt,
-        macht es allerdings unmöglich, mehrere solcher Applikationen zu kombinieren.
+Wenn wir nicht vorhaben, mehrere Instanzen der Applikation in derselben Instanz
+des Python-Interpreters zu unterstützen, können wir den Code einfach halten,
+indem wir nicht über das aktuelle `local`-Objekt auf die Applikation zugreifen,
+sondern einen anderen Weg nehmen.  Dieser Ansatz wird etwa von Django verfolgt,
+macht es allerdings unmöglich, mehrere solcher Applikationen zu kombinieren.
 
-        Der restliche Code des Moduls wird für unsere Views benutzt.  Die Idee besteht
-        darin, Dekoratoren zu benutzen, um die URL-Dispatching-Regeln für
-        View-Funktionen festzulegen, anstatt ein zentrales Modul ``urls.py`` zu
-        verwenden, wie es Django tut, oder über eine ``.htaccess``-Datei URLs
-        umzuschreiben, wie man es in PHP machen würde.  Dies ist **eine** Möglichkeit,
-        dies zu tun, und es gibt unzählige andere Wege der Handhabung von
-        URL-Regeldefinitionen.
+Der restliche Code des Moduls wird für unsere Views benutzt.  Die Idee besteht
+darin, Dekoratoren zu benutzen, um die URL-Dispatching-Regeln für
+View-Funktionen festzulegen, anstatt ein zentrales Modul ``urls.py`` zu
+verwenden, wie es Django tut, oder über eine ``.htaccess``-Datei URLs
+umzuschreiben, wie man es in PHP machen würde.  Dies ist **eine** Möglichkeit,
+dies zu tun, und es gibt unzählige andere Wege der Handhabung von
+URL-Regeldefinitionen.
 
-        Die Funktion `url_for`, die wir ebenfalls definieren, bietet einen einfachen
-        Weg, URLs anhand des Endpointes zu generieren.  Wir werden sie später in den
-        Views als auch unserem Model verwenden.
+Die Funktion `url_for`, die wir ebenfalls definieren, bietet einen einfachen
+Weg, URLs anhand des Endpointes zu generieren.  Wir werden sie später in den
+Views als auch unserem Model verwenden.
 
 
-        Unterbrechung: Und nun etwas komplett anderes
-        =============================================
+Unterbrechung: Und nun etwas komplett anderes
+=============================================
 
-        Da wir nun das Grundgerüst für unsere Anwendung fertig gestellt haben, können
-        wir jetzt erst einmal relaxen und uns etwas komplett anderem zuwenden: den
-        Verwaltungs-Scripts.  Während der Entwicklung erledigt man häufig immer
-        wiederkehrende Aufgaben, wie zum Beispiel das Starten eines Entwicklungs-Servers
-        (im Gegensatz zu PHP benötigt Werkzeug keinen Apache-Server; der in Python
-         integrierte `wsgiref`-Server ist völlig ausreichend und für die Entwicklung auf
-         jeden Fall empfehlenswert), das Starten eines Python-Interpreters (um mit den
-             Datenbankobjekten herumzuspielen oder die Datenbank zu initialisieren) etc.
+Da wir nun das Grundgerüst für unsere Anwendung fertig gestellt haben, können
+wir jetzt erst einmal relaxen und uns etwas komplett anderem zuwenden: den
+Verwaltungs-Scripts.  Während der Entwicklung erledigt man häufig immer
+wiederkehrende Aufgaben, wie zum Beispiel das Starten eines Entwicklungs-Servers
+(im Gegensatz zu PHP benötigt Werkzeug keinen Apache-Server; der in Python
+integrierte `wsgiref`-Server ist völlig ausreichend und für die Entwicklung auf
+jeden Fall empfehlenswert), das Starten eines Python-Interpreters (um mit den
+Datenbankobjekten herumzuspielen oder die Datenbank zu initialisieren) etc.
 
-         Werkzeug macht es unglaublich einfach, solche Verwaltungs-Scripts zu schreiben.
-         Der folgende Code implementiert ein voll funktionsfähiges Verwaltungs-Script
-         und gehört in die `manage.py`-Datei, welche du am Anfang erstellt hast:
+Werkzeug macht es unglaublich einfach, solche Verwaltungs-Scripts zu schreiben.
+Der folgende Code implementiert ein voll funktionsfähiges Verwaltungs-Script
+und gehört in die `manage.py`-Datei, welche du am Anfang erstellt hast:
 
-         .. sourcecode:: python
+.. sourcecode:: python
 
-#!/usr/bin/env python
-         from werkzeug import script
+    #!/usr/bin/env python
+    from werkzeug import script
 
-         def make_app():
-             from shorty.application import Shorty
-             return Shorty('sqlite:////tmp/shorty.db')
+    def make_app():
+        from shorty.application import Shorty
+        return Shorty('sqlite:////tmp/shorty.db')
 
-             def make_shell():
-    from shorty import models, utils
-    application = make_app()
-    return locals()
+    def make_shell():
+        from shorty import models, utils
+        application = make_app()
+        return locals()
 
     action_runserver = script.make_runserver(make_app, use_reloader=True)
     action_shell = script.make_shell(make_shell)
-action_initdb = lambda: make_app().init_database()
+    action_initdb = lambda: make_app().init_database()
 
-script.run()
+    script.run()
 
-    `werkzeug.script` ist genauer in der `Script-Dokumentation`_ beschrieben, und da
-    der Großteil des Codes verständlich sein sollte, werden wir hier nicht näher
-    darauf eingehen.
+`werkzeug.script` ist genauer in der `Script-Dokumentation`_ beschrieben, und da
+der Großteil des Codes verständlich sein sollte, werden wir hier nicht näher
+darauf eingehen.
 
-    Es ist aber wichtig, dass du ``python manage.py shell`` ausführen kannst, um
-    eine interaktive Python-Shell zu starten.  Solltest du einen Traceback
-    bekommen, kontrolliere bitte die darin genannte Code-Zeile und vergleiche sie
-    mit dem entsprechenden Code in dieser Anleitung.
+Es ist aber wichtig, dass du ``python manage.py shell`` ausführen kannst, um
+eine interaktive Python-Shell zu starten.  Solltest du einen Traceback
+bekommen, kontrolliere bitte die darin genannte Code-Zeile und vergleiche sie
+mit dem entsprechenden Code in dieser Anleitung.
 
-    Sobald das Script läuft, können wir mit dem Schreiben der Datenbank-Models
-    beginnen.
+Sobald das Script läuft, können wir mit dem Schreiben der Datenbank-Models
+beginnen.
 
-    .. _Script-Dokumentation: script.txt
+.. _Script-Dokumentation: script.txt
 
 
-    Teil 3: Datenbank-Models
-    ========================
+Teil 3: Datenbank-Models
+========================
 
-    Jetzt können wir die Models erstellen.  Da die Anwendung ziemlich einfach ist,
-    haben wir nur ein Model und eine Tabelle:
+Jetzt können wir die Models erstellen.  Da die Anwendung ziemlich einfach ist,
+haben wir nur ein Model und eine Tabelle:
 
-    .. sourcecode:: python
+.. sourcecode:: python
 
     from datetime import datetime
     from sqlalchemy import Table, Column, String, Boolean, DateTime
     from shorty.utils import session, metadata, url_for, get_random_uid
 
     url_table = Table('urls', metadata,
-            Column('uid', String(140), primary_key=True),
-            Column('target', String(500)),
-            Column('added', DateTime),
-            Column('public', Boolean)
-            )
+        Column('uid', String(140), primary_key=True),
+        Column('target', String(500)),
+        Column('added', DateTime),
+        Column('public', Boolean)
+    )
 
     class URL(object):
 
         def __init__(self, target, public=True, uid=None, added=None):
             self.target = target
-    self.public = public
+            self.public = public
             self.added = added or datetime.utcnow()
             if not uid:
                 while True:
-                uid = get_random_uid()
-                if not URL.query.get(uid):
-                    break
-                    self.uid = uid
+                    uid = get_random_uid()
+                    if not URL.query.get(uid):
+                        break
+            self.uid = uid
 
-                    @property
-                    def short_url(self):
-                        return url_for('link', uid=self.uid, _external=True)
+        @property
+        def short_url(self):
+            return url_for('link', uid=self.uid, _external=True)
 
-                        def __repr__(self):
-                            return '<URL %r>' % self.uid
+        def __repr__(self):
+            return '<URL %r>' % self.uid
 
-                            session.mapper(URL, url_table)
+    session.mapper(URL, url_table)
 
 
-    Dieses Modul ist gut überschaubar.  Wir importieren alles, was wir von
-    SQLAlchemy benötigen, und erstellen die Tabelle.  Dann fügen wir eine Klasse
-    für diese Tabelle hinzu und verbinden beide miteinander.  Für eine
-    detailliertere Erklärung bezüglich SQLAlchemy solltest du dir das
-    `exzellente Tutorial`_ anschauen.
+Dieses Modul ist gut überschaubar.  Wir importieren alles, was wir von
+SQLAlchemy benötigen, und erstellen die Tabelle.  Dann fügen wir eine Klasse
+für diese Tabelle hinzu und verbinden beide miteinander.  Für eine
+detailliertere Erklärung bezüglich SQLAlchemy solltest du dir das
+`exzellente Tutorial`_ anschauen.
 
-    Im Konstruktor generieren wir solange eine eindeutige ID, bis wir eine finden,
-    die noch nicht belegt ist.  Die `get_random_uid`-Funktion fehlt -- wir müssen
-    sie noch in unser `utils`-Modul einfügen:
+Im Konstruktor generieren wir solange eine eindeutige ID, bis wir eine finden,
+die noch nicht belegt ist.  Die `get_random_uid`-Funktion fehlt -- wir müssen
+sie noch in unser `utils`-Modul einfügen:
 
-    .. sourcecode:: python
+.. sourcecode:: python
 
     from random import sample, randrange
 
@@ -397,19 +397,19 @@ script.run()
     def get_random_uid():
         return ''.join(sample(URL_CHARS, randrange(3, 9)))
 
-        Wenn das getan ist, können wir ``python manage.py initdb`` ausführen, um die
-        Datenbank zu erstellen und ``python manage.py shell``, um damit herumzuspielen:
+Wenn das getan ist, können wir ``python manage.py initdb`` ausführen, um die
+Datenbank zu erstellen und ``python manage.py shell``, um damit herumzuspielen:
 
-        .. sourcecode:: pycon
+.. sourcecode:: pycon
 
-        Interactive Werkzeug Shell
-        >>> from shorty.models import session, URL
+    Interactive Werkzeug Shell
+    >>> from shorty.models import session, URL
 
-        Jetzt können wir einige URLs zu der Datenbank hinzufügen:
+Jetzt können wir einige URLs zu der Datenbank hinzufügen:
 
-        .. sourcecode:: pycon
+.. sourcecode:: pycon
 
-        >>> urls = [URL('http://example.org/'), URL('http://localhost:5000/')]
+    >>> urls = [URL('http://example.org/'), URL('http://localhost:5000/')]
     >>> URL.query.all()
     []
     >>> session.commit()
