@@ -14,6 +14,7 @@ import sys
 import inspect
 import traceback
 import codecs
+from tokenize import TokenError
 from werkzeug.utils import cached_property
 from werkzeug.debug.console import Console
 from werkzeug.debug.utils import render_template
@@ -204,8 +205,11 @@ class Frame(object):
                 if _funcdef_re.match(lines[lineno].code):
                     break
                 lineno -= 1
-            offset = len(inspect.getblock([x.code + '\n' for x
-                                           in lines[lineno:]]))
+            try:
+                offset = len(inspect.getblock([x.code + '\n' for x
+                                               in lines[lineno:]]))
+            except TokenError:
+                offset = 0
             for line in lines[lineno:lineno + offset]:
                 line.in_frame = True
 

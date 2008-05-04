@@ -240,6 +240,6 @@ class DebugReprGenerator(object):
                                title=title, repr=repr)
 
     def dump_locals(self, d):
-        attributes = [(key, self.repr(value)) for key, value in d.items()]
-        return render_template('dump_object.html', attributes=attributes,
+        items = [(key, self.repr(value)) for key, value in d.items()]
+        return render_template('dump_object.html', items=items,
                                title='Local variables in frame', repr=None)
