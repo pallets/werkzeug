@@ -32,7 +32,7 @@ def test_set_header():
     assert 'foo' in hs
     assert list(hs) == ['foo', 'Bar', 'Blah baz', 'Hehe']
     hs.add('Foo')
-    assert hs.to_header() == 'foo, Bar, Blah baz, Hehe'
+    assert hs.to_header() == 'foo, Bar, "Blah baz", Hehe'
 
 
 def test_list_header():

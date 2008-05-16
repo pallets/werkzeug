@@ -197,7 +197,7 @@ class HeaderSet(object):
 
     def to_header(self):
         """Convert the header set into an HTTP header string."""
-        return ', '.join(self._headers)
+        return ', '.join(map(quote_header_value, self._headers))
 
     def __getitem__(self, idx):
         return self._headers[idx]
@@ -464,6 +464,9 @@ class Authorization(dict):
 class WWWAuthenticate(_UpdateDict):
     """Provides simple access to `WWW-Authenticate` headers."""
 
+    #: list of keys that require quoting in the generated header
+    _require_quoting = frozenset(['domain', 'nonce', 'opaque', 'realm'])
+
     def __init__(self, auth_type=None, values=None, on_update=None):
         _UpdateDict.__init__(self, values or (), on_update)
         if auth_type:
@@ -500,7 +503,11 @@ class WWWAuthenticate(_UpdateDict):
         """Convert the stored values into a WWW-Authenticate header."""
         d = dict(self)
         auth_type = d.pop('__auth_type__', None) or 'basic'
-        return '%s %s' % (auth_type.title(), dump_header(d))
+        return '%s %s' % (auth_type.title(), ', '.join([
+            '%s=%s' % (key, quote_header_value(value,
+                       allow_token=key not in self._require_quoting))
+            for key, value in d.iteritems()
+        ]))
 
     def __str__(self):
         return self.to_header()
@@ -578,20 +585,24 @@ class WWWAuthenticate(_UpdateDict):
     del _set_property
 
 
-def quote_header_value(value, extra_chars=''):
+def quote_header_value(value, extra_chars='', allow_token=True):
     """Quote a header value if necessary."""
-    token_chars = _token_chars | set(extra_chars)
     value = str(value)
-    if not set(value).issubset(token_chars):
-        value = '"%s"' % value.replace('"', "'")
-    return value
+    if allow_token:
+        token_chars = _token_chars | set(extra_chars)
+        if set(value).issubset(token_chars):
+            return value
+    return '"%s"' % value.replace('\\', '\\\\').replace('"', '\\"')
 
 
-def dump_header(iterable):
+def dump_header(iterable, allow_token=True):
     """Dump an HTTP header again.  This is the reversal of
     `parse_list_header`, `parse_set_header` and `parse_dict_header`.  This
     also quotes strings that include an equals sign unless you pass it as dict
     of key, value pairs.
+
+    The `allow_token` parameter can be set to `False` to disallow tokens as
+    values.  If this is enabled all values are quoted.
     """
     if isinstance(iterable, dict):
         items = []
@@ -599,9 +610,13 @@ def dump_header(iterable):
             if value is None:
                 items.append(key)
             else:
-                items.append('%s=%s' % (key, quote_header_value(value)))
+                items.append('%s=%s' % (
+                    key,
+                    quote_header_value(value, allow_token=allow_token)
+                ))
     else:
-        items = [quote_header_value(x) for x in iterable]
+        items = [quote_header_value(x, allow_token=allow_token)
+                 for x in iterable]
     return ', '.join(items)
 
 
