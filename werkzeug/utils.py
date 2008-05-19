@@ -28,7 +28,8 @@ except NameError:
         return item[::-1]
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
-     _StorageHelper, _DictAccessorProperty, _dump_date
+     _StorageHelper, _DictAccessorProperty, _dump_date, \
+     _get_signature_validator
 from werkzeug.http import generate_etag
 
 
@@ -1725,8 +1726,65 @@ def run_wsgi_app(app, environ, buffered=False):
     return app_iter, response[0], response[1]
 
 
+def validate_arguments(func, args, kwargs, drop_extra=True):
+    """Check if the function accepts the arguments and keyword arguments.
+    Returns a new ``(args, kwargs)`` tuple that can savely be passed to
+    the function without causing a `TypeError` because the function signature
+    is incompatible.  If `drop_extra` is set to `True` (which is the default)
+    any extra positional or keyword arguments are dropped automatically.
+
+    The exception raised provides three arguments:
+
+    `missing`
+        A set of argument names that the function expected but where
+        missing.
+
+    `extra`
+        A dict of keyword arguments that the function can not handle but
+        where provided.
+
+    `extra_positional`
+        A list of values that where given by positional argument but the
+        function cannot accept.
+
+    This can be useful for decorators that forward user submitted data to
+    a view function::
+
+        from werkzeug import ArgumentValidationError, validate_arguments
+
+        def sanitize(f):
+            def proxy(request):
+                kwargs = request.values.to_dict()
+                try:
+                    args, kwargs = validate_arguments(f, (request,), kwargs)
+                except ArgumentValidationError:
+                    raise BadRequest('The browser failed to transmit all '
+                                     'the data expected.')
+                return f(*args, **kwargs)
+            return proxy
+    """
+    validate = _get_signature_validator(func)
+    args, kwargs, missing, extra, extra_positional = validate(args, kwargs)
+    if missing:
+        raise ArgumentValidationError(tuple(missing))
+    elif (extra or extra_positional) and not drop_extra:
+        raise ArgumentValidationError(None, extra, extra_positional)
+    return tuple(args), kwargs
+
+
+class ArgumentValidationError(ValueError):
+    """Raised if `validate_arguments` fails to validate"""
+
+    def __init__(self, missing=None, extra=None, extra_positional=None):
+        self.missing = set(missing or ())
+        self.extra = extra or {}
+        self.extra_positional = extra_positional or []
+        ValueError.__init__(self, 'function arguments invalid.  ('
+                            '%d missing)' % len(self.missing))
+
+
 # create all the special key errors now that the classes are defined.
 from werkzeug.exceptions import BadRequest
 for _cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
     _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')
-del _cls, BadRequest
+del BadRequest, _cls

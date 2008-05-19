@@ -31,6 +31,7 @@ Version 0.3
 - `url_encode` treats lists and tuples in dicts passed to it as multiple
   values for the same key so that one doesn't have to pass a `MultiDict`
   to the function.
+- added `validate_arguments`
 
 
 Version 0.2

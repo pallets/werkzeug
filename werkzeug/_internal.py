@@ -9,7 +9,9 @@
     :license: GNU GPL.
 """
 import cgi
+import inspect
 from cStringIO import StringIO
+from operator import itemgetter
 from Cookie import BaseCookie, Morsel, CookieError
 from time import asctime, gmtime, time
 from datetime import datetime
@@ -83,6 +85,71 @@ def _log(type, message, *args, **kwargs):
         _logger.addHandler(handler)
         _logger.setLevel(logging.INFO)
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
+
+
+def _get_signature_validator(func):
+    """Return a signature object for the function."""
+    # if we have a cached validator for this function, return it
+    if hasattr(func, '_werkzeug_validator'):
+        return func._werkzeug_validator
+
+    # inspect the function signature and collect all the information
+    positional, varargs, kwargs, defaults = inspect.getargspec(func)
+    defaults = defaults or ()
+    arg_count = len(positional)
+    arguments = []
+    has_varargs = varargs is not None
+    has_kwargs = kwargs is not None
+    for idx, name in enumerate(positional):
+        if isinstance(name, list):
+            raise TypeError('cannot validate functions that unpack tuples '
+                            'in the function signature')
+        try:
+            default = defaults[idx - arg_count]
+        except IndexError:
+            param = (name, False, None)
+        else:
+            param = (name, True, default)
+        arguments.append(param)
+
+    def validate(args, kwargs):
+        """The validation function used by `werkzeug.validate_arguments`."""
+        new_args = []
+        missing = []
+        extra = {}
+
+        # consume as many arguments as positional as possible
+        for idx, (name, has_default, default) in enumerate(arguments):
+            try:
+                value = args[idx]
+            except IndexError:
+                try:
+                    value = kwargs.pop(name)
+                except KeyError:
+                    if has_default:
+                        value = default
+                    else:
+                        missing.append(name)
+                        continue
+            else:
+                if name in kwargs:
+                    extra[name] = kwargs.pop(name)
+            new_args.append(value)
+
+        # on extra positional arguments check if varargs are consumed
+        extra_positional = arguments[len(arguments):]
+        if has_varargs:
+            new_args.extend(extra_positional)
+            del extra_positional[:]
+
+        # handle extra kwargs
+        if kwargs and not has_kwargs:
+            extra.update(kwargs)
+            kwargs = {}
+
+        return new_args, kwargs, missing, extra, extra_positional
+    func._werkzeug_validator = validate
+    return validate
 
 
 def _patch_wrapper(old, new):
