@@ -1733,7 +1733,7 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
     is incompatible.  If `drop_extra` is set to `True` (which is the default)
     any extra positional or keyword arguments are dropped automatically.
 
-    The exception raised provides three arguments:
+    The exception raised provides three attributes:
 
     `missing`
         A set of argument names that the function expected but where
@@ -1754,9 +1754,9 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
 
         def sanitize(f):
             def proxy(request):
-                kwargs = request.values.to_dict()
+                data = request.values.to_dict()
                 try:
-                    args, kwargs = validate_arguments(f, (request,), kwargs)
+                    args, kwargs = validate_arguments(f, (request,), data)
                 except ArgumentValidationError:
                     raise BadRequest('The browser failed to transmit all '
                                      'the data expected.')
