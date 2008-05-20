@@ -32,6 +32,7 @@ Version 0.3
   values for the same key so that one doesn't have to pass a `MultiDict`
   to the function.
 - added `validate_arguments`
+- added `BaseRequest.application`
 
 
 Version 0.2

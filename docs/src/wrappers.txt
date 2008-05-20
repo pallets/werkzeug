@@ -20,6 +20,7 @@ are available by mixing in various mixin classes or using `Request` and
 
     .. def:: werkzeug.wrappers.BaseRequest.__init__
     .. def:: werkzeug.wrappers.BaseRequest.from_values
+    .. def:: werkzeug.wrappers.BaseRequest.application
 
     **Properties**
 

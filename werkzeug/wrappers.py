@@ -33,7 +33,8 @@ from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
      header_property, parse_form_data, get_content_type, url_decode
-from werkzeug._internal import _empty_stream, _decode_unicode
+from werkzeug._internal import _empty_stream, _decode_unicode, \
+     _patch_wrapper
 
 
 class BaseRequest(object):
@@ -105,6 +106,18 @@ class BaseRequest(object):
         result.update(new_env)
         return cls(result)
     from_values = classmethod(from_values)
+
+    def application(cls, f):
+        """Decorate a function as responder that accepts the request as
+        first argument.  This works like the `responder` decorator but
+        the function is passed the request object as first argument::
+
+            @Request.application
+            def my_wsgi_app(request):
+                return Response('Hello World!')
+        """
+        return _patch_wrapper(f, lambda *a: f(cls(a[-2]))(*a[-2:]))
+    application = classmethod(application)
 
     def _get_file_stream(self):
         """Called to get a stream for the file upload.
