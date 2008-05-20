@@ -118,7 +118,6 @@ def _get_signature_validator(func):
         arguments.append(param)
 
     def validate(args, kwargs):
-        """The validation function used by `werkzeug.validate_arguments`."""
         new_args = []
         missing = []
         extra = {}
@@ -126,28 +125,24 @@ def _get_signature_validator(func):
         # consume as many arguments as positional as possible
         for idx, (name, has_default, default) in enumerate(arguments):
             try:
-                value = args[idx]
+                new_args.append(args[idx])
             except IndexError:
                 try:
-                    value = kwargs.pop(name)
+                    new_args.append(kwargs.pop(name))
                 except KeyError:
                     if has_default:
-                        value = default
+                        new_args.append(default)
                     else:
                         missing.append(name)
-                        continue
             else:
                 if name in kwargs:
                     extra[name] = kwargs.pop(name)
-            new_args.append(value)
 
-        # on extra positional arguments check if varargs are consumed
-        extra_positional = arguments[len(arguments):]
+        # handle extra arguments
+        extra_positional = args[arg_count:]
         if has_varargs:
             new_args.extend(extra_positional)
             del extra_positional[:]
-
-        # handle extra kwargs
         if kwargs and not has_kwargs:
             extra.update(kwargs)
             kwargs = {}

@@ -441,3 +441,22 @@ def test_html_builder():
 def test_shareddatamiddleware_get_file_loader():
     app = SharedDataMiddleware(None, {})
     assert callable(app.get_file_loader('foo'))
+
+
+def test_validate_arguments():
+    take_none = lambda: None
+    take_two = lambda a, b: None
+    take_two_one_default = lambda a, b=0: None
+
+    assert validate_arguments(take_two, (1, 2,), {}) == ((1, 2), {})
+    assert validate_arguments(take_two, (1,), {'b': 2}) == ((1, 2), {})
+    assert validate_arguments(take_two_one_default, (1,), {}) == ((1, 0), {})
+    assert validate_arguments(take_two_one_default, (1, 2), {}) == ((1, 2), {})
+
+    raises(ArgumentValidationError, validate_arguments, take_two, (), {})
+
+    assert validate_arguments(take_none, (1, 2,), {'c': 3}) == ((), {})
+    raises(ArgumentValidationError,
+           validate_arguments, take_none, (1,), {}, drop_extra=False)
+    raises(ArgumentValidationError,
+           validate_arguments, take_none, (), {'a': 1}, drop_extra=False)

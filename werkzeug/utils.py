@@ -1780,7 +1780,10 @@ class ArgumentValidationError(ValueError):
         self.extra = extra or {}
         self.extra_positional = extra_positional or []
         ValueError.__init__(self, 'function arguments invalid.  ('
-                            '%d missing)' % len(self.missing))
+                            '%d missing, %d additional)' % (
+            len(self.missing),
+            len(self.extra) + len(self.extra_positional)
+        ))
 
 
 # create all the special key errors now that the classes are defined.
