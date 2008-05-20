@@ -148,7 +148,7 @@ class AtomFeed(object):
                 self.author = ({'name': u'unbekannter Autor'},)
 
         if not self.updated:
-            dates = sorted(entry.updated for entry in self.entries)
+            dates = sorted([entry.updated for entry in self.entries])
             self.updated = dates and dates[-1] or datetime.utcnow()
 
         yield u'<?xml version="1.0" encoding="utf-8"?>\n'
@@ -163,7 +163,7 @@ class AtomFeed(object):
                 escape(self.feed_url, True)
         for link in self.links:
             yield u'  <link %s/>\n' % ''.join('%s="%s" ' % \
-                (k, escape(link[k], True)) for k in link)
+                [(k, escape(link[k], True)) for k in link])
         for author in self.author:
             yield u'  <author>\n'
             yield u'    <name>%s</name>\n' % escape(author['name'])
@@ -330,7 +330,7 @@ class FeedEntry(object):
             yield u'  </author>\n'
         for link in self.links:
             yield u'  <link %s/>\n' % ''.join('%s="%s" ' % \
-                (k, escape(link[k], True)) for k in link)
+                [(k, escape(link[k], True)) for k in link])
         if self.summary:
             yield u'  ' + _make_text_block('summary', self.summary,
                                            self.summary_type)
