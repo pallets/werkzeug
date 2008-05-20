@@ -142,7 +142,7 @@ def _get_signature_validator(func):
         extra_positional = args[arg_count:]
         if has_varargs:
             new_args.extend(extra_positional)
-            del extra_positional[:]
+            extra_positional = ()
         if kwargs and not has_kwargs:
             extra.update(kwargs)
             kwargs = {}
