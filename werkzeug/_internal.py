@@ -10,6 +10,7 @@
 """
 import cgi
 import inspect
+from weakref import WeakKeyDictionary
 from cStringIO import StringIO
 from Cookie import BaseCookie, Morsel, CookieError
 from time import asctime, gmtime, time
@@ -18,6 +19,7 @@ from datetime import datetime
 
 _logger = None
 _empty_stream = StringIO('')
+_signature_cache = WeakKeyDictionary()
 
 
 HTTP_STATUS_CODES = {
@@ -88,9 +90,13 @@ def _log(type, message, *args, **kwargs):
 
 def _get_signature_validator(func):
     """Return a signature object for the function."""
+    if hasattr(func, 'im_func'):
+        func = func.im_func
+
     # if we have a cached validator for this function, return it
-    if hasattr(func, '_werkzeug_validator'):
-        return func._werkzeug_validator
+    validate = _signature_cache.get(func)
+    if validate is not None:
+        return validate
 
     # inspect the function signature and collect all the information
     positional, varargs, kwargs, defaults = inspect.getargspec(func)
@@ -147,7 +153,7 @@ def _get_signature_validator(func):
             kwargs = {}
 
         return new_args, kwargs, missing, extra, extra_positional
-    func._werkzeug_validator = validate
+    _signature_cache[func] = validate
     return validate
 
 
