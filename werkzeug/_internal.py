@@ -11,7 +11,6 @@
 import cgi
 import inspect
 from cStringIO import StringIO
-from operator import itemgetter
 from Cookie import BaseCookie, Morsel, CookieError
 from time import asctime, gmtime, time
 from datetime import datetime
@@ -160,7 +159,7 @@ def _patch_wrapper(old, new):
         new.__module__ = old.__module__
         new.__doc__ = old.__doc__
         new.__dict__ = old.__dict__
-    except AttributeError:
+    except:
         pass
     return new
 
