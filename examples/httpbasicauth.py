@@ -27,7 +27,7 @@ class Application(object):
                         {'WWW-Authenticate': 'Basic realm="%s"' % self.realm})
 
     def dispatch_request(self, request):
-        return Response('Logged in as %s' % request.environ['REMOTE_USER'])
+        return Response('Logged in as %s' % request.authorization.username)
 
     def __call__(self, environ, start_response):
         request = Request(environ)
@@ -36,7 +36,7 @@ class Application(object):
             response = self.auth_required(request)
         else:
             response = self.dispatch_request(request)
-        return response(request)(environ, start_response)
+        return response(environ, start_response)
 
 
 if __name__ == '__main__':
