@@ -36,7 +36,7 @@ class Application(object):
             response = self.auth_required(request)
         else:
             response = self.dispatch_request(request)
-        return dispatch(request)(environ, start_response)
+        return response(request)(environ, start_response)
 
 
 if __name__ == '__main__':
