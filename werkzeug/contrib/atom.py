@@ -131,6 +131,7 @@ class AtomFeed(object):
         if len(args) == 1 and not kwargs and isinstance(args[0], FeedEntry):
             self.entries.append(args[0])
         else:
+            kwargs['feed_url'] = self.feed_url
             self.entries.append(FeedEntry(*args, **kwargs))
 
     def __repr__(self):
@@ -218,7 +219,7 @@ class AtomFeed(object):
 class FeedEntry(object):
     """Represents a single entry in a feed."""
 
-    def __init__(self, title=None, content=None, **kwargs):
+    def __init__(self, title=None, content=None, feed_url=None, **kwargs):
         """Holds an Atom feed entry.
 
         :Parameters:
@@ -284,7 +285,7 @@ class FeedEntry(object):
         self.published = kwargs.get('published')
         self.rights = kwargs.get('rights')
         self.links = kwargs.get('links', [])
-        self.xml_base = kwargs.get('xml_base', self.url)
+        self.xml_base = kwargs.get('xml_base', feed_url)
 
         if not hasattr(self.author, '__iter__') \
            or isinstance(self.author, (basestring, dict)):
