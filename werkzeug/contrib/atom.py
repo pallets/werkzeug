@@ -104,7 +104,7 @@ class AtomFeed(object):
         self.rights = kwargs.get('rights')
         self.rights_type = kwargs.get('rights_type')
         self.subtitle = kwargs.get('subtitle')
-        self.subtitle_type = kwargs.get('subtitle_type')
+        self.subtitle_type = kwargs.get('subtitle_type', 'text')
         self.generator = kwargs.get('generator')
         if self.generator is None:
             self.generator = self.default_generator
@@ -272,7 +272,7 @@ class FeedEntry(object):
         Everywhere where a list is demanded, any iterable can be used.
         """
         self.title = title
-        self.title_type = kwargs.get('title_type', 'html')
+        self.title_type = kwargs.get('title_type', 'text')
         self.content = content
         self.content_type = kwargs.get('content_type', 'html')
         self.url = kwargs.get('url')

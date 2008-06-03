@@ -42,6 +42,8 @@ def get_current_traceback(ignore_system_exceptions=False,
     if ignore_system_exceptions and exc_type in system_exceptions:
         raise
     for x in xrange(skip):
+        if tb.tb_next is None:
+            break
         tb = tb.tb_next
     tb = Traceback(exc_type, exc_value, tb)
     if not show_hidden_frames:
