@@ -29,7 +29,7 @@ except NameError:
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
      _StorageHelper, _DictAccessorProperty, _dump_date, \
-     _get_signature_validator
+     _parse_signature
 from werkzeug.http import generate_etag
 
 
@@ -1763,13 +1763,41 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
                 return f(*args, **kwargs)
             return proxy
     """
-    validate = _get_signature_validator(func)
-    args, kwargs, missing, extra, extra_positional = validate(args, kwargs)
+    parser = _parse_signature(func)
+    args, kwargs, missing, extra, extra_positional = parser(args, kwargs)[:5]
     if missing:
         raise ArgumentValidationError(tuple(missing))
     elif (extra or extra_positional) and not drop_extra:
         raise ArgumentValidationError(None, extra, extra_positional)
     return tuple(args), kwargs
+
+
+def bind_arguments(func, args, kwargs):
+    """Bind the arguments provided into a dict.  When passed a function,
+    a tuple of arguments and a dict of keyword arguments `bind_arguments`
+    returns a dict of names as the function would see it.  This can be useful
+    to implement a cache decorator that uses the function arguments to build
+    the cache key based on the values of the arguments.
+    """
+    args, kwargs, missing, extra, extra_positional, \
+        arg_spec, vararg_var, kwarg_var = _parse_signature(func)(args, kwargs)
+    values = {}
+    for (name, has_default, default), value in zip(arg_spec, args):
+        values[name] = value
+    if vararg_var is not None:
+        values[vararg_var] = tuple(extra_positional)
+    elif extra_positional:
+        raise TypeError('too many positional arguments')
+    if kwarg_var is not None:
+        multikw = set(extra) & set([x[0] for x in arg_spec])
+        if multikw:
+            raise TypeError('got multiple values for keyword argument ' +
+                            repr(iter(multikw).next()))
+        values[kwarg_var] = extra
+    elif extra:
+        raise TypeError('got unexpected keyword argument ' +
+                        repr(iter(extra).next()))
+    return values
 
 
 class ArgumentValidationError(ValueError):

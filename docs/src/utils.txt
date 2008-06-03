@@ -223,4 +223,5 @@ Helper Functions
 .. def:: werkzeug.utils.import_string
 .. def:: werkzeug.utils.find_modules
 .. def:: werkzeug.utils.validate_arguments
+.. def:: werkzeug.utils.bind_arguments
 .. def:: werkzeug.testapp.test_app

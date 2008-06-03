@@ -88,26 +88,24 @@ def _log(type, message, *args, **kwargs):
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
 
-def _get_signature_validator(func):
+def _parse_signature(func):
     """Return a signature object for the function."""
     if hasattr(func, 'im_func'):
         func = func.im_func
 
     # if we have a cached validator for this function, return it
-    validate = _signature_cache.get(func)
-    if validate is not None:
-        return validate
+    parse = _signature_cache.get(func)
+    if parse is not None:
+        return parse
 
     # inspect the function signature and collect all the information
-    positional, varargs, kwargs, defaults = inspect.getargspec(func)
+    positional, vararg_var, kwarg_var, defaults = inspect.getargspec(func)
     defaults = defaults or ()
     arg_count = len(positional)
     arguments = []
-    has_varargs = varargs is not None
-    has_kwargs = kwargs is not None
     for idx, name in enumerate(positional):
         if isinstance(name, list):
-            raise TypeError('cannot validate functions that unpack tuples '
+            raise TypeError('cannot parse functions that unpack tuples '
                             'in the function signature')
         try:
             default = defaults[idx - arg_count]
@@ -116,8 +114,9 @@ def _get_signature_validator(func):
         else:
             param = (name, True, default)
         arguments.append(param)
+    arguments = tuple(arguments)
 
-    def validate(args, kwargs):
+    def parse(args, kwargs):
         new_args = []
         missing = []
         extra = {}
@@ -140,16 +139,17 @@ def _get_signature_validator(func):
 
         # handle extra arguments
         extra_positional = args[arg_count:]
-        if has_varargs:
+        if vararg_var is not None:
             new_args.extend(extra_positional)
             extra_positional = ()
-        if kwargs and not has_kwargs:
+        if kwargs and not kwarg_var is not None:
             extra.update(kwargs)
             kwargs = {}
 
-        return new_args, kwargs, missing, extra, extra_positional
-    _signature_cache[func] = validate
-    return validate
+        return new_args, kwargs, missing, extra, extra_positional, \
+               arguments, vararg_var, kwarg_var
+    _signature_cache[func] = parse
+    return parse
 
 
 def _patch_wrapper(old, new):
