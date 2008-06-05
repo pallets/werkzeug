@@ -33,6 +33,7 @@ Version 0.3
   to the function.
 - added `validate_arguments`
 - added `BaseRequest.application`
+- improved Python 2.3 support
 
 
 Version 0.2

@@ -115,6 +115,14 @@ r"""
         <% endif %>
 
 
+    Python 2.3 Compatibility
+    ------------------------
+
+    Because of limitations in Python 2.3 it's impossible to achieve the
+    semi-silent variable lookup fallback.  If a template relies on undefined
+    variables it won't execute under Python 2.3.
+
+
     :copyright: 2006-2008 by Armin Ronacher, Ka-Ping Yee.
     :license: BSD License.
 """
@@ -127,6 +135,22 @@ from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 from werkzeug import utils
 from werkzeug._internal import _decode_unicode
+
+# Anything older than Python 2.4 
+if sys.version_info < (2, 4):
+    class AstMangler(object):
+
+        def __getattr__(self, key):
+            class_ = getattr(_ast, key)
+            def wrapper(*args, **kw):
+                lineno = kw.pop('lineno', None)
+                obj = class_(*args, **kw)
+                obj.lineno = lineno
+                return obj
+            return wrapper
+
+    _ast = ast
+    ast = AstMangler()
 
 
 # Copyright notice: The `parse_data` method uses the string interpolation
@@ -322,7 +346,7 @@ class Parser(object):
 
         def write_data(value):
             if value:
-                nodes.append(ast.Const(value, lineno))
+                nodes.append(ast.Const(value, lineno=lineno))
                 return value.count('\n')
             return 0
 
@@ -473,9 +497,12 @@ class Template(object):
         value will be the rendered template.
         """
         ns = self.default_context.copy()
-        ns.update(*args, **kwargs)
+        ns.update(dict(*args, **kwargs))
         context = Context(ns, self.encoding, self.errors)
-        exec self.code in context.runtime, context
+        if sys.version_info < (2, 4):
+            exec self.code in context.runtime, ns
+        else:
+            exec self.code in context.runtime, context
         return context.get_value(self.unicode_mode)
 
     def substitute(self, *args, **kwargs):
