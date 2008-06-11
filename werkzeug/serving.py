@@ -202,6 +202,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
 
 
 def run_simple(hostname, port, application, use_reloader=False,
+               use_debugger=False, use_evalex=True,
                extra_files=None, reloader_interval=1, threaded=False,
                processes=1, request_handler=None):
     """Start an application using wsgiref and with an optional reloader.  This
@@ -213,6 +214,8 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param application: the WSGI application to execute
     :param use_reloader: should the server automatically restart the python
                          process if modules were changed?
+    :param use_debugger: should the werkzeug debugging system be used?
+    :param use_evalex: should the exception evaluation feature be enabled?
     :param extra_files: a list of files the reloader should listen for
                         additionally to the modules.  For example configuration
                         files.
@@ -225,6 +228,10 @@ def run_simple(hostname, port, application, use_reloader=False,
                             at the `werkzeug.serving` sourcecode for more
                             details.
     """
+    if use_debugger:
+        from werkzeug.debug import DebuggedApplication
+        application = DebuggedApplication(application, use_evalex)
+
     def inner():
         srv = make_server(hostname, port, application, threaded,
                           processes, request_handler)
