@@ -121,9 +121,8 @@ def make_server(host, port, app=None, threaded=False, processes=1,
     elif processes > 1:
         class request_handler(request_handler):
             multiprocess = True
-            max_children = processes - 1
         class server(ForkingMixIn, WSGIServer):
-            pass
+            max_children = processes - 1
     else:
         server = WSGIServer
     srv = server((host, port), request_handler)
