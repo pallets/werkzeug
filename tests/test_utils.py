@@ -218,10 +218,12 @@ def test_environ_property():
 
         string = environ_property('string')
         missing = environ_property('missing', 'spam')
-        read_only = environ_property('number', read_only=True)
+        read_only = environ_property('number')
         number = environ_property('number', load_func=int)
         broken_number = environ_property('broken_number', load_func=int)
-        date = environ_property('date', None, parse_date, http_date)
+        date = environ_property('date', None, parse_date, http_date,
+                                read_only=False)
+        foo = environ_property('foo')
 
     a = A()
     assert a.string == 'abc'

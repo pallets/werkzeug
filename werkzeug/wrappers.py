@@ -69,13 +69,23 @@ class BaseRequest(object):
     encoding_errors = 'ignore'
     is_behind_proxy = False
 
-    def __init__(self, environ, populate_request=True):
+    def __init__(self, environ, populate_request=True, shallow=False):
         """Per default the request object will be added to the WSGI
         enviornment as `werkzeug.request` to support the debugging system.
-        If you don't want that, set `populate_request` to `False`."""
+        If you don't want that, set `populate_request` to `False`.
+
+        If `shallow` is `True` the environment is initialized as shallow
+        object around the environ.  Every operation that would modify the
+        environ in any way (such as consuming form data) raises an exception
+        unless the `shallow` attribute is explicitly set to `False`.  This
+        is useful for middlewares where you don't want to consume the form
+        data by accident.  A shallow request is not populated to the WSGI
+        environment.
+        """
         self.environ = environ
-        if populate_request:
+        if populate_request and not shallow:
             self.environ['werkzeug.request'] = self
+        self.shallow = shallow
         self._data_stream = None
 
     def from_values(cls, path='/', base_url=None, query_string=None, **options):
@@ -137,6 +147,10 @@ class BaseRequest(object):
 
         :internal:
         """
+        if self.shallow:
+            raise RuntimeError('A shallow request tried to consume '
+                               'form data.  If you really want to do that, '
+                               'set `shallow` to False.')
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
             data = parse_form_data(self.environ, self._get_file_stream,
                                    self.charset, self.encoding_errors)
@@ -182,7 +196,7 @@ class BaseRequest(object):
     form = property(form, doc=form.__doc__)
 
     def values(self):
-        """Combined multi dict for `args` and `form`"""
+        """Combined multi dict for `args` and `form`."""
         return CombinedMultiDict([self.args, self.form])
     values = cached_property(values)
 
@@ -282,6 +296,11 @@ class BaseRequest(object):
             return self.access_route[0]
         return self.environ.get('REMOTE_ADDR')
     remote_addr = property(remote_addr)
+
+    remote_user = environ_property('REMOTE_ADDR', doc='''
+        If the server supports user authentication, and the script is
+        protected, this attribute contains the username the user has
+        authenticated as.''')
 
     is_xhr = property(lambda x: x.environ.get('HTTP_X_REQUESTED_WITH', '')
                       .lower() == 'xmlhttprequest', doc='''

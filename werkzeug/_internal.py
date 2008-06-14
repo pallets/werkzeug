@@ -281,14 +281,16 @@ class _ExtendedCookie(BaseCookie):
 
 class _DictAccessorProperty(object):
     """Baseclass for `environ_property` and `header_property`."""
+    read_only = False
 
     def __init__(self, name, default=None, load_func=None, dump_func=None,
-                 read_only=False, doc=None):
+                 read_only=None, doc=None):
         self.name = name
         self.default = default
         self.load_func = load_func
         self.dump_func = dump_func
-        self.read_only = read_only
+        if read_only is not None:
+            self.read_only = read_only
         self.__doc__ = doc
 
     def __get__(self, obj, type=None):

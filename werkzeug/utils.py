@@ -1017,9 +1017,11 @@ class environ_property(_DictAccessorProperty):
     it.  If it raises `ValueError` or `TypeError` the default value is used.
     If no default value is provided `None` is used.
 
-    Per default the property works in two directions, but if you set
-    `read_only` to False it will block set/delete.
+    Per default the property is read only.  You have to explicitly enable it
+    by passing ``read_only=False`` to the constructor.
     """
+
+    read_only = True
 
     def lookup(self, obj):
         return obj.environ

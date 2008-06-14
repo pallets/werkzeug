@@ -34,6 +34,12 @@ Version 0.3
 - added `validate_arguments`
 - added `BaseRequest.application`
 - improved Python 2.3 support
+- `run_simple` accepts `use_debugger` and `use_evalex` parameters now,
+  like the `make_runserver` factory function from the script module.
+- the `environ_property` is now read only by default
+- it's now possible to initialize requests as "shallow" requests which
+  causes runtime errors if the request object tries to consume the
+  input stream.
 
 
 Version 0.2
