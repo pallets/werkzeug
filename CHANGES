@@ -4,7 +4,7 @@ Werkzeug Changelog
 
 Version 0.3
 -----------
-(codename to be selected, release date somewhere around May 2008)
+(codename EUR325CAT6, released on June 14th 2008)
 
 - added support for redirecting in url routing.
 - added `Authorization` and `AuthorizationMixin`
