@@ -264,3 +264,9 @@ def test_common_response_descriptors_mixin():
     response.content_language.add('en-US')
     response.content_language.add('fr')
     assert response.headers['Content-Language'] == 'en-US, fr'
+
+
+def test_shallow_mode():
+    request = Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
+    assert request.args['foo'] == 'bar'
+    raises(RuntimeError, lambda: request.form['foo'])
