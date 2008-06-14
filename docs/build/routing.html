@@ -106,11 +106,7 @@ than 1.</li>
 </ul>
 </dd>
 <dt><cite>path</cite></dt>
-<dd><p class="first">Matches one of the items provided.  Items can either be python
-identifiers or unicode strings:</p>
-<div class="syntax"><pre><span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&lt;any(about, help, imprint, u&quot;class&quot;):page_name&gt;&#39;</span><span class="p">)</span>
-</pre></div>
-</dd>
+<dd>Like the default string converter, but it also matches slashes.</dd>
 <dt><cite>any</cite></dt>
 <dd><p class="first">Matches one of the items provided.  Items can either be Python
 identifiers or unicode strings:</p>
@@ -223,12 +219,13 @@ subdomain feature.</p>
 </dl>
 <dl class="last">
 <dt><cite id="werkzeug.routing.Map.bind_to_environ">bind_to_environ</cite> <tt class="func-signature docutils literal"><span class="pre">(environ,</span> <span class="pre">server_name=None,</span> <span class="pre">subdomain=None,</span> <span class="pre">calculate_subdomain=False)</span></tt></dt>
-<dd><p class="first">Like <cite>bind</cite> but you can pass it an WSGI environment and it will fetch
-the information from that directory.  Note that because of limitations
-in the protocol there is no way to get the current subdomain and real
-<cite>server_name</cite> from the environment.  If you don&#8217;t provide it, Werkzeug
-will use <cite>SERVER_NAME</cite> and <cite>SERVER_PORT</cite> (or <cite>HTTP_HOST</cite> if provided)
-as used <cite>server_name</cite> with disabled subdomain feature.</p>
+<dd><p class="first">Like <cite>bind</cite> but you can pass it an WSGI environment and it will
+fetch the information from that directory.  Note that because of
+limitations in the protocol there is no way to get the current
+subdomain and real <cite>server_name</cite> from the environment.  If you don&#8217;t
+provide it, Werkzeug will use <cite>SERVER_NAME</cite> and <cite>SERVER_PORT</cite> (or
+<cite>HTTP_HOST</cite> if provided) as used <cite>server_name</cite> with disabled subdomain
+feature.</p>
 <p>If <cite>subdomain</cite> is <cite>None</cite> but an environment and a server name is
 provided it will calculate the current subdomain automatically.
 Example: <cite>server_name</cite> is <tt class="docutils literal"><span class="pre">'example.com'</span></tt> and the <cite>SERVER_NAME</cite>
@@ -249,9 +246,9 @@ match method.</p>
 URL matching and building based on runtime information.</p>
 <dl>
 <dt><cite id="werkzeug.routing.MapAdapter.match">match</cite> <tt class="func-signature docutils literal"><span class="pre">(path_info=None,</span> <span class="pre">method=None)</span></tt></dt>
-<dd><p class="first">The usage is simple: you just pass the match method the current path
-info as well as the method (which defaults to <cite>GET</cite>).  The following
-things can then happen:</p>
+<dd><p class="first">The usage is simple: you just pass the match method the current
+path info as well as the method (which defaults to <cite>GET</cite>).  The
+following things can then happen:</p>
 <ul class="simple">
 <li>you receive a <cite>NotFound</cite> exception that indicates that no URL is
 matching.  A <cite>NotFound</cite> exception is also a WSGI application you
@@ -291,19 +288,19 @@ redirect pages.</p>
 <p>And here is what happens on redirect and missing URLs:</p>
 <div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;/downloads&quot;</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
-<span class="c">...</span>
+  <span class="c">...</span>
 <span class="nc">werkzeug.routing.RequestRedirect</span>: <span class="n-Identifier">http://example.com/downloads/</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;/missing&quot;</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
-<span class="c">...</span>
+  <span class="c">...</span>
 <span class="nc">werkzeug.routing.NotFound</span>: <span class="n-Identifier">/missing</span>
 </pre></div>
 </dd>
 </dl>
 <dl>
 <dt><cite id="werkzeug.routing.MapAdapter.test">test</cite> <tt class="func-signature docutils literal"><span class="pre">(path_info=None,</span> <span class="pre">method=None)</span></tt></dt>
-<dd>Test if a rule would match.  Works like <cite>match</cite> but returns <cite>True</cite> if
-the URL matches, or <cite>False</cite> if it does not exist.</dd>
+<dd>Test if a rule would match.  Works like <cite>match</cite> but returns <cite>True</cite>
+if the URL matches, or <cite>False</cite> if it does not exist.</dd>
 </dl>
 <dl>
 <dt><cite id="werkzeug.routing.MapAdapter.dispatch">dispatch</cite> <tt class="func-signature docutils literal"><span class="pre">(view_func,</span> <span class="pre">path_info=None,</span> <span class="pre">method=None,</span> <span class="pre">catch_http_exceptions=False)</span></tt></dt>
@@ -332,6 +329,8 @@ it will catch the http exceptions.</p>
     <span class="k">return</span> <span class="n">urls</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">views</span><span class="p">[</span><span class="n">e</span><span class="p">](</span><span class="n">request</span><span class="p">,</span> <span class="o">**</span><span class="n">v</span><span class="p">),</span>
                          <span class="n">catch_http_exceptions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
+<p class="last">Keep in mind that this method might return exception objects too, so
+use <cite>Response.force_type</cite> to get a response object.</p>
 </dd>
 </dl>
 <dl class="last">
@@ -372,10 +371,10 @@ different methods for the same endpoint specified.</p>
 </dl>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.routing.Rule">Rule</cite></dt>
-<dd><p class="first">A Rule represents one URL pattern.  There are some options for <cite>Rule</cite> that
-change the way it behaves and are passed to the <cite>Rule</cite> constructor.  Note
-that beside the rule-string all arguments <em>must</em> be keyword arguments in
-order to not break the application on Werkzeug upgrades.</p>
+<dd><p class="first">A Rule represents one URL pattern.  There are some options for <cite>Rule</cite>
+that change the way it behaves and are passed to the <cite>Rule</cite> constructor.
+Note that beside the rule-string all arguments <em>must</em> be keyword arguments
+in order to not break the application on Werkzeug upgrades.</p>
 <dl>
 <dt><cite>string</cite></dt>
 <dd><p class="first">Rule strings basically are just normal URL paths with placeholders in
@@ -391,7 +390,7 @@ redirect to the same URL with the missing slash appended.</p>
 <dt><cite>endpoint</cite></dt>
 <dd>The endpoint for this rule. This can be anything. A reference to a
 function, a string, a number etc.  The preferred way is using a string
-because the endpoint is used for URL generation.</dd>
+as because the endpoint is used for URL generation.</dd>
 <dt><cite>defaults</cite></dt>
 <dd><p class="first">An optional dict with defaults for other rules with the same endpoint.
 This is a bit tricky but useful if you want to have unique URLs:</p>
@@ -431,11 +430,34 @@ not specified the <cite>Map</cite> setting is used.</dd>
 <dd>Set this to true and the rule will never match but will create a URL
 that can be build. This is useful if you have resources on a subdomain
 or folder that are not handled by the WSGI application (like static data)</dd>
+<dt><cite>redirect_to</cite></dt>
+<dd><p class="first">If given this must be either a string or callable.  In case of a
+callable it&#8217;s called with the url adapter that triggered the match and
+the values of the URL as keyword arguments and has to return the target
+for the redirect, otherwise it has to be a string with placeholders in
+rule syntax:</p>
+<div class="syntax"><pre><span class="k">def</span> <span class="nf">foo_with_slug</span><span class="p">(</span><span class="n">adapter</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+    <span class="c"># ask the database for the slug for the old id.  this of</span>
+    <span class="c"># course has nothing to do with werkzeug.</span>
+    <span class="k">return</span> <span class="s">&#39;foo/&#39;</span> <span class="o">+</span> <span class="n">Foo</span><span class="o">.</span><span class="n">get_slug_for_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+
+<span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/foo/&lt;slug&gt;&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/some/old/url/&lt;slug&gt;&#39;</span><span class="p">,</span> <span class="n">redirect_to</span><span class="o">=</span><span class="s">&#39;foo/&lt;slug&gt;&#39;</span><span class="p">),</span>
+    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/other/old/url/&lt;int:id&gt;&#39;</span><span class="p">,</span> <span class="n">redirect_to</span><span class="o">=</span><span class="n">foo_with_slug</span><span class="p">)</span>
+<span class="p">])</span>
+</pre></div>
+<p>When the rule is matched the routing system will raise a
+<cite>RequestRedirect</cite> exception with the target for the redirect.</p>
+<p class="last">Keep in mind that the URL will be joined against the URL root of the
+script so don&#8217;t use a leading slash on the target URL unless you
+really mean root of that domain.</p>
+</dd>
 </dl>
 <dl>
 <dt><cite id="werkzeug.routing.Rule.empty">empty</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
-<dd>Return an unbound copy of this rule.  This can be useful if you want
-to reuse an already bound URL for another map.</dd>
+<dd>Return an unbound copy of this rule.  This can be useful if you
+want to reuse an already bound URL for another map.</dd>
 </dl>
 <dl class="last">
 <dt><cite id="werkzeug.routing.Rule.bind">bind</cite> <tt class="func-signature docutils literal"><span class="pre">(map)</span></tt></dt>

@@ -50,7 +50,7 @@ is that we want to stick to some of the design decisions <a class="reference" hr
 past.  One of them is using view functions instead of controller classes with
 action methods, which is common in <a class="reference" href="http://www.rubyonrails.org/">Rails</a> and <a class="reference" href="http://pylonshq.com/">Pylons</a>, the other one is
 designer-friendly templates.</p>
-<p>The Werkzeug <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/example">example folder</a> contains a couple of applications that use other
+<p>The Werkzeug <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">example folder</a> contains a couple of applications that use other
 template engines, too, so you may want to have a look at them.  There is also
 the source code of this application.</p>
 <p>You can use <a class="reference" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> to install the required libraries:</p>
@@ -137,7 +137,7 @@ written yet.  However we should cover some of the objects already.  The
 <cite>session</cite> object pulled from there is not a PHP-like session object but a
 SQLAlchemy database session object.  Basically a database session object keeps
 track of yet uncommited objects for the database.  Unlike Django, an
-instanciated SQLAlchemy model is already tracked by the session!  The metadata
+instantiated SQLAlchemy model is already tracked by the session!  The metadata
 object is also an SQLAlchemy thing which is used to keep track of tables.  We
 can use the metadata object to easily create all tables for the database and
 SQLAlchemy uses it to look up foreign keys and similar stuff.</p>
@@ -183,7 +183,7 @@ use it for URL generation in the utils module.</p>
 <p>After that we have a <cite>try</cite>/<cite>except</cite> that catches HTTP exceptions that could
 occur while matching or in the view function.  When the adapter does not find
 a valid endpoint for our current request it will raise a <cite>NotFound</cite> exception
-which we can use like a response object.  And endpoint is basically the name
+which we can use like a response object.  An endpoint is basically the name
 of the function we want to handle our request with.  We just get the
 function with the name of the endpoint and pass it the request and the URL
 values.</p>
@@ -463,7 +463,7 @@ you can also disable it.</p>
 <p>And again we have imported two objects from the utils module that
 don&#8217;t exist yet.  One of those should render a jinja template into a response
 object, the other one validates a URL.  So let&#8217;s add those to <tt class="docutils literal"><span class="pre">utils.py</span></tt>:</p>
-<div class="syntax"><pre><span class="k">for</span> <span class="n">os</span> <span class="k">import</span> <span class="nn">path</span>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
 <span class="k">from</span> <span class="nn">urlparse</span> <span class="k">import</span> <span class="n">urlparse</span>
 <span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Response</span>
 <span class="k">from</span> <span class="nn">jinja</span> <span class="k">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">FileSystemLoader</span>
@@ -577,8 +577,8 @@ URL to filesystem paths and accessing static files right from the URL.  You
 have to explicitly tell the webserver or our development server that some
 path holds static files.</p>
 <p>Django even recommends a separate subdomain and standalone server for the
-static files which is a terrible good idea for heavy load environments but
-somewhat of an overkill for that simple application.</p>
+static files which is a terribly good idea for heavily loaded environments but
+somewhat of an overkill for this simple application.</p>
 <p>So here is the deal: We let our application host the static files, but in
 production mode you should probably tell the apache to serve those files by
 using an <cite>Alias</cite> directive in the apache config:</p>
@@ -724,7 +724,7 @@ template:</p>
 </pre></div>
 <p>Then we have to go into our application module and import the <cite>NotFound</cite>
 exception:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">NotFound</span>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">NotFound</span>
 </pre></div>
 <p>Finally we have to catch it and translate it into a response.  This except
 block goes right <strong>before</strong> the except block of the <cite>HTTPException</cite>:</p>

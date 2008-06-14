@@ -21,8 +21,9 @@
         <h4>Table of Contents</h4>
         <ul><li><a class="reference" href="#error-classes" id="id1" name="id1">Error Classes</a></li>
 <li><a class="reference" href="#baseclass" id="id2" name="id2">Baseclass</a></li>
-<li><a class="reference" href="#simple-aborting" id="id3" name="id3">Simple Aborting</a></li>
-<li><a class="reference" href="#custom-errors" id="id4" name="id4">Custom Errors</a></li>
+<li><a class="reference" href="#special-http-exceptions" id="id3" name="id3">Special HTTP Exceptions</a></li>
+<li><a class="reference" href="#simple-aborting" id="id4" name="id4">Simple Aborting</a></li>
+<li><a class="reference" href="#custom-errors" id="id5" name="id5">Custom Errors</a></li>
 </ul>
       </div>
       
@@ -210,6 +211,25 @@ of it independently and render nicer error messages.</p>
 </dl>
 </dd>
 </dl>
+</div>
+<div class="section">
+<h3 id="special-http-exceptions">Special HTTP Exceptions</h3>
+<p>Starting with Werkzeug 0.3 some of the builtin classes raise exceptions that
+look like regular python exceptions (eg <cite>KeyError</cite>) but are <cite>BadRequest</cite>
+HTTP exceptions at the same time.  This decision was made to simplify a
+common pattern where you want to abort if the client tampered with the
+submitted form data in a way that the application can&#8217;t recover properly and
+should abort with <tt class="docutils literal"><span class="pre">400</span> <span class="pre">BAD</span> <span class="pre">REQUEST</span></tt>.</p>
+<p>Assuming the application catches all HTTP exceptions and reacts to them
+properly a view function could do the following savely and doesn&#8217;t have to
+check if the keys exist:</p>
+<div class="syntax"><pre><span class="k">def</span> <span class="nf">new_post</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">post</span> <span class="o">=</span> <span class="n">Post</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s">&#39;title&#39;</span><span class="p">],</span> <span class="n">body</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s">&#39;body&#39;</span><span class="p">])</span>
+    <span class="n">post</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">post</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+</pre></div>
+<p>If <cite>title</cite> or <cite>body</cite> are missing in the form a <cite>MultiDict.KeyError</cite> will be
+raised which behaves like a <cite>KeyError</cite> but also a <cite>BadRequest</cite> exception.</p>
 </div>
 <div class="section">
 <h3 id="simple-aborting">Simple Aborting</h3>

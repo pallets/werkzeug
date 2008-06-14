@@ -16,6 +16,8 @@ Backwards Incompatible Changes
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.
+    -   The `environ_property` is now read-only by default.  This decision was
+        made because the request in general should be considered read-only.
 
 `0.2`
     -   The `BaseReporterStream` is now part of the contrib module, the

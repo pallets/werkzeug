@@ -72,12 +72,12 @@ there if you use the Werkzeug <a class="reference" href="routing.html">routing s
 <span class="k">from</span> <span class="nn">mypackage.urls</span> <span class="k">import</span> <span class="n">url_map</span>
 
 <span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
-    <span class="n">url_adapter</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">bind_to_environ</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
+    <span class="n">url_adapter</span> <span class="o">=</span> <span class="n">url_map</span><span class="o">.</span><span class="n">bind_to_environ</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
     <span class="n">req</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">endpoint</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">url_adapter</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
         <span class="n">view</span> <span class="o">=</span> <span class="n">import_string</span><span class="p">(</span><span class="s">&#39;mypackage.views.&#39;</span> <span class="o">+</span> <span class="n">endpoint</span><span class="p">)</span>
-        <span class="n">resp</span> <span class="o">=</span> <span class="n">view</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">view</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">)</span>
     <span class="k">except</span> <span class="p">(</span><span class="n">RequestRedirect</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">),</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">resp</span> <span class="o">=</span> <span class="n">e</span>
     <span class="k">return</span> <span class="n">resp</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>

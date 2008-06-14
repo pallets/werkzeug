@@ -78,14 +78,14 @@ context.</p>
 <h3 id="objects">Objects</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.local.LocalManager">LocalManager</cite></dt>
-<dd><p class="first">Local objects cannot manage themselves. For that you need a local manager.
-You can pass a local manager multiple locals or add them later by
-appending them to <cite>manager.locals</cite>.  Everytime the manager cleans up it,
-will clean up all the data left in the locals for this context.</p>
+<dd><p class="first">Local objects cannot manage themselves. For that you need a local
+manager.  You can pass a local manager multiple locals or add them later
+by appending them to <cite>manager.locals</cite>.  Everytime the manager cleans up
+it, will clean up all the data left in the locals for this context.</p>
 <dl>
 <dt><cite id="werkzeug.local.LocalManager.cleanup">cleanup</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
-<dd>Manually clean up the data in the locals for this context.  Call this
-at the end of the request or use <cite>make_middleware()</cite>.</dd>
+<dd>Manually clean up the data in the locals for this context.  Call
+this at the end of the request or use <cite>make_middleware()</cite>.</dd>
 </dl>
 <dl>
 <dt><cite id="werkzeug.local.LocalManager.make_middleware">make_middleware</cite> <tt class="func-signature docutils literal"><span class="pre">(app)</span></tt></dt>
@@ -94,8 +94,8 @@ request end.</dd>
 </dl>
 <dl>
 <dt><cite id="werkzeug.local.LocalManager.middleware">middleware</cite> <tt class="func-signature docutils literal"><span class="pre">(func)</span></tt></dt>
-<dd><p class="first">Like <cite>make_middleware</cite> but for decorating functions.  Example
-usage:</p>
+<dd><p class="first">Like <cite>make_middleware</cite> but for decorating functions.</p>
+<p>Example usage:</p>
 <div class="syntax"><pre><span class="nd">@manager</span><span class="o">.</span><span class="n">middleware</span>
 <span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
     <span class="o">...</span>
@@ -128,6 +128,12 @@ are right handed operands and any kind of assignment.</p>
 <p>Whenever something is bound to l.user / l.request the proxy objects
 will forward all operations.  If no object is bound a <cite>RuntimeError</cite>
 will be raised.</p>
+<dl>
+<dt><cite id="werkzeug.local.LocalProxy._get_current_object">_get_current_object</cite> <tt class="func-signature docutils literal"><span class="pre">()</span></tt></dt>
+<dd>Return the current object.  This is useful if you want the real
+object behind the proxy at a time for performance reasons or because
+you want to pass the object into a different context.</dd>
+</dl>
 <p>Keep in mind that <tt class="docutils literal"><span class="pre">repr()</span></tt> is also forwarded, so if you want to find
 out if you are dealing with a proxy you can do an <tt class="docutils literal"><span class="pre">isinstance()</span></tt> check:</p>
 <div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">LocalProxy</span>

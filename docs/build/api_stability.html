@@ -34,6 +34,13 @@ some upcoming changes there.</dd>
 <div class="section">
 <h3 id="backwards-incompatible-changes">Backwards Incompatible Changes</h3>
 <dl>
+<dt><cite>0.3</cite></dt>
+<dd><ul class="first last simple">
+<li>Werkzeug 0.3 will be the last release with Python 2.3 compatibility.</li>
+<li>The <cite>environ_property</cite> is now read-only by default.  This decision was
+made because the request in general should be considered read-only.</li>
+</ul>
+</dd>
 <dt><cite>0.2</cite></dt>
 <dd><ul class="first last simple">
 <li>The <cite>BaseReporterStream</cite> is now part of the contrib module, the
@@ -46,6 +53,12 @@ this 302 code, use <tt class="docutils literal"><span class="pre">response</span
 the old name will disappear in Werkzeug 0.3.</li>
 <li><cite>match</cite> can now raise <cite>MethodNotAllowed</cite> if configured for
 methods and there was no method for that request.</li>
+<li>The <cite>response_body</cite> attribute on the response object is now called
+<cite>data</cite>.  With Werkzeug 0.3 the old name will not work any longer.</li>
+<li>The file-like methods on the response object are deprecated.  If
+you want to use the response object as file like object use the
+<cite>Response</cite> class or a subclass of <cite>BaseResponse</cite> and mix the new
+<cite>ResponseStreamMixin</cite> class and use <cite>response.stream</cite>.</li>
 </ul>
 </dd>
 </dl>

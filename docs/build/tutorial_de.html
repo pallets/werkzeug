@@ -49,7 +49,7 @@ für WSGI.</p>
 <a class="reference" href="http://www.djangoproject.com/">Django</a>-ähnlichen Grundaufbau nachstellen wollen.  Dazu zählen wir zum
 Beispiel View-Funktionen anstelle der in <a class="reference" href="http://www.rubyonrails.org/">Rails</a> und <a class="reference" href="http://pylonshq.com/">Pylons</a> gängigen
 Controller-Klassen mit Action-Methoden, sowie designerfreundliche Templates.</p>
-<p>In Werkzeugs <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/example">Beispiel-Ordner</a> befinden sich einige Anwendungen, die andere
+<p>In Werkzeugs <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">Beispiel-Ordner</a> befinden sich einige Anwendungen, die andere
 Konzepte verfolgen, Template-Engines einsetzen etc.  Dort liegt auch der
 Quellcode der Anwendung, die wir in diesem Tutorial erstellen werden.</p>
 <p>Du kannst <a class="reference" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> verwenden, um Jinja und SQLAlchemy zu installieren,
@@ -416,7 +416,7 @@ Inhalt unserer noch leeren <tt class="docutils literal"><span class="pre">views.
         <span class="k">if</span> <span class="ow">not</span> <span class="n">validate_url</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
             <span class="n">error</span> <span class="o">=</span> <span class="s">u&quot;Entschuldigung, aber ich kann die angegebene &quot;</span> \
                     <span class="s">u&quot;URL nicht kürzen.&quot;</span>
-    <span class="k">elif</span> <span class="n">alias</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">alias</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">140</span><span class="p">:</span>
                 <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;Dein Alias ist zu lang&#39;</span>
             <span class="k">elif</span> <span class="s">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">alias</span><span class="p">:</span>
@@ -489,7 +489,7 @@ abschalten.</p>
 die jetzt noch nicht existieren.  Eines von diesen soll ein Jinja-Template in
 ein Response-Objekt verwandeln, das andere prüft eine URL.  Fügen wir also
 diese zu <tt class="docutils literal"><span class="pre">utils.py</span></tt> hinzu:</p>
-<div class="syntax"><pre><span class="k">for</span> <span class="n">os</span> <span class="k">import</span> <span class="nn">path</span>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
 <span class="k">from</span> <span class="nn">urlparse</span> <span class="k">import</span> <span class="n">urlparse</span>
 <span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Response</span>
 <span class="k">from</span> <span class="nn">jinja</span> <span class="k">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">FileSystemLoader</span>
@@ -764,7 +764,7 @@ namens <cite>not_found</cite> in den Views zu erstellen, welche ein Template aus
 </pre></div>
 <p>Dann müssen wir in unser Anwendungsmodul wechseln und die <cite>NotFound</cite>-Exception
 importieren:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">NotFound</span>
+<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">NotFound</span>
 </pre></div>
 <p>Schließlich müssen wir sie auffangen und in eine Response umwandeln.  Dieser
 except-Block kommt <strong>vor</strong> den except-Bock mit <cite>HTTPException</cite>:</p>

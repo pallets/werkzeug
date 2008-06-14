@@ -43,7 +43,7 @@ application:</p>
 <p>You can also pass it the <cite>extra_files</cite> keyword argument with a list of
 additional files (like configuration files) you want to observe.</p>
 <dl>
-<dt><cite id="werkzeug.serving.run_simple">run_simple</cite> <tt class="func-signature docutils literal"><span class="pre">(hostname,</span> <span class="pre">port,</span> <span class="pre">application,</span> <span class="pre">use_reloader=False,</span> <span class="pre">extra_files=None,</span> <span class="pre">reloader_interval=1,</span> <span class="pre">threaded=False,</span> <span class="pre">processes=1,</span> <span class="pre">request_handler=None)</span></tt></dt>
+<dt><cite id="werkzeug.serving.run_simple">run_simple</cite> <tt class="func-signature docutils literal"><span class="pre">(hostname,</span> <span class="pre">port,</span> <span class="pre">application,</span> <span class="pre">use_reloader=False,</span> <span class="pre">use_debugger=False,</span> <span class="pre">use_evalex=True,</span> <span class="pre">extra_files=None,</span> <span class="pre">reloader_interval=1,</span> <span class="pre">threaded=False,</span> <span class="pre">processes=1,</span> <span class="pre">request_handler=None)</span></tt></dt>
 <dd><p class="first">Start an application using wsgiref and with an optional reloader.  This
 wraps <cite>wsgiref</cite> to fix the wrong default reporting of the multithreaded
 WSGI variable and adds optional multithreading and fork support.</p>
@@ -54,6 +54,8 @@ WSGI variable and adds optional multithreading and fork support.</p>
 <p><strong>application</strong>: the WSGI application to execute</p>
 <p><strong>use_reloader</strong>: should the server automatically restart the python
 process if modules were changed?</p>
+<p><strong>use_debugger</strong>: should the werkzeug debugging system be used?</p>
+<p><strong>use_evalex</strong>: should the exception evaluation feature be enabled?</p>
 <p><strong>extra_files</strong>: a list of files the reloader should listen for
 additionally to the modules.  For example configuration
 files.</p>

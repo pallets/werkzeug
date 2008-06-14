@@ -21,7 +21,8 @@
         <h4>Table of Contents</h4>
         <ul><li><a class="reference" href="#syntax-elements" id="id1" name="id1">Syntax Elements</a></li>
 <li><a class="reference" href="#missing-variables" id="id2" name="id2">Missing Variables</a></li>
-<li><a class="reference" href="#the-template-class" id="id3" name="id3">The Template Class</a></li>
+<li><a class="reference" href="#python-2-3-compatibility" id="id3" name="id3">Python 2.3 Compatibility</a></li>
+<li><a class="reference" href="#the-template-class" id="id4" name="id4">The Template Class</a></li>
 </ul>
       </div>
       
@@ -33,7 +34,7 @@ than simple content generation.  The <cite>Template</cite> class can be directly
 from the <cite>werkzeug</cite> module.</p>
 <p>This template engine recognizes ASP/PHP like blocks and executes the code
 in them:</p>
-<div class="syntax"><pre><span class="n">t</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s">&#39;&lt;</span><span class="si">% f</span><span class="s">or u in users %&gt;${u[&#39;</span><span class="n">username</span><span class="s">&#39;]}</span><span class="se">\n</span><span class="s">&lt;</span><span class="si">% e</span><span class="s">ndfor %&gt;&#39;</span><span class="p">)</span>
+<div class="syntax"><pre><span class="n">t</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s">&#39;&lt;</span><span class="si">% f</span><span class="s">or u in users %&gt;${u[&quot;username&quot;]}</span><span class="se">\n</span><span class="s">&lt;</span><span class="si">% e</span><span class="s">ndfor %&gt;&#39;</span><span class="p">)</span>
 <span class="n">t</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">users</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;username&#39;</span><span class="p">:</span> <span class="s">&#39;John&#39;</span><span class="p">},</span>
                 <span class="p">{</span><span class="s">&#39;username&#39;</span><span class="p">:</span> <span class="s">&#39;Jane&#39;</span><span class="p">}])</span>
 </pre></div>
@@ -109,6 +110,12 @@ variable is undefined you can use this expression:</p>
     ...
 &lt;% endif %&gt;
 </pre></div>
+</div>
+<div class="section">
+<h3 id="python-2-3-compatibility">Python 2.3 Compatibility</h3>
+<p>Because of limitations in Python 2.3 it&#8217;s impossible to achieve the
+semi-silent variable lookup fallback.  If a template relies on undefined
+variables it won&#8217;t execute under Python 2.3.</p>
 </div>
 <div class="section">
 <h3 id="the-template-class">The Template Class</h3>
