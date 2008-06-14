@@ -30,7 +30,7 @@ from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
      _StorageHelper, _DictAccessorProperty, _dump_date, \
      _parse_signature
-from werkzeug.http import generate_etag
+from werkzeug.http import generate_etag, parse_etags
 
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
@@ -824,7 +824,11 @@ class SharedDataMiddleware(object):
             stream.close()
         headers = [('Content-Type', mime_type), ('Cache-Control', 'public')]
         if self.cache:
-            headers += [('Expires', expiry), ('ETag', generate_etag(data))]
+            etag = generate_etag(data)
+            headers += [('Expires', expiry), ('ETag', etag)]
+            if parse_etags(environ.get('HTTP_IF_NONE_MATCH')).contains(etag):
+                start_response('304 Not Modified', headers)
+                return []
 
         start_response('200 OK', headers)
         return [data]
