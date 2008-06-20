@@ -126,7 +126,12 @@ class BaseRequest(object):
             def my_wsgi_app(request):
                 return Response('Hello World!')
         """
-        return _patch_wrapper(f, lambda *a: f(cls(a[-2]))(*a[-2:]))
+        #: return a callable that wraps the -2nd argument with the request
+        #: and calls the function with all the arguments up to that one and
+        #: the request.  The return value is then called with the latest
+        #: two arguments.  This makes it possible to use this decorator for
+        #: both methods and standalone WSGI functions.
+        return _patch_wrapper(f, lambda *a: f(*a[:-2]+(cls(a[-2]),))(*a[-2:]))
     application = classmethod(application)
 
     def _get_file_stream(self):
