@@ -74,7 +74,7 @@ r"""
 try:
     from hashlib import sha1
 except ImportError:
-    from sha import new as sha1
+    import sha as sha1
 from hmac import new as hmac
 from datetime import datetime
 from time import time, mktime, gmtime
@@ -115,6 +115,8 @@ class SecureCookie(ModificationTrackingDict):
     methods are update() and digest().
     """
 
+    # The hash method to use.  This has to be a module with a new function
+    # or a function that creates a hashlib object.  Such as hashlib.md5
     hash_method = sha1
 
     def __init__(self, data=None, secret_key=None, new=True):
