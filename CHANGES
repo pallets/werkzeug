@@ -2,6 +2,15 @@ Werkzeug Changelog
 ==================
 
 
+Version 0.3.1
+-------------
+(released on June 24th 2008)
+
+- fixed a security problem with `werkzeug.contrib.SecureCookie`.
+  More details available in the `release announcement`_.
+
+.. _release announcement: http://lucumr.pocoo.org/cogitations/2008/06/24/werkzeug-031-released/
+
 Version 0.3
 -----------
 (codename EUR325CAT6, released on June 14th 2008)
