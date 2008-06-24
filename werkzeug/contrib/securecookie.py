@@ -75,7 +75,7 @@ try:
     from hashlib import sha1
 except ImportError:
     from sha import new as sha1
-from binascii import Error as BinASCIIError
+from hmac import new as hmac
 from datetime import datetime
 from time import time, mktime, gmtime
 from random import Random
@@ -110,11 +110,10 @@ def pickle_unquote(string):
 
 class SecureCookie(ModificationTrackingDict):
     """Represents a secure cookie.  You can subclass this class and provide
-    an alternative hash method.  The import thing is that the hash method
+    an alternative mac method.  The import thing is that the mac method
     is a function with a similar interface to the hashlib.  Required
     methods are update() and digest().
     """
-    __slots__ = ModificationTrackingDict.__slots__ + ('secret_key', 'new')
 
     hash_method = sha1
 
@@ -135,10 +134,6 @@ class SecureCookie(ModificationTrackingDict):
         return self.modified
     should_save = property(should_save)
 
-    def new_salt(self, secret_key):
-        """Return a new salt  Return value must be 4 bytes long."""
-        return generate_key()[:4]
-
     def serialize(self, expires=None):
         """Serialize the secure cookie into a string.
 
@@ -155,17 +150,15 @@ class SecureCookie(ModificationTrackingDict):
                 expires = gmtime(expires)
             self['_expires'] = int(mktime(expires))
         result = []
-        salt = self.new_salt(self.secret_key)
-        hash = self.hash_method(self.secret_key + salt)
+        mac = hmac(self.secret_key, None, self.hash_method)
         for key, value in self.iteritems():
             result.append('%s=%s' % (
                 url_quote_plus(key),
                 pickle_quote(value)
             ))
-            hash.update('|' + result[-1])
-        return '%s%s?%s' % (
-            salt,
-            hash.digest().encode('base64').strip(),
+            mac.update('|' + result[-1])
+        return '%s?%s' % (
+            mac.digest().encode('base64').strip(),
             '&'.join(result)
         )
 
@@ -173,29 +166,34 @@ class SecureCookie(ModificationTrackingDict):
         """Load the secure cookie from a serialized string."""
         if isinstance(string, unicode):
             string = string.encode('utf-8', 'ignore')
-        salt = string[:4]
         try:
-            base64_hash, data = string[4:].split('?', 1)
+            base64_hash, data = string.split('?', 1)
         except (ValueError, IndexError):
             items = ()
         else:
             items = {}
-            hash = sha1(secret_key + salt)
+            mac = hmac(secret_key, None, cls.hash_method)
             for item in data.split('&'):
-                hash.update('|' + item)
+                mac.update('|' + item)
                 if not '=' in item:
                     items = None
                     break
                 key, value = item.split('=', 1)
-                items[url_unquote_plus(key)] = value
+                # try to make the key a string
+                key = url_unquote_plus(key)
+                try:
+                    key = str(key)
+                except UnicodeError:
+                    pass
+                items[key] = value
 
-            # no parsing error and the hash looks okay, we can now
+            # no parsing error and the mac looks okay, we can now
             # sercurely unpickle our cookie.
             try:
                 client_hash = base64_hash.decode('base64')
             except Exception:
                 items = client_hash = None
-            if items is not None and client_hash == hash.digest():
+            if items is not None and client_hash == mac.digest():
                 try:
                     for key, value in items.iteritems():
                         items[key] = pickle_unquote(value)
