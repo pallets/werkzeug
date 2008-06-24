@@ -61,6 +61,9 @@ Werkzeug but other WSGI utilities; the ideas are the same.
 - `Other Libraries <libraries.txt>`_ --- links to other libraries you
   can use with Werkzeug.
 
+- `Reusable Applications <reusableapps.txt>`_  --- how to develop modular
+  applications with reusable bits.
+
 - `Deploying WSGI Applications <deploying.txt>`_ --- ready for production?
   This page covers all the details you have to know to deploy your
   application on various webservers.
