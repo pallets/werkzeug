@@ -87,7 +87,7 @@ from werkzeug._internal import _patch_wrapper
 if get_current_greenlet is int:
     get_ident = get_current_thread
 else:
-    get_ident = lambda: hash((get_current_thread(), get_current_greenlet()))
+    get_ident = lambda: (get_current_thread(), get_current_greenlet())
 
 
 class Local(object):
