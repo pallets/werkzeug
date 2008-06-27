@@ -103,7 +103,7 @@ class DebuggedApplication(object):
     def paste_traceback(self, request, traceback):
         """Paste the traceback and return a JSON response."""
         paste_id = traceback.paste()
-        return Response('{"url": "http://paste.pocoo.org/show/%d/", "id": %d}'
+        return Response('{"url": "http://paste.pocoo.org/show/%s/", "id": %s}'
                         % (paste_id, paste_id), mimetype='application/json')
 
     def get_source(self, request, frame):
