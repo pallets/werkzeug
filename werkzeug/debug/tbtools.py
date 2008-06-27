@@ -142,7 +142,7 @@ class Traceback(object):
         from xmlrpclib import ServerProxy
         srv = ServerProxy('http://paste.pocoo.org/xmlrpc/')
         return srv.pastes.newPaste('pytb', self.plaintext)
-        return '{"url": "http://paste.pocoo.org/show/%d/", "id": %d}' % \
+        return '{"url": "http://paste.pocoo.org/show/%s/", "id": %s}' % \
                (paste_id, paste_id)
 
     def render_summary(self, include_title=True):
