@@ -206,7 +206,7 @@ class Client(object):
         `run_once`
             The run_once flag for the WSGI Environment.  Defaults to `False`.
         """
-        if input_stream is None and data and method in ('PUT', 'POST'):
+        if input_stream is None and data is not None and method in ('PUT', 'POST'):
             need_multipart = False
             if isinstance(data, basestring):
                 assert content_type is not None, 'content type required'

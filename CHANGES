@@ -1,6 +1,11 @@
 Werkzeug Changelog
 ==================
 
+Version 0.4
+-----------
+
+- `Client` supports an empty `data` argument now.
+
 
 Version 0.3.1
 -------------
