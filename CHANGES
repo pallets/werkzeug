@@ -5,6 +5,8 @@ Version 0.4
 -----------
 
 - `Client` supports an empty `data` argument now.
+- fixed a bug in `Response.application` that made it impossible to use it
+  as method decorator.
 
 
 Version 0.3.1
