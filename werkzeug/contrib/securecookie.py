@@ -75,37 +75,17 @@ try:
     from hashlib import sha1
 except ImportError:
     import sha as sha1
+import cPickle as pickle
 from hmac import new as hmac
 from datetime import datetime
 from time import time, mktime, gmtime
 from random import Random
-from cPickle import loads, dumps, HIGHEST_PROTOCOL
 from werkzeug import url_quote_plus, url_unquote_plus
 from werkzeug.contrib.sessions import ModificationTrackingDict, generate_key
 
 
 class UnquoteError(Exception):
-    pass
-
-
-def pickle_quote(value):
-    """Pickle and url encode a value."""
-    result = None
-    for protocol in xrange(HIGHEST_PROTOCOL + 1):
-        data = ''.join(dumps(value, protocol).encode('base64').splitlines()).strip()
-        if result is None or len(result) > len(data):
-            result = data
-    return result
-
-
-def pickle_unquote(string):
-    """URL decode a string and load it into pickle"""
-    try:
-        return loads(string.decode('base64'))
-    # unfortunately pickle can cause pretty every error here.
-    # if we get one we catch it and convert it into an UnquoteError
-    except Exception, e:
-        raise UnquoteError(str(e))
+    """Internal exception."""
 
 
 class SecureCookie(ModificationTrackingDict):
@@ -118,6 +98,13 @@ class SecureCookie(ModificationTrackingDict):
     # The hash method to use.  This has to be a module with a new function
     # or a function that creates a hashlib object.  Such as hashlib.md5
     hash_method = sha1
+
+    # the module used for serialization
+    serialization_method = pickle
+
+    # if the contents should be base64 quoted.  This can be disabled if the
+    # serialization process returns cookie safe strings only.
+    quote_base64 = True
 
     def __init__(self, data=None, secret_key=None, new=True):
         ModificationTrackingDict.__init__(self, data or ())
@@ -136,6 +123,30 @@ class SecureCookie(ModificationTrackingDict):
         return self.modified
     should_save = property(should_save)
 
+    def quote(cls, value):
+        """Quote the value for the cookie."""
+        if cls.serialization_method is not None:
+            value = cls.serialization_method.dumps(value)
+        if cls.quote_base64:
+            value = ''.join(value.encode('base64').splitlines()).strip()
+        return value
+    quote = classmethod(quote)
+
+    def unquote(cls, value):
+        """Unquote the value for the cookie."""
+        try:
+            if cls.quote_base64:
+                value = value.decode('base64')
+            if cls.serialization_method is not None:
+                value = cls.serialization_method.loads(value)
+            return value
+        except:
+            # unfortunately pickle and other serialization modules can
+            # cause pretty every error here.  if we get one we catch it
+            # and convert it into an UnquoteError
+            raise UnquoteError()
+    unquote = classmethod(unquote)
+
     def serialize(self, expires=None):
         """Serialize the secure cookie into a string.
 
@@ -153,10 +164,10 @@ class SecureCookie(ModificationTrackingDict):
             self['_expires'] = int(mktime(expires))
         result = []
         mac = hmac(self.secret_key, None, self.hash_method)
-        for key, value in self.iteritems():
+        for key, value in sorted(self.items()):
             result.append('%s=%s' % (
                 url_quote_plus(key),
-                pickle_quote(value)
+                self.quote(value)
             ))
             mac.update('|' + result[-1])
         return '%s?%s' % (
@@ -198,7 +209,7 @@ class SecureCookie(ModificationTrackingDict):
             if items is not None and client_hash == mac.digest():
                 try:
                     for key, value in items.iteritems():
-                        items[key] = pickle_unquote(value)
+                        items[key] = cls.unquote(value)
                 except UnquoteError:
                     items = ()
                 else:
