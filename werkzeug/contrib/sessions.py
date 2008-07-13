@@ -48,7 +48,7 @@
 """
 import re
 import os
-from os import path, unlink
+from os import path
 from time import time
 from random import Random, random
 try:
@@ -217,6 +217,8 @@ class FilesystemSessionStore(SessionStore):
     def delete(self, session):
         fn = self.get_session_filename(session.sid)
         try:
+            # Late import because Google Appengine won't allow os.unlink
+            from os import unlink
             unlink(fn)
         except OSError:
             pass
