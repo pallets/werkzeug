@@ -215,14 +215,17 @@ class MemcachedCache(BaseCache):
     def delete(self, key):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
-        self._client.delete(key)
+        if _test_memcached_key(key):
+            self._client.delete(key)
 
     def delete_many(self, *keys):
-        keys = list(keys)
-        for idx, key in enumerate(keys):
+        new_keys = []
+        for key in keys:
             if isinstance(key, unicode):
-                keys[idx] = key.encode('utf-8')
-        self._client.delete_multi(keys)
+                key = key.encode('utf-8')
+            if _test_memcached_key(key):
+                new_keys.append(key)
+        self._client.delete_multi(new_keys)
 
     def clear(self):
         self._client.flush_all()
