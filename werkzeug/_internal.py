@@ -243,20 +243,17 @@ class _StorageHelper(cgi.FieldStorage):
     complete data of the stream.
     """
 
-    FieldStorageClass = cgi.FieldStorage
+    def __init__(self, fp=None, headers=None, outerboundary='',
+                 environ=None, keep_blank_values=False, strict_parsing=False):
+        self.stream_factory = environ.get('werkzeug.stream_factory')
+        cgi.FieldStorage.__init__(self, fp, headers, outerboundary,
+                                  environ or {}, keep_blank_values,
+                                  strict_parsing)
 
-    def __init__(self, environ, stream_factory):
-        if stream_factory is not None:
-            self.make_file = lambda binary=None: stream_factory()
-        cgi.FieldStorage.__init__(self,
-            fp=environ['wsgi.input'],
-            environ={
-                'REQUEST_METHOD':   environ['REQUEST_METHOD'],
-                'CONTENT_TYPE':     environ['CONTENT_TYPE'],
-                'CONTENT_LENGTH':   environ['CONTENT_LENGTH']
-            },
-            keep_blank_values=True
-        )
+    def make_file(self, binary=None):
+        if self.stream_factory is not None:
+            return self.stream_factory()
+        return cgi.FieldStorage.make_file(binary)
 
     def __repr__(self):
         return '<%s %r>' % (

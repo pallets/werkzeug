@@ -8,6 +8,10 @@ Version 0.4
 - fixed a bug in `Response.application` that made it impossible to use it
   as method decorator.
 - the session system should work on appengine now
+- `CacheControl.no_cache` and `CacheControl.private` behavior changed to
+  reflect the possibilities of the HTTP RFC.  Setting these attributes to
+  `None` or `True` now sets the value to "the empty value".
+  More details in the documentation.
 
 
 Version 0.3.1

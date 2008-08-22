@@ -1142,7 +1142,16 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     stream = _empty_stream
     form = []
     files = []
-    storage = _StorageHelper(environ, stream_factory)
+    storage = _StorageHelper(
+        fp=environ['wsgi.input'],
+        environ={
+            'REQUEST_METHOD':           environ['REQUEST_METHOD'],
+            'CONTENT_TYPE':             environ['CONTENT_TYPE'],
+            'CONTENT_LENGTH':           environ['CONTENT_LENGTH'],
+            'werkzeug.stream_factory':  stream_factory
+        },
+        keep_blank_values=True
+    )
     if storage.file:
         stream = storage.file
     if storage.list is not None:

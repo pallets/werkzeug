@@ -53,6 +53,17 @@ def test_cache_control_header():
     assert cc.private
     assert cc['community'] == 'UCI'
 
+    c = CacheControl()
+    assert c.no_cache is None
+    assert c.private is None
+    c.no_cache = True
+    assert c.no_cache == '*'
+    c.private = True
+    assert c.private == '*'
+    del c.private
+    assert c.private is None
+    assert c.to_header() == 'no-cache'
+
 
 def test_authorization_header():
     a = parse_authorization_header('Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==')
