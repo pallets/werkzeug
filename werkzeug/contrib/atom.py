@@ -207,7 +207,7 @@ class AtomFeed(object):
 
     def __call__(self, environ, start_response):
         """Use the class as WSGI response object."""
-        return self.get_response(environ, start_response)
+        return self.get_response()(environ, start_response)
 
     def __unicode__(self):
         return self.to_string()

@@ -12,6 +12,7 @@ Version 0.4
   reflect the possibilities of the HTTP RFC.  Setting these attributes to
   `None` or `True` now sets the value to "the empty value".
   More details in the documentation.
+- fixed `werkzeug.contrib.atom.AtomFeed.__call__`. (#338)
 
 
 Version 0.3.1
