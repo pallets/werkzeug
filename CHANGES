@@ -13,6 +13,8 @@ Version 0.4
   `None` or `True` now sets the value to "the empty value".
   More details in the documentation.
 - fixed `werkzeug.contrib.atom.AtomFeed.__call__`. (#338)
+- `BaseResponse.make_conditional` now always returns `self`.  Previously
+  it didn't for post requests and such.
 
 
 Version 0.3.1

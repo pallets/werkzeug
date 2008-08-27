@@ -705,14 +705,13 @@ class ETagResponseMixin(object):
         but modifies the object in-place.
         """
         environ = getattr(request_or_environ, 'environ', request_or_environ)
-        if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
-            return
-        self.headers['Date'] = http_date()
-        if 'content-length' in self.headers:
-            self.headers['Content-Length'] = len(self.data)
-        if not is_resource_modified(environ, self.headers.get('etag'), None,
-                                    self.headers.get('last-modified')):
-            self.status_code = 304
+        if environ['REQUEST_METHOD'] in ('GET', 'HEAD'):
+            self.headers['Date'] = http_date()
+            if 'content-length' in self.headers:
+                self.headers['Content-Length'] = len(self.data)
+            if not is_resource_modified(environ, self.headers.get('etag'), None,
+                                        self.headers.get('last-modified')):
+                self.status_code = 304
         return self
 
     def add_etag(self, overwrite=False, weak=False):
