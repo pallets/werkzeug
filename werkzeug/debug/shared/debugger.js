@@ -85,18 +85,24 @@ $(function() {
    */
   $('div.plain form')
     .submit(function() {
-      $('input[@type="submit"]', this).val('submitting...');
+      var label = $('input[@type="submit"]', this);
+      var old_val = label.val();
+      label.val('submitting...');
       $.ajax({
         dataType:     'json',
         url:          './__debugger__',
         data:         {tb: TRACEBACK, cmd: 'paste'},
         success:      function(data) {
-          console.log(data);
           $('div.plain span.pastemessage')
             .removeClass('pastemessage')
             .text('Paste created: ')
             .append($('<a>#' + data.id + '</a>').attr('href', data.url));
-      }});
+        },
+        error:        function() {
+          alert('Error: Could not submit paste.  No network connection?');
+          label.val(old_val);
+        }
+      });
       return false;
     });
 

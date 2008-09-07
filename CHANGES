@@ -15,6 +15,8 @@ Version 0.4
 - fixed `werkzeug.contrib.atom.AtomFeed.__call__`. (#338)
 - `BaseResponse.make_conditional` now always returns `self`.  Previously
   it didn't for post requests and such.
+- fixed a bug in boolean attribute handling of `html` and `xhtml`.
+- added graceful error handling to the debugger pastebin feature.
 
 
 Version 0.3.1

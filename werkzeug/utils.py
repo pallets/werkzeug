@@ -1098,6 +1098,8 @@ class HTMLBuilder(object):
                 if key.endswith('_'):
                     key = key[:-1]
                 if key in self._boolean_attributes:
+                    if not value:
+                        continue
                     value = self._dialect == 'xhtml' and '="%s"' % key or ''
                 else:
                     value = '="%s"' % escape(value, True)
@@ -1188,10 +1190,10 @@ def get_content_type(mimetype, charset):
 
 
 def format_string(string, context):
-    """String-template format a string::
+    """String-template format a string:
 
-        >>> format_string('$foo and ${foo}s', dict(foo=42))
-        '42 and 42s'
+    >>> format_string('$foo and ${foo}s', dict(foo=42))
+    '42 and 42s'
 
     This does not do any attribute lookup etc.  For more advanced string
     formattings have a look at the `werkzeug.template` module.
