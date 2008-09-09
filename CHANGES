@@ -23,6 +23,8 @@ Version 0.4
   properly remove all keys on replacing.
 - added `remove_entity_headers` which removes all entity headers from
   a list of headers (or a `Headers` object)
+- the responses now automatically call `remove_entity_headers` if the
+  status code is 304.
 
 
 Version 0.3.1
