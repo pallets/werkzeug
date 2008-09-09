@@ -857,7 +857,7 @@ class SharedDataMiddleware(object):
 
         headers.extend((
             ('Content-Type', mime_type),
-            ('Content-Length', len(data))
+            ('Content-Length', str(len(data)))
         ))
         start_response('200 OK', headers)
         return [data]
