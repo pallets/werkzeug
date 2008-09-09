@@ -274,6 +274,10 @@ The `Request` and `Response` classes subclass the `BaseRequest` and
 
     .. property:: werkzeug.wrappers.WWWAuthenticateMixin.www_authenticate
 
+.. class:: werkzeug.wrappers.UserAgentMixin
+
+    .. property:: werkzeug.wrappers.UserAgentMixin.user_agent
+
 
 Note on File Uploads
 ====================
