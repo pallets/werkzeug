@@ -52,7 +52,7 @@ all_by_module = {
                              'HeaderSet', 'parse_authorization_header',
                              'parse_www_authenticate_header',
                              'WWWAuthenticate', 'Authorization',
-                             'HTTP_STATUS_CODES'],
+                             'remove_entity_headers', 'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest', 'Request',
                              'Response', 'AcceptMixin', 'ETagRequestMixin',
                              'ETagResponseMixin', 'ResponseStreamMixin',

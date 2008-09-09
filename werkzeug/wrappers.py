@@ -27,7 +27,7 @@ from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
-     parse_www_authenticate_header
+     parse_www_authenticate_header, remove_entity_headers
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -552,6 +552,10 @@ class BaseResponse(object):
                 get_current_url(environ, root_only=True),
                 self.headers['Location']
             )
+        if 100 <= self.status_code < 200 or self.status_code == 204:
+            self.headers['Content-Length'] = 0
+        elif self.status_code == 304:
+            remove_entity_headers(self.headers)
 
     def close(self):
         """Close the wrapped response if possible."""
@@ -569,7 +573,8 @@ class BaseResponse(object):
         if environ['REQUEST_METHOD'] == 'HEAD':
             resp = ()
         elif 100 <= self.status_code < 200 or self.status_code in (204, 304):
-            self.headers['Content-Length'] = 0
+            # no response for 204/304.  the headers are adapted accordingly
+            # by fix_headers()
             resp = ()
         else:
             resp = self.iter_encoded()

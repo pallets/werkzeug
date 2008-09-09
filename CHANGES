@@ -17,6 +17,12 @@ Version 0.4
   it didn't for post requests and such.
 - fixed a bug in boolean attribute handling of `html` and `xhtml`.
 - added graceful error handling to the debugger pastebin feature.
+- added a more list like interface to `Headers` (slicing and indexing
+  works now)
+- fixed a bug with the `__setitem__` method of `Headers` that didn't
+  properly remove all keys on replacing.
+- added `remove_entity_headers` which removes all entity headers from
+  a list of headers (or a `Headers` object)
 
 
 Version 0.3.1

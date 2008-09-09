@@ -483,15 +483,8 @@ class Headers(object):
         if _list is None:
             _list = []
         self._list = _list
-        if isinstance(defaults, dict):
-            for key, value in defaults.iteritems():
-                if isinstance(value, (tuple, list)):
-                    for v in value:
-                        self._list.append((key, v))
-                else:
-                    self._list.append((key, value))
-        elif defaults is not None:
-            self._list[:] = defaults
+        if defaults is not None:
+            self.extend(defaults)
 
     def linked(cls, headerlist):
         """Create a new `Headers` object that uses the list of headers passed
@@ -508,7 +501,12 @@ class Headers(object):
         return cls(_list=headerlist)
     linked = classmethod(linked)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, _index_operation=True):
+        if _index_operation:
+            if isinstance(key, (int, long)):
+                return self._list[key]
+            elif isinstance(key, slice):
+                return self.__class__(self._list[key])
         ikey = key.lower()
         for k, v in self._list:
             if k.lower() == ikey:
@@ -539,7 +537,7 @@ class Headers(object):
         because no encoding takes place.
         """
         try:
-            rv = self[key]
+            rv = self.__getitem__(key, _index_operation=False)
         except KeyError:
             return default
         if type is None:
@@ -597,11 +595,20 @@ class Headers(object):
         values.
         """
         if isinstance(iterable, dict):
-            iterable = iterable.iteritems()
-        for key, value in iterable:
-            self.add(key, value)
+            for key, value in iterable.iteritems():
+                if isinstance(value, (tuple, list)):
+                    for v in value:
+                        self.add(key, v)
+                else:
+                    self.add(key, value)
+        else:
+            for key, value in iterable:
+                self.add(key, value)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key, _index_operation=True):
+        if _index_operation and isinstance(key, (int, long, slice)):
+            del self._list[key]
+            return
         key = key.lower()
         new = []
         for k, v in self._list:
@@ -609,12 +616,14 @@ class Headers(object):
                 new.append((k, v))
         self._list[:] = new
 
-    remove = __delitem__
+    def remove(self, key):
+        """Remove a key."""
+        return self.__delitem__(key, _index_operation=False)
 
     def __contains__(self, key):
         """Check if a key is present."""
         try:
-            self[key]
+            self.__getitem__(key, _index_operation=False)
         except KeyError:
             return False
         return True
@@ -634,17 +643,26 @@ class Headers(object):
         del self._list[:]
 
     def set(self, key, value):
-        """remove all header tuples for key and add
-        a new one
+        """remove all header tuples for key and add a new one.  The newly
+        added key either appears at the end of the list if there was no
+        entry or replaces the first one.
         """
         lc_key = key.lower()
         for idx, (old_key, old_value) in enumerate(self._list):
             if old_key.lower() == lc_key:
                 self._list[idx] = (key, value)
-                return
-        self.add(key, value)
+                break
+        else:
+            return self.add(key, value)
+        self._list[idx + 1:] = [(k, v) for k, v in self._list
+                                if k.lower() != lc_key]
 
-    __setitem__ = set
+    def __setitem__(self, key, value):
+        """Like `set()` but also supports index/slice based setting."""
+        if isinstance(key, (slice, int, long)):
+            self._list[key] = value
+        else:
+            self.set(key, value)
 
     def to_list(self, charset='utf-8'):
         """Convert the headers into a list and converts the unicode header
@@ -695,7 +713,9 @@ class EnvironHeaders(Headers):
     def __eq__(self, other):
         return self is other
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, _index_operation=False):
+        # _index_operation is a no-op for this class as there is no index but
+        # used because get() calls it.
         key = key.upper().replace('-', '_')
         if key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
             return self.environ[key]
@@ -746,6 +766,9 @@ class SharedDataMiddleware(object):
     This will then serve the ``shared_files`` folder in the `myapplication`
     python package.
     """
+
+    # TODO: use wsgi.file_wrapper or something, just don't yield everything
+    # at once.  Also consider switching to BaseResponse
 
     def __init__(self, app, exports, disallow=None, cache=True):
         self.app = app
@@ -822,14 +845,20 @@ class SharedDataMiddleware(object):
             data = stream.read()
         finally:
             stream.close()
-        headers = [('Content-Type', mime_type), ('Cache-Control', 'public')]
+
+        headers = [('Cache-Control', 'public')]
         if self.cache:
             etag = generate_etag(data)
             headers += [('Expires', expiry), ('ETag', etag)]
             if parse_etags(environ.get('HTTP_IF_NONE_MATCH')).contains(etag):
+                remove_entity_headers(headers)
                 start_response('304 Not Modified', headers)
                 return []
 
+        headers.extend((
+            ('Content-Type', mime_type),
+            ('Content-Length', len(data))
+        ))
         start_response('200 OK', headers)
         return [data]
 

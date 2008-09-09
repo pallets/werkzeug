@@ -37,6 +37,12 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
+_entity_headers = frozenset([
+    'allow', 'content-encoding', 'content-language', 'content-length',
+    'content-location', 'content-md5', 'content-range', 'content-type',
+    'expires', 'last-modified'
+])
+
 
 class Accept(list):
     """An `Accept` object is just a list subclass for lists of
@@ -854,3 +860,11 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
             unmodified = if_none_match.contains_raw(etag)
 
     return not unmodified
+
+
+def remove_entity_headers(headers):
+    """Remove all entity headers from a list or `Headers` object.  This
+    operation works in-place.
+    """
+    headers[:] = [(key, value) for key, value in headers if
+                  key.lower() not in _entity_headers]

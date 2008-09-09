@@ -175,12 +175,20 @@ def test_headers():
     assert headers.get('x-bar', type=int) == 1
     assert headers.getlist('x-bar', type=int) == [1, 2]
 
+    # list like operations
+    assert headers[0] == ('Content-Type', 'text/plain')
+    assert headers[:1] == Headers([('Content-Type', 'text/plain')])
+    del headers[:2]
+    del headers[-1]
+    assert headers == Headers([('X-Bar', '2')])
+
     # copying
     a = Headers([('foo', 'bar')])
     b = a.copy()
     a.add('foo', 'baz')
     assert a.getlist('foo') == ['bar', 'baz']
     assert b.getlist('foo') == ['bar']
+
 
 
 def test_cached_property():
