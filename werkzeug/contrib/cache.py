@@ -159,7 +159,7 @@ class MemcachedCache(BaseCache):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
-        if self.local:
+        if self.local is not None:
             if not hasattr(self.local, 'cache'):
                 self.local.cache = {}
             value = self.local.cache.get(key)
@@ -170,7 +170,8 @@ class MemcachedCache(BaseCache):
         # submitted data etc we fail silently for getting.
         if _test_memcached_key(key):
             value = self._client.get(key)
-            self.local.cache[key] = value
+            if self.local is not None:
+                self.local.cache[key] = value
             return value
 
     def get_dict(self, *keys):
