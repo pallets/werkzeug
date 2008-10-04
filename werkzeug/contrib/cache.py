@@ -134,14 +134,12 @@ class MemcachedCache(BaseCache):
     methods which is often the case in web applications.
     """
 
-    def __init__(self, servers, default_timeout=300, key_prefix=None,
-                 local=None):
+    def __init__(self, servers, default_timeout=300, key_prefix=None):
         BaseCache.__init__(self, default_timeout)
         if not have_memcache:
             raise RuntimeError('no memcache module found')
 
         self.key_prefix = key_prefix
-        self.local = local
 
         # cmemcache has a bug that debuglog is not defined for the
         # client.  Whenever pickle fails you get a weird AttributError.
@@ -159,20 +157,11 @@ class MemcachedCache(BaseCache):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
-        if self.local is not None:
-            if not hasattr(self.local, 'cache'):
-                self.local.cache = {}
-            value = self.local.cache.get(key)
-            if value:
-                return value
         # memcached doesn't support keys longer than that.  Because often
         # checks for so long keys can occour because it's tested from user
         # submitted data etc we fail silently for getting.
         if _test_memcached_key(key):
-            value = self._client.get(key)
-            if self.local is not None:
-                self.local.cache[key] = value
-            return value
+            return self._client.get(key)
 
     def get_dict(self, *keys):
         key_mapping = {}
