@@ -148,11 +148,10 @@ class LocalManager(object):
     def __init__(self, locals=None):
         if locals is None:
             self.locals = []
+        elif isinstance(locals, Local):
+            self.locals = [locals]
         else:
-            if isinstance(locals, (list, set, frozenset, tuple)):
-                self.locals = list(objects)
-            else:
-                self.locals = [locals]
+            self.locals = list(locals)
 
     def get_ident(self):
         """Return the context identifier the local objects use internally for
