@@ -1138,7 +1138,8 @@ class HTMLBuilder(object):
                 write(self._dialect == 'xhtml' and ' />' or '>')
                 return ''.join(buffer)
             write('>')
-            children_as_string = ''.join(children)
+            children_as_string = ''.join(unicode(x) for x in children
+                                         if x is not None)
             if children_as_string:
                 if tag in self._plaintext_elements:
                     children_as_string = escape(children_as_string)
