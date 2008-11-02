@@ -25,6 +25,8 @@ Version 0.4
   a list of headers (or a `Headers` object)
 - the responses now automatically call `remove_entity_headers` if the
   status code is 304.
+- fixed a bug with `Href` query parameter handling.  Previously the last
+  item of a call to `Href` was not handled properly if it was a dict.
 
 
 Version 0.3.1

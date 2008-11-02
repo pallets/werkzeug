@@ -965,6 +965,15 @@ class Href(object):
 
     >>> href(is_=42)
     '/foo?is=42'
+    >>> href({'foo': 'bar'})
+    '/foo?foo=bar'
+
+    Combining of both methods is not allowed:
+
+    >>> href({'foo': 'bar'}, bar=42)
+    Traceback (most recent call last):
+      ...
+    TypeError: keyword arguments and query-dicts can't be combined
 
     Accessing attributes on the href object creates a new href object with
     the attribute name as prefix:
@@ -989,12 +998,14 @@ class Href(object):
         return Href(urlparse.urljoin(base, name), self.charset)
 
     def __call__(self, *path, **query):
-        if query:
-            if path and isinstance(path[-1], dict):
-                query, path = path[-1], path[:-1]
-            else:
-                query = dict([(k.endswith('_') and k[:-1] or k, v)
-                              for k, v in query.items()])
+        if path and isinstance(path[-1], dict):
+            if query:
+                raise TypeError('keyword arguments and query-dicts '
+                                'can\'t be combined')
+            query, path = path[-1], path[:-1]
+        elif query:
+            query = dict([(k.endswith('_') and k[:-1] or k, v)
+                          for k, v in query.items()])
         path = '/'.join([url_quote(x, self.charset) for x in path
                          if x is not None]).lstrip('/')
         rv = self.base
