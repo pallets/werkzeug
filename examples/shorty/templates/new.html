@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block body %}
   <h2>Create a Shorty-URL!</h2>
-  {% if error %}<div class="error">{{ error }}</div>{% endif -%}
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <form action="" method="post">
     <p>Enter the URL you want to shorten</p>
     <p><input type="text" name="url" id="url" value="{{ url|e(true) }}"></p>
