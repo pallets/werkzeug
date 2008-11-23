@@ -71,7 +71,7 @@ if os.path.exists(documentation_path):
 
 setup(
     name='Werkzeug',
-    version='0.4',
+    version='0.5',
     url='http://werkzeug.pocoo.org/',
     license='BSD',
     author='Armin Ronacher',
