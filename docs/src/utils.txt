@@ -41,6 +41,7 @@ Data Structures
     .. def:: werkzeug.utils.Headers.get
     .. def:: werkzeug.utils.Headers.getlist
     .. def:: werkzeug.utils.Headers.add
+    .. def:: werkzeug.utils.Headers.pop
     .. def:: werkzeug.utils.Headers.set
     .. def:: werkzeug.utils.Headers.extend
     .. def:: werkzeug.utils.Headers.clear

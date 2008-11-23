@@ -36,6 +36,7 @@ from werkzeug.http import generate_etag, parse_etags, \
 
 _format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 _entity_re = re.compile(r'&([^;]+);')
+_missing = object()
 
 
 class MultiDict(dict):
@@ -620,6 +621,25 @@ class Headers(object):
     def remove(self, key):
         """Remove a key."""
         return self.__delitem__(key, _index_operation=False)
+
+    def pop(self, key=None, default=_missing):
+        """Removes a key or index."""
+        if key is None:
+            return self._list.pop()
+        if isinstance(key, (int, long)):
+            return self._list.pop(key)
+        try:
+            rv = self[key]
+            self.remove(key)
+        except KeyError:
+            if default is _missing:
+                return default
+            raise
+        return rv
+
+    def popitem(self):
+        """Removes a key or index and returns a (key, value) item."""
+        return self.pop()
 
     def __contains__(self, key):
         """Check if a key is present."""

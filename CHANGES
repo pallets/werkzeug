@@ -3,6 +3,7 @@ Werkzeug Changelog
 
 Version 0.4
 -----------
+(codename Schraubenzieher, released on November 23rd 2008)
 
 - `Client` supports an empty `data` argument now.
 - fixed a bug in `Response.application` that made it impossible to use it
@@ -29,6 +30,8 @@ Version 0.4
   status code is 304.
 - fixed a bug with `Href` query parameter handling.  Previously the last
   item of a call to `Href` was not handled properly if it was a dict.
+- headers now support a `pop` operation to better work with environ
+  properties.
 
 
 Version 0.3.1
