@@ -94,13 +94,13 @@ are essential for the application (session middlewares, serving of media
 files etc.).</p>
 <p>Here the initial code for our <tt class="docutils literal"><span class="pre">shorty/application.py</span></tt> file which implements
 the WSGI application:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">create_engine</span>
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">ClosingIterator</span>
-<span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">HTTPException</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">ClosingIterator</span>
+<span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="kn">import</span> <span class="n">HTTPException</span>
 
-<span class="k">from</span> <span class="nn">shorty.utils</span> <span class="k">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">local_manager</span><span class="p">,</span> <span class="n">url_map</span>
-<span class="k">from</span> <span class="nn">shorty</span> <span class="k">import</span> <span class="n">views</span>
-<span class="k">import</span> <span class="nn">shorty.models</span>
+<span class="kn">from</span> <span class="nn">shorty.utils</span> <span class="kn">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">local_manager</span><span class="p">,</span> <span class="n">url_map</span>
+<span class="kn">from</span> <span class="nn">shorty</span> <span class="kn">import</span> <span class="n">views</span>
+<span class="kn">import</span> <span class="nn">shorty.models</span>
 
 
 <span class="k">class</span> <span class="nc">Shorty</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -202,10 +202,10 @@ useful code later.</p>
 some more code into our utiliy module so that the imports work.  For the time
 being we just add the objects which we need for the application to work.  All
 the following code goes into the <tt class="docutils literal"><span class="pre">shorty/utils.py</span></tt> file:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">MetaData</span>
-<span class="k">from</span> <span class="nn">sqlalchemy.orm</span> <span class="k">import</span> <span class="n">create_session</span><span class="p">,</span> <span class="n">scoped_session</span>
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
-<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">MetaData</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">create_session</span><span class="p">,</span> <span class="n">scoped_session</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
+<span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
 
 <span class="n">local</span> <span class="o">=</span> <span class="n">Local</span><span class="p">()</span>
 <span class="n">local_manager</span> <span class="o">=</span> <span class="n">LocalManager</span><span class="p">([</span><span class="n">local</span><span class="p">])</span>
@@ -266,14 +266,14 @@ interpreter to play with the database models, initializing the database etc.</p>
 following piece of code implements a fully featured management script.  Put
 it into the <cite>manage.py</cite> file you have created in the beginning:</p>
 <div class="syntax"><pre><span class="c">#!/usr/bin/env python</span>
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">script</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">script</span>
 
 <span class="k">def</span> <span class="nf">make_app</span><span class="p">():</span>
-    <span class="k">from</span> <span class="nn">shorty.application</span> <span class="k">import</span> <span class="n">Shorty</span>
+    <span class="kn">from</span> <span class="nn">shorty.application</span> <span class="kn">import</span> <span class="n">Shorty</span>
     <span class="k">return</span> <span class="n">Shorty</span><span class="p">(</span><span class="s">&#39;sqlite:////tmp/shorty.db&#39;</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">make_shell</span><span class="p">():</span>
-    <span class="k">from</span> <span class="nn">shorty</span> <span class="k">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">utils</span>
+    <span class="kn">from</span> <span class="nn">shorty</span> <span class="kn">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">utils</span>
     <span class="n">application</span> <span class="o">=</span> <span class="n">make_app</span><span class="p">()</span>
     <span class="k">return</span> <span class="nb">locals</span><span class="p">()</span>
 
@@ -295,9 +295,9 @@ in the code boxes above.</p>
 <h3 id="part-3-database-models">Part 3: Database Models</h3>
 <p>Now we can create the models.  Because the application is pretty simple we
 just have one model and table:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
-<span class="k">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">DateTime</span>
-<span class="k">from</span> <span class="nn">shorty.utils</span> <span class="k">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">url_for</span><span class="p">,</span> <span class="n">get_random_uid</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">DateTime</span>
+<span class="kn">from</span> <span class="nn">shorty.utils</span> <span class="kn">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">url_for</span><span class="p">,</span> <span class="n">get_random_uid</span>
 
 <span class="n">url_table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;urls&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
     <span class="n">Column</span><span class="p">(</span><span class="s">&#39;uid&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mf">140</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
@@ -336,7 +336,7 @@ have a look at the <a class="reference" href="http://www.sqlalchemy.org/docs/04/
 free to use.
 What&#8217;s missing is the <cite>get_random_uid</cite> function we have to add to the utils
 module:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">sample</span><span class="p">,</span> <span class="n">randrange</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">sample</span><span class="p">,</span> <span class="n">randrange</span>
 
 <span class="n">URL_CHARS</span> <span class="o">=</span> <span class="s">&#39;abcdefghijkmpqrstuvwxyzABCDEFGHIJKLMNPQRST23456789&#39;</span>
 
@@ -346,7 +346,7 @@ module:</p>
 <p>Once that is done we can use <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">initdb</span></tt> to initialize the
 database and play around with the stuff using <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">shell</span></tt>:</p>
 <div class="syntax"><pre><span class="go">Interactive Werkzeug Shell</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">from</span> <span class="nn">shorty.models</span> <span class="k">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">URL</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shorty.models</span> <span class="kn">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">URL</span>
 </pre></div>
 <p>Now we can add some URLs to the database:</p>
 <div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span> <span class="o">=</span> <span class="p">[</span><span class="n">URL</span><span class="p">(</span><span class="s">&#39;http://example.org/&#39;</span><span class="p">),</span> <span class="n">URL</span><span class="p">(</span><span class="s">&#39;http://localhost:5000/&#39;</span><span class="p">)]</span>
@@ -383,11 +383,11 @@ Django way of naming those things.</p>
 <p>For the beginning we just create a view function for new URLs and a function
 that displays a message about a new link.  All that code goes into our still
 empty <tt class="docutils literal"><span class="pre">views.py</span></tt> file:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">redirect</span>
-<span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">NotFound</span>
-<span class="k">from</span> <span class="nn">shorty.utils</span> <span class="k">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">expose</span><span class="p">,</span> <span class="n">validate_url</span><span class="p">,</span> \
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">redirect</span>
+<span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="kn">import</span> <span class="n">NotFound</span>
+<span class="kn">from</span> <span class="nn">shorty.utils</span> <span class="kn">import</span> <span class="n">session</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">expose</span><span class="p">,</span> <span class="n">validate_url</span><span class="p">,</span> \
      <span class="n">url_for</span>
-<span class="k">from</span> <span class="nn">shorty.models</span> <span class="k">import</span> <span class="n">URL</span>
+<span class="kn">from</span> <span class="nn">shorty.models</span> <span class="kn">import</span> <span class="n">URL</span>
 
 <span class="nd">@expose</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
@@ -463,10 +463,10 @@ you can also disable it.</p>
 <p>And again we have imported two objects from the utils module that
 don&#8217;t exist yet.  One of those should render a jinja template into a response
 object, the other one validates a URL.  So let&#8217;s add those to <tt class="docutils literal"><span class="pre">utils.py</span></tt>:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
-<span class="k">from</span> <span class="nn">urlparse</span> <span class="k">import</span> <span class="n">urlparse</span>
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Response</span>
-<span class="k">from</span> <span class="nn">jinja</span> <span class="k">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">FileSystemLoader</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">urlparse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Response</span>
+<span class="kn">from</span> <span class="nn">jinja</span> <span class="kn">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">FileSystemLoader</span>
 
 <span class="n">ALLOWED_SCHEMES</span> <span class="o">=</span> <span class="n">frozenset</span><span class="p">([</span><span class="s">&#39;http&#39;</span><span class="p">,</span> <span class="s">&#39;https&#39;</span><span class="p">,</span> <span class="s">&#39;ftp&#39;</span><span class="p">,</span> <span class="s">&#39;ftps&#39;</span><span class="p">])</span>
 <span class="n">TEMPLATE_PATH</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&#39;templates&#39;</span><span class="p">)</span>
@@ -595,8 +595,8 @@ reference to the application object).  So head back to <tt class="docutils liter
 and do some code refactoring there.</p>
 <p>First of all you have to add a new import and calculate the path to the
 static files:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">SharedDataMiddleware</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">SharedDataMiddleware</span>
 
 <span class="n">STATIC_PATH</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&#39;static&#39;</span><span class="p">)</span>
 </pre></div>
@@ -639,7 +639,7 @@ be a big problem but we will have to do some sort of pagination.  Because if
 we print all URLs at once we have sooner or later an endless page that takes
 minutes to load.</p>
 <p>So let&#8217;s start by adding a <cite>Pagination</cite> class into our utils module:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">cached_property</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">cached_property</span>
 
 <span class="k">class</span> <span class="nc">Pagination</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
@@ -675,7 +675,7 @@ other properties return meaningful values so that we can use them in the
 template.</p>
 <p>Now we can import the <cite>Pagination</cite> class into our views module and add some
 code to the <cite>list</cite> function:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">shorty.utils</span> <span class="k">import</span> <span class="n">Pagination</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">shorty.utils</span> <span class="kn">import</span> <span class="n">Pagination</span>
 
 <span class="nd">@expose</span><span class="p">(</span><span class="s">&#39;/list/&#39;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;page&#39;</span><span class="p">:</span> <span class="mf">1</span><span class="p">})</span>
 <span class="nd">@expose</span><span class="p">(</span><span class="s">&#39;/list/&lt;int:page&gt;&#39;</span><span class="p">)</span>
@@ -724,7 +724,7 @@ template:</p>
 </pre></div>
 <p>Then we have to go into our application module and import the <cite>NotFound</cite>
 exception:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">NotFound</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="kn">import</span> <span class="n">NotFound</span>
 </pre></div>
 <p>Finally we have to catch it and translate it into a response.  This except
 block goes right <strong>before</strong> the except block of the <cite>HTTPException</cite>:</p>

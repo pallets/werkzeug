@@ -55,7 +55,7 @@ subclasses <cite>BaseRequest</cite> and all the important mixins.</p>
 <p>It&#8217;s a good idea to create a custom subclass of the <cite>BaseRequest</cite> and add
 missing functionality either via mixins or direct implementation.  Here
 an example for such subclasses:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">ETagRequestMixin</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">ETagRequestMixin</span>
 
 <span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="n">BaseRequest</span><span class="p">,</span> <span class="n">ETagRequestMixin</span><span class="p">):</span>
     <span class="k">pass</span>
@@ -217,7 +217,7 @@ actual response is sent to the server.  This helps debugging systems
 because they can catch all the exceptions before responses are started.</p>
 <p>Here a small example WSGI application that takes advantage of the
 response objects:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">BaseResponse</span> <span class="k">as</span> <span class="n">Response</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">BaseResponse</span> <span class="k">as</span> <span class="n">Response</span>
 
 <span class="k">def</span> <span class="nf">index</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="s">&#39;Index page&#39;</span><span class="p">)</span>
@@ -378,7 +378,7 @@ such as etags, cache control, user agents etc.  When subclassing you can
 mix those classes in to extend the functionality of the <cite>BaseRequest</cite> or
 <cite>BaseResponse</cite> object.  Here a small example for a request object that
 parses accept headers:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">AcceptMixin</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">AcceptMixin</span>
 
 <span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="n">BaseRequest</span><span class="p">,</span> <span class="n">AcceptMixin</span><span class="p">):</span>
     <span class="k">pass</span>
@@ -644,6 +644,17 @@ present in a 405 (Method Not Allowed) response.</dd>
 <dl class="last">
 <dt><cite id="werkzeug.wrappers.WWWAuthenticateMixin.www_authenticate">www_authenticate</cite></dt>
 <dd>The <tt class="docutils literal"><span class="pre">WWW-Authenticate</span></tt> header in a parsed form.</dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><strong>class</strong> <cite id="werkzeug.wrappers.UserAgentMixin">UserAgentMixin</cite></dt>
+<dd><p class="first">Adds a <cite>user_agent</cite> attribute to the request object which contains the
+parsed user agent of the browser that triggered the request as <cite>UserAgent</cite>
+object.</p>
+<dl class="last">
+<dt><cite id="werkzeug.wrappers.UserAgentMixin.user_agent">user_agent</cite></dt>
+<dd>The current user agent.</dd>
 </dl>
 </dd>
 </dl>

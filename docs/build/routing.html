@@ -39,7 +39,7 @@ from <cite>werkzeug</cite>!</p>
 <div class="section">
 <h3 id="quickstart">Quickstart</h3>
 <p>Here a simple example which could be the URL definition for a blog:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">NotFound</span><span class="p">,</span> <span class="n">RequestRedirect</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">NotFound</span><span class="p">,</span> <span class="n">RequestRedirect</span>
 
 <span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
     <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;blog/index&#39;</span><span class="p">),</span>
@@ -273,7 +273,7 @@ explicitly).</p>
 can be used as WSGI responses.  The will all render generic error or
 redirect pages.</p>
 <p>Here is a small example for matching:</p>
-<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
 <span class="gp">... </span>    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">),</span>
 <span class="gp">... </span>    <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/downloads/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;downloads/index&#39;</span><span class="p">),</span>
@@ -313,8 +313,8 @@ catching them by hand.  If you want to stick with the default
 error messages you can pass it <tt class="docutils literal"><span class="pre">catch_http_exceptions=True</span></tt> and
 it will catch the http exceptions.</p>
 <p>Here a small example for the dispatch usage:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">responder</span>
-<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">responder</span>
+<span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
 
 <span class="k">def</span> <span class="nf">on_index</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="s">&#39;Hello from the index&#39;</span><span class="p">)</span>
@@ -536,7 +536,7 @@ another string. This can be useful for sub applications:</p>
 <dd><p class="first">Returns copies of the rules wrapped and expands string templates in
 the endpoint, rule, defaults or subdomain sections.</p>
 <p>Here a small example for such a rule template:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">RuleTemplate</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">RuleTemplate</span>
 
 <span class="n">resource</span> <span class="o">=</span> <span class="n">RuleTemplate</span><span class="p">([</span>
     <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/$name/&#39;</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s">&#39;$name.list&#39;</span><span class="p">),</span>
@@ -556,8 +556,8 @@ replace the placeholders in all the string parameters.</p>
 subclass <cite>BaseConverter</cite> and pass that new converter to the url_map.  A converter
 has to provide two public methods: <cite>to_python</cite> and <cite>to_url</cite>, as well as a
 member that represents a regular expression.  Here is a small example:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">randrange</span>
-<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">Map</span><span class="p">,</span> <span class="n">BaseConverter</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randrange</span>
+<span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">Map</span><span class="p">,</span> <span class="n">BaseConverter</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span> <span class="nc">BooleanConverter</span><span class="p">(</span><span class="n">BaseConverter</span><span class="p">):</span>
 

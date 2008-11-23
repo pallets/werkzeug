@@ -39,14 +39,14 @@ iterator, the status and finally a list of headers.  The default response
 wrapper returns a tuple.  Because response objects have the same signature,
 you can use them as response wrapper, ideally by subclassing them and hooking
 in test functionality.</p>
-<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">BaseResponse</span><span class="p">,</span> <span class="n">test_app</span>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">BaseResponse</span><span class="p">,</span> <span class="n">test_app</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">test_app</span><span class="p">,</span> <span class="n">BaseResponse</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span><span class="o">.</span><span class="n">status_code</span>
 <span class="go">200</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span><span class="o">.</span><span class="n">headers</span>
 <span class="go">Headers([(&#39;Content-Type&#39;, &#39;text/html; charset=utf-8&#39;)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span><span class="o">.</span><span class="n">response_body</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[:</span><span class="mf">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[:</span><span class="mf">2</span><span class="p">]</span>
 <span class="go">[&#39;&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&#39;,</span>
 <span class="go"> &#39;  &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;&#39;]</span>
 </pre></div>

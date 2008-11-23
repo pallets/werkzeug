@@ -118,7 +118,7 @@ and <cite>popitemlist</cite>.</p>
 <dd><p class="first">A read only <cite>MultiDict</cite> decorator that you can pass multiple <cite>MultiDict</cite>
 instances as sequence and it will combine the return values of all wrapped
 dicts:</p>
-<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">MultiDict</span><span class="p">,</span> <span class="n">CombinedMultiDict</span>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">MultiDict</span><span class="p">,</span> <span class="n">CombinedMultiDict</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">post</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">([(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">get</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">([(</span><span class="s">&#39;blub&#39;</span><span class="p">,</span> <span class="s">&#39;blah&#39;</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">combined</span> <span class="o">=</span> <span class="n">CombinedMultiDict</span><span class="p">([</span><span class="n">get</span><span class="p">,</span> <span class="n">post</span><span class="p">])</span>
@@ -194,9 +194,14 @@ with the callable defined there.</p>
 <dd>add a new header tuple to the list</dd>
 </dl>
 <dl>
+<dt><cite id="werkzeug.utils.Headers.pop">pop</cite> <tt class="func-signature docutils literal"><span class="pre">(key=None,</span> <span class="pre">default=&lt;object</span> <span class="pre">object</span> <span class="pre">at</span> <span class="pre">0x523488&gt;)</span></tt></dt>
+<dd>Removes a key or index.</dd>
+</dl>
+<dl>
 <dt><cite id="werkzeug.utils.Headers.set">set</cite> <tt class="func-signature docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></tt></dt>
-<dd>remove all header tuples for key and add
-a new one</dd>
+<dd>remove all header tuples for key and add a new one.  The newly
+added key either appears at the end of the list if there was no
+entry or replaces the first one.</dd>
 </dl>
 <dl>
 <dt><cite id="werkzeug.utils.Headers.extend">extend</cite> <tt class="func-signature docutils literal"><span class="pre">(iterable)</span></tt></dt>
@@ -323,9 +328,22 @@ object into a string or call the <cite>to_header()</cite> function.  If you plan
 to subclass it and add your own items have a look at the sourcecode for
 that class.</p>
 <p>The following attributes are exposed:</p>
-<p class="last"><cite>no_cache</cite>, <cite>no_store</cite>, <cite>max_age</cite>, <cite>max_stale</cite>, <cite>min_fresh</cite>,
+<p><cite>no_cache</cite>, <cite>no_store</cite>, <cite>max_age</cite>, <cite>max_stale</cite>, <cite>min_fresh</cite>,
 <cite>no_transform</cite>, <cite>only_if_cached</cite>, <cite>public</cite>, <cite>private</cite>, <cite>must_revalidate</cite>,
 <cite>proxy_revalidate</cite>, and <cite>s_maxage</cite></p>
+<p>The behavior of this class changed slightly from 0.3 to 0.4.  Since 0.4
+setting <cite>no_cache</cite> or <cite>private</cite> to boolean <cite>True</cite> will set the implicit
+none-value which is <tt class="docutils literal"><span class="pre">*</span></tt>:</p>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">CacheControl</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">no_cache</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span>
+<span class="go">&lt;CacheControl &#39;no-cache&#39;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">no_cache</span>
+<span class="go">&#39;*&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">no_cache</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span>
+<span class="go">&lt;CacheControl &#39;&#39;&gt;</span>
+</pre></div>
 </dd>
 </dl>
 <dl>
@@ -730,6 +748,14 @@ the keyword arguments are used for the query parameters, cutting off
 the first trailing underscore of the parameter name:</p>
 <div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">href</span><span class="p">(</span><span class="n">is_</span><span class="o">=</span><span class="mf">42</span><span class="p">)</span>
 <span class="go">&#39;/foo?is=42&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">href</span><span class="p">({</span><span class="s">&#39;foo&#39;</span><span class="p">:</span> <span class="s">&#39;bar&#39;</span><span class="p">})</span>
+<span class="go">&#39;/foo?foo=bar&#39;</span>
+</pre></div>
+<p>Combining of both methods is not allowed:</p>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">href</span><span class="p">({</span><span class="s">&#39;foo&#39;</span><span class="p">:</span> <span class="s">&#39;bar&#39;</span><span class="p">},</span> <span class="n">bar</span><span class="o">=</span><span class="mf">42</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  <span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">keyword arguments and query-dicts can&#39;t be combined</span>
 </pre></div>
 <p>Accessing attributes on the href object creates a new href object with
 the attribute name as prefix:</p>
@@ -805,8 +831,8 @@ and finishes the processing if the resonse is started:</p>
 <dt><strong>class</strong> <cite id="werkzeug.utils.SharedDataMiddleware">SharedDataMiddleware</cite></dt>
 <dd><p class="first">A WSGI middleware that provides static content for development
 environments or simple server setups. Usage is quite simple:</p>
-<div class="syntax"><pre><span class="k">import</span> <span class="nn">os</span>
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">SharedDataMiddleware</span>
+<div class="syntax"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">SharedDataMiddleware</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">SharedDataMiddleware</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="p">{</span>
     <span class="s">&#39;/shared&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&#39;shared&#39;</span><span class="p">)</span>
@@ -1099,7 +1125,7 @@ function cannot accept.</dd>
 </dl>
 <p>This can be useful for decorators that forward user submitted data to
 a view function:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">ArgumentValidationError</span><span class="p">,</span> <span class="n">validate_arguments</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">ArgumentValidationError</span><span class="p">,</span> <span class="n">validate_arguments</span>
 
 <span class="k">def</span> <span class="nf">sanitize</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">proxy</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>

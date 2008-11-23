@@ -78,7 +78,7 @@ implementations which you can find at <a class="reference" href="http://www.wsgi
 <p>To start the application as standalone server, all you have to do is adding
 this start hook to the file:</p>
 <div class="syntax"><pre><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="k">from</span> <span class="nn">wsgiref.simple_server</span> <span class="k">import</span> <span class="n">make_server</span>
+    <span class="kn">from</span> <span class="nn">wsgiref.simple_server</span> <span class="kn">import</span> <span class="n">make_server</span>
     <span class="n">srv</span> <span class="o">=</span> <span class="n">make_server</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="mf">5000</span><span class="p">,</span> <span class="n">application</span><span class="p">)</span>
     <span class="n">srv</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
 </pre></div>
@@ -92,7 +92,7 @@ FastCGI and similar protocols) without altering the code.</p>
 <h3 id="adding-interactive-elements">Adding Interactive Elements</h3>
 <p>Let&#8217;s extend the example from above so that we say <tt class="docutils literal"><span class="pre">Hello</span> <span class="pre">John</span></tt> if the user
 visits <tt class="docutils literal"><span class="pre">http://localhost:5000/?name=John</span></tt>:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">cgi</span> <span class="k">import</span> <span class="n">parse_qs</span><span class="p">,</span> <span class="n">escape</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">cgi</span> <span class="kn">import</span> <span class="n">parse_qs</span><span class="p">,</span> <span class="n">escape</span>
 
 <span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
     <span class="n">start_response</span><span class="p">(</span><span class="s">&#39;200 OK&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="s">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s">&#39;text/html&#39;</span><span class="p">)])</span>
@@ -111,7 +111,7 @@ forces you to use unicode internally) and avoid repetitive work.</p>
 with an about function, both returning different content.  To keep the example
 simple we just want to use a dict that maps to that and take advantage or some
 of the Werkzeug features:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">escape</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">escape</span>
 
 <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="s">u&#39;&#39;&#39;&lt;h1&gt;Index Page&lt;/h1&gt;</span>
@@ -151,7 +151,7 @@ of the Werkzeug features:</p>
     <span class="k">return</span> <span class="n">resp</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">run_simple</span>
+    <span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">run_simple</span>
     <span class="n">run_simple</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="mf">5000</span><span class="p">,</span> <span class="n">application</span><span class="p">)</span>
 </pre></div>
 <p>Alright. That&#8217;s quite a lot of code but let&#8217;s go through it step-by-step.</p>

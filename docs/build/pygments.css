@@ -1,3 +1,4 @@
+.syntax .hll { background-color: #ffffcc }
 .syntax  { background: #f0f3f3; }
 .syntax .c { color: #0099FF; font-style: italic } /* Comment */
 .syntax .err { color: #AA0000; background-color: #FFAAAA } /* Error */
@@ -19,6 +20,7 @@
 .syntax .gt { color: #99CC66 } /* Generic.Traceback */
 .syntax .kc { color: #006699; font-weight: bold } /* Keyword.Constant */
 .syntax .kd { color: #006699; font-weight: bold } /* Keyword.Declaration */
+.syntax .kn { color: #006699; font-weight: bold } /* Keyword.Namespace */
 .syntax .kp { color: #006699 } /* Keyword.Pseudo */
 .syntax .kr { color: #006699; font-weight: bold } /* Keyword.Reserved */
 .syntax .kt { color: #007788; font-weight: bold } /* Keyword.Type */

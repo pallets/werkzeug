@@ -42,7 +42,7 @@ before and data is left in the thread local object.</p>
 <div class="section">
 <h3 id="nutshell">Nutshell</h3>
 <p>Here a simple example how you can use werkzeug.local:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
 
 <span class="n">local</span> <span class="o">=</span> <span class="n">Local</span><span class="p">()</span>
 <span class="n">local_manager</span> <span class="o">=</span> <span class="n">LocalManager</span><span class="p">([</span><span class="n">local</span><span class="p">])</span>
@@ -120,7 +120,7 @@ scoped sessions) to the Werkzeug locals.</dd>
 a proxied object.  The only operations not supported for forwarding
 are right handed operands and any kind of assignment.</p>
 <p>Example usage:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Local</span>
 <span class="n">l</span> <span class="o">=</span> <span class="n">Local</span><span class="p">()</span>
 <span class="n">request</span> <span class="o">=</span> <span class="n">l</span><span class="p">(</span><span class="s">&#39;request&#39;</span><span class="p">)</span>
 <span class="n">user</span> <span class="o">=</span> <span class="n">l</span><span class="p">(</span><span class="s">&#39;user&#39;</span><span class="p">)</span>
@@ -136,12 +136,12 @@ you want to pass the object into a different context.</dd>
 </dl>
 <p>Keep in mind that <tt class="docutils literal"><span class="pre">repr()</span></tt> is also forwarded, so if you want to find
 out if you are dealing with a proxy you can do an <tt class="docutils literal"><span class="pre">isinstance()</span></tt> check:</p>
-<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">LocalProxy</span>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">LocalProxy</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">LocalProxy</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
 <p>You can also create proxy objects by hand:</p>
-<div class="last"><div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalProxy</span>
+<div class="last"><div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalProxy</span>
 <span class="n">local</span> <span class="o">=</span> <span class="n">Local</span><span class="p">()</span>
 <span class="n">request</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">local</span><span class="p">,</span> <span class="s">&#39;request&#39;</span><span class="p">)</span>
 </pre></div>

@@ -31,8 +31,8 @@
 within your views to trigger a standard non 200 response.</p>
 <div class="section">
 <h3 id="usage-example">Usage Example</h3>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">responder</span>
-<span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">NotFound</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">responder</span>
+<span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="kn">import</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">NotFound</span>
 
 <span class="k">def</span> <span class="nf">view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="k">raise</span> <span class="n">NotFound</span><span class="p">()</span>
@@ -262,7 +262,7 @@ errors.  Especially redirects and ather non 200 status codes that
 represent do not represent errors are missing.  For redirects you can use
 the <cite>redirect</cite> function from the utilities.</p>
 <p>If you want to add an error yourself you can subclass <cite>HTTPException</cite>:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">HTTPException</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="kn">import</span> <span class="n">HTTPException</span>
 
 <span class="k">class</span> <span class="nc">PaymentRequred</span><span class="p">(</span><span class="n">HTTPException</span><span class="p">):</span>
     <span class="n">code</span> <span class="o">=</span> <span class="mf">402</span>

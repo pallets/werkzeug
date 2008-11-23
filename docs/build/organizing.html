@@ -66,10 +66,10 @@ there if you use the Werkzeug <a class="reference" href="routing.html">routing s
 <p>It&#8217;s also a good idea to call the file something like <tt class="docutils literal"><span class="pre">main.py</span></tt> or
 <tt class="docutils literal"><span class="pre">application.py</span></tt> and locate it in the root of the package.  This is what it
 <em>could</em> look like:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">import_string</span>
-<span class="k">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">HTTPException</span>
-<span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">RequestRedirect</span>
-<span class="k">from</span> <span class="nn">mypackage.urls</span> <span class="k">import</span> <span class="n">url_map</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">import_string</span>
+<span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="kn">import</span> <span class="n">HTTPException</span>
+<span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">RequestRedirect</span>
+<span class="kn">from</span> <span class="nn">mypackage.urls</span> <span class="kn">import</span> <span class="n">url_map</span>
 
 <span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
     <span class="n">url_adapter</span> <span class="o">=</span> <span class="n">url_map</span><span class="o">.</span><span class="n">bind_to_environ</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
@@ -102,8 +102,8 @@ response objects.  This would also contain other utilities and a bridge to a
 template engine.  In this example we will use the <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> template engine -
 basically because it&#8217;s something we use, too - but you can of course use any
 template engine:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">jinja</span> <span class="k">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">PackageLoader</span>
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">Response</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">jinja</span> <span class="kn">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">PackageLoader</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Response</span>
 
 <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">PackageLoader</span><span class="p">(</span><span class="s">&#39;mypackage&#39;</span><span class="p">,</span> <span class="s">&#39;templates&#39;</span><span class="p">))</span>
 
@@ -125,7 +125,7 @@ example view below.</p>
 <h3 id="urls">URLs</h3>
 <p>Because we use the Werkzeug URL routing system in this example and the URLs
 are stored in <cite>urls.py</cite>, we need that file:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug.routing</span> <span class="k">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
 
 <span class="n">url_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">([</span>
     <span class="n">Rule</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;static.index&#39;</span><span class="p">)</span>
@@ -137,7 +137,7 @@ are stored in <cite>urls.py</cite>, we need that file:</p>
 <h3 id="view">View</h3>
 <p>Here is the view defined above.  It must be saved in
 <cite>myprojects/views/static.py</cite> as defined above:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">myproject.utils</span> <span class="k">import</span> <span class="n">TemplateResponse</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">myproject.utils</span> <span class="kn">import</span> <span class="n">TemplateResponse</span>
 
 <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">TemplateResponse</span><span class="p">(</span><span class="s">&#39;index.html&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Welcome&#39;</span><span class="p">)</span>

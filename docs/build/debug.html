@@ -24,8 +24,8 @@ middleware that renders nice debugging tracebacks, optionally with an AJAX
 based debugger (which allows to execute code in the context of the
 traceback&#8217;s frames).</p>
 <p>Usage:</p>
-<div class="syntax"><pre><span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">DebuggedApplication</span><span class="p">,</span> <span class="n">run_simple</span>
-<span class="k">from</span> <span class="nn">myapplication</span> <span class="k">import</span> <span class="n">application</span>
+<div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">DebuggedApplication</span><span class="p">,</span> <span class="n">run_simple</span>
+<span class="kn">from</span> <span class="nn">myapplication</span> <span class="kn">import</span> <span class="n">application</span>
 
 <span class="n">application</span> <span class="o">=</span> <span class="n">DebuggedApplication</span><span class="p">(</span><span class="n">application</span><span class="p">,</span> <span class="n">evalex</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 

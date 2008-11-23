@@ -34,8 +34,8 @@ application:</p>
 <div class="syntax"><pre><span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
 
-<span class="k">from</span> <span class="nn">werkzeug</span> <span class="k">import</span> <span class="n">run_simple</span>
-<span class="k">from</span> <span class="nn">myproject</span> <span class="k">import</span> <span class="n">make_app</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">run_simple</span>
+<span class="kn">from</span> <span class="nn">myproject</span> <span class="kn">import</span> <span class="n">make_app</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">make_app</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 <span class="n">run_simple</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="mf">8080</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">use_reloader</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
