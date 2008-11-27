@@ -153,3 +153,24 @@ def test_dispatch():
     raise_this = NotFound()
     raises(NotFound, lambda: dispatch('/bar'))
     assert dispatch('/bar', True).status_code == 404
+
+
+def test_http_host_before_server_name():
+    env = {
+        'HTTP_HOST':            'wiki.example.com',
+        'SERVER_NAME':          'web0.example.com',
+        'SERVER_PORT':          '80',
+        'SCRIPT_NAME':          '',
+        'PATH_INFO':            '',
+        'REQUEST_METHOD':       'GET',
+        'wsgi.url_scheme':      'http'
+    }
+    map = Map([Rule('/', endpoint='index', subdomain='wiki')])
+    adapter = map.bind_to_environ(env, server_name='example.com')
+    assert adapter.match('/') == ('index', {})
+    assert adapter.build('index', force_external=True) == 'http://wiki.example.com/'
+    assert adapter.build('index') == '/'
+
+    env['HTTP_HOST'] = 'admin.example.com'
+    adapter = map.bind_to_environ(env, server_name='example.com')
+    assert adapter.build('index') == 'http://wiki.example.com/'

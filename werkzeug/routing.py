@@ -998,7 +998,8 @@ class Map(object):
                    in (('https', '443'), ('http', '80')):
                     server_name += ':' + environ['SERVER_PORT']
         elif subdomain is None:
-            cur_server_name = environ['SERVER_NAME'].split('.')
+            cur_server_name = environ.get('HTTP_HOST',
+                environ['SERVER_NAME']).split(':', 1)[0].split('.')
             real_server_name = server_name.split(':', 1)[0].split('.')
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
