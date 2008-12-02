@@ -110,7 +110,7 @@ class File(object):
                 filename = fd.name
         if mimetype is None:
             mimetype = guess_type(filename)
-        self.filename = fileanme
+        self.filename = filename
         self.mimetype = mimetype or 'application/octet-stream'
 
     def getattr(self, name):
