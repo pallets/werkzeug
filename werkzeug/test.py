@@ -65,7 +65,7 @@ def encode_multipart(values):
 
     This method does not accept unicode strings!
     """
-    boundary = '-----------=_Part_%s%s' (time(), random())
+    boundary = '-----------=_Part_%s%s' % (time(), random())
     lines = []
     for key, value in values.iteritems():
         if isinstance(value, File):
