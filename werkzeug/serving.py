@@ -88,7 +88,7 @@ if have_wsgiref:
 
         def log_request(self, code='-', size='-'):
             _log('info', '%s -- [%s] %s %s',
-                self.client_address[0],
+                self.address_string(),
                 self.requestline,
                 code,
                 size
@@ -99,6 +99,9 @@ if have_wsgiref:
 
         def log_message(self, format, *args):
             _log('info', format, args)
+
+        def address_string(self):
+            return self.client_address[0]
 
 
 def make_server(host, port, app=None, threaded=False, processes=1,
