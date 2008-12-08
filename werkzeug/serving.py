@@ -88,7 +88,7 @@ if have_wsgiref:
 
         def log_request(self, code='-', size='-'):
             _log('info', '%s -- [%s] %s %s',
-                self.address_string(),
+                self.client_address[0],
                 self.requestline,
                 code,
                 size
