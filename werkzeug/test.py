@@ -109,7 +109,7 @@ class File(object):
                     raise ValueError('no filename for provided')
                 filename = fd.name
         if mimetype is None:
-            mimetype = guess_type(filename)
+            mimetype = guess_type(filename)[0]
         self.filename = filename
         self.mimetype = mimetype or 'application/octet-stream'
 
@@ -147,7 +147,7 @@ class Client(object):
              data=None, input_stream=None, content_type=None,
              content_length=0, errors_stream=None, multithread=False,
              multiprocess=False, run_once=False, environ_overrides=None,
-             as_tuple=False):
+             as_tuple=False, buffered=False):
         """Takes the same arguments as the `create_environ` function from the
         utility module with some additions.
 
@@ -205,6 +205,10 @@ class Client(object):
 
         `run_once`
             The run_once flag for the WSGI Environment.  Defaults to `False`.
+
+        `buffered`
+            Set this to true to buffer the application run.  This will
+            automatically close the application for you as well.
         """
         if input_stream is None and data is not None and method in ('PUT', 'POST'):
             need_multipart = False
@@ -246,7 +250,7 @@ class Client(object):
                                      multiprocess, run_once)
         if environ_overrides:
             environ.update(environ_overrides)
-        rv = run_wsgi_app(self.application, environ)
+        rv = run_wsgi_app(self.application, environ, buffered=buffered)
         response = self.response_wrapper(*rv)
         if as_tuple:
             return environ, response

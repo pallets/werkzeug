@@ -9,6 +9,8 @@ Version 0.5
 - Fixed a typo in `werkzeug.test` that broke `File`.
 - `Map.bind_to_environ` uses the `Host` header now if available.
 - Fixed `BaseCache.get_dict` (#345)
+- `werkzeug.test.Client` can now run the application buffered in which
+  case the application is properly closed automatically.
 
 Version 0.4
 -----------
