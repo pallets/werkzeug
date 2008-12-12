@@ -8,6 +8,7 @@ Version 0.5
 - the development server no longer resolves the addresses of clients.
 - Fixed a typo in `werkzeug.test` that broke `File`.
 - `Map.bind_to_environ` uses the `Host` header now if available.
+- Fixed `BaseCache.get_dict` (#345)
 
 Version 0.4
 -----------

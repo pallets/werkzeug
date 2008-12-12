@@ -49,7 +49,7 @@ class BaseCache(object):
         return map(self.get, keys)
 
     def get_dict(self, *keys):
-        return dict(izip(keys, self.get_many(keys)))
+        return dict(izip(keys, self.get_many(*keys)))
 
     def set(self, key, value, timeout=None):
         pass
