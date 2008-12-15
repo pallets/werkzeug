@@ -174,3 +174,11 @@ def test_http_host_before_server_name():
     env['HTTP_HOST'] = 'admin.example.com'
     adapter = map.bind_to_environ(env, server_name='example.com')
     assert adapter.build('index') == 'http://wiki.example.com/'
+
+
+def test_adapter_url_parameter_sorting():
+    map = Map([Rule('/', endpoint='index')], sort_parameters=True,
+              sort_key=lambda x: x[1])
+    adapter = map.bind('localhost', '/')
+    assert adapter.build('index', {'x': 20, 'y': 10, 'z': 30},
+        force_external=True) == 'http://localhost/?y=10&x=20&z=30'

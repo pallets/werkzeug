@@ -1001,13 +1001,24 @@ class Href(object):
     >>> bar_href = href.bar
     >>> bar_href("blub")
     '/foo/bar/blub'
+
+    If `sort` is set to `True` the items are sorted by `key` or the default
+    sorting algorithm:
+
+    >>> href = Href("/", sort=True)
+    >>> href(a=1, b=2, c=3)
+    '/?a=1&b=2&c=3'
+
+    *new in Werkzeug 0.5*: `sort` and `key` were added.
     """
 
-    def __init__(self, base='./', charset='utf-8'):
+    def __init__(self, base='./', charset='utf-8', sort=False, key=None):
         if not base:
             base = './'
         self.base = base
         self.charset = charset
+        self.sort = sort
+        self.key = key
 
     def __getattr__(self, name):
         if name[:2] == '__':
@@ -1015,7 +1026,8 @@ class Href(object):
         base = self.base
         if base[-1:] != '/':
             base += '/'
-        return Href(urlparse.urljoin(base, name), self.charset)
+        return Href(urlparse.urljoin(base, name), self.charset, self.sort,
+                    self.key)
 
     def __call__(self, *path, **query):
         if path and isinstance(path[-1], dict):
@@ -1034,7 +1046,8 @@ class Href(object):
                 rv += '/'
             rv = urlparse.urljoin(rv, path)
         if query:
-            rv += '?' + url_encode(query, self.charset)
+            rv += '?' + url_encode(query, self.charset, sort=self.sort,
+                                   key=self.key)
         return str(rv)
 
 
@@ -1290,22 +1303,29 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     return MultiDict(tmp)
 
 
-def url_encode(obj, charset='utf-8', encode_keys=False):
+def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None):
     """URL encode a dict/`MultiDict`.  If a value is `None` it will not appear
     in the result string.  Per default only values are encoded into the target
     charset strings.  If `encode_keys` is set to ``True`` unicode keys are
     supported too.
+
+    If `sort` is set to `True` the items are sorted by `key` or the default
+    sorting algorithm.
+
+    *new in Werkzeug 0.5*: `sort` and `key` were added.
     """
     if isinstance(obj, MultiDict):
         items = obj.lists()
     elif isinstance(obj, dict):
         items = []
-        for key, value in obj.iteritems():
-            if not isinstance(value, (tuple, list)):
-                value = [value]
-            items.append((key, value))
+        for k, v in obj.iteritems():
+            if not isinstance(v, (tuple, list)):
+                v = [v]
+            items.append((k, v))
     else:
         items = obj or ()
+    if sort:
+        items.sort(key=key)
     tmp = []
     for key, values in items:
         if encode_keys and isinstance(key, unicode):

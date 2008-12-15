@@ -5,6 +5,8 @@ Version 0.5
 -----------
 (codename to be selected, release date yet unknown)
 
+- `url_encode` and all interfaces that call it, support ordering of
+  options now which however is disabled by default.
 - the development server no longer resolves the addresses of clients.
 - Fixed a typo in `werkzeug.test` that broke `File`.
 - `Map.bind_to_environ` uses the `Host` header now if available.

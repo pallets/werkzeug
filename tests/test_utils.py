@@ -254,6 +254,12 @@ def test_quoting():
            'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
 
+def test_sorted_url_encode():
+    assert url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
+    assert url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
+                      key=lambda x: x[0].lower()) == 'A=1&a=2&B=3&b=4'
+
+
 test_href_tool = '>>> from werkzeug import Href\n\n' + Href.__doc__
 
 
