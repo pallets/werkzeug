@@ -108,7 +108,9 @@ class SecureCookie(ModificationTrackingDict):
 
     def __init__(self, data=None, secret_key=None, new=True):
         ModificationTrackingDict.__init__(self, data or ())
-        self.secret_key = secret_key
+        # explicitly convert it into a bytestring because python 2.6
+        # no longer performs an implicit string conversion on hmac
+        self.secret_key = str(secret_key)
         self.new = new
 
     def __repr__(self):
