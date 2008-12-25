@@ -23,17 +23,6 @@ from itertools import izip
 from time import time
 from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 
-have_memcache = True
-try:
-    import cmemcache as memcache
-    is_cmemcache = True
-except ImportError:
-    try:
-        import memcache
-        is_cmemcache = False
-    except ImportError:
-        have_memcache = False
-
 
 class BaseCache(object):
     """Baseclass for the cache systems."""
@@ -126,6 +115,10 @@ _test_memcached_key = re.compile(r'[^\x00-\x21\xff]{1,250}$').match
 class MemcachedCache(BaseCache):
     """A cache that uses memcached as backend.
 
+    The first argument can either be a list or tuple of server addresses
+    in which case Werkzeug tries to import the memcache module and connect
+    to it, or an object that resembles the API of a `memcache.Client`.
+
     Implementation notes:  This cache backend works around some limitations in
     memcached to simplify the interface.  For example unicode keys are encoded
     to utf-8 on the fly.  Methods such as `get_dict` return the keys in the
@@ -136,21 +129,32 @@ class MemcachedCache(BaseCache):
 
     def __init__(self, servers, default_timeout=300, key_prefix=None):
         BaseCache.__init__(self, default_timeout)
-        if not have_memcache:
-            raise RuntimeError('no memcache module found')
-
-        self.key_prefix = key_prefix
-
-        # cmemcache has a bug that debuglog is not defined for the
-        # client.  Whenever pickle fails you get a weird AttributError.
-        if is_cmemcache:
-            self._client = memcache.Client(map(str, servers))
+        if isinstance(servers, (list, tuple)):
             try:
-                self._client.debuglog = lambda *a: None
-            except:
-                pass
+                import cmemcache as memcache
+                is_cmemcache = True
+            except ImportError:
+                try:
+                    import memcache
+                    is_cmemcache = False
+                except ImportError:
+                    raise RuntimeError('no memcache module found')
+
+            # cmemcache has a bug that debuglog is not defined for the
+            # client.  Whenever pickle fails you get a weird AttributError.
+            if is_cmemcache:
+                client = memcache.Client(map(str, servers))
+                try:
+                    client.debuglog = lambda *a: None
+                except:
+                    pass
+            else:
+                client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
         else:
-            self._client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
+            client = servers
+
+        self._client = client
+        self.key_prefix = key_prefix
 
     def get(self, key):
         if isinstance(key, unicode):
@@ -259,6 +263,15 @@ class MemcachedCache(BaseCache):
         if self.key_prefix:
             key = key_prefix + key
         self._client.decr(key, delta)
+
+
+class GAEMemcachedCache(MemcachedCache):
+    """Connects to the Google appengine memcached Cache."""
+
+    def __init__(self, default_timeout=300, key_prefix=None):
+        from google.appengine.api import memcache
+        MemcachedCache.__init__(self, memcache.Client(),
+                                default_timeout, key_prefix)
 
 
 class FileSystemCache(BaseCache):

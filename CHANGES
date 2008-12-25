@@ -5,6 +5,11 @@ Version 0.5
 -----------
 (codename to be selected, release date yet unknown)
 
+- `werkzeug.contrib.cache.Memcached` accepts now objects that
+  implementt the memcache.Client interface as alternative to a list of
+  strings with server addresses.
+  There is also now a `GAEMemcachedCache` that connects to the Google
+  appengine cache.
 - explicitly convert secret keys to bytestrings now because Python
   2.6 no longer does that.
 - `url_encode` and all interfaces that call it, support ordering of
