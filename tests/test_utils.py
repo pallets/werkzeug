@@ -476,3 +476,19 @@ def test_validate_arguments():
            validate_arguments, take_none, (1,), {}, drop_extra=False)
     raises(ArgumentValidationError,
            validate_arguments, take_none, (), {'a': 1}, drop_extra=False)
+
+
+def test_header_set_duplication_bug():
+    headers = Headers([
+        ('Content-Type', 'text/html'),
+        ('Foo', 'bar'),
+        ('Blub', 'blah')
+    ])
+    headers['blub'] = 'hehe'
+    headers['blafasel'] = 'humm'
+    assert headers == Headers([
+        ('Content-Type', 'text/html'),
+        ('Foo', 'bar'),
+        ('blub', 'hehe'),
+        ('blafasel', 'humm')
+    ])

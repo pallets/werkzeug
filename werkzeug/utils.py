@@ -671,11 +671,12 @@ class Headers(object):
         lc_key = key.lower()
         for idx, (old_key, old_value) in enumerate(self._list):
             if old_key.lower() == lc_key:
+                # replace first ocurrence
                 self._list[idx] = (key, value)
                 break
         else:
             return self.add(key, value)
-        self._list[idx + 1:] = [(k, v) for k, v in self._list
+        self._list[idx + 1:] = [(k, v) for k, v in self._list[idx + 1:]
                                 if k.lower() != lc_key]
 
     def __setitem__(self, key, value):

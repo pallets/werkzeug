@@ -20,6 +20,7 @@ Version 0.5
 - Fixed `BaseCache.get_dict` (#345)
 - `werkzeug.test.Client` can now run the application buffered in which
   case the application is properly closed automatically.
+- Fixed `Headers.set` (#354).  Caused header duplication before.
 
 Version 0.4
 -----------
