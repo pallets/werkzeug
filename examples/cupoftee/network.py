@@ -6,7 +6,7 @@
     Query the servers for information.
 
     :copyright: Copyright 2008 by Armin Ronacher.
-    :license: GNU GPL.
+    :license: BSD, see LICENSE for more details.
 """
 import time
 import socket

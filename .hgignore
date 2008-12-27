@@ -1,4 +1,5 @@
 ^(build|dist|Werkzeug\.egg-info)/
 \.py[co]$
 \.DS_Store$
+^env$
 ^docs/build/.*\.html$

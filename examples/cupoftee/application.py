@@ -6,7 +6,7 @@
     The WSGI appliction for the cup of tee browser.
 
     :copyright: Copyright 2008 by Armin Ronacher.
-    :license: GNU GPL.
+    :license: BSD, see LICENSE for more details.
 """
 import time
 from os import path

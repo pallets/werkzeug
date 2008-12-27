@@ -6,7 +6,7 @@
     This module provides internally used helpers and constants.
 
     :copyright: Copyright 2008 by Armin Ronacher.
-    :license: GNU GPL.
+    :license: BSD, see LICENSE for more details.
 """
 import cgi
 import inspect

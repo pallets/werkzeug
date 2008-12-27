@@ -7,7 +7,7 @@
     multiprocess mode that's good enough.
 
     :copyright: Copyright 2008 by Armin Ronacher.
-    :license: GNU GPL.
+    :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement
 import gdbm
