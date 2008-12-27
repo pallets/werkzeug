@@ -1739,6 +1739,8 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
                 server_port = '80'
             elif scheme == 'https':
                 server_port = '443'
+            else:
+                server_port = ''
             server_name = netloc
         if qs or fragment:
             raise ValueError('base url cannot contain a query string '
