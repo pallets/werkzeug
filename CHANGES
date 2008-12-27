@@ -23,6 +23,7 @@ Version 0.5
 - Fixed `Headers.set` (#354).  Caused header duplication before.
 - Fixed `Headers.pop` (#349).  default parameter was not properly
   handled.
+- Fixed UnboundLocalError in `create_environ` (#351)
 
 Version 0.4
 -----------
