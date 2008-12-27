@@ -21,6 +21,8 @@ Version 0.5
 - `werkzeug.test.Client` can now run the application buffered in which
   case the application is properly closed automatically.
 - Fixed `Headers.set` (#354).  Caused header duplication before.
+- Fixed `Headers.pop` (#349).  default parameter was not properly
+  handled.
 
 Version 0.4
 -----------

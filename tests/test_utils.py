@@ -189,6 +189,10 @@ def test_headers():
     assert a.getlist('foo') == ['bar', 'baz']
     assert b.getlist('foo') == ['bar']
 
+    headers = Headers([('a', 1)])
+    assert headers.pop('a') == 1
+    assert headers.pop('b', 2) == 2
+    raises(KeyError, 'headers.pop("c")')
 
 
 def test_cached_property():

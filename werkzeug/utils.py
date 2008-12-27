@@ -632,7 +632,7 @@ class Headers(object):
             rv = self[key]
             self.remove(key)
         except KeyError:
-            if default is _missing:
+            if default is not _missing:
                 return default
             raise
         return rv
