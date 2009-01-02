@@ -1,13 +1,20 @@
-Werkzeug is written and maintained by Armin Ronacher <armin.ronacher@active-4.com>.
+Werkzeug is written and maintained by the Werkzeug Team and various
+contributors:
 
-Other contributors (as mentionend in :copyright:s) are:
+Project Leader / Developer:
 
 - Armin Ronacher <armin.ronacher@active-4.com>
+
 - Georg Brandl
 - Leif K-Brooks <eurleif@gmail.com>
-- Marek Kubica
 - Thomas Johansson
 - Marian Sigler
+- Ronny Pfannschmidt
+- Noah Slater <nslater@bytesexual.org>
+- Alec Thomas
+- Shannon Behrens
+- Christoph Rauch
+- Clemens Hermann
 
 Contributors of code for werkzeug/examples are:
 

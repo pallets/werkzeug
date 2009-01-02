@@ -6,7 +6,7 @@
     This module contains special pages such as the recent changes page.
 
 
-    :copyright: Copyright 2007 by Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from simplewiki.utils import Response, Pagination, generate_template, href

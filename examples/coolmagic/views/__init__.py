@@ -5,6 +5,6 @@
 
     This module collects and assambles the urls.
 
-    :copyright: 2007 by Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """

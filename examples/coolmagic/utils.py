@@ -8,7 +8,7 @@
     and implement some additional functionallity like the ability to link
     to view functions.
 
-    :copyright: 2007 by Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from os.path import dirname, join

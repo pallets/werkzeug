@@ -5,7 +5,7 @@
 
     Manage the cup of tee application.
 
-    :copyright: 2008 by Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug import script

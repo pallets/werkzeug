@@ -5,7 +5,7 @@
 
     Stores session on the client.
 
-    :copyright: Copyright 2007 by Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from time import asctime

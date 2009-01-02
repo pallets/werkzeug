@@ -5,7 +5,7 @@
 
     Noun. plnt (plant) -- a planet application that sounds like a herb.
 
-    :copyright: Copyright 2007 by Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from plnt.webapp import Plnt

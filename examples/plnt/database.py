@@ -5,7 +5,7 @@
 
     The database definitions for the planet.
 
-    :copyright: Copyright 2007 by Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from sqlalchemy import MetaData, Table, Column, ForeignKey, Boolean, \

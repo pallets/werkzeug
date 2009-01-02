@@ -123,7 +123,7 @@ r"""
     variables it won't execute under Python 2.3.
 
 
-    :copyright: 2006-2008 by Armin Ronacher, Ka-Ping Yee.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD License.
 """
 import sys

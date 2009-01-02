@@ -5,7 +5,7 @@
 
     Does the synchronization.  Called by "manage-plnt.py sync"
 
-    :copyright: 2007 by Benjamin Wiegand, Marian Sigler, Armin Ronacher.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 import sys

@@ -9,7 +9,7 @@
         simplified assertions on various contenttypes
 
 
-    :copyright: 2007 by Ronny Pfannschmidt.
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug import Response, cached_property, import_string

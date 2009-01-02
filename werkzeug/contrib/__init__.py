@@ -13,7 +13,7 @@
     tell the Python interpreter that `contrib` is a package.
 
 
-    :copyright: 2007-2008 by Marek Kubica, Marian Sigler, Armin Ronacher,
+    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
                 Leif K-Brooks, Ronny Pfannschmid, Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 """
