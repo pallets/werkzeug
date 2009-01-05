@@ -254,7 +254,7 @@ class LocalProxy(object):
 
     def __unicode__(self):
         try:
-            return unicode(self.__current_oject)
+            return unicode(self.__current_object)
         except RuntimeError:
             return repr(self)
 
