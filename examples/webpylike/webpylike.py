@@ -7,7 +7,7 @@
     not implement is a stream system that hooks into sys.stdout like web.py
     provides.  I consider this bad design.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 import re

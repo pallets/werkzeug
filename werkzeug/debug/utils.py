@@ -5,7 +5,7 @@
 
     Various other utilities.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from os.path import join, dirname

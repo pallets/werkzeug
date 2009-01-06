@@ -9,7 +9,7 @@
     that automatically wraps the application within the require
     middlewares. Per default only the `SharedDataMiddleware` is applied.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from os import path, listdir

@@ -7,7 +7,7 @@
     them are used by the request and response wrappers but especially for
     middleware development it makes sense to use them without the wrappers.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import re

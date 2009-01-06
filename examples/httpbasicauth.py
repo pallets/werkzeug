@@ -6,7 +6,7 @@
     Shows how you can implement HTTP basic auth support without an
     additional component.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from werkzeug import Request, Response, run_simple

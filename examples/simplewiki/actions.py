@@ -9,7 +9,7 @@
     careful not to name any other objects in the module with the same
     prefix unless you want to act them as actions.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from difflib import unified_diff

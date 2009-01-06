@@ -68,13 +68,10 @@ r"""
             return response(environ, start_response)
 
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-try:
-    from hashlib import sha1
-except ImportError:
-    import sha as sha1
+import sys
 import cPickle as pickle
 from hmac import new as hmac
 from datetime import datetime
@@ -82,6 +79,23 @@ from time import time, mktime, gmtime
 from random import Random
 from werkzeug import url_quote_plus, url_unquote_plus
 from werkzeug.contrib.sessions import ModificationTrackingDict, generate_key
+
+
+# rather ugly way to import the correct hash method.  Because
+# hmac either accepts modules with a new method (sha, md5 etc.)
+# or a hashlib factory function we have to figure out what to
+# pass to it.  If we have 2.5 or higher (so not 2.4 with a
+# custom hashlib) we import from hashlib and fail if it does
+# not exist (have seen that in old OS X versions).
+# in all other cases the now deprecated sha module is used.
+_default_hash = None
+if sys.version_info >= (2, 5):
+    try:
+        from hashlib import sha1 as _default_hash
+    except ImportError:
+        pass
+if _default_hash is None:
+    import sha as _default_hash
 
 
 class UnquoteError(Exception):
@@ -97,7 +111,7 @@ class SecureCookie(ModificationTrackingDict):
 
     # The hash method to use.  This has to be a module with a new function
     # or a function that creates a hashlib object.  Such as hashlib.md5
-    hash_method = sha1
+    hash_method = _default_hash
 
     # the module used for serialization
     serialization_method = pickle

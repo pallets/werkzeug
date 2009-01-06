@@ -5,7 +5,7 @@
 
     The application from th web.py tutorial.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 from webpylike import WebPyApp, View, Response

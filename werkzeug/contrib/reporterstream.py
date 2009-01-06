@@ -7,7 +7,7 @@
     be informed about changes of the stream.  This is useful if you want
     to display a progress bar for the upload.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 

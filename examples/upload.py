@@ -5,7 +5,7 @@
 
     All uploaded files are directly send back to the client.
 
-    :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug import BaseRequest, BaseResponse, run_simple
