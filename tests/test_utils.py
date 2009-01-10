@@ -160,6 +160,18 @@ def test_headers():
         ('Content-Type', 'foo/bar'),
         ('X-Foo', 'bar')
     ]
+    assert str(headers) == (
+        "Content-Type: foo/bar\r\n"
+        "X-Foo: bar\r\n"
+        "\r\n")
+    assert str(Headers()) == "\r\n"
+
+    # extended add
+    headers.add('Content-Disposition', 'attachment', filename='foo')
+    assert headers['Content-Disposition'] == 'attachment; filename="foo"'
+
+    headers.add('x', 'y', z='"')
+    assert headers['x'] == r'y; z="\""'
 
     # defaults
     headers = Headers({
@@ -170,6 +182,12 @@ def test_headers():
     assert headers.getlist('x-bar') == ['1', '2']
     assert headers.get('x-Bar') == '1'
     assert headers.get('Content-Type') == 'text/plain'
+
+    assert headers.setdefault('X-Foo', 'nope') == 'bar'
+    assert headers.setdefault('X-Bar', 'nope') == '1'
+    assert headers.setdefault('X-Baz', 'quux') == 'quux'
+    assert headers.setdefault('X-Baz', 'nope') == 'quux'
+    headers.pop('X-Baz')
 
     # type conversion
     assert headers.get('x-bar', type=int) == 1

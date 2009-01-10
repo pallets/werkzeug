@@ -468,6 +468,10 @@ class Headers(object):
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
     subclass of the `BadRequest` HTTP exception and will render a page for a
     ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
+
+    Headers is mostly compatible with the Python wsgiref.headers.Headers
+    class, with the exception of __getitem__.  wsgiref will return None for
+    `headers['missing']`, whereas `Headers` will raise a KeyError.
     """
 
     #: the key error this class raises.  Because of circular dependencies
@@ -569,6 +573,14 @@ class Headers(object):
                 result.append(v)
         return result
 
+    def get_all(self, name):
+        """Return a list of all the values for the named field.
+
+        This method is compatible with the wsgiref `Headers` method
+        of the same name.
+        """
+        return self.getlist(name)
+
     def iteritems(self, lower=False):
         for key, value in self:
             if lower:
@@ -655,9 +667,42 @@ class Headers(object):
         """Yield ``(key, value)`` tuples."""
         return iter(self._list)
 
-    def add(self, key, value):
-        """add a new header tuple to the list"""
-        self._list.append((key, value))
+    def __len__(self):
+        return len(self._list)
+
+    def add(self, _key, _value, **_kw):
+        """Add a new header tuple to the list.
+
+        Keyword arguments can specify additional parameters for the header
+        value, with underscores converted to dashes::
+
+        >>> d = Headers()
+        >>> d.add('Content-Type', 'text/plain')
+        >>> d.add('Content-Disposition', 'attachment', filename='foo.png')
+
+        """
+        if not _kw:
+            self._list.append((_key, _value))
+        else:
+            segments = []
+            if _value is not None:
+                segments.append(_value)
+            for key, value in _kw.iteritems():
+                key = key.replace('_', '-')
+                if value is None:
+                    segments.append(key)
+                else:
+                    value = value.replace('\\', r'\\').replace('"', r'\"')
+                    segments.append('%s="%s"' % (key, value))
+            self._list.append((_key, '; '.join(segments)))
+
+    def add_header(self, _key, _value, **_kw):
+        """Add a new header tuple to the list.
+
+        An alias for `add`, compatible with the wsgiref `Headers` method of
+        the same name.
+        """
+        self.add(_key, _value, **_kw)
 
     def clear(self):
         """clears all headers"""
@@ -678,6 +723,14 @@ class Headers(object):
             return self.add(key, value)
         self._list[idx + 1:] = [(k, v) for k, v in self._list[idx + 1:]
                                 if k.lower() != lc_key]
+
+    def setdefault(self, key, value):
+        """Return the first value of key, setting to value if not already
+        present."""
+        if key in self:
+            return self[key]
+        self.set(key, value)
+        return value
 
     def __setitem__(self, key, value):
         """Like `set()` but also supports index/slice based setting."""
@@ -706,6 +759,14 @@ class Headers(object):
 
     def __copy__(self):
         return self.copy()
+
+    def __str__(self, charset='utf-8'):
+        """Returns formatted headers suitable for HTTP transmission."""
+        strs = []
+        for key, value in self.to_list(charset):
+            strs.append('%s: %s' % (key, value))
+        strs.append('\r\n')
+        return '\r\n'.join(strs)
 
     def __repr__(self):
         return '%s(%r)' % (
