@@ -113,7 +113,7 @@ class File(object):
         self.filename = filename
         self.mimetype = mimetype or 'application/octet-stream'
 
-    def getattr(self, name):
+    def __getattr__(self, name):
         return getattr(self.stream, name)
 
     def __repr__(self):

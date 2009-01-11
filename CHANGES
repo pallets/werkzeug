@@ -24,6 +24,8 @@ Version 0.4.1
 - Fixed `Headers.pop` (#349).  default parameter was not properly
   handled.
 - Fixed UnboundLocalError in `create_environ` (#351)
+- `Headers` is more compatible with wsgiref now.
+- `Template.render` accepts multidicts now.
 
 Version 0.4
 -----------
