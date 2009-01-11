@@ -212,9 +212,9 @@ class BaseRequest(object):
         members:
 
         - `filename` - The name of the uploaded file, as a Python string.
-        - `type` - The content type of the uploaded file.
-        - `data` - The raw content of the uploaded file.
+        - `content_type` - The content type of the uploaded file.
         - `read()` - Read from the stream.
+        - `save()` - Save the upload into a file or file pointer.
 
         Note that `files` will only contain data if the request method was POST
         and the ``<form>`` that posted to the request had
