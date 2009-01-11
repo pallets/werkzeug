@@ -1678,9 +1678,7 @@ def append_slash_redirect(environ, code=301):
     query_string = environ['QUERY_STRING']
     if query_string:
         new_path += '?' + query_string
-    if not new_path.startswith('/'):
-        new_path = '/' + new_path
-    return redirect(new_path)
+    return redirect(new_path, code)
 
 
 def responder(f):
