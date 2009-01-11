@@ -65,7 +65,8 @@ class DebuggedApplication(object):
             if hasattr(app_iter, 'close'):
                 app_iter.close()
             traceback = get_current_traceback(skip=1, show_hidden_frames=
-                                              self.show_hidden_frames)
+                                              self.show_hidden_frames,
+                                              ignore_system_exceptions=True)
             for frame in traceback.frames:
                 self.frames[frame.id] = frame
             self.tracebacks[traceback.id] = traceback
