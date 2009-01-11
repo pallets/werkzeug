@@ -19,13 +19,13 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#quickstart" id="id1" name="id1">Quickstart</a></li>
-<li><a class="reference" href="#rule-format" id="id2" name="id2">Rule Format</a></li>
-<li><a class="reference" href="#builtin-converters" id="id3" name="id3">Builtin Converters</a></li>
-<li><a class="reference" href="#maps-rules-and-adapters" id="id4" name="id4">Maps, Rules and Adapters</a></li>
-<li><a class="reference" href="#rule-factories" id="id5" name="id5">Rule Factories</a></li>
-<li><a class="reference" href="#rule-templates" id="id6" name="id6">Rule Templates</a></li>
-<li><a class="reference" href="#custom-converters" id="id7" name="id7">Custom Converters</a></li>
+        <ul><li><a class="reference internal" href="#quickstart" id="id1">Quickstart</a></li>
+<li><a class="reference internal" href="#rule-format" id="id2">Rule Format</a></li>
+<li><a class="reference internal" href="#builtin-converters" id="id3">Builtin Converters</a></li>
+<li><a class="reference internal" href="#maps-rules-and-adapters" id="id4">Maps, Rules and Adapters</a></li>
+<li><a class="reference internal" href="#rule-factories" id="id5">Rule Factories</a></li>
+<li><a class="reference internal" href="#rule-templates" id="id6">Rule Templates</a></li>
+<li><a class="reference internal" href="#custom-converters" id="id7">Custom Converters</a></li>
 </ul>
       </div>
       
@@ -33,11 +33,11 @@
 you want to call them), you need a dispatcher.  A simple way would be
 applying regular expression tests on <tt class="docutils literal"><span class="pre">PATH_INFO</span></tt> and call registered
 callback functions that return the value.</p>
-<p>Werkzeug provides a much more powerful system, similar to <a class="reference" href="http://routes.groovie.org/">Routes</a>.  All the
+<p>Werkzeug provides a much more powerful system, similar to <a class="reference external" href="http://routes.groovie.org/">Routes</a>.  All the
 objects mentioned on this page must be imported from <cite>werkzeug.routing</cite>, not
 from <cite>werkzeug</cite>!</p>
-<div class="section">
-<h3 id="quickstart">Quickstart</h3>
+<div class="section" id="quickstart">
+<h3>Quickstart</h3>
 <p>Here a simple example which could be the URL definition for a blog:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span><span class="p">,</span> <span class="n">NotFound</span><span class="p">,</span> <span class="n">RequestRedirect</span>
 
@@ -77,8 +77,8 @@ build domains for the current request.</p>
 <cite>MethodNotAllowed</cite>, or <cite>RequestRedirect</cite>.  For more details about those
 exceptions have a look at the documentation of the <cite>match</cite> method.</p>
 </div>
-<div class="section">
-<h3 id="rule-format">Rule Format</h3>
+<div class="section" id="rule-format">
+<h3>Rule Format</h3>
 <p>Rule strings basically are just normal URL paths with placeholders in the
 format <tt class="docutils literal"><span class="pre">&lt;converter(arguments):name&gt;</span></tt>, where converter and the arguments
 are optional.  If no converter is defined, the <cite>default</cite> converter is used
@@ -90,8 +90,8 @@ that slash appended.</p>
 <p>The list of converters can be extended, the default converters are explained
 below.</p>
 </div>
-<div class="section">
-<h3 id="builtin-converters">Builtin Converters</h3>
+<div class="section" id="builtin-converters">
+<h3>Builtin Converters</h3>
 <p>Here a list of converters that come with Werkzeug:</p>
 <dl>
 <dt><cite>string</cite></dt>
@@ -153,8 +153,8 @@ they could insert arbitrary Python code in the parameters part.</p>
 detail and might be unavailable in the future.</p>
 </div>
 </div>
-<div class="section">
-<h3 id="maps-rules-and-adapters">Maps, Rules and Adapters</h3>
+<div class="section" id="maps-rules-and-adapters">
+<h3>Maps, Rules and Adapters</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.routing.Map">Map</cite></dt>
 <dd><p class="first">The map class stores all the URL rules and some configuration
@@ -163,8 +163,9 @@ parameters.  Some of the configuration values are only stored on the
 and can be overridden for each rule.  Note that you have to specify all
 arguments beside the <cite>rules</cite> as keywords arguments!</p>
 <dl>
-<dt><cite id="werkzeug.routing.Map.__init__">__init__</cite> <tt class="func-signature docutils literal"><span class="pre">(rules=None,</span> <span class="pre">default_subdomain='',</span> <span class="pre">charset='utf-8',</span> <span class="pre">strict_slashes=True,</span> <span class="pre">redirect_defaults=True,</span> <span class="pre">converters=None)</span></tt></dt>
+<dt><cite id="werkzeug.routing.Map.__init__">__init__</cite> <tt class="func-signature docutils literal"><span class="pre">(rules=None,</span> <span class="pre">default_subdomain='',</span> <span class="pre">charset='utf-8',</span> <span class="pre">strict_slashes=True,</span> <span class="pre">redirect_defaults=True,</span> <span class="pre">converters=None,</span> <span class="pre">sort_parameters=False,</span> <span class="pre">sort_key=None)</span></tt></dt>
 <dd><p class="first">Initializes the new URL map.</p>
+<p><em>new in Werkzeug 0.5</em> <cite>sort_parameters</cite> and <cite>sort_key</cite> was added.</p>
 <dl class="last">
 <dt>Parameters</dt>
 <dd><p class="first"><strong>rules</strong>: sequence of url rules for this map.</p>
@@ -175,9 +176,12 @@ subdomain defined.</p>
 <p><strong>redirect_defaults</strong>: This will redirect to the default rule if it
 wasn&#8217;t visited that way. This helps creating
 unique URLs.</p>
-<p class="last"><strong>converters</strong>: A dict of converters that adds additional converters
+<p><strong>converters</strong>: A dict of converters that adds additional converters
 to the list of converters. If you redefine one
 converter this will override the original one.</p>
+<p><strong>sort_parameters</strong>: If set to <cite>True</cite> the url parameters are sorted.
+See <cite>url_encode</cite> for more details.</p>
+<p class="last"><strong>sort_key</strong>: The sort key function for <cite>url_encode</cite>.</p>
 </dd>
 </dl>
 </dd>
@@ -467,8 +471,8 @@ the information from the rule itself and the defaults from the map.</dd>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="rule-factories">Rule Factories</h3>
+<div class="section" id="rule-factories">
+<h3>Rule Factories</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.routing.RuleFactory">RuleFactory</cite></dt>
 <dd><p class="first">As soon as you have more complex URL setups it&#8217;s a good idea to use rule
@@ -529,8 +533,8 @@ another string. This can be useful for sub applications:</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="rule-templates">Rule Templates</h3>
+<div class="section" id="rule-templates">
+<h3>Rule Templates</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.routing.RuleTemplate">RuleTemplate</cite></dt>
 <dd><p class="first">Returns copies of the rules wrapped and expands string templates in
@@ -550,8 +554,8 @@ replace the placeholders in all the string parameters.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="custom-converters">Custom Converters</h3>
+<div class="section" id="custom-converters">
+<h3>Custom Converters</h3>
 <p>You can easily add custom converters.  The only thing you have to do is to
 subclass <cite>BaseConverter</cite> and pass that new converter to the url_map.  A converter
 has to provide two public methods: <cite>to_python</cite> and <cite>to_url</cite>, as well as a

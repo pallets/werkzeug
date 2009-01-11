@@ -19,8 +19,8 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#nutshell" id="id1" name="id1">Nutshell</a></li>
-<li><a class="reference" href="#objects" id="id2" name="id2">Objects</a></li>
+        <ul><li><a class="reference internal" href="#nutshell" id="id1">Nutshell</a></li>
+<li><a class="reference internal" href="#objects" id="id2">Objects</a></li>
 </ul>
       </div>
       
@@ -39,8 +39,8 @@ are other ways to handle concurrency in Python.  A very popular approach
 are greenlets.  Also, whether every request gets its own thread is not
 guaranteed in WSGI.  It could be that a request is reusing a thread from
 before and data is left in the thread local object.</p>
-<div class="section">
-<h3 id="nutshell">Nutshell</h3>
+<div class="section" id="nutshell">
+<h3>Nutshell</h3>
 <p>Here a simple example how you can use werkzeug.local:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Local</span><span class="p">,</span> <span class="n">LocalManager</span>
 
@@ -74,8 +74,8 @@ later by appending them to <cite>manager.locals</cite> and everytime the manager
 cleans up it will clean up all the data left in the locals for this
 context.</p>
 </div>
-<div class="section">
-<h3 id="objects">Objects</h3>
+<div class="section" id="objects">
+<h3>Objects</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.local.LocalManager">LocalManager</cite></dt>
 <dd><p class="first">Local objects cannot manage themselves. For that you need a local

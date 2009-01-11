@@ -19,8 +19,8 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#diving-in" id="id1" name="id1">Diving In</a></li>
-<li><a class="reference" href="#the-client" id="id2" name="id2">The Client</a></li>
+        <ul><li><a class="reference internal" href="#diving-in" id="id1">Diving In</a></li>
+<li><a class="reference internal" href="#the-client" id="id2">The Client</a></li>
 </ul>
       </div>
       
@@ -29,8 +29,8 @@ from an interactive Python session.  In theory that is pretty simple because
 you can fake a WSGI environment and call the application with a dummy
 <cite>start_response</cite> and iterate over the application iterator, but there are
 argumentably better ways to interact with an application.</p>
-<div class="section">
-<h3 id="diving-in">Diving In</h3>
+<div class="section" id="diving-in">
+<h3>Diving In</h3>
 <p>Werkzeug provides a <cite>Client</cite> object which you can pass a WSGI application (and
 optionally a response wrapper) which you can use to send virtual requests to
 the application.</p>
@@ -62,8 +62,8 @@ in test functionality.</p>
 <span class="go"> &#39;  &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;&#39;]</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="the-client">The Client</h3>
+<div class="section" id="the-client">
+<h3>The Client</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.test.Client">Client</cite></dt>
 <dd><p class="first">This class allows to send requests to a wrapped application.</p>
@@ -81,7 +81,7 @@ wrapper just returns a tuple.</p>
 </dd>
 </dl>
 <dl>
-<dt><cite id="werkzeug.test.Client.open">open</cite> <tt class="func-signature docutils literal"><span class="pre">(path='/',</span> <span class="pre">base_url=None,</span> <span class="pre">query_string=None,</span> <span class="pre">method='GET',</span> <span class="pre">data=None,</span> <span class="pre">input_stream=None,</span> <span class="pre">content_type=None,</span> <span class="pre">content_length=0,</span> <span class="pre">errors_stream=None,</span> <span class="pre">multithread=False,</span> <span class="pre">multiprocess=False,</span> <span class="pre">run_once=False,</span> <span class="pre">environ_overrides=None,</span> <span class="pre">as_tuple=False)</span></tt></dt>
+<dt><cite id="werkzeug.test.Client.open">open</cite> <tt class="func-signature docutils literal"><span class="pre">(path='/',</span> <span class="pre">base_url=None,</span> <span class="pre">query_string=None,</span> <span class="pre">method='GET',</span> <span class="pre">data=None,</span> <span class="pre">input_stream=None,</span> <span class="pre">content_type=None,</span> <span class="pre">content_length=0,</span> <span class="pre">errors_stream=None,</span> <span class="pre">multithread=False,</span> <span class="pre">multiprocess=False,</span> <span class="pre">run_once=False,</span> <span class="pre">environ_overrides=None,</span> <span class="pre">as_tuple=False,</span> <span class="pre">buffered=False)</span></tt></dt>
 <dd><p class="first">Takes the same arguments as the <cite>create_environ</cite> function from the
 utility module with some additions.</p>
 <p>The first parameter should be the path of the request which defaults to
@@ -127,6 +127,9 @@ type.</dd>
 <cite>False</cite>.</dd>
 <dt><cite>run_once</cite></dt>
 <dd>The run_once flag for the WSGI Environment.  Defaults to <cite>False</cite>.</dd>
+<dt><cite>buffered</cite></dt>
+<dd>Set this to true to buffer the application run.  This will
+automatically close the application for you as well.</dd>
 </dl>
 </dd>
 </dl>

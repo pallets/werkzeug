@@ -19,18 +19,18 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#error-classes" id="id1" name="id1">Error Classes</a></li>
-<li><a class="reference" href="#baseclass" id="id2" name="id2">Baseclass</a></li>
-<li><a class="reference" href="#special-http-exceptions" id="id3" name="id3">Special HTTP Exceptions</a></li>
-<li><a class="reference" href="#simple-aborting" id="id4" name="id4">Simple Aborting</a></li>
-<li><a class="reference" href="#custom-errors" id="id5" name="id5">Custom Errors</a></li>
+        <ul><li><a class="reference internal" href="#error-classes" id="id1">Error Classes</a></li>
+<li><a class="reference internal" href="#baseclass" id="id2">Baseclass</a></li>
+<li><a class="reference internal" href="#special-http-exceptions" id="id3">Special HTTP Exceptions</a></li>
+<li><a class="reference internal" href="#simple-aborting" id="id4">Simple Aborting</a></li>
+<li><a class="reference internal" href="#custom-errors" id="id5">Custom Errors</a></li>
 </ul>
       </div>
       
       <p>This module implements a number of Python exceptions you can raise from
 within your views to trigger a standard non 200 response.</p>
-<div class="section">
-<h3 id="usage-example">Usage Example</h3>
+<div class="section" id="usage-example">
+<h3>Usage Example</h3>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">BaseRequest</span><span class="p">,</span> <span class="n">responder</span>
 <span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="kn">import</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">NotFound</span>
 
@@ -71,8 +71,8 @@ code, you can add a second except for a specific subclass of an error:</p>
 <p>All the exceptions must be imported from the <cite>werkzeug.exceptions</cite> module
 unless you are using the <cite>abort</cite> callable which is available in <cite>werkzeug</cite>
 too.</p>
-<div class="section">
-<h3 id="error-classes">Error Classes</h3>
+<div class="section" id="error-classes">
+<h3>Error Classes</h3>
 <p>The following error classes exist in Werkzeug:</p>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.exceptions.BadRequest">BadRequest</cite></dt>
@@ -193,8 +193,8 @@ in attempting to fulfill the request.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="baseclass">Baseclass</h3>
+<div class="section" id="baseclass">
+<h3>Baseclass</h3>
 <p>All the exceptions implement this common interface:</p>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.exceptions.HTTPException">HTTPException</cite></dt>
@@ -212,8 +212,8 @@ of it independently and render nicer error messages.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="special-http-exceptions">Special HTTP Exceptions</h3>
+<div class="section" id="special-http-exceptions">
+<h3>Special HTTP Exceptions</h3>
 <p>Starting with Werkzeug 0.3 some of the builtin classes raise exceptions that
 look like regular python exceptions (eg <cite>KeyError</cite>) but are <cite>BadRequest</cite>
 HTTP exceptions at the same time.  This decision was made to simplify a
@@ -231,8 +231,8 @@ check if the keys exist:</p>
 <p>If <cite>title</cite> or <cite>body</cite> are missing in the form a <cite>MultiDict.KeyError</cite> will be
 raised which behaves like a <cite>KeyError</cite> but also a <cite>BadRequest</cite> exception.</p>
 </div>
-<div class="section">
-<h3 id="simple-aborting">Simple Aborting</h3>
+<div class="section" id="simple-aborting">
+<h3>Simple Aborting</h3>
 <p>Sometimes it&#8217;s convenient to just raise an exception by the error code,
 without importing the exception and looking up the name etc.  For this
 purpose there is the <cite>abort</cite> function.</p>
@@ -255,8 +255,8 @@ a WSGI application it will be raised in a proxy exception.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="custom-errors">Custom Errors</h3>
+<div class="section" id="custom-errors">
+<h3>Custom Errors</h3>
 <p>As you can see from the list above not all status codes are available as
 errors.  Especially redirects and ather non 200 status codes that
 represent do not represent errors are missing.  For redirects you can use

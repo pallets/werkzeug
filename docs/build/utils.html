@@ -19,12 +19,12 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#data-structures" id="id1" name="id1">Data Structures</a></li>
-<li><a class="reference" href="#working-with-http-headers" id="id2" name="id2">Working with HTTP Headers</a></li>
-<li><a class="reference" href="#url-helpers" id="id3" name="id3">URL Helpers</a></li>
-<li><a class="reference" href="#html-helpers" id="id4" name="id4">HTML Helpers</a></li>
-<li><a class="reference" href="#wsgi-helpers" id="id5" name="id5">WSGI Helpers</a></li>
-<li><a class="reference" href="#helper-functions" id="id6" name="id6">Helper Functions</a></li>
+        <ul><li><a class="reference internal" href="#data-structures" id="id1">Data Structures</a></li>
+<li><a class="reference internal" href="#working-with-http-headers" id="id2">Working with HTTP Headers</a></li>
+<li><a class="reference internal" href="#url-helpers" id="id3">URL Helpers</a></li>
+<li><a class="reference internal" href="#html-helpers" id="id4">HTML Helpers</a></li>
+<li><a class="reference internal" href="#wsgi-helpers" id="id5">WSGI Helpers</a></li>
+<li><a class="reference internal" href="#helper-functions" id="id6">Helper Functions</a></li>
 </ul>
       </div>
       
@@ -32,8 +32,8 @@
 applications.  Most of the classes provided by this module are used by the
 wrappers, you can however use them without the wrappers, too.</p>
 <p>All the utilities can be directly imported from the <cite>werkzeug</cite> module.</p>
-<div class="section">
-<h3 id="data-structures">Data Structures</h3>
+<div class="section" id="data-structures">
+<h3>Data Structures</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.utils.MultiDict">MultiDict</cite></dt>
 <dd><p class="first">A <cite>MultiDict</cite> is a dictionary subclass customized to deal with multiple
@@ -143,6 +143,9 @@ headers which are stored as tuples in a list.</p>
 <p>From Werkzeug 0.3 onwards, the <cite>KeyError</cite> raised by this class is also a
 subclass of the <cite>BadRequest</cite> HTTP exception and will render a page for a
 <tt class="docutils literal"><span class="pre">400</span> <span class="pre">BAD</span> <span class="pre">REQUEST</span></tt> if catched in a catch-all for HTTP exceptions.</p>
+<p>Headers is mostly compatible with the Python wsgiref.headers.Headers
+class, with the exception of __getitem__.  wsgiref will return None for
+<cite>headers[&#8216;missing&#8217;]</cite>, whereas <cite>Headers</cite> will raise a KeyError.</p>
 <dl>
 <dt><cite id="werkzeug.utils.Headers.__init__">__init__</cite> <tt class="func-signature docutils literal"><span class="pre">(defaults=None,</span> <span class="pre">_list=None)</span></tt></dt>
 <dd>Create a new <cite>Headers</cite> object based on a list or dict of headers
@@ -190,11 +193,20 @@ with the callable defined there.</p>
 </dd>
 </dl>
 <dl>
-<dt><cite id="werkzeug.utils.Headers.add">add</cite> <tt class="func-signature docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></tt></dt>
-<dd>add a new header tuple to the list</dd>
+<dt><cite id="werkzeug.utils.Headers.add">add</cite> <tt class="func-signature docutils literal"><span class="pre">(_key,</span> <span class="pre">_value,</span> <span class="pre">**_kw)</span></tt></dt>
+<dd><p class="first">Add a new header tuple to the list.</p>
+<p>Keyword arguments can specify additional parameters for the header
+value, with underscores converted to dashes:</p>
+<div class="syntax"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="n">Headers</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">d</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s">&#39;text/plain&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">d</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;Content-Disposition&#39;</span><span class="p">,</span> <span class="s">&#39;attachment&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s">&#39;foo.png&#39;</span><span class="p">)</span>
+</pre></div>
+<p class="last"><em>New in 0.4.1</em>: keyword arguments were added for wsgiref
+compatibility.</p>
+</dd>
 </dl>
 <dl>
-<dt><cite id="werkzeug.utils.Headers.pop">pop</cite> <tt class="func-signature docutils literal"><span class="pre">(key=None,</span> <span class="pre">default=&lt;object</span> <span class="pre">object</span> <span class="pre">at</span> <span class="pre">0x523488&gt;)</span></tt></dt>
+<dt><cite id="werkzeug.utils.Headers.pop">pop</cite> <tt class="func-signature docutils literal"><span class="pre">(key=None,</span> <span class="pre">default=&lt;object</span> <span class="pre">object</span> <span class="pre">at</span> <span class="pre">0x274b8&gt;)</span></tt></dt>
 <dd>Removes a key or index.</dd>
 </dl>
 <dl>
@@ -242,8 +254,8 @@ subclass of the <cite>BadRequest</cite> HTTP exception and will render a page fo
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="working-with-http-headers">Working with HTTP Headers</h3>
+<div class="section" id="working-with-http-headers">
+<h3>Working with HTTP Headers</h3>
 <dl>
 <dt><cite id="werkzeug.http.parse_set_header">parse_set_header</cite> <tt class="func-signature docutils literal"><span class="pre">(value,</span> <span class="pre">on_update=None)</span></tt></dt>
 <dd>Parse a set like header and return a <cite>HeaderSet</cite> object.  The return
@@ -664,8 +676,8 @@ by the wrappers and other places where a integer status code is expanded
 to a string throughout Werkzeug.</dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="url-helpers">URL Helpers</h3>
+<div class="section" id="url-helpers">
+<h3>URL Helpers</h3>
 <dl>
 <dt><cite id="werkzeug.utils.url_decode">url_decode</cite> <tt class="func-signature docutils literal"><span class="pre">(s,</span> <span class="pre">charset='utf-8',</span> <span class="pre">decode_keys=False,</span> <span class="pre">include_empty=True,</span> <span class="pre">errors='ignore')</span></tt></dt>
 <dd><p class="first">Parse a querystring and return it as <cite>MultiDict</cite>.  Per default only
@@ -679,11 +691,15 @@ you can set <cite>errors</cite> to <tt class="docutils literal"><span class="pre
 </dd>
 </dl>
 <dl>
-<dt><cite id="werkzeug.utils.url_encode">url_encode</cite> <tt class="func-signature docutils literal"><span class="pre">(obj,</span> <span class="pre">charset='utf-8',</span> <span class="pre">encode_keys=False)</span></tt></dt>
-<dd>URL encode a dict/<cite>MultiDict</cite>.  If a value is <cite>None</cite> it will not appear
+<dt><cite id="werkzeug.utils.url_encode">url_encode</cite> <tt class="func-signature docutils literal"><span class="pre">(obj,</span> <span class="pre">charset='utf-8',</span> <span class="pre">encode_keys=False,</span> <span class="pre">sort=False,</span> <span class="pre">key=None)</span></tt></dt>
+<dd><p class="first">URL encode a dict/<cite>MultiDict</cite>.  If a value is <cite>None</cite> it will not appear
 in the result string.  Per default only values are encoded into the target
 charset strings.  If <cite>encode_keys</cite> is set to <tt class="docutils literal"><span class="pre">True</span></tt> unicode keys are
-supported too.</dd>
+supported too.</p>
+<p>If <cite>sort</cite> is set to <cite>True</cite> the items are sorted by <cite>key</cite> or the default
+sorting algorithm.</p>
+<p class="last"><em>new in Werkzeug 0.5</em>: <cite>sort</cite> and <cite>key</cite> were added.</p>
+</dd>
 </dl>
 <dl>
 <dt><cite id="werkzeug.utils.url_quote">url_quote</cite> <tt class="func-signature docutils literal"><span class="pre">(s,</span> <span class="pre">charset='utf-8',</span> <span class="pre">safe='/:')</span></tt></dt>
@@ -763,11 +779,18 @@ the attribute name as prefix:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">bar_href</span><span class="p">(</span><span class="s">&quot;blub&quot;</span><span class="p">)</span>
 <span class="go">&#39;/foo/bar/blub&#39;</span>
 </pre></div>
+<p>If <cite>sort</cite> is set to <cite>True</cite> the items are sorted by <cite>key</cite> or the default
+sorting algorithm:</p>
+<div class="syntax"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">href</span> <span class="o">=</span> <span class="n">Href</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">href</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mf">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">3</span><span class="p">)</span>
+<span class="go">&#39;/?a=1&amp;b=2&amp;c=3&#39;</span>
+</pre></div>
+<p class="last"><em>new in Werkzeug 0.5</em>: <cite>sort</cite> and <cite>key</cite> were added.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="html-helpers">HTML Helpers</h3>
+<div class="section" id="html-helpers">
+<h3>HTML Helpers</h3>
 <dl>
 <dt><cite id="werkzeug.utils.escape">escape</cite> <tt class="func-signature docutils literal"><span class="pre">(s,</span> <span class="pre">quote=False)</span></tt></dt>
 <dd><p class="first">Replace special characters &#8220;&amp;&#8221;, &#8220;&lt;&#8221; and &#8220;&gt;&#8221; to HTML-safe sequences.  If
@@ -805,8 +828,8 @@ libraries exist.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="wsgi-helpers">WSGI Helpers</h3>
+<div class="section" id="wsgi-helpers">
+<h3>WSGI Helpers</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.utils.ClosingIterator">ClosingIterator</cite></dt>
 <dd><p class="first">The WSGI specification requires that all middlewares and gateways
@@ -989,8 +1012,8 @@ undefined.  Never pass non-conforming WSGI applications to this function.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="helper-functions">Helper Functions</h3>
+<div class="section" id="helper-functions">
+<h3>Helper Functions</h3>
 <dl>
 <dt><cite id="werkzeug.utils.cached_property">cached_property</cite> <tt class="func-signature docutils literal"><span class="pre">(func,</span> <span class="pre">name=None,</span> <span class="pre">doc=None)</span></tt></dt>
 <dd><p class="first">A decorator that converts a function into a lazy property. The

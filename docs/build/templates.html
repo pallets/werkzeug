@@ -19,10 +19,10 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#syntax-elements" id="id1" name="id1">Syntax Elements</a></li>
-<li><a class="reference" href="#missing-variables" id="id2" name="id2">Missing Variables</a></li>
-<li><a class="reference" href="#python-2-3-compatibility" id="id3" name="id3">Python 2.3 Compatibility</a></li>
-<li><a class="reference" href="#the-template-class" id="id4" name="id4">The Template Class</a></li>
+        <ul><li><a class="reference internal" href="#syntax-elements" id="id1">Syntax Elements</a></li>
+<li><a class="reference internal" href="#missing-variables" id="id2">Missing Variables</a></li>
+<li><a class="reference internal" href="#python-2-3-compatibility" id="id3">Python 2.3 Compatibility</a></li>
+<li><a class="reference internal" href="#the-template-class" id="id4">The Template Class</a></li>
 </ul>
       </div>
       
@@ -50,8 +50,8 @@ templates and used internally in werkzeug components.</p>
 <p>We do not recommend using this template engine in a real environment
 because is quite slow and does not provide any advanced features.  For
 simple applications (cgi script like) this can however be sufficient.</p>
-<div class="section">
-<h3 id="syntax-elements">Syntax Elements</h3>
+<div class="section" id="syntax-elements">
+<h3>Syntax Elements</h3>
 <p>Printing Variables:</p>
 <div class="syntax"><pre>$variable
 $variable.attribute[item](some, function)(calls)
@@ -100,8 +100,8 @@ and continue it in another one.  This example does <em>not</em> work:</p>
 %&gt;
 </pre></div>
 </div>
-<div class="section">
-<h3 id="missing-variables">Missing Variables</h3>
+<div class="section" id="missing-variables">
+<h3>Missing Variables</h3>
 <p>If you try to access a missing variable you will get back an <cite>Undefined</cite>
 object.  You can iterate over such an object or print it and it won&#8217;t
 fail.  However every other operation will raise an error.  To test if a
@@ -111,14 +111,14 @@ variable is undefined you can use this expression:</p>
 &lt;% endif %&gt;
 </pre></div>
 </div>
-<div class="section">
-<h3 id="python-2-3-compatibility">Python 2.3 Compatibility</h3>
+<div class="section" id="python-2-3-compatibility">
+<h3>Python 2.3 Compatibility</h3>
 <p>Because of limitations in Python 2.3 it&#8217;s impossible to achieve the
 semi-silent variable lookup fallback.  If a template relies on undefined
 variables it won&#8217;t execute under Python 2.3.</p>
 </div>
-<div class="section">
-<h3 id="the-template-class">The Template Class</h3>
+<div class="section" id="the-template-class">
+<h3>The Template Class</h3>
 <dl>
 <dt><strong>class</strong> <cite id="werkzeug.templates.Template">Template</cite></dt>
 <dd><p class="first">Represents a simple text based template.  It&#8217;s a good idea to load such

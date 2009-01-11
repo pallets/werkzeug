@@ -19,9 +19,9 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#base-wrappers" id="id1" name="id1">Base Wrappers</a></li>
-<li><a class="reference" href="#mixin-classes" id="id2" name="id2">Mixin Classes</a></li>
-<li><a class="reference" href="#note-on-file-uploads" id="id3" name="id3">Note on File Uploads</a></li>
+        <ul><li><a class="reference internal" href="#base-wrappers" id="id1">Base Wrappers</a></li>
+<li><a class="reference internal" href="#mixin-classes" id="id2">Mixin Classes</a></li>
+<li><a class="reference internal" href="#note-on-file-uploads" id="id3">Note on File Uploads</a></li>
 </ul>
       </div>
       
@@ -36,8 +36,8 @@ actual WSGI application.</p>
 unicode data.  Incoming form data parsed by the response object will be
 decoded into an unicode object if possible and if it makes sense.</p>
 <p>You can import all these objects directly from <cite>werkzeug</cite>.</p>
-<div class="section">
-<h3 id="base-wrappers">Base Wrappers</h3>
+<div class="section" id="base-wrappers">
+<h3>Base Wrappers</h3>
 <p>These objects implement a common set of operations.  They are missing fancy
 addon functionality like user agent parsing or etag handling.  These features
 are available by mixing in various mixin classes or using <cite>Request</cite> and
@@ -64,7 +64,7 @@ an example for such subclasses:</p>
 doesn&#8217;t enforce read only access everywhere you should never modify any
 data on the object itself unless you know exactly what you are doing.</p>
 <p>Per default the request object will assume all the text data is <cite>utf-8</cite>
-encoded.  Please refer to <a class="reference" href="unicode.html">the unicode chapter</a> for more
+encoded.  Please refer to <a class="reference external" href="unicode.html">the unicode chapter</a> for more
 details about customizing the behavior.</p>
 <p><strong>Creating Request Objects</strong></p>
 <dl>
@@ -146,15 +146,15 @@ prototype, jQuery and Mochikit and probably some more.</dd>
 <dd>The request method.  <cite>GET</cite>, <cite>POST</cite> etc.</dd>
 <dt><cite>args</cite></dt>
 <dd>A dictionary-like object containing all given HTTP GET parameters.  See
-the <cite>MultiDict</cite> documentation in the <a class="reference" href="utils.html">utils</a> section.</dd>
+the <cite>MultiDict</cite> documentation in the <a class="reference external" href="utils.html">utils</a> section.</dd>
 <dt><cite>form</cite></dt>
 <dd><p class="first">A dictionary-like object containing all given HTTP POST parameters.  See
-the <cite>MultiDict</cite> documentation in the <a class="reference" href="utils.html">utils</a> section.</p>
+the <cite>MultiDict</cite> documentation in the <a class="reference external" href="utils.html">utils</a> section.</p>
 <p class="last">This dict does not contain uploaded files, see <cite>files</cite> regarding that.</p>
 </dd>
 <dt><cite>values</cite></dt>
 <dd>An immutable dictionary-like object containing both the <cite>args</cite> and <cite>form</cite>
-values.  See the <cite>CombinedMultiDict</cite> documentation in the <a class="reference" href="utils.html">utils</a>
+values.  See the <cite>CombinedMultiDict</cite> documentation in the <a class="reference external" href="utils.html">utils</a>
 section.</dd>
 <dt><cite>cookies</cite></dt>
 <dd>A dictionary with the submitted cookie values.</dd>
@@ -172,7 +172,7 @@ members:</p>
 <p>Note that <cite>files</cite> will only contain data if the request method was POST
 and the <tt class="docutils literal"><span class="pre">&lt;form&gt;</span></tt> that posted to the request had
 <tt class="docutils literal"><span class="pre">enctype=&quot;multipart/form-data&quot;</span></tt>.  It will be empty otherwise.</p>
-<p class="last">See the <cite>MultiDict</cite> / <cite>FileStorage</cite> documentation in the <a class="reference" href="utils.html">utils</a>
+<p class="last">See the <cite>MultiDict</cite> / <cite>FileStorage</cite> documentation in the <a class="reference external" href="utils.html">utils</a>
 section for more details about the used data structure.</p>
 </dd>
 <dt><cite>environ</cite></dt>
@@ -240,7 +240,7 @@ which implements a couple of useful mixins.</p>
 subclasses of response objects and you want to post process them with a
 know interface.</p>
 <p>Per default the request object will assume all the text data is <cite>utf-8</cite>
-encoded.  Please refer to <a class="reference" href="unicode.html">the unicode chapter</a> for more
+encoded.  Please refer to <a class="reference external" href="unicode.html">the unicode chapter</a> for more
 details about customizing the behavior.</p>
 <p><strong>Creating Response Objects</strong></p>
 <dl>
@@ -371,8 +371,8 @@ pickeling.  This buffers the generator if there is one.</dd>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="mixin-classes">Mixin Classes</h3>
+<div class="section" id="mixin-classes">
+<h3>Mixin Classes</h3>
 <p>Werkzeug also provides helper mixins for various HTTP related functionality
 such as etags, cache control, user agents etc.  When subclassing you can
 mix those classes in to extend the functionality of the <cite>BaseRequest</cite> or
@@ -431,7 +431,7 @@ are compression encodings such as gzip.  For charsets have a look at
 <dd>List of languages this client accepts.</dd>
 </dl>
 <p class="last">All this properties store <cite>Accept</cite> objects as documented in the
-<a class="reference" href="utils.html">utils</a> section.</p>
+<a class="reference external" href="utils.html">utils</a> section.</p>
 </dd>
 </dl>
 <dl>
@@ -469,7 +469,7 @@ access to etags but also to the cache control header.</p>
 <dt><cite id="werkzeug.wrappers.ETagRequestMixin.if_unmodified_since">if_unmodified_since</cite></dt>
 <dd>The parsed <cite>If-Unmodified-Since</cite> header as datetime object.</dd>
 </dl>
-<p class="last">All the used data structures are documented in the <a class="reference" href="utils.html">utils</a> section.</p>
+<p class="last">All the used data structures are documented in the <a class="reference external" href="utils.html">utils</a> section.</p>
 </dd>
 </dl>
 <dl>
@@ -659,8 +659,8 @@ object.</p>
 </dd>
 </dl>
 </div>
-<div class="section">
-<h3 id="note-on-file-uploads">Note on File Uploads</h3>
+<div class="section" id="note-on-file-uploads">
+<h3>Note on File Uploads</h3>
 <p>File uploads are a tricky thing in general.  Per default all the file uploads
 go into temporary files on the filesystem and not the memory of the current
 process to avoid high memory usage.  You could also change that to store the

@@ -19,40 +19,40 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#teil-0-die-ordnerstruktur" id="id1" name="id1">Teil 0: Die Ordnerstruktur</a></li>
-<li><a class="reference" href="#teil-1-die-wsgi-anwendung" id="id2" name="id2">Teil 1: Die WSGI-Anwendung</a></li>
-<li><a class="reference" href="#teil-2-die-utilities" id="id3" name="id3">Teil 2: Die Utilities</a></li>
-<li><a class="reference" href="#unterbrechung-und-nun-etwas-komplett-anderes" id="id4" name="id4">Unterbrechung: Und nun etwas komplett anderes</a></li>
-<li><a class="reference" href="#teil-3-datenbank-models" id="id5" name="id5">Teil 3: Datenbank-Models</a></li>
-<li><a class="reference" href="#teil-4-die-view-funktionen" id="id6" name="id6">Teil 4: Die View-Funktionen</a></li>
-<li><a class="reference" href="#teil-5-die-templates" id="id7" name="id7">Teil 5: Die Templates</a></li>
-<li><a class="reference" href="#zwischenschritt-das-design-hinzuf-gen" id="id8" name="id8">Zwischenschritt: Das Design hinzufügen</a></li>
-<li><a class="reference" href="#teil-6-ffentliche-urls-auflisten" id="id9" name="id9">Teil 6: Öffentliche URLs auflisten</a></li>
-<li><a class="reference" href="#bonus-404-fehlerseiten-gestalten" id="id10" name="id10">Bonus: 404-Fehlerseiten gestalten</a></li>
-<li><a class="reference" href="#abschluss" id="id11" name="id11">Abschluss</a></li>
+        <ul><li><a class="reference internal" href="#teil-0-die-ordnerstruktur" id="id1">Teil 0: Die Ordnerstruktur</a></li>
+<li><a class="reference internal" href="#teil-1-die-wsgi-anwendung" id="id2">Teil 1: Die WSGI-Anwendung</a></li>
+<li><a class="reference internal" href="#teil-2-die-utilities" id="id3">Teil 2: Die Utilities</a></li>
+<li><a class="reference internal" href="#unterbrechung-und-nun-etwas-komplett-anderes" id="id4">Unterbrechung: Und nun etwas komplett anderes</a></li>
+<li><a class="reference internal" href="#teil-3-datenbank-models" id="id5">Teil 3: Datenbank-Models</a></li>
+<li><a class="reference internal" href="#teil-4-die-view-funktionen" id="id6">Teil 4: Die View-Funktionen</a></li>
+<li><a class="reference internal" href="#teil-5-die-templates" id="id7">Teil 5: Die Templates</a></li>
+<li><a class="reference internal" href="#zwischenschritt-das-design-hinzuf-gen" id="id8">Zwischenschritt: Das Design hinzufügen</a></li>
+<li><a class="reference internal" href="#teil-6-ffentliche-urls-auflisten" id="id9">Teil 6: Öffentliche URLs auflisten</a></li>
+<li><a class="reference internal" href="#bonus-404-fehlerseiten-gestalten" id="id10">Bonus: 404-Fehlerseiten gestalten</a></li>
+<li><a class="reference internal" href="#abschluss" id="id11">Abschluss</a></li>
 </ul>
       </div>
       
       <div class="admonition-hinweis admonition">
 <p class="first admonition-title">Hinweis</p>
-<p class="last">Dies ist die deutsche Übersetzung des <a class="reference" href="tutorial.html">Tutorials</a>.  Die
+<p class="last">Dies ist die deutsche Übersetzung des <a class="reference external" href="tutorial.html">Tutorials</a>.  Die
 Entwicklung rund um Werkzeug steht nie still, und Verbesserungen an der
 Library wirken sich oft auch auf das Tutorial aus &#8211; deshalb ist die
 Originalversion möglicherweise aktueller.</p>
 </div>
 <p>Willkommen zum Tutorial für Werkzeug 0.2.  Wir werden einen einfachen
-<a class="reference" href="http://tinyurl.com/">TinyURL</a>-Klon programmieren, der die URLs in einer Datenbank speichert.  Die
-Die verwendeten Bibliotheken für diese Anwendung sind <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> für die
-Templates, <a class="reference" href="http://sqlalchemy.org/">SQLAlchemy</a> für die Datenbank-Anbindung und natürlich Werkzeug
+<a class="reference external" href="http://tinyurl.com/">TinyURL</a>-Klon programmieren, der die URLs in einer Datenbank speichert.  Die
+Die verwendeten Bibliotheken für diese Anwendung sind <a class="reference external" href="http://jinja.pocoo.org/">Jinja</a> für die
+Templates, <a class="reference external" href="http://sqlalchemy.org/">SQLAlchemy</a> für die Datenbank-Anbindung und natürlich Werkzeug
 für WSGI.</p>
 <p>Wir haben uns hier für diese Komponenten entschieden, weil wir einen
-<a class="reference" href="http://www.djangoproject.com/">Django</a>-ähnlichen Grundaufbau nachstellen wollen.  Dazu zählen wir zum
-Beispiel View-Funktionen anstelle der in <a class="reference" href="http://www.rubyonrails.org/">Rails</a> und <a class="reference" href="http://pylonshq.com/">Pylons</a> gängigen
+<a class="reference external" href="http://www.djangoproject.com/">Django</a>-ähnlichen Grundaufbau nachstellen wollen.  Dazu zählen wir zum
+Beispiel View-Funktionen anstelle der in <a class="reference external" href="http://www.rubyonrails.org/">Rails</a> und <a class="reference external" href="http://pylonshq.com/">Pylons</a> gängigen
 Controller-Klassen mit Action-Methoden, sowie designerfreundliche Templates.</p>
-<p>In Werkzeugs <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">Beispiel-Ordner</a> befinden sich einige Anwendungen, die andere
+<p>In Werkzeugs <a class="reference external" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">Beispiel-Ordner</a> befinden sich einige Anwendungen, die andere
 Konzepte verfolgen, Template-Engines einsetzen etc.  Dort liegt auch der
 Quellcode der Anwendung, die wir in diesem Tutorial erstellen werden.</p>
-<p>Du kannst <a class="reference" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> verwenden, um Jinja und SQLAlchemy zu installieren,
+<p>Du kannst <a class="reference external" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> verwenden, um Jinja und SQLAlchemy zu installieren,
 falls diese nicht bereits installiert sind:</p>
 <div class="syntax"><pre><span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">Jinja</span>
 <span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">SQLAlchemy</span>
@@ -62,11 +62,11 @@ Administratorrechten), sofern die <cite>setuptools</cite> installiert sind, alle
 musst du das <cite>sudo</cite> weglassen.  Als OS X-Benutzer könntest du die Libraries
 auch via port installieren, Linux-Benutzer finden diese Pakete möglicherweise
 auch in ihrem Paketmanager.</p>
-<p>Wenn du neugierig bist, kannst du dir auch die <a class="reference" href="http://werkzeug.pocoo.org/e/shorty/">Online-Demo</a> der Anwendung
+<p>Wenn du neugierig bist, kannst du dir auch die <a class="reference external" href="http://werkzeug.pocoo.org/e/shorty/">Online-Demo</a> der Anwendung
 ansehen.</p>
 <p>Noch ein kleiner Hinweis: Dieses Tutorial erfordert Python 2.4.</p>
-<div class="section">
-<h3 id="teil-0-die-ordnerstruktur">Teil 0: Die Ordnerstruktur</h3>
+<div class="section" id="teil-0-die-ordnerstruktur">
+<h3>Teil 0: Die Ordnerstruktur</h3>
 <p>Bevor wir beginnen können, müssen wir ein Python-Paket für unsere
 Werkzeug-Anwendung erstellen.  Dort werden wir die Anwendung, die Templates
 und die statischen Dateien ablegen.</p>
@@ -83,8 +83,8 @@ leer.  Die erste dieser Dateien macht aus dem Ordner <tt class="docutils literal
 Python-Paket, die zweite werden wir später für unsere Verwaltungsfunktionen
 nutzen.</p>
 </div>
-<div class="section">
-<h3 id="teil-1-die-wsgi-anwendung">Teil 1: Die WSGI-Anwendung</h3>
+<div class="section" id="teil-1-die-wsgi-anwendung">
+<h3>Teil 1: Die WSGI-Anwendung</h3>
 <p>Im Gegensatz zu Django oder ähnlichen Frameworks arbeitet Werkzeug direkt auf
 der WSGI-Schicht.  Es gibt keine schicke Magie, die die zentrale WSGI-Anwendung
 für uns implementiert.  Das bedeutet, dass wir als Erstes eben diese
@@ -206,8 +206,8 @@ die SQLAlchemy-Session und leert das <cite>local</cite>-Objekt für diesen Reque
 erstellen, damit die Imports nicht fehlschlagen.  Den tatsächlichen Code für
 diese Module werden wir ein wenig später erstellen.</p>
 </div>
-<div class="section">
-<h3 id="teil-2-die-utilities">Teil 2: Die Utilities</h3>
+<div class="section" id="teil-2-die-utilities">
+<h3>Teil 2: Die Utilities</h3>
 <p>Nun haben wir die eigentliche WSGI-Applikation fertig gestellt, aber wir müssen
 das Utility-Modul noch um Code ergänzen, damit die Imports klappen.  Fürs Erste
 fügen wir nur die Objekte hinzu, die wir brauchen, damit die Applikation
@@ -266,8 +266,8 @@ URL-Regeldefinitionen.</p>
 Weg, URLs anhand des Endpointes zu generieren.  Wir werden sie später in den
 Views als auch unserem Model verwenden.</p>
 </div>
-<div class="section">
-<h3 id="unterbrechung-und-nun-etwas-komplett-anderes">Unterbrechung: Und nun etwas komplett anderes</h3>
+<div class="section" id="unterbrechung-und-nun-etwas-komplett-anderes">
+<h3>Unterbrechung: Und nun etwas komplett anderes</h3>
 <p>Da wir nun das Grundgerüst für unsere Anwendung fertig gestellt haben, können
 wir jetzt erst einmal relaxen und uns etwas komplett anderem zuwenden: den
 Verwaltungs-Scripts.  Während der Entwicklung erledigt man häufig immer
@@ -297,7 +297,7 @@ und gehört in die <cite>manage.py</cite>-Datei, welche du am Anfang erstellt ha
 
 <span class="n">script</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
-<p><cite>werkzeug.script</cite> ist genauer in der <a class="reference" href="script.html">Script-Dokumentation</a> beschrieben, und da
+<p><cite>werkzeug.script</cite> ist genauer in der <a class="reference external" href="script.html">Script-Dokumentation</a> beschrieben, und da
 der Großteil des Codes verständlich sein sollte, werden wir hier nicht näher
 darauf eingehen.</p>
 <p>Es ist aber wichtig, dass du <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">shell</span></tt> ausführen kannst, um
@@ -307,8 +307,8 @@ mit dem entsprechenden Code in dieser Anleitung.</p>
 <p>Sobald das Script läuft, können wir mit dem Schreiben der Datenbank-Models
 beginnen.</p>
 </div>
-<div class="section">
-<h3 id="teil-3-datenbank-models">Teil 3: Datenbank-Models</h3>
+<div class="section" id="teil-3-datenbank-models">
+<h3>Teil 3: Datenbank-Models</h3>
 <p>Jetzt können wir die Models erstellen.  Da die Anwendung ziemlich einfach ist,
 haben wir nur ein Model und eine Tabelle:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
@@ -348,7 +348,7 @@ haben wir nur ein Model und eine Tabelle:</p>
 SQLAlchemy benötigen, und erstellen die Tabelle.  Dann fügen wir eine Klasse
 für diese Tabelle hinzu und verbinden beide miteinander.  Für eine
 detailliertere Erklärung bezüglich SQLAlchemy solltest du dir das
-<a class="reference" href="http://www.sqlalchemy.org/docs/04/ormtutorial.html">exzellente Tutorial</a> anschauen.</p>
+<a class="reference external" href="http://www.sqlalchemy.org/docs/04/ormtutorial.html">exzellente Tutorial</a> anschauen.</p>
 <p>Im Konstruktor generieren wir solange eine eindeutige ID, bis wir eine finden,
 die noch nicht belegt ist.  Die <cite>get_random_uid</cite>-Funktion fehlt &#8211; wir müssen
 sie noch in unser <cite>utils</cite>-Modul einfügen:</p>
@@ -389,8 +389,8 @@ eigenen UID:</p>
 <p>Jetzt haben wir einige Datensätze in der Datenbank und wissen ungefähr, auf
 welche Weise SQLAlchemy funktioniert.  Zeit, unsere Views zu erstellen.</p>
 </div>
-<div class="section">
-<h3 id="teil-4-die-view-funktionen">Teil 4: Die View-Funktionen</h3>
+<div class="section" id="teil-4-die-view-funktionen">
+<h3>Teil 4: Die View-Funktionen</h3>
 <p>Nachdem wir mit SQLAlchemy herumgespielt haben, können wir zurück zu Werkzeug
 gehen und anfangen, unsere View-Funktionen zu erstellen.  Der Begriff
 &#8220;View-Funktion&#8221; kommt von Django. Dort werden die Funktionen, die Templates
@@ -517,13 +517,13 @@ Templates ein, so dass wir auch in Templates URLs erzeugen können.</p>
 <p>Da wir jetzt unsere beiden ersten View-Funktionen haben, ist es Zeit, die
 Templates hinzuzufügen.</p>
 </div>
-<div class="section">
-<h3 id="teil-5-die-templates">Teil 5: Die Templates</h3>
+<div class="section" id="teil-5-die-templates">
+<h3>Teil 5: Die Templates</h3>
 <p>Wir haben beschlossen, in diesem Beispiel Jinja-Templates zu nutzen.  Wenn du
 weißt, wie man Django-Templates nutzt, sollte es dir bekannt vorkommen; wenn du
 bis jetzt mit PHP gearbeitet hast, kannst du Jinja-Templates mit Smarty
 vergleichen.  Wenn du bis jetzt PHP als Templatesprache genutzt hast, solltest
-du für dein nächstes Projekt mal <a class="reference" href="http://www.makotemplates.org/">Mako</a> ansehen.</p>
+du für dein nächstes Projekt mal <a class="reference external" href="http://www.makotemplates.org/">Mako</a> ansehen.</p>
 <p><strong>Sicherheitswarnung</strong>: Wir nutzen hier Jinja, welches eine textbasierte
 Template-Engine ist.  Da Jinja nicht weiß, womit es arbeitet, musst du, wenn du
 HTML-Templates erstellst, <em>alle</em> Werte maskieren, die irgendwann an
@@ -597,8 +597,8 @@ wird ein <cite>nofollow</cite>-Flag hinzugefügt.</p>
 Server zu starten und auf den Teil der Anwendung zu schauen, der bereits
 funktioniert: neue URLs hinzufügen und weitergeleitet werden.</p>
 </div>
-<div class="section">
-<h3 id="zwischenschritt-das-design-hinzuf-gen">Zwischenschritt: Das Design hinzufügen</h3>
+<div class="section" id="zwischenschritt-das-design-hinzuf-gen">
+<h3>Zwischenschritt: Das Design hinzufügen</h3>
 <p>Jetzt ist es Zeit, etwas anderes zu machen: ein Design hinzufügen.
 Designelemente sind normalerweise in statischen CSS-Stylesheets definiert.
 Also müssen wir einige statische Dateien irgendwo ablegen &#8211; aber das ist ein
@@ -665,12 +665,12 @@ werden:</p>
 </pre></div>
 <p>Das geht natürlich in den <cite>&lt;head&gt;</cite>-Tag, wo zur Zeit nur der Titel festgelegt
 ist.</p>
-<p>Du kannst jetzt ein nettes Layout gestalten oder das <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css">Beispiel-Stylesheet</a>
+<p>Du kannst jetzt ein nettes Layout gestalten oder das <a class="reference external" href="http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css">Beispiel-Stylesheet</a>
 nutzen.  In beiden Fällen musst du es in die Datei <tt class="docutils literal"><span class="pre">static/style.css</span></tt>
 einfügen.</p>
 </div>
-<div class="section">
-<h3 id="teil-6-ffentliche-urls-auflisten">Teil 6: Öffentliche URLs auflisten</h3>
+<div class="section" id="teil-6-ffentliche-urls-auflisten">
+<h3>Teil 6: Öffentliche URLs auflisten</h3>
 <p>Jetzt wollen wir alle öffentlichen URLs auf der &#8220;List&#8221;-Seite auflisten.  Das
 sollte kein großes Problem sein, aber wir wollen auch eine Art Seitenumbruch
 haben.  Da wir alle URLs auf einmal ausgeben, haben wir früher oder später
@@ -753,8 +753,8 @@ dieser Seite nicht mit einem 404 zu quittieren, wäre schlechter Stil).</p>
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="bonus-404-fehlerseiten-gestalten">Bonus: 404-Fehlerseiten gestalten</h3>
+<div class="section" id="bonus-404-fehlerseiten-gestalten">
+<h3>Bonus: 404-Fehlerseiten gestalten</h3>
 <p>Jetzt, da wir unsere Anwendung fertig gestellt haben, können wir kleine
 Verbesserungen vornehmen, zum Beispiel eigene 404-Fehlerseiten.  Das ist
 ziemlich einfach.  Das Erste, was wir machen müssen, ist eine neue Funktion
@@ -788,13 +788,13 @@ except-Block kommt <strong>vor</strong> den except-Bock mit <cite>HTTPException<
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="abschluss">Abschluss</h3>
+<div class="section" id="abschluss">
+<h3>Abschluss</h3>
 <p>Dieses Tutorial behandelt alles, was du brauchst, um mit Werkzeug, SQLAlchemy
 und Jinja anzufangen und sollte dir helfen, die beste Lösung für deine Anwendung
 zu finden.  Für einige größere Beispiele, die außerdem einen anderen Aufbau und
 Ideen zum Ausführen benutzen, solltest du mal einen Blick auf den
-<a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">Beispielordner</a> werfen.</p>
+<a class="reference external" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">Beispielordner</a> werfen.</p>
 <p>In diesem Sinne: Viel Spaß mit Werkzeug!</p>
 </div>
 

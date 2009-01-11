@@ -19,17 +19,17 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#part-0-the-folder-structure" id="id1" name="id1">Part 0: The Folder Structure</a></li>
-<li><a class="reference" href="#part-1-the-wsgi-application" id="id2" name="id2">Part 1: The WSGI Application</a></li>
-<li><a class="reference" href="#part-2-the-utilities" id="id3" name="id3">Part 2: The Utilities</a></li>
-<li><a class="reference" href="#intermission-and-now-for-something-completely-different" id="id4" name="id4">Intermission: And Now For Something Completely Different</a></li>
-<li><a class="reference" href="#part-3-database-models" id="id5" name="id5">Part 3: Database Models</a></li>
-<li><a class="reference" href="#part-4-the-view-functions" id="id6" name="id6">Part 4: The View Functions</a></li>
-<li><a class="reference" href="#part-5-the-templates" id="id7" name="id7">Part 5: The Templates</a></li>
-<li><a class="reference" href="#intermission-adding-the-design" id="id8" name="id8">Intermission: Adding The Design</a></li>
-<li><a class="reference" href="#part-6-listing-public-urls" id="id9" name="id9">Part 6: Listing Public URLs</a></li>
-<li><a class="reference" href="#bonus-styling-404-error-pages" id="id10" name="id10">Bonus: Styling 404 Error Pages</a></li>
-<li><a class="reference" href="#outro" id="id11" name="id11">Outro</a></li>
+        <ul><li><a class="reference internal" href="#part-0-the-folder-structure" id="id1">Part 0: The Folder Structure</a></li>
+<li><a class="reference internal" href="#part-1-the-wsgi-application" id="id2">Part 1: The WSGI Application</a></li>
+<li><a class="reference internal" href="#part-2-the-utilities" id="id3">Part 2: The Utilities</a></li>
+<li><a class="reference internal" href="#intermission-and-now-for-something-completely-different" id="id4">Intermission: And Now For Something Completely Different</a></li>
+<li><a class="reference internal" href="#part-3-database-models" id="id5">Part 3: Database Models</a></li>
+<li><a class="reference internal" href="#part-4-the-view-functions" id="id6">Part 4: The View Functions</a></li>
+<li><a class="reference internal" href="#part-5-the-templates" id="id7">Part 5: The Templates</a></li>
+<li><a class="reference internal" href="#intermission-adding-the-design" id="id8">Intermission: Adding The Design</a></li>
+<li><a class="reference internal" href="#part-6-listing-public-urls" id="id9">Part 6: Listing Public URLs</a></li>
+<li><a class="reference internal" href="#bonus-styling-404-error-pages" id="id10">Bonus: Styling 404 Error Pages</a></li>
+<li><a class="reference internal" href="#outro" id="id11">Outro</a></li>
 </ul>
       </div>
       
@@ -38,33 +38,33 @@
 <p>This tutorial is available in the following languages:</p>
 <ul class="last simple">
 <li><strong>English</strong></li>
-<li><a class="reference" href="tutorial_de.html">Deutsch</a></li>
+<li><a class="reference external" href="tutorial_de.html">Deutsch</a></li>
 </ul>
 </div>
-<p>Welcome to the Werkzeug 0.2 tutorial in which we will create a <a class="reference" href="http://tinyurl.com/">TinyURL</a> clone
+<p>Welcome to the Werkzeug 0.2 tutorial in which we will create a <a class="reference external" href="http://tinyurl.com/">TinyURL</a> clone
 that stores URLs in a database.  The libraries we will use for this
-applications are <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> for the templates, <a class="reference" href="http://sqlalchemy.org/">SQLAlchemy</a> for the database
+applications are <a class="reference external" href="http://jinja.pocoo.org/">Jinja</a> for the templates, <a class="reference external" href="http://sqlalchemy.org/">SQLAlchemy</a> for the database
 layer and, of course, Werkzeug for the WSGI layer.</p>
 <p>The reasons why we&#8217;ve decided on these libraries for the tutorial application
-is that we want to stick to some of the design decisions <a class="reference" href="http://www.djangoproject.com/">Django</a> took in the
+is that we want to stick to some of the design decisions <a class="reference external" href="http://www.djangoproject.com/">Django</a> took in the
 past.  One of them is using view functions instead of controller classes with
-action methods, which is common in <a class="reference" href="http://www.rubyonrails.org/">Rails</a> and <a class="reference" href="http://pylonshq.com/">Pylons</a>, the other one is
+action methods, which is common in <a class="reference external" href="http://www.rubyonrails.org/">Rails</a> and <a class="reference external" href="http://pylonshq.com/">Pylons</a>, the other one is
 designer-friendly templates.</p>
-<p>The Werkzeug <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">example folder</a> contains a couple of applications that use other
+<p>The Werkzeug <a class="reference external" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">example folder</a> contains a couple of applications that use other
 template engines, too, so you may want to have a look at them.  There is also
 the source code of this application.</p>
-<p>You can use <a class="reference" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> to install the required libraries:</p>
+<p>You can use <a class="reference external" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> to install the required libraries:</p>
 <div class="syntax"><pre><span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">Jinja</span>
 <span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">SQLAlchemy</span>
 </pre></div>
-<p>If you&#8217;re on Windows, omit the &#8220;sudo&#8221; (and make sure, <a class="reference" href="http://pypi.python.org/pypi/setuptools">setuptools</a> is
+<p>If you&#8217;re on Windows, omit the &#8220;sudo&#8221; (and make sure, <a class="reference external" href="http://pypi.python.org/pypi/setuptools">setuptools</a> is
 installed); if you&#8217;re on OS X, you can check if the libraries are also
 available in port; or on Linux, you can check out your package manager for
 packages called <tt class="docutils literal"><span class="pre">python-jinja</span></tt> and <tt class="docutils literal"><span class="pre">python-sqlalchemy</span></tt>.</p>
-<p>If you&#8217;re curious, check out the <a class="reference" href="http://werkzeug.pocoo.org/e/shorty/">online demo</a> of the application.</p>
+<p>If you&#8217;re curious, check out the <a class="reference external" href="http://werkzeug.pocoo.org/e/shorty/">online demo</a> of the application.</p>
 <p>Small disclaimer: This tutorial requires Python 2.4 or later.</p>
-<div class="section">
-<h3 id="part-0-the-folder-structure">Part 0: The Folder Structure</h3>
+<div class="section" id="part-0-the-folder-structure">
+<h3>Part 0: The Folder Structure</h3>
 <p>Before we can get started we have to create a Python package for our Werkzeug
 application and the folders for the templates and static files.</p>
 <p>This tutorial application is called <cite>shorty</cite> and the initial directory layout
@@ -79,8 +79,8 @@ we will use looks like this:</p>
 being.   The first one makes <tt class="docutils literal"><span class="pre">shorty</span></tt> a Python package, the second one will
 hold our management utilities later.</p>
 </div>
-<div class="section">
-<h3 id="part-1-the-wsgi-application">Part 1: The WSGI Application</h3>
+<div class="section" id="part-1-the-wsgi-application">
+<h3>Part 1: The WSGI Application</h3>
 <p>Unlike Django or other frameworks, Werkzeug operates directly on the WSGI
 layer.  There is no fancy magic that implements the central WSGI application
 for you.  As a result of that the first thing you will do every time you write
@@ -196,8 +196,8 @@ objects).</p>
 <tt class="docutils literal"><span class="pre">shorty/models.py</span></tt> so that our imports work.  We will fill the modules with
 useful code later.</p>
 </div>
-<div class="section">
-<h3 id="part-2-the-utilities">Part 2: The Utilities</h3>
+<div class="section" id="part-2-the-utilities">
+<h3>Part 2: The Utilities</h3>
 <p>Now we have basically finished the WSGI application itself but we have to add
 some more code into our utiliy module so that the imports work.  For the time
 being we just add the objects which we need for the application to work.  All
@@ -253,8 +253,8 @@ definitions.</p>
 <p>The <cite>url_for</cite> function, which we have there too, provides a simple way to
 generate URLs by endpoint.  We will use it in the views and our model later.</p>
 </div>
-<div class="section">
-<h3 id="intermission-and-now-for-something-completely-different">Intermission: And Now For Something Completely Different</h3>
+<div class="section" id="intermission-and-now-for-something-completely-different">
+<h3>Intermission: And Now For Something Completely Different</h3>
 <p>Now that we have finished the foundation for the application we could relax
 and do something completely different: management scripts.  Most of the time
 you do similar tasks while developing.  One of them is firing up a
@@ -283,7 +283,7 @@ it into the <cite>manage.py</cite> file you have created in the beginning:</p>
 
 <span class="n">script</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
-<p><cite>werkzeug.script</cite> is explained in detail in the <a class="reference" href="script.html">script documentation</a> and
+<p><cite>werkzeug.script</cite> is explained in detail in the <a class="reference external" href="script.html">script documentation</a> and
 we won&#8217;t cover it here, most of the code should be self explaining anyway.</p>
 <p>What&#8217;s important is that you should be able to run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">shell</span></tt>
 to get an interactive Python interpreter without traceback.  If you get an
@@ -291,8 +291,8 @@ exception check the line number and compare your code with the code we have
 in the code boxes above.</p>
 <p>Now that the script system is running we can start writing our database models.</p>
 </div>
-<div class="section">
-<h3 id="part-3-database-models">Part 3: Database Models</h3>
+<div class="section" id="part-3-database-models">
+<h3>Part 3: Database Models</h3>
 <p>Now we can create the models.  Because the application is pretty simple we
 just have one model and table:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
@@ -331,7 +331,7 @@ just have one model and table:</p>
 <p>This module is pretty straightforward.  We import all the stuff we need from
 SQLAlchemy and create a table.  Then we add a class for this table and we map
 them both together.  For detailed explanations regarding SQLAlchemy you should
-have a look at the <a class="reference" href="http://www.sqlalchemy.org/docs/04/ormtutorial.html">excellent tutorial</a>.</p>
+have a look at the <a class="reference external" href="http://www.sqlalchemy.org/docs/04/ormtutorial.html">excellent tutorial</a>.</p>
 <p>In the constructor we generate a unique ID until we find an id which is still
 free to use.
 What&#8217;s missing is the <cite>get_random_uid</cite> function we have to add to the utils
@@ -372,8 +372,8 @@ Let&#8217;s create a private item with a custom uid:</p>
 <p>Now that we have some data in the database and we are somewhat familiar with
 the way SQLAlchemy works, it&#8217;s time to create our views.</p>
 </div>
-<div class="section">
-<h3 id="part-4-the-view-functions">Part 4: The View Functions</h3>
+<div class="section" id="part-4-the-view-functions">
+<h3>Part 4: The View Functions</h3>
 <p>Now after some playing with SQLAlchemy we can go back to Werkzeug and start
 creating our view functions.  The term &#8220;view function&#8221; is derived from Django
 which also calls the functions that render templates &#8220;view functions&#8221;.  So
@@ -489,12 +489,12 @@ system in the <cite>templates</cite> folder and renders it as response.</p>
 template context so that we can build URLs in the templates too.</p>
 <p>Now that we have our first two view functions it&#8217;s time to add the templates.</p>
 </div>
-<div class="section">
-<h3 id="part-5-the-templates">Part 5: The Templates</h3>
+<div class="section" id="part-5-the-templates">
+<h3>Part 5: The Templates</h3>
 <p>We have decided to use Jinja templates in this example.  If you are used to
 Django templates you should feel at home, if you have worked with PHP so far
 you can compare the Jinja templates with smarty.  If you have used PHP as
-templating language until now you should have a look at <a class="reference" href="http://www.makotemplates.org/">Mako</a> for your next
+templating language until now you should have a look at <a class="reference external" href="http://www.makotemplates.org/">Mako</a> for your next
 project.</p>
 <p><strong>Security Warning</strong>: We are using Jinja here which is a text based template
 engine.  As a matter of fact, Jinja has no idea what it is dealing with, so
@@ -567,8 +567,8 @@ second parameter adds a <cite>nofollow</cite> flag.</p>
 look at those part of the application that work already: adding new URLs and
 getting redirected.</p>
 </div>
-<div class="section">
-<h3 id="intermission-adding-the-design">Intermission: Adding The Design</h3>
+<div class="section" id="intermission-adding-the-design">
+<h3>Intermission: Adding The Design</h3>
 <p>Now it&#8217;s time to do something different: adding a design.  Design elements are
 usually in static CSS stylesheets so we have to put some static files
 somewhere.  But that&#8217;s a little big tricky.  If you have worked with PHP so
@@ -628,12 +628,12 @@ stylesheet <tt class="docutils literal"><span class="pre">style.css</span></tt>,
 <div class="syntax"><pre><span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">url_for</span><span class="o">(</span><span class="s1">&#39;static&#39;</span><span class="o">,</span> <span class="nv">file</span><span class="o">=</span><span class="s1">&#39;style.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
 </pre></div>
 <p>This of course goes into the <cite>&lt;head&gt;</cite> tag where currently just the title is.</p>
-<p>You can now design a nice layout for it or use the <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css">example stylesheet</a> if
+<p>You can now design a nice layout for it or use the <a class="reference external" href="http://dev.pocoo.org/projects/werkzeug/browser/examples/shorty/static/style.css">example stylesheet</a> if
 you want.  In both cases the file you have to create is called
 <tt class="docutils literal"><span class="pre">static/style.css</span></tt></p>
 </div>
-<div class="section">
-<h3 id="part-6-listing-public-urls">Part 6: Listing Public URLs</h3>
+<div class="section" id="part-6-listing-public-urls">
+<h3>Part 6: Listing Public URLs</h3>
 <p>Now we want to list all of the public URLs on the list page.  That shouldn&#8217;t
 be a big problem but we will have to do some sort of pagination.  Because if
 we print all URLs at once we have sooner or later an endless page that takes
@@ -713,8 +713,8 @@ returning a 404 status code would be considered bad style.)</p>
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="bonus-styling-404-error-pages">Bonus: Styling 404 Error Pages</h3>
+<div class="section" id="bonus-styling-404-error-pages">
+<h3>Bonus: Styling 404 Error Pages</h3>
 <p>Now that we&#8217;ve finished our application we can do some small improvements such
 as custom 404 error pages.  That&#8217;s pretty simple.  The first thing we have to
 do is creating a new function called <cite>not_found</cite> in the view that renders a
@@ -747,12 +747,12 @@ block goes right <strong>before</strong> the except block of the <cite>HTTPExcep
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="outro">Outro</h3>
+<div class="section" id="outro">
+<h3>Outro</h3>
 <p>This tutorial covers everything you need to get started with Werkzeug,
 SQLAlchemy and Jinja and should help you find the best solution for your
 application.  For some more complex examples that also use different setups
-and ideas for dispatching have a look at the <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">examples folder</a>.</p>
+and ideas for dispatching have a look at the <a class="reference external" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">examples folder</a>.</p>
 <p>Have fun with Werkzeug!</p>
 </div>
 

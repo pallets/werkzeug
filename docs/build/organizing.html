@@ -19,11 +19,11 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#entry-point" id="id1" name="id1">Entry Point</a></li>
-<li><a class="reference" href="#utils" id="id2" name="id2">Utils</a></li>
-<li><a class="reference" href="#urls" id="id3" name="id3">URLs</a></li>
-<li><a class="reference" href="#view" id="id4" name="id4">View</a></li>
-<li><a class="reference" href="#models-and-templates" id="id5" name="id5">Models and Templates</a></li>
+        <ul><li><a class="reference internal" href="#entry-point" id="id1">Entry Point</a></li>
+<li><a class="reference internal" href="#utils" id="id2">Utils</a></li>
+<li><a class="reference internal" href="#urls" id="id3">URLs</a></li>
+<li><a class="reference internal" href="#view" id="id4">View</a></li>
+<li><a class="reference internal" href="#models-and-templates" id="id5">Models and Templates</a></li>
 </ul>
       </div>
       
@@ -41,12 +41,12 @@ nearly the same.  We will use the latter naming in this file.</p>
 <dl>
 <dt>Model</dt>
 <dd>A model is an abstraction of your data.  For example if you have a
-database you can use the excellent <a class="reference" href="http://www.sqlalchemy.org/">SQLAlchemy</a> library that maps
+database you can use the excellent <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> library that maps
 database tables to classes or just provides a thin layer that lets you
 write your own classes.</dd>
 <dt>Template</dt>
 <dd><p class="first">The templates contain the actual HTML markup with placeholders for data
-passed to them.  Although there is a <a class="reference" href="minitmpl.html">minimal template language</a> in the Werkzeug package we don&#8217;t recommend using it for
+passed to them.  Although there is a <a class="reference external" href="minitmpl.html">minimal template language</a> in the Werkzeug package we don&#8217;t recommend using it for
 larger applications.  There are many good and powerful template engines
 out there that support debugging, template inheritance, XML output etc.</p>
 <p class="last">The integrated templating language is a good idea if you have one or two
@@ -58,11 +58,11 @@ it is not suitable for more complex tasks!</p>
 templates, and then outputs the result. This is the part where Werkzeug
 helps you.</dd>
 </dl>
-<div class="section">
-<h3 id="entry-point">Entry Point</h3>
+<div class="section" id="entry-point">
+<h3>Entry Point</h3>
 <p>There should be one central file that provides the WSGI application and
 dispatches the requests.  It&#8217;s also a good idea to assemble the final URL map
-there if you use the Werkzeug <a class="reference" href="routing.html">routing system</a>.</p>
+there if you use the Werkzeug <a class="reference external" href="routing.html">routing system</a>.</p>
 <p>It&#8217;s also a good idea to call the file something like <tt class="docutils literal"><span class="pre">main.py</span></tt> or
 <tt class="docutils literal"><span class="pre">application.py</span></tt> and locate it in the root of the package.  This is what it
 <em>could</em> look like:</p>
@@ -95,11 +95,11 @@ of a controller class you instantiate with the request as argument for each
 incoming request.  You can also use other request objects or no request object
 at all etc.</p>
 </div>
-<div class="section">
-<h3 id="utils">Utils</h3>
+<div class="section" id="utils">
+<h3>Utils</h3>
 <p>If we continue the example above we need an utils module with the request and
 response objects.  This would also contain other utilities and a bridge to a
-template engine.  In this example we will use the <a class="reference" href="http://jinja.pocoo.org/">Jinja</a> template engine -
+template engine.  In this example we will use the <a class="reference external" href="http://jinja.pocoo.org/">Jinja</a> template engine -
 basically because it&#8217;s something we use, too - but you can of course use any
 template engine:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">jinja</span> <span class="kn">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">PackageLoader</span>
@@ -121,8 +121,8 @@ on the template engine, so have a look at it&#8217;s documentation regarding tha
 second response subclass that is used to render templates.  It&#8217;s used in the
 example view below.</p>
 </div>
-<div class="section">
-<h3 id="urls">URLs</h3>
+<div class="section" id="urls">
+<h3>URLs</h3>
 <p>Because we use the Werkzeug URL routing system in this example and the URLs
 are stored in <cite>urls.py</cite>, we need that file:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">werkzeug.routing</span> <span class="kn">import</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Rule</span>
@@ -133,8 +133,8 @@ are stored in <cite>urls.py</cite>, we need that file:</p>
 </pre></div>
 <p>This is just one small URL rule for one view.</p>
 </div>
-<div class="section">
-<h3 id="view">View</h3>
+<div class="section" id="view">
+<h3>View</h3>
 <p>Here is the view defined above.  It must be saved in
 <cite>myprojects/views/static.py</cite> as defined above:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">myproject.utils</span> <span class="kn">import</span> <span class="n">TemplateResponse</span>
@@ -143,8 +143,8 @@ are stored in <cite>urls.py</cite>, we need that file:</p>
     <span class="k">return</span> <span class="n">TemplateResponse</span><span class="p">(</span><span class="s">&#39;index.html&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Welcome&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="models-and-templates">Models and Templates</h3>
+<div class="section" id="models-and-templates">
+<h3>Models and Templates</h3>
 <p>Models and templates are out of the scope for this documentation, but you
 should have gotten an idea on how you can organize your WSGI application built
 with the help of Werkzeug.</p>

@@ -19,53 +19,53 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><p class="first"><a class="reference" href="#installing-a-released-version" id="id1" name="id1">Installing a released version</a></p>
+        <ul><li><p class="first"><a class="reference internal" href="#installing-a-released-version" id="id1">Installing a released version</a></p>
 <ul class="simple">
-<li><a class="reference" href="#as-a-python-egg-via-easy-install" id="id2" name="id2">As a Python egg (via easy_install)</a></li>
-<li><a class="reference" href="#from-the-tarball-release" id="id3" name="id3">From the tarball release</a></li>
+<li><a class="reference internal" href="#as-a-python-egg-via-easy-install" id="id2">As a Python egg (via easy_install)</a></li>
+<li><a class="reference internal" href="#from-the-tarball-release" id="id3">From the tarball release</a></li>
 </ul>
 </li>
-<li><p class="first"><a class="reference" href="#installing-the-development-version" id="id4" name="id4">Installing the development version</a></p>
+<li><p class="first"><a class="reference internal" href="#installing-the-development-version" id="id4">Installing the development version</a></p>
 <ul class="simple">
-<li><a class="reference" href="#if-you-want-to-play-around-with-the-code" id="id5" name="id5">If you want to play around with the code</a></li>
-<li><a class="reference" href="#if-you-just-want-the-latest-features-and-use-them" id="id6" name="id6">If you just want the latest features and use them</a></li>
+<li><a class="reference internal" href="#if-you-want-to-play-around-with-the-code" id="id5">If you want to play around with the code</a></li>
+<li><a class="reference internal" href="#if-you-just-want-the-latest-features-and-use-them" id="id6">If you just want the latest features and use them</a></li>
 </ul>
 </li>
-<li><a class="reference" href="#documentation" id="id7" name="id7">Documentation</a></li>
+<li><a class="reference internal" href="#documentation" id="id7">Documentation</a></li>
 </ul>
       </div>
       
       <p>Werkzeug requires at least Python 2.3 to work correctly.</p>
-<div class="section">
-<h3 id="installing-a-released-version">Installing a released version</h3>
-<div class="section">
-<h4 id="as-a-python-egg-via-easy-install">As a Python egg (via easy_install)</h4>
-<p>You can install the most recent Werkzeug version using <a class="reference" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a>:</p>
+<div class="section" id="installing-a-released-version">
+<h3>Installing a released version</h3>
+<div class="section" id="as-a-python-egg-via-easy-install">
+<h4>As a Python egg (via easy_install)</h4>
+<p>You can install the most recent Werkzeug version using <a class="reference external" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a>:</p>
 <div class="syntax"><pre><span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">Werkzeug</span>
 </pre></div>
 <p>This will install a Werkzeug egg in your Python installation&#8217;s <cite>site-packages</cite>
 directory.</p>
 </div>
-<div class="section">
-<h4 id="from-the-tarball-release">From the tarball release</h4>
+<div class="section" id="from-the-tarball-release">
+<h4>From the tarball release</h4>
 <ol class="arabic simple">
-<li>Download the most recent tarball from the <a class="reference" href="http://werkzeug.pocoo.org/download.html">download page</a>.</li>
+<li>Download the most recent tarball from the <a class="reference external" href="http://werkzeug.pocoo.org/download.html">download page</a>.</li>
 <li>Unpack the tarball.</li>
 <li><tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt></li>
 </ol>
 <p>Note that the last command will automatically download and install
-<a class="reference" href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a> if you don&#8217;t already have it installed.  This requires a working
+<a class="reference external" href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a> if you don&#8217;t already have it installed.  This requires a working
 Internet connection.</p>
 <p>This will install Werkzeug into your Python installation&#8217;s <cite>site-packages</cite>
 directory.</p>
 </div>
 </div>
-<div class="section">
-<h3 id="installing-the-development-version">Installing the development version</h3>
-<div class="section">
-<h4 id="if-you-want-to-play-around-with-the-code">If you want to play around with the code</h4>
+<div class="section" id="installing-the-development-version">
+<h3>Installing the development version</h3>
+<div class="section" id="if-you-want-to-play-around-with-the-code">
+<h4>If you want to play around with the code</h4>
 <ol class="arabic simple">
-<li>Install <a class="reference" href="http://selenic.com/mercurial/">Mercurial</a></li>
+<li>Install <a class="reference external" href="http://selenic.com/mercurial/">Mercurial</a></li>
 <li><tt class="docutils literal"><span class="pre">hg</span> <span class="pre">clone</span> <span class="pre">http://dev.pocoo.org/hg/werkzeug-main</span> <span class="pre">werkzeug</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">cd</span> <span class="pre">werkzeug</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">werkzeug</span> <span class="pre">/usr/lib/python2.X/site-packages</span></tt></li>
@@ -73,8 +73,8 @@ directory.</p>
 <p>As an alternative to step 4 you can also do <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></tt> which
 will install the package via setuptools in development mode.</p>
 </div>
-<div class="section">
-<h4 id="if-you-just-want-the-latest-features-and-use-them">If you just want the latest features and use them</h4>
+<div class="section" id="if-you-just-want-the-latest-features-and-use-them">
+<h4>If you just want the latest features and use them</h4>
 <div class="syntax"><pre><span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">Werkzeug</span><span class="o">==</span><span class="n">dev</span>
 </pre></div>
 <p>This will install a Werkzeug egg containing the latest mercurial tip in
@@ -82,8 +82,8 @@ your Python installation&#8217;s <cite>site-packages</cite> directory. Every tim
 command is run, the sources are updated from the mercurial repository.</p>
 </div>
 </div>
-<div class="section">
-<h3 id="documentation">Documentation</h3>
+<div class="section" id="documentation">
+<h3>Documentation</h3>
 <p>The egg builds include a documentation which is available in the <cite>docs</cite> folder
 of the egg. If you&#8217;re running Linux you will find the documentation here:</p>
 <div class="syntax"><pre><span class="nb">file</span><span class="p">:</span><span class="o">///</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python2</span><span class="o">.</span><span class="n">X</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">Werkzeug</span><span class="o">-</span><span class="n">Y</span><span class="o">.</span><span class="n">Z</span><span class="o">-</span><span class="n">py2</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">egg</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">index</span><span class="o">.</span><span class="n">html</span>

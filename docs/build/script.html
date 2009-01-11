@@ -19,11 +19,11 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#basic-usage" id="id1" name="id1">Basic Usage</a></li>
-<li><a class="reference" href="#using-the-scripts" id="id2" name="id2">Using The Scripts</a></li>
-<li><a class="reference" href="#writing-actions" id="id3" name="id3">Writing Actions</a></li>
-<li><a class="reference" href="#action-discovery" id="id4" name="id4">Action Discovery</a></li>
-<li><a class="reference" href="#example-scripts" id="id5" name="id5">Example Scripts</a></li>
+        <ul><li><a class="reference internal" href="#basic-usage" id="id1">Basic Usage</a></li>
+<li><a class="reference internal" href="#using-the-scripts" id="id2">Using The Scripts</a></li>
+<li><a class="reference internal" href="#writing-actions" id="id3">Writing Actions</a></li>
+<li><a class="reference internal" href="#action-discovery" id="id4">Action Discovery</a></li>
+<li><a class="reference internal" href="#example-scripts" id="id5">Example Scripts</a></li>
 </ul>
       </div>
       
@@ -33,8 +33,8 @@ imports, starting the development server, initializing the database or
 something similar.</p>
 <p>For that purpose werkzeug provides the <cite>werkzeug.script</cite> module which
 helps you writing such scripts.</p>
-<div class="section">
-<h3 id="basic-usage">Basic Usage</h3>
+<div class="section" id="basic-usage">
+<h3>Basic Usage</h3>
 <p>The following snippet is roughly the same in every werkzeug script:</p>
 <div class="syntax"><pre><span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
@@ -61,8 +61,8 @@ factory functions that create such commands:</p>
 <span class="n">action_shell</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">make_shell</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;app&#39;</span><span class="p">:</span> <span class="n">make_app</span><span class="p">()})</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="using-the-scripts">Using The Scripts</h3>
+<div class="section" id="using-the-scripts">
+<h3>Using The Scripts</h3>
 <p>The script from above can be used like this from the shell now:</p>
 <div class="syntax"><pre>$ ./manage.py --help
 $ ./manage.py runserver localhost 8080 --debugger --no-reloader
@@ -72,8 +72,8 @@ $ ./manage.py shell
 <p>As you can see it&#8217;s possible to pass parameters as positional arguments
 or as named parameters, pretty much like Python function calls.</p>
 </div>
-<div class="section">
-<h3 id="writing-actions">Writing Actions</h3>
+<div class="section" id="writing-actions">
+<h3>Writing Actions</h3>
 <p>Writing new action functions is pretty straightforward.  All you have to do is
 to name the function <cite>action_COMMAND</cite> and it will be available as
 <cite>./manage.py COMMAND</cite>.  The docstring of the function is used for the help
@@ -88,8 +88,8 @@ value:</p>
     <span class="o">...</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="action-discovery">Action Discovery</h3>
+<div class="section" id="action-discovery">
+<h3>Action Discovery</h3>
 <p>Per default, the <cite>run</cite> function looks up variables in the current locals.
 That means if no arguments are provided, it implicitly assumes this call:</p>
 <div class="syntax"><pre><span class="n">script</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="nb">locals</span><span class="p">(),</span> <span class="s">&#39;action_&#39;</span><span class="p">)</span>
@@ -103,9 +103,9 @@ empty string and pass a dict with functions:</p>
 <span class="p">),</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="section">
-<h3 id="example-scripts">Example Scripts</h3>
-<p>In the Werkzeug <a class="reference" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">example folder</a> there are some <tt class="docutils literal"><span class="pre">./manage-APP.py</span></tt> scripts
+<div class="section" id="example-scripts">
+<h3>Example Scripts</h3>
+<p>In the Werkzeug <a class="reference external" href="http://dev.pocoo.org/projects/werkzeug/browser/examples">example folder</a> there are some <tt class="docutils literal"><span class="pre">./manage-APP.py</span></tt> scripts
 using <cite>werkzeug.script</cite>.</p>
 </div>
 

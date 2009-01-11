@@ -19,18 +19,18 @@
       
       <div class="toc">
         <h4>Table of Contents</h4>
-        <ul><li><a class="reference" href="#what-is-wsgi" id="id1" name="id1">What is WSGI?</a></li>
-<li><a class="reference" href="#writing-a-wsgi-application" id="id2" name="id2">Writing a WSGI Application</a></li>
-<li><a class="reference" href="#adding-interactive-elements" id="id3" name="id3">Adding Interactive Elements</a></li>
-<li><a class="reference" href="#that-sucks" id="id4" name="id4">That Sucks!</a></li>
-<li><a class="reference" href="#debugging-it" id="id5" name="id5">Debugging It</a></li>
+        <ul><li><a class="reference internal" href="#what-is-wsgi" id="id1">What is WSGI?</a></li>
+<li><a class="reference internal" href="#writing-a-wsgi-application" id="id2">Writing a WSGI Application</a></li>
+<li><a class="reference internal" href="#adding-interactive-elements" id="id3">Adding Interactive Elements</a></li>
+<li><a class="reference internal" href="#that-sucks" id="id4">That Sucks!</a></li>
+<li><a class="reference internal" href="#debugging-it" id="id5">Debugging It</a></li>
 </ul>
       </div>
       
-      <p>New to Werkzeug or even <a class="reference" href="http://www.python.org/dev/peps/pep-0333/">WSGI</a>? This part of the documentation covers the
+      <p>New to Werkzeug or even <a class="reference external" href="http://www.python.org/dev/peps/pep-0333/">WSGI</a>? This part of the documentation covers the
 low-level parts of Werkzeug that are in fact just plain WSGI.</p>
-<div class="section">
-<h3 id="what-is-wsgi">What is WSGI?</h3>
+<div class="section" id="what-is-wsgi">
+<h3>What is WSGI?</h3>
 <p>Basically WSGI is an interface between web servers and web applications.
 We&#8217;ll explain the mechanics of WSGI below, but to sum it up WSGI lets you
 develop rich web application without the need to know about your server
@@ -47,8 +47,8 @@ tiny wrapper around WSGI, thus you don&#8217;t lose any functionally unlike some
 other implementations that abstract more.  If you don&#8217;t require all the power
 of WSGI you can choose a higher-level implementation like Django.</p>
 </div>
-<div class="section">
-<h3 id="writing-a-wsgi-application">Writing a WSGI Application</h3>
+<div class="section" id="writing-a-wsgi-application">
+<h3>Writing a WSGI Application</h3>
 <p>The first part is about how to use WSGI without Werkzeug.  You can read
 the PEP (:pep:333) that defines it, but we&#8217;ll do a very brief summary:</p>
 <ul>
@@ -74,7 +74,7 @@ represent the input stream.</p>
 <p>Now you have an application, but how can you start it? From Python 2.5, the
 stdlib contains a WSGI server called <cite>wsgiref</cite>; for Python 2.4 and lower you
 have to install that on your own.  There are also other standalone
-implementations which you can find at <a class="reference" href="http://www.wsgi.org/">wsgi.org</a>.</p>
+implementations which you can find at <a class="reference external" href="http://www.wsgi.org/">wsgi.org</a>.</p>
 <p>To start the application as standalone server, all you have to do is adding
 this start hook to the file:</p>
 <div class="syntax"><pre><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
@@ -88,8 +88,8 @@ this start hook to the file:</p>
 modules like flup (provides a bridge to Apache and other webservers via
 FastCGI and similar protocols) without altering the code.</p>
 </div>
-<div class="section">
-<h3 id="adding-interactive-elements">Adding Interactive Elements</h3>
+<div class="section" id="adding-interactive-elements">
+<h3>Adding Interactive Elements</h3>
 <p>Let&#8217;s extend the example from above so that we say <tt class="docutils literal"><span class="pre">Hello</span> <span class="pre">John</span></tt> if the user
 visits <tt class="docutils literal"><span class="pre">http://localhost:5000/?name=John</span></tt>:</p>
 <div class="syntax"><pre><span class="kn">from</span> <span class="nn">cgi</span> <span class="kn">import</span> <span class="n">parse_qs</span><span class="p">,</span> <span class="n">escape</span>
@@ -101,8 +101,8 @@ visits <tt class="docutils literal"><span class="pre">http://localhost:5000/?nam
 </pre></div>
 <p>Basically we just combined the python CGI module with our WSGI application.</p>
 </div>
-<div class="section">
-<h3 id="that-sucks">That Sucks!</h3>
+<div class="section" id="that-sucks">
+<h3>That Sucks!</h3>
 <p>Indeed it does.  It&#8217;s neither fun to work with nor does it look clean and
 simple.  And that&#8217;s where utilities like Werkzeug come into play. Werkzeug,
 for example, lets you easily create unicode-aware applications (in fact it
@@ -170,12 +170,12 @@ URL.  The return value of the response is then called as WSGI application.</p>
 one of the template engines that are available for Python.  But for the simple
 example that should be enough.</p>
 </div>
-<div class="section">
-<h3 id="debugging-it">Debugging It</h3>
+<div class="section" id="debugging-it">
+<h3>Debugging It</h3>
 <p>You probably have had a typo in one of the examples above. In that case you
 don&#8217;t have to use the error output from the <cite>wsgiref</cite> server. There are some
 excellent debugging systems for WSGI, and one of them is shipped with Werkzeug
-and explained in the <a class="reference" href="debug.html">debug system</a> docs.</p>
+and explained in the <a class="reference external" href="debug.html">debug system</a> docs.</p>
 </div>
 
       <div style="clear:both"></div>
