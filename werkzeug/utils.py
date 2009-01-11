@@ -1224,8 +1224,8 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
         fp=environ['wsgi.input'],
         environ={
             'REQUEST_METHOD':           environ['REQUEST_METHOD'],
-            'CONTENT_TYPE':             environ['CONTENT_TYPE'],
-            'CONTENT_LENGTH':           environ['CONTENT_LENGTH'],
+            'CONTENT_TYPE':             environ.get('CONTENT_TYPE',''),
+            'CONTENT_LENGTH':           environ.get('CONTENT_LENGTH',''),
             'werkzeug.stream_factory':  stream_factory
         },
         keep_blank_values=True
