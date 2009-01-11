@@ -792,7 +792,7 @@ class EnvironHeaders(Headers):
 
     def linked(cls, environ):
         raise TypeError('%r object is always linked to environment, '
-                        'no separate initializer' % self.__class__.__name__)
+                        'no separate initializer' % cls.__name__)
     linked = classmethod(linked)
 
     def __eq__(self, other):

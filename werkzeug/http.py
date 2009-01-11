@@ -29,7 +29,7 @@ try:
     frozenset = frozenset
 except NameError:
     from sets import Set as set, ImmutableSet as frozenset
-from werkzeug._internal import _patch_wrapper, _UpdateDict, HTTP_STATUS_CODES
+from werkzeug._internal import _UpdateDict, HTTP_STATUS_CODES
 
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
@@ -481,7 +481,7 @@ class Authorization(dict):
         """Indicates what "quality of protection" the client has applied to
         the message for HTTP digest auth."""
         def on_update(header_set):
-            if not header_set and name in self:
+            if not header_set and 'qop' in self:
                 del self['qop']
             elif header_set:
                 self['qop'] = header_set.to_header()

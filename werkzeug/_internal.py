@@ -13,7 +13,7 @@ import inspect
 from weakref import WeakKeyDictionary
 from cStringIO import StringIO
 from Cookie import BaseCookie, Morsel, CookieError
-from time import asctime, gmtime, time
+from time import gmtime
 from datetime import datetime
 
 
@@ -184,6 +184,7 @@ def _decode_unicode(value, charset, errors):
 
 def _iter_modules(path):
     """Iterate over all modules in a package."""
+    import os
     import pkgutil
     if hasattr(pkgutil, 'iter_modules'):
         for importer, modname, ispkg in pkgutil.iter_modules(path):

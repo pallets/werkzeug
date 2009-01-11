@@ -15,7 +15,6 @@
 """
 import sys
 import re
-from types import InstanceType
 from traceback import format_exception_only
 try:
     from collections import deque

@@ -13,7 +13,7 @@ try:
     from simplejson import dumps
 except ImportError:
     def dumps(*args):
-        raise RuntimeErrr('simplejson required for jsrouting')
+        raise RuntimeError('simplejson required for jsrouting')
 
 from inspect import getmro
 from werkzeug.minitmpl import Template

@@ -27,7 +27,6 @@ from werkzeug.wrappers import Request as RequestBase, Response as ResponseBase
 from werkzeug.templates import Template
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RequestRedirect
-from werkzeug.contrib.sessions import FilesystemSessionStore
 
 __all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader',
            'GenshiTemplateLoader', 'Application']

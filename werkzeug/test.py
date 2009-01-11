@@ -51,7 +51,6 @@ from random import random
 from urllib import urlencode
 from cStringIO import StringIO
 from mimetypes import guess_type
-from werkzeug.wrappers import BaseResponse
 from werkzeug.utils import create_environ, run_wsgi_app
 
 

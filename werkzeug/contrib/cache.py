@@ -261,7 +261,7 @@ class MemcachedCache(BaseCache):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
         if self.key_prefix:
-            key = key_prefix + key
+            key = self.key_prefix + key
         self._client.decr(key, delta)
 
 
@@ -291,7 +291,7 @@ class FileSystemCache(BaseCache):
             for idx, key in enumerate(entries):
                 try:
                     f = file(self._get_filename(key))
-                    if pickle.load(f) > now and idx % 3 != 0:
+                    if load(f) > now and idx % 3 != 0:
                         f.close()
                         continue
                 except:

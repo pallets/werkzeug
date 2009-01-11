@@ -158,7 +158,7 @@ class IterI(IterIO):
         self.pos += len(s)
         self._buffer.append(s)
 
-    def writelines(slf, list):
+    def writelines(self, list):
         self.write(''.join(list))
 
     def flush(self):

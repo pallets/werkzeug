@@ -76,9 +76,8 @@ import cPickle as pickle
 from hmac import new as hmac
 from datetime import datetime
 from time import time, mktime, gmtime
-from random import Random
 from werkzeug import url_quote_plus, url_unquote_plus
-from werkzeug.contrib.sessions import ModificationTrackingDict, generate_key
+from werkzeug.contrib.sessions import ModificationTrackingDict
 
 
 # rather ugly way to import the correct hash method.  Because

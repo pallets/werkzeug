@@ -95,7 +95,6 @@
                              Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 """
-import sys
 import re
 from urlparse import urljoin
 from itertools import izip

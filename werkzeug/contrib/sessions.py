@@ -50,7 +50,7 @@ import re
 import os
 from os import path
 from time import time
-from random import Random, random
+from random import random
 try:
     from hashlib import sha1
 except ImportError:
