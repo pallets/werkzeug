@@ -680,6 +680,8 @@ class Headers(object):
         >>> d.add('Content-Type', 'text/plain')
         >>> d.add('Content-Disposition', 'attachment', filename='foo.png')
 
+        *New in 0.4.1*: keyword arguments were added for wsgiref
+        compatibility.
         """
         if not _kw:
             self._list.append((_key, _value))
