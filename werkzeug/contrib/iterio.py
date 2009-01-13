@@ -197,18 +197,22 @@ class IterO(IterIO):
         if mode == 1:
             pos += self.pos
         elif mode == 2:
-            pos += len(self._buf)
+            self.read()
+            self.pos = min(self.pos, self.pos + pos)
+            return
+        elif mode != 0:
+            raise IOError('Invalid argument')
+        buf = []
         try:
-            buf = []
             tmp_end_pos = len(self._buf)
             while pos > tmp_end_pos:
                 item = self._gen.next()
                 tmp_end_pos += len(item)
                 buf.append(item)
-            if buf:
-                self._buf += ''.join(buf)
         except StopIteration:
             pass
+        if buf:
+            self._buf += ''.join(buf)
         self.pos = max(0, pos)
 
     def read(self, n=-1):
@@ -216,7 +220,9 @@ class IterO(IterIO):
             raise ValueError('I/O operation on closed file')
         if n < 0:
             self._buf += ''.join(self._gen)
-            return self._buf[self.pos:]
+            result = self._buf[self.pos:]
+            self.pos += len(result)
+            return result
         new_pos = self.pos + n
         buf = []
         try:
@@ -233,7 +239,7 @@ class IterO(IterIO):
         try:
             return self._buf[self.pos:new_pos]
         finally:
-            self.pos = new_pos
+            self.pos = min(new_pos, len(self._buf))
 
     def readline(self, length=None):
         if self.closed:
@@ -244,10 +250,10 @@ class IterO(IterIO):
             pos = self.pos
             while nl_pos < 0:
                 item = self._gen.next()
-                pos2 = item.find('\n', pos)
+                local_pos = item.find('\n')
                 buf.append(item)
-                if pos2 >= 0:
-                    nl_pos = pos
+                if local_pos >= 0:
+                    nl_pos = pos + local_pos
                     break
                 pos += len(item)
         except StopIteration:
@@ -263,7 +269,7 @@ class IterO(IterIO):
         try:
             return self._buf[self.pos:new_pos]
         finally:
-            self.pos = new_pos
+            self.pos = min(new_pos, len(self._buf))
 
     def readlines(self, sizehint=0):
         total = 0
