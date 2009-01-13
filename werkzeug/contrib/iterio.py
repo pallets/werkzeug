@@ -218,17 +218,17 @@ class IterO(IterIO):
             self._buf += ''.join(self._gen)
             return self._buf[self.pos:]
         new_pos = self.pos + n
+        buf = []
         try:
-            buf = []
             tmp_end_pos = len(self._buf)
             while new_pos > tmp_end_pos:
                 item = self._gen.next()
                 tmp_end_pos += len(item)
                 buf.append(item)
-            if buf:
-                self._buf += ''.join(buf)
         except StopIteration:
             pass
+        if buf:
+            self._buf += ''.join(buf)
         new_pos = max(0, new_pos)
         try:
             return self._buf[self.pos:new_pos]

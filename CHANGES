@@ -5,6 +5,8 @@ Version 0.5
 -----------
 (codename yet to be selected, release date unknown)
 
+- fixed a bug in `contrib.IterIO`
+
 Version 0.4.1
 -------------
 (Bugfix release, releaesd on January 11th 2009)
