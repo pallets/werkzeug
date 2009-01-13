@@ -20,10 +20,17 @@ def test_accept():
 
     a = parse_accept_header('text/xml,application/xml,application/xhtml+xml,'
                             'text/html;q=0.9,text/plain;q=0.8,'
-                            'image/png,*/*;q=0.5')
-    assert a['missing'] == 0
+                            'image/png,*/*;q=0.5', MIMEAccept)
+    raises(ValueError, lambda: a['missing'])
     assert a['image/png'] == 1
     assert a['text/plain'] == 0.8
+    assert a['foo/bar'] == 0.5
+    assert a[a.find('foo/bar')] == ('*/*', 0.5)
+
+    a = parse_accept_header('ISO-8859-1,utf-8;q=0.7,*;q=0.7', CharsetAccept)
+    assert a['iso-8859-1'] == a['iso8859-1'] == 1
+    assert a['UTF8'] == 0.7
+    assert a['ebcdic'] == 0.7
 
 
 def test_set_header():

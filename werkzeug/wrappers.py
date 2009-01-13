@@ -27,7 +27,8 @@ from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
-     parse_www_authenticate_header, remove_entity_headers
+     parse_www_authenticate_header, remove_entity_headers, \
+     MIMEAccept, CharsetAccept
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -590,12 +591,13 @@ class AcceptMixin(object):
 
     def accept_mimetypes(self):
         """List of mimetypes this client supports."""
-        return parse_accept_header(self.environ.get('HTTP_ACCEPT'))
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT'), MIMEAccept)
     accept_mimetypes = cached_property(accept_mimetypes)
 
     def accept_charsets(self):
         """List of charsets this client supports."""
-        return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'))
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'),
+                                   CharsetAccept)
     accept_charsets = cached_property(accept_charsets)
 
     def accept_encodings(self):
@@ -750,18 +752,18 @@ class ResponseStream(object):
     iterable of the response object.
     """
 
-    closed = False
-    mode = 'wb'
+    mode = 'wb+'
 
     def __init__(self, response):
         self.response = response
+        self.closed = False
 
     def write(self, value):
         if self.closed:
             raise ValueError('I/O operation on closed file')
         buf = self.response.response
         if not isinstance(buf, list):
-            self.response.response = buf = list(self.response.response)
+            self.response.response = buf = list(buf)
         buf.append(value)
 
     def writelines(self, seq):

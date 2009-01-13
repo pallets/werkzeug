@@ -18,6 +18,7 @@
 """
 import re
 import rfc822
+import codecs
 from urllib2 import parse_http_list as _parse_list_header
 from datetime import datetime
 try:
@@ -60,25 +61,32 @@ class Accept(list):
             values.reverse()
             list.__init__(self, [(a, b) for b, a in values])
 
+    def _value_matches(self, value, item):
+        """Check if a value matches a given accept item."""
+        return item == '*' or item.lower() == value.lower()
+
     def __getitem__(self, key):
         """Beside index lookup (getting item n) you can also pass it a string
         to get the quality for the item.  If the item is not in the list, the
         returned quality is ``0``.
         """
         if isinstance(key, basestring):
-            for value in self:
-                if value[0] == key:
-                    return value[1]
+            for item, quality in self:
+                if self._value_matches(key, item):
+                    return quality
             return 0
         return list.__getitem__(self, key)
 
-    def __contains__(self, key):
-        return self.find(key) > -1
+    def __contains__(self, value):
+        for item, quality in self:
+            if self._value_matches(value, item):
+                return True
+        return False
 
     def __repr__(self):
-        return '%s(%s)' % (
+        return '%s([%s])' % (
             self.__class__.__name__,
-            list.__repr__(self)
+            ', '.join('(%r, %s)' % (x, y) for x, y in self)
         )
 
     def index(self, key):
@@ -91,15 +99,15 @@ class Accept(list):
     def find(self, key):
         """Get the position of an entry or return -1"""
         if isinstance(key, basestring):
-            for idx, value in enumerate(self):
-                if value[0] == key:
+            for idx, (item, quality) in enumerate(self):
+                if self._value_matches(key, item):
                     return idx
             return -1
         return list.find(self, key)
 
     def values(self):
         """Return a list of the values, not the qualities."""
-        return [x[0] for x in self]
+        return list(self.itervalues())
 
     def itervalues(self):
         """Iterate over all values."""
@@ -108,8 +116,68 @@ class Accept(list):
 
     def best(self):
         """The best match as value."""
-        return self and self[0][0] or None
+        if self:
+            return self[0][0]
     best = property(best)
+
+
+class MIMEAccept(Accept):
+    """Like `Accept` but with special methods and behavior for mimetypes."""
+
+    def _value_matches(self, value, item):
+        def _normalize(x):
+            x = x.lower()
+            return x == '*' and ('*', '*') or x.split('/', 1)
+
+        # this is from the application which is trusted.  to avoid developer
+        # frustration we actually check these for valid values
+        if '/' not in value:
+            raise ValueError('invalid mimetype %r' % value)
+        value_type, value_subtype = _normalize(value)
+        if value_type == '*' and value_subtype != '*':
+            raise ValueError('invalid mimetype %r' % value)
+
+        if '/' not in item:
+            return False
+        item_type, item_subtype = _normalize(item)
+        if item_type == '*' and item_subtype != '*':
+            return False
+        return (
+            (item_type == item_subtype == '*' or
+             value_type == value_subtype == '*') or
+            (item_type == value_type and (item_subtype == '*' or
+                                          value_subtype == '*' or
+                                          item_subtype == value_subtype))
+        )
+
+    @property
+    def accept_html(self):
+        """True if this object accepts HTML."""
+        return (
+            'text/html' in self or
+            'application/xhtml+xml' in self or
+            self.accept_xhtml
+        )
+
+    @property
+    def accept_xhtml(self):
+        """True if this object accepts XHTML."""
+        return (
+            'application/xhtml+xml' in self or
+            'application/xml' in self
+        )
+
+
+class CharsetAccept(Accept):
+    """Like Accept but with normalization for charsets."""
+
+    def _value_matches(self, value, item):
+        def _normalize(name):
+            try:
+                return codecs.lookup(name).name
+            except LookupError:
+                return name.lower()
+        return item == '*' or _normalize(value) == _normalize(item)
 
 
 class HeaderSet(object):
@@ -681,7 +749,7 @@ def parse_dict_header(value):
     return result
 
 
-def parse_accept_header(value):
+def parse_accept_header(value, cls=Accept):
     """Parses an HTTP Accept-* header.  This does not implement a complete
     valid algorithm but one that supports at least value and quality
     extraction.
@@ -690,7 +758,7 @@ def parse_accept_header(value):
     tuples sorted by the quality with some additional accessor methods).
     """
     if not value:
-        return Accept(None)
+        return cls(None)
     result = []
     for match in _accept_re.finditer(value):
         quality = match.group(2)
@@ -699,7 +767,7 @@ def parse_accept_header(value):
         else:
             quality = max(min(float(quality), 1), 0)
         result.append((match.group(1), quality))
-    return Accept(result)
+    return cls(result)
 
 
 def parse_cache_control_header(value, on_update=None):

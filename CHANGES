@@ -6,6 +6,9 @@ Version 0.5
 (codename yet to be selected, release date unknown)
 
 - fixed a bug in `contrib.IterIO`
+- added `MIMEAccept` and `CharsetAccept` that work like the regular
+  `Accept` but have extra special normlization for mimetypes and
+  charsets and extra convenience methods.
 
 Version 0.4.1
 -------------
