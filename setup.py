@@ -51,10 +51,10 @@ The `Werkzeug tip <http://dev.pocoo.org/hg/werkzeug-main/archive/tip.zip#egg=Wer
 is installable via `easy_install` with ``easy_install Werkzeug==dev``.
 """
 import os
-import ez_setup
-ez_setup.use_setuptools()
-
-from setuptools import setup, Feature
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 
 data_files = []
@@ -78,7 +78,6 @@ setup(
     author_email='armin.ronacher@active-4.com',
     description='The Swiss Army knife of Python web development',
     long_description=__doc__,
-    zip_safe=False,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
@@ -89,21 +88,10 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    packages=['werkzeug', 'werkzeug.debug'],
+    packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib'],
     data_files=data_files,
     package_data={
         'werkzeug.debug': ['shared/*', 'templates/*']
     },
-    features={
-        'contrib': Feature('optional contribute addon modules',
-            standard=True,
-            packages=['werkzeug.contrib']
-        )
-    },
-    platforms='any',
-    include_package_data=True,
-    extras_require={
-        'plugin': ['setuptools>=0.6a2'],
-        'wsgiref': ['wsgiref']
-    }
+    platforms='any'
 )

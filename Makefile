@@ -16,7 +16,7 @@ TESTS = \
 TEST_OPTIONS = \
 	-v \
 	--with-doctest \
-	-e '^test_app'
+	-e '^test_app$$' #skip the test_app application object which is not a test
 
 documentation:
 	@(cd docs; python ./generate.py)
