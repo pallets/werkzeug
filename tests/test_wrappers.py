@@ -18,8 +18,7 @@ from werkzeug.test import Client
 
 
 class RequestTestResponse(BaseResponse):
-    """
-    Subclass of the normal response class we use to test response
+    """Subclass of the normal response class we use to test response
     and base classes.  Has some methods to test if things in the
     response match.
     """
@@ -33,7 +32,6 @@ class RequestTestResponse(BaseResponse):
 
 
 def request_demo_app(environ, start_response):
-    """Small test app."""
     request = BaseRequest(environ)
     assert 'werkzeug.request' in environ
     start_response('200 OK', [('Content-Type', 'text/plain')])
@@ -68,6 +66,7 @@ def assert_environ(environ, method):
 
 
 def test_base_request():
+    """Base request behavior"""
     client = Client(request_demo_app, RequestTestResponse)
 
     # get requests
@@ -100,6 +99,7 @@ def test_base_request():
 
 
 def test_base_response():
+    """Base respone behavior"""
     # unicode
     response = BaseResponse(u'öäü')
     assert response.data == 'öäü'
@@ -120,6 +120,7 @@ def test_base_response():
 
 
 def test_type_forcing():
+    """Response Type forcing"""
     def wsgi_application(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return ['Hello World!']
@@ -145,6 +146,7 @@ def test_type_forcing():
 
 
 def test_accept_mixin():
+    """Accept request-wrapper mixin"""
     request = Request({
         'HTTP_ACCEPT':  'text/xml,application/xml,application/xhtml+xml,'
                         'text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
@@ -165,6 +167,7 @@ def test_accept_mixin():
 
 
 def test_etag_request_mixin():
+    """ETag request-wrapper mixin"""
     request = Request({
         'HTTP_CACHE_CONTROL':       'private, no-cache',
         'HTTP_IF_MATCH':            'w/"foo", bar, "baz"',
@@ -186,6 +189,7 @@ def test_etag_request_mixin():
 
 
 def test_user_agent_mixin():
+    """User agent request-wrapper mixin"""
     user_agents = [
         ('Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en-US; rv:1.8.1.11) '
          'Gecko/20071127 Firefox/2.0.0.11', 'firefox', 'macos', '2.0.0.11',
@@ -207,6 +211,7 @@ def test_user_agent_mixin():
 
 
 def test_etag_response_mixin():
+    """ETag response-wrapper mixin"""
     response = Response('Hello World')
     assert response.get_etag() == (None, None)
     response.add_etag()
@@ -224,6 +229,7 @@ def test_etag_response_mixin():
 
 
 def test_response_stream_mixin():
+    """Response stream response-wrapper mixin"""
     response = Response()
     response.stream.write('Hello ')
     response.stream.write('World!')
@@ -232,6 +238,7 @@ def test_response_stream_mixin():
 
 
 def test_common_response_descriptors_mixin():
+    """Common response descriptors response-wrapper mixin"""
     response = Response()
     response.mimetype = 'text/html'
     assert response.mimetype == 'text/html'
@@ -269,6 +276,7 @@ def test_common_response_descriptors_mixin():
 
 
 def test_shallow_mode():
+    """Request object shallow mode"""
     request = Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
     assert request.args['foo'] == 'bar'
     assert_raises(RuntimeError, lambda: request.form['foo'])

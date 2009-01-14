@@ -16,7 +16,7 @@ except ImportError:
         raise RuntimeError('simplejson required for jsrouting')
 
 from inspect import getmro
-from werkzeug.minitmpl import Template
+from werkzeug.templates import Template
 from werkzeug.routing import NumberConverter
 
 

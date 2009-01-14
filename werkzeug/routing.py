@@ -13,22 +13,21 @@
     build URLs.
 
     Here a simple example that creates an URL map for an application with
-    two subdomains (www and kb) and some URL rules::
+    two subdomains (www and kb) and some URL rules:
 
-        m = Map([
-            # Static URLs
-            Rule('/', endpoint='static/index'),
-            Rule('/about', endpoint='static/about'),
-            Rule('/help', endpoint='static/help'),
-
-            # Knowledge Base
-            Subdomain('kb', [
-                Rule('/', endpoint='kb/index'),
-                Rule('/browse/', endpoint='kb/browse'),
-                Rule('/browse/<int:id>/', endpoint='kb/browse'),
-                Rule('/browse/<int:id>/<int:page>', endpoint='kb/browse')
-            ])
-        ], default_subdomain='www')
+    >>> m = Map([
+    ...     # Static URLs
+    ...     Rule('/', endpoint='static/index'),
+    ...     Rule('/about', endpoint='static/about'),
+    ...     Rule('/help', endpoint='static/help'),
+    ...     # Knowledge Base
+    ...     Subdomain('kb', [
+    ...         Rule('/', endpoint='kb/index'),
+    ...         Rule('/browse/', endpoint='kb/browse'),
+    ...         Rule('/browse/<int:id>/', endpoint='kb/browse'),
+    ...         Rule('/browse/<int:id>/<int:page>', endpoint='kb/browse')
+    ...     ])
+    ... ], default_subdomain='www')
 
     If the application doesn't use subdomains it's perfectly fine to not set
     the default subdomain and use the `Subdomain` rule factory.  The endpoint
@@ -48,11 +47,13 @@
     >>> c.build("kb/browse", dict(id=42, page=3))
     'http://kb.example.com/browse/42/3'
     >>> c.build("static/about")
-    u'/about'
-    >>> c.build("static/about", subdomain="kb")
-    'http://www.example.com/about'
+    '/about'
     >>> c.build("static/index", force_external=True)
     'http://www.example.com/'
+
+    >>> c = m.bind('example.com', subdomain='kb')
+    >>> c.build("static/about")
+    'http://www.example.com/about'
 
     The first argument to bind is the server name *without* the subdomain.
     Per default it will assume that the script is mounted on the root, but
@@ -1126,7 +1127,6 @@ class MapAdapter(object):
 
         Here is a small example for matching:
 
-        >>> from werkzeug.routing import Map, Rule
         >>> m = Map([
         ...     Rule('/', endpoint='index'),
         ...     Rule('/downloads/', endpoint='downloads/index'), 
@@ -1143,11 +1143,11 @@ class MapAdapter(object):
         >>> urls.match("/downloads")
         Traceback (most recent call last):
           ...
-        werkzeug.routing.RequestRedirect: http://example.com/downloads/
+        RequestRedirect: http://example.com/downloads/
         >>> urls.match("/missing")
         Traceback (most recent call last):
           ...
-        werkzeug.routing.NotFound: /missing
+        NotFound: 404 Not Found
         """
         self.map.update()
         if path_info is None:
@@ -1226,12 +1226,14 @@ class MapAdapter(object):
         The `build` function also accepts an argument called `force_external`
         which, if you set it to `True` will force external URLs. Per default
         external URLs (include the server name) will only be used if the
-        target URL is on a
-        different subdomain.
+        target URL is on a different subdomain.
 
-        With the same map as in the example above this code generates some
-        target URLs:
-
+        >>> m = Map([
+        ...     Rule('/', endpoint='index'),
+        ...     Rule('/downloads/', endpoint='downloads/index'), 
+        ...     Rule('/downloads/<int:id>', endpoint='downloads/show')
+        ... ])
+        >>> urls = m.bind("example.com", "/")
         >>> urls.build("index", {})
         '/'
         >>> urls.build("downloads/show", {'id': 42})

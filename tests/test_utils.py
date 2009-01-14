@@ -19,6 +19,7 @@ from werkzeug.test import Client
 
 
 def test_import_patch():
+    """Import patch"""
     import werkzeug
     from werkzeug import __all__ as public_methods
     for name in public_methods:
@@ -26,6 +27,7 @@ def test_import_patch():
 
 
 def test_multidict():
+    """Multidict behavior"""
     md = MultiDict()
     assert isinstance(md, dict)
 
@@ -125,6 +127,7 @@ def test_multidict():
 
 
 def test_combined_multidict():
+    """Combined multidict behavior"""
     d1 = MultiDict([('foo', '1')])
     d2 = MultiDict([('bar', '2'), ('bar', '3')])
     d = CombinedMultiDict([d1, d2])
@@ -218,6 +221,7 @@ def test_headers():
 
 
 def test_cached_property():
+    """Cached property decorator"""
     foo = []
     class A(object):
         def prop(self):
@@ -247,6 +251,7 @@ def test_cached_property():
 
 
 def test_environ_property():
+    """Environ property descriptor"""
     class A(object):
         environ = {'string': 'abc', 'number': '42'}
 
@@ -273,6 +278,7 @@ def test_environ_property():
 
 
 def test_quoting():
+    """URL quoting"""
     assert url_quote(u'\xf6\xe4\xfc') == '%C3%B6%C3%A4%C3%BC'
     assert url_unquote(url_quote(u'#%="\xf6')) == u'#%="\xf6'
     assert url_quote_plus('foo bar') == 'foo+bar'
@@ -283,27 +289,32 @@ def test_quoting():
 
 
 def test_sorted_url_encode():
+    """Optional sorted URL encoding"""
     assert url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
     assert url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
                       key=lambda x: x[0].lower()) == 'A=1&a=2&B=3&b=4'
 
 
-test_href_tool = '>>> from werkzeug import Href\n\n' + Href.__doc__
-
-
 def test_escape():
+    """XML/HTML escaping"""
+    class Foo(str):
+        def __html__(self):
+            return unicode(self)
     assert escape(None) == ''
     assert escape(42) == '42'
     assert escape('<>') == '&lt;&gt;'
     assert escape('"foo"') == '"foo"'
     assert escape('"foo"', True) == '&quot;foo&quot;'
+    assert escape(Foo('<foo>')) == '<foo>'
 
 
 def test_unescape():
+    """XML/HTML unescaping"""
     assert unescape('&lt;&auml;&gt;') == u'<ä>'
 
 
 def test_create_environ():
+    """Environment creation helper"""
     env = create_environ('/foo?bar=baz', 'http://example.org/')
     expected = {
         'wsgi.multiprocess':    False,
@@ -329,6 +340,7 @@ def test_create_environ():
 
 
 def test_shared_data_middleware():
+    """Shared data middleware"""
     def null_application(environ, start_response):
         start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
         yield 'NOT FOUND'
@@ -348,6 +360,7 @@ def test_shared_data_middleware():
 
 
 def test_run_wsgi_app():
+    """WSGI test-runner"""
     def foo(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/plain')])
         yield '1'
@@ -392,12 +405,8 @@ def test_run_wsgi_app():
     assert len(got_close) == 2
 
 
-def test_date_funcs():
-    assert http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
-    assert cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
-
-
 def test_get_host():
+    """Host lookup"""
     env = {'HTTP_X_FORWARDED_HOST': 'example.org',
            'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
     assert get_host(env) == 'example.org'
@@ -405,21 +414,8 @@ def test_get_host():
         == 'example.org'
 
 
-test_get_current_url = '''
->>> from werkzeug.utils import get_current_url as x, create_environ
->>> env = create_environ('/foo?a=b', 'http://example.org/blub')
->>> x(env)
-'http://example.org/blub/foo?a=b'
->>> x(env, root_only=True)
-'http://example.org/blub/'
->>> x(env, host_only=True)
-'http://example.org/'
->>> x(env, strip_querystring=True)
-'http://example.org/blub/foo'
-'''
-
-
 def test_dates():
+    """Date formatting"""
     assert cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
     assert cookie_date(datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
     assert http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
@@ -427,6 +423,7 @@ def test_dates():
 
 
 def test_cookies():
+    """Cookie parsing"""
     assert parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
                         'c762809248d4beed; a=42') == {
         'CP':           u'null*',
@@ -441,6 +438,7 @@ def test_cookies():
 
 
 def test_responder():
+    """Responder decorator"""
     def foo(environ, start_response):
         return BaseResponse('Test')
     client = Client(responder(foo), BaseResponse)
@@ -450,6 +448,7 @@ def test_responder():
 
 
 def test_import_string():
+    """String based importing"""
     import cgi
     assert import_string('cgi.escape') is cgi.escape
     assert import_string('cgi:escape') is cgi.escape
@@ -460,6 +459,7 @@ def test_import_string():
 
 
 def test_find_modules():
+    """Module and package lookup"""
     assert list(find_modules('werkzeug.debug')) == \
         ['werkzeug.debug.console', 'werkzeug.debug.render',
          'werkzeug.debug.repr', 'werkzeug.debug.tbtools',
@@ -467,6 +467,7 @@ def test_find_modules():
 
 
 def test_html_builder():
+    """HTML builder"""
     assert html.p('Hello World') == '<p>Hello World</p>'
     assert html.a('Test', href='#') == '<a href="#">Test</a>'
     assert html.br() == '<br>'
@@ -483,11 +484,13 @@ def test_html_builder():
 
 
 def test_shareddatamiddleware_get_file_loader():
+    """Shared middleware file loader lookup"""
     app = SharedDataMiddleware(None, {})
     assert callable(app.get_file_loader('foo'))
 
 
 def test_validate_arguments():
+    """Function argument validator"""
     take_none = lambda: None
     take_two = lambda a, b: None
     take_two_one_default = lambda a, b=0: None
@@ -507,13 +510,13 @@ def test_validate_arguments():
 
 
 def test_parse_form_data_put_without_content():
-    '''A PUT without a Content-Type header returns empty data
+    """A PUT without a Content-Type header returns empty data
 
     Both rfc1945 and rfc2616 (1.0 and 1.1) say "Any HTTP/[1.0/1.1] message
     containing an entity-body SHOULD include a Content-Type header field
     defining the media type of that body."  In the case where either
     headers are omitted, parse_form_data should still work.
-    '''
+    """
     env = create_environ('/foo', 'http://example.org/', method='PUT')
     del env['CONTENT_TYPE']
     del env['CONTENT_LENGTH']
@@ -526,9 +529,7 @@ def test_parse_form_data_put_without_content():
 
 
 def test_parse_form_data_get_without_content():
-    """GET requests without data, content type and length should return
-    no data.
-    """
+    """GET requests without data, content type and length returns no data"""
     env = create_environ('/foo', 'http://example.org/', method='GET')
     del env['CONTENT_TYPE']
     del env['CONTENT_LENGTH']
@@ -540,6 +541,7 @@ def test_parse_form_data_get_without_content():
 
 
 def test_header_set_duplication_bug():
+    """Header duplication bug on set"""
     headers = Headers([
         ('Content-Type', 'text/html'),
         ('Foo', 'bar'),
@@ -556,6 +558,7 @@ def test_header_set_duplication_bug():
 
 
 def test_append_slash_redirect():
+    """Append slash redirect"""
     def app(env, sr):
         return append_slash_redirect(env)(env, sr)
     client = Client(app, BaseResponse)

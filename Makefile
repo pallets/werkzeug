@@ -9,11 +9,17 @@
 #
 
 TESTS = \
+	werkzeug \
 	tests \
 	tests/contrib
+
+TEST_OPTIONS = \
+	-v \
+	--with-doctest \
+	-e '^test_app'
 
 documentation:
 	@(cd docs; python ./generate.py)
 
 test:
-	@(nosetests -v $(TESTS))
+	@(nosetests $(TEST_OPTIONS) $(TESTS))

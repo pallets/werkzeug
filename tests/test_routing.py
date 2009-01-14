@@ -15,6 +15,7 @@ from werkzeug.utils import create_environ
 
 
 def test_basic_routing():
+    """Basic URL routing"""
     map = Map([
         Rule('/', endpoint='index'),
         Rule('/foo', endpoint='foo'),
@@ -50,6 +51,7 @@ NotFound: 404 Not Found
 
 
 def test_basic_building():
+    """Basic URL building"""
     map = Map([
         Rule('/', endpoint='index'),
         Rule('/foo', endpoint='foo'),
@@ -72,6 +74,7 @@ def test_basic_building():
 
 
 def test_defaults():
+    """URL routing defaults"""
     map = Map([
         Rule('/foo/', defaults={'page': 1}, endpoint='foo'),
         Rule('/foo/<int:page>', endpoint='foo')
@@ -87,6 +90,7 @@ def test_defaults():
 
 
 def test_greedy():
+    """URL routing greedy settings"""
     map = Map([
         Rule('/foo', endpoint='foo'),
         Rule('/<path:bar>', endpoint='bar'),
@@ -104,6 +108,7 @@ def test_greedy():
 
 
 def test_path():
+    """URL routing path converter behavior"""
     map = Map([
         Rule('/', defaults={'name': 'FrontPage'}, endpoint='page'),
         Rule('/Special', endpoint='special'),
@@ -134,6 +139,7 @@ def test_path():
 
 
 def test_dispatch():
+    """URL routing dispatch helper"""
     env = create_environ('/')
     map = Map([
         Rule('/', endpoint='root'),
@@ -157,6 +163,7 @@ def test_dispatch():
 
 
 def test_http_host_before_server_name():
+    """URL routing HTTP host takes precedence before server name"""
     env = {
         'HTTP_HOST':            'wiki.example.com',
         'SERVER_NAME':          'web0.example.com',
@@ -178,6 +185,7 @@ def test_http_host_before_server_name():
 
 
 def test_adapter_url_parameter_sorting():
+    """Optional adapter URL parameter sorting"""
     map = Map([Rule('/', endpoint='index')], sort_parameters=True,
               sort_key=lambda x: x[1])
     adapter = map.bind('localhost', '/')

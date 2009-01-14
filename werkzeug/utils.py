@@ -34,7 +34,7 @@ from werkzeug.http import generate_etag, parse_etags, \
      remove_entity_headers
 
 
-_format_re = re.compile(r'\$(%s|\{%s\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
+_format_re = re.compile(r'\$(?:(%s)|\{(%s)\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 _entity_re = re.compile(r'&([^;]+);')
 _missing = object()
 
@@ -121,7 +121,7 @@ class MultiDict(dict):
 
         Example:
 
-        >>> d = MultiDict(foo='42', bar='blub')
+        >>> d = MultiDict(dict(foo='42', bar='blub'))
         >>> d.get('foo', type=int)
         42
         >>> d.get('bar', -1, type=int)
@@ -162,10 +162,11 @@ class MultiDict(dict):
         you pass the values in will be shallow-copied before it is inserted in
         the dictionary.
 
-        >>> multidict.setlist('foo', ['1', '2'])
-        >>> multidict['foo']
+        >>> d = MultiDict()
+        >>> d.setlist('foo', ['1', '2'])
+        >>> d['foo']
         '1'
-        >>> multidict.getlist('foo')
+        >>> d.getlist('foo')
         ['1', '2']
         """
         dict.__setitem__(self, key, list(new_list))
@@ -1147,12 +1148,12 @@ class environ_property(_DictAccessorProperty):
     for the Werzeug request object, but also any other class with an
     environ attribute:
 
-    >>> class test_p(object):
-    ...     environ = { 'test': 'test' }
-    ...     test = environ_property('test')
-    >>> var = test_p()
+    >>> class Test(object):
+    ...     environ = {'key': 'value'}
+    ...     test = environ_property('key')
+    >>> var = Test()
     >>> var.test
-    test
+    'value'
 
     If you pass it a second value it's used as default if the key does not
     exist, the third one can be a converter that takes a value and converts
@@ -1190,7 +1191,7 @@ class HTMLBuilder(object):
 
     >>> html.p(class_='foo', *[html.a('foo', href='foo.html'), ' ',
     ...                        html.a('bar', href='bar.html')])
-    '<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
+    u'<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
 
     This class works around some browser limitations and can not be used for
     arbitrary SGML/XML generation.  For that purpose lxml and similar
@@ -1199,7 +1200,7 @@ class HTMLBuilder(object):
     Calling the builder escapes the string passed:
 
     >>> html.p(html("<foo>"))
-    '<p>&lt;foo&gt;</p>'
+    u'<p>&lt;foo&gt;</p>'
     """
 
     from htmlentitydefs import name2codepoint
@@ -1341,7 +1342,7 @@ def format_string(string, context):
     formattings have a look at the `werkzeug.template` module.
     """
     def lookup_arg(match):
-        x = context[match.group(1)]
+        x = context[match.group(1) or match.group(2)]
         if not isinstance(x, basestring):
             x = type(string)(x)
         return x
@@ -1453,12 +1454,12 @@ def url_unquote_plus(s, charset='utf-8', errors='ignore'):
 
 
 def url_fix(s, charset='utf-8'):
-    """Sometimes you get an URL by a user that just isn't a real URL because
+    r"""Sometimes you get an URL by a user that just isn't a real URL because
     it contains unsafe characters like ' ' and so on.  This function can fix
     some of the problems in a similar way browsers handle data entered by the
     user:
 
-    >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)')
+    >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
     'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
     :param charset: The target charset for the URL if the url was given as

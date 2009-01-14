@@ -14,12 +14,16 @@ from werkzeug.utils import http_date, Headers
 
 
 def test_accept():
+    """Regular accept header parsing and behavior"""
     a = parse_accept_header('en-us,ru;q=0.5')
     assert a.values() == ['en-us', 'ru']
     assert a.best == 'en-us'
     assert a.find('ru') == 1
     assert_raises(IndexError, lambda: a.index('de'))
 
+
+def test_mime_accept():
+    """MIME accept header parsing and behavior"""
     a = parse_accept_header('text/xml,application/xml,application/xhtml+xml,'
                             'text/html;q=0.9,text/plain;q=0.8,'
                             'image/png,*/*;q=0.5', MIMEAccept)
@@ -29,6 +33,9 @@ def test_accept():
     assert a['foo/bar'] == 0.5
     assert a[a.find('foo/bar')] == ('*/*', 0.5)
 
+
+def test_charset_accept():
+    """Charset accept header parsing and behavior"""
     a = parse_accept_header('ISO-8859-1,utf-8;q=0.7,*;q=0.7', CharsetAccept)
     assert a['iso-8859-1'] == a['iso8859-1'] == 1
     assert a['UTF8'] == 0.7
@@ -36,6 +43,7 @@ def test_accept():
 
 
 def test_set_header():
+    """Set header parsing and behavior"""
     hs = parse_set_header('foo, Bar, "Blah baz", Hehe')
     assert 'blah baz' in hs
     assert 'foobar' not in hs
@@ -46,16 +54,19 @@ def test_set_header():
 
 
 def test_list_header():
+    """List header parsing"""
     hl = parse_list_header('foo baz, blah')
     assert hl == ['foo baz', 'blah']
 
 
 def test_dict_header():
+    """Dict header parsing"""
     d = parse_dict_header('foo="bar baz", blah=42')
     assert d == {'foo': 'bar baz', 'blah': '42'}
 
 
 def test_cache_control_header():
+    """Cache control header parsing and behavior"""
     cc = parse_cache_control_header('max-age=0, no-cache')
     assert cc.max_age == 0
     assert cc.no_cache
@@ -76,6 +87,7 @@ def test_cache_control_header():
 
 
 def test_authorization_header():
+    """Authorization header parsing and behavior"""
     a = parse_authorization_header('Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==')
     assert a.type == 'basic'
     assert a.username == 'Aladdin'
@@ -102,6 +114,7 @@ def test_authorization_header():
 
 
 def test_www_authenticate_header():
+    """WWW Authenticate header parsing and behavior"""
     wa = parse_www_authenticate_header('Basic realm="WallyWorld"')
     assert wa.type == 'basic'
     assert wa.realm == 'WallyWorld'
@@ -122,6 +135,7 @@ def test_www_authenticate_header():
 
 
 def test_etags():
+    """ETag tools"""
     assert quote_etag('foo') == '"foo"'
     assert quote_etag('foo', True) == 'w/"foo"'
     assert unquote_etag('"foo"') == ('foo', False)
@@ -137,6 +151,7 @@ def test_etags():
 
 
 def test_parse_date():
+    """Date parsing"""
     assert parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(1994, 11, 6, 8, 49, 37)
     assert parse_date('Sunday, 06-Nov-94 08:49:37 GMT') == datetime(1994, 11, 6, 8, 49, 37)
     assert parse_date(' Sun Nov  6 08:49:37 1994') == datetime(1994, 11, 6, 8, 49, 37)
@@ -144,6 +159,7 @@ def test_parse_date():
 
 
 def test_remove_entity_headers():
+    """Entity header removing function"""
     now = http_date()
     headers1 = [('Date', now), ('Content-Type', 'text/html'), ('Content-Length', '0')]
     headers2 = Headers(headers1)
