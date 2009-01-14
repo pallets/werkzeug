@@ -6,7 +6,8 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
-from py.test import raises
+from nose.tools import assert_raises
+
 from werkzeug.utils import MultiDict
 from werkzeug.templates import Template
 

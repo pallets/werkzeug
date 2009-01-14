@@ -9,7 +9,9 @@
 import sys
 from datetime import datetime
 from os import path
-from py.test import raises
+
+from nose.tools import assert_raises
+
 from werkzeug.utils import *
 from werkzeug.wrappers import BaseResponse
 from werkzeug.http import parse_date
@@ -34,7 +36,7 @@ def test_multidict():
     # simple getitem gives the first value
     assert md['a'] == 1
     assert md['c'] == 3
-    raises(KeyError, "md['e']")
+    assert_raises(KeyError, lambda: md['e'])
     assert md.get('a') == 1
 
     # list getitem
@@ -69,7 +71,7 @@ def test_multidict():
 
     # delitem
     del md['u']
-    raises(KeyError, "md['u']")
+    assert_raises(KeyError, lambda: md['u'])
     del md['d']
     assert md.getlist('d') == []
 
@@ -137,10 +139,12 @@ def test_combined_multidict():
     assert d.getlist('bar', type=int) == [2, 3]
 
     # get key errors for missing stuff
-    raises(KeyError, 'd["missing"]')
+    assert_raises(KeyError, lambda: d["missing"])
 
     # make sure that they are immutable
-    raises(TypeError, 'd["foo"] = "blub"')
+    def test_assign():
+        d['foo'] = 'blub'
+    assert_raises(TypeError, test_assign)
 
 
 def test_headers():
@@ -210,7 +214,7 @@ def test_headers():
     headers = Headers([('a', 1)])
     assert headers.pop('a') == 1
     assert headers.pop('b', 2) == 2
-    raises(KeyError, 'headers.pop("c")')
+    assert_raises(KeyError, headers.pop, 'c')
 
 
 def test_cached_property():
@@ -258,7 +262,9 @@ def test_environ_property():
     a = A()
     assert a.string == 'abc'
     assert a.missing == 'spam'
-    raises(AttributeError, 'a.read_only = "something"')
+    def test_assign():
+        a.read_only = 'something'
+    assert_raises(AttributeError, test_assign)
     assert a.number == 42
     assert a.broken_number == None
     assert a.date is None
@@ -354,7 +360,7 @@ def test_run_wsgi_app():
     assert app_iter.next() == '1'
     assert app_iter.next() == '2'
     assert app_iter.next() == '3'
-    raises(StopIteration, app_iter.next)
+    assert_raises(StopIteration, app_iter.next)
 
     got_close = []
     class CloseIter(object):
@@ -378,7 +384,7 @@ def test_run_wsgi_app():
     assert status == '200 OK'
     assert headers == [('Content-Type', 'text/plain')]
     assert app_iter.next() == 'bar'
-    raises(StopIteration, app_iter.next)
+    assert_raises(StopIteration, app_iter.next)
     app_iter.close()
 
     assert run_wsgi_app(bar, {}, True)[0] == ['bar']
@@ -449,8 +455,8 @@ def test_import_string():
     assert import_string('cgi:escape') is cgi.escape
     assert import_string('XXXXXXXXXXXX', True) is None
     assert import_string('cgi.XXXXXXXXXXXX', True) is None
-    raises(ImportError, "import_string('XXXXXXXXXXXXXXXX')")
-    raises(AttributeError, "import_string('cgi.XXXXXXXXXX')")
+    assert_raises(ImportError, import_string, 'XXXXXXXXXXXXXXXX')
+    assert_raises(AttributeError, import_string, 'cgi.XXXXXXXXXX')
 
 
 def test_find_modules():
@@ -491,13 +497,14 @@ def test_validate_arguments():
     assert validate_arguments(take_two_one_default, (1,), {}) == ((1, 0), {})
     assert validate_arguments(take_two_one_default, (1, 2), {}) == ((1, 2), {})
 
-    raises(ArgumentValidationError, validate_arguments, take_two, (), {})
+    assert_raises(ArgumentValidationError, validate_arguments, take_two, (), {})
 
     assert validate_arguments(take_none, (1, 2,), {'c': 3}) == ((), {})
-    raises(ArgumentValidationError,
+    assert_raises(ArgumentValidationError,
            validate_arguments, take_none, (1,), {}, drop_extra=False)
-    raises(ArgumentValidationError,
+    assert_raises(ArgumentValidationError,
            validate_arguments, take_none, (), {'a': 1}, drop_extra=False)
+
 
 def test_parse_form_data_put_without_content():
     '''A PUT without a Content-Type header returns empty data
@@ -507,7 +514,22 @@ def test_parse_form_data_put_without_content():
     defining the media type of that body."  In the case where either
     headers are omitted, parse_form_data should still work.
     '''
-    env = create_environ('/foo', 'http://example.org/')
+    env = create_environ('/foo', 'http://example.org/', method='PUT')
+    del env['CONTENT_TYPE']
+    del env['CONTENT_LENGTH']
+
+    stream, form, files = parse_form_data(env)
+    print form
+    assert stream.read() == ""
+    assert len(form) == 0
+    assert len(files) == 0
+
+
+def test_parse_form_data_get_without_content():
+    """GET requests without data, content type and length should return
+    no data.
+    """
+    env = create_environ('/foo', 'http://example.org/', method='GET')
     del env['CONTENT_TYPE']
     del env['CONTENT_LENGTH']
 

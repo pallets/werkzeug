@@ -1287,8 +1287,11 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
         fp=environ['wsgi.input'],
         environ={
             'REQUEST_METHOD':           environ['REQUEST_METHOD'],
-            'CONTENT_TYPE':             environ.get('CONTENT_TYPE',''),
-            'CONTENT_LENGTH':           environ.get('CONTENT_LENGTH',''),
+            'CONTENT_TYPE':             environ.get('CONTENT_TYPE', ''),
+            'CONTENT_LENGTH':           environ.get('CONTENT_LENGTH') or '0',
+            # make sure to pass QUERY_STRING so that cgi.py does not
+            # substitute it with the interpreter arguments
+            'QUERY_STRING':             '',
             'werkzeug.stream_factory':  stream_factory
         },
         keep_blank_values=True

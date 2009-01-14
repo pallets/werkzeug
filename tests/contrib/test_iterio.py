@@ -1,4 +1,4 @@
-from py.test import raises
+from nose.tools import assert_raises
 from werkzeug.contrib.iterio import IterIO
 
 
@@ -32,6 +32,6 @@ def test_itero():
     io.seek(-4, 2)
     assert io.read(4) == '\nbar'
 
-    raises(IOError, io.seek, 2, 100)
+    assert_raises(IOError, io.seek, 2, 100)
     io.close()
-    raises(ValueError, io.read)
+    assert_raises(ValueError, io.read)

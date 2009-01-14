@@ -255,7 +255,7 @@ class _StorageHelper(cgi.FieldStorage):
     def make_file(self, binary=None):
         if self.stream_factory is not None:
             return self.stream_factory()
-        return cgi.FieldStorage.make_file(binary)
+        return cgi.FieldStorage.make_file(self, binary)
 
     def __repr__(self):
         return '<%s %r>' % (

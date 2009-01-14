@@ -8,8 +8,12 @@
 # :license: BSD, see LICENSE for more details.
 #
 
+TESTS = \
+	tests \
+	tests/contrib
+
 documentation:
 	@(cd docs; python ./generate.py)
 
 test:
-	@(cd tests; py.test $(TESTS))
+	@(nosetests -v $(TESTS))

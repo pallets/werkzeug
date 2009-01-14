@@ -8,7 +8,9 @@
     :license: BSD license.
 """
 import pickle
-from py.test import raises
+
+from nose.tools import assert_raises
+
 from datetime import datetime, timedelta
 from werkzeug.wrappers import *
 from werkzeug.utils import MultiDict
@@ -30,7 +32,7 @@ class RequestTestResponse(BaseResponse):
         return self.body_data[key]
 
 
-def request_test_app(environ, start_response):
+def request_demo_app(environ, start_response):
     """Small test app."""
     request = BaseRequest(environ)
     assert 'werkzeug.request' in environ
@@ -56,7 +58,7 @@ def prepare_environ_pickle(environ):
     return result
 
 
-def assert_request_test_environ(environ, method):
+def assert_environ(environ, method):
     assert environ['REQUEST_METHOD'] == method
     assert environ['PATH_INFO'] == '/'
     assert environ['SCRIPT_NAME'] == ''
@@ -66,7 +68,7 @@ def assert_request_test_environ(environ, method):
 
 
 def test_base_request():
-    client = Client(request_test_app, RequestTestResponse)
+    client = Client(request_demo_app, RequestTestResponse)
 
     # get requests
     response = client.get('/?foo=bar&foo=hehe')
@@ -75,7 +77,7 @@ def test_base_request():
     assert response['form'] == MultiDict()
     assert response['form_as_list'] == []
     assert response['data'] == ''
-    assert_request_test_environ(response['environ'], 'GET')
+    assert_environ(response['environ'], 'GET')
 
     # post requests with form data
     response = client.post('/?blub=blah', data='foo=blub+hehe&blah=42',
@@ -87,7 +89,7 @@ def test_base_request():
     # currently we do not guarantee that the values are ordered correctly
     # for post data.
     ## assert response['form_as_list'] == [('foo', ['blub hehe']), ('blah', ['42'])]
-    assert_request_test_environ(response['environ'], 'POST')
+    assert_environ(response['environ'], 'POST')
 
     # post requests with json data
     json = '{"foo": "bar", "blub": "blah"}'
@@ -139,7 +141,7 @@ def test_type_forcing():
         assert response.content_type == 'text/html'
 
     # without env, no arbitrary conversion
-    raises(TypeError, "SpecialResponse.force_type(wsgi_application)")
+    assert_raises(TypeError, "SpecialResponse.force_type(wsgi_application)")
 
 
 def test_accept_mixin():
@@ -269,4 +271,4 @@ def test_common_response_descriptors_mixin():
 def test_shallow_mode():
     request = Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
     assert request.args['foo'] == 'bar'
-    raises(RuntimeError, lambda: request.form['foo'])
+    assert_raises(RuntimeError, lambda: request.form['foo'])

@@ -1,7 +1,8 @@
+from nose.tools import assert_raises
+
 from werkzeug.contrib.testtools import *
 from werkzeug import Client, BaseRequest, responder
 
-from py.test import raises
 
 def response(content, mimetype):
     return TestResponse(
@@ -21,7 +22,7 @@ def test_json():
 
 def test_json_fail():
     resp = response('{ "a": 1}', 'text/plain')
-    raises(AttributeError, 'resp.json')
+    assert_raises(AttributeError, lambda: resp.json)
 
 def test_lxml_html():
     resp = response(
@@ -39,4 +40,4 @@ def test_lxml_fail():
     resp = response(
             '<html><head><title>Test</title></head></html>',
             'text/plain')
-    raises(AttributeError, 'resp.lxml')
+    assert_raises(AttributeError, lambda: resp.lxml)

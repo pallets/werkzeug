@@ -7,7 +7,8 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
-from py.test import raises
+from nose.tools import assert_raises
+
 from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect
 from werkzeug.utils import create_environ
@@ -23,8 +24,8 @@ def test_basic_routing():
     assert adapter.match('/') == ('index', {})
     assert adapter.match('/foo') == ('foo', {})
     assert adapter.match('/bar/') == ('bar', {})
-    raises(RequestRedirect, lambda: adapter.match('/bar'))
-    raises(NotFound, lambda: adapter.match('/blub'))
+    assert_raises(RequestRedirect, lambda: adapter.match('/bar'))
+    assert_raises(NotFound, lambda: adapter.match('/blub'))
 
 
 test_environ_defaults = '''
@@ -67,7 +68,7 @@ def test_basic_building():
     assert adapter.build('barf', {'bazf': 0.815}) == 'http://example.org/bar/0.815'
     assert adapter.build('barp', {'bazp': 'la/di'}) == 'http://example.org/bar/la/di'
     assert adapter.build('blah', {}) == '/hehe'
-    raises(BuildError, lambda: adapter.build('urks'))
+    assert_raises(BuildError, lambda: adapter.build('urks'))
 
 
 def test_defaults():
@@ -78,7 +79,7 @@ def test_defaults():
     adapter = map.bind('example.org', '/')
 
     assert adapter.match('/foo/') == ('foo', {'page': 1})
-    raises(RequestRedirect, lambda: adapter.match('/foo/1'))
+    assert_raises(RequestRedirect, lambda: adapter.match('/foo/1'))
     assert adapter.match('/foo/2') == ('foo', {'page': 2})
     assert adapter.build('foo', {}) == '/foo/'
     assert adapter.build('foo', {'page': 1}) == '/foo/'
@@ -119,7 +120,7 @@ def test_path():
     adapter = map.bind('example.org', '/')
 
     assert adapter.match('/') == ('page', {'name':'FrontPage'})
-    raises(RequestRedirect, lambda: adapter.match('/FrontPage'))
+    assert_raises(RequestRedirect, lambda: adapter.match('/FrontPage'))
     assert adapter.match('/Special') == ('special', {})
     assert adapter.match('/2007') == ('year', {'year':2007})
     assert adapter.match('/Some/Page') == ('page', {'name':'Some/Page'})
@@ -151,7 +152,7 @@ def test_dispatch():
     assert dispatch('/').data == "('root', {})"
     assert dispatch('/foo').status_code == 301
     raise_this = NotFound()
-    raises(NotFound, lambda: dispatch('/bar'))
+    assert_raises(NotFound, lambda: dispatch('/bar'))
     assert dispatch('/bar', True).status_code == 404
 
 

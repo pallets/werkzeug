@@ -6,7 +6,9 @@
     :license: BSD license.
 """
 from datetime import datetime
-from py.test import raises
+
+from nose.tools import assert_raises
+
 from werkzeug.http import *
 from werkzeug.utils import http_date, Headers
 
@@ -16,12 +18,12 @@ def test_accept():
     assert a.values() == ['en-us', 'ru']
     assert a.best == 'en-us'
     assert a.find('ru') == 1
-    raises(IndexError, lambda: a.index('de'))
+    assert_raises(IndexError, lambda: a.index('de'))
 
     a = parse_accept_header('text/xml,application/xml,application/xhtml+xml,'
                             'text/html;q=0.9,text/plain;q=0.8,'
                             'image/png,*/*;q=0.5', MIMEAccept)
-    raises(ValueError, lambda: a['missing'])
+    assert_raises(ValueError, lambda: a['missing'])
     assert a['image/png'] == 1
     assert a['text/plain'] == 0.8
     assert a['foo/bar'] == 0.5
