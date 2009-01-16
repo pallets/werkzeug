@@ -83,7 +83,7 @@ def _log(type, message, *args, **kwargs):
     if _logger is None:
         import logging
         _logger = logging.getLogger('werkzeug')
-        if _logger.getEffectiveLevel() == logging.NOTSET: 
+        if _logger.level == logging.NOTSET:
             _logger.setLevel(logging.INFO)
             handler = logging.StreamHandler()
             _logger.addHandler(handler)

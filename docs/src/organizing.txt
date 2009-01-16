@@ -26,7 +26,7 @@ Model
 Template
     The templates contain the actual HTML markup with placeholders for data
     passed to them.  Although there is a `minimal template language
-    <minitmpl.txt>`_ in the Werkzeug package we don't recommend using it for
+    <templates.txt>`_ in the Werkzeug package we don't recommend using it for
     larger applications.  There are many good and powerful template engines
     out there that support debugging, template inheritance, XML output etc.
 
