@@ -89,6 +89,7 @@ class BaseRequest(object):
         self.shallow = shallow
         self._data_stream = None
 
+    @classmethod
     def from_values(cls, path='/', base_url=None, query_string=None, **options):
         """Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method is
@@ -116,8 +117,8 @@ class BaseRequest(object):
             result.update(environ)
         result.update(new_env)
         return cls(result)
-    from_values = classmethod(from_values)
 
+    @classmethod
     def application(cls, f):
         """Decorate a function as responder that accepts the request as first
         argument.  This works like the :func:`responder` decorator but the
@@ -133,7 +134,6 @@ class BaseRequest(object):
         #: two arguments.  This makes it possible to use this decorator for
         #: both methods and standalone WSGI functions.
         return _patch_wrapper(f, lambda *a: f(*a[:-2]+(cls(a[-2]),))(*a[-2:]))
-    application = classmethod(application)
 
     def _get_file_stream(self):
         """Called to get a stream for the file upload.
@@ -164,6 +164,7 @@ class BaseRequest(object):
             data = (_empty_stream, MultiDict(), MultiDict())
         self._data_stream, self._form, self._files = data
 
+    @property
     def stream(self):
         """The parsed stream if the submitted data was not multipart or
         urlencoded form data.  This stream is the stream left by the CGI
@@ -172,15 +173,16 @@ class BaseRequest(object):
         if self._data_stream is None:
             self._load_form_data()
         return self._data_stream
-    stream = property(stream, doc=stream.__doc__)
+
     input_stream = environ_property('wsgi.input', 'The WSGI input stream.')
 
+    @cached_property
     def args(self):
         """The parsed URL parameters as `MultiDict`."""
         return url_decode(self.environ.get('QUERY_STRING', ''), self.charset,
                           errors=self.encoding_errors)
-    args = cached_property(args)
 
+    @cached_property
     def data(self):
         """This reads the buffered incoming data from the client into the
         string.  Usually it's a bad idea to access `data` because a client
@@ -188,8 +190,8 @@ class BaseRequest(object):
         server.
         """
         return self.stream.read()
-    data = cached_property(data)
 
+    @property
     def form(self):
         """Form parameters.  Currently it's not guaranteed that the MultiDict
         returned by this function is ordered in the same way as the submitted
@@ -199,13 +201,13 @@ class BaseRequest(object):
         if not hasattr(self, '_form'):
             self._load_form_data()
         return self._form
-    form = property(form, doc=form.__doc__)
 
+    @property
     def values(self):
         """Combined multi dict for `args` and `form`."""
         return CombinedMultiDict([self.args, self.form])
-    values = cached_property(values)
 
+    @property
     def files(self):
         """:class:`MultiDict` object containing all uploaded files.  Each key in
         :attr:`files` is the name from the ``<input type="file" name="">``.  Each
@@ -221,20 +223,20 @@ class BaseRequest(object):
         if not hasattr(self, '_files'):
             self._load_form_data()
         return self._files
-    files = property(files, doc=files.__doc__)
 
+    @cached_property
     def cookies(self):
         """The retreived cookie values as regular dictionary."""
         return parse_cookie(self.environ, self.charset)
-    cookies = cached_property(cookies)
 
+    @cached_property
     def headers(self):
         """The headers from the WSGI environ as immutable
         :class:`EnvironHeaders`.
         """
         return EnvironHeaders(self.environ)
-    headers = cached_property(headers)
 
+    @cached_property
     def path(self):
         """Requested path as unicode.  This works a bit like the regular path
         info in the WSGI environment but will always include a leading slash,
@@ -242,44 +244,44 @@ class BaseRequest(object):
         """
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
         return _decode_unicode(path, self.charset, self.encoding_errors)
-    path = cached_property(path)
 
+    @cached_property
     def script_root(self):
         """The root path of the script without the trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
         return _decode_unicode(path, self.charset, self.encoding_errors)
-    script_root = cached_property(script_root)
 
+    @cached_property
     def url(self):
         """The reconstructed current URL"""
         return get_current_url(self.environ)
-    url = cached_property(url)
 
+    @cached_property
     def base_url(self):
         """Like `url` but without the querystring"""
         return get_current_url(self.environ, strip_querystring=True)
-    base_url = cached_property(base_url)
 
+    @cached_property
     def url_root(self):
         """The full URL root (with hostname), this is the application root."""
         return get_current_url(self.environ, True)
-    url_root = cached_property(url_root)
 
+    @cached_property
     def host_url(self):
         """Just the host with scheme."""
         return get_current_url(self.environ, host_only=True)
-    host_url = cached_property(host_url)
 
+    @cached_property
     def host(self):
         """Just the host including the port if available."""
         return get_host(self.environ)
-    host = cached_property(host)
 
     query_string = environ_property('QUERY_STRING', '', read_only=True, doc=
         '''The URL parameters as raw bytestring.''')
     method = environ_property('REQUEST_METHOD', 'GET', read_only=True, doc=
         '''The transmission method. (For example ``'GET'`` or ``'POST'``).''')
 
+    @cached_property
     def access_route(self):
         """If an forwarded header exists this is a list of all ip addresses
         from the client ip to the last proxy server.
@@ -290,14 +292,13 @@ class BaseRequest(object):
         elif 'REMOTE_ADDR' in self.environ:
             return [self.environ['REMOTE_ADDR']]
         return []
-    access_route = cached_property(access_route)
 
+    @property
     def remote_addr(self):
         """The remote address of the client."""
         if self.is_behind_proxy and self.access_route:
             return self.access_route[0]
         return self.environ.get('REMOTE_ADDR')
-    remote_addr = property(remote_addr)
 
     remote_user = environ_property('REMOTE_ADDR', doc='''
         If the server supports user authentication, and the script is
@@ -410,6 +411,7 @@ class BaseResponse(object):
         else:
             self.status = status
 
+    @classmethod
     def force_type(cls, response, environ=None):
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`BaseResponse` internally in many
@@ -441,8 +443,8 @@ class BaseResponse(object):
             response = BaseResponse(*run_wsgi_app(response, environ))
         response.__class__ = cls
         return response
-    force_type = classmethod(force_type)
 
+    @classmethod
     def from_app(cls, app, environ, buffered=False):
         """Create a new response object from an application output.  This
         works best if you pass it an application that returns a generator all
@@ -452,7 +454,6 @@ class BaseResponse(object):
         you should set `buffered` to `True` which enforces buffering.
         """
         return cls(*run_wsgi_app(app, environ, buffered))
-    from_app = classmethod(from_app)
 
     def _get_status_code(self):
         try:
@@ -516,13 +517,14 @@ class BaseResponse(object):
         """Delete a cookie.  Fails silently if key doesn't exist."""
         self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
 
+    @property
     def header_list(self):
         """This returns the headers in the target charset as list.  It's used
         in __call__ to get the headers for the response.
         """
         return self.headers.to_list(self.charset)
-    header_list = property(header_list, doc=header_list.__doc__)
 
+    @property
     def is_streamed(self):
         """If the response is streamed (the response is not a sequence) this
         property is `True`.  In this case streamed means that there is no
@@ -537,7 +539,6 @@ class BaseResponse(object):
         except TypeError:
             return False
         return True
-    is_streamed = property(is_streamed, doc=is_streamed.__doc__)
 
     def fix_headers(self, environ):
         """This is automatically called right before the response is started
@@ -585,33 +586,33 @@ class AcceptMixin(object):
     thereof).
     """
 
+    @cached_property
     def accept_mimetypes(self):
         """List of mimetypes this client supports as :class:`MIMEAccept`
         object.
         """
         return parse_accept_header(self.environ.get('HTTP_ACCEPT'), MIMEAccept)
-    accept_mimetypes = cached_property(accept_mimetypes)
 
+    @cached_property
     def accept_charsets(self):
         """List of charsets this client supports as :class:`CharsetAccept`
         object.
         """
         return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'),
                                    CharsetAccept)
-    accept_charsets = cached_property(accept_charsets)
 
+    @cached_property
     def accept_encodings(self):
         """List of encodings this client accepts.  Encodings in a HTTP term
         are compression encodings such as gzip.  For charsets have a look at
         :attr:`accept_charset`.
         """
         return parse_accept_header(self.environ.get('HTTP_ACCEPT_ENCODING'))
-    accept_encodings = cached_property(accept_encodings)
 
+    @cached_property
     def accept_languages(self):
         """List of languages this client accepts."""
         return parse_accept_header(self.environ.get('HTTP_ACCEPT_LANGUAGE'))
-    accept_languages = cached_property(accept_languages)
 
 
 class ETagRequestMixin(object):
@@ -620,33 +621,33 @@ class ETagRequestMixin(object):
     only provides access to etags but also to the cache control header.
     """
 
+    @cached_property
     def cache_control(self):
         """A :class:`CacheControl` object for the incoming cache control
         headers.
         """
         cache_control = self.environ.get('HTTP_CACHE_CONTROL')
         return parse_cache_control_header(cache_control)
-    cache_control = cached_property(cache_control)
 
+    @cached_property
     def if_match(self):
         """An object containing all the etags in the `If-Match` header."""
         return parse_etags(self.environ.get('HTTP_IF_MATCH'))
-    if_match = cached_property(if_match)
 
+    @cached_property
     def if_none_match(self):
         """An object containing all the etags in the `If-None-Match` header."""
         return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
-    if_none_match = cached_property(if_none_match)
 
+    @cached_property
     def if_modified_since(self):
         """The parsed `If-Modified-Since` header as datetime object."""
         return parse_date(self.environ.get('HTTP_IF_MODIFIED_SINCE'))
-    if_modified_since = cached_property(if_modified_since)
 
+    @cached_property
     def if_unmodified_since(self):
         """The parsed `If-Unmodified-Since` header as datetime object."""
         return parse_date(self.environ.get('HTTP_IF_UNMODIFIED_SINCE'))
-    if_unmodified_since = cached_property(if_unmodified_since)
 
 
 class UserAgentMixin(object):
@@ -660,11 +661,11 @@ class UserAgentMixin(object):
     # a small comment that explains it.
     __module__ = 'werkzeug.useragents'
 
+    @cached_property
     def user_agent(self):
         """The current user agent."""
         from werkzeug.useragents import UserAgent
         return UserAgent(self.environ)
-    user_agent = cached_property(user_agent)
 
 
 class AuthorizationMixin(object):
@@ -672,11 +673,11 @@ class AuthorizationMixin(object):
     of the `Authorization` header as :class:`Authorization` object.
     """
 
+    @cached_property
     def authorization(self):
         """The `Authorization` object in parsed form."""
         header = self.environ.get('HTTP_AUTHORIZATION')
         return parse_authorization_header(header)
-    authorization = cached_property(authorization)
 
 
 class ETagResponseMixin(object):
@@ -685,6 +686,7 @@ class ETagResponseMixin(object):
     object that implements a dict like interface similar to :class:`Headers`.
     """
 
+    @property
     def cache_control(self):
         """The Cache-Control general-header field is used to specify
         directives that MUST be obeyed by all caching mechanisms along the
@@ -697,7 +699,6 @@ class ETagResponseMixin(object):
                 self.headers['Cache-Control'] = cache_control.to_header()
         return parse_cache_control_header(self.headers.get('cache-control'),
                                           on_update)
-    cache_control = property(cache_control, doc=cache_control.__doc__)
 
     def make_conditional(self, request_or_environ):
         """Make the response conditional to the request.  This method works
@@ -785,9 +786,9 @@ class ResponseStream(object):
             raise ValueError('I/O operation on closed file')
         return False
 
+    @property
     def encoding(self):
         return self.response.charset
-    encoding = property(encoding)
 
 
 class ResponseStreamMixin(object):
@@ -796,10 +797,10 @@ class ResponseStreamMixin(object):
     a write-only interface to the response iterable.
     """
 
+    @cached_property
     def stream(self):
         """The response iterable as write-only stream."""
         return ResponseStream(self)
-    stream = cached_property(stream)
 
 
 class CommonResponseDescriptorsMixin(object):
@@ -930,6 +931,7 @@ class CommonResponseDescriptorsMixin(object):
 class WWWAuthenticateMixin(object):
     """Adds a :attr:`www_authenticate` property to a response object."""
 
+    @property
     def www_authenticate(self):
         """The `WWW-Authenticate` header in a parsed form."""
         def on_update(www_auth):
@@ -939,7 +941,6 @@ class WWWAuthenticateMixin(object):
                 self.headers['WWW-Authenticate'] = www_auth.to_header()
         header = self.headers.get('www-authenticate')
         return parse_www_authenticate_header(header, on_update)
-    www_authenticate = property(www_authenticate)
 
 
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
