@@ -1138,9 +1138,17 @@ class cached_property(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        value = self.func(obj)
-        setattr(obj, self.__name__, value)
+        value = obj.__dict__.get(self.__name__, _missing)
+        if value is _missing:
+            value = self.func(obj)
+            obj.__dict__[self.__name__] = value
         return value
+
+    def __set__(self, obj, value):
+        # XXX: we make this a data descriptor rather than a read only
+        # descriptor just for sphinx and pydoc to properly pick it up.
+        # This should not be necessary otherwise.
+        raise TypeError('read only attribute')
 
 
 class environ_property(_DictAccessorProperty):

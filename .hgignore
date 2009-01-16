@@ -4,3 +4,4 @@
 \.DS_Store$
 ^env$
 ^docs/build/.*\.html$
+^newdocs/_build

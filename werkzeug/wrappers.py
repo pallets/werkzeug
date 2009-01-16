@@ -49,9 +49,9 @@ class BaseRequest(object):
     to the request object, there is also a class called `Request` which
     subclasses `BaseRequest` and all the important mixins.
 
-    It's a good idea to create a custom subclass of the `BaseRequest` and add
-    missing functionality either via mixins or direct implementation.  Here
-    an example for such subclasses::
+    It's a good idea to create a custom subclass of the :class:`BaseRequest`
+    and add missing functionality either via mixins or direct implementation.
+    Here an example for such subclasses::
 
         from werkzeug import BaseRequest, ETagRequestMixin
 
@@ -94,13 +94,13 @@ class BaseRequest(object):
         environ is given missing values are filled from there.  This method is
         useful for small scripts when you need to simulate a request from an URL.
         Do not use this method for unittesting, there is a full featured client
-        object in `werkzeug.test` that allows to create multipart requests
+        object in :mod:`werkzeug.test` that allows to create multipart requests
         etc.
 
         This accepts the same options as the `create_environ` function from the
         utils module and additionally an `environ` parameter that can contain
         values which will override the values from dict returned by
-        `create_environ`.
+        :func:`create_environ`.
 
         Additionally a dict passed to `query_string` will be encoded in the
         request class charset.
@@ -119,9 +119,9 @@ class BaseRequest(object):
     from_values = classmethod(from_values)
 
     def application(cls, f):
-        """Decorate a function as responder that accepts the request as
-        first argument.  This works like the `responder` decorator but
-        the function is passed the request object as first argument::
+        """Decorate a function as responder that accepts the request as first
+        argument.  This works like the :func:`responder` decorator but the
+        function is passed the request object as first argument::
 
             @Request.application
             def my_wsgi_app(request):
@@ -207,22 +207,16 @@ class BaseRequest(object):
     values = cached_property(values)
 
     def files(self):
-        """`MultiDict` object containing all uploaded files.  Each key in
-        `files` is the name from the ``<input type="file" name="" />``.  Each
-        value in `files` is a Werkzeug `FileStorage` object with the following
-        members:
+        """:class:`MultiDict` object containing all uploaded files.  Each key in
+        :attr:`files` is the name from the ``<input type="file" name="">``.  Each
+        value in :attr:`files` is a Werkzeug :class:`FileStorage` object.
 
-        - `filename` - The name of the uploaded file, as a Python string.
-        - `content_type` - The content type of the uploaded file.
-        - `read()` - Read from the stream.
-        - `save()` - Save the upload into a file or file pointer.
-
-        Note that `files` will only contain data if the request method was POST
-        and the ``<form>`` that posted to the request had
+        Note that :attr:`files` will only contain data if the request method was
+        POST or PUT and the ``<form>`` that posted to the request had
         ``enctype="multipart/form-data"``.  It will be empty otherwise.
 
-        See the `MultiDict` / `FileStorage` documentation for more details about
-        the used data structure.
+        See the :class:`MultiDict` / :class:`FileStorage` documentation for more
+        details about the used data structure.
         """
         if not hasattr(self, '_files'):
             self._load_form_data()
@@ -235,7 +229,9 @@ class BaseRequest(object):
     cookies = cached_property(cookies)
 
     def headers(self):
-        """The headers from the WSGI environ as immutable `EnvironHeaders`."""
+        """The headers from the WSGI environ as immutable
+        :class:`EnvironHeaders`.
+        """
         return EnvironHeaders(self.environ)
     headers = cached_property(headers)
 
@@ -355,14 +351,14 @@ class BaseResponse(object):
                 response = Response('Not Found', status=404)
             return response(environ, start_response)
 
-    Like `BaseRequest` which object is lacking a lot of functionality
+    Like :class:`BaseRequest` which object is lacking a lot of functionality
     implemented in mixins.  This gives you a better control about the actual
     API of your response objects, so you can create subclasses and add custom
-    functionality.  A full featured response object is available as `Response`
-    which implements a couple of useful mixins.
+    functionality.  A full featured response object is available as
+    :class:`Response` which implements a couple of useful mixins.
 
     To enforce a new type of already existing responses you can use the
-    `force_type` method.  This is useful if you're working with different
+    :meth:`force_type` method.  This is useful if you're working with different
     subclasses of response objects and you want to post process them with a
     know interface.
 
@@ -416,10 +412,10 @@ class BaseResponse(object):
 
     def force_type(cls, response, environ=None):
         """Enforce that the WSGI response is a response object of the current
-        type.  Werkzeug will use the `BaseResponse` internally in many
-        situations like the exceptions.  If you call `get_response` on an
-        exception you will get back a regular `BaseResponse` object, even if
-        you are using a custom subclass.
+        type.  Werkzeug will use the :class:`BaseResponse` internally in many
+        situations like the exceptions.  If you call :meth:`get_response` on an
+        exception you will get back a regular :class:`BaseResponse` object, even
+        if you are using a custom subclass.
 
         This method can enforce a given response type, and it will also
         convert arbitrary WSGI callables into response objects if an environ
@@ -584,18 +580,22 @@ class BaseResponse(object):
 
 
 class AcceptMixin(object):
-    """A mixin for classes with an `environ` attribute to get and all the HTTP
-    accept headers as `Accept` objects.  This can be mixed in request objects
-    or any other object that has a WSGI environ available as `environ`.
+    """A mixin for classes with an :attr:`~BaseResponse.environ` attribute to
+    get and all the HTTP accept headers as :class:`Accept` objects (or subclasses
+    thereof).
     """
 
     def accept_mimetypes(self):
-        """List of mimetypes this client supports."""
+        """List of mimetypes this client supports as :class:`MIMEAccept`
+        object.
+        """
         return parse_accept_header(self.environ.get('HTTP_ACCEPT'), MIMEAccept)
     accept_mimetypes = cached_property(accept_mimetypes)
 
     def accept_charsets(self):
-        """List of charsets this client supports."""
+        """List of charsets this client supports as :class:`CharsetAccept`
+        object.
+        """
         return parse_accept_header(self.environ.get('HTTP_ACCEPT_CHARSET'),
                                    CharsetAccept)
     accept_charsets = cached_property(accept_charsets)
@@ -603,7 +603,8 @@ class AcceptMixin(object):
     def accept_encodings(self):
         """List of encodings this client accepts.  Encodings in a HTTP term
         are compression encodings such as gzip.  For charsets have a look at
-        `accept_charset`."""
+        :attr:`accept_charset`.
+        """
         return parse_accept_header(self.environ.get('HTTP_ACCEPT_ENCODING'))
     accept_encodings = cached_property(accept_encodings)
 
@@ -615,12 +616,14 @@ class AcceptMixin(object):
 
 class ETagRequestMixin(object):
     """Add entity tag and cache descriptors to a request object or object with
-    an WSGI environment available as `environ`.  This not only provides
-    access to etags but also to the cache control header.
+    an WSGI environment available as :attr:`~BaseRequest.environ`.  This not
+    only provides access to etags but also to the cache control header.
     """
 
     def cache_control(self):
-        """A `CacheControl` object for the incoming cache control headers."""
+        """A :class:`CacheControl` object for the incoming cache control
+        headers.
+        """
         cache_control = self.environ.get('HTTP_CACHE_CONTROL')
         return parse_cache_control_header(cache_control)
     cache_control = cached_property(cache_control)
@@ -665,8 +668,8 @@ class UserAgentMixin(object):
 
 
 class AuthorizationMixin(object):
-    """Adds an `authorization` property that represents the parsed value of
-    the `Authorization` header as `Authorization` object.
+    """Adds an :attr:`authorization` property that represents the parsed value
+    of the `Authorization` header as :class:`Authorization` object.
     """
 
     def authorization(self):
@@ -679,7 +682,7 @@ class AuthorizationMixin(object):
 class ETagResponseMixin(object):
     """Adds extra functionality to a response object for etag and cache
     handling.  This mixin requires an object with at least a `headers`
-    object that implements a dict like interface similar to `Headers`.
+    object that implements a dict like interface similar to :class:`Headers`.
     """
 
     def cache_control(self):
@@ -706,7 +709,7 @@ class ETagResponseMixin(object):
         anything but GET or HEAD.
 
         It does not remove the body of the response because that's something
-        the `__call__` function does for us automatically.
+        the :meth:`__call__` function does for us automatically.
 
         Returns self so that you can do ``return resp.make_conditional(req)``
         but modifies the object in-place.
@@ -747,7 +750,7 @@ class ETagResponseMixin(object):
 
 
 class ResponseStream(object):
-    """A file descriptor like object used by the `ResponseStreamMixin` to
+    """A file descriptor like object used by the :class:`ResponseStreamMixin` to
     represent the body of the stream.  It directly pushes into the response
     iterable of the response object.
     """
@@ -788,9 +791,9 @@ class ResponseStream(object):
 
 
 class ResponseStreamMixin(object):
-    """Mixin for `BaseRequest` subclasses.  Classes that inherit from this
-    mixin will automatically get a `stream` property that provides a
-    write-only interface to the response iterable.
+    """Mixin for :class:`BaseRequest` subclasses.  Classes that inherit from
+    this mixin will automatically get a :attr:`stream` property that provides
+    a write-only interface to the response iterable.
     """
 
     def stream(self):
@@ -800,9 +803,9 @@ class ResponseStreamMixin(object):
 
 
 class CommonResponseDescriptorsMixin(object):
-    """A mixin for `BaseResponse` subclasses.  Response objects that mix this
-    class in will automatically get descriptors for a couple of HTTP headers
-    with automatic type conversion.
+    """A mixin for :class:`BaseResponse` subclasses.  Response objects that
+    mix this class in will automatically get descriptors for a couple of
+    HTTP headers with automatic type conversion.
     """
 
     def _get_mimetype(self):
@@ -925,10 +928,10 @@ class CommonResponseDescriptorsMixin(object):
 
 
 class WWWAuthenticateMixin(object):
-    """Adds a `www_authenticate` property to a response object."""
+    """Adds a :attr:`www_authenticate` property to a response object."""
 
     def www_authenticate(self):
-        """The ``WWW-Authenticate`` header in a parsed form."""
+        """The `WWW-Authenticate` header in a parsed form."""
         def on_update(www_auth):
             if not www_auth and 'www-authenticate' in self.headers:
                 del self.headers['www-authenticate']
@@ -943,10 +946,10 @@ class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
               UserAgentMixin, AuthorizationMixin):
     """Full featured request object implementing the following mixins:
 
-    - `AcceptMixin` for accept header parsing
-    - `ETagRequestMixin` for etag and cache control handling
-    - `UserAgentMixin` for user agent introspection
-    - `AuthorizationMixin` for http auth handling
+    - :class:`AcceptMixin` for accept header parsing
+    - :class:`ETagRequestMixin` for etag and cache control handling
+    - :class:`UserAgentMixin` for user agent introspection
+    - :class:`AuthorizationMixin` for http auth handling
     """
 
 
@@ -955,8 +958,8 @@ class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
                WWWAuthenticateMixin):
     """Full featured response object implementing the following mixins:
 
-    - `ETagResponseMixin` for etag and cache control handling
-    - `ResponseStreamMixin` to add support for the `stream` property
-    - `CommonResponseDescriptorsMixin` for various HTTP descriptors
-    - `WWWAuthenticateMixin` for HTTP authentication support
+    - :class:`ETagResponseMixin` for etag and cache control handling
+    - :class:`ResponseStreamMixin` to add support for the `stream` property
+    - :class:`CommonResponseDescriptorsMixin` for various HTTP descriptors
+    - :class:`WWWAuthenticateMixin` for HTTP authentication support
     """
