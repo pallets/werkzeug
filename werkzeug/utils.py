@@ -40,15 +40,15 @@ _missing = object()
 
 
 class MultiDict(dict):
-    """A `MultiDict` is a dictionary subclass customized to deal with multiple
-    values for the same key which is for example used by the parsing functions
-    in the wrappers.  This is necessary because some HTML form elements pass
-    multiple values for the same key.
+    """A :class:`MultiDict` is a dictionary subclass customized to deal with
+    multiple values for the same key which is for example used by the parsing
+    functions in the wrappers.  This is necessary because some HTML form
+    elements pass multiple values for the same key.
 
-    `MultiDict` implements the all standard dictionary methods.  Internally,
-    it saves all values for a key as a list, but the standard dict access
-    methods will only return the first value for a key. If you want to gain
-    access to the other values too you have to use the `list` methods as
+    :class:`MultiDict` implements the all standard dictionary methods.
+    Internally, it saves all values for a key as a list, but the standard dict
+    access methods will only return the first value for a key. If you want to
+    gain access to the other values too you have to use the `list` methods as
     explained below.
 
     Basic Usage:
@@ -67,8 +67,9 @@ class MultiDict(dict):
     first value when multiple values for one key are found.
 
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
-    subclass of the `BadRequest` HTTP exception and will render a page for a
-    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
+    subclass of the :exc:`~exceptions.BadRequest` HTTP exception and will
+    render a page for a ``400 BAD REQUEST`` if catched in a catch-all for HTTP
+    exceptions.
     """
 
     #: the key error this class raises.  Because of circular dependencies
@@ -240,17 +241,36 @@ class MultiDict(dict):
             for key, value in other_dict:
                 self.setlistdefault(key, []).append(value)
 
-    def pop(self, *args):
+    def pop(self, key, default=_missing):
         """Pop the first item for a list on the dict."""
-        return dict.pop(self, *args)[0]
+        if default is not _missing:
+            return dict.pop(self, key, default)
+        try:
+            return dict.pop(self, key)[0]
+        except KeyError, e:
+            raise self.KeyError(str(e))
 
     def popitem(self):
         """Pop an item from the dict."""
-        item = dict.popitem(self)
-        return (item[0], item[1][0])
+        try:
+            item = dict.popitem(self)
+            return (item[0], item[1][0])
+        except KeyError, e:
+            raise self.KeyError(str(e))
 
-    poplist = dict.pop
-    popitemlist = dict.popitem
+    def poplist(self, key):
+        """Pop the list for a key from the dict.  If the key is not in the dict
+        an empty list is returned.
+
+        *Changed in Werkzeug 0.5*: If the key does no longer exist"""
+        return dict.pop(self, key, [])
+
+    def popitemlist(self):
+        """Pop a ``(key, list)`` tuple from the dict."""
+        try:
+            return dict.popitem(self, [])
+        except KeyError, e:
+            raise self.KeyError(str(e))
 
     def __repr__(self):
         tmp = []
@@ -261,7 +281,7 @@ class MultiDict(dict):
 
 
 class CombinedMultiDict(MultiDict):
-    """A read only `MultiDict` decorator that you can pass multiple `MultiDict`
+    """A read only :class:`MultiDict` that you can pass multiple :class:`MultiDict`
     instances as sequence and it will combine the return values of all wrapped
     dicts:
 
@@ -278,8 +298,9 @@ class CombinedMultiDict(MultiDict):
     methods that usually change data which isn't possible.
 
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
-    subclass of the `BadRequest` HTTP exception and will render a page for a
-    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
+    subclass of the :exc:`~exceptions.BadRequest` HTTP exception and will
+    render a page for a ``400 BAD REQUEST`` if catched in a catch-all for HTTP
+    exceptions.
     """
 
     def __init__(self, dicts=None):
@@ -398,8 +419,8 @@ class CombinedMultiDict(MultiDict):
 
 
 class FileStorage(object):
-    """The `FileStorage` object is a thin wrapper over incoming files.  It is
-    used by the request object to represent uploaded files.  All the
+    """The :class:`FileStorage` class is a thin wrapper over incoming files.
+    It is used by the request object to represent uploaded files.  All the
     attributes of the wrapper stream are proxied by the file storage so
     it's possible to do ``storage.read()`` instead of the long form
     ``storage.stream.read()``.
@@ -407,15 +428,6 @@ class FileStorage(object):
 
     def __init__(self, stream=None, filename=None, name=None,
                  content_type='application/octet-stream', content_length=-1):
-        """Creates a new `FileStorage` object.
-
-        :param stream: the input stream for uploaded file.  Usually this
-                       points to a temporary file.
-        :param filename: The filename of the file on the client.
-        :param name: the name of the form field
-        :param content_type: the content type of the file
-        :param content_length: the content length of the file.
-        """
         self.name = name
         self.stream = stream or _empty_stream
         self.filename = filename or getattr(stream, 'name', None)
@@ -467,12 +479,19 @@ class Headers(object):
     headers which are stored as tuples in a list.
 
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
-    subclass of the `BadRequest` HTTP exception and will render a page for a
-    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
+    subclass of the :class:`~exceptions.BadRequest` HTTP exception and will
+    render a page for a ``400 BAD REQUEST`` if catched in a catch-all for
+    HTTP exceptions.
 
     Headers is mostly compatible with the Python wsgiref.headers.Headers
-    class, with the exception of __getitem__.  wsgiref will return None for
-    `headers['missing']`, whereas `Headers` will raise a KeyError.
+    class, with the exception of `__getitem__`.  wsgiref will return None for
+    `headers['missing']`, whereas :class:`Headers` will raise a KeyError.
+
+    To create a new :class:`Headers` object pass it a list or dict of headers
+    which are used as default values.  This does not reuse the list passed
+    to the constructor for internal usage.  To create a :class:`Headers`
+    object that uses as internal storage the list or list-like object you
+    can use the :meth:`linked` class method.
     """
 
     #: the key error this class raises.  Because of circular dependencies
@@ -481,12 +500,6 @@ class Headers(object):
     KeyError = None
 
     def __init__(self, defaults=None, _list=None):
-        """Create a new `Headers` object based on a list or dict of headers
-        which are used as default values.  This does not reuse the list passed
-        to the constructor for internal usage.  To create a `Headers` object
-        that uses as internal storage the list or list-like object provided
-        it's possible to use the `linked` classmethod.
-        """
         if _list is None:
             _list = []
         self._list = _list
@@ -494,8 +507,8 @@ class Headers(object):
             self.extend(defaults)
 
     def linked(cls, headerlist):
-        """Create a new `Headers` object that uses the list of headers passed
-        as internal storage:
+        """Create a new :class:`Headers` object that uses the list of headers
+        passed as internal storage:
 
         >>> headerlist = [('Content-Length', '40')]
         >>> headers = Headers.linked(headerlist)
@@ -503,7 +516,7 @@ class Headers(object):
         >>> headerlist
         [('Content-Length', '40'), ('Content-Type', 'text/html')]
 
-        :return: new linked `Headers` object.
+        :return: new linked :class:`Headers` object.
         """
         return cls(_list=headerlist)
     linked = classmethod(linked)
@@ -556,11 +569,9 @@ class Headers(object):
 
     def getlist(self, key, type=None):
         """Return the list of items for a given key. If that key is not in the
-        `MultiDict`, the return value will be an empty list.  Just as `get`
-        `getlist` accepts a `type` parameter.  All items will be converted
-        with the callable defined there.
-
-        :return: list
+        :class:`MultiDict`, the return value will be an empty list.  Just as
+        :meth:`get` :meth:`getlist` accepts a `type` parameter.  All items will
+        be converted with the callable defined there.
         """
         ikey = key.lower()
         result = []
@@ -577,7 +588,7 @@ class Headers(object):
     def get_all(self, name):
         """Return a list of all the values for the named field.
 
-        This method is compatible with the wsgiref `Headers` method
+        This method is compatible with the wsgiref :class:`Headers` method
         of the same name.
         """
         return self.getlist(name)
@@ -736,7 +747,7 @@ class Headers(object):
         return value
 
     def __setitem__(self, key, value):
-        """Like `set()` but also supports index/slice based setting."""
+        """Like :meth:`set` but also supports index/slice based setting."""
         if isinstance(key, (slice, int, long)):
             self._list[key] = value
         else:
@@ -784,17 +795,18 @@ class EnvironHeaders(Headers):
     a WSGI environment.
 
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
-    subclass of the `BadRequest` HTTP exception and will render a page for a
-    ``400 BAD REQUEST`` if catched in a catch-all for HTTP exceptions.
+    subclass of the :exc:`~exceptions.BadRequest` HTTP exception and will
+    render a page for a ``400 BAD REQUEST`` if catched in a catch-all for
+    HTTP exceptions.
     """
 
     def __init__(self, environ):
         self.environ = environ
 
+    @classmethod
     def linked(cls, environ):
         raise TypeError('%r object is always linked to environment, '
                         'no separate initializer' % cls.__name__)
-    linked = classmethod(linked)
 
     def __eq__(self, other):
         return self is other
@@ -850,7 +862,11 @@ class SharedDataMiddleware(object):
         })
 
     This will then serve the ``shared_files`` folder in the `myapplication`
-    python package.
+    Python package.
+
+    The optional `disallow` parameter can be a list of `fnmatch` rules for
+    files that are not accessible from the web.  If `cache` is set to `False`
+    no caching headers are sent.
     """
 
     # TODO: use wsgi.file_wrapper or something, just don't yield everything
@@ -876,6 +892,10 @@ class SharedDataMiddleware(object):
             self.is_allowed = lambda x: not fnmatch(x, disallow)
 
     def is_allowed(self, filename):
+        """Subclasses can override this method to disallow the access to
+        certain files.  However by providing `disallow` in the constructor
+        this method is overwritten.
+        """
         return True
 
     def get_file_loader(self, filename):
@@ -1774,7 +1794,7 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
     If the `path` contains a query string it will be used, even if the
     `query_string` parameter was given.  If it does not contain one
     the `query_string` parameter is used as querystring.  In that case
-    it can either be a dict, MultiDict or string.
+    it can either be a dict, :class:`MultiDict` or string.
 
     The following options exist:
 

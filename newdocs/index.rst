@@ -12,3 +12,4 @@ Welcome to the Werkzeug documentation.
    tutorial
    unicode
    wrappers
+   utils
