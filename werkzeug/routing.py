@@ -765,6 +765,13 @@ class UnicodeConverter(BaseConverter):
       than 1.
     - `maxlength` - the maximum length of the string.
     - `length` - the exact length of that string.
+
+    Example::
+
+        Rule('/pages/<page>'),
+        Rule('/<string(length=2):lang_code>')
+
+    This is the default validator.
     """
 
     def __init__(self, map, minlength=1, maxlength=None, length=None):
@@ -796,7 +803,12 @@ class AnyConverter(BaseConverter):
 
 
 class PathConverter(BaseConverter):
-    """Like the default string converter, but it also matches slashes."""
+    """Like the default string converter, but it also matches slashes.  This
+    is useful for Wikis::
+
+        Rule('/<path:wikipage>')
+        Rule('/<path:wikipage>/edit')
+    """
     regex = '[^/].*?'
     is_greedy = True
     weight = 50
@@ -843,6 +855,8 @@ class IntegerConverter(NumberConverter):
       variable length.
     - `min` - the minimal value.
     - `max` - the maximal value.
+
+    This converter does not support negative values.
     """
     regex = r'\d+'
     num_convert = int
@@ -857,6 +871,8 @@ class FloatConverter(NumberConverter):
 
     - `min` - the minimal value.
     - `max` - the maximal value.
+
+    This converter does not support negative values.
     """
     regex = r'\d+\.\d+'
     num_convert = float

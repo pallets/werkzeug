@@ -45,6 +45,32 @@ Data Structures
 
 .. autoclass:: EnvironHeaders
 
+.. autoclass:: Accept
+   :members:
+
+.. autoclass:: MIMEAccept
+   :members: accept_html, accept_xhtml
+
+.. autoclass:: CharsetAccept
+
+.. autoclass:: CacheControl
+   :members:
+
+.. autoclass:: HeaderSet
+   :members:
+
+.. autoclass:: UserAgent
+   :members:
+
+.. autoclass:: ETags
+   :members:
+
+.. autoclass:: Authorization
+   :members:
+
+.. autoclass:: WWWAuthenticate
+   :members:
+
 
 Middlewares
 ===========
@@ -101,6 +127,46 @@ HTML Helpers
 .. autofunction:: escape
 
 .. autofunction:: unescape
+
+
+HTTP Helpers
+============
+
+.. autofunction:: dump_header
+   
+.. autofunction:: cookie_date
+
+.. autofunction:: http_date
+
+.. autofunction:: parse_form_data
+
+.. autofunction:: parse_etags
+
+.. autofunction:: quote_etag
+
+.. autofunction:: unquote_etag
+
+.. autofunction:: generate_etag
+
+.. autofunction:: is_resource_modified
+
+.. autofunction:: parse_set_header
+
+.. autofunction:: parse_list_header
+
+.. autofunction:: parse_dict_header
+
+.. autofunction:: parse_accept_header(value, [class])
+
+.. autofunction:: parse_cache_control_header
+
+.. autofunction:: parse_date
+
+.. autofunction:: parse_authorization_header
+
+.. autofunction:: parse_www_authenticate_header
+
+.. autofunction:: remove_entity_headers
 
 
 General Helpers

@@ -46,7 +46,7 @@ _entity_headers = frozenset([
 
 
 class Accept(list):
-    """An `Accept` object is just a list subclass for lists of
+    """An :class:`Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by quality.
     """
 
@@ -122,7 +122,9 @@ class Accept(list):
 
 
 class MIMEAccept(Accept):
-    """Like `Accept` but with special methods and behavior for mimetypes."""
+    """Like :class:`Accept` but with special methods and behavior for
+    mimetypes.
+    """
 
     def _value_matches(self, value, item):
         def _normalize(x):
@@ -169,7 +171,7 @@ class MIMEAccept(Accept):
 
 
 class CharsetAccept(Accept):
-    """Like Accept but with normalization for charsets."""
+    """Like :class:`Accept` but with normalization for charsets."""
 
     def _value_matches(self, value, item):
         def _normalize(name):
@@ -181,12 +183,12 @@ class CharsetAccept(Accept):
 
 
 class HeaderSet(object):
-    """Similar to the `ETags` class this implements a set like structure.
-    Unlike `ETags` this is case insensitive and used for vary, allow, and
+    """Similar to the :class:`ETags` class this implements a set like structure.
+    Unlike :class:`ETags` this is case insensitive and used for vary, allow, and
     content-language headers.
 
-    If not constructed using the `parse_set_header` function the instanciation
-    works like this:
+    If not constructed using the :func:`parse_set_header` function the
+    instanciation works like this:
 
     >>> hs = HeaderSet(['foo', 'bar', 'baz'])
     >>> hs
@@ -320,8 +322,8 @@ class CacheControl(_UpdateDict):
     Because the cache-control directives in the HTTP header use dashes the
     python descriptors use underscores for that.
 
-    To get a header of the `CacheControl` object again you can convert the
-    object into a string or call the `to_header()` function.  If you plan
+    To get a header of the :class:`CacheControl` object again you can convert
+    the object into a string or call the :meth:`to_header` method.  If you plan
     to subclass it and add your own items have a look at the sourcecode for
     that class.
 
@@ -693,9 +695,9 @@ def quote_header_value(value, extra_chars='', allow_token=True):
 
 def dump_header(iterable, allow_token=True):
     """Dump an HTTP header again.  This is the reversal of
-    `parse_list_header`, `parse_set_header` and `parse_dict_header`.  This
-    also quotes strings that include an equals sign unless you pass it as dict
-    of key, value pairs.
+    :func:`parse_list_header`, :func:`parse_set_header` and
+    :func:`parse_dict_header`.  This also quotes strings that include an
+    equals sign unless you pass it as dict of key, value pairs.
 
     The `allow_token` parameter can be set to `False` to disallow tokens as
     values.  If this is enabled all values are quoted.
@@ -754,8 +756,11 @@ def parse_accept_header(value, cls=Accept):
     valid algorithm but one that supports at least value and quality
     extraction.
 
-    Returns a new `Accept` object (basicly a list of ``(value, quality)``
+    Returns a new :class:`Accept` object (basicly a list of ``(value, quality)``
     tuples sorted by the quality with some additional accessor methods).
+
+    The second parameter can be a subclass of :class:`Accept` that is created
+    with the parsed values and returned.
     """
     if not value:
         return cls(None)
@@ -781,9 +786,9 @@ def parse_cache_control_header(value, on_update=None):
 
 
 def parse_set_header(value, on_update=None):
-    """Parse a set like header and return a `HeaderSet` object.  The return
-    value is an object that treats the items case insensitive and keeps the
-    order of the items.
+    """Parse a set like header and return a :class:`HeaderSet` object.  The
+    return value is an object that treats the items case insensitive and keeps
+    the order of the items.
     """
     if not value:
         return HeaderSet(None, on_update)
@@ -793,7 +798,7 @@ def parse_set_header(value, on_update=None):
 def parse_authorization_header(value):
     """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
-    not given, otherwise an `Authorization` object.
+    not given, otherwise an :class:`Authorization` object.
     """
     if not value:
         return
@@ -819,7 +824,7 @@ def parse_authorization_header(value):
 
 
 def parse_www_authenticate_header(value, on_update=None):
-    """Parse an HTTP WWW-Authenticate header into a `WWWAuthenticate`
+    """Parse an HTTP WWW-Authenticate header into a :class:`WWWAuthenticate`
     object."""
     if not value:
         return WWWAuthenticate(on_update=on_update)
@@ -857,7 +862,7 @@ def unquote_etag(etag):
 
 
 def parse_etags(value):
-    """Parse and etag header.  Returns an `ETags` object."""
+    """Parse and etag header.  Returns an :class:`ETags` object."""
     if not value:
         return ETags()
     strong = []
@@ -931,7 +936,7 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
 
 
 def remove_entity_headers(headers):
-    """Remove all entity headers from a list or `Headers` object.  This
+    """Remove all entity headers from a list or :class:`Headers` object.  This
     operation works in-place.
     """
     headers[:] = [(key, value) for key, value in headers if

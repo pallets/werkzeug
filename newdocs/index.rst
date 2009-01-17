@@ -12,4 +12,5 @@ Welcome to the Werkzeug documentation.
    tutorial
    unicode
    wrappers
+   routing
    utils
