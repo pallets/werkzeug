@@ -65,24 +65,24 @@ class BaseRequest(object):
     Per default the request object will assume all the text data is `utf-8`
     encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
     details about customizing the behavior.
+
+    Per default the request object will be added to the WSGI
+    enviornment as `werkzeug.request` to support the debugging system.
+    If you don't want that, set `populate_request` to `False`.
+
+    If `shallow` is `True` the environment is initialized as shallow
+    object around the environ.  Every operation that would modify the
+    environ in any way (such as consuming form data) raises an exception
+    unless the `shallow` attribute is explicitly set to `False`.  This
+    is useful for middlewares where you don't want to consume the form
+    data by accident.  A shallow request is not populated to the WSGI
+    environment.
     """
     charset = 'utf-8'
     encoding_errors = 'ignore'
     is_behind_proxy = False
 
     def __init__(self, environ, populate_request=True, shallow=False):
-        """Per default the request object will be added to the WSGI
-        enviornment as `werkzeug.request` to support the debugging system.
-        If you don't want that, set `populate_request` to `False`.
-
-        If `shallow` is `True` the environment is initialized as shallow
-        object around the environ.  Every operation that would modify the
-        environ in any way (such as consuming form data) raises an exception
-        unless the `shallow` attribute is explicitly set to `False`.  This
-        is useful for middlewares where you don't want to consume the form
-        data by accident.  A shallow request is not populated to the WSGI
-        environment.
-        """
         self.environ = environ
         if populate_request and not shallow:
             self.environ['werkzeug.request'] = self
@@ -98,10 +98,9 @@ class BaseRequest(object):
         object in :mod:`werkzeug.test` that allows to create multipart requests
         etc.
 
-        This accepts the same options as the `create_environ` function from the
-        utils module and additionally an `environ` parameter that can contain
-        values which will override the values from dict returned by
-        :func:`create_environ`.
+        This accepts the same options as the :func:`create_environ` function
+        and additionally an `environ` parameter that can contain values which
+        will override the values from dict returned by :func:`create_environ`.
 
         Additionally a dict passed to `query_string` will be encoded in the
         request class charset.
@@ -127,6 +126,9 @@ class BaseRequest(object):
             @Request.application
             def my_wsgi_app(request):
                 return Response('Hello World!')
+
+        :param f: the WSGI callable to decorate
+        :return: a new WSGI callable
         """
         #: return a callable that wraps the -2nd argument with the request
         #: and calls the function with all the arguments up to that one and
@@ -178,25 +180,27 @@ class BaseRequest(object):
 
     @cached_property
     def args(self):
-        """The parsed URL parameters as `MultiDict`."""
+        """The parsed URL parameters as :class:`MultiDict`."""
         return url_decode(self.environ.get('QUERY_STRING', ''), self.charset,
                           errors=self.encoding_errors)
 
     @cached_property
     def data(self):
         """This reads the buffered incoming data from the client into the
-        string.  Usually it's a bad idea to access `data` because a client
+        string.  Usually it's a bad idea to access :attr:`data` because a client
         could send dozens of megabytes or more to cause memory problems on the
         server.
+
+        To circument that make sure to check the content length first.
         """
         return self.stream.read()
 
     @property
     def form(self):
-        """Form parameters.  Currently it's not guaranteed that the MultiDict
-        returned by this function is ordered in the same way as the submitted
-        form data.  The reason for this is that the underlaying cgi library
-        uses a dict internally and loses the ordering.
+        """Form parameters.  Currently it's not guaranteed that the
+        :class:`MultiDict` returned by this function is ordered in the same
+        way as the submitted form data.  The reason for this is that the
+        underlaying cgi library uses a dict internally and loses the ordering.
         """
         if not hasattr(self, '_form'):
             self._load_form_data()
@@ -204,7 +208,7 @@ class BaseRequest(object):
 
     @property
     def values(self):
-        """Combined multi dict for `args` and `form`."""
+        """Combined multi dict for :attr:`args` and :attr:`form`."""
         return CombinedMultiDict([self.args, self.form])
 
     @property
@@ -258,7 +262,7 @@ class BaseRequest(object):
 
     @cached_property
     def base_url(self):
-        """Like `url` but without the querystring"""
+        """Like :attr:`url` but without the querystring"""
         return get_current_url(self.environ, strip_querystring=True)
 
     @cached_property
@@ -308,7 +312,7 @@ class BaseRequest(object):
     is_xhr = property(lambda x: x.environ.get('HTTP_X_REQUESTED_WITH', '')
                       .lower() == 'xmlhttprequest', doc='''
         True if the request was triggered via an JavaScript XMLHttpRequest.
-        This only works with libraries that support the X-Requested-With
+        This only works with libraries that support the `X-Requested-With`
         header and set it to "XMLHttpRequest".  Libraries that do that are
         prototype, jQuery and Mochikit and probably some more.''')
     is_secure = property(lambda x: x.environ['wsgi.url_scheme'] == 'https',
@@ -366,6 +370,23 @@ class BaseResponse(object):
     Per default the request object will assume all the text data is `utf-8`
     encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
     details about customizing the behavior.
+
+    Response can be any kind of iterable or string.  If it's a string
+    it's considered being an iterable with one item which is the string
+    passed.  Headers can be a list of tuples or a :class:`Headers` object.
+
+    Special note for `mimetype` and `content_type`:  For most mime types
+    `mimetype` and `content_type` work the same, the difference affects
+    only 'text' mimetypes.  If the mimetype passed with `mimetype` is a
+    mimetype starting with `text/` it becomes a charset parameter defined
+    with the charset of the response object.  In constrast the
+    `content_type` parameter is always added as header unmodified.
+
+    :param response: a string or response iterable.
+    :param status: a string with a status or an integer with the status code.
+    :param headers: a list of headers or an :class:`Headers` object.
+    :param mimetype: the mimetype for the request.  See notice above.
+    :param content_type: the content type for the request.  See notice above.
     """
     charset = 'utf-8'
     default_status = 200
@@ -373,17 +394,6 @@ class BaseResponse(object):
 
     def __init__(self, response=None, status=None, headers=None,
                  mimetype=None, content_type=None):
-        """Response can be any kind of iterable or string.  If it's a string
-        it's considered being an iterable with one item which is the string
-        passed.  Headers can be a list of tuples or a `Headers` object.
-
-        Special note for `mimetype` and `content_type`.  For most mime types
-        `mimetype` and `content_type` work the same, the difference affects
-        only 'text' mimetypes.  If the mimetype passed with `mimetype` is a
-        mimetype starting with `text/` it becomes a charset parameter defined
-        with the charset of the response object.  In constrast the
-        `content_type` parameter is always added as header unmodified.
-        """
         if response is None:
             self.response = []
         elif isinstance(response, basestring):
@@ -435,6 +445,10 @@ class BaseResponse(object):
 
         Keep in mind that this will modify response objects in place if
         possible!
+
+        :param response: a response object or wsgi application.
+        :param environ: a WSGI environment object.
+        :return: a response object.
         """
         if not isinstance(response, BaseResponse):
             if environ is None:
@@ -452,6 +466,11 @@ class BaseResponse(object):
         returned by the `start_response` function.  This tries to resolve such
         edge cases automatically.  But if you don't get the expected output
         you should set `buffered` to `True` which enforces buffering.
+
+        :param app: the WSGI application to execute.
+        :param environ: the WSGI environment to execute aginst.
+        :param buffered: set to `True` to enforce buffering.
+        :return: a response object.
         """
         return cls(*run_wsgi_app(app, environ, buffered))
 
@@ -497,24 +516,35 @@ class BaseResponse(object):
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None, httponly=False):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
-        object in the Python standard library but it accepts unicode data too:
+        object in the Python standard library but it accepts unicode data too.
 
-        - `max_age` should be a number of seconds, or `None` (default) if the
-           cookie should last only as long as the client’s browser session.
-        - `expires` should be a `datetime` object or UNIX timestamp.
-        - Use `domain` if you want to set a cross-domain cookie.  For example,
-          ``domain=".example.com"`` will set a cookie that is readable by the
-          domain ``www.example.com``, ``foo.example.com`` etc.  Otherwise, a
-          cookie will only be readable by the domain that set it.
-        - `path` limits the cookie to a given path, per default it will span
-          the whole domain.
+        :param key: the key (name) of the cookie to be set.
+        :param value: the value of the cookie.
+        :param max_age: should be a number of seconds, or `None` (default) if
+                        the cookie should last only as long as the client's
+                        browser session.
+        :param expires: should be a `datetime` object or UNIX timestamp.
+        :param domain: if you want to set a cross-domain cookie.  For example,
+                       ``domain=".example.com"`` will set a cookie that is
+                       readable by the domain ``www.example.com``,
+                       ``foo.example.com`` etc.  Otherwise, a cookie will only
+                       be readable by the domain that set it.
+        :param path: limits the cookie to a given path, per default it will
+                     span the whole domain.
         """
         self.headers.add('Set-Cookie', dump_cookie(key, value, max_age,
                          expires, path, domain, secure, httponly,
                          self.charset))
 
     def delete_cookie(self, key, path='/', domain=None):
-        """Delete a cookie.  Fails silently if key doesn't exist."""
+        """Delete a cookie.  Fails silently if key doesn't exist.
+
+        :param key: the key (name) of the cookie to be deleted.
+        :param path: if the cookie that should be deleted was limited to a
+                     path, the path has to be defined here.
+        :param domain: if the cookie that should be deleted was limited to a
+                       domain, that domain has to be defined here.
+        """
         self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
 
     @property
@@ -544,6 +574,9 @@ class BaseResponse(object):
         """This is automatically called right before the response is started
         and should fix common mistakes in headers.  For example location
         headers are joined with the root URL here.
+
+        :param environ: the WSGI environment of the request to be used for
+                        the applied fixes.
         """
         if 'Location' in self.headers:
             self.headers['Location'] = urlparse.urljoin(
@@ -562,11 +595,17 @@ class BaseResponse(object):
 
     def freeze(self):
         """Call this method if you want to make your response object ready for
-        pickeling.  This buffers the generator if there is one."""
+        pickeling.  This buffers the generator if there is one.
+        """
         BaseResponse.data.__get__(self)
 
     def __call__(self, environ, start_response):
-        """Process this response as WSGI application."""
+        """Process this response as WSGI application.
+
+        :param environ: the WSGI environment.
+        :param start_response: the response callable provided by the WSGI
+                               server.
+        """
         self.fix_headers(environ)
         if environ['REQUEST_METHOD'] == 'HEAD':
             resp = ()
@@ -714,6 +753,10 @@ class ETagResponseMixin(object):
 
         Returns self so that you can do ``return resp.make_conditional(req)``
         but modifies the object in-place.
+
+        :param request_or_environ: a request object or WSGI environment to be
+                                   used to make the response conditional
+                                   against.
         """
         environ = getattr(request_or_environ, 'environ', request_or_environ)
         if environ['REQUEST_METHOD'] in ('GET', 'HEAD'):

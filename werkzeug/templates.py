@@ -386,8 +386,8 @@ class Parser(object):
 
 class Context(object):
 
-    def __init__(self, namespace, encoding, errors):
-        self.encoding = encoding
+    def __init__(self, namespace, charset, errors):
+        self.charset = charset
         self.errors = errors
         self._namespace = namespace
         self._buffer = []
@@ -406,13 +406,13 @@ class Context(object):
 
     def to_unicode(self, value):
         if isinstance(value, str):
-            return _decode_unicode(value, self.encoding, self.errors)
+            return _decode_unicode(value, self.charset, self.errors)
         return unicode(value)
 
     def get_value(self, as_unicode=True):
         rv = u''.join(self._buffer)
         if not as_unicode:
-            return rv.encode(self.encoding, self.errors)
+            return rv.encode(self.charset, self.errors)
         return rv
 
     def __getitem__(self, key, default=undefined):
@@ -453,40 +453,59 @@ class Template(object):
         'url_encode':       utils.url_encode
     }
 
-    def __init__(self, source, filename='<template>', encoding='utf-8',
+    def __init__(self, source, filename='<template>', charset='utf-8',
                  errors='strict', unicode_mode=True):
         if isinstance(source, str):
-            source = _decode_unicode(source, encoding, errors)
+            source = _decode_unicode(source, charset, errors)
         if isinstance(filename, unicode):
             filename = filename.encode('utf-8')
         node = Parser(tokenize(u'\n'.join(source.splitlines()),
                                filename), filename).parse()
         self.code = TemplateCodeGenerator(node, filename).getCode()
         self.filename = filename
-        self.encoding = encoding
+        self.charset = charset
         self.errors = errors
         self.unicode_mode = unicode_mode
 
-    def from_file(cls, file, encoding='utf-8', errors='strict',
-                  unicode_mode=True):
-        """Load a template from a file."""
+    @classmethod
+    def from_file(cls, file, charset='utf-8', errors='strict',
+                  unicode_mode=True, encoding=None):
+        """Load a template from a file.
+
+        .. versionchanged:: 0.5
+            The encoding parameter was renamed to charset.
+
+        :param file: a filename or file object to load the template from.
+        :param charset: the charset of the template to load.
+        :param errors: the error behavior of the charset decoding.
+        :param unicode_mode: set to `False` to disable unicode mode.
+        :return: a template
+        """
+        if encoding is not None:
+            from warnings import warn, DeprecationWarning
+            warn(DeprecationWarning('the encoding parameter is deprecated. '
+                                    'use charset instead.'), stacklevel=2)
+            charset = encoding
         close = False
         if isinstance(file, basestring):
             f = open(file, 'r')
             close = True
         try:
-            data = _decode_unicode(f.read(), encoding, errors)
+            data = _decode_unicode(f.read(), charset, errors)
         finally:
             if close:
                 f.close()
-        return cls(data, getattr(f, 'name', '<template>'), encoding,
+        return cls(data, getattr(f, 'name', '<template>'), charset,
                    errors, unicode_mode)
-    from_file = classmethod(from_file)
 
     def render(self, *args, **kwargs):
         """This function accepts either a dict or some keyword arguments which
         will then be the context the template is evaluated in.  The return
         value will be the rendered template.
+
+        :param context: the function accepts the same arguments as the
+                        :class:`dict` constructor.
+        :return: the rendered template as string
         """
         ns = self.default_context.copy()
         if len(args) == 1 and isinstance(args[0], utils.MultiDict):
@@ -495,11 +514,8 @@ class Template(object):
             ns.update(dict(*args))
         if kwargs:
             ns.update(kwargs)
-        context = Context(ns, self.encoding, self.errors)
-        if sys.version_info < (2, 4):
-            exec self.code in context.runtime, ns
-        else:
-            exec self.code in context.runtime, context
+        context = Context(ns, self.charset, self.errors)
+        exec self.code in context.runtime, context
         return context.get_value(self.unicode_mode)
 
     def substitute(self, *args, **kwargs):

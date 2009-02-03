@@ -380,3 +380,19 @@ dl p {
 dl p + p {
     margin-top: 10px;
 }
+
+span.versionmodified {
+    color: #4B4A49;
+    font-weight: bold;
+}
+
+span.versionadded {
+    color: #30691A;
+    font-weight: bold;
+}
+
+table.field-list td.field-body ul.simple {
+    margin: 0;
+    padding: 0!important;
+    list-style: none;
+}

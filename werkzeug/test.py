@@ -171,56 +171,37 @@ class Client(object):
         If the `path` contains a query string it will be used, even if the
         `query_string` parameter was given.  If it does not contain one
         the `query_string` parameter is used as querystring.  In that case
-        it can either be a dict, MultiDict or string.
+        it can either be a dict, :class:`MultiDict` or string.
 
-        The following options exist:
+        A file object for this method is either a file descriptor with an
+        additional `name` attribute (like a file descriptor returned by the
+        `open` / `file` function), a tuple in the form
+        ``(fd, filename, mimetype)`` (all arguments except fd optional) or
+        as dict with those keys and values.  They can be specified for the
+        `data` argument.
 
-        `method`
-            The request method.  Defaults to `GET`
+        Additionally you can instanciate the
+        :class:`~werkzeug.test.File` object (or a subclass of it)
+        and pass it as value.
 
-        `input_stream`
-            The input stream.  Defaults to an empty read only stream.
-
-        `data`
-            The data you want to transmit.  You can set this to a string and
-            define a content type instead of specifying an input stream.
-            Additionally you can pass a dict with the form data.  The values
-            could then be strings (no unicode objects!) which are then url
-            encoded or file objects.
-
-            A file object for this method is either a file descriptor with
-            an additional `name` attribute (like a file descriptor returned
-            by the `open` / `file` function), a tuple in the form
-            ``(fd, filename, mimetype)`` (all arguments except fd optional)
-            or as dict with those keys and values.
-
-            Additionally you can instanciate the `werkzeug.test.File` object
-            (or a subclass of it) and pass it as value.
-
-        `content_type`
-            The content type for this request.  Default is an empty content
-            type.
-
-        `content_length`
-            The value for the content length header.  Defaults to 0.
-
-        `errors_stream`
-            The wsgi.errors stream.  Defaults to `sys.stderr`.
-
-        `multithread`
-            The multithreaded flag for the WSGI Environment.  Defaults to
-            `False`.
-
-        `multiprocess`
-            The multiprocess flag for the WSGI Environment.  Defaults to
-            `False`.
-
-        `run_once`
-            The run_once flag for the WSGI Environment.  Defaults to `False`.
-
-        `buffered`
-            Set this to true to buffer the application run.  This will
-            automatically close the application for you as well.
+        :param method: The request method.
+        :param input_stream: The input stream.  Defaults to an empty stream.
+        :param data: The data you want to transmit.  You can set this to a
+                     string and define a content type instead of specifying an
+                     input stream.  Additionally you can pass a dict with the
+                     form data.  The values could then be strings (no unicode
+                     objects!) which are then URL encoded or file objects.
+        :param content_type: The content type for this request.  Default is
+                             an empty content type.
+        :param content_length: the value for the content length header.
+        :param errors_stream: the wsgi.errors stream.  Defaults to
+                              `sys.stderr`.
+        :param multithread: the multithreaded flag for the WSGI environment.
+        :param multiprocess: the multiprocess flag for the WSGI environment.
+        :param run_once: the run_once flag for the WSGI environment.
+        :param buffered: set this to true to buffer the application run.
+                         This will automatically close the application for
+                         you as well.
         """
         if input_stream is None and data is not None and method in ('PUT', 'POST'):
             need_multipart = False
@@ -269,27 +250,27 @@ class Client(object):
         return response
 
     def get(self, *args, **kw):
-        """Like open but method is enforced to GET"""
+        """Like open but method is enforced to GET."""
         kw['method'] = 'GET'
         return self.open(*args, **kw)
 
     def post(self, *args, **kw):
-        """Like open but method is enforced to POST"""
+        """Like open but method is enforced to POST."""
         kw['method'] = 'POST'
         return self.open(*args, **kw)
 
     def head(self, *args, **kw):
-        """Like open but method is enforced to HEAD"""
+        """Like open but method is enforced to HEAD."""
         kw['method'] = 'HEAD'
         return self.open(*args, **kw)
 
     def put(self, *args, **kw):
-        """Like open but method is enforced to PUT"""
+        """Like open but method is enforced to PUT."""
         kw['method'] = 'PUT'
         return self.open(*args, **kw)
 
     def delete(self, *args, **kw):
-        """Like open but method is enforced to DELETE"""
+        """Like open but method is enforced to DELETE."""
         kw['method'] = 'DELETE'
         return self.open(*args, **kw)
 

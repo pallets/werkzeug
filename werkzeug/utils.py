@@ -29,14 +29,13 @@ except NameError:
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
      _StorageHelper, _DictAccessorProperty, _dump_date, \
-     _parse_signature
+     _parse_signature, _missing
 from werkzeug.http import generate_etag, parse_etags, \
      remove_entity_headers
 
 
 _format_re = re.compile(r'\$(?:(%s)|\{(%s)\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 _entity_re = re.compile(r'&([^;]+);')
-_missing = object()
 
 
 class MultiDict(dict):
@@ -157,7 +156,7 @@ class MultiDict(dict):
         :param type: A callable that is used to cast the value in the
                      :class:`MultiDict`.  If a :exc:`ValueError` is raised
                      by this callable the value will be removed from the list.
-        :return: a list of all the values for the key.
+        :return: a :class:`list` of all the values for the key.
         """
         try:
             rv = dict.__getitem__(self, key)
@@ -212,7 +211,7 @@ class MultiDict(dict):
         :param default: An iterable of default values.  It is either copied
                         (in case it was a list) or converted into a list
                         before returned.
-        :return: a list
+        :return: a :class:`list`
         """
         if key not in self:
             default_list = list(default_list)
@@ -225,7 +224,7 @@ class MultiDict(dict):
         """Return a list of ``(key, value)`` pairs, where value is the last
         item in the list associated with the key.
 
-        :return: a list
+        :return: a :class:`list`
         """
         return [(key, self[key]) for key in self.iterkeys()]
 
@@ -234,7 +233,7 @@ class MultiDict(dict):
     def values(self):
         """Returns a list of the last value on every key list.
 
-        :return: a list.
+        :return: a :class:`list`.
         """
         return [self[key] for key in self.iterkeys()]
 
@@ -264,7 +263,7 @@ class MultiDict(dict):
         :param flat: If set to `False` the dict returned will have lists
                      with all the values in it.  Otherwise it will only
                      contain the first item for each key.
-        :return: a dict
+        :return: a :class:`dict`
         """
         if flat:
             return dict(self.iteritems())
@@ -437,7 +436,7 @@ class CombinedMultiDict(MultiDict):
         :param flat: If set to `False` the dict returned will have lists
                      with all the values in it.  Otherwise it will only
                      contain the first item for each key.
-        :return: a dict
+        :return: a :class:`dict`
         """
         rv = {}
         for d in reversed(self.dicts):
@@ -488,6 +487,12 @@ class FileStorage(object):
         destination is a file object you have to close it yourself after the
         call.  The buffer size is the number of bytes held in the memory
         during the copy process.  It defaults to 16KB.
+
+        :param dst: a filename or open file object the uploaded file
+                    is saved in.
+        :param buffer_size: the size of the buffer.  This works the same as
+                            the `length` parameter of
+                            :func:`shutil.copyfileobj`.
         """
         from shutil import copyfileobj
         close_dst = False
@@ -636,7 +641,7 @@ class Headers(object):
         :param type: A callable that is used to cast the value in the
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the value will be removed from the list.
-        :return: a list of all the values for the key.
+        :return: a :class:`list` of all the values for the key.
         """
         ikey = key.lower()
         result = []
@@ -1964,6 +1969,7 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
 
     The following options exist:
 
+    :param path: the path of the request.  See explanation above.
     :param method: the request method.
     :param input_stream: the input stream.  Defaults to an empty read only
                          stream.
@@ -2139,7 +2145,7 @@ def bind_arguments(func, args, kwargs):
     :param func: the function the arguments should be bound for.
     :param args: tuple of positional arguments.
     :param kwargs: a dict of keyword arguments.
-    :return: a dict of bound keyword arguments.
+    :return: a :class:`dict` of bound keyword arguments.
     """
     args, kwargs, missing, extra, extra_positional, \
         arg_spec, vararg_var, kwarg_var = _parse_signature(func)(args, kwargs)

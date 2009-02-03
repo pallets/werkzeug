@@ -90,14 +90,20 @@ class Accept(list):
         )
 
     def index(self, key):
-        """Get the position of en entry or raise `IndexError`."""
+        """Get the position of en entry or raise :exc:`IndexError`.
+
+        :param key: The key to be looked up.
+        """
         rv = self.find(key)
         if rv < 0:
             raise IndexError(key)
-        return key
+        return rv
 
     def find(self, key):
-        """Get the position of an entry or return -1"""
+        """Get the position of an entry or return -1.
+
+        :param key: The key to be looked up.
+        """
         if isinstance(key, basestring):
             for idx, (item, quality) in enumerate(self):
                 if self._value_matches(key, item):
@@ -114,11 +120,11 @@ class Accept(list):
         for item in self:
             yield item[0]
 
+    @property
     def best(self):
         """The best match as value."""
         if self:
             return self[0][0]
-    best = property(best)
 
 
 class MIMEAccept(Accept):
@@ -205,11 +211,18 @@ class HeaderSet(object):
         self.update((header,))
 
     def remove(self, header):
-        """Remove a layer from the set.  This raises an `IndexError` if the
-        header is not in the set."""
+        """Remove a layer from the set.  This raises an :exc:`KeyError` if the
+        header is not in the set.
+
+        .. versionchanged:: 0.5
+            In older version a :exc:`IndexError` was raised instead of an
+            :exc:`KeyError` if the object was missing.
+
+        :param header: the header to be removed.
+        """
         key = header.lower()
         if key not in self._set:
-            raise IndexError(header)
+            raise KeyError(header)
         self._set.remove(key)
         for idx, key in enumerate(self._headers):
             if key.lower() == header:
@@ -219,7 +232,10 @@ class HeaderSet(object):
             self.on_update(self)
 
     def update(self, iterable):
-        """Add all the headers from the iterable to the set."""
+        """Add all the headers from the iterable to the set.
+
+        :param iterable: updates the set with the items from the iterable.
+        """
         inserted_any = False
         for header in iterable:
             key = header.lower()
@@ -231,14 +247,20 @@ class HeaderSet(object):
             self.on_update(self)
 
     def discard(self, header):
-        """Like remove but ignores errors."""
+        """Like :meth:`remove` but ignores errors.
+
+        :param header: the header to be discarded.
+        """
         try:
             return self.remove(header)
-        except IndexError:
+        except KeyError:
             pass
 
     def find(self, header):
-        """Return the index of the header in the set or return -1 if not found."""
+        """Return the index of the header in the set or return -1 if not found.
+
+        :param header: the header to be looked up.
+        """
         header = header.lower()
         for idx, item in enumerate(self._headers):
             if item.lower() == header:
@@ -246,7 +268,11 @@ class HeaderSet(object):
         return -1
 
     def index(self, header):
-        """Return the index of the headerin the set or raise an `IndexError`."""
+        """Return the index of the headerin the set or raise an
+        :exc:`IndexError`.
+
+        :param header: the header to be looked up.
+        """
         rv = self.find(header)
         if rv < 0:
             raise IndexError(header)
@@ -263,9 +289,10 @@ class HeaderSet(object):
         """Return the set as real python set structure.  When calling this
         all the items are converted to lowercase and the ordering is lost.
 
-        If `preserve_casing` is `True` the items in the set returned will
-        have the original case like in the `HeaderSet`, otherwise they will
-        be lowercase.
+        :param preserve_casing: if set to `True` the items in the set returned
+                                will have the original case like in the
+                                :class:`HeaderSet`, otherwise they will
+                                be lowercase.
         """
         if preserve_casing:
             return set(self._headers)
@@ -333,19 +360,20 @@ class CacheControl(_UpdateDict):
     `no_transform`, `only_if_cached`, `public`, `private`, `must_revalidate`,
     `proxy_revalidate`, and `s_maxage`
 
-    The behavior of this class changed slightly from 0.3 to 0.4.  Since 0.4
-    setting `no_cache` or `private` to boolean `True` will set the implicit
-    none-value which is ``*``:
+    .. versionchanged:: 0.4
 
-    >>> cc = CacheControl()
-    >>> cc.no_cache = True
-    >>> cc
-    <CacheControl 'no-cache'>
-    >>> cc.no_cache
-    '*'
-    >>> cc.no_cache = None
-    >>> cc
-    <CacheControl ''>
+       setting `no_cache` or `private` to boolean `True` will set the implicit
+       none-value which is ``*``:
+
+       >>> cc = CacheControl()
+       >>> cc.no_cache = True
+       >>> cc
+       <CacheControl 'no-cache'>
+       >>> cc.no_cache
+       '*'
+       >>> cc.no_cache = None
+       >>> cc
+       <CacheControl ''>
     """
 
     def cache_property(key, empty, type):
@@ -617,6 +645,15 @@ class WWWAuthenticate(_UpdateDict):
         )
 
     def auth_property(name, doc=None):
+        """A static helper function for subclasses to add extra authentication
+        system properites onto a class::
+
+            class FooAuthenticate(WWWAuthenticate):
+                special_realm = auth_property('special_realm')
+
+        For more information have a look at the sourcecode to see how the
+        regular properties (:attr:`realm` etc. are implemented).
+        """
         def _set_value(self, value):
             if value is None:
                 self.pop(name, None)
@@ -684,7 +721,13 @@ class WWWAuthenticate(_UpdateDict):
 
 
 def quote_header_value(value, extra_chars='', allow_token=True):
-    """Quote a header value if necessary."""
+    """Quote a header value if necessary.
+
+    :param value: the value to quote.
+    :param extra_chars: a list of extra characters to skip quoting.
+    :param allow_token: if this is enabled token values are returned
+                        unchanged.
+    """
     value = str(value)
     if allow_token:
         token_chars = _token_chars | set(extra_chars)
@@ -699,8 +742,9 @@ def dump_header(iterable, allow_token=True):
     :func:`parse_dict_header`.  This also quotes strings that include an
     equals sign unless you pass it as dict of key, value pairs.
 
-    The `allow_token` parameter can be set to `False` to disallow tokens as
-    values.  If this is enabled all values are quoted.
+    :param iterable: the iterable or dict of values to quote.
+    :param allow_token: if set to `False` tokens as values are sallowed.
+                        See :func:`quote_header_value` for more details.
     """
     if isinstance(iterable, dict):
         items = []
@@ -725,6 +769,9 @@ def parse_list_header(value):
     the list may include quoted-strings.  A quoted-string could
     contain a comma.  A non-quoted string could have quotes in the
     middle.  Quotes are removed automatically after parsing.
+
+    :param value: a string with a list header.
+    :return: list
     """
     result = []
     for item in _parse_list_header(value):
@@ -738,6 +785,9 @@ def parse_dict_header(value):
     """Parse lists of key, value paits as described by RFC 2068 Section 2 and
     convert them into a python dict.  If there is no value for a key it will
     be `None`.
+
+    :param value: a string with a dict header.
+    :return: dict
     """
     result = {}
     for item in _parse_list_header(value):
@@ -761,6 +811,11 @@ def parse_accept_header(value, cls=Accept):
 
     The second parameter can be a subclass of :class:`Accept` that is created
     with the parsed values and returned.
+
+    :param value: the accept header string to be parsed.
+    :param cls: the wrapper class for the return value (can be
+                :class:`Accept` or a subclass thereof)
+    :return: an instance of `cls`.
     """
     if not value:
         return cls(None)
@@ -779,6 +834,11 @@ def parse_cache_control_header(value, on_update=None):
     """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
+
+    :param value: a cache control header to be parsed.
+    :param on_update: an optional callable that is called every time a
+                      value on the :class:`CacheControl` object is changed.
+    :return: a :class:`CacheControl` object.
     """
     if not value:
         return CacheControl(None, on_update)
@@ -789,6 +849,11 @@ def parse_set_header(value, on_update=None):
     """Parse a set like header and return a :class:`HeaderSet` object.  The
     return value is an object that treats the items case insensitive and keeps
     the order of the items.
+
+    :param value: a set header to be parsed.
+    :param on_update: an optional callable that is called every time a
+                      value on the :class:`HeaderSet` object is changed.
+    :return: a :class:`HeaderSet`
     """
     if not value:
         return HeaderSet(None, on_update)
@@ -799,6 +864,9 @@ def parse_authorization_header(value):
     """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
     not given, otherwise an :class:`Authorization` object.
+
+    :param value: the authorization header to parse.
+    :return: a :class:`Authorization` object or `None`.
     """
     if not value:
         return
@@ -825,7 +893,13 @@ def parse_authorization_header(value):
 
 def parse_www_authenticate_header(value, on_update=None):
     """Parse an HTTP WWW-Authenticate header into a :class:`WWWAuthenticate`
-    object."""
+    object.
+
+    :param value: a WWW-Authenticate header to parse.
+    :param on_update: an optional callable that is called every time a
+                      value on the :class:`WWWAuthenticate` object is changed.
+    :return: a :class:`WWWAuthenticate` object.
+    """
     if not value:
         return WWWAuthenticate(on_update=on_update)
     try:
@@ -838,7 +912,11 @@ def parse_www_authenticate_header(value, on_update=None):
 
 
 def quote_etag(etag, weak=False):
-    """Quote an etag."""
+    """Quote an etag.
+
+    :param etag: the etag to quote.
+    :param weak: set to `True` to tag it "weak".
+    """
     if '"' in etag:
         raise ValueError('invalid etag')
     etag = '"%s"' % etag
@@ -848,7 +926,16 @@ def quote_etag(etag, weak=False):
 
 
 def unquote_etag(etag):
-    """Unquote a single etag.  Return a ``(etag, weak)`` tuple."""
+    """Unquote a single etag:
+
+    >>> unquote_etag('w/"bar"')
+    ('bar', True)
+    >>> unquote_etag('"bar"')
+    ('bar', False)
+
+    :param etag: the etag identifier to unquote.
+    :return: a ``(etag, weak)`` tuple.
+    """
     if not etag:
         return None, None
     etag = etag.strip()
@@ -862,7 +949,11 @@ def unquote_etag(etag):
 
 
 def parse_etags(value):
-    """Parse and etag header.  Returns an :class:`ETags` object."""
+    """Parse an etag header.
+
+    :param value: the tag header to parse
+    :return: an :class:`ETags` object.
+    """
     if not value:
         return ETags()
     strong = []
@@ -901,6 +992,9 @@ def parse_date(value):
         Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
 
     If parsing fails the return value is `None`.
+
+    :param value: a string with a supported date format.
+    :return: a :class:`datetime.datetime` object.
     """
     if value:
         t = rfc822.parsedate_tz(value.strip())
@@ -912,7 +1006,15 @@ def parse_date(value):
 
 
 def is_resource_modified(environ, etag=None, data=None, last_modified=None):
-    """Convenience method for conditional requests."""
+    """Convenience method for conditional requests.
+
+    :param environ: the WSGI environment of the request to be checked.
+    :param etag: the etag for the response for comparision.
+    :param data: or alternatively the data of the response to automatically
+                 generate an etag using :func:`generate_etag`.
+    :param last_modified: an optional date of the last modification.
+    :return: `True` if the resource was modified, otherwise `False`.
+    """
     if etag is None and data is not None:
         etag = generate_etag(data)
     elif data is not None:
@@ -938,6 +1040,8 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
 def remove_entity_headers(headers):
     """Remove all entity headers from a list or :class:`Headers` object.  This
     operation works in-place.
+
+    :param headers: a list or :class:`Headers` object.
     """
     headers[:] = [(key, value) for key, value in headers if
                   key.lower() not in _entity_headers]

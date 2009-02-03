@@ -77,6 +77,17 @@ HTTP_STATUS_CODES = {
 }
 
 
+class _Missing(object):
+
+    def __repr__(self):
+        return 'no value'
+
+    def __reduce__(self):
+        return '_missing'
+
+_missing = _Missing()
+
+
 def _log(type, message, *args, **kwargs):
     """Log into the internal werkzeug logger."""
     global _logger
