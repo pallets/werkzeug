@@ -70,6 +70,14 @@ class MultiDict(dict):
     subclass of the :exc:`~exceptions.BadRequest` HTTP exception and will
     render a page for a ``400 BAD REQUEST`` if catched in a catch-all for HTTP
     exceptions.
+
+    A :cls:`MultiDict` can be constructed from an iterable of
+    ``(key, value)`` tuples, a dict, a :cls:`MultiDict` or with Werkzeug 0.2
+    onwards some keyword parameters.
+
+    :param mapping: the initial value for the cls:`MultiDict`.  Either a
+                    regular dict, an iterable of ``(key, value)`` tuples
+                    or `None`.
     """
 
     #: the key error this class raises.  Because of circular dependencies
@@ -77,11 +85,7 @@ class MultiDict(dict):
     #: this module.
     KeyError = None
 
-    def __init__(self, mapping=()):
-        """A `MultiDict` can be constructed from an iterable of
-        ``(key, value)`` tuples, a dict, a `MultiDict` or with Werkzeug 0.2
-        onwards some keyword parameters.
-        """
+    def __init__(self, mapping=None):
         if isinstance(mapping, MultiDict):
             dict.__init__(self, [(k, v[:]) for k, v in mapping.lists()])
         elif isinstance(mapping, dict):
@@ -95,7 +99,7 @@ class MultiDict(dict):
             dict.__init__(self, tmp)
         else:
             tmp = {}
-            for key, value in mapping:
+            for key, value in mapping or ():
                 tmp.setdefault(key, []).append(value)
             dict.__init__(self, tmp)
 
@@ -103,7 +107,8 @@ class MultiDict(dict):
         """Return the first data value for this key;
         raises KeyError if not found.
 
-        :raise KeyError: if the key does not exist
+        :param key: The key to be looked up.
+        :raise KeyError: if the key does not exist.
         """
         if key in self:
             return dict.__getitem__(self, key)[0]
