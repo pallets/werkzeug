@@ -62,8 +62,10 @@ from time import time
 from random import random
 from urllib import urlencode
 from cStringIO import StringIO
+from cookielib import CookieJar
 from mimetypes import guess_type
-from werkzeug.utils import create_environ, run_wsgi_app
+from urllib2 import Request as U2Request
+from werkzeug.utils import create_environ, run_wsgi_app, get_current_url
 
 
 def encode_multipart(values):
@@ -134,6 +136,58 @@ class File(object):
         )
 
 
+class _TestCookieHeaders(object):
+    """A headers adapter for cookielib
+    """
+
+    def __init__(self, headers):
+        self.headers = headers
+
+    def getheaders(self, name):
+        headers = []
+        for k, v in self.headers:
+            if k == name:
+                headers.append(v)
+        return headers
+
+
+class _TestCookieResponse(object):
+    """Something that looks like a httplib.HTTPResponse, but is actually just an
+    adapter for our test responses to make them available for cookielib.
+    """
+
+    def __init__(self, headers):
+        self.headers = _TestCookieHeaders(headers)
+
+    def info(self):
+        return self.headers
+
+
+class _TestCookieJar(CookieJar):
+    """A cookilib.CookiJar modified to inject and read cookie headers from and to
+    wsgi environments, and wsgi application responses.
+    """
+
+    def inject_wsgi(self, environ):
+        """Inject the cookies as client headers into the server's wsgi
+        environment.
+        """
+        cvals = []
+        for cookie in self:
+            cvals.append('%s=%s' % (cookie.name, cookie.value))
+        if cvals:
+            environ['HTTP_COOKIE'] = ','.join(cvals)
+
+    def extract_wsgi(self, environ, headers):
+        """Extract the server's set-cookie headers as cookies into the cookie
+        jar.
+        """
+        self.extract_cookies(
+            _TestCookieResponse(headers),
+            U2Request(get_current_url(environ)),
+        )
+
+
 class Client(object):
     """This class allows to send requests to a wrapped application.
 
@@ -147,13 +201,21 @@ class Client(object):
             ...
 
         client = Client(MyApplication(), response_wrapper=ClientResponse)
+
+    The use_cookies parameter indicates whether cookies should be stored and
+    sent for subsequent requests. This is True by default, but passing False
+    will disable this behaviour.
     """
 
-    def __init__(self, application, response_wrapper=None):
+    def __init__(self, application, response_wrapper=None, use_cookies=True):
         self.application = application
         if response_wrapper is None:
             response_wrapper = lambda a, s, h: (a, s, h)
         self.response_wrapper = response_wrapper
+        if use_cookies:
+            self.cookie_jar = _TestCookieJar()
+        else:
+            self.cookie_jar = None
 
     def open(self, path='/', base_url=None, query_string=None, method='GET',
              data=None, input_stream=None, content_type=None,
@@ -243,7 +305,11 @@ class Client(object):
                                      multiprocess, run_once)
         if environ_overrides:
             environ.update(environ_overrides)
+        if self.cookie_jar is not None:
+            self.cookie_jar.inject_wsgi(environ)
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
+        if self.cookie_jar is not None:
+            self.cookie_jar.extract_wsgi(environ, rv[2])
         response = self.response_wrapper(*rv)
         if as_tuple:
             return environ, response
