@@ -9,6 +9,7 @@ Version 0.5
 - added `MIMEAccept` and `CharsetAccept` that work like the regular
   `Accept` but have extra special normlization for mimetypes and
   charsets and extra convenience methods.
+- switched the serving system from wsgiref to something homebaked.
 
 Version 0.4.1
 -------------

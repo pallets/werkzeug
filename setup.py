@@ -35,9 +35,8 @@ Features
 
 -   an interactive debugger
 
--   wrapper around wsgiref that works around some of the limitations
-    and bugs, adds threading and fork support for test environments
-    and adds an automatic reloader.
+-   A simple WSGI server with support for threading and forking
+    with an automatic reloader.
 
 -   a flexible URL routing system with REST support.
 

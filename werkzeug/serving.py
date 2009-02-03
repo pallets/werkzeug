@@ -46,91 +46,137 @@ import socket
 import sys
 import time
 import thread
+from urlparse import urlparse
 from itertools import chain
-try:
-    from wsgiref.simple_server import ServerHandler, WSGIRequestHandler, \
-         WSGIServer
-    have_wsgiref = True
-except ImportError:
-    have_wsgiref = False
 from SocketServer import ThreadingMixIn, ForkingMixIn
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from werkzeug._internal import _log
 
 
-if have_wsgiref:
-    class BaseRequestHandler(WSGIRequestHandler):
-        """
-        Subclass of the normal request handler that thinks it is
-        threaded or something like that. The default wsgiref handler
-        has wrong information so we need this class.
-        """
-        multithreaded = False
-        multiprocess = False
-        _handler_class = None
+class WSGIHandler(BaseHTTPRequestHandler):
 
-        def get_handler(self):
-            handler = self._handler_class
-            if handler is None:
-                class handler(ServerHandler):
-                    wsgi_multithread = self.multithreaded
-                    wsgi_multiprocess = self.multiprocess
-                self._handler_class = handler
+    def run_wsgi(self):
+        path_info, _, query = urlparse(self.path)[2:5]
+        app = self.server.app
+        environ = {
+            'wsgi.version':         (1, 0),
+            'wsgi.url_scheme':      'http',
+            'wsgi.input':           self.rfile,
+            'wsgi.errors':          sys.stderr,
+            'wsgi.multithread':     self.server.multithread,
+            'wsgi.multiprocess':    self.server.multiprocess,
+            'wsgi.run_once':        0,
+            'REQUEST_METHOD':       self.command,
+            'SCRIPT_NAME':          '',
+            'QUERY_STRING':         query,
+            'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
+            'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
+            'REMOTE_ADDR':          self.client_address[0],
+            'REMOTE_PORT':          self.client_address[1],
+            'SERVER_NAME':          self.server.server_address[0],
+            'SERVER_PORT':          str(self.server.server_address[1]),
+            'SERVER_PROTOCOL':      self.request_version
+        }
+        if path_info:
+            from urllib import unquote
+            environ['PATH_INFO'] = unquote(path_info)
+        for key, value in self.headers.items():
+            environ['HTTP_' + key.upper().replace('-', '_')] = value
 
-            rv = handler(self.rfile, self.wfile, self.get_stderr(),
-                         self.get_environ())
-            rv.request_handler = self
-            return rv
+        headers_set = []
+        headers_sent = []
 
-        def handle(self):
-            self.raw_requestline = self.rfile.readline()
-            if self.parse_request():
-                self.get_handler().run(self.server.get_app())
+        def write(data):
+            assert headers_set, 'write() before start_response'
+            if not headers_sent:
+                status, response_headers = headers_sent[:] = headers_set
+                code, msg = status.split(None, 1)
+                self.send_response(int(code), msg)
+                for line in response_headers:
+                    self.send_header(*line)
+                self.end_headers()
 
-        def log_request(self, code='-', size='-'):
-            _log('info', '%s -- [%s] %s %s',
-                self.address_string(),
-                self.requestline,
-                code,
-                size
-            )
+            assert type(data) is str, 'applications must write bytes'
+            self.wfile.write(data)
 
-        def log_error(self, format, *args):
-            _log('error', 'Error: %s', format % args)
+        def start_response(status, response_headers, exc_info=None):
+            if exc_info:
+                try:
+                    if headers_sent:
+                        raise exc_info[0], exc_info[1], exc_info[2]
+                finally:
+                    exc_info = None
+            else:
+                assert not headers_set, 'Headers already set'
+            headers_set[:] = [status, response_headers]
+            return write
 
-        def log_message(self, format, *args):
-            _log('info', format, args)
+        try:
+            application_iter = app(environ, start_response)
+            try:
+                for data in application_iter:
+                    write(data)
+            finally:
+                if hasattr(application_iter, 'close'):
+                    application_iter.close()
+        except (socket.error, socket.timeout):
+            return
+        except:
+            from werkzeug.debug.tbtools import get_current_traceback
+            traceback = get_current_traceback(ignore_system_exceptions=True)
+            self.server.log('error', 'Error on request:\n%s',
+                            traceback.plaintext)
 
-        def address_string(self):
-            return self.client_address[0]
+    def __getattr__(self, name):
+        if name.startswith('do_'):
+            return self.run_wsgi
+        raise AttributeError(name)
+
+
+class BaseWSGIServer(HTTPServer):
+    multithread = False
+    multiprocess = False
+
+    def __init__(self, host, port, app):
+        HTTPServer.__init__(self, (host, int(port)), WSGIHandler)
+        self.app = app
+
+    def log(self, type, message, *args):
+        _log(type, message, args)
+
+    def serve_forever(self):
+        try:
+            HTTPServer.serve_forever(self)
+        except KeyboardInterrupt:
+            pass
+
+
+class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
+    multithread = True
+
+
+class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
+    multiprocess = True
+
+    def __init__(self, host, port, app, processes=40):
+        ForkingWSGIServer.__init__(self, host, port, app)
+        self.max_children = processes
 
 
 def make_server(host, port, app=None, threaded=False, processes=1,
                 request_handler=None):
-    """Create a new wsgiref server that is either threaded, or forks
+    """Create a new server instance that is either threaded, or forks
     or just processes one request after another.
     """
-    if not have_wsgiref:
-        raise RuntimeError('All the Werkzeug serving features require '
-                           'an installed wsgiref library.')
-    request_handler = request_handler or BaseRequestHandler
     if threaded and processes > 1:
         raise ValueError("cannot have a multithreaded and "
                          "multi process server.")
     elif threaded:
-        class request_handler(request_handler):
-            multithreaded = True
-        class server(ThreadingMixIn, WSGIServer):
-            pass
+        return ThreadedWSGIServer(host, port, app)
     elif processes > 1:
-        class request_handler(request_handler):
-            multiprocess = True
-        class server(ForkingMixIn, WSGIServer):
-            max_children = processes - 1
+        return ForkingWSGIServer(host, port, app, processes)
     else:
-        server = WSGIServer
-    srv = server((host, port), request_handler)
-    srv.set_app(app)
-    return srv
+        return BaseWSGIServer(host, port, app)
 
 
 def reloader_loop(extra_files=None, interval=1):
@@ -235,12 +281,8 @@ def run_simple(hostname, port, application, use_reloader=False,
         application = DebuggedApplication(application, use_evalex)
 
     def inner():
-        srv = make_server(hostname, port, application, threaded,
-                          processes, request_handler)
-        try:
-            srv.serve_forever()
-        except KeyboardInterrupt:
-            pass
+        make_server(hostname, port, application, threaded,
+                    processes, request_handler).serve_forever()
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         display_hostname = hostname or '127.0.0.1'

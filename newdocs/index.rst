@@ -14,3 +14,4 @@ Welcome to the Werkzeug documentation.
    wrappers
    routing
    utils
+   templates

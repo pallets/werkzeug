@@ -168,6 +168,12 @@ HTTP Helpers
 
 .. autofunction:: remove_entity_headers
 
+.. data:: HTTP_STATUS_CODES
+
+    A dict of status code -> default status message pairs.  This is used
+    by the wrappers and other places where a integer status code is expanded
+    to a string throughout Werkzeug.
+
 
 General Helpers
 ===============
