@@ -6,7 +6,7 @@
     Quite often you want to unittest your application or just check the output
     from an interactive python session.  In theory that is pretty simple because
     you can fake a WSGI environment and call the application with a dummy
-    start_response and iterate over the application iterator but there are
+    `start_response` and iterate over the application iterator but there are
     argumentably better ways to interact with an application.
 
     Werkzeug provides an object called `Client` which you can pass a WSGI
@@ -19,6 +19,19 @@
     you can use them as response wrapper, ideally by subclassing them and hooking
     in test functionality.
 
+    Diving In
+    =========
+
+    Werkzeug provides a `Client` object which you can pass a WSGI application (and
+    optionally a response wrapper) which you can use to send virtual requests to
+    the application.
+
+    A response wrapper is a callable that takes three arguments: the application
+    iterator, the status and finally a list of headers.  The default response
+    wrapper returns a tuple.  Because response objects have the same signature,
+    you can use them as response wrapper, ideally by subclassing them and hooking
+    in test functionality.
+
     >>> from werkzeug import Client, BaseResponse, test_app
     >>> c = Client(test_app, BaseResponse)
     >>> resp = c.get('/')
@@ -26,13 +39,12 @@
     200
     >>> resp.headers
     Headers([('Content-Type', 'text/html; charset=utf-8')])
-    >>> resp.response_body.splitlines()[:2]
+    >>> resp.data.splitlines()[:2]
     ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
      '  "http://www.w3.org/TR/html4/loose.dtd">']
 
-    Or here without wrapper defined:
+    Or without a wrapper defined:
 
-    >>> from werkzeug import Client, test_app
     >>> c = Client(test_app)
     >>> app_iter, status, headers = c.get('/')
     >>> status
@@ -123,20 +135,21 @@ class File(object):
 
 
 class Client(object):
-    """This class allows to send requests to a wrapped application."""
+    """This class allows to send requests to a wrapped application.
+
+    The response wrapper can be a class or factory function that takes
+    three arguments: app_iter, status and headers.  The default response
+    wrapper just returns a tuple.
+
+    Example::
+
+        class ClientResponse(BaseResponse):
+            ...
+
+        client = Client(MyApplication(), response_wrapper=ClientResponse)
+    """
 
     def __init__(self, application, response_wrapper=None):
-        """The response wrapper can be a class or factory function that takes
-        three arguments: app_iter, status and headers.  The default response
-        wrapper just returns a tuple.
-
-        Example::
-
-            class ClientResponse(BaseResponse):
-                ...
-
-            client = Client(MyApplication(), response_wrapper=ClientResponse)
-        """
         self.application = application
         if response_wrapper is None:
             response_wrapper = lambda a, s, h: (a, s, h)

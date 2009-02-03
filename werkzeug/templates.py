@@ -115,14 +115,6 @@ r"""
         <% endif %>
 
 
-    Python 2.3 Compatibility
-    ------------------------
-
-    Because of limitations in Python 2.3 it's impossible to achieve the
-    semi-silent variable lookup fallback.  If a template relies on undefined
-    variables it won't execute under Python 2.3.
-
-
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD License.
 """

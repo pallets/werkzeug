@@ -12,7 +12,7 @@ imported from the :mod:`werkzeug` module.
 
 .. module:: werkzeug
 
-.. docstring:: template
+.. docstring:: templates [3:-3]
 
 The Template Class
 ==================

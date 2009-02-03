@@ -11,7 +11,11 @@ Welcome to the Werkzeug documentation.
    terms
    tutorial
    unicode
+   exceptions
    wrappers
    routing
+   local
    utils
    templates
+   text
+   serving

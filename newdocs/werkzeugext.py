@@ -31,18 +31,25 @@ def werkzeug_docstring(dirname, arguments, options, content, lineno,
                        content_offset, block_text, state, state_machine):
     env = state.document.settings.env
     name = arguments[0]
+    mod = None
     if '.' in name:
         mod, name = name.rsplit('.', 1)
     elif hasattr(env, 'autodoc_current_module'):
         mod = env.autodoc_current_module
-    else:
+    if not mod:
         mod = env.currmodule
-    name = (mod and mod + '.' or '') + name
+    if arguments[0] == '.':
+        name = str(mod)
+    else:
+        name = str((mod and mod + '.' or '') + name)
     doc = ViewList()
-    for line in prepare_docstring(import_string(name).__doc__):
+    lines = prepare_docstring(import_string(name).__doc__)
+    if len(arguments) == 2:
+        lines = eval('lines' + arguments[1])
+    for line in lines:
         doc.append(line.rstrip().decode('utf-8'), '<werkzeugext>')
     return parse_rst(state, content_offset, doc)
 
 
 def setup(app):
-    app.add_directive('docstring', werkzeug_docstring, 1, (1, 0, 1))
+    app.add_directive('docstring', werkzeug_docstring, 1, (1, 1, 1))
