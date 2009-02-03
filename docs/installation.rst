@@ -70,7 +70,7 @@ of the egg. If you're running Linux you will find the documentation here::
 where `X`, `Y` and `Z` must be replaced by the Python/Werkzeug version number.
 
 
-.. _download page: http://werkzeug.pocoo.org/download.html
+.. _download page: http://werkzeug.pocoo.org/download
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _Mercurial: http://selenic.com/mercurial/

@@ -12,39 +12,39 @@ Error Classes
 
 The following error classes exist in Werkzeug:
 
-.. autoclass:: BadRequest
+.. autoexception:: BadRequest
 
-.. autoclass:: Unauthorized
+.. autoexception:: Unauthorized
 
-.. autoclass:: Forbidden
+.. autoexception:: Forbidden
 
-.. autoclass:: NotFound
+.. autoexception:: NotFound
 
-.. autoclass:: MethodNotAllowed
+.. autoexception:: MethodNotAllowed
 
-.. autoclass:: NotAcceptable
+.. autoexception:: NotAcceptable
 
-.. autoclass:: RequestTimeout
+.. autoexception:: RequestTimeout
 
-.. autoclass:: Gone
+.. autoexception:: Gone
 
-.. autoclass:: LengthRequired
+.. autoexception:: LengthRequired
 
-.. autoclass:: PreconditionFailed
+.. autoexception:: PreconditionFailed
 
-.. autoclass:: RequestEntityTooLarge
+.. autoexception:: RequestEntityTooLarge
 
-.. autoclass:: RequestURITooLarge
+.. autoexception:: RequestURITooLarge
 
-.. autoclass:: UnsupportedMediaType
+.. autoexception:: UnsupportedMediaType
 
-.. autoclass:: InternalServerError
+.. autoexception:: InternalServerError
 
-.. autoclass:: NotImplemented
+.. autoexception:: NotImplemented
 
-.. autoclass:: BadGateway
+.. autoexception:: BadGateway
 
-.. autoclass:: ServiceUnavailable
+.. autoexception:: ServiceUnavailable
 
 
 Baseclass
@@ -52,7 +52,7 @@ Baseclass
 
 All the exceptions implement this common interface:
 
-.. autoclass:: HTTPException
+.. autoexception:: HTTPException
    :members: get_response, __call__
 
 
@@ -60,11 +60,11 @@ Special HTTP Exceptions
 =======================
 
 Starting with Werkzeug 0.3 some of the builtin classes raise exceptions that
-look like regular python exceptions (eg `KeyError`) but are :exc:`BadRequest`
-HTTP exceptions at the same time.  This decision was made to simplify a
-common pattern where you want to abort if the client tampered with the
-submitted form data in a way that the application can't recover properly and
-should abort with ``400 BAD REQUEST``.
+look like regular python exceptions (eg :exc:`KeyError`) but are
+:exc:`BadRequest` HTTP exceptions at the same time.  This decision was made
+to simplify a common pattern where you want to abort if the client tampered
+with the submitted form data in a way that the application can't recover
+properly and should abort with ``400 BAD REQUEST``.
 
 Assuming the application catches all HTTP exceptions and reacts to them
 properly a view function could do the following savely and doesn't have to
@@ -76,7 +76,8 @@ check if the keys exist::
         return redirect(post.url)
 
 If `title` or `body` are missing in the form a special key error will be
-raised which behaves like a `KeyError` but also a :exc:`BadRequest` exception.
+raised which behaves like a :exc:`KeyError` but also a :exc:`BadRequest`
+exception.
 
 
 Simple Aborting
@@ -106,9 +107,9 @@ Custom Errors
 As you can see from the list above not all status codes are available as
 errors.  Especially redirects and ather non 200 status codes that
 represent do not represent errors are missing.  For redirects you can use
-the `redirect` function from the utilities.
+the :func:`redirect` function from the utilities.
 
-If you want to add an error yourself you can subclass `HTTPException`::
+If you want to add an error yourself you can subclass :exc:`HTTPException`::
 
     from werkzeug.exceptions import HTTPException
 
@@ -117,9 +118,11 @@ If you want to add an error yourself you can subclass `HTTPException`::
         description = '<p>Payment required.</p>'
 
 This is the minimal code you need for your own exception.  If you want to
-add more logic to the errors you can override the `get_description()`,
-`get_body()`, `get_headers()` and `get_response()` methods.  In any case
-you should have a look at the sourcecode of the exceptions module.
+add more logic to the errors you can override the
+:meth:`~HTTPException.get_description`, :meth:`~HTTPException.get_body`,
+:meth:`~HTTPException.get_headers` and :meth:`~HTTPException.get_response`
+methods.  In any case you should have a look at the sourcecode of the
+exceptions module.
 
 You can override the default description in the constructor with the
 `description` parameter (it's the first argument for all exceptions
