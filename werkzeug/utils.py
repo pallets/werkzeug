@@ -268,7 +268,7 @@ class MultiDict(dict):
     def popitemlist(self):
         """Pop a ``(key, list)`` tuple from the dict."""
         try:
-            return dict.popitem(self, [])
+            return dict.popitem(self)
         except KeyError, e:
             raise self.KeyError(str(e))
 

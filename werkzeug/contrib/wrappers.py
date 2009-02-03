@@ -60,7 +60,7 @@ class ProtobufRequestMixin(object):
             raise BadRequest("Unable to parse Protobuf request")
 
         # Fail if not all required fields are set
-        if self.protobuf_check_initialization not obj.IsInitialized():
+        if self.protobuf_check_initialization and not obj.IsInitialized():
             raise BadRequest("Partial Protobuf request")
 
         return obj
