@@ -164,8 +164,8 @@ class _TestCookieResponse(object):
 
 
 class _TestCookieJar(CookieJar):
-    """A cookilib.CookiJar modified to inject and read cookie headers from and to
-    wsgi environments, and wsgi application responses.
+    """A cookilib.CookiJar modified to inject and read cookie headers from
+    and to wsgi environments, and wsgi application responses.
     """
 
     def inject_wsgi(self, environ):
@@ -179,8 +179,8 @@ class _TestCookieJar(CookieJar):
             environ['HTTP_COOKIE'] = ','.join(cvals)
 
     def extract_wsgi(self, environ, headers):
-        """Extract the server's set-cookie headers as cookies into the cookie
-        jar.
+        """Extract the server's set-cookie headers as cookies into the
+        cookie jar.
         """
         self.extract_cookies(
             _TestCookieResponse(headers),
@@ -205,6 +205,10 @@ class Client(object):
     The use_cookies parameter indicates whether cookies should be stored and
     sent for subsequent requests. This is True by default, but passing False
     will disable this behaviour.
+
+    .. versionadded:: 0.5
+       `use_cookies` is new in this version.  Older versions did not provide
+       builtin cookie support.
     """
 
     def __init__(self, application, response_wrapper=None, use_cookies=True):

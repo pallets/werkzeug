@@ -10,6 +10,7 @@ Version 0.5
   `Accept` but have extra special normlization for mimetypes and
   charsets and extra convenience methods.
 - switched the serving system from wsgiref to something homebaked.
+- the :class:`Client` now supports cookies.
 
 Version 0.4.1
 -------------

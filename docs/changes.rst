@@ -22,6 +22,8 @@ API Changes
     -   The `encoding` parameter for :class:`Template`\s is now called
         `charset`.  The older one will work for another two versions
         but warn with a :exc:`DeprecationWarning`.
+    -   The :class:`Client` has cookie support now which is enabled
+        by default.
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.
