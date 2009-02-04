@@ -24,6 +24,7 @@ Serving and Testing
 
    serving
    test
+   script
 
 Reference
 ---------
