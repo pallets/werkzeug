@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    inyoka.middlewares.profiler
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    werkzeug.contrib.profiler
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Provides a WSGI Profiler middleware for finding bottlenecks.
+    Provides a WSGI profiler middleware for finding bottlenecks.
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.

@@ -3,9 +3,9 @@
     werkzeug.contrib.reporterstream
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    This module implements a class that can wrap `wsgi.input` in order to
-    be informed about changes of the stream.  This is useful if you want
-    to display a progress bar for the upload.
+    This module implements a class that can wrap `wsgi.input` in order to be
+    informed about changes of the stream.  This is useful if you want to
+    display a progress bar for the upload.
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.

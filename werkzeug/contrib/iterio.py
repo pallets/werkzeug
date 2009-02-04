@@ -7,7 +7,6 @@
     object and the other way round.  Converting streams into iterators
     requires the `greenlet`_ module.
 
-
     To convert an iterator into a stream all you have to do is to pass it
     directly to the `IterIO` constructor.  In this example we pass it a newly
     created generator::
@@ -33,7 +32,6 @@
         print iterator.next()       # prints something
         print iterator.next()       # prints otherthing
         iterator.next()             # raises StopIteration
-
 
     .. _greenlet: http://codespeak.net/py/dist/greenlet.html
 

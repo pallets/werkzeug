@@ -3,21 +3,24 @@
     werkzeug.contrib.kickstart
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    This module provides some simple shortcuts to make using Werkzeug
-    simpler for small scripts.
+    This module provides some simple shortcuts to make using Werkzeug simpler
+    for small scripts.
 
-    These improvements include predefied Request and Response objects as well
-    as a pre-defined Application object which all can be customized in child
-    classes of course. The Request and Reponse objects handle URL generation
-    as well as sessions via the werkzeug.contrib.sessions and is purely
-    optional.
+    These improvements include predefined `Request` and `Response` objects as
+    well as a predefined `Application` object which can be customized in child
+    classes, of course.  The `Request` and `Reponse` objects handle URL
+    generation as well as sessions via `werkzeug.contrib.sessions` and are
+    purely optional.
 
-    There is also some integration of template engines. The template loaders
-    are of course not neccessary to use the template engines in Werkzeug, but
-    they provide a common interface. Currently supported template engines
-    include Werkzeug's minitmpl an Genshi. Support for other engines can be
-    added in a trivial way. These loaders provide a template interface similar
-    to the one that Django uses.
+    There is also some integration of template engines.  The template loaders
+    are, of course, not neccessary to use the template engines in Werkzeug,
+    but they provide a common interface.  Currently supported template engines
+    include Werkzeug's minitmpl and Genshi_.  Support for other engines can be
+    added in a trivial way.  These loaders provide a template interface
+    similar to the one used by Django_.
+
+    .. _Genshi: http://genshi.edgewall.org/
+    .. _Django: http://www.djangoproject.com/
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.

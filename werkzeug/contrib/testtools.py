@@ -1,13 +1,13 @@
+# -*- coding: utf-8 -*-
 """
     werkzeug.contrib.testtools
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    This Module implements a extended wrappers for simplified Testing
+    This module implements extended wrappers for simplified testing.
 
     `TestResponse`
-        a response wrapper wich adds various cached attributes for
-        simplified assertions on various contenttypes
-
+        A response wrapper which adds various cached attributes for
+        simplified assertions on various content types.
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
