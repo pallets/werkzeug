@@ -107,7 +107,6 @@ is silently ignored as if the error handling was `ignore`.
 Further details are available as part of the API documentation of the concrete
 implementations of the functions or classes working with unicode.
 
-
 Request and Response Objects
 ============================
 

@@ -6,6 +6,13 @@ This page covers important terms used in the documentation and Werkzeug
 itself.
 
 
+WSGI
+----
+
+WSGI a specification for Python web applications Werkzeug follows.  It was
+specified in the :pep:`333` and is widely supported.  Unlike previous solutions
+it gurantees that web applications, servers and utilties can work together.
+
 Response Object
 ---------------
 
@@ -16,7 +23,6 @@ response object.
 
 A response object is *not* necessarily the :class:`BaseResponse` object or a
 subclass thereof.
-
 
 View Function
 -------------

@@ -163,8 +163,7 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
         self.max_children = processes
 
 
-def make_server(host, port, app=None, threaded=False, processes=1,
-                request_handler=None):
+def make_server(host, port, app=None, threaded=False, processes=1):
     """Create a new server instance that is either threaded, or forks
     or just processes one request after another.
     """
@@ -252,10 +251,18 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
                extra_files=None, reloader_interval=1, threaded=False,
-               processes=1, request_handler=None):
+               processes=1, static_files=None):
     """Start an application using wsgiref and with an optional reloader.  This
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
+
+    .. versionchanged:: 0.5
+       Older versions of this function supported replacing the default
+       request handler with a custom :mod:`wsgiref` request handler.  As we
+       are no longer using wsgiref internally that parameter went away.
+
+    .. versionadded:: 0.5
+       `static_files` was added to simplify serving of static files.
 
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
@@ -271,18 +278,21 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param threaded: should the process handle each request in a separate
                      thread?
     :param processes: number of processes to spawn.
-    :param request_handler: optional parameter that can be used to replace
-                            the default wsgiref request handler.  Have a look
-                            at the `werkzeug.serving` sourcecode for more
-                            details.
+    :param static_files: a dict of paths for static files.  This works exactly
+                         like :class:`SharedDataMiddleware`, it's actually
+                         just wrapping the application in that middleware before
+                         serving.
     """
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
         application = DebuggedApplication(application, use_evalex)
+    if static_files:
+        from werkzeug.utils import SharedDataMiddleware
+        application = SharedDataMiddleware(application, static_files)
 
     def inner():
         make_server(hostname, port, application, threaded,
-                    processes, request_handler).serve_forever()
+                    processes).serve_forever()
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         display_hostname = hostname or '127.0.0.1'

@@ -13,7 +13,7 @@ Version 0.5
 
 Version 0.4.1
 -------------
-(Bugfix release, releaesd on January 11th 2009)
+(Bugfix release, released on January 11th 2009)
 
 - `werkzeug.contrib.cache.Memcached` accepts now objects that
   implementt the memcache.Client interface as alternative to a list of

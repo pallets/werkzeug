@@ -44,9 +44,6 @@ If you want to play around with the code
 3.  ``cd werkzeug``
 4.  ``ln -s werkzeug /usr/lib/python2.X/site-packages``
 
-As an alternative to step 4 you can also do ``python setup.py develop`` which
-will install the package via setuptools in development mode.
-
 If you just want the latest features and use them
 -------------------------------------------------
 
@@ -58,16 +55,8 @@ This will install a Werkzeug egg containing the latest mercurial tip in
 your Python installation's `site-packages` directory. Every time the
 command is run, the sources are updated from the mercurial repository.
 
-
-Documentation
-=============
-
-The egg builds include a documentation which is available in the `docs` folder
-of the egg. If you're running Linux you will find the documentation here::
-
-    file:///usr/lib/python2.X/site-packages/Werkzeug-Y.Z-py2.X.egg/docs/index.html
-
-where `X`, `Y` and `Z` must be replaced by the Python/Werkzeug version number.
+However we strongly recommend cloning the repository and linking it instead
+as explained in the step before.
 
 
 .. _download page: http://werkzeug.pocoo.org/download

@@ -51,5 +51,15 @@ def werkzeug_docstring(dirname, arguments, options, content, lineno,
     return parse_rst(state, content_offset, doc)
 
 
+def werkzeug_changelog(dirname, arguments, options, content, lineno,
+                       content_offset, block_text, state, state_machine):
+    doc = ViewList()
+    lines = file('../CHANGES').read().splitlines()[3:]
+    for line in lines:
+        doc.append(line.rstrip().decode('utf-8'), '<werkzeugext>')
+    return parse_rst(state, content_offset, doc)
+
+
 def setup(app):
     app.add_directive('docstring', werkzeug_docstring, 1, (1, 1, 1))
+    app.add_directive('changelog', werkzeug_changelog, 0, (0, 0, 0))
