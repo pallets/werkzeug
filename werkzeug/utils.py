@@ -74,7 +74,7 @@ class MultiDict(dict):
     ``(key, value)`` tuples, a dict, a :class:`MultiDict` or with Werkzeug 0.2
     onwards some keyword parameters.
 
-    :param mapping: the initial value for the class:`MultiDict`.  Either a
+    :param mapping: the initial value for the :class:`MultiDict`.  Either a
                     regular dict, an iterable of ``(key, value)`` tuples
                     or `None`.
     """

@@ -1,7 +1,7 @@
 from os import path
 from urlparse import urlparse
 from random import sample, randrange
-from jinja import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 from werkzeug import Response, Local, LocalManager, cached_property
 from werkzeug.routing import Map, Rule
 from sqlalchemy import MetaData
