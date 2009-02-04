@@ -9,3 +9,4 @@ as part of the `contrib` module:
    :maxdepth: 2
 
    securecookie
+   cache
