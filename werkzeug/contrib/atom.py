@@ -3,8 +3,20 @@
     werkzeug.contrib.atom
     ~~~~~~~~~~~~~~~~~~~~~
 
-    This module provides a class called `AtomFeed` which can be used
+    This module provides a class called :class:`AtomFeed` which can be used
     to generate Atom feeds.
+
+    Example::
+
+        def atom_feed(request):
+            feed = AtomFeed("My Blog", feed_url=req.url,
+                            url=req.host_url,
+                            subtitle="My example blog for a feed test.")
+            for post in Post.query.limit(10).all():
+                feed.add(post.title, post.body, content_type='html',
+                         author=post.author, url=post.url, id=post.uid,
+                         updated=post.last_update, published=post.pub_date)
+            return feed.get_response()
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
@@ -34,64 +46,55 @@ def format_iso8601(obj):
 
 
 class AtomFeed(object):
-    """A helper class that creates Atom feeds."""
+    """A helper class that creates Atom feeds.
+
+    :param title: the title of the feed. Required.
+    :param title_type: the type attribute for the title element.  One of
+                       ``'html'``, ``'text'`` or ``'xhtml'``.
+    :param url: the url for the feed (not the url *of* the feed)
+    :param id: a globally unique id for the feed.  Must be an URI.  If
+               not present the `feed_url` is used, but one of both is
+               required.
+    :param updated: the time the feed was modified the last time.  Must
+                    be a :class:`datetime.datetime` object.  If not
+                    present the latest entry's `updated` is used.
+    :param feed_url: the URL to the feed.  Should be the URL that was
+                     requested.
+    :param author: the author of the feed.  Must be either a string (the
+                   name) or a dict with name (required) and uri or
+                   email (both optional).  Can be a list of (may be
+                   mixed, too) strings and dicts, too, if there are
+                   multiple authors. Required if not every entry has an
+                   author element.
+    :param icon: an icon for the feed.
+    :param logo: a logo for the feed.
+    :param rights: copyright information for the feed.
+    :param rights_type: the type attribute for the rights element.  One of
+                        ``'html'``, ``'text'`` or ``'xhtml'``.  Default is
+                        ``'text'``.
+    :param subtitle: a short description of the feed.
+    :param subtitle_type: the type attribute for the subtitle element.
+                          One of ``'text'``, ``'html'``, ``'text'``
+                          or ``'xhtml'``.  Default is ``'text'``.
+    :param links: additional links.  Must be a list of dictionaries with
+                  href (required) and rel, type, hreflang, title, length
+                  (all optional)
+    :param generator: the software that generated this feed.  This must be
+                      a tuple in the form ``(name, url, version)``.  If
+                      you don't want to specify one of them, set the item
+                      to `None`.
+    :param entries: a list with the entries for the feed. Entries can also
+                    be added later with :meth:`add`.
+
+    For more information on the elements see
+    http://www.atomenabled.org/developers/syndication/
+
+    Everywhere where a list is demanded, any iterable can be used.
+    """
+
     default_generator = ('Werkzeug', None, None)
 
     def __init__(self, title=None, entries=None, **kwargs):
-        """Create an Atom feed.
-
-        :Parameters:
-          title
-            the title of the feed. Required.
-          title_type
-            the type attribute for the title element. One of html, text,
-            xhtml. Default is text.
-          url
-            the url for the feed (not the url *of* the feed)
-          id
-            a globally unique id for the feed. Must be an URI. If not present
-            the `feed_url` is used, but one of both is required.
-          updated
-            the time the feed was modified the last time. Must be a `datetime`
-            object. If not present the latest entry's `updated` is used.
-          feed_url
-            the url to the feed. Should be the URL that was requested.
-          author
-            the author of the feed. Must be either a string (the name) or a
-            dict with name (required) and uri or email (both optional). Can be
-            a list of (may be mixed, too) strings and dicts, too, if there are
-            multiple authors. Required if not every entry has an author
-            element.
-          icon
-            an icon for the feed.
-          logo
-            a logo for the feed.
-          rights
-            copyright information for the feed.
-          rights_type
-            the type attribute for the rights element. One of html, text,
-            xhtml. Default is text.
-          subtitle
-            a short description of the feed.
-          subtitle_type
-            the type attribute for the subtitle element. One of html, text,
-            xhtml. Default is text.
-          links
-            additional links. Must be a list of dictionaries with href
-            (required) and rel, type, hreflang, title, length (all optional)
-          generator
-            the software that generated this feed.  This must be a tuple in
-            the form ``(name, url, version)``.  If you don't want to specify
-            one of them, set the item to None.
-          entries
-            a list with the entries for the feed. Entries can also be added
-            later with add().
-
-        For more information on the elements see
-        http://www.atomenabled.org/developers/syndication/
-
-        Everywhere where a list is demanded, any iterable can be used.
-        """
         self.title = title
         self.title_type = kwargs.get('title_type', 'text')
         self.url = kwargs.get('url')
@@ -127,7 +130,10 @@ class AtomFeed(object):
                 raise TypeError('author must contain at least a name')
 
     def add(self, *args, **kwargs):
-        """add a new entry to the feed"""
+        """Add a new entry to the feed.  This function can either be called
+        with a :class:`FeedEntry` or some keyword and positional arguments
+        that are forwarded to the :class:`FeedEntry` constructor.
+        """
         if len(args) == 1 and not kwargs and isinstance(args[0], FeedEntry):
             self.entries.append(args[0])
         else:
@@ -217,61 +223,47 @@ class AtomFeed(object):
 
 
 class FeedEntry(object):
-    """Represents a single entry in a feed."""
+    """Represents a single entry in a feed.
+
+    :param title: the title of the entry. Required.
+    :param title_type: the type attribute for the title element.  One of
+                       ``'html'``, ``'text'`` or ``'xhtml'``.
+    :param content: the content of the entry.
+    :param content_type: the type attribute for the content element.  One
+                         of ``'html'``, ``'text'`` or ``'xhtml'``.
+    :param summary: a summary of the entry's content.
+    :param summary_type: the type attribute for the summary element.  One
+                         of ``'html'``, ``'text'`` or ``'xhtml'``.
+    :param url: the url for the entry.
+    :param id: a globally unique id for the entry.  Must be an URI.  If
+               not present the URL is used, but one of both is required.
+    :param updated: the time the entry was modified the last time.  Must
+                    be a :class:`datetime.datetime` object. Required.
+    :param author: the author of the feed.  Must be either a string (the
+                   name) or a dict with name (required) and uri or
+                   email (both optional).  Can be a list of (may be
+                   mixed, too) strings and dicts, too, if there are
+                   multiple authors. Required if not every entry has an
+                   author element.
+    :param published: the time the entry was initially published.  Must
+                      be a :class:`datetime.datetime` object.
+    :param rights: copyright information for the entry.
+    :param rights_type: the type attribute for the rights element.  One of
+                        ``'html'``, ``'text'`` or ``'xhtml'``.  Default is
+                        ``'text'``.
+    :param links: additional links.  Must be a list of dictionaries with
+                  href (required) and rel, type, hreflang, title, length
+                  (all optional)
+    :param xml_base: The xml base (url) for this feed item.  If not provided
+                     it will default to the item url.
+
+    For more information on the elements see
+    http://www.atomenabled.org/developers/syndication/
+
+    Everywhere where a list is demanded, any iterable can be used.
+    """
 
     def __init__(self, title=None, content=None, feed_url=None, **kwargs):
-        """Holds an Atom feed entry.
-
-        :Parameters:
-          title
-            the title of the entry. Required.
-          title_type
-            the type attribute for the title element. One of html, text,
-            xhtml. Default is text.
-          content
-            the content of the entry.
-          content_type
-            the type attribute for the content element. One of html, text,
-            xhtml. Default is text.
-          summary
-            a summary of the entry's content.
-          summary_type
-            a type attribute for the summary element. One of html, text,
-            xhtml. Default is text.
-          url
-            the url for the entry.
-          id
-            a globally unique id for the entry. Must be an URI. If not present
-            the URL is used, but one of both is required.
-          updated
-            the time the entry was modified the last time. Must be a
-            `datetime` object. Required.
-          author
-            the author of the entry. Must be either a string (the name) or a
-            dict with name (required) and uri or email (both optional). Can
-            be a list of (may be mixed, too) strings and dicts, too, if there
-            are multiple authors. Required if there is no author for the
-            feed.
-          published
-            the time the entry was initially published. Must be a `datetime`
-            object.
-          rights
-            copyright information for the entry.
-          rights_type
-            the type attribute for the rights element. One of html, text,
-            xhtml. Default is text.
-          links
-            additional links. Must be a list of dictionaries with href
-            (required) and rel, type, hreflang, title, length (all optional)
-          xml_base
-            The xml base (url) for this feed item.  If not provided it will
-            default to the item url.
-
-        For more information on the elements see
-        http://www.atomenabled.org/developers/syndication/
-
-        Everywhere where a list is demanded, any iterable can be used.
-        """
         self.title = title
         self.title_type = kwargs.get('title_type', 'text')
         self.content = content

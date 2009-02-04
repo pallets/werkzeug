@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
     werkzeug.contrib.iterio
     ~~~~~~~~~~~~~~~~~~~~~~~
 
-    This module implements a `IterIO` that converts an iterator into a stream
-    object and the other way round.  Converting streams into iterators
-    requires the `greenlet`_ module.
-
+    This module implements a :class:`IterIO` that converts an iterator into
+    a stream object and the other way round.  Converting streams into
+    iterators requires the `greenlet`_ module.
 
     To convert an iterator into a stream all you have to do is to pass it
-    directly to the `IterIO` constructor.  In this example we pass it a newly
-    created generator::
+    directly to the :class:`IterIO` constructor.  In this example we pass it
+    a newly created generator::
 
         def foo():
             yield "something\n"
@@ -19,10 +18,11 @@
         print stream.read()         # read the whole iterator
 
     The other way round works a bit different because we have to ensure that
-    the code execution doesn't take place yet.  An `IterIO` call with a
+    the code execution doesn't take place yet.  An :class:`IterIO` call with a
     callable as first argument does two things.  The function itself is passed
-    an `IterI` stream it can feed.  The object returned by the `IterIO`
-    constructor on the other hand is not an stream object but an iterator::
+    an :class:`IterIO` stream it can feed.  The object returned by the
+    :class:`IterIO` constructor on the other hand is not an stream object but
+    an iterator::
 
         def foo(stream):
             stream.write("some")
@@ -47,8 +47,9 @@ except:
 
 
 class IterIO(object):
-    """
-    Baseclass for iterator IOs.
+    """Instances of this object implement an interface compatible with the
+    standard Python :class:`file` object.  Streams are either read-only or
+    write-only depending on how the object is created.
     """
 
     def __new__(cls, obj):
@@ -121,9 +122,7 @@ class IterIO(object):
 
 
 class IterI(IterIO):
-    """
-    Convert an stream into an iterator.
-    """
+    """Convert an stream into an iterator."""
 
     def __new__(cls, func):
         if greenlet is None:
@@ -170,9 +169,7 @@ class IterI(IterIO):
 
 
 class IterO(IterIO):
-    """
-    Iter output.  Wrap an iterator and give it a stream like interface.
-    """
+    """Iter output.  Wrap an iterator and give it a stream like interface."""
 
     __new__ = object.__new__
 
