@@ -92,7 +92,7 @@ def test_unicode():
     """Template unicode modes"""
     t = Template(u'öäü$szlig')
     assert t.render(szlig='ß') == u'öäüß'
-    t = Template(u'öäü$szlig', unicode_mode=False, encoding='iso-8859-15')
+    t = Template(u'öäü$szlig', unicode_mode=False, charset='iso-8859-15')
     assert t.render(szlig='\xdf') == '\xf6\xe4\xfc\xdf'
 
 

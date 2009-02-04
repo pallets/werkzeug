@@ -19,7 +19,7 @@ TEST_OPTIONS = \
 	-e '^test_app$$' #skip the test_app application object which is not a test
 
 documentation:
-	@(cd docs; python ./generate.py)
+	@(cd docs; make html)
 
 test:
 	@(nosetests $(TEST_OPTIONS) $(TESTS))
