@@ -8,5 +8,8 @@ as part of the `contrib` module:
 .. toctree::
    :maxdepth: 2
 
+   atom
    securecookie
    cache
+   wrappers
+   iterio
