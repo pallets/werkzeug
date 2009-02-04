@@ -67,6 +67,22 @@ r"""
                                     httponly=True)
             return response(environ, start_response)
 
+    A less verbose integration can be achieved by using shorthand methods::
+
+        class Request(BaseRequest):
+
+            @cached_property
+            def client_session(self):
+                return SecureCookie.load_cookie(self, secret_key=COOKIE_SECRET)
+
+        def application(environ, start_response):
+            request = Request(environ, start_response)
+
+            # get a response object here
+            response = ...
+
+            request.client_session.save_cookie(response)
+            return response(environ, start_response)
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
