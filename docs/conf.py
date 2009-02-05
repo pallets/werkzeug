@@ -194,5 +194,6 @@ latex_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'http://docs.python.org/dev': None,
-    'http://beta.pylonshq.com/docs/en/0.9.7': None
+    'http://beta.pylonshq.com/docs/en/0.9.7': None,
+    'http://www.sqlalchemy.org/docs/05': None
 }

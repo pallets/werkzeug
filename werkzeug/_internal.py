@@ -363,7 +363,7 @@ class _UpdateDict(dict):
 
 
 def _easteregg(app):
-    """Like the name says."""
+    """Like the name says.  But who knows how it works?"""
     gyver = '\n'.join([x + (77 - len(x)) * ' ' for x in '''
 eJyFlzuOJDkMRP06xRjymKgDJCDQStBYT8BCgK4gTwfQ2fcFs2a2FzvZk+hvlcRvRJD148efHt9m
 9Xz94dRY5hGt1nrYcXx7us9qlcP9HHNh28rz8dZj+q4rynVFFPdlY4zH873NKCexrDM6zxxRymzz

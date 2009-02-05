@@ -2,7 +2,6 @@
 Management Script Utilities
 ===========================
 
-
 .. module:: werkzeug.script
 
 .. docstring:: . [3:-3]

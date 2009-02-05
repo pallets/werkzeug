@@ -2,6 +2,8 @@
 Werkzeug Tutorial
 =================
 
+.. module:: werkzeug
+
 Welcome to the Werkzeug 0.5 tutorial in which we will create a `TinyURL`_ clone
 that stores URLs in a database.  The libraries we will use for this
 applications are `Jinja`_ 2 for the templates, `SQLAlchemy`_ for the database
@@ -78,9 +80,7 @@ are essential for the application (session middlewares, serving of media
 files etc.).
 
 Here the initial code for our ``shorty/application.py`` file which implements
-the WSGI application:
-
-.. sourcecode:: python
+the WSGI application::
 
     from sqlalchemy import create_engine
     from werkzeug import Request, ClosingIterator
@@ -168,7 +168,7 @@ The `init_database` function defined below can be used to create all the
 tables we use.
 
 And then comes the request dispatching function.  In there we create a new
-request object by passing the environment to the `Request` constructor.
+request object by passing the environment to the :class:`Request` constructor.
 Once again we bind the application to the local object, this time, however,
 we have to do this, otherwise things will break soon.
 
@@ -182,9 +182,9 @@ use it for URL generation in the utils module.
 
 After that we have a `try`/`except` that catches HTTP exceptions that could
 occur while matching or in the view function.  When the adapter does not find
-a valid endpoint for our current request it will raise a `NotFound` exception
-which we can use like a response object.  An endpoint is basically the name
-of the function we want to handle our request with.  We just get the
+a valid endpoint for our current request it will raise a :exc:`~exceptions.NotFound`
+exception which we can use like a response object.  An endpoint is basically
+the name of the function we want to handle our request with.  We just get the
 function with the name of the endpoint and pass it the request and the URL
 values.
 
@@ -205,9 +205,7 @@ Part 2: The Utilities
 Now we have basically finished the WSGI application itself but we have to add
 some more code into our utiliy module so that the imports work.  For the time
 being we just add the objects which we need for the application to work.  All
-the following code goes into the ``shorty/utils.py`` file:
-
-.. sourcecode:: python
+the following code goes into the ``shorty/utils.py`` file::
 
     from sqlalchemy import MetaData
     from sqlalchemy.orm import create_session, scoped_session
@@ -239,7 +237,7 @@ here is that calling a local object with a string returns a proxy object.  This
 returned proxy object always points to the attribute with that name on the
 local object.  For example `application` now points to `local.application`
 all the time.  If you, however, try to do something with it and there is
-no object bound to `local.application` you will get a `RuntimeError`.
+no object bound to `local.application` you will get a :exc:`RuntimeError`.
 
 The next three lines are basically everything we need to get SQLAlchemy 0.4
 or higher running in a Werkzeug application.  We create a new metadata for all
@@ -278,9 +276,7 @@ interpreter to play with the database models, initializing the database etc.
 
 Werkzeug makes it incredible easy to write such management scripts.  The
 following piece of code implements a fully featured management script.  Put
-it into the `manage.py` file you have created in the beginning:
-
-.. sourcecode:: python
+it into the `manage.py` file you have created in the beginning::
 
     #!/usr/bin/env python
     from werkzeug import script
@@ -300,8 +296,8 @@ it into the `manage.py` file you have created in the beginning:
 
     script.run()
 
-`werkzeug.script` is explained in detail in the `script documentation`_ and
-we won't cover it here, most of the code should be self explaining anyway.
+:mod:`werkzeug.script` is explained in detail in the script documentation
+and we won't cover it here, most of the code should be self explaining anyway.
 
 What's important is that you should be able to run ``python manage.py shell``
 to get an interactive Python interpreter without traceback.  If you get an
@@ -310,16 +306,12 @@ in the code boxes above.
 
 Now that the script system is running we can start writing our database models.
 
-.. _script documentation: script.txt
-
 
 Part 3: Database Models
 =======================
 
 Now we can create the models.  Because the application is pretty simple we
-just have one model and table:
-
-.. sourcecode:: python
+just have one model and table::
 
     from datetime import datetime
     from sqlalchemy import Table, Column, String, Boolean, DateTime
@@ -362,9 +354,7 @@ have a look at the `excellent tutorial`_.
 In the constructor we generate a unique ID until we find an id which is still
 free to use.
 What's missing is the `get_random_uid` function we have to add to the utils
-module:
-
-.. sourcecode:: python
+module::
 
     from random import sample, randrange
 
@@ -376,45 +366,36 @@ module:
 Once that is done we can use ``python manage.py initdb`` to initialize the
 database and play around with the stuff using ``python manage.py shell``:
 
-.. sourcecode:: pycon
-
-    Interactive Werkzeug Shell
-    >>> from shorty.models import session, URL
+>>> from shorty.models import session, URL
 
 Now we can add some URLs to the database:
 
-.. sourcecode:: pycon
-
-    >>> urls = [URL('http://example.org/'), URL('http://localhost:5000/')]
-    >>> URL.query.all()
-    []
-    >>> session.commit()
-    >>> URL.query.all()
-    [<URL '5cFbsk'>, <URL 'mpugsT'>]
+>>> urls = [URL('http://example.org/'), URL('http://localhost:5000/')]
+>>> URL.query.all()
+[]
+>>> session.commit()
+>>> URL.query.all()
+[<URL '5cFbsk'>, <URL 'mpugsT'>]
 
 As you can see we have to commit in order to send the urls to the database.
 Let's create a private item with a custom uid:
 
-.. sourcecode:: pycon
-
-    >>> URL('http://werkzeug.pocoo.org/', False, 'werkzeug-webpage')
-    >>> session.commit()
+>>> URL('http://werkzeug.pocoo.org/', False, 'werkzeug-webpage')
+>>> session.commit()
 
 And query them all:
 
-.. sourcecode:: pycon
-
-    >>> URL.query.filter_by(public=False).all()
-    [<URL 'werkzeug-webpage'>]
-    >>> URL.query.filter_by(public=True).all()
-    [<URL '5cFbsk'>, <URL 'mpugsT'>]
-    >>> URL.query.get('werkzeug-webpage')
-    <URL 'werkzeug-webpage'>
+>>> URL.query.filter_by(public=False).all()
+[<URL 'werkzeug-webpage'>]
+>>> URL.query.filter_by(public=True).all()
+[<URL '5cFbsk'>, <URL 'mpugsT'>]
+>>> URL.query.get('werkzeug-webpage')
+<URL 'werkzeug-webpage'>
 
 Now that we have some data in the database and we are somewhat familiar with
 the way SQLAlchemy works, it's time to create our views.
 
-.. _excellent tutorial: http://www.sqlalchemy.org/docs/04/ormtutorial.html
+.. _excellent tutorial: http://www.sqlalchemy.org/docs/05/ormtutorial.html
 
 
 Part 4: The View Functions
@@ -499,10 +480,10 @@ The `display` function is not much more complex.  The URL rule expects a
 parameter called `uid`, which the function accepts.  Then we look up the URL
 rule with the given uid and render a template by passing the URL object to it.
 
-If the URL does not exist we raise a `NotFound` exception which displays a
-generic "404 Page Not Found" page.  We can later replace it by a custom error
-page by catching that exception before the generic `HTTPException` in
-our WSGI application.
+If the URL does not exist we raise a :exc:`~exceptions.NotFound` exception
+which displays a generic "404 Page Not Found" page.  We can later replace it
+by a custom error page by catching that exception before the generic
+:exc:`~exceptions.HTTPException` in our WSGI application.
 
 The `link` view function is used by our models in the `short_url` property
 and is the short URL we provide.  So if the URL uid is ``foobar`` the URL
@@ -519,9 +500,7 @@ you can also disable it.
 
 And again we have imported two objects from the utils module that
 don't exist yet.  One of those should render a jinja template into a response
-object, the other one validates a URL.  So let's add those to ``utils.py``:
-
-.. sourcecode:: python
+object, the other one validates a URL.  So let's add those to ``utils.py``::
 
     from os import path    
     from urlparse import urlparse
@@ -681,9 +660,7 @@ reference to the application object).  So head back to ``application.py``
 and do some code refactoring there.
 
 First of all you have to add a new import and calculate the path to the
-static files:
-
-.. sourcecode:: python
+static files::
 
     from os import path
     from werkzeug import SharedDataMiddleware
@@ -697,17 +674,13 @@ really matter and for simplicity we can leave it in the application module.
 So how do we wrap our dispatching function?  In theory we just have to say
 ``self.__call__ = wrap(self.__call__)`` but unfortunately that doesn't work in
 python.  But it's not much harder.  Just rename `__call__` to `dispatch` and
-add a new `__call__` method:
-
-.. sourcecode:: python
+add a new `__call__` method::
 
         def __call__(self, environ, start_response):
             return self.dispatch(environ, start_response)
 
 Now we can go into our `__init__` function and hook in the middleware by
-wrapping the `dispatch` method:
-
-.. sourcecode:: python
+wrapping the `dispatch` method::
 
         self.dispatch = SharedDataMiddleware(self.dispatch, {
             '/static':  STATIC_PATH
@@ -718,9 +691,7 @@ inside the application class!
 
 Another good idea now is to tell our `url_map` in the utils module the
 location of our static files by adding a rule.  This way we can generate URLs
-to the static files in the templates:
-
-.. sourcecode:: python
+to the static files in the templates::
 
     url_map = Map([Rule('/static/<file>', endpoint='static', build_only=True)])
 
@@ -749,9 +720,7 @@ be a big problem but we will have to do some sort of pagination.  Because if
 we print all URLs at once we have sooner or later an endless page that takes
 minutes to load.
 
-So let's start by adding a `Pagination` class into our utils module:
-
-.. sourcecode:: python
+So let's start by adding a `Pagination` class into our utils module::
 
     from werkzeug import cached_property
 
@@ -780,18 +749,16 @@ So let's start by adding a `Pagination` class into our utils module:
 
 This is a very simple class that does most of the pagination for us.  We
 can pass at an unexecuted SQLAlchemy query, the number of items per page,
-the current page and the endpoint, which will be used for URL generation.  The
-`cached_property` decorator you see works pretty much like the normal
-`property` decorator, just that it memorizes the result.  We won't cover
-that class in detail but basically the idea is that accessing
+the current page and the endpoint, which will be used for URL generation.
+The :func:`cached_property` decorator you see works pretty much like the
+normal :func:`property` decorator, just that it memorizes the result.  We
+won't cover that class in detail but basically the idea is that accessing
 `pagination.entries` returns the items for the current page and that the
 other properties return meaningful values so that we can use them in the
 template.
 
 Now we can import the `Pagination` class into our views module and add some
-code to the `list` function:
-
-.. sourcecode:: python
+code to the `list` function::
 
     from shorty.utils import Pagination
 
@@ -852,32 +819,29 @@ Bonus: Styling 404 Error Pages
 Now that we've finished our application we can do some small improvements such
 as custom 404 error pages.  That's pretty simple.  The first thing we have to
 do is creating a new function called `not_found` in the view that renders a
-template:
-
-.. sourcecode:: python
+template::
 
     def not_found(request):
         return render_template('not_found.html')
 
-Then we have to go into our application module and import the `NotFound`
-exception:
-
-.. sourcecode:: python
+Then we have to go into our application module and import the
+:exc:`~exceptions.NotFound` exception::
 
     from werkzeug.exceptions import NotFound
 
 Finally we have to catch it and translate it into a response.  This except
-block goes right **before** the except block of the `HTTPException`:
-
-.. sourcecode:: python
+block goes right **before** the except block of the
+:exc:`~exceptions.HTTPException`::
 
     try:
         # this stays the same
+        pass
     except NotFound, e:
         response = views.not_found(request)
         response.status_code = 404
     except HTTPException, e:
         # this stays the same
+        pass
 
 Now add a template ``templates/not_found.html`` and you're done:
 

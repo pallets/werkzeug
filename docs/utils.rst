@@ -98,6 +98,8 @@ WSGI Helpers
 
 .. autofunction:: test_app
 
+.. autofunction:: _easteregg
+
 
 URL Helpers
 ===========

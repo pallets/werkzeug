@@ -2,6 +2,8 @@
 Important Terms
 ===============
 
+.. module:: werkzeug
+
 This page covers important terms used in the documentation and Werkzeug
 itself.
 

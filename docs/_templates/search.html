@@ -33,3 +33,7 @@
   {% endif %}
   </div>
 {% endblock %}
+{% block footer %}
+  {{ super() }}
+  <script type="text/javascript" src="searchindex.js"></script>
+{% endblock %}
