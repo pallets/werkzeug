@@ -19,6 +19,14 @@ If you are using ubuntu / debian you can apt-get it and activate it as follows::
 
     # apt-get install libapache2-mod-wsgi
 
+On FreeBSD install `mod_wsgi` by compiling the `www/mod_wsgi` port or by using
+pkg_add::
+
+    # pkg_add -r mod_wsgi
+
+If you are using pkgsrc you can install `mod_wsgi` by compiling the
+`www/ap2-wsgi` package.
+
 If you encounter segfaulting child processes after the first apache reload you
 can safely ignore them.  Just restart the server.
 
