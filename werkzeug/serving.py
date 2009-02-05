@@ -130,6 +130,10 @@ class WSGIHandler(BaseHTTPRequestHandler):
             from werkzeug.debug.tbtools import get_current_traceback
             traceback = get_current_traceback(ignore_system_exceptions=True)
             try:
+                # if we haven't yet sent the headers but they are set
+                # we roll back to be able to set them again.
+                if not headers_sent:
+                    del headers_set[:]
                 execute(InternalServerError())
             except:
                 pass
