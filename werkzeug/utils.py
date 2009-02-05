@@ -79,9 +79,9 @@ class MultiDict(dict):
                     or `None`.
     """
 
-    #: the key error this class raises.  Because of circular dependencies
-    #: with the http exception module this class is created at the end of
-    #: this module.
+    # the key error this class raises.  Because of circular dependencies
+    # with the http exception module this class is created at the end of
+    # this module.
     KeyError = None
 
     def __init__(self, mapping=None):
@@ -221,13 +221,17 @@ class MultiDict(dict):
         return default_list
 
     def items(self):
-        """Return a list of ``(key, value)`` pairs, where value is the last
+        """Return a list of ``(key, value)`` pairs, where value is the first
         item in the list associated with the key.
 
         :return: a :class:`list`
         """
         return [(key, self[key]) for key in self.iterkeys()]
 
+    #: Return a list of ``(key, value)`` pairs, where values is the list of
+    #: all values assoiciated with the key.
+    #:
+    #: :return: a :class:`list`
     lists = dict.items
 
     def values(self):
@@ -237,18 +241,32 @@ class MultiDict(dict):
         """
         return [self[key] for key in self.iterkeys()]
 
+    #: Return a list of all values assoiciated with a key.  Zipping
+    #: :meth:`keys` and this is the same as calling :meth:`lists`:
+    #:
+    #: >>> d = MultiDict({"foo": [1, 2, 3]})
+    #: >>> zip(d.keys(), d.listvalues()) == d.lists()
+    #: True
+    #:
+    #: :return: a :class:`list`
     listvalues = dict.values
 
     def iteritems(self):
+        """Like :meth:`items` but returns an iterator."""
         for key, values in dict.iteritems(self):
             yield key, values[0]
 
+    #: Return a list of all values assoiciated with a key.
+    #:
+    #: :return: a :class:`list`
     iterlists = dict.iteritems
 
     def itervalues(self):
+        """Like :meth:`values` but returns an iterator."""
         for values in dict.itervalues(self):
             yield values[0]
 
+    #: like :meth:`listvalues` but returns an iterator.
     iterlistvalues = dict.itervalues
 
     def copy(self):
@@ -282,7 +300,19 @@ class MultiDict(dict):
                 self.setlistdefault(key, []).append(value)
 
     def pop(self, key, default=_missing):
-        """Pop the first item for a list on the dict."""
+        """Pop the first item for a list on the dict.  Afterwards the
+        key is removed from the dict, so additional values are discarded:
+
+        >>> d = MultiDict({"foo": [1, 2, 3]})
+        >>> d.pop("foo")
+        1
+        >>> "foo" in d
+        False
+
+        :param key: the key to pop.
+        :param default: if provided the value to return if the key was
+                        not in the dictionary.
+        """
         if default is not _missing:
             return dict.pop(self, key, default)
         try:
@@ -349,10 +379,10 @@ class CombinedMultiDict(MultiDict):
     def __init__(self, dicts=None):
         self.dicts = dicts or []
 
+    @classmethod
     def fromkeys(cls):
         raise TypeError('cannot create %r instances by fromkeys' %
                         cls.__name__)
-    fromkeys = classmethod(fromkeys)
 
     def __getitem__(self, key):
         for d in self.dicts:
@@ -551,9 +581,9 @@ class Headers(object):
     :param defaults: The list of default values for the :class:`Headers`.
     """
 
-    #: the key error this class raises.  Because of circular dependencies
-    #: with the http exception module this class is created at the end of
-    #: this module.
+    # the key error this class raises.  Because of circular dependencies
+    # with the http exception module this class is created at the end of
+    # this module.
     KeyError = None
 
     def __init__(self, defaults=None, _list=None):
@@ -563,6 +593,7 @@ class Headers(object):
         if defaults is not None:
             self.extend(defaults)
 
+    @classmethod
     def linked(cls, headerlist):
         """Create a new :class:`Headers` object that uses the list of headers
         passed as internal storage:
@@ -577,7 +608,6 @@ class Headers(object):
         :return: new linked :class:`Headers` object.
         """
         return cls(_list=headerlist)
-    linked = classmethod(linked)
 
     def __getitem__(self, key, _index_operation=True):
         if _index_operation:

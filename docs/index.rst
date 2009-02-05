@@ -4,6 +4,7 @@ Documentation Overview
 
 Welcome to the Werkzeug documentation.
 
+
 Getting Started
 ---------------
 
@@ -19,6 +20,9 @@ should start here.
 Serving and Testing
 -------------------
 
+The development server and testing support and management script
+utilities are covered here:
+
 .. toctree::
    :maxdepth: 2
 
@@ -32,12 +36,12 @@ Reference
 .. toctree::
    :maxdepth: 2
 
-   exceptions
    wrappers
    routing
    local
    utils
    templates
+   exceptions
 
 Additional Information
 ----------------------
