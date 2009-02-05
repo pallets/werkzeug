@@ -28,7 +28,7 @@ def new_db_session():
     raises an exception.
     """
     return create_session(application.database_engine, autoflush=True,
-                          transactional=True)
+                          autocommit=False)
 
 
 # and create a new global session factory.  Calling this object gives

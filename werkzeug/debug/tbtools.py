@@ -231,6 +231,7 @@ class Frame(object):
             return eval(code, self.globals, self.locals)
         exec code in self.globals, self.locals
 
+    @cached_property
     def sourcelines(self):
         """The sourcecode of the file as list of unicode strings."""
         # get sourcecode from loader or file
@@ -275,17 +276,16 @@ class Frame(object):
             charset = 'utf-8'
 
         return source.decode(charset, 'replace').splitlines()
-    sourcelines = cached_property(sourcelines)
 
+    @property
     def current_line(self):
         try:
             return self.sourcelines[self.lineno - 1]
         except IndexError:
             return u''
-    current_line = property(current_line)
 
+    @cached_property
     def console(self):
         return Console(self.globals, self.locals)
-    console = cached_property(console)
 
     id = property(lambda x: id(x))

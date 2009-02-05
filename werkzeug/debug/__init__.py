@@ -37,12 +37,26 @@ class DebuggedApplication(object):
     The `evalex` keyword argument allows evaluating expressions in a
     traceback's frame context.
 
-    THIS IS A GAPING SECURITY HOLE IF PUBLICLY ACCESSIBLE!
+    :param app: the WSGI application to run debugged.
+    :param evalex: enable exception evaluation feature (interactive
+                   debugging).  This requires a non forking server.
+    :param request_key: The key that points to the request object in ths
+                        environment.  This parameter is ignored in current
+                        versions.
+    :param console_path: the URL for a general purpose console.
+    :param console_init_func: the function that is executed before starting
+                              the general purpose console.  The return value
+                              is used as initial namespace.
+    :param show_hidden_frames: by default hidden traceback frames are skipped.
+                               You can show them by setting this parameter
+                               to `True`.
     """
 
     def __init__(self, app, evalex=False, request_key='werkzeug.request',
-                 console_path='/console', console_init_func=dict,
+                 console_path='/console', console_init_func=None,
                  show_hidden_frames=False):
+        if console_init_func:
+            console_init_func = dict
         self.app = app
         self.evalex = evalex
         self.frames = {}
@@ -81,14 +95,13 @@ class DebuggedApplication(object):
                 # more, better log something into the error log and fall
                 # back gracefully.
                 environ['wsgi.errors'].write(
-                    '\nDebugging middlware catched exception in streamed '
+                    'Debugging middlware catched exception in streamed '
                     'reponse a point where response headers were already '
                     'sent.\n')
-                traceback.log(environ['wsgi.errors'])
-                return
+            else:
+                yield traceback.render_full(evalex=self.evalex) \
+                               .encode('utf-8', 'replace')
 
-            yield traceback.render_full(evalex=self.evalex) \
-                           .encode('utf-8', 'replace')
             traceback.log(environ['wsgi.errors'])
 
     def execute_command(self, request, command, frame):

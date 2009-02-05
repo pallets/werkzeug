@@ -28,6 +28,7 @@ utilities are covered here:
 
    serving
    test
+   debug
    script
 
 Reference

@@ -26,6 +26,13 @@ additional files (like configuration files) you want to observe.
 
 .. autofunction:: run_simple
 
+.. admonition:: Information
+
+   The development server is not intended to be used on production systems.
+   It was designed especially for development purposes and performs poorly
+   under high load.  For deployment setups have a look at the
+   :ref:`deployment` pages.
+
 Virtual Hosts
 -------------
 

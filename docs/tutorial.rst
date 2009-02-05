@@ -835,6 +835,17 @@ And finally the template:
     {% endblock %}
 
 
+The End Result
+==============
+
+And this is what it looks like in the end, with the example stylesheet
+from above:
+
+.. image:: _static/shorty-screenshot.png
+   :alt: a screenshot of the final shorty application
+   :align: center
+
+
 Bonus: Styling 404 Error Pages
 ==============================
 

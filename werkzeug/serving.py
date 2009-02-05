@@ -51,6 +51,8 @@ from itertools import chain
 from SocketServer import ThreadingMixIn, ForkingMixIn
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from werkzeug._internal import _log
+from werkzeug.utils import responder
+from werkzeug.exceptions import InternalServerError
 
 
 class WSGIHandler(BaseHTTPRequestHandler):
@@ -106,12 +108,12 @@ class WSGIHandler(BaseHTTPRequestHandler):
                         raise exc_info[0], exc_info[1], exc_info[2]
                 finally:
                     exc_info = None
-            else:
-                assert not headers_set, 'Headers already set'
+            elif headers_set:
+                raise AssertionError('Headers already set')
             headers_set[:] = [status, response_headers]
             return write
 
-        try:
+        def execute(app):
             application_iter = app(environ, start_response)
             try:
                 for data in application_iter:
@@ -119,11 +121,18 @@ class WSGIHandler(BaseHTTPRequestHandler):
             finally:
                 if hasattr(application_iter, 'close'):
                     application_iter.close()
+
+        try:
+            execute(app)
         except (socket.error, socket.timeout):
             return
         except:
             from werkzeug.debug.tbtools import get_current_traceback
             traceback = get_current_traceback(ignore_system_exceptions=True)
+            try:
+                execute(InternalServerError())
+            except:
+                pass
             self.server.log('error', 'Error on request:\n%s',
                             traceback.plaintext)
 
@@ -142,7 +151,7 @@ class BaseWSGIServer(HTTPServer):
         self.app = app
 
     def log(self, type, message, *args):
-        _log(type, message, args)
+        _log(type, message, *args)
 
     def serve_forever(self):
         try:
