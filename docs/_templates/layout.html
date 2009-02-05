@@ -51,10 +51,14 @@
           title="back to the documentation overview"><span>Werkzeug</span></a></h1>
       </div>
       <ul class="navigation">
+        {%- if current_page_name != 'index' %}
+        <li class="indexlink"><a href="{{ pathto('index') }}">Overview</a></li>
+        {%- endif %}
         {%- if prev %}
         <li><a href="{{ prev.link|e }}">&laquo; {{ prev.title }}</a></li>
         {%- endif %}
-        <li><a href="{{ pathto(current_page_name) if current_page_name else '#' }}">{{ title }}</a></li>
+        <li class="active"><a href="{{ pathto(current_page_name)
+          if current_page_name else '#' }}">{{ title }}</a></li>
         {%- if next %}
         <li><a href="{{ next.link|e }}">{{ next.title }} &raquo;</a></li>
         {%- endif %}

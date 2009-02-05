@@ -133,13 +133,13 @@ ul.navigation li {
     margin: 0;
     padding: 0;
     height: 2em;
+    line-height: 1.75em;
     float: left;
 }
 
 ul.navigation li a {
     margin: 0;
     padding: 0 10px 0 10px;
-    line-height: 1.75em;
     color: #EE9816;
 }
 
@@ -153,6 +153,12 @@ ul.navigation li.active {
 
 ul.navigation li.active a {
     color: black;
+}
+
+ul.navigation li.indexlink a {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #11557C;
 }
 
 div.body {
@@ -395,4 +401,24 @@ table.field-list td.field-body ul.simple {
     margin: 0;
     padding: 0!important;
     list-style: none;
+}
+
+table.indextable td {
+    width: 50%;
+    vertical-align: top;
+}
+
+table.indextable dt {
+    margin: 0;
+}
+
+table.indextable dd dt a {
+    color: black!important;
+    font-size: 0.8em;
+}
+
+div.jumpbox {
+    padding: 1em 0 0.4em 0;
+    border-bottom: 1px solid #ddd;
+    color: #aaa;
 }

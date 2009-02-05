@@ -43,16 +43,6 @@ Reference
    templates
    exceptions
 
-Additional Information
-----------------------
-
-.. toctree::
-   :maxdepth: 2
-
-   terms
-   unicode
-   changes
-
 Contributed Modules
 -------------------
 
@@ -63,3 +53,19 @@ as part of the `contrib` module:
    :maxdepth: 3
 
    contrib/index
+
+Additional Information
+----------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   terms
+   unicode
+   changes
+
+If you can’t find the information you’re looking for, have a look at the
+index or try to find it using the search function:
+
+*   :ref:`genindex`
+*   :ref:`search`
