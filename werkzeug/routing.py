@@ -759,19 +759,18 @@ class UnicodeConverter(BaseConverter):
     """This converter is the default converter and accepts any string but
     only one one path segment.  Thus the string can not include a slash.
 
-    Supported arguments:
-
-    - `minlength` - the minimum length of the string. must be greater
-      than 1.
-    - `maxlength` - the maximum length of the string.
-    - `length` - the exact length of that string.
+    This is the default validator.
 
     Example::
 
         Rule('/pages/<page>'),
         Rule('/<string(length=2):lang_code>')
 
-    This is the default validator.
+    :param map: the :class:`Map`.
+    :param minlength: the minimum length of the string.  Must be greater
+                      or equal 1.
+    :param maxlength: the maximum length of the string.
+    :param length: the exact length of the string.
     """
 
     def __init__(self, map, minlength=1, maxlength=None, length=None):
@@ -795,6 +794,10 @@ class AnyConverter(BaseConverter):
     identifiers or unicode strings::
 
         Rule('/<any(about, help, imprint, u"class"):page_name>')
+
+    :param map: the :class:`Map`.
+    :param items: this function accepts the possible items as positional
+                  arguments.
     """
 
     def __init__(self, map, *items):
@@ -803,11 +806,17 @@ class AnyConverter(BaseConverter):
 
 
 class PathConverter(BaseConverter):
-    """Like the default string converter, but it also matches slashes.  This
-    is useful for Wikis::
+    """Like the default :class:`UnicodeConverter`, but it also matches
+    slashes.  This is useful for wikis and similar applications::
 
         Rule('/<path:wikipage>')
         Rule('/<path:wikipage>/edit')
+
+    :param map: the :class:`Map`.
+    :param minlength: the minimum length of the string.  Must be greater
+                      or equal 1.
+    :param maxlength: the maximum length of the string.
+    :param length: the exact length of the string.
     """
     regex = '[^/].*?'
     is_greedy = True
@@ -847,16 +856,15 @@ class IntegerConverter(NumberConverter):
 
         Rule('/page/<int:page>')
 
-    Supported arguments:
-
-    - `fixed_digits` - the number of fixed digits in the URL. If you
-      set this to ``4`` for example, the application will only match
-      if the url looks like ``/0001/``.  The default is
-      variable length.
-    - `min` - the minimal value.
-    - `max` - the maximal value.
-
     This converter does not support negative values.
+
+    :param map: the :class:`Map`.
+    :param fixed_digits: the number of fixed digits in the URL.  If you set
+                         this to ``4`` for example, the application will
+                         only match if the url looks like ``/0001/``.  The
+                         default is variable length.
+    :param min: the minimal value.
+    :param max: the maximal value.
     """
     regex = r'\d+'
     num_convert = int
@@ -867,12 +875,11 @@ class FloatConverter(NumberConverter):
 
         Rule('/probability/<float:probability>')
 
-    Supported arguments:
-
-    - `min` - the minimal value.
-    - `max` - the maximal value.
-
     This converter does not support negative values.
+
+    :param map: the :class:`Map`.
+    :param min: the minimal value.
+    :param max: the maximal value.
     """
     regex = r'\d+\.\d+'
     num_convert = float
@@ -887,30 +894,29 @@ class Map(object):
     `Map` instance since those affect all rules, others are just defaults
     and can be overridden for each rule.  Note that you have to specify all
     arguments beside the `rules` as keywords arguments!
+
+    :param rules: sequence of url rules for this map.
+    :param default_subdomain: The default subdomain for rules without a
+                              subdomain defined.
+    :param charset: charset of the url. defaults to ``"utf-8"``
+    :param strict_slashes: Take care of trailing slashes.
+    :param redirect_defaults: This will redirect to the default rule if it
+                              wasn't visited that way. This helps creating
+                              unique URLs.
+    :param converters: A dict of converters that adds additional converters
+                       to the list of converters. If you redefine one
+                       converter this will override the original one.
+    :param sort_parameters: If set to `True` the url parameters are sorted.
+                            See `url_encode` for more details.
+    :param sort_key: The sort key function for `url_encode`.
+
+    .. versionadded:: 0.5
+        `sort_parameters` and `sort_key` was added.
     """
 
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
                  converters=None, sort_parameters=False, sort_key=None):
-        """Initializes the new URL map.
-
-        :param rules: sequence of url rules for this map.
-        :param default_subdomain: The default subdomain for rules without a
-                                  subdomain defined.
-        :param charset: charset of the url. defaults to ``"utf-8"``
-        :param strict_slashes: Take care of trailing slashes.
-        :param redirect_defaults: This will redirect to the default rule if it
-                                  wasn't visited that way. This helps creating
-                                  unique URLs.
-        :param converters: A dict of converters that adds additional converters
-                           to the list of converters. If you redefine one
-                           converter this will override the original one.
-        :param sort_parameters: If set to `True` the url parameters are sorted.
-                                See `url_encode` for more details.
-        :param sort_key: The sort key function for `url_encode`.
-
-        *new in Werkzeug 0.5* `sort_parameters` and `sort_key` was added.
-        """
         self._rules = []
         self._rules_by_endpoint = {}
         self._remap = True
@@ -937,6 +943,11 @@ class Map(object):
         you want to wrap the builder a bit so that the current language
         code is automatically added if not provided but endpoints expect
         it.
+
+        :param endpoint: the endpoint to check.
+        :param arguments: this function accepts one or more arguments
+                          as positional arguments.  Each one of them is
+                          checked.
         """
         self.update()
         arguments = set(arguments)
@@ -946,7 +957,12 @@ class Map(object):
         return False
 
     def iter_rules(self, endpoint=None):
-        """Iterate over all rules or the rules of an endpoint."""
+        """Iterate over all rules or the rules of an endpoint.
+
+        :param endpoint: if provided only the rules for that endpoint
+                         are returned.
+        :return: an iterator
+        """
         if endpoint is not None:
             return iter(self._rules_by_endpoint[endpoint])
         return iter(self._rules)
@@ -954,6 +970,8 @@ class Map(object):
     def add(self, rulefactory):
         """Add a new rule or factory to the map and bind it.  Requires that the
         rule is not bound to another map.
+
+        :param rulefactory: a :class:`Rule` or :class:`RuleFactory`
         """
         for rule in rulefactory.get_rules(self):
             rule.bind(self)
@@ -961,21 +979,16 @@ class Map(object):
             self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
         self._remap = True
 
-    def add_rule(self, rule):
-        from warnings import warn
-        warn(DeprecationWarning('use map.add instead of map.add_rule now'))
-        return self.add(rule)
-
     def bind(self, server_name, script_name=None, subdomain=None,
              url_scheme='http', default_method='GET', path_info=None):
-        """Return a new `MapAdapter` with the details specified to the call.
-        Note that `script_name` will default to ``'/'`` if not further
+        """Return a new :class:`MapAdapter` with the details specified to the
+        call.  Note that `script_name` will default to ``'/'`` if not further
         specified or `None`.  The `server_name` at least is a requirement
         because the HTTP RFC requires absolute URLs for redirects and so all
         redirect exceptions raised by Werkzeug will contain the full canonical
         URL.
 
-        If no path_info is passed to match() it will use the default path
+        If no path_info is passed to :meth:`match` it will use the default path
         info passed to bind.  While this doesn't really make sense for
         manual bind calls, it's useful if you bind a map to a WSGI
         environment which already contains the path info.
@@ -991,10 +1004,9 @@ class Map(object):
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme, path_info, default_method)
 
-    def bind_to_environ(self, environ, server_name=None, subdomain=None,
-                        calculate_subdomain=False):
-        """Like `bind` but you can pass it an WSGI environment and it will
-        fetch the information from that directory.  Note that because of
+    def bind_to_environ(self, environ, server_name=None, subdomain=None):
+        """Like :meth:`bind` but you can pass it an WSGI environment and it
+        will fetch the information from that directory.  Note that because of
         limitations in the protocol there is no way to get the current
         subdomain and real `server_name` from the environment.  If you don't
         provide it, Werkzeug will use `SERVER_NAME` and `SERVER_PORT` (or
@@ -1010,8 +1022,17 @@ class Map(object):
         If the object passed as environ as an environ attribute, the value of
         this attribute is used instead.  This allows you to pass request
         objects.  Additionally `PATH_INFO` added as a default ot the
-        `MapAdapter` so that you don't have to pass the path info to the
-        match method.
+        :class:`MapAdapter` so that you don't have to pass the path info to
+        the match method.
+
+        .. versionchanged:: 0.5
+            previously this method accepted a bogus `calculate_subdomain`
+            parameter that did not have any effect.  It was removed because
+            of that.
+
+        :param environ: a WSGI environment.
+        :param server_name: an optional server name hint (see above).
+        :param subdomain: optionally the current subdomain (see above).
         """
         if hasattr(environ, 'environ'):
             environ = environ.environ
@@ -1050,8 +1071,8 @@ class Map(object):
 
 
 class MapAdapter(object):
-    """Retured by `Map.bind` or `Map.bind_to_environ` and does the
-    URL matching and building based on runtime information.
+    """Retured by :meth:`Map.bind` or :meth:`Map.bind_to_environ` and does
+    the URL matching and building based on runtime information.
     """
 
     def __init__(self, map, server_name, script_name, subdomain,
@@ -1096,7 +1117,18 @@ class MapAdapter(object):
                                      catch_http_exceptions=True)
 
         Keep in mind that this method might return exception objects too, so
-        use `Response.force_type` to get a response object.
+        use :class:`Response.force_type` to get a response object.
+
+        :param view_func: a function that is called with the endpoint as
+                          first argument and the value dict as second.  Has
+                          to dispatch to the actual view function with this
+                          information.  (see above)
+        :param path_info: the path info to use for matching.  Overrides the
+                          path info specified on binding.
+        :param method: the HTTP method used for matching.  Overrides the
+                       method specified on binding.
+        :param catch_http_exceptions: set to `True` to catch any of the
+                                      werkzeug :class:`HTTPException`\s.
         """
         try:
             try:
@@ -1164,6 +1196,11 @@ class MapAdapter(object):
         Traceback (most recent call last):
           ...
         NotFound: 404 Not Found
+
+        :param path_info: the path info to use for matching.  Overrides the
+                          path info specified on binding.
+        :param method: the HTTP method used for matching.  Overrides the
+                       method specified on binding.
         """
         self.map.update()
         if path_info is None:
@@ -1225,6 +1262,11 @@ class MapAdapter(object):
     def test(self, path_info=None, method=None):
         """Test if a rule would match.  Works like `match` but returns `True`
         if the URL matches, or `False` if it does not exist.
+
+        :param path_info: the path info to use for matching.  Overrides the
+                          path info specified on binding.
+        :param method: the HTTP method used for matching.  Overrides the
+                       method specified on binding.
         """
         try:
             self.match(path_info, method)
@@ -1273,6 +1315,13 @@ class MapAdapter(object):
         The build method accepts an argument called `method` which allows you
         to specify the method you want to have an URL builded for if you have
         different methods for the same endpoint specified.
+
+        :param endpoint: the endpoint of the URL to build.
+        :param values: the values for the URL to build.  Unhandled values are
+                       appended to the URL as query parameters.
+        :param method: the HTTP method for the rule if there are different
+                       URLs for different methods on the same endpoint.
+        :param force_external: enforce full canonical external URLs.
         """
         self.map.update()
         method = method or self.default_method

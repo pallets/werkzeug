@@ -12,7 +12,7 @@ sure to have it installed.
 Creating a `.fcgi` file
 =======================
 
-Then you need to create the FastCGI server file.  Let's call it
+First you need to create the FastCGI server file.  Let's call it
 `yourapplication.fcgi`::
 
     #!/usr/bin/python
