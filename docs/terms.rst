@@ -24,6 +24,9 @@ response object.
 A response object is *not* necessarily the :class:`BaseResponse` object or a
 subclass thereof.
 
+For example Pylons/webob provide a very similar response class that can
+be used as well (:class:`webob.Response`).
+
 View Function
 -------------
 
