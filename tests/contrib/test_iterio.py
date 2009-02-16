@@ -3,6 +3,7 @@ from werkzeug.contrib.iterio import IterIO
 
 
 def test_itero():
+    """Test the IterIO"""
     iterable = iter(["Hello", "World", "1", "2", "3"])
     io = IterIO(iterable)
     assert io.tell() == 0

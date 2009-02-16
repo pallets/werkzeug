@@ -11,6 +11,8 @@ Version 0.5
   charsets and extra convenience methods.
 - switched the serving system from wsgiref to something homebaked.
 - the :class:`Client` now supports cookies.
+- added the :mod:`~werkzeug.contrib.fixers` module with various
+  fixes for webserver bugs and hosting setup side-effects.
 
 Version 0.4.1
 -------------

@@ -75,7 +75,7 @@ div.syntax {
 }
 
 div.page {
-    background-color: white;
+    background: white url(contents.png) repeat-x 0 130px;
     border: 1px solid #aaa;
     width: 740px;
     margin: 20px auto 20px auto;
@@ -162,9 +162,6 @@ ul.navigation li.indexlink a {
 }
 
 div.body {
-    background-color: #ffffff;
-    background-image: url(contents.png);
-    background-repeat: repeat-x;
     margin: 0 20px 0 20px;
     padding: 0.5em 0 20px 0;
 }

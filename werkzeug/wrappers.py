@@ -78,8 +78,14 @@ class BaseRequest(object):
     data by accident.  A shallow request is not populated to the WSGI
     environment.
     """
+
+    #: the charset for the request, defaults to utf-8
     charset = 'utf-8'
+
+    #: the error handling procedure for errors, defaults to 'ignore'
     encoding_errors = 'ignore'
+
+    #: set to True if the application runs behind an HTTP proxy
     is_behind_proxy = False
 
     def __init__(self, environ, populate_request=True, shallow=False):

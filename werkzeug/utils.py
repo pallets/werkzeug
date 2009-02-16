@@ -1712,7 +1712,7 @@ def unescape(s):
 
 
 def get_host(environ):
-    """Return the real host for the given WSGI enviornment.  This takes care
+    """Return the real host for the given WSGI environment.  This takes care
     of the `X-Forwarded-Host` header.
 
     :param environ: the WSGI environment to get the host of.

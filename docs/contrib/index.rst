@@ -13,3 +13,4 @@ as part of the `contrib` module:
    cache
    wrappers
    iterio
+   fixers

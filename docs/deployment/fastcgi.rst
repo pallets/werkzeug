@@ -56,14 +56,7 @@ A basic FastCGI configuration for lighttpd looks like that::
 
 This configuration binds the application to `/yourapplication`.  If you
 want the application to work in the URL root you have to work around a
-lighttpd bug with the following WSGI middleware::
-
-    def fix_lighttpd_path_bug(application):
-        def app(environ, start_response)
-            environ['PATH_INFO'] = environ['SCRIPT_NAME'] + environ['PATH_INFO']
-            environ['SCRIPT_NAME'] = ''
-            return application(environ, start_response)
-        return app
+lighttpd bug with the `~werkzeug.contrib.fixers.LighttpdCGIRootFix` middleware.
 
 Make sure to apply it only if you are mounting the application the URL
 root.
