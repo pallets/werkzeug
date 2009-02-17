@@ -33,7 +33,8 @@ from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, parse_form_data, get_content_type, url_decode
+     header_property, parse_form_data, get_content_type, url_decode, \
+     pop_path_info, peek_path_info
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper
 
@@ -333,6 +334,27 @@ class BaseRequest(object):
         boolean that is `True` if the application will be executed only
         once in a process lifetime.  This is the case for CGI for example,
         but it's not guaranteed that the exeuction only happens one time.''')
+
+    def pop_path_info(self):
+        """Works like :func:`pop_path_info` but updates :attr:`script_name`
+        and :attr:`path_info` which are per-se read-only attributes.
+
+        .. versionadded:: 0.5
+        """
+        if self.shallow:
+            raise RuntimeError('A shallow request tried to modify the WSGI '
+                               'environment.  If you really want to do that, '
+                               'set `shallow` to False.')
+        rv = pop_path_info(self.environ)
+        cached_property.refresh(self, ['script_root', 'path'])
+        return rv
+
+    def peek_path_info(self):
+        """Works like :func:`peek_path_info`.
+
+        .. versionadded:: 0.5
+        """
+        return peek_path_info(self.environ)
 
 
 class BaseResponse(object):

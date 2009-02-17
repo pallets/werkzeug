@@ -1165,6 +1165,39 @@ class ClosingIterator(object):
             callback()
 
 
+class FileWrapper(object):
+    """This class can be used to convert a :class:`file`-like object into
+    an iterable.  It yields `buffer_size` blocks until the file is fully
+    read.
+
+    You should not use this class directly but rather use the
+    :func:`wrap_file` function that uses the WSGI server's file wrapper
+    support if it's available.
+
+    .. versionadded:: 0.5
+
+    :param file: a :class:`file`-like object with a :meth:`~file.read` method.
+    :param buffer_size: number of bytes for one iteration.
+    """
+
+    def __init__(self, file, buffer_size=8192):
+        self.file = file
+        self.buffer_size = buffer_size
+
+    def close(self):
+        if hasattr(self.file, 'close'):
+            self.file.close()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        data = self.file.read(self.buffer_size)
+        if data:
+            return data
+        raise StopIteration()
+
+
 class Href(object):
     """Implements a callable that constructs URLs with the given base. The
     function can be called with any number of positional and keyword
@@ -1256,7 +1289,7 @@ class Href(object):
 
 
 class cached_property(object):
-    """A decorator that converts a function into a lazy property. The
+    """A decorator that converts a function into a lazy property.  The
     function wrapped is called the first time to retrieve the result
     and than that calculated result is used the next time you access
     the value::
@@ -1267,10 +1300,14 @@ class cached_property(object):
             def foo(self):
                 # calculate something important here
                 return 42
+
+    .. versionchanged:: 0.5
+       cached properties are now optionally writeable.
     """
 
-    def __init__(self, func, name=None, doc=None):
+    def __init__(self, func, name=None, doc=None, writeable=False):
         self.func = func
+        self.writeable = writeable
         self.__name__ = name or func.__name__
         self.__doc__ = doc or func.__doc__
 
@@ -1284,10 +1321,33 @@ class cached_property(object):
         return value
 
     def __set__(self, obj, value):
-        # XXX: we make this a data descriptor rather than a read only
-        # descriptor just for sphinx and pydoc to properly pick it up.
-        # This should not be necessary otherwise.
-        raise TypeError('read only attribute')
+        if not self.writeable:
+            raise TypeError('read only attribute')
+        obj.__dict__[self.__name__] = value
+
+    @staticmethod
+    def refresh(object, attributes):
+        """Helper function that invalidates the property cache.  This can be
+        useful if you have a function that changes a value that the cached
+        one depends on::
+
+            @cached_property
+            def foo(self):
+                return '%s/foo' % self.bar
+
+            def change_bar(self):
+                self.bar += 1
+                cached_property.refresh(self, ['foo'])
+
+        .. versionadded:: 0.5
+
+        :param object: the object with the attributes
+        :param attributes: an iterable with the attributes to refresh
+        """
+        for attribute in attributes:
+            prop = getattr(object.__class__, attribute)
+            assert isinstance(prop, cached_property), 'not a cached property'
+            object.__dict__.pop(prop.__name__, None)
 
 
 class environ_property(_DictAccessorProperty):
@@ -1764,6 +1824,70 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     return ''.join(tmp)
 
 
+def pop_path_info(environ):
+    """Removes and returns the next segment of `PATH_INFO`, pushing it onto
+    `SCRIPT_NAME`.  Returns `None` if there is nothing left on `PATH_INFO`.
+
+    If there are empty segments (``'/foo//bar``) these are ignored but
+    properly pushed to the `SCRIPT_NAME`:
+
+    >>> env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/a/b'}
+    >>> pop_path_info(env)
+    'a'
+    >>> env['SCRIPT_NAME']
+    '/foo/a'
+    >>> pop_path_info(env)
+    'b'
+    >>> env['SCRIPT_NAME']
+    '/foo/a/b'
+
+    .. versionadded:: 0.5
+
+    :param environ: the WSGI environment that is modified.
+    """
+    path = environ.get('PATH_INFO')
+    if not path:
+        return None
+
+    script_name = environ.get('SCRIPT_NAME', '')
+
+    # shift multiple leading slashes over
+    old_path = path
+    path = path.lstrip('/')
+    if path != old_path:
+        script_name += '/' * (len(old_path) - len(path))
+
+    if '/' not in path:
+        environ['PATH_INFO'] = ''
+        environ['SCRIPT_NAME'] = script_name + path
+        return path
+
+    segment, path = path.split('/', 1)
+    environ['PATH_INFO'] = '/' + path
+    environ['SCRIPT_NAME'] = script_name + segment
+    return segment
+
+
+def peek_path_info(environ):
+    """Returns the next segment on the `PATH_INFO` or `None` if there
+    is none.  Works like :func:`pop_path_info` without modifying the
+    environment:
+
+    >>> env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/a/b'}
+    >>> peek_path_info(env)
+    'a'
+    >>> peek_path_info(env)
+    'a'
+
+    .. versionadded:: 0.5
+
+    :param environ: the WSGI environment that is checked.
+    """
+    segments = environ.get('PATH_INFO', '').lstrip('/').split('/', 1)[0]
+    if segments:
+        return segments[0]
+
+
 def cookie_date(expires=None):
     """Formats the time to ensure compatibility with Netscape's cookie
     standard.
@@ -1919,6 +2043,18 @@ def responder(f):
             return Response('Hello World!')
     """
     return _patch_wrapper(f, lambda *a: f(*a)(*a[-2:]))
+
+
+def wrap_file(environ, file, buffer_size=8192):
+    """Wraps a file.  This uses the WSGI server's file wrapper if available
+    or otherwise the generic :class:`FileWrapper`.
+
+    .. versionadded:: 0.5
+
+    :param file: a :class:`file`-like object with a :meth:`~file.read` method.
+    :param buffer_size: number of bytes for one iteration.
+    """
+    return environ.get('wsgi.file_wrapper', FileWrapper)(file, buffer_size)
 
 
 def import_string(import_name, silent=False):

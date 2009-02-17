@@ -86,6 +86,8 @@ WSGI Helpers
 
 .. autoclass:: ClosingIterator
 
+.. autoclass:: FileWrapper
+
 .. autofunction:: get_host
 
 .. autofunction:: get_current_url
@@ -97,6 +99,12 @@ WSGI Helpers
 .. autofunction:: run_wsgi_app
 
 .. autofunction:: test_app
+
+.. autofunction:: wrap_file
+
+.. autofunction:: pop_path_info
+
+.. autofunction:: peek_path_info
 
 .. autofunction:: _easteregg
 
@@ -170,6 +178,12 @@ HTTP Helpers
 
 .. autofunction:: remove_entity_headers
 
+.. autofunction:: remove_hop_by_hop_headers
+
+.. autofunction:: is_entity_header
+
+.. autofunction:: is_hop_by_hop_header
+
 .. data:: HTTP_STATUS_CODES
 
     A dict of status code -> default status message pairs.  This is used
@@ -180,11 +194,12 @@ HTTP Helpers
 General Helpers
 ===============
 
-.. autofunction:: cached_property
+.. autoclass:: cached_property
+   :members:
 
-.. autofunction:: environ_property
+.. autoclass:: environ_property
 
-.. autofunction:: header_property
+.. autoclass:: header_property
 
 .. autofunction:: parse_cookie
 

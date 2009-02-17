@@ -13,7 +13,7 @@ from os import path
 from nose.tools import assert_raises
 
 from werkzeug.utils import *
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import BaseResponse, Request
 from werkzeug.http import parse_date
 from werkzeug.test import Client
 
@@ -566,3 +566,53 @@ def test_append_slash_redirect():
     response = client.get('foo', base_url='http://example.org/app')
     assert response.status_code == 301
     assert response.headers['Location'] == 'http://example.org/app/foo/'
+
+
+def test_pop_path_info():
+    """Test path info popping in wrappers and utils"""
+    original_env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/a/b///c'}
+
+    # regular path info popping
+    def assert_tuple(script_name, path_info):
+        assert env.get('SCRIPT_NAME') == script_name
+        assert env.get('PATH_INFO') == path_info
+    env = original_env.copy()
+    pop = lambda: pop_path_info(env)
+
+    assert_tuple('/foo', '/a/b///c')
+    assert pop() == 'a'
+    assert_tuple('/foo/a', '/b///c')
+    assert pop() == 'b'
+    assert_tuple('/foo/a/b', '///c')
+    assert pop() == 'c'
+    assert_tuple('/foo/a/b///c', '')
+    assert pop() is None
+
+    # request based path info popping, with multi slash
+    # removal if they are in prominent places (descriptor magic)
+    def assert_tuple(script_name, path_info):
+        assert req.script_root == script_name
+        assert req.path == path_info
+    req = Request(original_env.copy())
+    pop = req.pop_path_info
+
+    assert_tuple(u'/foo', u'/a/b///c')
+    assert pop() == 'a'
+    assert_tuple(u'/foo/a', u'/b///c')
+    assert pop() == 'b'
+    assert_tuple(u'/foo/a/b', u'/c')
+    assert pop() == 'c'
+    assert_tuple(u'/foo/a/b///c', u'/')
+    assert pop() is None
+
+
+def test_peek_path_info():
+    """Test path info peeking in wrappers and utils"""
+    env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/a/b///c'}
+    req = Request(env)
+
+    assert peek_path_info(env) == 'a'
+    assert peek_path_info(env) == 'a'
+
+    assert req.peek_path_info() == 'a'
+    assert req.peek_path_info() == 'a'

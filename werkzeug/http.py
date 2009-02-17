@@ -43,6 +43,11 @@ _entity_headers = frozenset([
     'content-location', 'content-md5', 'content-range', 'content-type',
     'expires', 'last-modified'
 ])
+_hop_by_pop_headers = frozenset([
+    'connection', 'keep-alive', 'proxy-authenticate',
+    'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
+    'upgrade'
+])
 
 
 class Accept(list):
@@ -1044,4 +1049,38 @@ def remove_entity_headers(headers):
     :param headers: a list or :class:`Headers` object.
     """
     headers[:] = [(key, value) for key, value in headers if
-                  key.lower() not in _entity_headers]
+                  not is_entity_header(key)]
+
+
+def remove_hop_by_hop_headers(headers):
+    """Remove all HTTP/1.1 "Hop-by-Hop" headers from a list or
+    :class:`Headers` object.  This operation works in-place.
+
+    .. versionadded:: 0.5
+
+    :param headers: a list or :class:`Headers` object.
+    """
+    headers[:] = [(key, value) for key, value in headers if
+                  not is_hop_by_hop_header(key)]
+
+
+def is_entity_header(header):
+    """Check if a header is an entity header.
+
+    .. versionadded:: 0.5
+
+    :param header: the header to test.
+    :return: `True` if it's an entity header, `False` otherwise.
+    """
+    return header.lower() in _entity_headers
+
+
+def is_hop_by_hop_header(header):
+    """Check if a header is an HTTP/1.1 "Hop-by-Hop" header.
+
+    .. versionadded:: 0.5
+
+    :param header: the header to test.
+    :return: `True` if it's an entity header, `False` otherwise.
+    """
+    return header.lower() in _hop_by_pop_headers

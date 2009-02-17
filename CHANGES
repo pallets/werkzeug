@@ -13,6 +13,11 @@ Version 0.5
 - the :class:`Client` now supports cookies.
 - added the :mod:`~werkzeug.contrib.fixers` module with various
   fixes for webserver bugs and hosting setup side-effects.
+- added :func:`is_hop_by_hop_header`
+- added :func:`is_entity_header`
+- added :func:`remove_hop_by_hop_headers`
+- added :func:`pop_path_info`
+- added :func:`peek_path_info`
 
 Version 0.4.1
 -------------

@@ -169,3 +169,16 @@ def test_remove_entity_headers():
 
     remove_entity_headers(headers2)
     assert headers2 == Headers([('Date', now)])
+
+
+def test_remove_hop_by_hop_headers():
+    """Hop-by-Hop header removing function"""
+    headers1 = [('Connection', 'closed'), ('Foo', 'bar'),
+                ('Keep-Alive', 'wtf')]
+    headers2 = Headers(headers1)
+
+    remove_hop_by_hop_headers(headers1)
+    assert headers1 == [('Foo', 'bar')]
+
+    remove_hop_by_hop_headers(headers2)
+    assert headers2 == Headers([('Foo', 'bar')])
