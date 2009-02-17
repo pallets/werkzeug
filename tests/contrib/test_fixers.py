@@ -24,9 +24,9 @@ def test_lighttpd_cgi_root_fix():
 def test_path_info_from_request_uri_fix():
     """Test the PathInfoFromRequestUriFix fixer"""
     app = fixers.PathInfoFromRequestUriFix(path_check_app)
-    for key in 'REQUEST_URI', 'REQUEST_URL':
+    for key in 'REQUEST_URI', 'REQUEST_URL', 'UNENCODED_URL':
         env = dict(create_environ(), SCRIPT_NAME='/test', PATH_INFO='/?????')
-        env[key] = '/test/foo%25bar'
+        env[key] = '/test/foo%25bar?drop=this'
         response = Response.from_app(app, env)
         assert response.data == 'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 

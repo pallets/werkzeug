@@ -39,21 +39,25 @@ class PathInfoFromRequestUriFix(object):
 
     This is for example a problem for a CGI scripts on a Windows Apache.
 
-    This fixer works by recreating the `PATH_INFO` from `REQUEST_URI` or
-    `REQUEST_URL` (whatever is available).  Thus the fix can only be
-    applied if the webserver supports either of these variables.
+    This fixer works by recreating the `PATH_INFO` from `REQUEST_URI`,
+    `REQUEST_URL`, or `UNENCODED_URL` (whatever is available).  Thus the
+    fix can only be applied if the webserver supports either of these
+    variables.
     """
 
     def __init__(self, app):
         self.app = app
 
     def __call__(self, environ, start_response):
-        request_uri = environ.get('REQUEST_URL', environ.get('REQUEST_URI'))
-        if request_uri is not None:
-            request_uri = unquote(request_uri)
+        for key in 'REQUEST_URL', 'REQUEST_URI', 'UNENCODED_URL':
+            if key not in environ:
+                continue
+            request_uri = unquote(environ[key])
             script_name = unquote(environ.get('SCRIPT_NAME', ''))
             if request_uri.startswith(script_name):
-                environ['PATH_INFO'] = request_uri[len(script_name):]
+                environ['PATH_INFO'] = request_uri[len(script_name):] \
+                    .split('?', 1)[0]
+                break
         return self.app(environ, start_response)
 
 
