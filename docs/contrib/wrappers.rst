@@ -11,3 +11,6 @@ Extra Wrappers
 
 .. autoclass:: ProtobufRequestMixin
    :members:
+
+.. autoclass:: RoutingArgsRequestMixin
+   :members:

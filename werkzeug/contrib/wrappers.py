@@ -32,8 +32,8 @@ class JSONRequestMixin(object):
     """Add json method to a request object.  This will parse the input data
     through simplejson if possible.
 
-    :exc:`werkzeug.BadRequest` will be raised if the content-type is not json
-    or if the data itself cannot be parsed as json.
+    :exc:`~werkzeug.exceptions.BadRequest` will be raised if the content-type
+    is not json or if the data itself cannot be parsed as json.
     """
 
     @cached_property
@@ -51,15 +51,16 @@ class ProtobufRequestMixin(object):
     """Add protobuf parsing method to a request object.  This will parse the
     input data through `protobuf`_ if possible.
 
-    :exc:`werkzeug.BadRequest` will be raised if the content-type is not
-    protobuf or if the data itself cannot be parsed property.
+    :exc:`~werkzeug.exceptions.BadRequest` will be raised if the content-type
+    is not protobuf or if the data itself cannot be parsed property.
 
     .. _protobuf: http://code.google.com/p/protobuf/
     """
 
     #: by default the :class:`ProtobufRequestMixin` will raise a
-    #: :exc:`werkzeug.BadRequest` if the object is not initialized.
-    #: You can bypass that check by setting this attribute to False.
+    #: :exc:`~werkzeug.exceptions.BadRequest` if the object is not
+    #: initialized.  You can bypass that check by setting this
+    #: attribute to `False`.
     protobuf_check_initialization = True
 
     def parse_protobuf(self, proto_type):
@@ -78,3 +79,45 @@ class ProtobufRequestMixin(object):
             raise BadRequest("Partial Protobuf request")
 
         return obj
+
+
+class RoutingArgsRequestMixin(object):
+    """This request mixin adds support for the wsgiorg routing args
+    `specification`_.
+
+    .. _specification: http://www.wsgi.org/wsgi/Specifications/routing_args
+    """
+
+    def _get_routing_args(self):
+        return self.environ.get('wsgiorg.routing_args', (()))[0]
+
+    def _set_routing_args(self, value):
+        if self.shallow:
+            raise RuntimeError('A shallow request tried to modify the WSGI '
+                               'environment.  If you really want to do that, '
+                               'set `shallow` to False.')
+        self.environ['wsgiorg.routing_args'] = (value, self.routing_vars)
+
+    routing_args = property(_get_routing_args, _set_routing_args, doc='''
+        The positional URL arguments as `tuple`.''')
+    del _get_routing_args, _set_routing_args
+
+    def _get_routing_vars(self):
+        rv = self.environ.get('wsgiorg.routing_args')
+        if rv is not None:
+            return rv[1]
+        rv = {}
+        if not self.shallow:
+            self.routing_vars = rv
+        return rv
+
+    def _set_routing_vars(self, value):
+        if self.shallow:
+            raise RuntimeError('A shallow request tried to modify the WSGI '
+                               'environment.  If you really want to do that, '
+                               'set `shallow` to False.')
+        self.environ['wsgiorg.routing_args'] = (self.routing_args, value)
+
+    routing_vars = property(_get_routing_vars, _set_routing_vars, doc='''
+        The keyword URL arguments as `dict`.''')
+    del _get_routing_vars, _set_routing_vars
