@@ -18,6 +18,7 @@ Version 0.5
 - added :func:`remove_hop_by_hop_headers`
 - added :func:`pop_path_info`
 - added :func:`peek_path_info`
+- added :func:`wrap_file` and :class:`FileWrapper`
 
 Version 0.4.1
 -------------
