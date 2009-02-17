@@ -9,6 +9,7 @@
 import sys
 from datetime import datetime
 from os import path
+from StringIO import StringIO
 
 from nose.tools import assert_raises
 
@@ -616,3 +617,41 @@ def test_peek_path_info():
 
     assert req.peek_path_info() == 'aaa'
     assert req.peek_path_info() == 'aaa'
+
+
+def test_limited_stream():
+    """Test the LimitedStream"""
+    io = StringIO('123456')
+    stream = LimitedStream(io, 3)
+    assert stream.read() == '123'
+    assert_raises(BadRequest, stream.read)
+
+    io = StringIO('123456')
+    stream = LimitedStream(io, 3)
+    assert stream.read(1) == '1'
+    assert stream.read(1) == '2'
+    assert stream.read(1) == '3'
+    assert_raises(BadRequest, stream.read)
+
+    io = StringIO('123456\nabcdefg')
+    stream = LimitedStream(io, 9)
+    assert stream.readline() == '123456\n'
+    assert stream.readline() == 'ab'
+
+    io = StringIO('123456\nabcdefg')
+    stream = LimitedStream(io, 9)
+    assert stream.readlines() == ['123456\n', 'ab']
+
+    io = StringIO('123456\nabcdefg')
+    stream = LimitedStream(io, 9)
+    assert stream.readlines(2) == ['12']
+    assert stream.readlines(2) == ['34']
+    assert stream.readlines() == ['56\n', 'ab']
+
+    io = StringIO('123456\nabcdefg')
+    stream = LimitedStream(io, 9)
+    assert stream.readline(100) == '123456\n'
+
+    io = StringIO('123456\nabcdefg')
+    stream = LimitedStream(io, 9)
+    assert stream.readlines(100) == ['123456\n', 'ab']

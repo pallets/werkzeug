@@ -1198,6 +1198,84 @@ class FileWrapper(object):
         raise StopIteration()
 
 
+class LimitedStream(object):
+    """Wraps a stream so that it doesn't read more than n bytes.  If the
+    stream is exhausted and the caller tries to get more bytes from it
+    :func:`on_exhausted` is called which by default raises a
+    :exc:`~werkzeug.exceptions.BadRequest`.  The return value of that
+    function is forwarded to the reader function.  So if it returns an
+    empty string :meth:`read` will return an empty string as well.
+
+    The limit however must never be higher than what the stream can
+    output.  Otherwise :meth:`readlines` will try to read past the
+    limit.
+    """
+
+    def __init__(self, stream, limit):
+        self._stream = stream
+        self._pos = 0
+        self.limit = limit
+
+    def on_exhausted(self):
+        """This is called when the stream tries to read past the limit.
+        The return value of this function is returned from the reading
+        function.
+
+        Per default this raises a :exc:`~werkzeug.exceptions.BadRequest`.
+        """
+        raise BadRequest('input stream exhausted')
+
+    def read(self, size=None):
+        """Read `size` bytes or if size is not provided everything is read.
+
+        :param size: the number of bytes read.
+        """
+        if self._pos >= self.limit:
+            return self.on_exhausted()
+        if size is None:
+            size = self.limit
+        read = self._stream.read(min(self.limit - self._pos, size))
+        self._pos += len(read)
+        return read
+
+    def readline(self, size=None):
+        """Read a line from the stream.  Arguments are forwarded to the
+        `readline` function of the underlaying stream if it supports
+        them.
+        """
+        if self._pos >= self.limit:
+            return self.on_exhausted()
+        if size is None:
+            size = self.limit - self._pos
+        else:
+            size = min(size, self.limit - self._pos)
+        line = self._stream.readline(size)
+        self._pos += len(line)
+        return line
+
+    def readlines(self, size=None):
+        """Reads a file into a list of strings.  It calls :meth:`readline`
+        until the file is read to the end.  It does not support the
+        optional `size` argument some other readline implementations
+        support.
+        """
+        last_pos = self._pos
+        result = []
+        if size is not None:
+            end = min(self.limit, last_pos + size)
+        else:
+            end = self.limit
+        while 1:
+            if size is not None:
+                size -= last_pos - self._pos
+            if self._pos >= end:
+                break
+            result.append(self.readline(size))
+            if size is not None:
+                last_pos = self._pos
+        return result
+
+
 class Href(object):
     """Implements a callable that constructs URLs with the given base. The
     function can be called with any number of positional and keyword
@@ -2352,4 +2430,4 @@ class ArgumentValidationError(ValueError):
 from werkzeug.exceptions import BadRequest
 for _cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
     _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')
-del BadRequest, _cls
+del _cls

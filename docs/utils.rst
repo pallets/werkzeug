@@ -88,6 +88,9 @@ WSGI Helpers
 
 .. autoclass:: FileWrapper
 
+.. autoclass:: LimitedStream
+   :members:
+
 .. autofunction:: get_host
 
 .. autofunction:: get_current_url

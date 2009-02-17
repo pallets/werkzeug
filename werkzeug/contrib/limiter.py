@@ -12,46 +12,33 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+from warnings import warn
+from werkzeug.utils import LimitedStream as LimitedStreamBase
 
 
-class LimitedStream(object):
-    """
-    Wraps a stream and doesn't read more than n bytes.
-    """
+class _SilentLimitedStream(LimitedStreamBase):
 
     def __init__(self, environ, limit):
-        self._environ = environ
-        self._stream = environ['wsgi.input']
-        self._limit = min(limit, int(environ.get('CONTENT_LENGTH') or 0))
-        self._pos = 0
+        LimitedStreamBase.__init__(self,
+            environ['wsgi.input'],
+            min(limit, int(environ.get('CONTENT_LENGTH') or 0))
+        )
 
-    def read(self, size=None):
-        if self._pos >= self._limit:
-            return ''
-        if size is None:
-            size = self._limit
-        read = self._stream.read(min(self._limit - self._pos, size))
-        self._pos += len(read)
-        return read
+    def on_exhausted(self):
+        return ''
 
-    def readline(self, *args):
-        if self._pos >= self._limit:
-            return ''
-        line = self._stream.readline(*args)
-        self.pos += len(line)
-        self.processed()
-        return line
 
-    def readlines(self, hint=None):
-        result = []
-        while self.pos < self._limit:
-            result.append(self.readline())
-        return result
+class LimitedStream(_SilentLimitedStream):
+
+    def __init__(self, environ, limit):
+        _SilentLimitedStream.__init__(self, environ, limit)
+        warn(DeprecationWarning('comtrin limited stream is deprecated, use '
+                                'werkzeug.LimitedStream instead.'),
+             stacklevel=2)
 
 
 class StreamLimitMiddleware(object):
-    """
-    Limits the input stream to a given number of bytes.  This is useful if
+    """Limits the input stream to a given number of bytes.  This is useful if
     you have a WSGI application that reads form data into memory (django for
     example) and you don't want users to harm the server by uploading tons of
     data.
@@ -64,5 +51,5 @@ class StreamLimitMiddleware(object):
         self.maximum_size = maximum_size
 
     def __call__(self, environ, start_response):
-        environ['wsgi.input'] = LimitedStream(environ, self.maximum_size)
+        environ['wsgi.input'] = _SilentLimitedStream(environ, self.maximum_size)
         return self.app(environ, start_response)

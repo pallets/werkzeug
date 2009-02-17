@@ -20,6 +20,10 @@ Version 0.5
 - added :func:`pop_path_info`
 - added :func:`peek_path_info`
 - added :func:`wrap_file` and :class:`FileWrapper`
+- moved `LimitedStream` from the contrib package into the regular
+  Werkzeug one and changes the default behavior to raise exceptions
+  rather than stopping without warning.  The old class will stick in
+  the module until 0.6.
 
 Version 0.4.1
 -------------
