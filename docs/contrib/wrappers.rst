@@ -14,3 +14,6 @@ Extra Wrappers
 
 .. autoclass:: RoutingArgsRequestMixin
    :members:
+
+.. autoclass:: ReverseSlashBehaviorRequestMixin
+   :members:

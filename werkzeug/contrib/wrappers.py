@@ -138,25 +138,25 @@ class ReverseSlashBehaviorRequestMixin(object):
     This example shows the differences (for an application mounted on
     `/application` and the request going to `/application/foo/bar`):
 
-    =============== =================== ======================
-                    normal behavior     reverse behavior
-    =============== =================== ======================
-    `script_root`   ``/application``    ``/application/``
-    `path`          ``/foo/bar``        ``foo/bar``
-    =============== =================== ======================
+        +---------------+-------------------+---------------------+
+        |               | normal behavior   | reverse behavior    |
+        +===============+===================+=====================+
+        | `script_root` | ``/application``  | ``/application/``   |
+        +---------------+-------------------+---------------------+
+        | `path`        | ``/foo/bar``      | ``foo/bar``         |
+        +---------------+-------------------+---------------------+
     """
 
     @cached_property
     def path(self):
         """Requested path as unicode.  This works a bit like the regular path
-        info in the WSGI environment but will always include a leading slash,
-        even if the URL root is accessed.
+        info in the WSGI environment but will not include a leading slash.
         """
         path = (self.environ.get('PATH_INFO') or '').lstrip('/')
         return _decode_unicode(path, self.charset, self.encoding_errors)
 
     @cached_property
     def script_root(self):
-        """The root path of the script without the trailing slash."""
+        """The root path of the script includling a trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/') + '/'
         return _decode_unicode(path, self.charset, self.encoding_errors)
