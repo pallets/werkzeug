@@ -1883,7 +1883,7 @@ def peek_path_info(environ):
 
     :param environ: the WSGI environment that is checked.
     """
-    segments = environ.get('PATH_INFO', '').lstrip('/').split('/', 1)[0]
+    segments = environ.get('PATH_INFO', '').lstrip('/').split('/', 1)
     if segments:
         return segments[0]
 

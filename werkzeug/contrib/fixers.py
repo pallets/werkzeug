@@ -70,6 +70,10 @@ class ProxyFix(object):
     :attr:`~werkzeug.BaseRequest.is_behind_proxy` attribute to `True`.
 
     Do not use this middleware in non proxy setups for security reasons.
+
+    The original values of `REMOTE_ADDR` and `HTTP_HOST` are stored in
+    the WSGI environment as `werkzeug.proxy_fix.orig_remote_addr` and
+    `werkzeug.proxy_fix.orig_http_host`.
     """
 
     def __init__(self, app):

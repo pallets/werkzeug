@@ -22,6 +22,7 @@
 """
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import cached_property
+from werkzeug._internal import _decode_unicode
 try:
     from simplejson import loads
 except ImportError:
@@ -121,3 +122,41 @@ class RoutingArgsRequestMixin(object):
     routing_vars = property(_get_routing_vars, _set_routing_vars, doc='''
         The keyword URL arguments as `dict`.''')
     del _get_routing_vars, _set_routing_vars
+
+
+class ReverseSlashBehaviorRequestMixin(object):
+    """This mixin reverses the trailing slash behavior of :attr:`script_root`
+    and :attr:`path`.  This makes it possible to use :func:`~urlparse.urljoin`
+    directly on the paths.
+
+    Because it changes the behavior or :class:`Request` this class has to be
+    mixed in *before* the actual request class::
+
+        class MyRequest(ReverseSlashBehaviorRequestMixin, Request):
+            pass
+
+    This example shows the differences (for an application mounted on
+    `/application` and the request going to `/application/foo/bar`):
+
+    =============== =================== ======================
+                    normal behavior     reverse behavior
+    =============== =================== ======================
+    `script_root`   ``/application``    ``/application/``
+    `path`          ``/foo/bar``        ``foo/bar``
+    =============== =================== ======================
+    """
+
+    @cached_property
+    def path(self):
+        """Requested path as unicode.  This works a bit like the regular path
+        info in the WSGI environment but will always include a leading slash,
+        even if the URL root is accessed.
+        """
+        path = (self.environ.get('PATH_INFO') or '').lstrip('/')
+        return _decode_unicode(path, self.charset, self.encoding_errors)
+
+    @cached_property
+    def script_root(self):
+        """The root path of the script without the trailing slash."""
+        path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/') + '/'
+        return _decode_unicode(path, self.charset, self.encoding_errors)

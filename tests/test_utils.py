@@ -608,11 +608,11 @@ def test_pop_path_info():
 
 def test_peek_path_info():
     """Test path info peeking in wrappers and utils"""
-    env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/a/b///c'}
+    env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/aaa/b///c'}
     req = Request(env)
 
-    assert peek_path_info(env) == 'a'
-    assert peek_path_info(env) == 'a'
+    assert peek_path_info(env) == 'aaa'
+    assert peek_path_info(env) == 'aaa'
 
-    assert req.peek_path_info() == 'a'
-    assert req.peek_path_info() == 'a'
+    assert req.peek_path_info() == 'aaa'
+    assert req.peek_path_info() == 'aaa'

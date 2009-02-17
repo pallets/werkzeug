@@ -31,7 +31,7 @@ def test_path_info_from_request_uri_fix():
         assert response.data == 'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
 
-def tst_proxy_fix():
+def test_proxy_fix():
     """Test the ProxyFix fixer"""
     @fixers.ProxyFix
     @Request.application
