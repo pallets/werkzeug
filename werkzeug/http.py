@@ -1055,6 +1055,9 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     """
     # XXX: get rid of size argument when calling readline()
     # XXX: add support for limiting the input data
+    # XXX: this function does not support multipart/mixed.  I don't know of
+    #      any browser that supports this, but it should be implemented
+    #      nonetheless.
 
     # make sure the buffer size is divisible by four so that we can base64
     # decode chunk by chunk
@@ -1096,26 +1099,26 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             name = extra.get('name')
             transfer_encoding = headers.get('content-transfer-encoding')
 
-            # regular form data, not a file
-            if filename is None:
-                stream = StringIO()
-
-            # a file upload
+            content_type = headers.get('content-type')
+            if content_type is None:
+                is_file = False
             else:
-                filename = fix_ie_filename(_decode_unicode(filename, charset,
-                                                           errors))
-                content_type = headers.get('content-type')
-                if content_type is None:
-                    content_type = 'application/octet-stream'
-                    extra = {}
-                else:
-                    content_type, extra = parse_header(content_type)
+                content_type = parse_header(content_type)[0]
+                is_file = True
+
+            if is_file:
+                if filename is not None:
+                    filename = fix_ie_filename(_decode_unicode(filename,
+                                                               charset,
+                                                               errors))
                 try:
                     content_length = int(headers['content-length'])
                 except (KeyError, ValueError):
                     content_length = 0
                 stream = stream_factory(total_content_length, content_type,
                                         filename, content_length)
+            else:
+                stream = StringIO()
 
             while 1:
                 line = file.readline(buffer_size)
@@ -1137,7 +1140,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             stream.truncate()
             stream.seek(0)
 
-            if filename is not None:
+            if is_file:
                 files.append((name, FileStorage(stream, filename, name,
                                                 content_type,
                                                 content_length)))
@@ -1155,11 +1158,6 @@ def parse_multipart_headers(file, buffer_size=64 * 1024):
     """This function parses multipart headers from a file.  It does not
     implement a full MIME parser but should be sufficient for what
     modern web browsers send.
-
-    .. warning::
-       Do not pass the WSGI input stream to this function.  The wsgi
-       input stream is not EOF limited and there is no guarantee that
-       `readline` supports the optional size hint.
 
     :param file: a :class:`file`-like object that supports
                  :meth:`~file.readline` with size hint.

@@ -144,7 +144,7 @@ class BaseRequest(object):
         #: both methods and standalone WSGI functions.
         return _patch_wrapper(f, lambda *a: f(*a[:-2]+(cls(a[-2]),))(*a[-2:]))
 
-    def _get_file_stream(self, total_content_length, filename, content_type,
+    def _get_file_stream(self, total_content_length, content_type, filename=None,
                          content_length=None):
         """Called to get a stream for the file upload.
 
@@ -164,14 +164,14 @@ class BaseRequest(object):
         :param total_content_length: the total content length of all the
                                      data in the request combined.  This value
                                      is guaranteed to be there.
-        :param filename: the filename of the uploaded file.
         :param content_type: the mimetype of the uploaded file.
+        :param filename: the filename of the uploaded file.  May be `None`.
         :param content_length: the length of this file.  This value is usually
                                not provided because webbrowsers do not provide
                                this value.
         """
-        return default_stream_factory(total_content_length, filename,
-                                      content_type, content_length)
+        return default_stream_factory(total_content_length, content_type,
+                                      filename, content_length)
 
     def _load_form_data(self):
         """Method used internally to retrieve submitted data.  After calling
