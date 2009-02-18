@@ -1145,7 +1145,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
         # make sure the stream was fully consumed, WSGI demands that.
         file.exhaust()
 
-    return MultiDict(form), MultiDict(files)
+    return form, files
 
 
 def parse_multipart_headers(file, buffer_size=64 * 1024):
@@ -1260,7 +1260,7 @@ def is_valid_multipart_boundary(boundary):
 
 
 # circular dependency fun
-from werkzeug.utils import LimitedStream, MultiDict, FileStorage, Headers
+from werkzeug.utils import LimitedStream, FileStorage, Headers
 
 
 class _MultiPartStream(LimitedStream):
