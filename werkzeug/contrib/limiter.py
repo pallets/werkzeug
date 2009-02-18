@@ -21,11 +21,9 @@ class _SilentLimitedStream(LimitedStreamBase):
     def __init__(self, environ, limit):
         LimitedStreamBase.__init__(self,
             environ['wsgi.input'],
-            min(limit, int(environ.get('CONTENT_LENGTH') or 0))
+            min(limit, int(environ.get('CONTENT_LENGTH') or 0)),
+            silent=True
         )
-
-    def on_exhausted(self):
-        return ''
 
 
 class LimitedStream(_SilentLimitedStream):

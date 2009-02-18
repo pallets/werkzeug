@@ -18,12 +18,12 @@ class UserAgentParser(object):
     """A simple user agent parser.  Used by the `UserAgent`."""
 
     platforms = (
+        ('iphone', 'iphone'),
         (r'darwin|mac|os\s*x', 'macos'),
         ('win', 'windows'),
         (r'android', 'android'),
         (r'x11|lin(\b|ux)?', 'linux'),
         ('(sun|i86)os', 'solaris'),
-        ('iphone', 'iphone'),
         (r'nintendo\s+wii', 'wii'),
         ('irix', 'irix'),
         ('hp-?ux', 'hpux'),

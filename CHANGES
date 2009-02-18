@@ -24,6 +24,10 @@ Version 0.5
   Werkzeug one and changes the default behavior to raise exceptions
   rather than stopping without warning.  The old class will stick in
   the module until 0.6.
+- implemented experimental multipart parser that replaces the old CGI
+  hack.  If you are experiencing problems with the development version
+  of 0.5 regarding form data and file uploads, please report a critical
+  bug and let us know!!!
 
 Version 0.4.1
 -------------

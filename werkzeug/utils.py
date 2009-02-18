@@ -28,10 +28,7 @@ except NameError:
         return item[::-1]
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
-     _StorageHelper, _DictAccessorProperty, _dump_date, \
-     _parse_signature, _missing
-from werkzeug.http import generate_etag, parse_etags, \
-     remove_entity_headers
+     _DictAccessorProperty, _dump_date, _parse_signature, _missing
 
 
 _format_re = re.compile(r'\$(?:(%s)|\{(%s)\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
@@ -1209,12 +1206,28 @@ class LimitedStream(object):
     The limit however must never be higher than what the stream can
     output.  Otherwise :meth:`readlines` will try to read past the
     limit.
+
+    The `silent` parameter has no effect if :meth:`is_exhausted` is
+    overriden by a subclass.
+
+    :param stream: the stream to wrap.
+    :param limit: the limit for the stream, must not be longer than
+                  what the string can provide if the stream does not
+                  end with `EOF` (like `wsgi.input`)
+    :param silent: If set to `True` the stream will allow reading
+                   past the limit and will return an empty string.
     """
 
-    def __init__(self, stream, limit):
+    def __init__(self, stream, limit, silent=False):
         self._stream = stream
         self._pos = 0
         self.limit = limit
+        self.silent = silent
+
+    @property
+    def is_exhausted(self):
+        """If the stream is exhausted this attribute is `True`."""
+        return self._pos >= self.limit
 
     def on_exhausted(self):
         """This is called when the stream tries to read past the limit.
@@ -1223,7 +1236,25 @@ class LimitedStream(object):
 
         Per default this raises a :exc:`~werkzeug.exceptions.BadRequest`.
         """
+        if self.silent:
+            return ''
         raise BadRequest('input stream exhausted')
+
+    def exhaust(self, chunk_size=1024 * 16):
+        """Exhaust the stream.  This consumes all the data left until the
+        limit is reached.  WSGI demands that the input stream is fully
+        read if available, this method can help to do that.
+
+        :param chunk_size: the size for a chunk.  It will read the chunk
+                           until the stream is exhausted and throw away
+                           the results.
+        """
+        to_read = self.limit - self._pos
+        chunk = chunk_size
+        while to_read > 0:
+            chunk = min(to_read, chunk)
+            self.read(chunk)
+            to_read -= chunk
 
     def read(self, size=None):
         """Read `size` bytes or if size is not provided everything is read.
@@ -1566,6 +1597,9 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     mimetype is unknow the input stream is wrapped and returned as first
     argument, else the stream is empty.
 
+    This function does not raise exception, even if the input data is
+    malformed.
+
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.
@@ -1573,40 +1607,30 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     :param errors: The encoding error behavior.
     :return: A tuple in the form ``(stream, form, files)``.
     """
+    content_type, extra = cgi.parse_header(environ.get('CONTENT_TYPE', ''))
+    try:
+        content_length = int(environ['CONTENT_LENGTH'])
+    except (KeyError, ValueError):
+        content_length = 0
     stream = _empty_stream
-    form = []
-    files = []
-    storage = _StorageHelper(
-        fp=environ['wsgi.input'],
-        environ={
-            'REQUEST_METHOD':           environ['REQUEST_METHOD'],
-            'CONTENT_TYPE':             environ.get('CONTENT_TYPE', ''),
-            'CONTENT_LENGTH':           environ.get('CONTENT_LENGTH') or '0',
-            # make sure to pass QUERY_STRING so that cgi.py does not
-            # substitute it with the interpreter arguments
-            'QUERY_STRING':             '',
-            'werkzeug.stream_factory':  stream_factory
-        },
-        keep_blank_values=True
-    )
-    if storage.file:
-        stream = storage.file
-    if storage.list is not None:
-        for key in storage.keys():
-            values = storage[key]
-            if not isinstance(values, list):
-                values = [values]
-            for item in values:
-                if getattr(item, 'filename', None) is not None:
-                    fn = _decode_unicode(item.filename, charset, errors)
-                    # fix stupid IE bug (IE6 sends the whole path)
-                    if fn[1:3] == ':\\' or fn[:2] == '\\\\':
-                        fn = fn.split('\\')[-1]
-                    files.append((key, FileStorage(item.file, fn, key,
-                                  item.type, item.length)))
-                else:
-                    form.append((key, _decode_unicode(item.value,
-                                 charset, errors)))
+    form = files = ()
+
+    if content_type == 'multipart/form-data':
+        try:
+            form, files = parse_multipart(environ['wsgi.input'],
+                                          extra.get('boundary'),
+                                          content_length, stream_factory,
+                                          charset, errors)
+        except ValueError:
+            # just ignore parsing errors
+            pass
+    elif content_type == 'application/x-www-form-urlencoded':
+        form = url_decode(environ['wsgi.input'].read(content_length),
+                          charset, errors=errors)
+    else:
+        stream = LimitedStream(environ['wsgi.input'], content_length,
+                               silent=True)
+
     return stream, MultiDict(form), MultiDict(files)
 
 
@@ -2129,6 +2153,13 @@ def wrap_file(environ, file, buffer_size=8192):
 
     .. versionadded:: 0.5
 
+    If the file wrapper from the WSGI server is used it's important to not
+    iterate over it from inside the application but to pass it through
+    unchanged.  If you want to pass out a file wrapper inside a response
+    object you have to set :attr:`~BaseResponse.direct_passthrough` to `True`.
+
+    More information about file wrappers are available in :pep:`333`.
+
     :param file: a :class:`file`-like object with a :meth:`~file.read` method.
     :param buffer_size: number of bytes for one iteration.
     """
@@ -2425,6 +2456,10 @@ class ArgumentValidationError(ValueError):
             len(self.extra) + len(self.extra_positional)
         ))
 
+
+# circurlar dependency fun
+from werkzeug.http import generate_etag, parse_etags, \
+     remove_entity_headers, parse_multipart
 
 # create all the special key errors now that the classes are defined.
 from werkzeug.exceptions import BadRequest

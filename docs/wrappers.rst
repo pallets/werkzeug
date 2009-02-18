@@ -44,6 +44,14 @@ are available by mixing in various mixin classes or using :class:`Request` and
 
       The response status as integer.
 
+   .. attribute:: direct_passthrough
+
+      If ``direct_passthrough=True`` was passed to the response object or if
+      this attribute was set to `True` before using the response object as
+      WSGI application, the wrapped iterator is returned unchanged.  This
+      makes it possible to pass a special `wsgi.file_wrapper` to the response
+      object.  See :func:`wrap_file` for more details.
+
    .. automethod:: __call__
 
 

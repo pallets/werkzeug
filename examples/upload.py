@@ -8,20 +8,15 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug import BaseRequest, BaseResponse, run_simple
+from werkzeug import BaseRequest, BaseResponse, run_simple, wrap_file
 
 
 def view_file(req):
     if not 'uploaded_file' in req.files:
         return BaseResponse('no file uploaded')
     f = req.files['uploaded_file']
-    def stream():
-        while 1:
-            data = f.read(65536)
-            if not data:
-                break
-            yield data
-    return BaseResponse(stream(), mimetype=f.content_type)
+    return BaseResponse(wrap_file(req.environ, f), mimetype=f.content_type,
+                        direct_passthrough=True)
 
 
 def upload_file(req):
@@ -44,4 +39,4 @@ def application(environ, start_response):
 
 
 if __name__ == '__main__':
-    run_simple('localhost', 5000, application)
+    run_simple('localhost', 5000, application, use_debugger=True)

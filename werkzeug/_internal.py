@@ -249,32 +249,6 @@ class _ExtendedMorsel(Morsel):
         return result
 
 
-class _StorageHelper(cgi.FieldStorage):
-    """Helper class used by `parse_form_data` to parse submitted file and
-    form data.  Don't use this class directly.  This also defines a simple
-    repr that prints just the filename as the default repr reads the
-    complete data of the stream.
-    """
-
-    def __init__(self, fp=None, headers=None, outerboundary='',
-                 environ=None, keep_blank_values=False, strict_parsing=False):
-        self.stream_factory = environ.get('werkzeug.stream_factory')
-        cgi.FieldStorage.__init__(self, fp, headers, outerboundary,
-                                  environ or {}, keep_blank_values,
-                                  strict_parsing)
-
-    def make_file(self, binary=None):
-        if self.stream_factory is not None:
-            return self.stream_factory()
-        return cgi.FieldStorage.make_file(self, binary)
-
-    def __repr__(self):
-        return '<%s %r>' % (
-            self.__class__.__name__,
-            self.name
-        )
-
-
 class _ExtendedCookie(BaseCookie):
     """Form of the base cookie that doesn't raise a `CookieError` for
     malformed keys.  This has the advantage that broken cookies submitted

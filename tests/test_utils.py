@@ -524,7 +524,6 @@ def test_parse_form_data_put_without_content():
     del env['CONTENT_LENGTH']
 
     stream, form, files = parse_form_data(env)
-    print form
     assert stream.read() == ""
     assert len(form) == 0
     assert len(files) == 0

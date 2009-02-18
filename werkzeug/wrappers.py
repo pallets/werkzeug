@@ -28,7 +28,7 @@ from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     MIMEAccept, CharsetAccept
+     MIMEAccept, CharsetAccept, default_stream_factory
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -144,15 +144,25 @@ class BaseRequest(object):
         #: both methods and standalone WSGI functions.
         return _patch_wrapper(f, lambda *a: f(*a[:-2]+(cls(a[-2]),))(*a[-2:]))
 
-    def _get_file_stream(self):
+    def _get_file_stream(self, total_content_length, filename, content_type,
+                         content_length=None):
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
         and `seek()` methods that is both writeable and readable.
 
-        The default implementation returns a temporary file.
+        The default implementation returns a temporary file if the total
+        content length is higher than 500KB.  Because many browsers do not
+        provide a content length for the files only the total content
+        length matters.
+
+        .. versionchanged:: 0.5
+           Previously this function was not passed any arguments.  In 0.5 older
+           functions not accepting any arguments are still supported for
+           backwards compatibility.
         """
-        return tempfile.TemporaryFile('w+b')
+        return default_stream_factory(total_content_length, filename,
+                                      content_type, content_length)
 
     def _load_form_data(self):
         """Method used internally to retrieve submitted data.  After calling
@@ -347,6 +357,8 @@ class BaseRequest(object):
                                'set `shallow` to False.')
         rv = pop_path_info(self.environ)
         cached_property.refresh(self, ['script_root', 'path'])
+        if rv is not None:
+            rv = _decode_unicode(rv, self.charset, self.encoding_errors)
         return rv
 
     def peek_path_info(self):
@@ -354,7 +366,10 @@ class BaseRequest(object):
 
         .. versionadded:: 0.5
         """
-        return peek_path_info(self.environ)
+        rv = peek_path_info(self.environ)
+        if rv is not None:
+            rv = _decode_unicode(rv, self.charset, self.encoding_errors)
+        return rv
 
 
 class BaseResponse(object):
@@ -410,18 +425,26 @@ class BaseResponse(object):
     with the charset of the response object.  In constrast the
     `content_type` parameter is always added as header unmodified.
 
+    .. versionchanged:: 0.5
+       the `direct_passthrough` parameter was added.
+
     :param response: a string or response iterable.
     :param status: a string with a status or an integer with the status code.
     :param headers: a list of headers or an :class:`Headers` object.
     :param mimetype: the mimetype for the request.  See notice above.
     :param content_type: the content type for the request.  See notice above.
+    :param direct_passthrough: if set to `True` :meth:`iter_encoded` is not
+                               called before iteration which makes it
+                               possible to pass special iterators though
+                               unchanged (see :func:`wrap_file` for more
+                               details.)
     """
     charset = 'utf-8'
     default_status = 200
     default_mimetype = 'text/plain'
 
     def __init__(self, response=None, status=None, headers=None,
-                 mimetype=None, content_type=None):
+                 mimetype=None, content_type=None, direct_passthrough=False):
         if response is None:
             self.response = []
         elif isinstance(response, basestring):
@@ -448,6 +471,7 @@ class BaseResponse(object):
             self.status_code = status
         else:
             self.status = status
+        self.direct_passthrough = direct_passthrough
 
     @classmethod
     def force_type(cls, response, environ=None):
@@ -532,7 +556,10 @@ class BaseResponse(object):
     def iter_encoded(self, charset=None):
         """Iter the response encoded with the encoding specified.  If no
         encoding is given the encoding from the class is used.  Note that
-        this does not encode data that is already a bytestring.
+        this does not encode data that is already a bytestring.  If the
+        response object is invoked as WSGI application the return value
+        of this method is used as application iterator except if
+        :attr:`direct_passthrough` was activated.
         """
         charset = charset or self.charset or 'ascii'
         for item in self.response:
@@ -641,6 +668,8 @@ class BaseResponse(object):
             # no response for 204/304.  the headers are adapted accordingly
             # by fix_headers()
             resp = ()
+        elif self.direct_passthrough:
+            resp = self.response
         else:
             resp = self.iter_encoded()
         start_response(self.status, self.header_list)

@@ -203,6 +203,7 @@ def test_user_agent_mixin():
          'google', None, '2.1', None)
     ]
     for ua, browser, platform, version, lang in user_agents:
+        print locals()
         request = Request({'HTTP_USER_AGENT': ua})
         assert request.user_agent.browser == browser
         assert request.user_agent.platform == platform
