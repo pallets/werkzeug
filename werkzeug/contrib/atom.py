@@ -4,9 +4,7 @@
     ~~~~~~~~~~~~~~~~~~~~~
 
     This module provides a class called :class:`AtomFeed` which can be
-    used to generate feeds in the Atom syndication format (see `RFC 4287`_).
-
-    .. _RFC 4287: http://tools.ietf.org/html/rfc4287
+    used to generate feeds in the Atom syndication format (see :rfc:`4287`).
 
     Example::
 

@@ -12,4 +12,4 @@ from sphinx.ext.autodoc import cut_lines
 
 
 def setup(app):
-    app.connect('autodoc-process-docstring', cut_lines(3, -3, what=['module']))
+    app.connect('autodoc-process-docstring', cut_lines(3, 3, what=['module']))

@@ -1621,10 +1621,10 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                                           extra.get('boundary'),
                                           content_length, stream_factory,
                                           charset, errors)
-        except ValueError:
-            # just ignore parsing errors
+        except ValueError, e:
             pass
-    elif content_type == 'application/x-www-form-urlencoded':
+    elif content_type == 'application/x-www-form-urlencoded' or \
+         content_type == 'application/x-url-encoded':
         form = url_decode(environ['wsgi.input'].read(content_length),
                           charset, errors=errors)
     else:
