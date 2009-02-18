@@ -28,7 +28,6 @@ def get_contents(filename):
 def test_multipart():
     """Tests multipart parsing against data collected from webbrowsers"""
     resources = join(dirname(__file__), 'multipart')
-
     client = Client(form_data_consumer, Response)
 
     repository = [
@@ -36,6 +35,10 @@ def test_multipart():
             (u'anchor.png', 'file1', 'image/png', 'file1.png'),
             (u'application_edit.png', 'file2', 'image/png', 'file2.png')
         ], u'example text'),
+        ('firefox3-2pnglongtext', '---------------------------14904044739787191031754711748', [
+            (u'accept.png', 'file1', 'image/png', 'file1.png'),
+            (u'add.png', 'file2', 'image/png', 'file2.png')
+        ], u'--long text\r\n--with boundary\r\n--lookalikes--'),
         ('opera8-2png1txt', '----------zEO9jQKmLc2Cq88c23Dx19', [
             (u'arrow_branch.png', 'file1', 'image/png', 'file1.png'),
             (u'award_star_bronze_1.png', 'file2', 'image/png', 'file2.png')

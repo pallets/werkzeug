@@ -1242,8 +1242,7 @@ class LimitedStream(object):
 
     def exhaust(self, chunk_size=1024 * 16):
         """Exhaust the stream.  This consumes all the data left until the
-        limit is reached.  WSGI demands that the input stream is fully
-        read if available, this method can help to do that.
+        limit is reached.
 
         :param chunk_size: the size for a chunk.  It will read the chunk
                            until the stream is exhausted and throw away

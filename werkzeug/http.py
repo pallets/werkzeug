@@ -29,11 +29,6 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
-try:
-    set = set
-    frozenset = frozenset
-except NameError:
-    from sets import Set as set, ImmutableSet as frozenset
 from werkzeug._internal import _UpdateDict, _decode_unicode, HTTP_STATUS_CODES
 
 
@@ -53,6 +48,10 @@ _hop_by_pop_headers = frozenset([
     'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
     'upgrade'
 ])
+
+#: supported http encodings that are also available in python we support
+#: for multipart messages.
+_supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 
 
 class Accept(list):
@@ -1066,6 +1065,8 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     else:
         stream_factory = _make_stream_factory(stream_factory)
 
+    if not boundary:
+        raise ValueError('Missing boundary')
     if not is_valid_multipart_boundary(boundary):
         raise ValueError('Invalid boundary: %s' % boundary)
     if len(boundary) > buffer_size:
@@ -1081,8 +1082,8 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     file = _MultiPartStream(file, content_length)
 
     try:
-        terminator = file.readline(buffer_size)
-        if terminator.strip() != next_part:
+        terminator = file.readline(buffer_size).strip()
+        if terminator != next_part:
             raise ValueError('Expected boundary at start of multipart data')
 
         while terminator != last_part:
@@ -1124,9 +1125,9 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                     terminator = line.strip()
                     if terminator in (next_part, last_part):
                         break
-                if transfer_encoding == 'base64':
+                if transfer_encoding in _supported_multipart_encodings:
                     try:
-                        line = line.decode('base64')
+                        line = line.decode(transfer_encoding)
                     except:
                         raise ValueError('could not base 64 decode chunk')
                 stream.write(line)
@@ -1258,7 +1259,7 @@ def is_hop_by_hop_header(header):
 
 def is_valid_multipart_boundary(boundary):
     """Checks if the string given is a valid multipart boundary."""
-    return boundary and _multipart_boundary_re.match(boundary) is not None
+    return _multipart_boundary_re.match(boundary) is not None
 
 
 # circular dependency fun

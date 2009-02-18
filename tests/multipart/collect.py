@@ -36,7 +36,7 @@ def upload_file(request):
     <form action="" method="post" enctype="multipart/form-data">
         <input type="file" name="file1"><br>
         <input type="file" name="file2"><br>
-        <input type="text" name="text"><br>
+        <textarea name="text"></textarea><br>
         <input type="submit" value="Send">
     </form>
     ''', mimetype='text/html')
