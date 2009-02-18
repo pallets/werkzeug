@@ -20,6 +20,7 @@ class UserAgentParser(object):
     platforms = (
         (r'darwin|mac|os\s*x', 'macos'),
         ('win', 'windows'),
+        (r'android', 'android'),
         (r'x11|lin(\b|ux)?', 'linux'),
         ('(sun|i86)os', 'solaris'),
         ('iphone', 'iphone'),
@@ -60,17 +61,15 @@ class UserAgentParser(object):
     )
 
     def __init__(self):
-        self.platforms = re.compile(r'|'.join(['(?P<%s>%s)' % (b, a) for a, b
-                                    in self.platforms]), re.I)
+        self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platforms]
         self.browsers = [(b, re.compile(self._browser_version_re % a))
                          for a, b in self.browsers]
 
     def __call__(self, user_agent):
-        match = self.platforms.search(user_agent)
-        if match is not None:
-            for platform, value in match.groupdict().iteritems():
-                if value:
-                    break
+        for platform, regex in self.platforms:
+            match = regex.search(user_agent)
+            if match is not None:
+                break
         else:
             platform = None
         for browser, regex in self.browsers:
