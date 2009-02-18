@@ -1050,7 +1050,7 @@ def fix_ie_filename(filename):
 def parse_multipart(file, boundary, content_length, stream_factory=None,
                     charset='utf-8', errors='ignore', buffer_size=64 * 1024):
     """Parse a multipart/form-data stream.  This is invoked by
-    `utils.parse_form_data` if the content type matches.  Currently it
+    :func:`utils.parse_form_data` if the content type matches.  Currently it
     exists for internal usage only, but could be exposed as separate
     function if it turns out to be useful and if we consider the API stable.
     """
@@ -1101,6 +1101,8 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
 
             # a file upload
             else:
+                filename = fix_ie_filename(_decode_unicode(filename, charset,
+                                                           errors))
                 content_type = headers.get('content-type')
                 if content_type is None:
                     content_type = 'application/octet-stream'
@@ -1135,9 +1137,9 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             stream.seek(0)
 
             if filename is not None:
-                files.append((name, FileStorage(stream, fix_ie_filename(
-                    _decode_unicode(filename, charset, errors)), name,
-                    content_type, content_length)))
+                files.append((name, FileStorage(stream, filename, name,
+                                                content_type,
+                                                content_length)))
             else:
                 form.append((name, _decode_unicode(stream.read(),
                                                    charset, errors)))

@@ -2,9 +2,7 @@
 Iter IO
 =======
 
-.. module:: werkzeug.contrib.iterio
-
-.. docstring:: . [3:-3]
+.. automodule:: werkzeug.contrib.iterio
 
 .. autoclass:: IterIO
    :members:

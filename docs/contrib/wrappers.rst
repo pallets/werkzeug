@@ -2,9 +2,7 @@
 Extra Wrappers
 ==============
 
-.. module:: werkzeug.contrib.wrappers
-
-.. docstring:: . [3:-3]
+.. automodule:: werkzeug.contrib.wrappers
 
 .. autoclass:: JSONRequestMixin
    :members:

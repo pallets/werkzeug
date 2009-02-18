@@ -3,6 +3,8 @@
     werkzeug.contrib.fixers
     ~~~~~~~~~~~~~~~~~~~~~~~
 
+    .. versionadded:: 0.5
+
     This module include various helpers that fix bugs in web servers.  They may
     be necessary for some versions of a buggy web server but not others.  We try
     to stay updated with the status of the bugs as good as possible but you have

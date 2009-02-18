@@ -2,9 +2,7 @@
 Atom Syndication
 ================
 
-.. module:: werkzeug.contrib.atom
-
-.. docstring:: . [3:-3]
+.. automodule:: werkzeug.contrib.atom
 
 .. autoclass:: AtomFeed
    :members:

@@ -2,9 +2,7 @@
 Context Locals
 ==============
 
-.. module:: werkzeug
-
-.. docstring:: local [3:-3]
+.. automodule:: werkzeug
 
 
 Objects

@@ -160,6 +160,15 @@ class BaseRequest(object):
            Previously this function was not passed any arguments.  In 0.5 older
            functions not accepting any arguments are still supported for
            backwards compatibility.
+
+        :param total_content_length: the total content length of all the
+                                     data in the request combined.  This value
+                                     is guaranteed to be there.
+        :param filename: the filename of the uploaded file.
+        :param content_type: the mimetype of the uploaded file.
+        :param content_length: the length of this file.  This value is usually
+                               not provided because webbrowsers do not provide
+                               this value.
         """
         return default_stream_factory(total_content_length, filename,
                                       content_type, content_length)

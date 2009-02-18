@@ -2,9 +2,7 @@
 HTTP Exceptions
 ===============
 
-.. module:: werkzeug.exceptions
-
-.. docstring:: . [3:-3]
+.. automodule:: werkzeug.exceptions
 
 
 Error Classes

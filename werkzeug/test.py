@@ -3,57 +3,7 @@
     werkzeug.test
     ~~~~~~~~~~~~~
 
-    Quite often you want to unittest your application or just check the output
-    from an interactive python session.  In theory that is pretty simple because
-    you can fake a WSGI environment and call the application with a dummy
-    `start_response` and iterate over the application iterator but there are
-    argumentably better ways to interact with an application.
-
-    Werkzeug provides an object called `Client` which you can pass a WSGI
-    application (and optionally a response wrapper) which you can use to send
-    virtual requests to the application.
-
-    A response wrapper is a callable that takes three arguments: the application
-    iterator, the status and finally a list of headers.  The default response
-    wrapper returns a tuple.  Because response objects have the same signature
-    you can use them as response wrapper, ideally by subclassing them and hooking
-    in test functionality.
-
-    Diving In
-    =========
-
-    Werkzeug provides a `Client` object which you can pass a WSGI application (and
-    optionally a response wrapper) which you can use to send virtual requests to
-    the application.
-
-    A response wrapper is a callable that takes three arguments: the application
-    iterator, the status and finally a list of headers.  The default response
-    wrapper returns a tuple.  Because response objects have the same signature,
-    you can use them as response wrapper, ideally by subclassing them and hooking
-    in test functionality.
-
-    >>> from werkzeug import Client, BaseResponse, test_app
-    >>> c = Client(test_app, BaseResponse)
-    >>> resp = c.get('/')
-    >>> resp.status_code
-    200
-    >>> resp.headers
-    Headers([('Content-Type', 'text/html; charset=utf-8')])
-    >>> resp.data.splitlines()[:2]
-    ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
-     '  "http://www.w3.org/TR/html4/loose.dtd">']
-
-    Or without a wrapper defined:
-
-    >>> c = Client(test_app)
-    >>> app_iter, status, headers = c.get('/')
-    >>> status
-    '200 OK'
-    >>> headers
-    [('Content-Type', 'text/html; charset=utf-8')]
-    >>> ''.join(app_iter).splitlines()[:2]
-    ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
-     '  "http://www.w3.org/TR/html4/loose.dtd">']
+    This module implements a client to WSGI applications for testing.
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.

@@ -8,7 +8,7 @@ This file lists all major changes in Werkzeug over the versions.
 For API breaking changes have a look at :ref:`api-changes`, they
 are listed there in detail.
 
-.. changelog::
+.. include:: ../CHANGES
 
 .. _api-changes:
 
@@ -24,6 +24,11 @@ API Changes
         but warn with a :exc:`DeprecationWarning`.
     -   The :class:`Client` has cookie support now which is enabled
         by default.
+    -   :meth:`BaseResponse._get_file_stream` is now passed more parameters
+        to make the function more useful.  In 0.6 the old way to invoke
+        the method will no longer work.  To support both newer and older
+        Werkzeug versions you can add all arguments to the signature and
+        provide default values for each of them.
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.

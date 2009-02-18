@@ -2,12 +2,7 @@
 Fixers
 ======
 
-.. module:: werkzeug.contrib.fixers
-
-.. versionadded:: 0.5
-
-.. docstring:: . [3:-3]
-
+.. automodule:: werkzeug.contrib.fixers
 
 .. autoclass:: LighttpdCGIRootFix
 

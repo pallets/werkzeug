@@ -2,9 +2,7 @@
 Cache
 =====
 
-.. module:: werkzeug.contrib.cache
-
-.. docstring:: . [3:-3]
+.. automodule:: werkzeug.contrib.cache
 
 
 Cache System API

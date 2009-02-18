@@ -2,9 +2,7 @@
 Management Script Utilities
 ===========================
 
-.. module:: werkzeug.script
-
-.. docstring:: . [3:-3]
+.. automodule:: werkzeug.script
 
 
 Writing Actions

@@ -2,9 +2,7 @@
 Secure Cookie
 =============
 
-.. module:: werkzeug.contrib.securecookie
-
-.. docstring:: . [3:-3]
+.. automodule:: werkzeug.contrib.securecookie
 
 Reference
 =========

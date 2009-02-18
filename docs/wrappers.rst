@@ -26,6 +26,8 @@ are available by mixing in various mixin classes or using :class:`Request` and
       `True` if this request object is shallow (does not modify :attr:`environ`),
       `False` otherwise.
 
+   .. automethod:: _get_file_stream
+
 
 .. autoclass:: BaseResponse
    :members:
