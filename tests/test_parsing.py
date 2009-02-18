@@ -46,7 +46,11 @@ def test_multipart():
         ('webkit3-2png1txt', '----WebKitFormBoundaryjdSFhcARk8fyGNy6', [
             (u'gtk-apply.png', 'file1', 'image/png', 'file1.png'),
             (u'gtk-no.png', 'file2', 'image/png', 'file2.png')
-        ], u'this is another text with ümläüts')
+        ], u'this is another text with ümläüts'),
+        ('ie6-2png1txt', '---------------------------7d91b03a20128', [
+            (u'file1.png', 'file1', 'image/x-png', 'file1.png'),
+            (u'file2.png', 'file2', 'image/x-png', 'file2.png')
+        ], u'ie6 sucks :-/')
     ]
 
     for name, boundary, files, text in repository:
