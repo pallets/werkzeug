@@ -19,12 +19,7 @@ import posixpath
 from itertools import chain
 from time import asctime, gmtime, time
 from datetime import timedelta
-try:
-    set = set
-except NameError:
-    from sets import Set as set
-    def reversed(item):
-        return item[::-1]
+
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
      _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
      _DictAccessorProperty, _dump_date, _parse_signature, _missing

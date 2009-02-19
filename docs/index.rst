@@ -16,6 +16,7 @@ should start here.
 
    installation
    tutorial
+   levels
 
 Serving and Testing
 -------------------
@@ -74,8 +75,8 @@ Additional Information
 
    terms
    unicode
-   changes
    request_data
+   changes
 
 If you can’t find the information you’re looking for, have a look at the
 index or try to find it using the search function:

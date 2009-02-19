@@ -4,7 +4,46 @@ Wrappers
 
 .. module:: werkzeug
 
-You can import all these objects directly from :mod:`werkzeug`.
+You can import all these objects directly from :mod:`werkzeug`.  Wrappers wrap
+the WSGI environment or the return value from a WSGI application so that it
+is another WSGI application (wraps a whole application).
+
+How they Work
+=============
+
+Your WSGI application is always passed two arguments.  The WSGI "environment"
+and the WSGI `start_response` function that is used to start the response
+phase.  The :class:`Request` class wraps the `environ` for easier access to
+request variables (form data, request headers etc.).
+
+The :class:`Response` on the other hand is a standard WSGI application that
+you can create.  The simple hello world in Werkzeug looks like this::
+
+    from werkzeug import Response
+    application = Response('Hello World!')
+
+To make it more useful you can replace it with a function and do some
+processing::
+
+    from werkzeug import Request, Response
+
+    def application(environ, start_response):
+        request = Request(environ)
+        response = Response("Hello %s!" % request.args.get('name', 'World!'))
+        return response(environ, start_response)
+
+Because this is a very common task the :class:`~Request` object provides
+a helper for that.  The above code can be rewritten like this::
+
+    from werkzeug import Request, Response
+
+    @Request.application
+    def application(request):
+        return Response("Hello %s!" % request.args.get('name', 'World!'))
+
+The `application` is still a valid WSGI application that accepts the
+environment and `start_response` callable.
+
 
 Base Wrappers
 =============
