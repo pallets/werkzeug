@@ -20,11 +20,7 @@ try:
     from collections import deque
 except ImportError:
     deque = None
-from cgi import escape
-try:
-    set
-except NameError:
-    from sets import Set as set, ImmutableSet as frozenset
+from werkzeug.utils import escape
 from werkzeug.debug.utils import render_template
 
 

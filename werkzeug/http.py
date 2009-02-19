@@ -20,7 +20,6 @@ import re
 import rfc822
 import codecs
 import inspect
-from cgi import parse_header
 from cStringIO import StringIO
 from tempfile import TemporaryFile
 from urllib2 import parse_http_list as _parse_list_header
@@ -732,6 +731,8 @@ class WWWAuthenticate(_UpdateDict):
 def quote_header_value(value, extra_chars='', allow_token=True):
     """Quote a header value if necessary.
 
+    .. versionadded:: 0.5
+
     :param value: the value to quote.
     :param extra_chars: a list of extra characters to skip quoting.
     :param allow_token: if this is enabled token values are returned
@@ -743,6 +744,41 @@ def quote_header_value(value, extra_chars='', allow_token=True):
         if set(value).issubset(token_chars):
             return value
     return '"%s"' % value.replace('\\', '\\\\').replace('"', '\\"')
+
+
+def unquote_header_value(value):
+    r"""Unquotes a header value.  (Reversal of :func:`quote_header_value`).
+    This does not use the real unquoting but what browsers are actually
+    using for quoting.
+
+    .. versionadded:: 0.5
+
+    :param value: the header value to unquote.
+    """
+    if value and value[0] == value[-1] == '"':
+        # this is not the real unquoting, but fixing this so that the
+        # RFC is met will result in bugs with internet explorer and
+        # probably some other browsers as well.  IE for example is
+        # uploading files with "C:\foo\bar.txt" as filename
+        value = value[1:-1].replace('\\\\', '\\').replace('\\"', '"')
+    return value
+
+
+def dump_options_header(header, options):
+    """The reverse function to :func:`parse_options_header`.
+
+    :param header: the header to dump
+    :param options: a dict of options to append.
+    """
+    segments = []
+    if header is not None:
+        segments.append(header)
+    for key, value in options.iteritems():
+        if value is None:
+            segments.append(key)
+        else:
+            segments.append('%s=%s' % (key, quote_header_value(value)))
+    return '; '.join(segments)
 
 
 def dump_header(iterable, allow_token=True):
@@ -785,7 +821,7 @@ def parse_list_header(value):
     result = []
     for item in _parse_list_header(value):
         if item[:1] == item[-1:] == '"':
-            item = item[1:-1]
+            item = unquote_header_value(item[1:-1])
         result.append(item)
     return result
 
@@ -805,9 +841,49 @@ def parse_dict_header(value):
             continue
         name, value = item.split('=', 1)
         if value[:1] == value[-1:] == '"':
-            value = value[1:-1]
+            value = unquote_header_value(value[1:-1])
         result[name] = value
     return result
+
+
+def parse_options_header(value):
+    """Parse a ``Content-Type`` like header into a tuple with the content
+    type and the options:
+
+    >>> parse_options_header('Content-Type: text/html; mimetype=text/html')
+    ('Content-Type: text/html', {'mimetype': 'text/html'})
+
+    This should not be used to parse ``Cache-Control`` like headers that use
+    a slightly different format.  For these headers use the
+    :func:`parse_dict_header` function.
+
+    .. versionadded:: 0.5
+
+    :param value: the header to parse.
+    :return: (str, options)
+    """
+    def _tokenize(string):
+        while string[:1] == ';':
+            string = string[1:]
+            end = string.find(';')
+            while end > 0 and string.count('"', 0, end) % 2:
+                end = string.find(';', end + 1)
+            if end < 0:
+                end = len(string)
+            value = string[:end]
+            yield value.strip()
+            string = string[end:]
+
+    parts = _tokenize(';' + value)
+    name = parts.next()
+    extra = {}
+    for part in parts:
+        if '=' in part:
+            key, value = part.split('=', 1)
+            extra[key.strip().lower()] = unquote_header_value(value.strip())
+        else:
+            extra[part.strip()] = None
+    return name, extra
 
 
 def parse_accept_header(value, cls=Accept):
@@ -1108,7 +1184,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             disposition = headers.get('content-disposition')
             if disposition is None:
                 raise ValueError('Missing Content-Disposition header')
-            disposition, extra = parse_header(disposition)
+            disposition, extra = parse_options_header(disposition)
             filename = extra.get('filename')
             name = extra.get('name')
             transfer_encoding = headers.get('content-transfer-encoding')
@@ -1117,7 +1193,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             if content_type is None:
                 is_file = False
             else:
-                content_type = parse_header(content_type)[0]
+                content_type = parse_options_header(content_type)[0]
                 is_file = True
 
             if is_file:

@@ -163,6 +163,8 @@ HTTP Helpers
 
 .. autofunction:: is_resource_modified
 
+.. autofunction:: parse_options_header
+
 .. autofunction:: parse_set_header
 
 .. autofunction:: parse_list_header
@@ -186,6 +188,10 @@ HTTP Helpers
 .. autofunction:: is_entity_header
 
 .. autofunction:: is_hop_by_hop_header
+
+.. autofunction:: quote_header_value
+
+.. autofunction:: unquote_header_value
 
 .. data:: HTTP_STATUS_CODES
 

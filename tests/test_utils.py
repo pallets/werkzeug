@@ -177,7 +177,7 @@ def test_headers():
 
     # extended add
     headers.add('Content-Disposition', 'attachment', filename='foo')
-    assert headers['Content-Disposition'] == 'attachment; filename="foo"'
+    assert headers['Content-Disposition'] == 'attachment; filename=foo'
 
     headers.add('x', 'y', z='"')
     assert headers['x'] == r'y; z="\""'

@@ -225,8 +225,7 @@ class BaseRequest(object):
     def form(self):
         """Form parameters.  Currently it's not guaranteed that the
         :class:`MultiDict` returned by this function is ordered in the same
-        way as the submitted form data.  The reason for this is that the
-        underlaying cgi library uses a dict internally and loses the ordering.
+        way as the submitted form data.
         """
         if not hasattr(self, '_form'):
             self._load_form_data()

@@ -8,7 +8,6 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import cgi
 import inspect
 from weakref import WeakKeyDictionary
 from cStringIO import StringIO

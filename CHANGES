@@ -28,6 +28,8 @@ Version 0.5
   hack.  If you are experiencing problems with the development version
   of 0.5 regarding form data and file uploads, please report a critical
   bug and let us know!!!
+- added :func:`dump_options_header` and :func:`parse_options_header`
+- added :func:`quote_header_valu` and :func:`unquote_header_value`
 
 Version 0.4.1
 -------------

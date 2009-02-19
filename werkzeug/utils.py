@@ -789,7 +789,7 @@ class Headers(object):
     def __len__(self):
         return len(self._list)
 
-    def add(self, _key, _value, **_kw):
+    def add(self, _key, _value, **kw):
         """Add a new header tuple to the list.
 
         Keyword arguments can specify additional parameters for the header
@@ -799,23 +799,16 @@ class Headers(object):
         >>> d.add('Content-Type', 'text/plain')
         >>> d.add('Content-Disposition', 'attachment', filename='foo.png')
 
+        The keyword argument dumping uses :func:`dump_options_header`
+        behind the scenes.
+
         .. versionadded:: 0.4.1
             keyword arguments were added for :mod:`wsgiref` compatibility.
         """
-        if not _kw:
-            self._list.append((_key, _value))
-        else:
-            segments = []
-            if _value is not None:
-                segments.append(_value)
-            for key, value in _kw.iteritems():
-                key = key.replace('_', '-')
-                if value is None:
-                    segments.append(key)
-                else:
-                    value = value.replace('\\', r'\\').replace('"', r'\"')
-                    segments.append('%s="%s"' % (key, value))
-            self._list.append((_key, '; '.join(segments)))
+        if kw:
+            _value = dump_options_header(_value, dict((k.replace('_', '-'), v)
+                                                      for k, v in kw.items()))
+        self._list.append((_key, _value))
 
     def add_header(self, _key, _value, **_kw):
         """Add a new header tuple to the list.
@@ -1616,7 +1609,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     :param errors: The encoding error behavior.
     :return: A tuple in the form ``(stream, form, files)``.
     """
-    content_type, extra = cgi.parse_header(environ.get('CONTENT_TYPE', ''))
+    content_type, extra = parse_options_header(environ.get('CONTENT_TYPE', ''))
     try:
         content_length = int(environ['CONTENT_LENGTH'])
     except (KeyError, ValueError):
@@ -2469,7 +2462,8 @@ class ArgumentValidationError(ValueError):
 
 # circurlar dependency fun
 from werkzeug.http import generate_etag, parse_etags, \
-     remove_entity_headers, parse_multipart
+     remove_entity_headers, parse_multipart, parse_options_header, \
+     dump_options_header
 
 # create all the special key errors now that the classes are defined.
 from werkzeug.exceptions import BadRequest
