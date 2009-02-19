@@ -29,7 +29,10 @@ Version 0.5
   of 0.5 regarding form data and file uploads, please report a critical
   bug and let us know!!!
 - added :func:`dump_options_header` and :func:`parse_options_header`
-- added :func:`quote_header_valu` and :func:`unquote_header_value`
+- added :func:`quote_header_value` and :func:`unquote_header_value`
+- :func:`url_encode` and :func:`url_decode` now accept a separator
+  argument to switch between `&` and `;` as pair separator.  The magic
+  switch is no longer in place.
 
 Version 0.4.1
 -------------

@@ -13,7 +13,6 @@
 import re
 import os
 import sys
-import cgi
 import urllib
 import urlparse
 import posixpath
@@ -1676,7 +1675,7 @@ def format_string(string, context):
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
-               errors='ignore'):
+               errors='ignore', separator='&'):
     """Parse a querystring and return it as :class:`MultiDict`.  Per default
     only values are decoded into unicode strings.  If `decode_keys` is set to
     `True` the same will happen for keys.
@@ -1688,24 +1687,38 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
     `HTTPUnicodeError` is raised.
 
+    .. versionchanged:: 0.5
+       In previous versions ";" and "&" could be used for url decoding.
+       This changed in 0.5 where only "&" is supported.  If you want to
+       use ";" instead a different `separator` can be provided.
+
     :param s: a string with the query string to decode.
     :param charset: the charset of the query string.
     :param decode_keys: set to `True` if you want the keys to be decoded
                         as well.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
+    :param separator: the pair separator to be used, defaults to ``&``
     :param errors: the decoding error behavior.
     """
-    tmp = []
-    for key, values in cgi.parse_qs(str(s), include_empty).iteritems():
-        for value in values:
-            if decode_keys:
-                key = _decode_unicode(key, charset, errors)
-            tmp.append((key, _decode_unicode(value, charset, errors)))
-    return MultiDict(tmp)
+    result = []
+    for pair in str(s).split(separator):
+        if not pair:
+            continue
+        if '=' in pair:
+            key, value = pair.split('=', 1)
+        else:
+            key = pair
+            value = ''
+        key = urllib.unquote_plus(key)
+        if decode_keys:
+            key = _decode_unicode(key, charset, errors)
+        result.append((key, url_unquote_plus(value, charset, errors)))
+    return MultiDict(result)
 
 
-def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None):
+def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
+               separator='&'):
     """URL encode a dict/`MultiDict`.  If a value is `None` it will not appear
     in the result string.  Per default only values are encoded into the target
     charset strings.  If `encode_keys` is set to ``True`` unicode keys are
@@ -1715,12 +1728,13 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None):
     sorting algorithm.
 
     .. versionadded:: 0.5
-        `sort` and `key` were added.
+        `sort`, `key`, and `separator` were added.
 
     :param obj: the object to encode into a query string.
     :param charset: the charset of the query string.
     :param encode_keys: set to `True` if you have unicode keys.
     :param sort: set to `True` if you want parameters to be sorted by `key`.
+    :param separator: the separator to be used for the pairs.
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
     """
@@ -1751,7 +1765,7 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None):
                 value = str(value)
             tmp.append('%s=%s' % (urllib.quote(key),
                                   urllib.quote_plus(value)))
-    return '&'.join(tmp)
+    return separator.join(tmp)
 
 
 def url_quote(s, charset='utf-8', safe='/:'):

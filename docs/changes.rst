@@ -29,6 +29,8 @@ API Changes
         the method will no longer work.  To support both newer and older
         Werkzeug versions you can add all arguments to the signature and
         provide default values for each of them.
+    -   :func:`url_decode` no longer supports both `&` and `;` as
+        separator.  This has to be specified explicitly now.
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.
