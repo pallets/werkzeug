@@ -27,7 +27,7 @@ You can use `easy_install`_ to install the required libraries::
 If you're on Windows, omit the "sudo" (and make sure, `setuptools`_ is
 installed); if you're on OS X, you can check if the libraries are also
 available in port; or on Linux, you can check out your package manager for
-packages called ``python-jinja`` and ``python-sqlalchemy``.
+packages called ``python-jinja2`` and ``python-sqlalchemy``.
 
 If you're curious, check out the `online demo`_ of the application.
 
