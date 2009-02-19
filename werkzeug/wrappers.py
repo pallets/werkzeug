@@ -89,6 +89,28 @@ class BaseRequest(object):
     #: set to True if the application runs behind an HTTP proxy
     is_behind_proxy = False
 
+    #: the maximum content length.  This is forwarded to the form data
+    #: parsing function (:func:`parse_form_data`).  When set and the
+    #: :attr:`form` or :attr:`files` attribute is accessed and the
+    #: parsing fails because more than the specified value is transmitted
+    #: a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+    #:
+    #: Have a look at :ref:`dealing-with-request-data` for more details.
+    #:
+    #: .. versionadded:: 0.5
+    max_content_length = None
+
+    #: the maximum form field size.  This is forwarded to the form data
+    #: parsing function (:func:`parse_form_data`).  When set and the
+    #: :attr:`form` or :attr:`files` attribute is accessed and the
+    #: data in memory for post data is longer than the specified value a
+    #: :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+    #:
+    #: Have a look at :ref:`dealing-with-request-data` for more details.
+    #:
+    #: .. versionadded:: 0.5
+    max_form_memory_size = None
+
     def __init__(self, environ, populate_request=True, shallow=False):
         self.environ = environ
         if populate_request and not shallow:
@@ -187,7 +209,9 @@ class BaseRequest(object):
                                'set `shallow` to False.')
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
             data = parse_form_data(self.environ, self._get_file_stream,
-                                   self.charset, self.encoding_errors)
+                                   self.charset, self.encoding_errors,
+                                   self.max_form_memory_size,
+                                   self.max_content_length)
         else:
             data = (_empty_stream, MultiDict(), MultiDict())
         self._data_stream, self._form, self._files = data
@@ -196,13 +220,17 @@ class BaseRequest(object):
     def stream(self):
         """The parsed stream if the submitted data was not multipart or
         urlencoded form data.  This stream is the stream left by the CGI
-        module after parsing.  This is *not* the WSGI input stream.
+        module after parsing.  This is *not* the WSGI input stream but
+        a wrapper around it that ensures the caller does not accidentally
+        read past `Content-Length`.
         """
         if self._data_stream is None:
             self._load_form_data()
         return self._data_stream
 
-    input_stream = environ_property('wsgi.input', 'The WSGI input stream.')
+    input_stream = environ_property('wsgi.input', 'The WSGI input stream.\n'
+        'In general it\'s a bad idea to use this one because you can easily '
+        'read past the boundary.  Use the :attr:`stream` instead.')
 
     @cached_property
     def args(self):

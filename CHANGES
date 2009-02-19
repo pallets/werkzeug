@@ -33,6 +33,9 @@ Version 0.5
 - :func:`url_encode` and :func:`url_decode` now accept a separator
   argument to switch between `&` and `;` as pair separator.  The magic
   switch is no longer in place.
+- all form data parsing functions as well as the :class:`BaseRequest`
+  object have parameters (or attributes) to limit the number of
+  incoming bytes (either totally or per field).
 
 Version 0.4.1
 -------------

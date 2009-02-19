@@ -1134,13 +1134,13 @@ def _line_parse(line):
 
 
 def parse_multipart(file, boundary, content_length, stream_factory=None,
-                    charset='utf-8', errors='ignore', buffer_size=10 * 1024):
+                    charset='utf-8', errors='ignore', buffer_size=10 * 1024,
+                    max_form_memory_size=None):
     """Parse a multipart/form-data stream.  This is invoked by
     :func:`utils.parse_form_data` if the content type matches.  Currently it
     exists for internal usage only, but could be exposed as separate
     function if it turns out to be useful and if we consider the API stable.
     """
-    # XXX: add support for limiting the input data
     # XXX: this function does not support multipart/mixed.  I don't know of
     #      any browser that supports this, but it should be implemented
     #      nonetheless.
@@ -1170,6 +1170,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
 
     form = []
     files = []
+    in_memory = 0
 
     # convert the file into a limited stream with iteration capabilities
     iterator = _ChunkIter(file, content_length, buffer_size)
@@ -1221,6 +1222,11 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                     except:
                         raise ValueError('could not base 64 decode chunk')
                 stream.write(line)
+                if not is_file and max_form_memory_size is not None:
+                    in_memory += len(line)
+                    if in_memory > max_form_memory_size:
+                        from werkzeug.exceptions import RequestEntityTooLarge
+                        raise RequestEntityTooLarge()
             else:
                 raise ValueError('unexpected end of part')
 
@@ -1237,7 +1243,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                 form.append((name, _decode_unicode(stream.read(),
                                                    charset, errors)))
     finally:
-        # make sure the stream was fully consumed, WSGI demands that.
+        # make sure the whole input stream is read
         iterator.exhaust()
 
     return form, files

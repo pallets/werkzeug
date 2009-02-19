@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+from nose.tools import assert_raises
 from os.path import join, dirname, abspath
+from cStringIO import StringIO
 from werkzeug import Client, Request, Response
+from werkzeug.exceptions import RequestEntityTooLarge
 
 
 @Request.application
@@ -69,3 +72,66 @@ def test_multipart():
                                'multipart/form-data; boundary="%s"' % boundary,
                                content_length=len(data))
         assert response.data == repr(text)
+
+
+def test_limiting():
+    """Test the limiting features."""
+    data = 'foo=Hello+World&bar=baz'
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='application/x-www-form-urlencoded',
+                              method='POST')
+    req.max_content_length = 4
+
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='application/x-www-form-urlencoded',
+                              method='POST')
+    req.max_content_length = 400
+    assert req.form['foo'] == 'Hello World'
+
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='application/x-www-form-urlencoded',
+                              method='POST')
+    req.max_form_memory_size = 7
+    assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
+
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='application/x-www-form-urlencoded',
+                              method='POST')
+    req.max_form_memory_size = 400
+    assert req.form['foo'] == 'Hello World'
+
+    data = ('--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n'
+            'Hello World\r\n'
+            '--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n'
+            'bar=baz\r\n--foo--')
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='multipart/form-data; boundary=foo',
+                              method='POST')
+    req.max_content_length = 4
+    assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
+
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='multipart/form-data; boundary=foo',
+                              method='POST')
+    req.max_content_length = 400
+    assert req.form['foo'] == 'Hello World'
+
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='multipart/form-data; boundary=foo',
+                              method='POST')
+    req.max_form_memory_size = 7
+    assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
+
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='multipart/form-data; boundary=foo',
+                              method='POST')
+    req.max_form_memory_size = 400
+    assert req.form['foo'] == 'Hello World'

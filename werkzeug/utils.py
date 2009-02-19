@@ -1587,7 +1587,8 @@ xhtml = HTMLBuilder('xhtml')
 
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
-                    errors='ignore'):
+                    errors='ignore', max_form_memory_size=None,
+                    max_content_length=None):
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
     transport method is `POST` or `PUT`.
@@ -1600,12 +1601,26 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     This function does not raise exception, even if the input data is
     malformed.
 
+    Have a look at :ref:`dealing-with-request-data` for more details.
+
+    .. versionadded:: 0.5
+       The `max_form_memory_size` and `max_content_length` parameters were added.
+
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
                            the same as :meth:`~BaseResponse._get_file_stream`.
     :param charset: The character set for URL and url encoded form data.
     :param errors: The encoding error behavior.
+    :param max_form_memory_size: the maximum number of bytes to be accepted for
+                           in-memory stored form data.  If the data
+                           exceeds the value specified a
+                           :exc:`~exceptions.RequestURITooLarge`
+                           exception is raised.
+    :param max_content_length: If this is provided and the transmitted data
+                               is longer than this value a
+                               :exc:`~exceptions.RequestEntityTooLarge`
+                               exception is raised.
     :return: A tuple in the form ``(stream, form, files)``.
     """
     content_type, extra = parse_options_header(environ.get('CONTENT_TYPE', ''))
@@ -1613,6 +1628,10 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
         content_length = int(environ['CONTENT_LENGTH'])
     except (KeyError, ValueError):
         content_length = 0
+
+    if max_content_length is not None and content_length > max_content_length:
+        raise RequestEntityTooLarge()
+
     stream = _empty_stream
     form = files = ()
 
@@ -1621,12 +1640,15 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
             form, files = parse_multipart(environ['wsgi.input'],
                                           extra.get('boundary'),
                                           content_length, stream_factory,
-                                          charset, errors)
+                                          charset, errors,
+                                          max_form_memory_size=max_form_memory_size)
         except ValueError, e:
-            print e
             pass
     elif content_type == 'application/x-www-form-urlencoded' or \
          content_type == 'application/x-url-encoded':
+        if max_form_memory_size is not None and \
+           content_length > max_form_memory_size:
+            raise RequestEntityTooLarge()
         form = url_decode(environ['wsgi.input'].read(content_length),
                           charset, errors=errors)
     else:
@@ -1698,8 +1720,8 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
                         as well.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
-    :param separator: the pair separator to be used, defaults to ``&``
     :param errors: the decoding error behavior.
+    :param separator: the pair separator to be used, defaults to ``&``
     """
     result = []
     for pair in str(s).split(separator):
@@ -2480,7 +2502,7 @@ from werkzeug.http import generate_etag, parse_etags, \
      dump_options_header
 
 # create all the special key errors now that the classes are defined.
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 for _cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
     _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')
 del _cls
