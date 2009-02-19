@@ -1014,6 +1014,14 @@ def parse_date(value):
             return datetime.utcfromtimestamp(rfc822.mktime_tz(t))
 
 
+def default_stream_factory(total_content_length, filename, content_type,
+                           content_length=None):
+    """The stream factory that is used per default."""
+    if total_content_length > 1024 * 500:
+        return TemporaryFile('wb+')
+    return StringIO()
+
+
 def _make_stream_factory(factory):
     """this exists for backwards compatibility!, will go away in 0.6."""
     args, _, _, defaults = inspect.getargspec(factory)
@@ -1028,15 +1036,7 @@ def _make_stream_factory(factory):
     return lambda *a: factory()
 
 
-def default_stream_factory(total_content_length, filename, content_type,
-                           content_length=None):
-    """The stream factory that is used per default."""
-    if total_content_length > 1024 * 500:
-        return TemporaryFile('wb+')
-    return StringIO()
-
-
-def fix_ie_filename(filename):
+def _fix_ie_filename(filename):
     """Internet Explorer 6 transmits the full file name if a file is
     uploaded.  This function strips the full path if it thinks the
     filename is Windows-like absolute.
@@ -1046,14 +1046,24 @@ def fix_ie_filename(filename):
     return filename
 
 
+def _line_parse(line):
+    """Removes line ending signs and returns a tuple (`stripped_line`,
+    `is_terminated`).
+    """
+    if line[-2:] == '\r\n':
+        return line[:-2], True
+    elif line[-1:] in '\r\n':
+        return line[:-1], True
+    return line, False
+
+
 def parse_multipart(file, boundary, content_length, stream_factory=None,
-                    charset='utf-8', errors='ignore', buffer_size=64 * 1024):
+                    charset='utf-8', errors='ignore', buffer_size=10 * 1024):
     """Parse a multipart/form-data stream.  This is invoked by
     :func:`utils.parse_form_data` if the content type matches.  Currently it
     exists for internal usage only, but could be exposed as separate
     function if it turns out to be useful and if we consider the API stable.
     """
-    # XXX: get rid of size argument when calling readline()
     # XXX: add support for limiting the input data
     # XXX: this function does not support multipart/mixed.  I don't know of
     #      any browser that supports this, but it should be implemented
@@ -1062,6 +1072,9 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     # make sure the buffer size is divisible by four so that we can base64
     # decode chunk by chunk
     assert buffer_size % 4 == 0, 'buffer size has to be divisible by 4'
+    # also the buffer size has to be at least 1024 bytes long or long headers
+    # will freak out the system
+    assert buffer_size >= 1024, 'buffer size has to be at least 1KB'
 
     if stream_factory is None:
         stream_factory = default_stream_factory
@@ -1082,15 +1095,16 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     form = []
     files = []
 
-    file = _MultiPartStream(file, content_length)
+    # convert the file into a limited stream with iteration capabilities
+    iterator = _ChunkIter(file, content_length, buffer_size)
 
     try:
-        terminator = file.readline(buffer_size).strip()
+        terminator = iterator.next().strip()
         if terminator != next_part:
             raise ValueError('Expected boundary at start of multipart data')
 
         while terminator != last_part:
-            headers = parse_multipart_headers(file, buffer_size)
+            headers = parse_multipart_headers(iterator)
             disposition = headers.get('content-disposition')
             if disposition is None:
                 raise ValueError('Missing Content-Disposition header')
@@ -1108,9 +1122,9 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
 
             if is_file:
                 if filename is not None:
-                    filename = fix_ie_filename(_decode_unicode(filename,
-                                                               charset,
-                                                               errors))
+                    filename = _fix_ie_filename(_decode_unicode(filename,
+                                                                charset,
+                                                                errors))
                 try:
                     content_length = int(headers['content-length'])
                 except (KeyError, ValueError):
@@ -1120,10 +1134,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             else:
                 stream = StringIO()
 
-            while 1:
-                line = file.readline(buffer_size)
-                if not line:
-                    raise ValueError('unexpected end of part')
+            for line in iterator:
                 if line[:2] == '--':
                     terminator = line.strip()
                     if terminator in (next_part, last_part):
@@ -1134,6 +1145,8 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                     except:
                         raise ValueError('could not base 64 decode chunk')
                 stream.write(line)
+            else:
+                raise ValueError('unexpected end of part')
 
             # chop of the trailing line terminator and rewind
             stream.seek(-2, 1)
@@ -1149,33 +1162,29 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                                                    charset, errors)))
     finally:
         # make sure the stream was fully consumed, WSGI demands that.
-        file.exhaust()
+        iterator.exhaust()
 
     return form, files
 
 
-def parse_multipart_headers(file, buffer_size=64 * 1024):
-    """This function parses multipart headers from a file.  It does not
-    implement a full MIME parser but should be sufficient for what
-    modern web browsers send.
-
-    :param file: a :class:`file`-like object that supports
-                 :meth:`~file.readline` with size hint.
-    :param buffer_size: size of the buffer.
+def parse_multipart_headers(iterable):
+    """Parses multipart headers from an iterable that yields lines (including
+    the trailing newline symbol.
     """
     result = []
-
-    while 1:
-        line = file.readline(buffer_size)
-        if line[-2:] != '\r\n':
+    for line in iterable:
+        line, line_terminated = _line_parse(line)
+        if not line_terminated:
             raise ValueError('unexpected end of line in multipart header')
-        line = line[:-2]
         if not line:
             break
-        parts = line.split(':', 1)
-        if len(parts) == 2:
-            result.append((parts[0].strip(), parts[1].strip()))
-
+        elif line[0] in ' \t' and result:
+            key, value = result[-1]
+            result[-1] = (key, value + '\n ' + line[1:])
+        else:
+            parts = line.split(':', 1)
+            if len(parts) == 2:
+                result.append((parts[0].strip(), parts[1].strip()))
     return Headers(result)
 
 
@@ -1264,8 +1273,23 @@ def is_valid_multipart_boundary(boundary):
 from werkzeug.utils import LimitedStream, FileStorage, Headers
 
 
-class _MultiPartStream(LimitedStream):
-    """Raises `ValueError` when exhausted."""
+class _ChunkIter(LimitedStream):
+    """An iterator that yields chunks from the file.  This iterator
+    does not end!  It will happily continue yielding empty strings
+    if the limit is reached.  This is intentional.
+    """
 
-    def on_exhausted(self):
-        raise ValueError('tried to read past boundary')
+    def __init__(self, stream, limit, buffer_size):
+        LimitedStream.__init__(self, stream, limit, True)
+        self._buffer = []
+        self._buffer_size = buffer_size
+
+    def next(self):
+        if len(self._buffer) > 1:
+            return self._buffer.pop(0)
+        chunks = self.read(self._buffer_size).splitlines(True)
+        first_chunk = self._buffer and self._buffer[0] or ''
+        if chunks:
+            first_chunk += chunks.pop(0)
+        self._buffer = chunks
+        return first_chunk

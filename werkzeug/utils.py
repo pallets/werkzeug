@@ -1224,6 +1224,9 @@ class LimitedStream(object):
         self.limit = limit
         self.silent = silent
 
+    def __iter__(self):
+        return self
+
     @property
     def is_exhausted(self):
         """If the stream is exhausted this attribute is `True`."""
@@ -1304,6 +1307,12 @@ class LimitedStream(object):
             if size is not None:
                 last_pos = self._pos
         return result
+
+    def next(self):
+        line = self.readline()
+        if line is None:
+            raise StopIteration()
+        return line
 
 
 class Href(object):
