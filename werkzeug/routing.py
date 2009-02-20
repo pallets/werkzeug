@@ -5,8 +5,8 @@
 
     When it comes to combining multiple controller or view functions (however
     you want to call them) you need a dispatcher.  A simple way would be
-    applying regular expression tests on the ``PATH_INFO`` and call registered
-    callback functions that return the value then.
+    applying regular expression tests on the ``PATH_INFO`` and calling
+    registered callback functions that return the value then.
 
     This module implements a much more powerful system than simple regular
     expression matching because it can also convert values in the URLs and
@@ -183,7 +183,7 @@ class RequestRedirect(HTTPException, RoutingException):
     """Raise if the map requests a redirect. This is for example the case if
     `strict_slashes` are activated and an url that requires a leading slash.
 
-    The attribute `new_url` contains the absolute desitination url.
+    The attribute `new_url` contains the absolute destination url.
     """
     code = 301
 
@@ -243,7 +243,7 @@ class Subdomain(RuleFactory):
             ])
         ])
 
-    All the rules except of the ``'#select_language'`` endpoint will now
+    All the rules except for the ``'#select_language'`` endpoint will now
     listen on a two letter long subdomain that helds the language code
     for the current request.
     """
@@ -374,7 +374,7 @@ class RuleTemplateFactory(RuleFactory):
 class Rule(RuleFactory):
     """A Rule represents one URL pattern.  There are some options for `Rule`
     that change the way it behaves and are passed to the `Rule` constructor.
-    Note that beside the rule-string all arguments *must* be keyword arguments
+    Note that besides the rule-string all arguments *must* be keyword arguments
     in order to not break the application on Werkzeug upgrades.
 
     `string`
@@ -435,7 +435,7 @@ class Rule(RuleFactory):
         not specified the `Map` setting is used.
 
     `build_only`
-        Set this to true and the rule will never match but will create a URL
+        Set this to True and the rule will never match but will create a URL
         that can be build. This is useful if you have resources on a subdomain
         or folder that are not handled by the WSGI application (like static data)
 
@@ -893,7 +893,7 @@ class Map(object):
     parameters.  Some of the configuration values are only stored on the
     `Map` instance since those affect all rules, others are just defaults
     and can be overridden for each rule.  Note that you have to specify all
-    arguments beside the `rules` as keywords arguments!
+    arguments besides the `rules` as keywords arguments!
 
     :param rules: sequence of url rules for this map.
     :param default_subdomain: The default subdomain for rules without a
@@ -1019,7 +1019,7 @@ class Map(object):
         in the wsgi `environ` is ``'staging.dev.example.com'`` the calculated
         subdomain will be ``'staging.dev'``.
 
-        If the object passed as environ as an environ attribute, the value of
+        If the object passed as environ has an environ attribute, the value of
         this attribute is used instead.  This allows you to pass request
         objects.  Additionally `PATH_INFO` added as a default ot the
         :class:`MapAdapter` so that you don't have to pass the path info to
@@ -1071,7 +1071,7 @@ class Map(object):
 
 
 class MapAdapter(object):
-    """Retured by :meth:`Map.bind` or :meth:`Map.bind_to_environ` and does
+    """Returned by :meth:`Map.bind` or :meth:`Map.bind_to_environ` and does
     the URL matching and building based on runtime information.
     """
 
@@ -1116,7 +1116,7 @@ class MapAdapter(object):
                 return urls.dispatch(lambda e, v: views[e](request, **v),
                                      catch_http_exceptions=True)
 
-        Keep in mind that this method might return exception objects too, so
+        Keep in mind that this method might return exception objects, too, so
         use :class:`Response.force_type` to get a response object.
 
         :param view_func: a function that is called with the endpoint as
@@ -1313,7 +1313,7 @@ class MapAdapter(object):
         raised.
 
         The build method accepts an argument called `method` which allows you
-        to specify the method you want to have an URL builded for if you have
+        to specify the method you want to have an URL built for if you have
         different methods for the same endpoint specified.
 
         :param endpoint: the endpoint of the URL to build.

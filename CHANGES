@@ -5,11 +5,12 @@ Version 0.5
 -----------
 (codename yet to be selected, release date unknown)
 
+- requires Python 2.4 now
 - fixed a bug in :class:`~contrib.IterIO`
 - added :class:`MIMEAccept` and :class:`CharsetAccept` that work like the
-  regular :class:`Accept` but have extra special normlization for mimetypes
+  regular :class:`Accept` but have extra special normalization for mimetypes
   and charsets and extra convenience methods.
-- switched the serving system from wsgiref to something homebaked.
+- switched the serving system from wsgiref to something homebrew.
 - the :class:`Client` now supports cookies.
 - added the :mod:`~werkzeug.contrib.fixers` module with various
   fixes for webserver bugs and hosting setup side-effects.
@@ -21,7 +22,7 @@ Version 0.5
 - added :func:`peek_path_info`
 - added :func:`wrap_file` and :class:`FileWrapper`
 - moved `LimitedStream` from the contrib package into the regular
-  Werkzeug one and changes the default behavior to raise exceptions
+  werkzeug one and changed the default behavior to raise exceptions
   rather than stopping without warning.  The old class will stick in
   the module until 0.6.
 - implemented experimental multipart parser that replaces the old CGI
@@ -43,7 +44,7 @@ Version 0.4.1
 (Bugfix release, released on January 11th 2009)
 
 - `werkzeug.contrib.cache.Memcached` accepts now objects that
-  implementt the memcache.Client interface as alternative to a list of
+  implement the memcache.Client interface as alternative to a list of
   strings with server addresses.
   There is also now a `GAEMemcachedCache` that connects to the Google
   appengine cache.
@@ -124,9 +125,9 @@ Version 0.3
   special key errors now that are subclasses of `BadRequest` so if you
   don't catch them they give meaningful HTTP responses.
 - added support for alternative encoding error handling and the new
-  `HTTPUnicodeError` which (if not cought) behaves like a `BadRequest`.
-- adde `BadRequest.wrap`.
-- added ETag-support to the SharedDataMiddleware and added an option
+  `HTTPUnicodeError` which (if not caught) behaves like a `BadRequest`.
+- added `BadRequest.wrap`.
+- added ETag support to the SharedDataMiddleware and added an option
   to disable caching.
 - fixed `is_xhr` on the request objects.
 - fixed error handling of the url adapter's `dispatch` method. (#318)
@@ -141,7 +142,7 @@ Version 0.3
 - improved Python 2.3 support
 - `run_simple` accepts `use_debugger` and `use_evalex` parameters now,
   like the `make_runserver` factory function from the script module.
-- the `environ_property` is now read only by default
+- the `environ_property` is now read-only by default
 - it's now possible to initialize requests as "shallow" requests which
   causes runtime errors if the request object tries to consume the
   input stream.
@@ -155,13 +156,13 @@ Version 0.2
 - Added `werkzeug.contrib.securecookie`
 - Exceptions have a ``get_response()`` method that return a response object
 - fixed the path ordering bug (#293), thanks Thomas Johansson
-- `BaseReporterStream` is now part of the werkzeug contrib module.  With
+- `BaseReporterStream` is now part of the werkzeug contrib module.  From
   Werkzeug 0.3 onwards you will have to import it from there.
 - added `DispatcherMiddleware`.
 - `RequestRedirect` is now a subclass of `HTTPException` and uses a
   301 status code instead of 302.
 - `url_encode` and `url_decode` can optionally treat keys as unicode strings
-  now too.
+  now, too.
 - `werkzeug.script` has a different caller format for boolean arguments now.
 - renamed `lazy_property` to `cached_property`.
 - added `import_string`.

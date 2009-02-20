@@ -5,7 +5,7 @@
 
     There are many ways to serve a WSGI application.  While you're developing
     it you usually don't want a full blown webserver like Apache but a simple
-    standalone one.  With Python 2.5 onwards there is the `wsgiref`_ server in
+    standalone one.  From Python 2.5 onwards there is the `wsgiref`_ server in
     the standard library.  If you're using older versions of Python you can
     download the package from the cheeseshop.
 
@@ -284,7 +284,7 @@ def run_simple(hostname, port, application, use_reloader=False,
                          process if modules were changed?
     :param use_debugger: should the werkzeug debugging system be used?
     :param use_evalex: should the exception evaluation feature be enabled?
-    :param extra_files: a list of files the reloader should listen for
+    :param extra_files: a list of files the reloader should watch
                         additionally to the modules.  For example configuration
                         files.
     :param reloader_interval: the interval for the reloader in seconds.

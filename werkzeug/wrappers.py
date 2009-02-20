@@ -68,7 +68,7 @@ class BaseRequest(object):
     details about customizing the behavior.
 
     Per default the request object will be added to the WSGI
-    enviornment as `werkzeug.request` to support the debugging system.
+    environment as `werkzeug.request` to support the debugging system.
     If you don't want that, set `populate_request` to `False`.
 
     If `shallow` is `True` the environment is initialized as shallow
@@ -245,7 +245,7 @@ class BaseRequest(object):
         could send dozens of megabytes or more to cause memory problems on the
         server.
 
-        To circument that make sure to check the content length first.
+        To circumvent that make sure to check the content length first.
         """
         return self.stream.read()
 
@@ -283,7 +283,7 @@ class BaseRequest(object):
 
     @cached_property
     def cookies(self):
-        """The retreived cookie values as regular dictionary."""
+        """The retrieved cookie values as regular dictionary."""
         return parse_cookie(self.environ, self.charset)
 
     @cached_property
@@ -340,7 +340,7 @@ class BaseRequest(object):
 
     @cached_property
     def access_route(self):
-        """If an forwarded header exists this is a list of all ip addresses
+        """If a forwarded header exists this is a list of all ip addresses
         from the client ip to the last proxy server.
         """
         if 'HTTP_X_FORWARDED_FOR' in self.environ:
@@ -364,7 +364,7 @@ class BaseRequest(object):
 
     is_xhr = property(lambda x: x.environ.get('HTTP_X_REQUESTED_WITH', '')
                       .lower() == 'xmlhttprequest', doc='''
-        True if the request was triggered via an JavaScript XMLHttpRequest.
+        True if the request was triggered via a JavaScript XMLHttpRequest.
         This only works with libraries that support the `X-Requested-With`
         header and set it to "XMLHttpRequest".  Libraries that do that are
         prototype, jQuery and Mochikit and probably some more.''')
@@ -458,7 +458,7 @@ class BaseResponse(object):
     `mimetype` and `content_type` work the same, the difference affects
     only 'text' mimetypes.  If the mimetype passed with `mimetype` is a
     mimetype starting with `text/` it becomes a charset parameter defined
-    with the charset of the response object.  In constrast the
+    with the charset of the response object.  In contrast the
     `content_type` parameter is always added as header unmodified.
 
     .. versionchanged:: 0.5
@@ -556,7 +556,7 @@ class BaseResponse(object):
         you should set `buffered` to `True` which enforces buffering.
 
         :param app: the WSGI application to execute.
-        :param environ: the WSGI environment to execute aginst.
+        :param environ: the WSGI environment to execute against.
         :param buffered: set to `True` to enforce buffering.
         :return: a response object.
         """
@@ -607,7 +607,7 @@ class BaseResponse(object):
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None, httponly=False):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
-        object in the Python standard library but it accepts unicode data too.
+        object in the Python standard library but it accepts unicode data, too.
 
         :param key: the key (name) of the cookie to be set.
         :param value: the value of the cookie.
@@ -686,7 +686,7 @@ class BaseResponse(object):
 
     def freeze(self):
         """Call this method if you want to make your response object ready for
-        pickeling.  This buffers the generator if there is one.
+        being pickled.  This buffers the generator if there is one.
         """
         BaseResponse.data.__get__(self)
 
@@ -755,7 +755,7 @@ class AcceptMixin(object):
 
 class ETagRequestMixin(object):
     """Add entity tag and cache descriptors to a request object or object with
-    an WSGI environment available as :attr:`~BaseRequest.environ`.  This not
+    a WSGI environment available as :attr:`~BaseRequest.environ`.  This not
     only provides access to etags but also to the cache control header.
     """
 
@@ -844,7 +844,7 @@ class ETagResponseMixin(object):
         method can be used to do that.  If called without etag just the date
         header is set.
 
-        This does nothing if the request method in the request or enviorn is
+        This does nothing if the request method in the request or environ is
         anything but GET or HEAD.
 
         It does not remove the body of the response because that's something

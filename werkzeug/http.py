@@ -5,7 +5,7 @@
 
     Werkzeug comes with a bunch of utilties that help Werkzeug to deal with
     HTTP data.  Most of the classes and functions provided by this module are
-    used by the wrappers, but they are useful on their own too, especially if
+    used by the wrappers, but they are useful on their own, too, especially if
     the response and request objects are not used.
 
     This covers some of the more HTTP centric features of WSGI, some other
@@ -96,7 +96,7 @@ class Accept(list):
         return item == '*' or item.lower() == value.lower()
 
     def __getitem__(self, key):
-        """Beside index lookup (getting item n) you can also pass it a string
+        """Besides index lookup (getting item n) you can also pass it a string
         to get the quality for the item.  If the item is not in the list, the
         returned quality is ``0``.
         """
@@ -120,7 +120,7 @@ class Accept(list):
         )
 
     def index(self, key):
-        """Get the position of en entry or raise :exc:`IndexError`.
+        """Get the position of an entry or raise :exc:`IndexError`.
 
         :param key: The key to be looked up.
         """
@@ -228,12 +228,12 @@ class CharsetAccept(Accept):
 
 
 class HeaderSet(object):
-    """Similar to the :class:`ETags` class this implements a set like structure.
+    """Similar to the :class:`ETags` class this implements a set-like structure.
     Unlike :class:`ETags` this is case insensitive and used for vary, allow, and
     content-language headers.
 
     If not constructed using the :func:`parse_set_header` function the
-    instanciation works like this:
+    instantiation works like this:
 
     >>> hs = HeaderSet(['foo', 'bar', 'baz'])
     >>> hs
@@ -254,7 +254,7 @@ class HeaderSet(object):
         header is not in the set.
 
         .. versionchanged:: 0.5
-            In older version a :exc:`IndexError` was raised instead of an
+            In older versions a :exc:`IndexError` was raised instead of a
             :exc:`KeyError` if the object was missing.
 
         :param header: the header to be removed.
@@ -307,7 +307,7 @@ class HeaderSet(object):
         return -1
 
     def index(self, header):
-        """Return the index of the headerin the set or raise an
+        """Return the index of the header in the set or raise an
         :exc:`IndexError`.
 
         :param header: the header to be looked up.
@@ -325,8 +325,8 @@ class HeaderSet(object):
             self.on_update(self)
 
     def as_set(self, preserve_casing=False):
-        """Return the set as real python set structure.  When calling this
-        all the items are converted to lowercase and the ordering is lost.
+        """Return the set as real python set type.  When calling this, all
+        the items are converted to lowercase and the ordering is lost.
 
         :param preserve_casing: if set to `True` the items in the set returned
                                 will have the original case like in the
@@ -382,7 +382,7 @@ class HeaderSet(object):
 
 class CacheControl(_UpdateDict):
     """Subclass of a dict that stores values for a Cache-Control header.  It
-    has accesors for all the cache-control directives specified in RFC 2616.
+    has accessors for all the cache-control directives specified in RFC 2616.
     The class does not differentiate between request and response directives.
 
     Because the cache-control directives in the HTTP header use dashes the
@@ -441,7 +441,7 @@ class CacheControl(_UpdateDict):
         self.provided = values is not None
 
     def _get_cache_value(self, key, empty, type):
-        """Used internally be the accessor properties."""
+        """Used internally by the accessor properties."""
         if type is bool:
             return key in self
         if key in self:
@@ -456,7 +456,7 @@ class CacheControl(_UpdateDict):
             return value
 
     def _set_cache_value(self, key, value, type):
-        """Used internally be the accessor properties."""
+        """Used internally by the accessor properties."""
         if type is bool:
             if value:
                 self[key] = None
@@ -471,6 +471,7 @@ class CacheControl(_UpdateDict):
                 self[key] = value
 
     def _del_cache_value(self, key):
+        """Used internally by the accessor properties."""
         if key in self:
             del self[key]
 
@@ -589,10 +590,9 @@ class Authorization(dict):
         When the authentication type is basic this is the password
         transmitted by the client, else `None`.''')
     realm = property(lambda x: x.get('realm'), doc='''
-        This is the server realm send back for digest auth.  For HTTP
-        digest auth.''')
+        This is the server realm sent back for HTTP digest auth.''')
     nonce = property(lambda x: x.get('nonce'), doc='''
-        The nonce the server send for digest auth, send back by the client.
+        The nonce the server sent for digest auth, sent back by the client.
         A nonce should be unique for every 401 response for HTTP digest
         auth.''')
     uri = property(lambda x: x.get('uri'), doc='''
@@ -711,7 +711,7 @@ class WWWAuthenticate(_UpdateDict):
         return property(fget, doc=doc)
 
     type = auth_property('__auth_type__', doc='''
-        The type of the auth machanism.  HTTP currently specifies
+        The type of the auth mechanism.  HTTP currently specifies
         `Basic` and `Digest`.''')
     realm = auth_property('realm', doc='''
         A string to be displayed to users so they know which username and
@@ -720,7 +720,7 @@ class WWWAuthenticate(_UpdateDict):
         indicate the collection of users who might have access.''')
     domain = _set_property('domain', doc='''
         A list of URIs that define the protection space.  If a URI is an
-        absolte path, it is relative to the canonical root URL of the
+        absolute path, it is relative to the canonical root URL of the
         server being accessed.''')
     nonce = auth_property('nonce', doc='''
         A server-specified data string which should be uniquely generated
@@ -819,7 +819,7 @@ def dump_header(iterable, allow_token=True):
     equals sign unless you pass it as dict of key, value pairs.
 
     :param iterable: the iterable or dict of values to quote.
-    :param allow_token: if set to `False` tokens as values are sallowed.
+    :param allow_token: if set to `False` tokens as values are disallowed.
                         See :func:`quote_header_value` for more details.
     """
     if isinstance(iterable, dict):
@@ -858,7 +858,7 @@ def parse_list_header(value):
 
 
 def parse_dict_header(value):
-    """Parse lists of key, value paits as described by RFC 2068 Section 2 and
+    """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
     convert them into a python dict.  If there is no value for a key it will
     be `None`.
 
@@ -922,7 +922,7 @@ def parse_accept_header(value, cls=Accept):
     valid algorithm but one that supports at least value and quality
     extraction.
 
-    Returns a new :class:`Accept` object (basicly a list of ``(value, quality)``
+    Returns a new :class:`Accept` object (basically a list of ``(value, quality)``
     tuples sorted by the quality with some additional accessor methods).
 
     The second parameter can be a subclass of :class:`Accept` that is created
@@ -962,9 +962,9 @@ def parse_cache_control_header(value, on_update=None):
 
 
 def parse_set_header(value, on_update=None):
-    """Parse a set like header and return a :class:`HeaderSet` object.  The
-    return value is an object that treats the items case insensitive and keeps
-    the order of the items.
+    """Parse a set-like header and return a :class:`HeaderSet` object.  The
+    return value is an object that treats the items case-insensitively and
+    keeps the order of the items.
 
     :param value: a set header to be parsed.
     :param on_update: an optional callable that is called every time a
@@ -1154,7 +1154,7 @@ def _fix_ie_filename(filename):
 
 
 def _line_parse(line):
-    """Removes line ending signs and returns a tuple (`stripped_line`,
+    """Removes line ending characters and returns a tuple (`stripped_line`,
     `is_terminated`).
     """
     if line[-2:] == '\r\n':
@@ -1261,7 +1261,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             else:
                 raise ValueError('unexpected end of part')
 
-            # chop of the trailing line terminator and rewind
+            # chop off the trailing line terminator and rewind
             stream.seek(-2, 1)
             stream.truncate()
             stream.seek(0)

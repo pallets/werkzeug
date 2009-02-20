@@ -35,10 +35,10 @@ class MultiDict(dict):
     functions in the wrappers.  This is necessary because some HTML form
     elements pass multiple values for the same key.
 
-    :class:`MultiDict` implements the all standard dictionary methods.
+    :class:`MultiDict` implements all standard dictionary methods.
     Internally, it saves all values for a key as a list, but the standard dict
     access methods will only return the first value for a key. If you want to
-    gain access to the other values too you have to use the `list` methods as
+    gain access to the other values, too, you have to use the `list` methods as
     explained below.
 
     Basic Usage:
@@ -62,7 +62,7 @@ class MultiDict(dict):
     exceptions.
 
     A :class:`MultiDict` can be constructed from an iterable of
-    ``(key, value)`` tuples, a dict, a :class:`MultiDict` or with Werkzeug 0.2
+    ``(key, value)`` tuples, a dict, a :class:`MultiDict` or from Werkzeug 0.2
     onwards some keyword parameters.
 
     :param mapping: the initial value for the :class:`MultiDict`.  Either a
@@ -220,19 +220,19 @@ class MultiDict(dict):
         return [(key, self[key]) for key in self.iterkeys()]
 
     #: Return a list of ``(key, value)`` pairs, where values is the list of
-    #: all values assoiciated with the key.
+    #: all values associated with the key.
     #:
     #: :return: a :class:`list`
     lists = dict.items
 
     def values(self):
-        """Returns a list of the last value on every key list.
+        """Returns a list of the first value on every key's value list.
 
         :return: a :class:`list`.
         """
         return [self[key] for key in self.iterkeys()]
 
-    #: Return a list of all values assoiciated with a key.  Zipping
+    #: Return a list of all values associated with a key.  Zipping
     #: :meth:`keys` and this is the same as calling :meth:`lists`:
     #:
     #: >>> d = MultiDict({"foo": [1, 2, 3]})
@@ -247,7 +247,7 @@ class MultiDict(dict):
         for key, values in dict.iteritems(self):
             yield key, values[0]
 
-    #: Return a list of all values assoiciated with a key.
+    #: Return a list of all values associated with a key.
     #:
     #: :return: a :class:`list`
     iterlists = dict.iteritems
@@ -271,7 +271,7 @@ class MultiDict(dict):
 
         :param flat: If set to `False` the dict returned will have lists
                      with all the values in it.  Otherwise it will only
-                     contain the first item for each key.
+                     contain the first value for each key.
         :return: a :class:`dict`
         """
         if flat:
@@ -506,11 +506,11 @@ class FileStorage(object):
     def save(self, dst, buffer_size=16384):
         """Save the file to a destination path or file object.  If the
         destination is a file object you have to close it yourself after the
-        call.  The buffer size is the number of bytes held in the memory
-        during the copy process.  It defaults to 16KB.
+        call.  The buffer size is the number of bytes held in memory during
+        the copy process.  It defaults to 16KB.
 
         :param dst: a filename or open file object the uploaded file
-                    is saved in.
+                    is saved to.
         :param buffer_size: the size of the buffer.  This works the same as
                             the `length` parameter of
                             :func:`shutil.copyfileobj`.
@@ -547,8 +547,8 @@ class FileStorage(object):
 
 
 class Headers(object):
-    """An object that stores some headers.  It has a dict like interface
-    but is ordered and can store keys multiple times.
+    """An object that stores some headers.  It has a dict-like interface
+    but is ordered and can store the same keys multiple times.
 
     This data structure is useful if you want a nicer way to handle WSGI
     headers which are stored as tuples in a list.
@@ -630,7 +630,7 @@ class Headers(object):
         >>> d.get('Content-Length', type=int)
         42
 
-        If a headers object is bound you must notadd unicode strings
+        If a headers object is bound you must not add unicode strings
         because no encoding takes place.
 
         :param key: The key to be looked up.
@@ -1112,10 +1112,10 @@ class ClosingIterator(object):
         return ClosingIterator(app(environ, start_response), [cleanup_session,
                                                               cleanup_locals])
 
-    If there is just one close function it can be bassed instead of the list.
+    If there is just one close function it can be passed instead of the list.
 
-    A closing iterator is non needed if the application uses response objects
-    and finishes the processing if the resonse is started::
+    A closing iterator is not needed if the application uses response objects
+    and finishes the processing if the response is started::
 
         try:
             return response(environ, start_response)
@@ -1590,10 +1590,10 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
 
     If the mimetype of the data transmitted is `multipart/form-data` the
     files multidict will be filled with `FileStorage` objects.  If the
-    mimetype is unknow the input stream is wrapped and returned as first
+    mimetype is unknown the input stream is wrapped and returned as first
     argument, else the stream is empty.
 
-    This function does not raise exception, even if the input data is
+    This function does not raise exceptions, even if the input data is
     malformed.
 
     Have a look at :ref:`dealing-with-request-data` for more details.
@@ -1609,11 +1609,11 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     :param errors: The encoding error behavior.
     :param max_form_memory_size: the maximum number of bytes to be accepted for
                            in-memory stored form data.  If the data
-                           exceeds the value specified a
+                           exceeds the value specified an
                            :exc:`~exceptions.RequestURITooLarge`
                            exception is raised.
     :param max_content_length: If this is provided and the transmitted data
-                               is longer than this value a
+                               is longer than this value an
                                :exc:`~exceptions.RequestEntityTooLarge`
                                exception is raised.
     :return: A tuple in the form ``(stream, form, files)``.
@@ -1700,7 +1700,7 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     Per default a missing value for a key will default to an empty key.  If
     you don't want that behavior you can set `include_empty` to `False`.
 
-    Per default encoding errors are ignore.  If you want a different behavior
+    Per default encoding errors are ignored.  If you want a different behavior
     you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
     `HTTPUnicodeError` is raised.
 
@@ -1817,7 +1817,7 @@ def url_quote_plus(s, charset='utf-8', safe=''):
 def url_unquote(s, charset='utf-8', errors='ignore'):
     """URL decode a single string with a given decoding.
 
-    Per default encoding errors are ignore.  If you want a different behavior
+    Per default encoding errors are ignored.  If you want a different behavior
     you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
     `HTTPUnicodeError` is raised.
 
@@ -1832,7 +1832,7 @@ def url_unquote_plus(s, charset='utf-8', errors='ignore'):
     """URL decode a single string with the given decoding and decode
     a "+" to whitespace.
 
-    Per default encoding errors are ignore.  If you want a different behavior
+    Per default encoding errors are ignored.  If you want a different behavior
     you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
     `HTTPUnicodeError` is raised.
 
@@ -1939,7 +1939,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     >>> get_current_url(env, strip_querystring=True)
     'http://localhost/script/'
 
-    :param environ: the WSGI environment to get the current URL of.
+    :param environ: the WSGI environment to get the current URL from.
     :param root_only: set `True` if you only want the root URL.
     :param strip_querystring: set to `True` if you don't want the querystring.
     :param host_only: set to `True` if the host URL should be returned.
@@ -2042,7 +2042,7 @@ def cookie_date(expires=None):
 def parse_cookie(header, charset='utf-8', errors='ignore'):
     """Parse a cookie.  Either from a string or WSGI environ.
 
-    Per default encoding errors are ignore.  If you want a different behavior
+    Per default encoding errors are ignored.  If you want a different behavior
     you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
     :exc:`HTTPUnicodeError` is raised.
 
@@ -2072,12 +2072,12 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 sync_expires=True):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
-    Python standard library but it accepts unicode data too.
+    Python standard library but it accepts unicode data, too.
 
     :param max_age: should be a number of seconds, or `None` (default) if
                     the cookie should last only as long as the client's
                     browser session.  Additionally `timedelta` objects
-                    are accepted too.
+                    are accepted, too.
     :param expires: should be a `datetime` object or unix timestamp.
     :param path: limits the cookie to a given path, per default it will
                  span the whole domain.
@@ -2201,13 +2201,12 @@ def wrap_file(environ, file, buffer_size=8192):
 
 
 def import_string(import_name, silent=False):
-    """Imports an object based on a string.  This use useful if you want to
+    """Imports an object based on a string.  This is useful if you want to
     use import paths as endpoints or something similar.  An import path can
     be specified either in dotted notation (``xml.sax.saxutils.escape``)
     or with a colon as object delimiter (``xml.sax.saxutils:escape``).
 
-    If the `silent` is True the return value will be `None` if the import
-    fails.
+    If `silent` is True the return value will be `None` if the import fails.
 
     :param import_name: the dotted name for the object to import.
     :param silent: if set to `True` import errors are ignored and
@@ -2240,7 +2239,7 @@ def find_modules(import_path, include_packages=False, recursive=False):
     packages to get the correct load path of that module.
 
     :param import_name: the dotted name for the package to find child modules.
-    :param include_packages: set to `True` if packages should be returned too.
+    :param include_packages: set to `True` if packages should be returned, too.
     :param recursive: set to `True` if recursion should happen.
     :return: generator
     """
@@ -2340,7 +2339,7 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
 def run_wsgi_app(app, environ, buffered=False):
     """Return a tuple in the form (app_iter, status, headers) of the
     application output.  This works best if you pass it an application that
-    returns a iterator all the time.
+    returns an iterator all the time.
 
     Sometimes applications may use the `write()` callable returned
     by the `start_response` function.  This tries to resolve such edge
@@ -2491,7 +2490,7 @@ class ArgumentValidationError(ValueError):
         ))
 
 
-# circurlar dependency fun
+# circular dependency fun
 from werkzeug.http import generate_etag, parse_etags, \
      remove_entity_headers, parse_multipart, parse_options_header, \
      dump_options_header

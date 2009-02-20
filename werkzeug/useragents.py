@@ -4,8 +4,8 @@
     ~~~~~~~~~~~~~~~~~~~
 
     This module provides a helper to inspect user agent strings.  This module
-    is far from complete but should work for most of the current browsers that
-    are available.
+    is far from complete but should work for most of the currently available
+    browsers.
 
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
@@ -88,9 +88,9 @@ class UserAgentParser(object):
 
 
 class UserAgent(object):
-    """Represents a user agent.  Pass it a WSGI environment or an user agent
+    """Represents a user agent.  Pass it a WSGI environment or a user agent
     string and you can inspect some of the details from the user agent
-    string via the attributes.  The following attribute exist:
+    string via the attributes.  The following attributes exist:
 
     -   `string`, the raw user agent string
     -   `platform`, the browser platform

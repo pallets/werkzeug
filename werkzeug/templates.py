@@ -3,7 +3,7 @@ r"""
     werkzeug.templates
     ~~~~~~~~~~~~~~~~~~
 
-    A minmal template engine.
+    A minimal template engine.
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD License.

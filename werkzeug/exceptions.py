@@ -4,7 +4,7 @@
     ~~~~~~~~~~~~~~~~~~~
 
     This module implements a number of Python exceptions you can raise from
-    within your views to trigger a standard non 200 response.
+    within your views to trigger a standard non-200 response.
 
 
     Usage Example
@@ -40,7 +40,7 @@
     because some errors fetch additional information from the WSGI
     environment.
 
-    If you want to hook in a different exception page to say, an 404 status
+    If you want to hook in a different exception page to say, a 404 status
     code, you can add a second except for a specific subclass of an error::
 
         @responder
@@ -158,7 +158,7 @@ class BadRequest(HTTPException):
     """
     *400* `Bad Request`
 
-    Raise if the browser send something to the application the application
+    Raise if the browser sends something to the application the application
     or server cannot handle.
     """
     code = 400
@@ -178,8 +178,8 @@ class Unauthorized(HTTPException):
     code = 401
     description = (
         '<p>The server could not verify that you are authorized to access '
-        'the URL requested.  You either supplied the wrong credentials (e.g.'
-        ', bad password), or your browser doesn\'t understand how to supply '
+        'the URL requested.  You either supplied the wrong credentials (e.g. '
+        'a bad password), or your browser doesn\'t understand how to supply '
         'the credentials required.</p><p>In case you are allowed to request '
         'the document, please check your user-id and password and try '
         'again.</p>'
@@ -248,7 +248,7 @@ class NotAcceptable(HTTPException):
     """
     *406* `Not Acceptable`
 
-    Raise if the server cant return any content conforming to the
+    Raise if the server can't return any content conforming to the
     `Accept` headers of the client.
     """
     code = 406
@@ -298,7 +298,7 @@ class LengthRequired(HTTPException):
     code = 411
     description = (
         '<p>A request with this method requires a valid <code>Content-'
-        'Lenght</code> header.</p>'
+        'Length</code> header.</p>'
     )
 
 
@@ -325,7 +325,7 @@ class RequestEntityTooLarge(HTTPException):
     """
     code = 413
     description = (
-        '<p>The data value transmitted exceed the capacity limit.</p>'
+        '<p>The data value transmitted exceeds the capacity limit.</p>'
     )
 
 
@@ -360,8 +360,8 @@ class InternalServerError(HTTPException):
     """
     *500* `Internal Server Error`
 
-    Raise if an internal server error occoured.  This is a good fallback if an
-    unknown error occoured in the dispatcher.
+    Raise if an internal server error occurred.  This is a good fallback if an
+    unknown error occurred in the dispatcher.
     """
     code = 500
     description = (
@@ -389,7 +389,7 @@ class BadGateway(HTTPException):
     """
     *502* `Bad Gateway`
 
-    If you do proxing in your application you should return this status code
+    If you do proxying in your application you should return this status code
     if you received an invalid response from the upstream server it accessed
     in attempting to fulfill the request.
     """
@@ -430,7 +430,7 @@ del _find_exceptions
 
 
 #: raised by the request functions if they were unable to decode the
-#: incomding data properly.
+#: incoming data properly.
 HTTPUnicodeError = BadRequest.wrap(UnicodeError, 'HTTPUnicodeError')
 
 

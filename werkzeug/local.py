@@ -10,7 +10,7 @@
     application is not thread safe any longer.
 
     The python standard library comes with a utility called "thread locals".
-    A thread local is a global object where you can put stuff on and get back
+    A thread local is a global object where you can put stuff in and get back
     later in a thread safe way.  That means whenever you set or get an object
     to / from a thread local object the thread local object checks in which
     thread you are and delivers the correct value.
@@ -72,7 +72,7 @@ try:
     get_current_greenlet = greenlet.getcurrent
     del greenlet
 except:
-    # catch all, py.* fails in so many different errors.
+    # catch all, py.* fails with so many different errors.
     get_current_greenlet = int
 try:
     from thread import get_ident as get_current_thread, allocate_lock
@@ -84,7 +84,7 @@ from werkzeug._internal import _patch_wrapper
 
 # get the best ident function.  if greenlets are not installed we can
 # savely just use the builtin thread function and save a python methodcall
-# and the cost of caculating a hash.
+# and the cost of calculating a hash.
 if get_current_greenlet is int:
     get_ident = get_current_thread
 else:

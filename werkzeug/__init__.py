@@ -7,7 +7,7 @@
 
     It provides useful classes and functions for any WSGI application to make
     the life of a python web developer much easier.  All of the provided
-    classes are independed from each other so you can mix it with any other
+    classes are independent from each other so you can mix it with any other
     library.
 
 

@@ -69,7 +69,7 @@ class File(object):
             self.stream = fd
             if filename is None:
                 if not hasattr(fd, 'name'):
-                    raise ValueError('no filename for provided')
+                    raise ValueError('no filename provided')
                 filename = fd.name
         if mimetype is None:
             mimetype = guess_type(filename)[0]
@@ -114,7 +114,7 @@ class _TestCookieResponse(object):
 
 
 class _TestCookieJar(CookieJar):
-    """A cookilib.CookiJar modified to inject and read cookie headers from
+    """A cookielib.CookieJar modified to inject and read cookie headers from
     and to wsgi environments, and wsgi application responses.
     """
 
@@ -196,7 +196,7 @@ class Client(object):
         as dict with those keys and values.  They can be specified for the
         `data` argument.
 
-        Additionally you can instanciate the
+        Additionally you can instantiate the
         :class:`~werkzeug.test.File` object (or a subclass of it)
         and pass it as value.
 
