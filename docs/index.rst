@@ -17,6 +17,7 @@ should start here.
    installation
    tutorial
    levels
+   quickstart
 
 Serving and Testing
 -------------------

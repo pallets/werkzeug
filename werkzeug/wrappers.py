@@ -23,12 +23,12 @@
 import tempfile
 import urlparse
 from datetime import datetime, timedelta
-from werkzeug.http import HTTP_STATUS_CODES, Accept, CacheControl, \
+from werkzeug.http import HTTP_STATUS_CODES, CacheControl, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     MIMEAccept, CharsetAccept, default_stream_factory
+     MIMEAccept, CharsetAccept, LanguageAccept, default_stream_factory
 from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
      Headers, EnvironHeaders, cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
@@ -743,8 +743,14 @@ class AcceptMixin(object):
 
     @cached_property
     def accept_languages(self):
-        """List of languages this client accepts."""
-        return parse_accept_header(self.environ.get('HTTP_ACCEPT_LANGUAGE'))
+        """List of languages this client accepts as :class:`LanguageAccept`
+        object.
+
+        .. versionchanged 0.5
+           In previous versions this was a regualr :class:`Accept` object.
+        """
+        return parse_accept_header(self.environ.get('HTTP_ACCEPT_LANGUAGE'),
+                                   LanguageAccept)
 
 
 class ETagRequestMixin(object):

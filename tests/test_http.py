@@ -42,6 +42,16 @@ def test_charset_accept():
     assert a['ebcdic'] == 0.7
 
 
+def test_language_accept():
+    """Language accept header parsing and behavior"""
+    a = parse_accept_header('de-AT,de;q=0.8,en;q=0.5', LanguageAccept)
+    assert a.best == 'de-AT'
+    assert 'de_AT' in a
+    assert 'en' in a
+    assert a['de-at'] == 1
+    assert a['en'] == 0.5
+
+
 def test_set_header():
     """Set header parsing and behavior"""
     hs = parse_set_header('foo, Bar, "Blah baz", Hehe')

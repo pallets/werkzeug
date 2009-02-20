@@ -154,16 +154,16 @@ def test_accept_mixin():
         'HTTP_ACCEPT_ENCODING': 'gzip,deflate',
         'HTTP_ACCEPT_LANGUAGE': 'en-us,en;q=0.5'
     })
-    assert request.accept_mimetypes == Accept([
+    assert request.accept_mimetypes == CharsetAccept([
         ('text/xml', 1), ('image/png', 1), ('application/xml', 1),
         ('application/xhtml+xml', 1), ('text/html', 0.9),
         ('text/plain', 0.8), ('*/*', 0.5)
     ])
-    assert request.accept_charsets == Accept([
+    assert request.accept_charsets == CharsetAccept([
         ('ISO-8859-1', 1), ('utf-8', 0.7), ('*', 0.7)
     ])
-    assert request.accept_encodings == Accept([('gzip', 1), ('deflate', 1)])
-    assert request.accept_languages == Accept([('en-us', 1), ('en', 0.5)])
+    assert request.accept_encodings == CharsetAccept([('gzip', 1), ('deflate', 1)])
+    assert request.accept_languages == CharsetAccept([('en-us', 1), ('en', 0.5)])
 
 
 def test_etag_request_mixin():

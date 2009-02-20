@@ -36,6 +36,7 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _multipart_boundary_re = re.compile('^[ -~]{0,200}[!-~]$')
+_locale_delim_re = re.compile(r'[_-]')
 
 _entity_headers = frozenset([
     'allow', 'content-encoding', 'content-language', 'content-length',
@@ -56,6 +57,27 @@ _supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 class Accept(list):
     """An :class:`Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by quality.
+
+    All :class:`Accept` objects work similar to a list but provide extra
+    functionality for working with the data.  Containment checks are
+    normalized to the rules of that header:
+
+    >>> a = CharsetAccept([('ISO-8859-1', 1), ('utf-8', 0.7)])
+    >>> a.best
+    'ISO-8859-1'
+    >>> 'iso-8859-1' in a
+    True
+    >>> 'UTF8' in a
+    True
+    >>> 'utf7' in a
+    False
+
+    To get the quality for an item you can use normal item lookup:
+
+    >>> print a['utf-8']
+    0.7
+    >>> a['utf7']
+    0
     """
 
     def __init__(self, values=()):
@@ -182,6 +204,15 @@ class MIMEAccept(Accept):
             'application/xhtml+xml' in self or
             'application/xml' in self
         )
+
+
+class LanguageAccept(Accept):
+    """Like :class:`Accept` but with normalization for languages."""
+
+    def _value_matches(self, value, item):
+        def _normalize(language):
+            return _locale_delim_re.split(language.lower())
+        return item == '*' or _normalize(value) == _normalize(item)
 
 
 class CharsetAccept(Accept):

@@ -53,6 +53,8 @@ Data Structures
 
 .. autoclass:: CharsetAccept
 
+.. autoclass:: LanguageAccept
+
 .. autoclass:: CacheControl
    :members:
 

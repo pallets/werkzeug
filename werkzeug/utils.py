@@ -2318,7 +2318,7 @@ def create_environ(path='/', base_url=None, query_string=None, method='GET',
 
     return {
         'REQUEST_METHOD':       method,
-        'SCRIPT_NAME':          script_name,
+        'SCRIPT_NAME':          script_name.rstrip('/'),
         'PATH_INFO':            path,
         'QUERY_STRING':         query_string,
         'SERVER_NAME':          server_name,

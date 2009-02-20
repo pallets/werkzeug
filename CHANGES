@@ -36,6 +36,7 @@ Version 0.5
 - all form data parsing functions as well as the :class:`BaseRequest`
   object have parameters (or attributes) to limit the number of
   incoming bytes (either totally or per field).
+- added :class:`LanguageAccept`
 
 Version 0.4.1
 -------------

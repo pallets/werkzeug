@@ -349,7 +349,7 @@ def test_create_environ():
         'wsgi.errors':          sys.stderr,
         'wsgi.multithread':     False,
         'wsgi.url_scheme':      'http',
-        'SCRIPT_NAME':          '/',
+        'SCRIPT_NAME':          '',
         'CONTENT_TYPE':         '',
         'CONTENT_LENGTH':       '0',
         'SERVER_NAME':          'example.org',
@@ -363,6 +363,8 @@ def test_create_environ():
     for key, value in expected.iteritems():
         assert env[key] == value
     assert env['wsgi.input'].read(0) == ''
+
+    assert create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'] == ''
 
 
 def test_shared_data_middleware():

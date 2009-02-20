@@ -57,7 +57,7 @@ all_by_module = {
                              'remove_entity_headers', 'is_entity_header',
                              'remove_hop_by_hop_headers', 'parse_options_header',
                              'dump_options_header', 'is_hop_by_hop_header',
-                             'unquote_header_value',
+                             'unquote_header_value', 'LanguageAccept',
                              'quote_header_value', 'HTTP_STATUS_CODES'],
     'werkzeug.wrappers':    ['BaseResponse', 'BaseRequest', 'Request',
                              'Response', 'AcceptMixin', 'ETagRequestMixin',
