@@ -62,6 +62,7 @@ Version 0.4.1
 - Fixed UnboundLocalError in `create_environ` (#351)
 - `Headers` is more compatible with wsgiref now.
 - `Template.render` accepts multidicts now.
+- dropped support for Python 2.3
 
 Version 0.4
 -----------

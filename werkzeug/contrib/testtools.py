@@ -54,7 +54,10 @@ class ContentAccessors(object):
         """Get the result of simplejson.loads if possible."""
         if 'json' not in self.mimetype:
             raise AttributeError('Not a JSON response')
-        from simplejson import loads
+        try:
+            from simplejson import loads
+        except:
+            from json import loads
         return loads(self.data)
     json = cached_property(json)
 

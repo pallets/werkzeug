@@ -170,7 +170,8 @@ class IterI(IterIO):
 class IterO(IterIO):
     """Iter output.  Wrap an iterator and give it a stream like interface."""
 
-    __new__ = object.__new__
+    def __new__(cls, gen):
+        return object.__new__(cls)
 
     def __init__(self, gen):
         self._gen = gen
