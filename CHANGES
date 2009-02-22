@@ -39,6 +39,7 @@ Version 0.5
   incoming bytes (either totally or per field).
 - added :class:`LanguageAccept`
 - request objects are now enforced to be read only for all collections.
+- added many new collection classes, refactored collections in general.
 
 Version 0.4.1
 -------------
