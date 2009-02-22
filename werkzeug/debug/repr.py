@@ -48,7 +48,7 @@ def dump(obj=missing):
 
 class _Helper(object):
     """Displays an HTML version of the normal help, for the interactive
-    debugger only because it requirse a patched sys.stdout.
+    debugger only because it requires a patched sys.stdout.
     """
 
     def __call__(self, topic=None):

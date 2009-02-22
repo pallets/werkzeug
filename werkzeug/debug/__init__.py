@@ -39,7 +39,7 @@ class DebuggedApplication(object):
 
     :param app: the WSGI application to run debugged.
     :param evalex: enable exception evaluation feature (interactive
-                   debugging).  This requires a non forking server.
+                   debugging).  This requires a non-forking server.
     :param request_key: The key that points to the request object in ths
                         environment.  This parameter is ignored in current
                         versions.
@@ -95,8 +95,8 @@ class DebuggedApplication(object):
                 # more, better log something into the error log and fall
                 # back gracefully.
                 environ['wsgi.errors'].write(
-                    'Debugging middlware catched exception in streamed '
-                    'reponse a point where response headers were already '
+                    'Debugging middleware catched exception in streamed '
+                    'response at a point where response headers were already '
                     'sent.\n')
             else:
                 yield traceback.render_full(evalex=self.evalex) \
