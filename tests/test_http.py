@@ -10,7 +10,7 @@ from datetime import datetime
 from nose.tools import assert_raises
 
 from werkzeug.http import *
-from werkzeug.utils import http_date, Headers
+from werkzeug.utils import http_date
 
 
 def test_accept():

@@ -31,6 +31,9 @@ API Changes
         provide default values for each of them.
     -   :func:`url_decode` no longer supports both `&` and `;` as
         separator.  This has to be specified explicitly now.
+    -   The request object is now enforced to be read-only for all
+        attributes.  If your code relies on modifications of some values
+        makes sure to create copies of them using the mutable counterparts!
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.

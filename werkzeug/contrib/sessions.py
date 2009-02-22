@@ -141,10 +141,10 @@ class Session(ModificationTrackingDict):
             self.should_save and '*' or ''
         )
 
+    @property
     def should_save(self):
         """True if the session should be saved."""
         return self.modified or self.new
-    should_save = property(should_save)
 
 
 class SessionStore(object):

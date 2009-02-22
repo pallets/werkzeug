@@ -29,12 +29,13 @@ from werkzeug.http import HTTP_STATUS_CODES, CacheControl, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
      MIMEAccept, CharsetAccept, LanguageAccept, default_stream_factory
-from werkzeug.utils import MultiDict, CombinedMultiDict, FileStorage, \
-     Headers, EnvironHeaders, cached_property, environ_property, \
+from werkzeug.utils import cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, parse_form_data, get_content_type, url_decode, \
-     pop_path_info, peek_path_info
+     header_property, parse_form_data, get_content_type, url_decode
+from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
+     EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
+     ImmutableList
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper
 
@@ -59,9 +60,9 @@ class BaseRequest(object):
         class Request(BaseRequest, ETagRequestMixin):
             pass
 
-    Request objects should be considered *read only*.  Even though the object
-    doesn't enforce read only access everywhere you should never modify any
-    data on the object itself unless you know exactly what you are doing.
+    Request objects are **read only**.  As of 0.5 modifications are not
+    allowed in any place.  Unlike the lower level parsing functions the
+    request object will use immutable objects everywhere possible.
 
     Per default the request object will assume all the text data is `utf-8`
     encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
@@ -78,6 +79,10 @@ class BaseRequest(object):
     is useful for middlewares where you don't want to consume the form
     data by accident.  A shallow request is not populated to the WSGI
     environment.
+
+    .. versionchanged:: 0.5
+       read-only mode was enforced by using immutables classes for all
+       data.
     """
 
     #: the charset for the request, defaults to utf-8
@@ -211,9 +216,10 @@ class BaseRequest(object):
             data = parse_form_data(self.environ, self._get_file_stream,
                                    self.charset, self.encoding_errors,
                                    self.max_form_memory_size,
-                                   self.max_content_length)
+                                   self.max_content_length,
+                                   dict_class=ImmutableMultiDict)
         else:
-            data = (_empty_stream, MultiDict(), MultiDict())
+            data = (_empty_stream, ImmutableMultiDict(), ImmutableMultiDict())
         self._data_stream, self._form, self._files = data
 
     @property
@@ -236,7 +242,8 @@ class BaseRequest(object):
     def args(self):
         """The parsed URL parameters as :class:`MultiDict`."""
         return url_decode(self.environ.get('QUERY_STRING', ''), self.charset,
-                          errors=self.encoding_errors)
+                          errors=self.encoding_errors,
+                          dict_class=ImmutableMultiDict)
 
     @cached_property
     def data(self):
@@ -284,7 +291,8 @@ class BaseRequest(object):
     @cached_property
     def cookies(self):
         """The retrieved cookie values as regular dictionary."""
-        return parse_cookie(self.environ, self.charset)
+        return parse_cookie(self.environ, self.charset,
+                            dict_class=ImmutableTypeConversionDict)
 
     @cached_property
     def headers(self):
@@ -345,10 +353,10 @@ class BaseRequest(object):
         """
         if 'HTTP_X_FORWARDED_FOR' in self.environ:
             addr = self.environ['HTTP_X_FORWARDED_FOR'].split(',')
-            return [x.strip() for x in addr]
+            return ImmutableList([x.strip() for x in addr])
         elif 'REMOTE_ADDR' in self.environ:
-            return [self.environ['REMOTE_ADDR']]
-        return []
+            return ImmutableList([self.environ['REMOTE_ADDR']])
+        return ImmutableList()
 
     @property
     def remote_addr(self):
@@ -380,32 +388,6 @@ class BaseRequest(object):
         boolean that is `True` if the application will be executed only
         once in a process lifetime.  This is the case for CGI for example,
         but it's not guaranteed that the exeuction only happens one time.''')
-
-    def pop_path_info(self):
-        """Works like :func:`pop_path_info` but updates :attr:`script_name`
-        and :attr:`path_info` which are per-se read-only attributes.
-
-        .. versionadded:: 0.5
-        """
-        if self.shallow:
-            raise RuntimeError('A shallow request tried to modify the WSGI '
-                               'environment.  If you really want to do that, '
-                               'set `shallow` to False.')
-        rv = pop_path_info(self.environ)
-        cached_property.refresh(self, ['script_root', 'path'])
-        if rv is not None:
-            rv = _decode_unicode(rv, self.charset, self.encoding_errors)
-        return rv
-
-    def peek_path_info(self):
-        """Works like :func:`peek_path_info`.
-
-        .. versionadded:: 0.5
-        """
-        rv = peek_path_info(self.environ)
-        if rv is not None:
-            rv = _decode_unicode(rv, self.charset, self.encoding_errors)
-        return rv
 
 
 class BaseResponse(object):

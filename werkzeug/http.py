@@ -917,7 +917,7 @@ def parse_options_header(value):
     return name, extra
 
 
-def parse_accept_header(value, cls=Accept):
+def parse_accept_header(value, accept_class=None):
     """Parses an HTTP Accept-* header.  This does not implement a complete
     valid algorithm but one that supports at least value and quality
     extraction.
@@ -929,12 +929,16 @@ def parse_accept_header(value, cls=Accept):
     with the parsed values and returned.
 
     :param value: the accept header string to be parsed.
-    :param cls: the wrapper class for the return value (can be
-                :class:`Accept` or a subclass thereof)
+    :param accept_class: the wrapper class for the return value (can be
+                         :class:`Accept` or a subclass thereof)
     :return: an instance of `cls`.
     """
+    if accept_class is None:
+        accept_class = Accept
+
     if not value:
-        return cls(None)
+        return accept_class(None)
+
     result = []
     for match in _accept_re.finditer(value):
         quality = match.group(2)
@@ -943,7 +947,7 @@ def parse_accept_header(value, cls=Accept):
         else:
             quality = max(min(float(quality), 1), 0)
         result.append((match.group(1), quality))
-    return cls(result)
+    return accept_class(result)
 
 
 def parse_cache_control_header(value, on_update=None):
@@ -1383,7 +1387,8 @@ def is_valid_multipart_boundary(boundary):
 
 
 # circular dependency fun
-from werkzeug.utils import LimitedStream, FileStorage, Headers
+from werkzeug.utils import LimitedStream, FileStorage
+from werkzeug.datastructures import Headers
 
 
 class _ChunkIter(LimitedStream):

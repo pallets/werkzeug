@@ -87,6 +87,12 @@ class _Missing(object):
 _missing = _Missing()
 
 
+def _proxy_repr(cls):
+    def proxy_repr(self):
+        return '%s(%s)' % (self.__class__.__name__, cls.__repr__(self))
+    return proxy_repr
+
+
 def _log(type, message, *args, **kwargs):
     """Log into the internal werkzeug logger."""
     global _logger

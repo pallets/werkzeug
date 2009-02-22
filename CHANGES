@@ -38,6 +38,7 @@ Version 0.5
   object have parameters (or attributes) to limit the number of
   incoming bytes (either totally or per field).
 - added :class:`LanguageAccept`
+- request objects are now enforced to be read only for all collections.
 
 Version 0.4.1
 -------------

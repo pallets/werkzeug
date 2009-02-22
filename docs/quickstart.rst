@@ -302,7 +302,7 @@ If headers appear multiple times you can use the :meth:`~Headers.getlist`
 method to get all values for a header:
 
 >>> response.headers.getlist('Set-Cookie')
-['name=value; Path=/', 'name2=value2; Path=/']
+ImmutableList(['name=value; Path=/', 'name2=value2; Path=/'])
 
 Finally if you have set all the conditional values you can make the
 response conditional against a requset.  Which means that if the request

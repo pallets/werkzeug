@@ -43,6 +43,7 @@ Reference
    routing
    local
    utils
+   datastructures
    templates
    exceptions
 
