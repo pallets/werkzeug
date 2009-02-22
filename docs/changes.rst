@@ -34,6 +34,9 @@ API Changes
     -   The request object is now enforced to be read-only for all
         attributes.  If your code relies on modifications of some values
         makes sure to create copies of them using the mutable counterparts!
+    -   `CacheControl` was splitted up into :class:`RequestCacheControl`
+        and :class:`ResponseCacheControl`, the former being immutable.
+        The old class will go away in 0.6
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.

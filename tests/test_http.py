@@ -11,6 +11,7 @@ from nose.tools import assert_raises
 
 from werkzeug.http import *
 from werkzeug.utils import http_date
+from werkzeug.datastructures import *
 
 
 def test_accept():
@@ -20,6 +21,7 @@ def test_accept():
     assert a.best == 'en-us'
     assert a.find('ru') == 1
     assert_raises(IndexError, lambda: a.index('de'))
+    assert a.to_header() == 'en-us,ru;q=0.5'
 
 
 def test_mime_accept():
@@ -80,11 +82,12 @@ def test_cache_control_header():
     cc = parse_cache_control_header('max-age=0, no-cache')
     assert cc.max_age == 0
     assert cc.no_cache
-    cc = parse_cache_control_header('private, community="UCI"')
+    cc = parse_cache_control_header('private, community="UCI"', None,
+                                    ResponseCacheControl)
     assert cc.private
     assert cc['community'] == 'UCI'
 
-    c = CacheControl()
+    c = ResponseCacheControl()
     assert c.no_cache is None
     assert c.private is None
     c.no_cache = True

@@ -23,19 +23,20 @@
 import tempfile
 import urlparse
 from datetime import datetime, timedelta
-from werkzeug.http import HTTP_STATUS_CODES, CacheControl, \
+from werkzeug.http import HTTP_STATUS_CODES, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     MIMEAccept, CharsetAccept, LanguageAccept, default_stream_factory
+     default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
      header_property, parse_form_data, get_content_type, url_decode
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
-     ImmutableList
+     ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
+     ResponseCacheControl, RequestCacheControl
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper
 
@@ -696,7 +697,7 @@ class BaseResponse(object):
 
 class AcceptMixin(object):
     """A mixin for classes with an :attr:`~BaseResponse.environ` attribute to
-    get and all the HTTP accept headers as :class:`Accept` objects (or subclasses
+    get all the HTTP accept headers as :class:`Accept` objects (or subclasses
     thereof).
     """
 
@@ -743,11 +744,12 @@ class ETagRequestMixin(object):
 
     @cached_property
     def cache_control(self):
-        """A :class:`CacheControl` object for the incoming cache control
+        """A :class:`RequestCacheControl` object for the incoming cache control
         headers.
         """
         cache_control = self.environ.get('HTTP_CACHE_CONTROL')
-        return parse_cache_control_header(cache_control)
+        return parse_cache_control_header(cache_control, None,
+                                          RequestCacheControl)
 
     @cached_property
     def if_match(self):
@@ -818,7 +820,8 @@ class ETagResponseMixin(object):
             elif cache_control:
                 self.headers['Cache-Control'] = cache_control.to_header()
         return parse_cache_control_header(self.headers.get('cache-control'),
-                                          on_update)
+                                          on_update,
+                                          ResponseCacheControl)
 
     def make_conditional(self, request_or_environ):
         """Make the response conditional to the request.  This method works

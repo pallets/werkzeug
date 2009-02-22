@@ -169,13 +169,13 @@ def test_accept_mixin():
 def test_etag_request_mixin():
     """ETag request-wrapper mixin"""
     request = Request({
-        'HTTP_CACHE_CONTROL':       'private, no-cache',
+        'HTTP_CACHE_CONTROL':       'no-store, no-cache',
         'HTTP_IF_MATCH':            'w/"foo", bar, "baz"',
         'HTTP_IF_NONE_MATCH':       'w/"foo", bar, "baz"',
         'HTTP_IF_MODIFIED_SINCE':   'Tue, 22 Jan 2008 11:18:44 GMT',
         'HTTP_IF_UNMODIFIED_SINCE': 'Tue, 22 Jan 2008 11:18:44 GMT'
     })
-    assert request.cache_control.private
+    assert request.cache_control.no_store
     assert request.cache_control.no_cache
 
     for etags in request.if_match, request.if_none_match:

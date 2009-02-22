@@ -51,8 +51,27 @@ HTTP Related
 
 .. autoclass:: LanguageAccept
 
-.. autoclass:: CacheControl
+.. autoclass:: RequestCacheControl
    :members:
+
+   .. autoattribute:: no_cache
+
+   .. autoattribute:: no_store
+
+   .. autoattribute:: max_age
+
+   .. autoattribute:: no_transform
+
+.. autoclass:: ResponseCacheControl
+   :members:
+
+   .. autoattribute:: no_cache
+
+   .. autoattribute:: no_store
+
+   .. autoattribute:: max_age
+
+   .. autoattribute:: no_transform
 
 .. autoclass:: UserAgent
    :members:

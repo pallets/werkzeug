@@ -92,11 +92,25 @@ class UserAgent(object):
     string and you can inspect some of the details from the user agent
     string via the attributes.  The following attributes exist:
 
-    -   `string`, the raw user agent string
-    -   `platform`, the browser platform
-    -   `browser`, the name of the browser
-    -   `version`, the version of the browser
-    -   `language`, the language of the browser
+    .. attribute:: string
+
+       the raw user agent string
+
+    .. attribute:: platform
+
+       the browser platform
+
+    .. attribute:: browser
+
+        the name of the browser
+
+    .. attribute:: version
+
+        the version of the browser
+
+    .. attribute:: language
+
+        the language of the browser
     """
     _parser = UserAgentParser()
 

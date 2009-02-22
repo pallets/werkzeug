@@ -316,31 +316,6 @@ class _DictAccessorProperty(object):
         )
 
 
-class _UpdateDict(dict):
-    """A dict that calls `on_update` on modifications."""
-
-    def __init__(self, data, on_update):
-        dict.__init__(self, data)
-        self.on_update = on_update
-
-    def calls_update(f):
-        def oncall(self, *args, **kw):
-            rv = f(self, *args, **kw)
-            if self.on_update is not None:
-                self.on_update(self)
-            return rv
-        return _patch_wrapper(f, oncall)
-
-    __setitem__ = calls_update(dict.__setitem__)
-    __delitem__ = calls_update(dict.__delitem__)
-    clear = calls_update(dict.clear)
-    pop = calls_update(dict.pop)
-    popitem = calls_update(dict.popitem)
-    setdefault = calls_update(dict.setdefault)
-    update = calls_update(dict.update)
-
-
-
 def _easteregg(app):
     """Like the name says.  But who knows how it works?"""
     gyver = '\n'.join([x + (77 - len(x)) * ' ' for x in '''
