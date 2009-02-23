@@ -12,6 +12,7 @@ import sys
 import urlparse
 from time import time
 from random import random
+from itertools import chain
 from tempfile import TemporaryFile
 from cStringIO import StringIO
 from cookielib import CookieJar
@@ -21,7 +22,7 @@ from urllib2 import Request as U2Request
 from werkzeug._internal import _empty_stream
 from werkzeug.wrappers import BaseRequest
 from werkzeug.utils import create_environ, run_wsgi_app, get_current_url, \
-     url_encode, url_decode
+     url_encode, url_decode, FileStorage
 from werkzeug.datastructures import FileMultiDict, MultiDict, CombinedMultiDict, Headers
 
 
@@ -80,7 +81,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     value = value.encode(charset)
                 write('\r\n\r\n' + value)
             write('\r\n')
-        write('--%s--\r\n' % boundary)
+    write('--%s--\r\n' % boundary)
 
     _closure[0].seek(0)
     return _closure[0], _closure[1], boundary
@@ -98,7 +99,6 @@ def encode_multipart(values, boundary=None, charset='utf-8'):
 def File(fd, filename=None, mimetype=None):
     """Backwards compat."""
     from warnings import warn
-    from werkzeug.utils import FileStorage
     warn(DeprecationWarning('werkzeug.test.File is deprecated, use the '
                             'EnvironBuilder or FileStorage instead'))
     return FileStorage(fd, filename=filename, content_type=mimetype)
@@ -156,9 +156,78 @@ class _TestCookieJar(CookieJar):
         )
 
 
+def _iter_data(data):
+    """Iterates over a dict or multidict yielding all keys and values.
+    This is used to iterate over the data passed to the
+    :class:`EnvironBuilder`.
+    """
+    if isinstance(data, MultiDict):
+        for key, values in data.iterlists():
+            for value in values:
+                yield key, value
+    else:
+        for item in data.iteritems():
+            yield item
+
+
 class EnvironBuilder(object):
     """This class can be used to conveniently create a WSGI environment
-    for testing purposes.
+    for testing purposes.  It can be used to quickly create WSGI environments
+    or request objects from arbitrary data.
+
+    The signature of this class is also used in some other places as of
+    Werkzeug 0.5 (:func:`create_environ`, :meth:`BaseResponse.from_values`,
+    :meth:`Client.open`).  Because of this most of the functionality is
+    available through the constructor alone.
+
+    Files and regular form data can be manipulated independently of each
+    other with the :attr:`form` and :attr:`files` attributes, but are
+    passed with the same argument to the constructor: `data`.
+
+    `data` can be any of these values:
+
+    -   a `str`: If it's a string it is converted into a :attr:`input_stream`,
+        the :attr:`content_length` is set and you have to provide a
+        :attr:`content_type`.
+    -   a `dict`: If it's a dict the keys have to be strings and the values
+        and of the following objects:
+
+        -   a :class:`file`-like object.  These are converted into
+            :class:`FileStorage` objects automatically.
+        -   a tuple.  The :meth:`~FileMultiDict.add_file` method is called
+            with the tuple items as positional arguments.
+        -   a dict.  The :meth:`~FileMultiDict.add_file` method is called
+            with the dict as keyword arguments.
+
+    :param path: the path of the request.  In the WSGI environment this will
+                 end up as `PATH_INFO`.  If the `query_string` is not defined
+                 and there is a question mark in the `path` everything after
+                 it is used as query string.
+    :param base_url: the base URL is a URL that is used to extract the WSGI
+                     URL scheme, host (server name + server port) and the
+                     script root (`SCRIPT_NAME`).
+    :param query_string: an optional string or dict with URL parameters.
+    :param method: the HTTP method to use, defaults to `GET`.
+    :param input_stream: an optional input stream.  Do not specify this and
+                         `data`.  As soon as an input stream is set you can't
+                         modify :attr:`args` and :attr:`files` unless you
+                         set the :attr:`input_stream` to `None` again.
+    :param content_type: The content type for the request.  As of 0.5 you
+                         don't have to provide this when specifying files
+                         and form data via `data`.
+    :param content_length: The content length for the request.  You don't
+                           have to specify this when providing data via
+                           `data`.
+    :param errors_stream: an optional error stream that is used for
+                          `wsgi.errors`.  Defaults to :data:`stderr`.
+    :param multithread: controls `wsgi.multithread`.  Defaults to `False`.
+    :param multiprocess: controls `wsgi.multiprocess`.  Defaults to `False`.
+    :param run_once: controls `wsgi.run_once`.  Defaults to `False`.
+    :param headers: an optional list or :class:`Headers` object of headers.
+    :param data: a string or dict of form data.  See explanation above.
+    :param environ_base: an optional dict of environment defaults.
+    :param environ_overrides: an optional dict of environment overrides.
+    :param charset: the charset used to encode unicode data.
     """
 
     server_protocol = 'HTTP/1.0'
@@ -180,14 +249,18 @@ class EnvironBuilder(object):
         else:
             if query_string is None:
                 query_string = MultiDict()
+            elif not isinstance(query_string, MultiDict):
+                query_string = MultiDict(query_string)
             self.args = query_string
         self.method = method
         if headers is None:
             headers = Headers()
-        else:
+        elif not isinstance(headers, Headers):
             headers = Headers(headers)
         self.headers = headers
         self.content_type = content_type
+        if errors_stream is None:
+            errors_stream = sys.stderr
         self.errors_stream = errors_stream
         self.multithread = multithread
         self.multiprocess = multiprocess
@@ -199,10 +272,12 @@ class EnvironBuilder(object):
         if data:
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
-            if not isinstance(data, MultiDict):
-                data = MultiDict(data)
-            for key, values in data.iterlists():
-                for value in values:
+            if isinstance(data, basestring):
+                self.input_stream = StringIO(data)
+                if self.content_length is None:
+                    self.content_length = len(data)
+            else:
+                for key, value in _iter_data(data):
                     if isinstance(value, (tuple, dict)) or \
                        hasattr(value, 'read'):
                         self._add_file_from_data(key, value)
@@ -250,9 +325,9 @@ class EnvironBuilder(object):
 
     def _get_content_type(self):
         ct = self.headers.get('Content-Type')
-        if ct is None:
+        if ct is None and not self._input_stream:
             if self.method in ('POST', 'PUT'):
-                if self.files:
+                if self._files:
                     return 'multipart/form-data'
                 return 'application/x-www-form-urlencoded'
             return None
@@ -395,10 +470,15 @@ class EnvironBuilder(object):
         if self.environ_base:
             result.update(self.environ_base)
 
+        def _encode(x):
+            if isinstance(x, unicode):
+                return x.encode(self.charset)
+            return x
+
         result.update({
             'REQUEST_METHOD':       self.method,
-            'SCRIPT_NAME':          self.script_root,
-            'PATH_INFO':            self.path,
+            'SCRIPT_NAME':          _encode(self.script_root),
+            'PATH_INFO':            _encode(self.path),
             'QUERY_STRING':         self.query_string,
             'SERVER_NAME':          self.server_name,
             'SERVER_PORT':          str(self.server_port),
@@ -409,7 +489,7 @@ class EnvironBuilder(object):
             'wsgi.version':         self.wsgi_version,
             'wsgi.url_scheme':      self.url_scheme,
             'wsgi.input':           input_stream,
-            'wsgi.errors':          self.errors_stream or sys.stderr,
+            'wsgi.errors':          self.errors_stream,
             'wsgi.multithread':     self.multithread,
             'wsgi.multiprocess':    self.multiprocess,
             'wsgi.run_once':        self.run_once
@@ -458,94 +538,30 @@ class Client(object):
         """Takes the same arguments as the :class:`EnvironBuilder` class with
         some additions.
 
-        The first parameter should be the path of the request which defaults to
-        '/'.  The second one can either be a absolute path (in that case the url
-        host is localhost:80) or a full path to the request with scheme,
-        netloc port and the path to the script.
+        .. versionchanged:: 0.5
+           If a dict is provided as file in the dict for the `data` parameter
+           the content type has to be called `content_type` now instead of
+           `mimetype`.  This change was made for consistency with
+           :class:`werkzeug.FileWrapper`.
 
-        If the `path` contains a query string it will be used, even if the
-        `query_string` parameter was given.  If it does not contain one
-        the `query_string` parameter is used as querystring.  In that case
-        it can either be a dict, :class:`MultiDict` or string.
+        Additional parameters:
 
-        A file object for this method is either a file descriptor with an
-        additional `name` attribute (like a file descriptor returned by the
-        `open` / `file` function), a tuple in the form
-        ``(fd, filename, mimetype)`` (all arguments except fd optional) or
-        as dict with those keys and values.  They can be specified for the
-        `data` argument.
-
-        :param method: The request method.
-        :param input_stream: The input stream.  Defaults to an empty stream.
-        :param data: The data you want to transmit.  You can set this to a
-                     string and define a content type instead of specifying an
-                     input stream.  Additionally you can pass a dict with the
-                     form data.  The values could then be strings (no unicode
-                     objects!) which are then URL encoded or file objects.
-        :param content_type: The content type for this request.  Default is
-                             an empty content type.
-        :param content_length: the value for the content length header.
-        :param errors_stream: the wsgi.errors stream.  Defaults to
-                              `sys.stderr`.
-        :param multithread: the multithreaded flag for the WSGI environment.
-        :param multiprocess: the multiprocess flag for the WSGI environment.
-        :param run_once: the run_once flag for the WSGI environment.
+        :param as_tuple: Returns a tuple in the form ``(environ, result)``
         :param buffered: set this to true to buffer the application run.
                          This will automatically close the application for
                          you as well.
         """
+        as_tuple = kwargs.pop('as_tuple', False)
+        buffered = kwargs.pop('buffered', False)
+        environ = None
         if not kwargs and len(args) == 1:
             if isinstance(args[0], EnvironBuilder):
-                return self._open_environ(args[0].get_environ())
+                environ = args[0].get_environ()
             elif isinstance(args[0], dict):
-                return self._open_environ(args[0])
-        return self._open(*args, **kwargs)
+                environ = args[0]
+        if environ is None:
+            environ = EnvironBuilder(*args, **kwargs).get_environ()
 
-    def _open(self, path='/', base_url=None, query_string=None, method='GET',
-             data=None, input_stream=None, content_type=None,
-             content_length=0, errors_stream=None, multithread=False,
-             multiprocess=False, run_once=False, environ_overrides=None,
-             as_tuple=False, buffered=False):
-        if input_stream is None and data is not None and method in ('PUT', 'POST'):
-            need_multipart = False
-            if isinstance(data, basestring):
-                assert content_type is not None, 'content type required'
-            else:
-                for key, value in data.iteritems():
-                    if isinstance(value, basestring):
-                        if isinstance(value, unicode):
-                            data[key] = str(value)
-                        continue
-                    need_multipart = True
-                    if isinstance(value, tuple):
-                        data[key] = File(*value)
-                    elif isinstance(value, dict):
-                        data[key] = File(**value)
-                    elif not isinstance(value, File):
-                        data[key] = File(value)
-                if need_multipart:
-                    boundary, data = encode_multipart(data)
-                    if content_type is None:
-                        content_type = 'multipart/form-data; boundary="%s"' % \
-                            boundary
-                else:
-                    data = urlencode(data)
-                    if content_type is None:
-                        content_type = 'application/x-www-form-urlencoded'
-            content_length = len(data)
-            input_stream = StringIO(data)
-
-        if hasattr(path, 'environ'):
-            environ = path.environ
-        elif isinstance(path, dict):
-            environ = path
-        else:
-            environ = create_environ(path, base_url, query_string, method,
-                                     input_stream, content_type, content_length,
-                                     errors_stream, multithread,
-                                     multiprocess, run_once)
-        if environ_overrides:
-            environ.update(environ_overrides)
         if self.cookie_jar is not None:
             self.cookie_jar.inject_wsgi(environ)
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
@@ -604,3 +620,57 @@ def create_environ(*args, **kwargs):
        and `charset` parameters were added.
     """
     return EnvironBuilder(*args, **kwargs).get_environ()
+
+
+def run_wsgi_app(app, environ, buffered=False):
+    """Return a tuple in the form (app_iter, status, headers) of the
+    application output.  This works best if you pass it an application that
+    returns an iterator all the time.
+
+    Sometimes applications may use the `write()` callable returned
+    by the `start_response` function.  This tries to resolve such edge
+    cases automatically.  But if you don't get the expected output you
+    should set `buffered` to `True` which enforces buffering.
+
+    If passed an invalid WSGI application the behavior of this function is
+    undefined.  Never pass non-conforming WSGI applications to this function.
+
+    :param app: the application to execute.
+    :param buffered: set to `True` to enforce buffering.
+    :return:
+    """
+    response = []
+    buffer = []
+
+    def start_response(status, headers, exc_info=None):
+        if exc_info is not None:
+            raise exc_info[0], exc_info[1], exc_info[2]
+        response[:] = [status, headers]
+        return buffer.append
+
+    app_iter = app(environ, start_response)
+
+    # when buffering we emit the close call early and conver the
+    # application iterator into a regular list
+    if buffered:
+        close_func = getattr(app_iter, 'close', None)
+        try:
+            app_iter = list(app_iter)
+        finally:
+            if close_func is not None:
+                close_func()
+
+    # otherwise we iterate the application iter until we have
+    # a response, chain the already received data with the already
+    # collected data and wrap it in a new `ClosingIterator` if
+    # we have a close callable.
+    else:
+        while not response:
+            buffer.append(app_iter.next())
+        if buffer:
+            app_iter = chain(buffer, app_iter)
+            close_func = getattr(app_iter, 'close', None)
+            if close_func is not None:
+                app_iter = ClosingIterator(app_iter, close_func)
+
+    return app_iter, response[0], response[1]

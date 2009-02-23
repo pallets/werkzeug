@@ -57,8 +57,78 @@ Or without a wrapper defined:
  '  "http://www.w3.org/TR/html4/loose.dtd">']
 
 
-The Client
-==========
+Environment Building
+====================
+
+.. versionadded:: 0.5
+
+The easiest way to interactively test applications is using the
+:class:`EnvironBuilder`.  It can create both standard WSGI environments
+and request objects.
+
+The following example creates a WSGI environment with one uploaded file
+and a form field:
+
+>>> from werkzeug import EnvironBuilder
+>>> from StringIO import StringIO
+>>> builder = EnvironBuilder(method='POST', data={'foo': 'this is some text',
+...      'file': (StringIO('my file contents'), 'test.txt')})
+>>> env = builder.get_environ()
+
+The resulting environment is a regular WSGI environment that can be used for
+further processing:
+
+>>> from werkzeug import Request
+>>> req = Request(env)
+>>> req.form['foo']
+u'this is some text'
+>>> req.files['file']
+<FileStorage: u'test.txt' ('text/plain')>
+>>> req.files['file'].read()
+'my file contents'
+
+The :class:`EnvironBuilder` figures out the content type automatically if you
+pass a dict to the constructor as `data`.  If you provide a string or an
+input stream you have to do that yourself.
+
+By default it will try to use ``application/x-www-form-urlencoded`` and only
+use ``multipart/form-data`` if files are uploaded:
+
+>>> builder = EnvironBuilder(method='POST', data={'foo': 'bar'})
+>>> builder.content_type
+'application/x-www-form-urlencoded'
+>>> builder.files['foo'] = StringIO('contents')
+>>> builder.content_type
+'multipart/form-data'
+
+If a string is provided as data (or an input stream) you have to specify
+the content type yourself:
+
+>>> builder = EnvironBuilder(method='POST', data='{"json": "this is"}')
+>>> builder.content_type
+>>> builder.content_type = 'application/json'
+
+
+Testing API
+===========
+
+.. autoclass:: EnvironBuilder
+   :members:
 
 .. autoclass:: Client
-   :members: open, get, head, post, put, delete
+
+   .. automethod:: open(options)
+
+   .. automethod:: get(options)
+
+   .. automethod:: post(options)
+
+   .. automethod:: put(options)
+
+   .. automethod:: delete(options)
+
+   .. automethod:: head(options)
+
+.. autofunction:: create_environ([options])
+
+.. autofunction:: run_wsgi_app

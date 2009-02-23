@@ -30,6 +30,9 @@ General Purpose
 
 .. autoclass:: ImmutableList
 
+.. autoclass:: FileMultiDict
+   :members:
+
 HTTP Related
 ============
 

@@ -40,6 +40,12 @@ Version 0.5
 - added :class:`LanguageAccept`
 - request objects are now enforced to be read only for all collections.
 - added many new collection classes, refactored collections in general.
+- test support was refactored, semi-undocumented `werkzeug.test.File`
+  was replaced by :class:`werkzeug.FileStorage`.
+- :class:`EnvironBuilder` was added and unifies the previous distinct
+  :func:`create_environ`, :class:`Client` and
+  :meth:`BaseRequest.from_values`.  They all work the same now which
+  is less confusing.
 
 Version 0.4.1
 -------------

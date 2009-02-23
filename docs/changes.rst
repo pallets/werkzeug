@@ -40,6 +40,8 @@ API Changes
     -   `CacheControl` was splitted up into :class:`RequestCacheControl`
         and :class:`ResponseCacheControl`, the former being immutable.
         The old class will go away in 0.6
+    -   undocumented `werkzeug.test.File` was replaced by
+        :class:`FileWrapper`.
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.

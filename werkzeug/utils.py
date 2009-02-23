@@ -16,7 +16,6 @@ import sys
 import urllib
 import urlparse
 import posixpath
-from itertools import chain
 from time import asctime, gmtime, time
 from datetime import timedelta
 
@@ -1411,60 +1410,6 @@ def find_modules(import_path, include_packages=False, recursive=False):
             yield modname
 
 
-def run_wsgi_app(app, environ, buffered=False):
-    """Return a tuple in the form (app_iter, status, headers) of the
-    application output.  This works best if you pass it an application that
-    returns an iterator all the time.
-
-    Sometimes applications may use the `write()` callable returned
-    by the `start_response` function.  This tries to resolve such edge
-    cases automatically.  But if you don't get the expected output you
-    should set `buffered` to `True` which enforces buffering.
-
-    If passed an invalid WSGI application the behavior of this function is
-    undefined.  Never pass non-conforming WSGI applications to this function.
-
-    :param app: the application to execute.
-    :param buffered: set to `True` to enforce buffering.
-    :return:
-    """
-    response = []
-    buffer = []
-
-    def start_response(status, headers, exc_info=None):
-        if exc_info is not None:
-            raise exc_info[0], exc_info[1], exc_info[2]
-        response[:] = [status, headers]
-        return buffer.append
-
-    app_iter = app(environ, start_response)
-
-    # when buffering we emit the close call early and conver the
-    # application iterator into a regular list
-    if buffered:
-        close_func = getattr(app_iter, 'close', None)
-        try:
-            app_iter = list(app_iter)
-        finally:
-            if close_func is not None:
-                close_func()
-
-    # otherwise we iterate the application iter until we have
-    # a response, chain the already received data with the already
-    # collected data and wrap it in a new `ClosingIterator` if
-    # we have a close callable.
-    else:
-        while not response:
-            buffer.append(app_iter.next())
-        if buffer:
-            app_iter = chain(buffer, app_iter)
-            close_func = getattr(app_iter, 'close', None)
-            if close_func is not None:
-                app_iter = ClosingIterator(app_iter, close_func)
-
-    return app_iter, response[0], response[1]
-
-
 def validate_arguments(func, args, kwargs, drop_extra=True):
     """Check if the function accepts the arguments and keyword arguments.
     Returns a new ``(args, kwargs)`` tuple that can savely be passed to
@@ -1583,3 +1528,8 @@ def create_environ(*args, **kwargs):
     """backward compatibility."""
     from werkzeug.test import create_environ
     return create_environ(*args, **kwargs)
+
+def run_wsgi_app(*args, **kwargs):
+    """backwards compatibility."""
+    from werkzeug.test import run_wsgi_app
+    return run_wsgi_app(*args, **kwargs)

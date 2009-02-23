@@ -32,10 +32,6 @@ WSGI Helpers
 
 .. autofunction:: responder
 
-.. autofunction:: create_environ
-
-.. autofunction:: run_wsgi_app
-
 .. autofunction:: test_app
 
 .. autofunction:: wrap_file

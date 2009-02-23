@@ -1047,11 +1047,13 @@ class FileMultiDict(MultiDict):
     """A special :class:`MultiDict` that has convenience methods to add
     files to it.  This is used for :class:`EnvironBuilder` and generally
     useful for unittesting.
+
+    .. versionadded:: 0.5
     """
 
     def add_file(self, name, file, filename=None, content_type=None):
         """Adds a new file to the dict.  `file` can be a file name or
-        a :class:`file`-like object.
+        a :class:`file`-like or a :class:`FileStorage` object.
 
         :param name: the name of the field.
         :param file: a filename or :class:`file`-like object
@@ -1059,6 +1061,9 @@ class FileMultiDict(MultiDict):
         :param content_type: an optional content type
         """
         from werkzeug.utils import FileStorage
+        if isinstance(file, FileStorage):
+            self[name] = file
+            return
         if isinstance(file, basestring):
             if filename is None:
                 filename = file
