@@ -152,7 +152,11 @@ class BaseRequest(object):
                                     ' consistency with EnvironBuilder'),
                  stacklevel=2)
             kwargs['environ_overrides'] = environ
-        return EnvironBuilder(*args, **kwargs).get_request(cls)
+        builder = EnvironBuilder(*args, **kwargs)
+        try:
+            return builder.get_request(cls)
+        finally:
+            builder.close()
 
     @classmethod
     def application(cls, f):

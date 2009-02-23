@@ -230,8 +230,13 @@ class EnvironBuilder(object):
     :param charset: the charset used to encode unicode data.
     """
 
-    server_protocol = 'HTTP/1.0'
+    #: the server protocol to use.  defaults to HTTP/1.1
+    server_protocol = 'HTTP/1.1'
+
+    #: the wsgi version to use.  defaults to (1, 0)
     wsgi_version = (1, 0)
+
+    #: the default request class for :meth:`get_request`
     request_class = BaseRequest
 
     def __init__(self, path='/', base_url=None, query_string=None,
@@ -320,7 +325,10 @@ class EnvironBuilder(object):
         self.host = netloc
         self.url_scheme = scheme
 
-    base_url = property(_get_base_url, _set_base_url)
+    base_url = property(_get_base_url, _set_base_url, doc='''
+        The base URL is a URL that is used to extract the WSGI
+        URL scheme, host (server name + server port) and the
+        script root (`SCRIPT_NAME`).''')
     del _get_base_url, _set_base_url
 
     def _get_content_type(self):
@@ -339,7 +347,10 @@ class EnvironBuilder(object):
         else:
             self.headers['Content-Type'] = value
 
-    content_type = property(_get_content_type, _set_content_type)
+    content_type = property(_get_content_type, _set_content_type, doc='''
+        The content type for the request.  Reflected from and to the
+        :attr:`headers`.  Do not set if you set :attr:`files` or
+        :attr:`form` for auto detection.''')
     del _get_content_type, _set_content_type
 
     def _get_content_length(self):
@@ -348,10 +359,13 @@ class EnvironBuilder(object):
     def _set_content_length(self, value):
         self.headers['Content-Length'] = str(value)
 
-    content_length = property(_get_content_length, _set_content_length)
+    content_length = property(_get_content_length, _set_content_length, doc='''
+        The content length as integer.  Reflected from and to the
+        :attr:`headers`.  Do not set if you set :attr:`files` or
+        :attr:`form` for auto detection.''')
     del _get_content_length, _set_content_length
 
-    def form_property(name, storage):
+    def form_property(name, storage, doc):
         key = '_' + name
         def getter(self):
             if self._input_stream is not None:
@@ -364,10 +378,14 @@ class EnvironBuilder(object):
         def setter(self, value):
             self._input_stream = None
             setattr(self, key, value)
-        return property(getter, setter)
+        return property(getter, setter, doc)
 
-    form = form_property('form', MultiDict)
-    files = form_property('files', FileMultiDict)
+    form = form_property('form', MultiDict, doc='''
+        A :class:`MultiDict` of form values.''')
+    files = form_property('files', FileMultiDict, doc='''
+        A :class:`FileMultiDict` of uploaded files.  You can use the
+        :meth:`~FileMultiDict.add_file` method to add new files to the
+        dict.''')
     del form_property
 
     def _get_input_stream(self):
@@ -377,7 +395,9 @@ class EnvironBuilder(object):
         self._input_stream = value
         self._form = self._files = None
 
-    input_stream = property(_get_input_stream, _set_input_stream)
+    input_stream = property(_get_input_stream, _set_input_stream, doc='''
+        An optional input stream.  If you set this it will clear
+        :attr:`form` and :attr:`files`.''')
     del _get_input_stream, _set_input_stream
 
     def _get_query_string(self):
@@ -391,7 +411,9 @@ class EnvironBuilder(object):
         self._query_string = value
         self._args = None
 
-    query_string = property(_get_query_string, _set_query_string)
+    query_string = property(_get_query_string, _set_query_string, doc='''
+        The query string.  If you set this to a string :attr:`args` will
+        no longer be available.''')
     del _get_query_string, _set_query_string
 
     def _get_args(self):
@@ -405,21 +427,18 @@ class EnvironBuilder(object):
         self._query_string = None
         self._args = value
 
-    args = property(_get_args, _set_args)
+    args = property(_get_args, _set_args, doc='''
+        The URL arguments as :class:`MultiDict`.''')
     del _get_args, _set_args
-
-    def get_request(self, cls=None):
-        """Returns a request with the data."""
-        if cls is None:
-            cls = self.request_class
-        return cls(self.get_environ())
 
     @property
     def server_name(self):
+        """The server name (read-only, use :attr:`host` to set)"""
         return self.host.split(':', 1)[0]
 
     @property
     def server_port(self):
+        """The server port as integer (read-only, use :attr:`host` to set)"""
         pieces = self.host.split(':', 1)
         if len(pieces) == 2 and pieces[1].isdigit():
             return int(pieces[1])
@@ -431,7 +450,10 @@ class EnvironBuilder(object):
         self.close()
 
     def close(self):
-        """Closes all files."""
+        """Closes all files.  If you put real :class:`file` objects into the
+        :attr:`files` dict you can call this method to automatically close
+        them all in one go.
+        """
         try:
             files = self.files.itervalues()
         except AttributeError:
@@ -443,7 +465,7 @@ class EnvironBuilder(object):
                 pass
 
     def get_environ(self):
-        """Return the environ."""
+        """Return the built environ."""
         input_stream = self.input_stream
         content_length = self.content_length
         content_type = self.content_type
@@ -500,6 +522,16 @@ class EnvironBuilder(object):
             result.update(self.environ_overrides)
         return result
 
+    def get_request(self, cls=None):
+        """Returns a request with the data.  If the request class is not
+        specified :attr:`request_class` is used.
+
+        :param cls: The request wrapper to use.
+        """
+        if cls is None:
+            cls = self.request_class
+        return cls(self.get_environ())
+
 
 class Client(object):
     """This class allows to send requests to a wrapped application.
@@ -536,7 +568,11 @@ class Client(object):
 
     def open(self, *args, **kwargs):
         """Takes the same arguments as the :class:`EnvironBuilder` class with
-        some additions.
+        some additions:  You can provide a :class:`EnvironBuilder` or a WSGI
+        environment as only argument instead of the :class:`EnvironBuilder`
+        arguments and two optional keyword arguments (`as_tuple`, `buffered`)
+        that change the type of the return value or the way the application is
+        executed.
 
         .. versionchanged:: 0.5
            If a dict is provided as file in the dict for the `data` parameter
@@ -560,7 +596,11 @@ class Client(object):
             elif isinstance(args[0], dict):
                 environ = args[0]
         if environ is None:
-            environ = EnvironBuilder(*args, **kwargs).get_environ()
+            builder = EnvironBuilder(*args, **kwargs)
+            try:
+                environ = builder.get_environ()
+            finally:
+                builder.close()
 
         if self.cookie_jar is not None:
             self.cookie_jar.inject_wsgi(environ)
@@ -619,7 +659,11 @@ def create_environ(*args, **kwargs):
        was added in 0.5.  The `headers`, `environ_base`, `environ_overrides`
        and `charset` parameters were added.
     """
-    return EnvironBuilder(*args, **kwargs).get_environ()
+    builder = EnvironBuilder(*args, **kwargs)
+    try:
+        return builder.get_environ()
+    finally:
+        builder.close()
 
 
 def run_wsgi_app(app, environ, buffered=False):

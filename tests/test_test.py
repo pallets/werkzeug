@@ -13,9 +13,10 @@
     :license: BSD, see LICENSE for more details.
 """
 
+import sys
 from cStringIO import StringIO
 from werkzeug.wrappers import Request, Response
-from werkzeug.test import Client, EnvironBuilder
+from werkzeug.test import Client, EnvironBuilder, create_environ
 
 
 def cookie_app(environ, start_response):
@@ -147,3 +148,31 @@ def test_environ_builder_paths():
     assert env['HTTP_HOST'] == 'foo.invalid'
     assert env['wsgi.url_scheme'] == 'https'
     assert b.base_url == 'https://foo.invalid/test/'
+
+
+def test_create_environ():
+    """Environment creation helper"""
+    env = create_environ('/foo?bar=baz', 'http://example.org/')
+    expected = {
+        'wsgi.multiprocess':    False,
+        'wsgi.version':         (1, 0),
+        'wsgi.run_once':        False,
+        'wsgi.errors':          sys.stderr,
+        'wsgi.multithread':     False,
+        'wsgi.url_scheme':      'http',
+        'SCRIPT_NAME':          '',
+        'CONTENT_TYPE':         '',
+        'CONTENT_LENGTH':       '0',
+        'SERVER_NAME':          'example.org',
+        'REQUEST_METHOD':       'GET',
+        'HTTP_HOST':            'example.org',
+        'PATH_INFO':            '/foo',
+        'SERVER_PORT':          '80',
+        'SERVER_PROTOCOL':      'HTTP/1.1',
+        'QUERY_STRING':         'bar=baz'
+    }
+    for key, value in expected.iteritems():
+        assert env[key] == value
+    assert env['wsgi.input'].read(0) == ''
+
+    assert create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'] == ''

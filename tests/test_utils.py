@@ -144,34 +144,6 @@ def test_unescape():
     assert unescape('&lt;&auml;&gt;') == u'<ä>'
 
 
-def test_create_environ():
-    """Environment creation helper"""
-    env = create_environ('/foo?bar=baz', 'http://example.org/')
-    expected = {
-        'wsgi.multiprocess':    False,
-        'wsgi.version':         (1, 0),
-        'wsgi.run_once':        False,
-        'wsgi.errors':          sys.stderr,
-        'wsgi.multithread':     False,
-        'wsgi.url_scheme':      'http',
-        'SCRIPT_NAME':          '',
-        'CONTENT_TYPE':         '',
-        'CONTENT_LENGTH':       '0',
-        'SERVER_NAME':          'example.org',
-        'REQUEST_METHOD':       'GET',
-        'HTTP_HOST':            'example.org',
-        'PATH_INFO':            '/foo',
-        'SERVER_PORT':          '80',
-        'SERVER_PROTOCOL':      'HTTP/1.0',
-        'QUERY_STRING':         'bar=baz'
-    }
-    for key, value in expected.iteritems():
-        assert env[key] == value
-    assert env['wsgi.input'].read(0) == ''
-
-    assert create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'] == ''
-
-
 def test_shared_data_middleware():
     """Shared data middleware"""
     def null_application(environ, start_response):

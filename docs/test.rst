@@ -115,6 +115,44 @@ Testing API
 .. autoclass:: EnvironBuilder
    :members:
 
+   .. attribute:: path
+
+      The path of the application.  (aka `PATH_INFO`)
+
+   .. attribute:: charset
+
+      The charset used to encode unicode data.
+
+   .. attribute:: headers
+
+      A :class:`Headers` object with the request headers.
+
+   .. attribute:: errors_stream
+
+      The error stream used for the `wsgi.errors` stream.
+
+   .. attribute:: multithread
+
+      The value of `wsgi.multithread`
+
+   .. attribute:: multiprocess
+
+      The value of `wsgi.multiprocess`
+
+   .. attribute:: environ_base
+
+      The dict used as base for the newly create environ.
+
+   .. attribute:: environ_base
+
+      A dict with values that are used to override the generated environ.
+
+   .. attribute:: input_stream
+    
+      The optional input stream.  This and :attr:`form` / :attr:`files`
+      is mutually exclusive.  Also do not provide this stream if the
+      request method is not `POST` / `PUT` or something comparable.
+
 .. autoclass:: Client
 
    .. automethod:: open(options)
