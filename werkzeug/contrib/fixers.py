@@ -5,10 +5,10 @@
 
     .. versionadded:: 0.5
 
-    This module include various helpers that fix bugs in web servers.  They may
+    This module includes various helpers that fix bugs in web servers.  They may
     be necessary for some versions of a buggy web server but not others.  We try
     to stay updated with the status of the bugs as good as possible but you have
-    to make sure if they fix the problem you encounter.
+    to make sure whether they fix the problem you encounter.
 
     If you notice bugs in webservers not fixed in this module consider
     contributing a patch.
@@ -21,7 +21,7 @@ from urllib import unquote
 
 class LighttpdCGIRootFix(object):
     """Wrap the application in this middleware if you are using lighttpd
-    with FastCGI or CGI and the application is mounted in the URL root.
+    with FastCGI or CGI and the application is mounted on the URL root.
     """
 
     def __init__(self, app):
@@ -39,7 +39,7 @@ class PathInfoFromRequestUriFix(object):
     which makes it impossible to store the `PATH_INFO` variable in the
     environment without loss of information on some systems.
 
-    This is for example a problem for a CGI scripts on a Windows Apache.
+    This is for example a problem for CGI scripts on a Windows Apache.
 
     This fixer works by recreating the `PATH_INFO` from `REQUEST_URI`,
     `REQUEST_URL`, or `UNENCODED_URL` (whatever is available).  Thus the
@@ -71,7 +71,7 @@ class ProxyFix(object):
     Werkzeug wrappers have builtin support for this by setting the
     :attr:`~werkzeug.BaseRequest.is_behind_proxy` attribute to `True`.
 
-    Do not use this middleware in non proxy setups for security reasons.
+    Do not use this middleware in non-proxy setups for security reasons.
 
     The original values of `REMOTE_ADDR` and `HTTP_HOST` are stored in
     the WSGI environment as `werkzeug.proxy_fix.orig_remote_addr` and

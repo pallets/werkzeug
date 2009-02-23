@@ -3,7 +3,7 @@
     werkzeug.contrib.sessions
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    This module contains some helper classes that helps one to add session
+    This module contains some helper classes that help one to add session
     support to a python WSGI application.
 
     Example::
@@ -149,7 +149,7 @@ class Session(ModificationTrackingDict):
 
 class SessionStore(object):
     """Baseclass for all session stores.  The Werkzeug contrib module does not
-    implement any useful stores beside the filesystem store, application
+    implement any useful stores besides the filesystem store, application
     developers are encouraged to create their own stores.
     """
 
@@ -190,7 +190,7 @@ class SessionStore(object):
 
 
 class FilesystemSessionStore(SessionStore):
-    """Simple example session store that saves session on the filesystem like
+    """Simple example session store that saves sessions in the filesystem like
     PHP does.
     """
 

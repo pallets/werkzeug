@@ -15,7 +15,7 @@
     to / from a thread local object the thread local object checks in which
     thread you are and delivers the correct value.
 
-    This however has a few disadvantages.  For example beside threads there
+    This however has a few disadvantages.  For example besides threads there
     are other ways to handle concurrency in Python.  A very popular approach
     are greenlets.  Also, whether every request gets its own thread is not
     guaranteed in WSGI.  It could be that a request is reusing a thread from
