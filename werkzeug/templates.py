@@ -372,7 +372,7 @@ class Template(object):
         :return: a template
         """
         if encoding is not None:
-            from warnings import warn, DeprecationWarning
+            from warnings import warn
             warn(DeprecationWarning('the encoding parameter is deprecated. '
                                     'use charset instead.'), stacklevel=2)
             charset = encoding
