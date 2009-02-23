@@ -1647,3 +1647,9 @@ from werkzeug.http import generate_etag, parse_etags, \
      dump_options_header
 from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict, TypeConversionDict
+
+
+# these objects were previously in this module as well.  we import
+# them here for backwards compatibility
+from werkzeug.datastructures import MultiDict, CombinedMultiDict, \
+     Headers, EnvironHeaders

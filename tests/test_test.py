@@ -149,4 +149,4 @@ def test_environ_builder_paths():
     assert env['PATH_INFO'] == '/foo'
     assert env['HTTP_HOST'] == 'foo.invalid'
     assert env['wsgi.url_scheme'] == 'https'
-    assert b.base_url == 'https://foo.invalid/'
+    assert b.base_url == 'https://foo.invalid/test/'

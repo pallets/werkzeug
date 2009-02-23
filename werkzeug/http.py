@@ -716,3 +716,7 @@ class _ChunkIter(LimitedStream):
             first_chunk += chunks.pop(0)
         self._buffer = chunks
         return first_chunk
+
+
+# backwards compatibible imports
+from werkzeug.datastructures import MIMEAccept, CharsetAccept, LanguageAccept
