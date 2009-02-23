@@ -95,6 +95,15 @@ def encode_multipart(values, boundary=None, charset='utf-8'):
     return boundary, stream.read()
 
 
+def File(fd, filename=None, mimetype=None):
+    """Backwards compat."""
+    from warnings import warn
+    from werkzeug.utils import FileStorage
+    warn(DeprecationWarning('werkzeug.test.File is deprecated, use the '
+                            'EnvironBuilder or FileStorage instead'))
+    return FileStorage(fd, filename=filename, content_type=mimetype)
+
+
 class _TestCookieHeaders(object):
     """A headers adapter for cookielib
     """
@@ -158,9 +167,11 @@ class EnvironBuilder(object):
 
     def __init__(self, path='/', base_url=None, query_string=None,
                  method='GET', input_stream=None, content_type=None,
-                 content_length=None, errors_stream=None, multithread=None,
-                 multiprocess=None, run_once=False, headers=None,
+                 content_length=None, errors_stream=None, multithread=False,
+                 multiprocess=False, run_once=False, headers=None, data=None,
                  environ_base=None, environ_overrides=None, charset='utf-8'):
+        if query_string is None and '?' in path:
+            path, query_string = path.split('?', 1)
         self.charset = charset
         self.path = path
         self.base_url = base_url
@@ -184,6 +195,36 @@ class EnvironBuilder(object):
         self.environ_base = environ_base
         self.environ_overrides = environ_overrides
         self.input_stream = input_stream
+
+        if data:
+            if input_stream is not None:
+                raise TypeError('can\'t provide input stream and data')
+            if not isinstance(data, MultiDict):
+                data = MultiDict(data)
+            for key, values in data.iterlists():
+                for value in values:
+                    if isinstance(value, (tuple, dict)) or \
+                       hasattr(value, 'read'):
+                        self._add_file_from_data(key, value)
+                    else:
+                        self.form[key] = value
+
+    def _add_file_from_data(self, key, value):
+        """Called in the EnvironBuilder to add files from the data dict."""
+        if isinstance(value, tuple):
+            self.files.add_file(key, *value)
+        elif isinstance(value, dict):
+            value = dict(value)
+            mimetype = value.pop('mimetype', None)
+            if mimetype is not None:
+                from warnings import warn
+                warn(DeprecationWarning('mimetype is now called content_type '
+                                        'for consistency with '
+                                        'FileMultiDict.add_file'))
+                value['content_type'] = mimetype
+            self.files.add_file(key, **value)
+        else:
+            self.files.add_file(key, value)
 
     def _get_base_url(self):
         return urlparse.urlunsplit((self.url_scheme, self.host,
@@ -316,7 +357,11 @@ class EnvironBuilder(object):
 
     def close(self):
         """Closes all files."""
-        for f in self.files.itervalues():
+        try:
+            files = self.files.itervalues()
+        except AttributeError:
+            return
+        for f in files:
             try:
                 f.close()
             except:
@@ -349,6 +394,7 @@ class EnvironBuilder(object):
         result = {}
         if self.environ_base:
             result.update(self.environ_base)
+
         result.update({
             'REQUEST_METHOD':       self.method,
             'SCRIPT_NAME':          self.script_root,
@@ -358,8 +404,8 @@ class EnvironBuilder(object):
             'SERVER_PORT':          str(self.server_port),
             'HTTP_HOST':            self.host,
             'SERVER_PROTOCOL':      self.server_protocol,
-            'CONTENT_TYPE':         content_type,
-            'CONTENT_LENGTH':       content_length,
+            'CONTENT_TYPE':         content_type or '',
+            'CONTENT_LENGTH':       str(content_length or '0'),
             'wsgi.version':         self.wsgi_version,
             'wsgi.url_scheme':      self.url_scheme,
             'wsgi.input':           input_stream,
@@ -408,13 +454,9 @@ class Client(object):
         else:
             self.cookie_jar = None
 
-    def open(self, path='/', base_url=None, query_string=None, method='GET',
-             data=None, input_stream=None, content_type=None,
-             content_length=0, errors_stream=None, multithread=False,
-             multiprocess=False, run_once=False, environ_overrides=None,
-             as_tuple=False, buffered=False):
-        """Takes the same arguments as the `create_environ` function from the
-        utility module with some additions.
+    def open(self, *args, **kwargs):
+        """Takes the same arguments as the :class:`EnvironBuilder` class with
+        some additions.
 
         The first parameter should be the path of the request which defaults to
         '/'.  The second one can either be a absolute path (in that case the url
@@ -432,10 +474,6 @@ class Client(object):
         ``(fd, filename, mimetype)`` (all arguments except fd optional) or
         as dict with those keys and values.  They can be specified for the
         `data` argument.
-
-        Additionally you can instantiate the
-        :class:`~werkzeug.test.File` object (or a subclass of it)
-        and pass it as value.
 
         :param method: The request method.
         :param input_stream: The input stream.  Defaults to an empty stream.
@@ -456,6 +494,18 @@ class Client(object):
                          This will automatically close the application for
                          you as well.
         """
+        if not kwargs and len(args) == 1:
+            if isinstance(args[0], EnvironBuilder):
+                return self._open_environ(args[0].get_environ())
+            elif isinstance(args[0], dict):
+                return self._open_environ(args[0])
+        return self._open(*args, **kwargs)
+
+    def _open(self, path='/', base_url=None, query_string=None, method='GET',
+             data=None, input_stream=None, content_type=None,
+             content_length=0, errors_stream=None, multithread=False,
+             multiprocess=False, run_once=False, environ_overrides=None,
+             as_tuple=False, buffered=False):
         if input_stream is None and data is not None and method in ('PUT', 'POST'):
             need_multipart = False
             if isinstance(data, basestring):
@@ -536,3 +586,21 @@ class Client(object):
             self.__class__.__name__,
             self.application
         )
+
+
+def create_environ(*args, **kwargs):
+    """Create a new WSGI environ dict based on the values passed.  The first
+    parameter should be the path of the request which defaults to '/'.  The
+    second one can either be a absolute path (in that case the host is
+    localhost:80) or a full path to the request with scheme, netloc port and
+    the path to the script.
+
+    This accepts the same arguments as the :class:`EnvironBuilder`
+    constructor.
+
+    .. versionchanged:: 0.5
+       This function is now a thin wrapper over :class:`EnvironBuilder` which
+       was added in 0.5.  The `headers`, `environ_base`, `environ_overrides`
+       and `charset` parameters were added.
+    """
+    return EnvironBuilder(*args, **kwargs).get_environ()

@@ -1411,82 +1411,6 @@ def find_modules(import_path, include_packages=False, recursive=False):
             yield modname
 
 
-def create_environ(path='/', base_url=None, query_string=None, method='GET',
-                   input_stream=None, content_type=None, content_length=0,
-                   errors_stream=None, multithread=False,
-                   multiprocess=False, run_once=False):
-    """Create a new WSGI environ dict based on the values passed.  The first
-    parameter should be the path of the request which defaults to '/'.  The
-    second one can either be a absolute path (in that case the host is
-    localhost:80) or a full path to the request with scheme, netloc port and
-    the path to the script.
-
-    If the `path` contains a query string it will be used, even if the
-    `query_string` parameter was given.  If it does not contain one
-    the `query_string` parameter is used as querystring.  In that case
-    it can either be a dict, :class:`MultiDict` or string.
-
-    The following options exist:
-
-    :param path: the path of the request.  See explanation above.
-    :param method: the request method.
-    :param input_stream: the input stream.  Defaults to an empty read only
-                         stream.
-    :param content_type: the content type for this request.
-    :param content_length: the value for the content length header.
-    :param errors_stream: the wsgi.errors stream.  Defaults to `sys.stderr`.
-    :param multithread: the multithreaded flag for the WSGI environment.
-    :param multiprocess: the multiprocess flag for the WSGI environment.
-    :param run_once: the run_once flag for the WSGI environment.
-    """
-    if base_url is not None:
-        scheme, netloc, script_name, qs, fragment = urlparse.urlsplit(base_url)
-        if ':' in netloc:
-            server_name, server_port = netloc.split(':')
-        else:
-            if scheme == 'http':
-                server_port = '80'
-            elif scheme == 'https':
-                server_port = '443'
-            else:
-                server_port = ''
-            server_name = netloc
-        if qs or fragment:
-            raise ValueError('base url cannot contain a query string '
-                             'or fragment')
-        script_name = urllib.unquote(script_name) or ''
-    else:
-        scheme = 'http'
-        server_name = netloc = 'localhost'
-        server_port = '80'
-        script_name = ''
-    if path and '?' in path:
-        path, query_string = path.split('?', 1)
-    elif not isinstance(query_string, basestring):
-        query_string = url_encode(query_string)
-    path = urllib.unquote(path) or '/'
-
-    return {
-        'REQUEST_METHOD':       method,
-        'SCRIPT_NAME':          script_name.rstrip('/'),
-        'PATH_INFO':            path,
-        'QUERY_STRING':         query_string,
-        'SERVER_NAME':          server_name,
-        'SERVER_PORT':          server_port,
-        'HTTP_HOST':            netloc,
-        'SERVER_PROTOCOL':      'HTTP/1.0',
-        'CONTENT_TYPE':         content_type or '',
-        'CONTENT_LENGTH':       str(content_length),
-        'wsgi.version':         (1, 0),
-        'wsgi.url_scheme':      scheme,
-        'wsgi.input':           input_stream or _empty_stream,
-        'wsgi.errors':          errors_stream or sys.stderr,
-        'wsgi.multithread':     multithread,
-        'wsgi.multiprocess':    multiprocess,
-        'wsgi.run_once':        run_once
-    }
-
-
 def run_wsgi_app(app, environ, buffered=False):
     """Return a tuple in the form (app_iter, status, headers) of the
     application output.  This works best if you pass it an application that
@@ -1649,7 +1573,13 @@ from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict, TypeConversionDict
 
 
+# DEPRECATED
 # these objects were previously in this module as well.  we import
-# them here for backwards compatibility
+# them here for backwards compatibility.  Will go away in 0.6
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, \
      Headers, EnvironHeaders
+
+def create_environ(*args, **kwargs):
+    """backward compatibility."""
+    from werkzeug.test import create_environ
+    return create_environ(*args, **kwargs)

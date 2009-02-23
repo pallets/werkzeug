@@ -20,7 +20,7 @@ def test_accept():
     assert a.values() == ['en-us', 'ru']
     assert a.best == 'en-us'
     assert a.find('ru') == 1
-    assert_raises(IndexError, lambda: a.index('de'))
+    assert_raises(ValueError, lambda: a.index('de'))
     assert a.to_header() == 'en-us,ru;q=0.5'
 
 

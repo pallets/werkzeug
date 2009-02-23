@@ -29,31 +29,28 @@ def cookie_app(environ, start_response):
 
 
 def test_set_cookie_app():
-    """Test that a server cookie is set and stored in the client
-    """
+    """Test that a server cookie is set and stored in the client"""
     c = Client(cookie_app)
     appiter, code, headers = c.open()
     assert 'Set-Cookie' in dict(headers)
 
 
 def test_cookiejar_stores_cookie():
-    """Test that the cookie jar in the test client stores the cookie
-    """
+    """Test that the cookie jar in the test client stores the cookie"""
     c = Client(cookie_app)
     appiter, code, headers = c.open()
     assert 'test' in c.cookie_jar._cookies['localhost.local']['/']
 
 
 def test_no_initial_cookie():
-    """Test there is no cookie set in the client initially.
-    """
+    """Test there is no cookie set in the client initially"""
     c = Client(cookie_app)
     appiter, code, headers = c.open()
     assert ''.join(appiter) == 'No Cookie'
 
 
 def test_resent_cookie():
-    """Test that the client resends cookies on subsequent requests,
+    """Test that the client resends cookies on subsequent requests
     """
     c = Client(cookie_app)
     c.open()
@@ -63,7 +60,7 @@ def test_resent_cookie():
 
 def test_disable_cookies():
     """Ensure that cookies are not stored when use_cookies is False in the
-    client.
+    client
     """
     c = Client(cookie_app, use_cookies=False)
     c.open()
@@ -73,7 +70,7 @@ def test_disable_cookies():
 
 def test_cookie_for_different_path():
     """Test that the client resends cookies on subsequent requests for
-    different paths.
+    different paths
     """
     c = Client(cookie_app)
     c.open('/path1')

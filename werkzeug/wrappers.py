@@ -30,7 +30,7 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_www_authenticate_header, remove_entity_headers, \
      default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
-     get_current_url, create_environ, url_encode, run_wsgi_app, get_host, \
+     get_current_url, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
      header_property, parse_form_data, get_content_type, url_decode
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
@@ -125,32 +125,34 @@ class BaseRequest(object):
         self._data_stream = None
 
     @classmethod
-    def from_values(cls, path='/', base_url=None, query_string=None, **options):
+    def from_values(cls, *args, **kwargs):
         """Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method is
         useful for small scripts when you need to simulate a request from an URL.
         Do not use this method for unittesting, there is a full featured client
-        object in :mod:`werkzeug.test` that allows to create multipart requests
-        etc.
+        object (:class:`Client`) that allows to create multipart requests,
+        support for cookies etc.
 
-        This accepts the same options as the :func:`create_environ` function
-        and additionally an `environ` parameter that can contain values which
-        will override the values from dict returned by :func:`create_environ`.
+        This accepts the same options as the :class:`EnvironBuilder`.
 
-        Additionally a dict passed to `query_string` will be encoded in the
-        request class charset.
+        .. versionchanged:: 0.5
+           This method now accepts the same arguments as
+           :class:`EnvironBuilder`.  Because of this the `environ` parameter
+           is now called `environ_overrides`.
 
         :return: request object
         """
-        if isinstance(query_string, dict):
-            query_string = url_encode(query_string, cls.charset)
-        environ = options.pop('environ', None)
-        new_env = create_environ(path, base_url, query_string, **options)
-        result = {}
+        from werkzeug.test import EnvironBuilder
+        charset = kwargs.pop('charset', cls.charset)
+        environ = kwargs.pop('environ', None)
         if environ is not None:
-            result.update(environ)
-        result.update(new_env)
-        return cls(result)
+            from warnings import DeprecationWarning
+            warn(DeprecationWarning('The environ parameter to from_values'
+                                    ' is now called environ_overrides for'
+                                    ' consistency with EnvironBuilder'),
+                 stacklevel=2)
+            kwargs['environ_overrides'] = environ
+        return EnvironBuilder(*args, **kwargs).get_request(cls)
 
     @classmethod
     def application(cls, f):
