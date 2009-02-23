@@ -1135,26 +1135,30 @@ class Accept(ImmutableList):
         )
 
     def index(self, key):
-        """Get the position of an entry or raise :exc:`IndexError`.
+        """Get the position of an entry or raise :exc:`ValueError`.
 
         :param key: The key to be looked up.
+
+        .. versionchanged:: 0.5
+           This used to raise :exc:`IndexError`, which was inconsistent
+           with the list API.
         """
-        rv = self.find(key)
-        if rv < 0:
-            raise IndexError(key)
-        return rv
+        if isinstance(key, basestring):
+            for idx, (item, quality) in enumerate(self):
+                if self._value_matches(key, item):
+                    return idx
+            raise ValueError(key)
+        return list.index(self, key)
 
     def find(self, key):
         """Get the position of an entry or return -1.
 
         :param key: The key to be looked up.
         """
-        if isinstance(key, basestring):
-            for idx, (item, quality) in enumerate(self):
-                if self._value_matches(key, item):
-                    return idx
+        try:
+            return self.index(key)
+        except ValueError:
             return -1
-        return list.find(self, key)
 
     def values(self):
         """Return a list of the values, not the qualities."""
