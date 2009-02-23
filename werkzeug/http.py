@@ -547,9 +547,10 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             else:
                 stream = StringIO()
 
+            newline_length = 0
             for line in iterator:
                 if line[:2] == '--':
-                    terminator = line.strip()
+                    terminator = line.rstrip()
                     if terminator in (next_part, last_part):
                         break
                 if transfer_encoding in _supported_multipart_encodings:
@@ -557,6 +558,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                         line = line.decode(transfer_encoding)
                     except:
                         raise ValueError('could not base 64 decode chunk')
+                newline_length = line[-2:] == '\r\n' and 2 or 1
                 stream.write(line)
                 if not is_file and max_form_memory_size is not None:
                     in_memory += len(line)
@@ -567,7 +569,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                 raise ValueError('unexpected end of part')
 
             # chop off the trailing line terminator and rewind
-            stream.seek(-2, 1)
+            stream.seek(-newline_length, 1)
             stream.truncate()
             stream.seek(0)
 

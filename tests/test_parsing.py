@@ -74,8 +74,31 @@ def test_multipart():
         assert response.data == repr(text)
 
 
+def test_nonstandard_line_endings():
+    """Test nonstandard line endings of multipart form data"""
+    for nl in '\n', '\r', '\r\n':
+        data = nl.join((
+            '--foo',
+            'Content-Disposition: form-data; name=foo',
+            '',
+            'this is just bar',
+            '--foo',
+            'Content-Disposition: form-data; name=bar',
+            '',
+            'blafasel',
+            '--foo--'
+        ))
+        req = Request.from_values(input_stream=StringIO(data),
+                                  content_length=len(data),
+                                  content_type='multipart/form-data; '
+                                  'boundary=foo', method='POST')
+        print req.form
+        assert req.form['foo'] == 'this is just bar'
+        assert req.form['bar'] == 'blafasel'
+
+
 def test_limiting():
-    """Test the limiting features."""
+    """Test the limiting features"""
     data = 'foo=Hello+World&bar=baz'
     req = Request.from_values(input_stream=StringIO(data),
                               content_length=len(data),

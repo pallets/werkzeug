@@ -127,6 +127,12 @@ def test_combined_multidict():
         d['foo'] = 'blub'
     assert_raises(TypeError, test_assign)
 
+    # make sure lists merges
+    md1 = MultiDict((("foo", "bar"),))
+    md2 = MultiDict((("foo", "blafasel"),))
+    x = CombinedMultiDict((md1, md2))
+    assert x.lists() == [('foo', ['bar', 'blafasel'])]
+
 
 def test_headers():
     # simple header tests

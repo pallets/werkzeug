@@ -191,7 +191,7 @@ datetime.datetime(2009, 2, 20, 10, 10, 25)
 >>> request.if_none_match
 <ETags '"e51c9-1e5d-46356dc86c640"'>
 >>> request.cache_control
-<CacheControl 'max-age=0'>
+<RequestCacheControl 'max-age=0'>
 >>> request.cache_control.max_age
 0
 >>> 'e51c9-1e5d-46356dc86c640' in request.if_none_match
@@ -256,7 +256,7 @@ retrieve them:
 >>> response.content_length
 12
 >>> from datetime import datetime
->>> response.date = datetime.utcnow()
+>>> response.date = datetime(2009, 2, 20, 17, 42, 51)
 >>> response.headers['Date']
 'Fri, 20 Feb 2009 17:42:51 GMT'
 
@@ -302,7 +302,7 @@ If headers appear multiple times you can use the :meth:`~Headers.getlist`
 method to get all values for a header:
 
 >>> response.headers.getlist('Set-Cookie')
-ImmutableList(['name=value; Path=/', 'name2=value2; Path=/'])
+['name=value; Path=/', 'name2=value2; Path=/']
 
 Finally if you have set all the conditional values you can make the
 response conditional against a requset.  Which means that if the request

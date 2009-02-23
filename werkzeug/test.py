@@ -8,82 +8,91 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import sys
+import urlparse
 from time import time
 from random import random
-from urllib import urlencode
+from tempfile import TemporaryFile
 from cStringIO import StringIO
 from cookielib import CookieJar
 from mimetypes import guess_type
 from urllib2 import Request as U2Request
-from werkzeug.utils import create_environ, run_wsgi_app, get_current_url
+
+from werkzeug._internal import _empty_stream
+from werkzeug.wrappers import BaseRequest
+from werkzeug.utils import create_environ, run_wsgi_app, get_current_url, \
+     url_encode, url_decode
+from werkzeug.datastructures import FileMultiDict, MultiDict, CombinedMultiDict, Headers
 
 
-def encode_multipart(values):
-    """Encode a dict of values (can either be strings or file descriptors)
-    into a multipart encoded string.  The filename is taken from the `.name`
-    attribute of the file descriptor.  Because StringIOs do not provide
-    this attribute it will generate a random filename in that case.
-
-    The return value is a tuple in the form (``boundary``, ``data``).
-
-    This method does not accept unicode strings!
+def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
+                            boundary=None, charset='utf-8'):
+    """Encode a dict of values (either strings or file descriptors or
+    :class:`FileStorage` objects.) into a multipart encoded string stored
+    in a file descriptor.
     """
-    boundary = '-----------=_Part_%s%s' % (time(), random())
-    lines = []
-    for key, value in values.iteritems():
-        if isinstance(value, File):
-            lines.extend((
-                '--' + boundary,
-                'Content-Disposition: form-data; name="%s"; filename="%s"' %
-                    (key, value.filename),
-                'Content-Type: ' + value.mimetype,
-                '',
-                value.read()
-            ))
-        else:
-            lines.extend((
-                '--' + boundary,
-                'Content-Disposition: form-data; name="%s"' % key,
-                '',
-                value
-            ))
-    lines.extend(('--' + boundary + '--', ''))
-    return boundary, '\r\n'.join(lines)
+    if boundary is None:
+        boundary = '---------------WerkzeugFormPart_%s%s' % (time(), random())
+    _closure = [StringIO(), 0, False]
+
+    if use_tempfile:
+        def write(string):
+            stream, total_length, on_disk = _closure
+            length = len(string)
+            if on_disk or length + _closure[1] <= threshold:
+                stream.write(string)
+            else:
+                new_stream = TemporaryFile('wb+')
+                new_stream.write(stream.getvalue())
+                _closure[0] = new_stream
+                _closure[2] = True
+            _closure[1] += length
+    else:
+        write = _closure[0].write
+
+    if not isinstance(values, MultiDict):
+        values = MultiDict(values)
+
+    for key, values in values.iterlists():
+        for value in values:
+            write('--%s\r\nContent-Disposition: form-data; name="%s"' %
+                  (boundary, key))
+            reader = getattr(value, 'read', None)
+            if reader is not None:
+                filename = getattr(value, 'filename',
+                                   getattr(value, 'name', None))
+                content_type = getattr(value, 'content_type', None)
+                if content_type is None:
+                    content_type = filename and guess_type(filename)[0] or \
+                                   'application/octet-stream'
+                if filename is not None:
+                    write('; filename="%s"\r\n' % filename)
+                else:
+                    write('\r\n')
+                write('Content-Type: %s\r\n\r\n' % content_type)
+                while 1:
+                    chunk = reader(16384)
+                    if not chunk:
+                        break
+                    write(chunk)
+            else:
+                if isinstance(value, unicode):
+                    value = value.encode(charset)
+                write('\r\n\r\n' + value)
+            write('\r\n')
+        write('--%s--\r\n' % boundary)
+
+    _closure[0].seek(0)
+    return _closure[0], _closure[1], boundary
 
 
-class File(object):
-    """Wraps a file descriptor or any other stream so that `encode_multipart`
-    can get the mimetype and filename from it.
+def encode_multipart(values, boundary=None, charset='utf-8'):
+    """Like `stream_encode_multipart` but returns a tuple in the form
+    (``boundary``, ``data``) where data is a bytestring.
     """
-
-    def __init__(self, fd, filename=None, mimetype=None):
-        if isinstance(fd, basestring):
-            if filename is None:
-                filename = fd
-            fd = file(fd, 'rb')
-            try:
-                self.stream = StringIO(fd.read())
-            finally:
-                fd.close()
-        else:
-            self.stream = fd
-            if filename is None:
-                if not hasattr(fd, 'name'):
-                    raise ValueError('no filename provided')
-                filename = fd.name
-        if mimetype is None:
-            mimetype = guess_type(filename)[0]
-        self.filename = filename
-        self.mimetype = mimetype or 'application/octet-stream'
-
-    def __getattr__(self, name):
-        return getattr(self.stream, name)
-
-    def __repr__(self):
-        return '<%s %r>' % (
-            self.__class__.__name__,
-            self.filename
-        )
+    stream, length, boundary = stream_encode_multipart(
+        values, use_tempfile=False, boundary=boundary, charset=charset)
+    return boundary, stream.read()
 
 
 class _TestCookieHeaders(object):
@@ -136,6 +145,234 @@ class _TestCookieJar(CookieJar):
             _TestCookieResponse(headers),
             U2Request(get_current_url(environ)),
         )
+
+
+class EnvironBuilder(object):
+    """This class can be used to conveniently create a WSGI environment
+    for testing purposes.
+    """
+
+    server_protocol = 'HTTP/1.0'
+    wsgi_version = (1, 0)
+    request_class = BaseRequest
+
+    def __init__(self, path='/', base_url=None, query_string=None,
+                 method='GET', input_stream=None, content_type=None,
+                 content_length=None, errors_stream=None, multithread=None,
+                 multiprocess=None, run_once=False, headers=None,
+                 environ_base=None, environ_overrides=None, charset='utf-8'):
+        self.charset = charset
+        self.path = path
+        self.base_url = base_url
+        if isinstance(query_string, basestring):
+            self.query_string = query_string
+        else:
+            if query_string is None:
+                query_string = MultiDict()
+            self.args = query_string
+        self.method = method
+        if headers is None:
+            headers = Headers()
+        else:
+            headers = Headers(headers)
+        self.headers = headers
+        self.content_type = content_type
+        self.errors_stream = errors_stream
+        self.multithread = multithread
+        self.multiprocess = multiprocess
+        self.run_once = run_once
+        self.environ_base = environ_base
+        self.environ_overrides = environ_overrides
+        self.input_stream = input_stream
+
+    def _get_base_url(self):
+        return urlparse.urlunsplit((self.url_scheme, self.host,
+                                    self.script_root, '', '')).rstrip('/') + '/'
+
+    def _set_base_url(self, value):
+        if value is None:
+            scheme = 'http'
+            netloc = 'localhost'
+            scheme = 'http'
+            script_root = ''
+        else:
+            scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(value)
+            if qs or anchor:
+                raise ValueError('base url must not contain a query string '
+                                 'or fragment')
+        self.script_root = script_root.rstrip('/')
+        self.host = netloc
+        self.url_scheme = scheme
+
+    base_url = property(_get_base_url, _set_base_url)
+    del _get_base_url, _set_base_url
+
+    def _get_content_type(self):
+        ct = self.headers.get('Content-Type')
+        if ct is None:
+            if self.method in ('POST', 'PUT'):
+                if self.files:
+                    return 'multipart/form-data'
+                return 'application/x-www-form-urlencoded'
+            return None
+        return ct
+
+    def _set_content_type(self, value):
+        if value is None:
+            self.headers.pop('Content-Type', None)
+        else:
+            self.headers['Content-Type'] = value
+
+    content_type = property(_get_content_type, _set_content_type)
+    del _get_content_type, _set_content_type
+
+    def _get_content_length(self):
+        return self.headers.get('Content-Length', type=int)
+
+    def _set_content_length(self, value):
+        self.headers['Content-Length'] = str(value)
+
+    content_length = property(_get_content_length, _set_content_length)
+    del _get_content_length, _set_content_length
+
+    def form_property(name, storage):
+        key = '_' + name
+        def getter(self):
+            if self._input_stream is not None:
+                raise AttributeError('an input stream is defined')
+            rv = getattr(self, key)
+            if rv is None:
+                rv = storage()
+                setattr(self, key, rv)
+            return rv
+        def setter(self, value):
+            self._input_stream = None
+            setattr(self, key, value)
+        return property(getter, setter)
+
+    form = form_property('form', MultiDict)
+    files = form_property('files', FileMultiDict)
+    del form_property
+
+    def _get_input_stream(self):
+        return self._input_stream
+
+    def _set_input_stream(self, value):
+        self._input_stream = value
+        self._form = self._files = None
+
+    input_stream = property(_get_input_stream, _set_input_stream)
+    del _get_input_stream, _set_input_stream
+
+    def _get_query_string(self):
+        if self._query_string is None:
+            if self._args is not None:
+                return url_encode(self._args, charset=self.charset)
+            return ''
+        return self._query_string
+
+    def _set_query_string(self, value):
+        self._query_string = value
+        self._args = None
+
+    query_string = property(_get_query_string, _set_query_string)
+    del _get_query_string, _set_query_string
+
+    def _get_args(self):
+        if self._query_string is not None:
+            raise AttributeError('a query string is defined')
+        if self._args is None:
+            self._args = MultiDict()
+        return self._args
+
+    def _set_args(self, value):
+        self._query_string = None
+        self._args = value
+
+    args = property(_get_args, _set_args)
+    del _get_args, _set_args
+
+    def get_request(self, cls=None):
+        """Returns a request with the data."""
+        if cls is None:
+            cls = self.request_class
+        return cls(self.get_environ())
+
+    @property
+    def server_name(self):
+        return self.host.split(':', 1)[0]
+
+    @property
+    def server_port(self):
+        pieces = self.host.split(':', 1)
+        if len(pieces) == 2 and pieces[1].isdigit():
+            return int(pieces[1])
+        elif self.url_scheme == 'https':
+            return 443
+        return 80
+
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        """Closes all files."""
+        for f in self.files.itervalues():
+            try:
+                f.close()
+            except:
+                pass
+
+    def get_environ(self):
+        """Return the environ."""
+        input_stream = self.input_stream
+        content_length = self.content_length
+        content_type = self.content_type
+
+        if input_stream is not None:
+            start_pos = input_stream.tell()
+            input_stream.seek(0, 2)
+            end_pos = input_stream.tell()
+            input_stream.seek(start_pos)
+            content_length = end_pos - start_pos
+        elif content_type == 'multipart/form-data':
+            values = CombinedMultiDict([self.form, self.files])
+            input_stream, content_length, boundary = \
+                stream_encode_multipart(values, charset=self.charset)
+            content_type += '; boundary="%s"' % boundary
+        elif content_type == 'application/x-www-form-urlencoded':
+            values = url_encode(self.form, charset=self.charset)
+            content_length = len(values)
+            input_stream = StringIO(values)
+        else:
+            input_stream = _empty_stream
+
+        result = {}
+        if self.environ_base:
+            result.update(self.environ_base)
+        result.update({
+            'REQUEST_METHOD':       self.method,
+            'SCRIPT_NAME':          self.script_root,
+            'PATH_INFO':            self.path,
+            'QUERY_STRING':         self.query_string,
+            'SERVER_NAME':          self.server_name,
+            'SERVER_PORT':          str(self.server_port),
+            'HTTP_HOST':            self.host,
+            'SERVER_PROTOCOL':      self.server_protocol,
+            'CONTENT_TYPE':         content_type,
+            'CONTENT_LENGTH':       content_length,
+            'wsgi.version':         self.wsgi_version,
+            'wsgi.url_scheme':      self.url_scheme,
+            'wsgi.input':           input_stream,
+            'wsgi.errors':          self.errors_stream or sys.stderr,
+            'wsgi.multithread':     self.multithread,
+            'wsgi.multiprocess':    self.multiprocess,
+            'wsgi.run_once':        self.run_once
+        })
+        for key, value in self.headers.to_list(self.charset):
+            result['HTTP_%s' % key.upper().replace('-', '_')] = value
+        if self.environ_overrides:
+            result.update(self.environ_overrides)
+        return result
 
 
 class Client(object):
@@ -239,7 +476,7 @@ class Client(object):
                 if need_multipart:
                     boundary, data = encode_multipart(data)
                     if content_type is None:
-                        content_type = 'multipart/form-data; boundary=' + \
+                        content_type = 'multipart/form-data; boundary="%s"' % \
                             boundary
                 else:
                     data = urlencode(data)

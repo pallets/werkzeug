@@ -973,7 +973,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         found = set()
         for d in self.dicts:
             for key, value in d.iteritems():
-                if not key in found:
+                if key not in found:
                     found.add(key)
                     yield key, value
 
@@ -987,28 +987,27 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     def items(self):
         return list(self.iteritems())
 
-    def lists(self):
+    def iterlists(self):
         rv = {}
         for d in self.dicts:
-            rv.update(d)
-        return rv.items()
+            for key, values in d.iterlists():
+                rv.setdefault(key, []).extend(values)
+        for key, values in rv.iteritems():
+            yield key, ImmutableList(values)
+
+    def lists(self):
+        return list(self.iterlists())
+
+    def iterlistvalues(self):
+        return (x[0] for x in self.lists())
 
     def listvalues(self):
-        rv = {}
-        for d in reversed(self.dicts):
-            rv.update(d)
-        return rv.values()
+        return list(self.iterlistvalues())
 
     def iterkeys(self):
         return iter(self.keys())
 
     __iter__ = iterkeys
-
-    def iterlists(self):
-        return iter(self.lists())
-
-    def iterlistvalues(self):
-        return iter(self.listvalues())
 
     def copy(self):
         """Return a shallow copy of this object."""
@@ -1042,6 +1041,33 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.dicts)
+
+
+class FileMultiDict(MultiDict):
+    """A special :class:`MultiDict` that has convenience methods to add
+    files to it.  This is used for :class:`EnvironBuilder` and generally
+    useful for unittesting.
+    """
+
+    def add_file(self, name, file, filename=None, content_type=None):
+        """Adds a new file to the dict.  `file` can be a file name or
+        a :class:`file`-like object.
+
+        :param name: the name of the field.
+        :param file: a filename or :class:`file`-like object
+        :param filename: an optional filename
+        :param content_type: an optional content type
+        """
+        from werkzeug.utils import FileStorage
+        if isinstance(file, basestring):
+            if filename is None:
+                filename = file
+            file = open(file, 'rb')
+        if filename and content_type is None:
+            from mimetypes import guess_type
+            content_type = guess_type(filename)[0] or \
+                           'application/octet-stream'
+        self[name] = FileStorage(file, filename, name, content_type)
 
 
 class ImmutableDict(ImmutableDictMixin, dict):
@@ -1641,7 +1667,7 @@ class ETags(object):
         return '<%s %r>' % (self.__class__.__name__, str(self))
 
 
-class Authorization(dict):
+class Authorization(ImmutableDictMixin, dict):
     """Represents an `Authorization` header sent by the client.  You should
     not create this kind of object yourself but use it when it's returned by
     the `parse_authorization_header` function.
@@ -1649,6 +1675,9 @@ class Authorization(dict):
     This object is a dict subclass and can be altered by setting dict items
     but it should be considered immutable as it's returned by the client and
     not meant for modifications.
+
+    .. versionchanged:: 0.5
+       This object became immutable.
     """
 
     def __init__(self, auth_type, data=None):

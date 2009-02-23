@@ -172,7 +172,7 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
     multiprocess = True
 
     def __init__(self, host, port, app, processes=40):
-        ForkingWSGIServer.__init__(self, host, port, app)
+        BaseWSGIServer.__init__(self, host, port, app)
         self.max_children = processes
 
 

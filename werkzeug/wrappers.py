@@ -209,19 +209,21 @@ class BaseRequest(object):
 
         :internal:
         """
-        if self.shallow:
-            raise RuntimeError('A shallow request tried to consume '
-                               'form data.  If you really want to do that, '
-                               'set `shallow` to False.')
-        if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
-            data = parse_form_data(self.environ, self._get_file_stream,
-                                   self.charset, self.encoding_errors,
-                                   self.max_form_memory_size,
-                                   self.max_content_length,
-                                   dict_class=ImmutableMultiDict)
-        else:
-            data = (_empty_stream, ImmutableMultiDict(), ImmutableMultiDict())
-        self._data_stream, self._form, self._files = data
+        if self._data_stream is None:
+            if self.shallow:
+                raise RuntimeError('A shallow request tried to consume '
+                                   'form data.  If you really want to do '
+                                   'that, set `shallow` to False.')
+            if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
+                data = parse_form_data(self.environ, self._get_file_stream,
+                                       self.charset, self.encoding_errors,
+                                       self.max_form_memory_size,
+                                       self.max_content_length,
+                                       dict_class=ImmutableMultiDict)
+            else:
+                data = (_empty_stream, ImmutableMultiDict(),
+                        ImmutableMultiDict())
+            self._data_stream, self._form, self._files = data
 
     @property
     def stream(self):
@@ -231,8 +233,7 @@ class BaseRequest(object):
         a wrapper around it that ensures the caller does not accidentally
         read past `Content-Length`.
         """
-        if self._data_stream is None:
-            self._load_form_data()
+        self._load_form_data()
         return self._data_stream
 
     input_stream = environ_property('wsgi.input', 'The WSGI input stream.\n'
@@ -263,11 +264,10 @@ class BaseRequest(object):
         :class:`MultiDict` returned by this function is ordered in the same
         way as the submitted form data.
         """
-        if not hasattr(self, '_form'):
-            self._load_form_data()
+        self._load_form_data()
         return self._form
 
-    @property
+    @cached_property
     def values(self):
         """Combined multi dict for :attr:`args` and :attr:`form`."""
         return CombinedMultiDict([self.args, self.form])
@@ -285,8 +285,7 @@ class BaseRequest(object):
         See the :class:`MultiDict` / :class:`FileStorage` documentation for more
         details about the used data structure.
         """
-        if not hasattr(self, '_files'):
-            self._load_form_data()
+        self._load_form_data()
         return self._files
 
     @cached_property

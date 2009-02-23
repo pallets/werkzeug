@@ -579,30 +579,6 @@ class cached_property(object):
             raise TypeError('read only attribute')
         obj.__dict__[self.__name__] = value
 
-    @staticmethod
-    def refresh(object, attributes):
-        """Helper function that invalidates the property cache.  This can be
-        useful if you have a function that changes a value that the cached
-        one depends on::
-
-            @cached_property
-            def foo(self):
-                return '%s/foo' % self.bar
-
-            def change_bar(self):
-                self.bar += 1
-                cached_property.refresh(self, ['foo'])
-
-        .. versionadded:: 0.5
-
-        :param object: the object with the attributes
-        :param attributes: an iterable with the attributes to refresh
-        """
-        for attribute in attributes:
-            prop = getattr(object.__class__, attribute)
-            assert isinstance(prop, cached_property), 'not a cached property'
-            object.__dict__.pop(prop.__name__, None)
-
 
 class environ_property(_DictAccessorProperty):
     """Maps request attributes to environment variables. This works not only
@@ -794,8 +770,9 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                                           charset, errors,
                                           max_form_memory_size=max_form_memory_size)
         except ValueError, e:
-            pass
-        form = dict_class(form)
+            form = dict_class()
+        else:
+            form = dict_class(form)
     elif content_type == 'application/x-www-form-urlencoded' or \
          content_type == 'application/x-url-encoded':
         if max_form_memory_size is not None and \

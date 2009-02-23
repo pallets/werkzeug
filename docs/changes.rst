@@ -34,6 +34,9 @@ API Changes
     -   The request object is now enforced to be read-only for all
         attributes.  If your code relies on modifications of some values
         makes sure to create copies of them using the mutable counterparts!
+    -   Some data structures that were only used on request objects are
+        now immutable as well.  (:class:`Authorization` / :class:`Accept`
+        and subclasses)
     -   `CacheControl` was splitted up into :class:`RequestCacheControl`
         and :class:`ResponseCacheControl`, the former being immutable.
         The old class will go away in 0.6
