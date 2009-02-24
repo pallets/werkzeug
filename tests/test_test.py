@@ -209,3 +209,20 @@ def test_create_environ():
     assert env['wsgi.input'].read(0) == ''
 
     assert create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'] == ''
+
+
+def test_file_closing():
+    """Test automatic closing of files in EnvironBuilder and friends"""
+    closed = []
+    class SpecialInput(object):
+        def read(self):
+            return ''
+        def close(self):
+            closed.append(self)
+
+    env = create_environ(data={'foo': SpecialInput()})
+    assert len(closed) == 1
+    builder = EnvironBuilder()
+    builder.files.add_file('blah', SpecialInput())
+    builder.close()
+    assert len(closed) == 2

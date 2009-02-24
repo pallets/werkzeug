@@ -280,6 +280,7 @@ class EnvironBuilder(object):
         self.environ_base = environ_base
         self.environ_overrides = environ_overrides
         self.input_stream = input_stream
+        self.closed = False
 
         if data:
             if input_stream is not None:
@@ -461,15 +462,18 @@ class EnvironBuilder(object):
         :attr:`files` dict you can call this method to automatically close
         them all in one go.
         """
+        if self.closed:
+            return
         try:
             files = self.files.itervalues()
         except AttributeError:
-            return
+            files = ()
         for f in files:
             try:
                 f.close()
-            except:
+            except Exception, e:
                 pass
+        self.closed = True
 
     def get_environ(self):
         """Return the built environ."""

@@ -67,6 +67,13 @@ class FileStorage(object):
             if close_dst:
                 dst.close()
 
+    def close(self):
+        """Close the underlaying file if possible."""
+        try:
+            self.stream.close()
+        except:
+            pass
+
     def __getattr__(self, name):
         return getattr(self.stream, name)
 
