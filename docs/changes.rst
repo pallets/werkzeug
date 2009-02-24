@@ -17,8 +17,7 @@ API Changes
 
 `0.5`
     -   Werkzeug switched away from wsgiref as library for the builtin
-        webserver and as such the `request_handler` parameter on the
-        :func:`run_simple` function is no longer supported.
+        webserver.
     -   The `encoding` parameter for :class:`Template`\s is now called
         `charset`.  The older one will work for another two versions
         but warn with a :exc:`DeprecationWarning`.
@@ -42,6 +41,8 @@ API Changes
         The old class will go away in 0.6
     -   undocumented `werkzeug.test.File` was replaced by
         :class:`FileWrapper`.
+    -   it's not longer possible to pass dicts inside the `data` dict
+        in :class:`Client`.  Use tuples instead.
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.

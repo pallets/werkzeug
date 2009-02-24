@@ -55,7 +55,7 @@ from werkzeug.utils import responder
 from werkzeug.exceptions import InternalServerError
 
 
-class WSGIHandler(BaseHTTPRequestHandler):
+class BaseRequestHandler(BaseHTTPRequestHandler, object):
 
     def run_wsgi(self):
         path_info, _, query = urlparse(self.path)[2:5]
@@ -151,8 +151,10 @@ class BaseWSGIServer(HTTPServer):
     multithread = False
     multiprocess = False
 
-    def __init__(self, host, port, app):
-        HTTPServer.__init__(self, (host, int(port)), WSGIHandler)
+    def __init__(self, host, port, app, handler=None):
+        if handler is None:
+            handler = BaseRequestHandler
+        HTTPServer.__init__(self, (host, int(port)), handler)
         self.app = app
 
     def log(self, type, message, *args):
@@ -172,12 +174,13 @@ class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
     multiprocess = True
 
-    def __init__(self, host, port, app, processes=40):
-        BaseWSGIServer.__init__(self, host, port, app)
+    def __init__(self, host, port, app, processes=40, handler=None):
+        BaseWSGIServer.__init__(self, host, port, app, handler)
         self.max_children = processes
 
 
-def make_server(host, port, app=None, threaded=False, processes=1):
+def make_server(host, port, app=None, threaded=False, processes=1,
+                request_handler=None):
     """Create a new server instance that is either threaded, or forks
     or just processes one request after another.
     """
@@ -185,11 +188,11 @@ def make_server(host, port, app=None, threaded=False, processes=1):
         raise ValueError("cannot have a multithreaded and "
                          "multi process server.")
     elif threaded:
-        return ThreadedWSGIServer(host, port, app)
+        return ThreadedWSGIServer(host, port, app, request_handler)
     elif processes > 1:
-        return ForkingWSGIServer(host, port, app, processes)
+        return ForkingWSGIServer(host, port, app, processes, request_handler)
     else:
-        return BaseWSGIServer(host, port, app)
+        return BaseWSGIServer(host, port, app, request_handler)
 
 
 def reloader_loop(extra_files=None, interval=1):
@@ -265,15 +268,10 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
                extra_files=None, reloader_interval=1, threaded=False,
-               processes=1, static_files=None):
+               processes=1, request_handler=None, static_files=None):
     """Start an application using wsgiref and with an optional reloader.  This
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
-
-    .. versionchanged:: 0.5
-       Older versions of this function supported replacing the default
-       request handler with a custom :mod:`wsgiref` request handler.  As we
-       are no longer using wsgiref internally that parameter went away.
 
     .. versionadded:: 0.5
        `static_files` was added to simplify serving of static files.
@@ -292,6 +290,11 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param threaded: should the process handle each request in a separate
                      thread?
     :param processes: number of processes to spawn.
+    :param request_handler: optional parameter that can be used to replace
+                            the default one.  You can use this to replace it
+                            with a different
+                            :class:`~BaseHTTPServer.BaseHTTPRequestHandler`
+                            subclass.
     :param static_files: a dict of paths for static files.  This works exactly
                          like :class:`SharedDataMiddleware`, it's actually
                          just wrapping the application in that middleware before
@@ -306,7 +309,7 @@ def run_simple(hostname, port, application, use_reloader=False,
 
     def inner():
         make_server(hostname, port, application, threaded,
-                    processes).serve_forever()
+                    processes, request_handler).serve_forever()
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         display_hostname = hostname or '127.0.0.1'

@@ -203,8 +203,6 @@ class EnvironBuilder(object):
             :class:`FileStorage` objects automatically.
         -   a tuple.  The :meth:`~FileMultiDict.add_file` method is called
             with the tuple items as positional arguments.
-        -   a dict.  The :meth:`~FileMultiDict.add_file` method is called
-            with the dict as keyword arguments.
 
     :param path: the path of the request.  In the WSGI environment this will
                  end up as `PATH_INFO`.  If the `query_string` is not defined
@@ -302,13 +300,14 @@ class EnvironBuilder(object):
         if isinstance(value, tuple):
             self.files.add_file(key, *value)
         elif isinstance(value, dict):
+            from warnings import warn
+            warn(DeprecationWarning('it\'s no longer possible to pass dicts '
+                                    'as `data`.  Use tuples or FileStorage '
+                                    'objects intead'), stacklevel=2)
+            args = v
             value = dict(value)
             mimetype = value.pop('mimetype', None)
             if mimetype is not None:
-                from warnings import warn
-                warn(DeprecationWarning('mimetype is now called content_type '
-                                        'for consistency with '
-                                        'FileMultiDict.add_file'))
                 value['content_type'] = mimetype
             self.files.add_file(key, **value)
         else:
@@ -658,7 +657,7 @@ class Client(object):
 def create_environ(*args, **kwargs):
     """Create a new WSGI environ dict based on the values passed.  The first
     parameter should be the path of the request which defaults to '/'.  The
-    second one can either be a absolute path (in that case the host is
+    second one can either be an absolute path (in that case the host is
     localhost:80) or a full path to the request with scheme, netloc port and
     the path to the script.
 
