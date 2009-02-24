@@ -46,6 +46,8 @@ Version 0.5
   :func:`create_environ`, :class:`Client` and
   :meth:`BaseRequest.from_values`.  They all work the same now which
   is less confusing.
+- officially documented imports from the internal modules as undefined
+  behavior.  These modules were never exposed as public interfaces.
 
 Version 0.4.1
 -------------

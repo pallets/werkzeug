@@ -8,6 +8,15 @@ This part of the documentation shows how to use the most important parts of
 Werkzeug.  It's intended as starting point for developers with basic
 understanding of :pep:`333` (WSGI) and :rfc:`2616` (HTTP).
 
+.. warning::
+
+   Make sure to import all objects from the places the documentation
+   suggests.  It is theoretically possible in some situations to import
+   objects from different locations but this is not supported.
+
+   For example :class:`MultiDict` is a member of the `werkzeug` module
+   but internally implemented in a different one.
+
 
 WSGI Environment
 ================

@@ -23,7 +23,8 @@ from werkzeug._internal import _empty_stream
 from werkzeug.wrappers import BaseRequest
 from werkzeug.utils import create_environ, run_wsgi_app, get_current_url, \
      url_encode, url_decode, FileStorage
-from werkzeug.datastructures import FileMultiDict, MultiDict, CombinedMultiDict, Headers
+from werkzeug.datastructures import FileMultiDict, MultiDict, \
+     CombinedMultiDict, Headers
 
 
 def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
