@@ -681,7 +681,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     :param app: the application to execute.
     :param buffered: set to `True` to enforce buffering.
-    :return:
+    :return: tuple in the form ``(app_iter, status, headers)``
     """
     response = []
     buffer = []
