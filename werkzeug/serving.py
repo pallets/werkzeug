@@ -100,6 +100,7 @@ class WSGIHandler(BaseHTTPRequestHandler):
 
             assert type(data) is str, 'applications must write bytes'
             self.wfile.write(data)
+            self.wfile.flush()
 
         def start_response(status, response_headers, exc_info=None):
             if exc_info:
