@@ -150,6 +150,39 @@ def test_environ_builder_paths():
     assert b.base_url == 'https://foo.invalid/test/'
 
 
+def test_environ_builder_content_type():
+    """EnvironBuilder content type behavior"""
+    builder = EnvironBuilder()
+    assert builder.content_type is None
+    builder.method = 'POST'
+    assert builder.content_type == 'application/x-www-form-urlencoded'
+    builder.form['foo'] = 'bar'
+    assert builder.content_type == 'application/x-www-form-urlencoded'
+    builder.files.add_file('blafasel', StringIO('foo'), 'test.txt')
+    assert builder.content_type == 'multipart/form-data'
+    req = builder.get_request()
+    assert req.form['foo'] == 'bar'
+    assert req.files['blafasel'].read() == 'foo'
+
+
+def test_environ_builder_stream_switch():
+    """EnvironBuilder stream switch"""
+    from cStringIO import OutputType
+    from werkzeug.test import stream_encode_multipart
+    from werkzeug import url_decode, MultiDict, parse_form_data
+
+    d = MultiDict(dict(foo=u'bar', blub=u'blah', hu=u'hum'))
+    for use_tempfile in False, True:
+        stream, length, boundary = stream_encode_multipart(
+            d, use_tempfile, threshold=150)
+        assert isinstance(stream, OutputType) != use_tempfile
+
+        form = parse_form_data({'wsgi.input': stream, 'CONTENT_LENGTH': str(length),
+                                'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
+                                boundary})[1]
+        assert form == d
+
+
 def test_create_environ():
     """Environment creation helper"""
     env = create_environ('/foo?bar=baz', 'http://example.org/')

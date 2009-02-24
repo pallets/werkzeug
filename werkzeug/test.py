@@ -39,15 +39,19 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     if use_tempfile:
         def write(string):
             stream, total_length, on_disk = _closure
-            length = len(string)
-            if on_disk or length + _closure[1] <= threshold:
+            if on_disk:
                 stream.write(string)
             else:
-                new_stream = TemporaryFile('wb+')
-                new_stream.write(stream.getvalue())
-                _closure[0] = new_stream
-                _closure[2] = True
-            _closure[1] += length
+                length = len(string)
+                if length + _closure[1] <= threshold:
+                    stream.write(string)
+                else:
+                    new_stream = TemporaryFile('wb+')
+                    new_stream.write(stream.getvalue())
+                    new_stream.write(string)
+                    _closure[0] = new_stream
+                    _closure[2] = True
+                _closure[1] = total_length + length
     else:
         write = _closure[0].write
 
@@ -83,8 +87,11 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
             write('\r\n')
     write('--%s--\r\n' % boundary)
 
+    length = int(_closure[0].tell())
     _closure[0].seek(0)
-    return _closure[0], _closure[1], boundary
+    print _closure[0].read()
+    _closure[0].seek(0)
+    return _closure[0], length, boundary
 
 
 def encode_multipart(values, boundary=None, charset='utf-8'):
