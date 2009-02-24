@@ -89,7 +89,6 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
 
     length = int(_closure[0].tell())
     _closure[0].seek(0)
-    print _closure[0].read()
     _closure[0].seek(0)
     return _closure[0], length, boundary
 
