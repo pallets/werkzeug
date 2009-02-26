@@ -12,6 +12,5 @@
     Python interpreter that `contrib` is a package.
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-                Leif K-Brooks, Ronny Pfannschmid, Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 """

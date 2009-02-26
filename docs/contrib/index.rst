@@ -14,3 +14,4 @@ as part of the `contrib` module:
    wrappers
    iterio
    fixers
+   profiler

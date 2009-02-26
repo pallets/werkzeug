@@ -10,6 +10,11 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+from warnings import warn
+warn(DeprecationWarning('reporter stream is deprecated.  If you want to continue '
+                        'using this class copy the module code from the '
+                        'werkzeug wiki: http://dev.pocoo.org/projects/werkzeug/'
+                        'wiki/ReporterStream')
 
 
 class BaseReporterStream(object):

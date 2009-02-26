@@ -18,22 +18,6 @@ from tokenize import PseudoToken
 from werkzeug import utils
 from werkzeug._internal import _decode_unicode
 
-# Anything older than Python 2.4 
-if sys.version_info < (2, 4):
-    class AstMangler(object):
-
-        def __getattr__(self, key):
-            class_ = getattr(_ast, key)
-            def wrapper(*args, **kw):
-                lineno = kw.pop('lineno', None)
-                obj = class_(*args, **kw)
-                obj.lineno = lineno
-                return obj
-            return wrapper
-
-    _ast = ast
-    ast = AstMangler()
-
 
 # Copyright notice: The `parse_data` method uses the string interpolation
 # algorithm by Ka-Ping Yee which originally was part of `ltpl20.py`_

@@ -3,7 +3,15 @@
     werkzeug.contrib.profiler
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Provides a WSGI profiler middleware for finding bottlenecks.
+    This module provides a simple WSGI profiler middleware for finding
+    bottlenecks in web application.  It uses the :mod:`profile` or
+    :mod:`cProfile` module to do the profiling and writes the stats to the
+    stream provided (defaults to stderr).
+
+    Example usage::
+
+        from werkzeug.contrib.profiler import ProfilerMiddleware
+        app = ProfilerMiddleware(app)
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
@@ -24,7 +32,7 @@ class MergeStream(object):
     """An object that redirects `write` calls to multiple streams.
     Use this to log to both `sys.stdout` and a file::
 
-        f = file('profiler.log')
+        f = open('profiler.log', 'w')
         stream = MergeStream(sys.stdout, f)
         profiler = ProfilerMiddleware(app, stream)
     """
@@ -40,7 +48,18 @@ class MergeStream(object):
 
 
 class ProfilerMiddleware(object):
-    """Simple profiler middleware."""
+    """Simple profiler middleware.  Wraps a WSGI application and profiles
+    a request.  This intentionally buffers the response so that timings are
+    more exact.
+
+    For the exact meaning of `sort_by` and `restrictions` consult the
+    :mod:`profile` documentation.
+
+    :param app: the WSGI application to profile.
+    :param stream: the stream for the profiled stats.  defaults to stderr.
+    :param sort_by: a tuple of columns to sort the result by.
+    :param restrictions: a tuple of profiling strictions.
+    """
 
     def __init__(self, app, stream=None,
                  sort_by=('time', 'calls'), restrictions=()):
@@ -82,8 +101,11 @@ class ProfilerMiddleware(object):
 def make_action(app_factory, hostname='localhost', port=5000,
                 threaded=False, processes=1, stream=None,
                 sort_by=('time', 'calls'), restrictions=()):
-    """Return a new callback for werkzeug scripts that starts a local
-    server for profiling.
+    """Return a new callback for :mod:`werkzeug.script` that starts a local
+    server with the profiler enabled::
+
+        from werkzeug.contrib import profiler
+        action_profile = profiler.make_action(make_app)
     """
     def action(hostname=('h', hostname), port=('p', port),
                threaded=threaded, processes=processes):
