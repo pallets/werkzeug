@@ -14,7 +14,7 @@ from warnings import warn
 warn(DeprecationWarning('reporter stream is deprecated.  If you want to continue '
                         'using this class copy the module code from the '
                         'werkzeug wiki: http://dev.pocoo.org/projects/werkzeug/'
-                        'wiki/ReporterStream')
+                        'wiki/ReporterStream'), stacklevel=2)
 
 
 class BaseReporterStream(object):
