@@ -68,10 +68,6 @@ import sys
 import inspect
 import getopt
 from os.path import basename
-try:
-    set = set
-except NameError:
-    from sets import Set as set
 
 
 argument_types = {

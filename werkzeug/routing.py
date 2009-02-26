@@ -102,10 +102,6 @@ from itertools import izip
 
 from werkzeug.utils import url_encode, url_quote, redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
-try:
-    set
-except NameError:
-    from sets import Set as set
 
 
 _rule_re = re.compile(r'''

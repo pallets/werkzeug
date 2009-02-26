@@ -3,8 +3,7 @@ Werkzeug Examples
 =================
 
 This directory contains various example applications and example code of
-Werkzeug powered applications.  Nearly all of them are written for Python 2.4
-and higher so don't expect them to work on Python 2.3.
+Werkzeug powered applications.
 
 Beside the proof of concept applications and code snippets in the partial
 folder they all have external depencencies for template engines or database
@@ -91,7 +90,6 @@ find in real life :-)
     Like shorty, but implemented using CouchDB.
 
     Requirements :
-    -   python 2.4 & sup
     -   werkzeug : http://werkzeug.pocoo.org
     -   jinja : http://jinja.pocoo.org
     -   couchdb 0.72 & above : http://www.couchdb.org

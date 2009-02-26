@@ -28,9 +28,8 @@
 
 
     As you can see from this example those exceptions are callable WSGI
-    applications.  Because of Python 2.3 / 2.4 compatibility those do not
-    extend from the response objects but only from the python exception
-    class.
+    applications.  Because of Python 2.4 compatibility those do not extend
+    from the response objects but only from the python exception class.
 
     As a matter of fact they are not Werkzeug response objects.  However you
     can get a response object by calling ``get_response()`` on a HTTP
