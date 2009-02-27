@@ -80,9 +80,6 @@ class FileStorage(object):
     def __nonzero__(self):
         return bool(self.filename and self.content_length)
 
-    def __len__(self):
-        return max(self.content_length, 0)
-
     def __iter__(self):
         return iter(self.readline, '')
 

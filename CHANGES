@@ -48,6 +48,9 @@ Version 0.5
   is less confusing.
 - officially documented imports from the internal modules as undefined
   behavior.  These modules were never exposed as public interfaces.
+- removed `FileStorage.__len__` which previously made the object
+  falsy for browsers not sending the content length which all browsers
+  do.
 
 Version 0.4.1
 -------------
