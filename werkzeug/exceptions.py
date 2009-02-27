@@ -141,9 +141,7 @@ class HTTPException(Exception):
 
 
 class _ProxyException(HTTPException):
-    """
-    An HTTP exception that expands renders a WSGI application on error.
-    """
+    """An HTTP exception that expands renders a WSGI application on error."""
 
     def __init__(self, response):
         Exception.__init__(self, 'proxy exception for %r' % response)
@@ -154,8 +152,7 @@ class _ProxyException(HTTPException):
 
 
 class BadRequest(HTTPException):
-    """
-    *400* `Bad Request`
+    """*400* `Bad Request`
 
     Raise if the browser sends something to the application the application
     or server cannot handle.
@@ -168,8 +165,7 @@ class BadRequest(HTTPException):
 
 
 class Unauthorized(HTTPException):
-    """
-    *401* `Unauthorized`
+    """*401* `Unauthorized`
 
     Raise if the user is not authorized.  Also used if you want to use HTTP
     basic auth.
@@ -186,8 +182,7 @@ class Unauthorized(HTTPException):
 
 
 class Forbidden(HTTPException):
-    """
-    *403* `Forbidden`
+    """*403* `Forbidden`
 
     Raise if the user doesn't have the permission for the requested resource
     but was authenticated.
@@ -200,8 +195,7 @@ class Forbidden(HTTPException):
 
 
 class NotFound(HTTPException):
-    """
-    *404* `Not Found`
+    """*404* `Not Found`
 
     Raise if a resource does not exist and never existed.
     """
@@ -214,8 +208,7 @@ class NotFound(HTTPException):
 
 
 class MethodNotAllowed(HTTPException):
-    """
-    *405* `Method Not Allowed`
+    """*405* `Method Not Allowed`
 
     Raise if the server used a method the resource does not handle.  For
     example `POST` if the resource is view only.  Especially useful for REST.
@@ -244,8 +237,7 @@ class MethodNotAllowed(HTTPException):
 
 
 class NotAcceptable(HTTPException):
-    """
-    *406* `Not Acceptable`
+    """*406* `Not Acceptable`
 
     Raise if the server can't return any content conforming to the
     `Accept` headers of the client.
@@ -261,8 +253,7 @@ class NotAcceptable(HTTPException):
 
 
 class RequestTimeout(HTTPException):
-    """
-    *408* `Request Timeout`
+    """*408* `Request Timeout`
 
     Raise to signalize a timeout.
     """
@@ -274,8 +265,7 @@ class RequestTimeout(HTTPException):
 
 
 class Gone(HTTPException):
-    """
-    *410* `Gone`
+    """*410* `Gone`
 
     Raise if a resource existed previously and went away without new location.
     """
@@ -288,8 +278,7 @@ class Gone(HTTPException):
 
 
 class LengthRequired(HTTPException):
-    """
-    *411* `Length Required`
+    """*411* `Length Required`
 
     Raise if the browser submitted data but no ``Content-Length`` header which
     is required for the kind of processing the server does.
@@ -302,8 +291,7 @@ class LengthRequired(HTTPException):
 
 
 class PreconditionFailed(HTTPException):
-    """
-    *412* `Precondition Failed`
+    """*412* `Precondition Failed`
 
     Status code used in combination with ``If-Match``, ``If-None-Match``, or
     ``If-Unmodified-Since``.
@@ -316,8 +304,7 @@ class PreconditionFailed(HTTPException):
 
 
 class RequestEntityTooLarge(HTTPException):
-    """
-    *413* `Request Entity Too Large`
+    """*413* `Request Entity Too Large`
 
     The status code one should return if the data submitted exceeded a given
     limit.
@@ -329,8 +316,7 @@ class RequestEntityTooLarge(HTTPException):
 
 
 class RequestURITooLarge(HTTPException):
-    """
-    *414* `Request URI Too Large`
+    """*414* `Request URI Too Large`
 
     Like *413* but for too long URLs.
     """
@@ -342,8 +328,7 @@ class RequestURITooLarge(HTTPException):
 
 
 class UnsupportedMediaType(HTTPException):
-    """
-    *415* `Unsupported Media Type`
+    """*415* `Unsupported Media Type`
 
     The status code returned if the server is unable to handle the media type
     the client transmitted.
@@ -356,8 +341,7 @@ class UnsupportedMediaType(HTTPException):
 
 
 class InternalServerError(HTTPException):
-    """
-    *500* `Internal Server Error`
+    """*500* `Internal Server Error`
 
     Raise if an internal server error occurred.  This is a good fallback if an
     unknown error occurred in the dispatcher.
@@ -371,8 +355,7 @@ class InternalServerError(HTTPException):
 
 
 class NotImplemented(HTTPException):
-    """
-    *501* `Not Implemented`
+    """*501* `Not Implemented`
 
     Raise if the application does not support the action requested by the
     browser.
@@ -385,8 +368,7 @@ class NotImplemented(HTTPException):
 
 
 class BadGateway(HTTPException):
-    """
-    *502* `Bad Gateway`
+    """*502* `Bad Gateway`
 
     If you do proxying in your application you should return this status code
     if you received an invalid response from the upstream server it accessed
@@ -400,8 +382,7 @@ class BadGateway(HTTPException):
 
 
 class ServiceUnavailable(HTTPException):
-    """
-    *503* `Service Unavailable`
+    """*503* `Service Unavailable`
 
     Status code you should return if a service is temporarily unavailable.
     """
