@@ -77,9 +77,6 @@ class FileStorage(object):
     def __getattr__(self, name):
         return getattr(self.stream, name)
 
-    def __nonzero__(self):
-        return bool(self.filename and self.content_length)
-
     def __iter__(self):
         return iter(self.readline, '')
 
