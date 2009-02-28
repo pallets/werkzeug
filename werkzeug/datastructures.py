@@ -5,7 +5,7 @@
 
     This module provides mixins and classes with an immutable interface.
 
-    :copyright: Copyright 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import re
