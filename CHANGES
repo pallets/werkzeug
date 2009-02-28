@@ -51,6 +51,7 @@ Version 0.5
 - removed `FileStorage.__len__` which previously made the object
   falsy for browsers not sending the content length which all browsers
   do.
+- :class:`SharedDataMiddleware` uses `wrap_file` now.
 
 Version 0.4.1
 -------------

@@ -119,6 +119,9 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
             try:
                 for data in application_iter:
                     write(data)
+                # make sure the headers are sent
+                if not headers_sent:
+                    write('')
             finally:
                 if hasattr(application_iter, 'close'):
                     application_iter.close()
