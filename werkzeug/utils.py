@@ -116,15 +116,27 @@ class SharedDataMiddleware(object):
     This will then serve the ``shared_files`` folder in the `myapplication`
     Python package.
 
-    The optional `disallow` parameter can be a list of `fnmatch` rules for
-    files that are not accessible from the web.  If `cache` is set to `False`
-    no caching headers are sent.
+    The optional `disallow` parameter can be a list of :func:`~fnmatch.fnmatch`
+    rules for files that are not accessible from the web.  If `cache` is set to
+    `False` no caching headers are sent.
+
+    .. versionchanged:: 0.5
+       The cache timeout is configurable now.
+
+    :param app: the application to wrap.  If you don't want to wrap an
+                application you can pass it :exc:`NotFound`.
+    :param exports: a dict of exported files and folders.
+    :param diallow: a list of :func:`~fnmatch.fnmatch` rules.
+    :param cache: enable or disable caching headers.
+    :Param cache_timeout: the cache timeout in seconds for the headers.
     """
 
-    def __init__(self, app, exports, disallow=None, cache=True):
+    def __init__(self, app, exports, disallow=None, cache=True,
+                 cache_timeout=21600):
         self.app = app
         self.exports = {}
         self.cache = cache
+        self.cache_timeout = cache_timeout
         for key, value in exports.iteritems():
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
@@ -215,7 +227,7 @@ class SharedDataMiddleware(object):
 
         headers = [('Last-Modified', http_date(mtime)), ('Date', http_date())]
         if self.cache:
-            timeout = 3600
+            timeout = self.cache_timeout
             etag = 'wzsdm-%s-%s-%s' % (mtime, file_size, hash(real_filename))
             headers += [
                 ('Etag', '"%s"' % etag),
