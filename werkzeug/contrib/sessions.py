@@ -55,7 +55,9 @@ try:
 except ImportError:
     from sha import new as sha1
 from cPickle import dump, load, HIGHEST_PROTOCOL
+
 from werkzeug.utils import ClosingIterator, dump_cookie, parse_cookie
+from werkzeug.datastructures import CallbackDict
 
 
 _sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')
@@ -71,18 +73,15 @@ def generate_key(salt=None):
     return sha1('%s%s%s' % (salt, time(), _urandom())).hexdigest()
 
 
-class ModificationTrackingDict(dict):
+class ModificationTrackingDict(CallbackDict):
     __slots__ = ('modified',)
 
     def __init__(self, *args, **kwargs):
-        dict.__init__(self, *args, **kwargs)
+        def on_update(self):
+            self.modified = True
         self.modified = False
-
-    def __repr__(self):
-        return '<%s %s%s>' % (
-            self.__class__.__name__,
-            dict.__repr__(self)
-        )
+        CallbackDict.__init__(self, on_update=on_update)
+        dict.update(self, *args, **kwargs)
 
     def copy(self):
         """Create a flat copy of the dict."""
@@ -96,29 +95,6 @@ class ModificationTrackingDict(dict):
 
     def __copy__(self):
         return self.copy()
-
-    def call_with_modification(f):
-        def oncall(self, *args, **kw):
-            try:
-                return f(self, *args, **kw)
-            finally:
-                self.modified = True
-        try:
-            oncall.__name__ = f.__name__
-            oncall.__doc__ = f.__doc__
-            oncall.__module__ = f.__module__
-        except:
-            pass
-        return oncall
-
-    __setitem__ = call_with_modification(dict.__setitem__)
-    __delitem__ = call_with_modification(dict.__delitem__)
-    clear = call_with_modification(dict.clear)
-    pop = call_with_modification(dict.pop)
-    popitem = call_with_modification(dict.popitem)
-    setdefault = call_with_modification(dict.setdefault)
-    update = call_with_modification(dict.update)
-    del call_with_modification
 
 
 class Session(ModificationTrackingDict):

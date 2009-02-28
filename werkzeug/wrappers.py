@@ -28,7 +28,8 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     default_stream_factory
+     default_stream_factory, parse_options_header, \
+     dump_options_header
 from werkzeug.utils import cached_property, environ_property, \
      get_current_url, url_encode, run_wsgi_app, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
@@ -36,7 +37,7 @@ from werkzeug.utils import cached_property, environ_property, \
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
-     ResponseCacheControl, RequestCacheControl
+     ResponseCacheControl, RequestCacheControl, CallbackDict
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper
 
@@ -935,6 +936,73 @@ class ResponseStreamMixin(object):
         return ResponseStream(self)
 
 
+class CommonRequestDescriptorsMixin(object):
+    """A mixin for :class:`BaseRequest` subclasses.  Request objects that
+    mix this class in will automatically get descriptors for a coupl eof
+    HTTP headers with automatic type conversion.
+
+    .. versionadded:: 0.5
+    """
+
+    content_type = environ_property('CONTENT_TYPE', doc='''
+         The Content-Type entity-header field indicates the media type of
+         the entity-body sent to the recipient or, in the case of the HEAD
+         method, the media type that would have been sent had the request
+         been a GET.''')
+    content_length = environ_property('CONTENT_LENGTH', None, int, str, doc='''
+         The Content-Length entity-header field indicates the size of the
+         entity-body in bytes or, in the case of the HEAD method, the size of
+         the entity-body that would have been sent had the request been a
+         GET.''')
+    referrer = environ_property('HTTP_REFERER', doc='''
+        The Referer[sic] request-header field allows the client to specify,
+        for the server's benefit, the address (URI) of the resource from which
+        the Request-URI was obtained (the "referrer", although the header
+        field is misspelled).''')
+    date = environ_property('HTTP_DATE', None, parse_date, doc='''
+        The Date general-header field represents the date and time at which
+        the message was originated, having the same semantics as orig-date
+        in RFC 822.''')
+    max_forwards = environ_property('HTTP_MAX_FORWARDS', None, int, doc='''
+         The Max-Forwards request-header field provides a mechanism with the
+         TRACE and OPTIONS methods to limit the number of proxies or gateways
+         that can forward the request to the next inbound server.''')
+
+    def _parse_content_type(self):
+        if not hasattr(self, '_parsed_content_type'):
+            self._parsed_content_type = \
+                parse_options_header(self.environ.get('CONTENT_TYPE', ''))
+
+    @property
+    def mimetype(self):
+        """Like :attr:`content_type` but without parameters (eg, without
+        charset, type etc.).  For example if the content
+        type is ``text/html; charset=utf-8`` the mimetype would be
+        ``'text/html'``.
+        """
+        self._parse_content_type()
+        return self._parsed_content_type[0]
+
+    @property
+    def mimetype_params(self):
+        """The mimetype parameters as dict.  For example if the content
+        type is ``text/html; charset=utf-8`` the params would be
+        ``{'charset': 'utf-8'}``.
+        """
+        self._parse_content_type()
+        return self._parsed_content_type[1]
+
+    @cached_property
+    def pragma(self):
+        """The Pragma general-header field is used to include
+        implementation-specific directives that might apply to any recipient
+        along the request/response chain.  All pragma directives specify
+        optional behavior from the viewpoint of the protocol; however, some
+        systems MAY require that behavior be consistent with the directives.
+        """
+        return parse_set_header(self.environ.get('HTTP_PRAGMA', ''))
+
+
 class CommonResponseDescriptorsMixin(object):
     """A mixin for :class:`BaseResponse` subclasses.  Response objects that
     mix this class in will automatically get descriptors for a couple of
@@ -942,16 +1010,29 @@ class CommonResponseDescriptorsMixin(object):
     """
 
     def _get_mimetype(self):
-        """The mimetype (content type without charset etc.)"""
-        ct = self.headers.get('Content-Type')
+        ct = self.headers.get('content-type')
         if ct:
             return ct.split(';')[0].strip()
 
     def _set_mimetype(self, value):
         self.headers['Content-Type'] = get_content_type(value, self.charset)
 
+    def _get_mimetype_params(self):
+        def on_update(d):
+            self.headers['Content-Type'] = \
+                dump_options_header(self.mimetype, d)
+        d = parse_options_header(self.headers.get('content-type', ''))[1]
+        return CallbackDict(d, on_update)
+
     mimetype = property(_get_mimetype, _set_mimetype, doc='''
         The mimetype (content type without charset etc.)''')
+    mimetype_params = property(_get_mimetype_params, doc='''
+        The mimetype parameters as dict.  For example if the content
+        type is ``text/html; charset=utf-8`` the params would be
+        ``{'charset': 'utf-8'}``.
+
+        .. versionadded:: 0.5
+        ''')
     location = header_property('Location', doc='''
         The Location response-header field is used to redirect the recipient
         to a location other than the Request-URI for completion of the request
@@ -1076,13 +1157,15 @@ class WWWAuthenticateMixin(object):
 
 
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
-              UserAgentMixin, AuthorizationMixin):
+              UserAgentMixin, AuthorizationMixin,
+              CommonRequestDescriptorsMixin):
     """Full featured request object implementing the following mixins:
 
     - :class:`AcceptMixin` for accept header parsing
     - :class:`ETagRequestMixin` for etag and cache control handling
     - :class:`UserAgentMixin` for user agent introspection
     - :class:`AuthorizationMixin` for http auth handling
+    - :class:`CommonRequestDescriptorsMixin` for common headers
     """
 
 

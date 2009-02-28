@@ -244,6 +244,10 @@ def test_common_response_descriptors_mixin():
     response.mimetype = 'text/html'
     assert response.mimetype == 'text/html'
     assert response.content_type == 'text/html; charset=utf-8'
+    assert response.mimetype_params == {'charset': 'utf-8'}
+    response.mimetype_params['x-foo'] = 'yep'
+    del response.mimetype_params['charset']
+    assert response.content_type == 'text/html; x-foo=yep'
 
     now = datetime.utcnow().replace(microsecond=0)
 
@@ -274,6 +278,27 @@ def test_common_response_descriptors_mixin():
     response.content_language.add('en-US')
     response.content_language.add('fr')
     assert response.headers['Content-Language'] == 'en-US, fr'
+
+
+def test_common_request_descriptors_mixin():
+    """Common request descriptors request-wrapper mixin"""
+    request = Request.from_values(content_type='text/html; charset=utf-8',
+                                  content_length='23',
+                                  headers={
+        'Referer':      'http://www.example.com/',
+        'Date':         'Sat, 28 Feb 2009 19:04:35 GMT',
+        'Max-Forwards': '10',
+        'Pragma':       'no-cache'
+    })
+
+    assert request.content_type == 'text/html; charset=utf-8'
+    assert request.mimetype == 'text/html'
+    assert request.mimetype_params == {'charset': 'utf-8'}
+    assert request.content_length == 23
+    assert request.referrer == 'http://www.example.com/'
+    assert request.date == datetime(2009, 2, 28, 19, 4, 35)
+    assert request.max_forwards == 10
+    assert 'no-cache' in request.pragma
 
 
 def test_shallow_mode():

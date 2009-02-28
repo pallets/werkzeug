@@ -278,6 +278,7 @@ class EnvironBuilder(object):
         self.environ_base = environ_base
         self.environ_overrides = environ_overrides
         self.input_stream = input_stream
+        self.content_length = content_length
         self.closed = False
 
         if data:
@@ -364,7 +365,10 @@ class EnvironBuilder(object):
         return self.headers.get('Content-Length', type=int)
 
     def _set_content_length(self, value):
-        self.headers['Content-Length'] = str(value)
+        if value is None:
+            self.headers.pop('Content-Length', None)
+        else:
+            self.headers['Content-Length'] = str(value)
 
     content_length = property(_get_content_length, _set_content_length, doc='''
         The content length as integer.  Reflected from and to the

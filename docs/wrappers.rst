@@ -133,6 +133,9 @@ and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides
 .. autoclass:: ResponseStreamMixin
    :members:
 
+.. autoclass:: CommonRequestDescriptorsMixin
+   :members:
+
 .. autoclass:: CommonResponseDescriptorsMixin
    :members:
 

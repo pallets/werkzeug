@@ -82,8 +82,11 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
         if path_info:
             from urllib import unquote
             environ['PATH_INFO'] = unquote(path_info)
+
         for key, value in self.headers.items():
-            environ['HTTP_' + key.upper().replace('-', '_')] = value
+            key = 'HTTP_' + key.upper().replace('-', '_')
+            if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
+                environ[key] = value
 
         headers_set = []
         headers_sent = []

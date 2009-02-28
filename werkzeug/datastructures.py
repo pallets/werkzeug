@@ -143,6 +143,7 @@ class UpdateDictMixin(object):
     __setitem__ = calls_update('__setitem__')
     __delitem__ = calls_update('__delitem__')
     clear = calls_update('clear')
+    pop = calls_update('pop')
     popitem = calls_update('popitem')
     setdefault = calls_update('setdefault')
     update = calls_update('update')
@@ -1441,6 +1442,22 @@ class CacheControl(ResponseCacheControl):
 # attach cache_property to the _CacheControl as staticmethod
 # so that others can reuse it.
 _CacheControl.cache_property = staticmethod(cache_property)
+
+
+class CallbackDict(UpdateDictMixin, dict):
+    """A dict that calls a function passed every time something is changed.
+    The function is passed the dict instance.
+    """
+
+    def __init__(self, initial=None, on_update=None):
+        dict.__init__(self, initial or ())
+        self.on_update = on_update
+
+    def __repr__(self):
+        return '<%s %s>' % (
+            self.__class__.__name__,
+            dict.__repr__(self)
+        )
 
 
 class HeaderSet(object):

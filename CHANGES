@@ -53,6 +53,8 @@ Version 0.5
   do.
 - :class:`SharedDataMiddleware` uses `wrap_file` now and has a
   configurable cache timeout.
+- added :class:`CommonRequestDescriptorsMixin`
+- added :attr:`CommonResponseDescriptorsMixin.mimetype_params`
 
 Version 0.4.1
 -------------
