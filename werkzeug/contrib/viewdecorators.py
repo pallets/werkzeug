@@ -5,14 +5,11 @@
 
     Convenience decorators for view callables to return common responses.
 
-    For details on HTTP status codes, see `RFC 2616`_.
+    For details on HTTP status codes, see :rfc:`2616`.
 
-    .. _RFC 2616: http://tools.ietf.org/html/rfc2616
-
-    :copyright: (c) 2006-2009 Jochen Kupperschmidt
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-
 from functools import wraps
 
 try:
@@ -27,15 +24,14 @@ def jsonify(func):
     """Return data as JSON response.
 
     Data returned by the decorated callable is transformed to JSON and wrapped
-    in a response with the appropriate MIME type (as defined in `RFC 4627`_).
-
-    .. _RFC 4627: http://tools.ietf.org/html/rfc4627
+    in a response with the appropriate MIME type (as defined in :rfc:`4627`).
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
         data = json.dumps(func(*args, **kwargs))
         return Response(data, mimetype='application/json')
     return wrapper
+
 
 def respond_created(func):
     """Return a ``201 Created`` response.
@@ -48,6 +44,7 @@ def respond_created(func):
         url = func(*args, **kwargs)
         return Response(status=201, headers=[('Location', url)])
     return wrapper
+
 
 def respond_no_content(func):
     """Send a ``204 No Content`` response."""

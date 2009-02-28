@@ -132,7 +132,7 @@ class SharedDataMiddleware(object):
     """
 
     def __init__(self, app, exports, disallow=None, cache=True,
-                 cache_timeout=21600):
+                 cache_timeout=60 * 60 * 12):
         self.app = app
         self.exports = {}
         self.cache = cache
@@ -231,7 +231,7 @@ class SharedDataMiddleware(object):
             etag = 'wzsdm-%s-%s-%s' % (mtime, file_size, hash(real_filename))
             headers += [
                 ('Etag', '"%s"' % etag),
-                ('Cache-Control', 'max-age=%s' % timeout)
+                ('Cache-Control', 'max-age=%d, public' % timeout)
             ]
             if not is_resource_modified(environ, etag, last_modified=mtime):
                 f.close()
