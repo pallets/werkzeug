@@ -177,7 +177,7 @@ class SharedDataMiddleware(object):
         manager = ResourceManager()
         filesystem_bound = isinstance(provider, DefaultProvider)
         def loader(path):
-            if not provider.has_resource(path):
+            if path is None or not provider.has_resource(path):
                 return None, None
             basename = posixpath.basename(path)
             if filesystem_bound:
@@ -192,7 +192,10 @@ class SharedDataMiddleware(object):
 
     def get_directory_loader(self, directory):
         def loader(path):
-            path = os.path.join(directory, path)
+            if path is not None:
+                path = os.path.join(directory, path)
+            else:
+                path = directory
             if os.path.isfile(path):
                 return os.path.basename(path), self._opener(path)
             return None, None

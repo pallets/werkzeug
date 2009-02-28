@@ -28,7 +28,7 @@ def on_show(request, page_name):
     else:
         query = query.order_by(RevisionedPage.revision_id.desc())
         revision_requested = False
-    page = query.firstt()
+    page = query.first()
     if page is None:
         return page_missing(request, page_name, revision_requested)
     return Response(generate_template('action_show.html',
