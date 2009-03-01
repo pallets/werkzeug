@@ -55,6 +55,7 @@ Version 0.5
   configurable cache timeout.
 - added :class:`CommonRequestDescriptorsMixin`
 - added :attr:`CommonResponseDescriptorsMixin.mimetype_params`
+- added :mod:`werkzeug.contrib.lint`
 
 Version 0.4.1
 -------------

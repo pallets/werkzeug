@@ -228,7 +228,7 @@ class SharedDataMiddleware(object):
         mime_type = guessed_type[0] or 'text/plain'
         f, mtime, file_size = file_loader()
 
-        headers = [('Last-Modified', http_date(mtime)), ('Date', http_date())]
+        headers = [('Date', http_date())]
         if self.cache:
             timeout = self.cache_timeout
             etag = 'wzsdm-%s-%s-%s' % (mtime, file_size, hash(real_filename))
@@ -246,7 +246,8 @@ class SharedDataMiddleware(object):
 
         headers.extend((
             ('Content-Type', mime_type),
-            ('Content-Length', str(file_size))
+            ('Content-Length', str(file_size)),
+            ('Last-Modified', http_date(mtime))
         ))
         start_response('200 OK', headers)
         return wrap_file(environ, f)

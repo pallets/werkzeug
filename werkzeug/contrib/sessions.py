@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
     werkzeug.contrib.sessions
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     This module contains some helper classes that help one to add session
-    support to a python WSGI application.
+    support to a python WSGI application.  For full client-side session
+    storage see :mod:`~werkzeug.contrib.securecookie` which implements a
+    secure, client-side session storage.
 
     Example::
 
@@ -98,8 +100,7 @@ class ModificationTrackingDict(CallbackDict):
 
 
 class Session(ModificationTrackingDict):
-    """
-    Subclass of a dict that keeps track of direct object changes.  Changes
+    """Subclass of a dict that keeps track of direct object changes.  Changes
     in mutable structures are not tracked, for those you have to set
     `modified` to `True` by hand.
     """
@@ -127,6 +128,9 @@ class SessionStore(object):
     """Baseclass for all session stores.  The Werkzeug contrib module does not
     implement any useful stores besides the filesystem store, application
     developers are encouraged to create their own stores.
+
+    :param session_class: The session class to use.  Defaults to
+                          :class:`Session`.
     """
 
     def __init__(self, session_class=None):
@@ -168,10 +172,18 @@ class SessionStore(object):
 class FilesystemSessionStore(SessionStore):
     """Simple example session store that saves sessions in the filesystem like
     PHP does.
+
+    :param path: the path to the folder used for storing the sessions.
+                 If not provided the default temporary directory is used.
+    :param filename_template: a string template used to give the session
+                              a filename.  ``%s`` is replaced with the
+                              session id.
+    :param session_class: The session class to use.  Defaults to
+                          :class:`Session`.
     """
 
     def __init__(self, path=None, filename_template='werkzeug_%s.sess',
-                 session_class=Session):
+                 session_class=None):
         SessionStore.__init__(self, session_class)
         if path is None:
             from tempfile import gettempdir
@@ -220,17 +232,17 @@ class SessionMiddleware(object):
     fast as sessions managed by the application itself and will put a key into
     the WSGI environment only relevant for the application which is against
     the concept of WSGI.
+
+    The cookie parameters are the same as for the :func:`~werkzeug.dump_cookie`
+    function just prefixed with ``cookie_``.  Additionally `max_age` is
+    called `cookie_age` and not `cookie_max_age` because of backwards
+    compatibility.
     """
 
     def __init__(self, app, store, cookie_name='session_id',
                  cookie_age=None, cookie_expires=None, cookie_path='/',
                  cookie_domain=None, cookie_secure=None,
                  cookie_httponly=False, environ_key='werkzeug.session'):
-        """The cookie parameters are the same as for the `dump_cookie`
-        function just prefixed with "cookie_".  Additionally "max_age" is
-        called "cookie_age" and not "cookie_max_age" because of backwards
-        compatibility.
-        """
         self.app = app
         self.store = store
         self.cookie_name = cookie_name

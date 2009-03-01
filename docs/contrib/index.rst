@@ -9,9 +9,11 @@ as part of the `contrib` module:
    :maxdepth: 2
 
    atom
+   sessions
    securecookie
    cache
    wrappers
    iterio
    fixers
    profiler
+   lint
