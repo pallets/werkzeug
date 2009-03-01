@@ -12,6 +12,8 @@ r"""
     Application Integration
     =======================
 
+    ::
+
         from werkzeug.contrib.sessions import SessionMiddleware, \
              FilesystemSessionStore
 
