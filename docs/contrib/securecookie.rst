@@ -16,8 +16,9 @@ Reference
 
    .. attribute:: modified
 
-      Whenever an item on the cookie is set this is set to `True`.  However
-      this does not track modifications inside mutable objects in the cookie:
+      Whenever an item on the cookie is set, this attribute is set to `True`.
+      However this does not track modifications inside mutable objects
+      in the cookie:
 
       >>> c = SecureCookie()
       >>> c["foo"] = [1, 2, 3]

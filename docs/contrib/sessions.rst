@@ -4,6 +4,9 @@ Sessions
 
 .. automodule:: werkzeug.contrib.sessions
 
+Reference
+=========
+
 .. autoclass:: Session
 
    .. attribute:: sid
@@ -16,10 +19,11 @@ Sessions
 
    .. attribute:: modified
 
-      Whenever an item on the cookie is set this is set to `True`.  However
-      this does not track modifications inside mutable objects in the cookie:
+      Whenever an item on the cookie is set, this attribute is set to `True`.
+      However this does not track modifications inside mutable objects
+      in the session:
 
-      >>> c = SecureCookie()
+      >>> c = Session({}, sid='deadbeefbabe2c00ffee')
       >>> c["foo"] = [1, 2, 3]
       >>> c.modified
       True

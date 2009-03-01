@@ -5,7 +5,7 @@
 
     .. versionadded:: 0.5
 
-    This module provides a middleware that performs santity checks of the WSGI
+    This module provides a middleware that performs sanity checks of the WSGI
     application.  It checks that :pep:`333` is properly implemented and warns
     on some common HTTP errors such as non-empty responses for 304 status
     codes.

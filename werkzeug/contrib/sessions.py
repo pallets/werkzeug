@@ -8,7 +8,9 @@ r"""
     storage see :mod:`~werkzeug.contrib.securecookie` which implements a
     secure, client-side session storage.
 
-    Example::
+
+    Application Integration
+    =======================
 
         from werkzeug.contrib.sessions import SessionMiddleware, \
              FilesystemSessionStore
