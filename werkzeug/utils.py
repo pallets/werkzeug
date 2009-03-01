@@ -16,7 +16,9 @@ import sys
 import urllib
 import urlparse
 import posixpath
-from time import time
+import mimetypes
+from zlib import adler32
+from time import time, mktime
 from datetime import datetime, timedelta
 
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
@@ -120,6 +122,11 @@ class SharedDataMiddleware(object):
     rules for files that are not accessible from the web.  If `cache` is set to
     `False` no caching headers are sent.
 
+    Currently the middleware does not support non ASCII filenames.  If the
+    encoding on the file system happens to be the encoding of the URI it may
+    work but this could also be by accident.  We strongly suggest using ASCII
+    only file names for static files.
+
     .. versionchanged:: 0.5
        The cache timeout is configurable now.
 
@@ -201,6 +208,13 @@ class SharedDataMiddleware(object):
             return None, None
         return loader
 
+    def generate_etag(self, mtime, file_size, real_filename):
+        return 'wzsdm-%d-%s-%s' % (
+            mktime(mtime.timetuple()),
+            file_size,
+            adler32(real_filename) & 0xffffffff
+        )
+
     def __call__(self, environ, start_response):
         # sanitize the path for non unix systems
         cleaned_path = environ.get('PATH_INFO', '').strip('/')
@@ -223,15 +237,15 @@ class SharedDataMiddleware(object):
                     break
         if file_loader is None or not self.is_allowed(real_filename):
             return self.app(environ, start_response)
-        from mimetypes import guess_type
-        guessed_type = guess_type(real_filename)
+
+        guessed_type = mimetypes.guess_type(real_filename)
         mime_type = guessed_type[0] or 'text/plain'
         f, mtime, file_size = file_loader()
 
         headers = [('Date', http_date())]
         if self.cache:
             timeout = self.cache_timeout
-            etag = 'wzsdm-%s-%s-%s' % (mtime, file_size, hash(real_filename))
+            etag = self.generate_etag(mtime, file_size, real_filename)
             headers += [
                 ('Etag', '"%s"' % etag),
                 ('Cache-Control', 'max-age=%d, public' % timeout)

@@ -8,8 +8,8 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import mimetypes
 from os.path import join, dirname, basename, isfile
-from mimetypes import guess_type
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 from werkzeug.debug.repr import debug_repr
 from werkzeug.debug.tbtools import get_current_traceback
@@ -128,7 +128,8 @@ class DebuggedApplication(object):
         """Return a static resource from the shared folder."""
         filename = join(dirname(__file__), 'shared', basename(filename))
         if isfile(filename):
-            mimetype = guess_type(filename)[0] or 'application/octet-stream'
+            mimetype = mimetypes.guess_type(filename)[0] \
+                or 'application/octet-stream'
             f = file(filename, 'rb')
             try:
                 return Response(f.read(), mimetype=mimetype)

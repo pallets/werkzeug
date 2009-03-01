@@ -10,6 +10,7 @@
 """
 import re
 import codecs
+import mimetypes
 from werkzeug._internal import _proxy_repr, _missing
 
 
@@ -1070,8 +1071,7 @@ class FileMultiDict(MultiDict):
                 filename = file
             file = open(file, 'rb')
         if filename and content_type is None:
-            from mimetypes import guess_type
-            content_type = guess_type(filename)[0] or \
+            content_type = mimetypes.guess_type(filename)[0] or \
                            'application/octet-stream'
         self[name] = FileStorage(file, filename, name, content_type)
 

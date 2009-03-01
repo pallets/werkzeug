@@ -46,6 +46,7 @@ import socket
 import sys
 import time
 import thread
+from urllib import unquote
 from urlparse import urlparse
 from itertools import chain
 from SocketServer import ThreadingMixIn, ForkingMixIn
@@ -60,9 +61,8 @@ from werkzeug.exceptions import InternalServerError
 class BaseRequestHandler(BaseHTTPRequestHandler, object):
     server_version = 'Werkzeug/' + version
 
-    def run_wsgi(self):
-        path_info, _, query = urlparse(self.path)[2:5]
-        app = self.server.app
+    def make_environ(self):
+        path_info, query = urlparse(self.path)[2::2]
         environ = {
             'wsgi.version':         (1, 0),
             'wsgi.url_scheme':      'http',
@@ -70,9 +70,10 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
             'wsgi.errors':          sys.stderr,
             'wsgi.multithread':     self.server.multithread,
             'wsgi.multiprocess':    self.server.multiprocess,
-            'wsgi.run_once':        0,
+            'wsgi.run_once':        False,
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
+            'PATH_INFO':            unquote(path_info),
             'QUERY_STRING':         query,
             'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
             'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
@@ -82,15 +83,17 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_PORT':          str(self.server.server_address[1]),
             'SERVER_PROTOCOL':      self.request_version
         }
-        if path_info:
-            from urllib import unquote
-            environ['PATH_INFO'] = unquote(path_info)
 
         for key, value in self.headers.items():
             key = 'HTTP_' + key.upper().replace('-', '_')
             if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 environ[key] = value
 
+        return environ
+
+    def run_wsgi(self):
+        app = self.server.app
+        environ = self.make_environ()
         headers_set = []
         headers_sent = []
 
@@ -141,11 +144,12 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
             finally:
                 if hasattr(application_iter, 'close'):
                     application_iter.close()
+                application_iter = None
 
         try:
             execute(app)
-        except (socket.error, socket.timeout):
-            return
+        except (socket.error, socket.timeout), e:
+            self.connection_dropped(e, environ)
         except:
             if self.server.passthrough_errors:
                 raise
@@ -161,6 +165,11 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
                 pass
             self.server.log('error', 'Error on request:\n%s',
                             traceback.plaintext)
+
+    def connection_dropped(self, error, environ):
+        """Called if the connection was closed by the client.  By default
+        nothing happens.
+        """
 
     def handle_one_request(self):
         """Handle a single HTTP request."""

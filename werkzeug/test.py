@@ -10,13 +10,13 @@
 """
 import sys
 import urlparse
+import mimetypes
 from time import time
 from random import random
 from itertools import chain
 from tempfile import TemporaryFile
 from cStringIO import StringIO
 from cookielib import CookieJar
-from mimetypes import guess_type
 from urllib2 import Request as U2Request
 
 from werkzeug._internal import _empty_stream
@@ -69,8 +69,9 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                                    getattr(value, 'name', None))
                 content_type = getattr(value, 'content_type', None)
                 if content_type is None:
-                    content_type = filename and guess_type(filename)[0] or \
-                                   'application/octet-stream'
+                    content_type = filename and \
+                        mimetypes.guess_type(filename)[0] or \
+                        'application/octet-stream'
                 if filename is not None:
                     write('; filename="%s"\r\n' % filename)
                 else:
