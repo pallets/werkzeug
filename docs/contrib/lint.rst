@@ -1,6 +1,6 @@
-==============================
-Lint — a validation middleware
-==============================
+==========================
+Lint Validation Middleware
+==========================
 
 .. automodule:: werkzeug.contrib.lint
 

@@ -71,7 +71,8 @@ all_by_module = {
                              'ETagResponseMixin', 'ResponseStreamMixin',
                              'CommonResponseDescriptorsMixin',
                              'UserAgentMixin', 'AuthorizationMixin',
-                             'WWWAuthenticateMixin'],
+                             'WWWAuthenticateMixin',
+                             'CommonRequestDescriptorsMixin'],
     # the undocumented easteregg ;-)
     'werkzeug._internal':   ['_easteregg']
 }

@@ -1,6 +1,10 @@
+.. _unicode:
+
 =======
 Unicode
 =======
+
+.. module:: werkzeug
 
 Since early Python 2 days unicode was part of all default Python builds.  It
 allows developers to write applications that deal with non-ASCII characters
@@ -89,7 +93,8 @@ argument that behaves like the `errors` parameter of the builtin string method
     Raise an exception if decoding fails.
 
 Unlike the regular python decoding Werkzeug does not raise an
-`UnicodeDecodeError` if the decoding failed but an :class:`HTTPUnicodeError` which
+:exc:`UnicodeDecodeError` if the decoding failed but an
+:exc:`~exceptions.HTTPUnicodeError` which
 is a direct subclass of `UnicodeError` and the `BadRequest` HTTP exception. 
 The reason is that if this exception is not caught by the application but
 a catch-all for HTTP exceptions exists a default `400 BAD REQUEST` error
@@ -126,6 +131,6 @@ application to utf-7 and strict error handling::
 
 Keep in mind that the error handling is only customizable for all decoding
 but not encoding.  If Werkzeug encounters an encoding error it will raise a
-`UnicodeEncodeError`.  It's your responsibility to not create data that is
+:exc:`UnicodeEncodeError`.  It's your responsibility to not create data that is
 not present in the target charset (a non issue with all unicode encodings
 such as utf-8).
