@@ -134,6 +134,8 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
         except (socket.error, socket.timeout):
             return
         except:
+            if self.server.passthrough_errors:
+                raise
             from werkzeug.debug.tbtools import get_current_traceback
             traceback = get_current_traceback(ignore_system_exceptions=True)
             try:
@@ -157,11 +159,13 @@ class BaseWSGIServer(HTTPServer):
     multithread = False
     multiprocess = False
 
-    def __init__(self, host, port, app, handler=None):
+    def __init__(self, host, port, app, handler=None,
+                 passthrough_errors=False):
         if handler is None:
             handler = BaseRequestHandler
         HTTPServer.__init__(self, (host, int(port)), handler)
         self.app = app
+        self.passthrough_errors = passthrough_errors
 
     def log(self, type, message, *args):
         _log(type, message, *args)
@@ -180,13 +184,15 @@ class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
     multiprocess = True
 
-    def __init__(self, host, port, app, processes=40, handler=None):
-        BaseWSGIServer.__init__(self, host, port, app, handler)
+    def __init__(self, host, port, app, processes=40, handler=None,
+                 passthrough_errors=False):
+        BaseWSGIServer.__init__(self, host, port, app, handler,
+                                passthrough_errors)
         self.max_children = processes
 
 
 def make_server(host, port, app=None, threaded=False, processes=1,
-                request_handler=None):
+                request_handler=None, passthrough_errors=False):
     """Create a new server instance that is either threaded, or forks
     or just processes one request after another.
     """
@@ -194,11 +200,14 @@ def make_server(host, port, app=None, threaded=False, processes=1,
         raise ValueError("cannot have a multithreaded and "
                          "multi process server.")
     elif threaded:
-        return ThreadedWSGIServer(host, port, app, request_handler)
+        return ThreadedWSGIServer(host, port, app, request_handler,
+                                  passthrough_errors)
     elif processes > 1:
-        return ForkingWSGIServer(host, port, app, processes, request_handler)
+        return ForkingWSGIServer(host, port, app, processes, request_handler,
+                                 passthrough_errors)
     else:
-        return BaseWSGIServer(host, port, app, request_handler)
+        return BaseWSGIServer(host, port, app, request_handler,
+                              passthrough_errors)
 
 
 def reloader_loop(extra_files=None, interval=1):
@@ -274,13 +283,15 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
                extra_files=None, reloader_interval=1, threaded=False,
-               processes=1, request_handler=None, static_files=None):
+               processes=1, request_handler=None, static_files=None,
+               passthrough_errors=False):
     """Start an application using wsgiref and with an optional reloader.  This
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
 
     .. versionadded:: 0.5
-       `static_files` was added to simplify serving of static files.
+       `static_files` was added to simplify serving of static files as well
+       as `passthrough_errors`.
 
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
@@ -305,6 +316,9 @@ def run_simple(hostname, port, application, use_reloader=False,
                          like :class:`SharedDataMiddleware`, it's actually
                          just wrapping the application in that middleware before
                          serving.
+    :param passthrough_errors: set this to `False` to disable the error catching.
+                               This means that the server will die on errors but
+                               it can be useful to hook debuggers in (pdb etc.)
     """
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
@@ -315,7 +329,8 @@ def run_simple(hostname, port, application, use_reloader=False,
 
     def inner():
         make_server(hostname, port, application, threaded,
-                    processes, request_handler).serve_forever()
+                    processes, request_handler,
+                    passthrough_errors).serve_forever()
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         display_hostname = hostname or '127.0.0.1'
