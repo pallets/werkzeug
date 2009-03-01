@@ -50,12 +50,15 @@ from urlparse import urlparse
 from itertools import chain
 from SocketServer import ThreadingMixIn, ForkingMixIn
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+
+from werkzeug import __version__ as version
 from werkzeug._internal import _log
 from werkzeug.utils import responder
 from werkzeug.exceptions import InternalServerError
 
 
 class BaseRequestHandler(BaseHTTPRequestHandler, object):
+    server_version = 'Werkzeug/' + version
 
     def run_wsgi(self):
         path_info, _, query = urlparse(self.path)[2:5]
@@ -97,8 +100,18 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
                 status, response_headers = headers_sent[:] = headers_set
                 code, msg = status.split(None, 1)
                 self.send_response(int(code), msg)
-                for line in response_headers:
-                    self.send_header(*line)
+                header_keys = set()
+                for key, value in response_headers:
+                    self.send_header(key, value)
+                    key = key.lower()
+                    header_keys.add(key)
+                if 'content-length' not in header_keys:
+                    self.close_connection = True
+                    self.send_header('Connection', 'close')
+                if 'server' not in header_keys:
+                    self.send_header('Server', self.version_string())
+                if 'date' not in header_keys:
+                    self.send_header('Date', self.date_time_string())
                 self.end_headers()
 
             assert type(data) is str, 'applications must write bytes'
@@ -149,10 +162,25 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
             self.server.log('error', 'Error on request:\n%s',
                             traceback.plaintext)
 
-    def __getattr__(self, name):
-        if name.startswith('do_'):
-            return self.run_wsgi
-        raise AttributeError(name)
+    def handle_one_request(self):
+        """Handle a single HTTP request."""
+        self.raw_requestline = self.rfile.readline()
+        if not self.raw_requestline:
+            self.close_connection = 1
+        elif self.parse_request():
+            return self.run_wsgi()
+
+    def send_response(self, code, message=None):
+        """Send the response header and log the response code."""
+        self.log_request(code)
+        if message is None:
+            message = code in self.responses and self.responses[code][0] or ''
+        if self.request_version != 'HTTP/0.9':
+            self.wfile.write("%s %d %s\r\n" %
+                             (self.protocol_version, code, message))
+
+    def version_string(self):
+        return BaseHTTPRequestHandler.version_string(self).strip()
 
 
 class BaseWSGIServer(HTTPServer):

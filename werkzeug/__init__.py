@@ -103,11 +103,19 @@ class module(ModuleType):
 # keep a reference to this module so that it's not garbage collected
 old_module = sys.modules['werkzeug']
 
+# figure out the version
+try:
+    version = __import__('pkg_resources').get_distribution('Werkzeug').version
+except:
+    version = 'unknown'
+
 # setup the new module and patch it into the dict of loaded modules
 new_module = sys.modules['werkzeug'] = module('werkzeug')
 new_module.__dict__.update({
-    '__file__': __file__,
-    '__path__': __path__,
-    '__doc__':  __doc__,
-    '__all__':  tuple(object_origins) + tuple(attribute_modules)
+    '__file__':         __file__,
+    '__path__':         __path__,
+    '__doc__':          __doc__,
+    '__all__':          tuple(object_origins) + tuple(attribute_modules),
+    '__docformat__':    'restructuredtext en',
+    '__version__':      version
 })

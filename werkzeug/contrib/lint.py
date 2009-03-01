@@ -168,12 +168,9 @@ class GuardedIterator(object):
                 if bytes_sent:
                     warn(HTTPWarning('%r responses must not have a body' %
                                      status_code))
-            else:
-                if content_length is None:
-                    warn(WSGIWarning('Content-Length header missing'))
-                elif content_length != bytes_sent:
-                    warn(WSGIWarning('Content-Length and the number of bytes '
-                                     'sent to the client do not match.'))
+            elif content_length is not None and content_length != bytes_sent:
+                warn(WSGIWarning('Content-Length and the number of bytes '
+                                 'sent to the client do not match.'))
 
     def __del__(self):
         if not self.closed:
