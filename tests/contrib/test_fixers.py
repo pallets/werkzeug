@@ -48,3 +48,17 @@ def test_proxy_fix():
         HTTP_HOST='fake'
     ))
     assert response.data == '1.2.3.4|example.com'
+
+
+def test_header_rewriter_fix():
+    """Test the HeaderRewriterFix fixer"""
+    @Request.application
+    def application(request):
+        return Response("", headers=[
+            ('X-Foo', 'bar')
+        ])
+    application = fixers.HeaderRewriterFix(application, ('X-Foo',), (('X-Bar', '42'),))
+    response = Response.from_app(application, create_environ())
+    assert response.headers['Content-Type'] == 'text/plain; charset=utf-8'
+    assert 'X-Foo' not in response.headers
+    assert response.headers['X-Bar'] == '42'
