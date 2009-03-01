@@ -176,6 +176,12 @@ class BaseWSGIServer(HTTPServer):
         except KeyboardInterrupt:
             pass
 
+    def handle_error(self, request, client_address):
+        if self.passthrough_errors:
+            raise
+        else:
+            return HTTPServer.handle_error(self, request, client_address)
+
 
 class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
     multithread = True
