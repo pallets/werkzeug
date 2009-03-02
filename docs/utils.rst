@@ -26,6 +26,8 @@ WSGI Helpers
 .. autoclass:: LimitedStream
    :members:
 
+.. autofunction:: make_line_iter
+
 .. autofunction:: get_host
 
 .. autofunction:: get_current_url

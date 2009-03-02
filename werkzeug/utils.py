@@ -383,13 +383,53 @@ class FileWrapper(object):
         raise StopIteration()
 
 
+
+def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
+    """Savely iterates line-based over an input stream.  If the input stream
+    is not a :class:`LimitedStream` the `limit` parameter is mandatory.
+
+    This uses the stream's :meth:`~file.read` method internally as opposite
+    to the :meth:`~file.readline` method that is unsafe and can only be used
+    in violation of the WSGI specification.  The same problem applies to the
+    `__iter__` function of the input stream which calls :meth:`~file.readline`
+    without arguments.
+
+    If you need line-by-line processing it's strongly recommended to iterate
+    over the input stream using this helper function.
+
+    :param stream: the stream to iterate over.
+    :param limit: the limit in bytes for the stream.  (Usually
+                  content length.  Not necessary if the `stream`
+                  is a :class:`LimitedStream`.
+    :param buffer_size: The optional buffer size.
+    """
+    if not isinstance(stream, LimitedStream):
+        if limit is None:
+            raise TypeError('stream not limited and no limit provided.')
+        stream = LimitedStream(stream, limit)
+    buffer = []
+    while 1:
+        if len(buffer) > 1:
+            yield buffer.pop(0)
+            continue
+        chunks = stream.read(buffer_size).splitlines(True)
+        first_chunk = buffer and buffer[0] or ''
+        if chunks:
+            first_chunk += chunks.pop(0)
+        buffer = chunks
+        if not first_chunk:
+            return
+        yield first_chunk
+
+
 class LimitedStream(object):
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it
-    :func:`on_exhausted` is called which by default raises a
-    :exc:`~werkzeug.exceptions.BadRequest`.  The return value of that
-    function is forwarded to the reader function.  So if it returns an
-    empty string :meth:`read` will return an empty string as well.
+    :func:`on_exhausted` is called which by default returns an empty
+    string or raises :exc:`~werkzeug.exceptions.BadRequest` if silent
+    is set to `False`.  The return value of that function is forwarded
+    to the reader function.  So if it returns an empty string
+    :meth:`read` will return an empty string as well.
 
     The limit however must never be higher than what the stream can
     output.  Otherwise :meth:`readlines` will try to read past the
@@ -397,6 +437,22 @@ class LimitedStream(object):
 
     The `silent` parameter has no effect if :meth:`is_exhausted` is
     overriden by a subclass.
+
+    .. admonition:: Note on WSGI compliance
+
+       calls to :meth:`readline` and :meth:`readlines` are not
+       WSGI compliant because it passes a size argument to the
+       readline methods.  Unfortunately the WSGI PEP is not safely
+       implementable without a size argument to :meth:`readline`
+       because there is no EOF marker in the stream.  As a result
+       of that the use of :meth:`readline` is discouraged.
+
+       For the same reason iterating over the :class:`LimitedStream`
+       is not portable.  It internally calls :meth:`readline`.
+
+       We strongly suggest using :meth:`read` only or using the
+       :func:`make_line_iter` which savely iterates line-based
+       over a WSGI input stream.
 
     :param stream: the stream to wrap.
     :param limit: the limit for the stream, must not be longer than
@@ -406,7 +462,7 @@ class LimitedStream(object):
                    past the limit and will return an empty string.
     """
 
-    def __init__(self, stream, limit, silent=False):
+    def __init__(self, stream, limit, silent=True):
         self._stream = stream
         self._pos = 0
         self.limit = limit
@@ -460,10 +516,7 @@ class LimitedStream(object):
         return read
 
     def readline(self, size=None):
-        """Read a line from the stream.  Arguments are forwarded to the
-        `readline` function of the underlaying stream if it supports
-        them.
-        """
+        """Reads one line from the stream."""
         if self._pos >= self.limit:
             return self.on_exhausted()
         if size is None:
@@ -833,8 +886,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                           charset, errors=errors, dict_class=dict_class)
     else:
         form = dict_class()
-        stream = LimitedStream(environ['wsgi.input'], content_length,
-                               silent=True)
+        stream = LimitedStream(environ['wsgi.input'], content_length)
 
     return stream, form, dict_class(files)
 

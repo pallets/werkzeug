@@ -30,7 +30,7 @@ class LimitedStream(_SilentLimitedStream):
 
     def __init__(self, environ, limit):
         _SilentLimitedStream.__init__(self, environ, limit)
-        warn(DeprecationWarning('comtrin limited stream is deprecated, use '
+        warn(DeprecationWarning('contrib limited stream is deprecated, use '
                                 'werkzeug.LimitedStream instead.'),
              stacklevel=2)
 

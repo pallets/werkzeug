@@ -404,12 +404,12 @@ def test_peek_path_info():
 def test_limited_stream():
     """Test the LimitedStream"""
     io = StringIO('123456')
-    stream = LimitedStream(io, 3)
+    stream = LimitedStream(io, 3, False)
     assert stream.read() == '123'
     assert_raises(BadRequest, stream.read)
 
     io = StringIO('123456')
-    stream = LimitedStream(io, 3)
+    stream = LimitedStream(io, 3, False)
     assert stream.read(1) == '1'
     assert stream.read(1) == '2'
     assert stream.read(1) == '3'
@@ -437,3 +437,10 @@ def test_limited_stream():
     io = StringIO('123456\nabcdefg')
     stream = LimitedStream(io, 9)
     assert stream.readlines(100) == ['123456\n', 'ab']
+
+    io = StringIO('123456')
+    stream = LimitedStream(io, 3)
+    assert stream.read(1) == '1'
+    assert stream.read(1) == '2'
+    assert stream.read() == '3'
+    assert stream.read() == ''

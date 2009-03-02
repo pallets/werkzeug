@@ -58,6 +58,7 @@ Version 0.5
 - added :mod:`werkzeug.contrib.lint`
 - added `passthrough_errors` to `run_simple`.
 - added `secure_filename`
+- added :func:`make_line_iter` 
 
 Version 0.4.1
 -------------
