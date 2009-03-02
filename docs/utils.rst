@@ -155,4 +155,6 @@ General Helpers
 
 .. autofunction:: validate_arguments
 
+.. autofunction:: secure_filename
+
 .. autofunction:: bind_arguments

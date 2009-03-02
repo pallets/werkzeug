@@ -43,7 +43,7 @@ all_by_module = {
                              'validate_arguments', 'ArgumentValidationError',
                              'bind_arguments', 'FileWrapper', 'wrap_file',
                              'pop_path_info', 'peek_path_info',
-                             'LimitedStream'],
+                             'LimitedStream', 'secure_filename'],
     'werkzeug.datastructures': ['MultiDict', 'CombinedMultiDict', 'Headers',
                              'EnvironHeaders', 'ImmutableList',
                              'ImmutableDict', 'ImmutableMultiDict',
