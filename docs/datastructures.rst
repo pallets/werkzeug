@@ -76,9 +76,6 @@ HTTP Related
 
    .. autoattribute:: no_transform
 
-.. autoclass:: UserAgent
-   :members:
-
 .. autoclass:: ETags
    :members:
 

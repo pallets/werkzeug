@@ -98,11 +98,49 @@ class UserAgent(object):
 
     .. attribute:: platform
 
-       the browser platform
+       the browser platform.  The following platforms are currently
+       recognized:
+
+       -   `aix`
+       -   `amiga`
+       -   `android`
+       -   `bsd`
+       -   `hpux`
+       -   `iphone`
+       -   `irix`
+       -   `linux`
+       -   `macos`
+       -   `sco`
+       -   `solaris`
+       -   `wii`
+       -   `windows`
 
     .. attribute:: browser
 
-        the name of the browser
+        the name of the browser.  The following browsers are currently
+        recognized:
+
+        -   `aol` *
+        -   `ask` *
+        -   `camino`
+        -   `chrome`
+        -   `firefox`
+        -   `galeon`
+        -   `google` *
+        -   `kmeleon`
+        -   `konqueror`
+        -   `links`
+        -   `lynx`
+        -   `msie`
+        -   `msn`
+        -   `netscape`
+        -   `opera`
+        -   `safari`
+        -   `seamonkey`
+        -   `webkit`
+        -   `yahoo` *
+
+        (Browsers maked with a star (``*``) are crawlers.)
 
     .. attribute:: version
 

@@ -78,6 +78,9 @@ HTML Helpers
 HTTP Helpers
 ============
 
+.. autoclass:: UserAgent
+   :members:
+
 .. autofunction:: dump_header
    
 .. autofunction:: cookie_date

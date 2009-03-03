@@ -1109,7 +1109,7 @@ def url_fix(s, charset='utf-8'):
 
 
 def secure_filename(filename):
-    """Pass it a filename and it will return a secure version of it.  This
+    r"""Pass it a filename and it will return a secure version of it.  This
     filename can then savely be stored on a regular file system and passed
     to :func:`os.path.join`.  The filename returned is an ASCII only string
     for maximum portability.
@@ -1510,9 +1510,7 @@ def import_string(import_name, silent=False):
         if ':' in import_name:
             module, obj = import_name.split(':', 1)
         elif '.' in import_name:
-            items = import_name.split('.')
-            module = '.'.join(items[:-1])
-            obj = items[-1]
+            module, obj = import_name.rsplit('.', 1)
         else:
             return __import__(import_name)
         return getattr(__import__(module, None, None, [obj]), obj)
