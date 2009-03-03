@@ -1,5 +1,6 @@
 from nose.tools import assert_raises
-from werkzeug import Request, Response, create_environ
+from werkzeug import Request, Response, Client, create_environ, \
+     ResponseCacheControl, parse_cache_control_header
 from werkzeug.contrib import fixers
 
 
@@ -62,3 +63,76 @@ def test_header_rewriter_fix():
     assert response.headers['Content-Type'] == 'text/plain; charset=utf-8'
     assert 'X-Foo' not in response.headers
     assert response.headers['X-Bar'] == '42'
+
+
+def test_ie_fixes():
+    """Test IE fixes."""
+    @fixers.InternetExplorerFix
+    @Request.application
+    def application(request):
+        response = Response('binary data here', mimetype='application/vnd.ms-excel')
+        response.headers['Vary'] = 'Cookie'
+        response.headers['Content-Disposition'] = 'attachment; filename=foo.xls'
+        return response
+
+    c = Client(application, Response)
+    response = c.get('/', headers=[
+        ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)')
+    ])
+
+    # IE gets no vary
+    assert response.data == 'binary data here'
+    assert 'vary' not in response.headers
+    assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
+    assert response.headers['content-type'] == 'application/vnd.ms-excel'
+
+    # other browsers do
+    c = Client(application, Response)
+    response = c.get('/')
+    assert response.data == 'binary data here'
+    assert 'vary' in response.headers
+
+    cc = ResponseCacheControl()
+    cc.no_cache = True
+
+    @fixers.InternetExplorerFix
+    @Request.application
+    def application(request):
+        response = Response('binary data here', mimetype='application/vnd.ms-excel')
+        response.headers['Pragma'] = ', '.join(pragma)
+        response.headers['Cache-Control'] = cc.to_header()
+        response.headers['Content-Disposition'] = 'attachment; filename=foo.xls'
+        return response
+
+
+    # IE has no pragma or cache control
+    pragma = ('no-cache',)
+    c = Client(application, Response)
+    response = c.get('/', headers=[
+        ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)')
+    ])
+    assert response.data == 'binary data here'
+    assert 'pragma' not in response.headers
+    assert 'cache-control' not in response.headers
+    assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
+
+    # IE has simplified pragma
+    pragma = ('no-cache', 'x-foo')
+    cc.proxy_revalidate = True
+    response = c.get('/', headers=[
+        ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)')
+    ])
+    assert response.data == 'binary data here'
+    assert response.headers['pragma'] == 'x-foo'
+    assert response.headers['cache-control'] == 'proxy-revalidate'
+    assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
+
+    # regular browsers get everything
+    response = c.get('/')
+    assert response.data == 'binary data here'
+    assert response.headers['pragma'] == 'no-cache, x-foo'
+    cc = parse_cache_control_header(response.headers['cache-control'],
+                                    cls=ResponseCacheControl)
+    assert cc.no_cache
+    assert cc.proxy_revalidate
+    assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'

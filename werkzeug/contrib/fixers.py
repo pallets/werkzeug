@@ -170,15 +170,17 @@ class InternetExplorerFix(object):
         if self.fix_attach and 'content-disposition' in headers:
             pragma = parse_set_header(headers.get('pragma', ''))
             pragma.discard('no-cache')
-            if not pragma:
+            header = pragma.to_header()
+            if not header:
                 headers.pop('pragma', '')
             else:
-                headers['Pragma'] = pragma
+                headers['Pragma'] = header
             header = headers.get('cache-control', '')
             if header:
                 cc = parse_cache_control_header(header,
                                                 cls=ResponseCacheControl)
-                cc.no_cache = cc.no_store = False
+                cc.no_cache = None
+                cc.no_store = False
                 header = cc.to_header()
                 if not header:
                     headers.pop('cache-control', '')
