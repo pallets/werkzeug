@@ -55,7 +55,7 @@ class InputStream(object):
         elif len(args) != 1:
             warn(WSGIWarning('too many parameters passed to wsgi.input.read()'),
                  stacklevel=2)
-        return self._stream.read(*args, **kwargs)
+        return self._stream.read(*args)
 
     def readline(self, *args):
         if len(args) == 0:
@@ -69,7 +69,7 @@ class InputStream(object):
                  stacklevel=2)
         else:
             raise TypeError('too many arguments passed to wsgi.input.readline()')
-        return self._stream.readline(*args, **kwargs)
+        return self._stream.readline(*args)
 
     def __iter__(self):
         try:

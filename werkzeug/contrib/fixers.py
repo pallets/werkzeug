@@ -17,6 +17,10 @@
     :license: BSD, see LICENSE for more details.
 """
 from urllib import unquote
+from werkzeug.http import parse_options_header, parse_cache_control_header, \
+     parse_set_header, dump_header
+from werkzeug.useragents import UserAgent
+from werkzeug.datastructures import Headers, ResponseCacheControl
 
 
 class LighttpdCGIRootFix(object):
@@ -132,3 +136,65 @@ class HeaderRewriterFix(object):
             new_headers += self.add_headers
             return start_response(status, new_headers, exc_info)
         return self.app(environ, rewriting_start_response)
+
+
+class InternetExplorerFix(object):
+    """This middleware fixes a couple of bugs with Microsoft Internet
+    Explorer.
+
+    Currently the following fixes are applied:
+
+    -   removing of `Vary` headers for unsupported mimetypes which
+        causes troubles with caching.  Can be disabled by passing
+        ``fix_vary=False`` to the constructor.
+        see: http://support.microsoft.com/kb/824847/en-us
+
+    -   removes offending headers to work around caching bugs in
+        Internet Explorer if `Content-Disposition` is set.  Can be
+        disabled by passing ``fix_attach=False`` to the constructor.
+
+    If it does not detect affected Internet Explorer versions it won't touch
+    the request / response.
+    """
+
+    def __init__(self, app, fix_vary=True, fix_attach=True):
+        self.app = app
+        self.fix_vary = fix_vary
+        self.fix_attach = fix_attach
+
+    def fix_headers(self, environ, headers, status=None):
+        if self.fix_vary:
+            header = headers.get('content-type', '')
+            mimetype, options = parse_options_header(header)
+            if mimetype not in ('text/html', 'text/plain', 'text/sgml'):
+                headers.pop('vary', None)
+
+        if self.fix_attach and 'content-disposition' in headers:
+            pragma = parse_set_header(headers.get('pragma', ''))
+            pragma.discard('no-cache')
+            if not pragma:
+                headers.pop('pragma', '')
+            else:
+                headers['Pragma'] = pragma
+            header = headers.get('cache-control', '')
+            if header:
+                cc = parse_cache_control_header(header, None,
+                                                ResponseCacheControl)
+                cc.no_cache = cc.no_store = False
+                header = cc.to_header()
+                if not header:
+                    headers.pop('cache-control', '')
+                else:
+                    headers['Cache-Control'] = header
+
+    def run_fixed(self, environ, start_response):
+        def fixing_start_response(status, headers, exc_info=None):
+            self.fix_headers(environ, Headers.linked(headers), status)
+            return start_response(status, headers, exc_info)
+        return self.app(environ, fixing_start_response)
+
+    def __call__(self, environ, start_response):
+        ua = UserAgent(environ)
+        if ua.browser != 'msie':
+            return self.app(environ, start_response)
+        return self.run_fixed(environ, start_response)
