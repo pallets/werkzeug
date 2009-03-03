@@ -11,3 +11,5 @@ Fixers
 .. autoclass:: ProxyFix
 
 .. autoclass:: HeaderRewriterFix
+
+.. autoclass:: InternetExplorerFix
