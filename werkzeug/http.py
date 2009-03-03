@@ -211,7 +211,7 @@ def parse_options_header(value):
     return name, extra
 
 
-def parse_accept_header(value, accept_class=None):
+def parse_accept_header(value, cls=None):
     """Parses an HTTP Accept-* header.  This does not implement a complete
     valid algorithm but one that supports at least value and quality
     extraction.
@@ -223,15 +223,15 @@ def parse_accept_header(value, accept_class=None):
     with the parsed values and returned.
 
     :param value: the accept header string to be parsed.
-    :param accept_class: the wrapper class for the return value (can be
+    :param cls: the wrapper class for the return value (can be
                          :class:`Accept` or a subclass thereof)
     :return: an instance of `cls`.
     """
-    if accept_class is None:
-        accept_class = Accept
+    if cls is None:
+        cls = Accept
 
     if not value:
-        return accept_class(None)
+        return cls(None)
 
     result = []
     for match in _accept_re.finditer(value):
@@ -241,30 +241,30 @@ def parse_accept_header(value, accept_class=None):
         else:
             quality = max(min(float(quality), 1), 0)
         result.append((match.group(1), quality))
-    return accept_class(result)
+    return cls(result)
 
 
-def parse_cache_control_header(value, on_update=None, cache_control_class=None):
+def parse_cache_control_header(value, on_update=None, cls=None):
     """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
 
     .. versionadded:: 0.5
-       The `cache_control_class` was added.  If not specified an immutable
+       The `cls` was added.  If not specified an immutable
        :class:`RequestCacheControl` is returned.
 
     :param value: a cache control header to be parsed.
     :param on_update: an optional callable that is called every time a
                       value on the :class:`CacheControl` object is changed.
-    :param cache_control_class: the class for the returned object.  By default
+    :param cls: the class for the returned object.  By default
                                 :class:`RequestCacheControl` is used.
-    :return: a `cache_control_class` object.
+    :return: a `cls` object.
     """
-    if cache_control_class is None:
-        cache_control_class = RequestCacheControl
+    if cls is None:
+        cls = RequestCacheControl
     if not value:
-        return cache_control_class(None, on_update)
-    return cache_control_class(parse_dict_header(value), on_update)
+        return cls(None, on_update)
+    return cls(parse_dict_header(value), on_update)
 
 
 def parse_set_header(value, on_update=None):

@@ -813,7 +813,7 @@ xhtml = HTMLBuilder('xhtml')
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
                     errors='ignore', max_form_memory_size=None,
-                    max_content_length=None, dict_class=None):
+                    max_content_length=None, cls=None):
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
     transport method is `POST` or `PUT`.
@@ -830,7 +830,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
 
     .. versionadded:: 0.5
        The `max_form_memory_size`, `max_content_length` and
-       `dict_class` parameters were added.
+       `cls` parameters were added.
 
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
@@ -847,7 +847,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                                is longer than this value an
                                :exc:`~exceptions.RequestEntityTooLarge`
                                exception is raised.
-    :param dict_class: an optional dict class to use.  If this is not specified
+    :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :return: A tuple in the form ``(stream, form, files)``.
     """
@@ -857,8 +857,8 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     except (KeyError, ValueError):
         content_length = 0
 
-    if dict_class is None:
-        dict_class = MultiDict
+    if cls is None:
+        cls = MultiDict
 
     if max_content_length is not None and content_length > max_content_length:
         raise RequestEntityTooLarge()
@@ -874,21 +874,21 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                                           charset, errors,
                                           max_form_memory_size=max_form_memory_size)
         except ValueError, e:
-            form = dict_class()
+            form = cls()
         else:
-            form = dict_class(form)
+            form = cls(form)
     elif content_type == 'application/x-www-form-urlencoded' or \
          content_type == 'application/x-url-encoded':
         if max_form_memory_size is not None and \
            content_length > max_form_memory_size:
             raise RequestEntityTooLarge()
         form = url_decode(environ['wsgi.input'].read(content_length),
-                          charset, errors=errors, dict_class=dict_class)
+                          charset, errors=errors, cls=cls)
     else:
-        form = dict_class()
+        form = cls()
         stream = LimitedStream(environ['wsgi.input'], content_length)
 
-    return stream, form, dict_class(files)
+    return stream, form, cls(files)
 
 
 def get_content_type(mimetype, charset):
@@ -930,7 +930,7 @@ def format_string(string, context):
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
-               errors='ignore', separator='&', dict_class=None):
+               errors='ignore', separator='&', cls=None):
     """Parse a querystring and return it as :class:`MultiDict`.  Per default
     only values are decoded into unicode strings.  If `decode_keys` is set to
     `True` the same will happen for keys.
@@ -947,7 +947,7 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
        This changed in 0.5 where only "&" is supported.  If you want to
        use ";" instead a different `separator` can be provided.
 
-       The `dict_class` parameter was added.
+       The `cls` parameter was added.
 
     :param s: a string with the query string to decode.
     :param charset: the charset of the query string.
@@ -957,11 +957,11 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
                           appear in the dict.
     :param errors: the decoding error behavior.
     :param separator: the pair separator to be used, defaults to ``&``
-    :param dict_class: an optional dict class to use.  If this is not specified
+    :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     """
-    if dict_class is None:
-        dict_class = MultiDict
+    if cls is None:
+        cls = MultiDict
     result = []
     for pair in str(s).split(separator):
         if not pair:
@@ -975,7 +975,7 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
         if decode_keys:
             key = _decode_unicode(key, charset, errors)
         result.append((key, url_unquote_plus(value, charset, errors)))
-    return dict_class(result)
+    return cls(result)
 
 
 def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
@@ -1323,7 +1323,7 @@ def cookie_date(expires=None):
 
 
 def parse_cookie(header, charset='utf-8', errors='ignore',
-                 dict_class=None):
+                 cls=None):
     """Parse a cookie.  Either from a string or WSGI environ.
 
     Per default encoding errors are ignored.  If you want a different behavior
@@ -1332,20 +1332,20 @@ def parse_cookie(header, charset='utf-8', errors='ignore',
 
     .. versionchanged:: 0.5
        This function now returns a :class:`TypeConversionDict` instead of a
-       regular dict.  The `dict_class` parameter was added.
+       regular dict.  The `cls` parameter was added.
 
     :param header: the header to be used to parse the cookie.  Alternatively
                    this can be a WSGI environment.
     :param charset: the charset for the cookie values.
     :param errors: the error behavior for the charset decoding.
-    :param dict_class: an optional dict class to use.  If this is not specified
+    :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`TypeConversionDict` is
                        used.
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
-    if dict_class is None:
-        dict_class = TypeConversionDict
+    if cls is None:
+        cls = TypeConversionDict
     cookie = _ExtendedCookie()
     cookie.load(header)
     result = {}
@@ -1357,7 +1357,7 @@ def parse_cookie(header, charset='utf-8', errors='ignore',
         if value.value is not None:
             result[key] = _decode_unicode(value.value, charset, errors)
 
-    return dict_class(result)
+    return cls(result)
 
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',

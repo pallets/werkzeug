@@ -226,7 +226,7 @@ class BaseRequest(object):
                                        self.charset, self.encoding_errors,
                                        self.max_form_memory_size,
                                        self.max_content_length,
-                                       dict_class=ImmutableMultiDict)
+                                       cls=ImmutableMultiDict)
             else:
                 data = (_empty_stream, ImmutableMultiDict(),
                         ImmutableMultiDict())
@@ -252,7 +252,7 @@ class BaseRequest(object):
         """The parsed URL parameters as :class:`MultiDict`."""
         return url_decode(self.environ.get('QUERY_STRING', ''), self.charset,
                           errors=self.encoding_errors,
-                          dict_class=ImmutableMultiDict)
+                          cls=ImmutableMultiDict)
 
     @cached_property
     def data(self):
@@ -299,7 +299,7 @@ class BaseRequest(object):
     def cookies(self):
         """The retrieved cookie values as regular dictionary."""
         return parse_cookie(self.environ, self.charset,
-                            dict_class=ImmutableTypeConversionDict)
+                            cls=ImmutableTypeConversionDict)
 
     @cached_property
     def headers(self):

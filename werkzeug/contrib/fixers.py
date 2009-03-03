@@ -140,9 +140,7 @@ class HeaderRewriterFix(object):
 
 class InternetExplorerFix(object):
     """This middleware fixes a couple of bugs with Microsoft Internet
-    Explorer.
-
-    Currently the following fixes are applied:
+    Explorer.  Currently the following fixes are applied:
 
     -   removing of `Vary` headers for unsupported mimetypes which
         causes troubles with caching.  Can be disabled by passing
@@ -178,8 +176,8 @@ class InternetExplorerFix(object):
                 headers['Pragma'] = pragma
             header = headers.get('cache-control', '')
             if header:
-                cc = parse_cache_control_header(header, None,
-                                                ResponseCacheControl)
+                cc = parse_cache_control_header(header,
+                                                cls=ResponseCacheControl)
                 cc.no_cache = cc.no_store = False
                 header = cc.to_header()
                 if not header:
