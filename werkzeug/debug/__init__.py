@@ -55,7 +55,7 @@ class DebuggedApplication(object):
     def __init__(self, app, evalex=False, request_key='werkzeug.request',
                  console_path='/console', console_init_func=None,
                  show_hidden_frames=False):
-        if console_init_func:
+        if not console_init_func:
             console_init_func = dict
         self.app = app
         self.evalex = evalex
