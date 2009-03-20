@@ -595,6 +595,8 @@ class Client(object):
            `mimetype`.  This change was made for consistency with
            :class:`werkzeug.FileWrapper`.
 
+            The `follow_redirect` parameter was added to :func:`open`.
+
         Additional parameters:
 
         :param as_tuple: Returns a tuple in the form ``(environ, result)``

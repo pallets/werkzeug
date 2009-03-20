@@ -59,6 +59,7 @@ Version 0.5
 - added `passthrough_errors` to `run_simple`.
 - added `secure_filename`
 - added :func:`make_line_iter` 
+- added :attr:`follow_redirect` to the :func:`open` of :class:`Client`.
 
 Version 0.4.1
 -------------
