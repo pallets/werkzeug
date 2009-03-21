@@ -595,15 +595,20 @@ class Client(object):
            `mimetype`.  This change was made for consistency with
            :class:`werkzeug.FileWrapper`.
 
+            The `follow_redirect` parameter was added to :func:`open`.
+
         Additional parameters:
 
         :param as_tuple: Returns a tuple in the form ``(environ, result)``
-        :param buffered: set this to true to buffer the application run.
+        :param buffered: Set this to true to buffer the application run.
                          This will automatically close the application for
                          you as well.
+        :param follow_redirects: Set this to false if the `Client` should not
+                                 follow http redirects.
         """
         as_tuple = kwargs.pop('as_tuple', False)
         buffered = kwargs.pop('buffered', False)
+        follow_redirects = kwargs.pop('follow_redirects', True)
         environ = None
         if not kwargs and len(args) == 1:
             if isinstance(args[0], EnvironBuilder):
@@ -622,6 +627,18 @@ class Client(object):
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
         if self.cookie_jar is not None:
             self.cookie_jar.extract_wsgi(environ, rv[2])
+
+        if rv[0].status_code in (301, 302, 303, 305, 307) and follow_redirects:
+            redirect = urlparse.urlunsplit(urlparse.urlsplit(
+                dict(rv[2])['Location'])[:-2] + ('', ''))
+            kwargs.update({
+                'base_url': redirect,
+                'as_tuple': as_tuple,
+                'buffered': buffered,
+                'follow_redirects': follow_redirects,
+            })
+            return self.open(*args, **kwargs)
+
         response = self.response_wrapper(*rv)
         if as_tuple:
             return environ, response
