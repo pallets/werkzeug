@@ -628,7 +628,8 @@ class Client(object):
         if self.cookie_jar is not None:
             self.cookie_jar.extract_wsgi(environ, rv[2])
 
-        if rv[0].status_code in (301, 302, 303, 305, 307) and follow_redirects:
+        status_code = int(rv[1].split(None, 1)[0])
+        if status_code in (301, 302, 303, 305, 307) and follow_redirects:
             redirect = urlparse.urlunsplit(urlparse.urlsplit(
                 dict(rv[2])['Location'])[:-2] + ('', ''))
             kwargs.update({
