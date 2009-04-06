@@ -15,8 +15,12 @@
 
 import sys
 from cStringIO import StringIO
+from nose.tools import assert_raises
 from werkzeug.wrappers import Request, Response
 from werkzeug.test import Client, EnvironBuilder, create_environ
+from werkzeug.utils import redirect, get_host
+from werkzeug.datastructures import Headers
+
 
 
 def cookie_app(environ, start_response):
@@ -26,6 +30,16 @@ def cookie_app(environ, start_response):
     response = Response(environ.get('HTTP_COOKIE', 'No Cookie'),
                         mimetype='text/plain')
     response.set_cookie('test', 'test')
+    return response(environ, start_response)
+
+
+def redirect_demo_app(environ, start_response):
+    response = redirect('http://localhost/some/redirect/')
+    return response(environ, start_response)
+
+
+def external_redirect_demo_app(environ, start_response):
+    response = redirect('http://example.org/')
     return response(environ, start_response)
 
 
@@ -226,3 +240,16 @@ def test_file_closing():
     builder.files.add_file('blah', SpecialInput())
     builder.close()
     assert len(closed) == 2
+
+
+def test_follow_redirect():
+    env = create_environ('/', base_url='http://localhost')
+    c = Client(redirect_demo_app)
+    headers = Headers(c.open(environ_overrides=env, follow_redirects=True)[2])
+    assert headers['Location'] == 'http://localhost/some/redirect/'
+
+
+def test_follow_external_redirect():
+    env = create_environ('/', base_url='http://localhost')
+    c = Client(external_redirect_demo_app)
+    assert_raises(RuntimeError, lambda: c.open(environ_overrides=env, follow_redirects=True))
