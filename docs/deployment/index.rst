@@ -10,6 +10,7 @@ server such as Apache or lighttpd.
 .. toctree::
    :maxdepth: 2
 
+   cgi
    mod_wsgi
    fastcgi
    proxying
