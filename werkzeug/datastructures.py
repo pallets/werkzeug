@@ -238,11 +238,6 @@ class MultiDict(TypeConversionDict):
                     or `None`.
     """
 
-    # internal list type.  This is an internal interface!  do not use.
-    # it's only used in methods that do not modify the multi dict so that
-    # ImmutableMultiDict can use it without much hassle.
-    _list_type = list
-
     # the key error this class raises.  Because of circular dependencies
     # with the http exception module this class is created at the end of
     # this module.
@@ -250,23 +245,21 @@ class MultiDict(TypeConversionDict):
 
     def __init__(self, mapping=None):
         if isinstance(mapping, MultiDict):
-            dict.__init__(self, ((k, self._list_type(v))
-                          for k, v in mapping.lists()))
+            dict.__init__(self, ((k, l[:]) for k, l in mapping.lists()))
         elif isinstance(mapping, dict):
             tmp = {}
             for key, value in mapping.iteritems():
                 if isinstance(value, (tuple, list)):
-                    value = self._list_type(value)
+                    value = list(value)
                 else:
-                    value = self._list_type([value])
+                    value = [value]
                 tmp[key] = value
             dict.__init__(self, tmp)
         else:
             tmp = {}
             for key, value in mapping or ():
                 tmp.setdefault(key, []).append(value)
-            dict.__init__(self, (dict((k, self._list_type(v))
-                                 for k, v in tmp.iteritems())))
+            dict.__init__(self, tmp)
 
     def __getitem__(self, key):
         """Return the first data value for this key;
@@ -298,16 +291,16 @@ class MultiDict(TypeConversionDict):
         try:
             rv = dict.__getitem__(self, key)
         except KeyError:
-            return self._list_type()
+            return []
         if type is None:
-            return rv
+            return list(rv)
         result = []
         for item in rv:
             try:
                 result.append(type(item))
             except ValueError:
                 pass
-        return self._list_type(result)
+        return result
 
     def setlist(self, key, new_list):
         """Remove the old values for a key and add new ones.  Note that the list
@@ -341,8 +334,16 @@ class MultiDict(TypeConversionDict):
             default = self[key]
         return default
 
-    def setlistdefault(self, key, default_list=()):
-        """Like `setdefault` but sets multiple values.
+    def setlistdefault(self, key, default_list=None):
+        """Like `setdefault` but sets multiple values.  The list returned
+        is not a copy, but the list that is actually used internally.  This
+        means that you can put new values into the dict by appending items
+        to the list:
+
+        >>> d = MultiDict({"foo": 1})
+        >>> d.setlistdefault("foo").extend([2, 3])
+        >>> d.getlist("foo")
+        [1, 2, 3]
 
         :param key: The key to be looked up.
         :param default: An iterable of default values.  It is either copied
@@ -351,10 +352,10 @@ class MultiDict(TypeConversionDict):
         :return: a :class:`list`
         """
         if key not in self:
-            default_list = list(default_list)
+            default_list = list(default_list or ())
             dict.__setitem__(self, key, default_list)
         else:
-            default_list = self.getlist(key)
+            default_list = dict.__getitem__(self, key)
         return default_list
 
     def items(self):
@@ -378,33 +379,40 @@ class MultiDict(TypeConversionDict):
         """
         return [self[key] for key in self.iterkeys()]
 
-    #: Return a list of all values associated with a key.  Zipping
-    #: :meth:`keys` and this is the same as calling :meth:`lists`:
-    #:
-    #: >>> d = MultiDict({"foo": [1, 2, 3]})
-    #: >>> zip(d.keys(), d.listvalues()) == d.lists()
-    #: True
-    #:
-    #: :return: a :class:`list`
-    listvalues = dict.values
+    def listvalues(self):
+        """Return a list of all values associated with a key.  Zipping
+        :meth:`keys` and this is the same as calling :meth:`lists`:
+
+        >>> d = MultiDict({"foo": [1, 2, 3]})
+        >>> zip(d.keys(), d.listvalues()) == d.lists()
+        True
+        
+        :return: a :class:`list`
+        """
+        return list(self.iterlistvalues())
 
     def iteritems(self):
         """Like :meth:`items` but returns an iterator."""
         for key, values in dict.iteritems(self):
             yield key, values[0]
 
-    #: Return a list of all values associated with a key.
-    #:
-    #: :return: a :class:`list`
-    iterlists = dict.iteritems
+    def iterlists(self):
+        """Return a list of all values associated with a key.
+
+        :return: a class:`list`
+        """
+        for key, values in dict.iteritems(self):
+            yield key, list(values)
 
     def itervalues(self):
         """Like :meth:`values` but returns an iterator."""
         for values in dict.itervalues(self):
             yield values[0]
 
-    #: like :meth:`listvalues` but returns an iterator.
-    iterlistvalues = dict.itervalues
+    def iterlistvalues(self):
+        """like :meth:`listvalues` but returns an iterator."""
+        for values in dict.itervalues(self):
+            yield list(values)
 
     def copy(self):
         """Return a shallow copy of this object."""
@@ -932,8 +940,6 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     exceptions.
     """
 
-    _list_type = ImmutableList
-
     def __init__(self, dicts=None):
         self.dicts = dicts or []
 
@@ -963,7 +969,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         rv = []
         for d in self.dicts:
             rv.extend(d.getlist(key, type))
-        return self._list_type(rv)
+        return rv
 
     def keys(self):
         rv = set()
@@ -994,8 +1000,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         for d in self.dicts:
             for key, values in d.iterlists():
                 rv.setdefault(key, []).extend(values)
-        for key, values in rv.iteritems():
-            yield key, ImmutableList(values)
+        return rv.iteritems()
 
     def lists(self):
         return list(self.iterlists())
@@ -1086,13 +1091,10 @@ class ImmutableDict(ImmutableDictMixin, dict):
 
 
 class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
-    """An immutable :class:`MultiDict`.  The methods that return the internal
-    lists return :class:`ImmutableList` objects.
+    """An immutable :class:`MultiDict`.
 
     .. versionadded:: 0.5
     """
-
-    _list_type = ImmutableList
 
 
 class Accept(ImmutableList):

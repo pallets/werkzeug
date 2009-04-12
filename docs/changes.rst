@@ -43,6 +43,11 @@ API Changes
         :class:`FileWrapper`.
     -   it's not longer possible to pass dicts inside the `data` dict
         in :class:`Client`.  Use tuples instead.
+    -   It's save to modify the return value of :meth:`MultiDict.getlist`
+        and methods that return lists in the :class:`MultiDict` now.  The
+        class creates copies instead of revealing the internal lists.
+        However :class:`MultiDict.setlistdefault` still (and intentionally)
+        returns the internal list for modifications.
 
 `0.3`
     -   Werkzeug 0.3 will be the last release with Python 2.3 compatibility.

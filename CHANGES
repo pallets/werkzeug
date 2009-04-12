@@ -59,6 +59,9 @@ Version 0.5
 - added `passthrough_errors` to `run_simple`.
 - added `secure_filename`
 - added :func:`make_line_iter` 
+- :class:`MultiDict` copies now instead of revealing internal
+  lists to the caller for `getlist` and iteration functions that
+  return lists.
 
 Version 0.4.1
 -------------
