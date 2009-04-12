@@ -22,7 +22,7 @@ from urllib2 import Request as U2Request
 from werkzeug._internal import _empty_stream
 from werkzeug.wrappers import BaseRequest
 from werkzeug.utils import create_environ, run_wsgi_app, get_current_url, \
-     url_encode, url_decode, FileStorage
+     url_encode, url_decode, FileStorage, get_host
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers
 
@@ -595,15 +595,20 @@ class Client(object):
            `mimetype`.  This change was made for consistency with
            :class:`werkzeug.FileWrapper`.
 
+            The `follow_redirects` parameter was added to :func:`open`.
+
         Additional parameters:
 
         :param as_tuple: Returns a tuple in the form ``(environ, result)``
-        :param buffered: set this to true to buffer the application run.
+        :param buffered: Set this to true to buffer the application run.
                          This will automatically close the application for
                          you as well.
+        :param follow_redirects: Set this to True if the `Client` should
+                                 follow HTTP redirects.
         """
         as_tuple = kwargs.pop('as_tuple', False)
         buffered = kwargs.pop('buffered', False)
+        follow_redirects = kwargs.pop('follow_redirects', False)
         environ = None
         if not kwargs and len(args) == 1:
             if isinstance(args[0], EnvironBuilder):
@@ -622,6 +627,35 @@ class Client(object):
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
         if self.cookie_jar is not None:
             self.cookie_jar.extract_wsgi(environ, rv[2])
+
+        # handle redirects
+        redirect_chain = []
+        status_code = int(rv[1].split(None, 1)[0])
+        while status_code in (301, 302, 303, 305, 307) and follow_redirects:
+            redirect = dict(rv[2])['Location']
+            host = get_host(create_environ('/', redirect))
+            if get_host(environ).split(':', 1)[0] != host:
+                raise RuntimeError('%r does not support redirect to '
+                                   'external targets' % self.__class__)
+
+            scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(redirect)
+            redirect_chain.append((redirect, status_code))
+
+            kwargs.update({
+                'base_url':         urlparse.urlunsplit((scheme, host,
+                                    script_root, '', '')).rstrip('/') + '/',
+                'query_string':     qs,
+                'as_tuple':         as_tuple,
+                'buffered':         buffered,
+                'follow_redirects': False
+            })
+            rv = self.open(*args, **kwargs)
+            status_code = int(rv[1].split(None, 1)[0])
+
+            # Prevent loops
+            if redirect_chain[-1] in redirect_chain[0:-1]:
+                break
+
         response = self.response_wrapper(*rv)
         if as_tuple:
             return environ, response

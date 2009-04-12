@@ -18,7 +18,10 @@
 """
 import re
 import inspect
-from email.utils import parsedate_tz, mktime_tz
+try:
+    from email.utils import parsedate_tz, mktime_tz
+except ImportError:
+    from email.Utils import parsedate_tz, mktime_tz
 from cStringIO import StringIO
 from tempfile import TemporaryFile
 from urllib2 import parse_http_list as _parse_list_header

@@ -62,6 +62,9 @@ Version 0.5
 - :class:`MultiDict` copies now instead of revealing internal
   lists to the caller for `getlist` and iteration functions that
   return lists.
+- added :attr:`follow_redirect` to the :func:`open` of :class:`Client`.
+- added support for `extra_files` in
+  :func:`~werkzeug.script.make_runserver`
 
 Version 0.4.1
 -------------
