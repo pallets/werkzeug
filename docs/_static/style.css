@@ -4,7 +4,7 @@ body {
     letter-spacing: -0.01em;
     line-height: 150%;
     text-align: center;
-    background-color: #AFC1C4;
+    background: #AFC1C4 url(background.png);
     color: black;
     margin: 0;
     padding: 0;
@@ -24,8 +24,10 @@ pre {
     font-size: 0.85em;
     letter-spacing: 0.015em;
     padding: 0.5em;
-    border: 1px solid #ccc;
-    background-color: #f8f8f8;
+    border: 1px solid #aaa;
+    border-right-color: #ddd;
+    border-bottom-color: #ddd;
+    background: #f8f8f8 url(codebackground.png);
 }
 
 cite, code, tt {
@@ -75,7 +77,7 @@ div.syntax {
 }
 
 div.page {
-    background: white url(contents.png) repeat-x 0 130px;
+    background: white url(contents.png) 0 130px;
     border: 1px solid #aaa;
     width: 740px;
     margin: 20px auto 20px auto;
