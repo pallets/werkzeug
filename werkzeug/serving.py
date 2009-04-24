@@ -191,6 +191,9 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
     def version_string(self):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
+    def address_string(self):
+        return self.client_address[0]
+
 
 class BaseWSGIServer(HTTPServer):
     multithread = False
