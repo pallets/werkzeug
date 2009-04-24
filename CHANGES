@@ -3,7 +3,7 @@ Werkzeug Changelog
 
 Version 0.5
 -----------
-(codename yet to be selected, release date unknown)
+(codename Schlagbohrer, released on April 24th 2009)
 
 - requires Python 2.4 now
 - fixed a bug in :class:`~contrib.IterIO`
