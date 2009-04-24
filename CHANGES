@@ -25,10 +25,7 @@ Version 0.5
   werkzeug one and changed the default behavior to raise exceptions
   rather than stopping without warning.  The old class will stick in
   the module until 0.6.
-- implemented experimental multipart parser that replaces the old CGI
-  hack.  If you are experiencing problems with the development version
-  of 0.5 regarding form data and file uploads, please report a critical
-  bug and let us know!!!
+- implemented experimental multipart parser that replaces the old CGI hack.
 - added :func:`dump_options_header` and :func:`parse_options_header`
 - added :func:`quote_header_value` and :func:`unquote_header_value`
 - :func:`url_encode` and :func:`url_decode` now accept a separator
