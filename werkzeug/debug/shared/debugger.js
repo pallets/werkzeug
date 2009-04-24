@@ -89,7 +89,7 @@ $(function() {
    */
   $('div.plain form')
     .submit(function() {
-      var label = $('input[@type="submit"]', this);
+      var label = $('input[type="submit"]', this);
       var old_val = label.val();
       label.val('submitting...');
       $.ajax({
