@@ -2,7 +2,8 @@
 Documentation Overview
 ======================
 
-Welcome to the Werkzeug documentation.
+Welcome to the Werkzeug |version| documentation.  You can find different
+editions of the `documentation online <http://werkzeug.pocoo.org/documentation/>`_.
 
 
 Getting Started
