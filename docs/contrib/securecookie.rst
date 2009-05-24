@@ -12,7 +12,7 @@ Reference
 
    .. attribute:: new
 
-      `True` is the cookie was newly created, otherwise `False`
+      `True` if the cookie was newly created, otherwise `False`
 
    .. attribute:: modified
 
