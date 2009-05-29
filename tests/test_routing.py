@@ -199,6 +199,7 @@ def test_request_direct_charset_bug():
     try:
         adapter.match(u'/öäü')
     except RequestRedirect, e:
-        assert e.new_url == 'http://localhost/%C3%B6%C3%A4%C3%BC/
+        print repr(e.new_url)
+        assert e.new_url == 'http://localhost/%C3%B6%C3%A4%C3%BC/'
     else:
         raise AssertionError('expected request redirect exception')

@@ -5,6 +5,8 @@ Version 0.6
 -----------
 (codename to be selected, release date yet unknown)
 
+- url routing system properly supports unicode URL rules now.
+
 
 Version 0.5
 -----------
