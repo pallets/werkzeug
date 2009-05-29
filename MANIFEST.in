@@ -5,3 +5,4 @@ recursive-include tests *
 recursive-include docs *
 recursive-include examples *
 recursive-include artwork *
+prune docs/_build/doctrees
