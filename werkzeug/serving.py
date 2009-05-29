@@ -382,7 +382,7 @@ def run_simple(hostname, port, application, use_reloader=False,
         _log('info', ' * Running on http://%s:%d/', display_hostname, port)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before
-        # we spawn a separate Python interpreter and loose this ability.
+        # we spawn a separate Python interpreter and lose this ability.
         test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))
