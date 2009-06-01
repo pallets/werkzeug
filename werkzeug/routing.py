@@ -1215,7 +1215,7 @@ class MapAdapter(object):
                     self.subdomain and self.subdomain + '.' or '',
                     self.server_name,
                     self.script_name[:-1],
-                    path_info.lstrip('/')
+                    path_info.lstrip('/').encode(self.map.charset)
                 )))
             if rv is None:
                 continue
@@ -1233,7 +1233,7 @@ class MapAdapter(object):
                             subdomain and subdomain + '.' or '',
                             self.server_name,
                             self.script_name[:-1],
-                            path.lstrip('/')
+                            path.lstrip('/').encode(self.map.charset)
                         )))
             if rule.redirect_to is not None:
                 if isinstance(rule.redirect_to, basestring):

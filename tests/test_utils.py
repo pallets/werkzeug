@@ -444,3 +444,12 @@ def test_limited_stream():
     assert stream.read(1) == '2'
     assert stream.read() == '3'
     assert stream.read() == ''
+
+
+def test_file_storage_truthiness():
+    """Test FileStorage truthiness"""
+    fs = FileStorage()
+    assert not fs, 'should be False'
+
+    fs = FileStorage(StringIO('Hello World'), filename='foo.txt')
+    assert fs, 'should be True because of a provided filename'

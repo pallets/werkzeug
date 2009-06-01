@@ -81,6 +81,9 @@ class FileStorage(object):
         except:
             pass
 
+    def __nonzero__(self):
+        return bool(self.filename)
+
     def __getattr__(self, name):
         return getattr(self.stream, name)
 

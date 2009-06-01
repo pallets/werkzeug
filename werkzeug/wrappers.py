@@ -249,7 +249,7 @@ class BaseRequest(object):
 
     @cached_property
     def args(self):
-        """The parsed URL parameters as :class:`MultiDict`."""
+        """The parsed URL parameters as :class:`ImmutableMultiDict`."""
         return url_decode(self.environ.get('QUERY_STRING', ''), self.charset,
                           errors=self.encoding_errors,
                           cls=ImmutableMultiDict)
@@ -268,8 +268,8 @@ class BaseRequest(object):
     @property
     def form(self):
         """Form parameters.  Currently it's not guaranteed that the
-        :class:`MultiDict` returned by this function is ordered in the same
-        way as the submitted form data.
+        :class:`ImmutableMultiDict` returned by this function is ordered in
+        the same way as the submitted form data.
         """
         self._load_form_data()
         return self._form

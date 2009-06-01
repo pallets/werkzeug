@@ -1,9 +1,11 @@
 Werkzeug Changelog
 ==================
 
-Version 0.6
------------
+Version 0.5.1
+-------------
 (codename to be selected, release date yet unknown)
+
+- fixed boolean check of :class:`FieldStorage`
 
 
 Version 0.5
