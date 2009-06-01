@@ -314,7 +314,7 @@ method to get all values for a header:
 ['name=value; Path=/', 'name2=value2; Path=/']
 
 Finally if you have set all the conditional values you can make the
-response conditional against a requset.  Which means that if the request
+response conditional against a request.  Which means that if the request
 can assure that it has the information already, no data besides the headers
 is sent over the network which saves traffic.  For that you should set at
 least an etag (which is used for comparision) and the date header and then
