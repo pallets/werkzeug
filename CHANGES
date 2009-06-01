@@ -3,7 +3,7 @@ Werkzeug Changelog
 
 Version 0.5.1
 -------------
-(codename to be selected, release date yet unknown)
+(bugfix release for 0.5, release date yet unknown)
 
 - fixed boolean check of :class:`FieldStorage`
 - url routing system properly supports unicode URL rules now.
