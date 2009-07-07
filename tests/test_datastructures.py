@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from copy import copy
+
 from nose.tools import assert_raises
 from werkzeug.datastructures import *
 
@@ -127,11 +129,28 @@ def test_combined_multidict():
         d['foo'] = 'blub'
     assert_raises(TypeError, test_assign)
 
+    # copies are immutable
+    d = d.copy()
+    assert_raises(TypeError, test_assign)
+
     # make sure lists merges
     md1 = MultiDict((("foo", "bar"),))
     md2 = MultiDict((("foo", "blafasel"),))
     x = CombinedMultiDict((md1, md2))
     assert x.lists() == [('foo', ['bar', 'blafasel'])]
+
+
+def test_immutable_dict_copies_are_mutable():
+    for cls in ImmutableTypeConversionDict, ImmutableMultiDict, ImmutableDict:
+        immutable = cls({'a': 1})
+        assert_raises(TypeError, immutable.pop, 'a')
+
+        mutable = immutable.copy()
+        mutable.pop('a')
+        assert 'a' in immutable
+        assert mutable is not immutable
+
+        assert copy(immutable) is immutable
 
 
 def test_headers():

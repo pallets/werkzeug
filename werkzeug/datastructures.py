@@ -196,6 +196,13 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
     .. versionadded:: 0.5
     """
 
+    def copy(self):
+        """Return a shallow mutable copy of this object."""
+        return TypeConversionDict(self)
+
+    def __copy__(self):
+        return self
+
 
 class MultiDict(TypeConversionDict):
     """A :class:`MultiDict` is a dictionary subclass customized to deal with
@@ -1089,12 +1096,26 @@ class ImmutableDict(ImmutableDictMixin, dict):
 
     __repr__ = _proxy_repr(dict)
 
+    def copy(self):
+        """Return a shallow mutable copy of this object."""
+        return TypeConversionDict(self)
+
+    def __copy__(self):
+        return self
+
 
 class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
     """An immutable :class:`MultiDict`.
 
     .. versionadded:: 0.5
     """
+
+    def copy(self):
+        """Return a shallow mutable copy of this object."""
+        return TypeConversionDict(self)
+
+    def __copy__(self):
+        return self
 
 
 class Accept(ImmutableList):

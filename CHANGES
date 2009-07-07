@@ -11,6 +11,9 @@ Version 0.5.1
   method.
 - implemented :meth:`BaseRequest._form_parsing_failed`.
 - fixed #394 
+- :meth:`ImmutableDict.copy`, :meth:`ImmutableMultiDict.copy` and
+  :meth:`ImmutableTypeConversionDict.copy` return mutable shallow
+  copies.
 
 
 Version 0.5
