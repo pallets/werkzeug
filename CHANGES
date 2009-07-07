@@ -22,6 +22,7 @@ Version 0.5.1
   with setuptools uploades not handled properly (#390)
 - fixed some minor bugs in the atom feed generator.
 - fixed a bug with client cookie header parsing being case sensitive.
+- fixed a not-working deprecation warning.
 
 
 Version 0.5

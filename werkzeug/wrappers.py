@@ -147,7 +147,7 @@ class BaseRequest(object):
         charset = kwargs.pop('charset', cls.charset)
         environ = kwargs.pop('environ', None)
         if environ is not None:
-            from warnings import DeprecationWarning
+            from warnings import DeprecationWarning, warn
             warn(DeprecationWarning('The environ parameter to from_values'
                                     ' is now called environ_overrides for'
                                     ' consistency with EnvironBuilder'),
