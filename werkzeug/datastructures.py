@@ -365,13 +365,17 @@ class MultiDict(TypeConversionDict):
             default_list = dict.__getitem__(self, key)
         return default_list
 
-    def items(self):
-        """Return a list of ``(key, value)`` pairs, where value is the first
-        item in the list associated with the key.
+    def items(self, multi=False):
+        """Return a list of ``(key, value)`` pairs.
+
+        :param multi: If set to `True` the list returned will have a
+                      pair for each value of each key.  Ohterwise it
+                      will only contain pairs for the first value of
+                      each key.
 
         :return: a :class:`list`
         """
-        return [(key, self[key]) for key in self.iterkeys()]
+        return list(self.iteritems(multi))
 
     #: Return a list of ``(key, value)`` pairs, where values is the list of
     #: all values associated with the key.
@@ -398,10 +402,14 @@ class MultiDict(TypeConversionDict):
         """
         return list(self.iterlistvalues())
 
-    def iteritems(self):
+    def iteritems(self, multi=False):
         """Like :meth:`items` but returns an iterator."""
         for key, values in dict.iteritems(self):
-            yield key, values[0]
+            if multi:
+                for value in values:
+                    yield key, value
+            else:
+                yield key, values[0]
 
     def iterlists(self):
         """Return a list of all values associated with a key.
@@ -498,11 +506,7 @@ class MultiDict(TypeConversionDict):
             raise self.KeyError(str(e))
 
     def __repr__(self):
-        tmp = []
-        for key, values in self.iterlists():
-            for value in values:
-                tmp.append((key, value))
-        return '%s(%r)' % (self.__class__.__name__, tmp)
+        return '%s(%r)' % (self.__class__.__name__, self.items(multi=True))
 
 
 class Headers(object):
@@ -984,11 +988,13 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
             rv.update(d.keys())
         return list(rv)
 
-    def iteritems(self):
+    def iteritems(self, multi=False):
         found = set()
         for d in self.dicts:
-            for key, value in d.iteritems():
-                if key not in found:
+            for key, value in d.iteritems(multi):
+                if multi:
+                    yield key, value
+                elif key not in found:
                     found.add(key)
                     yield key, value
 
@@ -999,8 +1005,8 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     def values(self):
         return list(self.itervalues())
 
-    def items(self):
-        return list(self.iteritems())
+    def items(self, multi=False):
+        return list(self.iteritems(multi))
 
     def iterlists(self):
         rv = {}

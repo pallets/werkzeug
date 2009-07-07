@@ -15,6 +15,8 @@ Version 0.5.1
   :meth:`ImmutableTypeConversionDict.copy` return mutable shallow
   copies.
 - fixed a bug with the `make_runserver` script action.
+- :meth:`MultiDict.items` and :meth:`MutiDict.iteritems` now accept an
+  argument to return a pair for each value of each key.
 
 
 Version 0.5

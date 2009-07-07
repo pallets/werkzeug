@@ -64,7 +64,11 @@ def test_multidict():
     assert list(sorted(md.itervalues())) == [1, 2, 3]
 
     assert list(sorted(md.items())) == [('a', 1), ('b', 2), ('c', 3)]
+    assert list(sorted(md.items(multi=True))) == \
+           [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
     assert list(sorted(md.iteritems())) == [('a', 1), ('b', 2), ('c', 3)]
+    assert list(sorted(md.iteritems(multi=True))) == \
+           [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
 
     assert list(sorted(md.lists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
     assert list(sorted(md.iterlists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
@@ -105,6 +109,11 @@ def test_multidict():
     assert md.get('a', type=int) == 4
     assert md.getlist('b', type=int) == [2, 3]
 
+    # repr
+    md = MultiDict([('a', 1), ('a', 2), ('b', 3)])
+    assert "('a', 1)" in repr(md)
+    assert "('a', 2)" in repr(md)
+    assert "('b', 3)" in repr(md)
 
 def test_combined_multidict():
     """Combined multidict behavior"""
@@ -116,6 +125,10 @@ def test_combined_multidict():
     assert d['foo'] == '1'
     assert d['bar'] == '2'
     assert d.getlist('bar') == ['2', '3']
+
+    assert sorted(d.items()) == [('bar', '2'), ('foo', '1')], d.items()
+    assert sorted(d.items(multi=True)) == [('bar', '2'), ('bar', '3'), ('foo', '1')]
+
 
     # type lookup
     assert d.get('foo', type=int) == 1
