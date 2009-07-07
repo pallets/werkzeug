@@ -24,6 +24,8 @@ Version 0.5.1
 - fixed a bug with client cookie header parsing being case sensitive.
 - fixed a not-working deprecation warning.
 - fixed package loading for :cls:`SharedDataMiddleware`.
+- fixed a bug in the secure cookie that made server-side expiration
+  on servers with a local time that was not set to UTC impossible.
 
 
 Version 0.5
