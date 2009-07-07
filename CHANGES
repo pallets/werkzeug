@@ -17,6 +17,9 @@ Version 0.5.1
 - fixed a bug with the `make_runserver` script action.
 - :meth:`MultiDict.items` and :meth:`MutiDict.iteritems` now accept an
   argument to return a pair for each value of each key.
+- the multipart parser works better with hand-crafted multipart
+  requests now that have extra newlines added.  This fixes a bug
+  with setuptools uploades not handled properly (#390)
 
 
 Version 0.5

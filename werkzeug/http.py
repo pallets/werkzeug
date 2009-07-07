@@ -517,8 +517,21 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     iterator = chain(make_line_iter(file, buffer_size=buffer_size),
                      repeat(''))
 
+    def _find_terminator():
+        """The terminator might have some additional newlines before it.
+        There is at least one application that sends additional newlines
+        before headers (the python setuptools package).
+        """
+        for line in iterator:
+            if not line:
+                break
+            line = line.strip()
+            if line:
+                return line
+        return ''
+
     try:
-        terminator = iterator.next().strip()
+        terminator = _find_terminator()
         if terminator != next_part:
             raise ValueError('Expected boundary at start of multipart data')
 

@@ -397,7 +397,7 @@ class MultiDict(TypeConversionDict):
         >>> d = MultiDict({"foo": [1, 2, 3]})
         >>> zip(d.keys(), d.listvalues()) == d.lists()
         True
-        
+
         :return: a :class:`list`
         """
         return list(self.iterlistvalues())
