@@ -23,6 +23,7 @@ Version 0.5.1
 - fixed some minor bugs in the atom feed generator.
 - fixed a bug with client cookie header parsing being case sensitive.
 - fixed a not-working deprecation warning.
+- fixed package loading for :cls:`SharedDataMiddleware`.
 
 
 Version 0.5

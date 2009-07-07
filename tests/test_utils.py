@@ -151,13 +151,18 @@ def test_shared_data_middleware():
         yield 'NOT FOUND'
     app = SharedDataMiddleware(null_application, {
         '/':        path.join(path.dirname(__file__), 'res'),
-        '/sources': path.join(path.dirname(__file__), 'res')
+        '/sources': path.join(path.dirname(__file__), 'res'),
+        '/pkg':     ('werkzeug.debug', 'shared')
     })
 
     for p in '/test.txt', '/sources/test.txt':
         app_iter, status, headers = run_wsgi_app(app, create_environ(p))
         assert status == '200 OK'
         assert ''.join(app_iter).strip() == 'FOUND'
+
+    app_iter, status, headers = run_wsgi_app(app, create_environ('/pkg/body.tmpl'))
+    contents = ''.join(app_iter)
+    assert 'Werkzeug Debugger' in contents
 
     app_iter, status, headers = run_wsgi_app(app, create_environ('/missing'))
     assert status == '404 NOT FOUND'
