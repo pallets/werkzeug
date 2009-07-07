@@ -121,8 +121,9 @@ class _TestCookieHeaders(object):
 
     def getheaders(self, name):
         headers = []
+        name = name.lower()
         for k, v in self.headers:
-            if k == name:
+            if k.lower() == name:
                 headers.append(v)
         return headers
 
