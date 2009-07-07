@@ -555,6 +555,8 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
 
             buf = ''
             for line in iterator:
+                if not line:
+                    raise ValueError('unexpected end of stream')
                 if line[:2] == '--':
                     terminator = line.rstrip()
                     if terminator in (next_part, last_part):

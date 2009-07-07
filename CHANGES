@@ -9,6 +9,8 @@ Version 0.5.1
 - url routing system properly supports unicode URL rules now.
 - file upload streams no longer have to provide a truncate()
   method.
+- implemented :meth:`BaseRequest._form_parsing_failed`.
+- fixed #394 
 
 
 Version 0.5

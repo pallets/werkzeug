@@ -816,7 +816,8 @@ xhtml = HTMLBuilder('xhtml')
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
                     errors='ignore', max_form_memory_size=None,
-                    max_content_length=None, cls=None):
+                    max_content_length=None, cls=None,
+                    silent=True):
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
     transport method is `POST` or `PUT`.
@@ -835,6 +836,9 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
        The `max_form_memory_size`, `max_content_length` and
        `cls` parameters were added.
 
+    .. versionadded:: 0.5.1
+       The optional `silent` flag was added.
+
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
@@ -852,6 +856,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                                exception is raised.
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
+    :param silent: If set to False parsing errors will not be catched.
     :return: A tuple in the form ``(stream, form, files)``.
     """
     content_type, extra = parse_options_header(environ.get('CONTENT_TYPE', ''))
@@ -877,6 +882,8 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                                           charset, errors,
                                           max_form_memory_size=max_form_memory_size)
         except ValueError, e:
+            if not silent:
+                raise
             form = cls()
         else:
             form = cls(form)

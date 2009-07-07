@@ -221,16 +221,32 @@ class BaseRequest(object):
                 raise RuntimeError('A shallow request tried to consume '
                                    'form data.  If you really want to do '
                                    'that, set `shallow` to False.')
+            data = None
             if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
-                data = parse_form_data(self.environ, self._get_file_stream,
-                                       self.charset, self.encoding_errors,
-                                       self.max_form_memory_size,
-                                       self.max_content_length,
-                                       cls=ImmutableMultiDict)
-            else:
+                try:
+                    data = parse_form_data(self.environ, self._get_file_stream,
+                                           self.charset, self.encoding_errors,
+                                           self.max_form_memory_size,
+                                           self.max_content_length,
+                                           cls=ImmutableMultiDict,
+                                           silent=False)
+                except ValueError, e:
+                    self._form_parsing_failed(e)
+            if data is None:
                 data = (_empty_stream, ImmutableMultiDict(),
                         ImmutableMultiDict())
             self._data_stream, self._form, self._files = data
+
+    def _form_parsing_failed(self, error):
+        """Called if parsing of form data failed.  This is currently only
+        invoked for failed multipart uploads.  By default this method does
+        nothing.
+
+        :param error: a `ValueError` object with a message why the
+                      parsing failed.
+
+        .. versionadded:: 0.5.1
+        """
 
     @property
     def stream(self):

@@ -8,6 +8,7 @@
     :license: BSD license.
 """
 import pickle
+from StringIO import StringIO
 
 from nose.tools import assert_raises
 
@@ -306,3 +307,22 @@ def test_shallow_mode():
     request = Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
     assert request.args['foo'] == 'bar'
     assert_raises(RuntimeError, lambda: request.form['foo'])
+
+
+def test_form_parsing_failed():
+    """Form parsing failed calls method on request object"""
+    errors = []
+    class TestRequest(Request):
+        def _form_parsing_failed(self, error):
+            errors.append(error)
+    data = (
+        '--blah\r\n'
+    )
+    data = TestRequest.from_values(input_stream=StringIO(data),
+                                   content_length=len(data),
+                                   content_type='multipart/form-data; boundary=foo',
+                                   method='POST')
+    assert not data.files
+    assert not data.form
+    assert len(errors) == 1
+    assert isinstance(errors[0], ValueError)
