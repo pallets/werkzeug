@@ -294,5 +294,6 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
         from werkzeug.serving import run_simple
         app = app_factory()
         run_simple(hostname, port, app, reloader, debugger, evalex,
-                   extra_files, 1, threaded, processes, static_files)
+                   extra_files, 1, threaded, processes,
+                   static_files=static_files)
     return action

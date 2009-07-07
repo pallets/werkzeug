@@ -14,6 +14,7 @@ Version 0.5.1
 - :meth:`ImmutableDict.copy`, :meth:`ImmutableMultiDict.copy` and
   :meth:`ImmutableTypeConversionDict.copy` return mutable shallow
   copies.
+- fixed a bug with the `make_runserver` script action.
 
 
 Version 0.5
