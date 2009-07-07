@@ -20,6 +20,7 @@ Version 0.5.1
 - the multipart parser works better with hand-crafted multipart
   requests now that have extra newlines added.  This fixes a bug
   with setuptools uploades not handled properly (#390)
+- fixed some minor bugs in the atom feed generator.
 
 
 Version 0.5
