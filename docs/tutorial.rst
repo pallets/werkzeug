@@ -304,6 +304,15 @@ to get an interactive Python interpreter without traceback.  If you get an
 exception check the line number and compare your code with the code we have
 in the code boxes above.
 
+To run your application for development purposes you can also use the manage
+script.  Just execute this command from your command line::
+
+    python manage.py runserver
+
+The server will then listen on `localhost:5000 <http://localhost:5000/>`_
+for incoming requests and show your application.  But we need to implement
+some more things before we can run the server without errors.
+
 Now that the script system is running we can start writing our database models.
 
 

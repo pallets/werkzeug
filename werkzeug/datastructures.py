@@ -197,7 +197,10 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
     """
 
     def copy(self):
-        """Return a shallow mutable copy of this object."""
+        """Return a shallow mutable copy of this object.  Keep in mind that
+        the standard library's :func:`copy` funciton is a no-op for this class
+        like for any other python immutable type (eg: :class:`tuple`).
+        """
         return TypeConversionDict(self)
 
     def __copy__(self):
@@ -252,7 +255,7 @@ class MultiDict(TypeConversionDict):
 
     def __init__(self, mapping=None):
         if isinstance(mapping, MultiDict):
-            dict.__init__(self, ((k, l[:]) for k, l in mapping.lists()))
+            dict.__init__(self, ((k, l[:]) for k, l in mapping.iterlists()))
         elif isinstance(mapping, dict):
             tmp = {}
             for key, value in mapping.iteritems():
@@ -1103,8 +1106,11 @@ class ImmutableDict(ImmutableDictMixin, dict):
     __repr__ = _proxy_repr(dict)
 
     def copy(self):
-        """Return a shallow mutable copy of this object."""
-        return TypeConversionDict(self)
+        """Return a shallow mutable copy of this object.  Keep in mind that
+        the standard library's :func:`copy` funciton is a no-op for this class
+        like for any other python immutable type (eg: :class:`tuple`).
+        """
+        return dict(self)
 
     def __copy__(self):
         return self
@@ -1117,8 +1123,11 @@ class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
     """
 
     def copy(self):
-        """Return a shallow mutable copy of this object."""
-        return TypeConversionDict(self)
+        """Return a shallow mutable copy of this object.  Keep in mind that
+        the standard library's :func:`copy` funciton is a no-op for this class
+        like for any other python immutable type (eg: :class:`tuple`).
+        """
+        return MultiDict(self)
 
     def __copy__(self):
         return self

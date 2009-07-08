@@ -5,7 +5,7 @@ Version 0.5.1
 -------------
 (bugfix release for 0.5, release date yet unknown)
 
-- fixed boolean check of :class:`FieldStorage`
+- fixed boolean check of :class:`FileStorage`
 - url routing system properly supports unicode URL rules now.
 - file upload streams no longer have to provide a truncate()
   method.
@@ -23,7 +23,7 @@ Version 0.5.1
 - fixed some minor bugs in the atom feed generator.
 - fixed a bug with client cookie header parsing being case sensitive.
 - fixed a not-working deprecation warning.
-- fixed package loading for :cls:`SharedDataMiddleware`.
+- fixed package loading for :class:`SharedDataMiddleware`.
 - fixed a bug in the secure cookie that made server-side expiration
   on servers with a local time that was not set to UTC impossible.
 
