@@ -251,8 +251,8 @@ class BaseRequest(object):
     @property
     def stream(self):
         """The parsed stream if the submitted data was not multipart or
-        urlencoded form data.  This stream is the stream left by the CGI
-        module after parsing.  This is *not* the WSGI input stream but
+        urlencoded form data.  This stream is the stream left by the form data
+        parser module after parsing.  This is *not* the WSGI input stream but
         a wrapper around it that ensures the caller does not accidentally
         read past `Content-Length`.
         """

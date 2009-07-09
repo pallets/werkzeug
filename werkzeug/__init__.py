@@ -17,7 +17,21 @@
 from types import ModuleType
 import sys
 
+# This import magic raises concerns quite often which is why the implementation
+# and motiviation is explained here in detail now.
+#
+# The majority of the functions and classes provided by Werkzeug work on the
+# HTTP and WSGI layer.  There is no useful grouping for those which is why
+# they are all importable from "werkzeug" instead of the modules where they are
+# implemented.  The downside of that is, that now everything would be loaded at
+# once, even if unused.
+#
+# The implementation of a lazy-loading module in this file replaces the
+# werkzeug package when imported from within.  Attribute access to the werkzeug
+# module will then lazily import from the modules that implement the objects.
 
+
+# import mapping to objects in other modules
 all_by_module = {
     'werkzeug.debug':       ['DebuggedApplication'],
     'werkzeug.local':       ['Local', 'LocalManager', 'LocalProxy'],
@@ -78,6 +92,7 @@ all_by_module = {
     'werkzeug._internal':   ['_easteregg']
 }
 
+# modules that should be imported when accessed as attributes of werkzeug
 attribute_modules = dict.fromkeys(['exceptions', 'routing', 'script'])
 
 
