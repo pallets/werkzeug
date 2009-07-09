@@ -3,7 +3,7 @@ Werkzeug Changelog
 
 Version 0.5.1
 -------------
-(bugfix release for 0.5, release date yet unknown)
+(bugfix release for 0.5, released on July 9th 2009)
 
 - fixed boolean check of :class:`FileStorage`
 - url routing system properly supports unicode URL rules now.
