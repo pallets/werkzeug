@@ -736,5 +736,6 @@ from werkzeug.datastructures import Headers, Accept, RequestCacheControl, \
      WWWAuthenticate
 
 
+# DEPRECATED
 # backwards compatibible imports
 from werkzeug.datastructures import MIMEAccept, CharsetAccept, LanguageAccept
