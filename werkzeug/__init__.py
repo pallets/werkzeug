@@ -87,6 +87,11 @@ for module, items in all_by_module.iteritems():
         object_origins[item] = module
 
 
+#: the cached version of the library.  We get the distribution from
+#: pkg_resources the first time this attribute is accessed.  Because
+#: this operation is quite slow it speeds up importing a lot.
+version = None
+
 class module(ModuleType):
     """Automatically import objects from the modules."""
 
@@ -100,15 +105,20 @@ class module(ModuleType):
             __import__('werkzeug.' + name)
         return ModuleType.__getattribute__(self, name)
 
+    @property
+    def __version__(self):
+        global version
+        if version is None:
+            try:
+                version = __import__('pkg_resources') \
+                          .get_distribution('Werkzeug').version
+            except:
+                version = 'unknown'
+        return version
 
 # keep a reference to this module so that it's not garbage collected
 old_module = sys.modules['werkzeug']
 
-# figure out the version
-try:
-    version = __import__('pkg_resources').get_distribution('Werkzeug').version
-except:
-    version = 'unknown'
 
 # setup the new module and patch it into the dict of loaded modules
 new_module = sys.modules['werkzeug'] = module('werkzeug')
@@ -117,6 +127,5 @@ new_module.__dict__.update({
     '__path__':         __path__,
     '__doc__':          __doc__,
     '__all__':          tuple(object_origins) + tuple(attribute_modules),
-    '__docformat__':    'restructuredtext en',
-    '__version__':      version
+    '__docformat__':    'restructuredtext en'
 })
