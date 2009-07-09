@@ -105,6 +105,14 @@ class module(ModuleType):
             __import__('werkzeug.' + name)
         return ModuleType.__getattribute__(self, name)
 
+    def __dir__(self):
+        """Just show what we want to show."""
+        result = list(new_module.__all__)
+        result.extend(('__file__', '__path__', '__doc__', '__all__',
+                       '__docformat__', '__name__', '__path__',
+                       '__package__', '__version__'))
+        return result
+
     @property
     def __version__(self):
         global version
