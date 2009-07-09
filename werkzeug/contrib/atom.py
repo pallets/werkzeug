@@ -9,8 +9,8 @@
     Example::
 
         def atom_feed(request):
-            feed = AtomFeed("My Blog", feed_url=req.url,
-                            url=req.host_url,
+            feed = AtomFeed("My Blog", feed_url=request.url,
+                            url=request.host_url,
                             subtitle="My example blog for a feed test.")
             for post in Post.query.limit(10).all():
                 feed.add(post.title, post.body, content_type='html',
