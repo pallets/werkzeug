@@ -198,7 +198,7 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
-        the standard library's :func:`copy` funciton is a no-op for this class
+        the standard library's :func:`copy` function is a no-op for this class
         like for any other python immutable type (eg: :class:`tuple`).
         """
         return TypeConversionDict(self)
@@ -1107,7 +1107,7 @@ class ImmutableDict(ImmutableDictMixin, dict):
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
-        the standard library's :func:`copy` funciton is a no-op for this class
+        the standard library's :func:`copy` function is a no-op for this class
         like for any other python immutable type (eg: :class:`tuple`).
         """
         return dict(self)
@@ -1124,7 +1124,7 @@ class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
-        the standard library's :func:`copy` funciton is a no-op for this class
+        the standard library's :func:`copy` function is a no-op for this class
         like for any other python immutable type (eg: :class:`tuple`).
         """
         return MultiDict(self)
