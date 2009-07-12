@@ -53,14 +53,17 @@ from itertools import chain
 from SocketServer import ThreadingMixIn, ForkingMixIn
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
-from werkzeug import __version__ as version
+import werkzeug
 from werkzeug._internal import _log
 from werkzeug.utils import responder
 from werkzeug.exceptions import InternalServerError
 
 
 class BaseRequestHandler(BaseHTTPRequestHandler, object):
-    server_version = 'Werkzeug/' + version
+
+    @property
+    def server_version(self):
+        return 'Werkzeug/' + werkzeug.__version__
 
     def make_environ(self):
         path_info, query = urlparse(self.path)[2::2]
