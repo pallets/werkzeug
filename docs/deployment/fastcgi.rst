@@ -97,6 +97,33 @@ session::
     $ screen
     $ /var/www/yourapplication/yourapplication.fcgi
 
+Debugging
+=========
+
+FastCGI deployments tend to be hard to debug on most webservers.  Very often the
+only thing the server log tells you is something along the lines of "premature
+end of headers".  In order to debug the application the only thing that can
+really give you ideas why it breaks is switching to the correct user and
+executing the application by hand.
+
+This example assumes your application is called `application.fcgi` and that your
+webserver user is `www-data`::
+
+    $ su www-data
+    $ cd /var/www/yourapplication
+    $ python application.fcgi
+    Traceback (most recent call last):
+      File "yourapplication.fcg", line 4, in <module>
+    ImportError: No module named yourapplication
+
+In this case the error seems to be "yourapplication" not being on the python
+path.  Common problems are:
+
+-   relative paths being used.  Don't rely on the current working directory
+-   the code depending on environment variables that are not set by the
+    web server.
+-   different python interpreters being used.
+
 .. _lighttpd: http://www.lighttpd.net/
 .. _nginx: http://nginx.net/
 .. _flup: http://trac.saddi.com/flup
