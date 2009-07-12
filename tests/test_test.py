@@ -253,6 +253,7 @@ def test_follow_external_redirect():
     c = Client(external_redirect_demo_app)
     assert_raises(RuntimeError, lambda: c.open(environ_overrides=env, follow_redirects=True))
 
+
 def test_follow_redirect_with_response_wrapper():
     # Test that the :cls:`Client` is aware of user defined response wrappers
     env = create_environ('/', 'http://localhost')

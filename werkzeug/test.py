@@ -640,7 +640,7 @@ class Client(object):
                 self.redirect_client = Client(self.application)
                 self.redirect_client.cookie_jar = self.cookie_jar
             redirect = dict(rv[2])['Location']
-            host = get_host(create_environ('/', redirect))
+            host = get_host(create_environ('/', redirect)).split(':', 1)[0]
             if get_host(environ).split(':', 1)[0] != host:
                 raise RuntimeError('%r does not support redirect to '
                                    'external targets' % self.__class__)
