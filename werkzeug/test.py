@@ -91,7 +91,6 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
 
     length = int(_closure[0].tell())
     _closure[0].seek(0)
-    _closure[0].seek(0)
     return _closure[0], length, boundary
 
 
@@ -121,8 +120,9 @@ class _TestCookieHeaders(object):
 
     def getheaders(self, name):
         headers = []
+        name = name.lower()
         for k, v in self.headers:
-            if k == name:
+            if k.lower() == name:
                 headers.append(v)
         return headers
 

@@ -56,21 +56,9 @@ except ImportError:
     from distutils.core import setup
 
 
-data_files = []
-documentation_path = 'docs/build'
-if os.path.exists(documentation_path):
-    documentation_files = []
-    for fn in os.listdir(documentation_path):
-        if not fn.startswith('.'):
-            fn = os.path.join(documentation_path, fn)
-            if os.path.isfile(fn):
-                documentation_files.append(fn)
-    data_files.append(('docs', documentation_files))
-
-
 setup(
     name='Werkzeug',
-    version='0.5',
+    version='0.6',
     url='http://werkzeug.pocoo.org/',
     license='BSD',
     author='Armin Ronacher',
@@ -78,7 +66,7 @@ setup(
     description='The Swiss Army knife of Python web development',
     long_description=__doc__,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
@@ -88,7 +76,6 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib'],
-    data_files=data_files,
     package_data={
         'werkzeug.debug': ['shared/*', 'templates/*']
     },

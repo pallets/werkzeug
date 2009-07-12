@@ -46,6 +46,7 @@ import socket
 import sys
 import time
 import thread
+import subprocess
 from urllib import unquote
 from urlparse import urlparse
 from itertools import chain
@@ -191,6 +192,9 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
     def version_string(self):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
+    def address_string(self):
+        return self.client_address[0]
+
 
 class BaseWSGIServer(HTTPServer):
     multithread = False
@@ -300,11 +304,9 @@ def restart_with_reloader():
     while 1:
         _log('info', ' * Restarting with reloader...')
         args = [sys.executable] + sys.argv
-        if sys.platform == 'win32':
-            args = ['"%s"' % arg for arg in args]
         new_environ = os.environ.copy()
         new_environ['WERKZEUG_RUN_MAIN'] = 'true'
-        exit_code = os.spawnve(os.P_WAIT, sys.executable, args, new_environ)
+        exit_code = subprocess.call(args, env=new_environ)
         if exit_code != 3:
             return exit_code
 
@@ -380,7 +382,7 @@ def run_simple(hostname, port, application, use_reloader=False,
         _log('info', ' * Running on http://%s:%d/', display_hostname, port)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before
-        # we spawn a separate Python interpreter and loose this ability.
+        # we spawn a separate Python interpreter and lose this ability.
         test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))

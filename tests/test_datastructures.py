@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from copy import copy
+
 from nose.tools import assert_raises
 from werkzeug.datastructures import *
 
@@ -62,7 +64,11 @@ def test_multidict():
     assert list(sorted(md.itervalues())) == [1, 2, 3]
 
     assert list(sorted(md.items())) == [('a', 1), ('b', 2), ('c', 3)]
+    assert list(sorted(md.items(multi=True))) == \
+           [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
     assert list(sorted(md.iteritems())) == [('a', 1), ('b', 2), ('c', 3)]
+    assert list(sorted(md.iteritems(multi=True))) == \
+           [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
 
     assert list(sorted(md.lists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
     assert list(sorted(md.iterlists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
@@ -103,6 +109,11 @@ def test_multidict():
     assert md.get('a', type=int) == 4
     assert md.getlist('b', type=int) == [2, 3]
 
+    # repr
+    md = MultiDict([('a', 1), ('a', 2), ('b', 3)])
+    assert "('a', 1)" in repr(md)
+    assert "('a', 2)" in repr(md)
+    assert "('b', 3)" in repr(md)
 
 def test_combined_multidict():
     """Combined multidict behavior"""
@@ -114,6 +125,10 @@ def test_combined_multidict():
     assert d['foo'] == '1'
     assert d['bar'] == '2'
     assert d.getlist('bar') == ['2', '3']
+
+    assert sorted(d.items()) == [('bar', '2'), ('foo', '1')], d.items()
+    assert sorted(d.items(multi=True)) == [('bar', '2'), ('bar', '3'), ('foo', '1')]
+
 
     # type lookup
     assert d.get('foo', type=int) == 1
@@ -127,11 +142,28 @@ def test_combined_multidict():
         d['foo'] = 'blub'
     assert_raises(TypeError, test_assign)
 
+    # copies are immutable
+    d = d.copy()
+    assert_raises(TypeError, test_assign)
+
     # make sure lists merges
     md1 = MultiDict((("foo", "bar"),))
     md2 = MultiDict((("foo", "blafasel"),))
     x = CombinedMultiDict((md1, md2))
     assert x.lists() == [('foo', ['bar', 'blafasel'])]
+
+
+def test_immutable_dict_copies_are_mutable():
+    for cls in ImmutableTypeConversionDict, ImmutableMultiDict, ImmutableDict:
+        immutable = cls({'a': 1})
+        assert_raises(TypeError, immutable.pop, 'a')
+
+        mutable = immutable.copy()
+        mutable.pop('a')
+        assert 'a' in immutable
+        assert mutable is not immutable
+
+        assert copy(immutable) is immutable
 
 
 def test_headers():

@@ -191,3 +191,15 @@ def test_adapter_url_parameter_sorting():
     adapter = map.bind('localhost', '/')
     assert adapter.build('index', {'x': 20, 'y': 10, 'z': 30},
         force_external=True) == 'http://localhost/?y=10&x=20&z=30'
+
+
+def test_request_direct_charset_bug():
+    map = Map([Rule(u'/öäü/')])
+    adapter = map.bind('localhost', '/')
+    try:
+        adapter.match(u'/öäü')
+    except RequestRedirect, e:
+        print repr(e.new_url)
+        assert e.new_url == 'http://localhost/%C3%B6%C3%A4%C3%BC/'
+    else:
+        raise AssertionError('expected request redirect exception')

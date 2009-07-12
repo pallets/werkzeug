@@ -5,13 +5,14 @@
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
+PYTHON        = python
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d _build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html pickle json htmlhelp qthelp latex changes linkcheck
+.PHONY: help clean html pickle json htmlhelp qthelp latex changes linkcheck archive
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -23,6 +24,7 @@ help:
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
+	@echo "  archive   create an archive of the HTML documentation"
 
 clean:
 	-rm -rf _build/*
@@ -74,3 +76,6 @@ linkcheck:
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in _build/linkcheck/output.txt."
+
+archive: html
+	@$(PYTHON) makearchive.py

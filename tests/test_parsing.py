@@ -74,6 +74,42 @@ def test_multipart():
         assert response.data == repr(text)
 
 
+def test_end_of_file_multipart():
+    """Test for multipart files ending unexpectedly"""
+    # This test looks innocent but it was actually timeing out in
+    # the Werkzeug 0.5 release version (#394)
+    data = (
+        '--foo\r\n'
+        'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n'
+        'Content-Type: text/plain\r\n\r\n'
+        'file contents and no end'
+    )
+    data = Request.from_values(input_stream=StringIO(data),
+                               content_length=len(data),
+                               content_type='multipart/form-data; boundary=foo',
+                               method='POST')
+    assert not data.files
+    assert not data.form
+
+
+def test_extra_newline_multipart():
+    """Test for multipart uploads with extra newlines"""
+    # this test looks innocent but it was actually timeing out in
+    # the Werkzeug 0.5 release version (#394)
+    data = (
+        '\r\n\r\n--foo\r\n'
+        'Content-Disposition: form-data; name="foo"\r\n\r\n'
+        'a string\r\n'
+        '--foo--'
+    )
+    data = Request.from_values(input_stream=StringIO(data),
+                               content_length=len(data),
+                               content_type='multipart/form-data; boundary=foo',
+                               method='POST')
+    assert not data.files
+    assert data.form['foo'] == 'a string'
+
+
 def test_nonstandard_line_endings():
     """Test nonstandard line endings of multipart form data"""
     for nl in '\n', '\r', '\r\n':

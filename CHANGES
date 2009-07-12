@@ -1,9 +1,41 @@
 Werkzeug Changelog
 ==================
 
+Version 0.6
+-----------
+(last pre 1.0 release. will get rid of deprecation warnings. release date yet unknown)
+
+Version 0.5.1
+-------------
+(bugfix release for 0.5, released on July 9th 2009)
+
+- fixed boolean check of :class:`FileStorage`
+- url routing system properly supports unicode URL rules now.
+- file upload streams no longer have to provide a truncate()
+  method.
+- implemented :meth:`BaseRequest._form_parsing_failed`.
+- fixed #394 
+- :meth:`ImmutableDict.copy`, :meth:`ImmutableMultiDict.copy` and
+  :meth:`ImmutableTypeConversionDict.copy` return mutable shallow
+  copies.
+- fixed a bug with the `make_runserver` script action.
+- :meth:`MultiDict.items` and :meth:`MutiDict.iteritems` now accept an
+  argument to return a pair for each value of each key.
+- the multipart parser works better with hand-crafted multipart
+  requests now that have extra newlines added.  This fixes a bug
+  with setuptools uploades not handled properly (#390)
+- fixed some minor bugs in the atom feed generator.
+- fixed a bug with client cookie header parsing being case sensitive.
+- fixed a not-working deprecation warning.
+- fixed package loading for :class:`SharedDataMiddleware`.
+- fixed a bug in the secure cookie that made server-side expiration
+  on servers with a local time that was not set to UTC impossible.
+- fixed console of the interactive debugger.
+
+
 Version 0.5
 -----------
-(codename yet to be selected, release date unknown)
+(codename Schlagbohrer, released on April 24th 2009)
 
 - requires Python 2.4 now
 - fixed a bug in :class:`~contrib.IterIO`
@@ -25,10 +57,7 @@ Version 0.5
   werkzeug one and changed the default behavior to raise exceptions
   rather than stopping without warning.  The old class will stick in
   the module until 0.6.
-- implemented experimental multipart parser that replaces the old CGI
-  hack.  If you are experiencing problems with the development version
-  of 0.5 regarding form data and file uploads, please report a critical
-  bug and let us know!!!
+- implemented experimental multipart parser that replaces the old CGI hack.
 - added :func:`dump_options_header` and :func:`parse_options_header`
 - added :func:`quote_header_value` and :func:`unquote_header_value`
 - :func:`url_encode` and :func:`url_decode` now accept a separator

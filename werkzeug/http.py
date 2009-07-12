@@ -517,8 +517,21 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     iterator = chain(make_line_iter(file, buffer_size=buffer_size),
                      repeat(''))
 
+    def _find_terminator():
+        """The terminator might have some additional newlines before it.
+        There is at least one application that sends additional newlines
+        before headers (the python setuptools package).
+        """
+        for line in iterator:
+            if not line:
+                break
+            line = line.strip()
+            if line:
+                return line
+        return ''
+
     try:
-        terminator = iterator.next().strip()
+        terminator = _find_terminator()
         if terminator != next_part:
             raise ValueError('Expected boundary at start of multipart data')
 
@@ -553,8 +566,10 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             else:
                 stream = StringIO()
 
-            newline_length = 0
+            buf = ''
             for line in iterator:
+                if not line:
+                    raise ValueError('unexpected end of stream')
                 if line[:2] == '--':
                     terminator = line.rstrip()
                     if terminator in (next_part, last_part):
@@ -564,8 +579,21 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                         line = line.decode(transfer_encoding)
                     except:
                         raise ValueError('could not base 64 decode chunk')
+                # we have something in the buffer from the last iteration.
+                # write that value to the output stream now and clear the buffer.
+                if buf:
+                    stream.write(buf)
+                    buf = ''
+
+                # If the line ends with windows CRLF we write everything except
+                # the last two bytes.  In all other cases however we write everything
+                # except the last byte.  If it was a newline, that's fine, otherwise
+                # it does not matter because we write it the last iteration.  If the
+                # loop aborts early because the end of a part was reached, the last
+                # newline is not written which is exactly what we want.
                 newline_length = line[-2:] == '\r\n' and 2 or 1
-                stream.write(line)
+                stream.write(line[:-newline_length])
+                buf = line[-newline_length:]
                 if not is_file and max_form_memory_size is not None:
                     in_memory += len(line)
                     if in_memory > max_form_memory_size:
@@ -574,9 +602,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             else:
                 raise ValueError('unexpected end of part')
 
-            # chop off the trailing line terminator and rewind
-            stream.seek(-newline_length, 1)
-            stream.truncate()
+            # rewind the stream
             stream.seek(0)
 
             if is_file:
@@ -710,5 +736,6 @@ from werkzeug.datastructures import Headers, Accept, RequestCacheControl, \
      WWWAuthenticate
 
 
+# DEPRECATED
 # backwards compatibible imports
 from werkzeug.datastructures import MIMEAccept, CharsetAccept, LanguageAccept

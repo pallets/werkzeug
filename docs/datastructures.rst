@@ -17,16 +17,19 @@ General Purpose
    :members:
 
 .. autoclass:: ImmutableTypeConversionDict
+   :members: copy
 
 .. autoclass:: MultiDict
    :members:
    :inherited-members:
 
 .. autoclass:: ImmutableMultiDict
+   :members: copy
 
 .. autoclass:: CombinedMultiDict
 
 .. autoclass:: ImmutableDict
+   :members: copy
 
 .. autoclass:: ImmutableList
 

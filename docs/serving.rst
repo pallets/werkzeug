@@ -60,4 +60,29 @@ development server on these host names as well.  You can use the
 :ref:`routing` system to dispatch between different hosts or parse
 :attr:`request.host` yourself.
 
+Troubleshooting
+---------------
+
+On operating systems that support ipv6 and have it configured such as modern
+Linux systems, OS X 10.4 or higher as well as Windows Vista some browsers can
+be painfully slow if accessing your local server.  The reason for this is that
+sometimes "localhost" is configured to be available on both ipv4 and ipv6 socktes
+and some browsers will try to access ipv6 first and then ivp4.
+
+At the current time the integrated webserver does not support ipv6 and ipv4 at
+the same time and for better portability ipv4 is the default.
+
+If you notice that the web browser takes ages to load the page there are two ways
+around this issue.  If you don't need ipv6 support you can disable the ipv6 entry
+in the `hosts file`_ by removing this line::
+
+    ::1             localhost
+
+Alternatively you can also disable ipv6 support in your browser.  For example
+if Firefox shows this behavior you can disable it by going to ``about:config``
+and disabling the `network.dns.disableIPv6` key.
+
+Another workaround that should work is accessing `127.0.0.1` instead of
+`localhost`.
+
 .. _hosts file: http://en.wikipedia.org/wiki/Hosts_file
