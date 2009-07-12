@@ -1223,6 +1223,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     """A handy helper function that recreates the full URL for the current
     request or parts of it.  Here an example:
 
+    >>> from werkzeug import create_environ
     >>> env = create_environ("/?param=foo", "http://localhost/script")
     >>> get_current_url(env)
     'http://localhost/script/?param=foo'
@@ -1671,16 +1672,6 @@ from werkzeug.datastructures import MultiDict, TypeConversionDict
 
 # DEPRECATED
 # these objects were previously in this module as well.  we import
-# them here for backwards compatibility.  Will go away in 0.6
+# them here for backwards compatibility with old pickles.
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, \
      Headers, EnvironHeaders
-
-def create_environ(*args, **kwargs):
-    """backward compatibility."""
-    from werkzeug.test import create_environ
-    return create_environ(*args, **kwargs)
-
-def run_wsgi_app(*args, **kwargs):
-    """backwards compatibility."""
-    from werkzeug.test import run_wsgi_app
-    return run_wsgi_app(*args, **kwargs)

@@ -21,8 +21,8 @@ from urllib2 import Request as U2Request
 
 from werkzeug._internal import _empty_stream
 from werkzeug.wrappers import BaseRequest
-from werkzeug.utils import create_environ, run_wsgi_app, get_current_url, \
-     url_encode, url_decode, FileStorage, get_host
+from werkzeug.utils import get_current_url, url_encode, url_decode, \
+     FileStorage, get_host
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers
 

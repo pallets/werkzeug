@@ -16,7 +16,7 @@ from nose.tools import assert_raises
 from werkzeug.utils import *
 from werkzeug.wrappers import BaseResponse, Request
 from werkzeug.http import parse_date
-from werkzeug.test import Client
+from werkzeug.test import Client, run_wsgi_app, create_environ
 
 
 def test_import_patch():

@@ -31,7 +31,7 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      default_stream_factory, parse_options_header, \
      dump_options_header
 from werkzeug.utils import cached_property, environ_property, \
-     get_current_url, url_encode, run_wsgi_app, get_host, \
+     get_current_url, url_encode, get_host, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
      header_property, parse_form_data, get_content_type, url_decode
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
@@ -40,6 +40,15 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ResponseCacheControl, RequestCacheControl, CallbackDict
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper
+
+
+def _run_wsgi_app(*args):
+    """This function replaces itself to ensure that the test module is not
+    imported unless required.  DO NOT USE!
+    """
+    global _run_wsgi_app
+    from werkzeug.test import run_wsgi_app as _run_wsgi_app
+    return _run_wsgi_app(*args)
 
 
 class BaseRequest(object):
@@ -145,14 +154,6 @@ class BaseRequest(object):
         """
         from werkzeug.test import EnvironBuilder
         charset = kwargs.pop('charset', cls.charset)
-        environ = kwargs.pop('environ', None)
-        if environ is not None:
-            from warnings import warn
-            warn(DeprecationWarning('The environ parameter to from_values'
-                                    ' is now called environ_overrides for'
-                                    ' consistency with EnvironBuilder'),
-                 stacklevel=2)
-            kwargs['environ_overrides'] = environ
         builder = EnvironBuilder(*args, **kwargs)
         try:
             return builder.get_request(cls)
@@ -547,7 +548,7 @@ class BaseResponse(object):
             if environ is None:
                 raise TypeError('cannot convert WSGI application into '
                                 'response objects without an environ')
-            response = BaseResponse(*run_wsgi_app(response, environ))
+            response = BaseResponse(*_run_wsgi_app(response, environ))
         response.__class__ = cls
         return response
 
@@ -565,7 +566,7 @@ class BaseResponse(object):
         :param buffered: set to `True` to enforce buffering.
         :return: a response object.
         """
-        return cls(*run_wsgi_app(app, environ, buffered))
+        return cls(*_run_wsgi_app(app, environ, buffered))
 
     def _get_status_code(self):
         try:

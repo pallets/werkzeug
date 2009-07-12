@@ -26,15 +26,6 @@ class _SilentLimitedStream(LimitedStreamBase):
         )
 
 
-class LimitedStream(_SilentLimitedStream):
-
-    def __init__(self, environ, limit):
-        _SilentLimitedStream.__init__(self, environ, limit)
-        warn(DeprecationWarning('contrib limited stream is deprecated, use '
-                                'werkzeug.LimitedStream instead.'),
-             stacklevel=2)
-
-
 class StreamLimitMiddleware(object):
     """Limits the input stream to a given number of bytes.  This is useful if
     you have a WSGI application that reads form data into memory (django for

@@ -1350,15 +1350,9 @@ class _CacheControl(UpdateDictMixin, dict):
     to subclass it and add your own items have a look at the sourcecode for
     that class.
 
-    The following attributes are exposed:
-
-    `no_cache`, `no_store`, `max_age`, `max_stale`, `min_fresh`,
-    `no_transform`, `only_if_cached`, `public`, `private`, `must_revalidate`,
-    `proxy_revalidate`, and `s_maxage`
-
     .. versionchanged:: 0.4
 
-       setting `no_cache` or `private` to boolean `True` will set the implicit
+       Setting `no_cache` or `private` to boolean `True` will set the implicit
        none-value which is ``*``:
 
        >>> cc = ResponseCacheControl()
@@ -1370,6 +1364,9 @@ class _CacheControl(UpdateDictMixin, dict):
        >>> cc.no_cache = None
        >>> cc
        <ResponseCacheControl ''>
+
+       In versions before 0.5 the here documented behavior affected the now
+       no longer existing `CacheControl` class.
     """
 
     no_cache = cache_property('no-cache', '*', None)
@@ -1435,6 +1432,11 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
     """A cache control for requests.  This is immutable and gives access
     to all the request-relevant cache control headers.
 
+    To get a header of the :class:`RequestCacheControl` object again you can
+    convert the object into a string or call the :meth:`to_header` method.  If
+    you plan to subclass it and add your own items have a look at the sourcecode
+    for that class.
+
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
        both for request and response.
@@ -1451,6 +1453,11 @@ class ResponseCacheControl(_CacheControl):
     this is mutable and gives access to response-relevant cache control
     headers.
 
+    To get a header of the :class:`ResponseCacheControl` object again you can
+    convert the object into a string or call the :meth:`to_header` method.  If
+    you plan to subclass it and add your own items have a look at the sourcecode
+    for that class.
+
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
        both for request and response.
@@ -1461,20 +1468,6 @@ class ResponseCacheControl(_CacheControl):
     must_revalidate = cache_property('must-revalidate', None, bool)
     proxy_revalidate = cache_property('proxy-revalidate', None, bool)
     s_maxage = cache_property('s-maxage', None, None)
-
-
-class CacheControl(ResponseCacheControl):
-    """Deprecated."""
-    max_stale = cache_property('max-stale', '*', int)
-    min_fresh = cache_property('min-fresh', '*', int)
-    no_transform = cache_property('no-transform', None, None)
-    only_if_cached = cache_property('only-if-cached', None, bool)
-
-    def __init__(self, values=(), on_update=None):
-        from warnings import warn
-        warn(DeprecationWarning('CacheControl is deprecated in favor of '
-                                'RequestCacheControl and ResponseCacheControl.'))
-        ResponseCacheControl.__init__(self, values, on_update)
 
 
 # attach cache_property to the _CacheControl as staticmethod

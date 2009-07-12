@@ -67,7 +67,7 @@ all_by_module = {
                              'LanguageAccept', 'RequestCacheControl',
                              'ResponseCacheControl', 'ETags', 'HeaderSet',
                              'WWWAuthenticate', 'Authorization',
-                             'CacheControl', 'FileMultiDict', 'CallbackDict'],
+                             'FileMultiDict', 'CallbackDict'],
     'werkzeug.useragents':  ['UserAgent'],
     'werkzeug.http':        ['parse_etags', 'parse_date', 'parse_cache_control_header',
                              'is_resource_modified', 'parse_accept_header',

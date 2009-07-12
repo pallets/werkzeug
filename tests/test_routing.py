@@ -11,7 +11,7 @@ from nose.tools import assert_raises
 
 from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect
-from werkzeug.utils import create_environ
+from werkzeug.test import create_environ
 
 
 def test_basic_routing():

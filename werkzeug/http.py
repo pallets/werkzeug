@@ -438,20 +438,6 @@ def default_stream_factory(total_content_length, filename, content_type,
     return StringIO()
 
 
-def _make_stream_factory(factory):
-    """this exists for backwards compatibility!, will go away in 0.6."""
-    args, _, _, defaults = inspect.getargspec(factory)
-    required_args = len(args) - len(defaults or ())
-    if inspect.ismethod(factory):
-        required_args -= 1
-    if required_args != 0:
-        return factory
-    from warnings import warn
-    warn(DeprecationWarning('stream factory passed to `parse_form_data` '
-                            'uses deprecated invokation API.'), stacklevel=4)
-    return lambda *a: factory()
-
-
 def _fix_ie_filename(filename):
     """Internet Explorer 6 transmits the full file name if a file is
     uploaded.  This function strips the full path if it thinks the
@@ -494,8 +480,6 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
 
     if stream_factory is None:
         stream_factory = default_stream_factory
-    else:
-        stream_factory = _make_stream_factory(stream_factory)
 
     if not boundary:
         raise ValueError('Missing boundary')

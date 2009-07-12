@@ -343,7 +343,7 @@ class Template(object):
 
     @classmethod
     def from_file(cls, file, charset='utf-8', errors='strict',
-                  unicode_mode=True, encoding=None):
+                  unicode_mode=True):
         """Load a template from a file.
 
         .. versionchanged:: 0.5
@@ -355,11 +355,6 @@ class Template(object):
         :param unicode_mode: set to `False` to disable unicode mode.
         :return: a template
         """
-        if encoding is not None:
-            from warnings import warn
-            warn(DeprecationWarning('the encoding parameter is deprecated. '
-                                    'use charset instead.'), stacklevel=2)
-            charset = encoding
         close = False
         if isinstance(file, basestring):
             f = open(file, 'r')
