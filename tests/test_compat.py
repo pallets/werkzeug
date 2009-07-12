@@ -1,5 +1,26 @@
 # -*- coding: utf-8 -*-
 
+import sys
+from subprocess import Popen, PIPE
+
+
+import_code = '''\
+import sys
+sys.path.insert(0, '..')
+import werkzeug.%s
+print ':'.join([k[9:] for k, v in sys.modules.iteritems()
+                if v is not None and k.startswith('werkzeug.')])
+'''
+
+
+def perform_import(module, allowed):
+    client = Popen([sys.executable, '-c', import_code % module],
+                   stdout=PIPE)
+    imported = set(client.communicate()[0].strip().split(':'))
+    rv = imported - allowed - set([module])
+    print 'leftovers from %r import: %s' % (module, rv)
+    return rv
+
 
 def test_old_imports():
     """Make sure everything imports from old places"""
@@ -8,3 +29,18 @@ def test_old_imports():
     from werkzeug.http import Accept, MIMEAccept, CharsetAccept, \
          LanguageAccept, ETags, HeaderSet, WWWAuthenticate, \
          Authorization
+
+
+def test_demand_import():
+    """Make sure that we're not importing too much."""
+    allowed_imports = set(['_internal', 'utils', 'http', 'exceptions',
+                           'datastructures'])
+
+    assert perform_import('http', allowed_imports) == set()
+    assert perform_import('utils', allowed_imports) == set()
+    assert perform_import('wrappers', allowed_imports) == set()
+
+    allowed_imports.add('wrappers')
+    assert perform_import('useragents', allowed_imports) == set()
+    assert perform_import('test', allowed_imports) == set()
+    assert perform_import('serving', allowed_imports) == set()
