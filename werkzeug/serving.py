@@ -14,10 +14,6 @@
     `KeyboardInterrupt` error.  While the latter is easy to solve the first
     one can be a pain in the ass in some situations.
 
-    Because of that Werkzeug ships a small wrapper over `wsgiref` that spawns
-    the WSGI application in a subprocess and automatically reloads the
-    application if a module was changed.
-
     The easiest way is creating a small ``start-myproject.py`` that runs the
     application::
 
@@ -34,8 +30,6 @@
 
     For bigger applications you should consider using `werkzeug.script`
     instead of a simple start file.
-
-    .. _wsgiref: http://cheeseshop.python.org/pypi/wsgiref
 
 
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
