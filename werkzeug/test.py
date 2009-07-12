@@ -580,6 +580,7 @@ class Client(object):
             self.cookie_jar = _TestCookieJar()
         else:
             self.cookie_jar = None
+        self.redirect_client = None
 
     def open(self, *args, **kwargs):
         """Takes the same arguments as the :class:`EnvironBuilder` class with
@@ -632,6 +633,12 @@ class Client(object):
         redirect_chain = []
         status_code = int(rv[1].split(None, 1)[0])
         while status_code in (301, 302, 303, 305, 307) and follow_redirects:
+            if not self.redirect_client:
+                # assume that we're not using the user defined response wrapper
+                # so that we don't need any ugly hacks to get the status
+                # code from the response.
+                self.redirect_client = Client(self.application)
+                self.redirect_client.cookie_jar = self.cookie_jar
             redirect = dict(rv[2])['Location']
             host = get_host(create_environ('/', redirect))
             if get_host(environ).split(':', 1)[0] != host:
@@ -645,11 +652,11 @@ class Client(object):
                 'base_url':         urlparse.urlunsplit((scheme, host,
                                     script_root, '', '')).rstrip('/') + '/',
                 'query_string':     qs,
-                'as_tuple':         as_tuple,
+                'as_tuple':         True,
                 'buffered':         buffered,
                 'follow_redirects': False
             })
-            rv = self.open(*args, **kwargs)
+            environ, rv = self.redirect_client.open(*args, **kwargs)
             status_code = int(rv[1].split(None, 1)[0])
 
             # Prevent loops

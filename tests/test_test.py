@@ -16,11 +16,10 @@
 import sys
 from cStringIO import StringIO
 from nose.tools import assert_raises
-from werkzeug.wrappers import Request, Response
+from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ
 from werkzeug.utils import redirect, get_host
 from werkzeug.datastructures import Headers
-
 
 
 def cookie_app(environ, start_response):
@@ -253,3 +252,11 @@ def test_follow_external_redirect():
     env = create_environ('/', base_url='http://localhost')
     c = Client(external_redirect_demo_app)
     assert_raises(RuntimeError, lambda: c.open(environ_overrides=env, follow_redirects=True))
+
+def test_follow_redirect_with_response_wrapper():
+    # Test that the :cls:`Client` is aware of user defined response wrappers
+    env = create_environ('/', 'http://localhost')
+    c = Client(redirect_demo_app, response_wrapper=BaseResponse)
+    resp = c.post(environ_overrides=env, follow_redirects=True, data='foo=blub+hehe&blah=42')
+    assert isinstance(resp, BaseResponse)
+    assert resp.headers['Location'] == 'http://localhost/some/redirect/'
