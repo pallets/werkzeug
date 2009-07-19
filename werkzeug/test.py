@@ -646,13 +646,15 @@ class Client(object):
                 # code from the response.
                 self.redirect_client = Client(self.application)
                 self.redirect_client.cookie_jar = self.cookie_jar
+
             redirect = dict(rv[2])['Location']
-            host = get_host(create_environ('/', redirect)).split(':', 1)[0]
+            scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(redirect)
+            base_url = urlparse.urlunsplit((scheme, netloc, '', '', '')).rstrip('/') + '/'
+            host = get_host(create_environ('/', base_url, query_string=qs)).split(':', 1)[0]
             if get_host(environ).split(':', 1)[0] != host:
                 raise RuntimeError('%r does not support redirect to '
                                    'external targets' % self.__class__)
 
-            scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(redirect)
             redirect_chain.append((redirect, status_code))
 
             # the redirect request should be a new request, and not be based on
@@ -660,8 +662,7 @@ class Client(object):
             redirect_kwargs = {}
             redirect_kwargs.update({
                 'path':             script_root,
-                'base_url':         urlparse.urlunsplit((scheme, host,
-                                    '', '', '')).rstrip('/') + '/',
+                'base_url':         base_url,
                 'query_string':     qs,
                 'as_tuple':         True,
                 'buffered':         buffered,
