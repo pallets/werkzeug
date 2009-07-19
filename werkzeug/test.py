@@ -548,6 +548,13 @@ class EnvironBuilder(object):
         return cls(self.get_environ())
 
 
+class ClientRedirectError(Exception):
+    """
+    If a redirect loop is detected when using follow_redirects=True with
+    the :cls:`Client`, then this exception is raised.
+    """
+
+
 class Client(object):
     """This class allows to send requests to a wrapped application.
 
@@ -648,20 +655,24 @@ class Client(object):
             scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(redirect)
             redirect_chain.append((redirect, status_code))
 
-            kwargs.update({
+            # the redirect request should be a new request, and not be based on
+            # the old request
+            redirect_kwargs = {}
+            redirect_kwargs.update({
+                'path':             script_root,
                 'base_url':         urlparse.urlunsplit((scheme, host,
-                                    script_root, '', '')).rstrip('/') + '/',
+                                    '', '', '')).rstrip('/') + '/',
                 'query_string':     qs,
                 'as_tuple':         True,
                 'buffered':         buffered,
-                'follow_redirects': False
+                'follow_redirects': False,
             })
-            environ, rv = self.redirect_client.open(*args, **kwargs)
+            environ, rv = self.redirect_client.open(**redirect_kwargs)
             status_code = int(rv[1].split(None, 1)[0])
 
             # Prevent loops
             if redirect_chain[-1] in redirect_chain[0:-1]:
-                break
+                raise ClientRedirectError("loop detected")
 
         response = self.response_wrapper(*rv)
         if as_tuple:

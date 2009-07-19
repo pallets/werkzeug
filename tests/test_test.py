@@ -15,9 +15,10 @@
 
 import sys
 from cStringIO import StringIO
-from nose.tools import assert_raises
+from nose.tools import assert_raises, raises
 from werkzeug.wrappers import Request, Response, BaseResponse
-from werkzeug.test import Client, EnvironBuilder, create_environ
+from werkzeug.test import Client, EnvironBuilder, create_environ, \
+    ClientRedirectError
 from werkzeug.utils import redirect, get_host
 from werkzeug.datastructures import Headers
 
@@ -31,11 +32,31 @@ def cookie_app(environ, start_response):
     response.set_cookie('test', 'test')
     return response(environ, start_response)
 
-
-def redirect_demo_app(environ, start_response):
+def redirect_loop_app(environ, start_response):
     response = redirect('http://localhost/some/redirect/')
     return response(environ, start_response)
 
+def redirect_with_get_app(environ, start_response):
+    req = Request(environ)
+    if req.url not in ('http://localhost/',
+                       'http://localhost/first/request',
+                       'http://localhost/some/redirect/'):
+        assert False, 'redirect_demo_app() did not expect URL "%s"' % req.url
+    if '/some/redirect' not in req.url:
+        response = redirect('http://localhost/some/redirect/')
+    else:
+        response = Response('current url: %s' % req.url)
+    return response(environ, start_response)
+
+def redirect_with_post_app(environ, start_response):
+    req = Request(environ)
+    if req.url == 'http://localhost/some/redirect/':
+        assert req.method == 'GET', 'request should be GET'
+        assert not req.form, 'request should not have data'
+        response = Response('current url: %s' % req.url)
+    else:
+        response = redirect('http://localhost/some/redirect/')
+    return response(environ, start_response)
 
 def external_redirect_demo_app(environ, start_response):
     response = redirect('http://example.org/')
@@ -243,9 +264,22 @@ def test_file_closing():
 
 def test_follow_redirect():
     env = create_environ('/', base_url='http://localhost')
-    c = Client(redirect_demo_app)
-    headers = Headers(c.open(environ_overrides=env, follow_redirects=True)[2])
-    assert headers['Location'] == 'http://localhost/some/redirect/'
+    c = Client(redirect_with_get_app)
+    appiter, code, headers = c.open(environ_overrides=env, follow_redirects=True)
+    assert code == '200 OK'
+    assert ''.join(appiter) == 'current url: http://localhost/some/redirect/'
+
+    # Test that the :cls:`Client` is aware of user defined response wrappers
+    c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
+    resp = c.get('/', follow_redirects=True)
+    assert resp.status_code == 200
+    assert resp.data == 'current url: http://localhost/some/redirect/'
+
+    # test with URL other than '/' to make sure redirected URL's are correct
+    c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
+    resp = c.get('/first/request', follow_redirects=True)
+    assert resp.status_code == 200
+    assert resp.data == 'current url: http://localhost/some/redirect/'
 
 
 def test_follow_external_redirect():
@@ -254,10 +288,14 @@ def test_follow_external_redirect():
     assert_raises(RuntimeError, lambda: c.open(environ_overrides=env, follow_redirects=True))
 
 
-def test_follow_redirect_with_response_wrapper():
-    # Test that the :cls:`Client` is aware of user defined response wrappers
-    env = create_environ('/', 'http://localhost')
-    c = Client(redirect_demo_app, response_wrapper=BaseResponse)
-    resp = c.post(environ_overrides=env, follow_redirects=True, data='foo=blub+hehe&blah=42')
-    assert isinstance(resp, BaseResponse)
-    assert resp.headers['Location'] == 'http://localhost/some/redirect/'
+@raises(ClientRedirectError)
+def test_follow_redirect_loop():
+    c = Client(redirect_loop_app, response_wrapper=BaseResponse)
+    resp = c.get('/', follow_redirects=True)
+
+
+def test_follow_redirect_with_post():
+    c = Client(redirect_with_post_app, response_wrapper=BaseResponse)
+    resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
+    assert resp.status_code == 200
+    assert resp.data == 'current url: http://localhost/some/redirect/'
