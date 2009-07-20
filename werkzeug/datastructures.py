@@ -236,7 +236,7 @@ class MultiDict(TypeConversionDict):
 
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
     subclass of the :exc:`~exceptions.BadRequest` HTTP exception and will
-    render a page for a ``400 BAD REQUEST`` if catched in a catch-all for HTTP
+    render a page for a ``400 BAD REQUEST`` if caught in a catch-all for HTTP
     exceptions.
 
     A :class:`MultiDict` can be constructed from an iterable of
@@ -521,7 +521,7 @@ class Headers(object):
 
     From Werkzeug 0.3 onwards, the :exc:`KeyError` raised by this class is
     also a subclass of the :class:`~exceptions.BadRequest` HTTP exception
-    and will render a page for a ``400 BAD REQUEST`` if catched in a
+    and will render a page for a ``400 BAD REQUEST`` if caught in a
     catch-all for HTTP exceptions.
 
     Headers is mostly compatible with the Python :class:`wsgiref.headers.Headers`
@@ -897,7 +897,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
 
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
     subclass of the :exc:`~exceptions.BadRequest` HTTP exception and will
-    render a page for a ``400 BAD REQUEST`` if catched in a catch-all for
+    render a page for a ``400 BAD REQUEST`` if caught in a catch-all for
     HTTP exceptions.
     """
 
@@ -950,7 +950,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
 
     From Werkzeug 0.3 onwards, the `KeyError` raised by this class is also a
     subclass of the :exc:`~exceptions.BadRequest` HTTP exception and will
-    render a page for a ``400 BAD REQUEST`` if catched in a catch-all for HTTP
+    render a page for a ``400 BAD REQUEST`` if caught in a catch-all for HTTP
     exceptions.
     """
 

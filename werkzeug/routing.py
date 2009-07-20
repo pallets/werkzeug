@@ -1088,7 +1088,7 @@ class MapAdapter(object):
         """Does the complete dispatching process.  `view_func` is called with
         the endpoint and a dict with the values for the view.  It should
         look up the view function, call it, and return a response object
-        or WSGI application.  http exceptions are not catched by default
+        or WSGI application.  http exceptions are not caught by default
         so that applications can display nicer error messages by just
         catching them by hand.  If you want to stick with the default
         error messages you can pass it ``catch_http_exceptions=True`` and
