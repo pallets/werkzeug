@@ -857,7 +857,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                                exception is raised.
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
-    :param silent: If set to False parsing errors will not be catched.
+    :param silent: If set to False parsing errors will not be caught.
     :return: A tuple in the form ``(stream, form, files)``.
     """
     content_type, extra = parse_options_header(environ.get('CONTENT_TYPE', ''))
