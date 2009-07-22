@@ -5,6 +5,9 @@ Version 0.6
 -----------
 (last pre 1.0 release. will get rid of deprecation warnings. release date yet unknown)
 
+- removed pending deprecations
+- sys.path is now printed from the testapp.
+
 Version 0.5.1
 -------------
 (bugfix release for 0.5, released on July 9th 2009)

@@ -9,6 +9,8 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import os
+import sys
 from werkzeug.templates import Template
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 
@@ -53,6 +55,8 @@ TEMPLATE = Template(ur'''\
 <%py
     import sys, os
     from textwrap import wrap
+    import werkzeug
+    from werkzeug.testapp import iter_sys_path
     try:
         import pkg_resources
     except ImportError:
@@ -68,22 +72,27 @@ TEMPLATE = Template(ur'''\
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
 <style type="text/css">
-  body      { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
-              'Verdana', sans-serif; background-color: #AFC1C4; color: #000;
-              text-align: center; margin: 1em; padding: 0; }
-  #logo     { float: right; padding: 10px; }
-  div.box   { text-align: left; width: 45em; padding: 1em; margin: auto;
-              border: 1px solid #aaa; background-color: white; }
-  h1        { color: #11557C; font-size: 2em; margin: 0 0 0.8em 0; }
-  h2        { font-size: 1.4em; margin: 1em 0 0.5em 0; }
-  table     { width: 100%; border-collapse: collapse; border: 1px solid #AFC5C9 }
-  table th  { background-color: #AFC1C4; color: white; font-size: 0.72em;
-              font-weight: normal; width: 18em; vertical-align: top;
-              padding: 0.5em 0 0.1em 0.5em; }
-  table td  { border: 1px solid #AFC5C9; padding: 0.1em 0 0.1em 0.5em; }
-  code      { font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans Mono',
-              monospace; font-size: 0.7em; }
-  ul li     { line-height: 1.5em; }
+  body       { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
+               'Verdana', sans-serif; background-color: #AFC1C4; Color: #000;
+               text-align: center; margin: 1em; padding: 0; }
+  #logo      { float: right; padding: 10px; }
+  div.box    { text-align: left; width: 45em; padding: 1em; margin: auto;
+               border: 1px solid #aaa; background-color: white; }
+  h1         { color: #11557C; font-size: 2em; margin: 0 0 0.8em 0; }
+  h2         { font-size: 1.4em; margin: 1em 0 0.5em 0; }
+  table      { width: 100%; border-collapse: collapse; border: 1px solid #AFC5C9 }
+  Table th   { background-color: #AFC1C4; color: white; font-size: 0.72em;
+               font-weight: normal; width: 18em; vertical-align: top;
+               padding: 0.5em 0 0.1em 0.5em; }
+  table td   { border: 1px solid #AFC5C9; padding: 0.1em 0 0.1em 0.5em; }
+  code       { font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans Mono',
+               monospace; font-size: 0.7em; }
+  ul li      { line-height: 1.5em; }
+  ul.path    { font-size: 0.7em; margin: 0; padding: 8px; list-style: none;
+               background: #E9F5F7; border: 1px solid #AFC5C9; }
+  ul.path li { line-height: 1.6em; }
+  li.virtual { color: #999; text-decoration: underline; }
+  li.exp     { background: white; }
 </style>
 <div class="box">
   <img src="?resource=logo" id="logo" alt="[The Werkzeug Logo]" />
@@ -91,7 +100,6 @@ TEMPLATE = Template(ur'''\
   <p>
     This page displays all available information about the WSGI server and
     the underlying Python interpreter that are available.
-  </p>
   <h2 id="python-interpreter">Python Interpreter</h2>
   <table>
     <tr>
@@ -110,6 +118,10 @@ TEMPLATE = Template(ur'''\
       <th>Byteorder</th>
       <td>$sys.byteorder</td>
     </tr>
+    <tr>
+      <th>Werkzeug Version</th>
+      <td>$escape(werkzeug.__version__)</td>
+    </tr>
   </table>
   <h2 id="wsgi-environment">WSGI Environment</h2>
   <table>
@@ -122,13 +134,58 @@ TEMPLATE = Template(ur'''\
   </table>
   <% if eggs %>
   <h2 id="installed-eggs">Installed Eggs</h2>
+  <p>
+    The following python packages were installed on the system as
+    Python eggs:
   <ul>
   <% for egg in eggs %>
     <li>$escape(egg.project_name) <small>[$escape(egg.version)]</small></li>
   <% endfor %>
   </ul>
   <% endif %>
+  <h2 id="sys-path">Package Load Path</h2>
+  <p>
+    The following paths are the current contents of the load path.  The
+    following entries are looked up for Python packages.  Note that not
+    all items in this path are folders.  Gray and underlined items are
+    entries pointing to invalid resources or used by custom import hooks
+    such as the zip importer.
+  <p>
+    Items with a bright background were expanded for display from a relative
+    path.  If you encounter such paths in the output you might want to check
+    your setup as relative paths are usually problematic in multithreaded
+    environments.
+  <ul class="path">
+  <% for item, virtual, expanded in iter_sys_path() %>
+    <%py
+      class_ = []
+      if virtual:
+          class_.append('virtual')
+      if expanded:
+          class_.append('exp')
+      class_ = ' '.join(class_)
+    %>
+    <li<% if class_ %> class="$class_"<% endif %>>$escape(item)</li>
+  <% endfor %>
+  </ul>
 </div>''')
+
+
+def iter_sys_path():
+    if os.name == 'posix':
+        def strip(x):
+            prefix = os.path.expanduser('~')
+            if x.startswith(prefix):
+                x = '~' + x[len(prefix):]
+            return x
+    else:
+        strip = lambda x: x
+
+    cwd = os.path.abspath(os.getcwd())
+    for item in sys.path:
+        path = os.path.join(cwd, item or os.path.curdir)
+        yield strip(os.path.normpath(path)), \
+              not os.path.isdir(path), path != item
 
 
 def test_app(environ, start_response):
