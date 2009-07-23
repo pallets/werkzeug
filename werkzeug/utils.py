@@ -42,12 +42,16 @@ class FileStorage(object):
     """
 
     def __init__(self, stream=None, filename=None, name=None,
-                 content_type='application/octet-stream', content_length=-1):
+                 content_type='application/octet-stream', content_length=-1,
+                 headers=None):
         self.name = name
         self.stream = stream or _empty_stream
         self.filename = filename or getattr(stream, 'name', None)
         self.content_type = content_type
         self.content_length = content_length
+        if headers is None:
+            headers = Headers()
+        self.headers = headers
 
     def save(self, dst, buffer_size=16384):
         """Save the file to a destination path or file object.  If the

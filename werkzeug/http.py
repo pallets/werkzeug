@@ -39,6 +39,7 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _multipart_boundary_re = re.compile('^[ -~]{0,200}[!-~]$')
+_unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
 
 _entity_headers = frozenset([
     'allow', 'content-encoding', 'content-language', 'content-length',
@@ -592,7 +593,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             if is_file:
                 files.append((name, FileStorage(stream, filename, name,
                                                 content_type,
-                                                content_length)))
+                                                content_length, headers)))
             else:
                 form.append((name, _decode_unicode(stream.read(),
                                                    charset, errors)))

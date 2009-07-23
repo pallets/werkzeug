@@ -110,6 +110,24 @@ def test_extra_newline_multipart():
     assert data.form['foo'] == 'a string'
 
 
+def test_multipart_headers():
+    """Test access to multipart headers"""
+    data = ('--foo\r\n'
+            'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
+            'X-Custom-Header: blah\r\n'
+            'Content-Type: text/plain; charset=utf-8\r\n\r\n'
+            'file contents, just the contents\r\n'
+            '--foo--')
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='multipart/form-data; boundary=foo',
+                              method='POST')
+    foo = req.files['foo']
+    assert foo.content_type == 'text/plain'
+    assert foo.headers['content-type'] == 'text/plain; charset=utf-8'
+    assert foo.headers['x-custom-header'] == 'blah'
+
+
 def test_nonstandard_line_endings():
     """Test nonstandard line endings of multipart form data"""
     for nl in '\n', '\r', '\r\n':

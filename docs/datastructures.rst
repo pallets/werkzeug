@@ -115,3 +115,11 @@ Others
    .. attribute:: content_length
 
       The length of the file in bytes.
+
+   .. attribute:: headers
+
+      The multipart headers as :class:`Headers` object.  This usually contains
+      irrelevant information but in combination with custom multipart requests
+      the raw headers might be interesting.
+
+      .. versionadded:: 0.6
