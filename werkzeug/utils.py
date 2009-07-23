@@ -1367,7 +1367,8 @@ def parse_cookie(header, charset='utf-8', errors='ignore',
     # `None` items which we have to skip here.
     for key, value in cookie.iteritems():
         if value.value is not None:
-            result[key] = _decode_unicode(value.value, charset, errors)
+            result[key] = _decode_unicode(unquote_header_value(value.value),
+                                          charset, errors)
 
     return cls(result)
 
@@ -1405,6 +1406,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         raise TypeError('invalid key %r' % key)
     if isinstance(value, unicode):
         value = value.encode(charset)
+    value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
     if isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
@@ -1665,7 +1667,7 @@ class ArgumentValidationError(ValueError):
 
 # circular dependency fun
 from werkzeug.http import parse_multipart, parse_options_header, \
-     is_resource_modified
+     is_resource_modified, quote_header_value, unquote_header_value
 from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict, TypeConversionDict
 
