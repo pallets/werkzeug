@@ -415,12 +415,13 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
         if limit is None:
             raise TypeError('stream not limited and no limit provided.')
         stream = LimitedStream(stream, limit)
+    _read = stream.read
     buffer = []
     while 1:
         if len(buffer) > 1:
             yield buffer.pop(0)
             continue
-        chunks = stream.read(buffer_size).splitlines(True)
+        chunks = _read(buffer_size).splitlines(True)
         first_chunk = buffer and buffer[0] or ''
         if chunks:
             first_chunk += chunks.pop(0)

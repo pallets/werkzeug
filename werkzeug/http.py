@@ -460,6 +460,9 @@ def _line_parse(line):
     return line, False
 
 
+_empty_stream_iter = repeat('')
+
+
 def parse_multipart(file, boundary, content_length, stream_factory=None,
                     charset='utf-8', errors='ignore', buffer_size=10 * 1024,
                     max_form_memory_size=None):
@@ -500,7 +503,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     # convert the file into a limited stream with iteration capabilities
     file = LimitedStream(file, content_length)
     iterator = chain(make_line_iter(file, buffer_size=buffer_size),
-                     repeat(''))
+                     _empty_stream_iter)
 
     def _find_terminator():
         """The terminator might have some additional newlines before it.
@@ -622,7 +625,10 @@ def parse_multipart_headers(iterable):
             parts = line.split(':', 1)
             if len(parts) == 2:
                 result.append((parts[0].strip(), parts[1].strip()))
-    return Headers(result)
+
+    # we link the list to the headers, no need to create a copy, the
+    # list was not shared anyways.
+    return Headers.linked(result)
 
 
 def is_resource_modified(environ, etag=None, data=None, last_modified=None):

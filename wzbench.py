@@ -134,6 +134,11 @@ MULTIPART_ENCODED_DATA = '\n'.join((
     'Content-Disposition: form-data; name=bar',
     '',
     'blafasel',
+    '--foo',
+    'Content-Disposition: form-data; name=foo; filename=wzbench.py',
+    'Content-Type: text/plain',
+    '',
+    file(__file__.rstrip('c')).read(),
     '--foo--'
 ))
 MULTIDICT = None
@@ -163,6 +168,33 @@ def time_multidict_lookup_hit():
 def after_multidict_lookup_hit():
     global MULTIDICT
     MULTIDICT = None
+
+
+def before_multidict_lookup_miss():
+    global MULTIDICT
+    MULTIDICT = wz.MultiDict()
+
+def time_multidict_lookup_miss():
+    try:
+        MULTIDICT['foo']
+    except KeyError:
+        pass
+
+def after_multidict_lookup_miss():
+    global MULTIDICT
+    MULTIDICT = None
+
+
+def time_cached_property():
+    class Foo(object):
+        @wz.cached_property
+        def x(self):
+            return 42
+
+    f = Foo()
+    f.x
+    f.x
+    f.x
 
 
 class Tee(object):
