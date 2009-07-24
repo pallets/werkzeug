@@ -4,3 +4,4 @@
 \.DS_Store$
 ^env$
 ^docs/_build
+[^/]+-stats\.txt$
