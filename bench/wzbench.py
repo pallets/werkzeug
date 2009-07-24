@@ -23,6 +23,7 @@ from types import FunctionType
 # create a new module were we later store all the werkzeug attributes.
 wz = type(sys)('werkzeug_nonlazy')
 sys.path.insert(0, '<DUMMY>')
+null_out = file(os.devnull, 'w')
 
 
 EXPECTED_DELTA = 0.75
@@ -54,19 +55,6 @@ def find_hg_tag(path):
     if tag is not None:
         return tag
     return tip
-
-
-def find_hg_root(path):
-    """Finds the repo folder for the given path."""
-    path = os.path.normpath(os.path.abspath(path))
-    old = None
-    while old != path:
-        if os.path.isdir(os.path.join(path, '.hg')):
-            return path
-        old = path
-        path = os.path.normpath(os.path.join(path, os.path.pardir))
-    print >> sys.stderr, 'wzbench has to be run from a hg checkout'
-    sys.exit(3)
 
 
 def load_werkzeug(path):
@@ -112,11 +100,11 @@ def median(seq):
 
 
 def format_func(func):
-    if type(func) is FuntionType:
+    if type(func) is FunctionType:
         name = func.__name__
     else:
         name = func
-    return name.replace('_', ' ').title())
+    return name.replace('_', ' ').title()
 
 
 def bench(func):
@@ -150,7 +138,7 @@ def main():
     """The main entrypoint."""
     from optparse import OptionParser
     parser = OptionParser(usage='%prog [options]')
-    parser.add_option('--werkzeug-path', '-p', dest='path', default='.',
+    parser.add_option('--werkzeug-path', '-p', dest='path', default='..',
                       help='the path to the werkzeug package. defaults to cwd')
     parser.add_option('--compare', '-c', dest='compare', nargs=2,
                       default=False, help='compare two hg nodes of Werkzeug')
@@ -164,16 +152,14 @@ def main():
     elif options.init_compare:
         init_compare()
     else:
-        options.path = os.path.abspath(options.path)
-        run(options.path, *load_werkzeug(options.path))
+        run(options.path)
 
 
 def init_compare():
     """Initializes the comparision feature."""
-    root = find_hg_root('.')
     print 'Initializing comparision feature'
-    subprocess.Popen(['hg', 'clone', root, 'a']).wait()
-    subprocess.Popen(['hg', 'clone', root, 'b']).wait()
+    subprocess.Popen(['hg', 'clone', '..', 'a']).wait()
+    subprocess.Popen(['hg', 'clone', '..', 'b']).wait()
 
 
 def compare(node1, node2):
@@ -185,14 +171,18 @@ def compare(node1, node2):
         sys.exit(1)
 
     def _hg_update(repo, node):
-        subprocess.call(['hg', 'revert', '-a', '--no-backup'])
-        subprocess.call(['hg', 'pull', '..'])
-        subprocess.call(['hg', 'update', node], cwd=repo)
+        hg = lambda *x: subprocess.call(['hg'] + list(x), cwd=repo,
+                                        stdout=null_out, stderr=null_out)
+        hg('revert', '-a', '--no-backup')
+        hg('pull', '..')
+        hg('update', node)
         if node == 'tip':
-            print 'applying local changes'
-            diff = subprocess.Popen(['hg', 'diff'], cwd='..').communicate()[0]
-            client = subprocess.Popen(['hg', 'import', '-'], stdin=subprocess.PIPE)
-            client.communicate(diff)
+            diff = subprocess.Popen(['hg', 'diff'], cwd='..',
+                                    stdout=null_out).communicate()[0]
+            if diff:
+                client = subprocess.Popen(['hg', 'import', '-'], stdout=null_out,
+                                          stdin=subprocess.PIPE)
+                client.communicate(diff)
 
     _hg_update('a', node1)
     _hg_update('b', node2)
@@ -213,7 +203,9 @@ def compare(node1, node2):
     print '-' * 80
 
 
-def run(path, wz_version, hg_tag=None):
+def run(path):
+    path = os.path.abspath(path)
+    wz_version, hg_tag = load_werkzeug(path)
     result = {}
     print '=' * 80
     print 'WERKZEUG INTERNAL BENCHMARK'.center(80)
@@ -233,6 +225,7 @@ def run(path, wz_version, hg_tag=None):
             if after:
                 after()
     print '-' * 80
+    return result
 
 
 URL_ENCODED_DATA = 'foo=bar&blah=blub&meh=muh&mah=meh'
@@ -336,6 +329,6 @@ def after_request_form_access():
 
 
 if __name__ == '__main__':
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(os.path.dirname(__file__) or os.path.curdir)
     main()
 
