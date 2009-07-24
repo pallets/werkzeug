@@ -104,6 +104,8 @@ def format_func(func):
         name = func.__name__
     else:
         name = func
+    if name.startswith('time_'):
+        name = name[5:]
     return name.replace('_', ' ').title()
 
 
@@ -164,6 +166,10 @@ def init_compare():
 
 def compare(node1, node2):
     """Compares two Werkzeug hg versions."""
+    print '=' * 80
+    print 'WERKZEUG INTERNAL BENCHMARK -- COMPARE MODE'.center(80)
+    print '-' * 80
+
     delim = '-' * 20
 
     def _error(msg):
@@ -186,11 +192,10 @@ def compare(node1, node2):
 
     _hg_update('a', node1)
     _hg_update('b', node2)
-    d1 = run('a')
-    d2 = run('b')
+    d1 = run('a', no_header=True)
+    d2 = run('b', no_header=True)
 
-    print '=' * 80
-    print 'BENCHMARK COMPARISON'.center(80)
+    print 'DIRECT COMPARISON'.center(80)
     print '-' * 80
     for key in sorted(d1):
         delta = d1[key] - d2[key]
@@ -203,13 +208,14 @@ def compare(node1, node2):
     print '-' * 80
 
 
-def run(path):
+def run(path, no_header=False):
     path = os.path.abspath(path)
     wz_version, hg_tag = load_werkzeug(path)
     result = {}
-    print '=' * 80
-    print 'WERKZEUG INTERNAL BENCHMARK'.center(80)
-    print '-' * 80
+    if not no_header:
+        print '=' * 80
+        print 'WERKZEUG INTERNAL BENCHMARK'.center(80)
+        print '-' * 80
     print 'Path:    %s' % path
     print 'Version: %s' % wz_version
     if hg_tag is not None:
@@ -330,5 +336,8 @@ def after_request_form_access():
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or os.path.curdir)
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print >> sys.stderr, 'interrupted!'
 
