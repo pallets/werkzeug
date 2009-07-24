@@ -15,6 +15,10 @@ are listed there in detail.
 API Changes
 ===========
 
+`0.6`
+    -   Old deprecations were removed.
+    -   `cached_property.writeable` was deprecated.
+
 `0.5`
     -   Werkzeug switched away from wsgiref as library for the builtin
         webserver.

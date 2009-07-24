@@ -9,6 +9,7 @@ Version 0.6
 - sys.path is now printed from the testapp.
 - fixed an RFC 2068 incompatibility with cookie value quoting.
 - the :class:`FileStorage` how gives access to the multipart headers.
+- `cached_property.writeable` was deprecated.
 
 Version 0.5.1
 -------------

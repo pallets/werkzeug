@@ -180,13 +180,14 @@ def compare(node1, node2):
         hg = lambda *x: subprocess.call(['hg'] + list(x), cwd=repo,
                                         stdout=null_out, stderr=null_out)
         hg('revert', '-a', '--no-backup')
-        hg('pull', '..')
+        hg('pull', '../..')
         hg('update', node)
         if node == 'tip':
             diff = subprocess.Popen(['hg', 'diff'], cwd='..',
-                                    stdout=null_out).communicate()[0]
+                                    stdout=subprocess.PIPE).communicate()[0]
             if diff:
-                client = subprocess.Popen(['hg', 'import', '-'], stdout=null_out,
+                client = subprocess.Popen(['hg', 'import', '--no-commit', '-'],
+                                          cwd=repo, stdout=null_out,
                                           stdin=subprocess.PIPE)
                 client.communicate(diff)
 
@@ -326,6 +327,7 @@ def before_request_form_access():
 def time_request_form_access():
     for x in xrange(30):
         REQUEST.path
+        REQUEST.script_root
         REQUEST.args['foo']
         REQUEST.form['foo']
 
