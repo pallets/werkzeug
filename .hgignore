@@ -5,3 +5,4 @@
 ^env$
 ^docs/_build
 [^/]+-stats\.txt$
+^bench/[ab]/
