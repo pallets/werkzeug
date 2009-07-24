@@ -211,32 +211,38 @@ class BaseRequest(object):
 
     def _load_form_data(self):
         """Method used internally to retrieve submitted data.  After calling
-        this sets `_form` and `_files` on the request object to multi dicts
+        this sets `form` and `files` on the request object to multi dicts
         filled with the incoming form data.  As a matter of fact the input
         stream will be empty afterwards.
 
         :internal:
         """
-        if self._data_stream is None:
-            if self.shallow:
-                raise RuntimeError('A shallow request tried to consume '
-                                   'form data.  If you really want to do '
-                                   'that, set `shallow` to False.')
-            data = None
-            if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
-                try:
-                    data = parse_form_data(self.environ, self._get_file_stream,
-                                           self.charset, self.encoding_errors,
-                                           self.max_form_memory_size,
-                                           self.max_content_length,
-                                           cls=ImmutableMultiDict,
-                                           silent=False)
-                except ValueError, e:
-                    self._form_parsing_failed(e)
-            if data is None:
-                data = (_empty_stream, ImmutableMultiDict(),
-                        ImmutableMultiDict())
-            self._data_stream, self._form, self._files = data
+        # abort early if we have already consumed the stream
+        if 'stream' in self.__dict__:
+            return
+        if self.shallow:
+            raise RuntimeError('A shallow request tried to consume '
+                               'form data.  If you really want to do '
+                               'that, set `shallow` to False.')
+        data = None
+        if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
+            try:
+                data = parse_form_data(self.environ, self._get_file_stream,
+                                       self.charset, self.encoding_errors,
+                                       self.max_form_memory_size,
+                                       self.max_content_length,
+                                       cls=ImmutableMultiDict,
+                                       silent=False)
+            except ValueError, e:
+                self._form_parsing_failed(e)
+        if data is None:
+            data = (_empty_stream, ImmutableMultiDict(),
+                    ImmutableMultiDict())
+
+        # inject the values into the instance dict so that we bypass
+        # our cached_property non-data descriptor.
+        d = self.__dict__
+        d['stream'], d['form'], d['files'] = data
 
     def _form_parsing_failed(self, error):
         """Called if parsing of form data failed.  This is currently only
@@ -249,7 +255,7 @@ class BaseRequest(object):
         .. versionadded:: 0.5.1
         """
 
-    @property
+    @cached_property
     def stream(self):
         """The parsed stream if the submitted data was not multipart or
         urlencoded form data.  This stream is the stream left by the form data
@@ -258,7 +264,7 @@ class BaseRequest(object):
         read past `Content-Length`.
         """
         self._load_form_data()
-        return self._data_stream
+        return self.stream
 
     input_stream = environ_property('wsgi.input', 'The WSGI input stream.\n'
         'In general it\'s a bad idea to use this one because you can easily '
@@ -282,21 +288,21 @@ class BaseRequest(object):
         """
         return self.stream.read()
 
-    @property
+    @cached_property
     def form(self):
         """Form parameters.  Currently it's not guaranteed that the
         :class:`ImmutableMultiDict` returned by this function is ordered in
         the same way as the submitted form data.
         """
         self._load_form_data()
-        return self._form
+        return self.form
 
     @cached_property
     def values(self):
         """Combined multi dict for :attr:`args` and :attr:`form`."""
         return CombinedMultiDict([self.args, self.form])
 
-    @property
+    @cached_property
     def files(self):
         """:class:`MultiDict` object containing all uploaded files.  Each key in
         :attr:`files` is the name from the ``<input type="file" name="">``.  Each
@@ -310,7 +316,7 @@ class BaseRequest(object):
         details about the used data structure.
         """
         self._load_form_data()
-        return self._files
+        return self.files
 
     @cached_property
     def cookies(self):

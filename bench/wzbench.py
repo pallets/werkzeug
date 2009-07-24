@@ -235,7 +235,8 @@ def run(path, no_header=False):
     return result
 
 
-URL_ENCODED_DATA = 'foo=bar&blah=blub&meh=muh&mah=meh'
+URL_DECODED_DATA = dict((str(x), str(x)) for x in xrange(100))
+URL_ENCODED_DATA = '&'.join('%s=%s' % x for x in URL_DECODED_DATA.items())
 MULTIPART_ENCODED_DATA = '\n'.join((
     '--foo',
     'Content-Disposition: form-data; name=foo',
@@ -258,6 +259,10 @@ REQUEST = None
 
 def time_url_decode():
     wz.url_decode(URL_ENCODED_DATA)
+
+
+def time_url_encode():
+    wz.url_encode(URL_DECODED_DATA)
 
 
 def time_parse_form_data_multipart():
