@@ -29,6 +29,7 @@ null_out = file(os.devnull, 'w')
 
 # ±4% are ignore
 TOLERANCE = 0.04
+MIN_RESOLUTION = 0.002
 
 # we run each test 5 times
 TEST_RUNS = 5
@@ -213,7 +214,8 @@ def compare(node1, node2):
     print '-' * 80
     for key in sorted(d1):
         delta = d1[key] - d2[key]
-        if abs(1 - d1[key] / d2[key]) < TOLERANCE:
+        if abs(1 - d1[key] / d2[key]) < TOLERANCE or \
+           abs(delta) < MIN_RESOLUTION:
             delta = ''
         else:
             delta = '%+.4f (%+d%%)' % (delta, round(d2[key] / d1[key] * 100 - 100))
@@ -269,6 +271,8 @@ MULTIPART_ENCODED_DATA = '\n'.join((
 MULTIDICT = None
 REQUEST = None
 TEST_ENV = None
+LOCAL = None
+LOCAL_MANAGER = None
 
 
 def time_url_decode():
@@ -390,6 +394,24 @@ def time_response_iter_head_performance():
                        mimetype='text/html')
     for item in resp({'REQUEST_METHOD': 'HEAD'}, lambda *s: None):
         pass
+
+
+def before_local_manager_dispatch():
+    global LOCAL_MANAGER, LOCAL
+    LOCAL = wz.Local()
+    LOCAL_MANAGER = wz.LocalManager([LOCAL])
+
+
+def time_local_manager_dispatch():
+    for x in xrange(10):
+        LOCAL.x = 42
+    for x in xrange(10):
+        LOCAL.x
+
+
+def after_local_manager_dispatch():
+    global LOCAL_MANAGER, LOCAL
+    LOCAL = LOCAL_MANAGER = None
 
 
 if __name__ == '__main__':
