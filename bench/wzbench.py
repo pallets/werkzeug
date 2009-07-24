@@ -13,6 +13,7 @@
 """
 from __future__ import division
 import os
+import gc
 import sys
 import subprocess
 from cStringIO import StringIO
@@ -26,10 +27,11 @@ sys.path.insert(0, '<DUMMY>')
 null_out = file(os.devnull, 'w')
 
 
-EXPECTED_DELTA = 0.75
-IGNORED_DELTA = 0.001
-TEST_RUNS = 3
-MIN_ROUNDS = 10
+# ±4% are ignore
+TOLERANCE = 0.04
+
+# we run each test 5 times
+TEST_RUNS = 5
 
 
 def find_hg_tag(path):
@@ -116,21 +118,28 @@ def bench(func):
 
     # figure out how many times we have to run the function to
     # get reliable timings.
-    def _testrun():
-        t = timer()
-        for x in xrange(50):
-            func()
-        return (timer() - t) / 50
-    delta = median(_testrun() for x in xrange(6)) or 0.001
-    rounds = max(MIN_ROUNDS, int(round(EXPECTED_DELTA / delta)))
-
-    # now run it and calculate the minimal per-iteration time
-    def _run():
+    for i in xrange(1, 10):
+        rounds = 10 * i
         t = timer()
         for x in xrange(rounds):
             func()
-        return (timer() - t) / rounds * 1000
-    delta = min(_run() for x in xrange(TEST_RUNS))
+        if timer() - t >= 0.2:
+            break
+
+    # now run the tests without gc TEST_RUNS times and use the median
+    # value of these runs.
+    def _run():
+        gc.collect()
+        gc.disable()
+        try:
+            t = timer()
+            for x in xrange(rounds):
+                func()
+            return (timer() - t) / rounds * 1000
+        finally:
+            gc.enable()
+
+    delta = median(_run() for x in xrange(TEST_RUNS))
     sys.stdout.write('%.4f\n' % delta)
     sys.stdout.flush()
 
@@ -166,6 +175,10 @@ def init_compare():
 
 def compare(node1, node2):
     """Compares two Werkzeug hg versions."""
+    if not os.path.isdir('a'):
+        print >> sys.stderr, 'error: comparision feature not initialized'
+        sys.exit(4)
+
     print '=' * 80
     print 'WERKZEUG INTERNAL BENCHMARK -- COMPARE MODE'.center(80)
     print '-' * 80
@@ -200,7 +213,7 @@ def compare(node1, node2):
     print '-' * 80
     for key in sorted(d1):
         delta = d1[key] - d2[key]
-        if abs(delta) < IGNORED_DELTA:
+        if abs(1 - d1[key] / d2[key]) < TOLERANCE:
             delta = ''
         else:
             delta = '%+.4f (%+d%%)' % (delta, round(d2[key] / d1[key] * 100 - 100))
@@ -255,6 +268,7 @@ MULTIPART_ENCODED_DATA = '\n'.join((
 ))
 MULTIDICT = None
 REQUEST = None
+TEST_ENV = None
 
 
 def time_url_decode():
@@ -266,13 +280,17 @@ def time_url_encode():
 
 
 def time_parse_form_data_multipart():
-    req = wz.Request.from_values(input_stream=StringIO(MULTIPART_ENCODED_DATA),
-                                 content_length=len(MULTIPART_ENCODED_DATA),
-                                 content_type='multipart/form-data; '
-                                              'boundary=foo', method='POST')
-    # make sure it's parsed
-    req.form
-
+    # use a hand written env creator so that we don't bench
+    # from_values which is known to be slowish in 0.5.1 and higher.
+    # we don't want to bench two things at once.
+    environ = {
+        'REQUEST_METHOD':   'POST',
+        'CONTENT_TYPE':     'multipart/form-data; boundary=foo',
+        'wsgi.input':       StringIO(MULTIPART_ENCODED_DATA),
+        'CONTENT_LENGTH':   str(len(MULTIPART_ENCODED_DATA))
+    }
+    request = wz.Request(environ)
+    request.form
 
 
 def before_multidict_lookup_hit():
@@ -309,9 +327,7 @@ def time_cached_property():
             return 42
 
     f = Foo()
-    for x in xrange(30):
-        f.x
-        f.x
+    for x in xrange(60):
         f.x
 
 
@@ -339,6 +355,41 @@ def time_request_form_access():
 def after_request_form_access():
     global REQUEST
     REQUEST = None
+
+
+def time_request_from_values():
+    wz.Request.from_values(base_url='http://www.google.com/',
+                           query_string='foo=bar&blah=blaz',
+                           input_stream=StringIO(MULTIPART_ENCODED_DATA),
+                           content_length=len(MULTIPART_ENCODED_DATA),
+                           content_type='multipart/form-data; '
+                                        'boundary=foo', method='POST')
+
+
+def before_request_shallow_init():
+    global TEST_ENV
+    TEST_ENV = wz.create_environ()
+
+def time_request_shallow_init():
+    wz.Request(TEST_ENV, shallow=True)
+
+def after_request_shallow_init():
+    global TEST_ENV
+    TEST_ENV = None
+
+
+def time_response_iter_performance():
+    resp = wz.Response(u'Hällo Wörld ' * 1000,
+                       mimetype='text/html')
+    for item in resp({'REQUEST_METHOD': 'GET'}, lambda *s: None):
+        pass
+
+
+def time_response_iter_head_performance():
+    resp = wz.Response(u'Hällo Wörld ' * 1000,
+                       mimetype='text/html')
+    for item in resp({'REQUEST_METHOD': 'HEAD'}, lambda *s: None):
+        pass
 
 
 if __name__ == '__main__':

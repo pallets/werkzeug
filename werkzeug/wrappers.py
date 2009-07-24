@@ -132,7 +132,6 @@ class BaseRequest(object):
         if populate_request and not shallow:
             self.environ['werkzeug.request'] = self
         self.shallow = shallow
-        self._data_stream = None
 
     @classmethod
     def from_values(cls, *args, **kwargs):

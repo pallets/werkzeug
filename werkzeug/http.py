@@ -40,6 +40,7 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _multipart_boundary_re = re.compile('^[ -~]{0,200}[!-~]$')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
+_empty_string_iter = repeat('')
 
 _entity_headers = frozenset([
     'allow', 'content-encoding', 'content-language', 'content-length',
@@ -460,7 +461,18 @@ def _line_parse(line):
     return line, False
 
 
-_empty_stream_iter = repeat('')
+def _find_terminator(iterator):
+    """The terminator might have some additional newlines before it.
+    There is at least one application that sends additional newlines
+    before headers (the python setuptools package).
+    """
+    for line in iterator:
+        if not line:
+            break
+        line = line.strip()
+        if line:
+            return line
+    return ''
 
 
 def parse_multipart(file, boundary, content_length, stream_factory=None,
@@ -503,23 +515,10 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     # convert the file into a limited stream with iteration capabilities
     file = LimitedStream(file, content_length)
     iterator = chain(make_line_iter(file, buffer_size=buffer_size),
-                     _empty_stream_iter)
-
-    def _find_terminator():
-        """The terminator might have some additional newlines before it.
-        There is at least one application that sends additional newlines
-        before headers (the python setuptools package).
-        """
-        for line in iterator:
-            if not line:
-                break
-            line = line.strip()
-            if line:
-                return line
-        return ''
+                     _empty_string_iter)
 
     try:
-        terminator = _find_terminator()
+        terminator = _find_terminator(iterator)
         if terminator != next_part:
             raise ValueError('Expected boundary at start of multipart data')
 
@@ -529,18 +528,29 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             if disposition is None:
                 raise ValueError('Missing Content-Disposition header')
             disposition, extra = parse_options_header(disposition)
-            filename = extra.get('filename')
             name = extra.get('name')
+
             transfer_encoding = headers.get('content-transfer-encoding')
+            try_decode = transfer_encoding is not None and \
+                         transfer_encoding in _supported_multipart_encodings
 
             content_type = headers.get('content-type')
+
+            # if no content type is given we stream into memory.  As temporary
+            # container a list is used.
             if content_type is None:
                 is_file = False
+                container = []
+                _write = container.append
+                guard_memory = max_form_memory_size is not None
+
+            # otherwise we parse the rest of the headers and ask the stream
+            # factory for something we can write in.
             else:
                 content_type = parse_options_header(content_type)[0]
+                filename = extra.get('filename')
                 is_file = True
-
-            if is_file:
+                guard_memory = False
                 if filename is not None:
                     filename = _fix_ie_filename(_decode_unicode(filename,
                                                                 charset,
@@ -549,40 +559,51 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                     content_length = int(headers['content-length'])
                 except (KeyError, ValueError):
                     content_length = 0
-                stream = stream_factory(total_content_length, content_type,
-                                        filename, content_length)
-            else:
-                stream = StringIO()
+                container = stream_factory(total_content_length, content_type,
+                                           filename, content_length)
+                _write = container.write
 
             buf = ''
             for line in iterator:
                 if not line:
                     raise ValueError('unexpected end of stream')
+
                 if line[:2] == '--':
                     terminator = line.rstrip()
                     if terminator in (next_part, last_part):
                         break
-                if transfer_encoding in _supported_multipart_encodings:
+
+                if try_decode:
                     try:
                         line = line.decode(transfer_encoding)
                     except:
                         raise ValueError('could not base 64 decode chunk')
+
                 # we have something in the buffer from the last iteration.
-                # write that value to the output stream now and clear the buffer.
+                # this is usually a newline delimiter.
                 if buf:
-                    stream.write(buf)
+                    _write(buf)
                     buf = ''
 
                 # If the line ends with windows CRLF we write everything except
-                # the last two bytes.  In all other cases however we write everything
-                # except the last byte.  If it was a newline, that's fine, otherwise
-                # it does not matter because we write it the last iteration.  If the
-                # loop aborts early because the end of a part was reached, the last
-                # newline is not written which is exactly what we want.
-                newline_length = line[-2:] == '\r\n' and 2 or 1
-                stream.write(line[:-newline_length])
-                buf = line[-newline_length:]
-                if not is_file and max_form_memory_size is not None:
+                # the last two bytes.  In all other cases however we write
+                # everything except the last byte.  If it was a newline, that's
+                # fine, otherwise it does not matter because we will write it
+                # the next iteration.  this ensures we do not not write the
+                # final newline into the stream.  That way we do not have to
+                # truncate the stream.
+                if line[-2:] == '\r\n':
+                    buf = '\r\n'
+                    cutoff = -2
+                else:
+                    buf = line[-1]
+                    cutoff = -1
+                _write(line[:cutoff])
+
+                # if we write into memory and there is a memory size limit we
+                # count the number of bytes in memory and raise exceptiosn if
+                # there is too much data in memory.
+                if guard_memory:
                     in_memory += len(line)
                     if in_memory > max_form_memory_size:
                         from werkzeug.exceptions import RequestEntityTooLarge
@@ -590,15 +611,13 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             else:
                 raise ValueError('unexpected end of part')
 
-            # rewind the stream
-            stream.seek(0)
-
             if is_file:
-                files.append((name, FileStorage(stream, filename, name,
+                container.seek(0)
+                files.append((name, FileStorage(container, filename, name,
                                                 content_type,
                                                 content_length, headers)))
             else:
-                form.append((name, _decode_unicode(stream.read(),
+                form.append((name, _decode_unicode(''.join(container),
                                                    charset, errors)))
     finally:
         # make sure the whole input stream is read
