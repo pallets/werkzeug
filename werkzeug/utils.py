@@ -708,15 +708,6 @@ class cached_property(object):
         return value
 
 
-class _CachedProperty(object):
-    """Helper for :class:`cached_property`"""
-
-    def __init__(self, func, name, doc):
-        self.func = func
-        self.__name__ = name
-        self.__doc__
-
-
 class environ_property(_DictAccessorProperty):
     """Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an
