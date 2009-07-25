@@ -210,3 +210,28 @@ def test_adapter_match_return_rule():
     map = Map([rule])
     adapter = map.bind('localhost', '/')
     assert adapter.match('/foo/', return_rule=True) == (rule, {})
+
+
+def test_server_name_interpolation():
+    """URL routing server name interpolation."""
+    server_name = 'example.invalid'
+    map = Map([Rule('/', endpoint='index'),
+               Rule('/', endpoint='alt', subdomain='alt')])
+
+    env = create_environ('/', 'http://%s/' % server_name)
+    adapter = map.bind_to_environ(env, server_name=server_name)
+    assert adapter.match() == ('index', {})
+
+    env = create_environ('/', 'http://alt.%s/' % server_name)
+    adapter = map.bind_to_environ(env, server_name=server_name)
+    assert adapter.match() == ('alt', {})
+
+    try:
+        env = create_environ('/', 'http://%s/' % server_name)
+        adapter = map.bind_to_environ(env, server_name='foo')
+    except ValueError, e:
+        msg = str(e)
+        assert 'provided (%r)' % 'foo' in msg
+        assert 'environment (%r)' % server_name in msg
+    else:
+        assert False, 'expected exception'

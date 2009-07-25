@@ -12,6 +12,8 @@ Version 0.6
 - `cached_property.writeable` was deprecated.
 - :meth:`MapAdapter.match` now accepts a `return_rule` keyword argument
   that returns the matched `Rule` instead of just the `endpoint`
+- :meth:`routing.Map.bind_to_environ` raises a more correct error message
+  now if the map was bound to an invalid WSGI environment.
 
 Version 0.5.1
 -------------
