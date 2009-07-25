@@ -1137,7 +1137,7 @@ class MapAdapter(object):
                 return e
             raise
 
-    def match(self, path_info=None, method=None):
+    def match(self, path_info=None, method=None, return_rule=False):
         """The usage is simple: you just pass the match method the current
         path info as well as the method (which defaults to `GET`).  The
         following things can then happen:
@@ -1159,7 +1159,8 @@ class MapAdapter(object):
           similar to all other subclasses of `HTTPException`.
 
         - you get a tuple in the form ``(endpoint, arguments)`` when there is
-          a match.
+          a match (unless `return_rule` is True, in which case you get a tuple
+          in the form ``(rule, arguments)``)
 
         If the path info is not passed to the match method the default path
         info of the map is used (defaults to the root URL if not defined
@@ -1197,6 +1198,11 @@ class MapAdapter(object):
                           path info specified on binding.
         :param method: the HTTP method used for matching.  Overrides the
                        method specified on binding.
+        :param return_rule: return the rule that matched instead of just the
+                            endpoint (defaults to `False`).
+
+        .. versionadded:: 0.6
+            `return_rule` was added.
         """
         self.map.update()
         if path_info is None:
@@ -1250,7 +1256,10 @@ class MapAdapter(object):
                     self.server_name,
                     self.script_name
                 ), redirect_url)))
-            return rule.endpoint, rv
+            if return_rule:
+                return rule, rv
+            else:
+                return rule.endpoint, rv
         if have_match_for:
             raise MethodNotAllowed(valid_methods=list(have_match_for))
         raise NotFound()

@@ -203,3 +203,10 @@ def test_request_direct_charset_bug():
         assert e.new_url == 'http://localhost/%C3%B6%C3%A4%C3%BC/'
     else:
         raise AssertionError('expected request redirect exception')
+
+def test_adapter_match_return_rule():
+    """Returning the matched Rule"""
+    rule = Rule('/foo/', endpoint='foo')
+    map = Map([rule])
+    adapter = map.bind('localhost', '/')
+    assert adapter.match('/foo/', return_rule=True) == (rule, {})

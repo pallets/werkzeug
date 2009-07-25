@@ -10,6 +10,8 @@ Version 0.6
 - fixed an RFC 2068 incompatibility with cookie value quoting.
 - the :class:`FileStorage` how gives access to the multipart headers.
 - `cached_property.writeable` was deprecated.
+- :meth:`MapAdapter.match` now accepts a `return_rule` keyword argument
+  that returns the matched `Rule` instead of just the `endpoint`
 
 Version 0.5.1
 -------------
