@@ -14,6 +14,7 @@ Version 0.6
   that returns the matched `Rule` instead of just the `endpoint`
 - :meth:`routing.Map.bind_to_environ` raises a more correct error message
   now if the map was bound to an invalid WSGI environment.
+- added support for SSL to the builtin development server.
 
 Version 0.5.1
 -------------

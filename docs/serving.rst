@@ -86,3 +86,35 @@ Another workaround that should work is accessing `127.0.0.1` instead of
 `localhost`.
 
 .. _hosts file: http://en.wikipedia.org/wiki/Hosts_file
+
+SSL
+---
+
+.. versionadded:: 0.6
+
+The builtin server supports SSL for testing purposes.  If an SSL context
+is provided it will be used.  That means a server can either run in HTTP
+or HTTPS mode, but not both.  This feature requires the Python OpenSSL
+library.
+
+The easiest way to enable SSL is to start the server in adhoc-mode.  In
+that case Werkzeug will generate an SSL certificate for you::
+
+    run_simple('localhost', 4000, application,
+               ssl_context='adhoc')
+
+The downside of this of course is that you will have to acknowledge the
+certificate each time the server is reloaded.  You can generate a
+certificate and key in advance and provide the SSL context when the server
+is started::
+
+    from OpenSSL import SSL
+    ctx = SSL.Context(SSL.SSLv23_METHOD)
+    ctx.use_privatekey_file('ssl.key')
+    ctx.use_certificate_file('ssl.cert')
+    run_simple('localhost', 4000, application, ssl_context=ctx)
+
+A key and certificate can be created in advance using the openssl tool::
+
+    $ openssl genrsa 1024 > ssl.key
+    $ openssl req -new -x509 -nodes -sha1 -days 365 -key ssl.key > ssl.cert

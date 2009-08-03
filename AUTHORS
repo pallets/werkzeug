@@ -23,3 +23,10 @@ Project Leader / Developer:
 Contributors of code for werkzeug/examples are:
 
 - Itay Neeman <itay@neeman.net>
+
+The SSL related parts of the Werkzeug development server are partially
+taken from Paste.  The original code is MIT licensed which is largely
+compatible with the modfied BSD license.  The following copyrights apply:
+
+- (c) 2005 Ian Bicking and contributors
+- (c) 2005 Clark C. Evans
