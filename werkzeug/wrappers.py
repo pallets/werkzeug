@@ -680,13 +680,14 @@ class BaseResponse(object):
         :param environ: the WSGI environment of the request to be used for
                         the applied fixes.
         """
-        if 'Location' in self.headers:
+        location = self.headers.get('location')
+        if location is not None:
             self.headers['Location'] = urlparse.urljoin(
                 get_current_url(environ, root_only=True),
-                self.headers['Location']
+                location
             )
         if 100 <= self.status_code < 200 or self.status_code == 204:
-            self.headers['Content-Length'] = 0
+            self.headers['Content-Length'] = '0'
         elif self.status_code == 304:
             remove_entity_headers(self.headers)
 

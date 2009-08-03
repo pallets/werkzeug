@@ -221,13 +221,21 @@ def test_etag_response_mixin():
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60
+    response.headers['Content-Length'] = len(response.data)
     assert response.headers['Cache-Control'] == 'must-revalidate, max-age=60'
 
-    response.make_conditional({
+    env = {
         'REQUEST_METHOD':       'GET',
         'HTTP_IF_NONE_MATCH':   response.get_etag()[0]
-    })
-    assert response.status_code == 304
+    }
+    response.make_conditional(env)
+
+    # after the thing is invoked by the server as wsgi application
+    # (we're emulating this here), there must not be any entity
+    # headers left and the status code would have to be 304
+    resp = Response.from_app(response, env)
+    assert resp.status_code == 304
+    assert not 'content-length' in resp.headers
 
 
 def test_response_stream_mixin():
