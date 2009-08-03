@@ -195,6 +195,7 @@ class BaseRequestHandler(BaseHTTPRequestHandler, object):
 
 
 class BaseWSGIServer(HTTPServer):
+    """Simple single-threaded, single-process WSGI server."""
     multithread = False
     multiprocess = False
 
@@ -223,10 +224,12 @@ class BaseWSGIServer(HTTPServer):
 
 
 class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
+    """A WSGI server that does threading."""
     multithread = True
 
 
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
+    """A WSGI server that does forking."""
     multiprocess = True
 
     def __init__(self, host, port, app, processes=40, handler=None,
