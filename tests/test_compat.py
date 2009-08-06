@@ -44,3 +44,16 @@ def test_demand_import():
     assert perform_import('useragents', allowed_imports) == set()
     assert perform_import('test', allowed_imports) == set()
     assert perform_import('serving', allowed_imports) == set()
+
+
+def test_fix_headers_in_response():
+    """Make sure fix_headers still works for backwards compatibility"""
+    from werkzeug import Response
+    class MyResponse(Response):
+        def fix_headers(self, environ):
+            Response.fix_headers(self, environ)
+            self.headers['x-foo'] = "meh"
+    myresp = MyResponse('Foo')
+    resp = Response.from_app(myresp, {'REQUEST_METHOD': 'GET'})
+    assert resp.headers['x-foo'] == 'meh'
+    assert resp.data == 'Foo'
