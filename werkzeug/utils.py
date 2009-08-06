@@ -1493,7 +1493,7 @@ def append_slash_redirect(environ, code=301):
     :param code: the status code for the redirect.
     """
     new_path = environ['PATH_INFO'].strip('/') + '/'
-    query_string = environ['QUERY_STRING']
+    query_string = environ.get('QUERY_STRING')
     if query_string:
         new_path += '?' + query_string
     return redirect(new_path, code)
