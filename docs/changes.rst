@@ -21,6 +21,9 @@ API Changes
     -   :meth:`BaseResponse.get_wsgi_headers` replaces the older
         `BaseResponse.fix_headers` method.  The older method stays
         around for backwards compatibility reasons until 0.7.
+    -   `BaseResponse.header_list` was deprecated.  You should not
+        need this function, `get_wsgi_headers` and the `to_list`
+        method on the regular headers should serve as a replacement.
 
 `0.5`
     -   Werkzeug switched away from wsgiref as library for the builtin
