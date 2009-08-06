@@ -133,6 +133,31 @@ class BaseRequest(object):
             self.environ['werkzeug.request'] = self
         self.shallow = shallow
 
+    def __repr__(self):
+        # make sure the __repr__ even works if the request was created
+        # from an invalid WSGI environment.  If we display the request
+        # in a debug session we don't want the repr to blow up.
+        args = []
+        try:
+            args.append("'%s'" % self.url)
+            args.append('[%s]' % self.method)
+        except:
+            args.append('(invalid WSGI environ)')
+
+        return '<%s %s>' % (
+            self.__class__.__name__,
+            ' '.join(args)
+        )
+
+    @property
+    def url_charset(self):
+        """The charset that is assumed for URLs.  Defaults to the value
+        of :attr:`charset`.
+
+        .. versionadded:: 0.6
+        """
+        return self.charset
+
     @classmethod
     def from_values(cls, *args, **kwargs):
         """Create a new request object based on the values provided.  If
@@ -272,8 +297,8 @@ class BaseRequest(object):
     @cached_property
     def args(self):
         """The parsed URL parameters as :class:`ImmutableMultiDict`."""
-        return url_decode(self.environ.get('QUERY_STRING', ''), self.charset,
-                          errors=self.encoding_errors,
+        return url_decode(self.environ.get('QUERY_STRING', ''),
+                          self.url_charset, errors=self.encoding_errors,
                           cls=ImmutableMultiDict)
 
     @cached_property
@@ -337,13 +362,13 @@ class BaseRequest(object):
         even if the URL root is accessed.
         """
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
-        return _decode_unicode(path, self.charset, self.encoding_errors)
+        return _decode_unicode(path, self.url_charset, self.encoding_errors)
 
     @cached_property
     def script_root(self):
         """The root path of the script without the trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
-        return _decode_unicode(path, self.charset, self.encoding_errors)
+        return _decode_unicode(path, self.url_charset, self.encoding_errors)
 
     @cached_property
     def url(self):
@@ -526,6 +551,17 @@ class BaseResponse(object):
         else:
             self.status = status
         self.direct_passthrough = direct_passthrough
+
+    def __repr__(self):
+        if isinstance(self.response, (list, tuple)):
+            body_info = '%d bytes' % sum(map(len, self.iter_encoded()))
+        else:
+            body_info = self.is_streamed and 'streamed' or 'likely-streamed'
+        return '<%s %s [%s]>' % (
+            self.__class__.__name__,
+            body_info,
+            self.status
+        )
 
     @classmethod
     def force_type(cls, response, environ=None):

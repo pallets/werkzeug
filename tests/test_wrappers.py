@@ -334,3 +334,10 @@ def test_form_parsing_failed():
     assert not data.form
     assert len(errors) == 1
     assert isinstance(errors[0], ValueError)
+
+
+def test_url_charset_reflection():
+    """Make sure the URL charset is the same as the charset by default."""
+    req = Request.from_values()
+    req.charset = 'utf-7'
+    assert req.url_charset == 'utf-7'

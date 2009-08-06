@@ -22,6 +22,38 @@ def test_reverse_slash_behavior():
     assert adapter.match(req.path) == ('foo', {})
 
 
+def test_dynamic_charset_request_mixin():
+    """Test DynamicCharsetRequestMixin"""
+    class MyRequest(wrappers.DynamicCharsetRequestMixin, Request):
+        pass
+    env = {'CONTENT_TYPE': 'text/html'}
+    req = MyRequest(env)
+    assert req.charset == 'latin1'
+
+    env = {'CONTENT_TYPE': 'text/html; charset=utf-8'}
+    req = MyRequest(env)
+    assert req.charset == 'utf-8'
+
+    env = {'CONTENT_TYPE': 'application/octet-stream'}
+    req = MyRequest(env)
+    assert req.charset == 'latin1'
+    assert req.url_charset == 'latin1'
+
+    MyRequest.url_charset = 'utf-8'
+    env = {'CONTENT_TYPE': 'application/octet-stream'}
+    req = MyRequest(env)
+    assert req.charset == 'latin1'
+    assert req.url_charset == 'utf-8'
+
+    def return_ascii(x):
+        return "ascii"
+    env = {'CONTENT_TYPE': 'text/plain; charset=x-weird-charset'}
+    req = MyRequest(env)
+    req.unknown_charset = return_ascii
+    assert req.charset == 'ascii'
+    assert req.url_charset == 'utf-8'
+
+
 def test_dynamic_charset_response_mixin():
     """Test DynamicCharsetResponseMixin"""
     class MyResponse(wrappers.DynamicCharsetResponseMixin, Response):

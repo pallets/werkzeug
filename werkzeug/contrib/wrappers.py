@@ -20,6 +20,7 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import codecs
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import cached_property
 from werkzeug.http import dump_options_header, parse_options_header
@@ -28,6 +29,15 @@ try:
     from simplejson import loads
 except ImportError:
     from json import loads
+
+
+def is_known_charset(charset):
+    """Checks if the given charset is known to Python."""
+    try:
+        codecs.lookup(charset)
+    except LookupError:
+        return False
+    return True
 
 
 class JSONRequestMixin(object):
@@ -163,6 +173,62 @@ class ReverseSlashBehaviorRequestMixin(object):
         return _decode_unicode(path, self.charset, self.encoding_errors)
 
 
+class DynamicCharsetRequestMixin(object):
+    """"If this mixin is mixed into a request class it will provide
+    a dynamic `charset` attribute.  This means that if the charset is
+    transmitted in the content type headers it's used from there.
+
+    Because it changes the behavior or :class:`Request` this class has
+    to be mixed in *before* the actual request class::
+
+        class MyRequest(DynamicCharsetRequestMixin, Request):
+            pass
+
+    By default the request object assumes that the URL charset is the
+    same as the data charset.  If the charset varies on each request
+    based on the transmitted data it's not a good idea to let the URLs
+    change based on that.  Most browsers assume either utf-8 or latin1
+    for the URLs if they have troubles figuring out.  It's strongly
+    recommended to set the URL charset to utf-8::
+
+        class MyRequest(DynamicCharsetRequestMixin, Request):
+            url_charset = 'utf-8'
+
+    .. versionadded:: 0.6
+    """
+
+    #: the default charset that is assumed if the content type header
+    #: is missing or does not contain a charset parameter.  The default
+    #: is latin1 which is what HTTP specifies as default charset.
+    #: You may however want to set this to utf-8 to better support
+    #: browsers that do not transmit a charset for incoming data.
+    default_charset = 'latin1'
+
+    def unknown_charset(self, charset):
+        """Called if a charset was provided but is not supported by
+        the Python codecs module.  By default latin1 is assumed then
+        to not lose any information, you may override this method to
+        change the behavior.
+
+        :param charset: the charset that was not found.
+        :return: the replacement charset.
+        """
+        return 'latin1'
+
+    @cached_property
+    def charset(self):
+        """The charset from the content type."""
+        header = self.environ.get('CONTENT_TYPE')
+        if header:
+            ct, options = parse_options_header(header)
+            charset = options.get('charset')
+            if charset:
+                if is_known_charset(charset):
+                    return charset
+                return self.unknown_charset(charset)
+        return self.default_charset
+
+
 class DynamicCharsetResponseMixin(object):
     """If this mixin is mixed into a response class it will provide
     a dynamic `charset` attribute.  This means that if the charset is
@@ -174,10 +240,10 @@ class DynamicCharsetResponseMixin(object):
     Because the charset attribute is no a property at class-level, the
     default value is stored in `default_charset`.
 
-    Because it changes the behavior or :class:`Request` this class has to be
-    mixed in *before* the actual request class::
+    Because it changes the behavior or :class:`Response` this class has
+    to be mixed in *before* the actual response class::
 
-        class MyRequest(DynamicCharsetResponseMixin, Request):
+        class MyResponse(DynamicCharsetResponseMixin, Response):
             pass
 
     .. versionadded:: 0.6

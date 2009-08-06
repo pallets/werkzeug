@@ -22,7 +22,10 @@ Version 0.6
   you need header modifications before responses are sent.
 - :func:`append_slash_redirect` no longer requires the QUERY_STRING to be
   in the WSGI environment.
-- :class:`~werkzeug.contrib.wrappers.DynamicCharsetResponseMixin` was added.
+- added :class:`~werkzeug.contrib.wrappers.DynamicCharsetResponseMixin`
+- added :class:`~werkzeug.contrib.wrappers.DynamicCharsetRequestMixin`
+- added :attr:`BaseRequest.url_charset`
+- request and response objects have a default `__repr__` now.
 
 Version 0.5.1
 -------------
