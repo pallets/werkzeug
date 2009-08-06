@@ -30,10 +30,10 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_www_authenticate_header, remove_entity_headers, \
      default_stream_factory, parse_options_header, \
      dump_options_header
+from werkzeug.urls import url_decode
 from werkzeug.utils import cached_property, environ_property, \
-     get_current_url, url_encode, get_host, \
-     cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, parse_form_data, get_content_type, url_decode
+     get_host, cookie_date, parse_cookie, dump_cookie, http_date, escape, \
+     header_property, parse_form_data, get_content_type, get_current_url
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \

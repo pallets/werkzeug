@@ -100,7 +100,8 @@ import re
 from urlparse import urljoin
 from itertools import izip
 
-from werkzeug.utils import url_encode, url_quote, redirect, format_string
+from werkzeug.urls import url_encode, url_quote
+from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 
 

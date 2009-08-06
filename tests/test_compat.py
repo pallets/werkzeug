@@ -38,6 +38,8 @@ def test_demand_import():
 
     assert perform_import('http', allowed_imports) == set()
     assert perform_import('utils', allowed_imports) == set()
+
+    allowed_imports.add('urls')
     assert perform_import('wrappers', allowed_imports) == set()
 
     allowed_imports.add('wrappers')

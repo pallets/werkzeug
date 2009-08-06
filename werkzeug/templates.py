@@ -15,7 +15,7 @@ from compiler import ast, parse
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
-from werkzeug import utils
+from werkzeug import utils, urls
 from werkzeug._internal import _decode_unicode
 
 
@@ -322,9 +322,9 @@ class Template(object):
     """
     default_context = {
         'escape':           utils.escape,
-        'url_quote':        utils.url_quote,
-        'url_quote_plus':   utils.url_quote_plus,
-        'url_encode':       utils.url_encode
+        'url_quote':        urls.url_quote,
+        'url_quote_plus':   urls.url_quote_plus,
+        'url_encode':       urls.url_encode
     }
 
     def __init__(self, source, filename='<template>', charset='utf-8',
