@@ -76,6 +76,14 @@ HTTP_STATUS_CODES = {
 }
 
 
+def public(obj=None):
+    """Marks a function or class as publically available.  Do not call
+    functions that are not public.
+    """
+    obj.__module__ = 'werkzeug'
+    return obj
+
+
 class _Missing(object):
 
     def __repr__(self):
@@ -331,6 +339,7 @@ class _DictAccessorProperty(object):
         )
 
 
+@public
 def _easteregg(app):
     """Like the name says.  But who knows how it works?"""
     gyver = '\n'.join([x + (77 - len(x)) * ' ' for x in '''

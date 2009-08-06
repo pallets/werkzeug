@@ -320,6 +320,10 @@ class Template(object):
     """Represents a simple text based template.  It's a good idea to load such
     templates from files on the file system to get better debug output.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
+
     default_context = {
         'escape':           utils.escape,
         'url_quote':        urls.url_quote,

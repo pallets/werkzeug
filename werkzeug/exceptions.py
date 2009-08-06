@@ -424,6 +424,9 @@ class Aborter(object):
     The rest of the arguments are forwarded to the exception constructor.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def __init__(self, mapping=None, extra=None):
         if mapping is None:
             mapping = default_exceptions

@@ -198,6 +198,9 @@ class SharedDataMiddleware(object):
     :Param cache_timeout: the cache timeout in seconds for the headers.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def __init__(self, app, exports, disallow=None, cache=True,
                  cache_timeout=60 * 60 * 12):
         self.app = app
@@ -338,6 +341,9 @@ class DispatcherMiddleware(object):
         })
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def __init__(self, app, mounts=None):
         self.app = app
         self.mounts = mounts or {}
@@ -380,6 +386,9 @@ class ClosingIterator(object):
             cleanup_session()
             cleanup_locals()
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, iterable, callbacks=None):
         iterator = iter(iterable)
@@ -439,6 +448,9 @@ class FileWrapper(object):
     :param file: a :class:`file`-like object with a :meth:`~file.read` method.
     :param buffer_size: number of bytes for one iteration.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, file, buffer_size=8192):
         self.file = file
@@ -536,6 +548,9 @@ class LimitedStream(object):
     :param silent: If set to `True` the stream will allow reading
                    past the limit and will return an empty string.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, stream, limit, silent=True):
         self._stream = stream

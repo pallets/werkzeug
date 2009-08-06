@@ -31,6 +31,21 @@ def test_old_imports():
          Authorization
 
 
+def test_exposed_werkzeug_mod():
+    """Make sure all public classes are from the werkzeug module."""
+    import werkzeug
+    wrong_modules = []
+    for key in werkzeug.__all__:
+        obj = getattr(werkzeug, key)
+        if isinstance(obj, type) and obj.__module__ != 'werkzeug':
+            wrong_modules.append(obj)
+
+    if wrong_modules:
+        print 'objects with wrong modules: %s' % ', '.join(
+            (x.__module__ + '.' + x.__name__ for x in wrong_modules))
+        assert False, 'found objects with __module__ not set to werkzeug'
+
+
 def test_demand_import():
     """Make sure that we're not importing too much."""
     allowed_imports = set(['_internal', 'utils', 'http', 'exceptions',

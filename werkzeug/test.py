@@ -236,6 +236,9 @@ class EnvironBuilder(object):
     :param charset: the charset used to encode unicode data.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     #: the server protocol to use.  defaults to HTTP/1.1
     server_protocol = 'HTTP/1.1'
 
@@ -577,6 +580,9 @@ class Client(object):
        `use_cookies` is new in this version.  Older versions did not provide
        builtin cookie support.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, application, response_wrapper=None, use_cookies=True):
         self.application = application

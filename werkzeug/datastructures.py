@@ -30,6 +30,9 @@ class ImmutableListMixin(object):
     :private:
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def __delitem__(self, key):
         is_immutable(self)
 
@@ -73,6 +76,9 @@ class ImmutableList(ImmutableListMixin, list):
 
     :private:
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     __repr__ = _proxy_repr(list)
 
@@ -129,7 +135,12 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
 
 
 class UpdateDictMixin(object):
-    """Makes dicts call `self.on_update` on modifications."""
+    """Makes dicts call `self.on_update` on modifications.
+
+    .. versionadded:: 0.5
+
+    :private:
+    """
 
     on_update = None
 
@@ -159,6 +170,9 @@ class TypeConversionDict(dict):
 
     .. versionadded:: 0.5
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def get(self, key, default=None, type=None):
         """Return the default value if the requested data doesn't exist.
@@ -196,6 +210,9 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
 
     .. versionadded:: 0.5
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
@@ -248,6 +265,9 @@ class MultiDict(TypeConversionDict):
                     regular dict, an iterable of ``(key, value)`` tuples
                     or `None`.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     # the key error this class raises.  Because of circular dependencies
     # with the http exception module this class is created at the end of
@@ -538,6 +558,9 @@ class Headers(object):
 
     :param defaults: The list of default values for the :class:`Headers`.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     # the key error this class raises.  Because of circular dependencies
     # with the http exception module this class is created at the end of
@@ -865,6 +888,8 @@ class ImmutableHeadersMixin(object):
     """Makes a :class:`Headers` immutable.
 
     .. versionadded:: 0.5
+
+    :private:
     """
 
     def __delitem__(self, key):
@@ -904,6 +929,9 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
     render a page for a ``400 BAD REQUEST`` if caught in a catch-all for
     HTTP exceptions.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, environ):
         self.environ = environ
@@ -957,6 +985,9 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     render a page for a ``400 BAD REQUEST`` if caught in a catch-all for HTTP
     exceptions.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, dicts=None):
         self.dicts = dicts or []
@@ -1078,6 +1109,9 @@ class FileMultiDict(MultiDict):
     .. versionadded:: 0.5
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def add_file(self, name, file, filename=None, content_type=None):
         """Adds a new file to the dict.  `file` can be a file name or
         a :class:`file`-like or a :class:`FileStorage` object.
@@ -1106,6 +1140,9 @@ class ImmutableDict(ImmutableDictMixin, dict):
     .. versionadded:: 0.5
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     __repr__ = _proxy_repr(dict)
 
     def copy(self):
@@ -1124,6 +1161,9 @@ class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
 
     .. versionadded:: 0.5
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
@@ -1164,6 +1204,9 @@ class Accept(ImmutableList):
     .. versionchanged:: 0.5
        :class:`Accept` objects are forzed immutable now.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, values=()):
         if values is None:
@@ -1266,6 +1309,9 @@ class MIMEAccept(Accept):
     mimetypes.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def _value_matches(self, value, item):
         def _normalize(x):
             x = x.lower()
@@ -1313,6 +1359,9 @@ class MIMEAccept(Accept):
 class LanguageAccept(Accept):
     """Like :class:`Accept` but with normalization for languages."""
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def _value_matches(self, value, item):
         def _normalize(language):
             return _locale_delim_re.split(language.lower())
@@ -1321,6 +1370,9 @@ class LanguageAccept(Accept):
 
 class CharsetAccept(Accept):
     """Like :class:`Accept` but with normalization for charsets."""
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def _value_matches(self, value, item):
         def _normalize(name):
@@ -1445,6 +1497,9 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
        both for request and response.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     max_stale = cache_property('max-stale', '*', int)
     min_fresh = cache_property('min-fresh', '*', int)
     no_transform = cache_property('no-transform', None, None)
@@ -1466,6 +1521,9 @@ class ResponseCacheControl(_CacheControl):
        both for request and response.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     public = cache_property('public', None, bool)
     private = cache_property('private', '*', None)
     must_revalidate = cache_property('must-revalidate', None, bool)
@@ -1482,6 +1540,9 @@ class CallbackDict(UpdateDictMixin, dict):
     """A dict that calls a function passed every time something is changed.
     The function is passed the dict instance.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, initial=None, on_update=None):
         dict.__init__(self, initial or ())
@@ -1506,6 +1567,9 @@ class HeaderSet(object):
     >>> hs
     HeaderSet(['foo', 'bar', 'baz'])
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, headers=None, on_update=None):
         self._headers = list(headers or ())
@@ -1652,6 +1716,9 @@ class ETags(object):
     of etags.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def __init__(self, strong_etags=None, weak_etags=None, star_tag=False):
         self._strong = frozenset(not star_tag and strong_etags or ())
         self._weak = frozenset(weak_etags or ())
@@ -1736,6 +1803,9 @@ class Authorization(ImmutableDictMixin, dict):
        This object became immutable.
     """
 
+    # this class is public
+    __module__ = 'werkzeug'
+
     def __init__(self, auth_type, data=None):
         dict.__init__(self, data or {})
         self.type = auth_type
@@ -1785,6 +1855,9 @@ class Authorization(ImmutableDictMixin, dict):
 
 class WWWAuthenticate(UpdateDictMixin, dict):
     """Provides simple access to `WWW-Authenticate` headers."""
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     #: list of keys that require quoting in the generated header
     _require_quoting = frozenset(['domain', 'nonce', 'opaque', 'realm'])
@@ -1924,6 +1997,9 @@ class FileStorage(object):
     it's possible to do ``storage.read()`` instead of the long form
     ``storage.stream.read()``.
     """
+
+    # this class is public
+    __module__ = 'werkzeug'
 
     def __init__(self, stream=None, filename=None, name=None,
                  content_type='application/octet-stream', content_length=-1,
