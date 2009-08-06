@@ -18,6 +18,9 @@ API Changes
 `0.6`
     -   Old deprecations were removed.
     -   `cached_property.writeable` was deprecated.
+    -   :meth:`BaseResponse.get_wsgi_headers` replaces the older
+        `BaseResponse.fix_headers` method.  The older method stays
+        around for backwards compatibility reasons until 0.7.
 
 `0.5`
     -   Werkzeug switched away from wsgiref as library for the builtin

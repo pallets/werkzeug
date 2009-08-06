@@ -486,8 +486,14 @@ class BaseResponse(object):
                                unchanged (see :func:`wrap_file` for more
                                details.)
     """
+
+    #: the charset of the response.
     charset = 'utf-8'
+
+    #: the default status if none is provided.
     default_status = 200
+
+    #: the default mimetype if none is provided.
     default_mimetype = 'text/plain'
 
     def __init__(self, response=None, status=None, headers=None,
@@ -498,14 +504,15 @@ class BaseResponse(object):
             self.response = [response]
         else:
             self.response = iter(response)
-        if not headers:
-            self.headers = Headers()
-        elif isinstance(headers, Headers):
+        if isinstance(headers, Headers):
             self.headers = headers
+        elif not headers:
+            self.headers = Headers()
         else:
             self.headers = Headers(headers)
+
         if content_type is None:
-            if mimetype is None and 'Content-Type' not in self.headers:
+            if mimetype is None and 'content-type' not in self.headers:
                 mimetype = self.default_mimetype
             if mimetype is not None:
                 mimetype = get_content_type(mimetype, self.charset)
@@ -608,7 +615,7 @@ class BaseResponse(object):
         of this method is used as application iterator except if
         :attr:`direct_passthrough` was activated.
         """
-        charset = charset or self.charset or 'ascii'
+        charset = charset or self.charset
         for item in self.response:
             if isinstance(item, unicode):
                 yield item.encode(charset)
@@ -651,9 +658,10 @@ class BaseResponse(object):
 
     @property
     def header_list(self):
-        """This returns the headers in the target charset as list.  It's used
-        in __call__ to get the headers for the response.
-        """
+        # XXX: deprecated
+        from warnings import warn
+        warn(DeprecationWarning('header_list is deprecated'),
+             stacklevel=2)
         return self.headers.to_list(self.charset)
 
     @property
@@ -672,25 +680,6 @@ class BaseResponse(object):
             return False
         return True
 
-    def fix_headers(self, environ):
-        """This is automatically called right before the response is started
-        and should fix common mistakes in headers.  For example location
-        headers are joined with the root URL here.
-
-        :param environ: the WSGI environment of the request to be used for
-                        the applied fixes.
-        """
-        location = self.headers.get('location')
-        if location is not None:
-            self.headers['Location'] = urlparse.urljoin(
-                get_current_url(environ, root_only=True),
-                location
-            )
-        if 100 <= self.status_code < 200 or self.status_code == 204:
-            self.headers['Content-Length'] = '0'
-        elif self.status_code == 304:
-            remove_entity_headers(self.headers)
-
     def close(self):
         """Close the wrapped response if possible."""
         if hasattr(self.response, 'close'):
@@ -702,26 +691,105 @@ class BaseResponse(object):
         """
         BaseResponse.data.__get__(self)
 
+    def fix_headers(self, environ):
+        # XXX: deprecated
+        from warnings import warn
+        warn(DeprecationWarning('called into deprecated fix_headers baseclass '
+                                'method.  Use get_wsgi_headers instead.'),
+             stacklevel=2)
+        self.headers[:] = self.get_wsgi_headers(environ)
+
+    def get_wsgi_headers(self, environ):
+        """This is automatically called right before the response is started
+        and returns headers modified for the given environment.  It returns a
+        copy of the headers from the response with some modifications applied
+        if necessary.
+
+        For example the location header (if present) is joined with the root
+        URL of the environment.  Also the content length is automatically set
+        to zero here for certain status codes.
+
+        .. versionchanged:: 0.6
+           Previously that function was called `fix_headers` and modified
+           the response object in place.
+
+        :param environ: the WSGI environment of the request.
+        :return: returns a new :class:`Headers` object.
+        """
+        headers = Headers(self.headers)
+        location = headers.get('location')
+        if location is not None:
+            headers['Location'] = urlparse.urljoin(
+                get_current_url(environ, root_only=True),
+                location
+            )
+        if 100 <= self.status_code < 200 or self.status_code == 204:
+            headers['Content-Length'] = '0'
+        elif self.status_code == 304:
+            remove_entity_headers(headers)
+        return headers
+
+    def get_app_iter(self, environ):
+        """Returns the application iterator for the given environ.  Depending
+        on the request method and the current status code the return value
+        might be an empty response rather than the one from the response.
+
+        If the request method is `HEAD` or the status code is in a range
+        where the HTTP specification requires an empty response, an empty
+        iterable is returned.
+
+        .. versionadded:: 0.6
+
+        :param environ: the WSGI environment of the request.
+        :return: a response iterable.
+        """
+        if environ['REQUEST_METHOD'] == 'HEAD' or \
+           100 <= self.status_code < 200 or self.status_code in (204, 304):
+            return ()
+        if self.direct_passthrough:
+            return self.response
+        return self.iter_encoded()
+
+    def get_wsgi_response(self, environ):
+        """Returns the final WSGI response as tuple.  The first item in
+        the tuple is the application iterator, the second the status and
+        the first the list of headers.  The response returned is created
+        specially for the given environment.  For example if the request
+        method in the WSGI environment is ``'HEAD'`` the response will
+        be empty and only the headers and status code will be present.
+
+        .. versionadded:: 0.6
+
+        :param environ: the WSGI environment of the request.
+        :return: a ``(app_iter, status, headers)`` tuple.
+        """
+        # XXX: code for backwards compatibility with custom fix_headers
+        # methods.
+        if self.fix_headers.func_code is not \
+           BaseResponse.fix_headers.func_code:
+            from warnings import warn
+            warn(DeprecationWarning('fix_headers changed behavior in 0.6 '
+                                    'and is now called get_wsgi_headers. '
+                                    'See documentation for more details.'),
+                 stacklevel=2)
+            self.fix_headers(environ)
+            headers = self.headers
+        else:
+            headers = self.get_wsgi_headers(environ)
+        app_iter = self.get_app_iter(environ)
+        return app_iter, self.status, headers.to_list(self.charset)
+
     def __call__(self, environ, start_response):
         """Process this response as WSGI application.
 
         :param environ: the WSGI environment.
         :param start_response: the response callable provided by the WSGI
                                server.
+        :return: an application iterator
         """
-        self.fix_headers(environ)
-        if environ['REQUEST_METHOD'] == 'HEAD':
-            resp = ()
-        elif 100 <= self.status_code < 200 or self.status_code in (204, 304):
-            # no response for 204/304.  the headers are adapted accordingly
-            # by fix_headers()
-            resp = ()
-        elif self.direct_passthrough:
-            resp = self.response
-        else:
-            resp = self.iter_encoded()
-        start_response(self.status, self.header_list)
-        return resp
+        app_iter, status, headers = self.get_wsgi_response(environ)
+        start_response(status, headers)
+        return app_iter
 
 
 class AcceptMixin(object):

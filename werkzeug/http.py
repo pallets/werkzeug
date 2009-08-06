@@ -204,6 +204,9 @@ def parse_options_header(value):
             yield value.strip()
             string = string[end:]
 
+    if not value:
+        return '', {}
+
     parts = _tokenize(';' + value)
     name = parts.next()
     extra = {}

@@ -548,7 +548,10 @@ class Headers(object):
             _list = []
         self._list = _list
         if defaults is not None:
-            self.extend(defaults)
+            if isinstance(defaults, (list, Headers)):
+                self._list.extend(defaults)
+            else:
+                self.extend(defaults)
 
     @classmethod
     def linked(cls, headerlist):
