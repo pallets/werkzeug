@@ -1,9 +1,51 @@
 # -*- coding: utf-8 -*-
+"""
+    werkzeug.formparser test
+    ~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Tests the form parsing capabilties.  Some of them are also tested from
+    the wrappers.
+
+    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :license: BSD, see LICENSE for more details.
+"""
 from nose.tools import assert_raises
 from os.path import join, dirname, abspath
 from cStringIO import StringIO
-from werkzeug import Client, Request, Response
+
+from werkzeug import Client, Request, Response, parse_form_data, \
+     create_environ, FileStorage
 from werkzeug.exceptions import RequestEntityTooLarge
+
+
+def test_parse_form_data_put_without_content():
+    """A PUT without a Content-Type header returns empty data
+
+    Both rfc1945 and rfc2616 (1.0 and 1.1) say "Any HTTP/[1.0/1.1] message
+    containing an entity-body SHOULD include a Content-Type header field
+    defining the media type of that body."  In the case where either
+    headers are omitted, parse_form_data should still work.
+    """
+    env = create_environ('/foo', 'http://example.org/', method='PUT')
+    del env['CONTENT_TYPE']
+    del env['CONTENT_LENGTH']
+
+    stream, form, files = parse_form_data(env)
+    assert stream.read() == ""
+    assert len(form) == 0
+    assert len(files) == 0
+
+
+def test_parse_form_data_get_without_content():
+    """GET requests without data, content type and length returns no data"""
+    env = create_environ('/foo', 'http://example.org/', method='GET')
+    del env['CONTENT_TYPE']
+    del env['CONTENT_LENGTH']
+
+    stream, form, files = parse_form_data(env)
+    assert stream.read() == ""
+    assert len(form) == 0
+    assert len(files) == 0
 
 
 @Request.application

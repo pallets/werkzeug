@@ -1,8 +1,20 @@
 # -*- coding: utf-8 -*-
 from copy import copy
 
+from cStringIO import StringIO
 from nose.tools import assert_raises
-from werkzeug.datastructures import *
+from werkzeug.datastructures import FileStorage, MultiDict, \
+     ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
+     ImmutableDict, Headers
+
+
+def test_file_storage_truthiness():
+    """Test FileStorage truthiness"""
+    fs = FileStorage()
+    assert not fs, 'should be False'
+
+    fs = FileStorage(StringIO('Hello World'), filename='foo.txt')
+    assert fs, 'should be True because of a provided filename'
 
 
 def test_multidict():

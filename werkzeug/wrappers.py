@@ -23,17 +23,18 @@
 import tempfile
 import urlparse
 from datetime import datetime, timedelta
+
 from werkzeug.http import HTTP_STATUS_CODES, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     default_stream_factory, parse_options_header, \
-     dump_options_header
+     parse_options_header, dump_options_header
 from werkzeug.urls import url_decode
+from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      get_host, cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, parse_form_data, get_content_type, get_current_url
+     header_property, get_content_type, get_current_url
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \

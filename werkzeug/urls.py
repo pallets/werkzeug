@@ -283,5 +283,5 @@ class Href(object):
         return str(rv)
 
 
-# imported here for circular dependencies
+# circular dependencies
 from werkzeug.datastructures import MultiDict

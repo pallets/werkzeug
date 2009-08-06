@@ -22,7 +22,7 @@ from time import time, mktime
 from datetime import datetime, timedelta
 
 from werkzeug._internal import _patch_wrapper, _decode_unicode, \
-     _empty_stream, _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
+     _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
      _DictAccessorProperty, _dump_date, _parse_signature, _missing
 
 
@@ -31,75 +31,6 @@ _entity_re = re.compile(r'&([^;]+);')
 _filename_ascii_strip_re = re.compile(r'[^A-Za-z0-9_.-]')
 _windows_device_files = ('CON', 'AUX', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1',
                          'LPT2', 'LPT3', 'PRN', 'NUL')
-
-
-class FileStorage(object):
-    """The :class:`FileStorage` class is a thin wrapper over incoming files.
-    It is used by the request object to represent uploaded files.  All the
-    attributes of the wrapper stream are proxied by the file storage so
-    it's possible to do ``storage.read()`` instead of the long form
-    ``storage.stream.read()``.
-    """
-
-    def __init__(self, stream=None, filename=None, name=None,
-                 content_type='application/octet-stream', content_length=-1,
-                 headers=None):
-        self.name = name
-        self.stream = stream or _empty_stream
-        self.filename = filename or getattr(stream, 'name', None)
-        self.content_type = content_type
-        self.content_length = content_length
-        if headers is None:
-            headers = Headers()
-        self.headers = headers
-
-    def save(self, dst, buffer_size=16384):
-        """Save the file to a destination path or file object.  If the
-        destination is a file object you have to close it yourself after the
-        call.  The buffer size is the number of bytes held in memory during
-        the copy process.  It defaults to 16KB.
-
-        For secure file saving also have a look at :func:`secure_filename`.
-
-        :param dst: a filename or open file object the uploaded file
-                    is saved to.
-        :param buffer_size: the size of the buffer.  This works the same as
-                            the `length` parameter of
-                            :func:`shutil.copyfileobj`.
-        """
-        from shutil import copyfileobj
-        close_dst = False
-        if isinstance(dst, basestring):
-            dst = file(dst, 'wb')
-            close_dst = True
-        try:
-            copyfileobj(self.stream, dst, buffer_size)
-        finally:
-            if close_dst:
-                dst.close()
-
-    def close(self):
-        """Close the underlaying file if possible."""
-        try:
-            self.stream.close()
-        except:
-            pass
-
-    def __nonzero__(self):
-        return bool(self.filename)
-
-    def __getattr__(self, name):
-        return getattr(self.stream, name)
-
-    def __iter__(self):
-        return iter(self.readline, '')
-
-    def __repr__(self):
-        return '<%s: %r (%r)>' % (
-            self.__class__.__name__,
-            self.filename,
-            self.content_type
-        )
 
 
 class SharedDataMiddleware(object):
@@ -782,94 +713,6 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     return ''.join(tmp)
 
 
-def parse_form_data(environ, stream_factory=None, charset='utf-8',
-                    errors='ignore', max_form_memory_size=None,
-                    max_content_length=None, cls=None,
-                    silent=True):
-    """Parse the form data in the environ and return it as tuple in the form
-    ``(stream, form, files)``.  You should only call this method if the
-    transport method is `POST` or `PUT`.
-
-    If the mimetype of the data transmitted is `multipart/form-data` the
-    files multidict will be filled with `FileStorage` objects.  If the
-    mimetype is unknown the input stream is wrapped and returned as first
-    argument, else the stream is empty.
-
-    This function does not raise exceptions, even if the input data is
-    malformed.
-
-    Have a look at :ref:`dealing-with-request-data` for more details.
-
-    .. versionadded:: 0.5
-       The `max_form_memory_size`, `max_content_length` and
-       `cls` parameters were added.
-
-    .. versionadded:: 0.5.1
-       The optional `silent` flag was added.
-
-    :param environ: the WSGI environment to be used for parsing.
-    :param stream_factory: An optional callable that returns a new read and
-                           writeable file descriptor.  This callable works
-                           the same as :meth:`~BaseResponse._get_file_stream`.
-    :param charset: The character set for URL and url encoded form data.
-    :param errors: The encoding error behavior.
-    :param max_form_memory_size: the maximum number of bytes to be accepted for
-                           in-memory stored form data.  If the data
-                           exceeds the value specified an
-                           :exc:`~exceptions.RequestURITooLarge`
-                           exception is raised.
-    :param max_content_length: If this is provided and the transmitted data
-                               is longer than this value an
-                               :exc:`~exceptions.RequestEntityTooLarge`
-                               exception is raised.
-    :param cls: an optional dict class to use.  If this is not specified
-                       or `None` the default :class:`MultiDict` is used.
-    :param silent: If set to False parsing errors will not be caught.
-    :return: A tuple in the form ``(stream, form, files)``.
-    """
-    content_type, extra = parse_options_header(environ.get('CONTENT_TYPE', ''))
-    try:
-        content_length = int(environ['CONTENT_LENGTH'])
-    except (KeyError, ValueError):
-        content_length = 0
-
-    if cls is None:
-        cls = MultiDict
-
-    if max_content_length is not None and content_length > max_content_length:
-        raise RequestEntityTooLarge()
-
-    stream = _empty_stream
-    files = ()
-
-    if content_type == 'multipart/form-data':
-        try:
-            form, files = parse_multipart(environ['wsgi.input'],
-                                          extra.get('boundary'),
-                                          content_length, stream_factory,
-                                          charset, errors,
-                                          max_form_memory_size=max_form_memory_size)
-        except ValueError, e:
-            if not silent:
-                raise
-            form = cls()
-        else:
-            form = cls(form)
-    elif content_type == 'application/x-www-form-urlencoded' or \
-         content_type == 'application/x-url-encoded':
-        if max_form_memory_size is not None and \
-           content_length > max_form_memory_size:
-            raise RequestEntityTooLarge()
-        from werkzeug.urls import url_decode
-        form = url_decode(environ['wsgi.input'].read(content_length),
-                          charset, errors=errors, cls=cls)
-    else:
-        form = cls()
-        stream = LimitedStream(environ['wsgi.input'], content_length)
-
-    return stream, form, cls(files)
-
-
 def get_content_type(mimetype, charset):
     """Return the full content type string with charset for a mimetype.
 
@@ -1422,10 +1265,10 @@ class ArgumentValidationError(ValueError):
 
 
 # circular dependency fun
-from werkzeug.http import parse_multipart, parse_options_header, \
-     is_resource_modified, quote_header_value, unquote_header_value
-from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
-from werkzeug.datastructures import MultiDict, TypeConversionDict
+from werkzeug.http import is_resource_modified, quote_header_value, \
+     unquote_header_value
+from werkzeug.exceptions import BadRequest
+from werkzeug.datastructures import TypeConversionDict
 
 
 # DEPRECATED

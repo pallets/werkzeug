@@ -11,7 +11,8 @@
 import re
 import codecs
 import mimetypes
-from werkzeug._internal import _proxy_repr, _missing
+
+from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -1086,7 +1087,6 @@ class FileMultiDict(MultiDict):
         :param filename: an optional filename
         :param content_type: an optional content type
         """
-        from werkzeug.utils import FileStorage
         if isinstance(file, FileStorage):
             self[name] = file
             return
@@ -1915,6 +1915,75 @@ class WWWAuthenticate(UpdateDictMixin, dict):
     # `WWWAuthenticate` can use it for new properties.
     auth_property = staticmethod(auth_property)
     del _set_property
+
+
+class FileStorage(object):
+    """The :class:`FileStorage` class is a thin wrapper over incoming files.
+    It is used by the request object to represent uploaded files.  All the
+    attributes of the wrapper stream are proxied by the file storage so
+    it's possible to do ``storage.read()`` instead of the long form
+    ``storage.stream.read()``.
+    """
+
+    def __init__(self, stream=None, filename=None, name=None,
+                 content_type='application/octet-stream', content_length=-1,
+                 headers=None):
+        self.name = name
+        self.stream = stream or _empty_stream
+        self.filename = filename or getattr(stream, 'name', None)
+        self.content_type = content_type
+        self.content_length = content_length
+        if headers is None:
+            headers = Headers()
+        self.headers = headers
+
+    def save(self, dst, buffer_size=16384):
+        """Save the file to a destination path or file object.  If the
+        destination is a file object you have to close it yourself after the
+        call.  The buffer size is the number of bytes held in memory during
+        the copy process.  It defaults to 16KB.
+
+        For secure file saving also have a look at :func:`secure_filename`.
+
+        :param dst: a filename or open file object the uploaded file
+                    is saved to.
+        :param buffer_size: the size of the buffer.  This works the same as
+                            the `length` parameter of
+                            :func:`shutil.copyfileobj`.
+        """
+        from shutil import copyfileobj
+        close_dst = False
+        if isinstance(dst, basestring):
+            dst = file(dst, 'wb')
+            close_dst = True
+        try:
+            copyfileobj(self.stream, dst, buffer_size)
+        finally:
+            if close_dst:
+                dst.close()
+
+    def close(self):
+        """Close the underlaying file if possible."""
+        try:
+            self.stream.close()
+        except:
+            pass
+
+    def __nonzero__(self):
+        return bool(self.filename)
+
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+    def __iter__(self):
+        return iter(self.readline, '')
+
+    def __repr__(self):
+        return '<%s: %r (%r)>' % (
+            self.__class__.__name__,
+            self.filename,
+            self.content_type
+        )
 
 
 # circular dependencies

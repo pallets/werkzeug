@@ -284,36 +284,6 @@ def test_validate_arguments():
            validate_arguments, take_none, (), {'a': 1}, drop_extra=False)
 
 
-def test_parse_form_data_put_without_content():
-    """A PUT without a Content-Type header returns empty data
-
-    Both rfc1945 and rfc2616 (1.0 and 1.1) say "Any HTTP/[1.0/1.1] message
-    containing an entity-body SHOULD include a Content-Type header field
-    defining the media type of that body."  In the case where either
-    headers are omitted, parse_form_data should still work.
-    """
-    env = create_environ('/foo', 'http://example.org/', method='PUT')
-    del env['CONTENT_TYPE']
-    del env['CONTENT_LENGTH']
-
-    stream, form, files = parse_form_data(env)
-    assert stream.read() == ""
-    assert len(form) == 0
-    assert len(files) == 0
-
-
-def test_parse_form_data_get_without_content():
-    """GET requests without data, content type and length returns no data"""
-    env = create_environ('/foo', 'http://example.org/', method='GET')
-    del env['CONTENT_TYPE']
-    del env['CONTENT_LENGTH']
-
-    stream, form, files = parse_form_data(env)
-    assert stream.read() == ""
-    assert len(form) == 0
-    assert len(files) == 0
-
-
 def test_header_set_duplication_bug():
     """Header duplication bug on set"""
     from werkzeug.datastructures import Headers
@@ -414,12 +384,3 @@ def test_limited_stream():
     assert stream.read(1) == '2'
     assert stream.read() == '3'
     assert stream.read() == ''
-
-
-def test_file_storage_truthiness():
-    """Test FileStorage truthiness"""
-    fs = FileStorage()
-    assert not fs, 'should be False'
-
-    fs = FileStorage(StringIO('Hello World'), filename='foo.txt')
-    assert fs, 'should be True because of a provided filename'
