@@ -1155,6 +1155,10 @@ def secure_filename(filename):
     >>> secure_filename(u'i contain cool \xfcml\xe4uts.txt')
     'i_contain_cool_umlauts.txt'
 
+    The function might return an empty filename.  It's your responsibility
+    to ensure that the filename is unique and that you generate random
+    filename if the function returned an empty one.
+
     .. versionadded:: 0.5
 
     :param filename: the filename to secure
@@ -1171,9 +1175,9 @@ def secure_filename(filename):
     # on nt a couple of special files are present in each folder.  We
     # have to ensure that the target file is not such a filename.  In
     # this case we prepend an underline
-    if os.name == 'nt':
-        if filename.split('.')[0].upper() in _windows_device_files:
-            filename = '_' + filename
+    if os.name == 'nt' and filename and \
+       filename.split('.')[0].upper() in _windows_device_files:
+        filename = '_' + filename
 
     return filename
 
