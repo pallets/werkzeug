@@ -15,6 +15,13 @@ Version 0.6
 - :meth:`routing.Map.bind_to_environ` raises a more correct error message
   now if the map was bound to an invalid WSGI environment.
 - added support for SSL to the builtin development server.
+- Response objects are no longer modified in place when they are evaluated
+  as WSGI applications.  For backwards compatibility the `fix_headers`
+  function is still called until in Werkzeug 0.6 if it was overridden.
+  You should however change your application to use `get_wsgi_headers` if
+  you need header modifications before responses are sent.
+- :func:`append_slash_redirect` no longer requires the QUERY_STRING to be
+  in the WSGI environment.
 
 Version 0.5.1
 -------------
