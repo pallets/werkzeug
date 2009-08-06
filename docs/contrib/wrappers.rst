@@ -15,3 +15,9 @@ Extra Wrappers
 
 .. autoclass:: ReverseSlashBehaviorRequestMixin
    :members:
+
+.. autoclass:: DynamicCharsetRequestMixin
+   :members:
+
+.. autoclass:: DynamicCharsetResponseMixin
+   :members:
