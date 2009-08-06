@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from werkzeug.contrib import wrappers
-from werkzeug import Request, routing
+from werkzeug import Request, Response, routing
 
 
 def test_reverse_slash_behavior():
@@ -18,3 +20,27 @@ def test_reverse_slash_behavior():
     assert adapter.match() == ('foo', {})
     adapter = map.bind(req.host, req.script_root)
     assert adapter.match(req.path) == ('foo', {})
+
+
+def test_dynamic_charset_response_mixin():
+    """Test DynamicCharsetResponseMixin"""
+    class MyResponse(wrappers.DynamicCharsetResponseMixin, Response):
+        default_charset = 'utf-7'
+    resp = MyResponse(mimetype='text/html')
+    assert resp.charset == 'utf-7'
+    resp.charset = 'utf-8'
+    assert resp.charset == 'utf-8'
+    assert resp.mimetype == 'text/html'
+    assert resp.mimetype_params == {'charset': 'utf-8'}
+    resp.mimetype_params['charset'] = 'iso-8859-15'
+    assert resp.charset == 'iso-8859-15'
+    resp.data = u'Hällo Wörld'
+    assert ''.join(resp.iter_encoded()) == \
+           u'Hällo Wörld'.encode('iso-8859-15')
+    del resp.headers['content-type']
+    try:
+        resp.charset = 'utf-8'
+    except TypeError, e:
+        pass
+    else:
+        assert False, 'expected type error on charset setting without ct'
