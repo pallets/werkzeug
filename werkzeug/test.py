@@ -22,7 +22,7 @@ from urllib2 import Request as U2Request
 from werkzeug._internal import _empty_stream
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode
-from werkzeug.utils import get_host, get_current_url
+from werkzeug.wsgi import get_host, get_current_url
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers, FileStorage
 

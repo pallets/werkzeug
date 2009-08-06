@@ -49,7 +49,6 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 import werkzeug
 from werkzeug._internal import _log
-from werkzeug.utils import responder
 from werkzeug.exceptions import InternalServerError
 
 

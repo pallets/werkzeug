@@ -62,8 +62,7 @@ except ImportError:
     from sha import new as sha1
 from cPickle import dump, load, HIGHEST_PROTOCOL
 
-from werkzeug.utils import ClosingIterator, dump_cookie, parse_cookie
-from werkzeug.datastructures import CallbackDict
+from werkzeug import ClosingIterator, dump_cookie, parse_cookie, CallbackDict
 
 
 _sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')

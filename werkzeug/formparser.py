@@ -340,7 +340,7 @@ def parse_multipart_headers(iterable):
 
 # circurlar dependencies
 from werkzeug.urls import url_decode
-from werkzeug.utils import LimitedStream, make_line_iter
+from werkzeug.wsgi import LimitedStream, make_line_iter
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import Headers, FileStorage, MultiDict
 from werkzeug.http import parse_options_header

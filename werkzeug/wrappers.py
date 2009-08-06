@@ -33,8 +33,9 @@ from werkzeug.http import HTTP_STATUS_CODES, \
 from werkzeug.urls import url_decode
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
-     get_host, cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, get_content_type, get_current_url
+     cookie_date, parse_cookie, dump_cookie, http_date, escape, \
+     header_property, get_content_type
+from werkzeug.wsgi import get_current_url, get_host
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \

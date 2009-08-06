@@ -13,17 +13,8 @@
     :license: BSD, see LICENSE for more details.
 """
 from warnings import warn
-from werkzeug.utils import LimitedStream as LimitedStreamBase
 
-
-class _SilentLimitedStream(LimitedStreamBase):
-
-    def __init__(self, environ, limit):
-        LimitedStreamBase.__init__(self,
-            environ['wsgi.input'],
-            min(limit, int(environ.get('CONTENT_LENGTH') or 0)),
-            silent=True
-        )
+from werkzeug import LimitedStream
 
 
 class StreamLimitMiddleware(object):
@@ -40,5 +31,6 @@ class StreamLimitMiddleware(object):
         self.maximum_size = maximum_size
 
     def __call__(self, environ, start_response):
-        environ['wsgi.input'] = _SilentLimitedStream(environ, self.maximum_size)
+        limit = min(limit, int(environ.get('CONTENT_LENGTH') or 0))
+        environ['wsgi.input'] = LimitedStream(environ['wsgi.input'], limit)
         return self.app(environ, start_response)

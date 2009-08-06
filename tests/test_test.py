@@ -16,10 +16,12 @@
 import sys
 from cStringIO import StringIO
 from nose.tools import assert_raises, raises
+
 from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ, \
     ClientRedirectError
-from werkzeug.utils import redirect, get_host
+from werkzeug.utils import redirect
+from werkzeug.wsgi import get_host
 from werkzeug.datastructures import Headers
 
 

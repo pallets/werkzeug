@@ -78,7 +78,8 @@ try:
     from thread import get_ident as get_current_thread, allocate_lock
 except ImportError:
     from dummy_thread import get_ident as get_current_thread, allocate_lock
-from werkzeug.utils import ClosingIterator
+
+from werkzeug.wsgi import ClosingIterator
 from werkzeug._internal import _patch_wrapper
 
 
