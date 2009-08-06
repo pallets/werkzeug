@@ -797,7 +797,7 @@ class BaseResponse(object):
         .. versionadded:: 0.6
 
         :param environ: the WSGI environment of the request.
-        :return: a ``(app_iter, status, headers)`` tuple.
+        :return: an ``(app_iter, status, headers)`` tuple.
         """
         # XXX: code for backwards compatibility with custom fix_headers
         # methods.
