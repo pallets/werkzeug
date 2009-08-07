@@ -189,7 +189,15 @@ def iter_sys_path():
 
 
 def test_app(environ, start_response):
-    """Simple test application that dumps the environment."""
+    """Simple test application that dumps the environment.  You can use
+    it to check if Werkzeug is working properly:
+
+    .. sourcecode:: pycon
+
+        >>> from werkzeug import run_simple, test_app
+        >>> run_simple('localhost', 3000, test_app)
+         * Running on http://localhost:3000/
+    """
     req = Request(environ, populate_request=False)
     if req.args.get('resource') == 'logo':
         response = logo

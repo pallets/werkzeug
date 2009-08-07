@@ -112,6 +112,11 @@ def dump_header(iterable, allow_token=True):
     :func:`parse_dict_header`.  This also quotes strings that include an
     equals sign unless you pass it as dict of key, value pairs.
 
+    >>> dump_header({'foo': 'bar baz'})
+    'foo="bar baz"'
+    >>> dump_header(('foo', 'bar baz'))
+    'foo, "bar baz"'
+
     :param iterable: the iterable or dict of values to quote.
     :param allow_token: if set to `False` tokens as values are disallowed.
                         See :func:`quote_header_value` for more details.
@@ -140,8 +145,19 @@ def parse_list_header(value):
     contain a comma.  A non-quoted string could have quotes in the
     middle.  Quotes are removed automatically after parsing.
 
+    It basically works like :func:`parse_set_header` just that items
+    may appear multiple times and case sensitivity is preserved.
+
+    The return value is a standard :class:`list`:
+
+    >>> parse_list_header('token, "quoted value"')
+    ['token', 'quoted value']
+
+    To create a header from the :class:`list` again, use the
+    :func:`dump_header` function.
+
     :param value: a string with a list header.
-    :return: list
+    :return: :class:`list`
     """
     result = []
     for item in _parse_list_header(value):
@@ -153,11 +169,24 @@ def parse_list_header(value):
 
 def parse_dict_header(value):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
-    convert them into a python dict.  If there is no value for a key it will
-    be `None`.
+    convert them into a python dict:
+
+    >>> d = parse_dict_header('foo="is a fish", bar="as well"')
+    >>> type(d) is dict
+    True
+    >>> sorted(d.items())
+    [('bar', 'as well'), ('foo', 'is a fish')]
+
+    If there is no value for a key it will be `None`:
+
+    >>> parse_dict_header('key_without_value')
+    {'key_without_value': None}
+
+    To create a header from the :class:`dict` again, use the
+    :func:`dump_header` function.
 
     :param value: a string with a dict header.
-    :return: dict
+    :return: :class:`dict`
     """
     result = {}
     for item in _parse_list_header(value):
@@ -271,9 +300,22 @@ def parse_cache_control_header(value, on_update=None, cls=None):
 
 
 def parse_set_header(value, on_update=None):
-    """Parse a set-like header and return a :class:`HeaderSet` object.  The
-    return value is an object that treats the items case-insensitively and
-    keeps the order of the items.
+    """Parse a set-like header and return a :class:`HeaderSet` object:
+
+    >>> hs = parse_set_header('token, "quoted value"')
+
+    The return value is an object that treats the items case-insensitively
+    and keeps the order of the items:
+
+    >>> 'TOKEN' in hs
+    True
+    >>> hs.index('quoted value')
+    1
+    >>> hs
+    HeaderSet(['token', 'quoted value'])
+
+    To create a header from the :class:`HeaderSet` again, use the
+    :func:`dump_header` function.
 
     :param value: a set header to be parsed.
     :param on_update: an optional callable that is called every time a

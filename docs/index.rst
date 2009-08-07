@@ -43,10 +43,13 @@ Reference
    wrappers
    routing
    local
+   wsgi
+   http
    utils
    datastructures
    templates
    exceptions
+   middlewares
 
 Deployment
 ----------

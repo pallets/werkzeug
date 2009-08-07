@@ -97,7 +97,7 @@ This however does *not* affect in-memory stored files if the
 How to extend Parsing?
 ----------------------
 
-Modern web applications transmit a lot more than multipart form data
+Modern web applications transmit a lot more than multipart form data or
 url encoded data.  Extending the parsing capabilities by subclassing
 the :class:`BaseRequest` is simple.  The following example implements
 parsing for incoming JSON data::

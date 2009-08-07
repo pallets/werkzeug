@@ -36,6 +36,8 @@ General Purpose
 .. autoclass:: FileMultiDict
    :members:
 
+.. _http-datastructures:
+
 HTTP Related
 ============
 
