@@ -40,9 +40,8 @@ in test functionality.
 200
 >>> resp.headers
 Headers([('Content-Type', 'text/html; charset=utf-8')])
->>> resp.data.splitlines()[:2]
-['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
- '  "http://www.w3.org/TR/html4/loose.dtd">']
+>>> resp.data.splitlines()[0]
+'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
 
 Or without a wrapper defined:
 
@@ -52,9 +51,8 @@ Or without a wrapper defined:
 '200 OK'
 >>> headers
 [('Content-Type', 'text/html; charset=utf-8')]
->>> ''.join(app_iter).splitlines()[:2]
-['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"',
- '  "http://www.w3.org/TR/html4/loose.dtd">']
+>>> ''.join(app_iter).splitlines()[0]
+'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
 
 
 Environment Building

@@ -4,6 +4,10 @@ Sessions
 
 .. automodule:: werkzeug.contrib.sessions
 
+.. testsetup::
+
+   from werkzeug.contrib.sessions import *
+
 Reference
 =========
 

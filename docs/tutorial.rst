@@ -375,31 +375,39 @@ module::
 Once that is done we can use ``python manage.py initdb`` to initialize the
 database and play around with the stuff using ``python manage.py shell``:
 
->>> from shorty.models import session, URL
+.. sourcecode:: pycon
+
+   >>> from shorty.models import session, URL
 
 Now we can add some URLs to the database:
 
->>> urls = [URL('http://example.org/'), URL('http://localhost:5000/')]
->>> URL.query.all()
-[]
->>> session.commit()
->>> URL.query.all()
-[<URL '5cFbsk'>, <URL 'mpugsT'>]
+.. sourcecode:: pycon
+
+   >>> urls = [URL('http://example.org/'), URL('http://localhost:5000/')]
+   >>> URL.query.all()
+   []
+   >>> session.commit()
+   >>> URL.query.all()
+   [<URL '5cFbsk'>, <URL 'mpugsT'>]
 
 As you can see we have to commit in order to send the urls to the database.
 Let's create a private item with a custom uid:
 
->>> URL('http://werkzeug.pocoo.org/', False, 'werkzeug-webpage')
->>> session.commit()
+.. sourcecode:: pycon
+
+   >>> URL('http://werkzeug.pocoo.org/', False, 'werkzeug-webpage')
+   >>> session.commit()
 
 And query them all:
 
->>> URL.query.filter_by(public=False).all()
-[<URL 'werkzeug-webpage'>]
->>> URL.query.filter_by(public=True).all()
-[<URL '5cFbsk'>, <URL 'mpugsT'>]
->>> URL.query.get('werkzeug-webpage')
-<URL 'werkzeug-webpage'>
+.. sourcecode:: pycon
+
+   >>> URL.query.filter_by(public=False).all()
+   [<URL 'werkzeug-webpage'>]
+   >>> URL.query.filter_by(public=True).all()
+   [<URL '5cFbsk'>, <URL 'mpugsT'>]
+   >>> URL.query.get('werkzeug-webpage')
+   <URL 'werkzeug-webpage'>
 
 Now that we have some data in the database and we are somewhat familiar with
 the way SQLAlchemy works, it's time to create our views.

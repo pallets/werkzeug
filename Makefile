@@ -9,13 +9,11 @@
 #
 
 TESTS = \
-	werkzeug \
 	tests \
 	tests/contrib
 
 TEST_OPTIONS = \
 	-v \
-	--with-doctest \
 	-e '^test_app$$' #skip the test_app application object which is not a test
 
 documentation:
@@ -23,3 +21,6 @@ documentation:
 
 test:
 	@(nosetests $(TEST_OPTIONS) $(TESTS))
+
+doctest:
+	@(cd docs; sphinx-build -b doctest . _build/doctest)

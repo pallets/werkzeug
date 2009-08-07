@@ -6,6 +6,10 @@ URL Routing
 
 .. module:: werkzeug.routing
 
+.. testsetup::
+
+   from werkzeug.routing import *
+
 When it comes to combining multiple controller or view functions (however
 you want to call them), you need a dispatcher.  A simple way would be
 applying regular expression tests on ``PATH_INFO`` and call registered
