@@ -197,6 +197,9 @@ def test_app(environ, start_response):
         >>> from werkzeug import run_simple, test_app
         >>> run_simple('localhost', 3000, test_app)
          * Running on http://localhost:3000/
+    
+    The application displays important information from the WSGI environment,
+    the Python interpreter and the installed libraries.
     """
     req = Request(environ, populate_request=False)
     if req.args.get('resource') == 'logo':

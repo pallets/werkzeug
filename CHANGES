@@ -26,6 +26,7 @@ Version 0.6
 - added :class:`~werkzeug.contrib.wrappers.DynamicCharsetRequestMixin`
 - added :attr:`BaseRequest.url_charset`
 - request and response objects have a default `__repr__` now.
+- builtin data structures are pickleable now.
 
 Version 0.5.1
 -------------

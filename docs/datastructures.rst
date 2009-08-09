@@ -13,6 +13,12 @@ You can import all these objects directly from :mod:`werkzeug`.
 General Purpose
 ===============
 
+.. versionchanged:: 0.6
+   The general purpose classes are now pickleble in each protocol as long
+   as the contained objects are pickleable.  This means that the
+   :class:`FileMultiDict` won't be pickleable as soon as it contains a
+   file.
+
 .. autoclass:: TypeConversionDict
    :members:
 

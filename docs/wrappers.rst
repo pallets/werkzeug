@@ -1,14 +1,14 @@
 .. _wrappers:
 
-========
-Wrappers
-========
+==========================
+Request / Response Objects
+==========================
 
 .. module:: werkzeug
 
-You can import all these objects directly from :mod:`werkzeug`.  Wrappers wrap
-the WSGI environment or the return value from a WSGI application so that it
-is another WSGI application (wraps a whole application).
+You can import all these objects directly from :mod:`werkzeug`.  The request
+and response objects wrap the WSGI environment or the return value from a WSGI
+application so that it is another WSGI application (wraps a whole application).
 
 How they Work
 =============

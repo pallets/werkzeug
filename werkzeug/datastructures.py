@@ -33,6 +33,9 @@ class ImmutableListMixin(object):
     # this class is public
     __module__ = 'werkzeug'
 
+    def __reduce_ex__(self, protocol):
+        return type(self), (list(self),)
+
     def __delitem__(self, key):
         is_immutable(self)
 
@@ -91,6 +94,9 @@ class ImmutableDictMixin(object):
     :private:
     """
 
+    def __reduce_ex__(self, protocol):
+        return type(self), (dict(self),)
+
     def setdefault(self, key, default=None):
         is_immutable(self)
 
@@ -120,6 +126,9 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
 
     :private:
     """
+
+    def __reduce_ex__(self, protocol):
+        return type(self), (self.items(multi=True),)
 
     def popitemlist(self):
         is_immutable(self)
@@ -291,6 +300,13 @@ class MultiDict(TypeConversionDict):
             for key, value in mapping or ():
                 tmp.setdefault(key, []).append(value)
             dict.__init__(self, tmp)
+
+    def __getstate__(self):
+        return dict(self.lists())
+
+    def __setstate__(self, value):
+        dict.clear(self)
+        dict.update(self, value)
 
     def __getitem__(self, key):
         """Return the first data value for this key;
@@ -988,6 +1004,9 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
 
     # this class is public
     __module__ = 'werkzeug'
+
+    def __reduce_ex__(self, protocol):
+        return type(self), (self.dicts,)
 
     def __init__(self, dicts=None):
         self.dicts = dicts or []

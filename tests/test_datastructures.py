@@ -1,11 +1,60 @@
 # -*- coding: utf-8 -*-
 from copy import copy
+import pickle
 
 from cStringIO import StringIO
 from nose.tools import assert_raises
 from werkzeug.datastructures import FileStorage, MultiDict, \
      ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
-     ImmutableDict, Headers
+     ImmutableDict, Headers, ImmutableList
+
+
+def test_multidict_pickle():
+    """MultiDict types are pickle-able"""
+    for protocol in xrange(pickle.HIGHEST_PROTOCOL + 1):
+        print 'pickling protocol', protocol
+        d = MultiDict()
+        d.setlist('foo', [1, 2, 3, 4])
+        d.setlist('bar', 'foo bar baz'.split())
+        s = pickle.dumps(d, protocol)
+        ud = pickle.loads(s)
+        assert type(ud) is type(d)
+        print ud.lists()
+        assert ud == d
+        ud['newkey'] = 'bla'
+        assert ud != d
+
+        im = ImmutableMultiDict(d)
+        assert im == d
+        s = pickle.dumps(im, protocol)
+        ud = pickle.loads(s)
+        assert ud == im
+        assert type(ud) is type(im)
+
+        c = CombinedMultiDict([ud, im])
+        cc = pickle.loads(pickle.dumps(c, protocol))
+        assert c == cc
+        assert type(c) is type(cc)
+
+
+def test_immutable_dict_pickle():
+    """ImmutableDicts are pickle-able"""
+    for protocol in xrange(pickle.HIGHEST_PROTOCOL + 1):
+        d = dict(foo="bar", blub="blah", meh=42)
+        for dtype in ImmutableDict, ImmutableTypeConversionDict:
+            nd = dtype(d)
+            od = pickle.loads(pickle.dumps(nd, protocol))
+            assert od == nd
+            assert type(od) is type(nd)
+
+
+def test_immutable_list_pickle():
+    """ImmutableLists are pickle-able"""
+    for protocol in xrange(pickle.HIGHEST_PROTOCOL + 1):
+        l = ImmutableList(range(100))
+        ul = pickle.loads(pickle.dumps(l, protocol))
+        assert l == ul
+        assert type(l) is type(ul)
 
 
 def test_file_storage_truthiness():

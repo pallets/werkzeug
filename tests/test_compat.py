@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import warnings
 from subprocess import Popen, PIPE
 
 
@@ -11,6 +12,13 @@ import werkzeug.%s
 print ':'.join([k[9:] for k, v in sys.modules.iteritems()
                 if v is not None and k.startswith('werkzeug.')])
 '''
+
+
+# ignore some warnings werkzeug emits for backwards compat
+for msg in ['called into deprecated fix_headers',
+            'fix_headers changed behavior']:
+    warnings.filterwarnings('ignore', message=msg,
+                            category=DeprecationWarning)
 
 
 def perform_import(module, allowed):
