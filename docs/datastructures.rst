@@ -14,7 +14,7 @@ General Purpose
 ===============
 
 .. versionchanged:: 0.6
-   The general purpose classes are now pickleble in each protocol as long
+   The general purpose classes are now pickleable in each protocol as long
    as the contained objects are pickleable.  This means that the
    :class:`FileMultiDict` won't be pickleable as soon as it contains a
    file.
