@@ -445,6 +445,9 @@ class FileWrapper(object):
 
     .. versionadded:: 0.5
 
+    If you're using this object together with a :class:`BaseResponse` you have
+    to use the `direct_passthrough` mode.
+
     :param file: a :class:`file`-like object with a :meth:`~file.read` method.
     :param buffer_size: number of bytes for one iteration.
     """
