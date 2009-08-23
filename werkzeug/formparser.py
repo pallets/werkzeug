@@ -266,7 +266,8 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                     try:
                         line = line.decode(transfer_encoding)
                     except:
-                        raise ValueError('could not base 64 decode chunk')
+                        raise ValueError('could not decode transfer '
+                                         'encoded chunk')
 
                 # we have something in the buffer from the last iteration.
                 # this is usually a newline delimiter.

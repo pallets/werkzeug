@@ -29,6 +29,8 @@ Version 0.6
 - builtin data structures are pickleable now.
 - the form data parser decides on the file to use based on the filename
   now not on the content type.  This fixes a bug with Google Chrome.
+- improved performance of `make_line_iter` and the multipart parser
+  for binary uploads.
 
 Version 0.5.1
 -------------

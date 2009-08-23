@@ -500,15 +500,22 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
     buffer = []
     while 1:
         if len(buffer) > 1:
-            yield buffer.pop(0)
+            yield buffer.pop()
             continue
+
+        # we reverse the chunks because popping from the last
+        # position of the list is O(1) and the number of chunks
+        # read will be quite large for binary files.
         chunks = _read(buffer_size).splitlines(True)
+        chunks.reverse()
+
         first_chunk = buffer and buffer[0] or ''
         if chunks:
-            first_chunk += chunks.pop(0)
-        buffer = chunks
+            first_chunk += chunks.pop()
         if not first_chunk:
             return
+
+        buffer = chunks
         yield first_chunk
 
 
@@ -556,7 +563,8 @@ class LimitedStream(object):
     __module__ = 'werkzeug'
 
     def __init__(self, stream, limit, silent=True):
-        self._stream = stream
+        self._read = stream.read
+        self._readline = stream.readline
         self._pos = 0
         self.limit = limit
         self.silent = silent
@@ -605,7 +613,7 @@ class LimitedStream(object):
             return self.on_exhausted()
         if size is None:
             size = self.limit
-        read = self._stream.read(min(self.limit - self._pos, size))
+        read = self._read(min(self.limit - self._pos, size))
         self._pos += len(read)
         return read
 
@@ -617,7 +625,7 @@ class LimitedStream(object):
             size = self.limit - self._pos
         else:
             size = min(size, self.limit - self._pos)
-        line = self._stream.readline(size)
+        line = self._readline(size)
         self._pos += len(line)
         return line
 
