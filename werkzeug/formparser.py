@@ -222,11 +222,11 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             try_decode = transfer_encoding is not None and \
                          transfer_encoding in _supported_multipart_encodings
 
-            content_type = headers.get('content-type')
+            filename = extra.get('filename')
 
             # if no content type is given we stream into memory.  As temporary
             # container a list is used.
-            if content_type is None:
+            if filename is None:
                 is_file = False
                 container = []
                 _write = container.append
@@ -235,8 +235,9 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             # otherwise we parse the rest of the headers and ask the stream
             # factory for something we can write in.
             else:
-                content_type = parse_options_header(content_type)[0]
-                filename = extra.get('filename')
+                content_type = headers.get('content-type')
+                content_type = parse_options_header(content_type)[0] \
+                    or 'text/plain'
                 is_file = True
                 guard_memory = False
                 if filename is not None:

@@ -134,6 +134,21 @@ def test_end_of_file_multipart():
     assert not data.form
 
 
+def test_multipart_file_no_content_type():
+    """Chrome does not always provide a content type."""
+    data = (
+        '--foo\r\n'
+        'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n\r\n'
+        'file contents\r\n--foo--'
+    )
+    data = Request.from_values(input_stream=StringIO(data),
+                               content_length=len(data),
+                               content_type='multipart/form-data; boundary=foo',
+                               method='POST')
+    assert data.files['test'].filename == 'test.txt'
+    assert data.files['test'].read() == 'file contents'
+
+
 def test_extra_newline_multipart():
     """Test for multipart uploads with extra newlines"""
     # this test looks innocent but it was actually timeing out in
