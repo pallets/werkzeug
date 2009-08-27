@@ -350,7 +350,6 @@ def test_response_streamed():
     r = Response("Hello World")
     assert not r.is_streamed
     r = Response(["foo", "bar"])
-    print r.response
     assert not r.is_streamed
     def gen():
         if 0:
