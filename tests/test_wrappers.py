@@ -337,7 +337,23 @@ def test_form_parsing_failed():
 
 
 def test_url_charset_reflection():
-    """Make sure the URL charset is the same as the charset by default."""
+    """Make sure the URL charset is the same as the charset by default"""
     req = Request.from_values()
     req.charset = 'utf-7'
     assert req.url_charset == 'utf-7'
+
+
+def test_response_streamed():
+    """Test the `is_streamed` property of a response"""
+    r = Response()
+    assert not r.is_streamed
+    r = Response("Hello World")
+    assert not r.is_streamed
+    r = Response(["foo", "bar"])
+    print r.response
+    assert not r.is_streamed
+    def gen():
+        if 0:
+            yield None
+    r = Response(gen())
+    assert r.is_streamed

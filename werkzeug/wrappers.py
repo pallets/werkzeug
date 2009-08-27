@@ -535,6 +535,8 @@ class BaseResponse(object):
             self.response = []
         elif isinstance(response, basestring):
             self.response = [response]
+        elif isinstance(response, (tuple, list)):
+            self.response = response
         else:
             self.response = iter(response)
         if isinstance(headers, Headers):
@@ -721,8 +723,8 @@ class BaseResponse(object):
         try:
             len(self.response)
         except TypeError:
-            return False
-        return True
+            return True
+        return False
 
     def close(self):
         """Close the wrapped response if possible."""

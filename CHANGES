@@ -31,6 +31,7 @@ Version 0.6
   now not on the content type.  This fixes a bug with Google Chrome.
 - improved performance of `make_line_iter` and the multipart parser
   for binary uploads.
+- fixed :attr:`~werkzeug.BaseResponse.is_streamed`
 
 Version 0.5.1
 -------------
