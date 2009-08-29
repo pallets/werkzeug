@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
+import urllib
 import urlparse
 import mimetypes
 from time import time
@@ -510,15 +511,15 @@ class EnvironBuilder(object):
         if self.environ_base:
             result.update(self.environ_base)
 
-        def _encode(x):
+        def _path_encode(x):
             if isinstance(x, unicode):
-                return x.encode(self.charset)
-            return x
+                x = x.encode(self.charset)
+            return urllib.unquote(x)
 
         result.update({
             'REQUEST_METHOD':       self.method,
-            'SCRIPT_NAME':          _encode(self.script_root),
-            'PATH_INFO':            _encode(self.path),
+            'SCRIPT_NAME':          _path_encode(self.script_root),
+            'PATH_INFO':            _path_encode(self.path),
             'QUERY_STRING':         self.query_string,
             'SERVER_NAME':          self.server_name,
             'SERVER_PORT':          str(self.server_port),

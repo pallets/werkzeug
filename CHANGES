@@ -32,6 +32,8 @@ Version 0.6
 - improved performance of `make_line_iter` and the multipart parser
   for binary uploads.
 - fixed :attr:`~werkzeug.BaseResponse.is_streamed`
+- fixed a path quoting bug in `EnvironBuilder` that caused PATH_INFO and
+  SCRIPT_NAME to end up in the environ unquoted.
 
 Version 0.5.1
 -------------

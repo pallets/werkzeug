@@ -301,3 +301,16 @@ def test_follow_redirect_with_post():
     resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
     assert resp.status_code == 200
     assert resp.data == 'current url: http://localhost/some/redirect/'
+
+
+def test_path_info_script_name_unquoting():
+    """PATH_INFO and SCRIPT_NAME in client are decoded."""
+    def test_app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [environ['PATH_INFO'] + '\n' + environ['SCRIPT_NAME']]
+    c = Client(test_app, response_wrapper=BaseResponse)
+    resp = c.get('/foo%40bar')
+    assert resp.data == '/foo@bar\n'
+    c = Client(test_app, response_wrapper=BaseResponse)
+    resp = c.get('/foo%40bar', 'http://localhost/bar%40baz')
+    assert resp.data == '/foo@bar\n/bar@baz'
