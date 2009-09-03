@@ -259,7 +259,7 @@ def format_string(string, context):
 
 def secure_filename(filename):
     r"""Pass it a filename and it will return a secure version of it.  This
-    filename can then savely be stored on a regular file system and passed
+    filename can then safely be stored on a regular file system and passed
     to :func:`os.path.join`.  The filename returned is an ASCII only string
     for maximum portability.
 
