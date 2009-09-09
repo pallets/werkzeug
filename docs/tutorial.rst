@@ -302,7 +302,8 @@ and we won't cover it here, most of the code should be self explaining anyway.
 What's important is that you should be able to run ``python manage.py shell``
 to get an interactive Python interpreter without traceback.  If you get an
 exception check the line number and compare your code with the code we have
-in the code boxes above.
+in the code boxes above.  Also make sure that you have created the empty
+``shorty/views.py`` and ``shorty/models.py`` files.
 
 To run your application for development purposes you can also use the manage
 script.  Just execute this command from your command line::
@@ -324,6 +325,7 @@ just have one model and table::
 
     from datetime import datetime
     from sqlalchemy import Table, Column, String, Boolean, DateTime
+    from sqlalchemy.orm import mapper
     from shorty.utils import session, metadata, url_for, get_random_uid
 
     url_table = Table('urls', metadata,
@@ -345,6 +347,7 @@ just have one model and table::
                     if not URL.query.get(uid):
                         break
             self.uid = uid
+            session.add(self)
 
         @property
         def short_url(self):
@@ -353,7 +356,7 @@ just have one model and table::
         def __repr__(self):
             return '<URL %r>' % self.uid
 
-    session.mapper(URL, url_table)
+    mapper(URL, url_table)
 
 This module is pretty straightforward.  We import all the stuff we need from
 SQLAlchemy and create a table.  Then we add a class for this table and we map
@@ -561,11 +564,9 @@ project.
 engine.  As a matter of fact, Jinja has no idea what it is dealing with, so
 if you want to create HTML template it's your responsibility to escape *all*
 values that might include, at some point, any of the following characters: ``>``,
-``<`` or ``&``.  Inside attributes you also have to escape double quotes.
-You can use the jinja ``|e`` filter for basic escapes, if you pass it `true`
-as argument it will also escape quotes (``|e(true)``).  As you can see from
-the examples below we don't escape URLs.  The reason is that we won't have
-any ampersands in the URL and as such it's safe to omit it.
+``<``, ``&``, and ``"``.  As you can see from the examples below we don't
+escape URLs.  The reason is that we won't have any ampersands in the URL and
+as such it's safe to omit it.
 
 For simplicity we will use HTML 4 in our templates.  If you have already
 some experience with XHTML you can adopt the templates to XHTML.  But keep
@@ -605,7 +606,7 @@ And we can inherit from this base template in our ``templates/new.html``:
       {% if error %}<div class="error">{{ error }}</div>{% endif -%}
       <form action="" method="post">
         <p>Enter the URL you want to shorten</p>
-        <p><input type="text" name="url" id="url" value="{{ url|e(true) }}"></p>
+        <p><input type="text" name="url" id="url" value="{{ url|e }}"></p>
         <p>Optionally you can give the URL a memorable name</p>
         <p><input type="text" id="alias" name="alias">{#
          #}<input type="submit" id="submit" value="Do!"></p>
@@ -793,7 +794,7 @@ returned if we are not on the first page and there aren't any entries to display
 (Accessing something like ``/list/42`` without entries on that page and not
 returning a 404 status code would be considered bad style.)
 
-And finally the template:
+And finally the template (``templates/list.html``):
 
 .. sourcecode:: html+jinja
 

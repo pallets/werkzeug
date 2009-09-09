@@ -1,6 +1,6 @@
 from werkzeug import redirect
 from werkzeug.exceptions import NotFound
-from shorty.utils import Session, Pagination, render_template, expose, \
+from shorty.utils import session, Pagination, render_template, expose, \
      validate_url, url_for
 from shorty.models import URL
 
@@ -21,7 +21,7 @@ def new(request):
                 error = 'The alias you have requested exists already'
         if not error:
             uid = URL(url, 'private' not in request.form, alias).uid
-            Session.commit()
+            session.commit()
             return redirect(url_for('display', uid=uid))
     return render_template('new.html', error=error, url=url)
 

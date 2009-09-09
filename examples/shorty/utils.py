@@ -20,7 +20,7 @@ application = local('application')
 metadata = MetaData()
 url_map = Map([Rule('/static/<file>', endpoint='static', build_only=True)])
 
-Session = scoped_session(lambda: create_session(application.database_engine,
+session = scoped_session(lambda: create_session(application.database_engine,
                          transactional=True), local_manager.get_ident)
 jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_PATH))
 

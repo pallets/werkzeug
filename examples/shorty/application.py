@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from werkzeug import Request, SharedDataMiddleware, ClosingIterator
 from werkzeug.exceptions import HTTPException, NotFound
-from shorty.utils import STATIC_PATH, Session, local, local_manager, \
+from shorty.utils import STATIC_PATH, session, local, local_manager, \
      metadata, url_map
 
 import shorty.models
@@ -35,7 +35,7 @@ class Shorty(object):
         except HTTPException, e:
             response = e
         return ClosingIterator(response(environ, start_response),
-                               [Session.remove, local_manager.cleanup])
+                               [session.remove, local_manager.cleanup])
 
     def __call__(self, environ, start_response):
         return self.dispatch(environ, start_response)

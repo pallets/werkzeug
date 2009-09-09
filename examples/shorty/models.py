@@ -1,6 +1,7 @@
 from datetime import datetime
 from sqlalchemy import Table, Column, String, Boolean, DateTime
-from shorty.utils import Session, metadata, url_for, get_random_uid
+from sqlalchemy.orm import mapper
+from shorty.utils import session, metadata, url_for, get_random_uid
 
 url_table = Table('urls', metadata,
     Column('uid', String(140), primary_key=True),
@@ -21,6 +22,7 @@ class URL(object):
                 if not URL.query.get(uid):
                     break
         self.uid = uid
+        session.add(self)
 
     @property
     def short_url(self):
@@ -29,4 +31,4 @@ class URL(object):
     def __repr__(self):
         return '<URL %r>' % self.uid
 
-Session.mapper(URL, url_table)
+mapper(URL, url_table)
