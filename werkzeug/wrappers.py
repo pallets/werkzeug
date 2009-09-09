@@ -733,9 +733,16 @@ class BaseResponse(object):
 
     def freeze(self):
         """Call this method if you want to make your response object ready for
-        being pickled.  This buffers the generator if there is one.
+        being pickled.  This buffers the generator if there is one.  It will
+        also set the `Content-Length` header to the length of the body.
+
+        .. versionchanged:: 0.6
+           The `Content-Length` header is now set.
         """
-        BaseResponse.data.__get__(self)
+        # this method invokes the descriptor on the base class because
+        # a subclass might change the behavior of that attribute
+        data = BaseResponse.data.__get__(self)
+        self.headers['Content-Length'] = str(len(data))
 
     def fix_headers(self, environ):
         # XXX: deprecated

@@ -34,6 +34,7 @@ Version 0.6
 - fixed :attr:`~werkzeug.BaseResponse.is_streamed`
 - fixed a path quoting bug in `EnvironBuilder` that caused PATH_INFO and
   SCRIPT_NAME to end up in the environ unquoted.
+- :meth:`werkzeug.BaseResponse.freeze` now sets the content length.
 
 Version 0.5.1
 -------------

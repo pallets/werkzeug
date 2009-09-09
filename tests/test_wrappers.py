@@ -356,3 +356,14 @@ def test_response_streamed():
             yield None
     r = Response(gen())
     assert r.is_streamed
+
+
+def test_response_freeze():
+    """Response freezing"""
+    def generate():
+        yield "foo"
+        yield "bar"
+    resp = Response(generate())
+    resp.freeze()
+    assert resp.response == ['foo', 'bar']
+    assert resp.headers['content-length'] == '6'
