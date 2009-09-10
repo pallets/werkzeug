@@ -14,6 +14,7 @@ from nose.tools import assert_raises
 
 from datetime import datetime, timedelta
 from werkzeug.wrappers import *
+from werkzeug.wsgi import LimitedStream
 from werkzeug.utils import MultiDict
 from werkzeug.test import Client
 
@@ -367,3 +368,14 @@ def test_response_freeze():
     resp.freeze()
     assert resp.response == ['foo', 'bar']
     assert resp.headers['content-length'] == '6'
+
+
+def test_other_method_payload():
+    """Stream limiting for unknown methods"""
+    data = 'Hello World'
+    req = Request.from_values(input_stream=StringIO(data),
+                              content_length=len(data),
+                              content_type='text/plain',
+                              method='WHAT_THE_FUCK')
+    assert req.data == data
+    assert isinstance(req.stream, LimitedStream)

@@ -35,6 +35,9 @@ Version 0.6
 - fixed a path quoting bug in `EnvironBuilder` that caused PATH_INFO and
   SCRIPT_NAME to end up in the environ unquoted.
 - :meth:`werkzeug.BaseResponse.freeze` now sets the content length.
+- for unknown HTTP methods the request stream is now always limited
+  instead of being empty.  This makes it easier to implement DAV
+  and other protocols on top of Werkzeug.
 
 Version 0.5.1
 -------------

@@ -35,7 +35,7 @@ from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
      header_property, get_content_type
-from werkzeug.wsgi import get_current_url, get_host
+from werkzeug.wsgi import get_current_url, get_host, LimitedStream
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
@@ -254,6 +254,7 @@ class BaseRequest(object):
                                'form data.  If you really want to do '
                                'that, set `shallow` to False.')
         data = None
+        stream = _empty_stream
         if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
             try:
                 data = parse_form_data(self.environ, self._get_file_stream,
@@ -264,8 +265,17 @@ class BaseRequest(object):
                                        silent=False)
             except ValueError, e:
                 self._form_parsing_failed(e)
+        else:
+            # if we have a content length header we are able to properly
+            # guard the incoming stream, no matter what request method is
+            # used.
+            content_length = self.headers.get('content-length', type=int)
+            if content_length is not None:
+                stream = LimitedStream(self.environ['wsgi.input'],
+                                       content_length)
+
         if data is None:
-            data = (_empty_stream, ImmutableMultiDict(),
+            data = (stream, ImmutableMultiDict(),
                     ImmutableMultiDict())
 
         # inject the values into the instance dict so that we bypass
