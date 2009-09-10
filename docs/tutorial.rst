@@ -336,6 +336,7 @@ just have one model and table::
     )
 
     class URL(object):
+        query = session.query_property()
 
         def __init__(self, target, public=True, uid=None, added=None):
             self.target = target
