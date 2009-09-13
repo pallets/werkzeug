@@ -252,6 +252,7 @@ class Subdomain(RuleFactory):
     def get_rules(self, map):
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
+                rule = rule.empty()
                 rule.subdomain = self.subdomain
                 yield rule
 
@@ -277,6 +278,7 @@ class Submount(RuleFactory):
     def get_rules(self, map):
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
+                rule = rule.empty()
                 rule.rule = self.path + rule.rule
                 yield rule
 
@@ -301,6 +303,7 @@ class EndpointPrefix(RuleFactory):
     def get_rules(self, map):
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
+                rule = rule.empty()
                 rule.endpoint = self.prefix + rule.endpoint
                 yield rule
 
@@ -495,7 +498,10 @@ class Rule(RuleFactory):
     def empty(self):
         """Return an unbound copy of this rule.  This can be useful if you
         want to reuse an already bound URL for another map."""
-        return Rule(self.rule, self.defaults, self.subdomain, self.methods,
+        defaults = None
+        if self.defaults is not None:
+            defaults = dict(self.defaults)
+        return Rule(self.rule, defaults, self.subdomain, self.methods,
                     self.build_only, self.endpoint, self.strict_slashes,
                     self.redirect_to)
 

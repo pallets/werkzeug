@@ -10,7 +10,8 @@
 from nose.tools import assert_raises
 
 from werkzeug.wrappers import Response
-from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect
+from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect, \
+     RuleTemplate, Submount, EndpointPrefix, Subdomain
 from werkzeug.test import create_environ
 
 
@@ -235,3 +236,75 @@ def test_server_name_interpolation():
         assert 'environment (%r)' % server_name in msg
     else:
         assert False, 'expected exception'
+
+
+def test_rule_emptying():
+    """Rule emptying"""
+    r = Rule('/foo', {'meh': 'muh'}, 'x', ['POST'],
+             False, 'x', True, None)
+    r2 = r.empty()
+    assert r.__dict__ == r2.__dict__
+    r.methods.add('GET')
+    assert r.__dict__ != r2.__dict__
+    r.methods.discard('GET')
+    r.defaults['meh'] = 'aha'
+    assert r.__dict__ != r2.__dict__
+
+
+def test_rule_templates():
+    """Rule templates"""
+    testcase = RuleTemplate(
+        [ Submount('/test/$app',
+          [ Rule('/foo/', endpoint='handle_foo')
+          , Rule('/bar/', endpoint='handle_bar')
+          , Rule('/baz/', endpoint='handle_baz')
+          ]),
+          EndpointPrefix('foo_',
+          [ Rule('/blah', endpoint='bar')
+          , Rule('/meh', endpoint='baz')
+          ]),
+          Subdomain('meh',
+          [ Rule('/blah', endpoint='x_bar')
+          , Rule('/meh', endpoint='x_baz')
+          ])
+        ])
+
+    url_map = Map(
+        [ testcase(app='test1')
+        , testcase(app='test2')
+        , testcase(app='test3')
+        , testcase(app='test4')
+        ])
+
+    out = [(x.rule, x.subdomain, x.endpoint)
+           for x in url_map.iter_rules()]
+    assert out == (
+        [ ('/test/test1/foo/', '', 'handle_foo')
+        , ('/test/test1/bar/', '', 'handle_bar')
+        , ('/test/test1/baz/', '', 'handle_baz')
+        , ('/blah', '', 'foo_bar')
+        , ('/meh', '', 'foo_baz')
+        , ('/blah', 'meh', 'x_bar')
+        , ('/meh', 'meh', 'x_baz')
+        , ('/test/test2/foo/', '', 'handle_foo')
+        , ('/test/test2/bar/', '', 'handle_bar')
+        , ('/test/test2/baz/', '', 'handle_baz')
+        , ('/blah', '', 'foo_bar')
+        , ('/meh', '', 'foo_baz')
+        , ('/blah', 'meh', 'x_bar')
+        , ('/meh', 'meh', 'x_baz')
+        , ('/test/test3/foo/', '', 'handle_foo')
+        , ('/test/test3/bar/', '', 'handle_bar')
+        , ('/test/test3/baz/', '', 'handle_baz')
+        , ('/blah', '', 'foo_bar')
+        , ('/meh', '', 'foo_baz')
+        , ('/blah', 'meh', 'x_bar')
+        , ('/meh', 'meh', 'x_baz')
+        , ('/test/test4/foo/', '', 'handle_foo')
+        , ('/test/test4/bar/', '', 'handle_bar')
+        , ('/test/test4/baz/', '', 'handle_baz')
+        , ('/blah', '', 'foo_bar')
+        , ('/meh', '', 'foo_baz')
+        , ('/blah', 'meh', 'x_bar')
+        , ('/meh', 'meh', 'x_baz') ]
+    )
