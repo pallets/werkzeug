@@ -14,15 +14,18 @@
 """
 
 import sys
-from cStringIO import StringIO
+from cStringIO import StringIO, OutputType
 from nose.tools import assert_raises, raises
 
 from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ, \
-    ClientRedirectError
+    ClientRedirectError, stream_encode_multipart
 from werkzeug.utils import redirect
 from werkzeug.wsgi import get_host
-from werkzeug.datastructures import Headers
+from werkzeug.formparser import parse_form_data
+from werkzeug.urls import url_decode
+from werkzeug.datastructures import Headers, MultiDict
+
 
 
 def cookie_app(environ, start_response):
@@ -34,9 +37,11 @@ def cookie_app(environ, start_response):
     response.set_cookie('test', 'test')
     return response(environ, start_response)
 
+
 def redirect_loop_app(environ, start_response):
     response = redirect('http://localhost/some/redirect/')
     return response(environ, start_response)
+
 
 def redirect_with_get_app(environ, start_response):
     req = Request(environ)
@@ -50,6 +55,7 @@ def redirect_with_get_app(environ, start_response):
         response = Response('current url: %s' % req.url)
     return response(environ, start_response)
 
+
 def redirect_with_post_app(environ, start_response):
     req = Request(environ)
     if req.url == 'http://localhost/some/redirect/':
@@ -60,8 +66,17 @@ def redirect_with_post_app(environ, start_response):
         response = redirect('http://localhost/some/redirect/')
     return response(environ, start_response)
 
+
 def external_redirect_demo_app(environ, start_response):
     response = redirect('http://example.org/')
+    return response(environ, start_response)
+
+
+def multi_value_post_app(environ, start_response):
+    req = Request(environ)
+    assert req.form['field'] == 'val1', req.form['field']
+    assert req.form.getlist('field') == ['val1', 'val2'], req.form.getlist('field')
+    response = Response('ok')
     return response(environ, start_response)
 
 
@@ -203,10 +218,6 @@ def test_environ_builder_content_type():
 
 def test_environ_builder_stream_switch():
     """EnvironBuilder stream switch"""
-    from cStringIO import OutputType
-    from werkzeug.test import stream_encode_multipart
-    from werkzeug import url_decode, MultiDict, parse_form_data
-
     d = MultiDict(dict(foo=u'bar', blub=u'blah', hu=u'hum'))
     for use_tempfile in False, True:
         stream, length, boundary = stream_encode_multipart(
@@ -314,3 +325,19 @@ def test_path_info_script_name_unquoting():
     c = Client(test_app, response_wrapper=BaseResponse)
     resp = c.get('/foo%40bar', 'http://localhost/bar%40baz')
     assert resp.data == '/foo@bar\n/bar@baz'
+
+
+def test_multi_value_submit():
+    """Multi-value submit in test client"""
+    c = Client(multi_value_post_app, response_wrapper=BaseResponse)
+    data = {
+        'field': ['val1','val2']
+    }
+    resp = c.post('/', data=data)
+    assert resp.status_code == 200
+    c = Client(multi_value_post_app, response_wrapper=BaseResponse)
+    data = MultiDict({
+        'field': ['val1','val2']
+    })
+    resp = c.post('/', data=data)
+    assert resp.status_code == 200

@@ -39,6 +39,8 @@ Version 0.6
   instead of being empty.  This makes it easier to implement DAV
   and other protocols on top of Werkzeug.
 - added :meth:`werkzeug.MIMEAccept.best_match`
+- multi-value test-client posts from a standard dictionary are now
+  supported.  Previously you had to use a multi dict.
 
 Version 0.5.1
 -------------

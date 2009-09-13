@@ -175,8 +175,12 @@ def _iter_data(data):
             for value in values:
                 yield key, value
     else:
-        for item in data.iteritems():
-            yield item
+        for key, values in data.iteritems():
+            if isinstance(values, (tuple, list)):
+                for value in values:
+                    yield key, value
+            else:
+                yield key, values
 
 
 class EnvironBuilder(object):
@@ -299,7 +303,7 @@ class EnvironBuilder(object):
                        hasattr(value, 'read'):
                         self._add_file_from_data(key, value)
                     else:
-                        self.form[key] = value
+                        self.form.setlistdefault(key).append(value)
 
     def _add_file_from_data(self, key, value):
         """Called in the EnvironBuilder to add files from the data dict."""
