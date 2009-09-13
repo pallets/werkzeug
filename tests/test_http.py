@@ -36,6 +36,20 @@ def test_mime_accept():
     assert a[a.find('foo/bar')] == ('*/*', 0.5)
 
 
+def test_accept_matches():
+    """The `best_match` feature of accept objects"""
+    a = parse_accept_header('text/xml,application/xml,application/xhtml+xml,'
+                            'text/html;q=0.9,text/plain;q=0.8,'
+                            'image/png', MIMEAccept)
+    assert a.best_match(['text/html', 'application/xhtml+xml']) == \
+        'application/xhtml+xml'
+    assert a.best_match(['text/html']) == 'text/html'
+    assert a.best_match(['foo/bar']) is None
+    assert a.best_match(['foo/bar', 'bar/foo'],
+                        default='foo/bar') == 'foo/bar'
+    assert a.best_match(['application/xml', 'text/xml']) == 'application/xml'
+
+
 def test_charset_accept():
     """Charset accept header parsing and behavior"""
     a = parse_accept_header('ISO-8859-1,utf-8;q=0.7,*;q=0.7', CharsetAccept)

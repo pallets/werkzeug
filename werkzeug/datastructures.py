@@ -1251,11 +1251,20 @@ class Accept(ImmutableList):
         returned quality is ``0``.
         """
         if isinstance(key, basestring):
-            for item, quality in self:
-                if self._value_matches(key, item):
-                    return quality
-            return 0
+            return self.quality(key)
         return list.__getitem__(self, key)
+
+    def quality(self, key):
+        """Returns the quality of the key.
+
+        .. versionadded:: 0.6
+           In previous versions you had to use the item-lookup syntax
+           (eg: ``obj[key]`` instead of ``obj.quality(key)``)
+        """
+        for item, quality in self:
+            if self._value_matches(key, item):
+                return quality
+        return 0
 
     def __contains__(self, value):
         for item, quality in self:
@@ -1315,6 +1324,25 @@ class Accept(ImmutableList):
 
     def __str__(self):
         return self.to_header()
+
+    def best_match(self, matches, default=None):
+        """Returns the best match from a list of possible matches based
+        on the quality of the client.  If two items have the same quality,
+        the one is returned that comes first.
+
+        :param matches: a list of matches to check for
+        :param default: the value that is returned if none match
+        """
+        best_quality = -1
+        result = default
+        for server_item in matches:
+            for client_item, quality in self:
+                if quality <= best_quality:
+                    break
+                if self._value_matches(client_item, server_item):
+                    best_quality = quality
+                    result = server_item
+        return result
 
     @property
     def best(self):

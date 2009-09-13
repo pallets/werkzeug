@@ -38,6 +38,7 @@ Version 0.6
 - for unknown HTTP methods the request stream is now always limited
   instead of being empty.  This makes it easier to implement DAV
   and other protocols on top of Werkzeug.
+- added :meth:`werkzeug.MIMEAccept.best_match`
 
 Version 0.5.1
 -------------
