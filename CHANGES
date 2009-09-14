@@ -43,6 +43,7 @@ Version 0.6
   supported.  Previously you had to use a multi dict.
 - rule templates properly work with submounts, subdomains and
   other rule factories now.
+- deprecated non-silent usage of the :class:`werkzeug.LimitedStream`.
 
 Version 0.5.1
 -------------

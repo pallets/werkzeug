@@ -523,8 +523,7 @@ class LimitedStream(object):
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it
     :func:`on_exhausted` is called which by default returns an empty
-    string or raises :exc:`~werkzeug.exceptions.BadRequest` if silent
-    is set to `False`.  The return value of that function is forwarded
+    string.  The return value of that function is forwarded
     to the reader function.  So if it returns an empty string
     :meth:`read` will return an empty string as well.
 
@@ -534,6 +533,11 @@ class LimitedStream(object):
 
     The `silent` parameter has no effect if :meth:`is_exhausted` is
     overriden by a subclass.
+
+    .. versionchanged:: 0.6
+       Non-silent usage was deprecated because it causes confusion.
+       If you want that, override :meth:`is_exhausted` and raise a
+       :exc:`~exceptions.BadRequest` yourself.
 
     .. admonition:: Note on WSGI compliance
 
@@ -568,6 +572,12 @@ class LimitedStream(object):
         self._pos = 0
         self.limit = limit
         self.silent = silent
+        if not silent:
+            from warnings import warn
+            warn(DeprecationWarning('non-silent usage of the '
+            'LimitedStream is deprecated.  If you want to '
+            'continue to use the stream in non-silent usage '
+            'override on_exhausted.'), stacklevel=2)
 
     def __iter__(self):
         return self

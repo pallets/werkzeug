@@ -99,15 +99,21 @@ def test_peek_path_info():
     assert peek_path_info(env) == 'aaa'
 
 
+class RaisingLimitedStream(LimitedStream):
+
+    def on_exhausted(self):
+        raise BadRequest('input stream exhausted')
+
+
 def test_limited_stream():
     """Test the LimitedStream"""
     io = StringIO('123456')
-    stream = LimitedStream(io, 3, False)
+    stream = RaisingLimitedStream(io, 3)
     assert stream.read() == '123'
     assert_raises(BadRequest, stream.read)
 
     io = StringIO('123456')
-    stream = LimitedStream(io, 3, False)
+    stream = RaisingLimitedStream(io, 3)
     assert stream.read(1) == '1'
     assert stream.read(1) == '2'
     assert stream.read(1) == '3'
