@@ -10,7 +10,7 @@ from datetime import datetime
 from nose.tools import assert_raises
 
 from werkzeug.http import *
-from werkzeug.utils import http_date
+from werkzeug.utils import http_date, redirect
 from werkzeug.datastructures import *
 
 
@@ -209,3 +209,16 @@ def test_remove_hop_by_hop_headers():
 
     remove_hop_by_hop_headers(headers2)
     assert headers2 == Headers([('Foo', 'bar')])
+
+
+def test_redirect():
+    """Tests the redirecting"""
+    resp = redirect(u'/füübär')
+    assert '/f%C3%BC%C3%BCb%C3%A4r' in resp.data
+    assert resp.headers['Location'] == '/f%C3%BC%C3%BCb%C3%A4r'
+    assert resp.status_code == 302
+
+    resp = redirect(u'http://☃.net/', 307)
+    assert 'http://xn--n3h.net/' in resp.data
+    assert resp.headers['Location'] == 'http://xn--n3h.net/'
+    assert resp.status_code == 307

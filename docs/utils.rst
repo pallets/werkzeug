@@ -26,6 +26,10 @@ URL Helpers
 
 .. autofunction:: url_fix
 
+.. autofunction:: uri_to_iri
+
+.. autofunction:: iri_to_uri
+
 
 HTML Helpers
 ============

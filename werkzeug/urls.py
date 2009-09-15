@@ -14,6 +14,114 @@ import urlparse
 from werkzeug._internal import _decode_unicode
 
 
+def _uri_split(uri):
+    """Splits up an URI or IRI."""
+    scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
+
+    port = None
+
+    if '@' in netloc:
+        auth, hostname = netloc.split('@', 1)
+    else:
+        auth = None
+        hostname = netloc
+    if hostname:
+        if ':' in hostname:
+            hostname, port = hostname.split(':', 1)
+    return scheme, auth, hostname, port, path, query, fragment
+
+
+def iri_to_uri(iri, charset='utf-8'):
+    r"""Converts any unicode based IRI to an acceptable ASCII URI.  Werkzeug
+    always uses utf-8 URLs internally because this is what browsers and HTTP
+    do as well.  In some places where it accepts an URL it also accepts a
+    unicode IRI and converts it into a URI.
+
+    Examples for IRI versus URI:
+
+    >>> iri_to_uri(u'http://☃.net/')
+    'http://xn--n3h.net/'
+    >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
+    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+
+    .. versionadded:: 0.6
+
+    :param iri: the iri to convert
+    :param charset: the charset for the URI
+    """
+    iri = unicode(iri)
+    scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
+
+    scheme = scheme.encode('ascii')
+    hostname = hostname.encode('idna')
+    if auth:
+        if ':' in auth:
+            auth, password = auth.split(':', 1)
+        else:
+            password = None
+        auth = urllib.quote(auth.encode(charset))
+        if password:
+            auth += ':' + urllib.quote(password.encode(charset))
+        hostname = auth + '@' + hostname
+    if port:
+        hostname += ':' + port
+
+    path = urllib.quote(path.encode(charset), safe="/:~+")
+    query = urllib.quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
+
+    return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+
+
+def uri_to_iri(uri, charset='utf-8', errors='ignore'):
+    r"""Converts a URI in a given charset to a IRI.
+
+    Examples for URI versus IRI
+
+    >>> uri_to_iri('http://xn--n3h.net/')
+    u'http://\u2603.net/'
+    >>> uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
+    u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
+
+    .. versionadded:: 0.6
+
+    :param uri: the URI to convert
+    :param charset: the charset of the URI
+    :param errors: the error handling on decode
+    """
+    uri = url_fix(uri, charset)
+    scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
+
+    scheme = _decode_unicode(scheme, 'ascii', errors)
+
+    try:
+        hostname = hostname.decode('idna')
+    except UnicodeError:
+        # dammit, that codec raised an error.  Because it does not support
+        # any error handling we have to fake it.... badly
+        if errors not in ('ignore', 'replace'):
+            raise
+        hostname = hostname.decode('ascii', errors)
+
+    if auth:
+        if ':' in auth:
+            auth, password = auth.split(':', 1)
+        else:
+            password = None
+        auth = _decode_unicode(urllib.unquote(auth), charset, errors)
+        if password:
+            auth += u':' + _decode_unicode(urllib.unquote(password),
+                                           charset, errors)
+        hostname = auth + u'@' + hostname
+    if port:
+        # port should be numeric, but you never know...
+        hostname += u':' + port.decode(charset, errors)
+
+    path = _decode_unicode(urllib.unquote(path), charset, errors)
+    query = _decode_unicode(urllib.unquote(query), charset, errors)
+
+    return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+
+
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
                errors='ignore', separator='&', cls=None):
     """Parse a querystring and return it as :class:`MultiDict`.  Per default

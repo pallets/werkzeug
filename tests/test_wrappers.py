@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from werkzeug.wrappers import *
 from werkzeug.wsgi import LimitedStream
 from werkzeug.utils import MultiDict
-from werkzeug.test import Client
+from werkzeug.test import Client, create_environ
 
 
 class RequestTestResponse(BaseResponse):
@@ -225,10 +225,11 @@ def test_etag_response_mixin():
     response.headers['Content-Length'] = len(response.data)
     assert response.headers['Cache-Control'] == 'must-revalidate, max-age=60'
 
-    env = {
+    env = create_environ()
+    env.update({
         'REQUEST_METHOD':       'GET',
         'HTTP_IF_NONE_MATCH':   response.get_etag()[0]
-    }
+    })
     response.make_conditional(env)
 
     # after the thing is invoked by the server as wsgi application
@@ -379,3 +380,14 @@ def test_other_method_payload():
                               method='WHAT_THE_FUCK')
     assert req.data == data
     assert isinstance(req.stream, LimitedStream)
+
+
+def test_urlfication():
+    """Make sure Responses use URLs in headers"""
+    resp = Response()
+    resp.headers['Location'] = u'http://üser:pässword@☃.net/påth'
+    resp.headers['Content-Location'] = u'http://☃.net/'
+    headers = resp.get_wsgi_headers(create_environ())
+    assert headers['location'] == \
+        'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+    assert headers['content-location'] == 'http://xn--n3h.net/'

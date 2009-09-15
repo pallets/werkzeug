@@ -473,13 +473,17 @@ def redirect(location, code=302):
     """
     assert code in (301, 302, 303, 305, 307), 'invalid code'
     from werkzeug.wrappers import BaseResponse
+    display_location = location
+    if isinstance(location, unicode):
+        from werkzeug.urls import iri_to_uri
+        location = iri_to_uri(location)
     response = BaseResponse(
         '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
         '<title>Redirecting...</title>\n'
         '<h1>Redirecting...</h1>\n'
         '<p>You should be redirected automatically to target URL: '
         '<a href="%s">%s</a>.  If not click the link.' %
-        ((escape(location),) * 2), code, mimetype='text/html')
+        (location, display_location), code, mimetype='text/html')
     response.headers['Location'] = location
     return response
 

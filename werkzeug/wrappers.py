@@ -30,7 +30,7 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
      parse_options_header, dump_options_header
-from werkzeug.urls import url_decode
+from werkzeug.urls import url_decode, iri_to_uri
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
@@ -774,22 +774,35 @@ class BaseResponse(object):
 
         .. versionchanged:: 0.6
            Previously that function was called `fix_headers` and modified
-           the response object in place.
+           the response object in place.  Also since 0.6, IRIs in location
+           and content-location headers are handled properly.
 
         :param environ: the WSGI environment of the request.
         :return: returns a new :class:`Headers` object.
         """
         headers = Headers(self.headers)
+
+        # make sure the location header is an absolute URL
         location = headers.get('location')
         if location is not None:
+            if isinstance(location, unicode):
+                location = iri_to_uri(location)
             headers['Location'] = urlparse.urljoin(
                 get_current_url(environ, root_only=True),
                 location
             )
+
+        # make sure the content location is a URL
+        content_location = headers.get('content-location')
+        if content_location is not None and \
+           isinstance(content_location, unicode):
+            headers['Content-Location'] = iri_to_uri(content_location)
+
         if 100 <= self.status_code < 200 or self.status_code == 204:
             headers['Content-Length'] = '0'
         elif self.status_code == 304:
             remove_entity_headers(headers)
+
         return headers
 
     def get_app_iter(self, environ):

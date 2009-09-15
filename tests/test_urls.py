@@ -9,7 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug import url_quote, url_unquote, url_quote_plus, \
-     url_unquote_plus, url_encode, url_decode, url_fix
+     url_unquote_plus, url_encode, url_decode, url_fix, uri_to_iri, \
+     iri_to_uri
 
 
 def test_quoting():
@@ -52,3 +53,7 @@ def test_sorted_url_encode():
     assert url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
     assert url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
                       key=lambda x: x[0].lower()) == 'A=1&a=2&B=3&b=4'
+
+
+def test_iri_support():
+    """The IRI support"""

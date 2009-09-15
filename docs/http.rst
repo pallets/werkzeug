@@ -64,7 +64,7 @@ Header Parsing
 The following functions can be used to parse incoming HTTP headers.
 Because Python does not provide data structures with the semantics required
 by :rfc:`2616`, Werkzeug implements some custom data structures that are
-:rfc:`documented separately <http-datastructures>`.
+`documented separately <http-datastructures>`.
 
 .. autofunction:: parse_options_header
 

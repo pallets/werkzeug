@@ -3,6 +3,7 @@
 import sys
 import warnings
 from subprocess import Popen, PIPE
+from werkzeug.test import create_environ
 
 
 import_code = '''\
@@ -79,6 +80,6 @@ def test_fix_headers_in_response():
             Response.fix_headers(self, environ)
             self.headers['x-foo'] = "meh"
     myresp = MyResponse('Foo')
-    resp = Response.from_app(myresp, {'REQUEST_METHOD': 'GET'})
+    resp = Response.from_app(myresp, create_environ(method='GET'))
     assert resp.headers['x-foo'] == 'meh'
     assert resp.data == 'Foo'
