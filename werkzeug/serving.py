@@ -204,6 +204,20 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
     def address_string(self):
         return self.client_address[0]
 
+    def log_request(self, code='-', size='-'):
+        self.log('info', '"%s" %s %s', self.requestline, code, size)
+
+    def log_error(self, *args):
+        self.log('error', *args)
+
+    def log_message(self, format, *args):
+        self.log('info', format, *args)
+
+    def log(self, type, message, *args):
+        _log(type, '%s - - [%s] %s\n' % (self.address_string(),
+                                         self.log_date_time_string(),
+                                         message % args))
+
 
 #: backwards compatible name if someone is subclassing it
 BaseRequestHandler = WSGIRequestHandler

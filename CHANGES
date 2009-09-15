@@ -45,6 +45,7 @@ Version 0.6
   other rule factories now.
 - deprecated non-silent usage of the :class:`werkzeug.LimitedStream`.
 - added support for IRI handling to many parts of Werkzeug.
+- development server properly logs to the werkzeug logger now.
 
 Version 0.5.1
 -------------

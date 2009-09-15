@@ -222,3 +222,7 @@ def test_redirect():
     assert 'http://xn--n3h.net/' in resp.data
     assert resp.headers['Location'] == 'http://xn--n3h.net/'
     assert resp.status_code == 307
+
+    resp = redirect('http://example.com/', 305)
+    assert resp.headers['Location'] == 'http://example.com/'
+    assert resp.status_code == 305
