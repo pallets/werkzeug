@@ -176,7 +176,7 @@ def _iter_data(data):
                 yield key, value
     else:
         for key, values in data.iteritems():
-            if isinstance(values, (tuple, list)):
+            if isinstance(values, list):
                 for value in values:
                     yield key, value
             else:
