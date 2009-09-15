@@ -210,6 +210,10 @@ class EnvironBuilder(object):
         -   a tuple.  The :meth:`~FileMultiDict.add_file` method is called
             with the tuple items as positional arguments.
 
+    .. versionadded:: 0.6
+       `path` and `base_url` can now be unicode strings that are encoded using
+       the :func:`iri_to_uri` function.
+
     :param path: the path of the request.  In the WSGI environment this will
                  end up as `PATH_INFO`.  If the `query_string` is not defined
                  and there is a question mark in the `path` everything after

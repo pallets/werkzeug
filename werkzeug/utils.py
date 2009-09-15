@@ -468,6 +468,10 @@ def redirect(location, code=302):
     redirect and 304 because it's the answer for a request with a request
     with defined If-Modified-Since headers.
 
+    .. versionadded:: 0.6
+       The location can now be unicode strings that are encoded using
+       the :func:`iri_to_uri` function.
+
     :param location: the location the response should redirect to.
     :param code: the redirect status code.
     """
