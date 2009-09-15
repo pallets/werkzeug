@@ -27,7 +27,6 @@ from werkzeug.urls import url_decode
 from werkzeug.datastructures import Headers, MultiDict
 
 
-
 def cookie_app(environ, start_response):
     """A WSGI application which sets a cookie, and returns as a ersponse any
     cookie which exists.
@@ -341,3 +340,10 @@ def test_multi_value_submit():
     })
     resp = c.post('/', data=data)
     assert resp.status_code == 200
+
+
+def test_iri_support():
+    """Test client IRI support"""
+    b = EnvironBuilder(u'/föö-bar', base_url=u'http://☃.net/')
+    assert b.path == '/f%C3%B6%C3%B6-bar'
+    assert b.base_url == 'http://xn--n3h.net/'

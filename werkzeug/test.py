@@ -22,7 +22,7 @@ from urllib2 import Request as U2Request
 
 from werkzeug._internal import _empty_stream
 from werkzeug.wrappers import BaseRequest
-from werkzeug.urls import url_encode
+from werkzeug.urls import url_encode, url_fix, iri_to_uri
 from werkzeug.wsgi import get_host, get_current_url
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers, FileStorage
@@ -261,7 +261,14 @@ class EnvironBuilder(object):
         if query_string is None and '?' in path:
             path, query_string = path.split('?', 1)
         self.charset = charset
+        if isinstance(path, unicode):
+            path = iri_to_uri(path, charset)
         self.path = path
+        if base_url is not None:
+            if isinstance(base_url, unicode):
+                base_url = iri_to_uri(base_url, charset)
+            else:
+                base_url = url_fix(base_url, charset)
         self.base_url = base_url
         if isinstance(query_string, basestring):
             self.query_string = query_string
