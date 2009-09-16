@@ -8,6 +8,7 @@
     :copyright: (c) 2009 by the Project Name Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+from nose.tools import assert_raises
 from werkzeug import url_quote, url_unquote, url_quote_plus, \
      url_unquote_plus, url_encode, url_decode, url_fix, uri_to_iri, \
      iri_to_uri
@@ -57,3 +58,11 @@ def test_sorted_url_encode():
 
 def test_iri_support():
     """The IRI support"""
+    assert_raises(UnicodeError, uri_to_iri, u'http://föö.com/')
+    assert_raises(UnicodeError, iri_to_uri, 'http://föö.com/')
+    assert uri_to_iri('http://xn--n3h.net/') == u'http://\u2603.net/'
+    assert uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th') == \
+        u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
+    assert iri_to_uri(u'http://☃.net/') == 'http://xn--n3h.net/'
+    assert iri_to_uri(u'http://üser:pässword@☃.net/påth') == \
+        'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
