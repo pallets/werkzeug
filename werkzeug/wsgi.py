@@ -200,8 +200,8 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
         parts = netloc.split(u'@', 1)[-1].split(u':', 1)
         if len(parts) == 2:
             netloc, port = parts
-            if scheme == u'http' and port == u'80' or \
-               scheme == u'https' and port == u'443':
+            if (scheme == u'http' and port == u'80') or \
+               (scheme == u'https' and port == u'443'):
                 port = None
         else:
             netloc = parts[0]
