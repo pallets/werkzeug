@@ -30,6 +30,8 @@ URL Helpers
 
 .. autofunction:: iri_to_uri
 
+.. autofunction:: extract_path_info
+
 
 HTML Helpers
 ============

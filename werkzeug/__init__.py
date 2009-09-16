@@ -58,7 +58,7 @@ all_by_module = {
                              'peek_path_info', 'SharedDataMiddleware',
                              'DispatcherMiddleware', 'ClosingIterator',
                              'FileWrapper', 'make_line_iter', 'LimitedStream',
-                             'responder', 'wrap_file'],
+                             'responder', 'wrap_file', 'extract_path_info'],
     'werkzeug.datastructures': ['MultiDict', 'CombinedMultiDict', 'Headers',
                              'EnvironHeaders', 'ImmutableList',
                              'ImmutableDict', 'ImmutableMultiDict',

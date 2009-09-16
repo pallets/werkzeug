@@ -46,6 +46,7 @@ Version 0.6
 - deprecated non-silent usage of the :class:`werkzeug.LimitedStream`.
 - added support for IRI handling to many parts of Werkzeug.
 - development server properly logs to the werkzeug logger now.
+- added :func:`werkzeug.extract_path_info`
 
 Version 0.5.1
 -------------

@@ -17,7 +17,7 @@ from werkzeug import Client, create_environ, BaseResponse, run_wsgi_app
 from werkzeug.exceptions import BadRequest
 
 from werkzeug.wsgi import SharedDataMiddleware, get_host, responder, \
-     LimitedStream, pop_path_info, peek_path_info
+     LimitedStream, pop_path_info, peek_path_info, extract_path_info
 
 
 def test_shareddatamiddleware_get_file_loader():
@@ -148,3 +148,34 @@ def test_limited_stream():
     assert stream.read(1) == '2'
     assert stream.read() == '3'
     assert stream.read() == ''
+
+
+def test_path_info_extraction():
+    """PATH INFO extraction feature"""
+    x = extract_path_info('http://example.com/app', '/app/hello')
+    assert x == u'/hello'
+    x = extract_path_info('http://example.com/app',
+                          'https://example.com/app/hello')
+    assert x == u'/hello'
+    x = extract_path_info('http://example.com/app/',
+                          'https://example.com/app/hello')
+    assert x == u'/hello'
+    x = extract_path_info('http://example.com/app/',
+                          'https://example.com/app')
+    assert x == u'/'
+    x = extract_path_info(u'http://☃.net/', u'/fööbär')
+    assert x == u'/fööbär'
+    x = extract_path_info(u'http://☃.net/x', u'http://☃.net/x/fööbär')
+    assert x == u'/fööbär'
+
+    env = create_environ(u'/fööbär', u'http://☃.net/x/')
+    x = extract_path_info(env, u'http://☃.net/x/fööbär')
+    assert x == u'/fööbär'
+
+    x = extract_path_info('http://example.com/app/',
+                          'https://example.com/a/hello')
+    assert x is None
+    x = extract_path_info('http://example.com/app/',
+                          'https://example.com/app/hello',
+                          collapse_http_schemes=False)
+    assert x is None

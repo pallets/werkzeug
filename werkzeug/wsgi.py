@@ -10,6 +10,7 @@
 """
 import os
 import urllib
+import urlparse
 import posixpath
 import mimetypes
 from zlib import adler32
@@ -148,6 +149,102 @@ def peek_path_info(environ):
     segments = environ.get('PATH_INFO', '').lstrip('/').split('/', 1)
     if segments:
         return segments[0]
+
+
+def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
+                      errors='ignore', collapse_http_schemes=True):
+    """Extracts the path info from the given URL (or WSGI environment) and
+    path.  The path info returned is a unicode string, not a bytestring
+    suitable for a WSGI environment.  The URLs might also be IRIs.
+
+    If the path info could not be determined, `None` is returned.
+
+    Some examples:
+
+    >>> extract_path_info('http://example.com/app', '/app/hello')
+    u'/hello'
+    >>> extract_path_info('http://example.com/app',
+    ...                   'https://example.com/app/hello')
+    u'/hello'
+    >>> extract_path_info('http://example.com/app',
+    ...                   'https://example.com/app/hello',
+    ...                   collapse_http_schemes=False) is None
+    True
+
+    Instead of providing a base URL you can also pass a WSGI environment.
+
+    .. versionadded:: 0.6
+
+    :param environ_or_baseurl: a WSGI environment dict, a base URL or
+                               base IRI.  This is the root of the
+                               application.
+    :param path_or_url: an absolute path from the server root, a
+                        relative path (in which case it's the path info)
+                        or a full URL.  Also accepts IRIs and unicode
+                        parameters.
+    :param charset: the charset for byte data in URLs
+    :param errors: the error handling on decode
+    :param collapse_http_schemes: if set to `False` the algorithm does
+                                  not assume that http and https on the
+                                  same server point to the same
+                                  resource.
+    """
+    from werkzeug.urls import uri_to_iri, url_fix
+
+    def _as_iri(obj):
+        if not isinstance(obj, unicode):
+            return uri_to_iri(obj, charset, errors)
+        return obj
+
+    def _normalize_netloc(scheme, netloc):
+        parts = netloc.split(u'@', 1)[-1].split(u':', 1)
+        if len(parts) == 2:
+            netloc, port = parts
+            if scheme == u'http' and port == u'80' or \
+               scheme == u'https' and port == u'443':
+                port = None
+        else:
+            netloc = parts[0]
+            port = None
+        if port is not None:
+            netloc += u':' + port
+        return netloc
+
+    # make sure whatever we are working on is a IRI and parse it
+    path = _as_iri(path_or_url)
+    if isinstance(environ_or_baseurl, dict):
+        environ_or_baseurl = get_current_url(environ_or_baseurl,
+                                             root_only=True)
+    base_iri = _as_iri(environ_or_baseurl)
+    base_scheme, base_netloc, base_path, = \
+        urlparse.urlsplit(base_iri)[:3]
+    cur_scheme, cur_netloc, cur_path, = \
+        urlparse.urlsplit(urlparse.urljoin(base_iri, path))[:3]
+
+    # normalize the network location
+    base_netloc = _normalize_netloc(base_scheme, base_netloc)
+    cur_netloc = _normalize_netloc(cur_scheme, cur_netloc)
+
+    # is that IRI even on a known HTTP scheme?
+    if collapse_http_schemes:
+        for scheme in base_scheme, cur_scheme:
+            if scheme not in (u'http', u'https'):
+                return None
+    else:
+        if not (base_scheme in (u'http', u'https') and \
+                base_scheme == cur_scheme):
+            return None
+
+    # are the netlocs compatibible?
+    if base_netloc != cur_netloc:
+        return None
+
+    # are we below the application path?
+    base_path = base_path.rstrip(u'/')
+    if not cur_path.startswith(base_path):
+        return None
+
+    return u'/' + cur_path[len(base_path):].lstrip(u'/')
 
 
 class SharedDataMiddleware(object):
