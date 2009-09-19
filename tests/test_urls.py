@@ -56,6 +56,15 @@ def test_sorted_url_encode():
                       key=lambda x: x[0].lower()) == 'A=1&a=2&B=3&b=4'
 
 
+def test_url_fixing():
+    """URL fixing"""
+    x = url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
+    assert x == 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+
+    x = url_fix('http://example.com/?foo=%2f%2f')
+    assert x == 'http://example.com/?foo=%2f%2f'
+
+
 def test_iri_support():
     """The IRI support"""
     assert_raises(UnicodeError, uri_to_iri, u'http://föö.com/')
@@ -66,3 +75,6 @@ def test_iri_support():
     assert iri_to_uri(u'http://☃.net/') == 'http://xn--n3h.net/'
     assert iri_to_uri(u'http://üser:pässword@☃.net/påth') == \
         'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+
+    assert uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
+        u'http://test.com/%3Fmeh?foo=%26%2F'

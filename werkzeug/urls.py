@@ -82,6 +82,11 @@ def uri_to_iri(uri, charset='utf-8', errors='ignore'):
     >>> uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
     u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
 
+    Query strings are left unchanged:
+
+    >>> uri_to_iri('/?foo=24&x=%26%2f')
+    u'/?foo=24&x=%26%2f'
+
     .. versionadded:: 0.6
 
     :param uri: the URI to convert
@@ -116,8 +121,16 @@ def uri_to_iri(uri, charset='utf-8', errors='ignore'):
         # port should be numeric, but you never know...
         hostname += u':' + port.decode(charset, errors)
 
-    path = _decode_unicode(urllib.unquote(path), charset, errors)
-    query = _decode_unicode(urllib.unquote(query), charset, errors)
+    # unquote the path, but keep question marks quoted so that the
+    # query string stays the same
+    path = _decode_unicode(urllib.unquote(path), charset, errors) \
+        .replace('?', '%3F')
+
+    # we only decode the querystring and leave quoted values alone
+    # because that's the easiest way to not corrupt it.  We can later
+    # write our own decode function that does not unquote some values
+    # such as ampersands.
+    query = _decode_unicode(query, charset, errors)
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
 
@@ -297,7 +310,7 @@ def url_fix(s, charset='utf-8'):
         s = s.encode(charset, 'ignore')
     scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
     path = urllib.quote(path, '/%')
-    qs = urllib.quote_plus(qs, ':&=')
+    qs = urllib.quote_plus(qs, ':&%=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 
