@@ -816,10 +816,6 @@ class PathConverter(BaseConverter):
         Rule('/<path:wikipage>/edit')
 
     :param map: the :class:`Map`.
-    :param minlength: the minimum length of the string.  Must be greater
-                      or equal 1.
-    :param maxlength: the maximum length of the string.
-    :param length: the exact length of the string.
     """
     regex = '[^/].*?'
     is_greedy = True
