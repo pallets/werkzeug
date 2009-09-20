@@ -48,6 +48,7 @@ Version 0.6
 - development server properly logs to the werkzeug logger now.
 - added :func:`werkzeug.extract_path_info`
 - fixed a querystring quoting bug in :func:`url_fix`
+- added `fallback_mimetype` to :class:`werkzeug.SharedDataMiddleware`.
 
 Version 0.5.1
 -------------

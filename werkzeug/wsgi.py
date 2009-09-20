@@ -284,13 +284,21 @@ class SharedDataMiddleware(object):
     work but this could also be by accident.  We strongly suggest using ASCII
     only file names for static files.
 
+    The middleware will guess the mimetype using the Python `mimetype`
+    module.  If it's unable to figure out the charset it will fall back
+    to `fallback_mimetype`.
+
     .. versionchanged:: 0.5
        The cache timeout is configurable now.
+
+    .. versionadded:: 0.6
+       The `fallback_mimetype` parameter was added.
 
     :param app: the application to wrap.  If you don't want to wrap an
                 application you can pass it :exc:`NotFound`.
     :param exports: a dict of exported files and folders.
     :param diallow: a list of :func:`~fnmatch.fnmatch` rules.
+    :param fallback_mimetype: the fallback mimetype for unknown files.
     :param cache: enable or disable caching headers.
     :Param cache_timeout: the cache timeout in seconds for the headers.
     """
@@ -299,7 +307,7 @@ class SharedDataMiddleware(object):
     __module__ = 'werkzeug'
 
     def __init__(self, app, exports, disallow=None, cache=True,
-                 cache_timeout=60 * 60 * 12):
+                 cache_timeout=60 * 60 * 12, fallback_mimetype='text/plain'):
         self.app = app
         self.exports = {}
         self.cache = cache
@@ -318,6 +326,7 @@ class SharedDataMiddleware(object):
         if disallow is not None:
             from fnmatch import fnmatch
             self.is_allowed = lambda x: not fnmatch(x, disallow)
+        self.fallback_mimetype = fallback_mimetype
 
     def is_allowed(self, filename):
         """Subclasses can override this method to disallow the access to
@@ -400,7 +409,7 @@ class SharedDataMiddleware(object):
             return self.app(environ, start_response)
 
         guessed_type = mimetypes.guess_type(real_filename)
-        mime_type = guessed_type[0] or 'text/plain'
+        mime_type = guessed_type[0] or self.fallback_mimetype
         f, mtime, file_size = file_loader()
 
         headers = [('Date', http_date())]
