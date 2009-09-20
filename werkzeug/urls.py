@@ -8,10 +8,55 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import urllib
 import urlparse
 
 from werkzeug._internal import _decode_unicode
+
+
+#: list of characters that are always safe in URLs.
+_always_safe = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         'abcdefghijklmnopqrstuvwxyz'
+                         '0123456789_.-')
+
+#: lookup table for encoded characters.
+_hextochr = dict(('%02x' % i, chr(i)) for i in xrange(256))
+_hextochr.update(('%02X' % i, chr(i)) for i in xrange(256))
+
+
+def _quote(s, safe='/', _quotechar='%%%02X'.__mod__):
+    assert isinstance(s, str), 'quote only works on bytes'
+    safe = _always_safe | set(safe)
+    rv = list(s)
+    for idx, char in enumerate(s):
+        if char not in safe:
+            rv[idx] = _quotechar(ord(char))
+    return ''.join(rv)
+
+
+def _quote_plus(s, safe=''):
+    if ' ' in s:
+        return _quote(s, safe + ' ').replace(' ', '+')
+    return _quote(s, safe)
+
+
+def _unquote(s, unsafe=''):
+    assert isinstance(s, str), 'unquote only works on bytes'
+    unsafe = set(unsafe)
+    rv = s.split('%')
+    for i in xrange(1, len(rv)):
+        item = rv[i]
+        try:
+            char = _hextochr[item[:2]]
+            if char in unsafe:
+                raise KeyError()
+            rv[i] = char + item[2:]
+        except KeyError:
+            rv[i] = '%' + item
+    return ''.join(rv)
+
+
+def _unquote_plus(s):
+    return _unquote(s.replace('+', ' '))
 
 
 def _uri_split(uri):
@@ -59,15 +104,15 @@ def iri_to_uri(iri, charset='utf-8'):
             auth, password = auth.split(':', 1)
         else:
             password = None
-        auth = urllib.quote(auth.encode(charset))
+        auth = _quote(auth.encode(charset))
         if password:
-            auth += ':' + urllib.quote(password.encode(charset))
+            auth += ':' + _quote(password.encode(charset))
         hostname = auth + '@' + hostname
     if port:
         hostname += ':' + port
 
-    path = urllib.quote(path.encode(charset), safe="/:~+")
-    query = urllib.quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
+    path = _quote(path.encode(charset), safe="/:~+")
+    query = _quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
 
@@ -112,25 +157,18 @@ def uri_to_iri(uri, charset='utf-8', errors='ignore'):
             auth, password = auth.split(':', 1)
         else:
             password = None
-        auth = _decode_unicode(urllib.unquote(auth), charset, errors)
+        auth = _decode_unicode(_unquote(auth), charset, errors)
         if password:
-            auth += u':' + _decode_unicode(urllib.unquote(password),
+            auth += u':' + _decode_unicode(_unquote(password),
                                            charset, errors)
         hostname = auth + u'@' + hostname
     if port:
         # port should be numeric, but you never know...
         hostname += u':' + port.decode(charset, errors)
 
-    # unquote the path, but keep question marks quoted so that the
-    # query string stays the same
-    path = _decode_unicode(urllib.unquote(path), charset, errors) \
-        .replace('?', '%3F')
-
-    # we only decode the querystring and leave quoted values alone
-    # because that's the easiest way to not corrupt it.  We can later
-    # write our own decode function that does not unquote some values
-    # such as ampersands.
-    query = _decode_unicode(query, charset, errors)
+    path = _decode_unicode(_unquote(path, '/;?'), charset, errors)
+    query = _decode_unicode(_unquote(query, ';/?:@&=+,$'),
+                            charset, errors)
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
 
@@ -177,7 +215,7 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
         else:
             key = pair
             value = ''
-        key = urllib.unquote_plus(key)
+        key = _unquote_plus(key)
         if decode_keys:
             key = _decode_unicode(key, charset, errors)
         result.append((key, url_unquote_plus(value, charset, errors)))
@@ -230,8 +268,8 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
                 value = value.encode(charset)
             else:
                 value = str(value)
-            tmp.append('%s=%s' % (urllib.quote(key),
-                                  urllib.quote_plus(value)))
+            tmp.append('%s=%s' % (_quote(key),
+                                  _quote_plus(value)))
     return separator.join(tmp)
 
 
@@ -246,7 +284,7 @@ def url_quote(s, charset='utf-8', safe='/:'):
         s = s.encode(charset)
     elif not isinstance(s, str):
         s = str(s)
-    return urllib.quote(s, safe=safe)
+    return _quote(s, safe=safe)
 
 
 def url_quote_plus(s, charset='utf-8', safe=''):
@@ -261,7 +299,7 @@ def url_quote_plus(s, charset='utf-8', safe=''):
         s = s.encode(charset)
     elif not isinstance(s, str):
         s = str(s)
-    return urllib.quote_plus(s, safe=safe)
+    return _quote_plus(s, safe=safe)
 
 
 def url_unquote(s, charset='utf-8', errors='ignore'):
@@ -275,7 +313,9 @@ def url_unquote(s, charset='utf-8', errors='ignore'):
     :param charset: the charset to be used.
     :param errors: the error handling for the charset decoding.
     """
-    return _decode_unicode(urllib.unquote(s), charset, errors)
+    if isinstance(s, unicode):
+        s = s.encode(charset)
+    return _decode_unicode(_unquote(s), charset, errors)
 
 
 def url_unquote_plus(s, charset='utf-8', errors='ignore'):
@@ -290,7 +330,7 @@ def url_unquote_plus(s, charset='utf-8', errors='ignore'):
     :param charset: the charset to be used.
     :param errors: the error handling for the charset decoding.
     """
-    return _decode_unicode(urllib.unquote_plus(s), charset, errors)
+    return _decode_unicode(_unquote_plus(s), charset, errors)
 
 
 def url_fix(s, charset='utf-8'):
@@ -309,8 +349,8 @@ def url_fix(s, charset='utf-8'):
     if isinstance(s, unicode):
         s = s.encode(charset, 'ignore')
     scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
-    path = urllib.quote(path, '/%')
-    qs = urllib.quote_plus(qs, ':&%=')
+    path = _quote(path, '/%')
+    qs = _quote_plus(qs, ':&%=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 
