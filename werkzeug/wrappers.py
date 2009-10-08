@@ -539,16 +539,13 @@ class BaseResponse(object):
     #: the default mimetype if none is provided.
     default_mimetype = 'text/plain'
 
+    #: if set to `False` accessing properties on the response object will
+    #: not try to consume the response iterator and buffer it.  By default
+    #: this will automatically happen for properties such as `data`.
+    implicit_iterable_buffering = True
+
     def __init__(self, response=None, status=None, headers=None,
                  mimetype=None, content_type=None, direct_passthrough=False):
-        if response is None:
-            self.response = []
-        elif isinstance(response, basestring):
-            self.response = [response]
-        elif isinstance(response, (tuple, list)):
-            self.response = response
-        else:
-            self.response = iter(response)
         if isinstance(headers, Headers):
             self.headers = headers
         elif not headers:
@@ -570,10 +567,40 @@ class BaseResponse(object):
             self.status_code = status
         else:
             self.status = status
+
+        # we set the response after the headers so that if a class changes
+        # the charset attribute, the data is set in the correct charset.
+        if response is None:
+            self.iterable = []
+        elif isinstance(response, basestring):
+            self.data = response
+        else:
+            self.iterable = response
         self.direct_passthrough = direct_passthrough
+        self._on_close = []
+
+    def call_on_close(self, func):
+        """Adds a function to the internal list of functions that should
+        be called as part of closing down the response.
+
+        .. versionadded:: 0.6
+        """
+        self._on_close.append(func)
+
+    def _get_response(self):
+        from warnings import warn
+        warn(DeprecationWarning('response.respons was renamed to '
+                                'response.iterable'), stacklevel=2)
+        return self.iterable
+    def _set_response(self, value):
+        from warnings import warn
+        warn(DeprecationWarning('response.respons was renamed to '
+                                'response.iterable'), stacklevel=2)
+        self.iterable = value
+    response = property(_get_response, _set_response)
 
     def __repr__(self):
-        if isinstance(self.response, (list, tuple)):
+        if self.iterable_is_buffered:
             body_info = '%d bytes' % sum(map(len, self.iter_encoded()))
         else:
             body_info = self.is_streamed and 'streamed' or 'likely-streamed'
@@ -654,14 +681,52 @@ class BaseResponse(object):
         """The string representation of the request body.  Whenever you access
         this property the request iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
+
+        This behavior can be disabled by setting
+        :attr:`implicit_iterable_buffering` to `False`.
         """
-        if not isinstance(self.response, list):
-            self.response = list(self.response)
-        return ''.join(self.iter_encoded())
+        self._ensure_buffered_iterable()
+        return ''.join(self.iterable)
     def _set_data(self, value):
-        self.response = [value]
+        # if an unicode string is set, it's encoded directly.  this allows
+        # us to guess the content length automatically in `get_wsgi_headers`.
+        if isinstance(value, unicode):
+            value = value.encode(self.charset)
+        self.iterable = [value]
     data = property(_get_data, _set_data, doc=_get_data.__doc__)
     del _get_data, _set_data
+
+    def _ensure_buffered_iterable(self):
+        if self.iterable_is_buffered:
+            return
+        if not self.implicit_iterable_buffering:
+            raise RuntimeError('The response object required the iterator '
+                               'to be buffered but implicit iterator '
+                               'consumption was disabled')
+        self.buffer_iterator()
+
+    @property
+    def iterable_is_buffered(self):
+        """If the iterator is buffered, this property will be `True`.  A
+        response object will consider an iterator to be buffered if the
+        response attribute is a list or tuple.
+        """
+        return isinstance(self.iterable, (tuple, list))
+
+    def buffer_iterator(self):
+        """Buffers the response iterator in a list.  By default this happens
+        if required.  If `implicit_iterable_buffering` is disabled, this
+        method is not automatically called and some properties might raise
+        exceptions.  This also encodes all the items.
+        """
+        if not self.iterable_is_buffered:
+            # if we consume an iterable we have to ensure that the close
+            # method of the iterable is called if available when we tear
+            # down the response
+            close = getattr(self.iterable, 'close', None)
+            self.iterable = list(self.iter_encoded())
+            if close is not None:
+                self.call_on_close(close)
 
     def iter_encoded(self, charset=None):
         """Iter the response encoded with the encoding specified.  If no
@@ -672,7 +737,7 @@ class BaseResponse(object):
         :attr:`direct_passthrough` was activated.
         """
         charset = charset or self.charset
-        for item in self.response:
+        for item in self.iterable:
             if isinstance(item, unicode):
                 yield item.encode(charset)
             else:
@@ -731,15 +796,17 @@ class BaseResponse(object):
         filtering that should not take place for streamed responses.
         """
         try:
-            len(self.response)
+            len(self.iterable)
         except TypeError:
             return True
         return False
 
     def close(self):
         """Close the wrapped response if possible."""
-        if hasattr(self.response, 'close'):
-            self.response.close()
+        if hasattr(self.iterable, 'close'):
+            self.iterable.close()
+        for func in self._on_close:
+            func()
 
     def freeze(self):
         """Call this method if you want to make your response object ready for
@@ -749,10 +816,8 @@ class BaseResponse(object):
         .. versionchanged:: 0.6
            The `Content-Length` header is now set.
         """
-        # this method invokes the descriptor on the base class because
-        # a subclass might change the behavior of that attribute
-        data = BaseResponse.data.__get__(self)
-        self.headers['Content-Length'] = str(len(data))
+        self.buffer_iterator()
+        self.headers['Content-Length'] = str(len(self.data))
 
     def fix_headers(self, environ):
         # XXX: deprecated
@@ -776,6 +841,11 @@ class BaseResponse(object):
            Previously that function was called `fix_headers` and modified
            the response object in place.  Also since 0.6, IRIs in location
            and content-location headers are handled properly.
+
+           Also starting with 0.6, Werkzeug will attempt to set the content
+           length if it is able to figure it out on its own.  This is the
+           case if all the strings in the response iterable are already
+           encoded and the iterable is buffered.
 
         :param environ: the WSGI environment of the request.
         :return: returns a new :class:`Headers` object.
@@ -803,6 +873,20 @@ class BaseResponse(object):
         elif self.status_code == 304:
             remove_entity_headers(headers)
 
+        # if we can determine the content length automatically, we
+        # should try to do that.  But only if this does not involve
+        # flattening the iterator or encoding of unicode strings in
+        # the response.
+        if self.iterable_is_buffered and 'content-length' not in self.headers:
+            try:
+                content_length = sum(len(str(x)) for x in self.iterable)
+            except UnicodeError:
+                # aha, something non-bytestringy in there, too bad, we
+                # can't savely figure out the length of the response.
+                pass
+            else:
+                self.headers['Content-Length'] = str(content_length)
+
         return headers
 
     def get_app_iter(self, environ):
@@ -823,7 +907,7 @@ class BaseResponse(object):
            100 <= self.status_code < 200 or self.status_code in (204, 304):
             return ()
         if self.direct_passthrough:
-            return self.response
+            return self.iterable
         return self.iter_encoded()
 
     def get_wsgi_response(self, environ):
@@ -1075,10 +1159,8 @@ class ResponseStream(object):
     def write(self, value):
         if self.closed:
             raise ValueError('I/O operation on closed file')
-        buf = self.response.response
-        if not isinstance(buf, list):
-            self.response.response = buf = list(buf)
-        buf.append(value)
+        self.response._ensure_buffered_iterable()
+        self.response.iterable.append(value)
 
     def writelines(self, seq):
         for item in seq:

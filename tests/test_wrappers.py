@@ -245,7 +245,7 @@ def test_response_stream_mixin():
     response = Response()
     response.stream.write('Hello ')
     response.stream.write('World!')
-    assert response.response == ['Hello ', 'World!']
+    assert response.iterable == ['Hello ', 'World!']
     assert response.data == 'Hello World!'
 
 
@@ -367,7 +367,7 @@ def test_response_freeze():
         yield "bar"
     resp = Response(generate())
     resp.freeze()
-    assert resp.response == ['foo', 'bar']
+    assert resp.iterable == ['foo', 'bar']
     assert resp.headers['content-length'] == '6'
 
 
