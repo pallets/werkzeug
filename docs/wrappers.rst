@@ -127,6 +127,8 @@ are available by mixing in various mixin classes or using :class:`Request` and
 
    .. automethod:: __call__
 
+   .. automethod:: _ensure_sequence
+
 
 Mixin Classes
 =============

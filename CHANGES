@@ -49,6 +49,10 @@ Version 0.6
 - added :func:`werkzeug.extract_path_info`
 - fixed a querystring quoting bug in :func:`url_fix`
 - added `fallback_mimetype` to :class:`werkzeug.SharedDataMiddleware`.
+- deprecated :meth:`BaseResponse.iter_encoded`'s charset parameter.
+- added :meth:`BaseResponse.make_sequence`,
+  :attr:`BaseResponse.is_sequence` and
+  :meth:`BaseResponse._ensure_sequence`.
 
 Version 0.5.1
 -------------

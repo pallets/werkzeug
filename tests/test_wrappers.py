@@ -245,7 +245,7 @@ def test_response_stream_mixin():
     response = Response()
     response.stream.write('Hello ')
     response.stream.write('World!')
-    assert response.iterable == ['Hello ', 'World!']
+    assert response.response == ['Hello ', 'World!']
     assert response.data == 'Hello World!'
 
 
@@ -367,7 +367,7 @@ def test_response_freeze():
         yield "bar"
     resp = Response(generate())
     resp.freeze()
-    assert resp.iterable == ['foo', 'bar']
+    assert resp.response == ['foo', 'bar']
     assert resp.headers['content-length'] == '6'
 
 
@@ -391,3 +391,62 @@ def test_urlfication():
     assert headers['location'] == \
         'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
     assert headers['content-location'] == 'http://xn--n3h.net/'
+
+
+def test_new_response_iterator_behavior():
+    """New response iterator encoding behavior"""
+    req = Request.from_values()
+    resp = Response(u'Hello Wörld!')
+
+    def get_content_length(resp):
+        headers = Headers.linked(resp.get_wsgi_headers(req.environ))
+        return headers.get('content-length', type=int)
+
+    def generate_items():
+        yield "Hello "
+        yield u"Wörld!"
+
+    # werkzeug encodes when set to `data` now, which happens
+    # if a string is passed to the response object.
+    assert resp.response == [u'Hello Wörld!'.encode('utf-8')]
+    assert resp.data == u'Hello Wörld!'.encode('utf-8')
+    assert get_content_length(resp) == 13
+    assert not resp.is_streamed
+    assert resp.is_sequence
+
+    # try the same for manual assignment
+    resp.data = u'Wörd'
+    assert resp.response == [u'Wörd'.encode('utf-8')]
+    assert resp.data == u'Wörd'.encode('utf-8')
+    assert get_content_length(resp) == 5
+    assert not resp.is_streamed
+    assert resp.is_sequence
+
+    # automatic generator sequence conversion
+    resp.response = generate_items()
+    assert resp.is_streamed
+    assert not resp.is_sequence
+    assert resp.data == u'Hello Wörld!'.encode('utf-8')
+    assert resp.response == ['Hello ', u'Wörld!'.encode('utf-8')]
+    assert not resp.is_streamed
+    assert resp.is_sequence
+
+    # automatic generator sequence conversion
+    resp.response = generate_items()
+    resp.implicit_seqence_conversion = False
+    assert resp.is_streamed
+    assert not resp.is_sequence
+    assert_raises(RuntimeError, lambda: resp.data)
+    resp.make_sequence()
+    assert resp.data == u'Hello Wörld!'.encode('utf-8')
+    assert resp.response == ['Hello ', u'Wörld!'.encode('utf-8')]
+    assert not resp.is_streamed
+    assert resp.is_sequence
+
+    # stream makes it a list no matter how the conversion is set
+    for val in True, False:
+        resp.implicit_seqence_conversion = val
+        resp.response = ("foo", "bar")
+        assert resp.is_sequence
+        resp.stream.write('baz')
+        assert resp.response == ['foo', 'bar', 'baz']

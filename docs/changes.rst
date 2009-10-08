@@ -24,6 +24,7 @@ API Changes
     -   `BaseResponse.header_list` was deprecated.  You should not
         need this function, `get_wsgi_headers` and the `to_list`
         method on the regular headers should serve as a replacement.
+    -   Deprecated `BaseResponse.iter_encoded`'s charset parameter.
     -   :class:`LimitedStream` non-silent usage was deprecated.
 
 `0.5`
