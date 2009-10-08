@@ -955,13 +955,14 @@ class BaseResponse(object):
         """
         # XXX: code for backwards compatibility with custom fix_headers
         # methods.
-        if __debug__ and self.fix_headers.func_code is not \
+        if self.fix_headers.func_code is not \
            BaseResponse.fix_headers.func_code:
-            from warnings import warn
-            warn(DeprecationWarning('fix_headers changed behavior in 0.6 '
-                                    'and is now called get_wsgi_headers. '
-                                    'See documentation for more details.'),
-                 stacklevel=2)
+            if __debug__:
+                from warnings import warn
+                warn(DeprecationWarning('fix_headers changed behavior in 0.6 '
+                                        'and is now called get_wsgi_headers. '
+                                        'See documentation for more details.'),
+                     stacklevel=2)
             self.fix_headers(environ)
             headers = self.headers
         else:
