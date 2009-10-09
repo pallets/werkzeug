@@ -111,9 +111,6 @@ class BaseRequest(object):
        data.
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     #: the charset for the request, defaults to utf-8
     charset = 'utf-8'
 
@@ -539,9 +536,6 @@ class BaseResponse(object):
                                unchanged (see :func:`wrap_file` for more
                                details.)
     """
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     #: the charset of the response.
     charset = 'utf-8'
@@ -989,9 +983,6 @@ class AcceptMixin(object):
     thereof).
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     @cached_property
     def accept_mimetypes(self):
         """List of mimetypes this client supports as :class:`MIMEAccept`
@@ -1033,9 +1024,6 @@ class ETagRequestMixin(object):
     only provides access to etags but also to the cache control header.
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     @cached_property
     def cache_control(self):
         """A :class:`RequestCacheControl` object for the incoming cache control
@@ -1072,9 +1060,6 @@ class UserAgentMixin(object):
     object.
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     @cached_property
     def user_agent(self):
         """The current user agent."""
@@ -1086,9 +1071,6 @@ class AuthorizationMixin(object):
     """Adds an :attr:`authorization` property that represents the parsed value
     of the `Authorization` header as :class:`Authorization` object.
     """
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     @cached_property
     def authorization(self):
@@ -1102,9 +1084,6 @@ class ETagResponseMixin(object):
     handling.  This mixin requires an object with at least a `headers`
     object that implements a dict like interface similar to :class:`Headers`.
     """
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     @property
     def cache_control(self):
@@ -1220,9 +1199,6 @@ class ResponseStreamMixin(object):
     a write-only interface to the response iterable.
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     @cached_property
     def stream(self):
         """The response iterable as write-only stream."""
@@ -1236,9 +1212,6 @@ class CommonRequestDescriptorsMixin(object):
 
     .. versionadded:: 0.5
     """
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     content_type = environ_property('CONTENT_TYPE', doc='''
          The Content-Type entity-header field indicates the media type of
@@ -1304,9 +1277,6 @@ class CommonResponseDescriptorsMixin(object):
     mix this class in will automatically get descriptors for a couple of
     HTTP headers with automatic type conversion.
     """
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     def _get_mimetype(self):
         ct = self.headers.get('content-type')
@@ -1443,9 +1413,6 @@ class CommonResponseDescriptorsMixin(object):
 class WWWAuthenticateMixin(object):
     """Adds a :attr:`www_authenticate` property to a response object."""
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     @property
     def www_authenticate(self):
         """The `WWW-Authenticate` header in a parsed form."""
@@ -1470,9 +1437,6 @@ class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
     - :class:`CommonRequestDescriptorsMixin` for common headers
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
 
 class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
                CommonResponseDescriptorsMixin,
@@ -1484,6 +1448,3 @@ class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
     - :class:`CommonResponseDescriptorsMixin` for various HTTP descriptors
     - :class:`WWWAuthenticateMixin` for HTTP authentication support
     """
-
-    # this class is public
-    __module__ = 'werkzeug'

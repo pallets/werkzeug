@@ -36,9 +36,6 @@ else:
 class Local(object):
     __slots__ = ('__storage__', '__lock__')
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     def __init__(self):
         object.__setattr__(self, '__storage__', {})
         object.__setattr__(self, '__lock__', allocate_lock())
@@ -89,9 +86,6 @@ class LocalManager(object):
     by appending them to `manager.locals`.  Everytime the manager cleans up
     it, will clean up all the data left in the locals for this context.
     """
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     def __init__(self, locals=None):
         if locals is None:
@@ -164,9 +158,6 @@ class LocalProxy(object):
     will be raised.
     """
     __slots__ = ('__local', '__dict__', '__name__')
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     def __init__(self, local, name):
         object.__setattr__(self, '_LocalProxy__local', local)

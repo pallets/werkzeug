@@ -321,9 +321,6 @@ class Template(object):
     templates from files on the file system to get better debug output.
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     default_context = {
         'escape':           utils.escape,
         'url_quote':        urls.url_quote,

@@ -41,18 +41,10 @@ def test_old_imports():
 
 
 def test_exposed_werkzeug_mod():
-    """Make sure all public classes are from the werkzeug module."""
+    """Make sure all things are importable."""
     import werkzeug
-    wrong_modules = []
     for key in werkzeug.__all__:
-        obj = getattr(werkzeug, key)
-        if isinstance(obj, type) and obj.__module__ != 'werkzeug':
-            wrong_modules.append(obj)
-
-    if wrong_modules:
-        print 'objects with wrong modules: %s' % ', '.join(
-            (x.__module__ + '.' + x.__name__ for x in wrong_modules))
-        assert False, 'found objects with __module__ not set to werkzeug'
+        getattr(werkzeug, key)
 
 
 def test_demand_import():

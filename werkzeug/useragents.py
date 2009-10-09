@@ -151,9 +151,6 @@ class UserAgent(object):
         the language of the browser
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     _parser = UserAgentParser()
 
     def __init__(self, environ_or_string):

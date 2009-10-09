@@ -405,9 +405,6 @@ class Href(object):
         `sort` and `key` were added.
     """
 
-    # this class is public
-    __module__ = 'werkzeug'
-
     def __init__(self, base='./', charset='utf-8', sort=False, key=None):
         if not base:
             base = './'

@@ -21,6 +21,7 @@ def test_multidict_pickle():
         assert type(ud) is type(d)
         print ud.lists()
         assert ud == d
+        assert pickle.loads(s.replace('werkzeug.datastructures', 'werkzeug')) == d
         ud['newkey'] = 'bla'
         assert ud != d
 
@@ -45,6 +46,8 @@ def test_immutable_dict_pickle():
             nd = dtype(d)
             od = pickle.loads(pickle.dumps(nd, protocol))
             assert od == nd
+            assert pickle.loads(pickle.dumps(nd, protocol) \
+                .replace('werkzeug.datastructures', 'werkzeug')) == nd
             assert type(od) is type(nd)
 
 
@@ -54,6 +57,8 @@ def test_immutable_list_pickle():
         l = ImmutableList(range(100))
         ul = pickle.loads(pickle.dumps(l, protocol))
         assert l == ul
+        assert pickle.loads(pickle.dumps(l, protocol) \
+            .replace('werkzeug.datastructures', 'werkzeug')) == l
         assert type(l) is type(ul)
 
 
