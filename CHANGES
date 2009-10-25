@@ -53,6 +53,7 @@ Version 0.6
 - added :meth:`BaseResponse.make_sequence`,
   :attr:`BaseResponse.is_sequence` and
   :meth:`BaseResponse._ensure_sequence`.
+- added better __repr__ of :class:`werkzeug.Map`
 
 Version 0.5.1
 -------------

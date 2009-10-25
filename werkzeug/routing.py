@@ -97,6 +97,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+from pprint import pformat
 from urlparse import urljoin
 from itertools import izip
 
@@ -1067,6 +1068,12 @@ class Map(object):
             for rules in self._rules_by_endpoint.itervalues():
                 rules.sort(lambda a, b: a.build_compare(b))
             self._remap = False
+
+
+    def __repr__(self):
+        rules = self.iter_rules()
+        return '%s([%s])' % (self.__class__.__name__, pformat(list(rules)))
+
 
 
 class MapAdapter(object):
