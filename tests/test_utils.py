@@ -180,10 +180,13 @@ def test_cookie_quoting():
 def test_import_string():
     """String based importing"""
     import cgi
+    from werkzeug.debug import DebuggedApplication
     assert import_string('cgi.escape') is cgi.escape
     assert import_string('cgi:escape') is cgi.escape
     assert import_string('XXXXXXXXXXXX', True) is None
     assert import_string('cgi.XXXXXXXXXXXX', True) is None
+    assert import_string(u'cgi.escape') is cgi.escape
+    assert import_string(u'werkzeug.debug.DebuggedApplication') is DebuggedApplication
     assert_raises(ImportError, import_string, 'XXXXXXXXXXXXXXXX')
     assert_raises(AttributeError, import_string, 'cgi.XXXXXXXXXX')
 

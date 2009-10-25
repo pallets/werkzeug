@@ -515,6 +515,10 @@ def import_string(import_name, silent=False):
             module, obj = import_name.rsplit('.', 1)
         else:
             return __import__(import_name)
+        # __import__ is not able to handle unicode strings in the fromlist
+        # if the module is a package
+        if isinstance(obj, unicode):
+            obj = obj.encode('utf-8')
         return getattr(__import__(module, None, None, [obj]), obj)
     except (ImportError, AttributeError):
         if not silent:
