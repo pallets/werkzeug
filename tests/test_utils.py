@@ -182,6 +182,7 @@ def test_import_string():
     import cgi
     from werkzeug.debug import DebuggedApplication
     assert import_string('cgi.escape') is cgi.escape
+    assert import_string(u'cgi.escape') is cgi.escape
     assert import_string('cgi:escape') is cgi.escape
     assert import_string('XXXXXXXXXXXX', True) is None
     assert import_string('cgi.XXXXXXXXXXXX', True) is None
