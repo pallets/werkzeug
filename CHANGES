@@ -54,6 +54,7 @@ Version 0.6
   :attr:`BaseResponse.is_sequence` and
   :meth:`BaseResponse._ensure_sequence`.
 - added better __repr__ of :class:`werkzeug.Map`
+- `import_string` accepts unicode strings as well now.
 
 Version 0.5.1
 -------------

@@ -508,6 +508,9 @@ def import_string(import_name, silent=False):
                    `None` is returned instead.
     :return: imported object
     """
+    # force the import name to automatically convert to strings
+    if isinstance(import_name, unicode):
+        import_name = str(import_name)
     try:
         if ':' in import_name:
             module, obj = import_name.split(':', 1)
