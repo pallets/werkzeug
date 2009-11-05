@@ -42,7 +42,6 @@ import time
 import thread
 import subprocess
 from urllib import unquote
-from urlparse import urlparse
 from itertools import chain
 from SocketServer import ThreadingMixIn, ForkingMixIn
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
@@ -60,7 +59,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return 'Werkzeug/' + werkzeug.__version__
 
     def make_environ(self):
-        path_info, query = urlparse(self.path)[2::2]
+        if '?' in self.path:
+            path_info, query = self.path.split('?', 1)
+        else:
+            path_info = self.path
+            query = ''
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
         environ = {
             'wsgi.version':         (1, 0),

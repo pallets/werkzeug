@@ -55,6 +55,7 @@ Version 0.6
   :meth:`BaseResponse._ensure_sequence`.
 - added better __repr__ of :class:`werkzeug.Map`
 - `import_string` accepts unicode strings as well now.
+- development server no breaks on double slashes after the host name.
 
 Version 0.5.1
 -------------
