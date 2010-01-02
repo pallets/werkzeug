@@ -78,3 +78,13 @@ def test_iri_support():
 
     assert uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
         u'http://test.com/%3Fmeh?foo=%26%2F'
+
+
+def test_href_past_root():
+    """Href() over root does not break the URL."""
+    base_href = Href('http://www.blagga.com/1/2/3')
+    assert base_href('../foo') == 'http://www.blagga.com/1/2/foo'
+    assert base_href('../../foo') == 'http://www.blagga.com/1/foo'
+    assert base_href('../../../foo') == 'http://www.blagga.com/foo'
+    assert base_href('../../../../foo') == 'http://www.blagga.com/foo'
+    assert base_href('../../../../../foo') == 'http://www.blagga.com/foo'

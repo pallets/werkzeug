@@ -37,7 +37,7 @@ r"""
 
         def application(environ, start_response):
             request = Request(environ)
-            sid = request.cookie.get('cookie_name')
+            sid = request.cookies.get('cookie_name')
             if sid is None:
                 request.session = session_store.new()
             else:
