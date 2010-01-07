@@ -82,7 +82,7 @@ $(function() {
           '<p>You can execute arbitrary Python code in the stack frames and ' +
           'there are some extra helpers available for introspection:' +
           '<ul><li><code>dump()</code> shows all variables in the frame' +
-          '<li><code>dump(obj)</code> dumps all what\'s know about the object</ul>');
+          '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>');
 
   /**
    * Add the pastebin feature
