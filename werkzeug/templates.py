@@ -20,9 +20,9 @@ from werkzeug._internal import _decode_unicode
 
 
 # Copyright notice: The `parse_data` method uses the string interpolation
-# algorithm by Ka-Ping Yee which originally was part of `ltpl20.py`_
+# algorithm by Ka-Ping Yee which originally was part of `Itpl20.py`_.
 #
-# .. _ltipl20.py: http://lfw.org/python/Itpl20.py
+# .. _Itpl20.py: http://lfw.org/python/Itpl20.py
 
 
 token_re = re.compile('%s|%s(?s)' % (

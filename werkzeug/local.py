@@ -25,7 +25,7 @@ from werkzeug._internal import _patch_wrapper
 
 
 # get the best ident function.  if greenlets are not installed we can
-# savely just use the builtin thread function and save a python methodcall
+# safely just use the builtin thread function and save a python methodcall
 # and the cost of calculating a hash.
 if get_current_greenlet is int:
     get_ident = get_current_thread
@@ -153,7 +153,7 @@ class LocalProxy(object):
         request = l('request')
         user = l('user')
 
-    Whenever something is bound to l.user / l.requesourececodest the proxy objects
+    Whenever something is bound to l.user / l.request the proxy objects
     will forward all operations.  If no object is bound a `RuntimeError`
     will be raised.
     """
