@@ -796,9 +796,12 @@ def run_wsgi_app(app, environ, buffered=False):
         while not response:
             buffer.append(app_iter.next())
         if buffer:
-            app_iter = chain(buffer, app_iter)
             close_func = getattr(app_iter, 'close', None)
+            app_iter = chain(buffer, app_iter)
             if close_func is not None:
                 app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], response[1]
+
+
+from werkzeug.wsgi import ClosingIterator

@@ -19,7 +19,7 @@ from nose.tools import assert_raises, raises
 
 from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ, \
-    ClientRedirectError, stream_encode_multipart
+    ClientRedirectError, stream_encode_multipart, run_wsgi_app
 from werkzeug.utils import redirect
 from werkzeug.wsgi import get_host
 from werkzeug.formparser import parse_form_data
@@ -347,3 +347,23 @@ def test_iri_support():
     b = EnvironBuilder(u'/föö-bar', base_url=u'http://☃.net/')
     assert b.path == '/f%C3%B6%C3%B6-bar'
     assert b.base_url == 'http://xn--n3h.net/'
+
+
+def test_run_wsgi_apps():
+    """Run various WSGI apps."""
+    def simple_app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return ['Hello World!']
+    app_iter, status, headers = run_wsgi_app(simple_app, {})
+    assert status == '200 OK'
+    assert headers == [('Content-Type', 'text/html')]
+    assert app_iter == ['Hello World!']
+
+    def yielding_app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        yield 'Hello '
+        yield 'World!'
+    app_iter, status, headers = run_wsgi_app(yielding_app, {})
+    assert status == '200 OK'
+    assert headers == [('Content-Type', 'text/html')]
+    assert list(app_iter) == ['Hello ', 'World!']
