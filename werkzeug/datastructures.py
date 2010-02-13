@@ -948,6 +948,8 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         return self.environ['HTTP_' + key]
 
     def __len__(self):
+        # the iter is necessary because otherwise list calls our
+        # len which would call list again and so forth.
         return len(list(iter(self)))
 
     def __iter__(self):

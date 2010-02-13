@@ -153,7 +153,7 @@ class _TestCookieJar(CookieJar):
         for cookie in self:
             cvals.append('%s=%s' % (cookie.name, cookie.value))
         if cvals:
-            environ['HTTP_COOKIE'] = ','.join(cvals)
+            environ['HTTP_COOKIE'] = ', '.join(cvals)
 
     def extract_wsgi(self, environ, headers):
         """Extract the server's set-cookie headers as cookies into the

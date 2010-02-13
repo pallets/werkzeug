@@ -58,6 +58,7 @@ Version 0.6
 - development server no breaks on double slashes after the host name.
 - better `__repr__` and `__str__` of
   :exception:`werkzeug.exceptions.HTTPException`
+- test client works correctly with multiple cookies now.
 
 Version 0.5.1
 -------------

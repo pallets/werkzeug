@@ -367,3 +367,18 @@ def test_run_wsgi_apps():
     assert status == '200 OK'
     assert headers == [('Content-Type', 'text/html')]
     assert list(app_iter) == ['Hello ', 'World!']
+
+
+def test_multiple_cookies():
+    """Ensure that the test client works with multiple cookies"""
+    @Request.application
+    def test_app(request):
+        response = Response(repr(sorted(request.cookies.items())))
+        response.set_cookie('test1', 'foo')
+        response.set_cookie('test2', 'bar')
+        return response
+    client = Client(test_app, Response)
+    resp = client.get('/')
+    assert resp.data == '[]'
+    resp = client.get('/')
+    assert resp.data == "[('test1', u'foo,'), ('test2', u'bar')]"
