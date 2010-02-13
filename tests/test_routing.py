@@ -10,8 +10,9 @@
 from nose.tools import assert_raises
 
 from werkzeug.wrappers import Response
+from werkzeug.datastructures import ImmutableDict
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect, \
-     RuleTemplate, Submount, EndpointPrefix, Subdomain
+     RuleTemplate, Submount, EndpointPrefix, Subdomain, UnicodeConverter
 from werkzeug.test import create_environ
 
 
@@ -308,3 +309,20 @@ def test_rule_templates():
         , ('/blah', 'meh', 'x_bar')
         , ('/meh', 'meh', 'x_baz') ]
     )
+
+
+def test_default_converters():
+    class MyMap(Map):
+        default_converters = Map.default_converters.copy()
+        default_converters['foo'] = UnicodeConverter
+    assert isinstance(Map.default_converters, ImmutableDict)
+    m = MyMap([
+        Rule('/a/<foo:a>', endpoint='a'),
+        Rule('/b/<foo:b>', endpoint='b'),
+        Rule('/c/<c>', endpoint='c')
+    ], converters={'bar': UnicodeConverter})
+    a = m.bind('example.org', '/')
+    assert a.match('/a/1') == ('a', {'a': '1'})
+    assert a.match('/b/2') == ('b', {'b': '2'})
+    assert a.match('/c/3') == ('c', {'c': '3'})
+    assert 'foo' not in Map.default_converters

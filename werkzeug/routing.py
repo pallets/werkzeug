@@ -914,6 +914,10 @@ class Map(object):
         `sort_parameters` and `sort_key` was added.
     """
 
+    #: .. versionadded:: 0.6
+    #:    a dict of default converters to be used.
+    default_converters = None
+
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
                  converters=None, sort_parameters=False, sort_key=None):
@@ -926,7 +930,7 @@ class Map(object):
         self.strict_slashes = strict_slashes
         self.redirect_defaults = redirect_defaults
 
-        self.converters = DEFAULT_CONVERTERS.copy()
+        self.converters = self.default_converters.copy()
         if converters:
             self.converters.update(converters)
 
@@ -1373,3 +1377,6 @@ DEFAULT_CONVERTERS = {
     'int':              IntegerConverter,
     'float':            FloatConverter
 }
+
+from werkzeug.datastructures import ImmutableDict
+Map.default_converters = ImmutableDict(DEFAULT_CONVERTERS)
