@@ -12,7 +12,6 @@ import sys
 import re
 import __builtin__ as builtins
 from compiler import ast, parse
-from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 from werkzeug import utils, urls
