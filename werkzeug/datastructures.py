@@ -947,9 +947,13 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
             return self.environ[key]
         return self.environ['HTTP_' + key]
 
+    def __len__(self):
+        return len(list(iter(self)))
+
     def __iter__(self):
         for key, value in self.environ.iteritems():
-            if key.startswith('HTTP_'):
+            if key.startswith('HTTP_') and key not in \
+               ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 yield key[5:].replace('_', '-').title(), value
             elif key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
                 yield key.replace('_', '-').title(), value

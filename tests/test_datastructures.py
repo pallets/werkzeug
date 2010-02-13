@@ -6,7 +6,7 @@ from cStringIO import StringIO
 from nose.tools import assert_raises
 from werkzeug.datastructures import FileStorage, MultiDict, \
      ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
-     ImmutableDict, Headers, ImmutableList
+     ImmutableDict, Headers, ImmutableList, EnvironHeaders
 
 
 def test_multidict_pickle():
@@ -300,3 +300,27 @@ def test_headers():
     assert headers.pop('a') == 1
     assert headers.pop('b', 2) == 2
     assert_raises(KeyError, headers.pop, 'c')
+
+
+def test_environ_headers_counts():
+    """Ensure that the EnvironHeaders count correctly."""
+    # this happens in multiple WSGI servers because they
+    # use a vary naive way to convert the headers;
+    broken_env = {
+        'HTTP_CONTENT_TYPE':        'text/html',
+        'CONTENT_TYPE':             'text/html',
+        'HTTP_CONTENT_LENGTH':      '0',
+        'CONTENT_LENGTH':           '0',
+        'HTTP_ACCEPT':              '*',
+        'wsgi.version':             (1, 0)
+    }
+    headers = EnvironHeaders(broken_env)
+    assert headers
+    assert len(headers) == 3
+    assert sorted(headers) == [
+        ('Accept', '*'),
+        ('Content-Length', '0'),
+        ('Content-Type', 'text/html')
+    ]
+    assert not EnvironHeaders({'wsgi.version': (1, 0)})
+    assert len(EnvironHeaders({'wsgi.version': (1, 0)})) == 0
