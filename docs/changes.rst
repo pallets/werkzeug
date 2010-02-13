@@ -26,6 +26,8 @@ API Changes
         method on the regular headers should serve as a replacement.
     -   Deprecated `BaseResponse.iter_encoded`'s charset parameter.
     -   :class:`LimitedStream` non-silent usage was deprecated.
+    -   the `__repr__` of HTTP exceptions changed.  This might break
+        doctests.
 
 `0.5`
     -   Werkzeug switched away from wsgiref as library for the builtin

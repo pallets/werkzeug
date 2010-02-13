@@ -11,7 +11,7 @@
 from nose.tools import assert_raises
 from werkzeug import url_quote, url_unquote, url_quote_plus, \
      url_unquote_plus, url_encode, url_decode, url_fix, uri_to_iri, \
-     iri_to_uri
+     iri_to_uri, Href
 
 
 def test_quoting():
