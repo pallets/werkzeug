@@ -170,13 +170,6 @@ class SecureCookie(ModificationTrackingDict):
             self.should_save and '*' or ''
         )
 
-    def should_save(self):
-        """True if the session should be saved.  By default this is only true
-        for :attr:`modified` cookies, not :attr:`new`.
-        """
-        return self.modified
-    should_save = property(should_save, doc=should_save.__doc__)
-
     @classmethod
     def quote(cls, value):
         """Quote the value for the cookie.  This can be any object supported

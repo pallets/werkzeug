@@ -45,5 +45,6 @@ Reference
    :members:
 
 .. autoclass:: FilesystemSessionStore
+   :members: list
 
 .. autoclass:: SessionMiddleware

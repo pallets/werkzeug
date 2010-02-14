@@ -63,6 +63,9 @@ Version 0.6
   the default converter mapping.  This helps subclasses to override
   the converters without passing them to the constructor.
 - implemented :class:`OrderedMultiDict`
+- improved the session support for more efficient session storing
+  on the filesystem.  Also added support for listing of sessions
+  to the filesystem session store.
 
 Version 0.5.1
 -------------

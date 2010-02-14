@@ -53,6 +53,7 @@ r"""
 """
 import re
 import os
+import tempfile
 from os import path
 from time import time
 from random import random
@@ -65,7 +66,7 @@ from cPickle import dump, load, HIGHEST_PROTOCOL
 from werkzeug import ClosingIterator, dump_cookie, parse_cookie, CallbackDict
 
 
-_sha1_re = re.compile(r'^[a-fA-F0-9]{40}$')
+_sha1_re = re.compile(r'^[a-f0-9]{40}$')
 
 
 def _urandom():
@@ -123,8 +124,21 @@ class Session(ModificationTrackingDict):
 
     @property
     def should_save(self):
-        """True if the session should be saved."""
-        return self.modified or self.new
+        """True if the session should be saved.
+
+        .. versionchanged:: 0.6
+           By default the session is now only saved if the session is
+           modified, not if it is new like it was before.
+        """
+        return self.modified
+
+    def __repr__(self):
+        return '<%s %s %s%s>' % (
+            self.__class__.__name__,
+            self.sid,
+            dict.__repr__(self),
+            self.should_save and '*' or ''
+        )
 
 
 class SessionStore(object):
@@ -176,6 +190,11 @@ class FilesystemSessionStore(SessionStore):
     """Simple example session store that saves sessions in the filesystem like
     PHP does.
 
+    .. versionchanged:: 0.6
+       `renew_missing` was added.  Previously this was considered `True`,
+       now the default changed to `False` and it can be explicitly
+       deactivated.
+
     :param path: the path to the folder used for storing the sessions.
                  If not provided the default temporary directory is used.
     :param filename_template: a string template used to give the session
@@ -183,47 +202,89 @@ class FilesystemSessionStore(SessionStore):
                               session id.
     :param session_class: The session class to use.  Defaults to
                           :class:`Session`.
+    :param renew_missing: set to `True` if you want the store to
+                          give the user a new sid if the session was
+                          not yet saved.
     """
 
     def __init__(self, path=None, filename_template='werkzeug_%s.sess',
-                 session_class=None):
+                 session_class=None, renew_missing=False, mode=0644):
         SessionStore.__init__(self, session_class)
         if path is None:
-            from tempfile import gettempdir
             path = gettempdir()
         self.path = path
         self.filename_template = filename_template
+        self.renew_missing = renew_missing
+        self.mode = mode
 
     def get_session_filename(self, sid):
         return path.join(self.path, self.filename_template % sid)
 
     def save(self, session):
-        f = file(self.get_session_filename(session.sid), 'wb')
-        try:
-            dump(dict(session), f, HIGHEST_PROTOCOL)
-        finally:
-            f.close()
+        def _dump(filename):
+            f = file(filename, 'wb')
+            try:
+                dump(dict(session), f, HIGHEST_PROTOCOL)
+            finally:
+                f.close()
+        fn = self.get_session_filename(session.sid)
+        if os.name == 'posix':
+            td, tmp = tempfile.mkstemp(suffix='.tmp', dir=self.path)
+            _dump(tmp)
+            try:
+                os.rename(tmp, fn)
+            except (IOError, OSError):
+                pass
+            os.chmod(fn, self.mode)
+        else:
+            _dump(fn)
+            try:
+                os.chmod(fn, self.mode)
+            except OSError:
+                # maybe some platforms fail here, have not found
+                # any that do thought.
+                pass
 
     def delete(self, session):
         fn = self.get_session_filename(session.sid)
         try:
-            # Late import because Google Appengine won't allow os.unlink
-            from os import unlink
-            unlink(fn)
+            os.unlink(fn)
         except OSError:
             pass
 
     def get(self, sid):
-        fn = self.get_session_filename(sid)
-        if not self.is_valid_key(sid) or not path.exists(fn):
+        if not self.is_valid_key(sid):
             return self.new()
+        try:
+            f = open(self.get_session_filename(sid), 'rb')
+        except IOError:
+            if self.renew_missing:
+                return self.new()
+            data = {}
         else:
-            f = file(fn, 'rb')
             try:
-                data = load(f)
+                try:
+                    data = load(f)
+                except Exception:
+                    data = {}
             finally:
                 f.close()
         return self.session_class(data, sid, False)
+
+    def list(self):
+        """Lists all sessions in the store.
+
+        .. versionadded:: 0.6
+        """
+        before, after = self.filename_template.split('%s', 1)
+        filename_re = re.compile(r'%s(.{5,})%s$' % (re.escape(before),
+                                                    re.escape(after)))
+        result = []
+        for filename in os.listdir(self.path):
+            match = filename_re.match(filename)
+            if match is not None:
+                result.append(match.group(1))
+        return result
 
 
 class SessionMiddleware(object):
