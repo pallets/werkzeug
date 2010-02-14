@@ -15,7 +15,7 @@ from nose.tools import assert_raises
 from datetime import datetime, timedelta
 from werkzeug.wrappers import *
 from werkzeug.wsgi import LimitedStream
-from werkzeug.utils import MultiDict
+from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict
 from werkzeug.test import Client, create_environ
 
 
@@ -450,3 +450,21 @@ def test_new_response_iterator_behavior():
         assert resp.is_sequence
         resp.stream.write('baz')
         assert resp.response == ['foo', 'bar', 'baz']
+
+
+def test_form_data_ordering():
+    """Make sure that the wrapper support custom structures."""
+    class MyRequest(Request):
+        parameter_storage_class = ImmutableOrderedMultiDict
+
+    req = MyRequest.from_values('/?foo=1&bar=0&foo=3')
+    assert list(req.args) == ['foo', 'bar']
+    assert req.args.items(multi=True) == [
+        ('foo', '1'),
+        ('bar', '0'),
+        ('foo', '3')
+    ]
+    assert isinstance(req.args, ImmutableOrderedMultiDict)
+    assert isinstance(req.values, CombinedMultiDict)
+    assert req.values['foo'] == '1'
+    assert req.values.getlist('foo') == ['1', '3']

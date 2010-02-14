@@ -142,6 +142,16 @@ class BaseRequest(object):
     #: .. versionadded:: 0.5
     max_form_memory_size = None
 
+    #: the class to use for `args` and `form`.  The default is an
+    #: :class:`ImmutableMultiDict` which supports multiple values per key.
+    #: alternatively it makes sense to use an :class:`ImmutableOrderedMultiDict`
+    #: which preserves order or a :class:`ImmutableDict` which is
+    #: the fastest but only remembers the last key.  It is also possible
+    #: to use mutable structures, but this is not recommended.
+    #:
+    #: .. versionadded:: 0.6
+    parameter_storage_class = ImmutableMultiDict
+
     def __init__(self, environ, populate_request=True, shallow=False):
         self.environ = environ
         if populate_request and not shallow:
@@ -271,7 +281,7 @@ class BaseRequest(object):
                                        self.charset, self.encoding_errors,
                                        self.max_form_memory_size,
                                        self.max_content_length,
-                                       cls=ImmutableMultiDict,
+                                       cls=self.parameter_storage_class,
                                        silent=False)
             except ValueError, e:
                 self._form_parsing_failed(e)
@@ -285,8 +295,8 @@ class BaseRequest(object):
                                        content_length)
 
         if data is None:
-            data = (stream, ImmutableMultiDict(),
-                    ImmutableMultiDict())
+            data = (stream, self.parameter_storage_class(),
+                    self.parameter_storage_class())
 
         # inject the values into the instance dict so that we bypass
         # our cached_property non-data descriptor.
@@ -321,10 +331,14 @@ class BaseRequest(object):
 
     @cached_property
     def args(self):
-        """The parsed URL parameters as :class:`ImmutableMultiDict`."""
+        """The parsed URL parameters.  By default a :class:`ImmutableMultiDict`
+        is returned from this function.  This can be changed by setting
+        :attr:`parameter_storage_class` to a different type.  This might
+        be necessary if the order of the form data is important.
+        """
         return url_decode(self.environ.get('QUERY_STRING', ''),
                           self.url_charset, errors=self.encoding_errors,
-                          cls=ImmutableMultiDict)
+                          cls=self.parameter_storage_class)
 
     @cached_property
     def data(self):
@@ -339,9 +353,10 @@ class BaseRequest(object):
 
     @cached_property
     def form(self):
-        """Form parameters.  Currently it's not guaranteed that the
-        :class:`ImmutableMultiDict` returned by this function is ordered in
-        the same way as the submitted form data.
+        """The form parameters.  By default a :class:`ImmutableMultiDict`
+        is returned from this function.  This can be changed by setting
+        :attr:`parameter_storage_class` to a different type.  This might
+        be necessary if the order of the form data is important.
         """
         self._load_form_data()
         return self.form
@@ -349,7 +364,12 @@ class BaseRequest(object):
     @cached_property
     def values(self):
         """Combined multi dict for :attr:`args` and :attr:`form`."""
-        return CombinedMultiDict([self.args, self.form])
+        args = []
+        for d in self.args, self.form:
+            if not isinstance(d, MultiDict):
+                d = MultiDict(d)
+            args.append(d)
+        return CombinedMultiDict(args)
 
     @cached_property
     def files(self):
@@ -369,7 +389,7 @@ class BaseRequest(object):
 
     @cached_property
     def cookies(self):
-        """The retrieved cookie values as regular dictionary."""
+        """Read only access to the retrieved cookie values as dictionary."""
         return parse_cookie(self.environ, self.charset,
                             cls=ImmutableTypeConversionDict)
 

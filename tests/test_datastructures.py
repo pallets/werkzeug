@@ -393,5 +393,4 @@ def test_ordered_multidict():
     id = ImmutableOrderedMultiDict(d)
     assert d == id
     d.add('foo', 2)
-    print d, id
     assert d != id
