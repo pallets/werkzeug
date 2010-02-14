@@ -243,33 +243,24 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
     """
-    if isinstance(obj, MultiDict):
-        items = obj.lists()
-    elif isinstance(obj, dict):
-        items = []
-        for k, v in obj.iteritems():
-            if not isinstance(v, (tuple, list)):
-                v = [v]
-            items.append((k, v))
-    else:
-        items = obj or ()
+    iterable = iter_multi_items(obj)
     if sort:
-        items.sort(key=key)
+        iterable = list(iterable)
+        iterable.sort(key=key)
     tmp = []
-    for key, values in items:
+    for key, value in iterable:
         if encode_keys and isinstance(key, unicode):
             key = key.encode(charset)
         else:
             key = str(key)
-        for value in values:
-            if value is None:
-                continue
-            elif isinstance(value, unicode):
-                value = value.encode(charset)
-            else:
-                value = str(value)
-            tmp.append('%s=%s' % (_quote(key),
-                                  _quote_plus(value)))
+        if value is None:
+            continue
+        elif isinstance(value, unicode):
+            value = value.encode(charset)
+        else:
+            value = str(value)
+        tmp.append('%s=%s' % (_quote(key),
+                              _quote_plus(value)))
     return separator.join(tmp)
 
 
@@ -445,4 +436,4 @@ class Href(object):
 
 
 # circular dependencies
-from werkzeug.datastructures import MultiDict
+from werkzeug.datastructures import MultiDict, iter_multi_items

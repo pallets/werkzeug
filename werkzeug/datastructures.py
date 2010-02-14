@@ -22,6 +22,25 @@ def is_immutable(self):
     raise TypeError('%r objects are immutable' % self.__class__.__name__)
 
 
+def iter_multi_items(mapping):
+    """Iterates over the items of a mapping yielding keys and values
+    without dropping any from more complex structures.
+    """
+    if isinstance(mapping, MultiDict):
+        for item in mapping.iteritems(multi=True):
+            yield item
+    elif isinstance(mapping, dict):
+        for key, value in mapping.iteritems():
+            if isinstance(value, (tuple, list)):
+                for value in value:
+                    yield key, value
+            else:
+                yield key, value
+    else:
+        for item in mapping:
+            yield item
+
+
 class ImmutableListMixin(object):
     """Makes a :class:`list` immutable.
 
@@ -589,8 +608,8 @@ class _omd_bucket(object):
 
 class OrderedMultiDict(MultiDict):
     """Works like a regular :class:`MultiDict` but preserves the
-    order of the fields.  The implementation uses a list and a
-    hashmap for better runtime to the cost of higher memory usage.
+    order of the fields.  To convert the ordered multi dict into a
+    list you can use the :meth:`items` method and pass it ``multi=True``.
 
     In general an :class:`OrderedMultiDict` is an order of magnitude
     slower than a :class:`MultiDict`.
@@ -714,20 +733,8 @@ class OrderedMultiDict(MultiDict):
                         'ordered multi dicts')
 
     def update(self, mapping):
-        add = OrderedMultiDict.add
-        if isinstance(mapping, MultiDict):
-            for key, value in mapping.iteritems(multi=True):
-                add(self, key, value)
-        elif isinstance(mapping, dict):
-            for key, value in mapping.iteritems():
-                if isinstance(value, (tuple, list)):
-                    for value in value:
-                        add(self, key, value)
-                else:
-                    add(self, key, value)
-        else:
-            for key, value in mapping:
-                add(self, key, value)
+        for key, value in iter_multi_items(mapping):
+            OrderedMultiDict.add(self, key, value)
 
     def poplist(self, key):
         buckets = dict.pop(self, key, ())

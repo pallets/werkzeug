@@ -12,7 +12,7 @@ from nose import SkipTest
 from nose.tools import assert_raises
 from werkzeug import url_quote, url_unquote, url_quote_plus, \
      url_unquote_plus, url_encode, url_decode, url_fix, uri_to_iri, \
-     iri_to_uri, Href
+     iri_to_uri, Href, OrderedMultiDict
 
 
 def test_quoting():
@@ -79,6 +79,17 @@ def test_iri_support():
 
     assert uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
         u'http://test.com/%3Fmeh?foo=%26%2F'
+
+
+def test_ordered_multidict_encoding():
+    """"Make sure URLs are properly encoded from OrderedMultiDicts"""
+    d = OrderedMultiDict()
+    d.add('foo', 1)
+    d.add('foo', 2)
+    d.add('foo', 3)
+    d.add('bar', 0)
+    d.add('foo', 4)
+    assert url_encode(d) == 'foo=1&foo=2&foo=3&bar=0&foo=4'
 
 
 def test_href_past_root():
