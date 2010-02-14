@@ -29,7 +29,12 @@ General Purpose
    :members:
    :inherited-members:
 
+.. autoclass:: OrderedMultiDict
+
 .. autoclass:: ImmutableMultiDict
+   :members: copy
+
+.. autoclass:: ImmutableOrderedMultiDict
    :members: copy
 
 .. autoclass:: CombinedMultiDict

@@ -124,6 +124,9 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
     def __reduce_ex__(self, protocol):
         return type(self), (self.items(multi=True),)
 
+    def add(self, key, value):
+        is_immutable(self)
+
     def popitemlist(self):
         is_immutable(self)
 
@@ -293,6 +296,9 @@ class MultiDict(TypeConversionDict):
         dict.clear(self)
         dict.update(self, value)
 
+    def __iter__(self):
+        return self.iterkeys()
+
     def __getitem__(self, key):
         """Return the first data value for this key;
         raises KeyError if not found.
@@ -305,8 +311,22 @@ class MultiDict(TypeConversionDict):
         raise self.KeyError(key)
 
     def __setitem__(self, key, value):
-        """Set an item as list."""
+        """Like :meth:`add` but removes an existing key first.
+
+        :param key: the key for the value.
+        :param value: the value to set.
+        """
         dict.__setitem__(self, key, [value])
+
+    def add(self, key, value):
+        """Adds a new value for the key.
+
+        .. versionadded:: 0.6
+
+        :param key: the key for the value.
+        :param value: the value to add.
+        """
+        dict.setdefault(self, key, []).append(value)
 
     def getlist(self, key, type=None):
         """Return the list of items for a given key. If that key is not in the
@@ -402,11 +422,13 @@ class MultiDict(TypeConversionDict):
         """
         return list(self.iteritems(multi))
 
-    #: Return a list of ``(key, value)`` pairs, where values is the list of
-    #: all values associated with the key.
-    #:
-    #: :return: a :class:`list`
-    lists = dict.items
+    def lists(self):
+        """Return a list of ``(key, value)`` pairs, where values is the list of
+        all values associated with the key.
+
+        :return: a :class:`list`
+        """
+        return list(self.iterlists())
 
     def values(self):
         """Returns a list of the first value on every key's value list.
@@ -470,7 +492,7 @@ class MultiDict(TypeConversionDict):
         """
         if flat:
             return dict(self.iteritems())
-        return dict(self)
+        return dict(self.lists())
 
     def update(self, other_dict):
         """update() extends rather than replaces existing key lists."""
@@ -478,7 +500,7 @@ class MultiDict(TypeConversionDict):
             for key, value_list in other_dict.iterlists():
                 self.setlistdefault(key, []).extend(value_list)
         elif isinstance(other_dict, dict):
-            for key, value in other_dict.items():
+            for key, value in other_dict.iteritems():
                 self.setlistdefault(key, []).append(value)
         else:
             for key, value in other_dict:
@@ -498,11 +520,11 @@ class MultiDict(TypeConversionDict):
         :param default: if provided the value to return if the key was
                         not in the dictionary.
         """
-        if default is not _missing:
-            return dict.pop(self, key, default)
         try:
             return dict.pop(self, key)[0]
         except KeyError, e:
+            if default is not _missing:
+                return default
             raise self.KeyError(str(e))
 
     def popitem(self):
@@ -532,6 +554,215 @@ class MultiDict(TypeConversionDict):
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.items(multi=True))
+
+
+class _omd_bucket(object):
+    """Wraps values in the :class:`OrderedMultiDict`.  This makes it
+    possible to keep an order over multiple different keys.  It requires
+    a lot of extra memory and slows down access a lot, but makes it
+    possible to access elements in O(1) and iterate in O(n).
+    """
+    __slots__ = ('prev', 'key', 'value', 'next')
+
+    def __init__(self, omd, key, value):
+        self.prev = omd._last_bucket
+        self.key = key
+        self.value = value
+        self.next = None
+
+        if omd._first_bucket is None:
+            omd._first_bucket = self
+        if omd._last_bucket is not None:
+            omd._last_bucket.next = self
+        omd._last_bucket = self
+
+    def unlink(self, omd):
+        if self.prev:
+            self.prev.next = self.next
+        if self.next:
+            self.next.prev = self.prev
+        if omd._first_bucket is self:
+            omd._first_bucket = self.next
+        if omd._last_bucket is self:
+            omd._last_bucket = self.prev
+
+
+class OrderedMultiDict(MultiDict):
+    """Works like a regular :class:`MultiDict` but preserves the
+    order of the fields.  The implementation uses a list and a
+    hashmap for better runtime to the cost of higher memory usage.
+
+    In general an :class:`OrderedMultiDict` is an order of magnitude
+    slower than a :class:`MultiDict`.
+    """
+
+    def __init__(self, mapping=None):
+        dict.__init__(self)
+        self._first_bucket = self._last_bucket = None
+        if mapping is not None:
+            OrderedMultiDict.update(self, mapping)
+
+    def __eq__(self, other):
+        if not isinstance(other, MultiDict):
+            return NotImplemented
+        if isinstance(other, OrderedMultiDict):
+            iter1 = self.iteritems(multi=True)
+            iter2 = other.iteritems(multi=True)
+            try:
+                for k1, v1 in iter1:
+                    k2, v2 = iter2.next()
+                    if k1 != k2 or v1 != v2:
+                        return False
+            except StopIteration:
+                return False
+            try:
+                iter2.next()
+            except StopIteration:
+                return True
+            return False
+        if len(self) != len(other):
+            return False
+        for key, values in self.iterlists():
+            if other.getlist(key) != values:
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __reduce_ex__(self, protocol):
+        return type(self), (self.items(multi=True),)
+
+    def __getstate__(self):
+        return self.items(multi=True)
+
+    def __setstate__(self, values):
+        dict.clear(self)
+        for key, value in values:
+            self.add(key, value)
+
+    def __getitem__(self, key):
+        if key in self:
+            return dict.__getitem__(self, key)[0].value
+        raise self.KeyError(key)
+
+    def __setitem__(self, key, value):
+        self.poplist(key)
+        self.add(key, value)
+
+    def __delitem__(self, key):
+        self.pop(key)
+
+    def iterkeys(self):
+        return (key for key, value in self.iteritems())
+
+    def itervalues(self):
+        return (value for key, value in self.iteritems())
+
+    def iteritems(self, multi=False):
+        ptr = self._first_bucket
+        if multi:
+            while ptr is not None:
+                yield ptr.key, ptr.value
+                ptr = ptr.next
+        else:
+            returned_keys = set()
+            while ptr is not None:
+                if ptr.key not in returned_keys:
+                    returned_keys.add(ptr.key)
+                    yield ptr.key, ptr.value
+                ptr = ptr.next
+
+    def iterlists(self):
+        returned_keys = set()
+        ptr = self._first_bucket
+        while ptr is not None:
+            if ptr.key not in returned_keys:
+                yield ptr.key, self.getlist(ptr.key)
+                returned_keys.add(ptr.key)
+            ptr = ptr.next
+
+    def iterlistvalues(self):
+        for key, values in self.iterlists():
+            yield values
+
+    def add(self, key, value):
+        dict.setdefault(self, key, []).append(_omd_bucket(self, key, value))
+
+    def getlist(self, key, type=None):
+        try:
+            rv = dict.__getitem__(self, key)
+        except KeyError:
+            return []
+        if type is None:
+            return [x.value for x in rv]
+        result = []
+        for item in rv:
+            try:
+                result.append(type(item.value))
+            except ValueError:
+                pass
+        return result
+
+    def setlist(self, key, new_list):
+        self.poplist(key)
+        for value in new_list:
+            self.add(key, value)
+
+    def setlistdefault(self, key, default_list=None):
+        raise TypeError('setlistdefault is unsupported for '
+                        'ordered multi dicts')
+
+    def update(self, mapping):
+        add = OrderedMultiDict.add
+        if isinstance(mapping, MultiDict):
+            for key, value in mapping.iteritems(multi=True):
+                add(self, key, value)
+        elif isinstance(mapping, dict):
+            for key, value in mapping.iteritems():
+                if isinstance(value, (tuple, list)):
+                    for value in value:
+                        add(self, key, value)
+                else:
+                    add(self, key, value)
+        else:
+            for key, value in mapping:
+                add(self, key, value)
+
+    def poplist(self, key):
+        buckets = dict.pop(self, key, ())
+        for bucket in buckets:
+            bucket.unlink(self)
+        return [x.value for x in buckets]
+
+    def pop(self, key, default=_missing):
+        try:
+            buckets = dict.pop(self, key)
+        except KeyError, e:
+            if default is not _missing:
+                return default
+            raise self.KeyError(str(e))
+        for bucket in buckets:
+            bucket.unlink(self)
+        return buckets[0].value
+
+    def popitem(self):
+        try:
+            key, buckets = dict.popitem(self)
+        except KeyError, e:
+            raise self.KeyError(str(e))
+        for bucket in buckets:
+            bucket.unlink(self)
+        return key, buckets[0].value
+
+    def popitemlist(self):
+        try:
+            key, buckets = dict.popitem(self)
+        except KeyError, e:
+            raise self.KeyError(str(e))
+        for bucket in buckets:
+            bucket.unlink(self)
+        return key, [x.value for x in buckets]
 
 
 class Headers(object):
@@ -937,7 +1168,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
                         'no separate initializer' % cls.__name__)
 
     def __eq__(self, other):
-        return self is other
+        return self.environ is other.environ
 
     def __getitem__(self, key, _index_operation=False):
         # _index_operation is a no-op for this class as there is no index but
@@ -1163,6 +1394,23 @@ class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
         like for any other python immutable type (eg: :class:`tuple`).
         """
         return MultiDict(self)
+
+    def __copy__(self):
+        return self
+
+
+class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
+    """An immutable :class:`OrderedMultiDict`.
+
+    .. versionadded:: 0.6
+    """
+
+    def copy(self):
+        """Return a shallow mutable copy of this object.  Keep in mind that
+        the standard library's :func:`copy` function is a no-op for this class
+        like for any other python immutable type (eg: :class:`tuple`).
+        """
+        return OrderedMultiDict(self)
 
     def __copy__(self):
         return self

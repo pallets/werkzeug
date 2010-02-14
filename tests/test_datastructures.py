@@ -6,7 +6,8 @@ from cStringIO import StringIO
 from nose.tools import assert_raises
 from werkzeug.datastructures import FileStorage, MultiDict, \
      ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
-     ImmutableDict, Headers, ImmutableList, EnvironHeaders
+     ImmutableDict, Headers, ImmutableList, EnvironHeaders, \
+     OrderedMultiDict, ImmutableOrderedMultiDict
 
 
 def test_multidict_pickle():
@@ -19,11 +20,21 @@ def test_multidict_pickle():
         s = pickle.dumps(d, protocol)
         ud = pickle.loads(s)
         assert type(ud) is type(d)
-        print ud.lists()
         assert ud == d
         assert pickle.loads(s.replace('werkzeug.datastructures', 'werkzeug')) == d
         ud['newkey'] = 'bla'
         assert ud != d
+
+        d2 = OrderedMultiDict(d)
+        d2.add('foo', 5)
+        s = pickle.dumps(d2, protocol)
+        ud = pickle.loads(s)
+        assert type(ud) is type(d2)
+        assert ud == d2
+        ud['newkey'] = 'bla'
+        print ud
+        print d2
+        assert ud != d2
 
         im = ImmutableMultiDict(d)
         assert im == d
@@ -324,3 +335,63 @@ def test_environ_headers_counts():
     ]
     assert not EnvironHeaders({'wsgi.version': (1, 0)})
     assert len(EnvironHeaders({'wsgi.version': (1, 0)})) == 0
+
+
+def test_multidict_pop():
+    """Ensure pop from multidict works like it should"""
+    make_d = lambda: MultiDict({'foo': [1, 2, 3, 4]})
+    d = make_d()
+    assert d.pop('foo') == 1
+    assert not d
+    d = make_d()
+    assert d.pop('foo', 32) == 1
+    assert not d
+    d = make_d()
+    assert d.pop('foos', 32) == 32
+    assert d
+    assert_raises(KeyError, d.pop, 'foos')
+
+
+def test_ordered_multidict():
+    """Test the OrderedMultiDict"""
+    d = OrderedMultiDict()
+    assert not d
+    d.add('foo', 'bar')
+    assert len(d) == 1
+    d.add('foo', 'baz')
+    assert len(d) == 1
+    assert d.items() == [('foo', 'bar')]
+    assert list(d) == ['foo']
+    assert d.items(multi=True) == [('foo', 'bar'),
+                                   ('foo', 'baz')]
+    del d['foo']
+    assert not d
+    assert len(d) == 0
+    assert list(d) == []
+
+    d.update([('foo', 1), ('foo', 2), ('bar', 42)])
+    d.add('foo', 3)
+    assert d.getlist('foo') == [1, 2, 3]
+    assert d.getlist('bar') == [42]
+    assert d.items() == [('foo', 1), ('bar', 42)]
+    assert d.items(multi=True) == [('foo', 1), ('foo', 2),
+                                   ('bar', 42), ('foo', 3)]
+    assert len(d) == 2
+
+    assert d.pop('foo') == 1
+    assert d.pop('blafasel', None) is None
+    assert d.pop('blafasel', 42) == 42
+    assert len(d) == 1
+    assert d.poplist('bar') == [42]
+    assert not d
+
+    d.add('foo', 42)
+    d.add('foo', 23)
+    d.add('bar', 2)
+    d.add('foo', 42)
+    assert d == MultiDict(d)
+    id = ImmutableOrderedMultiDict(d)
+    assert d == id
+    d.add('foo', 2)
+    print d, id
+    assert d != id

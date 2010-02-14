@@ -62,6 +62,7 @@ Version 0.6
 - the :class:`werkzeug.routing.Map` now has a class attribute with
   the default converter mapping.  This helps subclasses to override
   the converters without passing them to the constructor.
+- implemented :class:`OrderedMultiDict`
 
 Version 0.5.1
 -------------
