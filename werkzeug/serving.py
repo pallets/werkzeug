@@ -412,6 +412,15 @@ def restart_with_reloader():
         args = [sys.executable] + sys.argv
         new_environ = os.environ.copy()
         new_environ['WERKZEUG_RUN_MAIN'] = 'true'
+
+        # a weird bug on windows. sometimes unicode strings end up in the
+        # environment and subprocess.call does not like this, encode them
+        # to latin1 and continue.
+        if os.name == 'nt':
+            for key, value in new_environ:
+                if isinstance(value, unicode):
+                    new_environ[key] = value.encode('iso-8859-1')
+
         exit_code = subprocess.call(args, env=new_environ)
         if exit_code != 3:
             return exit_code
