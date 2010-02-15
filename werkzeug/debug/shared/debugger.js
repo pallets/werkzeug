@@ -160,7 +160,7 @@ function openShell(consoleNode, target, frameID) {
 
   var command = $('<input type="text">')
     .appendTo(form)
-    .keypress(function(e) {
+    .keydown(function(e) {
       if (e.charCode == 100 && e.ctrlKey) {
         output.text('--- screen cleared ---');
         return false;
