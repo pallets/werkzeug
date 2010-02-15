@@ -87,7 +87,7 @@ class ProfilerMiddleware(object):
         p = Profile()
         p.runcall(runapp)
         body = ''.join(response_body)
-        stats = Stats(p)
+        stats = Stats(p, stream=self._stream)
         stats.sort_stats(*self._sort_by)
 
         self._stream.write('-' * 80)

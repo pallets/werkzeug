@@ -73,6 +73,7 @@ Version 0.6
 - werkzeug debugger should work on the appengine dev server now.
 - the URL builder supports dropping of unexpected arguments now.
   Previously they were always appended to the URL as query string.
+- profiler now writes to the correct stream.
 
 Version 0.5.1
 -------------
