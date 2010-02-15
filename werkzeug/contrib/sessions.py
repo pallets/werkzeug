@@ -186,6 +186,10 @@ class SessionStore(object):
         return self.session_class({}, sid, True)
 
 
+#: used for temporary files by the filesystem session store
+_fs_transaction_suffix = '.__wz_sess'
+
+
 class FilesystemSessionStore(SessionStore):
     """Simple example session store that saves sessions in the filesystem like
     PHP does.
@@ -216,6 +220,8 @@ class FilesystemSessionStore(SessionStore):
         if isinstance(filename_template, unicode):
             filename_template = filename_template.encode(
                 sys.getfilesystemencoding() or 'utf-8')
+        assert not filename_template.endswith(_fs_transaction_suffix), \
+            'filename templates may not end with %s' % _fs_transaction_suffix
         self.filename_template = filename_template
         self.renew_missing = renew_missing
         self.mode = mode
@@ -234,7 +240,8 @@ class FilesystemSessionStore(SessionStore):
                 f.close()
         fn = self.get_session_filename(session.sid)
         if os.name == 'posix':
-            td, tmp = tempfile.mkstemp(suffix='.tmp', dir=self.path)
+            td, tmp = tempfile.mkstemp(suffix=_fs_transaction_suffix,
+                                       dir=self.path)
             _dump(tmp)
             try:
                 os.rename(tmp, fn)
@@ -286,6 +293,9 @@ class FilesystemSessionStore(SessionStore):
                                                     re.escape(after)))
         result = []
         for filename in os.listdir(self.path):
+            #: this is a session that is still being saved.
+            if filename.endswith(_fs_transaction_suffix):
+                continue
             match = filename_re.match(filename)
             if match is not None:
                 result.append(match.group(1))
