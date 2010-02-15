@@ -213,6 +213,9 @@ class FilesystemSessionStore(SessionStore):
         if path is None:
             path = gettempdir()
         self.path = path
+        if isinstance(filename_template, unicode):
+            filename_template = filename_template.encode(
+                sys.getfilesystemencoding() or 'utf-8')
         self.filename_template = filename_template
         self.renew_missing = renew_missing
         self.mode = mode
