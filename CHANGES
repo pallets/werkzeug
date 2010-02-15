@@ -68,6 +68,8 @@ Version 0.6
   to the filesystem session store.
 - werkzeug no longer utilizes the Python time module for parsing
   which means that dates in a broader range can be parsed.
+- the wrappers have no class attributes that make it possible to
+  swap out the dict and list types it uses.
 
 Version 0.5.1
 -------------

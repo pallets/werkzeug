@@ -15,7 +15,8 @@ from nose.tools import assert_raises
 from datetime import datetime, timedelta
 from werkzeug.wrappers import *
 from werkzeug.wsgi import LimitedStream
-from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict
+from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
+     ImmutableList, ImmutableTypeConversionDict
 from werkzeug.test import Client, create_environ
 
 
@@ -468,3 +469,23 @@ def test_form_data_ordering():
     assert isinstance(req.values, CombinedMultiDict)
     assert req.values['foo'] == '1'
     assert req.values.getlist('foo') == ['1', '3']
+
+
+def test_storage_classes():
+    """Test custom storage classes to be used for incoming data."""
+    class MyRequest(Request):
+        dict_storage_class = dict
+        list_storage_class = list
+    req = MyRequest.from_values(headers={
+        'Cookie':   'foo=bar'
+    })
+    assert type(req.cookies) is dict
+    assert req.cookies == {'foo': 'bar'}
+    assert type(req.access_route) is list
+
+    req = Request.from_values(headers={
+        'Cookie':   'foo=bar'
+    })
+    assert type(req.cookies) is ImmutableTypeConversionDict
+    assert req.cookies == {'foo': 'bar'}
+    assert type(req.access_route) is ImmutableList

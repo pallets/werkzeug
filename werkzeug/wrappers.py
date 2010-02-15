@@ -152,6 +152,20 @@ class BaseRequest(object):
     #: .. versionadded:: 0.6
     parameter_storage_class = ImmutableMultiDict
 
+    #: the type to be used for list values from the incoming WSGI
+    #: environment.  By default an :class:`ImmutableList` is used
+    #: (for example for :attr:`access_list`).
+    #:
+    #: .. versionadded:: 0.6
+    list_storage_class = ImmutableList
+
+    #: the type to be used for dict values from the incoming WSGI
+    #: environment.  By default an :class:`ImmutableTypeConversionDict`
+    #: is used (for example for :attr:`cookies`).
+    #:
+    #: .. versionadded:: 0.6
+    dict_storage_class = ImmutableTypeConversionDict
+
     def __init__(self, environ, populate_request=True, shallow=False):
         self.environ = environ
         if populate_request and not shallow:
@@ -391,7 +405,7 @@ class BaseRequest(object):
     def cookies(self):
         """Read only access to the retrieved cookie values as dictionary."""
         return parse_cookie(self.environ, self.charset,
-                            cls=ImmutableTypeConversionDict)
+                            cls=self.dict_storage_class)
 
     @cached_property
     def headers(self):
@@ -452,10 +466,10 @@ class BaseRequest(object):
         """
         if 'HTTP_X_FORWARDED_FOR' in self.environ:
             addr = self.environ['HTTP_X_FORWARDED_FOR'].split(',')
-            return ImmutableList([x.strip() for x in addr])
+            return self.list_storage_class([x.strip() for x in addr])
         elif 'REMOTE_ADDR' in self.environ:
-            return ImmutableList([self.environ['REMOTE_ADDR']])
-        return ImmutableList()
+            return self.list_storage_class([self.environ['REMOTE_ADDR']])
+        return self.list_storage_class()
 
     @property
     def remote_addr(self):
