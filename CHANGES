@@ -66,6 +66,8 @@ Version 0.6
 - improved the session support for more efficient session storing
   on the filesystem.  Also added support for listing of sessions
   to the filesystem session store.
+- werkzeug no longer utilizes the Python time module for parsing
+  which means that dates in a broader range can be parsed.
 
 Version 0.5.1
 -------------

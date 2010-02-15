@@ -185,6 +185,11 @@ def test_parse_date():
     assert parse_date('foo') is None
 
 
+def test_parse_date_overflows():
+    """Test for problematic days."""
+    assert parse_date(' Sun 02 Feb 1343 08:49:37 GMT') == datetime(1343, 2, 2, 8, 49, 37)
+
+
 def test_remove_entity_headers():
     """Entity header removing function"""
     now = http_date()

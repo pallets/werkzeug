@@ -19,11 +19,11 @@
 import re
 import inspect
 try:
-    from email.utils import parsedate_tz, mktime_tz
+    from email.utils import parsedate_tz
 except ImportError:
-    from email.Utils import parsedate_tz, mktime_tz
+    from email.Utils import parsedate_tz
 from urllib2 import parse_http_list as _parse_list_header
-from datetime import datetime
+from datetime import datetime, timedelta
 try:
     from hashlib import md5
 except ImportError:
@@ -466,10 +466,20 @@ def parse_date(value):
     if value:
         t = parsedate_tz(value.strip())
         if t is not None:
-            # if no timezone is part of the string we assume UTC
-            if t[-1] is None:
-                t = t[:-1] + (0,)
-            return datetime.utcfromtimestamp(mktime_tz(t))
+            try:
+                year = t[0]
+                # unfortunately that function does not tell us if two digit
+                # years were part of the string, or if they were prefixed
+                # with two zeroes.  So what we do is to assume that 69-99
+                # refer to 1900, and everything below to 2000
+                if year >= 0 and year <= 68:
+                    year += 2000
+                elif year >= 69 and year <= 99:
+                    year += 1900
+                return datetime(*((year,) + t[1:7])) - \
+                       timedelta(seconds=t[-1] or 0)
+            except OverflowError:
+                return None
 
 
 def is_resource_modified(environ, etag=None, data=None, last_modified=None):
