@@ -589,7 +589,7 @@ class Rule(RuleFactory):
                     result.update(self.defaults)
                 return result
 
-    def build(self, values):
+    def build(self, values, append_unknown=True):
         """Assembles the relative url for that rule and the subdomain.
         If building doesn't work for some reasons `None` is returned.
 
@@ -609,13 +609,14 @@ class Rule(RuleFactory):
                 add(data)
         subdomain, url = (u''.join(tmp)).split('|', 1)
 
-        query_vars = {}
-        for key in set(values) - processed:
-            query_vars[key] = unicode(values[key])
-        if query_vars:
-            url += '?' + url_encode(query_vars, self.map.charset,
-                                    sort=self.map.sort_parameters,
-                                    key=self.map.sort_key)
+        if append_unknown:
+            query_vars = {}
+            for key in set(values) - processed:
+                query_vars[key] = unicode(values[key])
+            if query_vars:
+                url += '?' + url_encode(query_vars, self.map.charset,
+                                        sort=self.map.sort_parameters,
+                                        key=self.map.sort_key)
 
         return subdomain, url
 
@@ -1295,7 +1296,8 @@ class MapAdapter(object):
             return False
         return True
 
-    def build(self, endpoint, values=None, method=None, force_external=False):
+    def build(self, endpoint, values=None, method=None, force_external=False,
+              append_unknown=True):
         """Building URLs works pretty much the other way round.  Instead of
         `match` you call `build` and pass it the endpoint and a dict of
         arguments for the placeholders.
@@ -1335,12 +1337,18 @@ class MapAdapter(object):
         to specify the method you want to have an URL built for if you have
         different methods for the same endpoint specified.
 
+        .. versionadded:: 0.6
+           the `append_unknown` parameter was added.
+
         :param endpoint: the endpoint of the URL to build.
         :param values: the values for the URL to build.  Unhandled values are
                        appended to the URL as query parameters.
         :param method: the HTTP method for the rule if there are different
                        URLs for different methods on the same endpoint.
         :param force_external: enforce full canonical external URLs.
+        :param append_unknown: unknown parameters are appended to the generated
+                               URL as query string argument.  Disable this
+                               if you want the builder to ignore those.
         """
         self.map.update()
         method = method or self.default_method
@@ -1351,7 +1359,7 @@ class MapAdapter(object):
 
         for rule in self.map._rules_by_endpoint.get(endpoint, ()):
             if rule.suitable_for(values, method):
-                rv = rule.build(values)
+                rv = rule.build(values, append_unknown)
                 if rv is not None:
                     break
         else:

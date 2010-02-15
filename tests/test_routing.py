@@ -326,3 +326,15 @@ def test_default_converters():
     assert a.match('/b/2') == ('b', {'b': '2'})
     assert a.match('/c/3') == ('c', {'c': '3'})
     assert 'foo' not in Map.default_converters
+
+
+def test_build_append_unknown():
+    """Test the new append_unknown feature of URL building"""
+    map = Map([
+        Rule('/bar/<float:bazf>', endpoint='barf')
+    ])
+    adapter = map.bind('example.org', '/', subdomain='blah')
+    assert adapter.build('barf', {'bazf': 0.815, 'bif' : 1.0}) == \
+        'http://example.org/bar/0.815?bif=1.0'
+    assert adapter.build('barf', {'bazf': 0.815, 'bif' : 1.0},
+        append_unknown=False) == 'http://example.org/bar/0.815'
