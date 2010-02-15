@@ -218,6 +218,8 @@ class FilesystemSessionStore(SessionStore):
         self.mode = mode
 
     def get_session_filename(self, sid):
+        if isinstance(sid, unicode):
+            sid = sid.encode('utf-8')
         return path.join(self.path, self.filename_template % sid)
 
     def save(self, session):
