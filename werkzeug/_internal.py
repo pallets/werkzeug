@@ -13,12 +13,13 @@ from weakref import WeakKeyDictionary
 from cStringIO import StringIO
 from Cookie import BaseCookie, Morsel, CookieError
 from time import gmtime
-from datetime import datetime
+from datetime import datetime, date
 
 
 _logger = None
 _empty_stream = StringIO('')
 _signature_cache = WeakKeyDictionary()
+_epoch_ord = date(1970, 1, 1).toordinal()
 
 
 HTTP_STATUS_CODES = {
@@ -237,19 +238,20 @@ def _dump_date(d, delim):
     )
 
 
-_timegm = None
 def _date_to_unix(arg):
     """Converts a timetuple, integer or datetime object into the seconds from
     epoch in utc.
     """
-    global _timegm
     if isinstance(arg, datetime):
         arg = arg.utctimetuple()
     elif isinstance(arg, (int, long, float)):
         return int(arg)
-    if _timegm is None:
-        from calendar import timegm as _timegm
-    return _timegm(arg)
+    year, month, day, hour, minute, second = arg[:6]
+    days = date(year, month, 1).toordinal() - _epoch_ord + day - 1
+    hours = days * 24 + hour
+    minutes = hours * 60 + minute
+    seconds = minutes * 60 + second
+    return seconds
 
 
 class _ExtendedMorsel(Morsel):
