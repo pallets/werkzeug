@@ -70,6 +70,7 @@ Version 0.6
   which means that dates in a broader range can be parsed.
 - the wrappers have no class attributes that make it possible to
   swap out the dict and list types it uses.
+- werkzeug debugger should work on the appengine dev server now.
 
 Version 0.5.1
 -------------

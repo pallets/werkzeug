@@ -32,6 +32,15 @@ class HTMLStringO(object):
     def close(self):
         pass
 
+    def flush(self):
+        pass
+
+    def seek(self, n, mode=0):
+        raise IOError('Bad file descriptor')
+
+    def readline(self):
+        raise IOError('Bad file descriptor')
+
     def reset(self):
         val = ''.join(self._buffer)
         del self._buffer[:]
@@ -53,7 +62,7 @@ class ThreadedStream(object):
     """Thread-local wrapper for sys.stdout for the interactive console."""
 
     def push():
-        if sys.stdout is sys.__stdout__:
+        if not isinstance(sys.stdout, ThreadedStream):
             sys.stdout = ThreadedStream()
         _local.stream = HTMLStringO()
     push = staticmethod(push)
