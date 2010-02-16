@@ -67,7 +67,8 @@ class cached_property(object):
                                     'by default for performance reasons'))
 
         self.__name__ = name or func.__name__
-        self.__doc__ = doc
+        self.__module__ = func.__module__
+        self.__doc__ = doc or func.__doc__
         self.func = func
 
     def __get__(self, obj, type=None):

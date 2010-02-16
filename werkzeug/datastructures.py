@@ -615,6 +615,7 @@ class OrderedMultiDict(MultiDict):
     slower than a :class:`MultiDict`.
 
     .. admonition:: note
+
        Due to a limitation in Python you cannot convert an ordered
        multi dict into a regular dict by using ``dict(multidict)``.
        Instead you have to use the :meth:`to_dict` method, otherwise

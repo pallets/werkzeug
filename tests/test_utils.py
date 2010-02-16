@@ -263,3 +263,14 @@ def test_append_slash_redirect():
     response = client.get('foo', base_url='http://example.org/app')
     assert response.status_code == 301
     assert response.headers['Location'] == 'http://example.org/app/foo/'
+
+
+def test_cached_property_doc():
+    """Documentation of cached_property is kept"""
+    @cached_property
+    def foo():
+        """testing"""
+        return 42
+    assert foo.__doc__ == 'testing'
+    assert foo.__name__ == 'foo'
+    assert foo.__module__ == __name__

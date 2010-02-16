@@ -59,7 +59,7 @@ Version 0.6
 - `import_string` accepts unicode strings as well now.
 - development server doesn't break on double slashes after the host name.
 - better `__repr__` and `__str__` of
-  :exception:`werkzeug.exceptions.HTTPException`
+  :exc:`werkzeug.exceptions.HTTPException`
 - test client works correctly with multiple cookies now.
 - the :class:`werkzeug.routing.Map` now has a class attribute with
   the default converter mapping.  This helps subclasses to override
