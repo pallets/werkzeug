@@ -20,7 +20,7 @@ Version 0.6
   function is still called in case it was overridden.
   You should however change your application to use `get_wsgi_headers` if
   you need header modifications before responses are sent as the backwards
-  compatibily support will go away in future versions.
+  compatibility support will go away in future versions.
 - :func:`append_slash_redirect` no longer requires the QUERY_STRING to be
   in the WSGI environment.
 - added :class:`~werkzeug.contrib.wrappers.DynamicCharsetResponseMixin`
