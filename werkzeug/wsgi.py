@@ -235,7 +235,7 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
                 base_scheme == cur_scheme):
             return None
 
-    # are the netlocs compatibible?
+    # are the netlocs compatible?
     if base_netloc != cur_netloc:
         return None
 
@@ -435,7 +435,7 @@ class SharedDataMiddleware(object):
 
 
 class DispatcherMiddleware(object):
-    """Allows one to mount middlewares or application in a WSGI application.
+    """Allows one to mount middlewares or applications in a WSGI application.
     This is useful if you want to combine multiple WSGI applications::
 
         app = DispatcherMiddleware(app, {
@@ -568,7 +568,7 @@ class FileWrapper(object):
 
 
 def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
-    """Savely iterates line-based over an input stream.  If the input stream
+    """Safely iterates line-based over an input stream.  If the input stream
     is not a :class:`LimitedStream` the `limit` parameter is mandatory.
 
     This uses the stream's :meth:`~file.read` method internally as opposite
@@ -646,7 +646,7 @@ class LimitedStream(object):
        is not portable.  It internally calls :meth:`readline`.
 
        We strongly suggest using :meth:`read` only or using the
-       :func:`make_line_iter` which savely iterates line-based
+       :func:`make_line_iter` which safely iterates line-based
        over a WSGI input stream.
 
     :param stream: the stream to wrap.
@@ -759,6 +759,6 @@ class LimitedStream(object):
         return line
 
 
-# circulear dependencies
+# circular dependencies
 from werkzeug.utils import http_date
 from werkzeug.http import is_resource_modified

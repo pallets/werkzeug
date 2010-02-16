@@ -87,7 +87,7 @@ converters = {
 
 
 def run(namespace=None, action_prefix='action_', args=None):
-    """Run the script.  Participating actions are looked up in the callers
+    """Run the script.  Participating actions are looked up in the caller's
     namespace if no namespace is given, otherwise in the dict provided.
     Only items that start with action_prefix are processed as actions.  If
     you want to use all items in the namespace provided as actions set

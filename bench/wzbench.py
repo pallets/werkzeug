@@ -5,7 +5,7 @@
     ~~~~~~~
 
     A werkzeug internal benchmark module.  It's used in combination with
-    hg bisact to find out how the Werkzeug performance of some internal
+    hg bisect to find out how the Werkzeug performance of some internal
     core parts changes over time.
 
     :copyright: 2009 by the Werkzeug Team, see AUTHORS for more details.
@@ -21,13 +21,13 @@ from timeit import default_timer as timer
 from types import FunctionType
 
 
-# create a new module were we later store all the werkzeug attributes.
+# create a new module where we later store all the werkzeug attributes.
 wz = type(sys)('werkzeug_nonlazy')
 sys.path.insert(0, '<DUMMY>')
 null_out = file(os.devnull, 'w')
 
 
-# ±4% are ignore
+# ±4% are ignored
 TOLERANCE = 0.04
 MIN_RESOLUTION = 0.002
 

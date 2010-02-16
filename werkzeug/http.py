@@ -3,7 +3,7 @@
     werkzeug.http
     ~~~~~~~~~~~~~
 
-    Werkzeug comes with a bunch of utilties that help Werkzeug to deal with
+    Werkzeug comes with a bunch of utilities that help Werkzeug to deal with
     HTTP data.  Most of the classes and functions provided by this module are
     used by the wrappers, but they are useful on their own, too, especially if
     the response and request objects are not used.
@@ -486,7 +486,7 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
     """Convenience method for conditional requests.
 
     :param environ: the WSGI environment of the request to be checked.
-    :param etag: the etag for the response for comparision.
+    :param etag: the etag for the response for comparison.
     :param data: or alternatively the data of the response to automatically
                  generate an etag using :func:`generate_etag`.
     :param last_modified: an optional date of the last modification.
@@ -573,5 +573,5 @@ from werkzeug.datastructures import Headers, Accept, RequestCacheControl, \
 
 
 # DEPRECATED
-# backwards compatibible imports
+# backwards compatible imports
 from werkzeug.datastructures import MIMEAccept, CharsetAccept, LanguageAccept

@@ -224,8 +224,8 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
 
             filename = extra.get('filename')
 
-            # if no content type is given we stream into memory.  As temporary
-            # container a list is used.
+            # if no content type is given we stream into memory.  A list is
+            # used as a temporary container.
             if filename is None:
                 is_file = False
                 container = []
@@ -279,7 +279,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                 # the last two bytes.  In all other cases however we write
                 # everything except the last byte.  If it was a newline, that's
                 # fine, otherwise it does not matter because we will write it
-                # the next iteration.  this ensures we do not not write the
+                # the next iteration.  this ensures we do not write the
                 # final newline into the stream.  That way we do not have to
                 # truncate the stream.
                 if line[-2:] == '\r\n':
@@ -291,7 +291,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                 _write(line[:cutoff])
 
                 # if we write into memory and there is a memory size limit we
-                # count the number of bytes in memory and raise exceptiosn if
+                # count the number of bytes in memory and raise an exception if
                 # there is too much data in memory.
                 if guard_memory:
                     in_memory += len(line)
@@ -340,7 +340,7 @@ def parse_multipart_headers(iterable):
     return Headers.linked(result)
 
 
-# circurlar dependencies
+# circular dependencies
 from werkzeug.urls import url_decode
 from werkzeug.wsgi import LimitedStream, make_line_iter
 from werkzeug.exceptions import RequestEntityTooLarge

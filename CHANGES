@@ -8,8 +8,8 @@ Version 0.6
 - removed pending deprecations
 - sys.path is now printed from the testapp.
 - fixed an RFC 2068 incompatibility with cookie value quoting.
-- the :class:`FileStorage` how gives access to the multipart headers.
-- `cached_property.writeable` was deprecated.
+- the :class:`FileStorage` now gives access to the multipart headers.
+- `cached_property.writeable` has been deprecated.
 - :meth:`MapAdapter.match` now accepts a `return_rule` keyword argument
   that returns the matched `Rule` instead of just the `endpoint`
 - :meth:`routing.Map.bind_to_environ` raises a more correct error message
@@ -17,18 +17,20 @@ Version 0.6
 - added support for SSL to the builtin development server.
 - Response objects are no longer modified in place when they are evaluated
   as WSGI applications.  For backwards compatibility the `fix_headers`
-  function is still called until in Werkzeug 0.6 if it was overridden.
+  function is still called in case it was overridden.
   You should however change your application to use `get_wsgi_headers` if
-  you need header modifications before responses are sent.
+  you need header modifications before responses are sent as the backwards
+  compatibily support will go away in future versions.
 - :func:`append_slash_redirect` no longer requires the QUERY_STRING to be
   in the WSGI environment.
 - added :class:`~werkzeug.contrib.wrappers.DynamicCharsetResponseMixin`
 - added :class:`~werkzeug.contrib.wrappers.DynamicCharsetRequestMixin`
 - added :attr:`BaseRequest.url_charset`
 - request and response objects have a default `__repr__` now.
-- builtin data structures are pickleable now.
-- the form data parser decides on the file to use based on the filename
-  now not on the content type.  This fixes a bug with Google Chrome.
+- builtin data structures can be pickled now.
+- the form data parser will now look at the filename instead the
+  content type to figure out if it should treat the upload as regular
+  form data or file upload.  This fixes a bug with Google Chrome.
 - improved performance of `make_line_iter` and the multipart parser
   for binary uploads.
 - fixed :attr:`~werkzeug.BaseResponse.is_streamed`
@@ -55,7 +57,7 @@ Version 0.6
   :meth:`BaseResponse._ensure_sequence`.
 - added better __repr__ of :class:`werkzeug.Map`
 - `import_string` accepts unicode strings as well now.
-- development server no breaks on double slashes after the host name.
+- development server doesn't break on double slashes after the host name.
 - better `__repr__` and `__str__` of
   :exception:`werkzeug.exceptions.HTTPException`
 - test client works correctly with multiple cookies now.
@@ -65,7 +67,7 @@ Version 0.6
 - implemented :class:`OrderedMultiDict`
 - improved the session support for more efficient session storing
   on the filesystem.  Also added support for listing of sessions
-  to the filesystem session store.
+  currently stored in the filesystem session store.
 - werkzeug no longer utilizes the Python time module for parsing
   which means that dates in a broader range can be parsed.
 - the wrappers have no class attributes that make it possible to

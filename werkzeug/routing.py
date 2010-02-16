@@ -30,7 +30,7 @@
     ... ], default_subdomain='www')
 
     If the application doesn't use subdomains it's perfectly fine to not set
-    the default subdomain and use the `Subdomain` rule factory.  The endpoint
+    the default subdomain and not use the `Subdomain` rule factory.  The endpoint
     in the rules can be anything, for example import paths or unique
     identifiers.  The WSGI application can use those endpoints to get the
     handler for that URL.  It doesn't have to be a string at all but it's
@@ -170,8 +170,8 @@ def get_converter(map, name, args):
 
 
 class RoutingException(Exception):
-    """Special exceptions that require the application to redirect, notifies
-    him about missing urls etc.
+    """Special exceptions that require the application to redirect, notifying
+    about missing urls, etc.
 
     :internal:
     """
@@ -179,7 +179,7 @@ class RoutingException(Exception):
 
 class RequestRedirect(HTTPException, RoutingException):
     """Raise if the map requests a redirect. This is for example the case if
-    `strict_slashes` are activated and an url that requires a leading slash.
+    `strict_slashes` are activated and an url that requires a trailing slash.
 
     The attribute `new_url` contains the absolute destination url.
     """
@@ -242,7 +242,7 @@ class Subdomain(RuleFactory):
         ])
 
     All the rules except for the ``'#select_language'`` endpoint will now
-    listen on a two letter long subdomain that helds the language code
+    listen on a two letter long subdomain that holds the language code
     for the current request.
     """
 
@@ -394,7 +394,7 @@ class Rule(RuleFactory):
     `endpoint`
         The endpoint for this rule. This can be anything. A reference to a
         function, a string, a number etc.  The preferred way is using a string
-        as because the endpoint is used for URL generation.
+        because the endpoint is used for URL generation.
 
     `defaults`
         An optional dict with defaults for other rules with the same endpoint.
@@ -762,7 +762,7 @@ class BaseConverter(object):
 
 class UnicodeConverter(BaseConverter):
     """This converter is the default converter and accepts any string but
-    only one one path segment.  Thus the string can not include a slash.
+    only one path segment.  Thus the string can not include a slash.
 
     This is the default validator.
 
@@ -894,7 +894,7 @@ class Map(object):
     parameters.  Some of the configuration values are only stored on the
     `Map` instance since those affect all rules, others are just defaults
     and can be overridden for each rule.  Note that you have to specify all
-    arguments besides the `rules` as keywords arguments!
+    arguments besides the `rules` as keyword arguments!
 
     :param rules: sequence of url rules for this map.
     :param default_subdomain: The default subdomain for rules without a
@@ -1011,7 +1011,7 @@ class Map(object):
 
     def bind_to_environ(self, environ, server_name=None, subdomain=None):
         """Like :meth:`bind` but you can pass it an WSGI environment and it
-        will fetch the information from that directory.  Note that because of
+        will fetch the information from that dictionary.  Note that because of
         limitations in the protocol there is no way to get the current
         subdomain and real `server_name` from the environment.  If you don't
         provide it, Werkzeug will use `SERVER_NAME` and `SERVER_PORT` (or
@@ -1026,7 +1026,7 @@ class Map(object):
 
         If the object passed as environ has an environ attribute, the value of
         this attribute is used instead.  This allows you to pass request
-        objects.  Additionally `PATH_INFO` added as a default ot the
+        objects.  Additionally `PATH_INFO` added as a default of the
         :class:`MapAdapter` so that you don't have to pass the path info to
         the match method.
 
@@ -1163,17 +1163,17 @@ class MapAdapter(object):
           same object as `werkzeug.exceptions.NotFound`)
 
         - you receive a `MethodNotAllowed` exception that indicates that there
-          is a match for this URL but non for the current request method.
+          is a match for this URL but not for the current request method.
           This is useful for RESTful applications.
 
         - you receive a `RequestRedirect` exception with a `new_url`
           attribute.  This exception is used to notify you about a request
-          Werkzeug requests by your WSGI application.  This is for example the
+          Werkzeug requests from your WSGI application.  This is for example the
           case if you request ``/foo`` although the correct URL is ``/foo/``
           You can use the `RequestRedirect` instance as response-like object
           similar to all other subclasses of `HTTPException`.
 
-        - you get a tuple in the form ``(endpoint, arguments)`` when there is
+        - you get a tuple in the form ``(endpoint, arguments)`` if there is
           a match (unless `return_rule` is True, in which case you get a tuple
           in the form ``(rule, arguments)``)
 

@@ -433,7 +433,7 @@ class MultiDict(TypeConversionDict):
         """Return a list of ``(key, value)`` pairs.
 
         :param multi: If set to `True` the list returned will have a
-                      pair for each value of each key.  Ohterwise it
+                      pair for each value of each key.  Otherwise it
                       will only contain pairs for the first value of
                       each key.
 
@@ -1455,7 +1455,7 @@ class Accept(ImmutableList):
     0
 
     .. versionchanged:: 0.5
-       :class:`Accept` objects are forzed immutable now.
+       :class:`Accept` objects are forced immutable now.
     """
 
     def __init__(self, values=()):
@@ -1689,7 +1689,7 @@ class _CacheControl(UpdateDictMixin, dict):
        >>> cc
        <ResponseCacheControl ''>
 
-       In versions before 0.5 the here documented behavior affected the now
+       In versions before 0.5 the behavior documented here affected the now
        no longer existing `CacheControl` class.
     """
 
@@ -1838,7 +1838,7 @@ class HeaderSet(object):
         self.update((header,))
 
     def remove(self, header):
-        """Remove a layer from the set.  This raises an :exc:`KeyError` if the
+        """Remove a header from the set.  This raises an :exc:`KeyError` if the
         header is not in the set.
 
         .. versionchanged:: 0.5
@@ -2003,7 +2003,7 @@ class ETags(object):
     def contains_raw(self, etag):
         """When passed a quoted tag it will check if this tag is part of the
         set.  If the tag is weak it is checked against weak and strong tags,
-        otherwise weak only."""
+        otherwise strong only."""
         etag, weak = unquote_etag(etag)
         if weak:
             return self.contains_weak(etag)
@@ -2164,13 +2164,13 @@ class WWWAuthenticate(UpdateDictMixin, dict):
 
     def auth_property(name, doc=None):
         """A static helper function for subclasses to add extra authentication
-        system properites onto a class::
+        system properties onto a class::
 
             class FooAuthenticate(WWWAuthenticate):
                 special_realm = auth_property('special_realm')
 
         For more information have a look at the sourcecode to see how the
-        regular properties (:attr:`realm` etc. are implemented).
+        regular properties (:attr:`realm` etc.) are implemented.
         """
         def _set_value(self, value):
             if value is None:
@@ -2216,7 +2216,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         If the algorithm is not understood, the challenge should be ignored
         (and a different one used, if there is more than one).''')
     qop = _set_property('qop', doc='''
-        A set of quality-of-privacy modifies such as auth and auth-int.''')
+        A set of quality-of-privacy directives such as auth and auth-int.''')
 
     def _get_stale(self):
         val = self.get('stale')
@@ -2284,7 +2284,7 @@ class FileStorage(object):
                 dst.close()
 
     def close(self):
-        """Close the underlaying file if possible."""
+        """Close the underlying file if possible."""
         try:
             self.stream.close()
         except:

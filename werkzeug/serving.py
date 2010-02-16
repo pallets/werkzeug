@@ -482,9 +482,10 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param passthrough_errors: set this to `True` to disable the error catching.
                                This means that the server will die on errors but
                                it can be useful to hook debuggers in (pdb etc.)
-    :param ssl_context: an SSL context for the connction, 'adhoc' if the server
-                        should automatically create one, or `None` to disable
-                        SSL (which is the default).
+    :param ssl_context: an SSL context for the connection. Either an OpenSSL
+                        context, the string ``'adhoc'`` if the server should
+                        automatically create one, or `None` to disable SSL
+                        (which is the default).
     """
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
@@ -500,7 +501,8 @@ def run_simple(hostname, port, application, use_reloader=False,
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         display_hostname = hostname or '127.0.0.1'
-        _log('info', ' * Running on http://%s:%d/', display_hostname, port)
+        _log('info', ' * Running on %s://%s:%d/', ssl_context is None
+             and 'http' or 'https', display_hostname, port)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before
         # we spawn a separate Python interpreter and lose this ability.

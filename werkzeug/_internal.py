@@ -65,7 +65,7 @@ HTTP_STATUS_CODES = {
     423:    'Locked',
     424:    'Failed Dependency',
     426:    'Upgrade Required',
-    449:    'Retry With',           # propritary MS extension
+    449:    'Retry With',           # proprietary MS extension
     500:    'Internal Server Error',
     501:    'Not Implemented',
     502:    'Bad Gateway',

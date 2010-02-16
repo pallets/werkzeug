@@ -830,10 +830,10 @@ class BaseResponse(object):
 
     @property
     def is_streamed(self):
-        """If the response is streamed (the response is not a iterable with
+        """If the response is streamed (the response is not an iterable with
         a length information) this property is `True`.  In this case streamed
         means that there is no information about the number of iterations.
-        This is usully `True` if a generator is passed to the response object.
+        This is usually `True` if a generator is passed to the response object.
 
         This is useful for checking before applying some sort of post
         filtering that should not take place for streamed responses.
@@ -938,7 +938,7 @@ class BaseResponse(object):
                 content_length = sum(len(str(x)) for x in self.response)
             except UnicodeError:
                 # aha, something non-bytestringy in there, too bad, we
-                # can't savely figure out the length of the response.
+                # can't safely figure out the length of the response.
                 pass
             else:
                 headers['Content-Length'] = str(content_length)
@@ -971,7 +971,7 @@ class BaseResponse(object):
     def get_wsgi_response(self, environ):
         """Returns the final WSGI response as tuple.  The first item in
         the tuple is the application iterator, the second the status and
-        the first the list of headers.  The response returned is created
+        the third the list of headers.  The response returned is created
         specially for the given environment.  For example if the request
         method in the WSGI environment is ``'HEAD'`` the response will
         be empty and only the headers and status code will be present.
@@ -1046,7 +1046,7 @@ class AcceptMixin(object):
         object.
 
         .. versionchanged 0.5
-           In previous versions this was a regualr :class:`Accept` object.
+           In previous versions this was a regular :class:`Accept` object.
         """
         return parse_accept_header(self.environ.get('HTTP_ACCEPT_LANGUAGE'),
                                    LanguageAccept)
@@ -1241,7 +1241,7 @@ class ResponseStreamMixin(object):
 
 class CommonRequestDescriptorsMixin(object):
     """A mixin for :class:`BaseRequest` subclasses.  Request objects that
-    mix this class in will automatically get descriptors for a coupl eof
+    mix this class in will automatically get descriptors for a couple of
     HTTP headers with automatic type conversion.
 
     .. versionadded:: 0.5

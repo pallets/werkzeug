@@ -203,7 +203,7 @@ class EnvironBuilder(object):
         the :attr:`content_length` is set and you have to provide a
         :attr:`content_type`.
     -   a `dict`: If it's a dict the keys have to be strings and the values
-        and of the following objects:
+        any of the following objects:
 
         -   a :class:`file`-like object.  These are converted into
             :class:`FileStorage` objects automatically.
@@ -321,7 +321,7 @@ class EnvironBuilder(object):
             from warnings import warn
             warn(DeprecationWarning('it\'s no longer possible to pass dicts '
                                     'as `data`.  Use tuples or FileStorage '
-                                    'objects intead'), stacklevel=2)
+                                    'objects instead'), stacklevel=2)
             args = v
             value = dict(value)
             mimetype = value.pop('mimetype', None)
@@ -624,7 +624,7 @@ class Client(object):
         Additional parameters:
 
         :param as_tuple: Returns a tuple in the form ``(environ, result)``
-        :param buffered: Set this to true to buffer the application run.
+        :param buffered: Set this to True to buffer the application run.
                          This will automatically close the application for
                          you as well.
         :param follow_redirects: Set this to True if the `Client` should
@@ -778,7 +778,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     app_iter = app(environ, start_response)
 
-    # when buffering we emit the close call early and conver the
+    # when buffering we emit the close call early and convert the
     # application iterator into a regular list
     if buffered:
         close_func = getattr(app_iter, 'close', None)
