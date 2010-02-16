@@ -22,7 +22,7 @@
     .. _Genshi: http://genshi.edgewall.org/
     .. _Django: http://www.djangoproject.com/
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from os import path

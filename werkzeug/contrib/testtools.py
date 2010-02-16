@@ -9,7 +9,7 @@
         A response wrapper which adds various cached attributes for
         simplified assertions on various content types.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug import Response, cached_property, import_string

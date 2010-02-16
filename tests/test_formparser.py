@@ -6,7 +6,7 @@
     Tests the form parsing capabilties.  Some of them are also tested from
     the wrappers.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from nose.tools import assert_raises

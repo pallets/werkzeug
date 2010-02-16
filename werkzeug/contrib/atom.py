@@ -18,7 +18,7 @@
                          updated=post.last_update, published=post.pub_date)
             return feed.get_response()
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from datetime import datetime

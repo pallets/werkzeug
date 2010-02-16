@@ -4,7 +4,7 @@
     ~~~~~~~~~~~~~~~~~~~~~
 
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
 from nose.tools import assert_raises

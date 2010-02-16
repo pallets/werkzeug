@@ -53,7 +53,7 @@
     you have access to it (either as a module global you can import or if you
     put it onto your WSGI application).
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import os
