@@ -215,6 +215,7 @@ def test_html_builder():
         )
     ) == '<html><head><title>foo</title><script type="text/javascript">' \
          '</script></head></html>'
+    assert html('<foo>') == '&lt;foo&gt;'
 
 
 def test_validate_arguments():
