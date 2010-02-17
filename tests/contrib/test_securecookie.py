@@ -1,3 +1,4 @@
+from werkzeug import Request, Response, parse_cookie
 from werkzeug.contrib.securecookie import SecureCookie
 
 
@@ -14,6 +15,7 @@ def test_basic_support():
     s = c.serialize()
 
     c2 = SecureCookie.unserialize(s, 'foo')
+    assert c is not c2
     assert not c2.new
     assert not c2.modified
     assert not c2.should_save
@@ -23,3 +25,21 @@ def test_basic_support():
     assert not c3.modified
     assert not c3.new
     assert c3 == {}
+
+
+def test_wrapper_support():
+    """Securecookie wrapper integration"""
+    req = Request.from_values()
+    resp = Response()
+    c = SecureCookie.load_cookie(req, secret_key='foo')
+    assert c.new
+    c['foo'] = 42
+    assert c.secret_key == 'foo'
+    c.save_cookie(resp)
+
+    req = Request.from_values(headers={
+        'Cookie':  'session="%s"' % parse_cookie(resp.headers['set-cookie'])['session']
+    })
+    c2 = SecureCookie.load_cookie(req, secret_key='foo')
+    assert not c2.new
+    assert c2 == c
