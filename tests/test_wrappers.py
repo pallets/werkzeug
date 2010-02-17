@@ -491,5 +491,5 @@ def test_storage_classes():
     assert type(req.access_route) is ImmutableList
 
     MyRequest.list_storage_class = tuple
-    req = Request.from_values()
+    req = MyRequest.from_values()
     assert type(req.access_route) is tuple
