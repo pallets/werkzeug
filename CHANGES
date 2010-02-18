@@ -1,9 +1,13 @@
 Werkzeug Changelog
 ==================
 
+Version 0.7
+-----------
+(codename yet to be selected, release date to be decided)
+
 Version 0.6
 -----------
-(last pre 1.0 release. will get rid of deprecation warnings. release date yet unknown)
+(codename Hammer, released on Feb 19th 2010)
 
 - removed pending deprecations
 - sys.path is now printed from the testapp.
