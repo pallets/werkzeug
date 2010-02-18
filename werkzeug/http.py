@@ -478,7 +478,7 @@ def parse_date(value):
                     year += 1900
                 return datetime(*((year,) + t[1:7])) - \
                        timedelta(seconds=t[-1] or 0)
-            except OverflowError:
+            except (ValueError, OverflowError):
                 return None
 
 

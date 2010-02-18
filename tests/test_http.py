@@ -189,6 +189,7 @@ def test_parse_date_overflows():
     """Test for problematic days."""
     assert parse_date(' Sun 02 Feb 1343 08:49:37 GMT') == datetime(1343, 2, 2, 8, 49, 37)
     assert parse_date('Thu, 01 Jan 1970 00:00:00 GMT') == datetime(1970, 1, 1, 0, 0)
+    assert parse_date('Thu, 33 Jan 1970 00:00:00 GMT') is None
 
 
 def test_remove_entity_headers():
