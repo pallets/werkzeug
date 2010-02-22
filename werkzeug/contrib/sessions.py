@@ -192,8 +192,9 @@ _fs_transaction_suffix = '.__wz_sess'
 
 
 class FilesystemSessionStore(SessionStore):
-    """Simple example session store that saves sessions in the filesystem like
-    PHP does.
+    """Simple example session store that saves sessions on the filesystem.
+    This store works best on POSIX systems and Windows Vista / Windows
+    Server 2008 and newer.
 
     .. versionchanged:: 0.6
        `renew_missing` was added.  Previously this was considered `True`,
