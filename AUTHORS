@@ -30,3 +30,12 @@ compatible with the modfied BSD license.  The following copyrights apply:
 
 - (c) 2005 Ian Bicking and contributors
 - (c) 2005 Clark C. Evans
+
+The rename() function from the posixemulation was taken almost unmodified
+from the Trac project's utility module.  The original code is BSD licensed
+with the following copyrights from that module:
+
+- (c) 2003-2009 Edgewall Software
+- (c) 2003-2006 Jonas Borgström <jonas@edgewall.com>
+- (c) 2006 Matthew Good <trac@matt-good.net>
+- (c) 2005-2006 Christian Boos <cboos@neuf.fr>

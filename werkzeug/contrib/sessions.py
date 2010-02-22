@@ -64,6 +64,7 @@ except ImportError:
 from cPickle import dump, load, HIGHEST_PROTOCOL
 
 from werkzeug import ClosingIterator, dump_cookie, parse_cookie, CallbackDict
+from werkzeug.posixemulation import rename
 
 
 _sha1_re = re.compile(r'^[a-f0-9]{40}$')
@@ -232,30 +233,19 @@ class FilesystemSessionStore(SessionStore):
         return path.join(self.path, self.filename_template % sid)
 
     def save(self, session):
-        def _dump(filename):
-            f = file(filename, 'wb')
-            try:
-                dump(dict(session), f, HIGHEST_PROTOCOL)
-            finally:
-                f.close()
         fn = self.get_session_filename(session.sid)
-        if os.name == 'posix':
-            td, tmp = tempfile.mkstemp(suffix=_fs_transaction_suffix,
-                                       dir=self.path)
-            _dump(tmp)
-            try:
-                os.rename(tmp, fn)
-            except (IOError, OSError):
-                pass
-            os.chmod(fn, self.mode)
-        else:
-            _dump(fn)
-            try:
-                os.chmod(fn, self.mode)
-            except OSError:
-                # maybe some platforms fail here, have not found
-                # any that do thought.
-                pass
+        fd, tmp = tempfile.mkstemp(suffix=_fs_transaction_suffix,
+                                   dir=self.path)
+        f = open(tmp, 'wb')
+        try:
+            dump(dict(session), f, HIGHEST_PROTOCOL)
+        finally:
+            f.close()
+        try:
+            rename(tmp, fn)
+        except (IOError, OSError):
+            pass
+        os.chmod(fn, self.mode)
 
     def delete(self, session):
         fn = self.get_session_filename(session.sid)
