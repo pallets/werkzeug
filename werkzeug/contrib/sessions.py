@@ -228,8 +228,11 @@ class FilesystemSessionStore(SessionStore):
         self.mode = mode
 
     def get_session_filename(self, sid):
+        # out of the box, this should be a strict ASCII subset but
+        # you might reconfigure the session object to have a more
+        # arbitrary string.
         if isinstance(sid, unicode):
-            sid = sid.encode('utf-8')
+            sid = sid.encode(sys.getfilesystemencoding() or 'utf-8')
         return path.join(self.path, self.filename_template % sid)
 
     def save(self, session):
