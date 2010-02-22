@@ -243,9 +243,9 @@ class FilesystemSessionStore(SessionStore):
             f.close()
         try:
             rename(tmp, fn)
+            os.chmod(fn, self.mode)
         except (IOError, OSError):
             pass
-        os.chmod(fn, self.mode)
 
     def delete(self, session):
         fn = self.get_session_filename(session.sid)
