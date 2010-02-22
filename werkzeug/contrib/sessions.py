@@ -236,7 +236,7 @@ class FilesystemSessionStore(SessionStore):
         fn = self.get_session_filename(session.sid)
         fd, tmp = tempfile.mkstemp(suffix=_fs_transaction_suffix,
                                    dir=self.path)
-        f = open(tmp, 'wb')
+        f = os.fdopen(fd, 'wb')
         try:
             dump(dict(session), f, HIGHEST_PROTOCOL)
         finally:
