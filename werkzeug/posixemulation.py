@@ -19,6 +19,7 @@ r"""
 """
 import os
 import errno
+import time
 import random
 
 
@@ -54,10 +55,18 @@ if os.name == 'nt':
             if ta == -1:
                 return False
             try:
-                return (_MoveFileTransacted(src, dst, None, None,
-                                            _MOVEFILE_REPLACE_EXISTING |
-                                            _MOVEFILE_WRITE_THROUGH, ta)
-                        and _CommitTransaction(ta))
+                retry = 0
+                rv = False
+                while not rv and retry < 100:
+                    rv = _MoveFileTransacted(src, dst, None, None,
+                                             _MOVEFILE_REPLACE_EXISTING |
+                                             _MOVEFILE_WRITE_THROUGH, ta)
+                    if rv == 0:
+                        time.sleep(0.001)
+                        retry += 1
+                    else:
+                        rv = _CommitTransaction(ta)
+                return rv
             finally:
                 _CloseHandle(ta)
     except Exception:
