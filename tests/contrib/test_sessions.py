@@ -1,11 +1,17 @@
 import atexit
 import shutil
 from werkzeug.contrib.sessions import FilesystemSessionStore
-from tempfile import mkdtemp
+from tempfile import mkdtemp, gettempdir
 
 
 session_folder = mkdtemp()
 atexit.register(lambda: shutil.rmtree(session_folder))
+
+
+def test_default_tempdir():
+    """Ensure that sessions go to the tempdir by default"""
+    store = FilesystemSessionStore()
+    assert store.path == gettempdir()
 
 
 def test_basic_fs_sessions():

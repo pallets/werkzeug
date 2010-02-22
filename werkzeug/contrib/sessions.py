@@ -215,7 +215,7 @@ class FilesystemSessionStore(SessionStore):
                  session_class=None, renew_missing=False, mode=0644):
         SessionStore.__init__(self, session_class)
         if path is None:
-            path = gettempdir()
+            path = tempfile.gettempdir()
         self.path = path
         if isinstance(filename_template, unicode):
             filename_template = filename_template.encode(
