@@ -516,7 +516,7 @@ def run_simple(hostname, port, application, use_reloader=False,
                     passthrough_errors, ssl_context).serve_forever()
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        display_hostname = hostname or '127.0.0.1'
+        display_hostname = hostname != '*' and hostname or 'localhost'
         if ':' in display_hostname:
             display_hostname = '[%s]' % display_hostname
         _log('info', ' * Running on %s://%s:%d/', ssl_context is None
