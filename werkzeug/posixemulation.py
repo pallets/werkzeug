@@ -72,6 +72,7 @@ if os.name == 'nt':
                                              _MOVEFILE_WRITE_THROUGH, ta)
                     if rv:
                         rv = _CommitTransaction(ta)
+                        break
                     else:
                         time.sleep(0.001)
                         retry += 1
