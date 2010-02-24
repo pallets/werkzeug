@@ -287,7 +287,7 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
     :param static_files: optionally a dict of static files.
     :param extra_files: optionally a list of extra files to track for reloading.
     """
-    def action(hostname=('h', hostname), port=('p', port),
+    def action(hostname=('H', hostname), port=('p', port),
                reloader=use_reloader, debugger=use_debugger,
                evalex=use_evalex, threaded=threaded, processes=processes):
         """Start a new development server."""
