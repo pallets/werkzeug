@@ -112,14 +112,13 @@ def run(namespace=None, action_prefix='action_', args=None):
         fail('Unknown action \'%s\'' % args[0])
 
     arguments = {}
-    conv = {}
+    types = {}
     key_to_arg = {}
     long_options = []
     formatstring = ''
     func, doc, arg_def = actions[args.pop(0)]
     for idx, (arg, shortcut, default, option_type) in enumerate(arg_def):
         real_arg = arg.replace('-', '_')
-        converter = converters[option_type]
         if shortcut:
             formatstring += shortcut
             if not isinstance(default, bool):
@@ -128,7 +127,7 @@ def run(namespace=None, action_prefix='action_', args=None):
         long_options.append(isinstance(default, bool) and arg or arg + '=')
         key_to_arg['--' + arg] = real_arg
         key_to_arg[idx] = real_arg
-        conv[real_arg] = converter
+        types[real_arg] = option_type
         arguments[real_arg] = default
 
     try:
@@ -144,7 +143,7 @@ def run(namespace=None, action_prefix='action_', args=None):
             fail('Too many parameters')
         specified_arguments.add(arg)
         try:
-            arguments[arg] = conv[arg](value)
+            arguments[arg] = converters[types[arg]](value)
         except ValueError:
             fail('Invalid value for argument %s (%s): %s' % (key, arg, value))
 
@@ -152,12 +151,13 @@ def run(namespace=None, action_prefix='action_', args=None):
         arg = key_to_arg[key]
         if arg in specified_arguments:
             fail('Argument \'%s\' is specified twice' % arg)
-        if arg.startswith('no_'):
-            value = 'no'
-        elif not value:
-            value = 'yes'
+        if types[arg] == 'boolean':
+            if arg.startswith('no_'):
+                value = 'no'
+            else:
+                value = 'yes'
         try:
-            arguments[arg] = conv[arg](value)
+            arguments[arg] = converters[types[arg]](value)
         except ValueError:
             fail('Invalid value for \'%s\': %s' % (key, value))
 
@@ -287,7 +287,7 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
     :param static_files: optionally a dict of static files.
     :param extra_files: optionally a list of extra files to track for reloading.
     """
-    def action(hostname=('H', hostname), port=('p', port),
+    def action(hostname=('h', hostname), port=('p', port),
                reloader=use_reloader, debugger=use_debugger,
                evalex=use_evalex, threaded=threaded, processes=processes):
         """Start a new development server."""

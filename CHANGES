@@ -1,9 +1,15 @@
 Werkzeug Changelog
 ==================
 
-Version 0.7
------------
-(codename yet to be selected, release date to be decided)
+Version 0.6.1
+-------------
+(bugfix release, release date to be decided)
+
+- added proper IPv6 support for the builtin server.
+- windows specific filesystem session store fixes.
+  (should no be more stable under high concurrency)
+- fixed a `NameError` in the session system.
+- fixed a bug with empty arguments in the werkzeug.script system.
 
 Version 0.6
 -----------
