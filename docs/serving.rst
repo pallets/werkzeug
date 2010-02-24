@@ -80,10 +80,15 @@ in the `hosts file`_ by removing this line::
 
 Alternatively you can also disable ipv6 support in your browser.  For example
 if Firefox shows this behavior you can disable it by going to ``about:config``
-and disabling the `network.dns.disableIPv6` key.
+and disabling the `network.dns.disableIPv6` key.  This however is not
+recommended as of Werkzeug 0.6.1!
 
-Another workaround that should work is accessing `127.0.0.1` instead of
-`localhost`.
+Starting with Werkzeug 0.6.1, the server will now switch between ipv4 and
+ipv6 based on your operating system's configuration.  This means if that
+you disabled ipv6 support in your browser but your operating system is
+preferring ipv6, you will be unable to connect to your server.  In that
+situation, you can either remove the localhost entry for ``::1`` or
+explicitly bind the hostname to an ipv4 address (`127.0.0.1`)
 
 .. _hosts file: http://en.wikipedia.org/wiki/Hosts_file
 
