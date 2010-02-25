@@ -104,6 +104,7 @@ from itertools import izip
 from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
+from werkzeug._internal import _get_environ
 
 
 _rule_re = re.compile(r'''
@@ -1039,8 +1040,7 @@ class Map(object):
         :param server_name: an optional server name hint (see above).
         :param subdomain: optionally the current subdomain (see above).
         """
-        if hasattr(environ, 'environ'):
-            environ = environ.environ
+        environ = _get_environ(environ)
         if server_name is None:
             if 'HTTP_HOST' in environ:
                 server_name = environ['HTTP_HOST']

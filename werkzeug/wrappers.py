@@ -41,7 +41,7 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
      ResponseCacheControl, RequestCacheControl, CallbackDict
 from werkzeug._internal import _empty_stream, _decode_unicode, \
-     _patch_wrapper
+     _patch_wrapper, _get_environ
 
 
 def _run_wsgi_app(*args):
@@ -1153,7 +1153,7 @@ class ETagResponseMixin(object):
                                    used to make the response conditional
                                    against.
         """
-        environ = getattr(request_or_environ, 'environ', request_or_environ)
+        environ = _get_environ(request_or_environ)
         if environ['REQUEST_METHOD'] in ('GET', 'HEAD'):
             self.headers['Date'] = http_date()
             if 'content-length' in self.headers:
