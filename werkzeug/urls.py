@@ -39,6 +39,23 @@ def _quote_plus(s, safe=''):
     return _quote(s, safe)
 
 
+
+def _safe_urlsplit(s):
+    """the urllib.urlsplit cache breaks if it contains unicode and
+    we cannot control that.  So we force type cast that thing back
+    to what we think it is.
+    """
+    rv = urlparse.urlsplit(s)
+    if type(rv[1]) is not type(s):
+        try:
+            return tuple(map(type(s), rv))
+        except UnicodeError:
+            # oh well, we most likely will break later again, but
+            # let's just say it worked out well to that point.
+            pass
+    return rv
+
+
 def _unquote(s, unsafe=''):
     assert isinstance(s, str), 'unquote only works on bytes'
     unsafe = set(unsafe)
@@ -61,7 +78,7 @@ def _unquote_plus(s):
 
 def _uri_split(uri):
     """Splits up an URI or IRI."""
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
+    scheme, netloc, path, query, fragment = _safe_urlsplit(uri)
 
     port = None
 
@@ -339,7 +356,7 @@ def url_fix(s, charset='utf-8'):
     """
     if isinstance(s, unicode):
         s = s.encode(charset, 'ignore')
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
+    scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
     path = _quote(path, '/%')
     qs = _quote_plus(qs, ':&%=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))

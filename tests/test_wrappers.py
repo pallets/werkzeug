@@ -101,6 +101,36 @@ def test_base_request():
     assert response['form'] == MultiDict()
 
 
+def test_access_route():
+    """Check access route on the wrappers"""
+    req = Request.from_values(headers={
+        'X-Forwarded-For': '192.168.1.2, 192.168.1.1'
+    })
+    req.environ['REMOTE_ADDR'] = '192.168.1.3'
+    req.is_behind_proxy = True
+    assert req.access_route == ['192.168.1.2', '192.168.1.1']
+    assert req.remote_addr == '192.168.1.2'
+    req.is_behind_proxy = False
+    assert req.access_route == ['192.168.1.2', '192.168.1.1']
+    assert req.remote_addr == '192.168.1.3'
+
+    req = Request.from_values()
+    req.environ['REMOTE_ADDR'] = '192.168.1.3'
+    assert req.access_route == ['192.168.1.3']
+
+
+def test_url_request_descriptors():
+    """Basic URL request descriptors"""
+    req = Request.from_values('/bar?foo=baz', 'http://example.com/test')
+    assert req.path == u'/bar'
+    assert req.script_root == u'/test'
+    assert req.url == 'http://example.com/test/bar?foo=baz'
+    assert req.base_url == 'http://example.com/test/bar'
+    assert req.url_root == 'http://example.com/test/'
+    assert req.host_url == 'http://example.com/'
+    assert req.host == 'example.com'
+
+
 def test_base_response():
     """Base respone behavior"""
     # unicode
@@ -485,12 +515,17 @@ def test_storage_classes():
     class MyRequest(Request):
         dict_storage_class = dict
         list_storage_class = list
-    req = MyRequest.from_values(headers={
+        parameter_storage_class = dict
+    req = MyRequest.from_values('/?foo=baz', headers={
         'Cookie':   'foo=bar'
     })
     assert type(req.cookies) is dict
     assert req.cookies == {'foo': 'bar'}
     assert type(req.access_route) is list
+
+    assert type(req.args) is dict
+    assert type(req.values) is CombinedMultiDict
+    assert req.values['foo'] == 'baz'
 
     req = Request.from_values(headers={
         'Cookie':   'foo=bar'
