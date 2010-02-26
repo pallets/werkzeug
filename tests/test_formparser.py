@@ -269,3 +269,13 @@ def test_limiting():
                               method='POST')
     req.max_form_memory_size = 400
     assert req.form['foo'] == 'Hello World'
+
+
+def test_large_file():
+    """Test a largish file."""
+    data = 'x' * (1024 * 600)
+    req = Request.from_values(data={'foo': (StringIO(data), 'test.txt')},
+                              method='POST')
+    # make sure we have a real file here, because we expect to be
+    # on the disk.  > 1024 * 500
+    assert isinstance(req.files['foo'].stream, file)

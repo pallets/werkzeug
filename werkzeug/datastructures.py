@@ -515,15 +515,8 @@ class MultiDict(TypeConversionDict):
 
     def update(self, other_dict):
         """update() extends rather than replaces existing key lists."""
-        if isinstance(other_dict, MultiDict):
-            for key, value_list in other_dict.iterlists():
-                self.setlistdefault(key, []).extend(value_list)
-        elif isinstance(other_dict, dict):
-            for key, value in other_dict.iteritems():
-                self.setlistdefault(key, []).append(value)
-        else:
-            for key, value in other_dict:
-                self.setlistdefault(key, []).append(value)
+        for key, value in iter_multi_items(other_dict):
+            MultiDict.add(self, key, value)
 
     def pop(self, key, default=_missing):
         """Pop the first item for a list on the dict.  Afterwards the
@@ -621,6 +614,11 @@ class OrderedMultiDict(MultiDict):
        Instead you have to use the :meth:`to_dict` method, otherwise
        the internal bucket objects are exposed.
     """
+
+    # the key error this class raises.  Because of circular dependencies
+    # with the http exception module this class is created at the end of
+    # this module.
+    KeyError = None
 
     def __init__(self, mapping=None):
         dict.__init__(self)
@@ -2315,6 +2313,7 @@ from werkzeug.http import dump_options_header, dump_header, generate_etag, \
 
 # create all the special key errors now that the classes are defined.
 from werkzeug.exceptions import BadRequest
-for _cls in MultiDict, CombinedMultiDict, Headers, EnvironHeaders:
+for _cls in MultiDict, OrderedMultiDict, CombinedMultiDict, Headers, \
+            EnvironHeaders:
     _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')
 del _cls
