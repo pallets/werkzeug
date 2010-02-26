@@ -109,3 +109,9 @@ def test_multidict():
         a=[1, 2],
         b=2
     ))) == '1|2'
+
+
+def test_substitute():
+    """Templer rendering responds to substitute as well"""
+    t = Template('<% if a %>1<% endif %>\n2')
+    assert t.render(a=1) == t.substitute(a=1)
