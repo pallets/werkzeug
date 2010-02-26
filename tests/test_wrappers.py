@@ -168,6 +168,9 @@ def test_accept_mixin():
     assert request.accept_encodings == CharsetAccept([('gzip', 1), ('deflate', 1)])
     assert request.accept_languages == CharsetAccept([('en-us', 1), ('en', 0.5)])
 
+    request = Request({'HTTP_ACCEPT': ''})
+    assert request.accept_mimetypes == CharsetAccept()
+
 
 def test_etag_request_mixin():
     """ETag request-wrapper mixin"""
@@ -212,6 +215,12 @@ def test_user_agent_mixin():
         assert request.user_agent.platform == platform
         assert request.user_agent.version == version
         assert request.user_agent.language == lang
+        assert bool(request.user_agent)
+        assert request.user_agent.to_header() == ua
+        assert str(request.user_agent) == ua
+
+    request = Request({'HTTP_USER_AGENT': 'foo'})
+    assert not request.user_agent
 
 
 def test_etag_response_mixin():

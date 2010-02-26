@@ -6,3 +6,5 @@
 ^docs/_build
 [^/]+-stats\.txt$
 ^bench/[ab]/
+\.coverage
+coverage_out/
