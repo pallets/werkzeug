@@ -20,7 +20,7 @@ from cStringIO import StringIO
 from cookielib import CookieJar
 from urllib2 import Request as U2Request
 
-from werkzeug._internal import _empty_stream
+from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri
 from werkzeug.wsgi import get_host, get_current_url
@@ -767,6 +767,7 @@ def run_wsgi_app(app, environ, buffered=False):
     :param buffered: set to `True` to enforce buffering.
     :return: tuple in the form ``(app_iter, status, headers)``
     """
+    environ = _get_environ(environ)
     response = []
     buffer = []
 
