@@ -40,6 +40,9 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
+_quoted_string_re = r'"[^"\\]*(?:\\.[^"\\]*)*"'
+_option_header_piece_re = re.compile(r';\s*([^\s;=]+|%s)\s*(?:=\s*([^;]+|%s))?\s*' %
+    (_quoted_string_re, _quoted_string_re))
 
 _entity_headers = frozenset([
     'allow', 'content-encoding', 'content-language', 'content-length',
@@ -217,29 +220,19 @@ def parse_options_header(value):
     :return: (str, options)
     """
     def _tokenize(string):
-        while string[:1] == ';':
-            string = string[1:]
-            end = string.find(';')
-            while end > 0 and string.count('"', 0, end) % 2:
-                end = string.find(';', end + 1)
-            if end < 0:
-                end = len(string)
-            value = string[:end]
-            yield value.strip()
-            string = string[end:]
+        for match in _option_header_piece_re.finditer(string):
+            key, value = match.groups()
+            key = unquote_header_value(key)
+            if value is not None:
+                value = unquote_header_value(value)
+            yield key, value
 
     if not value:
         return '', {}
 
     parts = _tokenize(';' + value)
-    name = parts.next()
-    extra = {}
-    for part in parts:
-        if '=' in part:
-            key, value = part.split('=', 1)
-            extra[key.strip().lower()] = unquote_header_value(value.strip())
-        else:
-            extra[part.strip()] = None
+    name = parts.next()[0]
+    extra = dict(parts)
     return name, extra
 
 
