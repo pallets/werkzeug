@@ -179,3 +179,17 @@ def test_path_info_extraction():
                           'https://example.com/app/hello',
                           collapse_http_schemes=False)
     assert x is None
+
+
+def test_get_host_fallback():
+    """Test non Host header server name guessing"""
+    assert get_host({
+        'SERVER_NAME':      'foobar.example.com',
+        'wsgi.url_scheme':  'http',
+        'SERVER_PORT':      '80'
+    }) == 'foobar.example.com'
+    assert get_host({
+        'SERVER_NAME':      'foobar.example.com',
+        'wsgi.url_scheme':  'http',
+        'SERVER_PORT':      '81'
+    }) == 'foobar.example.com:81'
