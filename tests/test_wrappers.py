@@ -15,9 +15,10 @@ from nose.tools import assert_raises
 from datetime import datetime, timedelta
 from werkzeug.wrappers import *
 from werkzeug.wsgi import LimitedStream
+from werkzeug.http import generate_etag
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
      ImmutableList, ImmutableTypeConversionDict
-from werkzeug.test import Client, create_environ
+from werkzeug.test import Client, create_environ, run_wsgi_app
 
 
 class RequestTestResponse(BaseResponse):
@@ -131,6 +132,17 @@ def test_url_request_descriptors():
     assert req.host == 'example.com'
 
 
+def test_authorization_mixin():
+    """Authorization mixin"""
+    request = Request.from_values(headers={
+        'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+    })
+    a = request.authorization
+    assert a.type == 'basic'
+    assert a.username == 'Aladdin'
+    assert a.password == 'open sesame'
+
+
 def test_base_response():
     """Base respone behavior"""
     # unicode
@@ -150,6 +162,48 @@ def test_base_response():
         ('Set-Cookie', 'foo=bar; Domain=example.org; expires=Thu, '
          '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub')
     ]
+
+    # delete cookie
+    response = BaseResponse()
+    response.delete_cookie('foo')
+    assert response.headers.to_list() == [
+        ('Content-Type', 'text/plain; charset=utf-8'),
+        ('Set-Cookie', 'foo=; expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/')
+    ]
+
+    # close call forwarding
+    closed = []
+    class Iterable(object):
+        def next(self):
+            raise StopIteration()
+        def __iter__(self):
+            return self
+        def close(self):
+            closed.append(True)
+    response = BaseResponse(Iterable())
+    response.call_on_close(lambda: closed.append(True))
+    app_iter, status, headers = run_wsgi_app(response,
+                                             create_environ(),
+                                             buffered=True)
+    assert status == '200 OK'
+    assert ''.join(app_iter) == ''
+    assert len(closed) == 2
+
+
+def test_response_status_codes():
+    """Response status codes"""
+    response = BaseResponse()
+    response.status_code = 404
+    assert response.status == '404 NOT FOUND'
+    response.status = '200 OK'
+    assert response.status_code == 200
+    response.status = '999 WTF'
+    assert response.status_code == 999
+    response.status_code = 588
+    assert response.status_code == 588
+    assert response.status == '588 UNKNOWN'
+    response.status = 'wtf'
+    assert response.status_code == 0
 
 
 def test_type_forcing():
@@ -175,7 +229,7 @@ def test_type_forcing():
         assert response.content_type == 'text/html'
 
     # without env, no arbitrary conversion
-    assert_raises(TypeError, "SpecialResponse.force_type(wsgi_application)")
+    assert_raises(TypeError, SpecialResponse.force_type, wsgi_application)
 
 
 def test_accept_mixin():
@@ -278,6 +332,35 @@ def test_etag_response_mixin():
     resp = Response.from_app(response, env)
     assert resp.status_code == 304
     assert not 'content-length' in resp.headers
+
+
+def test_etag_response_mixin_freezing():
+    """Freeze of the etag response mixin adds etag if mixed first"""
+    class WithFreeze(ETagResponseMixin, BaseResponse):
+        pass
+    class WithoutFreeze(BaseResponse, ETagResponseMixin):
+        pass
+
+    response = WithFreeze('Hello World')
+    response.freeze()
+    assert response.get_etag() == (generate_etag('Hello World'), False)
+    response = WithoutFreeze('Hello World')
+    response.freeze()
+    assert response.get_etag() == (None, None)
+    response = Response('Hello World')
+    response.freeze()
+    assert response.get_etag() == (None, None)
+
+
+def test_authenticate_mixin():
+    """Test the authenciate mixin of the response"""
+    resp = Response()
+    resp.www_authenticate.type = 'basic'
+    resp.www_authenticate.realm = 'Testing'
+    assert resp.headers['WWW-Authenticate'] == 'Basic realm="Testing"'
+    resp.www_authenticate.realm = None
+    resp.www_authenticate.type = None
+    assert 'WWW-Authenticate' not in resp.headers
 
 
 def test_response_stream_mixin():
@@ -537,3 +620,10 @@ def test_storage_classes():
     MyRequest.list_storage_class = tuple
     req = MyRequest.from_values()
     assert type(req.access_route) is tuple
+
+
+def test_response_headers_passthrough():
+    """If headers are a Headers object they will be stored on the response"""
+    headers = Headers()
+    resp = Response(headers=headers)
+    assert resp.headers is headers

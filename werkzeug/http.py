@@ -366,7 +366,7 @@ def parse_www_authenticate_header(value, on_update=None):
         auth_type, auth_info = value.split(None, 1)
         auth_type = auth_type.lower()
     except (ValueError, AttributeError):
-        return WWWAuthenticate(value.lower(), on_update=on_update)
+        return WWWAuthenticate(value.strip().lower(), on_update=on_update)
     return WWWAuthenticate(auth_type, parse_dict_header(auth_info),
                            on_update)
 
