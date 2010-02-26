@@ -827,7 +827,7 @@ class Headers(object):
 
         >>> headerlist = [('Content-Length', '40')]
         >>> headers = Headers.linked(headerlist)
-        >>> headers.add('Content-Type', 'text/html')
+        >>> headers['Content-Type'] = 'text/html'
         >>> headerlist
         [('Content-Length', '40'), ('Content-Type', 'text/html')]
 
