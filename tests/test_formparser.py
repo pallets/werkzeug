@@ -14,7 +14,7 @@ from os.path import join, dirname, abspath
 from cStringIO import StringIO
 
 from werkzeug import Client, Request, Response, parse_form_data, \
-     create_environ, FileStorage
+     create_environ, FileStorage, formparser, create_environ
 from werkzeug.exceptions import RequestEntityTooLarge
 
 
@@ -132,6 +132,26 @@ def test_end_of_file_multipart():
                                method='POST')
     assert not data.files
     assert not data.form
+
+
+def test_broken_multipart():
+    """Broken multipart does not break the applicaiton"""
+    data = (
+        '--foo\r\n'
+        'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n'
+        'Content-Transfer-Encoding: base64\r\n'
+        'Content-Type: text/plain\r\n\r\n'
+        'broken base 64'
+        '--foo--'
+    )
+    _, form, files = parse_form_data(create_environ(data=data, method='POST',
+                                     content_type='multipart/form-data; boundary=foo'))
+    assert not files
+    assert not form
+
+    assert_raises(ValueError, parse_form_data, create_environ(data=data, method='POST',
+                  content_type='multipart/form-data; boundary=foo'),
+                  silent=False)
 
 
 def test_multipart_file_no_content_type():
@@ -279,3 +299,35 @@ def test_large_file():
     # make sure we have a real file here, because we expect to be
     # on the disk.  > 1024 * 500
     assert isinstance(req.files['foo'].stream, file)
+
+
+def test_lowlevel():
+    """Lowlevel formparser tests"""
+    formparser._line_parse('foo') == ('foo', False)
+    formparser._line_parse('foo\r\n') == ('foo', True)
+    formparser._line_parse('foo\r') == ('foo', True)
+    formparser._line_parse('foo\n') == ('foo', True)
+
+    lineiter = iter('\n\n\nfoo\nbar\nbaz'.splitlines(True))
+    line = formparser._find_terminator(lineiter)
+    assert line == 'foo'
+    assert list(lineiter) == ['bar\n', 'baz']
+    assert formparser._find_terminator([]) == ''
+    assert formparser._find_terminator(['']) == ''
+
+    assert_raises(ValueError, formparser.parse_multipart, None, '', 20)
+    assert_raises(ValueError, formparser.parse_multipart, None, 'broken  ', 20)
+
+    data = '--foo\r\n\r\nHello World\r\n--foo--'
+    assert_raises(ValueError, formparser.parse_multipart, StringIO(data), 'foo', len(data))
+
+    data = '--foo\r\nContent-Disposition: form-field; name=foo\r\n' \
+           'Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--'
+    assert_raises(ValueError, formparser.parse_multipart, StringIO(data), 'foo', len(data))
+
+    data = '--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n'
+    assert_raises(ValueError, formparser.parse_multipart, StringIO(data), 'foo', len(data))
+
+    x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
+    assert x['foo'] == 'bar\n x test'
+    assert_raises(ValueError, formparser.parse_multipart_headers, ['foo: bar\r\n', ' x test'])

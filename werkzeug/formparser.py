@@ -189,7 +189,11 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
         raise ValueError('Missing boundary')
     if not is_valid_multipart_boundary(boundary):
         raise ValueError('Invalid boundary: %s' % boundary)
-    if len(boundary) > buffer_size:
+    if len(boundary) > buffer_size: # pragma: no cover
+        # this should never happen because we check for a minimum size
+        # of 1024 and boundaries may not be longer than 200.  The only
+        # situation when this happen is for non debug builds where
+        # the assert i skipped.
         raise ValueError('Boundary longer than buffer size')
 
     total_content_length = content_length
@@ -298,7 +302,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                     if in_memory > max_form_memory_size:
                         from werkzeug.exceptions import RequestEntityTooLarge
                         raise RequestEntityTooLarge()
-            else:
+            else: # pragma: no cover
                 raise ValueError('unexpected end of part')
 
             if is_file:
