@@ -7,7 +7,9 @@
     :license: BSD license.
 """
 import re
-from werkzeug.debug.repr import debug_repr, DebugReprGenerator
+import sys
+from werkzeug.debug.repr import debug_repr, DebugReprGenerator, dump, helper
+from werkzeug.debug.console import HTMLStringO
 
 
 def test_debug_repr():
@@ -54,6 +56,28 @@ def test_debug_repr():
         u'<span class="module">test_debug.</span>MyList([' \
         u'<span class="number">1</span>, <span class="number">2</span>])'
 
+    assert debug_repr(re.compile(r'foo\d')) == \
+        u're.compile(<span class="string regex">r\'foo\\d\'</span>)'
+    assert debug_repr(re.compile(ur'foo\d')) == \
+        u're.compile(<span class="string regex">ur\'foo\\d\'</span>)'
+
+    assert debug_repr(frozenset('x')) == \
+        u'frozenset([<span class="string">\'x\'</span>])'
+    assert debug_repr(set('x')) == \
+        u'set([<span class="string">\'x\'</span>])'
+
+    a = [1]
+    a.append(a)
+    assert debug_repr(a) == u'[<span class="number">1</span>, [...]]'
+
+    class Foo(object):
+        def __repr__(self):
+            1/0
+
+    assert debug_repr(Foo()) == \
+        u'<span class="brokenrepr">&lt;broken repr (ZeroDivisionError: ' \
+        u'integer division or modulo by zero)&gt;</span>'
+
 
 def test_object_dumping():
     """Test debug object dumping to HTML"""
@@ -82,3 +106,36 @@ def test_object_dumping():
     assert re.search('Local variables in frame', out)
     assert re.search('<th>x</th>.*<span class="number">42</span>(?s)', out)
     assert re.search('<th>y</th>.*<span class="number">23</span>(?s)', out)
+
+
+def test_debug_dump():
+    """Test debug dump"""
+    old = sys.stdout
+    sys.stdout = HTMLStringO()
+    try:
+        dump([1, 2, 3])
+        x = sys.stdout.reset()
+        dump()
+        y = sys.stdout.reset()
+    finally:
+        sys.stdout = old
+
+    assert 'Details for list object at' in x
+    assert '<span class="number">1</span>' in x
+    assert 'Local variables in frame' in y
+    assert '<th>x</th>' in y
+    assert '<th>old</th>' in y
+
+
+def test_debug_help():
+    """Test debug help"""
+    old = sys.stdout
+    sys.stdout = HTMLStringO()
+    try:
+        helper([1, 2, 3])
+        x = sys.stdout.reset()
+    finally:
+        sys.stdout = old
+
+    assert 'Help on list object' in x
+    assert '__delitem__' in x

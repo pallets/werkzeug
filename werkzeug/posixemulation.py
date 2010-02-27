@@ -24,7 +24,7 @@ import random
 
 
 can_rename_open_file = False
-if os.name == 'nt':
+if os.name == 'nt': # pragma: no cover
     _rename = lambda src, dst: False
     _rename_atomic = lambda src, dst: False
 
