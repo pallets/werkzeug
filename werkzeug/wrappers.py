@@ -773,7 +773,7 @@ class BaseResponse(object):
            The `charset` parameter was deprecated and became a no-op.
         """
         # XXX: deprecated
-        if __debug__ and charset is not None:
+        if __debug__ and charset is not None: # pragma: no cover
             from warnings import warn
             warn(DeprecationWarning('charset was deprecated and is ignored.'),
                  stacklevel=2)
@@ -821,7 +821,7 @@ class BaseResponse(object):
         self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
 
     @property
-    def header_list(self):
+    def header_list(self): # pragma: no cover
         # XXX: deprecated
         if __debug__:
             from warnings import warn

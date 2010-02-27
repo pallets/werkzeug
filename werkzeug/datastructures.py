@@ -777,6 +777,13 @@ class OrderedMultiDict(MultiDict):
         return key, [x.value for x in buckets]
 
 
+def _options_header_vkw(value, kw):
+    if not kw:
+        return value
+    return dump_options_header(value, dict((k.replace('_', '-'), v)
+                                            for k, v in kw.items()))
+
+
 class Headers(object):
     """An object that stores some headers.  It has a dict-like interface
     but is ordered and can store the same keys multiple times.
@@ -1033,10 +1040,7 @@ class Headers(object):
         .. versionadded:: 0.4.1
             keyword arguments were added for :mod:`wsgiref` compatibility.
         """
-        if kw:
-            _value = dump_options_header(_value, dict((k.replace('_', '-'), v)
-                                                      for k, v in kw.items()))
-        self._list.append((_key, _value))
+        self._list.append((_key, _options_header_vkw(_value, kw)))
 
     def add_header(self, _key, _value, **_kw):
         """Add a new header tuple to the list.
@@ -1050,22 +1054,30 @@ class Headers(object):
         """Clears all headers."""
         del self._list[:]
 
-    def set(self, key, value):
+    def set(self, _key, _value, **kw):
         """Remove all header tuples for `key` and add a new one.  The newly
         added key either appears at the end of the list if there was no
         entry or replaces the first one.
 
+        Keyword arguments can specify additional parameters for the header
+        value, with underscores converted to dashes.  See :meth:`add` for
+        more information.
+
+        .. versionchanged:: 0.6.1
+           :meth:`set` now accepts the same arguments as :meth:`add`.
+
         :param key: The key to be inserted.
         :param value: The value to be inserted.
         """
-        lc_key = key.lower()
+        lc_key = _key.lower()
+        _value = _options_header_vkw(_value, kw)
         for idx, (old_key, old_value) in enumerate(self._list):
             if old_key.lower() == lc_key:
                 # replace first ocurrence
-                self._list[idx] = (key, value)
+                self._list[idx] = (_key, _value)
                 break
         else:
-            return self.add(key, value)
+            return self.add(_key, _value)
         self._list[idx + 1:] = [(k, v) for k, v in self._list[idx + 1:]
                                 if k.lower() != lc_key]
 

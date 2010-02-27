@@ -7,7 +7,7 @@ from nose.tools import assert_raises
 from werkzeug.datastructures import FileStorage, MultiDict, \
      ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
      ImmutableDict, Headers, ImmutableList, EnvironHeaders, \
-     OrderedMultiDict, ImmutableOrderedMultiDict
+     OrderedMultiDict, ImmutableOrderedMultiDict, HeaderSet
 
 
 def test_multidict_pickle():
@@ -245,7 +245,8 @@ def test_combined_multidict():
 
     assert sorted(d.items()) == [('bar', '2'), ('foo', '1')], d.items()
     assert sorted(d.items(multi=True)) == [('bar', '2'), ('bar', '3'), ('foo', '1')]
-
+    assert 'missingkey' not in d
+    assert 'foo' in d
 
     # type lookup
     assert d.get('foo', type=int) == 1
@@ -271,7 +272,8 @@ def test_combined_multidict():
 
 
 def test_immutable_dict_copies_are_mutable():
-    for cls in ImmutableTypeConversionDict, ImmutableMultiDict, ImmutableDict:
+    for cls in ImmutableTypeConversionDict, ImmutableMultiDict, ImmutableDict, \
+               ImmutableOrderedMultiDict:
         immutable = cls({'a': 1})
         assert_raises(TypeError, immutable.pop, 'a')
 
@@ -314,11 +316,12 @@ def test_headers():
     assert headers['x'] == r'y; z="\""'
 
     # defaults
-    headers = Headers({
-        'Content-Type': 'text/plain',
-        'X-Foo':        'bar',
-        'X-Bar':        ['1', '2']
-    })
+    headers = Headers([
+        ('Content-Type', 'text/plain'),
+        ('X-Foo',        'bar'),
+        ('X-Bar',        '1'),
+        ('X-Bar',        '2')
+    ])
     assert headers.getlist('x-bar') == ['1', '2']
     assert headers.get('x-Bar') == '1'
     assert headers.get('Content-Type') == 'text/plain'
@@ -338,7 +341,7 @@ def test_headers():
     assert headers[:1] == Headers([('Content-Type', 'text/plain')])
     del headers[:2]
     del headers[-1]
-    assert headers == Headers([('X-Bar', '2')])
+    assert headers == Headers([('X-Bar', '1')])
 
     # copying
     a = Headers([('foo', 'bar')])
@@ -351,6 +354,32 @@ def test_headers():
     assert headers.pop('a') == 1
     assert headers.pop('b', 2) == 2
     assert_raises(KeyError, headers.pop, 'c')
+
+    # set replaces and accepts same arguments as add
+    a = Headers()
+    a.set('Content-Disposition', 'useless')
+    a.set('Content-Disposition', 'attachment', filename='foo')
+    assert a['Content-Disposition'] == 'attachment; filename=foo'
+
+
+def test_header_set():
+    """Test the header set"""
+    hs = HeaderSet()
+    hs.add('foo')
+    hs.add('bar')
+    assert 'Bar' in hs
+    assert hs.find('foo') == 0
+    assert hs.find('BAR') == 1
+    assert hs.find('baz') < 0
+    hs.discard('missing')
+    hs.discard('foo')
+    assert hs.find('foo') < 0
+    assert hs.find('bar') == 0
+    assert_raises(IndexError, hs.index, 'missing')
+    assert hs.index('bar') == 0
+    assert hs
+    hs.clear()
+    assert not hs
 
 
 def test_environ_headers_counts():
@@ -426,6 +455,8 @@ def test_ordered_multidict():
     assert d.poplist('bar') == [42]
     assert not d
 
+    d.get('missingkey') is None
+
     d.add('foo', 42)
     d.add('foo', 23)
     d.add('bar', 2)
@@ -499,6 +530,8 @@ def test_immutable_structures():
     d = EnvironHeaders({'HTTP_X_FOO': 'test'})
     assert_raises(TypeError, d.__delitem__, 0)
     assert_raises(TypeError, d.add, 42)
+    assert_raises(TypeError, d.pop, 'x-foo')
     assert_raises(TypeError, d.popitem)
     assert_raises(TypeError, d.setdefault, 'foo', 42)
     assert dict(d.items()) == {'X-Foo': 'test'}
+    assert_raises(TypeError, d.copy)

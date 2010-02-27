@@ -180,6 +180,7 @@ def test_etags():
     assert unquote_etag('"foo"') == ('foo', False)
     assert unquote_etag('w/"foo"') == ('foo', True)
     es = parse_etags('"foo", "bar", w/"baz", blar')
+    assert sorted(es) == ['bar', 'blar', 'foo']
     assert 'foo' in es
     assert 'baz' not in es
     assert es.contains_weak('baz')

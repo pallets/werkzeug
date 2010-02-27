@@ -20,13 +20,13 @@ import re
 import inspect
 try:
     from email.utils import parsedate_tz
-except ImportError:
+except ImportError: # pragma: no cover
     from email.Utils import parsedate_tz
 from urllib2 import parse_http_list as _parse_list_header
 from datetime import datetime, timedelta
 try:
     from hashlib import md5
-except ImportError:
+except ImportError: # pragma: no cover
     from md5 import new as md5
 
 

@@ -417,7 +417,7 @@ def _find_exceptions():
             if getattr(obj, 'code', None) is not None:
                 default_exceptions[obj.code] = obj
                 __all__.append(obj.__name__)
-        except TypeError:
+        except TypeError: # pragma: no cover
             continue
 _find_exceptions()
 del _find_exceptions
