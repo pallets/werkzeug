@@ -271,11 +271,14 @@ def make_shell(init_func=None, banner=None, use_ipython=True):
 def make_runserver(app_factory, hostname='localhost', port=5000,
                    use_reloader=False, use_debugger=False, use_evalex=True,
                    threaded=False, processes=1, static_files=None,
-                   extra_files=None):
+                   extra_files=None, ssl_context=None):
     """Returns an action callback that spawns a new development server.
 
     .. versionadded:: 0.5
        `static_files` and `extra_files` was added.
+
+    ..versionadded:: 0.6
+       `ssl_context` was added.
 
     :param app_factory: a function that returns a new WSGI application.
     :param hostname: the default hostname the server should listen on.
@@ -284,8 +287,9 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
     :param use_evalex: the default setting for the evalex flag of the debugger.
     :param threaded: the default threading setting.
     :param processes: the default number of processes to start.
-    :param static_files: optionally a dict of static files.
-    :param extra_files: optionally a list of extra files to track for reloading.
+    :param static_files: optional dict of static files.
+    :param extra_files: optional list of extra files to track for reloading.
+    :param ssl_context: optional SSL context for running server in HTTPS mode.
     """
     def action(hostname=('h', hostname), port=('p', port),
                reloader=use_reloader, debugger=use_debugger,
@@ -295,5 +299,5 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
         app = app_factory()
         run_simple(hostname, port, app, reloader, debugger, evalex,
                    extra_files, 1, threaded, processes,
-                   static_files=static_files)
+                   static_files=static_files, ssl_context=ssl_context)
     return action
