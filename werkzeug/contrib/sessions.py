@@ -133,14 +133,6 @@ class Session(ModificationTrackingDict):
         """
         return self.modified
 
-    def __repr__(self):
-        return '<%s %s %s%s>' % (
-            self.__class__.__name__,
-            self.sid,
-            dict.__repr__(self),
-            self.should_save and '*' or ''
-        )
-
 
 class SessionStore(object):
     """Baseclass for all session stores.  The Werkzeug contrib module does not
