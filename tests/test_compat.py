@@ -15,13 +15,6 @@ print ':'.join([k[9:] for k, v in sys.modules.iteritems()
 '''
 
 
-# ignore some warnings werkzeug emits for backwards compat
-for msg in ['called into deprecated fix_headers',
-            'fix_headers changed behavior']:
-    warnings.filterwarnings('ignore', message=msg,
-                            category=DeprecationWarning)
-
-
 def perform_import(module, allowed):
     client = Popen([sys.executable, '-c', import_code % module],
                    stdout=PIPE)
@@ -66,6 +59,12 @@ def test_demand_import():
 
 def test_fix_headers_in_response():
     """Make sure fix_headers still works for backwards compatibility"""
+    # ignore some warnings werkzeug emits for backwards compat
+    for msg in ['called into deprecated fix_headers',
+                'fix_headers changed behavior']:
+        warnings.filterwarnings('ignore', message=msg,
+                                category=DeprecationWarning)
+
     from werkzeug import Response
     class MyResponse(Response):
         def fix_headers(self, environ):
@@ -75,3 +74,5 @@ def test_fix_headers_in_response():
     resp = Response.from_app(myresp, create_environ(method='GET'))
     assert resp.headers['x-foo'] == 'meh'
     assert resp.data == 'Foo'
+
+    warnings.resetwarnings()

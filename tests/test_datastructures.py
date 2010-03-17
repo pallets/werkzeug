@@ -7,7 +7,7 @@ from nose.tools import assert_raises
 from werkzeug.datastructures import FileStorage, MultiDict, \
      ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
      ImmutableDict, Headers, ImmutableList, EnvironHeaders, \
-     OrderedMultiDict, ImmutableOrderedMultiDict
+     OrderedMultiDict, ImmutableOrderedMultiDict, HeaderSet
 
 
 def test_multidict_pickle():
@@ -192,6 +192,46 @@ def test_multidict():
     assert "('a', 2)" in repr(md)
     assert "('b', 3)" in repr(md)
 
+    # add and getlist
+    md.add('c', '42')
+    md.add('c', '23')
+    assert md.getlist('c') == ['42', '23']
+    md.add('c', 'blah')
+    assert md.getlist('c', type=int) == [42, 23]
+
+    # iter interfaces
+    assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
+    assert list(zip(md, md.iterlistvalues())) == list(md.iterlists())
+    assert list(zip(md.iterkeys(), md.iterlistvalues())) == list(md.iterlists())
+
+    # setdefault
+    md = MultiDict()
+    md.setdefault('x', []).append(42)
+    md.setdefault('x', []).append(23)
+    assert md['x'] == [42, 23]
+
+    # to dict
+    md = MultiDict()
+    md['foo'] = 42
+    md.add('bar', 1)
+    md.add('bar', 2)
+    assert md.to_dict() == {'foo': 42, 'bar': 1}
+    assert md.to_dict(flat=False) == {'foo': [42], 'bar': [1, 2]}
+
+    # popitem from empty dict
+    assert_raises(KeyError, MultiDict().popitem)
+    assert_raises(KeyError, MultiDict().popitemlist)
+
+    # key errors are of a special type
+    assert_raises(MultiDict.KeyError, MultiDict().__getitem__, 42)
+
+    # setlist works
+    md = MultiDict()
+    md['foo'] = 42
+    md.setlist('foo', [1, 2])
+    assert md.getlist('foo') == [1, 2]
+
+
 def test_combined_multidict():
     """Combined multidict behavior"""
     d1 = MultiDict([('foo', '1')])
@@ -205,7 +245,8 @@ def test_combined_multidict():
 
     assert sorted(d.items()) == [('bar', '2'), ('foo', '1')], d.items()
     assert sorted(d.items(multi=True)) == [('bar', '2'), ('bar', '3'), ('foo', '1')]
-
+    assert 'missingkey' not in d
+    assert 'foo' in d
 
     # type lookup
     assert d.get('foo', type=int) == 1
@@ -231,7 +272,8 @@ def test_combined_multidict():
 
 
 def test_immutable_dict_copies_are_mutable():
-    for cls in ImmutableTypeConversionDict, ImmutableMultiDict, ImmutableDict:
+    for cls in ImmutableTypeConversionDict, ImmutableMultiDict, ImmutableDict, \
+               ImmutableOrderedMultiDict:
         immutable = cls({'a': 1})
         assert_raises(TypeError, immutable.pop, 'a')
 
@@ -274,11 +316,12 @@ def test_headers():
     assert headers['x'] == r'y; z="\""'
 
     # defaults
-    headers = Headers({
-        'Content-Type': 'text/plain',
-        'X-Foo':        'bar',
-        'X-Bar':        ['1', '2']
-    })
+    headers = Headers([
+        ('Content-Type', 'text/plain'),
+        ('X-Foo',        'bar'),
+        ('X-Bar',        '1'),
+        ('X-Bar',        '2')
+    ])
     assert headers.getlist('x-bar') == ['1', '2']
     assert headers.get('x-Bar') == '1'
     assert headers.get('Content-Type') == 'text/plain'
@@ -298,7 +341,7 @@ def test_headers():
     assert headers[:1] == Headers([('Content-Type', 'text/plain')])
     del headers[:2]
     del headers[-1]
-    assert headers == Headers([('X-Bar', '2')])
+    assert headers == Headers([('X-Bar', '1')])
 
     # copying
     a = Headers([('foo', 'bar')])
@@ -311,6 +354,32 @@ def test_headers():
     assert headers.pop('a') == 1
     assert headers.pop('b', 2) == 2
     assert_raises(KeyError, headers.pop, 'c')
+
+    # set replaces and accepts same arguments as add
+    a = Headers()
+    a.set('Content-Disposition', 'useless')
+    a.set('Content-Disposition', 'attachment', filename='foo')
+    assert a['Content-Disposition'] == 'attachment; filename=foo'
+
+
+def test_header_set():
+    """Test the header set"""
+    hs = HeaderSet()
+    hs.add('foo')
+    hs.add('bar')
+    assert 'Bar' in hs
+    assert hs.find('foo') == 0
+    assert hs.find('BAR') == 1
+    assert hs.find('baz') < 0
+    hs.discard('missing')
+    hs.discard('foo')
+    assert hs.find('foo') < 0
+    assert hs.find('bar') == 0
+    assert_raises(IndexError, hs.index, 'missing')
+    assert hs.index('bar') == 0
+    assert hs
+    hs.clear()
+    assert not hs
 
 
 def test_environ_headers_counts():
@@ -386,6 +455,8 @@ def test_ordered_multidict():
     assert d.poplist('bar') == [42]
     assert not d
 
+    d.get('missingkey') is None
+
     d.add('foo', 42)
     d.add('foo', 23)
     d.add('bar', 2)
@@ -395,3 +466,72 @@ def test_ordered_multidict():
     assert d == id
     d.add('foo', 2)
     assert d != id
+
+    d.update({'blah': [1, 2, 3]})
+    assert d['blah'] == 1
+    assert d.getlist('blah') == [1, 2, 3]
+
+    # setlist works
+    d = OrderedMultiDict()
+    d['foo'] = 42
+    d.setlist('foo', [1, 2])
+    assert d.getlist('foo') == [1, 2]
+
+    assert_raises(OrderedMultiDict.KeyError, d.pop, 'missing')
+    assert_raises(OrderedMultiDict.KeyError, d.__getitem__, 'missing')
+
+    # popping
+    d = OrderedMultiDict()
+    d.add('foo', 23)
+    d.add('foo', 42)
+    d.add('foo', 1)
+    assert d.popitem() == ('foo', 23)
+    assert_raises(OrderedMultiDict.KeyError, d.popitem)
+    assert not d
+
+    d.add('foo', 23)
+    d.add('foo', 42)
+    d.add('foo', 1)
+    assert d.popitemlist() == ('foo', [23, 42, 1])
+    assert_raises(OrderedMultiDict.KeyError, d.popitemlist)
+
+
+def test_immutable_structures():
+    """Test immutable structures"""
+    l = ImmutableList([1, 2, 3])
+    assert_raises(TypeError, l.__delitem__, 0)
+    assert_raises(TypeError, l.__delslice__, 0, 1)
+    assert_raises(TypeError, l.__iadd__, [1, 2])
+    assert_raises(TypeError, l.__setitem__, 0, 1)
+    assert_raises(TypeError, l.__setslice__, 0, 1, [2, 3])
+    assert_raises(TypeError, l.append, 42)
+    assert_raises(TypeError, l.insert, 0, 32)
+    assert_raises(TypeError, l.pop)
+    assert_raises(TypeError, l.extend, [2, 3])
+    assert_raises(TypeError, l.reverse)
+    assert_raises(TypeError, l.sort)
+    assert l == [1, 2, 3]
+
+    d = ImmutableDict(foo=23, bar=42)
+    assert_raises(TypeError, d.setdefault, 'baz')
+    assert_raises(TypeError, d.update, {2: 3})
+    assert_raises(TypeError, d.popitem)
+    assert_raises(TypeError, d.__delitem__, 'foo')
+    assert_raises(TypeError, d.clear)
+    assert d == dict(foo=23, bar=42)
+
+    d = ImmutableMultiDict(d)
+    assert_raises(TypeError, d.add, 'fuss', 44)
+    assert_raises(TypeError, d.popitemlist)
+    assert_raises(TypeError, d.poplist, 'foo')
+    assert_raises(TypeError, d.setlist, 'tadaa', [1, 2])
+    assert_raises(TypeError, d.setlistdefault, 'tadaa')
+
+    d = EnvironHeaders({'HTTP_X_FOO': 'test'})
+    assert_raises(TypeError, d.__delitem__, 0)
+    assert_raises(TypeError, d.add, 42)
+    assert_raises(TypeError, d.pop, 'x-foo')
+    assert_raises(TypeError, d.popitem)
+    assert_raises(TypeError, d.setdefault, 'foo', 42)
+    assert dict(d.items()) == {'X-Foo': 'test'}
+    assert_raises(TypeError, d.copy)

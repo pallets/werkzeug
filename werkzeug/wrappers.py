@@ -35,13 +35,14 @@ from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      cookie_date, parse_cookie, dump_cookie, http_date, escape, \
      header_property, get_content_type
-from werkzeug.wsgi import get_current_url, get_host, LimitedStream
+from werkzeug.wsgi import get_current_url, get_host, LimitedStream, \
+     ClosingIterator
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
      ResponseCacheControl, RequestCacheControl, CallbackDict
 from werkzeug._internal import _empty_stream, _decode_unicode, \
-     _patch_wrapper
+     _patch_wrapper, _get_environ
 
 
 def _run_wsgi_app(*args):
@@ -58,7 +59,7 @@ def _warn_if_string(iterable):
     to the WSGI server is not a string.
     """
     if isinstance(iterable, basestring):
-        from warnings import Warning
+        from warnings import warn
         warn(Warning('response iterable was set to a string.  This appears '
                      'to work but means that the server will send the '
                      'data to the client char, by char.  This is almost '
@@ -772,7 +773,7 @@ class BaseResponse(object):
            The `charset` parameter was deprecated and became a no-op.
         """
         # XXX: deprecated
-        if __debug__ and charset is not None:
+        if __debug__ and charset is not None: # pragma: no cover
             from warnings import warn
             warn(DeprecationWarning('charset was deprecated and is ignored.'),
                  stacklevel=2)
@@ -820,7 +821,7 @@ class BaseResponse(object):
         self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
 
     @property
-    def header_list(self):
+    def header_list(self): # pragma: no cover
         # XXX: deprecated
         if __debug__:
             from warnings import warn
@@ -966,7 +967,7 @@ class BaseResponse(object):
             if __debug__:
                 _warn_if_string(self.response)
             return self.response
-        return self.iter_encoded()
+        return ClosingIterator(self.iter_encoded(), self.close)
 
     def get_wsgi_response(self, environ):
         """Returns the final WSGI response as tuple.  The first item in
@@ -1117,6 +1118,10 @@ class ETagResponseMixin(object):
     """Adds extra functionality to a response object for etag and cache
     handling.  This mixin requires an object with at least a `headers`
     object that implements a dict like interface similar to :class:`Headers`.
+
+    If you want the :meth:`freeze` method to automatically add an etag, you
+    have to mixin this method before the response base class.  The default
+    response class does not do that.
     """
 
     @property
@@ -1153,7 +1158,7 @@ class ETagResponseMixin(object):
                                    used to make the response conditional
                                    against.
         """
-        environ = getattr(request_or_environ, 'environ', request_or_environ)
+        environ = _get_environ(request_or_environ)
         if environ['REQUEST_METHOD'] in ('GET', 'HEAD'):
             self.headers['Date'] = http_date()
             if 'content-length' in self.headers:

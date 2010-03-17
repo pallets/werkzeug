@@ -10,7 +10,8 @@ from datetime import datetime
 from nose.tools import assert_raises
 
 from werkzeug.http import *
-from werkzeug.utils import http_date, redirect
+from werkzeug.utils import http_date, redirect, http_date
+from werkzeug.test import create_environ
 from werkzeug.datastructures import *
 
 
@@ -139,6 +140,10 @@ def test_authorization_header():
     assert a.response == '6629fae49393a05397450978507c4ef1'
     assert a.opaque == '5ccc069c403ebaf9f0171e9517f40e41'
 
+    assert parse_authorization_header('') is None
+    assert parse_authorization_header(None) is None
+    assert parse_authorization_header('foo') is None
+
 
 def test_www_authenticate_header():
     """WWW Authenticate header parsing and behavior"""
@@ -160,6 +165,13 @@ def test_www_authenticate_header():
     assert wa.nonce == 'dcd98b7102dd2f0e8b11d0f600bfb0c093'
     assert wa.opaque == '5ccc069c403ebaf9f0171e9517f40e41'
 
+    wa = parse_www_authenticate_header('broken')
+    assert wa.type == 'broken'
+
+    assert not parse_www_authenticate_header('').type
+    assert not parse_www_authenticate_header('')
+
+
 
 def test_etags():
     """ETag tools"""
@@ -168,6 +180,7 @@ def test_etags():
     assert unquote_etag('"foo"') == ('foo', False)
     assert unquote_etag('w/"foo"') == ('foo', True)
     es = parse_etags('"foo", "bar", w/"baz", blar')
+    assert sorted(es) == ['bar', 'blar', 'foo']
     assert 'foo' in es
     assert 'baz' not in es
     assert es.contains_weak('baz')
@@ -233,3 +246,50 @@ def test_redirect():
     resp = redirect('http://example.com/', 305)
     assert resp.headers['Location'] == 'http://example.com/'
     assert resp.status_code == 305
+
+
+def test_dump_options_header():
+    """Test options header dumping alone"""
+    assert dump_options_header('foo', {'bar': 42}) == \
+        'foo; bar=42'
+    assert dump_options_header('foo', {'bar': 42, 'fizz': None}) == \
+        'foo; bar=42; fizz'
+
+
+def test_dump_header():
+    """Test the header dumping function alone"""
+    assert dump_header([1, 2, 3]) == '1, 2, 3'
+    assert dump_header([1, 2, 3], allow_token=False) == '"1", "2", "3"'
+    assert dump_header({'foo': 'bar'}, allow_token=False) == 'foo="bar"'
+    assert dump_header({'foo': 'bar'}) == 'foo=bar'
+
+
+def test_parse_options_header():
+    """Parse options header"""
+    assert parse_options_header('something; foo="other\"thing"') == \
+        ('something', {'foo': 'other"thing'})
+    assert parse_options_header('something; foo="other\"thing"; meh=42') == \
+        ('something', {'foo': 'other"thing', 'meh': '42'})
+    assert parse_options_header('something; foo="other\"thing"; meh=42; bleh') == \
+        ('something', {'foo': 'other"thing', 'meh': '42', 'bleh': None})
+
+
+def test_is_resource_modified():
+    """Test is_resource_modified alone"""
+    env = create_environ()
+
+    # ignore POST
+    env['REQUEST_METHOD'] = 'POST'
+    assert not is_resource_modified(env, etag='testing')
+    env['REQUEST_METHOD'] = 'GET'
+
+    # etagify from data
+    assert_raises(TypeError, is_resource_modified, env, data='42', etag='23')
+    env['HTTP_IF_NONE_MATCH'] = generate_etag('awesome')
+    assert not is_resource_modified(env, data='awesome')
+
+    env['HTTP_IF_MODIFIED_SINCE'] = http_date(datetime(2008, 1, 1, 12, 30))
+    assert not is_resource_modified(env,
+        last_modified=datetime(2008, 1, 1, 12, 00))
+    assert is_resource_modified(env,
+        last_modified=datetime(2008, 1, 1, 13, 00))

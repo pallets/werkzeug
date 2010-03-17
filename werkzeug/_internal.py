@@ -94,6 +94,13 @@ def _proxy_repr(cls):
     return proxy_repr
 
 
+def _get_environ(obj):
+    env = getattr(obj, 'environ', obj)
+    assert isinstance(env, dict), \
+        '%r is not a WSGI environment (has to be a dict)' % type(obj).__name__
+    return env
+
+
 def _log(type, message, *args, **kwargs):
     """Log into the internal werkzeug logger."""
     global _logger

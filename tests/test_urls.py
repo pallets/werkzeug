@@ -92,6 +92,25 @@ def test_ordered_multidict_encoding():
     assert url_encode(d) == 'foo=1&foo=2&foo=3&bar=0&foo=4'
 
 
+def test_href():
+    """Test the Href class"""
+    x = Href('http://www.example.com/')
+    assert x('foo') == 'http://www.example.com/foo'
+    assert x.foo('bar') == 'http://www.example.com/foo/bar'
+    assert x.foo('bar', x=42) == 'http://www.example.com/foo/bar?x=42'
+    assert x.foo('bar', class_=42) == 'http://www.example.com/foo/bar?class=42'
+    assert x.foo('bar', {'class': 42}) == 'http://www.example.com/foo/bar?class=42'
+    assert_raises(AttributeError, lambda: x.__blah__)
+
+    x = Href('blah')
+    assert x.foo('bar') == 'blah/foo/bar'
+
+    assert_raises(TypeError, x.foo, {"foo": 23}, x=42)
+
+    x = Href('')
+    assert x('foo') == 'foo'
+
+
 def test_href_past_root():
     """Href() over root does not break the URL."""
     raise SkipTest('currently not implemented, stdlib bug?')

@@ -12,12 +12,12 @@ try:
     from py.magic import greenlet
     get_current_greenlet = greenlet.getcurrent
     del greenlet
-except:
+except: # pragma: no cover
     # catch all, py.* fails with so many different errors.
     get_current_greenlet = int
 try:
     from thread import get_ident as get_current_thread, allocate_lock
-except ImportError:
+except ImportError: # pragma: no cover
     from dummy_thread import get_ident as get_current_thread, allocate_lock
 
 from werkzeug.wsgi import ClosingIterator
@@ -27,7 +27,7 @@ from werkzeug._internal import _patch_wrapper
 # get the best ident function.  if greenlets are not installed we can
 # safely just use the builtin thread function and save a python methodcall
 # and the cost of calculating a hash.
-if get_current_greenlet is int:
+if get_current_greenlet is int: # pragma: no cover
     get_ident = get_current_thread
 else:
     get_ident = lambda: (get_current_thread(), get_current_greenlet())

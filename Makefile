@@ -22,5 +22,8 @@ documentation:
 test:
 	@(nosetests $(TEST_OPTIONS) $(TESTS))
 
+coverage:
+	@(nosetests $(TEST_OPTIONS) --with-coverage --cover-package=werkzeug --cover-html --cover-html-dir=coverage_out $(TESTS))
+
 doctest:
 	@(cd docs; sphinx-build -b doctest . _build/doctest)

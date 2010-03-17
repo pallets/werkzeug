@@ -57,7 +57,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-from werkzeug._internal import HTTP_STATUS_CODES
+from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
 
 
 class HTTPException(Exception):
@@ -75,9 +75,9 @@ class HTTPException(Exception):
         if description is not None:
             self.description = description
 
+    @classmethod
     def wrap(cls, exception, name=None):
-        """
-        This method returns a new subclass of the exception provided that
+        """This method returns a new subclass of the exception provided that
         also is a subclass of `BadRequest`.
         """
         class newcls(cls, exception):
@@ -87,15 +87,15 @@ class HTTPException(Exception):
         newcls.__module__ = sys._getframe(1).f_globals.get('__name__')
         newcls.__name__ = name or cls.__name__ + exception.__name__
         return newcls
-    wrap = classmethod(wrap)
 
+    @property
     def name(self):
         """The status name."""
         return HTTP_STATUS_CODES[self.code]
-    name = property(name, doc=name.__doc__)
 
     def get_description(self, environ):
         """Get the description."""
+        environ = _get_environ(environ)
         return self.description
 
     def get_body(self, environ):
@@ -125,6 +125,7 @@ class HTTPException(Exception):
         # with custom responses (testing exception instances against types) and
         # so we don't ever have to import the wrappers, but also because there
         # are circular dependencies when bootstrapping the module.
+        environ = _get_environ(environ)
         from werkzeug.wrappers import BaseResponse
         headers = self.get_headers(environ)
         return BaseResponse(self.get_body(environ), self.code, headers)
@@ -416,7 +417,7 @@ def _find_exceptions():
             if getattr(obj, 'code', None) is not None:
                 default_exceptions[obj.code] = obj
                 __all__.append(obj.__name__)
-        except TypeError:
+        except TypeError: # pragma: no cover
             continue
 _find_exceptions()
 del _find_exceptions
