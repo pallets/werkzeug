@@ -83,6 +83,7 @@ def test_iri_support():
     # this should work as well, might break on 2.4 because of a broken
     # idna codec
     assert uri_to_iri('/foo') == u'/foo'
+    assert iri_to_uri(u'/foo') == '/foo'
 
 
 def test_ordered_multidict_encoding():
