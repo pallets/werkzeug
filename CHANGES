@@ -10,6 +10,8 @@ Version 0.6.1
   (should no be more stable under high concurrency)
 - fixed a `NameError` in the session system.
 - fixed a bug with empty arguments in the werkzeug.script system.
+- fixed a bug where log lines will be duplicated if an application uses
+  :meth:`logging.basicConfig` (#499)
 
 Version 0.6
 -----------
