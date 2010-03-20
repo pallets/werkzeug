@@ -304,8 +304,8 @@ class SecureCookie(ModificationTrackingDict):
         """
         data = request.cookies.get(key)
         if not data:
-            return SecureCookie(secret_key=secret_key)
-        return SecureCookie.unserialize(data, secret_key)
+            return cls(secret_key=secret_key)
+        return cls.unserialize(data, secret_key)
 
     def save_cookie(self, response, key='session', expires=None,
                     session_expires=None, max_age=None, path='/', domain=None,
