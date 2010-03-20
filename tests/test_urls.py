@@ -80,6 +80,10 @@ def test_iri_support():
     assert uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
         u'http://test.com/%3Fmeh?foo=%26%2F'
 
+    # this should work as well, might break on 2.4 because of a broken
+    # idna codec
+    assert uri_to_iri('/foo') == u'/foo'
+
 
 def test_ordered_multidict_encoding():
     """"Make sure URLs are properly encoded from OrderedMultiDicts"""
