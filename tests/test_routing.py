@@ -338,3 +338,23 @@ def test_build_append_unknown():
         'http://example.org/bar/0.815?bif=1.0'
     assert adapter.build('barf', {'bazf': 0.815, 'bif' : 1.0},
         append_unknown=False) == 'http://example.org/bar/0.815'
+
+
+def test_method_fallback():
+    """Test that building falls back to different rules"""
+    map = Map([
+        Rule('/', endpoint='index', methods=['GET']),
+        Rule('/<name>', endpoint='hello_name', methods=['GET']),
+        Rule('/select', endpoint='hello_select', methods=['POST']),
+        Rule('/search_get', endpoint='search', methods=['GET']),
+        Rule('/search_post', endpoint='search', methods=['POST'])
+    ])
+    adapter = map.bind('example.com')
+    assert adapter.build('index') == '/'
+    assert adapter.build('index', method='GET') == '/'
+    assert adapter.build('hello_name', {'name': 'foo'}) == '/foo'
+    assert adapter.build('hello_select') == '/select'
+    assert adapter.build('hello_select', method='POST') == '/select'
+    assert adapter.build('search') == '/search_get'
+    assert adapter.build('search', method='GET') == '/search_get'
+    assert adapter.build('search', method='POST') == '/search_post'

@@ -34,7 +34,8 @@ import sys
 # import mapping to objects in other modules
 all_by_module = {
     'werkzeug.debug':       ['DebuggedApplication'],
-    'werkzeug.local':       ['Local', 'LocalManager', 'LocalProxy'],
+    'werkzeug.local':       ['Local', 'LocalManager', 'LocalProxy',
+                             'LocalStack', 'release_local'],
     'werkzeug.templates':   ['Template'],
     'werkzeug.serving':     ['run_simple'],
     'werkzeug.test':        ['Client', 'EnvironBuilder', 'create_environ',

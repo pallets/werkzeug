@@ -5,6 +5,13 @@ Version 0.6.1
 -------------
 (bugfix release, release date to be decided)
 
+- heavily improved local objects.  Should pick up standalone greenlet
+  builds now and support proxies to free callables as well.  There is
+  also a stacked local now that makes it possible to invoke the same
+  application from within itself by pushing current request/response
+  on top of the stack.
+- routing build method will also build non-default method rules properly
+  if no method is provided.
 - added proper IPv6 support for the builtin server.
 - windows specific filesystem session store fixes.
   (should no be more stable under high concurrency)

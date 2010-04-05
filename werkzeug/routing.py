@@ -611,9 +611,11 @@ class Rule(RuleFactory):
         subdomain, url = (u''.join(tmp)).split('|', 1)
 
         if append_unknown:
-            query_vars = {}
-            for key in set(values) - processed:
-                query_vars[key] = unicode(values[key])
+            query_vars = MultiDict(values)
+            for key in processed:
+                if key in query_vars:
+                    del query_vars[key]
+
             if query_vars:
                 url += '?' + url_encode(query_vars, self.map.charset,
                                         sort=self.map.sort_parameters,
@@ -630,13 +632,14 @@ class Rule(RuleFactory):
                self.endpoint == rule.endpoint and self != rule and \
                self.arguments == rule.arguments
 
-    def suitable_for(self, values, method):
+    def suitable_for(self, values, method=None):
         """Check if the dict of values has enough data for url generation.
 
         :internal:
         """
-        if self.methods is not None and method not in self.methods:
-            return False
+        if method is not None:
+            if self.methods is not None and method not in self.methods:
+                return False
 
         valueset = set(values)
 
@@ -1296,6 +1299,27 @@ class MapAdapter(object):
             return False
         return True
 
+    def _partial_build(self, endpoint, values, method, append_unknown):
+        """Helper for :meth:`build`.  Returns subdomain and path for the
+        rule that accepts this endpoint, values and method.
+
+        :internal:
+        """
+        # in case the method is none, try with the default method first
+        if method is None:
+            rv = self._partial_build(endpoint, values, self.default_method,
+                                     append_unknown)
+            if rv is not None:
+                return rv
+
+        # default method did not match or a specific method is passed,
+        # check all and go with first result.
+        for rule in self.map._rules_by_endpoint.get(endpoint, ()):
+            if rule.suitable_for(values, method):
+                rv = rule.build(values, append_unknown)
+                if rv is not None:
+                    return rv
+
     def build(self, endpoint, values=None, method=None, force_external=False,
               append_unknown=True):
         """Building URLs works pretty much the other way round.  Instead of
@@ -1351,20 +1375,21 @@ class MapAdapter(object):
                                if you want the builder to ignore those.
         """
         self.map.update()
-        method = method or self.default_method
         if values:
-            values = dict([(k, v) for k, v in values.items() if v is not None])
+            if isinstance(values, MultiDict):
+                values = dict((k, v) for k, v in values.iteritems(multi=True)
+                              if v is not None)
+            else:
+                values = dict((k, v) for k, v in values.iteritems()
+                              if v is not None)
         else:
             values = {}
 
-        for rule in self.map._rules_by_endpoint.get(endpoint, ()):
-            if rule.suitable_for(values, method):
-                rv = rule.build(values, append_unknown)
-                if rv is not None:
-                    break
-        else:
+        rv = self._partial_build(endpoint, values, method, append_unknown)
+        if rv is None:
             raise BuildError(endpoint, values, method)
         subdomain, path = rv
+
         if not force_external and subdomain == self.subdomain:
             return str(urljoin(self.script_name, path.lstrip('/')))
         return str('%s://%s%s%s/%s' % (
@@ -1386,5 +1411,5 @@ DEFAULT_CONVERTERS = {
     'float':            FloatConverter
 }
 
-from werkzeug.datastructures import ImmutableDict
+from werkzeug.datastructures import ImmutableDict, MultiDict
 Map.default_converters = ImmutableDict(DEFAULT_CONVERTERS)

@@ -9,12 +9,15 @@
     :license: BSD, see LICENSE for more details.
 """
 try:
-    from py.magic import greenlet
-    get_current_greenlet = greenlet.getcurrent
-    del greenlet
-except: # pragma: no cover
-    # catch all, py.* fails with so many different errors.
-    get_current_greenlet = int
+    from greenlet import getcurrent as get_current_greenlet
+except ImportError: # pragma: no cover
+    try:
+        from py.magic import greenlet
+        get_current_greenlet = greenlet.getcurrent
+        del greenlet
+    except:
+        # catch all, py.* fails with so many different errors.
+        get_current_greenlet = int
 try:
     from thread import get_ident as get_current_thread, allocate_lock
 except ImportError: # pragma: no cover
@@ -33,6 +36,29 @@ else:
     get_ident = lambda: (get_current_thread(), get_current_greenlet())
 
 
+def release_local(local):
+    """Releases the contents of the local for the current context.
+    This makes it possible to use locals without a manager.
+
+    Example::
+
+        >>> loc = Local()
+        >>> loc.foo = 42
+        >>> release_local(loc)
+        >>> hasattr(loc, 'foo')
+        False
+
+    With this function one can release :class:`Local` objects as well
+    as :class:`StackLocal` objects.  However it is not possible to
+    release data held by proxies that way, one always has to retain
+    a reference to the underlying local object in order to be able
+    to release it.
+
+    .. versionadded:: 0.6.1
+    """
+    local.__release_local__()
+
+
 class Local(object):
     __slots__ = ('__storage__', '__lock__')
 
@@ -46,6 +72,9 @@ class Local(object):
     def __call__(self, proxy):
         """Create a proxy for a name."""
         return LocalProxy(self, proxy)
+
+    def __release_local__(self):
+        self.__storage__.pop(get_ident(), None)
 
     def __getattr__(self, name):
         self.__lock__.acquire()
@@ -80,11 +109,82 @@ class Local(object):
             self.__lock__.release()
 
 
+class LocalStack(object):
+    """This class works similar to a :class:`Local` but keeps a stack
+    of objects instead.  This is best explained with an example::
+
+        >>> ls = LocalStack()
+        >>> ls.push(42)
+        >>> ls.top
+        42
+        >>> ls.push(23)
+        >>> ls.top
+        23
+        >>> ls.pop()
+        23
+        >>> ls.top
+        42
+
+    They can be release by using a :class:`LocalManager` or with the
+    :func:`release_local` function.  By calling the stack without
+    arguments it returns a proxy that resolves to the topmost item
+    on the stack.
+
+    .. versionadded:: 0.6.1
+    """
+
+    def __init__(self):
+        self._local = Local()
+        self._lock = allocate_lock()
+
+    def __release_local__(self):
+        self._local.__release_local__()
+
+    def __call__(self):
+        def _lookup():
+            rv = self.top
+            if rv is None:
+                raise RuntimeError('object unbound')
+            return rv
+        return LocalProxy(_lookup)
+
+    @property
+    def stack(self):
+        self._lock.acquire()
+        try:
+            rv = getattr(self._local, 'stack', None)
+            if rv is None:
+                self._local.stack = rv = []
+            return rv
+        finally:
+            self._lock.release()
+
+    def push(self, obj):
+        self.stack.append(obj)
+
+    def pop(self):
+        try:
+            return self.stack.pop()
+        except IndexError:
+            return None
+
+    @property
+    def top(self):
+        try:
+            return self.stack[-1]
+        except IndexError:
+            return None
+
+
 class LocalManager(object):
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them later
     by appending them to `manager.locals`.  Everytime the manager cleans up
     it, will clean up all the data left in the locals for this context.
+
+    .. versionchanged:: 0.6.1
+       Instead of a manager the :func:`release_local` function can be used
+       as well.
     """
 
     def __init__(self, locals=None):
@@ -109,7 +209,7 @@ class LocalManager(object):
         """
         ident = self.get_ident()
         for local in self.locals:
-            local.__storage__.pop(ident, None)
+            release_local(local)
 
     def make_middleware(self, app):
         """Wrap a WSGI application so that cleaning up happens after
@@ -150,16 +250,35 @@ class LocalProxy(object):
 
         from werkzeug import Local
         l = Local()
+
+        # these are proxies
         request = l('request')
         user = l('user')
 
+
+        from werkzeug import LocalStack
+        _response_local = LocalStack()
+
+        # this is a proxy
+        response = _response_local()
+
     Whenever something is bound to l.user / l.request the proxy objects
-    will forward all operations.  If no object is bound a `RuntimeError`
+    will forward all operations.  If no object is bound a :exc:`RuntimeError`
     will be raised.
+
+    To create proxies to :class:`Local` or :class:`LocalStack` objects,
+    call the object as shown above.  If you want to have a proxy to an
+    object looked up by a function, you can (as of Werkzeug 0.6.1) pass
+    a function to the :class:`LocalProxy` constructor::
+
+        session = LocalProxy(lambda: get_current_request().session)
+
+    .. versionchanged:: 0.6.1
+       The class can be instanciated with a callable as well now.
     """
     __slots__ = ('__local', '__dict__', '__name__')
 
-    def __init__(self, local, name):
+    def __init__(self, local, name=None):
         object.__setattr__(self, '_LocalProxy__local', local)
         object.__setattr__(self, '__name__', name)
 
@@ -168,6 +287,8 @@ class LocalProxy(object):
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
         """
+        if not hasattr(self.__local, '__release_local__'):
+            return self.__local()
         try:
             return getattr(self.__local, self.__name__)
         except AttributeError:
