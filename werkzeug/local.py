@@ -150,6 +150,7 @@ class LocalStack(object):
 
     @property
     def stack(self):
+        """The current context's stack as list"""
         self._lock.acquire()
         try:
             rv = getattr(self._local, 'stack', None)
@@ -160,9 +161,13 @@ class LocalStack(object):
             self._lock.release()
 
     def push(self, obj):
+        """Pushes a new item to the stack"""
         self.stack.append(obj)
 
     def pop(self):
+        """Removes the topmost item from the stack, will return the
+        old value or `None` if the stack was already empty.
+        """
         try:
             return self.stack.pop()
         except IndexError:
@@ -170,6 +175,9 @@ class LocalStack(object):
 
     @property
     def top(self):
+        """The topmost item on the stack.  If the stack is empty,
+        `None` is returned.
+        """
         try:
             return self.stack[-1]
         except IndexError:
@@ -295,12 +303,12 @@ class LocalProxy(object):
             raise RuntimeError('no object bound to %s' % self.__name__)
     __current_object = property(_get_current_object)
 
+    @property
     def __dict__(self):
         try:
             return self.__current_object.__dict__
         except RuntimeError:
             return AttributeError('__dict__')
-    __dict__ = property(__dict__)
 
     def __repr__(self):
         try:

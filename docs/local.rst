@@ -60,8 +60,13 @@ later by appending them to `manager.locals` and everytime the manager
 cleans up it will clean up all the data left in the locals for this
 context.
 
+.. autofunction:: release_local
+
 .. autoclass:: LocalManager
    :members: cleanup, make_middleware, middleware, get_ident
+
+.. autoclass:: LocalStack
+   :members: stack, push, pop, top
 
 .. autoclass:: LocalProxy
    :members: _get_current_object
