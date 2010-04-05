@@ -11,7 +11,9 @@ from threading import Thread
 
 from nose.tools import assert_raises
 
-from werkzeug import Local, LocalManager, LocalStack, LocalProxy, release_local
+from werkzeug import Local, LocalManager, LocalStack, LocalProxy, \
+     release_local
+from werkzeug.local import get_ident # for testing purposes only
 
 
 def test_basic_local():
@@ -69,9 +71,13 @@ def test_local_proxy():
 
 def test_local_stack():
     """Test the LocalStack"""
+    ident = get_ident()
+
     ls = LocalStack()
+    assert ident not in ls._local.__storage__
     assert ls.top is None
     ls.push(42)
+    assert ident in ls._local.__storage__
     assert ls.top == 42
     ls.push(23)
     assert ls.top == 23
@@ -91,7 +97,7 @@ def test_local_stack():
     ls.pop()
     assert repr(proxy) == '<LocalProxy unbound>'
 
-    release_local(ls)
+    assert ident not in ls._local.__storage__
 
 
 def test_local_proxies_with_callables():

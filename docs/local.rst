@@ -66,7 +66,7 @@ context.
    :members: cleanup, make_middleware, middleware, get_ident
 
 .. autoclass:: LocalStack
-   :members: stack, push, pop, top
+   :members: push, pop, top
 
 .. autoclass:: LocalProxy
    :members: _get_current_object

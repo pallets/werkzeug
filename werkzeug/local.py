@@ -125,10 +125,13 @@ class LocalStack(object):
         >>> ls.top
         42
 
-    They can be release by using a :class:`LocalManager` or with the
-    :func:`release_local` function.  By calling the stack without
-    arguments it returns a proxy that resolves to the topmost item
-    on the stack.
+    They can be force released by using a :class:`LocalManager` or with
+    the :func:`release_local` function but the correct way is to pop the
+    item from the stack after using.  When the stack is empty it will
+    no longer be bound to the current context (and as such released).
+
+    By calling the stack without arguments it returns a proxy that resolves to
+    the topmost item on the stack.
 
     .. versionadded:: 0.6.1
     """
@@ -148,30 +151,34 @@ class LocalStack(object):
             return rv
         return LocalProxy(_lookup)
 
-    @property
-    def stack(self):
-        """The current context's stack as list"""
+    def push(self, obj):
+        """Pushes a new item to the stack"""
         self._lock.acquire()
         try:
             rv = getattr(self._local, 'stack', None)
             if rv is None:
                 self._local.stack = rv = []
+            rv.append(obj)
             return rv
         finally:
             self._lock.release()
-
-    def push(self, obj):
-        """Pushes a new item to the stack"""
-        self.stack.append(obj)
 
     def pop(self):
         """Removes the topmost item from the stack, will return the
         old value or `None` if the stack was already empty.
         """
+        self._lock.acquire()
         try:
-            return self.stack.pop()
-        except IndexError:
-            return None
+            stack = getattr(self._local, 'stack', None)
+            if stack is None:
+                return None
+            elif len(stack) == 1:
+                release_local(self._local)
+                return stack[-1]
+            else:
+                return stack.pop()
+        finally:
+            self._lock.release()
 
     @property
     def top(self):
@@ -179,8 +186,8 @@ class LocalStack(object):
         `None` is returned.
         """
         try:
-            return self.stack[-1]
-        except IndexError:
+            return self._local.stack[-1]
+        except (AttributeError, IndexError):
             return None
 
 
