@@ -53,6 +53,20 @@ def test_local_release():
     assert ls.top is None
 
 
+def test_local_proxy():
+    """Tests some proxy operations"""
+    foo = []
+    ls = LocalProxy(lambda: foo)
+    ls.append(42)
+    ls.append(23)
+    ls[1:] = [1, 2, 3]
+    assert foo == [42, 1, 2, 3]
+    assert repr(foo) == repr(ls)
+    assert foo[0] == 42
+    foo += [1]
+    assert list(foo) == [42, 1, 2, 3, 1]
+
+
 def test_local_stack():
     """Test the LocalStack"""
     ls = LocalStack()
