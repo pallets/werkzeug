@@ -73,3 +73,13 @@ General Helpers
 .. autofunction:: secure_filename
 
 .. autofunction:: bind_arguments
+
+
+Security Helpers
+================
+
+.. versionadded:: 0.6.1
+
+.. autofunction:: generate_password_hash
+
+.. autofunction:: check_password_hash

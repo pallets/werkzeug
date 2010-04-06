@@ -90,6 +90,7 @@ all_by_module = {
                              'UserAgentMixin', 'AuthorizationMixin',
                              'WWWAuthenticateMixin',
                              'CommonRequestDescriptorsMixin'],
+    'werkzeug.security':    ['generate_password_hash', 'check_password_hash'],
     # the undocumented easteregg ;-)
     'werkzeug._internal':   ['_easteregg']
 }
