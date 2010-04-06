@@ -60,7 +60,22 @@ def _hash_internal(method, salt, password):
 
 
 def generate_password_hash(password, method='sha1', salt_length=8):
-    """return a the password encrypted in sha1 format with a random salt."""
+    """Hash a password with the given method and salt with with a string of
+    the given length.  The format of the string returned includes the method
+    that was used so that :func:`check_password_hash` can check the hash.
+
+    The format for the hashed string looks like this::
+
+        method$salt$hash
+
+    This method can **not** generate unsalted passwords but it is possible
+    to set the method to plain to enforce plaintext passwords.  If a salt
+    is used, hmac is used internally to salt the password.
+
+    :param password: the password to hash
+    :param method: the hash method to use (``'md5'`` or ``'sha1'``)
+    :param salt_length: the lengt of the salt in letters
+    """
     if isinstance(password, unicode):
         password = password.encode('utf-8')
     salt = method != 'plain' and gen_salt(salt_length) or ''
@@ -74,6 +89,12 @@ def check_password_hash(pwhash, password):
     """check a password against a given salted and hashed password value.
     In order to support unsalted legacy passwords this method supports
     plain text passwords, md5 and sha1 hashes (both salted and unsalted).
+
+    Returns `True` if the password matched, `False` otherwise.
+
+    :param pwhash: a hashed string like returned by
+                   :func:`generate_password_hash`
+    :param password: the plaintext password to compare against the hash
     """
     if isinstance(password, unicode):
         password = password.encode('utf-8')
