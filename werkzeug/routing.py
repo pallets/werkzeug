@@ -430,7 +430,15 @@ class Rule(RuleFactory):
         endpoints for `POST` and `GET`.  If methods are defined and the path
         matches but the method matched against is not in this list or in the
         list of another rule for that path the error raised is of the type
-        `MethodNotAllowed` rather than `NotFound`.
+        `MethodNotAllowed` rather than `NotFound`.  If `GET` is present in the
+        list of methods and `HEAD` is not, `HEAD` is added automatically.
+
+        .. versionchanged:: 0.6.1
+           `HEAD` is now automatically added to the methods if `GET` is
+           present.  The reason for this is that existing code often did not
+           work properly in servers not rewriting `HEAD` to `GET`
+           automatically and it was not documented how `HEAD` should be
+           treated.  This was considered a bug in Werkzeug because of that.
 
     `strict_slashes`
         Override the `Map` setting for `strict_slashes` only for this rule. If
@@ -484,6 +492,8 @@ class Rule(RuleFactory):
             self.methods = None
         else:
             self.methods = set([x.upper() for x in methods])
+            if 'HEAD' not in self.methods and 'GET' in self.methods:
+                self.methods.add('HEAD')
         self.endpoint = endpoint
         self.greediness = 0
         self.redirect_to = redirect_to

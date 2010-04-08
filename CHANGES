@@ -20,6 +20,10 @@ Version 0.6.1
 - fixed a bug where log lines will be duplicated if an application uses
   :meth:`logging.basicConfig` (#499)
 - added secure password hashing and checking functions.
+- `HEAD` is now implicitly added as method in the routing system if
+  `GET` is present.  Not doing that was considered a bug because often
+  code assumed that this is the case and in web servers that do not
+  normalize `HEAD` to `GET` this could break `HEAD` requests.
 
 Version 0.6
 -----------

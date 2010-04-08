@@ -12,7 +12,8 @@ from nose.tools import assert_raises
 from werkzeug.wrappers import Response
 from werkzeug.datastructures import ImmutableDict
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect, \
-     RuleTemplate, Submount, EndpointPrefix, Subdomain, UnicodeConverter
+     RuleTemplate, Submount, EndpointPrefix, Subdomain, UnicodeConverter, \
+     MethodNotAllowed
 from werkzeug.test import create_environ
 
 
@@ -358,3 +359,14 @@ def test_method_fallback():
     assert adapter.build('search') == '/search_get'
     assert adapter.build('search', method='GET') == '/search_get'
     assert adapter.build('search', method='POST') == '/search_post'
+
+
+def test_implicit_head():
+    """Test implicit HEAD in URL rules where GET is present"""
+    url_map = Map([
+        Rule('/get', methods=['GET'], endpoint='a'),
+        Rule('/post', methods=['POST'], endpoint='b')
+    ])
+    adapter = url_map.bind('example.org')
+    assert adapter.match('/get', method='HEAD') == ('a', {})
+    assert_raises(MethodNotAllowed, adapter.match, '/post', method='HEAD')
