@@ -74,7 +74,7 @@ def quote_header_value(value, extra_chars='', allow_token=True):
     return '"%s"' % value.replace('\\', '\\\\').replace('"', '\\"')
 
 
-def unquote_header_value(value):
+def unquote_header_value(value, is_filename = False):
     r"""Unquotes a header value.  (Reversal of :func:`quote_header_value`).
     This does not use the real unquoting but what browsers are actually
     using for quoting.
@@ -88,7 +88,15 @@ def unquote_header_value(value):
         # RFC is met will result in bugs with internet explorer and
         # probably some other browsers as well.  IE for example is
         # uploading files with "C:\foo\bar.txt" as filename
-        value = value[1:-1].replace('\\\\', '\\').replace('\\"', '"')
+        value = value[1:-1]
+        
+        # if this is a filename and the starting characters look like
+        # a UNC path, then just return the value without quotes.  Using the
+        # replace sequence below on a UNC path has the effect of turning
+        # the leading double slash into a single slash and then
+        # _fix_ie_filename() doesn't work correctly.  See #458.
+        if not is_filename or value[:2] != '\\\\':
+            return value.replace('\\\\', '\\').replace('\\"', '"')
     return value
 
 
@@ -224,7 +232,7 @@ def parse_options_header(value):
             key, value = match.groups()
             key = unquote_header_value(key)
             if value is not None:
-                value = unquote_header_value(value)
+                value = unquote_header_value(value, key == 'filename')
             yield key, value
 
     if not value:
