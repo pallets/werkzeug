@@ -115,7 +115,16 @@ def test_multipart():
                                content_length=len(data))
         assert response.data == repr(text)
 
-
+def test_ie7_full_path():
+    client = Client(form_data_consumer, Response)
+    data_file = join(dirname(__file__), 'multipart', 'ie7_full_path_request.txt')
+    data = get_contents(data_file)
+    boundary = '---------------------------7da36d1b4a0164'
+    response = client.post('/?object=cb_file_upload_multiple', data=data, content_type=
+                               'multipart/form-data; boundary="%s"' % boundary, content_length=len(data))
+    lines = response.data.split('\n', 3)[0:3]
+    assert lines[0] == "'Sellersburg Town Council Meeting 02-22-2010doc.doc'", lines[0]
+    
 def test_end_of_file_multipart():
     """Test for multipart files ending unexpectedly"""
     # This test looks innocent but it was actually timeing out in
