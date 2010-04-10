@@ -50,11 +50,15 @@ def _hash_internal(method, salt, password):
     if salt:
         if method not in _hash_mods:
             return None
+        if isinstance(salt, unicode):
+            salt = salt.encode('utf-8')
         h = hmac.new(salt, None, _hash_mods[method])
     else:
         if method not in _hash_funcs:
             return None
         h = _hash_funcs[method]()
+    if isinstance(password, unicode):
+        password = password.encode('utf-8')
     h.update(password)
     return h.hexdigest()
 
@@ -76,8 +80,6 @@ def generate_password_hash(password, method='sha1', salt_length=8):
     :param method: the hash method to use (``'md5'`` or ``'sha1'``)
     :param salt_length: the lengt of the salt in letters
     """
-    if isinstance(password, unicode):
-        password = password.encode('utf-8')
     salt = method != 'plain' and gen_salt(salt_length) or ''
     h = _hash_internal(method, salt, password)
     if h is None:
@@ -96,8 +98,6 @@ def check_password_hash(pwhash, password):
                    :func:`generate_password_hash`
     :param password: the plaintext password to compare against the hash
     """
-    if isinstance(password, unicode):
-        password = password.encode('utf-8')
     if pwhash.count('$') < 2:
         return False
     method, salt, hashval = pwhash.split('$', 2)

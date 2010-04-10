@@ -498,14 +498,11 @@ class Rule(RuleFactory):
         self.greediness = 0
         self.redirect_to = redirect_to
 
-        self._trace = []
         if defaults is not None:
             self.arguments = set(map(str, defaults))
         else:
             self.arguments = set()
-        self._converters = {}
-        self._regex = None
-        self._weights = []
+        self._trace = self._converters = self._regex = self._weights = None
 
     def empty(self):
         """Return an unbound copy of this rule.  This can be useful if you
@@ -520,13 +517,21 @@ class Rule(RuleFactory):
     def get_rules(self, map):
         yield self
 
-    def bind(self, map):
+    def refresh(self):
+        """Rebinds and refreshes the URL.  Call this if you modified the
+        rule in place.
+
+        :internal:
+        """
+        self.bind(self.map, rebind=True)
+
+    def bind(self, map, rebind=False):
         """Bind the url to a map and create a regular expression based on
         the information from the rule itself and the defaults from the map.
 
         :internal:
         """
-        if self.map is not None:
+        if self.map is not None and not rebind:
             raise RuntimeError('url rule %r already bound to map %r' %
                                (self, self.map))
         self.map = map
@@ -537,6 +542,10 @@ class Rule(RuleFactory):
 
         rule = self.subdomain + '|' + (self.is_leaf and self.rule
                                        or self.rule.rstrip('/'))
+
+        self._trace = []
+        self._converters = {}
+        self._weights = []
 
         regex_parts = []
         for converter, arguments, variable in parse_rule(rule):
