@@ -59,7 +59,8 @@ def on_edit(request, page_name):
             change_note = request.form.get('change_note', '')
             if page is None:
                 page = Page(page_name)
-            revision = Revision(page, text, change_note)
+                session.add(page)
+            session.add(Revision(page, text, change_note))
             session.commit()
             return redirect(href(page.name))
 
@@ -158,8 +159,8 @@ def on_revert(request, page_name):
                     change_note = request.form.get('change_note', '')
                     change_note = 'revert' + (change_note and ': ' +
                                               change_note or '')
-                    revision = Revision(page, old_revision.text,
-                                        change_note)
+                    session.add(Revision(page, old_revision.text,
+                                         change_note))
                     session.commit()
                     return redirect(href(page_name))
 

@@ -11,7 +11,8 @@
 from datetime import datetime
 from sqlalchemy import Table, Column, Integer, String, DateTime, \
      ForeignKey, MetaData, join
-from sqlalchemy.orm import relation, create_session, scoped_session
+from sqlalchemy.orm import relation, create_session, scoped_session, \
+     mapper
 from simplewiki.utils import application, local_manager, parse_creole
 
 
@@ -58,6 +59,7 @@ class Revision(object):
     new revisions.  It's also used for the diff system and the revision
     log.
     """
+    query = session.query_property()
 
     def __init__(self, page, text, change_note='', timestamp=None):
         if isinstance(page, (int, long)):
@@ -85,6 +87,7 @@ class Page(object):
     Represents a simple page without any revisions.  This is for example
     used in the page index where the page contents are not relevant.
     """
+    query = session.query_property()
 
     def __init__(self, name):
         self.name = name
@@ -103,6 +106,7 @@ class RevisionedPage(Page, Revision):
     and the ability of SQLAlchemy to map to joins we can combine `Page` and
     `Revision` into one class here.
     """
+    query = session.query_property()
 
     def __init__(self):
         raise TypeError('cannot create WikiPage instances, use the Page and '
@@ -117,11 +121,11 @@ class RevisionedPage(Page, Revision):
 
 
 # setup mappers
-session.mapper(Revision, revision_table)
-session.mapper(Page, page_table, properties=dict(
+mapper(Revision, revision_table)
+mapper(Page, page_table, properties=dict(
     revisions=relation(Revision, backref='page',
                        order_by=Revision.revision_id.desc())
 ))
-session.mapper(RevisionedPage, join(page_table, revision_table), properties=dict(
+mapper(RevisionedPage, join(page_table, revision_table), properties=dict(
     page_id=[page_table.c.page_id, revision_table.c.page_id],
 ))

@@ -10,10 +10,10 @@
     :license: BSD.
 """
 import difflib
+import creoleparser
 from os import path
 from genshi import Stream
 from genshi.template import TemplateLoader
-from creoleparser import Parser, Creole10
 from werkzeug import BaseRequest, BaseResponse, Local, LocalManager, \
      url_encode, url_quote, redirect, cached_property
 
@@ -33,13 +33,15 @@ request = local('request')
 application = local('application')
 
 # create a new creole parser
-creole_parser = Parser(dialect=Creole10(
-    wiki_links_base_url='',
-    wiki_links_path_func=lambda page_name: href(page_name),
-    wiki_links_space_char='_',
-    no_wiki_monospace=True,
-    use_additions=True
-))
+creole_parser = creoleparser.Parser(
+    dialect=creoleparser.create_dialect(creoleparser.creole10_base,
+        wiki_links_base_url='',
+        wiki_links_path_func=lambda page_name: href(page_name),
+        wiki_links_space_char='_',
+        no_wiki_monospace=True
+    ),
+    method='html'
+)
 
 
 def generate_template(template_name, **context):
