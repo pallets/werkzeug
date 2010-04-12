@@ -24,6 +24,7 @@ Version 0.6.1
   `GET` is present.  Not doing that was considered a bug because often
   code assumed that this is the case and in web servers that do not
   normalize `HEAD` to `GET` this could break `HEAD` requests.
+- the script support can start SSL servers now.
 
 Version 0.6
 -----------

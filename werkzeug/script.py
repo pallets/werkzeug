@@ -277,7 +277,7 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
     .. versionadded:: 0.5
        `static_files` and `extra_files` was added.
 
-    ..versionadded:: 0.6
+    ..versionadded:: 0.6.1
        `ssl_context` was added.
 
     :param app_factory: a function that returns a new WSGI application.
