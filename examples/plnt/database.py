@@ -10,16 +10,17 @@
 """
 from sqlalchemy import MetaData, Table, Column, ForeignKey, Boolean, \
      Integer, String, DateTime
-from sqlalchemy.orm import dynamic_loader, scoped_session, create_session
+from sqlalchemy.orm import dynamic_loader, scoped_session, create_session, \
+     mapper
 from plnt.utils import application, local_manager
 
 
 def new_db_session():
     return create_session(application.database_engine, autoflush=True,
-                          transactional=True)
+                          autocommit=False)
 
 metadata = MetaData()
-Session = scoped_session(new_db_session, local_manager.get_ident)
+session = scoped_session(new_db_session, local_manager.get_ident)
 
 
 blog_table = Table('blogs', metadata,
@@ -43,6 +44,7 @@ entry_table = Table('entries', metadata,
 
 
 class Blog(object):
+    query = session.query_property()
 
     def __init__(self, name, url, feed_url, description=u''):
         self.name = name
@@ -55,12 +57,13 @@ class Blog(object):
 
 
 class Entry(object):
+    query = session.query_property()
 
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.guid)
 
 
-Session.mapper(Entry, entry_table)
-Session.mapper(Blog, blog_table, properties=dict(
+mapper(Entry, entry_table)
+mapper(Blog, blog_table, properties=dict(
     entries=dynamic_loader(Entry, backref='blog')
 ))

@@ -218,7 +218,8 @@ the following code goes into the ``shorty/utils.py`` file::
 
     metadata = MetaData()
     session = scoped_session(lambda: create_session(application.database_engine,
-                             transactional=True), local_manager.get_ident)
+                             autocommit=False, autoflush=False),
+                             local_manager.get_ident)
 
     url_map = Map()
     def expose(rule, **kw):

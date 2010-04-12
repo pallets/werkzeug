@@ -10,7 +10,7 @@
 """
 import re
 from os import path
-from jinja import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 from werkzeug import Response, Local, LocalManager, url_encode, \
      url_quote, cached_property
 from werkzeug.routing import Map, Rule

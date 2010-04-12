@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from werkzeug import SharedDataMiddleware, ClosingIterator, Request
 from werkzeug.exceptions import HTTPException, NotFound
 from plnt.utils import local, local_manager, url_map, endpoints
-from plnt.database import Session, metadata
+from plnt.database import session, metadata
 
 # import the views module because it contains setup code
 import plnt.views
@@ -48,7 +48,7 @@ class Plnt(object):
         except HTTPException, e:
             response = e
         return ClosingIterator(response(environ, start_response),
-                               Session.remove)
+                               session.remove)
 
     def __call__(self, environ, start_response):
         return self._dispatch(environ, start_response)

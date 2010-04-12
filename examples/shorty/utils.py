@@ -21,7 +21,8 @@ metadata = MetaData()
 url_map = Map([Rule('/static/<file>', endpoint='static', build_only=True)])
 
 session = scoped_session(lambda: create_session(application.database_engine,
-                         transactional=True), local_manager.get_ident)
+                                                autocommit=False,
+                                                autoflush=False))
 jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_PATH))
 
 

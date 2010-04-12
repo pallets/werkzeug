@@ -13,7 +13,7 @@ import feedparser
 from time import time
 from datetime import datetime
 from werkzeug import escape
-from plnt.database import Blog, Entry, Session
+from plnt.database import Blog, Entry, session
 from plnt.utils import strip_tags, nl2p
 
 
@@ -100,5 +100,6 @@ def sync():
             entry.text = text
             entry.pub_date = pub_date
             entry.last_update = updated
+            session.add(entry)
 
-    Session().commit()
+    session.commit()
