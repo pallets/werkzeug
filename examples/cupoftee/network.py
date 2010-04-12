@@ -15,9 +15,6 @@ from datetime import datetime
 from cupoftee.utils import unicodecmp
 
 
-GAMETYPES = dict(enumerate(('dm', 'tdm', 'ctf')))
-
-
 class ServerError(Exception):
     pass
 
@@ -44,9 +41,10 @@ class ServerBrowser(Syncable):
         to_delete = set(self.servers)
         for x in xrange(1, 17):
             addr = ('master%d.teeworlds.com' % x, 8300)
+            print addr
             try:
                 self._sync_master(addr, to_delete)
-            except (socket.error, socket.timeout, IOError):
+            except (socket.error, socket.timeout, IOError), e:
                 continue
         for server_id in to_delete:
             self.servers.pop(server_id, None)
@@ -94,9 +92,9 @@ class Server(Syncable):
         self.version, server_name, map_name = bits[:3]
         self.name = server_name.decode('latin1')
         self.map = map_name.decode('latin1')
-        self.gametype_id, self.flags, self.progression, player_count, \
-            self.max_players = map(int, bits[3:8])
-        self.gametype = GAMETYPES.get(self.gametype_id, 'unknown')
+        self.gametype = bits[3]
+        self.flags, self.progression, player_count, \
+            self.max_players = map(int, bits[4:8])
 
         # sync the player stats
         players = dict((p.name, p) for p in self.players)

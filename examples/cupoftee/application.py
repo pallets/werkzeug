@@ -83,11 +83,11 @@ class Cup(object):
     def update_master(self):
         wait = self.interval
         while 1:
-            time.sleep(wait)
             if self.master.sync():
                 wait = self.interval
             else:
                 wait = self.interval // 2
+            time.sleep(wait)
 
     def dispatch_request(self, request):
         url_adapter = url_map.bind_to_environ(request.environ)
