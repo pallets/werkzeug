@@ -1,9 +1,13 @@
 Werkzeug Changelog
 ==================
 
+Version 1.0
+-----------
+(first 1.0 release, release date to be announced)
+
 Version 0.6.1
 -------------
-(bugfix release, release date to be decided)
+(bugfix release, released on April 13th 2010)
 
 - heavily improved local objects.  Should pick up standalone greenlet
   builds now and support proxies to free callables as well.  There is
