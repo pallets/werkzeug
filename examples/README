@@ -22,11 +22,11 @@ find in real life :-)
 
     Requirements:
     -   SQLAlchemy
-    -   Creoleparser >= 0.3.3
+    -   Creoleparser >= 0.7
     -   genshi
 
     You can obtain all packages in the Cheeseshop via easy_install.  You have
-    to have at least version 0.3.3 of Creoleparser.
+    to have at least version 0.7 of Creoleparser.
 
     Usage::
 
@@ -67,7 +67,7 @@ find in real life :-)
     can add more in a python shell by playing with the `Blog` model.
 
 `shorty`
-    A tinyurl clone for the Werkzeug 0.2 tutorial.
+    A tinyurl clone for the Werkzeug tutorial.
 
     Requirements:
     -   SQLAlchemy
