@@ -3,7 +3,7 @@ CGI
 ===
 
 If all other deployment methods do not work, CGI will work for sure.  CGI
-is supported by all major browsers but usually has a less-than-optimal
+is supported by all major servers but usually has a less-than-optimal
 performance.
 
 This is also the way you can use a Werkzeug application on Google's
@@ -39,6 +39,6 @@ In Apache for example you can put a like like this into the config:
 
 .. sourcecode:: apache
 
-    ScriptName /app /path/to/the/application.cgi
+    ScriptAlias /app /path/to/the/application.cgi
 
 For more information consult the documentation of your webserver.

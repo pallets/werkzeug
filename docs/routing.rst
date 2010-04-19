@@ -128,6 +128,14 @@ Maps, Rules and Adapters
 .. autoclass:: Map
    :members:
 
+   .. attribute:: converters
+
+      The dictionary of converters.  This can be modified after the class
+      was created, but will only affect rules added after the
+      modification.  If the rules are defined with the list passed to the
+      class, the `converters` parameter to the constructor has to be used
+      instead.
+
 .. autoclass:: MapAdapter
    :members:
 
