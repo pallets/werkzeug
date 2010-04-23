@@ -583,7 +583,13 @@ class BaseResponse(object):
 
     #: if set to `False` accessing properties on the response object will
     #: not try to consume the response iterator and convert it into a list.
-    implicit_seqence_conversion = True
+    #:
+    #: .. versionadded:: 0.6.2
+    #:
+    #:    That attribute was previously called `implicit_seqence_conversion`.
+    #:    (Notice the typo).  If you did use this feature, you have to adapt
+    #:    your code to the name change.
+    implicit_sequence_conversion = True
 
     def __init__(self, response=None, status=None, headers=None,
                  mimetype=None, content_type=None, direct_passthrough=False):
@@ -713,7 +719,7 @@ class BaseResponse(object):
         can lead to unwanted behavior if you stream big data.
 
         This behavior can be disabled by setting
-        :attr:`implicit_seqence_conversion` to `False`.
+        :attr:`implicit_sequence_conversion` to `False`.
         """
         self._ensure_sequence()
         return ''.join(self.iter_encoded())
@@ -738,7 +744,7 @@ class BaseResponse(object):
             if mutable and not isinstance(self.response, list):
                 self.response = list(self.response)
             return
-        if not self.implicit_seqence_conversion:
+        if not self.implicit_sequence_conversion:
             raise RuntimeError('The response object required the iterable '
                                'to be a sequence, but the implicit '
                                'conversion was disabled.  Call '
@@ -747,7 +753,7 @@ class BaseResponse(object):
 
     def make_sequence(self):
         """Converts the response iterator in a list.  By default this happens
-        automatically if required.  If `implicit_seqence_conversion` is
+        automatically if required.  If `implicit_sequence_conversion` is
         disabled, this method is not automatically called and some properties
         might raise exceptions.  This also encodes all the items.
 

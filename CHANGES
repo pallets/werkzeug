@@ -5,6 +5,13 @@ Version 1.0
 -----------
 (first 1.0 release, release date to be announced)
 
+Version 0.6.2
+-------------
+(bugfix release, released on April 23th 2010)
+
+- renamed the attribute `implicit_seqence_conversion` attribute of the
+  request object to `implicit_sequence_conversion`.
+
 Version 0.6.1
 -------------
 (bugfix release, released on April 13th 2010)

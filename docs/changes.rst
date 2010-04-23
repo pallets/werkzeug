@@ -15,6 +15,14 @@ are listed there in detail.
 API Changes
 ===========
 
+`0.6.2`
+    -   renamed the attribute `implicit_seqence_conversion` attribute of
+        the request object to `implicit_sequence_conversion`.  Because
+        this is a feature that is typically unused and was only in there
+        for the 0.6 series we consider this a bug that does not require
+        backwards compatibility support which would be impossible to
+        properly implement.
+
 `0.6`
     -   Old deprecations were removed.
     -   `cached_property.writeable` was deprecated.
