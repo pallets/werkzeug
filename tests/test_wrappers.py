@@ -556,7 +556,7 @@ def test_new_response_iterator_behavior():
 
     # automatic generator sequence conversion
     resp.response = generate_items()
-    resp.implicit_seqence_conversion = False
+    resp.implicit_sequence_conversion = False
     assert resp.is_streamed
     assert not resp.is_sequence
     assert_raises(RuntimeError, lambda: resp.data)
@@ -568,7 +568,7 @@ def test_new_response_iterator_behavior():
 
     # stream makes it a list no matter how the conversion is set
     for val in True, False:
-        resp.implicit_seqence_conversion = val
+        resp.implicit_sequence_conversion = val
         resp.response = ("foo", "bar")
         assert resp.is_sequence
         resp.stream.write('baz')
