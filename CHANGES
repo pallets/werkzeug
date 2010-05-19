@@ -5,6 +5,9 @@ Version 1.0
 -----------
 (first 1.0 release, release date to be announced)
 
+- fixed an issue where the SharedDataMiddleware could cause an
+  internal server error on weird paths when loading via pkg_resources.
+
 Version 0.6.2
 -------------
 (bugfix release, released on April 23th 2010)

@@ -350,8 +350,10 @@ class SharedDataMiddleware(object):
         manager = ResourceManager()
         filesystem_bound = isinstance(provider, DefaultProvider)
         def loader(path):
+            if path is None:
+                return None, None
             path = posixpath.join(package_path, path)
-            if path is None or not provider.has_resource(path):
+            if not provider.has_resource(path):
                 return None, None
             basename = posixpath.basename(path)
             if filesystem_bound:
