@@ -370,3 +370,10 @@ def test_implicit_head():
     adapter = url_map.bind('example.org')
     assert adapter.match('/get', method='HEAD') == ('a', {})
     assert_raises(MethodNotAllowed, adapter.match, '/post', method='HEAD')
+
+
+def test_protocol_joining_bug():
+    m = Map([Rule('/<foo>', endpoint='x')])
+    a = m.bind('example.org')
+    assert a.build('x', {'foo': 'x:y'}) == '/x:y'
+    assert a.build('x', {'foo': 'x:y'}, force_external=True) == 'http://example.org/x:y'

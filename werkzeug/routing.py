@@ -1410,7 +1410,7 @@ class MapAdapter(object):
         subdomain, path = rv
 
         if not force_external and subdomain == self.subdomain:
-            return str(urljoin(self.script_name, path.lstrip('/')))
+            return str(urljoin(self.script_name, './' + path.lstrip('/')))
         return str('%s://%s%s%s/%s' % (
             self.url_scheme,
             subdomain and subdomain + '.' or '',
