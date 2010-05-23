@@ -314,7 +314,7 @@ class LocalProxy(object):
         try:
             return self._get_current_object().__dict__
         except RuntimeError:
-            return AttributeError('__dict__')
+            raise AttributeError('__dict__')
 
     def __repr__(self):
         try:
