@@ -119,8 +119,8 @@ def bench(func):
 
     # figure out how many times we have to run the function to
     # get reliable timings.
-    for i in xrange(1, 10):
-        rounds = 10 * i
+    for i in xrange(3, 10):
+        rounds = 1 << i
         t = timer()
         for x in xrange(rounds):
             func()
@@ -196,6 +196,13 @@ def compare(node1, node2):
         hg = lambda *x: subprocess.call(['hg'] + list(x), cwd=repo,
                                         stdout=null_out, stderr=null_out)
         hg('revert', '-a', '--no-backup')
+        client = subprocess.Popen(['hg', 'status', '--unknown', '-n', '-0'],
+                                  stdout=subprocess.PIPE, cwd=repo)
+        unknown = client.communicate()[0]
+        if unknown:
+            client = subprocess.Popen(['xargs', '-0', 'rm', '-f'], cwd=repo,
+                                      stdout=null_out, stdin=subprocess.PIPE)
+            client.communicate(unknown)
         hg('pull', '../..')
         hg('update', node)
         if node == 'tip':
