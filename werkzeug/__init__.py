@@ -96,7 +96,7 @@ all_by_module = {
 }
 
 # modules that should be imported when accessed as attributes of werkzeug
-attribute_modules = dict.fromkeys(['exceptions', 'routing', 'script'])
+attribute_modules = frozenset(['exceptions', 'routing', 'script'])
 
 
 object_origins = {}

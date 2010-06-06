@@ -37,8 +37,8 @@ undefined = type('UndefinedType', (object,), {
     '__repr__': lambda x: 'Undefined',
     '__str__':  lambda x: ''
 })()
-runtime_vars = dict.fromkeys(('Undefined', '__to_unicode', '__context',
-                              '__write', '__write_many'))
+runtime_vars = frozenset(['Undefined', '__to_unicode', '__context',
+                          '__write', '__write_many'])
 
 
 def call_stmt(func, args, lineno):
