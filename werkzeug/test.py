@@ -22,7 +22,7 @@ from urllib2 import Request as U2Request
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
-from werkzeug.wsgi import get_host, get_current_url
+from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers, FileStorage
 
@@ -800,6 +800,3 @@ def run_wsgi_app(app, environ, buffered=False):
                 app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], response[1]
-
-
-from werkzeug.wsgi import ClosingIterator

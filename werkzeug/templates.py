@@ -16,6 +16,7 @@ from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 from werkzeug import utils, urls
 from werkzeug._internal import _decode_unicode
+from werkzeug.datastructures import MultiDict
 
 
 # Copyright notice: The `parse_data` method uses the string interpolation
@@ -377,7 +378,7 @@ class Template(object):
         :return: the rendered template as string
         """
         ns = self.default_context.copy()
-        if len(args) == 1 and isinstance(args[0], utils.MultiDict):
+        if len(args) == 1 and isinstance(args[0], MultiDict):
             ns.update(args[0].to_dict(flat=True))
         else:
             ns.update(dict(*args))

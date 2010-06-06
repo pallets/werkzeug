@@ -8,7 +8,7 @@
 """
 from nose.tools import assert_raises
 
-from werkzeug.utils import MultiDict
+from werkzeug import MultiDict
 from werkzeug.templates import Template
 
 

@@ -15,6 +15,11 @@ from tempfile import TemporaryFile
 from itertools import chain, repeat
 
 from werkzeug._internal import _decode_unicode, _empty_stream
+from werkzeug.urls import url_decode
+from werkzeug.wsgi import LimitedStream, make_line_iter
+from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.datastructures import Headers, FileStorage, MultiDict
+from werkzeug.http import parse_options_header
 
 
 #: an iterator that yields empty strings
@@ -342,11 +347,3 @@ def parse_multipart_headers(iterable):
     # we link the list to the headers, no need to create a copy, the
     # list was not shared anyways.
     return Headers.linked(result)
-
-
-# circular dependencies
-from werkzeug.urls import url_decode
-from werkzeug.wsgi import LimitedStream, make_line_iter
-from werkzeug.exceptions import RequestEntityTooLarge
-from werkzeug.datastructures import Headers, FileStorage, MultiDict
-from werkzeug.http import parse_options_header

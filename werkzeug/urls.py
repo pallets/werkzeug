@@ -11,6 +11,7 @@
 import urlparse
 
 from werkzeug._internal import _decode_unicode
+from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
 #: list of characters that are always safe in URLs.
@@ -460,7 +461,3 @@ class Href(object):
             rv += '?' + url_encode(query, self.charset, sort=self.sort,
                                    key=self.key)
         return str(rv)
-
-
-# circular dependencies
-from werkzeug.datastructures import MultiDict, iter_multi_items

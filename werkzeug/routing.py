@@ -105,6 +105,7 @@ from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
+from werkzeug.datastructures import ImmutableDict, MultiDict
 
 
 _rule_re = re.compile(r'''
@@ -912,6 +913,17 @@ class FloatConverter(NumberConverter):
         NumberConverter.__init__(self, map, 0, min, max)
 
 
+#: the default converter mapping for the map.
+DEFAULT_CONVERTERS = {
+    'default':          UnicodeConverter,
+    'string':           UnicodeConverter,
+    'any':              AnyConverter,
+    'path':             PathConverter,
+    'int':              IntegerConverter,
+    'float':            FloatConverter
+}
+
+
 class Map(object):
     """The map class stores all the URL rules and some configuration
     parameters.  Some of the configuration values are only stored on the
@@ -940,7 +952,7 @@ class Map(object):
 
     #: .. versionadded:: 0.6
     #:    a dict of default converters to be used.
-    default_converters = None
+    default_converters = ImmutableDict(DEFAULT_CONVERTERS)
 
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
@@ -1416,17 +1428,3 @@ class MapAdapter(object):
             self.script_name[:-1],
             path.lstrip('/')
         ))
-
-
-#: the default converter mapping for the map.
-DEFAULT_CONVERTERS = {
-    'default':          UnicodeConverter,
-    'string':           UnicodeConverter,
-    'any':              AnyConverter,
-    'path':             PathConverter,
-    'int':              IntegerConverter,
-    'float':            FloatConverter
-}
-
-from werkzeug.datastructures import ImmutableDict, MultiDict
-Map.default_converters = ImmutableDict(DEFAULT_CONVERTERS)
