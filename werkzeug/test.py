@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-import urllib
 import urlparse
 import mimetypes
 from time import time
@@ -22,7 +21,7 @@ from urllib2 import Request as U2Request
 
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
-from werkzeug.urls import url_encode, url_fix, iri_to_uri
+from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
 from werkzeug.wsgi import get_host, get_current_url
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers, FileStorage
@@ -525,7 +524,7 @@ class EnvironBuilder(object):
         def _path_encode(x):
             if isinstance(x, unicode):
                 x = x.encode(self.charset)
-            return urllib.unquote(x)
+            return _unquote(x)
 
         result.update({
             'REQUEST_METHOD':       self.method,
