@@ -189,7 +189,7 @@ def test_import_string():
     assert import_string(u'cgi.escape') is cgi.escape
     assert import_string(u'werkzeug.debug.DebuggedApplication') is DebuggedApplication
     assert_raises(ImportError, import_string, 'XXXXXXXXXXXXXXXX')
-    assert_raises(AttributeError, import_string, 'cgi.XXXXXXXXXX')
+    assert_raises(ImportError, import_string, 'cgi.XXXXXXXXXX')
 
 
 def test_find_modules():
