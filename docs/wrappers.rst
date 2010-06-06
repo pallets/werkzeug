@@ -51,7 +51,7 @@ Mutability and Reusability of Wrappers
 ======================================
 
 The implementation of the Werkzeug request and response objects are trying
-to guard you from common pitfals by disallowing certain things as much as
+to guard you from common pitfalls by disallowing certain things as much as
 possible.  This serves two purposes: high performance and avoiding of
 pitfalls.
 
@@ -70,7 +70,7 @@ FOr the response object the following rules apply:
 1. The response object is mutable
 2. The response object can be pickled or copied after `freeze()` was
    called.
-3. Since Werkzeug 0.6 it's save to use the same response object for
+3. Since Werkzeug 0.6 it's safe to use the same response object for
    multiple WSGI responses.
 4. It's possible to create copies using `copy.deepcopy`.
 

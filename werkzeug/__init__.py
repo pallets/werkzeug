@@ -18,7 +18,7 @@ from types import ModuleType
 import sys
 
 # This import magic raises concerns quite often which is why the implementation
-# and motiviation is explained here in detail now.
+# and motivation is explained here in detail now.
 #
 # The majority of the functions and classes provided by Werkzeug work on the
 # HTTP and WSGI layer.  There is no useful grouping for those which is why

@@ -674,20 +674,19 @@ class Client(object):
 
             # the redirect request should be a new request, and not be based on
             # the old request
-            redirect_kwargs = {}
-            redirect_kwargs.update({
+            redirect_kwargs = {
                 'path':             script_root,
                 'base_url':         base_url,
                 'query_string':     qs,
                 'as_tuple':         True,
                 'buffered':         buffered,
                 'follow_redirects': False,
-            })
+            }
             environ, rv = self.redirect_client.open(**redirect_kwargs)
             status_code = int(rv[1].split(None, 1)[0])
 
             # Prevent loops
-            if redirect_chain[-1] in redirect_chain[0:-1]:
+            if redirect_chain[-1] in redirect_chain[:-1]:
                 raise ClientRedirectError("loop detected")
 
         response = self.response_wrapper(*rv)

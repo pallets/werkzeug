@@ -172,7 +172,6 @@ def test_www_authenticate_header():
     assert not parse_www_authenticate_header('')
 
 
-
 def test_etags():
     """ETag tools"""
     assert quote_etag('foo') == '"foo"'

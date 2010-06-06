@@ -39,7 +39,6 @@ def _quote_plus(s, safe=''):
     return _quote(s, safe)
 
 
-
 def _safe_urlsplit(s):
     """the urllib.urlsplit cache breaks if it contains unicode and
     we cannot control that.  So we force type cast that thing back
@@ -262,17 +261,16 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
     """
     iterable = iter_multi_items(obj)
     if sort:
-        iterable = list(iterable)
-        iterable.sort(key=key)
+        iterable = sorted(iterable, key=key)
     tmp = []
     for key, value in iterable:
+        if value is None:
+            continue
         if encode_keys and isinstance(key, unicode):
             key = key.encode(charset)
         else:
             key = str(key)
-        if value is None:
-            continue
-        elif isinstance(value, unicode):
+        if isinstance(value, unicode):
             value = value.encode(charset)
         else:
             value = str(value)

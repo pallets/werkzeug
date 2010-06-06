@@ -50,8 +50,8 @@ def find_hg_tag(path):
     except OSError:
         return
 
-    client = subprocess.Popen(['hg', 'parent', '--template', '#node#'], cwd=path,
-                              stdout=subprocess.PIPE)
+    client = subprocess.Popen(['hg', 'parent', '--template', '#node#'],
+                              stdout=subprocess.PIPE, cwd=path)
 
     tip = client.communicate()[0].strip()
     tag = tags.get(tip)
@@ -146,6 +146,7 @@ def bench(func):
 
     return delta
 
+
 def main():
     """The main entrypoint."""
     from optparse import OptionParser
@@ -154,8 +155,9 @@ def main():
                       help='the path to the werkzeug package. defaults to cwd')
     parser.add_option('--compare', '-c', dest='compare', nargs=2,
                       default=False, help='compare two hg nodes of Werkzeug')
-    parser.add_option('--init-compare', dest='init_compare', action='store_true',
-                      default=False, help='Initializes the comparison feature')
+    parser.add_option('--init-compare', dest='init_compare',
+                      action='store_true', default=False,
+                      help='Initializes the comparison feature')
     options, args = parser.parse_args()
     if args:
         parser.error('Script takes no arguments')
@@ -168,8 +170,8 @@ def main():
 
 
 def init_compare():
-    """Initializes the comparision feature."""
-    print 'Initializing comparision feature'
+    """Initializes the comparison feature."""
+    print 'Initializing comparison feature'
     subprocess.Popen(['hg', 'clone', '..', 'a']).wait()
     subprocess.Popen(['hg', 'clone', '..', 'b']).wait()
 
@@ -177,7 +179,7 @@ def init_compare():
 def compare(node1, node2):
     """Compares two Werkzeug hg versions."""
     if not os.path.isdir('a'):
-        print >> sys.stderr, 'error: comparision feature not initialized'
+        print >> sys.stderr, 'error: comparison feature not initialized'
         sys.exit(4)
 
     print '=' * 80
@@ -216,11 +218,12 @@ def compare(node1, node2):
         delta = d1[key] - d2[key]
         if abs(1 - d1[key] / d2[key]) < TOLERANCE or \
            abs(delta) < MIN_RESOLUTION:
-            delta = ''
+            delta = '=='
         else:
-            delta = '%+.4f (%+d%%)' % (delta, round(d2[key] / d1[key] * 100 - 100))
-        print '%36s   %.4f    %.4f    %s' % (format_func(key), d1[key],
-                                             d2[key], delta)
+            delta = '%+.4f (%+d%%)' % \
+                        (delta, round(d2[key] / d1[key] * 100 - 100))
+        print '%36s   %.4f    %.4f    %s' % \
+                        (format_func(key), d1[key], d2[key], delta)
     print '-' * 80
 
 
@@ -374,8 +377,10 @@ def before_request_shallow_init():
     global TEST_ENV
     TEST_ENV = wz.create_environ()
 
+
 def time_request_shallow_init():
     wz.Request(TEST_ENV, shallow=True)
+
 
 def after_request_shallow_init():
     global TEST_ENV
@@ -420,4 +425,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print >> sys.stderr, 'interrupted!'
-

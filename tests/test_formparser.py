@@ -124,7 +124,7 @@ def test_ie7_unc_path():
                                'multipart/form-data; boundary="%s"' % boundary, content_length=len(data))
     lines = response.data.split('\n', 3)
     assert lines[0] == repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc'), lines[0]
-    
+
 def test_end_of_file_multipart():
     """Test for multipart files ending unexpectedly"""
     # This test looks innocent but it was actually timeing out in

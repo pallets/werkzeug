@@ -9,7 +9,6 @@
 from werkzeug import generate_password_hash, check_password_hash
 
 
-
 def test_password_hashing():
     """Test the password hashing and password hash checking"""
     hash1 = generate_password_hash('default')
