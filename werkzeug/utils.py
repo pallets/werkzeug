@@ -525,8 +525,15 @@ def import_string(import_name, silent=False):
             obj = obj.encode('utf-8')
         return getattr(__import__(module, None, None, [obj]), obj)
     except (ImportError, AttributeError):
-        if not silent:
-            raise
+        # support importing modules not yet set up by the parent module
+        # (or package for that matter)
+        try:
+            modname = module + '.' + obj
+            __import__(modname)
+            return sys.modules[modname]
+        except ImportError:
+            if not silent:
+                raise
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
