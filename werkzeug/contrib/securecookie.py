@@ -43,7 +43,7 @@ r"""
         from werkzeug.contrib.securecookie import SecureCookie
 
         # don't use this key but a different one; you could just use
-        # os.unrandom(20) to get something random
+        # os.urandom(20) to get something random
         SECRET_KEY = '\xfa\xdd\xb8z\xae\xe0}4\x8b\xea'
 
         class Request(BaseRequest):

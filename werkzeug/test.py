@@ -322,7 +322,6 @@ class EnvironBuilder(object):
             warn(DeprecationWarning('it\'s no longer possible to pass dicts '
                                     'as `data`.  Use tuples or FileStorage '
                                     'objects instead'), stacklevel=2)
-            args = v
             value = dict(value)
             mimetype = value.pop('mimetype', None)
             if mimetype is not None:
