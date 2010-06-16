@@ -244,12 +244,6 @@ def test_limiting():
                               content_length=len(data),
                               content_type='application/x-www-form-urlencoded',
                               method='POST')
-    req.max_content_length = 4
-
-    req = Request.from_values(input_stream=StringIO(data),
-                              content_length=len(data),
-                              content_type='application/x-www-form-urlencoded',
-                              method='POST')
     req.max_content_length = 400
     assert req.form['foo'] == 'Hello World'
 
@@ -312,10 +306,10 @@ def test_large_file():
 
 def test_lowlevel():
     """Lowlevel formparser tests"""
-    formparser._line_parse('foo') == ('foo', False)
-    formparser._line_parse('foo\r\n') == ('foo', True)
-    formparser._line_parse('foo\r') == ('foo', True)
-    formparser._line_parse('foo\n') == ('foo', True)
+    assert formparser._line_parse('foo') == ('foo', False)
+    assert formparser._line_parse('foo\r\n') == ('foo', True)
+    assert formparser._line_parse('foo\r') == ('foo', True)
+    assert formparser._line_parse('foo\n') == ('foo', True)
 
     lineiter = iter('\n\n\nfoo\nbar\nbaz'.splitlines(True))
     line = formparser._find_terminator(lineiter)
