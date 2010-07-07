@@ -587,12 +587,17 @@ class Client(object):
     sent for subsequent requests. This is True by default, but passing False
     will disable this behaviour.
 
+    If you want to request some subdomain of your application you may set
+    `allow_subdomain_redirects` to `True` as if not no external redirects
+    are allowed.
+
     .. versionadded:: 0.5
        `use_cookies` is new in this version.  Older versions did not provide
        builtin cookie support.
     """
 
-    def __init__(self, application, response_wrapper=None, use_cookies=True):
+    def __init__(self, application, response_wrapper=None, use_cookies=True,
+                 allow_subdomain_redirects=False):
         self.application = application
         if response_wrapper is None:
             response_wrapper = lambda a, s, h: (a, s, h)
@@ -602,6 +607,7 @@ class Client(object):
         else:
             self.cookie_jar = None
         self.redirect_client = None
+        self.allow_subdomain_redirects = allow_subdomain_redirects
 
     def open(self, *args, **kwargs):
         """Takes the same arguments as the :class:`EnvironBuilder` class with
@@ -662,10 +668,19 @@ class Client(object):
                 self.redirect_client.cookie_jar = self.cookie_jar
 
             redirect = dict(rv[2])['Location']
+
             scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(redirect)
             base_url = urlparse.urlunsplit((scheme, netloc, '', '', '')).rstrip('/') + '/'
-            host = get_host(create_environ('/', base_url, query_string=qs)).split(':', 1)[0]
-            if get_host(environ).split(':', 1)[0] != host:
+
+            cur_server_name = netloc.split(':', 1)[0].split('.')
+            real_server_name = get_host(environ).split(':', 1)[0].split('.')
+
+            if self.allow_subdomain_redirects:
+                allowed = cur_server_name[-len(real_server_name):] == real_server_name
+            else:
+                allowed = cur_server_name == real_server_name
+
+            if not allowed:
                 raise RuntimeError('%r does not support redirect to '
                                    'external targets' % self.__class__)
 
@@ -673,6 +688,7 @@ class Client(object):
 
             # the redirect request should be a new request, and not be based on
             # the old request
+
             redirect_kwargs = {
                 'path':             script_root,
                 'base_url':         base_url,

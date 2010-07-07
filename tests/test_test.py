@@ -67,7 +67,15 @@ def redirect_with_post_app(environ, start_response):
 
 
 def external_redirect_demo_app(environ, start_response):
-    response = redirect('http://example.org/')
+    response = redirect('http://example.com/')
+    return response(environ, start_response)
+
+
+def external_subdomain_redirect_demo_app(environ, start_response):
+    if 'test.example.com' in environ['HTTP_HOST']:
+        response = Response('redirected successfully to subdomain')
+    else:
+        response = redirect('http://test.example.com/login')
     return response(environ, start_response)
 
 
@@ -297,7 +305,21 @@ def test_follow_redirect():
 def test_follow_external_redirect():
     env = create_environ('/', base_url='http://localhost')
     c = Client(external_redirect_demo_app)
-    assert_raises(RuntimeError, lambda: c.open(environ_overrides=env, follow_redirects=True))
+    assert_raises(RuntimeError, lambda: c.get(environ_overrides=env, follow_redirects=True))
+
+
+def test_follow_external_redirect_on_same_subdomain():
+    env = create_environ('/', base_url='http://example.com')
+    c = Client(external_subdomain_redirect_demo_app, allow_subdomain_redirects=True)
+    c.get(environ_overrides=env, follow_redirects=True)
+
+    # check that this does not work for real external domains
+    env = create_environ('/', base_url='http://localhost')
+    assert_raises(RuntimeError, lambda: c.get(environ_overrides=env, follow_redirects=True))
+
+    # check that subdomain redirects fail if no `allow_subdomain_redirects` is applied
+    c = Client(external_subdomain_redirect_demo_app)
+    assert_raises(RuntimeError, lambda: c.get(environ_overrides=env, follow_redirects=True))
 
 
 @raises(ClientRedirectError)
