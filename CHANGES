@@ -1,9 +1,9 @@
 Werkzeug Changelog
 ==================
 
-Version 1.0
+Version 0.7
 -----------
-(first 1.0 release, release date to be announced)
+(Last pre 1.0 release, release date to be announced)
 
 - improved func:`url_decode` and :func:`url_encode` performance.
 - fixed an issue where the SharedDataMiddleware could cause an
@@ -12,6 +12,8 @@ Version 1.0
   generated component contains a colon.
 - :func:`werkzeug.import_string` now works with partially set up
   packages properly.
+- disabled automatic socket swiching for IPv6 on the development
+  server due to problems it caused.
 
 Version 0.6.2
 -------------

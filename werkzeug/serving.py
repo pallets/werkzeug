@@ -279,14 +279,18 @@ class _SSLConnectionFix(object):
 
 def select_ip_version(host, port):
     """Returns AF_INET4 or AF_INET6 depending on where to connect to."""
-    try:
-        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
-                                  socket.SOCK_STREAM, 0,
-                                  socket.AI_PASSIVE)
-        if info:
-            return info[0][0]
-    except socket.gaierror:
-        pass
+    # disabled due to problems with current ipv6 implementations
+    # and various operating systems.  Probably this code also is
+    # not supposed to work, but I can't come up with any other
+    # ways to implement this.
+    ##try:
+    ##    info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+    ##                              socket.SOCK_STREAM, 0,
+    ##                              socket.AI_PASSIVE)
+    ##    if info:
+    ##        return info[0][0]
+    ##except socket.gaierror:
+    ##    pass
     if ':' in host and hasattr(socket, 'AF_INET6'):
         return socket.AF_INET6
     return socket.AF_INET
