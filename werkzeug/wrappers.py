@@ -1166,7 +1166,12 @@ class ETagResponseMixin(object):
         """
         environ = _get_environ(request_or_environ)
         if environ['REQUEST_METHOD'] in ('GET', 'HEAD'):
-            self.headers['Date'] = http_date()
+            # if the date is not in the headers, add it now.  We however
+            # will not override an already existing header.  Unfortunately
+            # will this header be overriden by many WSGI servers including
+            # wsgiref.
+            if 'date' not in self.headers:
+                self.headers['Date'] = http_date()
             if 'content-length' in self.headers:
                 self.headers['Content-Length'] = len(self.data)
             if not is_resource_modified(environ, self.headers.get('etag'), None,

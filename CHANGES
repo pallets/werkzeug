@@ -14,6 +14,8 @@ Version 0.7
   packages properly.
 - disabled automatic socket swiching for IPv6 on the development
   server due to problems it caused.
+- Werkzeug no longer overrides the Date header when creating a
+  conditional HTTP response.
 
 Version 0.6.2
 -------------
