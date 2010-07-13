@@ -319,12 +319,14 @@ def test_etag_response_mixin():
     response.headers['Content-Length'] = len(response.data)
     assert response.headers['Cache-Control'] == 'must-revalidate, max-age=60'
 
+    assert 'date' not in response.headers
     env = create_environ()
     env.update({
         'REQUEST_METHOD':       'GET',
         'HTTP_IF_NONE_MATCH':   response.get_etag()[0]
     })
     response.make_conditional(env)
+    assert 'date' in response.headers
 
     # after the thing is invoked by the server as wsgi application
     # (we're emulating this here), there must not be any entity
@@ -332,6 +334,13 @@ def test_etag_response_mixin():
     resp = Response.from_app(response, env)
     assert resp.status_code == 304
     assert not 'content-length' in resp.headers
+
+    # make sure date is not overriden
+    response = Response('Hello World')
+    response.date = 1337
+    d = response.date
+    response.make_conditional(env)
+    assert response.date == d
 
 
 def test_etag_response_mixin_freezing():
