@@ -150,6 +150,7 @@ old_module = sys.modules['werkzeug']
 new_module = sys.modules['werkzeug'] = module('werkzeug')
 new_module.__dict__.update({
     '__file__':         __file__,
+    '__package__':      'werkzeug',
     '__path__':         __path__,
     '__doc__':          __doc__,
     '__all__':          tuple(object_origins) + tuple(attribute_modules),
