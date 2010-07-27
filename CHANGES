@@ -16,6 +16,8 @@ Version 0.7
   server due to problems it caused.
 - Werkzeug no longer overrides the Date header when creating a
   conditional HTTP response.
+- The routing system provides a method to retrieve the matching
+  methods for a given path.
 
 Version 0.6.2
 -------------
