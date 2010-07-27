@@ -1324,9 +1324,22 @@ class MapAdapter(object):
             self.match(path_info, method)
         except RequestRedirect:
             pass
-        except NotFound:
+        except (NotFound, MethodNotAllowed):
             return False
         return True
+
+    def allowed_methods(self, path_info=None):
+        """Returns the valid methods that match for a given path.
+
+        .. versionadded:: 0.7
+        """
+        try:
+            self.match(path_info, method='--')
+        except MethodNotAllowed, e:
+            return e.valid_methods
+        except HTTPException, e:
+            pass
+        return []
 
     def _partial_build(self, endpoint, values, method, append_unknown):
         """Helper for :meth:`build`.  Returns subdomain and path for the

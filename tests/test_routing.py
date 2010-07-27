@@ -373,7 +373,16 @@ def test_implicit_head():
 
 
 def test_protocol_joining_bug():
+    """Make sure the protocol joining bug is fixed"""
     m = Map([Rule('/<foo>', endpoint='x')])
     a = m.bind('example.org')
     assert a.build('x', {'foo': 'x:y'}) == '/x:y'
     assert a.build('x', {'foo': 'x:y'}, force_external=True) == 'http://example.org/x:y'
+
+
+def test_allowed_methods_querying():
+    """Make sure it's possible to test for allowed methods"""
+    m = Map([Rule('/<foo>', methods=['GET', 'HEAD']),
+             Rule('/foo', methods=['POST'])])
+    a = m.bind('example.org')
+    assert sorted(a.allowed_methods('/foo')) == ['GET', 'HEAD', 'POST']
