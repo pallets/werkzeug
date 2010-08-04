@@ -945,9 +945,13 @@ class Map(object):
     :param sort_parameters: If set to `True` the url parameters are sorted.
                             See `url_encode` for more details.
     :param sort_key: The sort key function for `url_encode`.
+    :param encoding_errors: the error method to use for decoding
 
     .. versionadded:: 0.5
         `sort_parameters` and `sort_key` was added.
+
+    .. versionadded:: 0.7
+        `encoding_errors` was added.
     """
 
     #: .. versionadded:: 0.6
@@ -956,13 +960,15 @@ class Map(object):
 
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
-                 converters=None, sort_parameters=False, sort_key=None):
+                 converters=None, sort_parameters=False, sort_key=None,
+                 encoding_errors='ignore'):
         self._rules = []
         self._rules_by_endpoint = {}
         self._remap = True
 
         self.default_subdomain = default_subdomain
         self.charset = charset
+        self.encoding_errors = encoding_errors
         self.strict_slashes = strict_slashes
         self.redirect_defaults = redirect_defaults
 
@@ -1255,7 +1261,8 @@ class MapAdapter(object):
         if path_info is None:
             path_info = self.path_info
         if not isinstance(path_info, unicode):
-            path_info = path_info.decode(self.map.charset, 'ignore')
+            path_info = path_info.decode(self.map.charset,
+                                         self.map.encoding_errors)
         method = (method or self.default_method).upper()
         path = u'%s|/%s' % (self.subdomain, path_info.lstrip('/'))
         have_match_for = set()
