@@ -84,9 +84,9 @@ class Local(object):
             raise AttributeError(name)
 
     def __setattr__(self, name, value):
+        ident = self.__ident_func__()
         self.__lock__.acquire()
         try:
-            ident = self.__ident_func__()
             storage = self.__storage__
             if ident in storage:
                 storage[ident][name] = value
