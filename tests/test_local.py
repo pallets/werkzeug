@@ -109,3 +109,27 @@ def test_local_proxies_with_callables():
     ls.append(42)
     assert ls == [23, 42]
     assert foo == [23, 42]
+
+
+def test_custom_idents():
+    """Local manager supports custom ident functions"""
+    ident = 0
+    local = Local()
+    stack = LocalStack()
+    mgr = LocalManager([local, stack], ident_func=lambda: ident)
+
+    local.foo = 42
+    stack.push({'foo': 42})
+    ident = 1
+    local.foo = 23
+    stack.push({'foo': 23})
+    ident = 0
+    assert local.foo == 42
+    assert stack.top['foo'] == 42
+    stack.pop()
+    assert stack.top is None
+    ident = 1
+    assert local.foo == 23
+    assert stack.top['foo'] == 23
+    stack.pop()
+    assert stack.top is None

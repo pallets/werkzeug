@@ -20,6 +20,8 @@ Version 0.7
   methods for a given path.
 - The routing system now accepts a parameter to change the encoding
   error behaviour.
+- The local manager can now accept custom ident functions in the
+  constructor that are forwarded to the wrapped local objects.
 
 Version 0.6.2
 -------------
