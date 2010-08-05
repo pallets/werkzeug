@@ -540,7 +540,11 @@ class Rule(RuleFactory):
             self.strict_slashes = map.strict_slashes
         if self.subdomain is None:
             self.subdomain = map.default_subdomain
+        self.compile()
 
+    def compile(self):
+        """Compiles the regular expression and stores it."""
+        assert self.map is not None, 'rule not bound'
         rule = self.subdomain + '|' + (self.is_leaf and self.rule
                                        or self.rule.rstrip('/'))
 
@@ -555,7 +559,7 @@ class Rule(RuleFactory):
                 self._trace.append((False, variable))
                 self._weights.append(len(variable))
             else:
-                convobj = get_converter(map, converter, arguments)
+                convobj = get_converter(self.map, converter, arguments)
                 regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                 self._converters[variable] = convobj
                 self._trace.append((True, variable))

@@ -841,8 +841,8 @@ class Headers(object):
         """
         return cls(_list=headerlist)
 
-    def __getitem__(self, key, _index_operation=True):
-        if _index_operation:
+    def __getitem__(self, key, _get_mode=False):
+        if not _get_mode:
             if isinstance(key, (int, long)):
                 return self._list[key]
             elif isinstance(key, slice):
@@ -851,6 +851,11 @@ class Headers(object):
         for k, v in self._list:
             if k.lower() == ikey:
                 return v
+        # micro optimization: if we are in get mode we will catch that
+        # exception one stack level down so we can raise a standard
+        # key error instead of our special one.
+        if _get_mode:
+            raise KeyError()
         raise self.KeyError(key)
 
     def __eq__(self, other):
@@ -883,7 +888,7 @@ class Headers(object):
                      by this callable the default value is returned.
         """
         try:
-            rv = self.__getitem__(key, _index_operation=False)
+            rv = self.__getitem__(key, _get_mode=True)
         except KeyError:
             return default
         if type is None:
@@ -1010,7 +1015,7 @@ class Headers(object):
     def __contains__(self, key):
         """Check if a key is present."""
         try:
-            self.__getitem__(key, _index_operation=False)
+            self.__getitem__(key, _get_mode=True)
         except KeyError:
             return False
         return True
@@ -1194,8 +1199,8 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
     def __eq__(self, other):
         return self.environ is other.environ
 
-    def __getitem__(self, key, _index_operation=False):
-        # _index_operation is a no-op for this class as there is no index but
+    def __getitem__(self, key, _get_mode=False):
+        # _get_mode is a no-op for this class as there is no index but
         # used because get() calls it.
         key = key.upper().replace('-', '_')
         if key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
