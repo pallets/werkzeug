@@ -78,14 +78,10 @@ class Local(object):
         self.__storage__.pop(self.__ident_func__(), None)
 
     def __getattr__(self, name):
-        self.__lock__.acquire()
         try:
-            try:
-                return self.__storage__[self.__ident_func__()][name]
-            except KeyError:
-                raise AttributeError(name)
-        finally:
-            self.__lock__.release()
+            return self.__storage__[self.__ident_func__()][name]
+        except KeyError:
+            raise AttributeError(name)
 
     def __setattr__(self, name, value):
         self.__lock__.acquire()
@@ -100,14 +96,10 @@ class Local(object):
             self.__lock__.release()
 
     def __delattr__(self, name):
-        self.__lock__.acquire()
         try:
-            try:
-                del self.__storage__[self.__ident_func__()][name]
-            except KeyError:
-                raise AttributeError(name)
-        finally:
-            self.__lock__.release()
+            del self.__storage__[self.__ident_func__()][name]
+        except KeyError:
+            raise AttributeError(name)
 
 
 class LocalStack(object):
