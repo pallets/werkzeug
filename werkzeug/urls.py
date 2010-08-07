@@ -349,6 +349,8 @@ def url_unquote_plus(s, charset='utf-8', errors='ignore'):
     :param charset: the charset to be used.
     :param errors: the error handling for the charset decoding.
     """
+    if isinstance(s, unicode):
+        s = s.encode(charset)
     return _decode_unicode(_unquote_plus(s), charset, errors)
 
 

@@ -22,6 +22,7 @@ Version 0.7
   error behaviour.
 - The local manager can now accept custom ident functions in the
   constructor that are forwarded to the wrapped local objects.
+- url_unquote_plus now accepts unicode strings again.
 
 Version 0.6.2
 -------------

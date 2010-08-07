@@ -126,3 +126,9 @@ def test_href_past_root():
     assert base_href('../../../../foo') == 'http://www.blagga.com/foo'
     assert base_href('../../../../../foo') == 'http://www.blagga.com/foo'
     assert base_href('../../../../../../foo') == 'http://www.blagga.com/foo'
+
+
+def test_url_unquote_plus_unicode():
+    """Make sure that URL unquote plus accepts unicode."""
+    # was broken in 0.6
+    assert url_unquote_plus(u'\x6d') == u'\x6d'
