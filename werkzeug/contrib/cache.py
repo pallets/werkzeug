@@ -58,6 +58,7 @@
 """
 import os
 import re
+import tempfile
 try:
     from hashlib import md5
 except ImportError:
@@ -65,6 +66,7 @@ except ImportError:
 from itertools import izip
 from time import time
 from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
+from werkzeug.posixemulation import rename
 
 
 class BaseCache(object):
@@ -441,19 +443,25 @@ class FileSystemCache(BaseCache):
                       it starts deleting some.
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`.
+    :param mode: the file mode wanted for the cache files, default 0600
     """
 
-    def __init__(self, cache_dir, threshold=500, default_timeout=300):
+    #: used for temporary files by the FileSystemCache
+    _fs_transaction_suffix = '.__wz_cache'
+
+    def __init__(self, cache_dir, threshold=500, default_timeout=300, mode=0600):
         BaseCache.__init__(self, default_timeout)
         self._path = cache_dir
         self._threshold = threshold
+        self._mode = mode
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
     def _list_dir(self):
         """return a list of (fully qualified) cache filenames
         """
-        return [os.path.join(self._path, fn) for fn in os.listdir(self._path)]
+        return [os.path.join(self._path, fn) for fn in os.listdir(self._path)
+                if not fn.endswith(self._fs_transaction_suffix)]
 
     def _prune(self):
         entries = self._list_dir()
@@ -513,12 +521,16 @@ class FileSystemCache(BaseCache):
         filename = self._get_filename(key)
         self._prune()
         try:
-            f = open(filename, 'wb')
+            fd, tmp = tempfile.mkstemp(suffix=self._fs_transaction_suffix,
+                                       dir=self._path)
+            f = os.fdopen(fd, 'wb')
             try:
                 dump(int(time() + timeout), f, 1)
                 dump(value, f, HIGHEST_PROTOCOL)
             finally:
                 f.close()
+            rename(tmp, filename)
+            os.chmod(filename, self._mode)
         except (IOError, OSError):
             pass
 

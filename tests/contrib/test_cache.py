@@ -15,6 +15,22 @@ def test_simplecache_get_dict():
     assert 'b' == d['b']
 
 
+def test_filesystemcache_set_get():
+    """
+    test if FileSystemCache.set/get works
+    """
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        cache = FileSystemCache(cache_dir=tmp_dir)
+        for i in range(3):
+            cache.set(str(i), i * i)
+        for i in range(3):
+            result = cache.get(str(i))
+            assert result == i * i
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
 def test_filesystemcache_prune():
     """
     test if FileSystemCache._prune works and keeps the cache entry count
