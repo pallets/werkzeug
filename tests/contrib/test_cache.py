@@ -1,4 +1,6 @@
-from werkzeug.contrib.cache import SimpleCache
+import os, tempfile, shutil
+
+from werkzeug.contrib.cache import SimpleCache, FileSystemCache
 
 
 def test_simplecache_get_dict():
@@ -11,3 +13,19 @@ def test_simplecache_get_dict():
     assert 'a' == d['a']
     assert 'b' in d
     assert 'b' == d['b']
+
+
+def test_filesystemcache_prune():
+    """
+    test if FileSystemCache._prune works and keeps the cache entry count
+    below the given threshold.
+    """
+    THRESHOLD = 13
+    tmp_dir = tempfile.mkdtemp()
+    cache = FileSystemCache(cache_dir=tmp_dir, threshold=THRESHOLD)
+    for i in range(2 * THRESHOLD):
+        cache.set(str(i), i)
+    cache_files = os.listdir(tmp_dir)
+    shutil.rmtree(tmp_dir)
+    assert len(cache_files) <= THRESHOLD
+

@@ -453,15 +453,25 @@ class FileSystemCache(BaseCache):
         entries = os.listdir(self._path)
         if len(entries) > self._threshold:
             now = time()
-            for idx, key in enumerate(entries):
+            for idx, fname in enumerate(entries):
+                remove = False
+                fname = os.path.join(self._path, fname)
+                f = None
                 try:
-                    f = file(self._get_filename(key))
-                    if load(f) > now and idx % 3 != 0:
-                        f.close()
-                        continue
+                    try:
+                        f = file(fname, 'rb')
+                        expires = load(f)
+                        remove = expires <= now or idx % 3 == 0
+                    finally:
+                        if f is not None:
+                            f.close()
                 except:
-                    f.close()
-                self.delete(key)
+                    pass
+                if remove:
+                    try:
+                        os.remove(fname)
+                    except (IOError, OSError):
+                        pass
 
     def _get_filename(self, key):
         hash = md5(key).hexdigest()
