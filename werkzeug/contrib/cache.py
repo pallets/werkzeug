@@ -450,13 +450,17 @@ class FileSystemCache(BaseCache):
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
+    def _list_dir(self):
+        """return a list of (fully qualified) cache filenames
+        """
+        return [os.path.join(self._path, fn) for fn in os.listdir(self._path)]
+
     def _prune(self):
-        entries = os.listdir(self._path)
+        entries = self._list_dir()
         if len(entries) > self._threshold:
             now = time()
             for idx, fname in enumerate(entries):
                 remove = False
-                fname = os.path.join(self._path, fname)
                 f = None
                 try:
                     try:
@@ -473,6 +477,13 @@ class FileSystemCache(BaseCache):
                         os.remove(fname)
                     except (IOError, OSError):
                         pass
+
+    def clear(self):
+        for fname in self._list_dir():
+            try:
+                os.remove(fname)
+            except (IOError, OSError):
+                pass
 
     def _get_filename(self, key):
         hash = md5(key).hexdigest()
@@ -517,6 +528,3 @@ class FileSystemCache(BaseCache):
         except (IOError, OSError):
             pass
 
-    def clear(self):
-        for key in os.listdir(self._path):
-            self.delete(key)

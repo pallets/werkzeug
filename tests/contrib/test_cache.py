@@ -29,3 +29,18 @@ def test_filesystemcache_prune():
     shutil.rmtree(tmp_dir)
     assert len(cache_files) <= THRESHOLD
 
+
+def test_filesystemcache_clear():
+    """
+    test if FileSystemCache.clear works
+    """
+    tmp_dir = tempfile.mkdtemp()
+    cache = FileSystemCache(cache_dir=tmp_dir)
+    cache.set('foo', 'bar')
+    cache_files = os.listdir(tmp_dir)
+    assert len(cache_files) == 1
+    cache.clear()
+    cache_files = os.listdir(tmp_dir)
+    assert len(cache_files) == 0
+    shutil.rmtree(tmp_dir)
+
