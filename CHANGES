@@ -23,6 +23,8 @@ Version 0.7
 - The local manager can now accept custom ident functions in the
   constructor that are forwarded to the wrapped local objects.
 - url_unquote_plus now accepts unicode strings again.
+- fixed an issues with the filesystem session support's prune
+  function and concurrent usage.
 
 Version 0.6.2
 -------------
