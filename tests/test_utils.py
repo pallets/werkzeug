@@ -176,6 +176,8 @@ def test_cookie_quoting():
     assert val == 'foo="?foo"; Path=/'
     assert parse_cookie(val) == {'foo': '?foo'}
 
+    assert parse_cookie(r'foo="foo\054bar"') == {'foo': 'foo,bar'}
+
 
 def test_import_string():
     """String based importing"""
