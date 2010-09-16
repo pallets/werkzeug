@@ -403,4 +403,4 @@ def test_multiple_cookies():
     resp = client.get('/')
     assert resp.data == '[]'
     resp = client.get('/')
-    assert resp.data == "[('test1', u'foo,'), ('test2', u'bar')]"
+    assert resp.data == "[('test1', u'foo'), ('test2', u'bar')]"
