@@ -46,10 +46,13 @@ Features
 Development Version
 -------------------
 
-The `Werkzeug tip <http://dev.pocoo.org/hg/werkzeug-main/archive/tip.zip#egg=Werkzeug-dev>`_
-is installable via `easy_install` with ``easy_install Werkzeug==dev``.
+The Werkzeug development version can be installed by cloning the git
+repository from `github`_::
+
+    git clone git@github.com:mitsuhiko/werkzeug.git
+
+.. _github: http://github.com/mitsuhiko/werkzeug
 """
-import os
 try:
     from setuptools import setup
 except ImportError:

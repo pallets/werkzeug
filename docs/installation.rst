@@ -36,30 +36,12 @@ directory.
 Installing the development version
 ==================================
 
-If you want to play around with the code
-----------------------------------------
-
-1.  Install `Mercurial`_
-2.  ``hg clone http://dev.pocoo.org/hg/werkzeug-main werkzeug``
+1.  Install `Git`_
+2.  ``git clone git://github.com/mitsuhiko/werkzeug.git``
 3.  ``cd werkzeug``
 4.  ``ln -s werkzeug /usr/lib/python2.X/site-packages``
-
-If you just want the latest features and use them
--------------------------------------------------
-
-::
-    
-    sudo easy_install Werkzeug==dev
-
-This will install a Werkzeug egg containing the latest mercurial tip in
-your Python installation's `site-packages` directory. Every time the
-command is run, the sources are updated from the mercurial repository.
-
-However we strongly recommend cloning the repository and linking it instead
-as explained in the step before.
-
 
 .. _download page: http://werkzeug.pocoo.org/download
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
-.. _Mercurial: http://selenic.com/mercurial/
+.. _Git: http://git-scm.org/
