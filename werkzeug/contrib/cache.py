@@ -286,8 +286,14 @@ class MemcachedCache(BaseCache):
                 try:
                     import memcache
                     is_cmemcache = False
+                    is_pylibmc = False
                 except ImportError:
-                    raise RuntimeError('no memcache module found')
+                    try:
+                        import pylibmc as memcache
+                        is_cmemcache = False
+                        is_pylibmc = True
+                    except ImportError:
+                        raise RuntimeError('no memcache module found')
 
             # cmemcache has a bug that debuglog is not defined for the
             # client.  Whenever pickle fails you get a weird AttributeError.
@@ -298,7 +304,10 @@ class MemcachedCache(BaseCache):
                 except:
                     pass
             else:
-                client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
+                if is_pylibmc:
+                    client = memcache.Client(servers, False)
+                else:
+                    client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
         else:
             client = servers
 

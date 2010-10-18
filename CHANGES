@@ -26,6 +26,7 @@ Version 0.7
 - fixed an issues with the filesystem session support's prune
   function and concurrent usage.
 - fixed a problem with external URL generation discarding the port.
+- added support for pylibmc to the Werkzeug cache abstraction layer.
 
 Version 0.6.2
 -------------
