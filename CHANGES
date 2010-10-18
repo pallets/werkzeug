@@ -27,6 +27,8 @@ Version 0.7
   function and concurrent usage.
 - fixed a problem with external URL generation discarding the port.
 - added support for pylibmc to the Werkzeug cache abstraction layer.
+- fixed an issue with the new multipart parser that happened when
+  a linkebreak happend to be on the chunk limit.
 
 Version 0.6.2
 -------------

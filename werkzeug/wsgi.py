@@ -609,6 +609,9 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
 
         first_chunk = buffer and buffer[0] or ''
         if chunks:
+            if first_chunk.endswith('\n') or first_chunk.endswith('\r'):
+                yield first_chunk
+                first_chunk = ''
             first_chunk += chunks.pop()
         if not first_chunk:
             return

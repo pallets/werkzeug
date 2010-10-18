@@ -17,7 +17,8 @@ from werkzeug import Client, create_environ, BaseResponse, run_wsgi_app
 from werkzeug.exceptions import BadRequest
 
 from werkzeug.wsgi import SharedDataMiddleware, get_host, responder, \
-     LimitedStream, pop_path_info, peek_path_info, extract_path_info
+     LimitedStream, pop_path_info, peek_path_info, extract_path_info, \
+     make_line_iter
 
 
 def test_shareddatamiddleware_get_file_loader():
@@ -193,3 +194,13 @@ def test_get_host_fallback():
         'wsgi.url_scheme':  'http',
         'SERVER_PORT':      '81'
     }) == 'foobar.example.com:81'
+
+
+def test_multi_part_line_breaks():
+    test_stream = StringIO('abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK')
+    lines = list(make_line_iter(test_stream, limit=1024, buffer_size=16))
+    assert lines == ['abcdef\r\n', 'ghijkl\r\n', 'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK']
+
+    test_stream = StringIO('abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz')
+    lines = list(make_line_iter(test_stream, limit=1024, buffer_size=24))
+    assert lines == ['abc\r\n', 'This line is broken by the buffer length.\r\n', 'Foo bar baz']
