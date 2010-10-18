@@ -1,0 +1,12 @@
+MANIFEST
+build
+dist
+*.egg-info
+*.pyc
+*.pyo
+env
+docs/_build
+bench/a
+bench/b
+.coverage
+coverage_out
