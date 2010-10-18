@@ -25,6 +25,7 @@ Version 0.7
 - url_unquote_plus now accepts unicode strings again.
 - fixed an issues with the filesystem session support's prune
   function and concurrent usage.
+- fixed a problem with external URL generation discarding the port.
 
 Version 0.6.2
 -------------

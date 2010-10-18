@@ -1094,9 +1094,15 @@ class Map(object):
                    in (('https', '443'), ('http', '80')):
                     server_name += ':' + environ['SERVER_PORT']
         elif subdomain is None:
-            wsgi_server_name = environ.get('HTTP_HOST', environ['SERVER_NAME'])
-            cur_server_name = wsgi_server_name.split(':', 1)[0].split('.')
-            real_server_name = server_name.split(':', 1)[0].split('.')
+            if 'HTTP_HOST' in environ:
+                wsgi_server_name = environ.get('HTTP_HOST')
+            else:
+                wsgi_server_name = environ.get('SERVER_NAME')
+                if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
+                   in (('https', '443'), ('http', '80')):
+                    wsgi_server_name += ':' + environ['SERVER_PORT']
+            cur_server_name = wsgi_server_name.split('.')
+            real_server_name = server_name.split('.')
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
                 raise ValueError('the server name provided (%r) does not '

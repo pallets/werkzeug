@@ -386,3 +386,33 @@ def test_allowed_methods_querying():
              Rule('/foo', methods=['POST'])])
     a = m.bind('example.org')
     assert sorted(a.allowed_methods('/foo')) == ['GET', 'HEAD', 'POST']
+
+def test_external_building_with_port():
+    """Test external URL building with port number"""
+    map = Map([
+        Rule('/', endpoint='index'),
+    ])
+    adapter = map.bind('example.org:5000', '/')
+    built_url = adapter.build('index', {}, force_external=True)
+    assert built_url == 'http://example.org:5000/', built_url
+
+def test_external_building_with_port_bind_to_environ():
+    """Test external URL building with port number (map.bind_to_environ)"""
+    map = Map([
+        Rule('/', endpoint='index'),
+    ])
+    adapter = map.bind_to_environ(
+        create_environ('/', 'http://example.org:5000/'),
+        server_name="example.org:5000"
+    )
+    built_url = adapter.build('index', {}, force_external=True)
+    assert built_url == 'http://example.org:5000/', built_url
+
+def test_external_building_with_port_bind_to_environ_wrong_servername():
+    """Test external URL building with port number (map.bind_to_environ) with wrong server name raises ValueError"""
+    map = Map([
+        Rule('/', endpoint='index'),
+    ])
+    environ = create_environ('/', 'http://example.org:5000/')
+    assert_raises(ValueError, lambda: map.bind_to_environ(environ, server_name="example.org"))
+
