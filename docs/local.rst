@@ -6,23 +6,23 @@ Context Locals
 
 Sooner or later you have some things you want to have in every single view
 or helper function or whatever.  In PHP the way to go are global
-variables.  However that is not possible in WSGI applications without a
+variables.  However, that isn't possible in WSGI applications without a
 major drawback:  As soon as you operate on the global namespace your
-application is not thread safe any longer.
+application isn't thread-safe any longer.
 
-The python standard library comes with a utility called "thread locals".
-A thread local is a global object where you can put stuff in and get back
-later in a thread safe way.  That means whenever you set or get an object
-to / from a thread local object the thread local object checks in which
-thread you are and delivers the correct value.
+The Python standard library comes with a utility called "thread locals".
+A thread local is a global object in which you can put stuff in and get back
+later in a thread-safe way.  That means whenever you set or get an object
+on a thread local object, the thread local object checks in which
+thread you are and retrieves the correct value.
 
-This however has a few disadvantages.  For example besides threads there
+This, however, has a few disadvantages.  For example, besides threads there
 are other ways to handle concurrency in Python.  A very popular approach
-are greenlets.  Also, whether every request gets its own thread is not
+is greenlets.  Also, whether every request gets its own thread is not
 guaranteed in WSGI.  It could be that a request is reusing a thread from
-before and data is left in the thread local object.
+before, and hence data is left in the thread local object.
 
-Here a simple example how you can use werkzeug.local::
+Here's a simple example of how one could use werkzeug.local::
 
     from werkzeug import Local, LocalManager
 
@@ -35,17 +35,17 @@ Here a simple example how you can use werkzeug.local::
 
     application = local_manager.make_middleware(application)
 
-Now what this code does is binding request to `local.request`.  Every
-other piece of code executed after this assignment in the same context can
-safely access local.request and will get the same request object.  The
-`make_middleware` method on the local manager ensures that everything is
-cleaned up after the request.
+This binds the request to `local.request`.  Every other piece of code executed
+after this assignment in the same context can safely access local.request and
+will get the same request object.  The `make_middleware` method on the local
+manager ensures that all references to the local objects are cleared up after
+the request.
 
 The same context means the same greenlet (if you're using greenlets) in
 the same thread and same process.
 
 If a request object is not yet set on the local object and you try to
-access it you will get an `AttributeError`.  You can use `getattr` to avoid
+access it, you will get an `AttributeError`.  You can use `getattr` to avoid
 that::
 
     def get_request():
