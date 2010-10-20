@@ -76,3 +76,13 @@ def test_dynamic_charset_response_mixin():
         pass
     else:
         assert False, 'expected type error on charset setting without ct'
+
+
+def test_json_response():
+    class JSONResponse(wrappers.JSONResponseMixin, Response):
+        pass
+    resp = JSONResponse({'foo': 'bar'})
+    assert resp.mimetype == 'application/json'
+    resp_data = ''.join(resp.iter_encoded())
+    expt_data = '{"foo": "bar"}'
+    assert resp_data == expt_data, "%s == %s" % (resp_data, expt_data)

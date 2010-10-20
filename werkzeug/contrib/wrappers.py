@@ -50,7 +50,7 @@ class JSONRequestMixin(object):
 
     @cached_property
     def json(self):
-        """Get the result of simplejson.loads if possible."""
+        """Load request data using a JSON parser if possible."""
         if 'json' not in self.environ.get('CONTENT_TYPE', ''):
             raise BadRequest('Not a JSON request')
         try:
@@ -227,6 +227,41 @@ class DynamicCharsetRequestMixin(object):
                     return charset
                 return self.unknown_charset(charset)
         return self.default_charset
+
+
+class JSONResponseMixin(object):
+    """If mixed in, encodes the first argument as JSON and sets the default
+    mimetype to ``application/json``.
+
+    The actual JSON encoding happens when the response is first properly
+    serialized, and so the :attr:`response` attribute is merely a simple
+    reference to the value which will be encoded.
+
+    Should there be need to change which JSON encoder is used (see relevant
+    documentation), one can set the :attr:`json_encoder` attribute to whichever
+    JSON encoder best suites the user.
+
+    Because this class changes the behavior of :class:`Response` this
+    class has to be mixed in *before* the actual response class::
+
+        class MyResponse(JSONResponseMixin, Response):
+            pass
+
+    .. versionadded:: 0.6
+    """
+
+    #: the default mimetype for JSON
+    default_mimetype = 'application/json'
+    #: the JSON encoder to use for output
+    json_encoder = json.JSONEncoder
+
+    def __init__(self, *args, **kwds):
+        super(JSONResponseMixin, self).__init__(*args, **kwds)
+        if self.direct_passthrough:
+            raise TypeError('JSON response cannot have direct_passthrough')
+
+    def iter_encoded(self):
+        return [json.dumps(self.response, cls=self.json_encoder)]
 
 
 class DynamicCharsetResponseMixin(object):
