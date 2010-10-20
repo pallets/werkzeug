@@ -429,6 +429,16 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         morsel['expires'] = expires
     elif max_age is not None and sync_expires:
         morsel['expires'] = cookie_date(time() + max_age)
+    if domain and ':' in domain:
+        # The port part of the domain should NOT be used. Strip it
+        domain = domain.split(':', 1)[0]
+    if domain and not len(domain.split('.')) > 2:
+        raise RuntimeError(
+            "Setting \"domain\" for a cookie on a server running localy(ex: "
+            "localhost) is not supportted by complying browsers. You should "
+            "have something like: \"127.0.0.1 localhost dev.localhost\" on "
+            "your hosts file and then point your server to run on "
+            "\"dev.localhost\" and also set \"domain\" for \"dev.localhost\"")
     for k, v in (('path', path), ('domain', domain), ('secure', secure),
                  ('max-age', max_age), ('httponly', httponly)):
         if v is not None and v is not False:
