@@ -29,6 +29,8 @@ Version 0.7
 - added support for pylibmc to the Werkzeug cache abstraction layer.
 - fixed an issue with the new multipart parser that happened when
   a linkebreak happend to be on the chunk limit.
+- cookies are now set properly if ports are in use.  A runtime error
+  is raised if one tries to set a cookie for a domain without a dot.
 
 Version 0.6.2
 -------------
