@@ -442,7 +442,7 @@ class MultiDict(TypeConversionDict):
         return list(self.iteritems(multi))
 
     def lists(self):
-        """Return a list of ``(key, value)`` pairs, where values is the list of
+        """Return a list of ``(key, values)`` pairs, where values is the list of
         all values associated with the key.
 
         :return: a :class:`list`
