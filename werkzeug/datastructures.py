@@ -488,7 +488,7 @@ class MultiDict(TypeConversionDict):
             yield values[0]
 
     def iterlistvalues(self):
-        """like :meth:`listvalues` but returns an iterator."""
+        """Like :meth:`listvalues` but returns an iterator."""
         for values in dict.itervalues(self):
             yield list(values)
 
