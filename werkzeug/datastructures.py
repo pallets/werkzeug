@@ -478,10 +478,7 @@ class MultiDict(TypeConversionDict):
                 yield key, values[0]
 
     def iterlists(self):
-        """Return a list of all values associated with a key.
-
-        :return: a class:`list`
-        """
+        """Like :meth:`items` but returns an iterator."""
         for key, values in dict.iteritems(self):
             yield key, list(values)
 
