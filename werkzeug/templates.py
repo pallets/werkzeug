@@ -361,6 +361,7 @@ class Template(object):
                                     'use charset instead.'), stacklevel=2)
             charset = encoding
         close = False
+        f = file
         if isinstance(file, basestring):
             f = open(file, 'r')
             close = True

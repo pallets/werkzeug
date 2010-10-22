@@ -6,6 +6,10 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
+import os
+import StringIO as sio
+import tempfile
+
 from nose.tools import assert_raises
 
 from werkzeug.utils import MultiDict
@@ -109,3 +113,23 @@ def test_multidict():
         a=[1, 2],
         b=2
     ))) == '1|2'
+
+
+def test_from_file_with_filename():
+    """Template from_file where file parameter is a filename"""
+    fd, filename = tempfile.mkstemp()
+    try:
+        os.write(fd, "Hello ${you}!")
+    finally:
+        os.close(fd)
+    try:
+        t = Template.from_file(filename)
+        assert t.render(you="World") == "Hello World!"
+    finally:
+        os.unlink(filename)
+
+
+def test_from_file_with_fileobject():
+    """Template from_file where file parameter is a file object"""
+    t = Template.from_file(sio.StringIO("Hello ${you}!"))
+    assert t.render(you="World") == "Hello World!"
