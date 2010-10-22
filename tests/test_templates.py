@@ -6,6 +6,10 @@
     :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
+import os
+import StringIO as sio
+import tempfile
+
 from nose.tools import assert_raises
 
 from werkzeug import MultiDict
@@ -115,3 +119,23 @@ def test_substitute():
     """Templer rendering responds to substitute as well"""
     t = Template('<% if a %>1<% endif %>\n2')
     assert t.render(a=1) == t.substitute(a=1)
+
+
+def test_from_file_with_filename():
+    """Template from_file where file parameter is a filename"""
+    fd, filename = tempfile.mkstemp()
+    try:
+        os.write(fd, "Hello ${you}!")
+    finally:
+        os.close(fd)
+    try:
+        t = Template.from_file(filename)
+        assert t.render(you="World") == "Hello World!"
+    finally:
+        os.unlink(filename)
+
+
+def test_from_file_with_fileobject():
+    """Template from_file where file parameter is a file object"""
+    t = Template.from_file(sio.StringIO("Hello ${you}!"))
+    assert t.render(you="World") == "Hello World!"

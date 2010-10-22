@@ -357,6 +357,7 @@ class Template(object):
         :return: a template
         """
         close = False
+        f = file
         if isinstance(file, basestring):
             f = open(file, 'r')
             close = True
