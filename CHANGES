@@ -31,6 +31,8 @@ Version 0.7
   a linkebreak happend to be on the chunk limit.
 - cookies are now set properly if ports are in use.  A runtime error
   is raised if one tries to set a cookie for a domain without a dot.
+- fixed an issue with Template.from_file not working for file
+  descriptors.
 
 Version 0.6.2
 -------------
