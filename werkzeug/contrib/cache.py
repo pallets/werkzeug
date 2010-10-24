@@ -328,7 +328,7 @@ class MemcachedCache(BaseCache):
     def get_dict(self, *keys):
         key_mapping = {}
         have_encoded_keys = False
-        for idx, key in enumerate(keys):
+        for key in keys:
             if isinstance(key, unicode):
                 encoded_key = key.encode('utf-8')
                 have_encoded_keys = True
