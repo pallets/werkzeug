@@ -218,7 +218,16 @@ def test_html_builder():
     ) == '<html><head><title>foo</title><script type="text/javascript">' \
          '</script></head></html>'
     assert html('<foo>') == '&lt;foo&gt;'
-
+    assert html.input(disabled=True) == '<input disabled>'
+    assert xhtml.input(disabled=True) == '<input disabled="disabled" />'
+    assert html.input(disabled='') == '<input>'
+    assert xhtml.input(disabled='') == '<input />'
+    assert html.input(disabled=None) == '<input>'
+    assert xhtml.input(disabled=None) == '<input />'
+    assert html.script('alert("Hello World");') == '<script>' \
+        'alert("Hello World");</script>'
+    assert xhtml.script('alert("Hello World");') == '<script>' \
+        '/*<![CDATA[*/alert("Hello World");/*]]>*/</script>'
 
 def test_validate_arguments():
     """Function argument validator"""

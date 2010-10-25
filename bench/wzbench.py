@@ -426,6 +426,24 @@ def after_local_manager_dispatch():
     LOCAL = LOCAL_MANAGER = None
 
 
+def before_html_builder():
+    global TABLE
+    TABLE = [['col 1', 'col 2', 'col 3', '4', '5', '6'] for x in range(10)]
+
+
+def time_html_builder():
+    html_rows = []
+    for row in TABLE:
+        html_cols = [wz.html.td(col, class_='col') for col in row]
+        html_rows.append(wz.html.tr(class_='row', *html_cols))
+    table = wz.html.table(*html_rows)
+
+
+def after_html_builder():
+    global TABLE
+    TABLE = None
+
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or os.path.curdir)
     try:
