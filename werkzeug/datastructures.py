@@ -2007,7 +2007,10 @@ class ETags(object):
         return self.is_weak(etag) or self.contains(etag)
 
     def contains(self, etag):
-        """Check if an etag is part of the set ignoring weak tags."""
+        """Check if an etag is part of the set ignoring weak tags.
+        It is also possible to use the ``in`` operator.
+
+        """
         if self.star_tag:
             return True
         return etag in self._strong
