@@ -1075,12 +1075,20 @@ class ETagRequestMixin(object):
 
     @cached_property
     def if_match(self):
-        """An object containing all the etags in the `If-Match` header."""
+        """An object containing all the etags in the `If-Match` header.
+
+        :rtype: :class:`~werkzeug.ETags`
+
+        """
         return parse_etags(self.environ.get('HTTP_IF_MATCH'))
 
     @cached_property
     def if_none_match(self):
-        """An object containing all the etags in the `If-None-Match` header."""
+        """An object containing all the etags in the `If-None-Match` header.
+
+        :rtype: :class:`~werkzeug.ETags`
+
+        """
         return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
 
     @cached_property
