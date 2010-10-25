@@ -146,8 +146,9 @@ class HTMLBuilder(object):
     _entities = name2codepoint.copy()
     _entities['apos'] = 39
     _empty_elements = set([
-        'area', 'base', 'basefont', 'br', 'col', 'frame', 'hr', 'img',
-        'input', 'isindex', 'link', 'meta', 'param'
+        'area', 'base', 'basefont', 'br', 'col', 'command', 'embed', 'frame',
+        'hr', 'img', 'input', 'keygen', 'isindex', 'link', 'meta', 'param',
+        'source', 'wbr'
     ])
     _boolean_attributes = set([
         'selected', 'checked', 'compact', 'declare', 'defer', 'disabled',
@@ -167,34 +168,41 @@ class HTMLBuilder(object):
         if tag[:2] == '__':
             raise AttributeError(tag)
         def proxy(*children, **arguments):
-            buffer = ['<' + tag]
-            write = buffer.append
+            buffer = '<' + tag
             for key, value in arguments.iteritems():
                 if value is None:
                     continue
-                if key.endswith('_'):
+                if key[-1] == '_':
                     key = key[:-1]
                 if key in self._boolean_attributes:
                     if not value:
                         continue
-                    value = self._dialect == 'xhtml' and '="%s"' % key or ''
+                    if self._dialect == 'xhtml':
+                        value = '="' + key + '"'
+                    else:
+                        value = ''
                 else:
-                    value = '="%s"' % escape(value, True)
-                write(' ' + key + value)
+                    value = '="' + escape(value, True) + '"'
+                buffer += ' ' + key + value
             if not children and tag in self._empty_elements:
-                write(self._dialect == 'xhtml' and ' />' or '>')
-                return ''.join(buffer)
-            write('>')
-            children_as_string = ''.join(unicode(x) for x in children
-                                         if x is not None)
+                if self._dialect == 'xhtml':
+                    buffer += ' />'
+                else:
+                    buffer += '>'
+                return buffer
+            buffer += '>'
+            
+            children_as_string = ''.join([unicode(x) for x in children
+                                         if x is not None])
+            
             if children_as_string:
                 if tag in self._plaintext_elements:
                     children_as_string = escape(children_as_string)
                 elif tag in self._c_like_cdata and self._dialect == 'xhtml':
-                    children_as_string = '/*<![CDATA[*/%s/*]]>*/' % \
-                                         children_as_string
-            buffer.extend((children_as_string, '</%s>' % tag))
-            return ''.join(buffer)
+                    children_as_string = '/*<![CDATA[*/' + \
+                                         children_as_string + '/*]]>*/'
+            buffer += children_as_string + '</' + tag + '>'
+            return buffer
         return proxy
 
     def __repr__(self):
