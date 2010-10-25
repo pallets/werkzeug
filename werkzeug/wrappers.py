@@ -1096,8 +1096,8 @@ class ETagRequestMixin(object):
 
 class UserAgentMixin(object):
     """Adds a `user_agent` attribute to the request object which contains the
-    parsed user agent of the browser that triggered the request as `UserAgent`
-    object.
+    parsed user agent of the browser that triggered the request as a
+    :class:`~werkzeug.UserAgent` object.
     """
 
     @cached_property
