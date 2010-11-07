@@ -78,7 +78,7 @@ class DebuggedApplication(object):
                 yield item
             if hasattr(app_iter, 'close'):
                 app_iter.close()
-        except:
+        except Exception:
             if hasattr(app_iter, 'close'):
                 app_iter.close()
             traceback = get_current_traceback(skip=1, show_hidden_frames=
@@ -92,7 +92,7 @@ class DebuggedApplication(object):
                 start_response('500 INTERNAL SERVER ERROR', [
                     ('Content-Type', 'text/html; charset=utf-8')
                 ])
-            except:
+            except Exception:
                 # if we end up here there has been output but an error
                 # occurred.  in that situation we can do nothing fancy any
                 # more, better log something into the error log and fall

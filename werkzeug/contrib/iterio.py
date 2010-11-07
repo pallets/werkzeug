@@ -41,7 +41,7 @@ r"""
 """
 try:
     from py.magic import greenlet
-except:
+except ImportError:
     greenlet = None
 
 
