@@ -274,7 +274,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                 if try_decode:
                     try:
                         line = line.decode(transfer_encoding)
-                    except:
+                    except Exception:
                         raise ValueError('could not decode transfer '
                                          'encoded chunk')
 

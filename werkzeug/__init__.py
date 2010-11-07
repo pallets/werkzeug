@@ -138,7 +138,7 @@ class module(ModuleType):
             try:
                 version = __import__('pkg_resources') \
                           .get_distribution('Werkzeug').version
-            except:
+            except Exception:
                 version = 'unknown'
         return version
 

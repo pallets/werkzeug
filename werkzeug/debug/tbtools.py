@@ -242,7 +242,7 @@ class Frame(object):
                     source = self.loader.get_source(self.module)
                 elif hasattr(self.loader, 'get_source_by_code'):
                     source = self.loader.get_source_by_code(self.code)
-            except:
+            except Exception:
                 # we munch the exception so that we don't cause troubles
                 # if the loader is broken.
                 pass

@@ -188,7 +188,7 @@ def _patch_wrapper(old, new):
         new.__module__ = old.__module__
         new.__doc__ = old.__doc__
         new.__dict__ = old.__dict__
-    except:
+    except Exception:
         pass
     return new
 

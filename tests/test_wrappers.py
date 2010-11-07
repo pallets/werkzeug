@@ -54,7 +54,7 @@ def prepare_environ_pickle(environ):
     for key, value in environ.iteritems():
         try:
             pickle.dumps((key, value))
-        except:
+        except Exception:
             continue
         result[key] = value
     return result

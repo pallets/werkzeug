@@ -56,7 +56,7 @@ class ContentAccessors(object):
             raise AttributeError('Not a JSON response')
         try:
             from simplejson import loads
-        except:
+        except ImportError:
             from json import loads
         return loads(self.data)
     json = cached_property(json)

@@ -152,7 +152,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             execute(app)
         except (socket.error, socket.timeout), e:
             self.connection_dropped(e, environ)
-        except:
+        except Exception:
             if self.server.passthrough_errors:
                 raise
             from werkzeug.debug.tbtools import get_current_traceback
@@ -163,7 +163,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                 if not headers_sent:
                     del headers_set[:]
                 execute(InternalServerError())
-            except:
+            except Exception:
                 pass
             self.server.log('error', 'Error on request:\n%s',
                             traceback.plaintext)
@@ -174,7 +174,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             return BaseHTTPRequestHandler.handle(self)
         except (socket.error, socket.timeout), e:
             self.connection_dropped(e)
-        except:
+        except Exception:
             if self.server.ssl_context is None or not is_ssl_error():
                 raise
 

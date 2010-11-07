@@ -176,7 +176,7 @@ class GuardedIterator(object):
             try:
                 warn(WSGIWarning('Iterator was garbage collected before '
                                  'it was closed.'))
-            except:
+            except Exception:
                 pass
 
 

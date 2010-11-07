@@ -2302,7 +2302,7 @@ class FileStorage(object):
         """Close the underlying file if possible."""
         try:
             self.stream.close()
-        except:
+        except Exception:
             pass
 
     def __nonzero__(self):

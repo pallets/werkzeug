@@ -180,7 +180,7 @@ class BaseRequest(object):
         try:
             args.append("'%s'" % self.url)
             args.append('[%s]' % self.method)
-        except:
+        except Exception:
             args.append('(invalid WSGI environ)')
 
         return '<%s %s>' % (

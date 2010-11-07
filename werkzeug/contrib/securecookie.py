@@ -203,7 +203,7 @@ class SecureCookie(ModificationTrackingDict):
             if cls.serialization_method is not None:
                 value = cls.serialization_method.loads(value)
             return value
-        except:
+        except Exception:
             # unfortunately pickle and other serialization modules can
             # cause pretty every error here.  if we get one we catch it
             # and convert it into an UnquoteError
