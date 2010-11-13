@@ -380,7 +380,7 @@ def make_server(host, port, app=None, threaded=False, processes=1,
                               passthrough_errors, ssl_context)
 
 
-def reloader_loop(extra_files=None, interval=1):
+def reloader_loop(extra_files=None, interval=1, reload_handler=None):
     """When this function is run from the main thread, it will force other
     threads to exit when any modules currently loaded change.
 
@@ -408,9 +408,9 @@ def reloader_loop(extra_files=None, interval=1):
     fnames.extend(iter_module_files())
     fnames.extend(extra_files or ())
 
-    reloader(fnames, interval=interval)
+    reloader(fnames, interval=interval, reload_handler=reload_handler)
 
-def _reloader_stat_loop(fnames, interval=1):
+def _reloader_stat_loop(fnames, interval=1, reload_handler=None):
     mtimes = {}
     while 1:
         for filename in fnames:
@@ -425,10 +425,12 @@ def _reloader_stat_loop(fnames, interval=1):
                 continue
             elif mtime > old_time:
                 _log('info', ' * Detected change in %r, reloading' % filename)
+                if reload_handler:
+                  reload_handler(filename)
                 sys.exit(3)
         time.sleep(interval)
 
-def _reloader_inotify(fnames, interval=None):
+def _reloader_inotify(fnames, interval=None, reload_handler=None):
     #: Mutated by inotify loop when changes occur.
     changed = [False]
 
@@ -442,6 +444,8 @@ def _reloader_inotify(fnames, interval=None):
         if changed[0]:
             return
         _log('info', ' * Detected change in %r, reloading' % event.path)
+        if reload_handler:
+          reload_handler(filename)
         changed[:] = [True]
 
     for fname in fnames:
@@ -493,12 +497,12 @@ def restart_with_reloader():
             return exit_code
 
 
-def run_with_reloader(main_func, extra_files=None, interval=1):
+def run_with_reloader(main_func, extra_files=None, interval=1, reload_handler=None):
     """Run the given function in an independent python interpreter."""
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         thread.start_new_thread(main_func, ())
         try:
-            reloader_loop(extra_files, interval)
+            reloader_loop(extra_files, interval, reload_handler)
         except KeyboardInterrupt:
             return
     try:
@@ -509,7 +513,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
 
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
-               extra_files=None, reloader_interval=1, threaded=False,
+               extra_files=None, reloader_interval=1, reload_handler=None, threaded=False,
                processes=1, request_handler=None, static_files=None,
                passthrough_errors=False, ssl_context=None):
     """Start an application using wsgiref and with an optional reloader.  This
@@ -533,6 +537,9 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param extra_files: a list of files the reloader should watch
                         additionally to the modules.  For example configuration
                         files.
+    :param reload_handler: a function that is called whenever a file watched
+                           by the reloader changes. the file's full path is
+                           passed to the function as the first and only argument
     :param reloader_interval: the interval for the reloader in seconds.
     :param threaded: should the process handle each request in a separate
                      thread?
@@ -579,6 +586,6 @@ def run_simple(hostname, port, application, use_reloader=False,
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))
         test_socket.close()
-        run_with_reloader(inner, extra_files, reloader_interval)
+        run_with_reloader(inner, extra_files, reloader_interval, reload_handler)
     else:
         inner()
