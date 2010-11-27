@@ -37,6 +37,9 @@ class DebuggedApplication(object):
     The `evalex` keyword argument allows evaluating expressions in a
     traceback's frame context.
 
+    .. versionadded:: 0.7
+       The `lodgeit_url` parameter was added.
+
     :param app: the WSGI application to run debugged.
     :param evalex: enable exception evaluation feature (interactive
                    debugging).  This requires a non-forking server.

@@ -35,6 +35,7 @@ Version 0.7
   descriptors.
 - reloader can now use inotify to track reloads.  This requires the
   pyinotify library to be installed.
+- Werkzeug debugger can now submit to custom lodgeit installations.
 
 Version 0.6.2
 -------------
