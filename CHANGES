@@ -39,6 +39,7 @@ Version 0.7
 - redirect function's status code assertion now allows 201 to be used
   as redirection code.  While it's not a real redirect, it shares
   enough with redirects for the function to still be useful.
+- Fixed securecookie for pypy.
 
 Version 0.6.2
 -------------

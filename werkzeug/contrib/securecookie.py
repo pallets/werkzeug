@@ -144,7 +144,10 @@ class SecureCookie(ModificationTrackingDict):
     #: The hash method to use.  This has to be a module with a new function
     #: or a function that creates a hashlib object.  Such as `hashlib.md5`
     #: Subclasses can override this attribute.  The default hash is sha1.
-    hash_method = _default_hash
+    #: Make sure to wrap this in staticmethod() if you store an arbitrary
+    #: function there such as hashlib.sha1 which  might be implemented
+    #: as a function.
+    hash_method = staticmethod(_default_hash)
 
     #: the module used for serialization.  Unless overriden by subclasses
     #: the standard pickle module is used.
