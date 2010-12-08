@@ -519,6 +519,8 @@ def test_immutable_structures():
     assert_raises(TypeError, d.__delitem__, 'foo')
     assert_raises(TypeError, d.clear)
     assert d == dict(foo=23, bar=42)
+    d = ImmutableDict.fromkeys([1, 2])
+    assert d[1] == d[2] == None
 
     d = ImmutableMultiDict(d)
     assert_raises(TypeError, d.add, 'fuss', 44)
@@ -526,6 +528,8 @@ def test_immutable_structures():
     assert_raises(TypeError, d.poplist, 'foo')
     assert_raises(TypeError, d.setlist, 'tadaa', [1, 2])
     assert_raises(TypeError, d.setlistdefault, 'tadaa')
+    d = ImmutableMultiDict.fromkeys([1, 2])
+    assert d[1] == d[2] == None
 
     d = EnvironHeaders({'HTTP_X_FOO': 'test'})
     assert_raises(TypeError, d.__delitem__, 0)
