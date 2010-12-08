@@ -11,6 +11,7 @@
 import re
 import codecs
 import mimetypes
+from itertools import repeat
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 
@@ -106,6 +107,11 @@ class ImmutableDictMixin(object):
 
     :private:
     """
+    @classmethod
+    def fromkeys(cls, keys, value=None):
+        instance = super(cls, cls).__new__(cls)
+        instance.__init__(zip(keys, repeat(value)))
+        return instance
 
     def __reduce_ex__(self, protocol):
         return type(self), (dict(self),)
