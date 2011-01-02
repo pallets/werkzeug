@@ -115,7 +115,7 @@ if _default_hash is None:
 
 
 def safe_str_cmp(a, b):
-    """This function compares strings in somewhat linear time.  In case
+    """This function compares strings in somewhat constant time.  In case
     someone actually finds a way to measure that over the network which
     I strongly doubt."""
     if len(a) != len(b):
