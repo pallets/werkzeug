@@ -4,7 +4,7 @@ Werkzeug Tutorial
 
 .. module:: werkzeug
 
-Welcome to the Werkzeug 0.5 tutorial in which we will create a `TinyURL`_ clone
+Welcome to the Werkzeug tutorial in which we will create a `TinyURL`_ clone
 that stores URLs in a database.  The libraries we will use for this
 applications are `Jinja`_ 2 for the templates, `SQLAlchemy`_ for the database
 layer and, of course, Werkzeug for the WSGI layer.
