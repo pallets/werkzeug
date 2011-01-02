@@ -14,11 +14,12 @@ from __future__ import with_statement
 import sys
 import os
 import re
+import posixpath
 import difflib
 
 
 _from_import_re = re.compile(r'from werkzeug import\s+')
-_direct_usage = re.compile('(?<![^`])(werkzeug\.)([a-zA-Z_][a-zA-Z0-9_]+)')
+_direct_usage = re.compile('(?<!`)(werkzeug\.)([a-zA-Z_][a-zA-Z0-9_]+)')
 
 
 all_by_module = {
@@ -200,8 +201,10 @@ def rewrite_file(filename):
     if deferred_imports:
         inject_imports(new_file, deferred_imports)
 
-    for line in difflib.unified_diff(old_file, new_file, 'a/' + filename,
-                                     'b/' + filename, lineterm=''):
+    for line in difflib.unified_diff(old_file, new_file,
+                                     posixpath.join('a', filename),
+                                     posixpath.join('b', filename),
+                                     lineterm=''):
         print line
 
 
