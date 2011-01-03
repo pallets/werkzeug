@@ -39,7 +39,7 @@ class WerkzeugStyle(Style):
         Name.Builtin.Pseudo:       "#3465a4",        # class: 'bp'
         Name.Class:                "#000000",        # class: 'nc' - to be revised
         Name.Constant:             "#000000",        # class: 'no' - to be revised
-        Name.Decorator:            "#888",           # class: 'nd' - to be revised
+        Name.Decorator:            "#1B5C66",        # class: 'nd' - to be revised
         Name.Entity:               "#ce5c00",        # class: 'ni'
         Name.Exception:            "bold #cc0000",   # class: 'ne'
         Name.Function:             "#000000",        # class: 'nf'

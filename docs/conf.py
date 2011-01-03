@@ -88,7 +88,7 @@ add_function_parentheses = True
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'tango'
+pygments_style = 'werkzeug_theme_support.WerkzeugStyle'
 
 # doctest setup code
 doctest_global_setup = '''\
