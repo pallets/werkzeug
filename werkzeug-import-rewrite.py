@@ -18,7 +18,7 @@ import posixpath
 import difflib
 
 
-_from_import_re = re.compile(r'from werkzeug import\s+')
+_from_import_re = re.compile(r'(\s*(>>>|\.\.\.)?\s*)from werkzeug import\s+')
 _direct_usage = re.compile('(?<!`)(werkzeug\.)([a-zA-Z_][a-zA-Z0-9_]+)')
 
 
@@ -159,6 +159,8 @@ def rewrite_from_imports(fromlist, indentation, lineiter):
             if len(fromlist) + len(prefix) > 79:
                 yield prefix + ', '.join(item_buffer[:-1]) + ', \\'
                 item_buffer = [item_buffer[-1]]
+                # doctest continuations
+                indentation = indentation.replace('>', '.')
                 prefix = indentation + '     '
         yield prefix + ', '.join(item_buffer)
 
@@ -186,7 +188,7 @@ def rewrite_file(filename):
         if match is not None:
             fromlist = line[match.end():]
             new_file.extend(rewrite_from_imports(fromlist,
-                                                 line[:match.start()],
+                                                 match.group(1),
                                                  lineiter))
             continue
         # rewrite attribute access to 'werkzeug'
