@@ -213,7 +213,7 @@ def rewrite_in_folders(folders):
         for dirpath, dirnames, filenames in os.walk(folder):
             for filename in filenames:
                 filename = os.path.join(dirpath, filename)
-                if filename.endswith('.py'):
+                if filename.endswith(('.rst', '.py')):
                     rewrite_file(filename)
 
 
