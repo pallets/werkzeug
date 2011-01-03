@@ -11,7 +11,7 @@
     :license: BSD.
 """
 import re
-from werkzeug import BaseRequest, BaseResponse
+from werkzeug.wrappers import BaseRequest, BaseResponse
 from werkzeug.exceptions import HTTPException, MethodNotAllowed, \
      NotImplemented, NotFound
 

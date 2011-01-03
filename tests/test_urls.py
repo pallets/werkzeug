@@ -10,9 +10,9 @@
 """
 from nose import SkipTest
 from nose.tools import assert_raises
-from werkzeug import url_quote, url_unquote, url_quote_plus, \
-     url_unquote_plus, url_encode, url_decode, url_fix, uri_to_iri, \
-     iri_to_uri, Href, OrderedMultiDict
+from werkzeug.datastructures import OrderedMultiDict
+from werkzeug.urls import Href, iri_to_uri, uri_to_iri, url_decode, url_encode, \
+     url_fix, url_quote, url_quote_plus, url_unquote, url_unquote_plus
 
 
 def test_quoting():

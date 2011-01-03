@@ -23,6 +23,7 @@
 import urlparse
 from datetime import datetime, timedelta
 
+from werkzeug.datastructures import ETags, ETags
 from werkzeug.http import HTTP_STATUS_CODES, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
@@ -81,7 +82,7 @@ class BaseRequest(object):
     and add missing functionality either via mixins or direct implementation.
     Here an example for such subclasses::
 
-        from werkzeug import BaseRequest, ETagRequestMixin
+        from werkzeug.wrappers import BaseRequest, ETagRequestMixin
 
         class Request(BaseRequest, ETagRequestMixin):
             pass
@@ -517,7 +518,7 @@ class BaseResponse(object):
     Here a small example WSGI application that takes advantage of the
     response objects::
 
-        from werkzeug import BaseResponse as Response
+        from werkzeug.wrappers import BaseResponse as Response
 
         def index():
             return Response('Index page')
@@ -1077,7 +1078,7 @@ class ETagRequestMixin(object):
     def if_match(self):
         """An object containing all the etags in the `If-Match` header.
 
-        :rtype: :class:`~werkzeug.ETags`
+        :rtype: :class:`~ETags`
 
         """
         return parse_etags(self.environ.get('HTTP_IF_MATCH'))
@@ -1086,7 +1087,7 @@ class ETagRequestMixin(object):
     def if_none_match(self):
         """An object containing all the etags in the `If-None-Match` header.
 
-        :rtype: :class:`~werkzeug.ETags`
+        :rtype: :class:`~ETags`
 
         """
         return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
@@ -1105,7 +1106,7 @@ class ETagRequestMixin(object):
 class UserAgentMixin(object):
     """Adds a `user_agent` attribute to the request object which contains the
     parsed user agent of the browser that triggered the request as a
-    :class:`~werkzeug.UserAgent` object.
+    :class:`~UserAgent` object.
     """
 
     @cached_property

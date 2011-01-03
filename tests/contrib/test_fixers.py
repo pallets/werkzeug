@@ -1,6 +1,8 @@
 from nose.tools import assert_raises
-from werkzeug import Request, Response, Client, create_environ, \
-     ResponseCacheControl, parse_cache_control_header
+from werkzeug.datastructures import ResponseCacheControl
+from werkzeug.http import parse_cache_control_header
+from werkzeug.test import Client, create_environ
+from werkzeug.wrappers import Request, Response
 from werkzeug.contrib import fixers
 
 

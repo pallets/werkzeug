@@ -40,7 +40,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     """A handy helper function that recreates the full URL for the current
     request or parts of it.  Here an example:
 
-    >>> from werkzeug import create_environ
+    >>> from werkzeug.test import create_environ
     >>> env = create_environ("/?param=foo", "http://localhost/script")
     >>> get_current_url(env)
     'http://localhost/script/?param=foo'
@@ -254,7 +254,7 @@ class SharedDataMiddleware(object):
     environments or simple server setups. Usage is quite simple::
 
         import os
-        from werkzeug import SharedDataMiddleware
+        from werkzeug.wsgi import SharedDataMiddleware
 
         app = SharedDataMiddleware(app, {
             '/shared': os.path.join(os.path.dirname(__file__), 'shared')

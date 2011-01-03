@@ -15,7 +15,7 @@ application using the builtin server::
     #!/usr/bin/env python
     # -*- coding: utf-8 -*-
 
-    from werkzeug import run_simple
+    from werkzeug.serving import run_simple
     from myproject import make_app
 
     app = make_app(...)

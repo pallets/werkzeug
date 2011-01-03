@@ -13,8 +13,11 @@ from nose.tools import assert_raises
 from os.path import join, dirname, abspath
 from cStringIO import StringIO
 
-from werkzeug import Client, Request, Response, parse_form_data, \
-     create_environ, FileStorage, formparser, create_environ
+from werkzeug import formparser
+from werkzeug.datastructures import FileStorage
+from werkzeug.formparser import parse_form_data
+from werkzeug.test import Client, create_environ, create_environ
+from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import RequestEntityTooLarge
 
 

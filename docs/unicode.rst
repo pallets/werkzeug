@@ -120,7 +120,7 @@ powered applications you can change the default encoding Werkzeug operates on
 by subclassing these two classes.  For example you can easily set the
 application to utf-7 and strict error handling::
 
-    from werkzeug import BaseRequest, BaseResponse
+    from werkzeug.wrappers import BaseRequest, BaseResponse
 
     class Request(BaseRequest):
         charset = 'utf-7'

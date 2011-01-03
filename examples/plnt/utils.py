@@ -11,8 +11,10 @@
 import re
 from os import path
 from jinja2 import Environment, FileSystemLoader
-from werkzeug import Response, Local, LocalManager, url_encode, \
-     url_quote, cached_property
+from werkzeug.local import Local, LocalManager
+from werkzeug.urls import url_encode, url_quote
+from werkzeug.utils import cached_property
+from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule
 
 

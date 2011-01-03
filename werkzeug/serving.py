@@ -20,7 +20,7 @@
         #!/usr/bin/env python
         # -*- coding: utf-8 -*-
         from myproject import make_app
-        from werkzeug import run_simple
+        from werkzeug.serving import run_simple
 
         app = make_app(...)
         run_simple('localhost', 8080, app, use_reloader=True)

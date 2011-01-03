@@ -34,7 +34,7 @@ def test_basic_routing():
 
 test_environ_defaults = '''
 >>> from werkzeug.routing import Map, Rule
->>> from werkzeug import create_environ
+>>> from werkzeug.test import create_environ
 >>> environ = create_environ("/foo")
 >>> environ["PATH_INFO"]
 '/foo'

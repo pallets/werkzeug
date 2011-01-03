@@ -6,7 +6,7 @@
     :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
-from werkzeug import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 def test_password_hashing():

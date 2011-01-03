@@ -10,7 +10,8 @@
 """
 from os import path
 from sqlalchemy import create_engine
-from werkzeug import SharedDataMiddleware, ClosingIterator, Request
+from werkzeug.wrappers import Request
+from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
 from werkzeug.exceptions import HTTPException, NotFound
 from plnt.utils import local, local_manager, url_map, endpoints
 from plnt.database import session, metadata

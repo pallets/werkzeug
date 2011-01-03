@@ -13,7 +13,9 @@
 """
 from os.path import dirname, join
 from jinja import Environment, FileSystemLoader
-from werkzeug import BaseRequest, BaseResponse, Local, LocalManager, redirect
+from werkzeug.local import Local, LocalManager
+from werkzeug.utils import redirect
+from werkzeug.wrappers import BaseRequest, BaseResponse
 
 
 local = Local()

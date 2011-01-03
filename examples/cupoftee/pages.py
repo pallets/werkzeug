@@ -9,7 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import operator
-from werkzeug import redirect
+from werkzeug.utils import redirect
 from werkzeug.exceptions import NotFound
 from cupoftee.application import Page
 from cupoftee.utils import unicodecmp

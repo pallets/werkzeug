@@ -279,7 +279,7 @@ class LocalProxy(object):
 
     Example usage::
 
-        from werkzeug import Local
+        from werkzeug.local import Local
         l = Local()
 
         # these are proxies
@@ -287,7 +287,7 @@ class LocalProxy(object):
         user = l('user')
 
 
-        from werkzeug import LocalStack
+        from werkzeug.local import LocalStack
         _response_local = LocalStack()
 
         # this is a proxy

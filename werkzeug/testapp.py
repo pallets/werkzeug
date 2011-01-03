@@ -194,7 +194,8 @@ def test_app(environ, start_response):
 
     .. sourcecode:: pycon
 
-        >>> from werkzeug import run_simple, test_app
+        >>> from werkzeug.serving import run_simple
+        >>> from werkzeug.testapp import test_app
         >>> run_simple('localhost', 3000, test_app)
          * Running on http://localhost:3000/
 

@@ -21,13 +21,13 @@ request variables (form data, request headers etc.).
 The :class:`Response` on the other hand is a standard WSGI application that
 you can create.  The simple hello world in Werkzeug looks like this::
 
-    from werkzeug import Response
+    from werkzeug.wrappers import Response
     application = Response('Hello World!')
 
 To make it more useful you can replace it with a function and do some
 processing::
 
-    from werkzeug import Request, Response
+    from werkzeug.wrappers import Request, Response
 
     def application(environ, start_response):
         request = Request(environ)
@@ -37,7 +37,7 @@ processing::
 Because this is a very common task the :class:`~Request` object provides
 a helper for that.  The above code can be rewritten like this::
 
-    from werkzeug import Request, Response
+    from werkzeug.wrappers import Request, Response
 
     @Request.application
     def application(request):
@@ -139,7 +139,7 @@ mix those classes in to extend the functionality of the :class:`BaseRequest`
 or :class:`BaseResponse` object.  Here a small example for a request object
 that parses accept headers::
 
-    from werkzeug import BaseRequest, AcceptMixin
+    from werkzeug.wrappers import AcceptMixin, BaseRequest
 
     class Request(BaseRequest, AcceptMixin):
         pass

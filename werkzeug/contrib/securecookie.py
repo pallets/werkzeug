@@ -39,7 +39,8 @@ r"""
     If you are using the werkzeug request objects you could integrate the
     secure cookie into your application like this::
 
-        from werkzeug import BaseRequest, cached_property
+        from werkzeug.utils import cached_property
+        from werkzeug.wrappers import BaseRequest
         from werkzeug.contrib.securecookie import SecureCookie
 
         # don't use this key but a different one; you could just use
@@ -92,7 +93,7 @@ import cPickle as pickle
 from hmac import new as hmac
 from itertools import izip
 from time import time
-from werkzeug import url_quote_plus, url_unquote_plus
+from werkzeug.urls import url_quote_plus, url_unquote_plus
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.sessions import ModificationTrackingDict
 

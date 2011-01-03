@@ -12,7 +12,8 @@
     :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug import Response, cached_property, import_string
+from werkzeug.utils import cached_property, import_string
+from werkzeug.wrappers import Response
 
 
 class ContentAccessors(object):

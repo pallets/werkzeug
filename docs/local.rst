@@ -24,7 +24,7 @@ before, and hence data is left in the thread local object.
 
 Here's a simple example of how one could use werkzeug.local::
 
-    from werkzeug import Local, LocalManager
+    from werkzeug.local import Local, LocalManager
 
     local = Local()
     local_manager = LocalManager([local])
@@ -76,7 +76,7 @@ context.
 
    .. sourcecode:: pycon
 
-       >>> from werkzeug import LocalProxy
+       >>> from werkzeug.local import LocalProxy
        >>> isinstance(request, LocalProxy)
        True
 
@@ -84,6 +84,6 @@ context.
 
    .. sourcecode:: python
 
-       from werkzeug import Local, LocalProxy
+       from werkzeug.local import Local, LocalProxy
        local = Local()
        request = LocalProxy(local, 'request')

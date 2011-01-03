@@ -17,7 +17,8 @@ Example
 This example implements a small `Hello World` application that greets the
 user with the name entered::
 
-    from werkzeug import Request, Response, escape
+    from werkzeug.utils import escape
+    from werkzeug.wrappers import Request, Response
 
     @Request.application
     def hello_world(request):
@@ -35,7 +36,8 @@ user with the name entered::
 Alternatively the same application could be use without request and response
 objects but by taking advantage of the parsing functions werkzeug provides::
 
-    from werkzeug import parse_form_data, escape
+    from werkzeug.formparser import parse_form_data
+    from werkzeug.utils import escape
 
     def hello_world(environ, start_response):
         result = ['<title>Greeter</title>']

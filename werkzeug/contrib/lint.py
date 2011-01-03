@@ -22,7 +22,9 @@
 from urlparse import urlparse
 from warnings import warn
 
-from werkzeug import Headers, FileWrapper, is_entity_header
+from werkzeug.datastructures import Headers
+from werkzeug.http import is_entity_header
+from werkzeug.wsgi import FileWrapper
 
 
 class WSGIWarning(Warning):

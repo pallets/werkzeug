@@ -14,7 +14,7 @@ import __builtin__ as builtins
 from compiler import ast, parse
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
-from werkzeug import utils, urls
+from werkzeug import urls, utils
 from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict
 

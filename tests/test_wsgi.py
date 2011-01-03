@@ -13,7 +13,8 @@ from cStringIO import StringIO
 
 from nose.tools import assert_raises
 
-from werkzeug import Client, create_environ, BaseResponse, run_wsgi_app
+from werkzeug.test import Client, create_environ, run_wsgi_app
+from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest
 
 from werkzeug.wsgi import SharedDataMiddleware, get_host, responder, \

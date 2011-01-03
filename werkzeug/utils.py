@@ -611,7 +611,7 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
     This can be useful for decorators that forward user submitted data to
     a view function::
 
-        from werkzeug import ArgumentValidationError, validate_arguments
+        from werkzeug.utils import ArgumentValidationError, validate_arguments
 
         def sanitize(f):
             def proxy(request):

@@ -10,7 +10,7 @@
 """
 from coolmagic.utils import Response, TemplateResponse, ThreadedRequest, \
      export, url_for, redirect
-from werkzeug import escape
+from werkzeug.utils import escape
 
 
 #: a thread local proxy request object

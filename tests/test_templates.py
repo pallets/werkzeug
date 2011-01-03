@@ -12,7 +12,7 @@ import tempfile
 
 from nose.tools import assert_raises
 
-from werkzeug import MultiDict
+from werkzeug.datastructures import MultiDict
 from werkzeug.templates import Template
 
 

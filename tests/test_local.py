@@ -11,7 +11,7 @@ from threading import Thread
 
 from nose.tools import assert_raises
 
-from werkzeug import Local, LocalManager, LocalStack, LocalProxy, \
+from werkzeug.local import Local, LocalManager, LocalProxy, LocalStack, \
      release_local
 from werkzeug.local import get_ident # for testing purposes only
 

@@ -2,7 +2,9 @@ from os import path
 from urlparse import urlparse
 from random import sample, randrange
 from jinja2 import Environment, FileSystemLoader
-from werkzeug import Response, Local, LocalManager, cached_property
+from werkzeug.local import Local, LocalManager
+from werkzeug.utils import cached_property
+from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule
 from sqlalchemy import MetaData
 from sqlalchemy.orm import create_session, scoped_session

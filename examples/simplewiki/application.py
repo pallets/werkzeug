@@ -12,7 +12,8 @@
 """
 from os import path
 from sqlalchemy import create_engine
-from werkzeug import ClosingIterator, SharedDataMiddleware, redirect
+from werkzeug.utils import redirect
+from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
 from simplewiki.utils import Request, Response, local, local_manager, href
 from simplewiki.database import session, metadata
 from simplewiki import actions

@@ -12,7 +12,8 @@
 
     ::
 
-        from werkzeug import BaseRequest, responder
+        from werkzeug.wrappers import BaseRequest
+        from werkzeug.wsgi import responder
         from werkzeug.exceptions import HTTPException, NotFound
 
         def view(request):

@@ -1231,7 +1231,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     instances as sequence and it will combine the return values of all wrapped
     dicts:
 
-    >>> from werkzeug import MultiDict, CombinedMultiDict
+    >>> from werkzeug.datastructures import CombinedMultiDict, MultiDict
     >>> post = MultiDict([('foo', 'bar')])
     >>> get = MultiDict([('blub', 'blah')])
     >>> combined = CombinedMultiDict([get, post])
