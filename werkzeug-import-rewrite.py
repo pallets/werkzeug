@@ -202,9 +202,9 @@ def rewrite_file(filename):
         inject_imports(new_file, deferred_imports)
 
     for line in difflib.unified_diff(old_file, new_file,
-                                     posixpath.join('a', filename),
-                                     posixpath.join('b', filename),
-                                     lineterm=''):
+                     posixpath.normpath(posixpath.join('a', filename)),
+                     posixpath.normpath(posixpath.join('b', filename)),
+                     lineterm=''):
         print line
 
 
