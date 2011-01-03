@@ -71,11 +71,16 @@ Contribute
 ----------
 
 Found a bug? Have a good idea for improving Werkzeug? Head over to
-`Werkzeug's new github <http://github.com/mitsuhiko/flask>`_ page and
+`Werkzeug's new github <http://github.com/mitsuhiko/werkzeug>`_ page and
 create a new ticket or fork.  If you just want to chat with fellow
 developers, visit the `IRC channel </community/#irc-channel>`_ or join the
 `mailinglist </community/#mailinglist>`_. 
 
+.. raw:: html
 
-.. _Flask: http://flask.pocoo.org/
+    <a href="http://github.com/mitsuhiko/werkzeug"><img style="position: fixed; top: 0; right: 0; border: 0;"
+       src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+
+.. _Flask: http://werkzeug.pocoo.org/
 .. _tipfy: http://www.tipfy.org/
