@@ -2,7 +2,16 @@
 Mini Templates
 ==============
 
-.. module:: werkzeug
+.. admonition:: Deprecated Functionality
+
+   ``werkzeug.templates`` is deprecated without replacement functionality.
+   Consider one of the following template engines as replacement:
+
+   -    `Jinja2 <http://jinja.pocoo.org/>`_
+   -    `Mako <http://www.makotemplates.org/>`_
+   -    `Genshi <http://genshi.edgewall.org/>`_
+
+.. module:: werkzeug.templates
 
 Werkzeug ships a **minimal** templating system which is useful for small
 scripts where you just want to generate some HTML and don't want another
@@ -15,6 +24,7 @@ imported from the :mod:`werkzeug` module.
 The template engine recognizes ASP/PHP like blocks and executes the code
 in them::
 
+    from werkzeug.templates import Template
     t = Template('<% for u in users %>${u["username"]}\n<% endfor %>')
     t.render(users=[{'username': 'John'},
                     {'username': 'Jane'}])

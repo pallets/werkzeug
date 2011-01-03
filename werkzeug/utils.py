@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 
 from werkzeug._internal import _decode_unicode, \
      _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
-     _DictAccessorProperty, _dump_date, _parse_signature, _missing
+     _DictAccessorProperty, _parse_signature, _missing
 
 
 _format_re = re.compile(r'\$(?:(%s)|\{(%s)\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
@@ -340,21 +340,6 @@ def unescape(s):
     return _entity_re.sub(handle_match, s)
 
 
-def cookie_date(expires=None):
-    """Formats the time to ensure compatibility with Netscape's cookie
-    standard.
-
-    Accepts a floating point number expressed in seconds since the epoch in, a
-    datetime object or a timetuple.  All times in UTC.  The :func:`parse_date`
-    function can be used to parse such a date.
-
-    Outputs a string in the format ``Wdy, DD-Mon-YYYY HH:MM:SS GMT``.
-
-    :param expires: If provided that date is used, otherwise the current.
-    """
-    return _dump_date(expires, '-')
-
-
 def parse_cookie(header, charset='utf-8', errors='ignore',
                  cls=None):
     """Parse a cookie.  Either from a string or WSGI environ.
@@ -453,20 +438,6 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         if v is not None and v is not False:
             morsel[k] = str(v)
     return morsel.output(header='').lstrip()
-
-
-def http_date(timestamp=None):
-    """Formats the time to match the RFC1123 date format.
-
-    Accepts a floating point number expressed in seconds since the epoch in, a
-    datetime object or a timetuple.  All times in UTC.  The :func:`parse_date`
-    function can be used to parse such a date.
-
-    Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
-
-    :param timestamp: If provided that date is used, otherwise the current.
-    """
-    return _dump_date(timestamp, ' ')
 
 
 def redirect(location, code=302):
@@ -688,10 +659,9 @@ class ArgumentValidationError(ValueError):
 
 
 # circular dependencies
-from werkzeug.http import quote_header_value, unquote_header_value
-from werkzeug.exceptions import BadRequest
+from werkzeug.http import quote_header_value, unquote_header_value, \
+     cookie_date
 from werkzeug.datastructures import TypeConversionDict
-
 
 # DEPRECATED
 # these objects were previously in this module as well.  we import

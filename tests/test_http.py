@@ -10,7 +10,7 @@ from datetime import datetime
 from nose.tools import assert_raises
 
 from werkzeug.http import *
-from werkzeug.utils import http_date, redirect, http_date
+from werkzeug.utils import redirect
 from werkzeug.test import create_environ
 from werkzeug.datastructures import *
 
@@ -292,3 +292,11 @@ def test_is_resource_modified():
         last_modified=datetime(2008, 1, 1, 12, 00))
     assert is_resource_modified(env,
         last_modified=datetime(2008, 1, 1, 13, 00))
+
+
+def test_dates():
+    """Date formatting"""
+    assert cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
+    assert cookie_date(datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
+    assert http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
+    assert http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'

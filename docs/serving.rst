@@ -2,7 +2,7 @@
 Serving WSGI Applications
 =========================
 
-.. module:: werkzeug
+.. module:: werkzeug.serving
 
 There are many ways to serve a WSGI application.  While you're developing it,
 you usually don't want to have a full-blown webserver like Apache up and

@@ -2,7 +2,7 @@
 Middlewares
 ===========
 
-.. module:: werkzeug
+.. module:: werkzeug.wsgi
 
 Middlewares wrap applications to dispatch between then or provide
 additional request handling.  Additionally to the middlewares documented
@@ -16,4 +16,4 @@ implemented as a WSGI middleware.
 
 Also there's the …
 
-.. autofunction:: _easteregg
+.. autofunction:: werkzeug._internal._easteregg

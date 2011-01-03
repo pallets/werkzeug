@@ -4,11 +4,11 @@
 Request / Response Objects
 ==========================
 
-.. module:: werkzeug
+.. module:: werkzeug.wrappers
 
-You can import all these objects directly from :mod:`werkzeug`.  The request
-and response objects wrap the WSGI environment or the return value from a WSGI
-application so that it is another WSGI application (wraps a whole application).
+The request and response objects wrap the WSGI environment or the return
+value from a WSGI application so that it is another WSGI application
+(wraps a whole application).
 
 How they Work
 =============
@@ -176,5 +176,5 @@ and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides
 .. autoclass:: WWWAuthenticateMixin
    :members:
 
-.. autoclass:: UserAgentMixin
+.. autoclass:: werkzeug.useragents.UserAgentMixin
    :members:

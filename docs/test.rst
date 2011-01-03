@@ -2,7 +2,7 @@
 Test Utilities
 ==============
 
-.. module:: werkzeug
+.. module:: werkzeug.test
 
 Quite often you want to unittest your application or just check the output
 from an interactive python session.  In theory that is pretty simple because

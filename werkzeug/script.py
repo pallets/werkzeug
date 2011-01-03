@@ -3,6 +3,12 @@ r'''
     werkzeug.script
     ~~~~~~~~~~~~~~~
 
+    .. admonition:: Deprecated Functionality
+
+       ``werkzeug.script`` is deprecated without replacement functionality.
+       Python's command line support improved greately with :mod:`argparse`
+       and a bunch of alternative modules and its recommended nowadays.
+
     Most of the time you have recurring tasks while writing an application
     such as starting up an interactive python interpreter with some prefilled
     imports, starting the development server, initializing the database or

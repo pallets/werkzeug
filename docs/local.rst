@@ -2,7 +2,7 @@
 Context Locals
 ==============
 
-.. module:: werkzeug
+.. module:: werkzeug.local
 
 Sooner or later you have some things you want to have in every single view
 or helper function or whatever.  In PHP the way to go are global

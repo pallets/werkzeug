@@ -23,18 +23,16 @@
 import urlparse
 from datetime import datetime, timedelta
 
-from werkzeug.datastructures import ETags, ETags
 from werkzeug.http import HTTP_STATUS_CODES, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     parse_options_header, dump_options_header
+     parse_options_header, dump_options_header, http_date
 from werkzeug.urls import url_decode, iri_to_uri
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
-     cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, get_content_type
+     parse_cookie, dump_cookie, header_property, get_content_type
 from werkzeug.wsgi import get_current_url, get_host, LimitedStream, \
      ClosingIterator
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \

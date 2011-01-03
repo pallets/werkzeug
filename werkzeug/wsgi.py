@@ -18,8 +18,7 @@ from time import time, mktime
 from datetime import datetime
 
 from werkzeug._internal import _patch_wrapper
-from werkzeug.utils import http_date
-from werkzeug.http import is_resource_modified
+from werkzeug.http import is_resource_modified, http_date
 
 
 def responder(f):

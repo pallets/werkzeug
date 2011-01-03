@@ -58,6 +58,7 @@ def test_cached_property():
 
 def test_environ_property():
     """Environ property descriptor"""
+    from werkzeug.http import http_date
     class A(object):
         environ = {'string': 'abc', 'number': '42'}
 
@@ -145,14 +146,6 @@ def test_run_wsgi_app():
     assert run_wsgi_app(bar, {}, True)[0] == ['bar']
 
     assert len(got_close) == 2
-
-
-def test_dates():
-    """Date formatting"""
-    assert cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
-    assert cookie_date(datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
-    assert http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
-    assert http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'
 
 
 def test_cookies():

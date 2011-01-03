@@ -16,6 +16,7 @@ should start here.
    :maxdepth: 2
 
    installation
+   transition
    tutorial
    levels
    quickstart
@@ -32,7 +33,6 @@ utilities are covered here:
    serving
    test
    debug
-   script
 
 Reference
 ---------
@@ -46,7 +46,6 @@ Reference
    http
    datastructures
    utils
-   templates
    local
    middlewares
    exceptions
@@ -72,6 +71,17 @@ as part of the `contrib` module:
    :maxdepth: 3
 
    contrib/index
+
+Deprecated Modules
+------------------
+
+These modules were deprecated and will disappear with Werkzeug 1.0:
+
+.. toctree::
+   :maxdepth: 3
+
+   script
+   templates
 
 Additional Information
 ----------------------
