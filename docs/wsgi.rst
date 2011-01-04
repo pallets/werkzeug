@@ -2,14 +2,12 @@
 WSGI Helpers
 ============
 
-.. module:: werkzeug
+.. module:: werkzeug.wsgi
 
 The following classes and functions are designed to make working with
 the WSGI specification easier or operate on the WSGI layer.  All the
 functionality from this module is available on the high-level
 :ref:`Request/Response classes <wrappers>`.
-
-You can import all these objects directly from :mod:`werkzeug`.
 
 
 Iterator / Stream Helpers
@@ -44,9 +42,11 @@ information or perform common manipulations:
 
 .. autofunction:: peek_path_info
 
+.. autofunction:: extract_path_info
+
 Convenience Helpers
 ===================
 
-.. autofunction:: test_app
-
 .. autofunction:: responder
+
+.. autofunction:: werkzeug.testapp.test_app

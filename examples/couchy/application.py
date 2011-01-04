@@ -1,7 +1,8 @@
 from couchdb.client import Server
 from couchy.utils import STATIC_PATH, local, local_manager, \
      url_map
-from werkzeug import Request, SharedDataMiddleware, ClosingIterator
+from werkzeug.wrappers import Request
+from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
 from werkzeug.exceptions import HTTPException, NotFound
 from couchy import views
 from couchy.models import URL

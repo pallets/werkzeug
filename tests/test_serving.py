@@ -8,7 +8,8 @@
 """
 import time
 import urllib
-from werkzeug import serving, test_app, __version__ as version
+from werkzeug import __version__ as version, serving
+from werkzeug.testapp import test_app
 from threading import Thread
 
 

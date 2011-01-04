@@ -9,7 +9,8 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
-from werkzeug import Request, Response, run_simple
+from werkzeug.serving import run_simple
+from werkzeug.wrappers import Request, Response
 
 
 class Application(object):

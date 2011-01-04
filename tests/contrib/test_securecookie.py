@@ -1,4 +1,5 @@
-from werkzeug import Request, Response, parse_cookie
+from werkzeug.utils import parse_cookie
+from werkzeug.wrappers import Request, Response
 from werkzeug.contrib.securecookie import SecureCookie
 
 

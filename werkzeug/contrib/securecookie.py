@@ -39,7 +39,8 @@ r"""
     If you are using the werkzeug request objects you could integrate the
     secure cookie into your application like this::
 
-        from werkzeug import BaseRequest, cached_property
+        from werkzeug.utils import cached_property
+        from werkzeug.wrappers import BaseRequest
         from werkzeug.contrib.securecookie import SecureCookie
 
         # don't use this key but a different one; you could just use
@@ -90,9 +91,9 @@ r"""
 import sys
 import cPickle as pickle
 from hmac import new as hmac
-from datetime import datetime
-from time import time, mktime, gmtime
-from werkzeug import url_quote_plus, url_unquote_plus
+from itertools import izip
+from time import time
+from werkzeug.urls import url_quote_plus, url_unquote_plus
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.sessions import ModificationTrackingDict
 
@@ -112,6 +113,18 @@ if sys.version_info >= (2, 5):
         pass
 if _default_hash is None:
     import sha as _default_hash
+
+
+def safe_str_cmp(a, b):
+    """This function compares strings in somewhat constant time.  In case
+    someone actually finds a way to measure that over the network which
+    I strongly doubt."""
+    if len(a) != len(b):
+        return False
+    rv = 0
+    for x, y in izip(a, b):
+        rv |= ord(x) ^ ord(y)
+    return rv == 0
 
 
 class UnquoteError(Exception):
@@ -144,7 +157,10 @@ class SecureCookie(ModificationTrackingDict):
     #: The hash method to use.  This has to be a module with a new function
     #: or a function that creates a hashlib object.  Such as `hashlib.md5`
     #: Subclasses can override this attribute.  The default hash is sha1.
-    hash_method = _default_hash
+    #: Make sure to wrap this in staticmethod() if you store an arbitrary
+    #: function there such as hashlib.sha1 which  might be implemented
+    #: as a function.
+    hash_method = staticmethod(_default_hash)
 
     #: the module used for serialization.  Unless overriden by subclasses
     #: the standard pickle module is used.
@@ -203,7 +219,7 @@ class SecureCookie(ModificationTrackingDict):
             if cls.serialization_method is not None:
                 value = cls.serialization_method.loads(value)
             return value
-        except:
+        except Exception:
             # unfortunately pickle and other serialization modules can
             # cause pretty every error here.  if we get one we catch it
             # and convert it into an UnquoteError
@@ -273,7 +289,7 @@ class SecureCookie(ModificationTrackingDict):
                 client_hash = base64_hash.decode('base64')
             except Exception:
                 items = client_hash = None
-            if items is not None and client_hash == mac.digest():
+            if items is not None and safe_str_cmp(client_hash, mac.digest()):
                 try:
                     for key, value in items.iteritems():
                         items[key] = cls.unquote(value)

@@ -102,7 +102,8 @@ url encoded data.  Extending the parsing capabilities by subclassing
 the :class:`BaseRequest` is simple.  The following example implements
 parsing for incoming JSON data::
 
-    from werkzeug import Request, cached_property
+    from werkzeug.utils import cached_property
+    from werkzeug.wrappers import Request
     from simplejson import loads
 
     class JSONRequest(Request):

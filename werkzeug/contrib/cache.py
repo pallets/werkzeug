@@ -301,7 +301,7 @@ class MemcachedCache(BaseCache):
                 client = memcache.Client(map(str, servers))
                 try:
                     client.debuglog = lambda *a: None
-                except:
+                except Exception:
                     pass
             else:
                 if is_pylibmc:
@@ -487,7 +487,7 @@ class FileSystemCache(BaseCache):
                     finally:
                         if f is not None:
                             f.close()
-                except:
+                except Exception:
                     pass
                 if remove:
                     try:
@@ -516,7 +516,7 @@ class FileSystemCache(BaseCache):
             finally:
                 f.close()
             os.remove(filename)
-        except:
+        except Exception:
             return None
 
     def add(self, key, value, timeout=None):

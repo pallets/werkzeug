@@ -1159,7 +1159,8 @@ class MapAdapter(object):
 
         Here a small example for the dispatch usage::
 
-            from werkzeug import Request, Response, responder
+            from werkzeug.wrappers import Request, Response
+            from werkzeug.wsgi import responder
             from werkzeug.routing import Map, Rule
 
             def on_index(request):

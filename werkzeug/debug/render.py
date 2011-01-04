@@ -61,7 +61,7 @@ def var_table(var):
     def safe_pformat(x):
         try:
             lines = pprint.pformat(x).splitlines()
-        except:
+        except Exception:
             return '?'
         tmp = []
         for line in lines:

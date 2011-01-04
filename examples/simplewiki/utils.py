@@ -14,8 +14,10 @@ import creoleparser
 from os import path
 from genshi import Stream
 from genshi.template import TemplateLoader
-from werkzeug import BaseRequest, BaseResponse, Local, LocalManager, \
-     url_encode, url_quote, redirect, cached_property
+from werkzeug.local import Local, LocalManager
+from werkzeug.urls import url_encode, url_quote
+from werkzeug.utils import cached_property, redirect
+from werkzeug.wrappers import BaseRequest, BaseResponse
 
 
 # calculate the path to the templates an create the template loader

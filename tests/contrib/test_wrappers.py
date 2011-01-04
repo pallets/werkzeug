@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from werkzeug.contrib import wrappers
-from werkzeug import Request, Response, routing
+from werkzeug import routing
+from werkzeug.wrappers import Request, Response
 
 
 def test_reverse_slash_behavior():

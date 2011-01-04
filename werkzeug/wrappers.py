@@ -28,12 +28,11 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     parse_options_header, dump_options_header
+     parse_options_header, dump_options_header, http_date
 from werkzeug.urls import url_decode, iri_to_uri
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
-     cookie_date, parse_cookie, dump_cookie, http_date, escape, \
-     header_property, get_content_type
+     parse_cookie, dump_cookie, header_property, get_content_type
 from werkzeug.wsgi import get_current_url, get_host, LimitedStream, \
      ClosingIterator
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
@@ -81,7 +80,7 @@ class BaseRequest(object):
     and add missing functionality either via mixins or direct implementation.
     Here an example for such subclasses::
 
-        from werkzeug import BaseRequest, ETagRequestMixin
+        from werkzeug.wrappers import BaseRequest, ETagRequestMixin
 
         class Request(BaseRequest, ETagRequestMixin):
             pass
@@ -180,7 +179,7 @@ class BaseRequest(object):
         try:
             args.append("'%s'" % self.url)
             args.append('[%s]' % self.method)
-        except:
+        except Exception:
             args.append('(invalid WSGI environ)')
 
         return '<%s %s>' % (
@@ -517,7 +516,7 @@ class BaseResponse(object):
     Here a small example WSGI application that takes advantage of the
     response objects::
 
-        from werkzeug import BaseResponse as Response
+        from werkzeug.wrappers import BaseResponse as Response
 
         def index():
             return Response('Index page')
@@ -1075,12 +1074,20 @@ class ETagRequestMixin(object):
 
     @cached_property
     def if_match(self):
-        """An object containing all the etags in the `If-Match` header."""
+        """An object containing all the etags in the `If-Match` header.
+
+        :rtype: :class:`~ETags`
+
+        """
         return parse_etags(self.environ.get('HTTP_IF_MATCH'))
 
     @cached_property
     def if_none_match(self):
-        """An object containing all the etags in the `If-None-Match` header."""
+        """An object containing all the etags in the `If-None-Match` header.
+
+        :rtype: :class:`~ETags`
+
+        """
         return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
 
     @cached_property
@@ -1096,8 +1103,8 @@ class ETagRequestMixin(object):
 
 class UserAgentMixin(object):
     """Adds a `user_agent` attribute to the request object which contains the
-    parsed user agent of the browser that triggered the request as `UserAgent`
-    object.
+    parsed user agent of the browser that triggered the request as a
+    :class:`~UserAgent` object.
     """
 
     @cached_property

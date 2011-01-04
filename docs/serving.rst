@@ -2,7 +2,7 @@
 Serving WSGI Applications
 =========================
 
-.. module:: werkzeug
+.. module:: werkzeug.serving
 
 There are many ways to serve a WSGI application.  While you're developing it,
 you usually don't want to have a full-blown webserver like Apache up and
@@ -15,7 +15,7 @@ application using the builtin server::
     #!/usr/bin/env python
     # -*- coding: utf-8 -*-
 
-    from werkzeug import run_simple
+    from werkzeug.serving import run_simple
     from myproject import make_app
 
     app = make_app(...)

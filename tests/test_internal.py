@@ -3,8 +3,9 @@ from nose.tools import assert_raises
 
 from warnings import filterwarnings, resetwarnings
 from datetime import datetime
-from werkzeug import _internal as internal, Request, Response, \
-     create_environ
+from werkzeug import _internal as internal
+from werkzeug.test import create_environ
+from werkzeug.wrappers import Request, Response
 
 
 def test_date_to_unix():
@@ -26,7 +27,7 @@ def test_easteregg():
 
 def test_wrapper_internals():
     """Test internals of the wrappers"""
-    from werkzeug import Request
+    from werkzeug.wrappers import Request
     req = Request.from_values(data={'foo': 'bar'}, method='POST')
     req._load_form_data()
     assert req.form.to_dict() == {'foo': 'bar'}

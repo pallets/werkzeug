@@ -14,7 +14,7 @@
 """
 from warnings import warn
 
-from werkzeug import LimitedStream
+from werkzeug.wsgi import LimitedStream
 
 
 class StreamLimitMiddleware(object):

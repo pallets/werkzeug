@@ -13,7 +13,9 @@ from os import path
 from threading import Thread
 from cupoftee.db import Database
 from cupoftee.network import ServerBrowser
-from werkzeug import Request, Response, Template, SharedDataMiddleware
+from werkzeug.templates import Template
+from werkzeug.wrappers import Request, Response
+from werkzeug.wsgi import SharedDataMiddleware
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.routing import Map, Rule
 

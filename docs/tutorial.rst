@@ -4,7 +4,7 @@ Werkzeug Tutorial
 
 .. module:: werkzeug
 
-Welcome to the Werkzeug 0.5 tutorial in which we will create a `TinyURL`_ clone
+Welcome to the Werkzeug tutorial in which we will create a `TinyURL`_ clone
 that stores URLs in a database.  The libraries we will use for this
 applications are `Jinja`_ 2 for the templates, `SQLAlchemy`_ for the database
 layer and, of course, Werkzeug for the WSGI layer.
@@ -83,7 +83,8 @@ Here the initial code for our ``shorty/application.py`` file which implements
 the WSGI application::
 
     from sqlalchemy import create_engine
-    from werkzeug import Request, ClosingIterator
+    from werkzeug.wrappers import Request
+    from werkzeug.wsgi import ClosingIterator
     from werkzeug.exceptions import HTTPException
 
     from shorty.utils import session, metadata, local, local_manager, url_map
@@ -209,7 +210,7 @@ the following code goes into the ``shorty/utils.py`` file::
 
     from sqlalchemy import MetaData
     from sqlalchemy.orm import create_session, scoped_session
-    from werkzeug import Local, LocalManager
+    from werkzeug.local import Local, LocalManager
     from werkzeug.routing import Map, Rule
 
     local = Local()
@@ -436,7 +437,7 @@ empty ``views.py`` file:
 
 .. sourcecode:: python
 
-    from werkzeug import redirect
+    from werkzeug.utils import redirect
     from werkzeug.exceptions import NotFound
     from shorty.utils import session, render_template, expose, validate_url, \
          url_for
@@ -526,7 +527,7 @@ object, the other one validates a URL.  So let's add those to ``utils.py``::
 
     from os import path    
     from urlparse import urlparse
-    from werkzeug import Response
+    from werkzeug.wrappers import Response
     from jinja2 import Environment, FileSystemLoader
 
     ALLOWED_SCHEMES = frozenset(['http', 'https', 'ftp', 'ftps'])
@@ -683,7 +684,7 @@ First of all you have to add a new import and calculate the path to the
 static files::
 
     from os import path
-    from werkzeug import SharedDataMiddleware
+    from werkzeug.wsgi import SharedDataMiddleware
 
     STATIC_PATH = path.join(path.dirname(__file__), 'static')
 
@@ -742,7 +743,7 @@ minutes to load.
 
 So let's start by adding a `Pagination` class into our utils module::
 
-    from werkzeug import cached_property
+    from werkzeug.utils import cached_property
 
     class Pagination(object):
 

@@ -1,4 +1,4 @@
-from werkzeug import redirect
+from werkzeug.utils import redirect
 from werkzeug.exceptions import NotFound
 from couchy.utils import render_template, expose, \
      validate_url, url_for, Pagination

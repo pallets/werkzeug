@@ -12,7 +12,7 @@ import sys
 import feedparser
 from time import time
 from datetime import datetime
-from werkzeug import escape
+from werkzeug.utils import escape
 from plnt.database import Blog, Entry, session
 from plnt.utils import strip_tags, nl2p
 

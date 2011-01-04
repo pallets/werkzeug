@@ -2,7 +2,7 @@
 Debugging Applications
 ======================
 
-.. module:: werkzeug
+.. module:: werkzeug.debug
 
 Depending on the WSGI gateway/server, exceptions are handled differently.
 But most of the time, exceptions go to stderr or the error log.

@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
-from werkzeug import Request, SharedDataMiddleware, ClosingIterator
+from werkzeug.wrappers import Request
+from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
 from werkzeug.exceptions import HTTPException, NotFound
 from shorty.utils import STATIC_PATH, session, local, local_manager, \
      metadata, url_map

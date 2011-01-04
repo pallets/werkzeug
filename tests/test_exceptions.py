@@ -8,7 +8,9 @@
 """
 from nose.tools import assert_raises
 
-from werkzeug import exceptions, Response, abort, Aborter
+from werkzeug import exceptions
+from werkzeug.exceptions import Aborter, abort
+from werkzeug.wrappers import Response
 
 
 def test_proxy_exception():

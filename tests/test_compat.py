@@ -65,7 +65,7 @@ def test_fix_headers_in_response():
         warnings.filterwarnings('ignore', message=msg,
                                 category=DeprecationWarning)
 
-    from werkzeug import Response
+    from werkzeug.wrappers import Response
     class MyResponse(Response):
         def fix_headers(self, environ):
             Response.fix_headers(self, environ)

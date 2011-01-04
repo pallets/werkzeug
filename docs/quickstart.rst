@@ -25,7 +25,7 @@ The WSGI environment contains all the information the user request transmit
 to the application.  It is passed to the WSGI application but you can also
 create a WSGI environ dict using the :func:`create_environ` helper:
 
->>> from werkzeug import create_environ
+>>> from werkzeug.test import create_environ
 >>> environ = create_environ('/foo', 'http://localhost:8080/')
 
 Now we have an environment to play around:
@@ -49,7 +49,7 @@ For access to the request data the :class:`Request` object is much more fun.
 It wraps the `environ` and provides a read-only access to the data from
 there:
 
->>> from werkzeug import Request
+>>> from werkzeug.wrappers import Request
 >>> request = Request(environ)
 
 Now you can access the important variables and Werkzeug will parse them
@@ -226,7 +226,7 @@ So imagine your standard WSGI "Hello World" application::
 
 With request objects it would look like this::
 
-    from werkzeug import Response
+    from werkzeug.wrappers import Response
 
     def application(environ, start_response):
         response = Response('Hello World!')
@@ -235,7 +235,7 @@ With request objects it would look like this::
 Also unlike request objects response objects are designed to be modified.
 So here is what you can do with them:
 
->>> from werkzeug import Response
+>>> from werkzeug.wrappers import Response
 >>> response = Response("Hello World!")
 >>> response.headers['content-type']
 'text/plain; charset=utf-8'

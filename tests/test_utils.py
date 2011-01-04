@@ -58,6 +58,7 @@ def test_cached_property():
 
 def test_environ_property():
     """Environ property descriptor"""
+    from werkzeug.http import http_date
     class A(object):
         environ = {'string': 'abc', 'number': '42'}
 
@@ -147,14 +148,6 @@ def test_run_wsgi_app():
     assert len(got_close) == 2
 
 
-def test_dates():
-    """Date formatting"""
-    assert cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
-    assert cookie_date(datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
-    assert http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
-    assert http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'
-
-
 def test_cookies():
     """Cookie parsing"""
     assert parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
@@ -218,7 +211,16 @@ def test_html_builder():
     ) == '<html><head><title>foo</title><script type="text/javascript">' \
          '</script></head></html>'
     assert html('<foo>') == '&lt;foo&gt;'
-
+    assert html.input(disabled=True) == '<input disabled>'
+    assert xhtml.input(disabled=True) == '<input disabled="disabled" />'
+    assert html.input(disabled='') == '<input>'
+    assert xhtml.input(disabled='') == '<input />'
+    assert html.input(disabled=None) == '<input>'
+    assert xhtml.input(disabled=None) == '<input />'
+    assert html.script('alert("Hello World");') == '<script>' \
+        'alert("Hello World");</script>'
+    assert xhtml.script('alert("Hello World");') == '<script>' \
+        '/*<![CDATA[*/alert("Hello World");/*]]>*/</script>'
 
 def test_validate_arguments():
     """Function argument validator"""

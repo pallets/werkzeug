@@ -1,4 +1,4 @@
-from werkzeug import redirect
+from werkzeug.utils import redirect
 from werkzeug.exceptions import NotFound
 from shorty.utils import session, Pagination, render_template, expose, \
      validate_url, url_for

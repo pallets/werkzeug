@@ -4,7 +4,6 @@ Management Script Utilities
 
 .. automodule:: werkzeug.script
 
-
 Writing Actions
 ===============
 

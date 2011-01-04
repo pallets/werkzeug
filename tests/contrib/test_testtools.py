@@ -1,7 +1,9 @@
 from nose.tools import assert_raises
 
 from werkzeug.contrib.testtools import *
-from werkzeug import Client, BaseRequest, responder
+from werkzeug.test import Client
+from werkzeug.wrappers import BaseRequest
+from werkzeug.wsgi import responder
 
 
 def response(content, mimetype):

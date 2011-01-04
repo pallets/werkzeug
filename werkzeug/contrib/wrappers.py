@@ -8,7 +8,7 @@
 
     Example::
 
-        from werkzeug import Request as RequestBase
+        from werkzeug.wrappers import Request as RequestBase
         from werkzeug.contrib.wrappers import JSONRequestMixin
 
         class Request(RequestBase, JSONRequestMixin):

@@ -1,5 +1,6 @@
 from os import path
-from werkzeug import BaseRequest, BaseResponse, Template
+from werkzeug.templates import Template
+from werkzeug.wrappers import BaseRequest, BaseResponse
 from werkzeug.routing import NotFound, RequestRedirect
 from werkzeug.exceptions import HTTPException, NotFound
 from i18nurls.urls import map

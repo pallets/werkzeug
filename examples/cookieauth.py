@@ -10,7 +10,9 @@
     :copyright: Copyright 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug import Request, Response, cached_property, redirect, escape, run_simple
+from werkzeug.serving import run_simple
+from werkzeug.utils import cached_property, escape, redirect
+from werkzeug.wrappers import Request, Response
 from werkzeug.contrib.securecookie import SecureCookie
 
 

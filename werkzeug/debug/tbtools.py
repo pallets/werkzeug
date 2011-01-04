@@ -137,10 +137,10 @@ class Traceback(object):
         tb = self.plaintext.encode('utf-8', 'replace').rstrip() + '\n'
         logfile.write(tb)
 
-    def paste(self):
+    def paste(self, lodgeit_url):
         """Create a paste and return the paste id."""
         from xmlrpclib import ServerProxy
-        srv = ServerProxy('http://paste.pocoo.org/xmlrpc/')
+        srv = ServerProxy('%sxmlrpc/' % lodgeit_url)
         return srv.pastes.newPaste('pytb', self.plaintext)
 
     def render_summary(self, include_title=True):
@@ -148,7 +148,7 @@ class Traceback(object):
         return render_template('traceback_summary.html', traceback=self,
                                include_title=include_title)
 
-    def render_full(self, evalex=False):
+    def render_full(self, evalex=False, lodgeit_url=None):
         """Render the Full HTML page with the traceback info."""
         return render_template('traceback_full.html', traceback=self,
                                evalex=evalex)
@@ -242,7 +242,7 @@ class Frame(object):
                     source = self.loader.get_source(self.module)
                 elif hasattr(self.loader, 'get_source_by_code'):
                     source = self.loader.get_source_by_code(self.code)
-            except:
+            except Exception:
                 # we munch the exception so that we don't cause troubles
                 # if the loader is broken.
                 pass

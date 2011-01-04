@@ -27,3 +27,11 @@ coverage:
 
 doctest:
 	@(cd docs; sphinx-build -b doctest . _build/doctest)
+
+upload-docs:
+	$(MAKE) -C docs html dirhtml latex
+	#$(MAKE) -C docs/_build/latex all-pdf
+	cd docs/_build/; mv html werkzeug-docs; zip -r werkzeug-docs.zip werkzeug-docs; mv werkzeug-docs html
+	scp -r docs/_build/dirhtml/* pocoo.org:/var/www/werkzeug.pocoo.org/docs/
+	#scp -r docs/_build/latex/Flask.pdf pocoo.org:/var/www/werkzeug.pocoo.org/docs/werkzeug-docs.pdf
+	scp -r docs/_build/werkzeug-docs.zip pocoo.org:/var/www/werkzeug.pocoo.org/docs/

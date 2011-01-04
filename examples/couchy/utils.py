@@ -2,7 +2,9 @@ from os import path
 from urlparse import urlparse
 from random import sample, randrange
 from jinja import Environment, FileSystemLoader
-from werkzeug import Response, Local, LocalManager, cached_property
+from werkzeug.local import Local, LocalManager
+from werkzeug.utils import cached_property
+from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule
 
 TEMPLATE_PATH = path.join(path.dirname(__file__), 'templates')

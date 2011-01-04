@@ -8,7 +8,9 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug import BaseRequest, BaseResponse, run_simple, wrap_file
+from werkzeug.serving import run_simple
+from werkzeug.wrappers import BaseRequest, BaseResponse
+from werkzeug.wsgi import wrap_file
 
 
 def view_file(req):

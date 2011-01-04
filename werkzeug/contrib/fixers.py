@@ -17,6 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from urllib import unquote
+from werkzeug.wrappers import BaseRequest
 from werkzeug.http import parse_options_header, parse_cache_control_header, \
      parse_set_header, dump_header
 from werkzeug.useragents import UserAgent
@@ -77,7 +78,7 @@ class ProxyFix(object):
     sets `REMOTE_ADDR`, `HTTP_HOST` from `X-Forwarded` headers.
 
     Werkzeug wrappers have builtin support for this by setting the
-    :attr:`~werkzeug.BaseRequest.is_behind_proxy` attribute to `True`.
+    :attr:`~BaseRequest.is_behind_proxy` attribute to `True`.
 
     Do not use this middleware in non-proxy setups for security reasons.
 
