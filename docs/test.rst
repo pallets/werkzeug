@@ -39,7 +39,7 @@ in test functionality.
 >>> resp.status_code
 200
 >>> resp.headers
-Headers([('Content-Type', 'text/html; charset=utf-8')])
+Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '8287')])
 >>> resp.data.splitlines()[0]
 '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
 
@@ -50,7 +50,7 @@ Or without a wrapper defined:
 >>> status
 '200 OK'
 >>> headers
-[('Content-Type', 'text/html; charset=utf-8')]
+[('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '8287')]
 >>> ''.join(app_iter).splitlines()[0]
 '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
 
