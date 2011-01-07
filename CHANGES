@@ -40,6 +40,8 @@ Version 0.7
   as redirection code.  While it's not a real redirect, it shares
   enough with redirects for the function to still be useful.
 - Fixed securecookie for pypy.
+- Fixed `ValueErrors` being raised on calls to `best_match` on
+  `MIMEAccept` objects when invalid user data was supplied.
 
 Version 0.6.2
 -------------

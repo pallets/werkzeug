@@ -36,6 +36,11 @@ def test_mime_accept():
     assert a['foo/bar'] == 0.5
     assert a[a.find('foo/bar')] == ('*/*', 0.5)
 
+    # was a bug in 0.6
+    parse_accept_header('foo=,application/xml,application/xhtml+xml,'
+                        'text/html;q=0.9,text/plain;q=0.8,'
+                        'image/png,*/*;q=0.5', MIMEAccept).best_match(['foo/bar'])
+
 
 def test_accept_matches():
     """The `best_match` feature of accept objects"""
