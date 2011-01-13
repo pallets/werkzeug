@@ -256,9 +256,12 @@ class DebugReprGenerator(object):
     def render_object_dump(self, items, title, repr=None):
         html_items = []
         for key, value in items:
-            html_items.append('<tr><th>%s<td>%s' % (escape(key), value))
+            html_items.append('<tr><th>%s<td><pre class=repr>%s</pre>' %
+                              (escape(key), value))
+        if not html_items:
+            html_items.append('<tr><td><em>Nothing</em>')
         return OBJECT_DUMP_HTML % {
             'title':    escape(title),
-            'repr':     repr and '<div class=repr>%s</div>' % repr or '',
+            'repr':     repr and '<pre class=repr>%s</pre>' % repr or '',
             'items':    '\n'.join(html_items)
         }
