@@ -42,6 +42,7 @@ Version 0.7
 - Fixed securecookie for pypy.
 - Fixed `ValueErrors` being raised on calls to `best_match` on
   `MIMEAccept` objects when invalid user data was supplied.
+- Deprecated `werkzeug.contrib.kickstart` and `werkzeug.contrib.testtools`
 
 Version 0.6.2
 -------------

@@ -15,6 +15,10 @@
 from werkzeug.utils import cached_property, import_string
 from werkzeug.wrappers import Response
 
+from warnings import warn
+warn(DeprecationWarning('werkzeug.contrib.testtools is deprecated and '
+                        'will be removed with Werkzeug 1.0'))
+
 
 class ContentAccessors(object):
     """

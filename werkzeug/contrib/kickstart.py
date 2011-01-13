@@ -34,6 +34,10 @@ from werkzeug.routing import RequestRedirect
 __all__ = ['Request', 'Response', 'TemplateNotFound', 'TemplateLoader',
            'GenshiTemplateLoader', 'Application']
 
+from warnings import warn
+warn(DeprecationWarning('werkzeug.contrib.kickstart is deprecated and '
+                        'will be removed in Werkzeug 1.0'))
+
 
 class Request(RequestBase):
     """A handy subclass of the base request that adds a URL builder.
