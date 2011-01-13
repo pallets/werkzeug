@@ -28,18 +28,18 @@ _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 RegexType = type(_paragraph_re)
 
 
-HELP_HTML = '''
+HELP_HTML = '''\
 <div class=box>
   <h3>%(title)s</h3>
   <pre class=help>%(text)s</pre>
-</div>
+</div>\
 '''
-OBJECT_DUMP_HTML = '''
+OBJECT_DUMP_HTML = '''\
 <div class=box>
   <h3>%(title)s</h3>
   %(repr)s
   <table>%(items)s</table>
-</div>
+</div>\
 '''
 
 
@@ -65,22 +65,23 @@ class _Helper(object):
     debugger only because it requires a patched sys.stdout.
     """
 
+    def __repr__(self):
+        return 'Type help(object) for help about object.'
+
     def __call__(self, topic=None):
-        if topic is not None:
-            import pydoc
-            pydoc.help(topic)
-            rv = sys.stdout.reset().decode('utf-8', 'ignore')
-            paragraphs = _paragraph_re.split(rv)
-            if len(paragraphs) > 1:
-                title = paragraphs[0]
-                text = '\n\n'.join(paragraphs[1:])
-            else: # pragma: no cover
-                title = 'Help'
-                text = paragraphs[0]
-            html = '<h3>%s</h3><pre class=help>%s</pre>' % (title, text)
-        else:
+        if topic is None:
+            sys.stdout._write('<span class=help>%s</span>' % repr(self))
+            return
+        import pydoc
+        pydoc.help(topic)
+        rv = sys.stdout.reset().decode('utf-8', 'ignore')
+        paragraphs = _paragraph_re.split(rv)
+        if len(paragraphs) > 1:
+            title = paragraphs[0]
+            text = '\n\n'.join(paragraphs[1:])
+        else: # pragma: no cover
             title = 'Help'
-            text = 'Type help(object) for help about object.'
+            text = paragraphs[0]
         sys.stdout._write(HELP_HTML % {'title': title, 'text': text})
 
 
@@ -182,8 +183,7 @@ class DebugReprGenerator(object):
 
     def dispatch_repr(self, obj, recursive):
         if obj is helper:
-            return u'<span class="help">Use help(object) for help ' \
-                   u'about object.</span>'
+            return u'<span class="help">%r</span>' % helper
         if isinstance(obj, (int, long, float, complex)):
             return u'<span class="number">%r</span>' % obj
         if isinstance(obj, basestring):
@@ -256,7 +256,7 @@ class DebugReprGenerator(object):
     def render_object_dump(self, items, title, repr=None):
         html_items = []
         for key, value in items:
-            html_items.append('<th>%s<td>%s' % (escape(key), value))
+            html_items.append('<tr><th>%s<td>%s' % (escape(key), value))
         return OBJECT_DUMP_HTML % {
             'title':    escape(title),
             'repr':     repr and '<div class=repr>%s</div>' % repr or '',
