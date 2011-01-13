@@ -94,6 +94,9 @@ class Traceback(object):
 
     def filter_hidden_frames(self):
         """Remove the frames according to the paste spec."""
+        if not self.frames:
+            return
+
         new_frames = []
         hidden = False
         for frame in self.frames:
@@ -115,8 +118,13 @@ class Traceback(object):
                 continue
             new_frames.append(frame)
 
+        # if we only have one frame and that frame is from the codeop
+        # module, remove it.
+        if len(new_frames) == 1 and self.frames[0].module == 'codeop':
+            del self.frames[:]
+
         # if the last frame is missing something went terrible wrong :(
-        if self.frames[-1] in new_frames:
+        elif self.frames[-1] in new_frames:
             self.frames[:] = new_frames
 
     def is_syntax_error(self):

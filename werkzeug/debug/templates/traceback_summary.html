@@ -1,4 +1,4 @@
-<div class="traceback">
+<div class="traceback<% if not traceback.frames %> noframe-traceback<% endif %>">
   <% if traceback.is_syntax_error %>
     <% if include_title %>
       <h3>Syntax Error</h3>
