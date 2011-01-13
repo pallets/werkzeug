@@ -21,12 +21,26 @@ try:
 except ImportError: # pragma: no cover
     deque = None
 from werkzeug.utils import escape
-from werkzeug.debug.utils import render_template
 
 
 missing = object()
 _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 RegexType = type(_paragraph_re)
+
+
+HELP_HTML = '''
+<div class=box>
+  <h3>%(title)s</h3>
+  <pre class=help>%(text)s</pre>
+</div>
+'''
+OBJECT_DUMP_HTML = '''
+<div class=box>
+  <h3>%(title)s</h3>
+  %(repr)s
+  <table>%(items)s</table>
+</div>
+'''
 
 
 def debug_repr(obj):
@@ -52,7 +66,6 @@ class _Helper(object):
     """
 
     def __call__(self, topic=None):
-        title = text = None
         if topic is not None:
             import pydoc
             pydoc.help(topic)
@@ -64,8 +77,11 @@ class _Helper(object):
             else: # pragma: no cover
                 title = 'Help'
                 text = paragraphs[0]
-        rv = render_template('help_command.html', title=title, text=text)
-        sys.stdout._write(rv)
+            html = '<h3>%s</h3><pre class=help>%s</pre>' % (title, text)
+        else:
+            title = 'Help'
+            text = 'Type help(object) for help about object.'
+        sys.stdout._write(HELP_HTML % {'title': title, 'text': text})
 
 helper = _Helper()
 
@@ -229,10 +245,18 @@ class DebugReprGenerator(object):
                     pass
             title = 'Details for'
         title += ' ' + object.__repr__(obj)[1:-1]
-        return render_template('dump_object.html', items=items,
-                               title=title, repr=repr)
+        return self.render_object_dump(items, title, repr)
 
     def dump_locals(self, d):
         items = [(key, self.repr(value)) for key, value in d.items()]
-        return render_template('dump_object.html', items=items,
-                               title='Local variables in frame', repr=None)
+        return self.render_object_dump(items, 'Local variables in frame')
+
+    def render_object_dump(self, items, title, repr=None):
+        html_items = []
+        for key, value in items:
+            html_items.append('<th>%s<td>%s' % (escape(key), value))
+        return OBJECT_DUMP_HTML % {
+            'title':    escape(title),
+            'repr':     repr and '<div class=repr>%s</div>' % repr or '',
+            'items':    '\n'.join(html_items)
+        }

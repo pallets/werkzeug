@@ -11,10 +11,14 @@
 import mimetypes
 from os.path import join, dirname, basename, isfile
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
-from werkzeug.debug.repr import debug_repr
 from werkzeug.debug.tbtools import get_current_traceback
 from werkzeug.debug.console import Console
 from werkzeug.debug.utils import render_template
+
+
+#: import this here because it once was documented as being available
+#: from this module.  In case there are users left ...
+from werkzeug.debug.repr import debug_repr
 
 
 class _ConsoleFrame(object):
