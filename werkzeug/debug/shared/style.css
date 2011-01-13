@@ -60,6 +60,7 @@ pre.console input { background-color: #fafafa; color: #555;
 
 span.string { color: #30799B; }
 span.number { color: #9C1A1C; }
+span.help   { color: #3A7734; }
 span.object { color: #485F6E; }
 span.extended { opacity: 0.5; }
 span.extended:hover { opacity: 1; }

@@ -83,6 +83,7 @@ class _Helper(object):
             text = 'Type help(object) for help about object.'
         sys.stdout._write(HELP_HTML % {'title': title, 'text': text})
 
+
 helper = _Helper()
 
 
@@ -181,7 +182,8 @@ class DebugReprGenerator(object):
 
     def dispatch_repr(self, obj, recursive):
         if obj is helper:
-            return helper.get_help(None)
+            return u'<span class="help">Use help(object) for help ' \
+                   u'about object.</span>'
         if isinstance(obj, (int, long, float, complex)):
             return u'<span class="number">%r</span>' % obj
         if isinstance(obj, basestring):

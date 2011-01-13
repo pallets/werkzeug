@@ -147,6 +147,7 @@ function openShell(consoleNode, target, frameID) {
         });
         output.append(tmp);
         command.focus();
+        consoleNode.scrollTop(command.position().top);
         var old = history.pop();
         history.push(cmd);
         if (typeof old != 'undefined')
