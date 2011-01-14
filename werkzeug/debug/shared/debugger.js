@@ -192,6 +192,6 @@ function focusSourceBlock() {
       break
     line = tmp;
   }
-  var container = $('div.sourceview')[0];
-  container.scrollTop = line.offset().top - container.offsetTop;
+  var container = $('div.sourceview');
+  container.scrollTop(line.offset().top);
 }

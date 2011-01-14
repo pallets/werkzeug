@@ -16,7 +16,7 @@ textarea     { font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans Mono',
 
 div.debugger { text-align: left; padding: 12px; margin: auto;
                background-color: white; }
-h1           { color: #11557C; font-size: 30px; margin: 0 0 0.3em 0; }
+h1           { font-size: 36px; margin: 0 0 0.3em 0; }
 div.detail p { margin: 0 0 8px 13px; font-size: 14px; }
 div.explanation { margin: 20px 13px; font-size: 15px; color: #555; }
 div.footer   { font-size: 13px; text-align: right; margin: 30px 0;
@@ -97,11 +97,11 @@ pre.console div.box pre { border: none; }
 pre.console div.box pre.help { background-color: white; }
 pre.console div.box pre.help:hover { cursor: default; }
 pre.console table tr { vertical-align: top; }
-div.box table.source { background-color: #fafafa;
-                       border-collapse: collapse; width: 100%; }
-div.box table.source td { border-top: 1px solid #eee; padding: 4px 0 4px 10px; }
-div.box table.source td.lineno { color: #999; padding-right: 10px; width: 1px; }
-div.box table.source tr.in-frame { background-color: #D6EEFF; }
-div.box table.source tr.current { background-color: white; }
-div.sourceview { max-height: 400px; overflow: auto; border: 1px solid #ccc; }
 div.console { border: 1px solid #ccc; padding: 4px; background-color: #fafafa; }
+
+div.box table.source { border-collapse: collapse; width: 100%; background: #E8EFF0 }
+div.box table.source td { border-top: 1px solid #E8EFF0; padding: 4px 0 4px 10px; }
+div.box table.source td.lineno { color: #999; padding-right: 10px; width: 1px; }
+div.box table.source tr.in-frame { background-color: white; }
+div.box table.source tr.current { background-color: #EEF7F8; color: #23707E; }
+div.sourceview { max-height: 400px; overflow: auto; border: 1px solid #ccc; }
