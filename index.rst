@@ -82,5 +82,5 @@ developers, visit the `IRC channel </community/#irc-channel>`_ or join the
        src="http://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
 
 
-.. _Flask: http://werkzeug.pocoo.org/
+.. _Flask: http://flask.pocoo.org/
 .. _tipfy: http://www.tipfy.org/
