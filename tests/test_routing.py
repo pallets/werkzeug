@@ -31,6 +31,42 @@ def test_basic_routing():
     assert_raises(RequestRedirect, lambda: adapter.match('/bar'))
     assert_raises(NotFound, lambda: adapter.match('/blub'))
 
+    adapter = map.bind('example.org', '/test')
+    try:
+        adapter.match('/bar')
+    except RequestRedirect, e:
+        print e.new_url
+        assert e.new_url == 'http://example.org/test/bar/'
+    else:
+        assert False
+
+    adapter = map.bind('example.org', '/')
+    try:
+        adapter.match('/bar')
+    except RequestRedirect, e:
+        print e.new_url
+        assert e.new_url == 'http://example.org/bar/'
+    else:
+        assert False
+
+    adapter = map.bind('example.org', '/')
+    try:
+        adapter.match('/bar?aha=muhaha')
+    except RequestRedirect, e:
+        print e.new_url
+        assert e.new_url == 'http://example.org/bar/?aha=muhaha'
+    else:
+        assert False
+
+    adapter = map.bind('example.org', '/')
+    try:
+        adapter.match('/bar', query_args={'aha': 'muhaha'})
+    except RequestRedirect, e:
+        print e.new_url
+        assert e.new_url == 'http://example.org/bar/?aha=muhaha'
+    else:
+        assert False
+
 
 test_environ_defaults = '''
 >>> from werkzeug.routing import Map, Rule

@@ -97,11 +97,12 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import posixpath
 from pprint import pformat
 from urlparse import urljoin
 from itertools import izip
 
-from werkzeug.urls import url_encode, url_quote
+from werkzeug.urls import url_encode, url_decode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
@@ -1030,7 +1031,8 @@ class Map(object):
         self._remap = True
 
     def bind(self, server_name, script_name=None, subdomain=None,
-             url_scheme='http', default_method='GET', path_info=None):
+             url_scheme='http', default_method='GET', path_info=None,
+             query_args=None):
         """Return a new :class:`MapAdapter` with the details specified to the
         call.  Note that `script_name` will default to ``'/'`` if not further
         specified or `None`.  The `server_name` at least is a requirement
@@ -1046,13 +1048,16 @@ class Map(object):
         `subdomain` will default to the `default_subdomain` for this map if
         no defined. If there is no `default_subdomain` you cannot use the
         subdomain feature.
+
+        .. versionadded:: 0.7
+           `query_args` added
         """
         if subdomain is None:
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
         return MapAdapter(self, server_name, script_name, subdomain,
-                          url_scheme, path_info, default_method)
+                          url_scheme, path_info, default_method, query_args)
 
     def bind_to_environ(self, environ, server_name=None, subdomain=None):
         """Like :meth:`bind` but you can pass it an WSGI environment and it
@@ -1135,7 +1140,7 @@ class MapAdapter(object):
     """
 
     def __init__(self, map, server_name, script_name, subdomain,
-                 url_scheme, path_info, default_method):
+                 url_scheme, path_info, default_method, query_args=None):
         self.map = map
         self.server_name = server_name
         if not script_name.endswith('/'):
@@ -1145,6 +1150,7 @@ class MapAdapter(object):
         self.url_scheme = url_scheme
         self.path_info = path_info or u''
         self.default_method = default_method
+        self.query_args = query_args
 
     def dispatch(self, view_func, path_info=None, method=None,
                  catch_http_exceptions=False):
@@ -1201,7 +1207,8 @@ class MapAdapter(object):
                 return e
             raise
 
-    def match(self, path_info=None, method=None, return_rule=False):
+    def match(self, path_info=None, method=None, return_rule=False,
+              query_args=None):
         """The usage is simple: you just pass the match method the current
         path info as well as the method (which defaults to `GET`).  The
         following things can then happen:
@@ -1264,9 +1271,15 @@ class MapAdapter(object):
                        method specified on binding.
         :param return_rule: return the rule that matched instead of just the
                             endpoint (defaults to `False`).
+        :param query_args: optional query arguments that are used for
+                           automatic redirects.  It's currently not possible
+                           to use the query arguments for URL matching.
 
         .. versionadded:: 0.6
-            `return_rule` was added.
+           `return_rule` was added.
+
+        .. versionadded:: 0.7
+           `query_args` was added.
         """
         self.map.update()
         if path_info is None:
@@ -1274,6 +1287,11 @@ class MapAdapter(object):
         if not isinstance(path_info, unicode):
             path_info = path_info.decode(self.map.charset,
                                          self.map.encoding_errors)
+        if '?' in path_info:
+            path_info, query_args = path_info.split('?')
+            query_args = url_decode(query_args, self.map.charset)
+        if query_args is None:
+            query_args = self.query_args
         method = (method or self.default_method).upper()
         path = u'%s|/%s' % (self.subdomain, path_info.lstrip('/'))
         have_match_for = set()
@@ -1281,13 +1299,8 @@ class MapAdapter(object):
             try:
                 rv = rule.match(path)
             except RequestSlash:
-                raise RequestRedirect(str('%s://%s%s%s/%s/' % (
-                    self.url_scheme,
-                    self.subdomain and self.subdomain + '.' or '',
-                    self.server_name,
-                    self.script_name[:-1],
-                    url_quote(path_info.lstrip('/'), self.map.charset)
-                )))
+                raise RequestRedirect(self.make_redirect_url(
+                    path_info + '/', query_args))
             if rv is None:
                 continue
             if rule.methods is not None and method not in rule.methods:
@@ -1299,13 +1312,8 @@ class MapAdapter(object):
                        r.suitable_for(rv, method):
                         rv.update(r.defaults)
                         subdomain, path = r.build(rv)
-                        raise RequestRedirect(str('%s://%s%s%s/%s' % (
-                            self.url_scheme,
-                            subdomain and subdomain + '.' or '',
-                            self.server_name,
-                            self.script_name[:-1],
-                            url_quote(path.lstrip('/'), self.map.charset)
-                        )))
+                        raise RequestRedirect(self.make_redirect_url(
+                            path_info, query_args))
             if rule.redirect_to is not None:
                 if isinstance(rule.redirect_to, basestring):
                     def _handle_match(match):
@@ -1358,6 +1366,20 @@ class MapAdapter(object):
         except HTTPException, e:
             pass
         return []
+
+    def make_redirect_url(self, path_info, query_args=None):
+        """Creates a redirect URL."""
+        suffix = ''
+        if query_args:
+            suffix = '?' + url_encode(query_args, self.map.charset)
+        return str('%s://%s%s/%s%s' % (
+            self.url_scheme,
+            self.subdomain and self.subdomain + '.' or '',
+            self.server_name,
+            posixpath.join(self.script_name[:-1].lstrip('/'),
+                           url_quote(path_info.lstrip('/'), self.map.charset)),
+            suffix
+        ))
 
     def _partial_build(self, endpoint, values, method, append_unknown):
         """Helper for :meth:`build`.  Returns subdomain and path for the

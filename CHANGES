@@ -43,6 +43,9 @@ Version 0.7
 - Fixed `ValueErrors` being raised on calls to `best_match` on
   `MIMEAccept` objects when invalid user data was supplied.
 - Deprecated `werkzeug.contrib.kickstart` and `werkzeug.contrib.testtools`
+- URL routing now can be passed the URL arguments to keep them for
+  redirects.  In the future matching on URL arguments might also be
+  possible.
 
 Version 0.6.2
 -------------
