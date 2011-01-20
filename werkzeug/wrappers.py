@@ -698,18 +698,27 @@ class BaseResponse(object):
         return cls(*_run_wsgi_app(app, environ, buffered))
 
     def _get_status_code(self):
-        try:
-            return int(self.status.split(None, 1)[0])
-        except ValueError:
-            return 0
+        return self._status_code
     def _set_status_code(self, code):
+        self._status_code = code
         try:
-            self.status = '%d %s' % (code, HTTP_STATUS_CODES[code].upper())
+            self._status = '%d %s' % (code, HTTP_STATUS_CODES[code].upper())
         except KeyError:
-            self.status = '%d UNKNOWN' % code
+            self._status = '%d UNKNOWN' % code
     status_code = property(_get_status_code, _set_status_code,
                            'The HTTP Status code as number')
     del _get_status_code, _set_status_code
+
+    def _get_status(self):
+        return self._status
+    def _set_status(self, value):
+        self._status = value
+        try:
+            self._status_code = int(self._status.split(None, 1)[0])
+        except ValueError:
+            self._status_code = 0
+    status = property(_get_status, _set_status, 'The HTTP Status code')
+    del _get_status, _set_status
 
     def _get_data(self):
         """The string representation of the request body.  Whenever you access
@@ -912,9 +921,23 @@ class BaseResponse(object):
         :return: returns a new :class:`Headers` object.
         """
         headers = Headers(self.headers)
+        location = None
+        content_location = None
+        content_length = None
+
+        # iterate over the headers to find all values in one go.  Because
+        # get_wsgi_headers is used each response that gives us a tiny
+        # speedup.
+        for key, value in headers:
+            ikey = key.lower()
+            if ikey == 'location':
+                location = value
+            elif ikey == 'content-location':
+                content_location = value
+            elif ikey == 'content-length':
+                content_length = value
 
         # make sure the location header is an absolute URL
-        location = headers.get('location')
         if location is not None:
             if isinstance(location, unicode):
                 location = iri_to_uri(location)
@@ -924,13 +947,16 @@ class BaseResponse(object):
             )
 
         # make sure the content location is a URL
-        content_location = headers.get('content-location')
         if content_location is not None and \
            isinstance(content_location, unicode):
             headers['Content-Location'] = iri_to_uri(content_location)
 
+        # remove entity headers and set content length to zero if needed.
+        # Also update content_length accordingly so that the automatic
+        # content length detection does not trigger in the following
+        # code.
         if 100 <= self.status_code < 200 or self.status_code == 204:
-            headers['Content-Length'] = '0'
+            headers['Content-Length'] = content_length = '0'
         elif self.status_code == 304:
             remove_entity_headers(headers)
 
@@ -938,7 +964,7 @@ class BaseResponse(object):
         # should try to do that.  But only if this does not involve
         # flattening the iterator or encoding of unicode strings in
         # the response.
-        if self.is_sequence and 'content-length' not in self.headers:
+        if self.is_sequence and content_length is None:
             try:
                 content_length = sum(len(str(x)) for x in self.response)
             except UnicodeError:
