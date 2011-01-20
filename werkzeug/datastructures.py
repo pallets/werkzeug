@@ -780,8 +780,6 @@ class OrderedMultiDict(MultiDict):
 
 
 def _options_header_vkw(value, kw):
-    if not kw:
-        return value
     return dump_options_header(value, dict((k.replace('_', '-'), v)
                                             for k, v in kw.items()))
 
@@ -1047,7 +1045,9 @@ class Headers(object):
         .. versionadded:: 0.4.1
             keyword arguments were added for :mod:`wsgiref` compatibility.
         """
-        self._list.append((_key, _options_header_vkw(_value, kw)))
+        if kw:
+            _value = _options_header_vkw(_value, kw)
+        self._list.append((_key, _value))
 
     def add_header(self, _key, _value, **_kw):
         """Add a new header tuple to the list.
@@ -1076,8 +1076,11 @@ class Headers(object):
         :param key: The key to be inserted.
         :param value: The value to be inserted.
         """
+        if kw:
+            _value = _options_header_vkw(_value, kw)
+        if not self._list:
+            return self.add(_key, _value)
         lc_key = _key.lower()
-        _value = _options_header_vkw(_value, kw)
         for idx, (old_key, old_value) in enumerate(self._list):
             if old_key.lower() == lc_key:
                 # replace first ocurrence
