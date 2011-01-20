@@ -1,5 +1,7 @@
 from nose.tools import assert_raises
 
+from warnings import filterwarnings
+filterwarnings('ignore', module='werkzeug.contrib.testtools', category=DeprecationWarning)
 from werkzeug.contrib.testtools import *
 from werkzeug.test import Client
 from werkzeug.wrappers import BaseRequest

@@ -171,7 +171,7 @@ def render_testapp(req):
     for key, value in sorted_environ:
         wsgi_env.append('<tr><th>%s<td><code>%s</code>' % (
             escape(str(key)),
-            escape(' '.join(wrap(escape(repr(value)))))
+            ' '.join(wrap(escape(repr(value))))
         ))
 
     sys_path = []
