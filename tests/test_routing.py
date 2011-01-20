@@ -111,6 +111,15 @@ def test_basic_building():
     assert adapter.build('blah', {}) == '/hehe'
     assert_raises(BuildError, lambda: adapter.build('urks'))
 
+    adapter = map.bind('example.org', '/test', subdomain='blah')
+    assert adapter.build('index', {}) == 'http://example.org/test/'
+    assert adapter.build('foo', {}) == 'http://example.org/test/foo'
+    assert adapter.build('bar', {'baz': 'blub'}) == 'http://example.org/test/bar/blub'
+    assert adapter.build('bari', {'bazi': 50}) == 'http://example.org/test/bar/50'
+    assert adapter.build('barf', {'bazf': 0.815}) == 'http://example.org/test/bar/0.815'
+    assert adapter.build('barp', {'bazp': 'la/di'}) == 'http://example.org/test/bar/la/di'
+    assert adapter.build('blah', {}) == '/test/hehe'
+
 
 def test_defaults():
     """URL routing defaults"""
