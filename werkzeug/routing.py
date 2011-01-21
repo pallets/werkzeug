@@ -1459,11 +1459,10 @@ class MapAdapter(object):
         self.map.update()
         if values:
             if isinstance(values, MultiDict):
-                values = dict((k, v) for k, v in values.iteritems(multi=True)
-                              if v is not None)
+                valueiter = values.iteritems(multi=True)
             else:
-                values = dict((k, v) for k, v in values.iteritems()
-                              if v is not None)
+                valueiter = values.iteritems()
+            values = dict((k, v) for k, v in valueiter if v is not None)
         else:
             values = {}
 
