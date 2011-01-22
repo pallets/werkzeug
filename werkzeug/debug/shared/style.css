@@ -1,4 +1,10 @@
-@import url(http://fonts.googleapis.com/css?family=Ubuntu);
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: normal;
+  src: local('Ubuntu'), local('Ubuntu-Regular'),
+    url('?__debugger__=yes&cmd=resource&f=ubuntu.ttf') format('truetype');
+}
 
 body, input  { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                'Verdana', sans-serif; color: #000; text-align: center;
