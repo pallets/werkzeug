@@ -15,7 +15,7 @@ import inspect
 import traceback
 import codecs
 from tokenize import TokenError
-from werkzeug.utils import cached_property
+from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
 from werkzeug.debug.utils import render_template
 
@@ -29,6 +29,15 @@ try:
     system_exceptions += (GeneratorExit,)
 except NameError:
     pass
+
+
+SUMMARY_HTML = u'''\
+<div class="%(classes)s">
+  %(title)s
+  <ul>%(frames)s</ul>
+  %(description)s
+</div>
+'''
 
 
 def get_current_traceback(ignore_system_exceptions=False,
@@ -153,8 +162,36 @@ class Traceback(object):
 
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
-        return render_template('traceback_summary.html', traceback=self,
-                               include_title=include_title)
+        title = ''
+        description = ''
+        frames = []
+        classes = ['traceback']
+        if not self.frames:
+            classes.append('noframe-traceback')
+
+        if include_title:
+            if self.is_syntax_error:
+                title = u'Syntax Error'
+            else:
+                title = u'Traceback <em>(most recent call last)</em>:'
+
+        for frame in self.frames:
+            frames.append(u'<li%s>%s' % (
+                frame.info and u' title="%s"' % escape(frame.info) or u'',
+                frame.render()
+            ))
+
+        if self.is_syntax_error:
+            description_wrapper = u'<pre class=syntaxerror>%s</pre>'
+        else:
+            description_wrapper = u'<blockquote>%s</blockquote>'
+
+        return SUMMARY_HTML % {
+            'classes':      u' '.join(classes),
+            'title':        title and u'<h3>%s</h3>' % title or u'',
+            'frames':       u'\n'.join(frames),
+            'description':  description_wrapper % escape(self.exception)
+        }
 
     def render_full(self, evalex=False, lodgeit_url=None):
         """Render the Full HTML page with the traceback info."""
