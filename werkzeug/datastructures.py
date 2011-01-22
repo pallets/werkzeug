@@ -1111,7 +1111,7 @@ class Headers(object):
         else:
             self.set(key, value)
 
-    def to_list(self, charset='utf-8'):
+    def to_list(self, charset='iso-8859-1'):
         """Convert the headers into a list and converts the unicode header
         items to the specified charset.
 
@@ -1132,7 +1132,7 @@ class Headers(object):
     def __copy__(self):
         return self.copy()
 
-    def __str__(self, charset='utf-8'):
+    def __str__(self, charset='iso-8859-1'):
         """Returns formatted headers suitable for HTTP transmission."""
         strs = []
         for key, value in self.to_list(charset):
