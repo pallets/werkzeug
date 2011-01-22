@@ -17,7 +17,6 @@ import codecs
 from tokenize import TokenError
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
-from werkzeug.debug.utils import render_template
 
 _coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
 _line_re = re.compile(r'^(.*?)$(?m)')
@@ -31,47 +30,25 @@ except NameError:
     pass
 
 
-PAGE_HTML = u'''\
+HEADER = u'''\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
   <head>
-    <title>%(exception)s // Werkzeug Debugger</title>
+    <title>%(title)s // Werkzeug Debugger</title>
     <link rel="stylesheet" href="./__debugger__?cmd=resource&amp;f=style.css" type="text/css">
     <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=jquery.js"></script>
     <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
       var TRACEBACK = %(traceback_id)d,
-          CONSOLE_MODE = false,
+          CONSOLE_MODE = %(console)s,
           EVALEX = %(evalex)s
     </script>
   </head>
   <body>
     <div class="debugger">
-      <h1>%(exception_type)s</h1>
-      <div class="detail">
-        <p class="errormsg">%(exception)s</p>
-      </div>
-      <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
-      %(summary)s
-      <div class="plain">
-        <form action="%(lodgeit_url)s" method="post">
-          <p>
-            <input type="hidden" name="language" value="pytb">
-            This is the Copy/Paste friendly version of the traceback.  <span
-            class="pastemessage">You can also paste this traceback into LodgeIt:
-            <input type="submit" value="create paste"></span>
-          </p>
-          <textarea cols="50" rows="10" name="code" readonly>%(plaintext)s</textarea>
-        </form>
-      </div>
-      <div class="explanation">
-        The debugger caught an exception in your WSGI application.  You can now
-        look at the traceback which led to the error.  <span class="nojavascript">
-        If you enable JavaScript you can also use additional features such as code
-        execution (if the evalex feature is enabled), automatic pasting of the
-        exceptions and much more.</span>
-      </div>
+'''
+FOOTER = u'''\
       <div class="footer">
         Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
         friendly Werkzeug powered traceback interpreter.
@@ -79,12 +56,49 @@ PAGE_HTML = u'''\
     </div>
   </body>
 </html>
+'''
+
+PAGE_HTML = HEADER + u'''\
+<h1>%(exception_type)s</h1>
+<div class="detail">
+  <p class="errormsg">%(exception)s</p>
+</div>
+<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+%(summary)s
+<div class="plain">
+  <form action="%(lodgeit_url)s" method="post">
+    <p>
+      <input type="hidden" name="language" value="pytb">
+      This is the Copy/Paste friendly version of the traceback.  <span
+      class="pastemessage">You can also paste this traceback into LodgeIt:
+      <input type="submit" value="create paste"></span>
+    </p>
+    <textarea cols="50" rows="10" name="code" readonly>%(plaintext)s</textarea>
+  </form>
+</div>
+<div class="explanation">
+  The debugger caught an exception in your WSGI application.  You can now
+  look at the traceback which led to the error.  <span class="nojavascript">
+  If you enable JavaScript you can also use additional features such as code
+  execution (if the evalex feature is enabled), automatic pasting of the
+  exceptions and much more.</span>
+</div>
+''' + FOOTER + '''
 <!--
 
 %(plaintext_cs)s
 
 -->
 '''
+
+CONSOLE_HTML = HEADER + u'''\
+<h1>Interactive Console</h1>
+<div class="explanation">
+In this console you can execute Python expressions in the context of the
+application.  The initial namespace was created by the debugger automatically.
+</div>
+<div class="console"><div class="inner">The Console requires JavaScript.</div></div>
+''' + FOOTER
 
 SUMMARY_HTML = u'''\
 <div class="%(classes)s">
@@ -111,6 +125,15 @@ SOURCE_LINE_HTML = u'''\
   <td>%(code)s</td>
 </tr>
 '''
+
+
+def render_console_html():
+    return CONSOLE_HTML % {
+        'evalex':           'true',
+        'console':          'true',
+        'title':            'Console',
+        'traceback_id':     -1
+    }
 
 
 def get_current_traceback(ignore_system_exceptions=False,
@@ -275,10 +298,13 @@ class Traceback(object):
 
     def render_full(self, evalex=False, lodgeit_url=None):
         """Render the Full HTML page with the traceback info."""
+        exc = escape(self.exception)
         return PAGE_HTML % {
             'evalex':           evalex and 'true' or 'false',
+            'console':          'false',
             'lodgeit_url':      escape(lodgeit_url),
-            'exception':        escape(self.exception),
+            'title':            exc,
+            'exception':        exc,
             'exception_type':   escape(self.exception_type),
             'summary':          self.render_summary(include_title=False),
             'plaintext':        self.plaintext,

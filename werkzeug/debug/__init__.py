@@ -11,9 +11,8 @@
 import mimetypes
 from os.path import join, dirname, basename, isfile
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
-from werkzeug.debug.tbtools import get_current_traceback
+from werkzeug.debug.tbtools import get_current_traceback, render_console_html
 from werkzeug.debug.console import Console
-from werkzeug.debug.utils import render_template
 
 
 #: import this here because it once was documented as being available
@@ -127,7 +126,7 @@ class DebuggedApplication(object):
         """Display a standalone shell."""
         if 0 not in self.frames:
             self.frames[0] = _ConsoleFrame(self.console_init_func())
-        return Response(render_template('console.html'), mimetype='text/html')
+        return Response(render_console_html(), mimetype='text/html')
 
     def paste_traceback(self, request, traceback):
         """Paste the traceback and return a JSON response."""
