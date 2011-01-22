@@ -198,8 +198,20 @@ class Traceback(object):
         return render_template('traceback_full.html', traceback=self,
                                evalex=evalex)
 
+    def generate_plaintext_traceback(self):
+        """Like the plaintext attribute but returns a generator"""
+        yield u'Traceback (most recent call last):'
+        for frame in self.frames:
+            yield u'  File "%s", line %s, in %s' % (
+                frame.filename,
+                frame.lineno,
+                frame.function_name
+            )
+            yield u'    ' + frame.current_line.strip()
+        yield self.exception
+
     def plaintext(self):
-        return render_template('traceback_plaintext.html', traceback=self)
+        return u'\n'.join(self.generate_plaintext_traceback())
     plaintext = cached_property(plaintext)
 
     id = property(lambda x: id(x))
