@@ -39,6 +39,61 @@ SUMMARY_HTML = u'''\
 </div>
 '''
 
+PAGE_HTML = u'''\
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <title>%(exception)s // Werkzeug Debugger</title>
+    <link rel="stylesheet" href="./__debugger__?cmd=resource&amp;f=style.css" type="text/css">
+    <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=jquery.js"></script>
+    <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=debugger.js"></script>
+    <script type="text/javascript">
+      var TRACEBACK = %(traceback_id)d,
+          CONSOLE_MODE = false,
+          EVALEX = %(evalex)s
+    </script>
+  </head>
+  <body>
+    <div class="debugger">
+      <h1>%(exception_type)s</h1>
+      <div class="detail">
+        <p class="errormsg">%(exception)s</p>
+      </div>
+      <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+      %(summary)s
+      <div class="plain">
+        <form action="%(lodgeit_url)s" method="post">
+          <p>
+            <input type="hidden" name="language" value="pytb">
+            This is the Copy/Paste friendly version of the traceback.  <span
+            class="pastemessage">You can also paste this traceback into LodgeIt:
+            <input type="submit" value="create paste"></span>
+          </p>
+          <textarea cols="50" rows="10" name="code" readonly>%(plaintext)s</textarea>
+        </form>
+      </div>
+      <div class="explanation">
+        The debugger caught an exception in your WSGI application.  You can now
+        look at the traceback which led to the error.  <span class="nojavascript">
+        If you enable JavaScript you can also use additional features such as code
+        execution (if the evalex feature is enabled), automatic pasting of the
+        exceptions and much more.</span>
+      </div>
+      <div class="footer">
+        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
+        friendly Werkzeug powered traceback interpreter.
+      </div>
+    </div>
+  </body>
+</html>
+<!--
+
+%(plaintext_cs)s
+
+-->
+'''
+
 
 def get_current_traceback(ignore_system_exceptions=False,
                           show_hidden_frames=False, skip=0):
@@ -195,8 +250,16 @@ class Traceback(object):
 
     def render_full(self, evalex=False, lodgeit_url=None):
         """Render the Full HTML page with the traceback info."""
-        return render_template('traceback_full.html', traceback=self,
-                               evalex=evalex)
+        return PAGE_HTML % {
+            'evalex':           evalex and 'true' or 'false',
+            'lodgeit_url':      escape(lodgeit_url),
+            'exception':        escape(self.exception),
+            'exception_type':   escape(self.exception_type),
+            'summary':          self.render_summary(include_title=False),
+            'plaintext':        self.plaintext,
+            'plaintext_cs':     re.sub('-{2,}', '-', self.plaintext),
+            'traceback_id':     self.id
+        }
 
     def generate_plaintext_traceback(self):
         """Like the plaintext attribute but returns a generator"""
