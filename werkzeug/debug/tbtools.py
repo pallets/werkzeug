@@ -31,14 +31,6 @@ except NameError:
     pass
 
 
-SUMMARY_HTML = u'''\
-<div class="%(classes)s">
-  %(title)s
-  <ul>%(frames)s</ul>
-  %(description)s
-</div>
-'''
-
 PAGE_HTML = u'''\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
@@ -92,6 +84,23 @@ PAGE_HTML = u'''\
 %(plaintext_cs)s
 
 -->
+'''
+
+SUMMARY_HTML = u'''\
+<div class="%(classes)s">
+  %(title)s
+  <ul>%(frames)s</ul>
+  %(description)s
+</div>
+'''
+
+FRAME_HTML = u'''\
+<div class="frame" id="frame-%(id)d">
+  <h4>File <cite class="filename">"%(filename)s"</cite>,
+      line <em class="line">%(lineno)s</em>,
+      in <code class="function">%(function_name)s</code></h4>
+  <pre>%(current_line)s</pre>
+</div>
 '''
 
 
@@ -312,7 +321,13 @@ class Frame(object):
 
     def render(self):
         """Render a single frame in a traceback."""
-        return render_template('frame.html', frame=self)
+        return FRAME_HTML % {
+            'id':               self.id,
+            'filename':         escape(self.filename),
+            'lineno':           self.lineno,
+            'function_name':    escape(self.function_name),
+            'current_line':     escape(self.current_line.strip())
+        }
 
     def render_source(self):
         """Render the sourcecode."""
