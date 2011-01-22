@@ -44,9 +44,9 @@ def test_shared_data_middleware():
         assert status == '200 OK'
         assert ''.join(app_iter).strip() == 'FOUND'
 
-    app_iter, status, headers = run_wsgi_app(app, create_environ('/pkg/body.tmpl'))
+    app_iter, status, headers = run_wsgi_app(app, create_environ('/pkg/debugger.js'))
     contents = ''.join(app_iter)
-    assert 'Werkzeug Debugger' in contents
+    assert '$(function() {' in contents
 
     app_iter, status, headers = run_wsgi_app(app, create_environ('/missing'))
     assert status == '404 NOT FOUND'
