@@ -159,10 +159,7 @@ class DebuggedApplication(object):
         # any more!
         request = Request(environ)
         response = self.debug_application
-        if self.evalex and self.console_path is not None and \
-           request.path == self.console_path:
-            response = self.display_console(request)
-        elif request.path.rstrip('/').endswith('/__debugger__'):
+        if request.args.get('__debugger__') == 'yes':
             cmd = request.args.get('cmd')
             arg = request.args.get('f')
             traceback = self.tracebacks.get(request.args.get('tb', type=int))
@@ -175,4 +172,7 @@ class DebuggedApplication(object):
                 response = self.get_source(request, frame)
             elif self.evalex and cmd is not None and frame is not None:
                 response = self.execute_command(request, cmd, frame)
+        elif self.evalex and self.console_path is not None and \
+           request.path == self.console_path:
+            response = self.display_console(request)
         return response(environ, start_response)

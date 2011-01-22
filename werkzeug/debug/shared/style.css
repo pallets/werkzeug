@@ -71,9 +71,9 @@ span.extended { opacity: 0.5; }
 span.extended:hover { opacity: 1; }
 a.toggle { text-decoration: none; background-repeat: no-repeat;
            background-position: center center;
-           background-image: url(./__debugger__?cmd=resource&f=more.png); }
+           background-image: url(?__debugger__=yes&cmd=resource&f=more.png); }
 a.toggle:hover { background-color: #444; }
-a.open { background-image: url(./__debugger__?cmd=resource&f=less.png); }
+a.open { background-image: url(?__debugger__=yes&cmd=resource&f=less.png); }
 
 pre.console div.traceback,
 pre.console div.box { margin: 5px 10px; white-space: normal;

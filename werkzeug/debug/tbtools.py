@@ -36,9 +36,9 @@ HEADER = u'''\
 <html>
   <head>
     <title>%(title)s // Werkzeug Debugger</title>
-    <link rel="stylesheet" href="./__debugger__?cmd=resource&amp;f=style.css" type="text/css">
-    <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=jquery.js"></script>
-    <script type="text/javascript" src="./__debugger__?cmd=resource&amp;f=debugger.js"></script>
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css" type="text/css">
+    <script type="text/javascript" src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
+    <script type="text/javascript" src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
       var TRACEBACK = %(traceback_id)d,
           CONSOLE_MODE = %(console)s,
