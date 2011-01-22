@@ -103,6 +103,15 @@ FRAME_HTML = u'''\
 </div>
 '''
 
+SOURCE_TABLE_HTML = u'<table class=source>%s</table>'
+
+SOURCE_LINE_HTML = u'''\
+<tr class="%(classes)s">
+  <td class=lineno>%(lineno)s</td>
+  <td>%(code)s</td>
+</tr>
+'''
+
 
 def get_current_traceback(ignore_system_exceptions=False,
                           show_hidden_frames=False, skip=0):
@@ -142,6 +151,13 @@ class Line(object):
             rv.append('current')
         return rv
     classes = property(classes)
+
+    def render(self):
+        return SOURCE_LINE_HTML % {
+            'classes':      u' '.join(self.classes),
+            'lineno':       self.lineno,
+            'code':         escape(self.code)
+        }
 
 
 class Traceback(object):
@@ -329,8 +345,8 @@ class Frame(object):
             'current_line':     escape(self.current_line.strip())
         }
 
-    def render_source(self):
-        """Render the sourcecode."""
+    def get_annotated_lines(self):
+        """Helper function that returns lines with extra information."""
         lines = [Line(idx + 1, x) for idx, x in enumerate(self.sourcelines)]
 
         # find function definition and mark lines
@@ -354,7 +370,12 @@ class Frame(object):
         except IndexError:
             pass
 
-        return render_template('source.html', frame=self, lines=lines)
+        return lines
+
+    def render_source(self):
+        """Render the sourcecode."""
+        return SOURCE_TABLE_HTML % u'\n'.join(line.render() for line in
+                                              self.get_annotated_lines())
 
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
