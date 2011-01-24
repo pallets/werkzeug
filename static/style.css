@@ -2,8 +2,8 @@
 
 body         { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana',
                sans-serif; font-size: 15px; color: #000; }
-a            { color: #185F6D; }
-a:hover      { color: #2794AA; }
+a            { color: #185F6D; border-bottom: 1px dotted #2BABC4; text-decoration: none; }
+a:hover      { color: #2794AA; border-bottom: 1px solid #2794AA; }
 .box         { width: 540px; margin: 40px auto; }
 h1, h2, h3   { font-family: 'Ubuntu', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                'Verdana', sans-serif; font-weight: normal; }

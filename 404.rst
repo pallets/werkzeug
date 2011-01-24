@@ -1,0 +1,18 @@
+public: yes
+
+Page Not Found
+==============
+
+We're sorry, but the page you are looking for does not exist.  Because we
+had a major redesign here lately that might be our fault.
+
+May we suggest one of the following solutions:
+
+-   Head over to the current `documentation </docs/`_.  In case you are
+    looking for something in the documentation, you might be able to find
+    it there.
+-   Head over the `front page </>`_ if you are curious about what Werkzeug
+    is.
+-   Ask the `community </community/>`_
+-   `Drop me a line <armin.ronacher@active-4.com>`_ if you think something
+    vanished that should absolutely be coming back.
