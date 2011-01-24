@@ -8,7 +8,7 @@ had a major redesign here lately that might be our fault.
 
 May we suggest one of the following solutions:
 
--   Head over to the current `documentation </docs/`_.  In case you are
+-   Head over to the current `documentation </docs/>`_.  In case you are
     looking for something in the documentation, you might be able to find
     it there.
 -   Head over the `front page </>`_ if you are curious about what Werkzeug
