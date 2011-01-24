@@ -290,7 +290,9 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                 # fine, otherwise it does not matter because we will write it
                 # the next iteration.  this ensures we do not write the
                 # final newline into the stream.  That way we do not have to
-                # truncate the stream.
+                # truncate the stream.  However we do have to make sure that
+                # if something else than a newline is in there we write it
+                # out.
                 if line[-2:] == '\r\n':
                     buf = '\r\n'
                     cutoff = -2
@@ -309,6 +311,12 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                         raise RequestEntityTooLarge()
             else: # pragma: no cover
                 raise ValueError('unexpected end of part')
+
+            # if we have a leftover in the buffer that is not a newline
+            # character we have to flush it, otherwise we will chop of
+            # certain values.
+            if buf not in ('', '\r', '\n', '\r\n'):
+                _write(buf)
 
             if is_file:
                 container.seek(0)

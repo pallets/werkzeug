@@ -51,6 +51,8 @@ Version 0.7
   makes it possible to have utf-8 cookies.  This is a part where
   the Python 3 version will later change in that it will always
   operate on latin1 values.
+- Fixed a bug in the form parser that caused the last character to
+  be dropped off if certain values in multipart data is used.
 
 Version 0.6.2
 -------------

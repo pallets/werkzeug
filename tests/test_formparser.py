@@ -337,3 +337,18 @@ def test_lowlevel():
     x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
     assert x['foo'] == 'bar\n x test'
     assert_raises(ValueError, formparser.parse_multipart_headers, ['foo: bar\r\n', ' x test'])
+
+
+def test_bad_newline_bad_newline_assumption():
+    """Make sure we don't eat up stuff that is not a newline"""
+    class ISORequest(Request):
+        charset = 'latin1'
+    contents = 'U2vlbmUgbORu'
+    data = '--foo\r\nContent-Disposition: form-data; name="test"\r\n' \
+           'Content-Transfer-Encoding: base64\r\n\r\n' + \
+           contents + '\r\n--foo--'
+    req = ISORequest.from_values(input_stream=StringIO(data),
+                                 content_length=len(data),
+                                 content_type='multipart/form-data; boundary=foo',
+                                 method='POST')
+    assert req.form['test'] == u'Sk\xe5ne l\xe4n'
