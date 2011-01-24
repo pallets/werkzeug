@@ -53,6 +53,8 @@ Version 0.7
   operate on latin1 values.
 - Fixed a bug in the form parser that caused the last character to
   be dropped off if certain values in multipart data is used.
+- Multipart parser now looks at the part-individual content type
+  header to override the global charset.
 
 Version 0.6.2
 -------------
