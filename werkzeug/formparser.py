@@ -233,6 +233,14 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
 
             filename = extra.get('filename')
 
+            # Figure out input charset for current part
+            content_type = headers.get('content-type')
+            if content_type:
+                mimetype, ct_params = parse_options_header(content_type)
+                part_charset = ct_params.get("charset", charset)
+            else:
+                part_charset = charset
+
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.
             if filename is None:
@@ -244,9 +252,6 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             # otherwise we parse the rest of the headers and ask the stream
             # factory for something we can write in.
             else:
-                content_type = headers.get('content-type')
-                content_type = parse_options_header(content_type)[0] \
-                    or 'text/plain'
                 is_file = True
                 guard_memory = False
                 if filename is not None:
@@ -325,7 +330,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
                                                 content_length, headers)))
             else:
                 form.append((name, _decode_unicode(''.join(container),
-                                                   charset, errors)))
+                                                   part_charset, errors)))
     finally:
         # make sure the whole input stream is read
         file.exhaust()
