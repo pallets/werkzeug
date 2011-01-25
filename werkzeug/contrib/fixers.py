@@ -35,8 +35,10 @@ class LighttpdCGIRootFix(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        environ['PATH_INFO'] = environ.get('SCRIPT_NAME', '') + \
-                               environ.get('PATH_INFO', '')
+        #only set PATH_INFO for older versions of Lighty:
+        if environ['SERVER_SOFTWARE'] < 'lighttpd/1.4.28':
+            environ['PATH_INFO'] = environ.get('SCRIPT_NAME', '') + \
+                                   environ.get('PATH_INFO', '')
         environ['SCRIPT_NAME'] = ''
         return self.app(environ, start_response)
 
