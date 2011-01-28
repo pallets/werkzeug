@@ -55,6 +55,8 @@ Version 0.7
   be dropped off if certain values in multipart data is used.
 - Multipart parser now looks at the part-individual content type
   header to override the global charset.
+- introduced mimetype and mimetype_params attribute for the file
+  storage object.
 
 Version 0.6.2
 -------------

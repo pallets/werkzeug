@@ -212,8 +212,10 @@ def test_multipart_headers():
                               content_type='multipart/form-data; boundary=foo',
                               method='POST')
     foo = req.files['foo']
-    assert foo.content_type == 'text/plain'
-    assert foo.headers['content-type'] == 'text/plain; charset=utf-8'
+    assert foo.mimetype == 'text/plain'
+    assert foo.mimetype_params == {'charset': 'utf-8'}
+    assert foo.headers['content-type'] == foo.content_type \
+        == 'text/plain; charset=utf-8'
     assert foo.headers['x-custom-header'] == 'blah'
 
 
