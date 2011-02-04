@@ -18,9 +18,10 @@ First you need to create the FastCGI server file.  Let's call it
     #!/usr/bin/python
     from flup.server.fcgi import WSGIServer
     from yourapplication import make_app
-
-    application = make_app()
-    WSGIServer(application).run()
+    
+    if __name__ == '__main__':
+        application = make_app()
+        WSGIServer(application).run()
 
 This is enough for Apache to work, however ngingx and older versions of
 lighttpd need a socket to be explicitly passed to communicate with the FastCGI
@@ -70,7 +71,8 @@ work in the URL root you have to work around a lighttpd bug with the
 
 Make sure to apply it only if you are mounting the application the URL
 root. Also, see the Lighty docs for more information on `FastCGI and Python
-<http://redmine.lighttpd.net/wiki/lighttpd/Docs:ModFastCGI>`_.
+<http://redmine.lighttpd.net/wiki/lighttpd/Docs:ModFastCGI>`_ (note that
+explicitly passing a socket to run() is no longer necessary).
 
 Configuring nginx
 =================
