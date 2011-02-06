@@ -102,7 +102,9 @@ def make_action(app_factory, hostname='localhost', port=5000,
                 threaded=False, processes=1, stream=None,
                 sort_by=('time', 'calls'), restrictions=()):
     """Return a new callback for :mod:`werkzeug.script` that starts a local
-    server with the profiler enabled::
+    server with the profiler enabled.
+
+    ::
 
         from werkzeug.contrib import profiler
         action_profile = profiler.make_action(make_app)
