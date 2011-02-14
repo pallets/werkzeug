@@ -57,6 +57,8 @@ Version 0.7
   header to override the global charset.
 - introduced mimetype and mimetype_params attribute for the file
   storage object.
+- changed FileStorage filename fallback logic to skip special filenames
+  that Python uses for marking special files like stdin.
 
 Version 0.6.2
 -------------

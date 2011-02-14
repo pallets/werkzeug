@@ -2275,7 +2275,17 @@ class FileStorage(object):
                  headers=None):
         self.name = name
         self.stream = stream or _empty_stream
-        self.filename = filename or getattr(stream, 'name', None)
+
+        # if no filename is provided we can attempt to get the filename
+        # from the stream object passed.  There we have to be careful to
+        # skip things like <fdopen>, <stderr> etc.  Python marks these
+        # special filenames with angular brackets.
+        if filename is None:
+            filename = getattr(stream, 'name', None)
+            if filename and filename[0] == '<' and filename[-1] == '>':
+                filename = None
+
+        self.filename = filename
         self.content_type = content_type
         self.content_length = content_length
         if headers is None:
