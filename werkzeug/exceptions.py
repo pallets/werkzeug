@@ -279,6 +279,19 @@ class RequestTimeout(HTTPException):
     )
 
 
+class Conflict(HTTPException):
+    """*409* `Conflict`
+
+    Raise to signal that a request cannot be completed because it conflicts
+    with the current state on the server.
+    """
+    code = 409
+    description = (
+        '<p>A conflict happened while processing the request.  The resource '
+        'might have been modified while the request was being processed.'
+    )
+
+
 class Gone(HTTPException):
     """*410* `Gone`
 
@@ -352,6 +365,41 @@ class UnsupportedMediaType(HTTPException):
     description = (
         '<p>The server does not support the media type transmitted in '
         'the request.</p>'
+    )
+
+
+class RequestedRangeNotSatisfiable(HTTPException):
+    """*416* `Requested Range Not Satisfiable`
+
+    The client asked for a part of the file that lies beyond the end
+    of the file.
+    """
+    code = 416
+    description = (
+        '<p>The server cannot provide the requested range.'
+    )
+
+
+class ExpectationFailed(HTTPException):
+    """*417* `Expectation Failed`
+
+    The server cannot meet the requirements of the Expect request-header.
+    """
+    code = 417
+    description = (
+        '<p>The server could not meet the requirements of the Except header'
+    )
+
+
+class ImATeapot(HTTPException):
+    """*418* `I'm a teapot`
+
+    The server should return this if it is a teapot and someone attempted
+    to brew coffee with it.
+    """
+    code = 418
+    description = (
+        '<p>This server is a teapot, not a coffee machine'
     )
 
 

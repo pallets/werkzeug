@@ -59,6 +59,7 @@ Version 0.7
   storage object.
 - changed FileStorage filename fallback logic to skip special filenames
   that Python uses for marking special files like stdin.
+- introduced more HTTP exception classes.
 
 Version 0.6.2
 -------------

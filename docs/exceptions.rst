@@ -24,6 +24,8 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: RequestTimeout
 
+.. autoexception:: Conflict
+
 .. autoexception:: Gone
 
 .. autoexception:: LengthRequired
@@ -35,6 +37,12 @@ The following error classes exist in Werkzeug:
 .. autoexception:: RequestURITooLarge
 
 .. autoexception:: UnsupportedMediaType
+
+.. autoexception:: RequestedRangeNotSatisfiable
+
+.. autoexception:: ExpectationFailed
+
+.. autoexception:: ImATeapot
 
 .. autoexception:: InternalServerError
 
