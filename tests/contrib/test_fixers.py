@@ -19,7 +19,8 @@ def test_lighttpd_cgi_root_fix():
     app = fixers.LighttpdCGIRootFix(path_check_app)
     response = Response.from_app(app, dict(create_environ(),
         SCRIPT_NAME='/foo',
-        PATH_INFO='/bar'
+        PATH_INFO='/bar',
+        SERVER_SOFTWARE='lighttpd/1.4.27'
     ))
     assert response.data == 'PATH_INFO: /foo/bar\nSCRIPT_NAME: '
 

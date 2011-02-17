@@ -35,8 +35,13 @@ class LighttpdCGIRootFix(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        #only set PATH_INFO for older versions of Lighty:
-        if environ['SERVER_SOFTWARE'] < 'lighttpd/1.4.28':
+        # only set PATH_INFO for older versions of Lighty or if no
+        # server software is provided.  That's because the test was
+        # added in newer Werkzeug versions and we don't want to break
+        # people's code if they are using this fixer in a test that
+        # does not set the SERVER_SOFTWARE key.
+        if 'SERVER_SOFTWARE' not in environ or \
+           environ['SERVER_SOFTWARE'] < 'lighttpd/1.4.28':
             environ['PATH_INFO'] = environ.get('SCRIPT_NAME', '') + \
                                    environ.get('PATH_INFO', '')
         environ['SCRIPT_NAME'] = ''
