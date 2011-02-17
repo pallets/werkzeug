@@ -1287,9 +1287,6 @@ class MapAdapter(object):
         if not isinstance(path_info, unicode):
             path_info = path_info.decode(self.map.charset,
                                          self.map.encoding_errors)
-        if '?' in path_info:
-            path_info, query_args = path_info.split('?')
-            query_args = url_decode(query_args, self.map.charset)
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
