@@ -284,6 +284,8 @@ class Conflict(HTTPException):
 
     Raise to signal that a request cannot be completed because it conflicts
     with the current state on the server.
+
+    .. versionadded:: 0.7
     """
     code = 409
     description = (
@@ -373,6 +375,8 @@ class RequestedRangeNotSatisfiable(HTTPException):
 
     The client asked for a part of the file that lies beyond the end
     of the file.
+
+    .. versionadded:: 0.7
     """
     code = 416
     description = (
@@ -384,6 +388,8 @@ class ExpectationFailed(HTTPException):
     """*417* `Expectation Failed`
 
     The server cannot meet the requirements of the Expect request-header.
+
+    .. versionadded:: 0.7
     """
     code = 417
     description = (
@@ -396,6 +402,8 @@ class ImATeapot(HTTPException):
 
     The server should return this if it is a teapot and someone attempted
     to brew coffee with it.
+
+    .. versionadded:: 0.7
     """
     code = 418
     description = (
