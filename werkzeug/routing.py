@@ -1347,7 +1347,7 @@ class MapAdapter(object):
             self.match(path_info, method)
         except RequestRedirect:
             pass
-        except (NotFound, MethodNotAllowed):
+        except HTTPException:
             return False
         return True
 
