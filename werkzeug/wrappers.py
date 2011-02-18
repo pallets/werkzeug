@@ -627,11 +627,14 @@ class BaseResponse(object):
 
     def call_on_close(self, func):
         """Adds a function to the internal list of functions that should
-        be called as part of closing down the response.
+        be called as part of closing down the response.  Since 0.7 this
+        function also returns the function that was passed so that this
+        can be used as a decorator.
 
         .. versionadded:: 0.6
         """
         self._on_close.append(func)
+        return func
 
     def __repr__(self):
         if self.is_sequence:

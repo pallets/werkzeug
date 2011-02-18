@@ -60,6 +60,7 @@ Version 0.7
 - changed FileStorage filename fallback logic to skip special filenames
   that Python uses for marking special files like stdin.
 - introduced more HTTP exception classes.
+- `call_on_close` now can be used as a decorator.
 
 Version 0.6.2
 -------------
