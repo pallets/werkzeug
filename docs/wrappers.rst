@@ -65,7 +65,7 @@ For the request object the following rules apply:
    locks around calls.
 3. It's not possible to pickle the request object.
 
-FOr the response object the following rules apply:
+For the response object the following rules apply:
 
 1. The response object is mutable
 2. The response object can be pickled or copied after `freeze()` was
