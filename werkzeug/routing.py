@@ -1097,7 +1097,7 @@ class Map(object):
                 server_name = environ['SERVER_NAME']
                 if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
                    in (('https', '443'), ('http', '80')):
-                    server_name += ':' + environ['SERVER_PORT']
+                    server_name += ':' + str(environ['SERVER_PORT'])
         elif subdomain is None:
             if 'HTTP_HOST' in environ:
                 wsgi_server_name = environ.get('HTTP_HOST')
