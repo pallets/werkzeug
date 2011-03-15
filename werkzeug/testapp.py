@@ -160,9 +160,13 @@ def render_testapp(req):
                                    b.project_name.lower()))
     python_eggs = []
     for egg in eggs:
+        try:
+            version = egg.version
+        except (ValueError, AttributeError):
+            version = 'unknown'
         python_eggs.append('<li>%s <small>[%s]</small>' % (
             escape(egg.project_name),
-            escape(egg.version)
+            escape(version)
         ))
 
     wsgi_env = []
