@@ -11,13 +11,7 @@
 try:
     from greenlet import getcurrent as get_current_greenlet
 except ImportError: # pragma: no cover
-    try:
-        from py.magic import greenlet
-        get_current_greenlet = greenlet.getcurrent
-        del greenlet
-    except Exception:
-        # catch all, py.* fails with so many different errors.
-        get_current_greenlet = int
+    get_current_greenlet = int
 try:
     from thread import get_ident as get_current_thread, allocate_lock
 except ImportError: # pragma: no cover

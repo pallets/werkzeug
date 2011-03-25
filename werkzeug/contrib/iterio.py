@@ -40,7 +40,7 @@ r"""
     :license: BSD, see LICENSE for more details.
 """
 try:
-    from py.magic import greenlet
+    import greenlet
 except ImportError:
     greenlet = None
 
