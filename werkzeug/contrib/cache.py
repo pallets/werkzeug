@@ -441,6 +441,41 @@ class GAEMemcachedCache(MemcachedCache):
                                 default_timeout, key_prefix)
 
 
+class RedisCache(BaseCache):
+    """Uses the Redis key-value store as a caching backend.
+
+    Note: Python Redis API takes care of encoding unicode strings on the fly.
+    """
+    def __init__(self, host='localhost', port=6379, default_timeout=300):
+        BaseCache.__init__(self, default_timeout)
+        try:
+            import redis
+        except ImportError:
+            raise RuntimeError('no redis module found')
+        self._client = redis.Redis(host=host, port=port)
+
+    def get(self, key):
+        return self._client.get(key)
+
+    def set(self, key, value, timeout=None):
+        if timeout is None:
+            timeout = self.default_timeout
+        self._client.setex(key, value, timeout)
+
+    def add(self, key, value, timeout=None):
+        if timeout is None:
+            timeout = self.default_timeout
+        added = self._client.setnx(key, value)
+        if added:
+            self._client.expire(key, timeout)
+
+    def delete(self, key):
+        self._client.delete(key)
+
+    def delete_many(self, *keys):
+        self._client.delete(*keys)
+
+
 class FileSystemCache(BaseCache):
     """A cache that stores the items on the file system.  This cache depends
     on being the only user of the `cache_dir`.  Make absolutely sure that
