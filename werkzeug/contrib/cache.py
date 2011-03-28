@@ -442,20 +442,37 @@ class GAEMemcachedCache(MemcachedCache):
 
 
 class RedisCache(BaseCache):
-    """Uses the Redis key-value store as a caching backend.
+    """Uses the Redis key-value store as a cache backend.
 
-    Note: Python Redis API takes care of encoding unicode strings on the fly.
+    The first argument can be either a string denoting address of the Redis
+    server or an object resembling an instance of a redis.Redis class.
+
+    Note: Python Redis API already takes care of encoding unicode strings on
+    the fly.
+
+    :param host: address of the Redis server or an object which API is
+                 compatible with the official Python Redis client (redis-py).
+    :param port: port number on which Redis server listens for connections
+    :param default_timeout: the default timeout that is used if no timeout is
+                            specified on :meth:`~BaseCache.set`.
+
     """
     def __init__(self, host='localhost', port=6379, default_timeout=300):
         BaseCache.__init__(self, default_timeout)
-        try:
-            import redis
-        except ImportError:
-            raise RuntimeError('no redis module found')
-        self._client = redis.Redis(host=host, port=port)
+        if isinstance(host, basestring):
+            try:
+                import redis
+            except ImportError:
+                raise RuntimeError('no redis module found')
+            self._client = redis.Redis(host=host, port=port)
+        else:
+            self._client = host
 
     def get(self, key):
         return self._client.get(key)
+
+    def get_many(self, *keys):
+        return self._client.mget(keys)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
@@ -469,11 +486,28 @@ class RedisCache(BaseCache):
         if added:
             self._client.expire(key, timeout)
 
+    def set_many(self, mapping, timeout=None):
+        if timeout is None:
+            timeout = self.default_timeout
+        pipe = self._client.pipeline()
+        for key, value in mapping.iteritems():
+            pipe.setex(key, value, timeout)
+        pipe.execute()
+
     def delete(self, key):
         self._client.delete(key)
 
     def delete_many(self, *keys):
         self._client.delete(*keys)
+
+    def clear(self):
+        self._client.flushdb()
+
+    def inc(self, key, delta=1):
+        return self._client.incr(key, delta)
+
+    def dec(self, key, delta=1):
+        return self._client.decr(key, delta)
 
 
 class FileSystemCache(BaseCache):
