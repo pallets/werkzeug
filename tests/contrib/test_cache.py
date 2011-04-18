@@ -1,6 +1,7 @@
 import os, tempfile, shutil
 
-from werkzeug.contrib.cache import SimpleCache, FileSystemCache
+from nose import SkipTest
+from werkzeug.contrib.cache import SimpleCache, FileSystemCache, RedisCache
 
 
 def test_simplecache_get_dict():
@@ -59,4 +60,104 @@ def test_filesystemcache_clear():
     cache_files = os.listdir(tmp_dir)
     assert len(cache_files) == 0
     shutil.rmtree(tmp_dir)
+
+
+def _check_redis():
+    try:
+        import redis
+    except ImportError:
+        raise SkipTest("redis module not installed")
+
+
+def test_rediscache_get_set():
+    """
+    test basic RedisCache capabilities
+    """
+    _check_redis()
+    cache = RedisCache()
+    cache.set('foo', 'bar')
+    assert cache.get('foo') == 'bar'
+
+
+def test_rediscache_get_many():
+    """
+    test retrieving multiple vahelues from RedisCache
+    """
+    _check_redis()
+    cache = RedisCache()
+    cache.set('foo', 'bar')
+    cache.set('spam', 'eggs')
+    assert cache.get_many('foo', 'spam') == ['bar', 'eggs']
+
+
+def test_rediscache_set_many():
+    """
+    test setting multiple vahelues from RedisCache
+    """
+    _check_redis()
+    cache = RedisCache()
+    cache.set_many({'foo': 'bar', 'spam': 'eggs'})
+    assert cache.get('foo') == 'bar'
+    assert cache.get('spam') == 'eggs'
+
+
+def test_rediscache_expire():
+    """
+    test RedisCache handling expire time on keys
+    """
+    _check_redis()
+    import time
+    cache = RedisCache()
+    cache.set('foo', 'bar', 1)
+    time.sleep(2)
+    assert cache.get('foo') is None
+
+
+def test_rediscache_add():
+    """
+    test if RedisCache.add() preserves existing keys
+    """
+    _check_redis()
+    cache = RedisCache()
+    # sanity check that add() works like set()
+    cache.add('foo', 'bar')
+    assert cache.get('foo') ==  'bar'
+    cache.add('foo', 'qux')
+    assert cache.get('foo') ==  'bar'
+
+
+def test_rediscache_delete():
+    """
+    test if RedisCache correctly deletes single key
+    """
+    _check_redis()
+    cache = RedisCache()
+    cache.add('foo', 'bar')
+    assert cache.get('foo') ==  'bar'
+    cache.delete('foo')
+    assert cache.get('foo') is None
+
+
+def test_rediscache_delete_many():
+    """
+    test if RedisCache correctly deletes many keys
+    """
+    _check_redis()
+    cache = RedisCache()
+    cache.add('foo', 'bar')
+    cache.add('spam', 'eggs')
+    cache.delete_many('foo', 'spam')
+    assert cache.get('foo') is None
+    assert cache.get('spam') is None
+
+
+def test_rediscache_inc_dec():
+    """
+    test if Rediscache effectively handles incrementation and decrementation
+    """
+    _check_redis()
+    cache = RedisCache()
+    cache.set('foo', 1)
+    assert cache.inc('foo') == 2
+    assert cache.dec('foo') == 1
 
