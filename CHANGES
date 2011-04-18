@@ -61,6 +61,7 @@ Version 0.7
   that Python uses for marking special files like stdin.
 - introduced more HTTP exception classes.
 - `call_on_close` now can be used as a decorator.
+- support for redis as cache backend.
 
 Version 0.6.2
 -------------

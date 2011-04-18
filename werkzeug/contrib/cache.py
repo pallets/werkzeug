@@ -450,6 +450,8 @@ class RedisCache(BaseCache):
     Note: Python Redis API already takes care of encoding unicode strings on
     the fly.
 
+    .. versionadded:: 0.7
+
     :param host: address of the Redis server or an object which API is
                  compatible with the official Python Redis client (redis-py).
     :param port: port number on which Redis server listens for connections
