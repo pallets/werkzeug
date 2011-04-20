@@ -130,6 +130,10 @@ def test_url_request_descriptors():
     assert req.url_root == 'http://example.com/test/'
     assert req.host_url == 'http://example.com/'
     assert req.host == 'example.com'
+    assert req.scheme == 'http'
+
+    req = Request.from_values('/bar?foo=baz', 'https://example.com/test')
+    assert req.scheme == 'https'
 
 
 def test_authorization_mixin():
