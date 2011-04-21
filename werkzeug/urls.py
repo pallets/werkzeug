@@ -458,7 +458,7 @@ class Href(object):
         if path:
             if not rv.endswith('/'):
                 rv += '/'
-            rv = urlparse.urljoin(rv, path)
+            rv = urlparse.urljoin(rv, './' + path)
         if query:
             rv += '?' + url_encode(query, self.charset, sort=self.sort,
                                    key=self.key)
