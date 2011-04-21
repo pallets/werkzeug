@@ -120,6 +120,7 @@ def test_href_url_join():
     """Make sure that Href does not care about URLs in paths."""
     x = Href('test')
     assert x('foo:bar') == 'test/foo:bar'
+    assert x('http://example.com/') == 'test/http://example.com/'
 
 
 def test_href_past_root():
