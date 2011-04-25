@@ -62,6 +62,7 @@ Version 0.7
 - introduced more HTTP exception classes.
 - `call_on_close` now can be used as a decorator.
 - support for redis as cache backend.
+- Added `BaseRequest.scheme`.
 
 Version 0.6.2
 -------------

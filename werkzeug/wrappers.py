@@ -483,7 +483,9 @@ class BaseRequest(object):
         authenticated as.''')
 
     scheme = environ_property('wsgi.url_scheme', doc='''
-        URL scheme (http or https).''')
+        URL scheme (http or https).
+
+        .. versionadded:: 0.7''')
 
     is_xhr = property(lambda x: x.environ.get('HTTP_X_REQUESTED_WITH', '')
                       .lower() == 'xmlhttprequest', doc='''
