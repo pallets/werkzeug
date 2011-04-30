@@ -283,7 +283,7 @@ Put it into the ``manage.py`` file you have created in the beginning::
 
     #!/usr/bin/env python
 
-    commands = {}
+    # Helpers
 
     def _make_app():
         from shorty.application import Shorty
@@ -294,23 +294,24 @@ Put it into the ``manage.py`` file you have created in the beginning::
         application = _make_app()
         return locals()
 
-    def command(f):
-        commands[f.func_name] = f
-        return f
+    # Commands
 
-    @command
     def runserver():
         from werkzeug.serving import run_simple
         run_simple('localhost', 8000, _make_app(), use_reloader=True)
 
-    @command
     def shell():
         from code import interact
         interact('Interactive Werkzeug Shell', local=_make_shell())
 
-    @command
     def init_db():
         _make_app().init_database()
+
+    commands = {
+        'runserver': runserver,
+        'shell': shell,
+        'init_db': init_db
+    }
 
     if __name__ == '__main__':
         import sys
