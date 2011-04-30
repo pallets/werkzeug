@@ -4,7 +4,7 @@
 #
 # Shortcuts for various tasks.
 #
-# :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
+# :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
 # :license: BSD, see LICENSE for more details.
 #
 
