@@ -276,30 +276,48 @@ for development, it's perfectly fine and also recommended to use the wsgiref
 server that comes with python for development purposes), starting a python
 interpreter to play with the database models, initializing the database etc.
 
-Werkzeug makes it incredible easy to write such management scripts.  The
-following piece of code implements a fully featured management script.  Put
-it into the `manage.py` file you have created in the beginning::
+The following piece of code implements a simple management script, but you can
+- and really should - extend it to make it cleaner and more powerful using
+:mod:`argparse`, :mod:`optparse`, or other alternatives.
+Put it into the ``manage.py`` file you have created in the beginning::
 
     #!/usr/bin/env python
-    from werkzeug import script
 
-    def make_app():
+    commands = {}
+
+    def _make_app():
         from shorty.application import Shorty
         return Shorty('sqlite:////tmp/shorty.db')
 
-    def make_shell():
+    def _make_shell():
         from shorty import models, utils
-        application = make_app()
+        application = _make_app()
         return locals()
 
-    action_runserver = script.make_runserver(make_app, use_reloader=True)
-    action_shell = script.make_shell(make_shell)
-    action_initdb = lambda: make_app().init_database()
+    def command(f):
+        commands[f.func_name] = f
+        return f
 
-    script.run()
+    @command
+    def runserver():
+        from werkzeug.serving import run_simple
+        run_simple('localhost', 8000, _make_app(), use_reloader=True)
 
-:mod:`werkzeug.script` is explained in detail in the script documentation
-and we won't cover it here, most of the code should be self explaining anyway.
+    @command
+    def shell():
+        from code import interact
+        interact('Interactive Werkzeug Shell', local=_make_shell())
+
+    @command
+    def init_db():
+        _make_app().init_database()
+
+    if __name__ == '__main__':
+        import sys
+        arg = sys.argv
+        if len(arg) > 1:
+            if arg[1] in commands:
+                commands[arg[1]]()
 
 What's important is that you should be able to run ``python manage.py shell``
 to get an interactive Python interpreter without traceback.  If you get an
