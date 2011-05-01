@@ -16,7 +16,7 @@ API Changes
 ===========
 
 `0.7`
-    -   improved func:`url_decode` and :func:`url_encode` performance.
+    -   improved :func:`url_decode` and :func:`url_encode` performance.
     -   fixed an issue where the SharedDataMiddleware could cause an
         internal server error on weird paths when loading via pkg_resources.
     -   fixed an URL generation bug that caused URLs to be invalid if a
