@@ -15,6 +15,66 @@ are listed there in detail.
 API Changes
 ===========
 
+`0.7`
+    -   improved func:`url_decode` and :func:`url_encode` performance.
+    -   fixed an issue where the SharedDataMiddleware could cause an
+        internal server error on weird paths when loading via pkg_resources.
+    -   fixed an URL generation bug that caused URLs to be invalid if a
+        generated component contains a colon.
+    -   :func:`werkzeug.import_string` now works with partially set up
+        packages properly.
+    -   disabled automatic socket swiching for IPv6 on the development
+        server due to problems it caused.
+    -   Werkzeug no longer overrides the Date header when creating a
+        conditional HTTP response.
+    -   The routing system provides a method to retrieve the matching
+        methods for a given path.
+    -   The routing system now accepts a parameter to change the encoding
+        error behaviour.
+    -   The local manager can now accept custom ident functions in the
+        constructor that are forwarded to the wrapped local objects.
+    -   url_unquote_plus now accepts unicode strings again.
+    -   fixed an issues with the filesystem session support's prune
+        function and concurrent usage.
+    -   fixed a problem with external URL generation discarding the port.
+    -   added support for pylibmc to the Werkzeug cache abstraction layer.
+    -   fixed an issue with the new multipart parser that happened when
+        a linkebreak happend to be on the chunk limit.
+    -   cookies are now set properly if ports are in use.  A runtime error
+        is raised if one tries to set a cookie for a domain without a dot.
+    -   fixed an issue with Template.from_file not working for file
+        descriptors.
+    -   reloader can now use inotify to track reloads.  This requires the
+        pyinotify library to be installed.
+    -   Werkzeug debugger can now submit to custom lodgeit installations.
+    -   redirect function's status code assertion now allows 201 to be used
+        as redirection code.  While it's not a real redirect, it shares
+        enough with redirects for the function to still be useful.
+    -   Fixed securecookie for pypy.
+    -   Fixed `ValueErrors` being raised on calls to `best_match` on
+        `MIMEAccept` objects when invalid user data was supplied.
+    -   Deprecated `werkzeug.contrib.kickstart` and `werkzeug.contrib.testtools`
+    -   URL routing now can be passed the URL arguments to keep them for
+        redirects.  In the future matching on URL arguments might also be
+        possible.
+    -   header encoding changed from utf-8 to latin1 to support a port to
+        Python 3.  Bytestrings passed to the object stay untouched which
+        makes it possible to have utf-8 cookies.  This is a part where
+        the Python 3 version will later change in that it will always
+        operate on latin1 values.
+    -   Fixed a bug in the form parser that caused the last character to
+        be dropped off if certain values in multipart data is used.
+    -   Multipart parser now looks at the part-individual content type
+        header to override the global charset.
+    -   introduced mimetype and mimetype_params attribute for the file
+        storage object.
+    -   changed FileStorage filename fallback logic to skip special filenames
+        that Python uses for marking special files like stdin.
+    -   introduced more HTTP exception classes.
+    -   `call_on_close` now can be used as a decorator.
+    -   support for redis as cache backend.
+    -   Added `BaseRequest.scheme`.
+
 `0.6.2`
     -   renamed the attribute `implicit_seqence_conversion` attribute of
         the request object to `implicit_sequence_conversion`.  Because
