@@ -156,7 +156,7 @@ def parse_converter_args(argstr):
     for item in _converter_args_re.finditer(argstr):
         print argstr[item.start():item.end()]
         if item.group('key'):
-            k.append(pythonize(item.group('key')))
+            k.append(_pythonize(item.group('key')))
         else:
             name = item.group('name')
             kw[name] = _pythonize(item.group('value'))
