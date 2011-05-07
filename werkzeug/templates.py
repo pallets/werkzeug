@@ -19,6 +19,11 @@ from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict
 
 
+from warnings import warn
+warn(DeprecationWarning('werkzeug.templates is deprecated and '
+                        'will be removed in Werkzeug 1.0'))
+
+
 # Copyright notice: The `parse_data` method uses the string interpolation
 # algorithm by Ka-Ping Yee which originally was part of `Itpl20.py`_.
 #
