@@ -482,6 +482,11 @@ class BaseRequest(object):
         protected, this attribute contains the username the user has
         authenticated as.''')
 
+    scheme = environ_property('wsgi.url_scheme', doc='''
+        URL scheme (http or https).
+
+        .. versionadded:: 0.7''')
+
     is_xhr = property(lambda x: x.environ.get('HTTP_X_REQUESTED_WITH', '')
                       .lower() == 'xmlhttprequest', doc='''
         True if the request was triggered via a JavaScript XMLHttpRequest.

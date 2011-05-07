@@ -23,4 +23,6 @@ Cache Systems
 
 .. autoclass:: GAEMemcachedCache
 
+.. autoclass:: RedisCache
+
 .. autoclass:: FileSystemCache
