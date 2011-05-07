@@ -393,7 +393,7 @@ class ExpectationFailed(HTTPException):
     """
     code = 417
     description = (
-        '<p>The server could not meet the requirements of the Except header'
+        '<p>The server could not meet the requirements of the Expect header'
     )
 
 
