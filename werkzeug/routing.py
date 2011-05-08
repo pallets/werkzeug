@@ -135,14 +135,18 @@ _converter_args_re = re.compile(r'''
         \d+|
         \w+|
         "[^"]*?"
-    )
+    )\s*,
 ''', re.VERBOSE|re.UNICODE)
 
+_PYTHON_CONSTANTS = {
+    'None': None,
+    'True': True,
+    'False': False,
+}
+
 def _pythonize(value):
-    if value == 'True':
-        return True
-    elif value == 'False':
-        return False
+    if value in _PYTHON_CONSTANTS:
+        return _PYTHON_CONSTANTS[value]
     for convert in int, float, unicode:
         try:
             return convert(value)
@@ -150,6 +154,7 @@ def _pythonize(value):
             pass
 
 def parse_converter_args(argstr):
+    argstr = argstr+',' #always cause a taining ,
     k = []
     kw = {}
     

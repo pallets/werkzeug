@@ -485,3 +485,12 @@ def test_converter_parser():
     assert k == ('test',)
     assert kw == {'a': 1, 'b': 3.0 }
 
+    k, kw = parse_converter_args('')
+    assert not k and not kw
+
+    k, kw = parse_converter_args('a, b, c,')
+    assert k == ('a', 'b', 'c')
+    assert not kw
+
+    k, kw = parse_converter_args('True, False, None')
+    assert k == (True, False, None)
