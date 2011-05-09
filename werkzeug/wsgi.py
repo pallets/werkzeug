@@ -298,7 +298,7 @@ class SharedDataMiddleware(object):
     :param app: the application to wrap.  If you don't want to wrap an
                 application you can pass it :exc:`NotFound`.
     :param exports: a dict of exported files and folders.
-    :param diallow: a list of :func:`~fnmatch.fnmatch` rules.
+    :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
     :param fallback_mimetype: the fallback mimetype for unknown files.
     :param cache: enable or disable caching headers.
     :Param cache_timeout: the cache timeout in seconds for the headers.
