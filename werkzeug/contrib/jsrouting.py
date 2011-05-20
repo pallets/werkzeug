@@ -12,23 +12,25 @@
 try:
     from simplejson import dumps
 except ImportError:
-    def dumps(*args):
-        raise RuntimeError('simplejson required for jsrouting')
+    try:
+        from json import dumps
+    except ImportError:
+        def dumps(*args):
+            raise RuntimeError('simplejson required for jsrouting')
 
 from inspect import getmro
-from werkzeug.templates import Template
 from werkzeug.routing import NumberConverter
 
 
-_javascript_routing_template = Template(u'''\
-<% if name_parts %>\
-<% for idx in xrange(0, len(name_parts) - 1) %>\
-if (typeof ${'.'.join(name_parts[:idx + 1])} === 'undefined') \
-${'.'.join(name_parts[:idx + 1])} = {};
-<% endfor %>\
-${'.'.join(name_parts)} = <% endif %>\
-(function (server_name, script_name, subdomain, url_scheme) {
-    var converters = ${', '.join(converters)};
+def render_template(name_parts, rules, converters):
+    result = u''
+    if name_parts:
+        for idx in xrange(0, len(name_parts) - 1):
+            name = u'.'.join(name_parts[:idx + 1])
+            result += u"if (typeof %s === 'undefined') %s = {}\n" % (name, name)
+        result += '%s = ' % '.'.join(name_parts)
+    result += """(function (server_name, script_name, subdomain, url_scheme) {
+    var converters = %(converters)s;
     var rules = $rules;
     function in_array(array, value) {
         if (array.indexOf != undefined) {
@@ -160,7 +162,8 @@ ${'.'.join(name_parts)} = <% endif %>\
                    + '/' + lstrip(rv.path, '/');
         }
     };
-})''')
+})""" % {'converters': u', '.join(converters)}
+    return result
 
 
 def generate_map(map, name='url_map'):
@@ -203,11 +206,9 @@ def generate_map(map, name='url_map'):
             u'defaults':    rule.defaults
         })
 
-    return _javascript_routing_template.render({
-        'name_parts':   name and name.split('.') or [],
-        'rules':        dumps(rules),
-        'converters':   converters
-    })
+    return render_template(name_parts=name and name.split('.') or [],
+                           rules=dumps(rules),
+                           converters=converters)
 
 
 def generate_adapter(adapter, name='url_for', map_name='url_map'):

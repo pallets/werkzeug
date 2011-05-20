@@ -3,10 +3,10 @@ Werkzeug
 
 Werkzeug started as simple collection of various utilities for WSGI
 applications and has become one of the most advanced WSGI utility
-modules.  It includes a powerful debugger, full featured request and
+modules.  It includes a powerful debugger, full-featured request and
 response objects, HTTP utilities to handle entity tags, cache control
 headers, HTTP dates, cookie handling, file uploads, a powerful URL
-routing system and a bunch of community contributed addon modules.
+routing system and a bunch of community-contributed addon modules.
 
 Werkzeug is unicode aware and doesn't enforce a specific template
 engine, database adapter or anything else.  It doesn't even enforce
