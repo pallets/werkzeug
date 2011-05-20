@@ -139,3 +139,11 @@ def test_url_unquote_plus_unicode():
     """Make sure that URL unquote plus accepts unicode."""
     # was broken in 0.6
     assert url_unquote_plus(u'\x6d') == u'\x6d'
+    assert type(url_unquote_plus(u'\x6d')) is unicode
+
+
+def test_quoting_of_local_urls():
+    """Make sure that urls without domain quote correctly."""
+    rv = iri_to_uri(u'/foo\x8f')
+    assert rv == '/foo%C2%8F'
+    assert type(rv) is str

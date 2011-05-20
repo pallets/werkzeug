@@ -57,13 +57,13 @@ def _safe_urlsplit(s):
     to what we think it is.
     """
     rv = urlparse.urlsplit(s)
-    if type(rv[1]) is not type(s):
-        try:
-            return tuple(map(type(s), rv))
-        except UnicodeError:
-            # oh well, we most likely will break later again, but
-            # let's just say it worked out well to that point.
-            pass
+    # we have to check rv[2] here and not rv[1] as rv[1] will be
+    # an empty bytestring in case no domain was given.
+    if type(rv[2]) is not type(s):
+        assert hasattr(urlparse, 'clear_cache')
+        urlparse.clear_cache()
+        rv = urlparse.urlsplit(s)
+        assert type(rv[2]) is type(s)
     return rv
 
 
@@ -143,7 +143,9 @@ def iri_to_uri(iri, charset='utf-8'):
     path = _quote(path.encode(charset), safe="/:~+")
     query = _quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
 
-    return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+    # this absolutely always must return a string.  Otherwise some parts of
+    # the system might perform double quoting (#61)
+    return str(urlparse.urlunsplit([scheme, hostname, path, query, fragment]))
 
 
 def uri_to_iri(uri, charset='utf-8', errors='ignore'):
