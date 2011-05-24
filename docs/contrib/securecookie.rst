@@ -4,6 +4,25 @@ Secure Cookie
 
 .. automodule:: werkzeug.contrib.securecookie
 
+Security
+========
+
+The default implementation uses Pickle as this is the only module that
+used to be available in the standard library when this module was created.
+If you have simplejson available it's strongly recommended to create a
+subclass and replace the serialization method::
+
+    import json
+    from werkzeug.contrib.securecookie import SecureCookie
+
+    class JSONSecureCookie(SecureCookie):
+        serialization_method = json
+
+The weakness of Pickle is that if someone gains access to the secret key
+the attacker can not only modify the session but also execute arbitrary
+code on the server.
+
+
 Reference
 =========
 
