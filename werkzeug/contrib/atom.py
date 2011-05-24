@@ -152,7 +152,7 @@ class AtomFeed(object):
         # atom demands either an author element in every entry or a global one
         if not self.author:
             if False in map(lambda e: bool(e.author), self.entries):
-                self.author = ({'name': u'unbekannter Autor'},)
+                self.author = ({'name': 'Unknown author'},)
 
         if not self.updated:
             dates = sorted([entry.updated for entry in self.entries])
