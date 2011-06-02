@@ -5,6 +5,8 @@ Version 0.7
 -----------
 (Last pre 1.0 release, release date to be announced)
 
+- Add support for python-libmemcached to the Werkzeug cache abstraction
+  layer.
 - improved func:`url_decode` and :func:`url_encode` performance.
 - fixed an issue where the SharedDataMiddleware could cause an
   internal server error on weird paths when loading via pkg_resources.
