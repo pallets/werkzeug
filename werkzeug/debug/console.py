@@ -35,10 +35,14 @@ class HTMLStringO(object):
         pass
 
     def seek(self, n, mode=0):
-        raise IOError('Bad file descriptor')
+        pass
 
     def readline(self):
-        raise IOError('Bad file descriptor')
+        if len(self._buffer) == 0:
+            return ''
+        ret = self._buffer[0]
+        del self._buffer[0]
+        return ret
 
     def reset(self):
         val = ''.join(self._buffer)
