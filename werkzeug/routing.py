@@ -1131,7 +1131,7 @@ class Map(object):
 
     def __repr__(self):
         rules = self.iter_rules()
-        return '%s([%s])' % (self.__class__.__name__, pformat(list(rules)))
+        return '%s(%s)' % (self.__class__.__name__, pformat(list(rules)))
 
 
 class MapAdapter(object):
