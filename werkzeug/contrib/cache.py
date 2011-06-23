@@ -68,6 +68,19 @@ from time import time
 from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 from werkzeug.posixemulation import rename
 
+def _items(mappingorseq):
+    """Wrapper for efficient iteration over mappings represented by dicts
+    or sequences::
+
+        >>> for k, v in _items((i, i*i) for i in xrange(5)):
+        ...    assert k*k == v
+
+        >>> for k, v in _items(dict((i, i*i) for i in xrange(5))):
+        ...    assert k*k == v
+
+    """
+    return mappingorseq.iteritems() if hasattr(mappingorseq, 'iteritems') \
+        else mappingorseq
 
 class BaseCache(object):
     """Baseclass for the cache systems.  All the cache systems implement this
@@ -145,13 +158,13 @@ class BaseCache(object):
         pass
 
     def set_many(self, mapping, timeout=None):
-        """Sets multiple keys and values from a dict.
+        """Sets multiple keys and values from a mapping.
 
-        :param mapping: a dict with the keys/values to set.
+        :param mapping: a mapping with the keys/values to set.
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
         """
-        for key, value in mapping.iteritems():
+        for key, value in _items(mapping):
             self.set(key, value, timeout)
 
     def delete_many(self, *keys):
@@ -378,7 +391,7 @@ class MemcachedCache(BaseCache):
         if timeout is None:
             timeout = self.default_timeout
         new_mapping = {}
-        for key, value in mapping.iteritems():
+        for key, value in _items(mapping):
             if isinstance(key, unicode):
                 key = key.encode('utf-8')
             if self.key_prefix:
@@ -492,7 +505,7 @@ class RedisCache(BaseCache):
         if timeout is None:
             timeout = self.default_timeout
         pipe = self._client.pipeline()
-        for key, value in mapping.iteritems():
+        for key, value in _items(mapping):
             pipe.setex(key, value, timeout)
         pipe.execute()
 
