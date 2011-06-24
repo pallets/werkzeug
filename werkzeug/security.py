@@ -26,6 +26,8 @@ except ImportError:
     _hash_mods = {'sha1': _sha1_mod, 'md5': _md5_mod}
     _hash_funcs = {'sha1': _sha1_mod.new, 'md5': _md5_mod.new}
 
+from werkzeug.wrappers import Response
+
 
 SALT_CHARS = string.letters + string.digits
 
@@ -102,3 +104,51 @@ def check_password_hash(pwhash, password):
         return False
     method, salt, hashval = pwhash.split('$', 2)
     return _hash_internal(method, salt, password) == hashval
+
+
+class Authenticator(object):
+    """An object which can validate HTTP authentication attempts and issue
+    appropriate challenges in response.
+    """
+
+    def __init__(self, users=None):
+        """Create an authenticator.
+
+        ``users`` is an optional dictionary of usernames to passwords which
+        can be provided for authentication.
+        """
+
+        self.users = users
+
+    def password_for_user(self, user):
+        """Retrieve a password for a certain user."""
+
+        if user in self.users:
+            return self.users[user]
+
+        return None
+
+    def make_basic_challenge(self, realm, message=None):
+        """Create a HTTP basic authentication challenge."""
+
+        if message is None:
+            message = "Authentication is required"
+
+        authenticate = 'Basic realm="%s"' % realm
+
+        return Response(message, 401, {"WWW-Authenticate": authenticate})
+
+    def validate(self, authorization):
+        """Validate an authorization.
+
+        ``authorization`` is an ``Authorization`` object.
+        """
+
+        if authorization.type == "basic":
+            username = authorization.username
+            expected = self.password_for_user(username)
+            if expected is None:
+                return False
+            return expected == authorization.password
+
+        return False
