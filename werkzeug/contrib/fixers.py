@@ -17,9 +17,8 @@
     :license: BSD, see LICENSE for more details.
 """
 from urllib import unquote
-from werkzeug.wrappers import BaseRequest
 from werkzeug.http import parse_options_header, parse_cache_control_header, \
-     parse_set_header, dump_header
+     parse_set_header
 from werkzeug.useragents import UserAgent
 from werkzeug.datastructures import Headers, ResponseCacheControl
 
