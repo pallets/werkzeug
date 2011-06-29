@@ -121,6 +121,51 @@ _rule_re = re.compile(r'''
     >
 ''', re.VERBOSE)
 _simple_rule_re = re.compile(r'<([^>]+)>')
+_converter_args_re = re.compile(r'''
+    (?P<name>\w+)\s*=\s*(?P<value>
+        True|False|
+        \d+(\.\d*)|
+        \w+|
+        "[^"]*?"
+    )|
+    (?P<key>
+        True|False|
+        \d+.\d+|
+        \d+.|
+        \d+|
+        \w+|
+        "[^"]*?"
+    )\s*,
+''', re.VERBOSE|re.UNICODE)
+
+_PYTHON_CONSTANTS = {
+    'None': None,
+    'True': True,
+    'False': False,
+}
+
+def _pythonize(value):
+    if value in _PYTHON_CONSTANTS:
+        return _PYTHON_CONSTANTS[value]
+    for convert in int, float, unicode:
+        try:
+            return convert(value)
+        except ValueError:
+            pass
+
+def parse_converter_args(argstr):
+    argstr = argstr+',' #always cause a taining ,
+    k = []
+    kw = {}
+    
+    for item in _converter_args_re.finditer(argstr):
+        print argstr[item.start():item.end()]
+        if item.group('key'):
+            k.append(_pythonize(item.group('key')))
+        else:
+            name = item.group('name')
+            kw[name] = _pythonize(item.group('value'))
+    return tuple(k), kw
 
 
 def parse_rule(rule):
@@ -164,8 +209,7 @@ def get_converter(map, name, args):
     if not name in map.converters:
         raise LookupError('the converter %r does not exist' % name)
     if args:
-        storage = type('_Storage', (), {'__getitem__': lambda s, x: x})()
-        args, kwargs = eval(u'(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
+        args, kwargs = parse_converter_args(args)
     else:
         args = ()
         kwargs = {}

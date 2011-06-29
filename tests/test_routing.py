@@ -13,7 +13,7 @@ from werkzeug.wrappers import Response
 from werkzeug.datastructures import ImmutableDict
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect, \
      RuleTemplate, Submount, EndpointPrefix, Subdomain, UnicodeConverter, \
-     MethodNotAllowed
+     MethodNotAllowed, parse_converter_args
 from werkzeug.test import create_environ
 
 
@@ -476,3 +476,21 @@ def test_external_building_with_port_bind_to_environ_wrong_servername():
     environ = create_environ('/', 'http://example.org:5000/')
     assert_raises(ValueError, lambda: map.bind_to_environ(environ, server_name="example.org"))
 
+
+def test_converter_parser():
+# incomplete
+
+    k, kw = parse_converter_args(u'test, a=1, b=3.0')
+
+    assert k == ('test',)
+    assert kw == {'a': 1, 'b': 3.0 }
+
+    k, kw = parse_converter_args('')
+    assert not k and not kw
+
+    k, kw = parse_converter_args('a, b, c,')
+    assert k == ('a', 'b', 'c')
+    assert not kw
+
+    k, kw = parse_converter_args('True, False, None')
+    assert k == (True, False, None)
