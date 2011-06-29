@@ -102,7 +102,7 @@ from pprint import pformat
 from urlparse import urljoin
 from itertools import izip
 
-from werkzeug.urls import url_encode, url_decode, url_quote
+from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
@@ -144,6 +144,7 @@ _PYTHON_CONSTANTS = {
     'False': False,
 }
 
+
 def _pythonize(value):
     if value in _PYTHON_CONSTANTS:
         return _PYTHON_CONSTANTS[value]
@@ -153,19 +154,19 @@ def _pythonize(value):
         except ValueError:
             pass
 
+
 def parse_converter_args(argstr):
-    argstr = argstr+',' #always cause a taining ,
-    k = []
-    kw = {}
-    
+    argstr += ','
+    args = []
+    kwargs = {}
+
     for item in _converter_args_re.finditer(argstr):
-        print argstr[item.start():item.end()]
         if item.group('key'):
-            k.append(_pythonize(item.group('key')))
+            args.append(_pythonize(item.group('key')))
         else:
             name = item.group('name')
-            kw[name] = _pythonize(item.group('value'))
-    return tuple(k), kw
+            kwargs[name] = _pythonize(item.group('value'))
+    return tuple(args), kwargs
 
 
 def parse_rule(rule):
