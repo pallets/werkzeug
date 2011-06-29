@@ -714,6 +714,11 @@ class Client(object):
         kw['method'] = 'GET'
         return self.open(*args, **kw)
 
+    def patch(self, *args, **kw):
+        """Like open but method is enforced to PATCH."""
+        kw['method'] = 'PATCH'
+        return self.open(*args, **kw)
+
     def post(self, *args, **kw):
         """Like open but method is enforced to POST."""
         kw['method'] = 'POST'
