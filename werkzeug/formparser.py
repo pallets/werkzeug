@@ -47,7 +47,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
                     silent=True):
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
-    transport method is `POST` or `PUT`.
+    transport method is `POST`, `PUT`, or `PATCH`.
 
     If the mimetype of the data transmitted is `multipart/form-data` the
     files multidict will be filled with `FileStorage` objects.  If the
