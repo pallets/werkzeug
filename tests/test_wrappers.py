@@ -94,6 +94,15 @@ def test_base_request():
     ## assert response['form_as_list'] == [('foo', ['blub hehe']), ('blah', ['42'])]
     assert_environ(response['environ'], 'POST')
 
+    # patch requests with form data
+    response = client.patch('/?blub=blah', data='foo=blub+hehe&blah=42',
+                            content_type='application/x-www-form-urlencoded')
+    assert response['args'] == MultiDict([('blub', 'blah')])
+    assert response['args_as_list'] == [('blub', ['blah'])]
+    assert response['form'] == MultiDict([('foo', 'blub hehe'), ('blah', '42')])
+    assert response['data'] == ''
+    assert_environ(response['environ'], 'PATCH')
+
     # post requests with json data
     json = '{"foo": "bar", "blub": "blah"}'
     response = client.post('/?a=b', data=json, content_type='application/json')
