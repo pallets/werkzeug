@@ -92,7 +92,7 @@
     method is raised.
 
 
-    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
                              Thomas Johansson.
     :license: BSD, see LICENSE for more details.
 """
