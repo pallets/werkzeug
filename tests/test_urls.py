@@ -5,7 +5,7 @@
 
     Tests the URL features
 
-    :copyright: (c) 2010 by the Project Name Team, see AUTHORS for more details.
+    :copyright: (c) 2011 by the Project Name Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from nose import SkipTest

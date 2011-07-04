@@ -5,7 +5,7 @@
 
     This module implements a client to WSGI applications for testing.
 
-    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import sys
@@ -85,7 +85,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
             else:
                 if isinstance(value, unicode):
                     value = value.encode(charset)
-                write('\r\n\r\n' + value)
+                write('\r\n\r\n' + str(value))
             write('\r\n')
     write('--%s--\r\n' % boundary)
 

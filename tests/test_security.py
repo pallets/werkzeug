@@ -3,7 +3,7 @@
     werkzeug.security test
     ~~~~~~~~~~~~~~~~~~~~~~
 
-    :copyright: (c) 2010 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
 from werkzeug.security import check_password_hash, generate_password_hash
