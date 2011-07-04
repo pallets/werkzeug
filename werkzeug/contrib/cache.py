@@ -292,35 +292,40 @@ class MemcachedCache(BaseCache):
     def __init__(self, servers, default_timeout=300, key_prefix=None):
         BaseCache.__init__(self, default_timeout)
         if isinstance(servers, (list, tuple)):
+            is_cmemcached = is_cmemcache = is_pylibmc = False
             try:
-                import cmemcache as memcache
-                is_cmemcache = True
+                import cmemcached as memcache
+                is_cmemcached = True
             except ImportError:
                 try:
-                    import memcache
-                    is_cmemcache = False
-                    is_pylibmc = False
+                    import cmemcache as memcache
+                    is_cmemcache = True
                 except ImportError:
                     try:
-                        import pylibmc as memcache
+                        import memcache
                         is_cmemcache = False
-                        is_pylibmc = True
+                        is_pylibmc = False
                     except ImportError:
-                        raise RuntimeError('no memcache module found')
+                        try:
+                            import pylibmc as memcache
+                            is_cmemcache = False
+                            is_pylibmc = True
+                        except ImportError:
+                            raise RuntimeError('no memcache module found')
 
-            # cmemcache has a bug that debuglog is not defined for the
-            # client.  Whenever pickle fails you get a weird AttributeError.
             if is_cmemcache:
+                # cmemcache has a bug that debuglog is not defined for the
+                # client.  Whenever pickle fails you get a weird
+                # AttributeError.
                 client = memcache.Client(map(str, servers))
                 try:
                     client.debuglog = lambda *a: None
                 except Exception:
                     pass
+            elif is_pylibmc or is_cmemcached:
+                client = memcache.Client(servers, False)
             else:
-                if is_pylibmc:
-                    client = memcache.Client(servers, False)
-                else:
-                    client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
+                client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
         else:
             client = servers
 
