@@ -15,6 +15,13 @@ def test_simplecache_get_dict():
     assert 'b' in d
     assert 'b' == d['b']
 
+def test_simplecache_set_many():
+    """Make sure set_many works with sequences as well as dicts"""
+    cache = SimpleCache()
+    cache.set_many({0: 0, 1: 1, 2: 4})
+    assert cache.get(2) == 4
+    cache.set_many((i, i*i) for i in xrange(3))
+    assert cache.get(2) == 4
 
 def test_filesystemcache_set_get():
     """
@@ -81,7 +88,7 @@ def test_rediscache_get_set():
 
 def test_rediscache_get_many():
     """
-    test retrieving multiple vahelues from RedisCache
+    test retrieving multiple values from RedisCache
     """
     _check_redis()
     cache = RedisCache()
@@ -92,7 +99,7 @@ def test_rediscache_get_many():
 
 def test_rediscache_set_many():
     """
-    test setting multiple vahelues from RedisCache
+    test setting multiple values from RedisCache
     """
     _check_redis()
     cache = RedisCache()
