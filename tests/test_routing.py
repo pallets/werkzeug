@@ -403,6 +403,18 @@ def test_complex_routing_rules():
     assert a.match('/foox') == ('foox', {})
     assert a.match('/1/2/3') == ('barx_path_path', {'bar': '1', 'blub': '2/3'})
 
+    assert a.build('index') == '/'
+    assert a.build('an_int', {'blub': 42}) == '/42'
+    assert a.build('a_string', {'blub': 'test'}) == '/test'
+    assert a.build('nested') == '/foo/'
+    assert a.build('nestedbar') == '/foobar/'
+    assert a.build('nested_show', {'testing': '1/2/3'}) == '/foo/1/2/3/'
+    assert a.build('nested_edit', {'testing': '1/2/3'}) == '/foo/1/2/3/edit'
+    assert a.build('users', {'page': 1}) == '/users/'
+    assert a.build('users', {'page': 2}) == '/users/page/2'
+    assert a.build('foox') == '/foox'
+    assert a.build('barx_path_path', {'bar': '1', 'blub': '2/3'}) == '/1/2/3'
+
 
 def test_default_converters():
     class MyMap(Map):

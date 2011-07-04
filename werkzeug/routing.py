@@ -750,28 +750,12 @@ class Rule(RuleFactory):
         """
         return bool(self.arguments), -len(self._weights), self._weights
 
-    def build_compare(self, other):
-        """Compare this object with another one for building.
+    def build_compare_key(self):
+        """The build compare key for sorting.
 
         :internal:
         """
-        if not other.arguments and self.arguments:
-            return -1
-        elif other.arguments and not self.arguments:
-            return 1
-        elif not other.defaults and self.defaults:
-            return -1
-        elif other.defaults and not self.defaults:
-            return 1
-        elif self.provides_defaults_for(other):
-            return -1
-        elif other.provides_defaults_for(self):
-            return 1
-        elif len(self.arguments) > len(other.arguments):
-            return -1
-        elif len(self.arguments) < len(other.arguments):
-            return 1
-        return -1
+        return -len(self.arguments), -len(self.defaults or ())
 
     def __eq__(self, other):
         return self.__class__ is other.__class__ and \
@@ -1159,7 +1143,7 @@ class Map(object):
         if self._remap:
             self._rules.sort(key=lambda x: x.match_compare_key())
             for rules in self._rules_by_endpoint.itervalues():
-                rules.sort(lambda a, b: a.build_compare(b))
+                rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False
 
     def __repr__(self):
