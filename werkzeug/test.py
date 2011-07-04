@@ -85,7 +85,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
             else:
                 if isinstance(value, unicode):
                     value = value.encode(charset)
-                write('\r\n\r\n' + value)
+                write('\r\n\r\n' + str(value))
             write('\r\n')
     write('--%s--\r\n' % boundary)
 
