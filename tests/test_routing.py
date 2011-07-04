@@ -373,6 +373,37 @@ def test_rule_templates():
     ])
 
 
+def test_complex_routing_rules():
+    from werkzeug.routing import Rule, Map
+
+    m = Map([
+        Rule('/', endpoint='index'),
+        Rule('/<int:blub>', endpoint='an_int'),
+        Rule('/<blub>', endpoint='a_string'),
+        Rule('/foo/', endpoint='nested'),
+        Rule('/foobar/', endpoint='nestedbar'),
+        Rule('/foo/<path:testing>/', endpoint='nested_show'),
+        Rule('/foo/<path:testing>/edit', endpoint='nested_edit'),
+        Rule('/users/', endpoint='users', defaults={'page': 1}),
+        Rule('/users/page/<int:page>', endpoint='users'),
+        Rule('/foox', endpoint='foox'),
+        Rule('/<path:bar>/<path:blub>', endpoint='barx_path_path')
+    ])
+    a = m.bind('example.com')
+
+    assert a.match('/') == ('index', {})
+    assert a.match('/42') == ('an_int', {'blub': 42})
+    assert a.match('/blub') == ('a_string', {'blub': 'blub'})
+    assert a.match('/foo/') == ('nested', {})
+    assert a.match('/foobar/') == ('nestedbar', {})
+    assert a.match('/foo/1/2/3/') == ('nested_show', {'testing': '1/2/3'})
+    assert a.match('/foo/1/2/3/edit') == ('nested_edit', {'testing': '1/2/3'})
+    assert a.match('/users/') == ('users', {'page': 1})
+    assert a.match('/users/page/2') == ('users', {'page': 2})
+    assert a.match('/foox') == ('foox', {})
+    assert a.match('/1/2/3') == ('barx_path_path', {'bar': '1', 'blub': '2/3'})
+
+
 def test_default_converters():
     class MyMap(Map):
         default_converters = Map.default_converters.copy()
