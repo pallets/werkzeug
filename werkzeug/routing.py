@@ -102,7 +102,7 @@ from pprint import pformat
 from urlparse import urljoin
 from itertools import izip
 
-from werkzeug.urls import url_encode, url_decode, url_quote
+from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
@@ -121,6 +121,55 @@ _rule_re = re.compile(r'''
     >
 ''', re.VERBOSE)
 _simple_rule_re = re.compile(r'<([^>]+)>')
+_converter_args_re = re.compile(r'''
+    (?P<name>\w+)\s*=\s*(?P<value>
+        True|False|
+        \d+(\.\d*)|
+        \w+|
+        "[^"]*?"
+    )|
+    (?P<key>
+        True|False|
+        \d+.\d+|
+        \d+.|
+        \d+|
+        \w+|
+        "[^"]*?"
+    )\s*,
+''', re.VERBOSE|re.UNICODE)
+
+
+_PYTHON_CONSTANTS = {
+    'None':     None,
+    'True':     True,
+    'False':    False
+}
+
+
+def _pythonize(value):
+    if value in _PYTHON_CONSTANTS:
+        return _PYTHON_CONSTANTS[value]
+    for convert in int, float:
+        try:
+            return convert(value)
+        except ValueError:
+            pass
+    return unicode(value)
+
+
+def parse_converter_args(argstr):
+    argstr += ','
+    args = []
+    kwargs = {}
+
+    for item in _converter_args_re.finditer(argstr):
+        if item.group('key'):
+            args.append(_pythonize(item.group('key')))
+        else:
+            name = item.group('name')
+            kwargs[name] = _pythonize(item.group('value'))
+
+    return tuple(args), kwargs
 
 
 def parse_rule(rule):
@@ -164,8 +213,7 @@ def get_converter(map, name, args):
     if not name in map.converters:
         raise LookupError('the converter %r does not exist' % name)
     if args:
-        storage = type('_Storage', (), {'__getitem__': lambda s, x: x})()
-        args, kwargs = eval(u'(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
+        args, kwargs = parse_converter_args(args)
     else:
         args = ()
         kwargs = {}
@@ -497,7 +545,6 @@ class Rule(RuleFactory):
             if 'HEAD' not in self.methods and 'GET' in self.methods:
                 self.methods.add('HEAD')
         self.endpoint = endpoint
-        self.greediness = 0
         self.redirect_to = redirect_to
 
         if defaults is not None:
@@ -546,38 +593,44 @@ class Rule(RuleFactory):
     def compile(self):
         """Compiles the regular expression and stores it."""
         assert self.map is not None, 'rule not bound'
-        rule = self.subdomain + '|' + (self.is_leaf and self.rule
-                                       or self.rule.rstrip('/'))
+        subdomain_rule = self.subdomain
 
         self._trace = []
         self._converters = {}
         self._weights = []
-
         regex_parts = []
-        for converter, arguments, variable in parse_rule(rule):
-            if converter is None:
-                regex_parts.append(re.escape(variable))
-                self._trace.append((False, variable))
-                self._weights.append(len(variable))
-            else:
-                convobj = get_converter(self.map, converter, arguments)
-                regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
-                self._converters[variable] = convobj
-                self._trace.append((True, variable))
-                self._weights.append(convobj.weight)
-                self.arguments.add(str(variable))
-                if convobj.is_greedy:
-                    self.greediness += 1
+
+        def _build_regex(rule):
+            for converter, arguments, variable in parse_rule(rule):
+                if converter is None:
+                    regex_parts.append(re.escape(variable))
+                    self._trace.append((False, variable))
+                    for part in variable.split('/'):
+                        if part:
+                            self._weights.append((0, -len(part)))
+                else:
+                    convobj = get_converter(self.map, converter, arguments)
+                    regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
+                    self._converters[variable] = convobj
+                    self._trace.append((True, variable))
+                    self._weights.append((1, convobj.weight))
+                    self.arguments.add(str(variable))
+
+        _build_regex(self.subdomain)
+        regex_parts.append('\\|')
+        self._trace.append((False, '|'))
+        _build_regex(self.is_leaf and self.rule or self.rule.rstrip('/'))
         if not self.is_leaf:
             self._trace.append((False, '/'))
 
-        if not self.build_only:
-            regex = r'^%s%s$' % (
-                u''.join(regex_parts),
-                (not self.is_leaf or not self.strict_slashes) and \
-                    '(?<!/)(?P<__suffix__>/?)' or ''
-            )
-            self._regex = re.compile(regex, re.UNICODE)
+        if self.build_only:
+            return
+        regex = r'^%s%s$' % (
+            u''.join(regex_parts),
+            (not self.is_leaf or not self.strict_slashes) and \
+                '(?<!/)(?P<__suffix__>/?)' or ''
+        )
+        self._regex = re.compile(regex, re.UNICODE)
 
     def match(self, path):
         """Check if the rule matches a given path. Path is a string in the
@@ -681,64 +734,28 @@ class Rule(RuleFactory):
 
         return True
 
-    def match_compare(self, other):
-        """Compare this object with another one for matching.
+    def match_compare_key(self):
+        """The match compare key for sorting.
+
+        Current implementation:
+
+        1.  rules without any arguments come first for performance
+            reasons only as we expect them to match faster and some
+            common ones usually don't have any arguments (index pages etc.)
+        2.  The more complex rules come first so the second argument is the
+            negative length of the number of weights.
+        3.  lastly we order by the actual weights.
 
         :internal:
         """
-        for sw, ow in izip(self._weights, other._weights):
-            if sw > ow:
-                return -1
-            elif sw < ow:
-                return 1
-        if len(self._weights) > len(other._weights):
-            return -1
-        if len(self._weights) < len(other._weights):
-            return 1
-        if not other.arguments and self.arguments:
-            return 1
-        elif other.arguments and not self.arguments:
-            return -1
-        elif other.defaults is None and self.defaults is not None:
-            return 1
-        elif other.defaults is not None and self.defaults is None:
-            return -1
-        elif self.greediness > other.greediness:
-            return -1
-        elif self.greediness < other.greediness:
-            return 1
-        elif len(self.arguments) > len(other.arguments):
-            return 1
-        elif len(self.arguments) < len(other.arguments):
-            return -1
-        return 1
+        return bool(self.arguments), -len(self._weights), self._weights
 
-    def build_compare(self, other):
-        """Compare this object with another one for building.
+    def build_compare_key(self):
+        """The build compare key for sorting.
 
         :internal:
         """
-        if not other.arguments and self.arguments:
-            return -1
-        elif other.arguments and not self.arguments:
-            return 1
-        elif other.defaults is None and self.defaults is not None:
-            return -1
-        elif other.defaults is not None and self.defaults is None:
-            return 1
-        elif self.provides_defaults_for(other):
-            return -1
-        elif other.provides_defaults_for(self):
-            return 1
-        elif self.greediness > other.greediness:
-            return -1
-        elif self.greediness < other.greediness:
-            return 1
-        elif len(self.arguments) > len(other.arguments):
-            return -1
-        elif len(self.arguments) < len(other.arguments):
-            return 1
-        return -1
+        return -len(self.arguments), -len(self.defaults or ())
 
     def __eq__(self, other):
         return self.__class__ is other.__class__ and \
@@ -776,7 +793,6 @@ class Rule(RuleFactory):
 class BaseConverter(object):
     """Base class for all converters."""
     regex = '[^/]+'
-    is_greedy = False
     weight = 100
 
     def __init__(self, map):
@@ -849,8 +865,7 @@ class PathConverter(BaseConverter):
     :param map: the :class:`Map`.
     """
     regex = '[^/].*?'
-    is_greedy = True
-    weight = 50
+    weight = 200
 
 
 class NumberConverter(BaseConverter):
@@ -858,6 +873,7 @@ class NumberConverter(BaseConverter):
 
     :internal:
     """
+    weight = 50
 
     def __init__(self, map, fixed_digits=0, min=None, max=None):
         BaseConverter.__init__(self, map)
@@ -1014,6 +1030,7 @@ class Map(object):
                          are returned.
         :return: an iterator
         """
+        self.update()
         if endpoint is not None:
             return iter(self._rules_by_endpoint[endpoint])
         return iter(self._rules)
@@ -1124,9 +1141,9 @@ class Map(object):
         in the correct order after things changed.
         """
         if self._remap:
-            self._rules.sort(lambda a, b: a.match_compare(b))
+            self._rules.sort(key=lambda x: x.match_compare_key())
             for rules in self._rules_by_endpoint.itervalues():
-                rules.sort(lambda a, b: a.build_compare(b))
+                rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False
 
     def __repr__(self):

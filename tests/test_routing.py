@@ -13,7 +13,7 @@ from werkzeug.wrappers import Response
 from werkzeug.datastructures import ImmutableDict
 from werkzeug.routing import Map, Rule, NotFound, BuildError, RequestRedirect, \
      RuleTemplate, Submount, EndpointPrefix, Subdomain, UnicodeConverter, \
-     MethodNotAllowed
+     MethodNotAllowed, parse_converter_args
 from werkzeug.test import create_environ
 
 
@@ -321,11 +321,11 @@ def test_rule_templates():
           , Rule('/bar/', endpoint='handle_bar')
           , Rule('/baz/', endpoint='handle_baz')
           ]),
-          EndpointPrefix('foo_',
-          [ Rule('/blah', endpoint='bar')
-          , Rule('/meh', endpoint='baz')
+          EndpointPrefix('${app}',
+          [ Rule('/${app}-blah', endpoint='bar')
+          , Rule('/${app}-meh', endpoint='baz')
           ]),
-          Subdomain('meh',
+          Subdomain('$app',
           [ Rule('/blah', endpoint='x_bar')
           , Rule('/meh', endpoint='x_baz')
           ])
@@ -338,38 +338,82 @@ def test_rule_templates():
         , testcase(app='test4')
         ])
 
-    out = [(x.rule, x.subdomain, x.endpoint)
-           for x in url_map.iter_rules()]
-    assert out == (
-        [ ('/test/test1/foo/', '', 'handle_foo')
-        , ('/test/test1/bar/', '', 'handle_bar')
-        , ('/test/test1/baz/', '', 'handle_baz')
-        , ('/blah', '', 'foo_bar')
-        , ('/meh', '', 'foo_baz')
-        , ('/blah', 'meh', 'x_bar')
-        , ('/meh', 'meh', 'x_baz')
-        , ('/test/test2/foo/', '', 'handle_foo')
-        , ('/test/test2/bar/', '', 'handle_bar')
-        , ('/test/test2/baz/', '', 'handle_baz')
-        , ('/blah', '', 'foo_bar')
-        , ('/meh', '', 'foo_baz')
-        , ('/blah', 'meh', 'x_bar')
-        , ('/meh', 'meh', 'x_baz')
-        , ('/test/test3/foo/', '', 'handle_foo')
-        , ('/test/test3/bar/', '', 'handle_bar')
-        , ('/test/test3/baz/', '', 'handle_baz')
-        , ('/blah', '', 'foo_bar')
-        , ('/meh', '', 'foo_baz')
-        , ('/blah', 'meh', 'x_bar')
-        , ('/meh', 'meh', 'x_baz')
-        , ('/test/test4/foo/', '', 'handle_foo')
-        , ('/test/test4/bar/', '', 'handle_bar')
-        , ('/test/test4/baz/', '', 'handle_baz')
-        , ('/blah', '', 'foo_bar')
-        , ('/meh', '', 'foo_baz')
-        , ('/blah', 'meh', 'x_bar')
-        , ('/meh', 'meh', 'x_baz') ]
-    )
+    out = sorted([(x.rule, x.subdomain, x.endpoint)
+                  for x in url_map.iter_rules()])
+
+    assert out == ([
+        ('/blah', 'test1', 'x_bar'),
+        ('/blah', 'test2', 'x_bar'),
+        ('/blah', 'test3', 'x_bar'),
+        ('/blah', 'test4', 'x_bar'),
+        ('/meh', 'test1', 'x_baz'),
+        ('/meh', 'test2', 'x_baz'),
+        ('/meh', 'test3', 'x_baz'),
+        ('/meh', 'test4', 'x_baz'),
+        ('/test/test1/bar/', '', 'handle_bar'),
+        ('/test/test1/baz/', '', 'handle_baz'),
+        ('/test/test1/foo/', '', 'handle_foo'),
+        ('/test/test2/bar/', '', 'handle_bar'),
+        ('/test/test2/baz/', '', 'handle_baz'),
+        ('/test/test2/foo/', '', 'handle_foo'),
+        ('/test/test3/bar/', '', 'handle_bar'),
+        ('/test/test3/baz/', '', 'handle_baz'),
+        ('/test/test3/foo/', '', 'handle_foo'),
+        ('/test/test4/bar/', '', 'handle_bar'),
+        ('/test/test4/baz/', '', 'handle_baz'),
+        ('/test/test4/foo/', '', 'handle_foo'),
+        ('/test1-blah', '', 'test1bar'),
+        ('/test1-meh', '', 'test1baz'),
+        ('/test2-blah', '', 'test2bar'),
+        ('/test2-meh', '', 'test2baz'),
+        ('/test3-blah', '', 'test3bar'),
+        ('/test3-meh', '', 'test3baz'),
+        ('/test4-blah', '', 'test4bar'),
+        ('/test4-meh', '', 'test4baz')
+    ])
+
+
+def test_complex_routing_rules():
+    from werkzeug.routing import Rule, Map
+
+    m = Map([
+        Rule('/', endpoint='index'),
+        Rule('/<int:blub>', endpoint='an_int'),
+        Rule('/<blub>', endpoint='a_string'),
+        Rule('/foo/', endpoint='nested'),
+        Rule('/foobar/', endpoint='nestedbar'),
+        Rule('/foo/<path:testing>/', endpoint='nested_show'),
+        Rule('/foo/<path:testing>/edit', endpoint='nested_edit'),
+        Rule('/users/', endpoint='users', defaults={'page': 1}),
+        Rule('/users/page/<int:page>', endpoint='users'),
+        Rule('/foox', endpoint='foox'),
+        Rule('/<path:bar>/<path:blub>', endpoint='barx_path_path')
+    ])
+    a = m.bind('example.com')
+
+    assert a.match('/') == ('index', {})
+    assert a.match('/42') == ('an_int', {'blub': 42})
+    assert a.match('/blub') == ('a_string', {'blub': 'blub'})
+    assert a.match('/foo/') == ('nested', {})
+    assert a.match('/foobar/') == ('nestedbar', {})
+    assert a.match('/foo/1/2/3/') == ('nested_show', {'testing': '1/2/3'})
+    assert a.match('/foo/1/2/3/edit') == ('nested_edit', {'testing': '1/2/3'})
+    assert a.match('/users/') == ('users', {'page': 1})
+    assert a.match('/users/page/2') == ('users', {'page': 2})
+    assert a.match('/foox') == ('foox', {})
+    assert a.match('/1/2/3') == ('barx_path_path', {'bar': '1', 'blub': '2/3'})
+
+    assert a.build('index') == '/'
+    assert a.build('an_int', {'blub': 42}) == '/42'
+    assert a.build('a_string', {'blub': 'test'}) == '/test'
+    assert a.build('nested') == '/foo/'
+    assert a.build('nestedbar') == '/foobar/'
+    assert a.build('nested_show', {'testing': '1/2/3'}) == '/foo/1/2/3/'
+    assert a.build('nested_edit', {'testing': '1/2/3'}) == '/foo/1/2/3/edit'
+    assert a.build('users', {'page': 1}) == '/users/'
+    assert a.build('users', {'page': 2}) == '/users/page/2'
+    assert a.build('foox') == '/foox'
+    assert a.build('barx_path_path', {'bar': '1', 'blub': '2/3'}) == '/1/2/3'
 
 
 def test_default_converters():
@@ -476,3 +520,21 @@ def test_external_building_with_port_bind_to_environ_wrong_servername():
     environ = create_environ('/', 'http://example.org:5000/')
     assert_raises(ValueError, lambda: map.bind_to_environ(environ, server_name="example.org"))
 
+
+def test_converter_parser():
+# incomplete
+
+    k, kw = parse_converter_args(u'test, a=1, b=3.0')
+
+    assert k == ('test',)
+    assert kw == {'a': 1, 'b': 3.0 }
+
+    k, kw = parse_converter_args('')
+    assert not k and not kw
+
+    k, kw = parse_converter_args('a, b, c,')
+    assert k == ('a', 'b', 'c')
+    assert not kw
+
+    k, kw = parse_converter_args('True, False, None')
+    assert k == (True, False, None)
