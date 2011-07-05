@@ -71,6 +71,7 @@ Version 0.7
   instead that rewrites the `REMOTE_ADDR` according to your setup.
   Also see the :class:`werkzeug.contrib.fixers.ProxyFix` for
   a drop-in replacement.
+- added cookie forging support to the test client.
 
 Version 0.6.2
 -------------

@@ -23,6 +23,7 @@ from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
+from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers, FileStorage
 
@@ -608,6 +609,25 @@ class Client(object):
             self.cookie_jar = None
         self.redirect_client = None
         self.allow_subdomain_redirects = allow_subdomain_redirects
+
+    def set_cookie(self, server_name, key, value='', max_age=None,
+                   expires=None, path='/', domain=None, secure=None,
+                   httponly=False, charset='utf-8'):
+        """Sets a cookie in the client's cookie jar.  The server name
+        is required and has to match the one that is also passed to
+        the open call.
+        """
+        assert self.cookie_jar is not None, 'cookies disabled'
+        header = dump_cookie(key, value, max_age, expires, path, domain,
+                             secure, httponly, charset)
+        environ = create_environ(path, base_url='http://' + server_name)
+        headers = [('Set-Cookie', header)]
+        self.cookie_jar.extract_wsgi(environ, headers)
+
+    def delete_cookie(self, server_name, key, path='/', domain=None):
+        """Deletes a cookie in the test client."""
+        self.set_cookie(server_name, key, expires=0, max_age=0,
+                        path=path, domain=domain)
 
     def open(self, *args, **kwargs):
         """Takes the same arguments as the :class:`EnvironBuilder` class with

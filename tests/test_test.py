@@ -87,6 +87,14 @@ def multi_value_post_app(environ, start_response):
     return response(environ, start_response)
 
 
+def test_cookie_forging():
+    """Test that cookie forging works."""
+    c = Client(cookie_app)
+    c.set_cookie('localhost', 'foo', 'bar')
+    appiter, code, headers = c.open()
+    assert list(appiter) == ['foo=bar']
+
+
 def test_set_cookie_app():
     """Test that a server cookie is set and stored in the client"""
     c = Client(cookie_app)
