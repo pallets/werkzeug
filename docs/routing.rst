@@ -103,24 +103,6 @@ Here a list of converters that come with Werkzeug:
 
 .. autoclass:: FloatConverter
 
-.. admonition:: Important
-
-    Werkzeug evaluates converter arguments as if they were Python method calls.
-    Thus, you should **never** create rules from user-submitted data since
-    they could insert arbitrary Python code in the parameters part.
-
-    As a matter of fact, this is a legal definition and sets *fixed_digits* to 2:
-
-    .. sourcecode:: python
-
-        url_map = Map([
-            Rule('/picture/<int(fixed_digits=1 + 1):id>.png',
-                 endpoint='view_image')
-        ])
-
-    However, evaluating Python expressions is currently an implementation
-    detail and might be unavailable in the future.
-
 
 Maps, Rules and Adapters
 ========================
