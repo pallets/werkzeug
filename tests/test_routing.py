@@ -538,7 +538,6 @@ def test_converter_parser():
     assert args == (True, False, None)
 
     args, kwargs = parse_converter_args('"foo", u"bar"')
-    print args
     assert args == ('foo', 'bar')
 
 
