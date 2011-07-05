@@ -40,30 +40,33 @@ def gen_salt(length):
     return ''.join(_sys_rng.choice(SALT_CHARS) for _ in xrange(length))
 
 
-def _hash_internal(method, salt, password):
+def _hash_internal(method, salt, password, pepper):
     """Internal password hash helper.  Supports plaintext without salt,
     unsalted and salted passwords.  In case salted passwords are used
     hmac is used.
     """
     if method == 'plain':
         return password
+    if isinstance(password, unicode):
+        password = password.encode('utf-8')
+    if (salt or pepper) and method not in _hash_mods:
+        return None
     if salt:
-        if method not in _hash_mods:
-            return None
         if isinstance(salt, unicode):
             salt = salt.encode('utf-8')
-        h = hmac.new(salt, None, _hash_mods[method])
+        h = hmac.new(salt, password, _hash_mods[method])
     else:
         if method not in _hash_funcs:
             return None
-        h = _hash_funcs[method]()
-    if isinstance(password, unicode):
-        password = password.encode('utf-8')
-    h.update(password)
+        h = _hash_funcs[method](password)
+    if pepper:
+        if isinstance(pepper, unicode):
+            pepper = pepper.encode('utf-8')
+        h = hmac.new(pepper, h.hexdigest(), _hash_mods[method])
     return h.hexdigest()
 
 
-def generate_password_hash(password, method='sha1', salt_length=8):
+def generate_password_hash(password, method='sha1', salt_length=8, pepper=None):
     """Hash a password with the given method and salt with with a string of
     the given length.  The format of the string returned includes the method
     that was used so that :func:`check_password_hash` can check the hash.
@@ -79,15 +82,16 @@ def generate_password_hash(password, method='sha1', salt_length=8):
     :param password: the password to hash
     :param method: the hash method to use (``'md5'`` or ``'sha1'``)
     :param salt_length: the lengt of the salt in letters
+    :param pepper: a secret constant stored in the application code
     """
     salt = method != 'plain' and gen_salt(salt_length) or ''
-    h = _hash_internal(method, salt, password)
+    h = _hash_internal(method, salt, password, pepper)
     if h is None:
         raise TypeError('invalid method %r' % method)
     return '%s$%s$%s' % (method, salt, h)
 
 
-def check_password_hash(pwhash, password):
+def check_password_hash(pwhash, password, pepper=None):
     """check a password against a given salted and hashed password value.
     In order to support unsalted legacy passwords this method supports
     plain text passwords, md5 and sha1 hashes (both salted and unsalted).
@@ -97,8 +101,9 @@ def check_password_hash(pwhash, password):
     :param pwhash: a hashed string like returned by
                    :func:`generate_password_hash`
     :param password: the plaintext password to compare against the hash
+    :param pepper: a secret constant stored in the application code
     """
     if pwhash.count('$') < 2:
         return False
     method, salt, hashval = pwhash.split('$', 2)
-    return _hash_internal(method, salt, password) == hashval
+    return _hash_internal(method, salt, password, pepper) == hashval
