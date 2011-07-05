@@ -190,9 +190,8 @@ def test_import_string():
 def test_find_modules():
     """Module and package lookup"""
     assert list(find_modules('werkzeug.debug')) == \
-        ['werkzeug.debug.console', 'werkzeug.debug.render',
-         'werkzeug.debug.repr', 'werkzeug.debug.tbtools',
-         'werkzeug.debug.utils']
+        ['werkzeug.debug.console', 'werkzeug.debug.repr',
+         'werkzeug.debug.tbtools']
 
 
 def test_html_builder():
