@@ -72,6 +72,7 @@ Version 0.7
   Also see the :class:`werkzeug.contrib.fixers.ProxyFix` for
   a drop-in replacement.
 - added cookie forging support to the test client.
+- added support for host based matching in the routing system.
 
 Version 0.6.2
 -------------
