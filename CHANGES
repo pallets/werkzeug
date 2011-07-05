@@ -75,6 +75,9 @@ Version 0.7
 - added support for host based matching in the routing system.
 - switched from the default 'ignore' to the better 'replace'
   unicode error handling mode.
+- The builtin server now adds a function named 'werkzeug.server.shutdown'
+  into the WSGI env to initiate a shutdown.  This currently only works
+  in Python 2.6 and later.
 
 Version 0.6.2
 -------------

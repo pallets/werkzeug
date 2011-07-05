@@ -40,6 +40,7 @@ import socket
 import sys
 import time
 import thread
+import signal
 import subprocess
 from urllib import unquote
 from SocketServer import ThreadingMixIn, ForkingMixIn
@@ -63,6 +64,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         else:
             path_info = self.path
             query = ''
+
+        def shutdown_server():
+            self.server.shutdown_signal = True
+
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
         environ = {
             'wsgi.version':         (1, 0),
@@ -72,6 +77,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'wsgi.multithread':     self.server.multithread,
             'wsgi.multiprocess':    self.server.multiprocess,
             'wsgi.run_once':        False,
+            'werkzeug.server.shutdown':
+                                    shutdown_server,
             'SERVER_SOFTWARE':      self.server_version,
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
@@ -171,12 +178,27 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
     def handle(self):
         """Handles a request ignoring dropped connections."""
         try:
-            return BaseHTTPRequestHandler.handle(self)
+            rv = BaseHTTPRequestHandler.handle(self)
         except (socket.error, socket.timeout), e:
             self.connection_dropped(e)
         except Exception:
             if self.server.ssl_context is None or not is_ssl_error():
                 raise
+        if self.server.shutdown_signal:
+            self.initiate_shutdown()
+        return rv
+
+    def initiate_shutdown(self):
+        """A horrible, horrible way to kill the server for Python 2.6 and
+        later.  It's the best we can do.
+        """
+        # reloader active
+        if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+            os.kill(os.getpid(), signal.SIGKILL)
+        # python 2.7
+        self.server._BaseServer__shutdown_request = True
+        # python 2.6
+        self.server._BaseServer__serving = False
 
     def connection_dropped(self, error, environ=None):
         """Called if the connection was closed by the client.  By default
@@ -309,6 +331,7 @@ class BaseWSGIServer(HTTPServer, object):
         HTTPServer.__init__(self, (host, int(port)), handler)
         self.app = app
         self.passthrough_errors = passthrough_errors
+        self.shutdown_signal = False
 
         if ssl_context is not None:
             try:

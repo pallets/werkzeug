@@ -60,6 +60,22 @@ development server on these host names as well.  You can use the
 :ref:`routing` system to dispatch between different hosts or parse
 :attr:`request.host` yourself.
 
+Shutting Down The Server
+------------------------
+
+.. versionadded:: 0.7
+
+Starting with Werkzeug 0.7 the development server provides a way to shut
+down the server after a request.  This currently only works with Python
+2.6 and later and will only work with the development server.  To initiate
+the shutdown you have to call a function named
+``'werkzeug.server.shutdown'`` in the WSGI environment::
+
+    def shutdown_server(environ):
+        if not 'werkzeug.server.shutdown' in environ:
+            raise RuntimeError('Not running the development server')
+        environ['werkzeug.server.shutdown']()
+
 Troubleshooting
 ---------------
 
