@@ -357,7 +357,7 @@ class EnvironBuilder(object):
     def _get_content_type(self):
         ct = self.headers.get('Content-Type')
         if ct is None and not self._input_stream:
-            if self.method in ('POST', 'PUT'):
+            if self.method in ('POST', 'PUT', 'PATCH'):
                 if self._files:
                     return 'multipart/form-data'
                 return 'application/x-www-form-urlencoded'
@@ -712,6 +712,11 @@ class Client(object):
     def get(self, *args, **kw):
         """Like open but method is enforced to GET."""
         kw['method'] = 'GET'
+        return self.open(*args, **kw)
+
+    def patch(self, *args, **kw):
+        """Like open but method is enforced to PATCH."""
+        kw['method'] = 'PATCH'
         return self.open(*args, **kw)
 
     def post(self, *args, **kw):

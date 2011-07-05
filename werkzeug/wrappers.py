@@ -288,7 +288,7 @@ class BaseRequest(object):
                                'that, set `shallow` to False.')
         data = None
         stream = _empty_stream
-        if self.environ['REQUEST_METHOD'] in ('POST', 'PUT'):
+        if self.environ['REQUEST_METHOD'] in ('POST', 'PUT', 'PATCH'):
             try:
                 data = parse_form_data(self.environ, self._get_file_stream,
                                        self.charset, self.encoding_errors,
@@ -391,7 +391,7 @@ class BaseRequest(object):
         value in :attr:`files` is a Werkzeug :class:`FileStorage` object.
 
         Note that :attr:`files` will only contain data if the request method was
-        POST or PUT and the ``<form>`` that posted to the request had
+        POST, PUT or PATCH and the ``<form>`` that posted to the request had
         ``enctype="multipart/form-data"``.  It will be empty otherwise.
 
         See the :class:`MultiDict` / :class:`FileStorage` documentation for more
