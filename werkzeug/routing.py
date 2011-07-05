@@ -1423,7 +1423,13 @@ class MapAdapter(object):
         return []
 
     def get_host(self, domain_part):
+        """Figures out the full host name for the given domain part.  The
+        domain part is a subdomain in case host matching is disabled or
+        a full host name.
+        """
         if self.map.host_matching:
+            if domain_part is None:
+                return self.server_name
             return domain_part
         subdomain = domain_part
         if subdomain is None:

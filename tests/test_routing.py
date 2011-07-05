@@ -583,6 +583,12 @@ def test_host_matching():
     a = m.bind('www.example.com')
     assert a.match('/') == ('index', {'domain': 'example.com'})
     assert a.match('/foo/') == ('x', {'domain': 'example.com', 'page': 1})
+    try:
+        a.match('/foo')
+    except RequestRedirect, e:
+        assert e.new_url == 'http://www.example.com/foo/'
+    else:
+        assert False, 'expected redirect'
 
     a = m.bind('files.example.com')
     assert a.match('/') == ('files', {'domain': 'example.com'})
