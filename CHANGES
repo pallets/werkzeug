@@ -65,6 +65,7 @@ Version 0.7
 - `call_on_close` now can be used as a decorator.
 - support for redis as cache backend.
 - Added `BaseRequest.scheme`.
+- support for the RFC 5789 PATCH method.
 
 Version 0.6.2
 -------------
