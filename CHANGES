@@ -73,6 +73,8 @@ Version 0.7
   a drop-in replacement.
 - added cookie forging support to the test client.
 - added support for host based matching in the routing system.
+- switched from the default 'ignore' to the better 'replace'
+  unicode error handling mode.
 
 Version 0.6.2
 -------------

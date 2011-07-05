@@ -1019,7 +1019,7 @@ class Map(object):
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
                  converters=None, sort_parameters=False, sort_key=None,
-                 encoding_errors='ignore', host_matching=False):
+                 encoding_errors='replace', host_matching=False):
         self._rules = []
         self._rules_by_endpoint = {}
         self._remap = True

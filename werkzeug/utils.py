@@ -341,7 +341,7 @@ def unescape(s):
     return _entity_re.sub(handle_match, s)
 
 
-def parse_cookie(header, charset='utf-8', errors='ignore',
+def parse_cookie(header, charset='utf-8', errors='replace',
                  cls=None):
     """Parse a cookie.  Either from a string or WSGI environ.
 

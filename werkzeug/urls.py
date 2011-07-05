@@ -148,7 +148,7 @@ def iri_to_uri(iri, charset='utf-8'):
     return str(urlparse.urlunsplit([scheme, hostname, path, query, fragment]))
 
 
-def uri_to_iri(uri, charset='utf-8', errors='ignore'):
+def uri_to_iri(uri, charset='utf-8', errors='replace'):
     r"""Converts a URI in a given charset to a IRI.
 
     Examples for URI versus IRI
@@ -205,7 +205,7 @@ def uri_to_iri(uri, charset='utf-8', errors='ignore'):
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
-               errors='ignore', separator='&', cls=None):
+               errors='replace', separator='&', cls=None):
     """Parse a querystring and return it as :class:`MultiDict`.  Per default
     only values are decoded into unicode strings.  If `decode_keys` is set to
     `True` the same will happen for keys.
@@ -323,7 +323,7 @@ def url_quote_plus(s, charset='utf-8', safe=''):
     return _quote_plus(s, safe=safe)
 
 
-def url_unquote(s, charset='utf-8', errors='ignore'):
+def url_unquote(s, charset='utf-8', errors='replace'):
     """URL decode a single string with a given decoding.
 
     Per default encoding errors are ignored.  If you want a different behavior
@@ -339,7 +339,7 @@ def url_unquote(s, charset='utf-8', errors='ignore'):
     return _decode_unicode(_unquote(s), charset, errors)
 
 
-def url_unquote_plus(s, charset='utf-8', errors='ignore'):
+def url_unquote_plus(s, charset='utf-8', errors='replace'):
     """URL decode a single string with the given decoding and decode
     a "+" to whitespace.
 
@@ -370,7 +370,7 @@ def url_fix(s, charset='utf-8'):
                     unicode string.
     """
     if isinstance(s, unicode):
-        s = s.encode(charset, 'ignore')
+        s = s.encode(charset, 'replace')
     scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
     path = _quote(path, '/%')
     qs = _quote_plus(qs, ':&%=')

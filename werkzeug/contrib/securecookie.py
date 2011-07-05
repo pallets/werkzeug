@@ -261,7 +261,7 @@ class SecureCookie(ModificationTrackingDict):
         :return: a new :class:`SecureCookie`.
         """
         if isinstance(string, unicode):
-            string = string.encode('utf-8', 'ignore')
+            string = string.encode('utf-8', 'replace')
         try:
             base64_hash, data = string.split('?', 1)
         except (ValueError, IndexError):

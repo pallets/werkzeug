@@ -113,8 +113,8 @@ class BaseRequest(object):
     #: the charset for the request, defaults to utf-8
     charset = 'utf-8'
 
-    #: the error handling procedure for errors, defaults to 'ignore'
-    encoding_errors = 'ignore'
+    #: the error handling procedure for errors, defaults to 'replace'
+    encoding_errors = 'replace'
 
     #: the maximum content length.  This is forwarded to the form data
     #: parsing function (:func:`parse_form_data`).  When set and the

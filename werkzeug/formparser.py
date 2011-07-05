@@ -42,7 +42,7 @@ def default_stream_factory(total_content_length, filename, content_type,
 
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
-                    errors='ignore', max_form_memory_size=None,
+                    errors='replace', max_form_memory_size=None,
                     max_content_length=None, cls=None,
                     silent=True):
     """Parse the form data in the environ and return it as tuple in the form
@@ -169,7 +169,7 @@ def is_valid_multipart_boundary(boundary):
 
 
 def parse_multipart(file, boundary, content_length, stream_factory=None,
-                    charset='utf-8', errors='ignore', buffer_size=10 * 1024,
+                    charset='utf-8', errors='replace', buffer_size=10 * 1024,
                     max_form_memory_size=None):
     """Parse a multipart/form-data stream.  This is invoked by
     :func:`utils.parse_form_data` if the content type matches.  Currently it

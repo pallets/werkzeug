@@ -204,7 +204,7 @@ def _decode_unicode(value, charset, errors):
         return value.decode(charset, errors)
     except UnicodeError, e:
         if fallback is not None:
-            return value.decode(fallback, 'ignore')
+            return value.decode(fallback, 'replace')
         from werkzeug.exceptions import HTTPUnicodeError
         raise HTTPUnicodeError(str(e))
 
