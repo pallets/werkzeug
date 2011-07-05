@@ -554,9 +554,9 @@ def test_alias_redirects():
     ])
     a = m.bind('example.com')
 
-    def ensure_redirect(path, new_url):
+    def ensure_redirect(path, new_url, args=None):
         try:
-            a.match(path)
+            a.match(path, query_args=args)
         except RequestRedirect, e:
             assert e.new_url == new_url
         else:
@@ -566,6 +566,7 @@ def test_alias_redirects():
     ensure_redirect('/users/index.html', '/users/')
     ensure_redirect('/users/page-2.html', '/users/page/2')
     ensure_redirect('/users/page-1.html', '/users/')
+    ensure_redirect('/users/page-1.html', '/users/?foo=bar', {'foo': 'bar'})
 
     assert a.build('index') == '/'
     assert a.build('users', {'page': 1}) == '/users/'
