@@ -522,19 +522,51 @@ def test_external_building_with_port_bind_to_environ_wrong_servername():
 
 
 def test_converter_parser():
-# incomplete
+    args, kwargs = parse_converter_args(u'test, a=1, b=3.0')
 
-    k, kw = parse_converter_args(u'test, a=1, b=3.0')
+    assert args == ('test',)
+    assert kwargs == {'a': 1, 'b': 3.0 }
 
-    assert k == ('test',)
-    assert kw == {'a': 1, 'b': 3.0 }
+    args, kwargs = parse_converter_args('')
+    assert not args and not kwargs
 
-    k, kw = parse_converter_args('')
-    assert not k and not kw
+    args, kwargs = parse_converter_args('a, b, c,')
+    assert args == ('a', 'b', 'c')
+    assert not kwargs
 
-    k, kw = parse_converter_args('a, b, c,')
-    assert k == ('a', 'b', 'c')
-    assert not kw
+    args, kwargs = parse_converter_args('True, False, None')
+    assert args == (True, False, None)
 
-    k, kw = parse_converter_args('True, False, None')
-    assert k == (True, False, None)
+    args, kwargs = parse_converter_args('"foo", u"bar"')
+    print args
+    assert args == ('foo', 'bar')
+
+
+def test_alias_redirects():
+    m = Map([
+        Rule('/', endpoint='index'),
+        Rule('/index.html', endpoint='index', alias=True),
+        Rule('/users/', defaults={'page': 1}, endpoint='users'),
+        Rule('/users/index.html', defaults={'page': 1}, alias=True,
+             endpoint='users'),
+        Rule('/users/page/<int:page>', endpoint='users'),
+        Rule('/users/page-<int:page>.html', alias=True, endpoint='users'),
+    ])
+    a = m.bind('example.com')
+
+    def ensure_redirect(path, new_url):
+        try:
+            a.match(path)
+        except RequestRedirect, e:
+            assert e.new_url == new_url
+        else:
+            assert False, 'expected redirect'
+
+    ensure_redirect('/index.html', '/')
+    ensure_redirect('/users/index.html', '/users/')
+    ensure_redirect('/users/page-2.html', '/users/page/2')
+    ensure_redirect('/users/page-1.html', '/users/')
+
+    assert a.build('index') == '/'
+    assert a.build('users', {'page': 1}) == '/users/'
+    assert a.build('users', {'page': 2}) == '/users/page/2'

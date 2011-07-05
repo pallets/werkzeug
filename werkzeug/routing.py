@@ -122,19 +122,14 @@ _rule_re = re.compile(r'''
 ''', re.VERBOSE)
 _simple_rule_re = re.compile(r'<([^>]+)>')
 _converter_args_re = re.compile(r'''
-    (?P<name>\w+)\s*=\s*(?P<value>
-        True|False|
-        \d+(\.\d*)|
-        \w+|
-        "[^"]*?"
-    )|
-    (?P<key>
+    ((?P<name>\w+)\s*=\s*)?
+    (?P<value>
         True|False|
         \d+.\d+|
         \d+.|
         \d+|
         \w+|
-        [urUR]?("[^"]*?"|'[^']*')
+        [urUR]?(?P<stringval>"[^"]*?"|'[^']*')
     )\s*,
 ''', re.VERBOSE|re.UNICODE)
 
@@ -154,6 +149,8 @@ def _pythonize(value):
             return convert(value)
         except ValueError:
             pass
+    if value[:1] == value[-1:] and value[0] in '"\'':
+        value = value[1:-1]
     return unicode(value)
 
 
@@ -163,11 +160,15 @@ def parse_converter_args(argstr):
     kwargs = {}
 
     for item in _converter_args_re.finditer(argstr):
-        if item.group('key'):
-            args.append(_pythonize(item.group('key')))
+        value = item.group('stringval')
+        if value is None:
+            value = item.group('value')
+        value = _pythonize(value)
+        if not item.group('name'):
+            args.append(value)
         else:
             name = item.group('name')
-            kwargs[name] = _pythonize(item.group('value'))
+            kwargs[name] = value
 
     return tuple(args), kwargs
 
@@ -246,6 +247,13 @@ class RequestRedirect(HTTPException, RoutingException):
 
 class RequestSlash(RoutingException):
     """Internal exception."""
+
+
+class RequestAliasRedirect(RoutingException):
+    """This rule is an alias and wants to redirect to the canonical URL."""
+
+    def __init__(self, matched_values):
+        self.matched_values = matched_values
 
 
 class BuildError(RoutingException, LookupError):
@@ -523,11 +531,15 @@ class Rule(RuleFactory):
         Keep in mind that the URL will be joined against the URL root of the
         script so don't use a leading slash on the target URL unless you
         really mean root of that domain.
+
+    `alias`
+        If enabled this rule serves as an alias for another rule with the same
+        endpoint and arguments.
     """
 
     def __init__(self, string, defaults=None, subdomain=None, methods=None,
                  build_only=False, endpoint=None, strict_slashes=None,
-                 redirect_to=None):
+                 redirect_to=None, alias=False):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
         self.rule = string
@@ -538,6 +550,7 @@ class Rule(RuleFactory):
         self.subdomain = subdomain
         self.defaults = defaults
         self.build_only = build_only
+        self.alias = alias
         if methods is None:
             self.methods = None
         else:
@@ -666,6 +679,10 @@ class Rule(RuleFactory):
                     result[str(name)] = value
                 if self.defaults is not None:
                     result.update(self.defaults)
+
+                if self.alias and self.map.redirect_defaults:
+                    raise RequestAliasRedirect(result)
+
                 return result
 
     def build(self, values, append_unknown=True):
@@ -755,7 +772,8 @@ class Rule(RuleFactory):
 
         :internal:
         """
-        return -len(self.arguments), -len(self.defaults or ())
+        return self.alias and 1 or 0, -len(self.arguments), \
+               -len(self.defaults or ())
 
     def __eq__(self, other):
         return self.__class__ is other.__class__ and \
@@ -1315,6 +1333,9 @@ class MapAdapter(object):
             except RequestSlash:
                 raise RequestRedirect(self.make_redirect_url(
                     path_info + '/', query_args))
+            except RequestAliasRedirect, e:
+                raise RequestRedirect(self.make_alias_redirect_url(
+                    path, rule.endpoint, e.matched_values, method, query_args))
             if rv is None:
                 continue
             if rule.methods is not None and method not in rule.methods:
@@ -1396,6 +1417,15 @@ class MapAdapter(object):
                            url_quote(path_info.lstrip('/'), self.map.charset)),
             suffix
         ))
+
+    def make_alias_redirect_url(self, path, endpoint, values, method, query_args):
+        """Internally called to make an alias redirect URL."""
+        url = self.build(endpoint, values, method, append_unknown=False)
+        if query_args:
+            url += '?' + url_encode(query_args, self.map.charset)
+        assert url != path, 'detected invalid alias setting.  No canonical ' \
+               'URL found'
+        return url
 
     def _partial_build(self, endpoint, values, method, append_unknown):
         """Helper for :meth:`build`.  Returns subdomain and path for the
