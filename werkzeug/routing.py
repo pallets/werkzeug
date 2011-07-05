@@ -715,7 +715,7 @@ class Rule(RuleFactory):
                 processed.add(data)
             else:
                 add(data)
-        subdomain, url = (u''.join(tmp)).split('|', 1)
+        domain_part, url = (u''.join(tmp)).split('|', 1)
 
         if append_unknown:
             query_vars = MultiDict(values)
@@ -728,7 +728,7 @@ class Rule(RuleFactory):
                                         sort=self.map.sort_parameters,
                                         key=self.map.sort_key)
 
-        return subdomain, url
+        return domain_part, url
 
     def provides_defaults_for(self, rule):
         """Check if this rule has defaults for a given rule.
@@ -1366,9 +1366,9 @@ class MapAdapter(object):
                     if r.provides_defaults_for(rule) and \
                        r.suitable_for(rv, method):
                         rv.update(r.defaults)
-                        subdomain, path = r.build(rv)
+                        domain_part, path = r.build(rv)
                         raise RequestRedirect(self.make_redirect_url(
-                            path, query_args, subdomain=subdomain))
+                            path, query_args, domain_part=domain_part))
             if rule.redirect_to is not None:
                 if isinstance(rule.redirect_to, basestring):
                     def _handle_match(match):
@@ -1422,17 +1422,25 @@ class MapAdapter(object):
             pass
         return []
 
-    def make_redirect_url(self, path_info, query_args=None, subdomain=None):
-        """Creates a redirect URL."""
+    def get_host(self, domain_part):
+        if self.map.host_matching:
+            return domain_part
+        subdomain = domain_part
+        if subdomain is None:
+            subdomain = self.subdomain
+        return (subdomain and subdomain + '.' or '') + self.server_name
+
+    def make_redirect_url(self, path_info, query_args=None, domain_part=None):
+        """Creates a redirect URL.
+
+        :internal:
+        """
         suffix = ''
         if query_args:
             suffix = '?' + url_encode(query_args, self.map.charset)
-        if subdomain is None:
-            subdomain = self.subdomain
-        return str('%s://%s%s/%s%s' % (
+        return str('%s://%s/%s%s' % (
             self.url_scheme,
-            subdomain and subdomain + '.' or '',
-            self.server_name,
+            self.get_host(domain_part),
             posixpath.join(self.script_name[:-1].lstrip('/'),
                            url_quote(path_info.lstrip('/'), self.map.charset)),
             suffix
@@ -1440,7 +1448,8 @@ class MapAdapter(object):
 
     def make_alias_redirect_url(self, path, endpoint, values, method, query_args):
         """Internally called to make an alias redirect URL."""
-        url = self.build(endpoint, values, method, append_unknown=False)
+        url = self.build(endpoint, values, method, append_unknown=False,
+                         force_external=True)
         if query_args:
             url += '?' + url_encode(query_args, self.map.charset)
         assert url != path, 'detected invalid alias setting.  No canonical ' \
@@ -1535,14 +1544,18 @@ class MapAdapter(object):
         rv = self._partial_build(endpoint, values, method, append_unknown)
         if rv is None:
             raise BuildError(endpoint, values, method)
-        subdomain, path = rv
+        domain_part, path = rv
 
-        if not force_external and subdomain == self.subdomain:
+        host = self.get_host(domain_part)
+
+        # shortcut this.
+        if not force_external and (
+            (self.map.host_matching and host == self.server_name) or
+            (not self.map.host_matching and domain_part == self.subdomain)):
             return str(urljoin(self.script_name, './' + path.lstrip('/')))
-        return str('%s://%s%s%s/%s' % (
+        return str('%s://%s%s/%s' % (
             self.url_scheme,
-            subdomain and subdomain + '.' or '',
-            self.server_name,
+            host,
             self.script_name[:-1],
             path.lstrip('/')
         ))

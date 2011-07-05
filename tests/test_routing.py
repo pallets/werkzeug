@@ -557,7 +557,7 @@ def test_alias_redirects():
         try:
             a.match(path, query_args=args)
         except RequestRedirect, e:
-            assert e.new_url == new_url
+            assert e.new_url == 'http://example.com' + new_url
         else:
             assert False, 'expected redirect'
 
@@ -576,10 +576,20 @@ def test_host_matching():
     m = Map([
         Rule('/', endpoint='index', host='www.<domain>'),
         Rule('/', endpoint='files', host='files.<domain>'),
+        Rule('/foo/', defaults={'page': 1}, host='www.<domain>', endpoint='x'),
+        Rule('/<int:page>', host='files.<domain>', endpoint='x')
     ], host_matching=True)
 
     a = m.bind('www.example.com')
     assert a.match('/') == ('index', {'domain': 'example.com'})
+    assert a.match('/foo/') == ('x', {'domain': 'example.com', 'page': 1})
 
     a = m.bind('files.example.com')
     assert a.match('/') == ('files', {'domain': 'example.com'})
+    assert a.match('/2') == ('x', {'domain': 'example.com', 'page': 2})
+    try:
+        a.match('/1')
+    except RequestRedirect, e:
+        assert e.new_url == 'http://www.example.com/foo/'
+    else:
+        assert False, 'expected redirect'
