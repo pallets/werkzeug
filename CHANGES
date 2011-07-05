@@ -78,6 +78,8 @@ Version 0.7
 - The builtin server now adds a function named 'werkzeug.server.shutdown'
   into the WSGI env to initiate a shutdown.  This currently only works
   in Python 2.6 and later.
+- Headers are now assumed to be latin1 for better compatibility with
+  Python 3 once we have support.
 
 Version 0.6.2
 -------------

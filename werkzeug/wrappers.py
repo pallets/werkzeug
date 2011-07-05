@@ -1032,7 +1032,7 @@ class BaseResponse(object):
         else:
             headers = self.get_wsgi_headers(environ)
         app_iter = self.get_app_iter(environ)
-        return app_iter, self.status, headers.to_list(self.charset)
+        return app_iter, self.status, headers.to_list()
 
     def __call__(self, environ, start_response):
         """Process this response as WSGI application.
