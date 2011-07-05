@@ -134,7 +134,7 @@ _converter_args_re = re.compile(r'''
         \d+.|
         \d+|
         \w+|
-        "[^"]*?"
+        [urUR]?("[^"]*?"|'[^']*')
     )\s*,
 ''', re.VERBOSE|re.UNICODE)
 
@@ -841,9 +841,9 @@ class UnicodeConverter(BaseConverter):
 
 class AnyConverter(BaseConverter):
     """Matches one of the items provided.  Items can either be Python
-    identifiers or unicode strings::
+    identifiers or strings::
 
-        Rule('/<any(about, help, imprint, u"class"):page_name>')
+        Rule('/<any(about, help, imprint, class, "foo,bar"):page_name>')
 
     :param map: the :class:`Map`.
     :param items: this function accepts the possible items as positional
