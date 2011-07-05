@@ -971,8 +971,10 @@ class BaseResponse(object):
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve
         # flattening the iterator or encoding of unicode strings in
-        # the response.
-        if self.is_sequence and content_length is None:
+        # the response.  We however should not do that if we have a 304
+        # response.
+        if self.is_sequence and content_length is None and \
+           self.status_code != 304:
             try:
                 content_length = sum(len(str(x)) for x in self.response)
             except UnicodeError:

@@ -649,3 +649,10 @@ def test_response_headers_passthrough():
     headers = Headers()
     resp = Response(headers=headers)
     assert resp.headers is headers
+
+
+def test_response_304_no_content_length():
+    """Ensure that 304 responses don't get an automatic content length"""
+    resp = Response('Test', status=304)
+    env = create_environ()
+    assert 'content-length' not in resp.get_wsgi_headers(env)
