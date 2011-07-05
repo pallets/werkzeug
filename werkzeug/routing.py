@@ -540,6 +540,9 @@ class Rule(RuleFactory):
         If provided and the URL map has host matching enabled this can be
         used to provide a match rule for the whole host.  This also means
         that the subdomain feature is disabled.
+
+    .. versionadded:: 0.7
+       The `alias` and `host` parameters were added.
     """
 
     def __init__(self, string, defaults=None, subdomain=None, methods=None,
@@ -997,12 +1000,16 @@ class Map(object):
                             See `url_encode` for more details.
     :param sort_key: The sort key function for `url_encode`.
     :param encoding_errors: the error method to use for decoding
+    :param host_matching: if set to `True` it enables the host matching
+                          feature and disables the subdomain one.  If
+                          enabled the `host` parameter to rules is used
+                          instead of the `subdomain` one.
 
     .. versionadded:: 0.5
         `sort_parameters` and `sort_key` was added.
 
     .. versionadded:: 0.7
-        `encoding_errors` was added.
+        `encoding_errors` and `host_matching` was added.
     """
 
     #: .. versionadded:: 0.6

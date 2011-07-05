@@ -179,3 +179,25 @@ example::
     ], converters={'bool': BooleanConverter})
 
 If you want that converter to be the default converter, name it ``'default'``.
+
+Host Matching
+=============
+
+.. versionadded:: 0.7
+
+Starting with Werkzeug 0.7 it's also possible to do matching on the whole
+host names instead of just the subdomain.  To enable this feature you need
+to pass ``host_matching=True`` to the :class:`Map` constructor and provide
+the `host` argument to all routes::
+
+    url_map = Map([
+        Rule('/', endpoint='www_index', host='www.example.com'),
+        Rule('/', endpoint='help_index', host='help.example.com')
+    ], host_matching=True)
+
+Variable parts are of course also possible in the host section::
+
+    url_map = Map([
+        Rule('/', endpoint='www_index', host='www.example.com'),
+        Rule('/', endpoint='user_index', host='<user>.example.com')
+    ], host_matching=True)
