@@ -14,7 +14,7 @@ import re
 import os
 import sys
 from time import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from werkzeug._internal import _decode_unicode, \
      _iter_modules, _ExtendedCookie, _ExtendedMorsel, \
