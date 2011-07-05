@@ -66,6 +66,10 @@ Version 0.7
 - support for redis as cache backend.
 - Added `BaseRequest.scheme`.
 - support for the RFC 5789 PATCH method.
+- removed support for `is_behind_proxy`.  Use a WSGI middleware
+  instead that rewrites the `REMOTE_ADDR` according to your setup.
+  Also see the :class:`werkzeug.contrib.fixers.ProxyFix` for
+  a drop-in replacement.
 
 Version 0.6.2
 -------------

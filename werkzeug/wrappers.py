@@ -116,9 +116,6 @@ class BaseRequest(object):
     #: the error handling procedure for errors, defaults to 'ignore'
     encoding_errors = 'ignore'
 
-    #: set to True if the application runs behind an HTTP proxy
-    is_behind_proxy = False
-
     #: the maximum content length.  This is forwarded to the form data
     #: parsing function (:func:`parse_form_data`).  When set and the
     #: :attr:`form` or :attr:`files` attribute is accessed and the
@@ -473,8 +470,6 @@ class BaseRequest(object):
     @property
     def remote_addr(self):
         """The remote address of the client."""
-        if self.is_behind_proxy and self.access_route:
-            return self.access_route[0]
         return self.environ.get('REMOTE_ADDR')
 
     remote_user = environ_property('REMOTE_USER', doc='''

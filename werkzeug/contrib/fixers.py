@@ -83,9 +83,6 @@ class ProxyFix(object):
     application that was not designed with HTTP proxies in mind.  It
     sets `REMOTE_ADDR`, `HTTP_HOST` from `X-Forwarded` headers.
 
-    Werkzeug wrappers have builtin support for this by setting the
-    :attr:`~BaseRequest.is_behind_proxy` attribute to `True`.
-
     Do not use this middleware in non-proxy setups for security reasons.
 
     The original values of `REMOTE_ADDR` and `HTTP_HOST` are stored in

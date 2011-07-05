@@ -117,10 +117,6 @@ def test_access_route():
         'X-Forwarded-For': '192.168.1.2, 192.168.1.1'
     })
     req.environ['REMOTE_ADDR'] = '192.168.1.3'
-    req.is_behind_proxy = True
-    assert req.access_route == ['192.168.1.2', '192.168.1.1']
-    assert req.remote_addr == '192.168.1.2'
-    req.is_behind_proxy = False
     assert req.access_route == ['192.168.1.2', '192.168.1.1']
     assert req.remote_addr == '192.168.1.3'
 
