@@ -91,11 +91,11 @@ r"""
 import sys
 import cPickle as pickle
 from hmac import new as hmac
-from itertools import izip
 from time import time
 from werkzeug.urls import url_quote_plus, url_unquote_plus
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.sessions import ModificationTrackingDict
+from werkzeug.security import safe_str_cmp
 
 
 # rather ugly way to import the correct hash method.  Because
@@ -113,18 +113,6 @@ if sys.version_info >= (2, 5):
         pass
 if _default_hash is None:
     import sha as _default_hash
-
-
-def safe_str_cmp(a, b):
-    """This function compares strings in somewhat constant time.  In case
-    someone actually finds a way to measure that over the network which
-    I strongly doubt."""
-    if len(a) != len(b):
-        return False
-    rv = 0
-    for x, y in izip(a, b):
-        rv |= ord(x) ^ ord(y)
-    return rv == 0
 
 
 class UnquoteError(Exception):

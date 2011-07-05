@@ -91,3 +91,5 @@ Security Helpers
 .. autofunction:: generate_password_hash
 
 .. autofunction:: check_password_hash
+
+.. autofunction:: safe_str_cmp

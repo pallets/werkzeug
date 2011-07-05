@@ -10,6 +10,7 @@
 """
 import hmac
 import string
+from itertools import izip
 from random import SystemRandom
 
 # because the API of hmac changed with the introduction of the
@@ -31,6 +32,22 @@ SALT_CHARS = string.letters + string.digits
 
 
 _sys_rng = SystemRandom()
+
+
+def safe_str_cmp(a, b):
+    """This function compares strings in somewhat constant time.  This
+    requires that the length of at least one string is known in advance.
+
+    Returns `True` if the two strings are equal or `False` if they are not.
+
+    .. versionadded:: 0.7
+    """
+    if len(a) != len(b):
+        return False
+    rv = 0
+    for x, y in izip(a, b):
+        rv |= ord(x) ^ ord(y)
+    return rv == 0
 
 
 def gen_salt(length):
@@ -101,4 +118,4 @@ def check_password_hash(pwhash, password):
     if pwhash.count('$') < 2:
         return False
     method, salt, hashval = pwhash.split('$', 2)
-    return _hash_internal(method, salt, password) == hashval
+    return safe_str_cmp(_hash_internal(method, salt, password), hashval)
