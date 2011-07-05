@@ -532,6 +532,12 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
     unmodified = False
     if isinstance(last_modified, basestring):
         last_modified = parse_date(last_modified)
+
+    # ensure that microsecond is zero because the HTTP spec does not transmit
+    # that either and we might have some false positives.  See issue #39
+    if last_modified is not None:
+        last_modified = last_modified.replace(microsecond=0)
+
     modified_since = parse_date(environ.get('HTTP_IF_MODIFIED_SINCE'))
 
     if modified_since and last_modified and last_modified <= modified_since:
