@@ -570,3 +570,16 @@ def test_alias_redirects():
     assert a.build('index') == '/'
     assert a.build('users', {'page': 1}) == '/users/'
     assert a.build('users', {'page': 2}) == '/users/page/2'
+
+
+def test_host_matching():
+    m = Map([
+        Rule('/', endpoint='index', host='www.<domain>'),
+        Rule('/', endpoint='files', host='files.<domain>'),
+    ], host_matching=True)
+
+    a = m.bind('www.example.com')
+    assert a.match('/') == ('index', {'domain': 'example.com'})
+
+    a = m.bind('files.example.com')
+    assert a.match('/') == ('files', {'domain': 'example.com'})

@@ -535,11 +535,16 @@ class Rule(RuleFactory):
     `alias`
         If enabled this rule serves as an alias for another rule with the same
         endpoint and arguments.
+
+    `host`
+        If provided and the URL map has host matching enabled this can be
+        used to provide a match rule for the whole host.  This also means
+        that the subdomain feature is disabled.
     """
 
     def __init__(self, string, defaults=None, subdomain=None, methods=None,
                  build_only=False, endpoint=None, strict_slashes=None,
-                 redirect_to=None, alias=False):
+                 redirect_to=None, alias=False, host=None):
         if not string.startswith('/'):
             raise ValueError('urls must start with a leading slash')
         self.rule = string
@@ -548,6 +553,7 @@ class Rule(RuleFactory):
         self.map = None
         self.strict_slashes = strict_slashes
         self.subdomain = subdomain
+        self.host = host
         self.defaults = defaults
         self.build_only = build_only
         self.alias = alias
@@ -574,7 +580,7 @@ class Rule(RuleFactory):
             defaults = dict(self.defaults)
         return Rule(self.rule, defaults, self.subdomain, self.methods,
                     self.build_only, self.endpoint, self.strict_slashes,
-                    self.redirect_to)
+                    self.redirect_to, self.alias, self.host)
 
     def get_rules(self, map):
         yield self
@@ -606,7 +612,11 @@ class Rule(RuleFactory):
     def compile(self):
         """Compiles the regular expression and stores it."""
         assert self.map is not None, 'rule not bound'
-        subdomain_rule = self.subdomain
+
+        if self.map.host_matching:
+            domain_rule = self.host or ''
+        else:
+            domain_rule = self.subdomain or ''
 
         self._trace = []
         self._converters = {}
@@ -629,7 +639,7 @@ class Rule(RuleFactory):
                     self._weights.append((1, convobj.weight))
                     self.arguments.add(str(variable))
 
-        _build_regex(self.subdomain)
+        _build_regex(domain_rule)
         regex_parts.append('\\|')
         self._trace.append((False, '|'))
         _build_regex(self.is_leaf and self.rule or self.rule.rstrip('/'))
@@ -647,7 +657,9 @@ class Rule(RuleFactory):
 
     def match(self, path):
         """Check if the rule matches a given path. Path is a string in the
-        form ``"subdomain|/path(method)"`` and is assembled by the map.
+        form ``"subdomain|/path(method)"`` and is assembled by the map.  If
+        the map is doing host matching the subdomain part will be the host
+        instead.
 
         If the rule matches a dict with the converted values is returned,
         otherwise the return value is `None`.
@@ -1000,7 +1012,7 @@ class Map(object):
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',
                  strict_slashes=True, redirect_defaults=True,
                  converters=None, sort_parameters=False, sort_key=None,
-                 encoding_errors='ignore'):
+                 encoding_errors='ignore', host_matching=False):
         self._rules = []
         self._rules_by_endpoint = {}
         self._remap = True
@@ -1010,6 +1022,7 @@ class Map(object):
         self.encoding_errors = encoding_errors
         self.strict_slashes = strict_slashes
         self.redirect_defaults = redirect_defaults
+        self.host_matching = host_matching
 
         self.converters = self.default_converters.copy()
         if converters:
@@ -1087,7 +1100,11 @@ class Map(object):
         .. versionadded:: 0.7
            `query_args` added
         """
-        if subdomain is None:
+        if self.host_matching:
+            if subdomain is not None:
+                raise RuntimeError('host matching enabled and a '
+                                   'subdomain was provided')
+        elif subdomain is None:
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
@@ -1133,7 +1150,7 @@ class Map(object):
                 if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
                    in (('https', '443'), ('http', '80')):
                     server_name += ':' + environ['SERVER_PORT']
-        elif subdomain is None:
+        elif subdomain is None and not self.host_matching:
             if 'HTTP_HOST' in environ:
                 wsgi_server_name = environ.get('HTTP_HOST')
             else:
@@ -1325,7 +1342,10 @@ class MapAdapter(object):
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
-        path = u'%s|/%s' % (self.subdomain, path_info.lstrip('/'))
+
+        path = u'%s|/%s' % (self.map.host_matching and self.server_name or
+                            self.subdomain, path_info.lstrip('/'))
+
         have_match_for = set()
         for rule in self.map._rules:
             try:
