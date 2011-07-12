@@ -747,19 +747,25 @@ class Rule(RuleFactory):
 
         :internal:
         """
+        # if a method was given explicitly and that method is not supported
+        # by this rule, this rule is not suitable.
         if method is not None and self.methods is not None \
            and method not in self.methods:
             return False
 
-        valueset = set(values)
+        defaults = self.defaults or ()
 
-        for key in self.arguments - set(self.defaults or ()):
-            if key not in values:
+        # all arguments required must be either in the defaults dict or
+        # the value dictionary otherwise it's not suitable
+        for key in self.arguments:
+            if key not in defaults and key not in values:
                 return False
 
-        if self.arguments.issubset(valueset) and self.defaults:
-            for key, value in self.defaults.iteritems():
-                if value != values[key]:
+        # in case defaults are given we ensure taht either the value was
+        # skipped or the value is the same as the default value.
+        if defaults:
+            for key, value in defaults.iteritems():
+                if key in values and value != values[key]:
                     return False
 
         return True

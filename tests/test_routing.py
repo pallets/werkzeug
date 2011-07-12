@@ -573,18 +573,26 @@ def test_alias_redirects():
 
 
 def test_double_defaults():
-    m = Map([
-        Rule('/', defaults={'foo': 1, 'bar': False}, endpoint='x'),
-        Rule('/<int:foo>', defaults={'bar': False}, endpoint='x'),
-        Rule('/bar/', defaults={'foo': 1, 'bar': True}, endpoint='x'),
-        Rule('/bar/<int:foo>', defaults={'bar': True}, endpoint='x')
-    ])
-    a = m.bind('example.com')
+    for prefix in '', '/aaa':
+        m = Map([
+            Rule(prefix + '/', defaults={'foo': 1, 'bar': False}, endpoint='x'),
+            Rule(prefix + '/<int:foo>', defaults={'bar': False}, endpoint='x'),
+            Rule(prefix + '/bar/', defaults={'foo': 1, 'bar': True}, endpoint='x'),
+            Rule(prefix + '/bar/<int:foo>', defaults={'bar': True}, endpoint='x')
+        ])
+        a = m.bind('example.com')
 
-    assert a.match('/') == ('x', {'foo': 1, 'bar': False})
-    assert a.match('/2') == ('x', {'foo': 2, 'bar': False})
-    assert a.match('/bar/') == ('x', {'foo': 1, 'bar': True})
-    assert a.match('/bar/2') == ('x', {'foo': 2, 'bar': True})
+        assert a.match(prefix + '/') == ('x', {'foo': 1, 'bar': False})
+        assert a.match(prefix + '/2') == ('x', {'foo': 2, 'bar': False})
+        assert a.match(prefix + '/bar/') == ('x', {'foo': 1, 'bar': True})
+        assert a.match(prefix + '/bar/2') == ('x', {'foo': 2, 'bar': True})
+
+        assert a.build('x', {'foo': 1, 'bar': False}) == prefix + '/'
+        assert a.build('x', {'foo': 2, 'bar': False}) == prefix + '/2'
+        assert a.build('x', {'bar': False}) == prefix + '/'
+        assert a.build('x', {'foo': 1, 'bar': True}) == prefix + '/bar/'
+        assert a.build('x', {'foo': 2, 'bar': True}) == prefix + '/bar/2'
+        assert a.build('x', {'bar': True}) == prefix + '/bar/'
 
 
 def test_host_matching():
