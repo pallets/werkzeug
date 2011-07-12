@@ -572,6 +572,21 @@ def test_alias_redirects():
     assert a.build('users', {'page': 2}) == '/users/page/2'
 
 
+def test_double_defaults():
+    m = Map([
+        Rule('/', defaults={'foo': 1, 'bar': False}, endpoint='x'),
+        Rule('/<int:foo>', defaults={'bar': False}, endpoint='x'),
+        Rule('/bar/', defaults={'foo': 1, 'bar': True}, endpoint='x'),
+        Rule('/bar/<int:foo>', defaults={'bar': True}, endpoint='x')
+    ])
+    a = m.bind('example.com')
+
+    assert a.match('/') == ('x', {'foo': 1, 'bar': False})
+    assert a.match('/2') == ('x', {'foo': 2, 'bar': False})
+    assert a.match('/bar/') == ('x', {'foo': 1, 'bar': True})
+    assert a.match('/bar/2') == ('x', {'foo': 2, 'bar': True})
+
+
 def test_host_matching():
     m = Map([
         Rule('/', endpoint='index', host='www.<domain>'),
