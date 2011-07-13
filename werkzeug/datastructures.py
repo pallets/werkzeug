@@ -1385,16 +1385,18 @@ class FileMultiDict(MultiDict):
         :param content_type: an optional content type
         """
         if isinstance(file, FileStorage):
-            self[name] = file
-            return
-        if isinstance(file, basestring):
-            if filename is None:
-                filename = file
-            file = open(file, 'rb')
-        if filename and content_type is None:
-            content_type = mimetypes.guess_type(filename)[0] or \
-                           'application/octet-stream'
-        self[name] = FileStorage(file, filename, name, content_type)
+            value = file
+        else:
+            if isinstance(file, basestring):
+                if filename is None:
+                    filename = file
+                file = open(file, 'rb')
+            if filename and content_type is None:
+                content_type = mimetypes.guess_type(filename)[0] or \
+                               'application/octet-stream'
+            value = FileStorage(file, filename, name, content_type)
+
+        self.add(name, value)
 
 
 class ImmutableDict(ImmutableDictMixin, dict):

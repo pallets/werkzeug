@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from copy import copy
+from os.path import join, dirname
 import pickle
 
 from cStringIO import StringIO
@@ -7,7 +8,7 @@ from nose.tools import assert_raises
 from werkzeug.datastructures import FileStorage, MultiDict, \
      ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
      ImmutableDict, Headers, ImmutableList, EnvironHeaders, \
-     OrderedMultiDict, ImmutableOrderedMultiDict, HeaderSet
+     OrderedMultiDict, ImmutableOrderedMultiDict, HeaderSet, FileMultiDict
 
 
 def test_multidict_pickle():
@@ -539,3 +540,15 @@ def test_immutable_structures():
     assert_raises(TypeError, d.setdefault, 'foo', 42)
     assert dict(d.items()) == {'X-Foo': 'test'}
     assert_raises(TypeError, d.copy)
+
+
+def test_file_multidict():
+    """Test FileMultiDict()"""
+    fmd = FileMultiDict()
+    fmd.add_file("attachment", FileStorage(StringIO('Hello World'), filename='first.txt'))
+    fmd.add_file("attachment", join(dirname(__file__), "res/test.txt"), filename='test.txt')
+    values = fmd.getlist("attachment")
+    assert len(values) == 2
+    assert values[0].filename, "first.txt"
+    assert values[1].filename, "test.txt"
+    
