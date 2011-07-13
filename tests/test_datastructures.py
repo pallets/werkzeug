@@ -549,6 +549,6 @@ def test_file_multidict():
     fmd.add_file("attachment", join(dirname(__file__), "res/test.txt"), filename='test.txt')
     values = fmd.getlist("attachment")
     assert len(values) == 2
-    assert values[0].filename, "first.txt"
-    assert values[1].filename, "test.txt"
+    assert values[0].filename == "first.txt"
+    assert values[1].filename == "test.txt"
     
