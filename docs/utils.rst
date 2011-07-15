@@ -93,3 +93,5 @@ Security Helpers
 .. autofunction:: check_password_hash
 
 .. autofunction:: safe_str_cmp
+
+.. autofunction:: safe_join

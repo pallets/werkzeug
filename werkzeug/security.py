@@ -8,8 +8,10 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import os
 import hmac
 import string
+import posixpath
 from itertools import izip
 from random import SystemRandom
 
@@ -32,6 +34,8 @@ SALT_CHARS = string.letters + string.digits
 
 
 _sys_rng = SystemRandom()
+_os_alt_seps = list(sep for sep in [os.path.sep, os.path.altsep]
+                    if sep not in (None, '/'))
 
 
 def safe_str_cmp(a, b):
@@ -119,3 +123,19 @@ def check_password_hash(pwhash, password):
         return False
     method, salt, hashval = pwhash.split('$', 2)
     return safe_str_cmp(_hash_internal(method, salt, password), hashval)
+
+
+def safe_join(directory, filename):
+    """Safely join `directory` and `filename`.  If this cannot be done,
+    this function returns ``None``.
+
+    :param directory: the base directory.
+    :param filename: the untrusted filename relative to that directory.
+    """
+    filename = posixpath.normpath(filename)
+    for sep in _os_alt_seps:
+        if sep in filename:
+            return None
+    if os.path.isabs(filename) or filename.startswith('../'):
+        return None
+    return os.path.join(directory, filename)

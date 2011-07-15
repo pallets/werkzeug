@@ -80,6 +80,7 @@ Version 0.7
   in Python 2.6 and later.
 - Headers are now assumed to be latin1 for better compatibility with
   Python 3 once we have support.
+- added :func:`werkzeug.security.safe_join`
 
 Version 0.6.2
 -------------
