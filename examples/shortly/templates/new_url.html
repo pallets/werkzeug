@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}Create New Short URL{% endblock %}
+{% block body %}
+  <h2>Submit URL</h2>
+  <form action="" method=post>
+    {% if error %}
+      <p class=error><strong>Error:</strong> {{ error }}
+    {% endif %}
+    <p>URL:
+      <input type=text name=url value="{{ url }}" class=urlinput>
+      <input type=submit value="Shorten">
+  </form>
+{% endblock %}

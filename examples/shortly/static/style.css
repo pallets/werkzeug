@@ -1,0 +1,17 @@
+body        { background: #E8EFF0; margin: 0; padding: 0; }
+body, input { font-family: 'Helvetica Neue', Arial,
+              sans-serif; font-weight: 300; font-size: 18px; }
+.box        { width: 500px; margin: 60px auto; padding: 20px;
+              background: white; box-shadow: 0 1px 4px #BED1D4;
+              border-radius: 2px; }
+a           { color: #11557C; }
+h1, h2      { margin: 0; color: #11557C; }
+h1 a        { text-decoration: none; }
+h2          { font-weight: normal; font-size: 24px; }
+.tagline    { color: #888; font-style: italic; margin: 0 0 20px 0; }
+.link div   { overflow: auto; font-size: 0.8em; white-space: pre;
+              padding: 4px 10px; margin: 5px 0; background: #E5EAF1; }
+dt          { font-weight: normal; }
+.error      { background: #E8EFF0; padding: 3px 8px; color: #11557C;
+              font-size: 0.9em; border-radius: 2px; }
+.urlinput   { width: 300px; }
