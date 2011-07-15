@@ -6,7 +6,9 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD license.
 """
-from werkzeug.security import check_password_hash, generate_password_hash
+import os
+from werkzeug.security import check_password_hash, generate_password_hash, \
+     safe_join
 
 
 def test_password_hashing():
@@ -32,3 +34,11 @@ def test_password_hashing():
 
     legacy = u'md5$$c21f969b5f03d33d43e04f8f136e7682'
     assert check_password_hash(legacy, 'default')
+
+
+def test_safe_join():
+    """Test the safe joining helper"""
+    assert safe_join('foo', 'bar/baz') == os.path.join('foo', 'bar/baz')
+    assert safe_join('foo', '../bar/baz') is None
+    if os.name == 'nt':
+        assert safe_join('foo', 'foo\\bar') is None
