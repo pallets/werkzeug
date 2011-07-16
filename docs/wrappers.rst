@@ -176,5 +176,5 @@ and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides
 .. autoclass:: WWWAuthenticateMixin
    :members:
 
-.. autoclass:: werkzeug.useragents.UserAgentMixin
+.. autoclass:: UserAgentMixin
    :members:
