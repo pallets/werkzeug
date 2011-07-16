@@ -49,7 +49,55 @@ The final result will look something like this:
 .. _Jinja: http://jinja.pocoo.org/
 .. _redis: http://redis.io/
 
-Step 0: Creating the Folders
+Step 0: A Basic WSGI Introduction
+---------------------------------
+
+Werkzeug is a utility library for WSGI.  WSGI itself is a protocol or
+convention that ensures that your web application can speak with the
+webserver and more importantly and that web applications work nicely
+together.
+
+A basic “Hello World” application in WSGI without the help of Werkzeug
+looks like this::
+
+    def application(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return ['Hello World!']
+
+A WSGI application is something you can call and pass an environ dict
+and a ``start_response`` callable.  The environ contains all incoming
+information, the ``start_response`` function can be used to indicate the
+start of the response.  With Werkzeug you don't have to deal directly with
+either as request and response objects are provided to work with them.
+
+The request data takes the environ object and allows you to access the
+data from that environ in a nice manner.  The response object is a WSGI
+application in itself and provides a much nicer way to create responses.
+
+Here is how you would write that application with response objects::
+
+    from werkzeug.wrappers import Response
+
+    def application(environ, start_response):
+        response = Response('Hello World!', mimetype='text/plain')
+        return response(environ, start_response)
+
+And here an expanded version that looks at the query string in the URL
+(more importantly at the `name` parameter in the URL to substitute “World”
+against another word)::
+
+    from werkzeug.wrappers import Request, Response
+
+    def application(environ, start_response):
+        request = Request(environ)
+        text = 'Hello %s!' % request.args.get('name', 'World')
+        response = Response(text, mimetype='text/plain')
+        return response(environ, start_response)
+
+And that's all you need to know about WSGI.
+
+
+Step 1: Creating the Folders
 ----------------------------
 
 Before we get started, let’s create the folders needed for this application::
@@ -66,7 +114,7 @@ css and javascript files go. Inside the templates folder we will make
 Jinja2 look for templates.  The templates you create later in the tutorial
 will go in this directory.
 
-Step 1: The Base Structure
+Step 2: The Base Structure
 --------------------------
 
 Now let's get right into and create a module for our application.  Let's
@@ -158,7 +206,7 @@ automatically restart.
 
 Just go to the URL and you should see “Hello World!”.
 
-Step 2: The Environment
+Step 3: The Environment
 -----------------------
 
 Now that we have the basic application class we can make the constructor
@@ -176,7 +224,7 @@ so let's extend the class a bit::
         t = self.jinja_env.get_template(template_name)
         return Response(t.render(context), mimetype='text/html')
 
-Step 3: The Routing
+Step 4: The Routing
 -------------------
 
 Next up is routing.  Routing is the process of match and parse the URL to
@@ -235,7 +283,7 @@ If all works well we call the function ``on_`` + endpoint and pass it the
 request as argument as well as all the URL arguments as keyword arguments
 and return the response object that method returns.
 
-Step 4: The First View
+Step 5: The First View
 ----------------------
 
 Let's start with the first view: the one for new URLs::
@@ -294,7 +342,7 @@ So what is missing for this view to work is the template.  We will create
 this later, let's first also write the other views and then do the
 templates in one go.
 
-Step 5: Redirect View
+Step 6: Redirect View
 ---------------------
 
 The redirect view is easy.  All it has to do is to look for the link in
@@ -313,7 +361,7 @@ by hand if the URL does not exist which will bubble up to the
 ``dispatch_request`` function and be converted into a default 404
 response.
 
-Step 6: Detail View
+Step 7: Detail View
 -------------------
 
 The link detail view is very similar, just that we render a template
@@ -335,7 +383,7 @@ a key does not yet exist::
 Please be aware that redis always works strings, so you have to convert
 the click count to :class:`int` by hand.
 
-Step 7: Templates
+Step 8: Templates
 -----------------
 
 And here are all the templates.  Just drop them into the `templates`
@@ -392,7 +440,7 @@ XSS attacks and rendering errors.
       </dl>
     {% endblock %}
 
-Step 8: The Style
+Step 9: The Style
 -----------------
 
 For this to look better than ugly black and white, here a simple
