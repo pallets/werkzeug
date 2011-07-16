@@ -99,7 +99,6 @@ import re
 import posixpath
 from pprint import pformat
 from urlparse import urljoin
-from itertools import izip
 
 from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
