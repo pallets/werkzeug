@@ -100,7 +100,7 @@ class RealmDigestDB(object):
         request.authentication = authResult
 
         authorization = request.authorization
-        if authorization is None:
+        if authorization is None or authorization.response is None:
             return authResult.deny('initial', None)
         authorization.result = authResult
 
