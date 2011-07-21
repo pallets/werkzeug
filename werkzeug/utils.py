@@ -192,10 +192,10 @@ class HTMLBuilder(object):
                     buffer += '>'
                 return buffer
             buffer += '>'
-            
+
             children_as_string = ''.join([unicode(x) for x in children
                                          if x is not None])
-            
+
             if children_as_string:
                 if tag in self._plaintext_elements:
                     children_as_string = escape(children_as_string)
@@ -522,9 +522,9 @@ def import_string(import_name, silent=False):
             modname = module + '.' + obj
             __import__(modname)
             return sys.modules[modname]
-    except ImportError:
+    except ImportError, e:
         if not silent:
-            raise
+            raise ImportStringError(import_name, e), None, sys.exc_info()[2]
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
@@ -657,6 +657,58 @@ class ArgumentValidationError(ValueError):
             len(self.missing),
             len(self.extra) + len(self.extra_positional)
         ))
+
+
+class ImportStringError(Exception):
+    """Provides information about a failed :func:`import_string` attempt."""
+
+    #: String in dotted notation that failed to be imported.
+    import_name = None
+    #: Wrapped exception.
+    exception = None
+
+    def __init__(self, import_name, exception):
+        self.import_name = import_name
+        self.exception = exception
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+    def __unicode__(self):
+        import textwrap
+        msg = textwrap.dedent("""
+        import_string() failed for %r. Possible reasons are:
+
+        - missing __init__.py in a package;
+        - package or module path not included in sys.path;
+        - duplicated package or module name taking precedence in sys.path;
+        - missing module, class, function or variable;
+
+        Debugged import:
+
+        %s
+
+        Original exception:
+
+        %s: %s""").strip()
+        partial_name = ''
+        tracked = []
+        for part in self.import_name.replace(':', '.').split('.'):
+            partial_name += (partial_name and '.') + part
+            partial_imported = import_string(partial_name, silent=True)
+            if partial_imported:
+                tracked.append((partial_name, partial_imported.__file__))
+            else:
+                track = ['- %r found in %r.' % (n, f) for n, f in tracked]
+                track.append('- %r not found.' % partial_name)
+                s = len(track) != 1 and 's' or ''
+                return msg % (self.import_name,
+                              '\n'.join(track),
+                              self.exception.__class__.__name__,
+                              str(self.exception))
+
+    def __repr__(self):
+        return '<%s \'%s\'>' % (self.__class__.__name__, self)
 
 
 # circular dependencies
