@@ -522,9 +522,9 @@ def import_string(import_name, silent=False):
             modname = module + '.' + obj
             __import__(modname)
             return sys.modules[modname]
-    except ImportError:
+    except ImportError, e:
         if not silent:
-            raise
+            raise ImportStringError(import_name, e), None, sys.exc_info()[2]
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
@@ -657,6 +657,49 @@ class ArgumentValidationError(ValueError):
             len(self.missing),
             len(self.extra) + len(self.extra_positional)
         ))
+
+
+class ImportStringError(Exception):
+    """Provides information about a failed :func:`import_string` attempt."""
+
+    #: String in dotted notation that failed to be imported.
+    import_name = None
+    #: Wrapped exception.
+    exception = None
+
+    def __init__(self, import_name, exception):
+        self.import_name = import_name
+        self.exception = exception
+
+        msg = (
+            'import_string() failed for %r. Possible reasons are:\n\n'
+            '- missing __init__.py in a package;\n'
+            '- package or module path not included in sys.path;\n'
+            '- duplicated package or module name taking precedence in '
+            'sys.path;\n'
+            '- missing module, class, function or variable;\n\n'
+            'Debugged import:\n\n%s\n\n'
+            'Original exception:\n\n%s: %s')
+
+        name = ''
+        tracked = []
+        for part in import_name.replace(':', '.').split('.'):
+            name += (name and '.') + part
+            imported = import_string(name, silent=True)
+            if imported:
+                tracked.append((name, imported.__file__))
+            else:
+                track = ['- %r found in %r.' % (n, i) for n, i in tracked]
+                track.append('- %r not found.' % name)
+                msg = msg % (import_name, '\n'.join(track),
+                             exception.__class__.__name__, str(exception))
+                break
+
+        Exception.__init__(self, msg)
+
+    def __repr__(self):
+        return '<%s(%r, %r)>' % (self.__class__.__name__, self.import_name,
+                                 self.exception)
 
 
 # circular dependencies
