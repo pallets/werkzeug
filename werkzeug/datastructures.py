@@ -1653,6 +1653,11 @@ class MIMEAccept(Accept):
             'application/xml' in self
         )
 
+    @property
+    def accept_json(self):
+        """True if this object accepts JSON."""
+        return 'application/json' in self
+
 
 class LanguageAccept(Accept):
     """Like :class:`Accept` but with normalization for languages."""
