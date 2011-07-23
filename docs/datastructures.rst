@@ -62,7 +62,7 @@ HTTP Related
    :members:
 
 .. autoclass:: MIMEAccept
-   :members: accept_html, accept_xhtml
+   :members: accept_html, accept_xhtml, accept_json
 
 .. autoclass:: CharsetAccept
 
