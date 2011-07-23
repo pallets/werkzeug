@@ -53,3 +53,20 @@ patch:
     ::
 
         patch -p1 < new-imports.udiff
+
+Stop Using Deprecated Things
+----------------------------
+
+A few things in Werkzeug will stop being supported and for other's we're
+suggesting alternatives even if they will stick around for a longer time.
+
+Do not use:
+
+-   `werkzeug.script`, replace it with custom scripts written with
+    `argparse` or something similar.
+-   `werkzeug.template`, replace with a proper template engine.
+-   `werkzeug.contrib.jsrouting`, stop using URL generation for
+    JavaScript, it does not scale well with many public routing.
+-   `werkzeug.contrib.kickstart`, replace with hand written code, the
+    Werkzeug API became better in general that this is no longer
+    necessary.
