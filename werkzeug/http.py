@@ -17,7 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-import inspect
+from time import time
 try:
     from email.utils import parsedate_tz
 except ImportError: # pragma: no cover
@@ -32,7 +32,8 @@ except ImportError: # pragma: no cover
 
 #: HTTP_STATUS_CODES is "exported" from this module.
 #: XXX: move to werkzeug.consts or something
-from werkzeug._internal import HTTP_STATUS_CODES, _dump_date
+from werkzeug._internal import HTTP_STATUS_CODES, _dump_date, \
+     _ExtendedCookie, _ExtendedMorsel, _decode_unicode
 
 
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
@@ -602,10 +603,110 @@ def is_hop_by_hop_header(header):
     return header.lower() in _hop_by_pop_headers
 
 
+def parse_cookie(header, charset='utf-8', errors='replace',
+                 cls=None):
+    """Parse a cookie.  Either from a string or WSGI environ.
+
+    Per default encoding errors are ignored.  If you want a different behavior
+    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
+    :exc:`HTTPUnicodeError` is raised.
+
+    .. versionchanged:: 0.5
+       This function now returns a :class:`TypeConversionDict` instead of a
+       regular dict.  The `cls` parameter was added.
+
+    :param header: the header to be used to parse the cookie.  Alternatively
+                   this can be a WSGI environment.
+    :param charset: the charset for the cookie values.
+    :param errors: the error behavior for the charset decoding.
+    :param cls: an optional dict class to use.  If this is not specified
+                       or `None` the default :class:`TypeConversionDict` is
+                       used.
+    """
+    if isinstance(header, dict):
+        header = header.get('HTTP_COOKIE', '')
+    if cls is None:
+        cls = TypeConversionDict
+    cookie = _ExtendedCookie()
+    cookie.load(header)
+    result = {}
+
+    # decode to unicode and skip broken items.  Our extended morsel
+    # and extended cookie will catch CookieErrors and convert them to
+    # `None` items which we have to skip here.
+    for key, value in cookie.iteritems():
+        if value.value is not None:
+            result[key] = _decode_unicode(unquote_header_value(value.value),
+                                          charset, errors)
+
+    return cls(result)
+
+
+def dump_cookie(key, value='', max_age=None, expires=None, path='/',
+                domain=None, secure=None, httponly=False, charset='utf-8',
+                sync_expires=True):
+    """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
+    The parameters are the same as in the cookie Morsel object in the
+    Python standard library but it accepts unicode data, too.
+
+    :param max_age: should be a number of seconds, or `None` (default) if
+                    the cookie should last only as long as the client's
+                    browser session.  Additionally `timedelta` objects
+                    are accepted, too.
+    :param expires: should be a `datetime` object or unix timestamp.
+    :param path: limits the cookie to a given path, per default it will
+                 span the whole domain.
+    :param domain: Use this if you want to set a cross-domain cookie. For
+                   example, ``domain=".example.com"`` will set a cookie
+                   that is readable by the domain ``www.example.com``,
+                   ``foo.example.com`` etc. Otherwise, a cookie will only
+                   be readable by the domain that set it.
+    :param secure: The cookie will only be available via HTTPS
+    :param httponly: disallow JavaScript to access the cookie.  This is an
+                     extension to the cookie standard and probably not
+                     supported by all browsers.
+    :param charset: the encoding for unicode values.
+    :param sync_expires: automatically set expires if max_age is defined
+                         but expires not.
+    """
+    try:
+        key = str(key)
+    except UnicodeError:
+        raise TypeError('invalid key %r' % key)
+    if isinstance(value, unicode):
+        value = value.encode(charset)
+    value = quote_header_value(value)
+    morsel = _ExtendedMorsel(key, value)
+    if isinstance(max_age, timedelta):
+        max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
+    if expires is not None:
+        if not isinstance(expires, basestring):
+            expires = cookie_date(expires)
+        morsel['expires'] = expires
+    elif max_age is not None and sync_expires:
+        morsel['expires'] = cookie_date(time() + max_age)
+    if domain and ':' in domain:
+        # The port part of the domain should NOT be used. Strip it
+        domain = domain.split(':', 1)[0]
+    if domain:
+        assert '.' in domain, (
+            "Setting \"domain\" for a cookie on a server running localy (ex: "
+            "localhost) is not supportted by complying browsers. You should "
+            "have something like: \"127.0.0.1 localhost dev.localhost\" on "
+            "your hosts file and then point your server to run on "
+            "\"dev.localhost\" and also set \"domain\" for \"dev.localhost\""
+        )
+    for k, v in (('path', path), ('domain', domain), ('secure', secure),
+                 ('max-age', max_age), ('httponly', httponly)):
+        if v is not None and v is not False:
+            morsel[k] = str(v)
+    return morsel.output(header='').lstrip()
+
+
 # circular dependency fun
 from werkzeug.datastructures import Headers, Accept, RequestCacheControl, \
      ResponseCacheControl, HeaderSet, ETags, Authorization, \
-     WWWAuthenticate
+     WWWAuthenticate, TypeConversionDict
 
 
 # DEPRECATED
