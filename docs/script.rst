@@ -4,6 +4,11 @@ Management Script Utilities
 
 .. automodule:: werkzeug.script
 
+.. admonition:: Deprecation
+
+   `werkzeug.script` as a module is going away.  Please stop using it and
+   replace it with custom scripts based on argparse.
+
 Writing Actions
 ===============
 
