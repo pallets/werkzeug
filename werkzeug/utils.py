@@ -659,7 +659,7 @@ class ArgumentValidationError(ValueError):
         ))
 
 
-class ImportStringError(Exception):
+class ImportStringError(ImportError):
     """Provides information about a failed :func:`import_string` attempt."""
 
     #: String in dotted notation that failed to be imported.
@@ -695,7 +695,7 @@ class ImportStringError(Exception):
                              exception.__class__.__name__, str(exception))
                 break
 
-        Exception.__init__(self, msg)
+        ImportError.__init__(self, msg)
 
     def __repr__(self):
         return '<%s(%r, %r)>' % (self.__class__.__name__, self.import_name,

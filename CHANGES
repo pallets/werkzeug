@@ -83,6 +83,8 @@ Version 0.7
 - added :func:`werkzeug.security.safe_join`
 - Added `accept_json` property analogous to `accept_html` on the
   :class:`werkzeug.datastructures.MIMEAccept`.
+- :func:`werkzeug.utils.import_string` now fails with much better
+  error messages that pinpoint to the problem.
 
 Version 0.6.2
 -------------
