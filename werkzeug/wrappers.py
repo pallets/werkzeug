@@ -29,7 +29,8 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
      parse_options_header, dump_options_header, http_date, \
-     parse_if_range_header, parse_cookie, dump_cookie
+     parse_if_range_header, parse_cookie, dump_cookie, \
+     parse_range_header
 from werkzeug.urls import url_decode, iri_to_uri
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
@@ -1146,9 +1147,21 @@ class ETagRequestMixin(object):
     def if_range(self):
         """The parsed `If-Range` header.
 
+        .. versionadded:: 0.7
+
         :rtype: :class:`~werkzeug.datastructures.IfRange`
         """
         return parse_if_range_header(self.environ.get('HTTP_IF_RANGE'))
+
+    @cached_property
+    def range(self):
+        """The parsed `Range` header.
+
+        .. versionadded:: 0.7
+
+        :rtype: :class:`~werkzeug.datastructures.Range`
+        """
+        return parse_range_header(self.environ.get('HTTP_RANGE'))
 
 
 class UserAgentMixin(object):

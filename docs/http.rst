@@ -50,6 +50,8 @@ by :rfc:`2616`, Werkzeug implements some custom data structures that are
 
 .. autofunction:: parse_if_range_header
 
+.. autofunction:: parse_range_header
+
 Header Utilities
 ================
 
@@ -66,6 +68,8 @@ strings from the parsed data.
 .. autofunction:: remove_entity_headers
 
 .. autofunction:: remove_hop_by_hop_headers
+
+.. autofunction:: is_byte_range_valid
 
 .. autofunction:: quote_header_value
 

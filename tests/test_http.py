@@ -360,3 +360,34 @@ def test_if_range_parsing():
         assert rv.etag is None
         assert rv.date is None
         assert rv.to_header() == ''
+
+
+def test_range_parsing():
+    """Parsing of the range header."""
+    rv = parse_range_header('bytes=52')
+    assert rv is None
+
+    rv = parse_range_header('bytes=52-')
+    assert rv.units == 'bytes'
+    assert rv.ranges == [(52, None)]
+    assert rv.to_header() == 'bytes=52-'
+
+    rv = parse_range_header('bytes=52-99')
+    assert rv.units == 'bytes'
+    assert rv.ranges == [(52, 100)]
+    assert rv.to_header() == 'bytes=52-99'
+
+    rv = parse_range_header('bytes=52-99,-1000')
+    assert rv.units == 'bytes'
+    assert rv.ranges == [(52, 100), (-1000, None)]
+    assert rv.to_header() == 'bytes=52-99,-1000'
+
+    rv = parse_range_header('bytes = 1 - 100')
+    assert rv.units == 'bytes'
+    assert rv.ranges == [(1, 101)]
+    assert rv.to_header() == 'bytes=1-100'
+
+    rv = parse_range_header('AWesomes=0-999')
+    assert rv.units == 'awesomes'
+    assert rv.ranges == [(0, 1000)]
+    assert rv.to_header() == 'awesomes=0-999'

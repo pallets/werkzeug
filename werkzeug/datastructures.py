@@ -2091,6 +2091,7 @@ class IfRange(object):
         self.date = date
 
     def to_header(self):
+        """Converts the object back into an HTTP header."""
         if self.date is not None:
             return http_date(self.date)
         if self.etag is not None:
@@ -2099,6 +2100,72 @@ class IfRange(object):
 
     def __str__(self):
         return self.to_header()
+
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, str(self))
+
+
+def is_byte_range_valid(start, stop, length):
+    """Checks if a given byte content range is valid for the given length.
+
+    .. versionadded:: 0.7
+    """
+    if (start is None) != (stop is None):
+        return False
+    elif start is None:
+        return length is None or length >= 0
+    elif length is None:
+        return 0 <= start < stop
+    elif start >= stop:
+        return False
+    return 0 <= start < length
+
+
+class Range(object):
+    """Represents a range header.  All the methods are only supporting bytes
+    as unit.  It does store multiple ranges but :meth:`range_for_length` will
+    only work if only one range is provided.
+
+    .. versionadded:: 0.7
+    """
+
+    def __init__(self, units, ranges):
+        #: The units of this range.  Usually "bytes".
+        self.units = units
+        #: A list of ``(begin, end)`` tuples for the range header provided.
+        #: The ranges are non-inclusive.
+        self.ranges = ranges
+
+    def range_for_length(self, length):
+        """If the range is for bytes, the length is not None and there is
+        exactly one range and it is satisfiable it returns a ``(start, stop)``
+        tuple, otherwise `None`.
+        """
+        if self.units != 'bytes' or length is None or len(self.ranges) != 1:
+            return None
+        start, end = self.ranges[0]
+        if end is None:
+            end = length
+            if start < 0:
+                start += length
+        if is_byte_range_valid(start, end, length):
+            return start, min(end, length)
+
+    def to_header(self):
+        """Converts the object back into an HTTP header."""
+        ranges = []
+        for begin, end in self.ranges:
+            if end is None:
+                ranges.append(begin >= 0 and '%s-' % begin or str(begin))
+            else:
+                ranges.append('%s-%s' % (begin, end - 1))
+        return '%s=%s' % (self.units, ','.join(ranges))
+
+    def __str__(self):
+        return self.to_header()
+
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, str(self))
 
 
 class Authorization(ImmutableDictMixin, dict):

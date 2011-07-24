@@ -399,6 +399,49 @@ def parse_if_range_header(value):
     return IfRange(unquote_etag(value)[0])
 
 
+def parse_range_header(value, make_inclusive=True):
+    """Parses a range header into a :class:`~werkzeug.datastructures.Range`
+    object.  If the header is missing or malformed `None` is returned.
+    `ranges` is a list of ``(start, stop)`` tuples where the ranges are
+    non-inclusive.
+
+    .. versionadded:: 0.7
+    """
+    if not value or '=' not in value:
+        return None
+
+    ranges = []
+    last_end = 0
+    units, rng = value.split('=', 1)
+    units = units.strip().lower()
+
+    for item in rng.split(','):
+        item = item.strip()
+        if '-' not in item:
+            return None
+        if item.startswith('-'):
+            if last_end < 0:
+                return None
+            begin = int(item)
+            end = None
+            last_end = -1
+        elif '-' in item:
+            begin, end = item.split('-', 1)
+            begin = int(begin)
+            if begin < last_end or last_end < 0:
+                return None
+            if end:
+                end = int(end) + 1
+                if begin >= end:
+                    return None
+            else:
+                end = None
+            last_end = end
+        ranges.append((begin, end))
+
+    return Range(units, ranges)
+
+
 def quote_etag(etag, weak=False):
     """Quote an etag.
 
@@ -725,7 +768,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
 # circular dependency fun
 from werkzeug.datastructures import Headers, Accept, RequestCacheControl, \
      ResponseCacheControl, HeaderSet, ETags, Authorization, \
-     WWWAuthenticate, TypeConversionDict, IfRange
+     WWWAuthenticate, TypeConversionDict, IfRange, Range
 
 
 # DEPRECATED
