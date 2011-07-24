@@ -2105,22 +2105,6 @@ class IfRange(object):
         return '<%s %r>' % (self.__class__.__name__, str(self))
 
 
-def is_byte_range_valid(start, stop, length):
-    """Checks if a given byte content range is valid for the given length.
-
-    .. versionadded:: 0.7
-    """
-    if (start is None) != (stop is None):
-        return False
-    elif start is None:
-        return length is None or length >= 0
-    elif length is None:
-        return 0 <= start < stop
-    elif start >= stop:
-        return False
-    return 0 <= start < length
-
-
 class Range(object):
     """Represents a range header.  All the methods are only supporting bytes
     as unit.  It does store multiple ranges but :meth:`range_for_length` will
@@ -2151,6 +2135,14 @@ class Range(object):
         if is_byte_range_valid(start, end, length):
             return start, min(end, length)
 
+    def make_content_range(self, length):
+        """Creates a :class:`~werkzeug.datastructures.ContentRange` object
+        from the current range and given content length.
+        """
+        rng = self.range_for_length(length)
+        if rng is not None:
+            return ContentRange(self.units, rng[0], rng[1], length)
+
     def to_header(self):
         """Converts the object back into an HTTP header."""
         ranges = []
@@ -2160,6 +2152,80 @@ class Range(object):
             else:
                 ranges.append('%s-%s' % (begin, end - 1))
         return '%s=%s' % (self.units, ','.join(ranges))
+
+    def __str__(self):
+        return self.to_header()
+
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, str(self))
+
+
+class ContentRange(object):
+    """Represents the content range header.
+
+    .. versionadded:: 0.7
+    """
+
+    def __init__(self, units, start, stop, length=None, on_update=None):
+        assert is_byte_range_valid(start, stop, length), \
+            'Bad range provided'
+        self.on_update = on_update
+        self.set(start, stop, length, units)
+
+    def _callback_property(name):
+        def fget(self):
+            return getattr(self, name)
+        def fset(self, value):
+            setattr(self, name, value)
+            if self.on_update is not None:
+                self.on_update(self)
+        return property(fget, fset)
+
+    #: The units to use, usually "bytes"
+    units = _callback_property('_units')
+    #: The start point of the range or `None`.
+    start = _callback_property('_start')
+    #: The stop point of the range (non-inclusive) or `None`.  Can only be
+    #: `None` if also start is `None`.
+    stop = _callback_property('_stop')
+    #: The length of the range or `None`.
+    length = _callback_property('_length')
+
+    def set(self, start, stop, length=None, units='bytes'):
+        """Simple method to update the ranges."""
+        assert is_byte_range_valid(start, stop, length), \
+            'Bad range provided'
+        self._units = units
+        self._start = start
+        self._stop = stop
+        self._length = length
+        if self.on_update is not None:
+            self.on_update(self)
+
+    def unset(self):
+        """Sets the units to `None` which indicates that the header should
+        no longer be used.
+        """
+        self.set(None, None, units=None)
+
+    def to_header(self):
+        if self.units is None:
+            return ''
+        if self.length is None:
+            length = '*'
+        else:
+            length = self.length
+        if self.start is None:
+            return '%s */%s' % (self.units, length)
+        return '%s %s-%s/%s' % (
+            self.units,
+            self.start,
+            self.stop - 1,
+            length
+        )
+
+    def __nonzero__(self):
+        return self.units is not None
 
     def __str__(self):
         return self.to_header()
@@ -2472,7 +2538,7 @@ class FileStorage(object):
 # circular dependencies
 from werkzeug.http import dump_options_header, dump_header, generate_etag, \
      quote_header_value, parse_set_header, unquote_etag, quote_etag, \
-     parse_options_header, http_date
+     parse_options_header, http_date, is_byte_range_valid
 
 
 # create all the special key errors now that the classes are defined.

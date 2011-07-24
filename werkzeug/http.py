@@ -285,13 +285,14 @@ def parse_cache_control_header(value, on_update=None, cls=None):
 
     .. versionadded:: 0.5
        The `cls` was added.  If not specified an immutable
-       :class:`RequestCacheControl` is returned.
+       :class:`~werkzeug.datastructures.RequestCacheControl` is returned.
 
     :param value: a cache control header to be parsed.
-    :param on_update: an optional callable that is called every time a
-                      value on the :class:`CacheControl` object is changed.
+    :param on_update: an optional callable that is called every time a value
+                      on the :class:`~werkzeug.datastructures.CacheControl`
+                      object is changed.
     :param cls: the class for the returned object.  By default
-                                :class:`RequestCacheControl` is used.
+                :class:`~werkzeug.datastructures.RequestCacheControl` is used.
     :return: a `cls` object.
     """
     if cls is None:
@@ -440,6 +441,51 @@ def parse_range_header(value, make_inclusive=True):
         ranges.append((begin, end))
 
     return Range(units, ranges)
+
+
+def parse_content_range_header(value, on_update=None):
+    """Parses a range header into a
+    :class:`~werkzeug.datastructures.ContentRange` object or `None` if
+    parsing is not possible.
+
+    .. versionadded:: 0.7
+
+    :param value: a content range header to be parsed.
+    :param on_update: an optional callable that is called every time a value
+                      on the :class:`~werkzeug.datastructures.ContentRange`
+                      object is changed.
+    """
+    if value is None:
+        return None
+    try:
+        units, rangedef = (value or '').strip().split(None, 1)
+    except ValueError:
+        return None
+
+    if '/' not in rangedef:
+        return None
+    rng, length = rangedef.split('/', 1)
+    if length == '*':
+        length = None
+    elif length.isdigit():
+        length = int(length)
+    else:
+        return None
+
+    if rng == '*':
+        return ContentRange(units, None, None, length, on_update=on_update)
+    elif '-' not in rng:
+        return None
+
+    start, stop = rng.split('-', 1)
+    try:
+        start = int(start)
+        stop = int(stop) + 1
+    except ValueError:
+        return None
+
+    if is_byte_range_valid(start, stop, length):
+        return ContentRange(units, start, stop, length, on_update=on_update)
 
 
 def quote_etag(etag, weak=False):
@@ -765,12 +811,29 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     return morsel.output(header='').lstrip()
 
 
+def is_byte_range_valid(start, stop, length):
+    """Checks if a given byte content range is valid for the given length.
+
+    .. versionadded:: 0.7
+    """
+    if (start is None) != (stop is None):
+        return False
+    elif start is None:
+        return length is None or length >= 0
+    elif length is None:
+        return 0 <= start < stop
+    elif start >= stop:
+        return False
+    return 0 <= start < length
+
+
 # circular dependency fun
-from werkzeug.datastructures import Headers, Accept, RequestCacheControl, \
-     ResponseCacheControl, HeaderSet, ETags, Authorization, \
-     WWWAuthenticate, TypeConversionDict, IfRange, Range
+from werkzeug.datastructures import Accept, HeaderSet, ETags, Authorization, \
+     WWWAuthenticate, TypeConversionDict, IfRange, Range, ContentRange, \
+     RequestCacheControl
 
 
 # DEPRECATED
 # backwards compatible imports
-from werkzeug.datastructures import MIMEAccept, CharsetAccept, LanguageAccept
+from werkzeug.datastructures import MIMEAccept, CharsetAccept, \
+     LanguageAccept, Headers

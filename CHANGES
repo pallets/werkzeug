@@ -91,6 +91,10 @@ Version 0.7
 - Added support for parsing of the `Range` header
   (:func:`werkzeug.http.parse_range_header` and
   :class:`werkzeug.datastructures.Range`)
+- Added support for parsing of the `Content-Range` header of respones
+  and provided an accessor object for it.
+  (:func:`werkzeug.http.parse_content_range_header` and
+  :class:`werkzeug.datastructures.ContentRange`)
 
 Version 0.6.2
 -------------

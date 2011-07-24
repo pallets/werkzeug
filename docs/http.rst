@@ -52,6 +52,8 @@ by :rfc:`2616`, Werkzeug implements some custom data structures that are
 
 .. autofunction:: parse_range_header
 
+.. autofunction:: parse_content_range_header
+
 Header Utilities
 ================
 

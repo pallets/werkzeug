@@ -30,7 +30,7 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_www_authenticate_header, remove_entity_headers, \
      parse_options_header, dump_options_header, http_date, \
      parse_if_range_header, parse_cookie, dump_cookie, \
-     parse_range_header, dump_header
+     parse_range_header, parse_content_range_header, dump_header
 from werkzeug.urls import url_decode, iri_to_uri
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
@@ -40,7 +40,8 @@ from werkzeug.wsgi import get_current_url, get_host, LimitedStream, \
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
-     ResponseCacheControl, RequestCacheControl, CallbackDict
+     ResponseCacheControl, RequestCacheControl, CallbackDict, \
+     ContentRange
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
 
@@ -1273,6 +1274,44 @@ class ETagResponseMixin(object):
         if not no_etag:
             self.add_etag()
         super(ETagResponseMixin, self).freeze()
+
+    accept_ranges = header_property('Accept-Ranges', doc='''
+        The `Accept-Ranges` header.  Even though the name would indicate
+        that multiple values are supported, it must be one string token only.
+
+        The values ``'bytes'`` and ``'none'`` are common.
+
+        .. versionadded:: 0.7''')
+
+    def _get_content_range(self):
+        def on_update(rng):
+            if not rng:
+                del self.headers['content-range']
+            else:
+                self.headers['Content-Range'] = rng.to_header()
+        rv = parse_content_range_header(self.headers.get('content-range'),
+                                        on_update)
+        # always provide a content range object to make the descriptor
+        # more user friendly.  It provides an unset() method that can be
+        # used to remove the header quickly.
+        if rv is None:
+            rv = ContentRange(None, None, None, on_update=on_update)
+        return rv
+    def _set_content_range(self, value):
+        if not value:
+            del self.headers['content-range']
+        elif isinstance(value, basestring):
+            self.headers['Content-Range'] = value
+        else:
+            self.headers['Content-Range'] = value.to_header()
+    content_range = property(_get_content_range, _set_content_range, doc='''
+        The `Content-Range` header as
+        :class:`~werkzeug.datastructures.ContentRange` object.  Even if the
+        header is not set it wil provide such an object for easier
+        manipulation.
+
+        .. versionadded:: 0.7''')
+    del _get_content_range, _set_content_range
 
 
 class ResponseStream(object):

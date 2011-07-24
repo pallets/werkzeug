@@ -102,6 +102,12 @@ HTTP Related
 .. autoclass:: IfRange
    :members:
 
+.. autoclass:: Range
+   :members:
+
+.. autoclass:: ContentRange
+   :members:
+
 
 Others
 ======

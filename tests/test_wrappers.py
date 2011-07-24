@@ -652,3 +652,29 @@ def test_response_304_no_content_length():
     resp = Response('Test', status=304)
     env = create_environ()
     assert 'content-length' not in resp.get_wsgi_headers(env)
+
+
+def test_ranges():
+    """Test basic range support"""
+    # basic range stuff
+    req = Request.from_values()
+    assert req.range is None
+    req = Request.from_values(headers={'Range': 'bytes=0-499'})
+    assert req.range.ranges == [(0, 500)]
+
+    resp = Response()
+    resp.content_range = req.range.make_content_range(1000)
+    assert resp.content_range.units == 'bytes'
+    assert resp.content_range.start == 0
+    assert resp.content_range.stop == 500
+    assert resp.content_range.length == 1000
+    assert resp.headers['Content-Range'] == 'bytes 0-499/1000'
+
+    resp.content_range.unset()
+    assert 'Content-Range' not in resp.headers
+
+    resp.headers['Content-Range'] = 'bytes 0-499/1000'
+    assert resp.content_range.units == 'bytes'
+    assert resp.content_range.start == 0
+    assert resp.content_range.stop == 500
+    assert resp.content_range.length == 1000

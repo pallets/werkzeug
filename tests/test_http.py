@@ -391,3 +391,29 @@ def test_range_parsing():
     assert rv.units == 'awesomes'
     assert rv.ranges == [(0, 1000)]
     assert rv.to_header() == 'awesomes=0-999'
+
+
+def test_content_range_parsing():
+    """Content-Range header parsing"""
+    rv = parse_content_range_header('bytes 0-98/*')
+    assert rv.units == 'bytes'
+    assert rv.start == 0
+    assert rv.stop == 99
+    assert rv.length is None
+    assert rv.to_header() == 'bytes 0-98/*'
+
+    rv = parse_content_range_header('bytes 0-98/*asdfsa')
+    assert rv is None
+
+    rv = parse_content_range_header('bytes 0-99/100')
+    assert rv.to_header() == 'bytes 0-99/100'
+    rv.start = None
+    rv.stop = None
+    assert rv.units == 'bytes'
+    assert rv.to_header() == 'bytes */100'
+
+    rv = parse_content_range_header('bytes */100')
+    assert rv.start is None
+    assert rv.stop is None
+    assert rv.length == 100
+    assert rv.units == 'bytes'
