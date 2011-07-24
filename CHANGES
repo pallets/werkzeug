@@ -3,7 +3,8 @@ Werkzeug Changelog
 
 Version 0.7
 -----------
-(codename Schraubschlüssel, released on July 24th 2011)
+
+Released on July 24th 2011, codename Schraubschlüssel
 
 - Add support for python-libmemcached to the Werkzeug cache abstraction
   layer.
@@ -98,6 +99,7 @@ Version 0.7
 
 Version 0.6.2
 -------------
+
 (bugfix release, released on April 23th 2010)
 
 - renamed the attribute `implicit_seqence_conversion` attribute of the
@@ -105,6 +107,7 @@ Version 0.6.2
 
 Version 0.6.1
 -------------
+
 (bugfix release, released on April 13th 2010)
 
 - heavily improved local objects.  Should pick up standalone greenlet
@@ -130,7 +133,8 @@ Version 0.6.1
 
 Version 0.6
 -----------
-(codename Hammer, released on Feb 19th 2010)
+
+Released on Feb 19th 2010, codename Hammer.
 
 - removed pending deprecations
 - sys.path is now printed from the testapp.
@@ -234,7 +238,8 @@ Version 0.5.1
 
 Version 0.5
 -----------
-(codename Schlagbohrer, released on April 24th 2009)
+
+Released on April 24th, codename Schlagbohrer.
 
 - requires Python 2.4 now
 - fixed a bug in :class:`~contrib.IterIO`
@@ -296,6 +301,7 @@ Version 0.5
 
 Version 0.4.1
 -------------
+
 (Bugfix release, released on January 11th 2009)
 
 - `werkzeug.contrib.cache.Memcached` accepts now objects that
@@ -323,7 +329,8 @@ Version 0.4.1
 
 Version 0.4
 -----------
-(codename Schraubenzieher, released on November 23rd 2008)
+
+Released on November 23rd 2008, codename Schraubenzieher.
 
 - `Client` supports an empty `data` argument now.
 - fixed a bug in `Response.application` that made it impossible to use it
@@ -356,7 +363,8 @@ Version 0.4
 
 Version 0.3.1
 -------------
-(released on June 24th 2008)
+
+(bugfix release, released on June 24th 2008)
 
 - fixed a security problem with `werkzeug.contrib.SecureCookie`.
   More details available in the `release announcement`_.
@@ -365,7 +373,8 @@ Version 0.3.1
 
 Version 0.3
 -----------
-(codename EUR325CAT6, released on June 14th 2008)
+
+Released on June 14th 2008, codename EUR325CAT6.
 
 - added support for redirecting in url routing.
 - added `Authorization` and `AuthorizationMixin`
@@ -405,7 +414,8 @@ Version 0.3
 
 Version 0.2
 -----------
-(codename Faustkeil, released Feb 14th 2008)
+
+Released Feb 14th 2008, codename Faustkeil.
 
 - Added `AnyConverter` to the routing system.
 - Added `werkzeug.contrib.securecookie`
@@ -449,6 +459,7 @@ Version 0.2
 
 Version 0.1
 -----------
-(codename Wictorinoxger, released Dec 9th 2007)
+
+Released on Dec 9th 2007, codename Wictorinoxger.
 
 - Initial release
