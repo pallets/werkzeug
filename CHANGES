@@ -88,6 +88,9 @@ Version 0.7
 - Added support for parsing of the `If-Range` header
   (:func:`werkzeug.http.parse_if_range_header` and
   :class:`werkzeug.datastructures.IfRange`)
+- Added support for parsing of the `Range` header
+  (:func:`werkzeug.http.parse_range_header` and
+  :class:`werkzeug.datastructures.Range`)
 
 Version 0.6.2
 -------------
