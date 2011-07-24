@@ -17,6 +17,11 @@
 from types import ModuleType
 import sys
 
+
+# the version.  Usually set automatically by a script.
+__version__ = '0.7-dev'
+
+
 # This import magic raises concerns quite often which is why the implementation
 # and motivation is explained here in detail now.
 #
@@ -106,11 +111,6 @@ for module, items in all_by_module.iteritems():
         object_origins[item] = module
 
 
-#: the cached version of the library.  We get the distribution from
-#: pkg_resources the first time this attribute is accessed.  Because
-#: this operation is quite slow it speeds up importing a lot.
-version = None
-
 class module(ModuleType):
     """Automatically import objects from the modules."""
 
@@ -132,17 +132,6 @@ class module(ModuleType):
                        '__package__', '__version__'))
         return result
 
-    @property
-    def __version__(self):
-        global version
-        if version is None:
-            try:
-                version = __import__('pkg_resources') \
-                          .get_distribution('Werkzeug').version
-            except Exception:
-                version = 'unknown'
-        return version
-
 # keep a reference to this module so that it's not garbage collected
 old_module = sys.modules['werkzeug']
 
@@ -154,6 +143,7 @@ new_module.__dict__.update({
     '__package__':      'werkzeug',
     '__path__':         __path__,
     '__doc__':          __doc__,
+    '__version__':      __version__,
     '__all__':          tuple(object_origins) + tuple(attribute_modules),
     '__docformat__':    'restructuredtext en'
 })
