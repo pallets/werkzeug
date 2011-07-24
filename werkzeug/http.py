@@ -302,7 +302,8 @@ def parse_cache_control_header(value, on_update=None, cls=None):
 
 
 def parse_set_header(value, on_update=None):
-    """Parse a set-like header and return a :class:`HeaderSet` object:
+    """Parse a set-like header and return a
+    :class:`~werkzeug.datastructures.HeaderSet` object:
 
     >>> hs = parse_set_header('token, "quoted value"')
 
@@ -321,8 +322,9 @@ def parse_set_header(value, on_update=None):
 
     :param value: a set header to be parsed.
     :param on_update: an optional callable that is called every time a
-                      value on the :class:`HeaderSet` object is changed.
-    :return: a :class:`HeaderSet`
+                      value on the :class:`~werkzeug.datastructures.HeaderSet`
+                      object is changed.
+    :return: a :class:`~werkzeug.datastructures.HeaderSet`
     """
     if not value:
         return HeaderSet(None, on_update)
@@ -332,10 +334,11 @@ def parse_set_header(value, on_update=None):
 def parse_authorization_header(value):
     """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
-    not given, otherwise an :class:`Authorization` object.
+    not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
+    object.
 
     :param value: the authorization header to parse.
-    :return: a :class:`Authorization` object or `None`.
+    :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
     """
     if not value:
         return
@@ -361,13 +364,14 @@ def parse_authorization_header(value):
 
 
 def parse_www_authenticate_header(value, on_update=None):
-    """Parse an HTTP WWW-Authenticate header into a :class:`WWWAuthenticate`
-    object.
+    """Parse an HTTP WWW-Authenticate header into a
+    :class:`~werkzeug.datastructures.WWWAuthenticate` object.
 
     :param value: a WWW-Authenticate header to parse.
-    :param on_update: an optional callable that is called every time a
-                      value on the :class:`WWWAuthenticate` object is changed.
-    :return: a :class:`WWWAuthenticate` object.
+    :param on_update: an optional callable that is called every time a value
+                      on the :class:`~werkzeug.datastructures.WWWAuthenticate`
+                      object is changed.
+    :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
     """
     if not value:
         return WWWAuthenticate(on_update=on_update)
@@ -381,7 +385,8 @@ def parse_www_authenticate_header(value, on_update=None):
 
 
 def parse_if_range_header(value):
-    """Parses an if-range header which can be an etag or a date.
+    """Parses an if-range header which can be an etag or a date.  Returns
+    a :class:`~werkzeug.datastructures.IfRange` object.
 
     .. versionadded:: 0.7
     """
@@ -435,7 +440,7 @@ def parse_etags(value):
     """Parse an etag header.
 
     :param value: the tag header to parse
-    :return: an :class:`ETags` object.
+    :return: an :class:`~werkzeug.datastructures.ETags` object.
     """
     if not value:
         return ETags()
