@@ -19,6 +19,9 @@ TEST_OPTIONS = \
 documentation:
 	@(cd docs; make html)
 
+release:
+	python scripts/make-release.py
+
 test:
 	@(nosetests $(TEST_OPTIONS) $(TESTS))
 
