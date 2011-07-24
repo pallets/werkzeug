@@ -3,7 +3,7 @@ Werkzeug Changelog
 
 Version 0.7
 -----------
-(Last pre 1.0 release, release date to be announced)
+(codename Schraubschlüssel, released on July 24th 2011)
 
 - Add support for python-libmemcached to the Werkzeug cache abstraction
   layer.
