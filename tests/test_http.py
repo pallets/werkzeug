@@ -329,3 +329,34 @@ def test_cookie_quoting():
     assert parse_cookie(val) == {'foo': '?foo'}
 
     assert parse_cookie(r'foo="foo\054bar"') == {'foo': 'foo,bar'}
+
+
+def test_if_range_parsing():
+    """Basic If-Range parsing."""
+    rv = parse_if_range_header('"Test"')
+    assert rv.etag == 'Test'
+    assert rv.date is None
+    assert rv.to_header() == '"Test"'
+
+    # weak information is dropped
+    rv = parse_if_range_header('w/"Test"')
+    assert rv.etag == 'Test'
+    assert rv.date is None
+    assert rv.to_header() == '"Test"'
+
+    # broken etags are supported too
+    rv = parse_if_range_header('bullshit')
+    assert rv.etag == 'bullshit'
+    assert rv.date is None
+    assert rv.to_header() == '"bullshit"'
+
+    rv = parse_if_range_header('Thu, 01 Jan 1970 00:00:00 GMT')
+    assert rv.etag is None
+    assert rv.date == datetime(1970, 1, 1)
+    assert rv.to_header() == 'Thu, 01 Jan 1970 00:00:00 GMT'
+
+    for x in '', None:
+        rv = parse_if_range_header(x)
+        assert rv.etag is None
+        assert rv.date is None
+        assert rv.to_header() == ''

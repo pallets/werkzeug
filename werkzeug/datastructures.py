@@ -2075,6 +2075,32 @@ class ETags(object):
         return '<%s %r>' % (self.__class__.__name__, str(self))
 
 
+class IfRange(object):
+    """Very simple object that represents the `If-Range` header in parsed
+    form.  It will either have neither a etag or date or one of either but
+    never both.
+
+    .. versionadded:: 0.7
+    """
+
+    def __init__(self, etag=None, date=None):
+        #: The etag parsed and unquoted.  Ranges always operate on strong
+        #: etags so the weakness information is not necessary.
+        self.etag = etag
+        #: The date in parsed format or `None`.
+        self.date = date
+
+    def to_header(self):
+        if self.date is not None:
+            return http_date(self.date)
+        if self.etag is not None:
+            return quote_etag(self.etag)
+        return ''
+
+    def __str__(self):
+        return self.to_header()
+
+
 class Authorization(ImmutableDictMixin, dict):
     """Represents an `Authorization` header sent by the client.  You should
     not create this kind of object yourself but use it when it's returned by
@@ -2378,8 +2404,8 @@ class FileStorage(object):
 
 # circular dependencies
 from werkzeug.http import dump_options_header, dump_header, generate_etag, \
-     quote_header_value, parse_set_header, unquote_etag, \
-     parse_options_header
+     quote_header_value, parse_set_header, unquote_etag, quote_etag, \
+     parse_options_header, http_date
 
 
 # create all the special key errors now that the classes are defined.

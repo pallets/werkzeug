@@ -48,6 +48,8 @@ by :rfc:`2616`, Werkzeug implements some custom data structures that are
 
 .. autofunction:: parse_www_authenticate_header
 
+.. autofunction:: parse_if_range_header
+
 Header Utilities
 ================
 
@@ -70,6 +72,14 @@ strings from the parsed data.
 .. autofunction:: unquote_header_value
 
 .. autofunction:: dump_header
+
+
+Cookies
+=======
+
+.. autofunction:: parse_cookie
+
+.. autofunction:: dump_cookie
 
 
 Conditional Response Helpers

@@ -380,6 +380,20 @@ def parse_www_authenticate_header(value, on_update=None):
                            on_update)
 
 
+def parse_if_range_header(value):
+    """Parses an if-range header which can be an etag or a date.
+
+    .. versionadded:: 0.7
+    """
+    if not value:
+        return IfRange()
+    date = parse_date(value)
+    if date is not None:
+        return IfRange(date=date)
+    # drop weakness information
+    return IfRange(unquote_etag(value)[0])
+
+
 def quote_etag(etag, weak=False):
     """Quote an etag.
 
@@ -706,7 +720,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
 # circular dependency fun
 from werkzeug.datastructures import Headers, Accept, RequestCacheControl, \
      ResponseCacheControl, HeaderSet, ETags, Authorization, \
-     WWWAuthenticate, TypeConversionDict
+     WWWAuthenticate, TypeConversionDict, IfRange
 
 
 # DEPRECATED

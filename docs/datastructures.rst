@@ -99,6 +99,9 @@ HTTP Related
 .. autoclass:: WWWAuthenticate
    :members:
 
+.. autoclass:: IfRange
+   :members:
+
 
 Others
 ======

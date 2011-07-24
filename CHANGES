@@ -85,6 +85,9 @@ Version 0.7
   :class:`werkzeug.datastructures.MIMEAccept`.
 - :func:`werkzeug.utils.import_string` now fails with much better
   error messages that pinpoint to the problem.
+- Added support for parsing of the `If-Range` header
+  (:func:`werkzeug.http.parse_if_range_header` and
+  :class:`werkzeug.datastructures.IfRange`)
 
 Version 0.6.2
 -------------

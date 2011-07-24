@@ -28,11 +28,12 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_date, generate_etag, is_resource_modified, unquote_etag, \
      quote_etag, parse_set_header, parse_authorization_header, \
      parse_www_authenticate_header, remove_entity_headers, \
-     parse_options_header, dump_options_header, http_date
+     parse_options_header, dump_options_header, http_date, \
+     parse_if_range_header, parse_cookie, dump_cookie
 from werkzeug.urls import url_decode, iri_to_uri
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
-     parse_cookie, dump_cookie, header_property, get_content_type
+     header_property, get_content_type
 from werkzeug.wsgi import get_current_url, get_host, LimitedStream, \
      ClosingIterator
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
@@ -1120,7 +1121,6 @@ class ETagRequestMixin(object):
         """An object containing all the etags in the `If-Match` header.
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
-
         """
         return parse_etags(self.environ.get('HTTP_IF_MATCH'))
 
@@ -1129,7 +1129,6 @@ class ETagRequestMixin(object):
         """An object containing all the etags in the `If-None-Match` header.
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
-
         """
         return parse_etags(self.environ.get('HTTP_IF_NONE_MATCH'))
 
@@ -1142,6 +1141,14 @@ class ETagRequestMixin(object):
     def if_unmodified_since(self):
         """The parsed `If-Unmodified-Since` header as datetime object."""
         return parse_date(self.environ.get('HTTP_IF_UNMODIFIED_SINCE'))
+
+    @cached_property
+    def if_range(self):
+        """The parsed `If-Range` header.
+
+        :rtype: :class:`~werkzeug.datastructures.IfRange`
+        """
+        return parse_if_range_header(self.environ.get('HTTP_IF_RANGE'))
 
 
 class UserAgentMixin(object):
