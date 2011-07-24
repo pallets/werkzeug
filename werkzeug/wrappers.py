@@ -30,7 +30,7 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_www_authenticate_header, remove_entity_headers, \
      parse_options_header, dump_options_header, http_date, \
      parse_if_range_header, parse_cookie, dump_cookie, \
-     parse_range_header
+     parse_range_header, dump_header
 from werkzeug.urls import url_decode, iri_to_uri
 from werkzeug.formparser import parse_form_data, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
@@ -1508,7 +1508,14 @@ class CommonResponseDescriptorsMixin(object):
                 elif header_set:
                     self.headers[name] = header_set.to_header()
             return parse_set_header(self.headers.get(name), on_update)
-        return property(fget, doc=doc)
+        def fset(self, value):
+            if not value:
+                del self.headers[name]
+            elif isinstance(value, basestring):
+                self.headers[name] = value
+            else:
+                self.headers[name] = dump_header(value)
+        return property(fget, fset, doc=doc)
 
     vary = _set_property('Vary', doc='''
          The Vary field value indicates the set of request-header fields that
