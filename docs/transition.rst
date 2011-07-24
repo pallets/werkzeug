@@ -70,3 +70,4 @@ Do not use:
 -   `werkzeug.contrib.kickstart`, replace with hand written code, the
     Werkzeug API became better in general that this is no longer
     necessary.
+-   `werkzeug.contrib.testtools`, not useful really.
