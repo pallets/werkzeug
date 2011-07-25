@@ -465,7 +465,7 @@ def _reloader_inotify(fnames, interval=None):
     # this API changed at one point, support both
     try:
         from pyinotify import EventsCodes as ec
-        events_codes.IN_ATTRIB
+        ec.IN_ATTRIB
     except (ImportError, AttributeError):
         import pyinotify as ec
 
