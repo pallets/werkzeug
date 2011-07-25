@@ -262,11 +262,15 @@ def make_shell(init_func=None, banner=None, use_ipython=True):
         namespace = init_func()
         if ipython:
             try:
-                import IPython
+                try:
+                    from IPython.frontend.terminal.embed import InteractiveShellEmbed
+                    sh = InteractiveShellEmbed(banner1=banner)
+                except ImportError:
+                    from IPython.Shell import IPShellEmbed
+                    sh = IPShellEmbed(banner=banner)
             except ImportError:
                 pass
             else:
-                sh = IPython.Shell.IPShellEmbed(banner=banner)
                 sh(global_ns={}, local_ns=namespace)
                 return
         from code import interact
