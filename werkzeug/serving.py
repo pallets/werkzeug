@@ -435,6 +435,7 @@ def reloader_loop(extra_files=None, interval=1):
 
     reloader(fnames, interval=interval)
 
+
 def _reloader_stat_loop(fnames, interval=1):
     mtimes = {}
     while 1:
@@ -453,15 +454,23 @@ def _reloader_stat_loop(fnames, interval=1):
                 sys.exit(3)
         time.sleep(interval)
 
+
 def _reloader_inotify(fnames, interval=None):
-    #: Mutated by inotify loop when changes occur.
+    # Mutated by inotify loop when changes occur.
     changed = [False]
 
     # Setup inotify watches
-    from pyinotify import WatchManager, EventsCodes, Notifier
+    from pyinotify import WatchManager, Notifier
+
+    # this API changed at one point, support both
+    try:
+        from pyinotify import EventsCodes as ec
+        events_codes.IN_ATTRIB
+    except (ImportError, AttributeError):
+        import pyinotify as ec
+
     wm = WatchManager()
-    mask = "IN_DELETE_SELF IN_MOVE_SELF IN_MODIFY IN_ATTRIB".split()
-    mask = reduce(lambda m, a: m | getattr(EventsCodes, a), mask, 0)
+    mask = ec.IN_DELETE_SELF | ec.IN_MOVE_SELF | ec.IN_MODIFY | ec.IN_ATTRIB
 
     def signal_changed(event):
         if changed[0]:
@@ -483,6 +492,7 @@ def _reloader_inotify(fnames, interval=None):
     finally:
         notif.stop()
     sys.exit(3)
+
 
 # Decide which reloader to use
 try:
