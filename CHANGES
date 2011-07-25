@@ -6,6 +6,9 @@ Version 0.7.1
 
 (bugfix release, release date to be decided)
 
+- Fixed a problem with newer versions of IPython
+- Fixed a problem with newer versions of pyinotify
+
 Version 0.7
 -----------
 
