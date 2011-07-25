@@ -1,6 +1,19 @@
 Werkzeug Changelog
 ==================
 
+Version 0.8
+-----------
+
+Release date to be announced, codename to be decided.
+
+Version 0.7.1
+-------------
+
+(bugfix release, release date to be decided)
+
+- Fixed a problem with newer versions of IPython
+- Fixed a problem with newer versions of pyinotify
+
 Version 0.7
 -----------
 
