@@ -9,7 +9,7 @@ Release date to be announced, codename to be decided.
 Version 0.7.1
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on July 26th 2011)
 
 - Fixed a problem with newer versions of IPython
 - Disabled pyinotify based reloader which does not work reliably.
