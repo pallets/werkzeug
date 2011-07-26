@@ -494,15 +494,10 @@ def _reloader_inotify(fnames, interval=None):
     sys.exit(3)
 
 
-# Decide which reloader to use
-try:
-    __import__("pyinotify")   # Pyflakes-avoidant
-except ImportError:
-    reloader = _reloader_stat_loop
-    reloader_name = "stat() polling"
-else:
-    reloader = _reloader_inotify
-    reloader_name = "inotify events"
+# currently we always use the stat loop reloader for the simple reason
+# that the inotify one does not respond to added files properly.  Also
+# it's quite buggy and the API is a mess.
+reloader = _reloader_stat_loop
 
 
 def restart_with_reloader():
@@ -510,7 +505,7 @@ def restart_with_reloader():
     but running the reloader thread.
     """
     while 1:
-        _log('info', ' * Restarting with reloader: %s', reloader_name)
+        _log('info', ' * Restarting with reloader')
         args = [sys.executable] + sys.argv
         new_environ = os.environ.copy()
         new_environ['WERKZEUG_RUN_MAIN'] = 'true'

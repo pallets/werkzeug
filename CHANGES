@@ -12,7 +12,7 @@ Version 0.7.1
 (bugfix release, release date to be decided)
 
 - Fixed a problem with newer versions of IPython
-- Fixed a problem with newer versions of pyinotify
+- Disabled pyinotify based reloader which does not work reliably.
 
 Version 0.7
 -----------
