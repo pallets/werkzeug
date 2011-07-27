@@ -45,7 +45,7 @@ $(function() {
               sourceView.slideUp('fast');
             });
         $.get(document.location.pathname, {__debugger__: 'yes', cmd:
-            'source', frm: frameID}, function(data) {
+            'source', frm: frameID, s: SECRET}, function(data) {
           $('table', sourceView)
             .replaceWith(data);
           if (!sourceView.is(':visible'))
@@ -96,7 +96,8 @@ $(function() {
       $.ajax({
         dataType:     'json',
         url:          document.location.pathname,
-        data:         {__debugger__: 'yes', tb: TRACEBACK, cmd: 'paste'},
+        data:         {__debugger__: 'yes', tb: TRACEBACK, cmd: 'paste',
+                       s: SECRET},
         success:      function(data) {
           $('div.plain span.pastemessage')
             .removeClass('pastemessage')
@@ -134,7 +135,7 @@ function openShell(consoleNode, target, frameID) {
     .submit(function() {
       var cmd = command.val();
       $.get(document.location.pathname, {
-          __debugger__: 'yes', cmd: cmd, frm: frameID}, function(data) {
+          __debugger__: 'yes', cmd: cmd, frm: frameID, s: SECRET}, function(data) {
         var tmp = $('<div>').html(data);
         $('span.extended', tmp).each(function() {
           var hidden = $(this).wrap('<span>').hide();

@@ -42,7 +42,8 @@ HEADER = u'''\
     <script type="text/javascript">
       var TRACEBACK = %(traceback_id)d,
           CONSOLE_MODE = %(console)s,
-          EVALEX = %(evalex)s
+          EVALEX = %(evalex)s,
+          SECRET = "%(secret)s";
     </script>
   </head>
   <body>
@@ -127,11 +128,12 @@ SOURCE_LINE_HTML = u'''\
 '''
 
 
-def render_console_html():
+def render_console_html(secret):
     return CONSOLE_HTML % {
         'evalex':           'true',
         'console':          'true',
         'title':            'Console',
+        'secret':           secret,
         'traceback_id':     -1
     }
 
@@ -261,7 +263,7 @@ class Traceback(object):
         """Create a paste and return the paste id."""
         from xmlrpclib import ServerProxy
         srv = ServerProxy('%sxmlrpc/' % lodgeit_url)
-        return srv.pastes.newPaste('pytb', self.plaintext)
+        return srv.pastes.newPaste('pytb', self.plaintext, '', '', '', True)
 
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
@@ -296,7 +298,8 @@ class Traceback(object):
             'description':  description_wrapper % escape(self.exception)
         }
 
-    def render_full(self, evalex=False, lodgeit_url=None):
+    def render_full(self, evalex=False, lodgeit_url=None,
+                    secret=None):
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
         return PAGE_HTML % {
@@ -309,7 +312,8 @@ class Traceback(object):
             'summary':          self.render_summary(include_title=False),
             'plaintext':        self.plaintext,
             'plaintext_cs':     re.sub('-{2,}', '-', self.plaintext),
-            'traceback_id':     self.id
+            'traceback_id':     self.id,
+            'secret':           secret
         }
 
     def generate_plaintext_traceback(self):
