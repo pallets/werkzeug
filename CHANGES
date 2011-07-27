@@ -6,6 +6,9 @@ Version 0.7.2
 
 (bugfix release, release date to be announced)
 
+- Fixed a CSRF problem with the debugger.
+- The debugger is now generating private pastes on lodgeit.
+
 Version 0.7.1
 -------------
 

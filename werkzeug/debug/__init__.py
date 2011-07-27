@@ -13,6 +13,7 @@ from os.path import join, dirname, basename, isfile
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 from werkzeug.debug.tbtools import get_current_traceback, render_console_html
 from werkzeug.debug.console import Console
+from werkzeug.security import gen_salt
 
 
 #: import this here because it once was documented as being available
@@ -77,7 +78,8 @@ class DebuggedApplication(object):
         self.console_path = console_path
         self.console_init_func = console_init_func
         self.show_hidden_frames = show_hidden_frames
-        self.lodgeit_url=lodgeit_url
+        self.lodgeit_url = lodgeit_url
+        self.secret = gen_salt(20)
 
     def debug_application(self, environ, start_response):
         """Run the application and conserve the traceback frames."""
@@ -113,7 +115,8 @@ class DebuggedApplication(object):
                     'sent.\n')
             else:
                 yield traceback.render_full(evalex=self.evalex,
-                                            lodgeit_url=self.lodgeit_url) \
+                                            lodgeit_url=self.lodgeit_url,
+                                            secret=self.secret) \
                                .encode('utf-8', 'replace')
 
             traceback.log(environ['wsgi.errors'])
@@ -126,12 +129,13 @@ class DebuggedApplication(object):
         """Display a standalone shell."""
         if 0 not in self.frames:
             self.frames[0] = _ConsoleFrame(self.console_init_func())
-        return Response(render_console_html(), mimetype='text/html')
+        return Response(render_console_html(secret=self.secret),
+                        mimetype='text/html')
 
     def paste_traceback(self, request, traceback):
         """Paste the traceback and return a JSON response."""
         paste_id = traceback.paste(self.lodgeit_url)
-        return Response('{"url": "%sshow/%s/", "id": %s}'
+        return Response('{"url": "%sshow/%s/", "id": "%s"}'
                         % (self.lodgeit_url, paste_id, paste_id),
                         mimetype='application/json')
 
@@ -162,15 +166,18 @@ class DebuggedApplication(object):
         if request.args.get('__debugger__') == 'yes':
             cmd = request.args.get('cmd')
             arg = request.args.get('f')
+            secret = request.args.get('s')
             traceback = self.tracebacks.get(request.args.get('tb', type=int))
             frame = self.frames.get(request.args.get('frm', type=int))
             if cmd == 'resource' and arg:
                 response = self.get_resource(request, arg)
-            elif cmd == 'paste' and traceback is not None:
+            elif cmd == 'paste' and traceback is not None and \
+                 secret == self.secret:
                 response = self.paste_traceback(request, traceback)
-            elif cmd == 'source' and frame:
+            elif cmd == 'source' and frame and self.secret == secret:
                 response = self.get_source(request, frame)
-            elif self.evalex and cmd is not None and frame is not None:
+            elif self.evalex and cmd is not None and frame is not None and \
+                 self.secret == secret:
                 response = self.execute_command(request, cmd, frame)
         elif self.evalex and self.console_path is not None and \
            request.path == self.console_path:
