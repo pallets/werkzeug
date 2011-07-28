@@ -19,7 +19,7 @@ Version 0.7.1
 
 (bugfix release, released on July 26th 2011)
 
-- Fixed a problem with newer versions of IPython
+- Fixed a problem with newer versions of IPython.
 - Disabled pyinotify based reloader which does not work reliably.
 
 Version 0.7
@@ -29,14 +29,14 @@ Released on July 24th 2011, codename Schraubschlüssel
 
 - Add support for python-libmemcached to the Werkzeug cache abstraction
   layer.
-- improved :func:`url_decode` and :func:`url_encode` performance.
-- fixed an issue where the SharedDataMiddleware could cause an
+- Improved :func:`url_decode` and :func:`url_encode` performance.
+- Fixed an issue where the SharedDataMiddleware could cause an
   internal server error on weird paths when loading via pkg_resources.
-- fixed an URL generation bug that caused URLs to be invalid if a
+- Fixed an URL generation bug that caused URLs to be invalid if a
   generated component contains a colon.
 - :func:`werkzeug.import_string` now works with partially set up
   packages properly.
-- disabled automatic socket swiching for IPv6 on the development
+- Disabled automatic socket swiching for IPv6 on the development
   server due to problems it caused.
 - Werkzeug no longer overrides the Date header when creating a
   conditional HTTP response.
@@ -47,17 +47,17 @@ Released on July 24th 2011, codename Schraubschlüssel
 - The local manager can now accept custom ident functions in the
   constructor that are forwarded to the wrapped local objects.
 - url_unquote_plus now accepts unicode strings again.
-- fixed an issues with the filesystem session support's prune
+- Fixed an issue with the filesystem session support's prune
   function and concurrent usage.
-- fixed a problem with external URL generation discarding the port.
-- added support for pylibmc to the Werkzeug cache abstraction layer.
-- fixed an issue with the new multipart parser that happened when
-  a linkebreak happend to be on the chunk limit.
-- cookies are now set properly if ports are in use.  A runtime error
+- Fixed a problem with external URL generation discarding the port.
+- Added support for pylibmc to the Werkzeug cache abstraction layer.
+- Fixed an issue with the new multipart parser that happened when
+  a linebreak happend to be on the chunk limit.
+- Cookies are now set properly if ports are in use.  A runtime error
   is raised if one tries to set a cookie for a domain without a dot.
-- fixed an issue with Template.from_file not working for file
+- Fixed an issue with Template.from_file not working for file
   descriptors.
-- reloader can now use inotify to track reloads.  This requires the
+- Reloader can now use inotify to track reloads.  This requires the
   pyinotify library to be installed.
 - Werkzeug debugger can now submit to custom lodgeit installations.
 - redirect function's status code assertion now allows 201 to be used
@@ -70,7 +70,7 @@ Released on July 24th 2011, codename Schraubschlüssel
 - URL routing now can be passed the URL arguments to keep them for
   redirects.  In the future matching on URL arguments might also be
   possible.
-- header encoding changed from utf-8 to latin1 to support a port to
+- Header encoding changed from utf-8 to latin1 to support a port to
   Python 3.  Bytestrings passed to the object stay untouched which
   makes it possible to have utf-8 cookies.  This is a part where
   the Python 3 version will later change in that it will always
@@ -79,44 +79,44 @@ Released on July 24th 2011, codename Schraubschlüssel
   be dropped off if certain values in multipart data is used.
 - Multipart parser now looks at the part-individual content type
   header to override the global charset.
-- introduced mimetype and mimetype_params attribute for the file
+- Introduced mimetype and mimetype_params attribute for the file
   storage object.
-- changed FileStorage filename fallback logic to skip special filenames
+- Changed FileStorage filename fallback logic to skip special filenames
   that Python uses for marking special files like stdin.
-- introduced more HTTP exception classes.
+- Introduced more HTTP exception classes.
 - `call_on_close` now can be used as a decorator.
-- support for redis as cache backend.
+- Support for redis as cache backend.
 - Added `BaseRequest.scheme`.
-- support for the RFC 5789 PATCH method.
-- new custom routing parser and better ordering.
-- removed support for `is_behind_proxy`.  Use a WSGI middleware
+- Support for the RFC 5789 PATCH method.
+- New custom routing parser and better ordering.
+- Removed support for `is_behind_proxy`.  Use a WSGI middleware
   instead that rewrites the `REMOTE_ADDR` according to your setup.
   Also see the :class:`werkzeug.contrib.fixers.ProxyFix` for
   a drop-in replacement.
-- added cookie forging support to the test client.
-- added support for host based matching in the routing system.
-- switched from the default 'ignore' to the better 'replace'
+- Added cookie forging support to the test client.
+- Added support for host based matching in the routing system.
+- Switched from the default 'ignore' to the better 'replace'
   unicode error handling mode.
 - The builtin server now adds a function named 'werkzeug.server.shutdown'
   into the WSGI env to initiate a shutdown.  This currently only works
   in Python 2.6 and later.
 - Headers are now assumed to be latin1 for better compatibility with
   Python 3 once we have support.
-- added :func:`werkzeug.security.safe_join`
+- Added :func:`werkzeug.security.safe_join`.
 - Added `accept_json` property analogous to `accept_html` on the
   :class:`werkzeug.datastructures.MIMEAccept`.
 - :func:`werkzeug.utils.import_string` now fails with much better
   error messages that pinpoint to the problem.
 - Added support for parsing of the `If-Range` header
   (:func:`werkzeug.http.parse_if_range_header` and
-  :class:`werkzeug.datastructures.IfRange`)
+  :class:`werkzeug.datastructures.IfRange`).
 - Added support for parsing of the `Range` header
   (:func:`werkzeug.http.parse_range_header` and
-  :class:`werkzeug.datastructures.Range`)
+  :class:`werkzeug.datastructures.Range`).
 - Added support for parsing of the `Content-Range` header of respones
-  and provided an accessor object for it.
+  and provided an accessor object for it
   (:func:`werkzeug.http.parse_content_range_header` and
-  :class:`werkzeug.datastructures.ContentRange`)
+  :class:`werkzeug.datastructures.ContentRange`).
 
 Version 0.6.2
 -------------
