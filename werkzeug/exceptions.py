@@ -514,3 +514,8 @@ abort = Aborter()
 
 # imported here because of circular dependencies of werkzeug.utils
 from werkzeug.utils import escape
+
+
+#: an exception that is used internally to signal both a key error and a
+#: bad request.  Used by a lot of the datastructures.
+BadRequestKeyError = BadRequest.wrap(KeyError)

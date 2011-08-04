@@ -6,6 +6,9 @@ Version 0.8
 
 Release date to be announced, codename to be decided.
 
+- Removed data structure specific KeyErrors for a general
+  purpose :exc:`~werkzeug.exceptions.BadRequestKeyError`.
+
 Version 0.7.2
 -------------
 

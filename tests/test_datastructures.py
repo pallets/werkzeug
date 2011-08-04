@@ -9,6 +9,7 @@ from werkzeug.datastructures import FileStorage, MultiDict, \
      ImmutableMultiDict, CombinedMultiDict, ImmutableTypeConversionDict, \
      ImmutableDict, Headers, ImmutableList, EnvironHeaders, \
      OrderedMultiDict, ImmutableOrderedMultiDict, HeaderSet, FileMultiDict
+from werkzeug.exceptions import BadRequestKeyError
 
 
 def test_multidict_pickle():
@@ -224,7 +225,7 @@ def test_multidict():
     assert_raises(KeyError, MultiDict().popitemlist)
 
     # key errors are of a special type
-    assert_raises(MultiDict.KeyError, MultiDict().__getitem__, 42)
+    assert_raises(BadRequestKeyError, MultiDict().__getitem__, 42)
 
     # setlist works
     md = MultiDict()
@@ -478,8 +479,8 @@ def test_ordered_multidict():
     d.setlist('foo', [1, 2])
     assert d.getlist('foo') == [1, 2]
 
-    assert_raises(OrderedMultiDict.KeyError, d.pop, 'missing')
-    assert_raises(OrderedMultiDict.KeyError, d.__getitem__, 'missing')
+    assert_raises(BadRequestKeyError, d.pop, 'missing')
+    assert_raises(BadRequestKeyError, d.__getitem__, 'missing')
 
     # popping
     d = OrderedMultiDict()
@@ -487,14 +488,14 @@ def test_ordered_multidict():
     d.add('foo', 42)
     d.add('foo', 1)
     assert d.popitem() == ('foo', 23)
-    assert_raises(OrderedMultiDict.KeyError, d.popitem)
+    assert_raises(BadRequestKeyError, d.popitem)
     assert not d
 
     d.add('foo', 23)
     d.add('foo', 42)
     d.add('foo', 1)
     assert d.popitemlist() == ('foo', [23, 42, 1])
-    assert_raises(OrderedMultiDict.KeyError, d.popitemlist)
+    assert_raises(BadRequestKeyError, d.popitemlist)
 
 
 def test_immutable_structures():

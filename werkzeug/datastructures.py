@@ -291,11 +291,6 @@ class MultiDict(TypeConversionDict):
                     or `None`.
     """
 
-    # the key error this class raises.  Because of circular dependencies
-    # with the http exception module this class is created at the end of
-    # this module.
-    KeyError = None
-
     def __init__(self, mapping=None):
         if isinstance(mapping, MultiDict):
             dict.__init__(self, ((k, l[:]) for k, l in mapping.iterlists()))
@@ -333,7 +328,7 @@ class MultiDict(TypeConversionDict):
         """
         if key in self:
             return dict.__getitem__(self, key)[0]
-        raise self.KeyError(key)
+        raise BadRequestKeyError(key)
 
     def __setitem__(self, key, value):
         """Like :meth:`add` but removes an existing key first.
@@ -539,7 +534,7 @@ class MultiDict(TypeConversionDict):
         except KeyError, e:
             if default is not _missing:
                 return default
-            raise self.KeyError(str(e))
+            raise BadRequestKeyError(str(e))
 
     def popitem(self):
         """Pop an item from the dict."""
@@ -547,7 +542,7 @@ class MultiDict(TypeConversionDict):
             item = dict.popitem(self)
             return (item[0], item[1][0])
         except KeyError, e:
-            raise self.KeyError(str(e))
+            raise BadRequestKeyError(str(e))
 
     def poplist(self, key):
         """Pop the list for a key from the dict.  If the key is not in the dict
@@ -564,7 +559,7 @@ class MultiDict(TypeConversionDict):
         try:
             return dict.popitem(self)
         except KeyError, e:
-            raise self.KeyError(str(e))
+            raise BadRequestKeyError(str(e))
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.items(multi=True))
@@ -617,11 +612,6 @@ class OrderedMultiDict(MultiDict):
        the internal bucket objects are exposed.
     """
 
-    # the key error this class raises.  Because of circular dependencies
-    # with the http exception module this class is created at the end of
-    # this module.
-    KeyError = None
-
     def __init__(self, mapping=None):
         dict.__init__(self)
         self._first_bucket = self._last_bucket = None
@@ -670,7 +660,7 @@ class OrderedMultiDict(MultiDict):
     def __getitem__(self, key):
         if key in self:
             return dict.__getitem__(self, key)[0].value
-        raise self.KeyError(key)
+        raise BadRequestKeyError(key)
 
     def __setitem__(self, key, value):
         self.poplist(key)
@@ -755,7 +745,7 @@ class OrderedMultiDict(MultiDict):
         except KeyError, e:
             if default is not _missing:
                 return default
-            raise self.KeyError(str(e))
+            raise BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
         return buckets[0].value
@@ -764,7 +754,7 @@ class OrderedMultiDict(MultiDict):
         try:
             key, buckets = dict.popitem(self)
         except KeyError, e:
-            raise self.KeyError(str(e))
+            raise BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
         return key, buckets[0].value
@@ -773,7 +763,7 @@ class OrderedMultiDict(MultiDict):
         try:
             key, buckets = dict.popitem(self)
         except KeyError, e:
-            raise self.KeyError(str(e))
+            raise BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
         return key, [x.value for x in buckets]
@@ -809,11 +799,6 @@ class Headers(object):
 
     :param defaults: The list of default values for the :class:`Headers`.
     """
-
-    # the key error this class raises.  Because of circular dependencies
-    # with the http exception module this class is created at the end of
-    # this module.
-    KeyError = None
 
     def __init__(self, defaults=None, _list=None):
         if _list is None:
@@ -856,7 +841,7 @@ class Headers(object):
         # key error instead of our special one.
         if _get_mode:
             raise KeyError()
-        raise self.KeyError(key)
+        raise BadRequestKeyError(key)
 
     def __eq__(self, other):
         return other.__class__ is self.__class__ and \
@@ -1267,7 +1252,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         for d in self.dicts:
             if key in d:
                 return d[key]
-        raise self.KeyError(key)
+        raise BadRequestKeyError(key)
 
     def get(self, key, default=None, type=None):
         for d in self.dicts:
@@ -2539,11 +2524,4 @@ class FileStorage(object):
 from werkzeug.http import dump_options_header, dump_header, generate_etag, \
      quote_header_value, parse_set_header, unquote_etag, quote_etag, \
      parse_options_header, http_date, is_byte_range_valid
-
-
-# create all the special key errors now that the classes are defined.
-from werkzeug.exceptions import BadRequest
-for _cls in MultiDict, OrderedMultiDict, CombinedMultiDict, Headers, \
-            EnvironHeaders:
-    _cls.KeyError = BadRequest.wrap(KeyError, _cls.__name__ + '.KeyError')
-del _cls
+from werkzeug.exceptions import BadRequestKeyError
