@@ -40,23 +40,6 @@ def test_exposed_werkzeug_mod():
         getattr(werkzeug, key)
 
 
-def test_demand_import():
-    """Make sure that we're not importing too much."""
-    allowed_imports = set(['_internal', 'utils', 'http', 'exceptions',
-                           'datastructures'])
-
-    assert perform_import('http', allowed_imports) == set()
-    assert perform_import('utils', allowed_imports) == set()
-
-    allowed_imports.update(('urls', 'formparser', 'wsgi'))
-    assert perform_import('wrappers', allowed_imports) == set()
-
-    allowed_imports.add('wrappers')
-    assert perform_import('useragents', allowed_imports) == set()
-    assert perform_import('test', allowed_imports) == set()
-    assert perform_import('serving', allowed_imports) == set()
-
-
 def test_fix_headers_in_response():
     """Make sure fix_headers still works for backwards compatibility"""
     # ignore some warnings werkzeug emits for backwards compat
