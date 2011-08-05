@@ -8,6 +8,7 @@ Release date to be announced, codename to be decided.
 
 - Removed data structure specific KeyErrors for a general
   purpose :exc:`~werkzeug.exceptions.BadRequestKeyError`.
+- Documented :meth:`werkzeug.wrappers.BaseRequest._load_form_data`.
 
 Version 0.7.2
 -------------

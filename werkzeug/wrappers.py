@@ -280,7 +280,7 @@ class BaseRequest(object):
         filled with the incoming form data.  As a matter of fact the input
         stream will be empty afterwards.
 
-        :internal:
+        .. versionadded:: 0.8
         """
         # abort early if we have already consumed the stream
         if 'stream' in self.__dict__:
