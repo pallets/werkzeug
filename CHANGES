@@ -17,6 +17,8 @@ Version 0.7.2
 
 - Fixed a CSRF problem with the debugger.
 - The debugger is now generating private pastes on lodgeit.
+- If URL maps are now bound to environments the query arguments
+  are properly decoded from it for redirects.
 
 Version 0.7.1
 -------------

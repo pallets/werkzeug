@@ -100,7 +100,7 @@ import posixpath
 from pprint import pformat
 from urlparse import urljoin
 
-from werkzeug.urls import url_encode, url_quote
+from werkzeug.urls import url_encode, url_decode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
@@ -1176,9 +1176,13 @@ class Map(object):
                                  'environment (%r)' %
                                  (server_name, wsgi_server_name))
             subdomain = '.'.join(filter(None, cur_server_name[:offset]))
+        query_args = url_decode(environ.get('QUERY_STRING', ''),
+                                charset=self.charset,
+                                errors=self.encoding_errors)
         return Map.bind(self, server_name, environ.get('SCRIPT_NAME'),
                         subdomain, environ['wsgi.url_scheme'],
-                        environ['REQUEST_METHOD'], environ.get('PATH_INFO'))
+                        environ['REQUEST_METHOD'], environ.get('PATH_INFO'),
+                        query_args=query_args)
 
     def update(self):
         """Called before matching and building to keep the compiled rules
