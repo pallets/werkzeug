@@ -1108,6 +1108,9 @@ class Map(object):
 
         .. versionadded:: 0.7
            `query_args` added
+
+        .. versionadded:: 0.8
+           `query_args` can now also be a string.
         """
         if self.host_matching:
             if subdomain is not None:
@@ -1176,13 +1179,10 @@ class Map(object):
                                  'environment (%r)' %
                                  (server_name, wsgi_server_name))
             subdomain = '.'.join(filter(None, cur_server_name[:offset]))
-        query_args = url_decode(environ.get('QUERY_STRING', ''),
-                                charset=self.charset,
-                                errors=self.encoding_errors)
         return Map.bind(self, server_name, environ.get('SCRIPT_NAME'),
                         subdomain, environ['wsgi.url_scheme'],
                         environ['REQUEST_METHOD'], environ.get('PATH_INFO'),
-                        query_args=query_args)
+                        query_args=environ.get('QUERY_STRING', ''))
 
     def update(self):
         """Called before matching and building to keep the compiled rules
@@ -1337,14 +1337,18 @@ class MapAdapter(object):
         :param return_rule: return the rule that matched instead of just the
                             endpoint (defaults to `False`).
         :param query_args: optional query arguments that are used for
-                           automatic redirects.  It's currently not possible
-                           to use the query arguments for URL matching.
+                           automatic redirects as string or dictionary.  It's
+                           currently not possible to use the query arguments
+                           for URL matching.
 
         .. versionadded:: 0.6
            `return_rule` was added.
 
         .. versionadded:: 0.7
            `query_args` was added.
+
+        .. versionchanged:: 0.8
+           `query_args` can now also be a string.
         """
         self.map.update()
         if path_info is None:
@@ -1470,6 +1474,11 @@ class MapAdapter(object):
                 return self.make_redirect_url(
                     path, query_args, domain_part=domain_part)
 
+    def encode_query_args(self, query_args):
+        if not isinstance(query_args, basestring):
+            query_args = url_encode(query_args, self.map.charset)
+        return query_args
+
     def make_redirect_url(self, path_info, query_args=None, domain_part=None):
         """Creates a redirect URL.
 
@@ -1477,7 +1486,7 @@ class MapAdapter(object):
         """
         suffix = ''
         if query_args:
-            suffix = '?' + url_encode(query_args, self.map.charset)
+            suffix = '?' + self.encode_query_args(query_args)
         return str('%s://%s/%s%s' % (
             self.url_scheme,
             self.get_host(domain_part),
@@ -1491,7 +1500,7 @@ class MapAdapter(object):
         url = self.build(endpoint, values, method, append_unknown=False,
                          force_external=True)
         if query_args:
-            url += '?' + url_encode(query_args, self.map.charset)
+            url += '?' + self.encode_query_args(query_args)
         assert url != path, 'detected invalid alias setting.  No canonical ' \
                'URL found'
         return url

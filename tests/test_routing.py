@@ -35,7 +35,6 @@ def test_basic_routing():
     try:
         adapter.match('/bar')
     except RequestRedirect, e:
-        print e.new_url
         assert e.new_url == 'http://example.org/test/bar/'
     else:
         assert False
@@ -44,7 +43,6 @@ def test_basic_routing():
     try:
         adapter.match('/bar')
     except RequestRedirect, e:
-        print e.new_url
         assert e.new_url == 'http://example.org/bar/'
     else:
         assert False
@@ -53,8 +51,24 @@ def test_basic_routing():
     try:
         adapter.match('/bar', query_args={'aha': 'muhaha'})
     except RequestRedirect, e:
-        print e.new_url
         assert e.new_url == 'http://example.org/bar/?aha=muhaha'
+    else:
+        assert False
+
+    adapter = map.bind('example.org', '/')
+    try:
+        adapter.match('/bar', query_args='aha=muhaha')
+    except RequestRedirect, e:
+        assert e.new_url == 'http://example.org/bar/?aha=muhaha'
+    else:
+        assert False
+
+    adapter = map.bind_to_environ(create_environ('/bar?foo=bar',
+                                                 'http://example.org/'))
+    try:
+        adapter.match()
+    except RequestRedirect, e:
+        assert e.new_url == 'http://example.org/bar/?foo=bar'
     else:
         assert False
 

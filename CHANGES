@@ -9,6 +9,9 @@ Release date to be announced, codename to be decided.
 - Removed data structure specific KeyErrors for a general
   purpose :exc:`~werkzeug.exceptions.BadRequestKeyError`.
 - Documented :meth:`werkzeug.wrappers.BaseRequest._load_form_data`.
+- The routing system now also accepts strings instead of
+  dictionaries for the `query_args` parameter since we're only
+  passing them through for redirects.
 
 Version 0.7.2
 -------------
