@@ -685,8 +685,10 @@ def remove_hop_by_hop_headers(headers):
 
     :param headers: a list or :class:`Headers` object.
     """
+    connkeys = set(i.strip() for i in headers.get('connection', '').split(',')
+        if i.strip())
     headers[:] = [(key, value) for key, value in headers if
-                  not is_hop_by_hop_header(key)]
+                  not is_hop_by_hop_header(key) and key not in connkeys]
 
 
 def is_entity_header(header):
