@@ -746,11 +746,12 @@ class BaseResponse(object):
         self._ensure_sequence()
         return ''.join(self.iter_encoded())
     def _set_data(self, value):
-        # if an unicode string is set, it's encoded directly.  this allows
-        # us to guess the content length automatically in `get_wsgi_headers`.
+        # if an unicode string is set, it's encoded directly so that we
+        # can set the content length
         if isinstance(value, unicode):
             value = value.encode(self.charset)
         self.response = [value]
+        self.headers['Content-Length'] = str(len(value))
     data = property(_get_data, _set_data, doc=_get_data.__doc__)
     del _get_data, _set_data
 

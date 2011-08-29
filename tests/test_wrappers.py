@@ -678,3 +678,12 @@ def test_ranges():
     assert resp.content_range.start == 0
     assert resp.content_range.stop == 500
     assert resp.content_range.length == 1000
+
+
+def test_auto_content_length():
+    resp = Response('Hello World!')
+    assert resp.content_length == 12
+
+    resp = Response(['Hello World!'])
+    assert resp.content_length is None
+    assert resp.get_wsgi_headers({})['Content-Length'] == '12'

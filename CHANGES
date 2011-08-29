@@ -12,6 +12,9 @@ Release date to be announced, codename to be decided.
 - The routing system now also accepts strings instead of
   dictionaries for the `query_args` parameter since we're only
   passing them through for redirects.
+- Werkzeug now automatically sets the content length immediately when
+  the :attr:`~werkzeug.wrappers.BaseResponse.data` attribute is set
+  for efficiency and simplicity reasons.
 
 Version 0.7.2
 -------------
