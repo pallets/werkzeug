@@ -941,6 +941,7 @@ class BaseResponse(object):
         location = None
         content_location = None
         content_length = None
+        status = self.status_code
 
         # iterate over the headers to find all values in one go.  Because
         # get_wsgi_headers is used each response that gives us a tiny
@@ -972,9 +973,9 @@ class BaseResponse(object):
         # Also update content_length accordingly so that the automatic
         # content length detection does not trigger in the following
         # code.
-        if 100 <= self.status_code < 200 or self.status_code == 204:
+        if 100 <= status < 200 or status == 204:
             headers['Content-Length'] = content_length = '0'
-        elif self.status_code == 304:
+        elif status == 304:
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we
@@ -982,8 +983,7 @@ class BaseResponse(object):
         # flattening the iterator or encoding of unicode strings in
         # the response.  We however should not do that if we have a 304
         # response.
-        if self.is_sequence and content_length is None and \
-           self.status_code != 304:
+        if self.is_sequence and content_length is None and status != 304:
             try:
                 content_length = sum(len(str(x)) for x in self.response)
             except UnicodeError:
@@ -1009,8 +1009,9 @@ class BaseResponse(object):
         :param environ: the WSGI environment of the request.
         :return: a response iterable.
         """
+        status = self.status_code
         if environ['REQUEST_METHOD'] == 'HEAD' or \
-           100 <= self.status_code < 200 or self.status_code in (204, 304):
+           100 <= status < 200 or status in (204, 304):
             return ()
         if self.direct_passthrough:
             if __debug__:
