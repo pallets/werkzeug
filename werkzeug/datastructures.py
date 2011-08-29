@@ -1104,14 +1104,8 @@ class Headers(object):
 
         :return: list
         """
-        result = []
-        for k, v in self:
-            if isinstance(v, unicode):
-                v = v.encode(charset)
-            else:
-                v = str(v)
-            result.append((k, v))
-        return result
+        return [(k, isinstance(v, unicode) and v.encode(charset) or str(v))
+                for k, v in self]
 
     def copy(self):
         return self.__class__(self._list)
