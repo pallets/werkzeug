@@ -8,26 +8,19 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-try:
-    from greenlet import getcurrent as get_current_greenlet
-except ImportError: # pragma: no cover
-    get_current_greenlet = int
-try:
-    from thread import get_ident as get_current_thread, allocate_lock
-except ImportError: # pragma: no cover
-    from dummy_thread import get_ident as get_current_thread, allocate_lock
-
 from werkzeug.wsgi import ClosingIterator
 from werkzeug._internal import _patch_wrapper
 
-
-# get the best ident function.  if greenlets are not installed we can
-# safely just use the builtin thread function and save a python methodcall
-# and the cost of calculating a hash.
-if get_current_greenlet is int: # pragma: no cover
-    get_ident = get_current_thread
-else:
-    get_ident = lambda: (get_current_thread(), get_current_greenlet())
+# since each thread has its own greenlet we can just use those as identifiers
+# for the context.  If greenlets are not available we fall back to the
+# current thread ident.
+try:
+    from greenlet import getcurrent as get_ident
+except ImportError: # pragma: no cover
+    try:
+        from thread import get_ident
+    except ImportError: # pragma: no cover
+        from dummy_thread import get_ident
 
 
 def release_local(local):
@@ -54,15 +47,14 @@ def release_local(local):
 
 
 class Local(object):
-    __slots__ = ('__storage__', '__lock__', '__ident_func__')
+    __slots__ = ('__storage__', '__ident_func__')
 
     def __init__(self):
         object.__setattr__(self, '__storage__', {})
-        object.__setattr__(self, '__lock__', allocate_lock())
         object.__setattr__(self, '__ident_func__', get_ident)
 
     def __iter__(self):
-        return self.__storage__.iteritems()
+        return iter(self.__storage__.items())
 
     def __call__(self, proxy):
         """Create a proxy for a name."""
@@ -79,15 +71,11 @@ class Local(object):
 
     def __setattr__(self, name, value):
         ident = self.__ident_func__()
-        self.__lock__.acquire()
+        storage = self.__storage__
         try:
-            storage = self.__storage__
-            if ident in storage:
-                storage[ident][name] = value
-            else:
-                storage[ident] = {name: value}
-        finally:
-            self.__lock__.release()
+            storage[ident][name] = value
+        except KeyError:
+            storage[ident] = {name: value}
 
     def __delattr__(self, name):
         try:
@@ -125,7 +113,6 @@ class LocalStack(object):
 
     def __init__(self):
         self._local = Local()
-        self._lock = allocate_lock()
 
     def __release_local__(self):
         self._local.__release_local__()
@@ -147,32 +134,24 @@ class LocalStack(object):
 
     def push(self, obj):
         """Pushes a new item to the stack"""
-        self._lock.acquire()
-        try:
-            rv = getattr(self._local, 'stack', None)
-            if rv is None:
-                self._local.stack = rv = []
-            rv.append(obj)
-            return rv
-        finally:
-            self._lock.release()
+        rv = getattr(self._local, 'stack', None)
+        if rv is None:
+            self._local.stack = rv = []
+        rv.append(obj)
+        return rv
 
     def pop(self):
         """Removes the topmost item from the stack, will return the
         old value or `None` if the stack was already empty.
         """
-        self._lock.acquire()
-        try:
-            stack = getattr(self._local, 'stack', None)
-            if stack is None:
-                return None
-            elif len(stack) == 1:
-                release_local(self._local)
-                return stack[-1]
-            else:
-                return stack.pop()
-        finally:
-            self._lock.release()
+        stack = getattr(self._local, 'stack', None)
+        if stack is None:
+            return None
+        elif len(stack) == 1:
+            release_local(self._local)
+            return stack[-1]
+        else:
+            return stack.pop()
 
     @property
     def top(self):
