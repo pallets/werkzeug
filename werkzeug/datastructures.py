@@ -1064,17 +1064,19 @@ class Headers(object):
         if kw:
             _value = _options_header_vkw(_value, kw)
         if not self._list:
-            return self.add(_key, _value)
-        lc_key = _key.lower()
-        for idx, (old_key, old_value) in enumerate(self._list):
-            if old_key.lower() == lc_key:
+            self._list.append((_key, _value))
+            return
+        listiter = iter(self._list)
+        ikey = _key.lower()
+        for idx, (old_key, old_value) in enumerate(listiter):
+            if old_key.lower() == ikey:
                 # replace first ocurrence
                 self._list[idx] = (_key, _value)
                 break
         else:
-            return self.add(_key, _value)
-        self._list[idx + 1:] = [(k, v) for k, v in self._list[idx + 1:]
-                                if k.lower() != lc_key]
+            self._list.append((_key, _value))
+            return
+        self._list[idx + 1:] = [t for t in listiter if t[0].lower() != ikey]
 
     def setdefault(self, key, value):
         """Returns the value for the key if it is in the dict, otherwise it
