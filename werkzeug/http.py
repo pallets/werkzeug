@@ -357,9 +357,11 @@ def parse_authorization_header(value):
                                        'password': password})
     elif auth_type == 'digest':
         auth_map = parse_dict_header(auth_info)
-        for key in 'username', 'realm', 'nonce', 'uri', 'nc', 'cnonce', \
-                   'response':
+        for key in 'username', 'realm', 'nonce', 'uri', 'response':
             if not key in auth_map:
+                return
+        if 'qop' in auth_map:
+            if not auth_map.get('nc') or not auth_map.get('cnonce'):
                 return
         return Authorization('digest', auth_map)
 
