@@ -115,7 +115,7 @@ _rule_re = re.compile(r'''
         (?:\((?P<args>.*?)\))?                  # converter arguments
         \:                                      # variable delimiter
     )?
-    (?P<variable>[a-zA-Z][a-zA-Z0-9_]*)         # variable name
+    (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)        # variable name
     >
 ''', re.VERBOSE)
 _simple_rule_re = re.compile(r'<([^>]+)>')
