@@ -642,3 +642,15 @@ def test_server_name_casing():
     env['SERVER_NAME'] = env['HTTP_HOST'] = 'FOO.EXAMPLE.COM'
     a = m.bind_to_environ(env, server_name='example.com')
     assert a.match('/') == ('index', {})
+
+    env = create_environ()
+    env['SERVER_NAME'] = '127.0.0.1'
+    env['SERVER_PORT'] = '5000'
+    del env['HTTP_HOST']
+    a = m.bind_to_environ(env, server_name='example.com')
+    try:
+        a.match()
+    except NotFound:
+        pass
+    else:
+        assert False, 'Expected not found exception'
