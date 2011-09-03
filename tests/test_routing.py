@@ -636,3 +636,14 @@ def test_host_matching():
         assert e.new_url == 'http://www.example.com/foo/'
     else:
         assert False, 'expected redirect'
+
+
+def test_server_name_casing():
+    m = Map([
+        Rule('/', endpoint='index', subdomain='foo')
+    ])
+
+    env = create_environ()
+    env['SERVER_NAME'] = env['HTTP_HOST'] = 'FOO.EXAMPLE.COM'
+    a = m.bind_to_environ(env, server_name='example.com')
+    assert a.match('/') == ('index', {})

@@ -1112,6 +1112,7 @@ class Map(object):
         .. versionadded:: 0.8
            `query_args` can now also be a string.
         """
+        assert server_name.islower(), 'server names have to be lowercase'
         if self.host_matching:
             if subdomain is not None:
                 raise RuntimeError('host matching enabled and a '
@@ -1163,6 +1164,7 @@ class Map(object):
                    in (('https', '443'), ('http', '80')):
                     server_name += ':' + environ['SERVER_PORT']
         elif subdomain is None and not self.host_matching:
+            assert server_name.islower(), 'server names have to be lowercase'
             if 'HTTP_HOST' in environ:
                 wsgi_server_name = environ.get('HTTP_HOST')
             else:
@@ -1170,6 +1172,7 @@ class Map(object):
                 if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
                    in (('https', '443'), ('http', '80')):
                     wsgi_server_name += ':' + environ['SERVER_PORT']
+            wsgi_server_name = wsgi_server_name.lower()
             cur_server_name = wsgi_server_name.split('.')
             real_server_name = server_name.split('.')
             offset = -len(real_server_name)

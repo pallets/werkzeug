@@ -15,6 +15,7 @@ Release date to be announced, codename to be decided.
 - Werkzeug now automatically sets the content length immediately when
   the :attr:`~werkzeug.wrappers.BaseResponse.data` attribute is set
   for efficiency and simplicity reasons.
+- The routing system will now normalize server names to lowercase.
 
 Version 0.7.2
 -------------
