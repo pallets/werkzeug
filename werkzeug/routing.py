@@ -1150,6 +1150,10 @@ class Map(object):
             parameter that did not have any effect.  It was removed because
             of that.
 
+        .. versionchanged:: 0.8
+           This will no longer raise a ValueError when an unexpected server
+           name was passed.
+
         :param environ: a WSGI environment.
         :param server_name: an optional server name hint (see above).
         :param subdomain: optionally the current subdomain (see above).
@@ -1177,11 +1181,14 @@ class Map(object):
             real_server_name = server_name.split('.')
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
-                raise ValueError('the server name provided (%r) does not '
-                                 'match the server name from the WSGI '
-                                 'environment (%r)' %
-                                 (server_name, wsgi_server_name))
-            subdomain = '.'.join(filter(None, cur_server_name[:offset]))
+                # This can happen even with valid configs if the server was
+                # accesssed directly by IP address under some situations.
+                # Instead of raising an exception like in Werkzeug 0.7 or
+                # earlier we go by an invalid subdomain which will result
+                # in a 404 error on matching.
+                subdomain = '<invalid>'
+            else:
+                subdomain = '.'.join(filter(None, cur_server_name[:offset]))
         return Map.bind(self, server_name, environ.get('SCRIPT_NAME'),
                         subdomain, environ['wsgi.url_scheme'],
                         environ['REQUEST_METHOD'], environ.get('PATH_INFO'),

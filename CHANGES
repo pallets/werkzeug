@@ -16,6 +16,9 @@ Release date to be announced, codename to be decided.
   the :attr:`~werkzeug.wrappers.BaseResponse.data` attribute is set
   for efficiency and simplicity reasons.
 - The routing system will now normalize server names to lowercase.
+- The routing system will no longer raise ValueErrors in case the
+  configuration for the server name was incorrect.  This should make
+  deployment much easier because you can ignore that factor now.
 
 Version 0.7.2
 -------------
