@@ -405,7 +405,23 @@ def make_server(host, port, app=None, threaded=False, processes=1,
                               passthrough_errors, ssl_context)
 
 
-def reloader_loop(extra_files=None, interval=1):
+def _iter_module_files():
+    for module in sys.modules.values():
+        filename = getattr(module, '__file__', None)
+        if filename:
+            old = None
+            while not os.path.isfile(filename):
+                old = filename
+                filename = os.path.dirname(filename)
+                if filename == old:
+                    break
+            else:
+                if filename[-4:] in ('.pyc', '.pyo'):
+                    filename = filename[:-1]
+                yield filename
+
+
+def _reloader_stat_loop(extra_files=None, interval=1):
     """When this function is run from the main thread, it will force other
     threads to exit when any modules currently loaded change.
 
@@ -414,32 +430,10 @@ def reloader_loop(extra_files=None, interval=1):
 
     :param extra_files: a list of additional files it should watch.
     """
-    def iter_module_files():
-        for module in sys.modules.values():
-            filename = getattr(module, '__file__', None)
-            if filename:
-                old = None
-                while not os.path.isfile(filename):
-                    old = filename
-                    filename = os.path.dirname(filename)
-                    if filename == old:
-                        break
-                else:
-                    if filename[-4:] in ('.pyc', '.pyo'):
-                        filename = filename[:-1]
-                    yield filename
-
-    fnames = []
-    fnames.extend(iter_module_files())
-    fnames.extend(extra_files or ())
-
-    reloader(fnames, interval=interval)
-
-
-def _reloader_stat_loop(fnames, interval=1):
+    from itertools import chain
     mtimes = {}
     while 1:
-        for filename in fnames:
+        for filename in chain(_iter_module_files(), extra_files or ()):
             try:
                 mtime = os.stat(filename).st_mtime
             except OSError:
@@ -455,7 +449,7 @@ def _reloader_stat_loop(fnames, interval=1):
         time.sleep(interval)
 
 
-def _reloader_inotify(fnames, interval=None):
+def _reloader_inotify(extra_files=None, interval=None):
     # Mutated by inotify loop when changes occur.
     changed = [False]
 
@@ -478,13 +472,16 @@ def _reloader_inotify(fnames, interval=None):
         _log('info', ' * Detected change in %r, reloading' % event.path)
         changed[:] = [True]
 
-    for fname in fnames:
+    for fname in extra_files or ():
         wm.add_watch(fname, mask, signal_changed)
 
     # ... And now we wait...
     notif = Notifier(wm)
     try:
         while not changed[0]:
+            # always reiterate through sys.modules, adding them
+            for fname in _iter_module_files():
+                wm.add_watch(fname, mask, signal_changed)
             notif.process_events()
             if notif.check_events(timeout=interval):
                 notif.read_events()
@@ -497,7 +494,7 @@ def _reloader_inotify(fnames, interval=None):
 # currently we always use the stat loop reloader for the simple reason
 # that the inotify one does not respond to added files properly.  Also
 # it's quite buggy and the API is a mess.
-reloader = _reloader_stat_loop
+reloader_loop = _reloader_stat_loop
 
 
 def restart_with_reloader():
