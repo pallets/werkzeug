@@ -19,6 +19,8 @@ Release date to be announced, codename to be decided.
 - The routing system will no longer raise ValueErrors in case the
   configuration for the server name was incorrect.  This should make
   deployment much easier because you can ignore that factor now.
+- Fixed a bug with parsing HTTP digest headers.  It rejected headers
+  with missing nc and nonce params.
 
 Version 0.7.2
 -------------
