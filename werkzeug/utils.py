@@ -352,7 +352,6 @@ def redirect(location, code=302):
     :param location: the location the response should redirect to.
     :param code: the redirect status code. defaults to 302.
     """
-    assert code in (201, 301, 302, 303, 305, 307), 'invalid code'
     from werkzeug.wrappers import BaseResponse
     display_location = location
     if isinstance(location, unicode):
