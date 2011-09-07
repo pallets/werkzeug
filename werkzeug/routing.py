@@ -115,7 +115,7 @@ _rule_re = re.compile(r'''
         (?:\((?P<args>.*?)\))?                  # converter arguments
         \:                                      # variable delimiter
     )?
-    (?P<variable>[a-zA-Z][a-zA-Z0-9_]*)         # variable name
+    (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)        # variable name
     >
 ''', re.VERBOSE)
 _simple_rule_re = re.compile(r'<([^>]+)>')
@@ -1112,6 +1112,7 @@ class Map(object):
         .. versionadded:: 0.8
            `query_args` can now also be a string.
         """
+        server_name = server_name.lower()
         if self.host_matching:
             if subdomain is not None:
                 raise RuntimeError('host matching enabled and a '
@@ -1149,6 +1150,10 @@ class Map(object):
             parameter that did not have any effect.  It was removed because
             of that.
 
+        .. versionchanged:: 0.8
+           This will no longer raise a ValueError when an unexpected server
+           name was passed.
+
         :param environ: a WSGI environment.
         :param server_name: an optional server name hint (see above).
         :param subdomain: optionally the current subdomain (see above).
@@ -1163,6 +1168,7 @@ class Map(object):
                    in (('https', '443'), ('http', '80')):
                     server_name += ':' + environ['SERVER_PORT']
         elif subdomain is None and not self.host_matching:
+            server_name = server_name.lower()
             if 'HTTP_HOST' in environ:
                 wsgi_server_name = environ.get('HTTP_HOST')
             else:
@@ -1170,15 +1176,19 @@ class Map(object):
                 if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
                    in (('https', '443'), ('http', '80')):
                     wsgi_server_name += ':' + environ['SERVER_PORT']
+            wsgi_server_name = wsgi_server_name.lower()
             cur_server_name = wsgi_server_name.split('.')
             real_server_name = server_name.split('.')
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
-                raise ValueError('the server name provided (%r) does not '
-                                 'match the server name from the WSGI '
-                                 'environment (%r)' %
-                                 (server_name, wsgi_server_name))
-            subdomain = '.'.join(filter(None, cur_server_name[:offset]))
+                # This can happen even with valid configs if the server was
+                # accesssed directly by IP address under some situations.
+                # Instead of raising an exception like in Werkzeug 0.7 or
+                # earlier we go by an invalid subdomain which will result
+                # in a 404 error on matching.
+                subdomain = '<invalid>'
+            else:
+                subdomain = '.'.join(filter(None, cur_server_name[:offset]))
         return Map.bind(self, server_name, environ.get('SCRIPT_NAME'),
                         subdomain, environ['wsgi.url_scheme'],
                         environ['REQUEST_METHOD'], environ.get('PATH_INFO'),

@@ -10,7 +10,6 @@
 """
 import os
 import hmac
-import string
 import posixpath
 from itertools import izip
 from random import SystemRandom
@@ -30,7 +29,7 @@ except ImportError:
     _hash_funcs = {'sha1': _sha1_mod.new, 'md5': _md5_mod.new}
 
 
-SALT_CHARS = string.letters + string.digits
+SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 
 _sys_rng = SystemRandom()

@@ -303,15 +303,9 @@ def test_server_name_interpolation():
     adapter = map.bind_to_environ(env, server_name=server_name)
     assert adapter.match() == ('alt', {})
 
-    try:
-        env = create_environ('/', 'http://%s/' % server_name)
-        adapter = map.bind_to_environ(env, server_name='foo')
-    except ValueError, e:
-        msg = str(e)
-        assert 'provided (%r)' % 'foo' in msg
-        assert 'environment (%r)' % server_name in msg
-    else:
-        assert False, 'expected exception'
+    env = create_environ('/', 'http://%s/' % server_name)
+    adapter = map.bind_to_environ(env, server_name='foo')
+    assert adapter.subdomain == '<invalid>'
 
 
 def test_rule_emptying():
@@ -532,7 +526,8 @@ def test_external_building_with_port_bind_to_environ_wrong_servername():
         Rule('/', endpoint='index'),
     ])
     environ = create_environ('/', 'http://example.org:5000/')
-    assert_raises(ValueError, lambda: map.bind_to_environ(environ, server_name="example.org"))
+    adapter = map.bind_to_environ(environ, server_name="example.org")
+    assert adapter.subdomain == '<invalid>'
 
 
 def test_converter_parser():
@@ -636,3 +631,26 @@ def test_host_matching():
         assert e.new_url == 'http://www.example.com/foo/'
     else:
         assert False, 'expected redirect'
+
+
+def test_server_name_casing():
+    m = Map([
+        Rule('/', endpoint='index', subdomain='foo')
+    ])
+
+    env = create_environ()
+    env['SERVER_NAME'] = env['HTTP_HOST'] = 'FOO.EXAMPLE.COM'
+    a = m.bind_to_environ(env, server_name='example.com')
+    assert a.match('/') == ('index', {})
+
+    env = create_environ()
+    env['SERVER_NAME'] = '127.0.0.1'
+    env['SERVER_PORT'] = '5000'
+    del env['HTTP_HOST']
+    a = m.bind_to_environ(env, server_name='example.com')
+    try:
+        a.match()
+    except NotFound:
+        pass
+    else:
+        assert False, 'Expected not found exception'

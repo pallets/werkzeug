@@ -136,6 +136,7 @@ def test_authorization_header():
                  response="6629fae49393a05397450978507c4ef1",
                  opaque="5ccc069c403ebaf9f0171e9517f40e41"''')
     assert a.type == 'digest'
+    assert a.username == 'Mufasa'
     assert a.realm == 'testrealm@host.invalid'
     assert a.nonce == 'dcd98b7102dd2f0e8b11d0f600bfb0c093'
     assert a.uri == '/dir/index.html'
@@ -144,7 +145,21 @@ def test_authorization_header():
     assert a.cnonce == '0a4f113b'
     assert a.response == '6629fae49393a05397450978507c4ef1'
     assert a.opaque == '5ccc069c403ebaf9f0171e9517f40e41'
-
+    
+    a = parse_authorization_header('''Digest username="Mufasa",
+                 realm="testrealm@host.invalid",
+                 nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
+                 uri="/dir/index.html",
+                 response="e257afa1414a3340d93d30955171dd0e",
+                 opaque="5ccc069c403ebaf9f0171e9517f40e41"''')
+    assert a.type == 'digest'
+    assert a.username == 'Mufasa'
+    assert a.realm == 'testrealm@host.invalid'
+    assert a.nonce == 'dcd98b7102dd2f0e8b11d0f600bfb0c093'
+    assert a.uri == '/dir/index.html'
+    assert a.response == 'e257afa1414a3340d93d30955171dd0e'
+    assert a.opaque == '5ccc069c403ebaf9f0171e9517f40e41'
+    
     assert parse_authorization_header('') is None
     assert parse_authorization_header(None) is None
     assert parse_authorization_header('foo') is None

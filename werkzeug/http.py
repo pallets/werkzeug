@@ -50,7 +50,7 @@ _entity_headers = frozenset([
     'content-location', 'content-md5', 'content-range', 'content-type',
     'expires', 'last-modified'
 ])
-_hop_by_pop_headers = frozenset([
+_hop_by_hop_headers = frozenset([
     'connection', 'keep-alive', 'proxy-authenticate',
     'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
     'upgrade'
@@ -357,9 +357,11 @@ def parse_authorization_header(value):
                                        'password': password})
     elif auth_type == 'digest':
         auth_map = parse_dict_header(auth_info)
-        for key in 'username', 'realm', 'nonce', 'uri', 'nc', 'cnonce', \
-                   'response':
+        for key in 'username', 'realm', 'nonce', 'uri', 'response':
             if not key in auth_map:
+                return
+        if 'qop' in auth_map:
+            if not auth_map.get('nc') or not auth_map.get('cnonce'):
                 return
         return Authorization('digest', auth_map)
 
@@ -708,7 +710,7 @@ def is_hop_by_hop_header(header):
     :param header: the header to test.
     :return: `True` if it's an entity header, `False` otherwise.
     """
-    return header.lower() in _hop_by_pop_headers
+    return header.lower() in _hop_by_hop_headers
 
 
 def parse_cookie(header, charset='utf-8', errors='replace',
