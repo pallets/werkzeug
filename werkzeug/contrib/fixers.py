@@ -97,9 +97,11 @@ class ProxyFix(object):
 
     def __call__(self, environ, start_response):
         getter = environ.get
+        forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '')
         forwarded_for = getter('HTTP_X_FORWARDED_FOR', '').split(',')
         forwarded_host = getter('HTTP_X_FORWARDED_HOST', '')
         environ.update({
+            'werkzeug.proxy_fix.orig_wsgi_url_scheme':  getter('wsgi.url_scheme'),
             'werkzeug.proxy_fix.orig_remote_addr':  getter('REMOTE_ADDR'),
             'werkzeug.proxy_fix.orig_http_host':    getter('HTTP_HOST')
         })
@@ -107,6 +109,8 @@ class ProxyFix(object):
             environ['REMOTE_ADDR'] = forwarded_for[0].strip()
         if forwarded_host:
             environ['HTTP_HOST'] = forwarded_host
+        if forwarded_proto:
+            environ['wsgi.url_scheme'] = forwarded_proto
         return self.app(environ, start_response)
 
 
