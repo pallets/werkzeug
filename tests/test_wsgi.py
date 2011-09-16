@@ -151,6 +151,10 @@ def test_limited_stream():
     assert stream.read() == '3'
     assert stream.read() == ''
 
+    io = StringIO('123456')
+    stream = LimitedStream(io, 3)
+    assert stream.read(-1) == '123'
+
 
 def test_path_info_extraction():
     """PATH INFO extraction feature"""

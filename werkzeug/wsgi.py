@@ -718,7 +718,7 @@ class LimitedStream(object):
         """
         if self._pos >= self.limit:
             return self.on_exhausted()
-        if size is None:
+        if size is None or size == -1:  # -1 is for consistence with file
             size = self.limit
         read = self._read(min(self.limit - self._pos, size))
         self._pos += len(read)
