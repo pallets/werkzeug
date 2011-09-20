@@ -323,7 +323,7 @@ class MemcachedCache(BaseCache):
                 except Exception:
                     pass
             elif is_pylibmc or is_cmemcached:
-                client = memcache.Client(servers, False)
+                client = memcache.Client(servers)
             else:
                 client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
         else:

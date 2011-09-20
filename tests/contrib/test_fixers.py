@@ -2,6 +2,7 @@ from nose.tools import assert_raises
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
 from werkzeug.test import Client, create_environ
+from werkzeug.utils import redirect
 from werkzeug.wrappers import Request, Response
 from werkzeug.contrib import fixers
 
@@ -45,13 +46,28 @@ def test_proxy_fix():
             # do not use request.host as this fixes too :)
             request.environ['HTTP_HOST']
         ))
-    response = Response.from_app(app, dict(create_environ(),
+    environ = dict(create_environ(),
+        HTTP_X_FORWARDED_PROTO="https",
         HTTP_X_FORWARDED_HOST='example.com',
         HTTP_X_FORWARDED_FOR='1.2.3.4, 5.6.7.8',
         REMOTE_ADDR='127.0.0.1',
         HTTP_HOST='fake'
-    ))
+    )
+
+    response = Response.from_app(app, environ)
+
     assert response.data == '1.2.3.4|example.com'
+
+    # And we must check that if it is a redirection it is
+    # correctly done:
+
+    redirect_app = redirect('/foo/bar.hml')
+    response = Response.from_app(redirect_app, environ)
+
+    wsgi_headers = response.get_wsgi_headers(environ)
+    assert wsgi_headers['Location'] == 'https://example.com/foo/bar.hml'
+
+
 
 
 def test_header_rewriter_fix():
