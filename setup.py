@@ -78,7 +78,9 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib'],
+    packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib',
+              'werkzeug.testsuite', 'werkzeug.testsuite.contrib'],
+    test_suite='werkzeug.testsuite.suite',
     package_data={
         'werkzeug.debug': ['shared/*', 'templates/*']
     },

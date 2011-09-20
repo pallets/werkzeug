@@ -8,14 +8,6 @@
 # :license: BSD, see LICENSE for more details.
 #
 
-TESTS = \
-	tests \
-	tests/contrib
-
-TEST_OPTIONS = \
-	-v \
-	-e '^test_app$$' #skip the test_app application object which is not a test
-
 documentation:
 	@(cd docs; make html)
 
@@ -23,7 +15,7 @@ release:
 	python scripts/make-release.py
 
 test:
-	@(nosetests $(TEST_OPTIONS) $(TESTS))
+	python setup.py test
 
 coverage:
 	@(nosetests $(TEST_OPTIONS) --with-coverage --cover-package=werkzeug --cover-html --cover-html-dir=coverage_out $(TESTS))
