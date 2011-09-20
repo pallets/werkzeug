@@ -15,9 +15,9 @@ import unittest
 from werkzeug.utils import import_string, find_modules
 
 
-def iter_suites():
+def iter_suites(package):
     """Yields all testsuites."""
-    for module in find_modules(__name__):
+    for module in find_modules(package, include_packages=True):
         mod = import_string(module)
         if hasattr(mod, 'suite'):
             yield mod.suite()
@@ -133,7 +133,7 @@ def suite():
     break it.
     """
     suite = unittest.TestSuite()
-    for other_suite in iter_suites():
+    for other_suite in iter_suites(__name__):
         suite.addTest(other_suite)
     return suite
 
