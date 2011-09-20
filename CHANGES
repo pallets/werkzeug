@@ -22,6 +22,7 @@ Release date to be announced, codename to be decided.
 - Fixed a bug with parsing HTTP digest headers.  It rejected headers
   with missing nc and nonce params.
 - Proxy fix now also updates wsgi.url_scheme based on X-Forwarded-Proto.
+- Added support for key prefixes to the redis cache.
 
 Version 0.7.2
 -------------

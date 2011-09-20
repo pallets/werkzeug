@@ -470,14 +470,18 @@ class RedisCache(BaseCache):
 
     .. versionadded:: 0.7
 
+    .. versionadded:: 0.8
+       `key_prefix` was added.
+
     :param host: address of the Redis server or an object which API is
                  compatible with the official Python Redis client (redis-py).
     :param port: port number on which Redis server listens for connections
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`.
-
+    :param key_prefix: A prefix that should be added to all keys.
     """
-    def __init__(self, host='localhost', port=6379, default_timeout=300):
+    def __init__(self, host='localhost', port=6379, default_timeout=300,
+                 key_prefix=None):
         BaseCache.__init__(self, default_timeout)
         if isinstance(host, basestring):
             try:
@@ -487,47 +491,59 @@ class RedisCache(BaseCache):
             self._client = redis.Redis(host=host, port=port)
         else:
             self._client = host
+        self.key_prefix = key_prefix or ''
 
     def get(self, key):
-        return self._client.get(key)
+        return self._client.get(self.key_prefix + key)
 
     def get_many(self, *keys):
+        if self.key_prefix:
+            keys = [self.key_prefix + key for key in keys]
         return self._client.mget(keys)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        self._client.setex(key, value, timeout)
+        self._client.setex(self.key_prefix + key, value, timeout)
 
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        added = self._client.setnx(key, value)
+        added = self._client.setnx(self.key_prefix + key, value)
         if added:
-            self._client.expire(key, timeout)
+            self._client.expire(self.key_prefix + key, timeout)
 
     def set_many(self, mapping, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
         pipe = self._client.pipeline()
         for key, value in _items(mapping):
-            pipe.setex(key, value, timeout)
+            pipe.setex(self.key_prefix + key, value, timeout)
         pipe.execute()
 
     def delete(self, key):
-        self._client.delete(key)
+        self._client.delete(self.key_prefix + key)
 
     def delete_many(self, *keys):
+        if not keys:
+            return
+        if self.key_prefix:
+            keys = [self.key_prefix + key for key in keys]
         self._client.delete(*keys)
 
     def clear(self):
-        self._client.flushdb()
+        if self.key_prefix:
+            keys = self._client.keys(self.key_prefix + '*')
+            if keys:
+                self._client.delete(*keys)
+        else:
+            self._client.flushdb()
 
     def inc(self, key, delta=1):
-        return self._client.incr(key, delta)
+        return self._client.incr(self.key_prefix + key, delta)
 
     def dec(self, key, delta=1):
-        return self._client.decr(key, delta)
+        return self._client.decr(self.key_prefix + key, delta)
 
 
 class FileSystemCache(BaseCache):
