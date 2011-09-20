@@ -136,6 +136,10 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         assert stream.read() == '3'
         assert stream.read() == ''
 
+        io = StringIO('123456')
+        stream = wsgi.LimitedStream(io, 3)
+        assert stream.read(-1) == '123'
+
     def test_path_info_extraction(self):
         x = wsgi.extract_path_info('http://example.com/app', '/app/hello')
         assert x == u'/hello'
