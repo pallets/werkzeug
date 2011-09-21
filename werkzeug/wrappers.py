@@ -608,7 +608,7 @@ class BaseResponse(object):
     autocorrect_location_header = True
 
     #: Should this response object automatically set the content-length
-    #: header if possible?  THis is true by default.
+    #: header if possible?  This is true by default.
     #:
     #: .. versionadded:: 0.8
     automatically_set_content_length = True
