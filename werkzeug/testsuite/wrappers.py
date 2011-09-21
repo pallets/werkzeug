@@ -633,6 +633,28 @@ class WrappersTestCase(WerkzeugTestCase):
         assert resp.content_length is None
         assert resp.get_wsgi_headers({})['Content-Length'] == '12'
 
+    def test_disabled_auto_content_length(self):
+        class MyResponse(wrappers.Response):
+            automatically_set_content_length = False
+        resp = MyResponse('Hello World!')
+        self.assert_(resp.content_length is None)
+
+        resp = MyResponse(['Hello World!'])
+        self.assert_(resp.content_length is None)
+        self.assert_('Content-Length' not in resp.get_wsgi_headers({}))
+
+    def test_location_header_autocorrect(self):
+        env = create_environ()
+        class MyResponse(wrappers.Response):
+            autocorrect_location_header = False
+        resp = MyResponse('Hello World!')
+        resp.headers['Location'] = '/test'
+        self.assert_equal(resp.get_wsgi_headers(env)['Location'], '/test')
+
+        resp = wrappers.Response('Hello World!')
+        resp.headers['Location'] = '/test'
+        self.assert_equal(resp.get_wsgi_headers(env)['Location'], 'http://localhost/test')
+
 
 def suite():
     suite = unittest.TestSuite()

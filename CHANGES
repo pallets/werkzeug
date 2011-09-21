@@ -23,6 +23,9 @@ Release date to be announced, codename to be decided.
   with missing nc and nonce params.
 - Proxy fix now also updates wsgi.url_scheme based on X-Forwarded-Proto.
 - Added support for key prefixes to the redis cache.
+- Added the ability to supress some auto corrections in the wrappers
+  that are now controlled via `autocorrect_location_header` and
+  `automatically_set_content_length` on the response objects.
 
 Version 0.7.2
 -------------

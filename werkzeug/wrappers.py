@@ -601,6 +601,18 @@ class BaseResponse(object):
     #:    your code to the name change.
     implicit_sequence_conversion = True
 
+    #: Should this response object correct the location header to be RFC
+    #: conformant?  This is true by default.
+    #:
+    #: .. versionadded:: 0.8
+    autocorrect_location_header = True
+
+    #: Should this response object automatically set the content-length
+    #: header if possible?  THis is true by default.
+    #:
+    #: .. versionadded:: 0.8
+    automatically_set_content_length = True
+
     def __init__(self, response=None, status=None, headers=None,
                  mimetype=None, content_type=None, direct_passthrough=False):
         if isinstance(headers, Headers):
@@ -751,7 +763,8 @@ class BaseResponse(object):
         if isinstance(value, unicode):
             value = value.encode(self.charset)
         self.response = [value]
-        self.headers['Content-Length'] = str(len(value))
+        if self.automatically_set_content_length:
+            self.headers['Content-Length'] = str(len(value))
     data = property(_get_data, _set_data, doc=_get_data.__doc__)
     del _get_data, _set_data
 
@@ -957,12 +970,16 @@ class BaseResponse(object):
 
         # make sure the location header is an absolute URL
         if location is not None:
+            old_location = location
             if isinstance(location, unicode):
                 location = iri_to_uri(location)
-            headers['Location'] = urlparse.urljoin(
-                get_current_url(environ, root_only=True),
-                location
-            )
+            if self.autocorrect_location_header:
+                location = urlparse.urljoin(
+                    get_current_url(environ, root_only=True),
+                    location
+                )
+            if location != old_location:
+                headers['Location'] = location
 
         # make sure the content location is a URL
         if content_location is not None and \
@@ -983,7 +1000,8 @@ class BaseResponse(object):
         # flattening the iterator or encoding of unicode strings in
         # the response.  We however should not do that if we have a 304
         # response.
-        if self.is_sequence and content_length is None and status != 304:
+        if self.automatically_set_content_length and \
+           self.is_sequence and content_length is None and status != 304:
             try:
                 content_length = sum(len(str(x)) for x in self.response)
             except UnicodeError:
