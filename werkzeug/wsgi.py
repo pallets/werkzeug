@@ -688,8 +688,6 @@ class LimitedStream(object):
         """This is called when the stream tries to read past the limit.
         The return value of this function is returned from the reading
         function.
-
-        Per default this raises a :exc:`~werkzeug.exceptions.BadRequest`.
         """
         if self.silent:
             return ''
