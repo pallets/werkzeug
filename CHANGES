@@ -31,6 +31,9 @@ Release date to be announced, codename to be decided.
   fails to do so.
 - :func:`~werkzeug.wsgi.make_line_iter` now requires a limit that is
   not higher than the length the stream can provide.
+- Refactored form parsing into a form parser class that makes it possible
+  to hook into individual parts of the parsing process for debugging and
+  extending.
 
 Version 0.7.2
 -------------
