@@ -100,10 +100,11 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
 
     stream = _empty_stream
     files = ()
+    input_stream = LimitedStream(environ['wsgi.input'], content_length)
 
     if content_type == 'multipart/form-data':
         try:
-            form, files = parse_multipart(environ['wsgi.input'],
+            form, files = parse_multipart(input_stream,
                                           extra.get('boundary'),
                                           content_length, stream_factory,
                                           charset, errors,
@@ -119,11 +120,10 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
         if max_form_memory_size is not None and \
            content_length > max_form_memory_size:
             raise RequestEntityTooLarge()
-        form = url_decode(environ['wsgi.input'].read(content_length),
-                          charset, errors=errors, cls=cls)
+        form = url_decode(input_stream.read(), charset, errors=errors, cls=cls)
     else:
         form = cls()
-        stream = LimitedStream(environ['wsgi.input'], content_length)
+        stream = input_stream
 
     return stream, form, cls(files)
 
@@ -198,7 +198,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
         # this should never happen because we check for a minimum size
         # of 1024 and boundaries may not be longer than 200.  The only
         # situation when this happen is for non debug builds where
-        # the assert i skipped.
+        # the assert is skipped.
         raise ValueError('Boundary longer than buffer size')
 
     total_content_length = content_length
@@ -209,8 +209,10 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
     files = []
     in_memory = 0
 
-    # convert the file into a limited stream with iteration capabilities
-    file = LimitedStream(file, content_length)
+    # convert the file into a limited stream with iteration capabilities.
+    # The content length is not used in that case.
+    if not isinstance(file, LimitedStream):
+        file = LimitedStream(file, content_length)
     iterator = chain(make_line_iter(file, buffer_size=buffer_size),
                      _empty_string_iter)
 

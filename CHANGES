@@ -26,6 +26,11 @@ Release date to be announced, codename to be decided.
 - Added the ability to supress some auto corrections in the wrappers
   that are now controlled via `autocorrect_location_header` and
   `automatically_set_content_length` on the response objects.
+- Werkzeug now uses a new method to check that the length of incoming
+  data is complete and will raise IO errors by itself if the server
+  fails to do so.
+- :func:`~werkzeug.wsgi.make_line_iter` now requires a limit that is
+  not higher than the length the stream can provide.
 
 Version 0.7.2
 -------------

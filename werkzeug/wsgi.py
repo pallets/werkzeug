@@ -583,6 +583,9 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
     If you need line-by-line processing it's strongly recommended to iterate
     over the input stream using this helper function.
 
+    .. versionchanged:: 0.8
+       This function now ensures that the limit was reached.
+
     :param stream: the stream to iterate over.
     :param limit: the limit in bytes for the stream.  (Usually
                   content length.  Not necessary if the `stream`
@@ -718,7 +721,10 @@ class LimitedStream(object):
             return self.on_exhausted()
         if size is None or size == -1:  # -1 is for consistence with file
             size = self.limit
-        read = self._read(min(self.limit - self._pos, size))
+        to_read = min(self.limit - self._pos, size)
+        read = self._read(to_read)
+        if to_read and len(read) != to_read:
+            raise IOError('Stream has gone away')
         self._pos += len(read)
         return read
 
@@ -731,6 +737,8 @@ class LimitedStream(object):
         else:
             size = min(size, self.limit - self._pos)
         line = self._readline(size)
+        if size and not line:
+            raise IOError('Stream has gone away')
         self._pos += len(line)
         return line
 

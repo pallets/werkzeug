@@ -182,12 +182,14 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         }) == 'foobar.example.com:81'
 
     def test_multi_part_line_breaks(self):
-        test_stream = StringIO('abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK')
-        lines = list(wsgi.make_line_iter(test_stream, limit=1024, buffer_size=16))
+        data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
+        test_stream = StringIO(data)
+        lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=16))
         assert lines == ['abcdef\r\n', 'ghijkl\r\n', 'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK']
 
-        test_stream = StringIO('abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz')
-        lines = list(wsgi.make_line_iter(test_stream, limit=1024, buffer_size=24))
+        data = 'abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz'
+        test_stream = StringIO(data)
+        lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=24))
         assert lines == ['abc\r\n', 'This line is broken by the buffer length.\r\n', 'Foo bar baz']
 
 
