@@ -305,18 +305,21 @@ class MultiPartTestCase(WerkzeugTestCase):
             self.assert_equal(req.form['bar'], 'blafasel')
 
     def test_failures(self):
-        self.assert_raises(ValueError, formparser.parse_multipart, None, '', 20)
-        self.assert_raises(ValueError, formparser.parse_multipart, None, 'broken  ', 20)
+        def parse_multipart(stream, boundary, content_length):
+            parser = formparser.MultiPartParser(content_length)
+            return parser.parse(stream, boundary, content_length)
+        self.assert_raises(ValueError, parse_multipart, StringIO(''), '', 0)
+        self.assert_raises(ValueError, parse_multipart, StringIO(''), 'broken  ', 0)
 
         data = '--foo\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, formparser.parse_multipart, StringIO(data), 'foo', len(data))
+        self.assert_raises(ValueError, parse_multipart, StringIO(data), 'foo', len(data))
 
         data = '--foo\r\nContent-Disposition: form-field; name=foo\r\n' \
                'Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, formparser.parse_multipart, StringIO(data), 'foo', len(data))
+        self.assert_raises(ValueError, parse_multipart, StringIO(data), 'foo', len(data))
 
         data = '--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n'
-        self.assert_raises(ValueError, formparser.parse_multipart, StringIO(data), 'foo', len(data))
+        self.assert_raises(ValueError, parse_multipart, StringIO(data), 'foo', len(data))
 
         x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
         self.assert_equal(x['foo'], 'bar\n x test')
@@ -348,11 +351,12 @@ class InternalFunctionsTestCase(WerkzeugTestCase):
 
     def test_find_terminator(self):
         lineiter = iter('\n\n\nfoo\nbar\nbaz'.splitlines(True))
-        line = formparser._find_terminator(lineiter)
+        find_terminator = formparser.MultiPartParser()._find_terminator
+        line = find_terminator(lineiter)
         assert line == 'foo'
         assert list(lineiter) == ['bar\n', 'baz']
-        assert formparser._find_terminator([]) == ''
-        assert formparser._find_terminator(['']) == ''
+        assert find_terminator([]) == ''
+        assert find_terminator(['']) == ''
 
 
 def suite():

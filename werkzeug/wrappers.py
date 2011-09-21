@@ -32,7 +32,7 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_if_range_header, parse_cookie, dump_cookie, \
      parse_range_header, parse_content_range_header, dump_header
 from werkzeug.urls import url_decode, iri_to_uri
-from werkzeug.formparser import parse_form_data, default_stream_factory
+from werkzeug.formparser import FormDataParser, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      header_property, get_content_type
 from werkzeug.wsgi import get_current_url, get_host, LimitedStream, \
@@ -167,6 +167,10 @@ class BaseRequest(object):
     #: .. versionadded:: 0.6
     dict_storage_class = ImmutableTypeConversionDict
 
+    #: The form data parser that shoud be used.  Can be replaced to customize
+    #: the form date parsing.
+    form_data_parser_class = FormDataParser
+
     def __init__(self, environ, populate_request=True, shallow=False):
         self.environ = environ
         if populate_request and not shallow:
@@ -246,7 +250,7 @@ class BaseRequest(object):
         return _patch_wrapper(f, lambda *a: f(*a[:-2]+(cls(a[-2]),))(*a[-2:]))
 
     def _get_file_stream(self, total_content_length, content_type, filename=None,
-                         content_length=None):
+                        content_length=None):
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -256,11 +260,6 @@ class BaseRequest(object):
         content length is higher than 500KB.  Because many browsers do not
         provide a content length for the files only the total content
         length matters.
-
-        .. versionchanged:: 0.5
-           Previously this function was not passed any arguments.  In 0.5 older
-           functions not accepting any arguments are still supported for
-           backwards compatibility.
 
         :param total_content_length: the total content length of all the
                                      data in the request combined.  This value
@@ -273,6 +272,29 @@ class BaseRequest(object):
         """
         return default_stream_factory(total_content_length, content_type,
                                       filename, content_length)
+
+    @property
+    def want_form_data_parsed(self):
+        """Returns True if the request method is ``POST``, ``PUT`` or
+        ``PATCH``.  Can be overriden to support other HTTP methods that
+        should carry form data.
+
+        .. versionadded:: 0.8
+        """
+        return self.environ['REQUEST_METHOD'] in ('POST', 'PUT', 'PATCH')
+
+    def make_form_data_parser(self):
+        """Creates the form data parser.  Instanciates the
+        :attr:`form_data_parser_class` with some parameters.
+
+        .. versionadded:: 0.8
+        """
+        return self.form_data_parser_class(self._get_file_stream,
+                                           self.charset,
+                                           self.encoding_errors,
+                                           self.max_form_memory_size,
+                                           self.max_content_length,
+                                           self.parameter_storage_class)
 
     def _load_form_data(self):
         """Method used internally to retrieve submitted data.  After calling
@@ -291,16 +313,9 @@ class BaseRequest(object):
                                'that, set `shallow` to False.')
         data = None
         stream = _empty_stream
-        if self.environ['REQUEST_METHOD'] in ('POST', 'PUT', 'PATCH'):
-            try:
-                data = parse_form_data(self.environ, self._get_file_stream,
-                                       self.charset, self.encoding_errors,
-                                       self.max_form_memory_size,
-                                       self.max_content_length,
-                                       cls=self.parameter_storage_class,
-                                       silent=False)
-            except ValueError, e:
-                self._form_parsing_failed(e)
+        if self.want_form_data_parsed:
+            parser = self.make_form_data_parser()
+            data = parser.parse_from_environ(self.environ)
         else:
             # if we have a content length header we are able to properly
             # guard the incoming stream, no matter what request method is
@@ -318,17 +333,6 @@ class BaseRequest(object):
         # our cached_property non-data descriptor.
         d = self.__dict__
         d['stream'], d['form'], d['files'] = data
-
-    def _form_parsing_failed(self, error):
-        """Called if parsing of form data failed.  This is currently only
-        invoked for failed multipart uploads.  By default this method does
-        nothing.
-
-        :param error: a `ValueError` object with a message why the
-                      parsing failed.
-
-        .. versionadded:: 0.5.1
-        """
 
     @cached_property
     def stream(self):

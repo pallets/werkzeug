@@ -430,21 +430,15 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_raises(RuntimeError, lambda: request.form['foo'])
 
     def test_form_parsing_failed(self):
-        errors = []
-        class TestRequest(wrappers.Request):
-            def _form_parsing_failed(self, error):
-                errors.append(error)
         data = (
             '--blah\r\n'
         )
-        data = TestRequest.from_values(input_stream=StringIO(data),
-                                       content_length=len(data),
-                                       content_type='multipart/form-data; boundary=foo',
-                                       method='POST')
+        data = wrappers.Request.from_values(input_stream=StringIO(data),
+                                            content_length=len(data),
+                                            content_type='multipart/form-data; boundary=foo',
+                                            method='POST')
         assert not data.files
         assert not data.form
-        assert len(errors) == 1
-        assert isinstance(errors[0], ValueError)
 
     def test_url_charset_reflection(self):
         req = wrappers.Request.from_values()

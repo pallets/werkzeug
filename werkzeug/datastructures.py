@@ -2418,7 +2418,7 @@ class FileStorage(object):
     """
 
     def __init__(self, stream=None, filename=None, name=None,
-                 content_type='application/octet-stream', content_length=-1,
+                 content_type=None, content_length=None,
                  headers=None):
         self.name = name
         self.stream = stream or _empty_stream
@@ -2433,16 +2433,28 @@ class FileStorage(object):
                 filename = None
 
         self.filename = filename
-        self.content_type = content_type
-        self.content_length = content_length
         if headers is None:
             headers = Headers()
         self.headers = headers
+        if content_type is not None:
+            headers['Content-Type'] = content_type
+        if content_length is not None:
+            headers['Content-Length'] = str(content_length)
 
     def _parse_content_type(self):
         if not hasattr(self, '_parsed_content_type'):
             self._parsed_content_type = \
                 parse_options_header(self.content_type)
+
+    @property
+    def content_type(self):
+        """The file's content type.  Usually not available"""
+        return self.headers.get('content-type')
+
+    @property
+    def content_length(self):
+        """The file's content length.  Usually not available"""
+        return int(self.headers.get('content-length') or 0)
 
     @property
     def mimetype(self):

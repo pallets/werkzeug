@@ -149,4 +149,8 @@ incoming data as part of it.  If you want to generate such fake-WSGI
 environments for unittesting you might want to use the
 :func:`create_environ` function or the :class:`EnvironBuilder` instead.
 
+.. autoclass:: FormDataParser
+
 .. autofunction:: parse_form_data
+
+.. autofunction:: parse_multipart_headers
