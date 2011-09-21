@@ -104,8 +104,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
 
     if content_type == 'multipart/form-data':
         try:
-            form, files = parse_multipart(input_stream,
-                                          extra.get('boundary'),
+            form, files = parse_multipart(input_stream, extra.get('boundary'),
                                           content_length, stream_factory,
                                           charset, errors,
                                           max_form_memory_size=max_form_memory_size)
@@ -198,7 +197,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
         # this should never happen because we check for a minimum size
         # of 1024 and boundaries may not be longer than 200.  The only
         # situation when this happen is for non debug builds where
-        # the assert is skipped.
+        # the assert i skipped.
         raise ValueError('Boundary longer than buffer size')
 
     total_content_length = content_length
@@ -239,7 +238,7 @@ def parse_multipart(file, boundary, content_length, stream_factory=None,
             content_type = headers.get('content-type')
             if content_type:
                 mimetype, ct_params = parse_options_header(content_type)
-                part_charset = ct_params.get("charset", charset)
+                part_charset = ct_params.get('charset', charset)
             else:
                 part_charset = charset
 
