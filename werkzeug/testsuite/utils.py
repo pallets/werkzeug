@@ -16,8 +16,8 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug import utils
 from werkzeug.datastructures import Headers
 from werkzeug.http import parse_date, http_date
-from werkzeug.wrappers import BaseResponse, Request
-from werkzeug.test import Client, run_wsgi_app, create_environ
+from werkzeug.wrappers import BaseResponse
+from werkzeug.test import Client, run_wsgi_app
 
 
 class GeneralUtilityTestCase(WerkzeugTestCase):
