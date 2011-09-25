@@ -37,8 +37,6 @@ General Helpers
 
 .. autofunction:: import_string
 
-.. autofunction:: import_module
-
 .. autofunction:: find_modules
 
 .. autofunction:: validate_arguments

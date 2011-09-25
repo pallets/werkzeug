@@ -383,42 +383,6 @@ def append_slash_redirect(environ, code=301):
     return redirect(new_path, code)
 
 
-def import_module(module_name):
-    """This function works similar to :meth:`import_string` but it
-    does not resolve attributes.  This appears to be a downside but it
-    gives you better debugging support.  If a module cannot be found it
-    will return ``None`` but if a module fails to import because of a
-    missing dependency it will raise a proper :exc:`ImportError`.
-
-    Example usage::
-
-        def import_view(module_name, view_name):
-            mod = import_module('myapplication.views')
-            if mod is None:
-                raise RuntimeError('View module %s not found' % module_name)
-            view = getattr(mod, view_name, None)
-            if view is None:
-                raise RuntimeError('View function %s not found in %s' %
-                                   (module_name, view_name))
-            return view
-
-    .. versionadded:: 0.8
-
-    :param module_name: the name of the module to import
-    """
-    try:
-        __import__(module_name)
-    except ImportError:
-        exc_type, exc_value, tb_root = sys.exc_info()
-        tb = tb_root
-        while tb is not None:
-            if tb.tb_frame.f_globals.get('__name__') == module_name:
-                raise exc_type, exc_value, tb_root
-            tb = tb.tb_next
-        return None
-    return sys.modules[module_name]
-
-
 def import_string(import_name, silent=False):
     """Imports an object based on a string.  This is useful if you want to
     use import paths as endpoints or something similar.  An import path can

@@ -34,9 +34,6 @@ Release date to be announced, codename to be decided.
 - Refactored form parsing into a form parser class that makes it possible
   to hook into individual parts of the parsing process for debugging and
   extending.
-- Added :meth:`werkzeug.utils.import_module` function that does better
-  error signalling than :meth:`werkzeug.utils.import_string` but does
-  not solve attributes.
 - For conditional responses the content length is no longer set when it
   is already there and added if missing.
 - Immutable datastructures are hashable now.

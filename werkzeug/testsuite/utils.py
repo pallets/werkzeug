@@ -161,12 +161,6 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
         self.assert_raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
-    def test_import_module(self):
-        import cgi
-        from werkzeug import debug
-        self.assert_(utils.import_module('cgi') is cgi)
-        self.assert_(utils.import_module('werkzeug.debug') is debug)
-
     def test_find_modules(self):
         assert list(utils.find_modules('werkzeug.debug')) == \
             ['werkzeug.debug.console', 'werkzeug.debug.repr',
