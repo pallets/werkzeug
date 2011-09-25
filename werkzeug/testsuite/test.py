@@ -9,6 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 
+from __future__ import with_statement
+
 import sys
 import unittest
 from cStringIO import StringIO, OutputType
@@ -19,10 +21,8 @@ from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ, \
     ClientRedirectError, stream_encode_multipart, run_wsgi_app
 from werkzeug.utils import redirect
-from werkzeug.wsgi import get_host
 from werkzeug.formparser import parse_form_data
-from werkzeug.urls import url_decode
-from werkzeug.datastructures import Headers, MultiDict
+from werkzeug.datastructures import MultiDict
 
 
 def cookie_app(environ, start_response):
