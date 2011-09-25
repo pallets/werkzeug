@@ -697,6 +697,15 @@ class LimitedStream(object):
         from werkzeug.exceptions import BadRequest
         raise BadRequest('input stream exhausted')
 
+    def on_disconnect(self):
+        """What should happen if a disconnect is detected?  The return
+        value of this function is returned from read functions in case
+        the client went away.  By default a
+        :exc:`~werkzeug.exceptions.ClientDisconnected` exception is raised.
+        """
+        from werkzeug.exceptions import ClientDisconnected
+        raise ClientDisconnected()
+
     def exhaust(self, chunk_size=1024 * 16):
         """Exhaust the stream.  This consumes all the data left until the
         limit is reached.
@@ -722,9 +731,12 @@ class LimitedStream(object):
         if size is None or size == -1:  # -1 is for consistence with file
             size = self.limit
         to_read = min(self.limit - self._pos, size)
-        read = self._read(to_read)
+        try:
+            read = self._read(to_read)
+        except (IOError, ValueError):
+            return self.on_disconnect()
         if to_read and len(read) != to_read:
-            raise IOError('Stream has gone away')
+            return self.on_disconnect()
         self._pos += len(read)
         return read
 
@@ -736,9 +748,12 @@ class LimitedStream(object):
             size = self.limit - self._pos
         else:
             size = min(size, self.limit - self._pos)
-        line = self._readline(size)
+        try:
+            line = self._readline(size)
+        except (ValueError, IOError):
+            return self.on_disconnect()
         if size and not line:
-            raise IOError('Stream has gone away')
+            return self.on_disconnect()
         self._pos += len(line)
         return line
 

@@ -179,6 +179,21 @@ class BadRequest(HTTPException):
     )
 
 
+class ClientDisconnected(BadRequest):
+    """Internal exception that is raised if Werkzeug detects a disconnected
+    client.  Since the client is already gone at that point attempting to
+    send the error message to the client might not work and might ultimately
+    result in another exception in the server.  Mainly this is here so that
+    it is silenced by default as far as Werkzeug is concerned.
+
+    Since disconnections cannot be reliably detected and are unspecified
+    by WSGI to a large extend this might or might not be raised if a client
+    is gone.
+
+    .. versionadded:: 0.8
+    """
+
+
 class Unauthorized(HTTPException):
     """*401* `Unauthorized`
 

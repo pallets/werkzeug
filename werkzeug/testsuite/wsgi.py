@@ -15,7 +15,7 @@ from cStringIO import StringIO
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug.wrappers import BaseResponse
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug import wsgi
 
@@ -139,6 +139,21 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         io = StringIO('123456')
         stream = wsgi.LimitedStream(io, 3)
         assert stream.read(-1) == '123'
+
+    def test_limited_stream_disconnection(self):
+        io = StringIO('A bit of content')
+
+        # disconnect detection on out of bytes
+        stream = wsgi.LimitedStream(io, 255)
+        with self.assert_raises(ClientDisconnected):
+            stream.read()
+
+        # disconnect detection because file close
+        io = StringIO('x' * 255)
+        io.close()
+        stream = wsgi.LimitedStream(io, 255)
+        with self.assert_raises(ClientDisconnected):
+            stream.read()
 
     def test_path_info_extraction(self):
         x = wsgi.extract_path_info('http://example.com/app', '/app/hello')
