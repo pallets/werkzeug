@@ -95,6 +95,15 @@ class ProxyFix(object):
     def __init__(self, app):
         self.app = app
 
+    def get_remote_addr(self, forwarded_for):
+        """Selects the new remote addr from the given list of ips in
+        X-Forwarded-For.  By default the first one is picked.
+
+        .. versionadded:: 0.8
+        """
+        if forwarded_for:
+            return forwarded_for[0]
+
     def __call__(self, environ, start_response):
         getter = environ.get
         forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '')
@@ -105,10 +114,10 @@ class ProxyFix(object):
             'werkzeug.proxy_fix.orig_remote_addr':      getter('REMOTE_ADDR'),
             'werkzeug.proxy_fix.orig_http_host':        getter('HTTP_HOST')
         })
-        if forwarded_for:
-            first_addr = forwarded_for[0].strip()
-            if first_addr:
-                environ['REMOTE_ADDR'] = first_addr
+        forwarded_for = [x for x in [x.strip() for x in forwarded_for] if x]
+        remote_addr = self.get_remote_addr(forwarded_for)
+        if remote_addr is not None:
+            environ['REMOTE_ADDR'] = remote_addr
         if forwarded_host:
             environ['HTTP_HOST'] = forwarded_host
         if forwarded_proto:

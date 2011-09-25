@@ -9,6 +9,7 @@ Fixers
 .. autoclass:: PathInfoFromRequestUriFix
 
 .. autoclass:: ProxyFix
+   :members:
 
 .. autoclass:: HeaderRewriterFix
 
