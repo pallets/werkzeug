@@ -39,6 +39,7 @@ Release date to be announced, codename to be decided.
 - Immutable datastructures are hashable now.
 - Headers datastructure no longer allows newlines in values to avoid
   header injection attacks.
+- Removed support for Python 2.4
 
 Version 0.7.2
 -------------
