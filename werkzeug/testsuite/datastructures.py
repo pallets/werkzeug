@@ -525,6 +525,21 @@ class HeadersTestCase(WerkzeugTestCase):
         a.set('Content-Disposition', 'attachment', filename='foo')
         assert a['Content-Disposition'] == 'attachment; filename=foo'
 
+    def test_reject_newlines(self):
+        h = self.storage_class()
+
+        for variation in 'foo\nbar', 'foo\r\nbar', 'foo\rbar':
+            with self.assert_raises(ValueError):
+                h['foo'] = variation
+            with self.assert_raises(ValueError):
+                h.add('foo', variation)
+            with self.assert_raises(ValueError):
+                h.add('foo', 'test', option=variation)
+            with self.assert_raises(ValueError):
+                h.set('foo', variation)
+            with self.assert_raises(ValueError):
+                h.set('foo', 'test', option=variation)
+
 
 class EnvironHeadersTestCase(WerkzeugTestCase):
     storage_class = datastructures.EnvironHeaders

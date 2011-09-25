@@ -1054,7 +1054,13 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        self._validate_value(_value)
         self._list.append((_key, _value))
+
+    def _validate_value(self, value):
+        if isinstance(value, basestring) and ('\n' in value or '\r' in value):
+            raise ValueError('Detected newline in header value.  This is '
+                'a potential security problem')
 
     def add_header(self, _key, _value, **_kw):
         """Add a new header tuple to the list.
@@ -1085,6 +1091,7 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        self._validate_value(_value)
         if not self._list:
             self._list.append((_key, _value))
             return
@@ -1116,6 +1123,7 @@ class Headers(object):
     def __setitem__(self, key, value):
         """Like :meth:`set` but also supports index/slice based setting."""
         if isinstance(key, (slice, int, long)):
+            self._validate_value(value)
             self._list[key] = value
         else:
             self.set(key, value)
