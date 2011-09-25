@@ -228,6 +228,23 @@ class ImmutableDictBaseTestCase(WerkzeugTestCase):
         self.assert_(mutable is not immutable)
         self.assert_(copy(immutable) is immutable)
 
+    def test_dict_is_hashable(self):
+        cls = self.storage_class
+        immutable = cls({'a': 1, 'b': 2})
+        immutable2 = cls({'a': 2, 'b': 2})
+        x = set([immutable])
+        self.assert_(immutable in x)
+        self.assert_(immutable2 not in x)
+        x.discard(immutable)
+        self.assert_(immutable not in x)
+        self.assert_(immutable2 not in x)
+        x.add(immutable2)
+        self.assert_(immutable not in x)
+        self.assert_(immutable2 in x)
+        x.add(immutable)
+        self.assert_(immutable in x)
+        self.assert_(immutable2 in x)
+
 
 class ImmutableTypeConversionDictTestCase(ImmutableDictBaseTestCase):
     storage_class = datastructures.ImmutableTypeConversionDict
@@ -236,6 +253,23 @@ class ImmutableTypeConversionDictTestCase(ImmutableDictBaseTestCase):
 class ImmutableMultiDictTestCase(ImmutableDictBaseTestCase):
     storage_class = datastructures.ImmutableMultiDict
 
+    def test_multidict_is_hashable(self):
+        cls = self.storage_class
+        immutable = cls({'a': [1, 2], 'b': 2})
+        immutable2 = cls({'a': [1], 'b': 2})
+        x = set([immutable])
+        self.assert_(immutable in x)
+        self.assert_(immutable2 not in x)
+        x.discard(immutable)
+        self.assert_(immutable not in x)
+        self.assert_(immutable2 not in x)
+        x.add(immutable2)
+        self.assert_(immutable not in x)
+        self.assert_(immutable2 in x)
+        x.add(immutable)
+        self.assert_(immutable in x)
+        self.assert_(immutable2 in x)
+
 
 class ImmutableDictTestCase(ImmutableDictBaseTestCase):
     storage_class = datastructures.ImmutableDict
@@ -243,6 +277,11 @@ class ImmutableDictTestCase(ImmutableDictBaseTestCase):
 
 class ImmutableOrderedMultiDictTestCase(ImmutableDictBaseTestCase):
     storage_class = datastructures.ImmutableOrderedMultiDict
+
+    def test_ordered_multidict_is_hashable(self):
+        a = self.storage_class([('a', 1), ('b', 1), ('a', 2)])
+        b = self.storage_class([('a', 1), ('a', 2), ('b', 1)])
+        self.assert_not_equal(hash(a), hash(b))
 
 
 class MultiDictTestCase(MutableMultiDictBaseTestCase):
@@ -536,6 +575,16 @@ class HeaderSetTestCase(WerkzeugTestCase):
         assert hs
         hs.clear()
         assert not hs
+
+
+class ImmutableListTestCase(WerkzeugTestCase):
+    storage_class = datastructures.ImmutableList
+
+    def test_list_hashable(self):
+        t = (1, 2, 3, 4)
+        l = self.storage_class(t)
+        self.assert_equal(hash(t), hash(l))
+        self.assert_not_equal(t, l)
 
 
 def suite():

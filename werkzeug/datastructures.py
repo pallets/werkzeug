@@ -50,6 +50,14 @@ class ImmutableListMixin(object):
     :private:
     """
 
+    _hash_cache = None
+
+    def __hash__(self):
+        if self._hash_cache is not None:
+            return self._hash_cache
+        rv = self._hash_cache = hash(tuple(self))
+        return rv
+
     def __reduce_ex__(self, protocol):
         return type(self), (list(self),)
 
@@ -107,6 +115,8 @@ class ImmutableDictMixin(object):
 
     :private:
     """
+    _hash_cache = None
+
     @classmethod
     def fromkeys(cls, keys, value=None):
         instance = super(cls, cls).__new__(cls)
@@ -115,6 +125,15 @@ class ImmutableDictMixin(object):
 
     def __reduce_ex__(self, protocol):
         return type(self), (dict(self),)
+
+    def _iter_hashitems(self):
+        return self.iteritems()
+
+    def __hash__(self):
+        if self._hash_cache is not None:
+            return self._hash_cache
+        rv = self._hash_cache = hash(frozenset(self._iter_hashitems()))
+        return rv
 
     def setdefault(self, key, default=None):
         is_immutable(self)
@@ -148,6 +167,9 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
 
     def __reduce_ex__(self, protocol):
         return type(self), (self.items(multi=True),)
+
+    def _iter_hashitems(self):
+        return enumerate(self.iteritems(multi=True))
 
     def add(self, key, value):
         is_immutable(self)
@@ -1129,7 +1151,9 @@ class Headers(object):
 
 
 class ImmutableHeadersMixin(object):
-    """Makes a :class:`Headers` immutable.
+    """Makes a :class:`Headers` immutable.  We do not mark them as
+    hashable though since the only usecase for this datastructure
+    in Werkzeug is a view on a mutable structure.
 
     .. versionadded:: 0.5
 

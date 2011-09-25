@@ -39,6 +39,7 @@ Release date to be announced, codename to be decided.
   not solve attributes.
 - For conditional responses the content length is no longer set when it
   is already there and added if missing.
+- Immutable datastructures are hashable now.
 
 Version 0.7.2
 -------------
