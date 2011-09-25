@@ -106,7 +106,9 @@ class ProxyFix(object):
             'werkzeug.proxy_fix.orig_http_host':        getter('HTTP_HOST')
         })
         if forwarded_for:
-            environ['REMOTE_ADDR'] = forwarded_for[0].strip()
+            first_addr = forwarded_for[0].strip()
+            if first_addr:
+                environ['REMOTE_ADDR'] = first_addr
         if forwarded_host:
             environ['HTTP_HOST'] = forwarded_host
         if forwarded_proto:

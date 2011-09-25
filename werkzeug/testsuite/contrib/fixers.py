@@ -78,6 +78,19 @@ class ServerFixerTestCase(WerkzeugTestCase):
         wsgi_headers = response.get_wsgi_headers(environ)
         assert wsgi_headers['Location'] == 'https://example.com/foo/bar.hml'
 
+    def test_proxy_fix_weird_enum(self):
+        @fixers.ProxyFix
+        @Request.application
+        def app(request):
+            return Response(request.remote_addr)
+        environ = dict(create_environ(),
+            HTTP_X_FORWARDED_FOR=',',
+            REMOTE_ADDR='127.0.0.1',
+        )
+
+        response = Response.from_app(app, environ)
+        self.assert_equal(response.data, '127.0.0.1')
+
     def test_header_rewriter_fix(self):
         """Test the HeaderRewriterFix fixer"""
         @Request.application
