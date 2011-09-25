@@ -11,8 +11,6 @@
 
 from __future__ import with_statement
 
-import os
-import sys
 import unittest
 from werkzeug.utils import import_string, find_modules
 
@@ -134,7 +132,6 @@ def suite():
     in case you want to test that monkeypatches to Flask do not
     break it.
     """
-    sys.path.append(os.path.join(os.path.dirname(__file__), 'test_apps'))
     suite = unittest.TestSuite()
     for other_suite in iter_suites(__name__):
         suite.addTest(other_suite)
