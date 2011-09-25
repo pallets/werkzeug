@@ -384,7 +384,7 @@ def append_slash_redirect(environ, code=301):
 
 
 def import_module(module_name):
-    """This function works similar to :meth:`import_string` but that it
+    """This function works similar to :meth:`import_string` but it
     does not resolve attributes.  This appears to be a downside but it
     gives you better debugging support.  If a module cannot be found it
     will return ``None`` but if a module fails to import because of a
