@@ -331,6 +331,12 @@ class WrappersTestCase(WerkzeugTestCase):
         response.make_conditional(env)
         assert response.date == d
 
+        # make sure content length is only set if missing
+        response = wrappers.Response('Hello World')
+        response.content_length = 999
+        response.make_conditional(env)
+        self.assert_equal(response.content_length, 999)
+
     def test_etag_response_mixin_freezing(self):
         class WithFreeze(wrappers.ETagResponseMixin, wrappers.BaseResponse):
             pass
