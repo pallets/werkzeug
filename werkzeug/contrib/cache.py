@@ -267,9 +267,10 @@ _test_memcached_key = re.compile(r'[^\x00-\x21\xff]{1,250}$').match
 class MemcachedCache(BaseCache):
     """A cache that uses memcached as backend.
 
-    The first argument can either be a list or tuple of server addresses
-    in which case Werkzeug tries to import the memcache module and connect
-    to it, or an object that resembles the API of a :class:`memcache.Client`.
+    The first argument can either be an object that resembles the API of a
+    :class:`memcache.Client` or a tuple/list of server addresses. In the
+    event that a tuple/list is passed, Werkzeug tries to import the best
+    available memcache library.
 
     Implementation notes:  This cache backend works around some limitations in
     memcached to simplify the interface.  For example unicode keys are encoded
@@ -292,45 +293,14 @@ class MemcachedCache(BaseCache):
     def __init__(self, servers, default_timeout=300, key_prefix=None):
         BaseCache.__init__(self, default_timeout)
         if isinstance(servers, (list, tuple)):
-            is_cmemcached = is_cmemcache = is_pylibmc = False
-            try:
-                import cmemcached as memcache
-                is_cmemcached = True
-            except ImportError:
-                try:
-                    import cmemcache as memcache
-                    is_cmemcache = True
-                except ImportError:
-                    try:
-                        import memcache
-                        is_cmemcache = False
-                        is_pylibmc = False
-                    except ImportError:
-                        try:
-                            import pylibmc as memcache
-                            is_cmemcache = False
-                            is_pylibmc = True
-                        except ImportError:
-                            raise RuntimeError('no memcache module found')
-
-            if is_cmemcache:
-                # cmemcache has a bug that debuglog is not defined for the
-                # client.  Whenever pickle fails you get a weird
-                # AttributeError.
-                client = memcache.Client(map(str, servers))
-                try:
-                    client.debuglog = lambda *a: None
-                except Exception:
-                    pass
-            elif is_pylibmc or is_cmemcached:
-                client = memcache.Client(servers)
-            else:
-                client = memcache.Client(servers, False, HIGHEST_PROTOCOL)
+            self._client = self.import_preferred_memcache_lib(servers)
         else:
-            client = servers
+            # NOTE: servers is actually an already initialized memcache
+            # client.
+            self._client = servers
 
-        self._client = client
         self.key_prefix = key_prefix
+
 
     def get(self, key):
         if isinstance(key, unicode):
@@ -356,9 +326,6 @@ class MemcachedCache(BaseCache):
                 encoded_key = self.key_prefix + encoded_key
             if _test_memcached_key(key):
                 key_mapping[encoded_key] = key
-        # the keys call here is important because otherwise cmemcache
-        # does ugly things.  What exactly I don't know, I think it does
-        # Py_DECREF but quite frankly I don't care.
         d = rv = self._client.get_multi(key_mapping.keys())
         if have_encoded_keys or self.key_prefix:
             rv = {}
@@ -441,22 +408,34 @@ class MemcachedCache(BaseCache):
         self._client.decr(key, delta)
 
 
-class GAEMemcachedCache(MemcachedCache):
-    """Connects to the Google appengine memcached Cache.
+    def import_preferred_memcache_lib(self, servers):
+        """ Returns an initialized memcache client """
+        try:
+            import pylibmc
+            return pylibmc.Client(servers)
+        except ImportError:
+            pass
 
-    :param default_timeout: the default timeout that is used if no timeout is
-                            specified on :meth:`~BaseCache.set`.
-    :param key_prefix: a prefix that is added before all keys.  This makes it
-                       possible to use the same memcached server for different
-                       applications.  Keep in mind that
-                       :meth:`~BaseCache.clear` will also clear keys with a
-                       different prefix.
-    """
+        try:
+            from google.appengine.api import memcache
+            return memcache.Client()
+        except ImportError:
+            pass
 
-    def __init__(self, default_timeout=300, key_prefix=None):
-        from google.appengine.api import memcache
-        MemcachedCache.__init__(self, memcache.Client(),
-                                default_timeout, key_prefix)
+        try:
+            import memcache
+            return memcache.Client(servers)
+        except ImportError:
+            pass
+
+        # If you're seeing this, either you need to install a memcache client
+        # or you need to monkey patch this method to support your
+        # environment.
+        raise RuntimeError('no memcache module found')
+
+
+# backwards compatibility
+GAEMemcachedCache = MemcachedCache
 
 
 class RedisCache(BaseCache):

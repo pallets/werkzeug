@@ -44,6 +44,9 @@ Release date to be announced, codename to be decided.
 - Added stream based URL decoding.  This reduces memory usage on large
   transmitted form data that is URL decoded since Werkzeug will no longer
   load all the unparsed data into memory.
+- Memcache client now no longer uses the buggy cmemcache module and
+  supports pylibmc.  GAE is not tried automatically and the dedicated
+  class is no longer necessary.
 - Removed support for Python 2.4
 
 Version 0.7.2
