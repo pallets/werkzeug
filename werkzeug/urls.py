@@ -248,7 +248,7 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
     """Works like :func:`url_decode` but decodes a stream.  The behavior
     of stream and limit follows functions like
     :func:`~werkzeug.wsgi.make_line_iter`.  The generator of pairs is
-    directly feeded to the `cls` so you can consume the data while it's
+    directly fed to the `cls` so you can consume the data while it's
     parsed.
 
     .. versionadded:: 0.8
