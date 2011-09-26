@@ -8,11 +8,13 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import re
 import os
 import urllib
 import urlparse
 import posixpath
 import mimetypes
+from itertools import chain
 from zlib import adler32
 from time import time, mktime
 from datetime import datetime
@@ -570,6 +572,15 @@ class FileWrapper(object):
         raise StopIteration()
 
 
+def make_limited_stream(stream, limit):
+    """Makes a stream limited."""
+    if not isinstance(stream, LimitedStream):
+        if limit is None:
+            raise TypeError('stream not limited and no limit provided.')
+        stream = LimitedStream(stream, limit)
+    return stream
+
+
 def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
     """Safely iterates line-based over an input stream.  If the input stream
     is not a :class:`LimitedStream` the `limit` parameter is mandatory.
@@ -592,10 +603,7 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
                   is a :class:`LimitedStream`.
     :param buffer_size: The optional buffer size.
     """
-    if not isinstance(stream, LimitedStream):
-        if limit is None:
-            raise TypeError('stream not limited and no limit provided.')
-        stream = LimitedStream(stream, limit)
+    stream = make_limited_stream(stream, limit)
     _read = stream.read
     buffer = []
     while 1:
@@ -620,6 +628,42 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
 
         buffer = chunks
         yield first_chunk
+
+
+def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
+    """Works like :func:`make_line_iter` but accepts a separator
+    which divides chunks.  If you want newline based processing
+    you shuold use :func:`make_limited_stream` instead as it
+    supports arbitrary newline markers.
+
+    .. versionadded:: 0.8
+
+    :param stream: the stream to iterate over.
+    :param separator: the separator that divides chunks.
+    :param limit: the limit in bytes for the stream.  (Usually
+                  content length.  Not necessary if the `stream`
+                  is a :class:`LimitedStream`.
+    :param buffer_size: The optional buffer size.
+    """
+    stream = make_limited_stream(stream, limit)
+    _read = stream.read
+    _split = re.compile(r'(%s)' % re.escape(separator)).split
+    buffer = []
+    while 1:
+        new_data = _read(buffer_size)
+        if not new_data:
+            break
+        chunks = _split(new_data)
+        new_buf = []
+        for item in chain(buffer, chunks):
+            if item == separator:
+                yield ''.join(new_buf)
+                new_buf = []
+            else:
+                new_buf.append(item)
+        buffer = new_buf
+    if buffer:
+        yield ''.join(buffer)
 
 
 class LimitedStream(object):

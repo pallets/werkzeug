@@ -25,6 +25,8 @@ iterator and the input stream.
 
 .. autofunction:: make_line_iter
 
+.. autofunction:: make_chunk_iter
+
 .. autofunction:: wrap_file
 
 

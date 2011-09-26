@@ -55,7 +55,11 @@ URL Helpers
 
 .. autofunction:: url_decode
 
+.. autofunction:: url_decode_stream
+
 .. autofunction:: url_encode
+
+.. autofunction:: url_encode_stream
 
 .. autofunction:: url_quote
 

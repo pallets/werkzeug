@@ -16,7 +16,7 @@ from itertools import chain, repeat
 from functools import update_wrapper
 
 from werkzeug._internal import _decode_unicode, _empty_stream
-from werkzeug.urls import url_decode
+from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import LimitedStream, make_line_iter
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import Headers, FileStorage, MultiDict
@@ -205,8 +205,8 @@ class FormDataParser(object):
         if self.max_form_memory_size is not None and \
            content_length > self.max_form_memory_size:
             raise RequestEntityTooLarge()
-        form = url_decode(stream.read(), self.charset,
-                          errors=self.errors, cls=self.cls)
+        form = url_decode_stream(stream, self.charset,
+                                 errors=self.errors, cls=self.cls)
         return _empty_stream, form, self.cls()
 
     #: mapping of mimetypes to parsing functions

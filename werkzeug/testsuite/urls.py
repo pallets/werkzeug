@@ -10,6 +10,7 @@
 """
 
 import unittest
+from StringIO import StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -42,6 +43,17 @@ class URLsTestCase(WerkzeugTestCase):
         x = urls.url_decode('%C3%9Ch=H%C3%A4nsel', decode_keys=True)
         assert x[u'Üh'] == u'Hänsel'
 
+    def test_streamed_url_decoding(self):
+        item1 = 'a' * 100000
+        item2 = 'b' * 400
+        string = 'a=%s&b=%s&c=%s' % (item1, item2, item2)
+        gen = urls.url_decode_stream(StringIO(string), limit=len(string),
+                                     return_iterator=True)
+        self.assert_equal(gen.next(), ('a', item1))
+        self.assert_equal(gen.next(), ('b', item2))
+        self.assert_equal(gen.next(), ('c', item2))
+        self.assert_raises(StopIteration, gen.next)
+
     def test_url_encoding(self):
         assert urls.url_encode({'foo': 'bar 45'}) == 'foo=bar+45'
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
@@ -52,6 +64,25 @@ class URLsTestCase(WerkzeugTestCase):
         assert urls.url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
         assert urls.url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
                           key=lambda x: x[0].lower()) == 'A=1&a=2&B=3&b=4'
+
+    def test_streamed_url_encoding(self):
+        out = StringIO()
+        urls.url_encode_stream({'foo': 'bar 45'}, out)
+        self.assert_equal(out.getvalue(), 'foo=bar+45')
+
+        d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
+        out = StringIO()
+        urls.url_encode_stream(d, out, sort=True)
+        self.assert_equal(out.getvalue(), 'bar=23&blah=H%C3%A4nsel&foo=1')
+        out = StringIO()
+        urls.url_encode_stream(d, out, sort=True, separator=';')
+        self.assert_equal(out.getvalue(), 'bar=23;blah=H%C3%A4nsel;foo=1')
+
+        gen = urls.url_encode_stream(d, sort=True)
+        self.assert_equal(gen.next(), 'bar=23')
+        self.assert_equal(gen.next(), 'blah=H%C3%A4nsel')
+        self.assert_equal(gen.next(), 'foo=1')
+        self.assert_raises(StopIteration, gen.next)
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
