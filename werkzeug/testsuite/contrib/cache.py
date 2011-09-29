@@ -23,7 +23,6 @@ except ImportError:
     redis = None
 
 
-
 class SimpleCacheTestCase(WerkzeugTestCase):
 
     def test_get_dict(self):
@@ -91,20 +90,20 @@ class RedisCacheTestCase(WerkzeugTestCase):
 
     def test_get_set(self):
         c = self.make_cache()
-        c.set('foo', 'bar')
-        assert c.get('foo') == 'bar'
+        c.set('foo', ['bar'])
+        assert c.get('foo') == ['bar']
 
     def test_get_many(self):
         c = self.make_cache()
-        c.set('foo', 'bar')
+        c.set('foo', ['bar'])
         c.set('spam', 'eggs')
-        assert c.get_many('foo', 'spam') == ['bar', 'eggs']
+        assert c.get_many('foo', 'spam') == [['bar'], 'eggs']
 
     def test_set_many(self):
         c = self.make_cache()
-        c.set_many({'foo': 'bar', 'spam': 'eggs'})
+        c.set_many({'foo': 'bar', 'spam': ['eggs']})
         assert c.get('foo') == 'bar'
-        assert c.get('spam') == 'eggs'
+        assert c.get('spam') == ['eggs']
 
     def test_expire(self):
         c = self.make_cache()

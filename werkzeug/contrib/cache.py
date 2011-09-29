@@ -460,6 +460,9 @@ class RedisCache(BaseCache):
     .. versionadded:: 0.8
        `key_prefix` was added.
 
+    .. versionchanged:: 0.8
+       This cache backend now properly serializes objects.
+
     :param host: address of the Redis server or an object which API is
                  compatible with the official Python Redis client (redis-py).
     :param port: port number on which Redis server listens for connections
@@ -481,23 +484,43 @@ class RedisCache(BaseCache):
             self._client = host
         self.key_prefix = key_prefix or ''
 
+    def dump_object(self, value):
+        """Dumps an object into a string for redis.  By default it serializes
+        integers as regular string and pickle dumps everything else.
+        """
+        if isinstance(value, (int, long)):
+            return str(value)
+        return '!' + pickle.dumps(value)
+
+    def load_object(self, value):
+        """The reversal of :meth:`dump_object`.  This might be callde with
+        None.
+        """
+        if value is None:
+            return None
+        if value.startswith('!'):
+            return pickle.loads(value[1:])
+        return int(value)
+
     def get(self, key):
-        return self._client.get(self.key_prefix + key)
+        return self.load_object(self._client.get(self.key_prefix + key))
 
     def get_many(self, *keys):
         if self.key_prefix:
             keys = [self.key_prefix + key for key in keys]
-        return self._client.mget(keys)
+        return [self.load_object(x) for x in self._client.mget(keys)]
 
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        self._client.setex(self.key_prefix + key, value, timeout)
+        dump = self.dump_object(value)
+        self._client.setex(self.key_prefix + key, dump, timeout)
 
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        added = self._client.setnx(self.key_prefix + key, value)
+        dump = self.dump_object(value)
+        added = self._client.setnx(self.key_prefix + key, dump)
         if added:
             self._client.expire(self.key_prefix + key, timeout)
 
@@ -506,7 +529,8 @@ class RedisCache(BaseCache):
             timeout = self.default_timeout
         pipe = self._client.pipeline()
         for key, value in _items(mapping):
-            pipe.setex(self.key_prefix + key, value, timeout)
+            dump = self.dump_object(value)
+            pipe.setex(self.key_prefix + key, dump, timeout)
         pipe.execute()
 
     def delete(self, key):

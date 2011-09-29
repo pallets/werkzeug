@@ -47,6 +47,7 @@ Release date to be announced, codename to be decided.
 - Memcache client now no longer uses the buggy cmemcache module and
   supports pylibmc.  GAE is not tried automatically and the dedicated
   class is no longer necessary.
+- Redis cache now properly serializes data.
 - Removed support for Python 2.4
 
 Version 0.7.2
