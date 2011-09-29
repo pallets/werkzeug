@@ -65,8 +65,12 @@ except ImportError:
     from md5 import new as md5
 from itertools import izip
 from time import time
-from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 from werkzeug.posixemulation import rename
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 
 def _items(mappingorseq):
@@ -244,20 +248,22 @@ class SimpleCache(BaseCache):
         now = time()
         expires, value = self._cache.get(key, (0, None))
         if expires > time():
-            return loads(value)
+            return pickle.loads(value)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
         self._prune()
-        self._cache[key] = (time() + timeout, dumps(value, HIGHEST_PROTOCOL))
+        self._cache[key] = (time() + timeout, pickle.dumps(value,
+            pickle.HIGHEST_PROTOCOL))
 
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
         if len(self._cache) > self._threshold:
             self._prune()
-        item = (time() + timeout, dumps(value, HIGHEST_PROTOCOL))
+        item = (time() + timeout, pickle.dumps(value,
+            pickle.HIGHEST_PROTOCOL))
         self._cache.setdefault(key, item)
 
     def delete(self, key):
@@ -461,6 +467,7 @@ class RedisCache(BaseCache):
                             specified on :meth:`~BaseCache.set`.
     :param key_prefix: A prefix that should be added to all keys.
     """
+
     def __init__(self, host='localhost', port=6379, default_timeout=300,
                  key_prefix=None):
         BaseCache.__init__(self, default_timeout)
@@ -568,7 +575,7 @@ class FileSystemCache(BaseCache):
                 try:
                     try:
                         f = open(fname, 'rb')
-                        expires = load(f)
+                        expires = pickle.load(f)
                         remove = expires <= now or idx % 3 == 0
                     finally:
                         if f is not None:
@@ -597,8 +604,8 @@ class FileSystemCache(BaseCache):
         try:
             f = open(filename, 'rb')
             try:
-                if load(f) >= time():
-                    return load(f)
+                if pickle.load(f) >= time():
+                    return pickle.load(f)
             finally:
                 f.close()
             os.remove(filename)
@@ -620,8 +627,8 @@ class FileSystemCache(BaseCache):
                                        dir=self._path)
             f = os.fdopen(fd, 'wb')
             try:
-                dump(int(time() + timeout), f, 1)
-                dump(value, f, HIGHEST_PROTOCOL)
+                pickle.dump(int(time() + timeout), f, 1)
+                pickle.dump(value, f, pickle.HIGHEST_PROTOCOL)
             finally:
                 f.close()
             rename(tmp, filename)
@@ -634,4 +641,3 @@ class FileSystemCache(BaseCache):
             os.remove(self._get_filename(key))
         except (IOError, OSError):
             pass
-
