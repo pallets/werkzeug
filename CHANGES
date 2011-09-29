@@ -6,6 +6,8 @@ Version 0.8.1
 
 (bugfix release, release date to be announced)
 
+- Fixed an issue with the memcache not working properly.
+
 Version 0.8
 -----------
 

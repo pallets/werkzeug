@@ -304,7 +304,7 @@ class MemcachedCache(BaseCache):
             if servers is None:
                 servers = ['127.0.0.1:11211']
             self._client = self.import_preferred_memcache_lib(servers)
-            if self.client is None:
+            if self._client is None:
                 raise RuntimeError('no memcache module found')
         else:
             # NOTE: servers is actually an already initialized memcache
