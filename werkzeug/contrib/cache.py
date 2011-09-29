@@ -68,6 +68,7 @@ from time import time
 from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 from werkzeug.posixemulation import rename
 
+
 def _items(mappingorseq):
     """Wrapper for efficient iteration over mappings represented by dicts
     or sequences::
@@ -81,6 +82,7 @@ def _items(mappingorseq):
     """
     return mappingorseq.iteritems() if hasattr(mappingorseq, 'iteritems') \
         else mappingorseq
+
 
 class BaseCache(object):
     """Baseclass for the cache systems.  All the cache systems implement this
@@ -290,17 +292,20 @@ class MemcachedCache(BaseCache):
                        different prefix.
     """
 
-    def __init__(self, servers, default_timeout=300, key_prefix=None):
+    def __init__(self, servers=None, default_timeout=300, key_prefix=None):
         BaseCache.__init__(self, default_timeout)
-        if isinstance(servers, (list, tuple)):
+        if servers is None or isinstance(servers, (list, tuple)):
+            if servers is None:
+                servers = ['127.0.0.1:11211']
             self._client = self.import_preferred_memcache_lib(servers)
+            if self.client is None:
+                raise RuntimeError('no memcache module found')
         else:
             # NOTE: servers is actually an already initialized memcache
             # client.
             self._client = servers
 
         self.key_prefix = key_prefix
-
 
     def get(self, key):
         if isinstance(key, unicode):
@@ -407,31 +412,28 @@ class MemcachedCache(BaseCache):
             key = self.key_prefix + key
         self._client.decr(key, delta)
 
-
     def import_preferred_memcache_lib(self, servers):
-        """ Returns an initialized memcache client """
+        """Returns an initialized memcache client.  Used by the constructor."""
         try:
             import pylibmc
-            return pylibmc.Client(servers)
         except ImportError:
             pass
+        else:
+            return pylibmc.Client(servers)
 
         try:
             from google.appengine.api import memcache
-            return memcache.Client()
         except ImportError:
             pass
+        else:
+            return memcache.Client()
 
         try:
             import memcache
-            return memcache.Client(servers)
         except ImportError:
             pass
-
-        # If you're seeing this, either you need to install a memcache client
-        # or you need to monkey patch this method to support your
-        # environment.
-        raise RuntimeError('no memcache module found')
+        else:
+            return memcache.Client(servers)
 
 
 # backwards compatibility
