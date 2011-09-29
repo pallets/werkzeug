@@ -472,23 +472,35 @@ class RedisCache(BaseCache):
             self._client = host
         self.key_prefix = key_prefix or ''
 
+    def _dumps(self, obj):
+        if (obj is None) or isinstance(obj, int):
+            return obj
+        else:
+            return dumps(obj, HIGHEST_PROTOCOL)
+
+    def _loads(self, string):
+        if (string is None) or string.isdigit():
+            return string
+        else:
+            return loads(string)
+
     def get(self, key):
-        return self._client.get(self.key_prefix + key)
+        return self._loads(self._client.get(self.key_prefix + key))
 
     def get_many(self, *keys):
         if self.key_prefix:
             keys = [self.key_prefix + key for key in keys]
-        return self._client.mget(keys)
+        return [self._loads(value) for value in self._client.mget(keys)]
 
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        self._client.setex(self.key_prefix + key, value, timeout)
+        self._client.setex(self.key_prefix + key, self._dumps(value), timeout)
 
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        added = self._client.setnx(self.key_prefix + key, value)
+        added = self._client.setnx(self.key_prefix + key, self._dumps(value))
         if added:
             self._client.expire(self.key_prefix + key, timeout)
 
@@ -497,7 +509,7 @@ class RedisCache(BaseCache):
             timeout = self.default_timeout
         pipe = self._client.pipeline()
         for key, value in _items(mapping):
-            pipe.setex(self.key_prefix + key, value, timeout)
+            pipe.setex(self.key_prefix + key, self._dumps(value), timeout)
         pipe.execute()
 
     def delete(self, key):
