@@ -500,7 +500,11 @@ class RedisCache(BaseCache):
             return None
         if value.startswith('!'):
             return pickle.loads(value[1:])
-        return int(value)
+        try:
+            return int(value)
+        except ValueError:
+            # before 0.8 we did not have serialization.  Still support that.
+            return value
 
     def get(self, key):
         return self.load_object(self._client.get(self.key_prefix + key))
