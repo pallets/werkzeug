@@ -65,8 +65,38 @@ except ImportError:
     from md5 import new as md5
 from itertools import izip
 from time import time
-from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 from werkzeug.posixemulation import rename
+
+try:
+    import msgpack
+
+    def loads(string):
+        return msgpack.loads(string)
+
+    def dumps(obj, protocol=None, bin=None):
+        return msgpack.dumps(obj)
+
+    def load(fp):
+        buf = b''
+        obj = None
+        while True:
+            b = fp.read(1)
+            if not b: break
+            buf += b
+            obj = msgpack.loads(buf)
+            if obj is not None: break
+        return obj
+
+    def dump(obj, fp, protocol=None, bin=None):
+        return msgpack.dump(obj, fp)
+
+    HIGHEST_PROTOCOL = None  # compatibility for pickle
+
+except ImportError:
+    try:
+        from cPickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
+    except ImportError:
+        from pickle import loads, dumps, load, dump, HIGHEST_PROTOCOL
 
 def _items(mappingorseq):
     """Wrapper for efficient iteration over mappings represented by dicts
