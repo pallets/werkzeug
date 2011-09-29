@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.8
 -----------
 
-Release date to be announced, codename to be decided.
+Released on September 29th 2011, codename Lötkolben
 
 - Removed data structure specific KeyErrors for a general
   purpose :exc:`~werkzeug.exceptions.BadRequestKeyError`.
