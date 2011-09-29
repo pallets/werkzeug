@@ -583,6 +583,9 @@ class MultiDict(TypeConversionDict):
         except KeyError, e:
             raise BadRequestKeyError(str(e))
 
+    def __copy__(self):
+        return self.copy()
+
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.items(multi=True))
 
