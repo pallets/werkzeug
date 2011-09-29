@@ -9,6 +9,8 @@ Version 0.8.1
 - Fixed an issue with the memcache not working properly.
 - Fixed an issue for Python 2.7.1 and higher that broke
   copying of multidicts with :func:`copy.copy`.
+- Changed hashing methodology of immutable ordered multi dicts
+  for a potential problem with alternative Python implementations.
 
 Version 0.8
 -----------
