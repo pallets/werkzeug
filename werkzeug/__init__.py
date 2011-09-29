@@ -19,7 +19,7 @@ import sys
 
 
 # the version.  Usually set automatically by a script.
-__version__ = '0.8-dev'
+__version__ = '0.8'
 
 
 # This import magic raises concerns quite often which is why the implementation
