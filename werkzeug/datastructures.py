@@ -169,7 +169,7 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
         return type(self), (self.items(multi=True),)
 
     def _iter_hashitems(self):
-        return enumerate(self.iteritems(multi=True))
+        return self.iteritems(multi=True)
 
     def add(self, key, value):
         is_immutable(self)
@@ -1456,6 +1456,9 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
 
     .. versionadded:: 0.6
     """
+
+    def _iter_hashitems(self):
+        return enumerate(self.iteritems(multi=True))
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
