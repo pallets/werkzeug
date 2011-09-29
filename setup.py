@@ -80,9 +80,8 @@ setup(
     ],
     packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib',
               'werkzeug.testsuite', 'werkzeug.testsuite.contrib'],
+    include_package_data=True,
     test_suite='werkzeug.testsuite.suite',
-    package_data={
-        'werkzeug.debug': ['shared/*', 'templates/*']
-    },
+    zip_safe=False,
     platforms='any'
 )
