@@ -91,9 +91,8 @@ even in your package manager.  If you use Ubuntu, try::
     $ sudo apt-get install python-virtualenv
 
 If you are on Windows and don't have the `easy_install` command, you must
-install it first.  Check the :ref:`windows-easy-install` section for more
-information about how to do that.  Once you have it installed, run the
-same commands as above, but without the `sudo` prefix.
+install it first.  Once you have it installed, run the same commands as
+above, but without the `sudo` prefix.
 
 Once you have virtualenv installed, just fire up a shell and create
 your own environment.  I usually create a project folder and an `env`
