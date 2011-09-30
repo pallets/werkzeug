@@ -177,6 +177,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
     def handle(self):
         """Handles a request ignoring dropped connections."""
+        rv = None
         try:
             rv = BaseHTTPRequestHandler.handle(self)
         except (socket.error, socket.timeout), e:
