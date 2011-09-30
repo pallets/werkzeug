@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.7.2
 -------------
 
-(bugfix release, releasd on September 30th 2011)
+(bugfix release, released on September 30th 2011)
 
 - Fixed a CSRF problem with the debugger.
 - The debugger is now generating private pastes on lodgeit.
