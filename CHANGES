@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.8.1
 -------------
 
-(bugfix release, release date to be announced)
+(bugfix release, released on September 30th 2011)
 
 - Fixed an issue with the memcache not working properly.
 - Fixed an issue for Python 2.7.1 and higher that broke
