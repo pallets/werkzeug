@@ -9,7 +9,7 @@ Relase date to be decided, codename to be chosen.
 Version 0.8.1
 -------------
 
-(bugfix release, release date to be announced)
+(bugfix release, released on September 30th 2011)
 
 - Fixed an issue with the memcache not working properly.
 - Fixed an issue for Python 2.7.1 and higher that broke
@@ -69,7 +69,7 @@ Released on September 29th 2011, codename Lötkolben
 Version 0.7.2
 -------------
 
-(bugfix release, release date to be announced)
+(bugfix release, released on September 30th 2011)
 
 - Fixed a CSRF problem with the debugger.
 - The debugger is now generating private pastes on lodgeit.
