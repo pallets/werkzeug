@@ -6,6 +6,14 @@ Version 0.9
 
 Relase date to be decided, codename to be chosen.
 
+Version 0.8.2
+-------------
+
+(bugfix release, release date to be decided)
+
+- Fixed a problem with request handling of the builtin server
+  not repsonding to socket errors properly.
+
 Version 0.8.1
 -------------
 
