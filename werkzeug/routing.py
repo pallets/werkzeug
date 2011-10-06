@@ -315,6 +315,36 @@ class Subdomain(RuleFactory):
                 yield rule
 
 
+class Host(RuleFactory):
+    """Like `Subdomain` but matches hosts::
+
+        url_map = Map([
+            Host('www.example.com', [
+                Rule('/', endpoint='commercial_index'),
+                Rule('/buy', endpoint='commercial_buy')
+            ]),
+            Host('www.example.org', [
+                Rule('/', endpoint='organization_index'),
+                Rule('/donate', endpoint='organization_donate')
+            ]),
+            Rule('/help', endpoint='help')
+        ], host_matching=True)
+
+    You must also pass `host_matching=True` to the :class:`Map` constructor.
+    """
+
+    def __init__(self, host, rules):
+        self.host = host
+        self.rules = rules
+
+    def get_rules(self, map):
+        for rulefactory in self.rules:
+            for rule in rulefactory.get_rules(map):
+                rule = rule.empty()
+                rule.host = self.host
+                yield rule
+
+
 class Submount(RuleFactory):
     """Like `Subdomain` but prefixes the URL rule with a given string::
 

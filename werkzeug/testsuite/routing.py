@@ -558,7 +558,11 @@ class RoutingTestCase(WerkzeugTestCase):
             r.Rule('/', endpoint='index', host='www.<domain>'),
             r.Rule('/', endpoint='files', host='files.<domain>'),
             r.Rule('/foo/', defaults={'page': 1}, host='www.<domain>', endpoint='x'),
-            r.Rule('/<int:page>', host='files.<domain>', endpoint='x')
+            r.Rule('/<int:page>', host='files.<domain>', endpoint='x'),
+            r.Host('api.<domain>', [
+                r.Rule('/', endpoint='api_index'),
+                r.Rule('/user/<name>', endpoint='api_user')
+            ])
         ], host_matching=True)
 
         a = m.bind('www.example.com')
@@ -580,6 +584,10 @@ class RoutingTestCase(WerkzeugTestCase):
             assert e.new_url == 'http://www.example.com/foo/'
         else:
             assert False, 'expected redirect'
+
+        a = m.bind('api.example.net')
+        assert a.match('/') == ('api_index', {'domain': 'example.net'})
+        assert a.match('/user/a') == ('api_user', {'domain': 'example.net', 'name': 'a'})
 
     def test_server_name_casing(self):
         m = r.Map([

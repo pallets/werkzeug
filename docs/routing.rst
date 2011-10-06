@@ -133,6 +133,8 @@ Rule Factories
 
 .. autoclass:: Subdomain
 
+.. autoclass:: Host
+
 .. autoclass:: Submount
 
 .. autoclass:: EndpointPrefix
@@ -194,6 +196,9 @@ the `host` argument to all routes::
         Rule('/', endpoint='www_index', host='www.example.com'),
         Rule('/', endpoint='help_index', host='help.example.com')
     ], host_matching=True)
+
+If you have many routes that require the same host name, you can use the
+:class:`Host` factory to avoid repeating yourself.
 
 Variable parts are of course also possible in the host section::
 
