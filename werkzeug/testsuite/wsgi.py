@@ -104,9 +104,13 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
         io = StringIO('123456')
         stream = RaisingLimitedStream(io, 3)
+        self.assert_equal(stream.tell(), 0)
         assert stream.read(1) == '1'
+        self.assert_equal(stream.tell(), 1)
         assert stream.read(1) == '2'
+        self.assert_equal(stream.tell(), 2)
         assert stream.read(1) == '3'
+        self.assert_equal(stream.tell(), 3)
         self.assert_raises(BadRequest, stream.read)
 
         io = StringIO('123456\nabcdefg')

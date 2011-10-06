@@ -823,6 +823,13 @@ class LimitedStream(object):
                 last_pos = self._pos
         return result
 
+    def tell(self):
+        """Returns the position of the stream.
+
+        .. versionadded:: 0.9
+        """
+        return self._pos
+
     def next(self):
         line = self.readline()
         if line is None:

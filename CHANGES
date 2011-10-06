@@ -6,6 +6,9 @@ Version 0.9
 
 Relase date to be decided, codename to be chosen.
 
+- Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
+  on the limited stream.
+
 Version 0.8.2
 -------------
 
