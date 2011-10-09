@@ -8,6 +8,8 @@ Relase date to be decided, codename to be chosen.
 
 - Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
   on the limited stream.
+- :class:`~werkzeug.datastructures.ETags` now is nonzero if it
+  contains at least one etag of any kind, including weak ones.
 
 Version 0.8.2
 -------------
