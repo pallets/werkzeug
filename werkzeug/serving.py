@@ -298,6 +298,9 @@ class _SSLConnectionFix(object):
     def __getattr__(self, attrib):
         return getattr(self._con, attrib)
 
+    def shutdown(self, arg=None):
+        self._con.shutdown()
+
 
 def select_ip_version(host, port):
     """Returns AF_INET4 or AF_INET6 depending on where to connect to."""

@@ -10,6 +10,7 @@ Relase date to be decided, codename to be chosen.
   on the limited stream.
 - :class:`~werkzeug.datastructures.ETags` now is nonzero if it
   contains at least one etag of any kind, including weak ones.
+- Added a workaround for a bug in the stdlib for SSL servers.
 
 Version 0.8.2
 -------------
