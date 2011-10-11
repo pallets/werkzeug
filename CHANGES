@@ -11,6 +11,8 @@ Relase date to be decided, codename to be chosen.
 - :class:`~werkzeug.datastructures.ETags` now is nonzero if it
   contains at least one etag of any kind, including weak ones.
 - Added a workaround for a bug in the stdlib for SSL servers.
+- Improved SSL interface of the devserver so that it can generate
+  certificates easily and load them from files.
 
 Version 0.8.2
 -------------
