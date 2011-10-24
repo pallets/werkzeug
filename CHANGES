@@ -21,6 +21,8 @@ Version 0.8.2
 
 - Fixed a problem with request handling of the builtin server
   not repsonding to socket errors properly.
+- The routing request redirect exception's code attribute is now
+  used properly.
 
 Version 0.8.1
 -------------
