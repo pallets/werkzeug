@@ -240,7 +240,7 @@ class RequestRedirect(HTTPException, RoutingException):
         self.new_url = new_url
 
     def get_response(self, environ):
-        return redirect(self.new_url, 301)
+        return redirect(self.new_url, self.code)
 
 
 class RequestSlash(RoutingException):

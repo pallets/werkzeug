@@ -603,6 +603,12 @@ class RoutingTestCase(WerkzeugTestCase):
         else:
             assert False, 'Expected not found exception'
 
+    def test_redirect_request_exception_code(self):
+        exc = r.RequestRedirect('http://www.google.com/')
+        exc.code = 307
+        env = create_environ()
+        self.assert_equal(exc.get_response(env).status_code, exc.code)
+
 
 def suite():
     suite = unittest.TestSuite()
