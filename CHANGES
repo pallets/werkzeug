@@ -11,6 +11,8 @@ Version 0.8.2
 - The routing request redirect exception's code attribute is now
   used properly.
 - Fixed a bug with shutdowns on Windows.
+- Fixed a few unicode issues with non-ascii characters being
+  hardcoded in URL rules.
 
 Version 0.8.1
 -------------
