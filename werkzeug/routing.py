@@ -1611,8 +1611,8 @@ class MapAdapter(object):
         if not force_external and (
             (self.map.host_matching and host == self.server_name) or
             (not self.map.host_matching and domain_part == self.subdomain)):
-            return str(urljoin(self.script_name, './' + path.lstrip('/')))
-        return str('%s://%s%s/%s' % (
+            return unicode(urljoin(self.script_name, './' + path.lstrip('/')))
+        return unicode('%s://%s%s/%s' % (
             self.url_scheme,
             host,
             self.script_name[:-1],
