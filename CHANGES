@@ -23,6 +23,7 @@ Version 0.8.2
   not repsonding to socket errors properly.
 - The routing request redirect exception's code attribute is now
   used properly.
+- Fixed a bug with shutdowns on Windows.
 
 Version 0.8.1
 -------------

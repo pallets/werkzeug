@@ -195,9 +195,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         """A horrible, horrible way to kill the server for Python 2.6 and
         later.  It's the best we can do.
         """
+        # Windows does not provide SIGKILL, go with SIGTERM then.
+        sig = getattr(signal, 'SIGKILL', signal.SIGTERM)
         # reloader active
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-            os.kill(os.getpid(), signal.SIGKILL)
+            os.kill(os.getpid(), sig)
         # python 2.7
         self.server._BaseServer__shutdown_request = True
         # python 2.6
