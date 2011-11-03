@@ -44,7 +44,7 @@ $(function() {
             .click(function() {
               sourceView.slideUp('fast');
             });
-        $.get(document.location.pathname, {__debugger__: 'yes', cmd:
+        $.get('', {__debugger__: 'yes', cmd:
             'source', frm: frameID, s: SECRET}, function(data) {
           $('table', sourceView)
             .replaceWith(data);
@@ -134,7 +134,7 @@ function openShell(consoleNode, target, frameID) {
   var form = $('<form>&gt;&gt;&gt; </form>')
     .submit(function() {
       var cmd = command.val();
-      $.get(document.location.pathname, {
+      $.get('', {
           __debugger__: 'yes', cmd: cmd, frm: frameID, s: SECRET}, function(data) {
         var tmp = $('<div>').html(data);
         $('span.extended', tmp).each(function() {
@@ -178,7 +178,7 @@ function openShell(consoleNode, target, frameID) {
         return false;
       }
     });
-    
+
   return consoleNode.slideDown('fast', function() {
     command.focus();
   });
