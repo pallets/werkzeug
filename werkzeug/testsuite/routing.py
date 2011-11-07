@@ -449,6 +449,30 @@ class RoutingTestCase(WerkzeugTestCase):
         assert a.build('x', {'foo': 'x:y'}, force_external=True) == \
             'http://example.org/x:y'
 
+    def test_protocol_joining_bug_with_secure(self):
+        m = r.Map([r.Rule('/<foo>', endpoint='x')])
+        a = m.bind('example.org')
+        assert a.build('x', {'foo': 'x:y'}) == '/x:y'
+        assert a.build('x', {'foo': 'x:y'}, force_secure=True) == \
+            'https://example.org/x:y'
+
+    def test_secure_building_with_port(self):
+        map = r.Map([
+            r.Rule('/', endpoint='index'),
+        ])
+        adapter = map.bind('example.org:5000', '/')
+        built_url = adapter.build('index', {}, force_secure=True)
+        assert built_url == 'https://example.org:5000/', built_url
+
+    def test_secure_with_external(self):
+        map = r.Map([
+            r.Rule('/', endpoint='index'),
+        ])
+        adapter = map.bind('example.org:5000', '/')
+        built_url = adapter.build('index', {}, force_external=True,
+                                  force_secure=True)
+        assert built_url == 'https://example.org:5000/', built_url
+
     def test_allowed_methods_querying(self):
         m = r.Map([r.Rule('/<foo>', methods=['GET', 'HEAD']),
                    r.Rule('/foo', methods=['POST'])])
