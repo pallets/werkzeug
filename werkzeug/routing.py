@@ -1612,7 +1612,7 @@ class MapAdapter(object):
         url_scheme = self.url_scheme
 
         # shortcut this.
-	if force_secure:
+        if force_secure:
             url_scheme = 'https'
         elif not force_external and (
             (self.map.host_matching and host == self.server_name) or
