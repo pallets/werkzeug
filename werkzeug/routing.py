@@ -1537,7 +1537,7 @@ class MapAdapter(object):
                     return rv
 
     def build(self, endpoint, values=None, method=None, force_external=False,
-              append_unknown=True):
+              force_secure=False, append_unknown=True):
         """Building URLs works pretty much the other way round.  Instead of
         `match` you call `build` and pass it the endpoint and a dict of
         arguments for the placeholders.
@@ -1559,6 +1559,8 @@ class MapAdapter(object):
         '/downloads/42'
         >>> urls.build("downloads/show", {'id': 42}, force_external=True)
         'http://example.com/downloads/42'
+        >>> urls.build("downloads/show", {'id': 42}, force_secure=True)
+        'https://example.com/downloads/42'
 
         Because URLs cannot contain non ASCII data you will always get
         bytestrings back.  Non ASCII characters are urlencoded with the
@@ -1586,6 +1588,7 @@ class MapAdapter(object):
         :param method: the HTTP method for the rule if there are different
                        URLs for different methods on the same endpoint.
         :param force_external: enforce full canonical external URLs.
+        :param force_secure: enforce absolute secure URLs.
         :param append_unknown: unknown parameters are appended to the generated
                                URL as query string argument.  Disable this
                                if you want the builder to ignore those.
@@ -1606,14 +1609,17 @@ class MapAdapter(object):
         domain_part, path = rv
 
         host = self.get_host(domain_part)
+        url_scheme = self.url_scheme
 
         # shortcut this.
-        if not force_external and (
+        if force_secure:
+            url_scheme = 'https'
+        elif not force_external and (
             (self.map.host_matching and host == self.server_name) or
             (not self.map.host_matching and domain_part == self.subdomain)):
             return str(urljoin(self.script_name, './' + path.lstrip('/')))
         return str('%s://%s%s/%s' % (
-            self.url_scheme,
+            url_scheme,
             host,
             self.script_name[:-1],
             path.lstrip('/')
