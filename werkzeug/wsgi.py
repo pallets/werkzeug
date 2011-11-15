@@ -57,7 +57,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     :param strip_querystring: set to `True` if you don't want the querystring.
     :param host_only: set to `True` if the host URL should be returned.
     """
-    tmp = [environ['wsgi.url_scheme'], '://', get_host(environ)]
+    tmp = [get_url_scheme(environ), '://', get_host(environ)]
     cat = tmp.append
     if host_only:
         return ''.join(tmp) + '/'
@@ -88,6 +88,19 @@ def get_host(environ):
        in (('https', '443'), ('http', '80')):
         result += ':' + environ['SERVER_PORT']
     return result
+
+
+def get_url_scheme(environ):
+    """Return the real URL scheme for the given WSGI environment.  This takes
+    care of the `X-Forwarded-Proto` header.
+
+    :param environ: the WSGI environment to get the host of.
+    """
+    if 'HTTP_X_FORWARDED_PROTO' in environ:
+        result = environ['HTTP_X_FORWARDED_PROTO']
+        if result in ('http', 'https'):
+            return result
+    return environ['wsgi.url_scheme']
 
 
 def pop_path_info(environ):
