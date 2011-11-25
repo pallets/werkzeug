@@ -369,6 +369,24 @@ class TestTestCase(WerkzeugTestCase):
         resp = client.get('/')
         assert resp.data == "[('test1', u'foo'), ('test2', u'bar')]"
 
+    def test_correct_open_invocation_on_redirect(self):
+        class MyClient(Client):
+            counter = 0
+            def open(self, *args, **kwargs):
+                self.counter += 1
+                env = kwargs.setdefault('environ_overrides', {})
+                env['werkzeug._foo'] = self.counter
+                return Client.open(self, *args, **kwargs)
+
+        @Request.application
+        def test_app(request):
+            return Response(str(request.environ['werkzeug._foo']))
+
+        c = MyClient(test_app, response_wrapper=Response)
+        self.assert_equal(c.get('/').data, '1')
+        self.assert_equal(c.get('/').data, '2')
+        self.assert_equal(c.get('/').data, '3')
+
 
 def suite():
     suite = unittest.TestSuite()
