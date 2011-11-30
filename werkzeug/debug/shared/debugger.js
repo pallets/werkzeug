@@ -196,5 +196,6 @@ function focusSourceBlock() {
     line = tmp;
   }
   var container = $('div.sourceview');
-  container.scrollTop(line.offset().top);
+
+  container.scrollTop(line.offset().top - container.offset().top + container.scrollTop());
 }
