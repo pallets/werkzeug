@@ -715,7 +715,7 @@ class Rule(RuleFactory):
                     return
                 processed.add(data)
             else:
-                add(data)
+                add(url_quote(data, self.map.charset, safe='/:|'))
         domain_part, url = (u''.join(tmp)).split('|', 1)
 
         if append_unknown:
@@ -1121,6 +1121,8 @@ class Map(object):
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
+        if isinstance(server_name, unicode):
+            server_name = server_name.encode('idna')
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme, path_info, default_method, query_args)
 

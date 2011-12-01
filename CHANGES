@@ -13,6 +13,8 @@ Relase date to be decided, codename to be chosen.
 - Added a workaround for a bug in the stdlib for SSL servers.
 - Improved SSL interface of the devserver so that it can generate
   certificates easily and load them from files.
+- Refactored test client to invoke the open method on the class
+  for redirects.  This makes subclassing more powerful.
 
 Version 0.8.2
 -------------
@@ -24,6 +26,8 @@ Version 0.8.2
 - The routing request redirect exception's code attribute is now
   used properly.
 - Fixed a bug with shutdowns on Windows.
+- Fixed a few unicode issues with non-ascii characters being
+  hardcoded in URL rules.
 
 Version 0.8.1
 -------------

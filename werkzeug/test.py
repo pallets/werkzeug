@@ -474,7 +474,10 @@ class EnvironBuilder(object):
         return 80
 
     def __del__(self):
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def close(self):
         """Closes all files.  If you put real :class:`file` objects into the
@@ -600,14 +603,11 @@ class Client(object):
     def __init__(self, application, response_wrapper=None, use_cookies=True,
                  allow_subdomain_redirects=False):
         self.application = application
-        if response_wrapper is None:
-            response_wrapper = lambda a, s, h: (a, s, h)
         self.response_wrapper = response_wrapper
         if use_cookies:
             self.cookie_jar = _TestCookieJar()
         else:
             self.cookie_jar = None
-        self.redirect_client = None
         self.allow_subdomain_redirects = allow_subdomain_redirects
 
     def set_cookie(self, server_name, key, value='', max_age=None,
@@ -628,6 +628,46 @@ class Client(object):
         """Deletes a cookie in the test client."""
         self.set_cookie(server_name, key, expires=0, max_age=0,
                         path=path, domain=domain)
+
+    def run_wsgi_app(self, environ, buffered=False):
+        """Runs the wrapped WSGI app with the given environment."""
+        if self.cookie_jar is not None:
+            self.cookie_jar.inject_wsgi(environ)
+        rv = run_wsgi_app(self.application, environ, buffered=buffered)
+        if self.cookie_jar is not None:
+            self.cookie_jar.extract_wsgi(environ, rv[2])
+        return rv
+
+    def resolve_redirect(self, response, new_location, environ, buffered=False):
+        """Resolves a single redirect and triggers the request again
+        directly on this redirect client.
+        """
+        scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(new_location)
+        base_url = urlparse.urlunsplit((scheme, netloc, '', '', '')).rstrip('/') + '/'
+
+        cur_server_name = netloc.split(':', 1)[0].split('.')
+        real_server_name = get_host(environ).rsplit(':', 1)[0].split('.')
+
+        if self.allow_subdomain_redirects:
+            allowed = cur_server_name[-len(real_server_name):] == real_server_name
+        else:
+            allowed = cur_server_name == real_server_name
+
+        if not allowed:
+            raise RuntimeError('%r does not support redirect to '
+                               'external targets' % self.__class__)
+
+        # For redirect handling we temporarily disable the response
+        # wrapper.  This is not threadsafe but not a real concern
+        # since the test client must not be shared anyways.
+        old_response_wrapper = self.response_wrapper
+        self.response_wrapper = None
+        try:
+            return self.open(path=script_root, base_url=base_url,
+                             query_string=qs, as_tuple=True,
+                             buffered=buffered)
+        finally:
+            self.response_wrapper = old_response_wrapper
 
     def open(self, *args, **kwargs):
         """Takes the same arguments as the :class:`EnvironBuilder` class with
@@ -670,61 +710,25 @@ class Client(object):
             finally:
                 builder.close()
 
-        if self.cookie_jar is not None:
-            self.cookie_jar.inject_wsgi(environ)
-        rv = run_wsgi_app(self.application, environ, buffered=buffered)
-        if self.cookie_jar is not None:
-            self.cookie_jar.extract_wsgi(environ, rv[2])
+        response = self.run_wsgi_app(environ, buffered=buffered)
 
         # handle redirects
         redirect_chain = []
-        status_code = int(rv[1].split(None, 1)[0])
-        while status_code in (301, 302, 303, 305, 307) and follow_redirects:
-            if not self.redirect_client:
-                # assume that we're not using the user defined response wrapper
-                # so that we don't need any ugly hacks to get the status
-                # code from the response.
-                self.redirect_client = Client(self.application)
-                self.redirect_client.cookie_jar = self.cookie_jar
+        while 1:
+            status_code = int(response[1].split(None, 1)[0])
+            if status_code not in (301, 302, 303, 305, 307) \
+               or not follow_redirects:
+                break
+            new_location = Headers.linked(response[2])['location']
+            new_redirect_entry = (new_location, status_code)
+            if new_redirect_entry in redirect_chain:
+                raise ClientRedirectError('loop detected')
+            redirect_chain.append(new_redirect_entry)
+            environ, response = self.resolve_redirect(response, new_location,
+                                                      environ, buffered=buffered)
 
-            redirect = dict(rv[2])['Location']
-
-            scheme, netloc, script_root, qs, anchor = urlparse.urlsplit(redirect)
-            base_url = urlparse.urlunsplit((scheme, netloc, '', '', '')).rstrip('/') + '/'
-
-            cur_server_name = netloc.split(':', 1)[0].split('.')
-            real_server_name = get_host(environ).split(':', 1)[0].split('.')
-
-            if self.allow_subdomain_redirects:
-                allowed = cur_server_name[-len(real_server_name):] == real_server_name
-            else:
-                allowed = cur_server_name == real_server_name
-
-            if not allowed:
-                raise RuntimeError('%r does not support redirect to '
-                                   'external targets' % self.__class__)
-
-            redirect_chain.append((redirect, status_code))
-
-            # the redirect request should be a new request, and not be based on
-            # the old request
-
-            redirect_kwargs = {
-                'path':             script_root,
-                'base_url':         base_url,
-                'query_string':     qs,
-                'as_tuple':         True,
-                'buffered':         buffered,
-                'follow_redirects': False,
-            }
-            environ, rv = self.redirect_client.open(**redirect_kwargs)
-            status_code = int(rv[1].split(None, 1)[0])
-
-            # Prevent loops
-            if redirect_chain[-1] in redirect_chain[:-1]:
-                raise ClientRedirectError("loop detected")
-
-        response = self.response_wrapper(*rv)
+        if self.response_wrapper is not None:
+            response = self.response_wrapper(*response)
         if as_tuple:
             return environ, response
         return response

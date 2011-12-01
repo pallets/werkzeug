@@ -609,6 +609,23 @@ class RoutingTestCase(WerkzeugTestCase):
         env = create_environ()
         self.assert_equal(exc.get_response(env).status_code, exc.code)
 
+    def test_unicode_rules(self):
+        m = r.Map([
+            r.Rule(u'/войти/', endpoint='enter')
+        ])
+        a = m.bind(u'☃.example.com')
+        try:
+            a.match(u'/войти')
+        except r.RequestRedirect, e:
+            self.assert_equal(e.new_url, 'http://xn--n3h.example.com/'
+                              '%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
+        endpoint, values = a.match(u'/войти/')
+        self.assert_equal(endpoint, 'enter')
+        self.assert_equal(values, {})
+
+        url = a.build('enter', {}, force_external=True)
+        self.assert_equal(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
+
 
 def suite():
     suite = unittest.TestSuite()
