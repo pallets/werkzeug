@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.9
 -----------
 
-Relase date to be decided, codename to be chosen.
+Release date to be decided, codename to be chosen.
 
 - Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
   on the limited stream.
@@ -14,7 +14,7 @@ Relase date to be decided, codename to be chosen.
 - Improved SSL interface of the devserver so that it can generate
   certificates easily and load them from files.
 - Refactored test client to invoke the open method on the class
-  for redirects.  This makes subclassing more powerful.
+  for redirects. This makes subclassing more powerful.
 
 Version 0.8.2
 -------------
@@ -22,7 +22,7 @@ Version 0.8.2
 (bugfix release, release date to be decided)
 
 - Fixed a problem with request handling of the builtin server
-  not repsonding to socket errors properly.
+  not responding to socket errors properly.
 - The routing request redirect exception's code attribute is now
   used properly.
 - Fixed a bug with shutdowns on Windows.
@@ -37,7 +37,7 @@ Version 0.8.1
 - Fixed an issue with the memcache not working properly.
 - Fixed an issue for Python 2.7.1 and higher that broke
   copying of multidicts with :func:`copy.copy`.
-- Changed hashing methodology of immutable ordered multi dicts
+- Changed hashing methodology of immutable ordered multidicts
   for a potential problem with alternative Python implementations.
 
 Version 0.8
@@ -62,7 +62,7 @@ Released on September 29th 2011, codename Lötkolben
   with missing nc and nonce params.
 - Proxy fix now also updates wsgi.url_scheme based on X-Forwarded-Proto.
 - Added support for key prefixes to the redis cache.
-- Added the ability to supress some auto corrections in the wrappers
+- Added the ability to suppress some auto corrections in the wrappers
   that are now controlled via `autocorrect_location_header` and
   `automatically_set_content_length` on the response objects.
 - Werkzeug now uses a new method to check that the length of incoming
@@ -121,8 +121,8 @@ Released on July 24th 2011, codename Schraubschlüssel
   generated component contains a colon.
 - :func:`werkzeug.import_string` now works with partially set up
   packages properly.
-- Disabled automatic socket swiching for IPv6 on the development
-  server due to problems it caused.
+- Disabled automatic socket switching for IPv6 on the development
+  server due to the problems it caused.
 - Werkzeug no longer overrides the Date header when creating a
   conditional HTTP response.
 - The routing system provides a method to retrieve the matching
@@ -137,7 +137,7 @@ Released on July 24th 2011, codename Schraubschlüssel
 - Fixed a problem with external URL generation discarding the port.
 - Added support for pylibmc to the Werkzeug cache abstraction layer.
 - Fixed an issue with the new multipart parser that happened when
-  a linebreak happend to be on the chunk limit.
+  a linebreak happened to be on the chunk limit.
 - Cookies are now set properly if ports are in use.  A runtime error
   is raised if one tries to set a cookie for a domain without a dot.
 - Fixed an issue with Template.from_file not working for file
@@ -161,7 +161,7 @@ Released on July 24th 2011, codename Schraubschlüssel
   the Python 3 version will later change in that it will always
   operate on latin1 values.
 - Fixed a bug in the form parser that caused the last character to
-  be dropped off if certain values in multipart data is used.
+  be dropped off if certain values in multipart data are used.
 - Multipart parser now looks at the part-individual content type
   header to override the global charset.
 - Introduced mimetype and mimetype_params attribute for the file
@@ -198,7 +198,7 @@ Released on July 24th 2011, codename Schraubschlüssel
 - Added support for parsing of the `Range` header
   (:func:`werkzeug.http.parse_range_header` and
   :class:`werkzeug.datastructures.Range`).
-- Added support for parsing of the `Content-Range` header of respones
+- Added support for parsing of the `Content-Range` header of responses
   and provided an accessor object for it
   (:func:`werkzeug.http.parse_content_range_header` and
   :class:`werkzeug.datastructures.ContentRange`).
@@ -225,7 +225,7 @@ Version 0.6.1
   if no method is provided.
 - added proper IPv6 support for the builtin server.
 - windows specific filesystem session store fixes.
-  (should no be more stable under high concurrency)
+  (should now be more stable under high concurrency)
 - fixed a `NameError` in the session system.
 - fixed a bug with empty arguments in the werkzeug.script system.
 - fixed a bug where log lines will be duplicated if an application uses
@@ -279,7 +279,7 @@ Released on Feb 19th 2010, codename Hammer.
   and other protocols on top of Werkzeug.
 - added :meth:`werkzeug.MIMEAccept.best_match`
 - multi-value test-client posts from a standard dictionary are now
-  supported.  Previously you had to use a multi dict.
+  supported.  Previously you had to use a multidict.
 - rule templates properly work with submounts, subdomains and
   other rule factories now.
 - deprecated non-silent usage of the :class:`werkzeug.LimitedStream`.
@@ -307,7 +307,7 @@ Released on Feb 19th 2010, codename Hammer.
   currently stored in the filesystem session store.
 - werkzeug no longer utilizes the Python time module for parsing
   which means that dates in a broader range can be parsed.
-- the wrappers have no class attributes that make it possible to
+- the wrappers have now class attributes that make it possible to
   swap out the dict and list types it uses.
 - werkzeug debugger should work on the appengine dev server now.
 - the URL builder supports dropping of unexpected arguments now.
