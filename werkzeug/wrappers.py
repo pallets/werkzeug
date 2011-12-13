@@ -737,7 +737,7 @@ class BaseResponse(object):
         except KeyError:
             self._status = '%d UNKNOWN' % code
     status_code = property(_get_status_code, _set_status_code,
-                           'The HTTP Status code as number')
+                           doc='The HTTP Status code as number')
     del _get_status_code, _set_status_code
 
     def _get_status(self):
@@ -748,7 +748,7 @@ class BaseResponse(object):
             self._status_code = int(self._status.split(None, 1)[0])
         except ValueError:
             self._status_code = 0
-    status = property(_get_status, _set_status, 'The HTTP Status code')
+    status = property(_get_status, _set_status, doc='The HTTP Status code')
     del _get_status, _set_status
 
     def _get_data(self):
