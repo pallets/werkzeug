@@ -325,7 +325,10 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_raises(ValueError, parse_multipart, StringIO(data), 'foo', len(data))
 
         x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
+        y = formparser.parse_multipart_headers(['\n', 'start: end\r\n'])
+
         self.assert_equal(x['foo'], 'bar\n x test')
+        self.assert_equal(y['start'], 'end')
         self.assert_raises(ValueError, formparser.parse_multipart_headers,
                            ['foo: bar\r\n', ' x test'])
 
