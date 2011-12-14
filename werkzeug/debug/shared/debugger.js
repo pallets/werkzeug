@@ -45,7 +45,7 @@ $(function() {
               sourceView.slideUp('fast');
             });
         $.get(document.location.pathname, {__debugger__: 'yes', cmd:
-            'source', frm: frameID, s: SECRET}, function(data) {
+            'source', frm: frameID, s: SECRET, p: PID}, function(data) {
           $('table', sourceView)
             .replaceWith(data);
           if (!sourceView.is(':visible'))
@@ -135,7 +135,7 @@ function openShell(consoleNode, target, frameID) {
     .submit(function() {
       var cmd = command.val();
       $.get(document.location.pathname, {
-          __debugger__: 'yes', cmd: cmd, frm: frameID, s: SECRET}, function(data) {
+          __debugger__: 'yes', cmd: cmd, frm: frameID, s: SECRET, p: PID}, function(data) {
         var tmp = $('<div>').html(data);
         $('span.extended', tmp).each(function() {
           var hidden = $(this).wrap('<span>').hide();
