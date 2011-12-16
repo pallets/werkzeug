@@ -19,7 +19,7 @@ Relase date to be decided, codename to be chosen.
 Version 0.8.2
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on December 16th 2011)
 
 - Fixed a problem with request handling of the builtin server
   not repsonding to socket errors properly.
