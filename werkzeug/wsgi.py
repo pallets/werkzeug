@@ -604,30 +604,44 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
     :param buffer_size: The optional buffer size.
     """
     stream = make_limited_stream(stream, limit)
-    _read = stream.read
-    buffer = []
-    while 1:
-        if len(buffer) > 1:
-            yield buffer.pop()
-            continue
+    def _iter_basic_lines():
+        _read = stream.read
+        buffer = []
+        while 1:
+            if len(buffer) > 1:
+                yield buffer.pop()
+                continue
 
-        # we reverse the chunks because popping from the last
-        # position of the list is O(1) and the number of chunks
-        # read will be quite large for binary files.
-        chunks = _read(buffer_size).splitlines(True)
-        chunks.reverse()
+            # we reverse the chunks because popping from the last
+            # position of the list is O(1) and the number of chunks
+            # read will be quite large for binary files.
+            chunks = _read(buffer_size).splitlines(True)
+            chunks.reverse()
 
-        first_chunk = buffer and buffer[0] or ''
-        if chunks:
-            if first_chunk.endswith('\n') or first_chunk.endswith('\r'):
-                yield first_chunk
-                first_chunk = ''
-            first_chunk += chunks.pop()
-        if not first_chunk:
-            return
+            first_chunk = buffer and buffer[0] or ''
+            if chunks:
+                if first_chunk and first_chunk[-1] in '\r\n':
+                    yield first_chunk
+                    first_chunk = ''
+                first_chunk += chunks.pop()
+            if not first_chunk:
+                return
 
-        buffer = chunks
-        yield first_chunk
+            buffer = chunks
+            yield first_chunk
+
+    # This hackery is necessary to merge 'foo\r' and '\n' into one item
+    # of 'foo\r\n' if we were unlucky and we hit a chunk boundary.
+    previous = ''
+    for item in _iter_basic_lines():
+        if item == '\n' and previous[-1:] == '\r':
+            previous += '\n'
+            item = ''
+        if previous:
+            yield previous
+        previous = item
+    if previous:
+        yield previous
 
 
 def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
