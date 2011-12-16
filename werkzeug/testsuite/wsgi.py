@@ -214,6 +214,13 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=24))
         self.assert_equal(lines, ['abc\r\n', 'This line is broken by the buffer length.\r\n', 'Foo bar baz'])
 
+    def test_multi_part_line_breaks_problematic(self):
+        data = 'abc\rdef\r\nghi'
+        for x in xrange(1, 10):
+            test_stream = StringIO(data)
+            lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=4))
+            assert lines == ['abc\r', 'def\r\n', 'ghi']
+
 
 def suite():
     suite = unittest.TestSuite()

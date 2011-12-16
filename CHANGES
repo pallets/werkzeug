@@ -30,6 +30,9 @@ Version 0.8.2
   hardcoded in URL rules.
 - Fixed two property docstrings being assigned to fdel instead
   of ``__doc__``.
+- Fixed an issue where CRLF line endings could be split into two
+  by the line iter function, causing problems with multipart file
+  uploads.
 
 Version 0.8.1
 -------------
