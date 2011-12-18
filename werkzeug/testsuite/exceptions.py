@@ -23,7 +23,6 @@ from werkzeug.wrappers import Response
 class ExceptionsTestCase(WerkzeugTestCase):
 
     def test_proxy_exception(self):
-        """Proxy exceptions"""
         orig_resp = Response('Hello World')
         try:
             exceptions.abort(orig_resp)
@@ -35,7 +34,6 @@ class ExceptionsTestCase(WerkzeugTestCase):
         self.assert_equal(resp.data, 'Hello World')
 
     def test_aborter(self):
-        """Exception aborter"""
         abort = exceptions.abort
         self.assert_raises(exceptions.BadRequest, abort, 400)
         self.assert_raises(exceptions.Unauthorized, abort, 401)

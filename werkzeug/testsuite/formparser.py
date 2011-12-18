@@ -48,7 +48,6 @@ def get_contents(filename):
 class FormParserTestCase(WerkzeugTestCase):
 
     def test_limiting(self):
-        """Test the limiting features"""
         data = 'foo=Hello+World&bar=baz'
         req = Request.from_values(input_stream=StringIO(data),
                                   content_length=len(data),
@@ -104,13 +103,12 @@ class FormParserTestCase(WerkzeugTestCase):
         self.assert_equal(req.form['foo'], 'Hello World')
 
     def test_parse_form_data_put_without_content(self):
-        """A PUT without a Content-Type header returns empty data
+        # A PUT without a Content-Type header returns empty data
 
-        Both rfc1945 and rfc2616 (1.0 and 1.1) say "Any HTTP/[1.0/1.1] message
-        containing an entity-body SHOULD include a Content-Type header field
-        defining the media type of that body."  In the case where either
-        headers are omitted, parse_form_data should still work.
-        """
+        # Both rfc1945 and rfc2616 (1.0 and 1.1) say "Any HTTP/[1.0/1.1] message
+        # containing an entity-body SHOULD include a Content-Type header field
+        # defining the media type of that body."  In the case where either
+        # headers are omitted, parse_form_data should still work.
         env = create_environ('/foo', 'http://example.org/', method='PUT')
         del env['CONTENT_TYPE']
         del env['CONTENT_LENGTH']
@@ -121,7 +119,6 @@ class FormParserTestCase(WerkzeugTestCase):
         self.assert_equal(len(files), 0)
 
     def test_parse_form_data_get_without_content(self):
-        """GET requests without data, content type and length returns no data"""
         env = create_environ('/foo', 'http://example.org/', method='GET')
         del env['CONTENT_TYPE']
         del env['CONTENT_LENGTH']
@@ -132,7 +129,6 @@ class FormParserTestCase(WerkzeugTestCase):
         self.assert_equal(len(files), 0)
 
     def test_large_file(self):
-        """Test a largish file."""
         data = 'x' * (1024 * 600)
         req = Request.from_values(data={'foo': (StringIO(data), 'test.txt')},
                                   method='POST')
@@ -144,7 +140,6 @@ class FormParserTestCase(WerkzeugTestCase):
 class MultiPartTestCase(WerkzeugTestCase):
 
     def test_basic(self):
-        """Tests multipart parsing against data collected from webbrowsers"""
         resources = join(dirname(__file__), 'multipart')
         client = Client(form_data_consumer, Response)
 
@@ -200,7 +195,6 @@ class MultiPartTestCase(WerkzeugTestCase):
                           repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc'))
 
     def test_end_of_file(self):
-        """Test for multipart files ending unexpectedly"""
         # This test looks innocent but it was actually timeing out in
         # the Werkzeug 0.5 release version (#394)
         data = (
@@ -217,7 +211,6 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_(not data.form)
 
     def test_broken(self):
-        """Broken multipart does not break the applicaiton"""
         data = (
             '--foo\r\n'
             'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n'
@@ -237,7 +230,6 @@ class MultiPartTestCase(WerkzeugTestCase):
                       silent=False)
 
     def test_file_no_content_type(self):
-        """Chrome does not always provide a content type."""
         data = (
             '--foo\r\n'
             'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n\r\n'
@@ -251,7 +243,6 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_equal(data.files['test'].read(), 'file contents')
 
     def test_extra_newline(self):
-        """Test for multipart uploads with extra newlines"""
         # this test looks innocent but it was actually timeing out in
         # the Werkzeug 0.5 release version (#394)
         data = (
@@ -268,7 +259,6 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_equal(data.form['foo'], 'a string')
 
     def test_headers(self):
-        """Test access to multipart headers"""
         data = ('--foo\r\n'
                 'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
                 'X-Custom-Header: blah\r\n'
@@ -287,7 +277,6 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_equal(foo.headers['x-custom-header'], 'blah')
 
     def test_nonstandard_line_endings(self):
-        """Test nonstandard line endings of multipart form data"""
         for nl in '\n', '\r', '\r\n':
             data = nl.join((
                 '--foo',
@@ -330,7 +319,6 @@ class MultiPartTestCase(WerkzeugTestCase):
                            ['foo: bar\r\n', ' x test'])
 
     def test_bad_newline_bad_newline_assumption(self):
-        """Make sure we don't eat up stuff that is not a newline"""
         class ISORequest(Request):
             charset = 'latin1'
         contents = 'U2vlbmUgbORu'
