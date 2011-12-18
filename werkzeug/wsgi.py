@@ -624,8 +624,9 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
                     yield first_chunk
                     first_chunk = ''
                 first_chunk += chunks.pop()
-            if not first_chunk:
-                return
+            else:
+                yield first_chunk
+                break
 
             buffer = chunks
 
