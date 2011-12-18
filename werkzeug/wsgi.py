@@ -628,7 +628,14 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
                 return
 
             buffer = chunks
-            yield first_chunk
+
+            # in case the line is longer than the buffer size we
+            # can't yield yet.  This will only happen if the buffer
+            # is empty.
+            if not buffer and first_chunk[-1] not in '\r\n':
+                buffer = [first_chunk]
+            else:
+                yield first_chunk
 
     # This hackery is necessary to merge 'foo\r' and '\n' into one item
     # of 'foo\r\n' if we were unlucky and we hit a chunk boundary.
