@@ -15,6 +15,9 @@ Relase date to be decided, codename to be chosen.
   certificates easily and load them from files.
 - Refactored test client to invoke the open method on the class
   for redirects.  This makes subclassing more powerful.
+- :func:`werkzeug.wsgi.make_chunk_iter` and
+  :func:`werkzeug.wsgi.make_line_iter` now support processing of
+  iterators and streams.
 
 Version 0.8.2
 -------------

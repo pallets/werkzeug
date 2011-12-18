@@ -221,6 +221,21 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=4))
             assert lines == ['abc\r', 'def\r\n', 'ghi']
 
+    def test_iter_functions_support_iterators(self):
+        data = ['abcdef\r\nghi', 'jkl\r\nmnopqrstuvwxyz\r', '\nABCDEFGHIJK']
+        lines = list(wsgi.make_line_iter(data))
+        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n', 'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
+
+    def test_make_chunk_iter(self):
+        data = ['abcdefXghi', 'jklXmnopqrstuvwxyzX', 'ABCDEFGHIJK']
+        rv = list(wsgi.make_chunk_iter(data, 'X'))
+        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz', 'ABCDEFGHIJK'])
+
+        data = 'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
+        test_stream = StringIO(data)
+        rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data), buffer_size=4))
+        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz', 'ABCDEFGHIJK'])
+
 
 def suite():
     suite = unittest.TestSuite()
