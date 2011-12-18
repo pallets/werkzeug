@@ -236,6 +236,12 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data), buffer_size=4))
         self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz', 'ABCDEFGHIJK'])
 
+    def test_lines_longer_buffer_size(self):
+        data = '1234567890\n1234567890\n'
+        for bufsize in xrange(1, 15):
+            lines = list(wsgi.make_line_iter(StringIO(data), limit=len(data), buffer_size=4))
+            self.assert_equal(lines, ['1234567890\n', '1234567890\n'])
+
 
 def suite():
     suite = unittest.TestSuite()

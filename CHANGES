@@ -19,6 +19,15 @@ Relase date to be decided, codename to be chosen.
   :func:`werkzeug.wsgi.make_line_iter` now support processing of
   iterators and streams.
 
+Version 0.8.3
+-------------
+
+(bugfix release, relase date to be announced)
+
+- Fixed another issue with :func:`werkzeug.wsgi.make_line_iter`
+  where lines longer than the buffer size were not handled
+  properly.
+
 Version 0.8.2
 -------------
 
