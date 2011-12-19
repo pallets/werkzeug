@@ -608,35 +608,18 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
         _read = stream.read
         buffer = []
         while 1:
-            if len(buffer) > 1:
-                yield buffer.pop()
-                continue
-
-            # we reverse the chunks because popping from the last
-            # position of the list is O(1) and the number of chunks
-            # read will be quite large for binary files.
-            chunks = _read(buffer_size).splitlines(True)
-            chunks.reverse()
-
-            first_chunk = buffer and buffer[0] or ''
-            if chunks:
-                if first_chunk and first_chunk[-1] in '\r\n':
-                    yield first_chunk
-                    first_chunk = ''
-                first_chunk += chunks.pop()
-            else:
-                yield first_chunk
+            new_data = _read()
+            if not new_data:
                 break
-
-            buffer = chunks
-
-            # in case the line is longer than the buffer size we
-            # can't yield yet.  This will only happen if the buffer
-            # is empty.
-            if not buffer and first_chunk[-1] not in '\r\n':
-                buffer = [first_chunk]
-            else:
-                yield first_chunk
+            new_buf = []
+            for item in chain(buffer, new_data.splitlines(True)):
+                new_buf.append(item)
+                if item and item[-1:] in '\r\n':
+                    yield ''.join(new_buf)
+                    new_buf = []
+            buffer = new_buf
+        if buffer:
+            yield ''.join(buffer)
 
     # This hackery is necessary to merge 'foo\r' and '\n' into one item
     # of 'foo\r\n' if we were unlucky and we hit a chunk boundary.
