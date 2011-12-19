@@ -20,7 +20,6 @@ from werkzeug.security import check_password_hash, generate_password_hash, \
 class SecurityTestCase(WerkzeugTestCase):
 
     def test_password_hashing(self):
-        """Test the password hashing and password hash checking"""
         hash1 = generate_password_hash('default')
         hash2 = generate_password_hash(u'default', method='sha1')
         assert hash1 != hash2
@@ -44,7 +43,6 @@ class SecurityTestCase(WerkzeugTestCase):
         assert check_password_hash(legacy, 'default')
 
     def test_safe_join(self):
-        """Test the safe joining helper"""
         assert safe_join('foo', 'bar/baz') == os.path.join('foo', 'bar/baz')
         assert safe_join('foo', '../bar/baz') is None
         if os.name == 'nt':

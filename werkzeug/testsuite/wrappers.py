@@ -430,7 +430,6 @@ class WrappersTestCase(WerkzeugTestCase):
         assert 'no-cache' in request.pragma
 
     def test_shallow_mode(self):
-        """Request object shallow mode"""
         request = wrappers.Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
         assert request.args['foo'] == 'bar'
         self.assert_raises(RuntimeError, lambda: request.form['foo'])
