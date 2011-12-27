@@ -18,6 +18,8 @@ Relase date to be decided, codename to be chosen.
 - :func:`werkzeug.wsgi.make_chunk_iter` and
   :func:`werkzeug.wsgi.make_line_iter` now support processing of
   iterators and streams.
+- URL generation by the routing system now no longer quotes
+  ``+``.
 
 Version 0.8.3
 -------------
