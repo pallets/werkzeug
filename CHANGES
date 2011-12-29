@@ -20,6 +20,8 @@ Relase date to be decided, codename to be chosen.
   iterators and streams.
 - URL generation by the routing system now no longer quotes
   ``+``.
+- The :func:`werkzeug.security.generate_password_hash` and
+  check functions now support any of the hashlib algorithms.
 
 Version 0.8.3
 -------------
