@@ -9,6 +9,8 @@ Version 0.8.3
 - Fixed another issue with :func:`werkzeug.wsgi.make_line_iter`
   where lines longer than the buffer size were not handled
   properly.
+- Restore stdout after debug console finished executing so
+  that the debugger can be used on GAE better.
 
 Version 0.8.2
 -------------
