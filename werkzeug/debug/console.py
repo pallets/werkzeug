@@ -201,4 +201,8 @@ class Console(object):
         self._ipy = _InteractiveConsole(globals, locals)
 
     def eval(self, code):
-        return self._ipy.runsource(code)
+        old_sys_stdout = sys.stdout
+        try:
+            return self._ipy.runsource(code)
+        finally:
+            sys.stdout = old_sys_stdout
