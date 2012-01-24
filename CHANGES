@@ -11,6 +11,8 @@ Version 0.8.3
   properly.
 - Restore stdout after debug console finished executing so
   that the debugger can be used on GAE better.
+- Fixed a bug with the redis cache for int subclasses
+  (affects bool caching).
 
 Version 0.8.2
 -------------
