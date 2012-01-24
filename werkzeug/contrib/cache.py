@@ -488,7 +488,8 @@ class RedisCache(BaseCache):
         """Dumps an object into a string for redis.  By default it serializes
         integers as regular string and pickle dumps everything else.
         """
-        if isinstance(value, (int, long)):
+        t = type(value)
+        if t is int or t is long:
             return str(value)
         return '!' + pickle.dumps(value)
 

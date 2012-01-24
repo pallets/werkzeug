@@ -149,6 +149,14 @@ class RedisCacheTestCase(WerkzeugTestCase):
         c.delete('foo')
 
 
+    def test_true_false(self):
+        c = self.make_cache()
+        c.set('foo', True)
+        assert c.get('foo') == True
+        c.set('bar', False)
+        assert c.get('bar') == False
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(SimpleCacheTestCase))
