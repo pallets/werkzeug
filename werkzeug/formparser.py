@@ -103,7 +103,7 @@ def exhaust_stream(f):
 
 class FormDataParser(object):
     """This class implements parsing of form data for Werkzeug.  By itself
-    it can parse multipart and url encoded form data.  It can be subclasses
+    it can parse multipart and url encoded form data.  It can be subclassed
     and extended but for most mimetypes it is a better idea to use the
     untouched stream and expose it as separate attributes on a request
     object.
