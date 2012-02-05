@@ -40,6 +40,15 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         assert resp.headers['Location'] == 'http://example.com/'
         assert resp.status_code == 305
 
+    def test_redirect_xss(self):
+        location = 'http://example.com/?xss="><script>alert(1)</script>'
+        resp = utils.redirect(location)
+        assert '<script>alert(1)</script>' not in resp.data
+
+        location = 'http://example.com/?xss="onmouseover="alert(1)'
+        resp = utils.redirect(location)
+        assert 'href="http://example.com/?xss="onmouseover="alert(1)"' not in resp.data
+
     def test_cached_property(self):
         foo = []
         class A(object):

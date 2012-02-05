@@ -353,7 +353,7 @@ def redirect(location, code=302):
     :param code: the redirect status code. defaults to 302.
     """
     from werkzeug.wrappers import BaseResponse
-    display_location = location
+    display_location = escape(location)
     if isinstance(location, unicode):
         from werkzeug.urls import iri_to_uri
         location = iri_to_uri(location)
@@ -363,7 +363,7 @@ def redirect(location, code=302):
         '<h1>Redirecting...</h1>\n'
         '<p>You should be redirected automatically to target URL: '
         '<a href="%s">%s</a>.  If not click the link.' %
-        (location, display_location), code, mimetype='text/html')
+        (escape(location, True), display_location), code, mimetype='text/html')
     response.headers['Location'] = location
     return response
 
