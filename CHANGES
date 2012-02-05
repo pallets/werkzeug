@@ -35,6 +35,8 @@ Version 0.8.3
   that the debugger can be used on GAE better.
 - Fixed a bug with the redis cache for int subclasses
   (affects bool caching).
+- Fixed an XSS problem with redirect targets coming from
+  untrusted sources.
 
 Version 0.8.2
 -------------
