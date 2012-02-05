@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.8.3
 -------------
 
-(bugfix release, relase date to be announced)
+(bugfix release, relased on February 5th 2012)
 
 - Fixed another issue with :func:`werkzeug.wsgi.make_line_iter`
   where lines longer than the buffer size were not handled
