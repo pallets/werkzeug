@@ -61,7 +61,7 @@ except ImportError:
 
 setup(
     name='Werkzeug',
-    version='0.8.3-dev',
+    version='0.8.3',
     url='http://werkzeug.pocoo.org/',
     license='BSD',
     author='Armin Ronacher',
