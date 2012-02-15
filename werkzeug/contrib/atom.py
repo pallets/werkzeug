@@ -21,7 +21,7 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from datetime import datetime
+from datetime import datetime, tzinfo, timedelta
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
 
@@ -40,9 +40,25 @@ def _make_text_block(name, content, content_type=None):
                                          escape(content), name)
 
 
+class UTC(tzinfo):
+    """UTC tzinfo based on http://docs.python.org/library/datetime.html"""
+
+    def utcoffset(self, dt):
+        return timedelta(0)
+
+    def dst(self, dt):
+        return timedelta(0)
+
+    def tzname(self, dt):
+        return u'UTC'
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
+
+
 def format_iso8601(obj):
     """Format a datetime object for iso8601"""
-    return obj.strftime('%Y-%m-%dT%H:%M:%SZ')
+    return obj.astimezone(UTC()).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 class AtomFeed(object):
