@@ -1,6 +1,18 @@
 Werkzeug Changelog
 ==================
 
+Version 0.8.4
+-------------
+
+(bugfix release, release date to be announced)
+
+- Added a favicon to the debugger which fixes problem with
+  state changes being triggered through a request to
+  /favicon.ico in Google Chrome.  This should fix some
+  problems with Flask and other frameworks that use
+  context local objects on a stack with context preservation
+  on errors.
+
 Version 0.8.3
 -------------
 
