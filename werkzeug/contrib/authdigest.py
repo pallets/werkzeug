@@ -192,7 +192,7 @@ class DigestAuthentication(object):
         self.H = self.hashAlgorithms[self.algorithm]
 
     def verify(self, authorization, hashPass=None, method='GET', **kw):
-        reqResponse = self.digest(authorization, hashPass, **kw)
+        reqResponse = self.digest(authorization, hashPass, method, **kw)
         if reqResponse:
             return (authorization.response.lower() == reqResponse.lower())
 
