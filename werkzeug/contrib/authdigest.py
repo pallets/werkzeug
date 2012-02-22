@@ -107,7 +107,7 @@ class RealmDigestDB(object):
         hashPass = self[authorization.username]
         if hashPass is None:
             return authResult.deny('unknown_user')
-        elif not self.alg.verify(authorization, hashPass, **kw):
+        elif not self.alg.verify(authorization, hashPass, request.method, **kw):
             return authResult.deny('invalid_password')
         else:
             return authResult.approve('success')
@@ -191,12 +191,12 @@ class DigestAuthentication(object):
         self.algorithm = algorithm.lower()
         self.H = self.hashAlgorithms[self.algorithm]
 
-    def verify(self, authorization, hashPass=None, **kw):
+    def verify(self, authorization, hashPass=None, method='GET', **kw):
         reqResponse = self.digest(authorization, hashPass, **kw)
         if reqResponse:
             return (authorization.response.lower() == reqResponse.lower())
 
-    def digest(self, authorization, hashPass=None, **kw):
+    def digest(self, authorization, hashPass=None, method='GET', **kw):
         if authorization is None:
             return None
 
@@ -204,7 +204,7 @@ class DigestAuthentication(object):
             hA1 = self._compute_hA1(authorization, kw['password'])
         else: hA1 = hashPass
 
-        hA2 = self._compute_hA2(authorization, kw.pop('method', 'GET'))
+        hA2 = self._compute_hA2(authorization, method)
 
         if 'auth' in authorization.qop:
             res = self._compute_qop_auth(authorization, hA1, hA2)
@@ -219,7 +219,7 @@ class DigestAuthentication(object):
 
     def _compute_hA1(self, auth, password=None):
         return self.hashPassword(auth.username, auth.realm, password or auth.password)
-    def _compute_hA2(self, auth, method):
+    def _compute_hA2(self, auth, method='GET'):
         return self.H(method, auth.uri)
     def _compute_qop_auth(self, auth, hA1, hA2):
         return self.H(hA1, auth.nonce, auth.nc, auth.cnonce, auth.qop, hA2)
