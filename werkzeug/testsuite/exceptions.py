@@ -48,6 +48,7 @@ class ExceptionsTestCase(WerkzeugTestCase):
         self.assert_raises(exceptions.RequestEntityTooLarge, abort, 413)
         self.assert_raises(exceptions.RequestURITooLarge, abort, 414)
         self.assert_raises(exceptions.UnsupportedMediaType, abort, 415)
+        self.assert_raises(exceptions.UnprocessableEntity, abort, 422)
         self.assert_raises(exceptions.InternalServerError, abort, 500)
         self.assert_raises(exceptions.NotImplemented, abort, 501)
         self.assert_raises(exceptions.BadGateway, abort, 502)
