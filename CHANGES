@@ -102,7 +102,7 @@ Released on September 29th 2011, codename Lötkolben
   with missing nc and nonce params.
 - Proxy fix now also updates wsgi.url_scheme based on X-Forwarded-Proto.
 - Added support for key prefixes to the redis cache.
-- Added the ability to supress some auto corrections in the wrappers
+- Added the ability to suppress some auto corrections in the wrappers
   that are now controlled via `autocorrect_location_header` and
   `automatically_set_content_length` on the response objects.
 - Werkzeug now uses a new method to check that the length of incoming
@@ -161,7 +161,7 @@ Released on July 24th 2011, codename Schraubschlüssel
   generated component contains a colon.
 - :func:`werkzeug.import_string` now works with partially set up
   packages properly.
-- Disabled automatic socket swiching for IPv6 on the development
+- Disabled automatic socket switching for IPv6 on the development
   server due to problems it caused.
 - Werkzeug no longer overrides the Date header when creating a
   conditional HTTP response.
@@ -177,7 +177,7 @@ Released on July 24th 2011, codename Schraubschlüssel
 - Fixed a problem with external URL generation discarding the port.
 - Added support for pylibmc to the Werkzeug cache abstraction layer.
 - Fixed an issue with the new multipart parser that happened when
-  a linebreak happend to be on the chunk limit.
+  a linebreak happened to be on the chunk limit.
 - Cookies are now set properly if ports are in use.  A runtime error
   is raised if one tries to set a cookie for a domain without a dot.
 - Fixed an issue with Template.from_file not working for file
@@ -201,7 +201,7 @@ Released on July 24th 2011, codename Schraubschlüssel
   the Python 3 version will later change in that it will always
   operate on latin1 values.
 - Fixed a bug in the form parser that caused the last character to
-  be dropped off if certain values in multipart data is used.
+  be dropped off if certain values in multipart data are used.
 - Multipart parser now looks at the part-individual content type
   header to override the global charset.
 - Introduced mimetype and mimetype_params attribute for the file
@@ -238,7 +238,7 @@ Released on July 24th 2011, codename Schraubschlüssel
 - Added support for parsing of the `Range` header
   (:func:`werkzeug.http.parse_range_header` and
   :class:`werkzeug.datastructures.Range`).
-- Added support for parsing of the `Content-Range` header of respones
+- Added support for parsing of the `Content-Range` header of responses
   and provided an accessor object for it
   (:func:`werkzeug.http.parse_content_range_header` and
   :class:`werkzeug.datastructures.ContentRange`).
@@ -265,7 +265,7 @@ Version 0.6.1
   if no method is provided.
 - added proper IPv6 support for the builtin server.
 - windows specific filesystem session store fixes.
-  (should no be more stable under high concurrency)
+  (should now be more stable under high concurrency)
 - fixed a `NameError` in the session system.
 - fixed a bug with empty arguments in the werkzeug.script system.
 - fixed a bug where log lines will be duplicated if an application uses
