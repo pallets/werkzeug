@@ -224,7 +224,7 @@ So imagine your standard WSGI "Hello World" application::
         start_response('200 OK', [('Content-Type', 'text/plain')])
         return ['Hello World!']
 
-With request objects it would look like this::
+With response objects it would look like this::
 
     from werkzeug.wrappers import Response
 
