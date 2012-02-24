@@ -49,6 +49,7 @@ Version 0.8.3
   (affects bool caching).
 - Fixed an XSS problem with redirect targets coming from
   untrusted sources.
+- Redis cache backend now supports password authentication.
 
 Version 0.8.2
 -------------
@@ -362,7 +363,7 @@ Version 0.5.1
 - file upload streams no longer have to provide a truncate()
   method.
 - implemented :meth:`BaseRequest._form_parsing_failed`.
-- fixed #394 
+- fixed #394
 - :meth:`ImmutableDict.copy`, :meth:`ImmutableMultiDict.copy` and
   :meth:`ImmutableTypeConversionDict.copy` return mutable shallow
   copies.
@@ -436,7 +437,7 @@ Released on April 24th, codename Schlagbohrer.
 - added :mod:`werkzeug.contrib.lint`
 - added `passthrough_errors` to `run_simple`.
 - added `secure_filename`
-- added :func:`make_line_iter` 
+- added :func:`make_line_iter`
 - :class:`MultiDict` copies now instead of revealing internal
   lists to the caller for `getlist` and iteration functions that
   return lists.
