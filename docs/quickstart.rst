@@ -184,7 +184,7 @@ True
 >>> 'utf-8' in request.accept_charsets
 True
 
-Normalization is available, so you can savely use alternative forms
+Normalization is available, so you can safely use alternative forms
 to perform containment checking:
 
 >>> 'UTF8' in request.accept_charsets
