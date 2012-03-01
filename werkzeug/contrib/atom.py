@@ -57,8 +57,12 @@ class UTC(tzinfo):
 
 
 def format_iso8601(obj):
-    """Format a datetime object for iso8601"""
-    return obj.astimezone(UTC()).strftime('%Y-%m-%dT%H:%M:%SZ')
+    """Format a datetime object for ISO 8601,
+    and assume UTC only if no timezone is given.
+    """
+    if not obj.tzinfo:
+        obj = obj.replace(tzinfo=UTC())
+    return obj.astimezone(UTC()).isoformat()[:19] + 'Z'
 
 
 class AtomFeed(object):
