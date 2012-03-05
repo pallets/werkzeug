@@ -102,7 +102,10 @@ class DebuggedApplication(object):
 
             try:
                 start_response('500 INTERNAL SERVER ERROR', [
-                    ('Content-Type', 'text/html; charset=utf-8')
+                    ('Content-Type', 'text/html; charset=utf-8'),
+                    # Disable Chrome's XSS protection, the debug
+                    # output can cause false-positives.
+                    ('X-XSS-Protection', '0'),
                 ])
             except Exception:
                 # if we end up here there has been output but an error
