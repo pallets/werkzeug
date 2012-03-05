@@ -12,6 +12,8 @@ Version 0.8.4
   problems with Flask and other frameworks that use
   context local objects on a stack with context preservation
   on errors.
+- Fixed a problem with proxies not forwarding some rarely
+  used special methods properly.
 
 Version 0.8.3
 -------------
