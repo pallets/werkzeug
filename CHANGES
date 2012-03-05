@@ -14,6 +14,8 @@ Version 0.8.4
   on errors.
 - Fixed a problem with proxies not forwarding some rarely
   used special methods properly.
+- Added a workaround to prevent the XSS protection from Chrome
+  breaking the debugger.
 
 Version 0.8.3
 -------------
