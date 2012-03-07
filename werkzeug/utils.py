@@ -226,6 +226,8 @@ def get_content_type(mimetype, charset):
     """
     if mimetype.startswith('text/') or \
        mimetype == 'application/xml' or \
+       mimetype == 'application/json' or \
+       mimetype == 'application/javascript' or \
        (mimetype.startswith('application/') and
         mimetype.endswith('+xml')):
         mimetype += '; charset=' + charset
