@@ -327,7 +327,7 @@ class MultiPartParser(object):
     def start_file_streaming(self, filename, headers, total_content_length):
         filename = _decode_unicode(filename, self.charset, self.errors)
         filename = self._fix_ie_filename(filename)
-        content_type = headers.get('content_type')
+        content_type = headers.get('content-type')
         try:
             content_length = int(headers['content-length'])
         except (KeyError, ValueError):
