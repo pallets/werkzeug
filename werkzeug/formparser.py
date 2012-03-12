@@ -33,7 +33,6 @@ _multipart_boundary_re = re.compile('^[ -~]{0,200}[!-~]$')
 #: for multipart messages.
 _supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 
-
 def default_stream_factory(total_content_length, filename, content_type,
                            content_length=None):
     """The stream factory that is used per default."""
@@ -319,10 +318,11 @@ class MultiPartParser(object):
     def get_part_charset(self, headers):
         # Figure out input charset for current part
         content_type = headers.get('content-type')
+        
         if content_type:
             mimetype, ct_params = parse_options_header(content_type)
-            return ct_params.get('charset', self.charset)
-        return self.charset
+            return mimetype, ct_params.get('charset', None)
+        return None, None
 
     def start_file_streaming(self, filename, headers, total_content_length):
         filename = _decode_unicode(filename, self.charset, self.errors)
@@ -377,7 +377,7 @@ class MultiPartParser(object):
             transfer_encoding = self.get_part_encoding(headers)
             name = extra.get('name')
             filename = extra.get('filename')
-            part_charset = self.get_part_charset(headers)
+            part_mimetype, part_charset = self.get_part_charset(headers)
 
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.
@@ -456,7 +456,13 @@ class MultiPartParser(object):
                 files.append((name, FileStorage(container, filename, name,
                                                 headers=headers)))
             else:
-                form.append((name, _decode_unicode(''.join(container),
-                                                   part_charset, self.errors)))
+                if ((part_charset is None) and (part_mimetype is None)):
+                    form.append((name, _decode_unicode(''.join(container),self.charset, self.errors)))
+                elif (part_charset is not None):
+                    form.append((name, _decode_unicode(''.join(container),part_charset, self.errors)))
+                elif (part_mimetype.startswith( 'text/' )):
+                    form.append((name, _decode_unicode(''.join(container),self.charset, self.errors)))
+                else:                                   
+                    form.append((name, container))
 
         return self.cls(form), self.cls(files)
