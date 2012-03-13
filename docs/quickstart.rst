@@ -232,7 +232,7 @@ With response objects it would look like this::
         response = Response('Hello World!')
         return response(environ, start_response)
 
-Also unlike request objects response objects are designed to be modified.
+Also, unlike request objects, response objects are designed to be modified.
 So here is what you can do with them:
 
 >>> from werkzeug.wrappers import Response
