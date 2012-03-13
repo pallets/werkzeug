@@ -19,6 +19,11 @@ from werkzeug.contrib import cache
 
 try:
     import redis
+    try:
+        from redis.exceptions import ConnectionError as RedisConnectionError
+        cache.RedisCache(key_prefix='werkzeug-test-case:')._client.set('test','connection')
+    except RedisConnectionError:
+        redis = None
 except ImportError:
     redis = None
 
