@@ -305,7 +305,7 @@ class Conflict(HTTPException):
     code = 409
     description = (
         '<p>A conflict happened while processing the request.  The resource '
-        'might have been modified while the request was being processed.'
+        'might have been modified while the request was being processed.</p>'
     )
 
 
@@ -318,7 +318,7 @@ class Gone(HTTPException):
     description = (
         '<p>The requested URL is no longer available on this server and '
         'there is no forwarding address.</p><p>If you followed a link '
-        'from a foreign page, please contact the author of this page.'
+        'from a foreign page, please contact the author of this page.</p>'
     )
 
 
@@ -395,7 +395,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
     """
     code = 416
     description = (
-        '<p>The server cannot provide the requested range.'
+        '<p>The server cannot provide the requested range.</p>'
     )
 
 
@@ -408,7 +408,8 @@ class ExpectationFailed(HTTPException):
     """
     code = 417
     description = (
-        '<p>The server could not meet the requirements of the Expect header'
+        '<p>The server could not meet the requirements of the Expect '
+        'header.</p>'
     )
 
 
@@ -422,7 +423,7 @@ class ImATeapot(HTTPException):
     """
     code = 418
     description = (
-        '<p>This server is a teapot, not a coffee machine'
+        '<p>This server is a teapot, not a coffee machine.</p>'
     )
     
 class UnprocessableEntity(HTTPException):
@@ -433,7 +434,8 @@ class UnprocessableEntity(HTTPException):
     """
     code = 422
     description = (
-        '<p>The request was well-formed but was unable to be followed due to semantic errors.'
+        '<p>The request was well-formed but was unable to be followed due to '
+        'semantic errors.</p>'
     )    
 
 
