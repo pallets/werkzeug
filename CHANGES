@@ -17,6 +17,7 @@ Version 0.8.4
   used special methods properly.
 - Added a workaround to prevent the XSS protection from Chrome
   breaking the debugger.
+- Skip redis tests if redis is not running.
 
 Version 0.8.3
 -------------
