@@ -128,7 +128,7 @@ If you want to add an error yourself you can subclass :exc:`HTTPException`::
 
     from werkzeug.exceptions import HTTPException
 
-    class PaymentRequred(HTTPException):
+    class PaymentRequired(HTTPException):
         code = 402
         description = '<p>Payment required.</p>'
 
