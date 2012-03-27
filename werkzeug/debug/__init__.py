@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import mimetypes
+from os import getpid
 from os.path import join, dirname, basename, isfile
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 from werkzeug.debug.tbtools import get_current_traceback, render_console_html
@@ -67,6 +68,7 @@ class DebuggedApplication(object):
     def __init__(self, app, evalex=False, request_key='werkzeug.request',
                  console_path='/console', console_init_func=None,
                  show_hidden_frames=False,
+                 multiprocess_support=False,
                  lodgeit_url='http://paste.pocoo.org/'):
         if not console_init_func:
             console_init_func = dict
@@ -80,6 +82,7 @@ class DebuggedApplication(object):
         self.show_hidden_frames = show_hidden_frames
         self.lodgeit_url = lodgeit_url
         self.secret = gen_salt(20)
+        self.multiprocess_support = multiprocess_support
 
     def debug_application(self, environ, start_response):
         """Run the application and conserve the traceback frames."""
@@ -119,7 +122,8 @@ class DebuggedApplication(object):
             else:
                 yield traceback.render_full(evalex=self.evalex,
                                             lodgeit_url=self.lodgeit_url,
-                                            secret=self.secret) \
+                                            secret=self.secret,
+                                            pid=self.multiprocess_support and getpid() or '') \
                                .encode('utf-8', 'replace')
 
             traceback.log(environ['wsgi.errors'])
@@ -159,6 +163,9 @@ class DebuggedApplication(object):
                 f.close()
         return Response('Not Found', status=404)
 
+    def mp_redirect(self, request):
+        return Response('Wrong Process', status=302, headers=[('Location', request.url)])
+
     def __call__(self, environ, start_response):
         """Dispatch the requests."""
         # important: don't ever access a function here that reads the incoming
@@ -167,12 +174,15 @@ class DebuggedApplication(object):
         request = Request(environ)
         response = self.debug_application
         if request.args.get('__debugger__') == 'yes':
+            pid = request.args.get('p')
             cmd = request.args.get('cmd')
             arg = request.args.get('f')
             secret = request.args.get('s')
             traceback = self.tracebacks.get(request.args.get('tb', type=int))
             frame = self.frames.get(request.args.get('frm', type=int))
-            if cmd == 'resource' and arg:
+            if self.multiprocess_support and pid and pid != str(getpid()):
+              response = self.mp_redirect(request)
+            elif cmd == 'resource' and arg:
                 response = self.get_resource(request, arg)
             elif cmd == 'paste' and traceback is not None and \
                  secret == self.secret:

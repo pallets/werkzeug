@@ -47,6 +47,7 @@ HEADER = u'''\
       var TRACEBACK = %(traceback_id)d,
           CONSOLE_MODE = %(console)s,
           EVALEX = %(evalex)s,
+          PID = "%(pid)s",
           SECRET = "%(secret)s";
     </script>
   </head>
@@ -303,7 +304,7 @@ class Traceback(object):
         }
 
     def render_full(self, evalex=False, lodgeit_url=None,
-                    secret=None):
+                    secret=None, pid=''):
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
         return PAGE_HTML % {
@@ -317,6 +318,7 @@ class Traceback(object):
             'plaintext':        self.plaintext,
             'plaintext_cs':     re.sub('-{2,}', '-', self.plaintext),
             'traceback_id':     self.id,
+            'pid':              pid,
             'secret':           secret
         }
 
