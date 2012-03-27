@@ -18,6 +18,8 @@ Version 0.8.4
 - Added a workaround to prevent the XSS protection from Chrome
   breaking the debugger.
 - Skip redis tests if redis is not running.
+- Fixed a typo in the multipart parser that caused content-type
+  to not be picked up properly.
 
 Version 0.8.3
 -------------
