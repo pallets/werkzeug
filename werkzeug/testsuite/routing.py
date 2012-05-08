@@ -175,6 +175,18 @@ class RoutingTestCase(WerkzeugTestCase):
         assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == \
             ('files', {'file':'downloads/werkzeug/0.2.zip'})
 
+    def test_path_complex(self):
+        map = r.Map([
+            r.Rule('/', endpoint='index'),
+            r.Rule('/static/<path:filename>', endpoint='static'),
+            r.Rule('/<first>/', endpoint='first'),
+            r.Rule('/<first>/<second>/', endpoint='second'),
+            r.Rule('/<first>/<second>/<third>', endpoint='third'),
+        ])
+        adapter = map.bind('example.org', '/')
+        self.assertEquals(adapter.match('/'), ('index', {}))
+        self.assertEquals(adapter.match('/static/img/favicon.ico'), ('static', {'filename': 'img/favicon.ico'}))
+
     def test_dispatch(self):
         env = create_environ('/')
         map = r.Map([
