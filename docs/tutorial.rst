@@ -119,8 +119,8 @@ Step 2: The Base Structure
 
 Now let's get right into and create a module for our application.  Let's
 create a file called `shortly.py` in the `shortly` folder.  At first we
-will need a bunch of imports.  I will pull in here all the imports, even
-if they are not used right away to keep it from being confusing::
+will need a bunch of imports.  I will pull in all the imports here, even
+if they are not used right away, to keep it from being confusing::
 
     import os
     import redis
