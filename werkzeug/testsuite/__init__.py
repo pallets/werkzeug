@@ -9,8 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from __future__ import with_statement
-
 import unittest
 from werkzeug.utils import import_string, find_modules
 
@@ -67,8 +65,16 @@ class WerkzeugTestCase(unittest.TestCase):
         catcher = _ExceptionCatcher(self, exc_type)
         if callable is None:
             return catcher
-        with catcher:
+
+        # Python 2.4 doesn't have the `with` statement; this is the
+        # equivalent of:
+        #    with catcher:
+        #        callable(*args, **kwargs)
+        catcher.__enter__()
+        try:
             callable(*args, **kwargs)
+        except Exception, e:
+            catcher.__exit__(type(e), e, None)
 
 
 class _ExceptionCatcher(object):
