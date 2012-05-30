@@ -173,7 +173,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
     def runcode(self, code):
         try:
-            exec code in self.globals, self.locals
+            exec(code, self.globals, self.locals)
         except Exception:
             self.showtraceback()
 

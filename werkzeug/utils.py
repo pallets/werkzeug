@@ -17,6 +17,11 @@ import sys
 from werkzeug._internal import _iter_modules, _DictAccessorProperty, \
      _parse_signature, _missing
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 _format_re = re.compile(r'\$(?:(%s)|\{(%s)\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
 _entity_re = re.compile(r'&([^;]+);')
@@ -139,7 +144,11 @@ class HTMLBuilder(object):
     u'<p>&lt;foo&gt;</p>'
     """
 
-    from htmlentitydefs import name2codepoint
+    try:
+        from htmlentitydefs import name2codepoint
+    except ImportError:
+        from html.entities import name2codepoint
+
     _entity_re = re.compile(r'&([^;]+);')
     _entities = name2codepoint.copy()
     _entities['apos'] = 39
@@ -411,7 +420,7 @@ def import_string(import_name, silent=False):
             return __import__(import_name)
         # __import__ is not able to handle unicode strings in the fromlist
         # if the module is a package
-        if isinstance(obj, unicode):
+        if sys.version_info < (3, 0) and isinstance(obj, unicode):
             obj = obj.encode('utf-8')
         try:
             return getattr(__import__(module, None, None, [obj]), obj)
@@ -421,9 +430,9 @@ def import_string(import_name, silent=False):
             modname = module + '.' + obj
             __import__(modname)
             return sys.modules[modname]
-    except ImportError, e:
+    except ImportError as e:
         if not silent:
-            raise ImportStringError(import_name, e), None, sys.exc_info()[2]
+            raise(ImportStringError(import_name, e), None, sys.exc_info()[2])
 
 
 def find_modules(import_path, include_packages=False, recursive=False):

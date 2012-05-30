@@ -20,7 +20,21 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import urlparse
+try:
+    import urlparse
+except ImportError: # pragma: no cover
+    import urllib.parse as urlparse
+
+try:
+    long
+except NameError: #pragma: no cover
+    long = int
+
+try:
+    basestring
+except NameError: #pragma: no cover
+    basestring = str
+
 from datetime import datetime, timedelta
 
 from werkzeug.http import HTTP_STATUS_CODES, \

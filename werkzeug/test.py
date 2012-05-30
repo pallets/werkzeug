@@ -9,15 +9,39 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-import urlparse
+
+try:
+    unicode
+except NameError: # pragma: no cover
+    unicode = str
+
+try:
+    basestring
+except NameError: # pragma: no cover
+    basestring = str
+
+try:
+    import urlparse
+except ImportError: # pragma: no cover
+    import urllib.parse as urlparse
+
 import mimetypes
 from time import time
 from random import random
 from itertools import chain
 from tempfile import TemporaryFile
-from cStringIO import StringIO
-from cookielib import CookieJar
-from urllib2 import Request as U2Request
+
+try:
+    from cStringIO import StringIO
+except ImportError: # pragma: no cover
+    from io import StringIO
+
+try:
+    from cookielib import CookieJar
+    from urllib2 import Request as U2Request
+except ImportError: # pragma: no cover
+    from http.cookiejar import CookieJar
+    from urllib.request import Request as U2Request
 
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
@@ -175,7 +199,7 @@ def _iter_data(data):
             for value in values:
                 yield key, value
     else:
-        for key, values in data.iteritems():
+        for key, values in iter(data.items()):
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -493,7 +517,7 @@ class EnvironBuilder(object):
         for f in files:
             try:
                 f.close()
-            except Exception, e:
+            except Exception as e:
                 pass
         self.closed = True
 
@@ -815,7 +839,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     def start_response(status, headers, exc_info=None):
         if exc_info is not None:
-            raise exc_info[0], exc_info[1], exc_info[2]
+            raise(exc_info[0], exc_info[1], exc_info[2])
         response[:] = [status, headers]
         return buffer.append
 
@@ -837,7 +861,7 @@ def run_wsgi_app(app, environ, buffered=False):
     # we have a close callable.
     else:
         while not response:
-            buffer.append(app_iter.next())
+            buffer.append(next(app_iter))
         if buffer:
             close_func = getattr(app_iter, 'close', None)
             app_iter = chain(buffer, app_iter)
