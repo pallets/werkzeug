@@ -483,6 +483,23 @@ def _iter_module_files():
                 yield filename
 
 
+def _filelist(paths):
+    """Helper function to expand the 'extra_files' in the cases where 
+    the files are actually directories.
+    """
+    files = set()
+    for path in paths: 
+
+        if os.path.isdir(path):
+            for root, ds, fs in os.walk(path):
+                for f in fs: 
+                    files.add(os.path.join(root, f))
+        else:
+            files.add(path)
+            
+    return list(files)
+
+
 def _reloader_stat_loop(extra_files=None, interval=1):
     """When this function is run from the main thread, it will force other
     threads to exit when any modules currently loaded change.
@@ -490,12 +507,15 @@ def _reloader_stat_loop(extra_files=None, interval=1):
     Copyright notice.  This function is based on the autoreload.py from
     the CherryPy trac which originated from WSGIKit which is now dead.
 
-    :param extra_files: a list of additional files it should watch.
+    :param extra_files: a list of additional files it should watch. If 
+    a directory is specified it will be traversed and all files within it 
+    will be added to the filelist
     """
     from itertools import chain
     mtimes = {}
     while 1:
-        for filename in chain(_iter_module_files(), extra_files or ()):
+        files = _filelist(extra_files)
+        for filename in chain(_iter_module_files(), files):
             try:
                 mtime = os.stat(filename).st_mtime
             except OSError:
