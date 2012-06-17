@@ -235,11 +235,10 @@ def _line_parse(line):
 
 def parse_multipart_headers(iterable):
     """Parses multipart headers from an iterable that yields lines (including
-    the trailing newline symbol.  The iterable has to be newline terminated:
+    the trailing newline symbol).  The iterable has to be newline terminated.
 
-    >>> parse_multipart_headers(['Foo: Bar\r\n', 'Test: Blub\r\n',
-    ...                          '\r\n', 'More data'])
-    Headers([('Foo', 'Bar'), ('Test', 'Blub')])
+    The iterable will stop at the line where the headers ended so it can be
+    further consumed.
 
     :param iterable: iterable of strings that are newline terminated
     """
