@@ -93,17 +93,21 @@ def _uri_split(uri):
     """Splits up an URI or IRI."""
     scheme, netloc, path, query, fragment = _safe_urlsplit(uri)
 
+    auth = None
     port = None
 
     if '@' in netloc:
-        auth, hostname = netloc.split('@', 1)
+        auth, netloc = netloc.split('@', 1)
+
+    if netloc.startswith('['):
+        host, port_part = netloc[1:].split(']', 1)
+        if port_part.startswith(':'):
+            port = port_part[1:]
+    elif ':' in netloc:
+        host, port = netloc.split(':', 1)
     else:
-        auth = None
-        hostname = netloc
-    if hostname:
-        if ':' in hostname:
-            hostname, port = hostname.split(':', 1)
-    return scheme, auth, hostname, port, path, query, fragment
+        host = netloc
+    return scheme, auth, host, port, path, query, fragment
 
 
 def iri_to_uri(iri, charset='utf-8'):
@@ -129,6 +133,10 @@ def iri_to_uri(iri, charset='utf-8'):
 
     scheme = scheme.encode('ascii')
     hostname = hostname.encode('idna')
+
+    if ':' in hostname:
+        hostname = '[' + hostname + ']'
+
     if auth:
         if ':' in auth:
             auth, password = auth.split(':', 1)
@@ -183,6 +191,9 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         if errors not in ('ignore', 'replace'):
             raise
         hostname = hostname.decode('ascii', errors)
+
+    if ':' in hostname:
+        hostname = '[' + hostname + ']'
 
     if auth:
         if ':' in auth:
