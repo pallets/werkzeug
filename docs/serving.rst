@@ -26,6 +26,8 @@ additional files (like configuration files) you want to observe.
 
 .. autofunction:: run_simple
 
+.. autofunction:: make_ssl_devcert
+
 .. admonition:: Information
 
    The development server is not intended to be used on production systems.
@@ -118,16 +120,34 @@ is provided it will be used.  That means a server can either run in HTTP
 or HTTPS mode, but not both.  This feature requires the Python OpenSSL
 library.
 
-The easiest way to enable SSL is to start the server in adhoc-mode.  In
-that case Werkzeug will generate an SSL certificate for you::
+Quickstart
+``````````
+
+The easiest way to do SSL based development with Werkzeug is by using it
+to generate an SSL certificate and private key and storing that somewhere
+and to then put it there.  For the certificate you need to provide the
+name of your server on generation or a `CN`.
+
+1.  Generate an SSL key and store it somewhere:
+
+    >>> from werkzeug.serving import make_ssl_devcert
+    >>> make_ssl_devcert('/path/to/the/key', host='localhost')
+    ('/path/to/the/key.crt', '/path/to/the/key.key')
+
+2.  Now this tuple can be passed as ``ssl_context`` to the
+    :func:`run_simple` method:
 
     run_simple('localhost', 4000, application,
-               ssl_context='adhoc')
+               ssl_context=('/path/to/the/key.crt',
+                            '/path/to/the/key.key'))
 
-The downside of this of course is that you will have to acknowledge the
-certificate each time the server is reloaded.  You can generate a
-certificate and key in advance and provide the SSL context when the server
-is started::
+You will have to acknowledge the certificate in your browser once then.
+
+Loading Contexts by Hand
+````````````````````````
+
+Instead of using a tuple as ``ssl_context`` you can also create the
+context programmatically.  This way you have better control over it::
 
     from OpenSSL import SSL
     ctx = SSL.Context(SSL.SSLv23_METHOD)
@@ -135,7 +155,26 @@ is started::
     ctx.use_certificate_file('ssl.cert')
     run_simple('localhost', 4000, application, ssl_context=ctx)
 
-A key and certificate can be created in advance using the openssl tool::
+Generating Certificates
+```````````````````````
+
+A key and certificate can be created in advance using the openssl tool
+instead of the :func:`make_ssl_devcert`.  This requires that you have
+the `openssl` command installed on your system::
 
     $ openssl genrsa 1024 > ssl.key
     $ openssl req -new -x509 -nodes -sha1 -days 365 -key ssl.key > ssl.cert
+
+Adhoc Certificates
+``````````````````
+
+The easiest way to enable SSL is to start the server in adhoc-mode.  In
+that case Werkzeug will generate an SSL certificate for you::
+
+    run_simple('localhost', 4000, application,
+               ssl_context='adhoc')
+
+The downside of this of course is that you will have to acknowledge the
+certificate each time the server is reloaded.  Adhoc certificates are
+discouraged because modern browsers do a bad job at supporting them for
+security reasons.

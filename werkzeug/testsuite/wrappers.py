@@ -126,6 +126,7 @@ class WrappersTestCase(WerkzeugTestCase):
     def test_url_request_descriptors(self):
         req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
         assert req.path == u'/bar'
+        assert req.full_path == u'/bar?foo=baz'
         assert req.script_root == u'/test'
         assert req.url == 'http://example.com/test/bar?foo=baz'
         assert req.base_url == 'http://example.com/test/bar'
@@ -430,7 +431,6 @@ class WrappersTestCase(WerkzeugTestCase):
         assert 'no-cache' in request.pragma
 
     def test_shallow_mode(self):
-        """Request object shallow mode"""
         request = wrappers.Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
         assert request.args['foo'] == 'bar'
         self.assert_raises(RuntimeError, lambda: request.form['foo'])

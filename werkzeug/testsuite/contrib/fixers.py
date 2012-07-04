@@ -48,7 +48,6 @@ class ServerFixerTestCase(WerkzeugTestCase):
             assert response.data == 'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
     def test_proxy_fix(self):
-        """Test the ProxyFix fixer"""
         @fixers.ProxyFix
         @Request.application
         def app(request):
@@ -92,7 +91,6 @@ class ServerFixerTestCase(WerkzeugTestCase):
         self.assert_equal(response.data, '127.0.0.1')
 
     def test_header_rewriter_fix(self):
-        """Test the HeaderRewriterFix fixer"""
         @Request.application
         def application(request):
             return Response("", headers=[

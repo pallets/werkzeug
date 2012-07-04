@@ -623,7 +623,8 @@ class RoutingTestCase(WerkzeugTestCase):
 
     def test_unicode_rules(self):
         m = r.Map([
-            r.Rule(u'/войти/', endpoint='enter')
+            r.Rule(u'/войти/', endpoint='enter'),
+            r.Rule(u'/foo+bar/', endpoint='foobar')
         ])
         a = m.bind(u'☃.example.com')
         try:
@@ -635,8 +636,20 @@ class RoutingTestCase(WerkzeugTestCase):
         self.assert_equal(endpoint, 'enter')
         self.assert_equal(values, {})
 
+        try:
+            a.match(u'/foo+bar')
+        except r.RequestRedirect, e:
+            self.assert_equal(e.new_url, 'http://xn--n3h.example.com/'
+                              'foo+bar/')
+        endpoint, values = a.match(u'/foo+bar/')
+        self.assert_equal(endpoint, 'foobar')
+        self.assert_equal(values, {})
+
         url = a.build('enter', {}, force_external=True)
         self.assert_equal(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
+
+        url = a.build('foobar', {}, force_external=True)
+        self.assert_equal(url, 'http://xn--n3h.example.com/foo+bar/')
 
 
 def suite():

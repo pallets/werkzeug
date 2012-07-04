@@ -184,7 +184,7 @@ True
 >>> 'utf-8' in request.accept_charsets
 True
 
-Normalization is available, so you can savely use alternative forms
+Normalization is available, so you can safely use alternative forms
 to perform containment checking:
 
 >>> 'UTF8' in request.accept_charsets
@@ -224,7 +224,7 @@ So imagine your standard WSGI "Hello World" application::
         start_response('200 OK', [('Content-Type', 'text/plain')])
         return ['Hello World!']
 
-With request objects it would look like this::
+With response objects it would look like this::
 
     from werkzeug.wrappers import Response
 
@@ -232,7 +232,7 @@ With request objects it would look like this::
         response = Response('Hello World!')
         return response(environ, start_response)
 
-Also unlike request objects response objects are designed to be modified.
+Also, unlike request objects, response objects are designed to be modified.
 So here is what you can do with them:
 
 >>> from werkzeug.wrappers import Response
