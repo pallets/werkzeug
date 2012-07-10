@@ -92,8 +92,8 @@ class URLsTestCase(WerkzeugTestCase):
         assert x == 'http://example.com/?foo=%2f%2f'
 
     def test_iri_support(self):
-        self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
-        self.assert_raises(UnicodeError, urls.iri_to_uri, 'http://föö.com/')
+        urls.uri_to_iri(u'http://föö.com/')
+        urls.iri_to_uri(u'http://föö.com/')
         assert urls.uri_to_iri('http://xn--n3h.net/') == u'http://\u2603.net/'
         assert urls.uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th') == \
             u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
@@ -160,6 +160,26 @@ class URLsTestCase(WerkzeugTestCase):
         rv = urls.iri_to_uri(u'/foo\x8f')
         assert rv == '/foo%C2%8F'
         assert type(rv) is str
+
+    def test_iri_to_uri_idempotence_ascii_only(self):
+        uri = u'http://www.idempoten.ce'
+        uri = urls.iri_to_uri(uri)
+        assert urls.iri_to_uri(uri) == uri
+
+    def test_iri_to_uri_idempotence_non_ascii(self):
+        uri = u'http://\N{SNOWMAN}/\N{SNOWMAN}'
+        uri = urls.iri_to_uri(uri)
+        assert urls.iri_to_uri(uri) == uri
+
+    def test_uri_to_iri_idempotence_ascii_only(self):
+        uri = 'http://www.idempoten.ce'
+        uri = urls.uri_to_iri(uri)
+        assert urls.uri_to_iri(uri) == uri
+
+    def test_uri_to_iri_idempotence_non_ascii(self):
+        uri = 'http://xn--n3h/%E2%98%83'
+        uri = urls.uri_to_iri(uri)
+        assert urls.uri_to_iri(uri) == uri
 
 
 def suite():
