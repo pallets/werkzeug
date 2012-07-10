@@ -164,36 +164,36 @@ class URLsTestCase(WerkzeugTestCase):
     def test_iri_to_uri_idempotence_ascii_only(self):
         uri = u'http://www.idempoten.ce'
         uri = urls.iri_to_uri(uri)
-        assert urls.iri_to_uri(uri) == uri
+        self.assertEqual(urls.iri_to_uri(uri), uri)
 
     def test_iri_to_uri_idempotence_non_ascii(self):
         uri = u'http://\N{SNOWMAN}/\N{SNOWMAN}'
         uri = urls.iri_to_uri(uri)
-        assert urls.iri_to_uri(uri) == uri
+        self.assertEqual(urls.iri_to_uri(uri), uri)
 
     def test_uri_to_iri_idempotence_ascii_only(self):
         uri = 'http://www.idempoten.ce'
         uri = urls.uri_to_iri(uri)
-        assert urls.uri_to_iri(uri) == uri
+        self.assertEqual(urls.uri_to_iri(uri), uri)
 
     def test_uri_to_iri_idempotence_non_ascii(self):
         uri = 'http://xn--n3h/%E2%98%83'
         uri = urls.uri_to_iri(uri)
-        assert urls.uri_to_iri(uri) == uri
+        self.assertEqual(urls.uri_to_iri(uri), uri)
 
     def test_iri_to_uri_to_iri(self):
         iri = u'http://föö.com/'
         uri = urls.iri_to_uri(iri)
-        assert urls.uri_to_iri(uri) == iri
+        self.assertEqual(urls.uri_to_iri(uri), iri)
 
     def test_uri_to_iri_to_uri(self):
         uri = 'http://xn--f-rgao.com/%C3%9E'
         iri = urls.uri_to_iri(uri)
-        assert urls.iri_to_uri(iri) == uri
+        self.assertEqual(urls.iri_to_uri(iri), uri)
 
     def test_uri_iri_normalization(self):
-        expected_uri = 'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93'
-        expected_iri = u'http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713'
+        uri = 'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93'
+        iri = u'http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713'
 
         tests = [
             u'http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713',
@@ -205,12 +205,12 @@ class URLsTestCase(WerkzeugTestCase):
         ]
 
         for test in tests:
-            assert urls.uri_to_iri(test) == expected_iri
-            assert urls.iri_to_uri(test) == expected_uri
-            assert urls.uri_to_iri(urls.iri_to_uri(test)) == expected_iri
-            assert urls.iri_to_uri(urls.uri_to_iri(test)) == expected_uri
-            assert urls.uri_to_iri(urls.uri_to_iri(test)) == expected_iri
-            assert urls.iri_to_uri(urls.iri_to_uri(test)) == expected_uri
+            self.assertEqual(urls.uri_to_iri(test), iri)
+            self.assertEqual(urls.iri_to_uri(test), uri)
+            self.assertEqual(urls.uri_to_iri(urls.iri_to_uri(test)), iri)
+            self.assertEqual(urls.iri_to_uri(urls.uri_to_iri(test)), uri)
+            self.assertEqual(urls.uri_to_iri(urls.uri_to_iri(test)), iri)
+            self.assertEqual(urls.iri_to_uri(urls.iri_to_uri(test)), uri)
 
 
 def suite():
