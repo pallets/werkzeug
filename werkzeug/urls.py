@@ -34,7 +34,6 @@ _hextochr = dict((a + b, chr(int(a + b, 16)))
 
 
 def _quote(s, safe='/', _join=''.join):
-    assert isinstance(s, str), 'quote only works on bytes'
     if not s or not s.rstrip(_always_safe + safe):
         return s
     try:
@@ -69,7 +68,6 @@ def _safe_urlsplit(s):
 
 
 def _unquote(s, unsafe=''):
-    assert isinstance(s, str), 'unquote only works on bytes'
     rv = s.split('%')
     if len(rv) == 1:
         return s
@@ -124,7 +122,10 @@ def iri_to_uri(iri, charset='utf-8'):
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
-    iri = unicode(iri)
+    if type(iri) is str:
+        iri = iri.decode(charset)
+    else:
+        iri = unicode(iri)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = scheme.encode('ascii')
@@ -170,7 +171,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: the charset of the URI
     :param errors: the error handling on decode
     """
-    uri = url_fix(str(uri), charset)
+    uri = url_fix(uri, charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
     scheme = _decode_unicode(scheme, 'ascii', errors)
@@ -178,31 +179,35 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     try:
         hostname = hostname.decode('idna')
     except UnicodeError:
-        # dammit, that codec raised an error.  Because it does not support
-        # any error handling we have to fake it.... badly
-        if errors not in ('ignore', 'replace'):
-            raise
-        hostname = hostname.decode('ascii', errors)
+        # IDNA decoding failed. We assume this to mean that we've already
+        # decoded any IDNA parts and that the failure is due to the presence
+        # of non-ASCII characters in the string, our reasoning being that
+        # this operation should be idempotent and further attempts at decoding
+        # may result in corruption.
+        #
+        # This may not be correct and may need further thought.
+        pass
 
     if auth:
         if ':' in auth:
             auth, password = auth.split(':', 1)
         else:
             password = None
-        auth = _decode_unicode(_unquote(auth), charset, errors)
+        auth = _decode_unicode(_unquote(auth.encode(charset)), charset, errors)
         if password:
-            auth += u':' + _decode_unicode(_unquote(password),
+            auth += u':' + _decode_unicode(_unquote(password.encode(charset)),
                                            charset, errors)
         hostname = auth + u'@' + hostname
     if port:
         # port should be numeric, but you never know...
         hostname += u':' + port.decode(charset, errors)
 
-    path = _decode_unicode(_unquote(path, '/;?'), charset, errors)
-    query = _decode_unicode(_unquote(query, ';/?:@&=+,$'),
+    path = _decode_unicode(_unquote(path.encode(charset), '/;?'), charset, errors)
+    query = _decode_unicode(_unquote(query.encode(charset), ';/?:@&=+,$'),
                             charset, errors)
 
-    return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+    thing = urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+    return thing
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
@@ -441,10 +446,12 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    if isinstance(s, unicode):
-        s = s.encode(charset, 'replace')
     scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
-    path = _quote(path, '/%')
+    if type(path) is unicode:
+        path = path.encode(charset)
+    if type(qs) is unicode:
+        qs = qs.encode(charset)
+    path = _quote(path, '/%').decode(charset)
     qs = _quote_plus(qs, ':&%=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
