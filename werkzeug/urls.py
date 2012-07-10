@@ -122,7 +122,10 @@ def iri_to_uri(iri, charset='utf-8'):
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
-    iri = unicode(iri)
+    if type(iri) is str:
+        iri = iri.decode(charset)
+    else:
+        iri = unicode(iri)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = scheme.encode('ascii')
@@ -200,7 +203,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         hostname += u':' + port.decode(charset, errors)
 
     path = _decode_unicode(_unquote(path.encode(charset), '/;?'), charset, errors)
-    query = _decode_unicode(_unquote(query, ';/?:@&=+,$'),
+    query = _decode_unicode(_unquote(query.encode(charset), ';/?:@&=+,$'),
                             charset, errors)
 
     thing = urlparse.urlunsplit([scheme, hostname, path, query, fragment])
@@ -444,7 +447,11 @@ def url_fix(s, charset='utf-8'):
                     unicode string.
     """
     scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
-    path = _quote(path.encode(charset), '/%').decode(charset)
+    if type(path) is unicode:
+        path = path.encode(charset)
+    if type(qs) is unicode:
+        qs = qs.encode(charset)
+    path = _quote(path, '/%').decode(charset)
     qs = _quote_plus(qs, ':&%=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 

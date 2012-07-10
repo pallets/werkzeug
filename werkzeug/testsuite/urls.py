@@ -181,6 +181,37 @@ class URLsTestCase(WerkzeugTestCase):
         uri = urls.uri_to_iri(uri)
         assert urls.uri_to_iri(uri) == uri
 
+    def test_iri_to_uri_to_iri(self):
+        iri = u'http://föö.com/'
+        uri = urls.iri_to_uri(iri)
+        assert urls.uri_to_iri(uri) == iri
+
+    def test_uri_to_iri_to_uri(self):
+        uri = 'http://xn--f-rgao.com/%C3%9E'
+        iri = urls.uri_to_iri(uri)
+        assert urls.iri_to_uri(iri) == uri
+
+    def test_uri_iri_normalization(self):
+        expected_uri = 'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93'
+        expected_iri = u'http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713'
+
+        tests = [
+            u'http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713',
+            u'http://xn--f-rgao.com/\u2610/fred?utf8=\N{CHECK MARK}',
+            'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93',
+            u'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93',
+            u'http://föñ.com/\u2610/fred?utf8=%E2%9C%93',
+            'http://xn--f-rgao.com/\xe2\x98\x90/fred?utf8=\xe2\x9c\x93',
+        ]
+
+        for test in tests:
+            assert urls.uri_to_iri(test) == expected_iri
+            assert urls.iri_to_uri(test) == expected_uri
+            assert urls.uri_to_iri(urls.iri_to_uri(test)) == expected_iri
+            assert urls.iri_to_uri(urls.uri_to_iri(test)) == expected_uri
+            assert urls.uri_to_iri(urls.uri_to_iri(test)) == expected_iri
+            assert urls.iri_to_uri(urls.iri_to_uri(test)) == expected_uri
+
 
 def suite():
     suite = unittest.TestSuite()
