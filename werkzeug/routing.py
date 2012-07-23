@@ -1164,6 +1164,12 @@ class Map(object):
         if server_name is None:
             if 'HTTP_HOST' in environ:
                 server_name = environ['HTTP_HOST']
+                if (environ['wsgi.url_scheme'] == 'http'
+                        and server_name.endswith(':80')):
+                    server_name = server_name[:-3]
+                if (environ['wsgi.url_scheme'] == 'https'
+                        and server_name.endswith(':443')):
+                    server_name = server_name[:-4]
             else:
                 server_name = environ['SERVER_NAME']
                 if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
@@ -1173,6 +1179,12 @@ class Map(object):
             server_name = server_name.lower()
             if 'HTTP_HOST' in environ:
                 wsgi_server_name = environ.get('HTTP_HOST')
+                if (environ['wsgi.url_scheme'] == 'http'
+                        and wsgi_server_name.endswith(':80')):
+                    wsgi_server_name = wsgi_server_name[:-3]
+                if (environ['wsgi.url_scheme'] == 'https'
+                        and wsgi_server_name.endswith(':443')):
+                    wsgi_server_name = wsgi_server_name[:-4]
             else:
                 wsgi_server_name = environ.get('SERVER_NAME')
                 if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
