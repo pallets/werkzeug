@@ -30,6 +30,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
     def test_mime_accept(self):
         a = http.parse_accept_header('text/xml,application/xml,'
                                      'application/xhtml+xml,'
+                                     'application/foo;quiet=no; bar=baz;q=0.6,'
                                      'text/html;q=0.9,text/plain;q=0.8,'
                                      'image/png,*/*;q=0.5',
                                      datastructures.MIMEAccept)
@@ -37,6 +38,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(a['image/png'],  1)
         self.assert_equal(a['text/plain'],  0.8)
         self.assert_equal(a['foo/bar'],  0.5)
+        self.assert_equal(a['application/foo;quiet=no; bar=baz'],  0.6)
         self.assert_equal(a[a.find('foo/bar')],  ('*/*', 0.5))
 
     def test_accept_matches(self):

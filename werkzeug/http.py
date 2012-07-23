@@ -36,7 +36,8 @@ from werkzeug._internal import HTTP_STATUS_CODES, _dump_date, \
      _ExtendedCookie, _ExtendedMorsel, _decode_unicode
 
 
-_accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
+_accept_re = re.compile(r'([^\s;,]+(?:;\s*(?:[^;,q][^;,]*|q[^\s;,=][^;,]*))*)'
+                        r'(?:;\s*q=(\d*(?:\.\d+)?))?')
 _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
