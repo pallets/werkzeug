@@ -37,9 +37,9 @@ from werkzeug._compat import to_unicode, iteritems, text_type, \
      integer_types
 
 
-# incorrect
 _cookie_charset = 'latin1'
-_accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
+_accept_re = re.compile(r'([^\s;,]+(?:;\s*(?:[^;,q][^;,]*|q[^\s;,=][^;,]*))*)'
+                        r'(?:;\s*q=(\d*(?:\.\d+)?))?')
 _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
