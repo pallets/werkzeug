@@ -468,7 +468,7 @@ class TooManyRequests(HTTPException):
     )    
 
 class RequestHeaderFieldsTooLarge(HTTPException):
-    """*431* `RequestHeaderFieldsTooLarge`
+    """*431* `Request Header Fields Too Large`
 
     The server refuses to process the request because the header fields are too
     large. One or more individual fields may be too large, or the set of all
