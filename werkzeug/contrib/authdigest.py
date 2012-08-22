@@ -76,6 +76,8 @@ class RealmDigestDB(object):
         r = self.alg.hashPassword(user, self.realm, password)
         self.db[user] = r
         return r
+    def del_user(self, user):
+        del self.db[user]
 
     def __contains__(self, user):
         return user in self.db
