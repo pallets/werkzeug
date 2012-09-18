@@ -336,20 +336,27 @@ class SharedDataMiddleware(object):
         """
         return True
 
-    def _opener(self, filename):
+    def _file_opener(self, filename):
         return lambda: (
             open(filename, 'rb'),
             datetime.utcfromtimestamp(os.path.getmtime(filename)),
             int(os.path.getsize(filename))
         )
+        
+    def _stream_opener(self, stream):
+        stream.seek(0,2)
+        size = stream.tell()
+        stream.seek(0)
+        return lambda: (
+            stream, datetime.utcnow(), size
+        )
 
     def get_file_loader(self, filename):
-        return lambda x: (os.path.basename(filename), self._opener(filename))
+        return lambda x: (os.path.basename(filename), self._file_opener(filename))
 
     def get_package_loader(self, package, package_path):
         from pkg_resources import DefaultProvider, ResourceManager, \
              get_provider
-        loadtime = datetime.utcnow()
         provider = get_provider(package)
         manager = ResourceManager()
         filesystem_bound = isinstance(provider, DefaultProvider)
@@ -361,13 +368,10 @@ class SharedDataMiddleware(object):
                 return None, None
             basename = posixpath.basename(path)
             if filesystem_bound:
-                return basename, self._opener(
+                return basename, self._file_opener(
                     provider.get_resource_filename(manager, path))
-            return basename, lambda: (
-                provider.get_resource_stream(manager, path),
-                loadtime,
-                0
-            )
+            return basename, self._stream_opener(
+                provider.get_resource_stream(manager, path))
         return loader
 
     def get_directory_loader(self, directory):
@@ -377,7 +381,7 @@ class SharedDataMiddleware(object):
             else:
                 path = directory
             if os.path.isfile(path):
-                return os.path.basename(path), self._opener(path)
+                return os.path.basename(path), self._file_opener(path)
             return None, None
         return loader
 
