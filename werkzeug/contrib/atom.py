@@ -254,6 +254,8 @@ class FeedEntry(object):
     :param links: additional links.  Must be a list of dictionaries with
                   href (required) and rel, type, hreflang, title, length
                   (all optional)
+    :param categories: categories for the entry. Must be a list of dictionaries
+                       with term (required), scheme and label (all optional)
     :param xml_base: The xml base (url) for this feed item.  If not provided
                      it will default to the item url.
 
@@ -277,6 +279,7 @@ class FeedEntry(object):
         self.published = kwargs.get('published')
         self.rights = kwargs.get('rights')
         self.links = kwargs.get('links', [])
+        self.categories = kwargs.get('categories', [])
         self.xml_base = kwargs.get('xml_base', feed_url)
 
         if not hasattr(self.author, '__iter__') \
@@ -324,6 +327,9 @@ class FeedEntry(object):
         for link in self.links:
             yield u'  <link %s/>\n' % ''.join('%s="%s" ' % \
                 (k, escape(link[k], True)) for k in link)
+        for category in self.categories:
+            yield u'  <category %s/>\n' % ''.join('%s="%s" ' % \
+                (k, escape(category[k], True)) for k in category)
         if self.summary:
             yield u'  ' + _make_text_block('summary', self.summary,
                                            self.summary_type)
