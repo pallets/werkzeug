@@ -275,7 +275,7 @@ class FeedEntry(object):
         self.updated = kwargs.get('updated')
         self.summary = kwargs.get('summary')
         self.summary_type = kwargs.get('summary_type', 'html')
-        self.author = kwargs.get('author')
+        self.author = kwargs.get('author', ())
         self.published = kwargs.get('published')
         self.rights = kwargs.get('rights')
         self.links = kwargs.get('links', [])
