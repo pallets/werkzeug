@@ -361,6 +361,11 @@ class BaseRequest(object):
                           self.url_charset, errors=self.encoding_errors,
                           cls=self.parameter_storage_class)
 
+    @property
+    def GET(self):
+        """An alias of BaseRequest.args"""
+        return self.args
+
     @cached_property
     def data(self):
         """This reads the buffered incoming data from the client into the
@@ -383,6 +388,11 @@ class BaseRequest(object):
         self._load_form_data()
         return self.form
 
+    @property
+    def POST(self):
+        """An alias of BaseRequest.form"""
+        return self.form
+
     @cached_property
     def values(self):
         """Combined multi dict for :attr:`args` and :attr:`form`."""
@@ -392,6 +402,11 @@ class BaseRequest(object):
                 d = MultiDict(d)
             args.append(d)
         return CombinedMultiDict(args)
+
+    @property
+    def REQUEST(self):
+        """An alias of BaseRequest.values"""
+        return self.values
 
     @cached_property
     def files(self):
