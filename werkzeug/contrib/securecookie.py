@@ -233,6 +233,9 @@ class SecureCookie(ModificationTrackingDict):
         :param secret_key: the secret key used to serialize the cookie.
         :return: a new :class:`SecureCookie`.
         """
+        # explicitly convert it into a bytestring because python 2.6
+        # no longer performs an implicit string conversion on hmac
+        secret_key = str(secret_key)
         if isinstance(string, unicode):
             string = string.encode('utf-8', 'replace')
         try:
