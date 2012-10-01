@@ -9,12 +9,23 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import sys
 import codecs
 import mimetypes
 from itertools import repeat
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 
+
+try:
+    long
+except NameError: # pragma: no cover
+    long = int
+
+try:
+    basestring
+except NameError: # pragma: no cover
+    basestring = str
 
 _locale_delim_re = re.compile(r'[_-]')
 
@@ -28,10 +39,10 @@ def iter_multi_items(mapping):
     without dropping any from more complex structures.
     """
     if isinstance(mapping, MultiDict):
-        for item in mapping.iteritems(multi=True):
+        for item in mapping.items(multi=True):
             yield item
     elif isinstance(mapping, dict):
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if isinstance(value, (tuple, list)):
                 for value in value:
                     yield key, value
@@ -318,7 +329,7 @@ class MultiDict(TypeConversionDict):
             dict.__init__(self, ((k, l[:]) for k, l in mapping.iterlists()))
         elif isinstance(mapping, dict):
             tmp = {}
-            for key, value in mapping.iteritems():
+            for key, value in mapping.items():
                 if isinstance(value, (tuple, list)):
                     value = list(value)
                 else:
@@ -493,7 +504,7 @@ class MultiDict(TypeConversionDict):
 
     def iteritems(self, multi=False):
         """Like :meth:`items` but returns an iterator."""
-        for key, values in dict.iteritems(self):
+        for key, values in dict.items(self):
             if multi:
                 for value in values:
                     yield key, value
@@ -502,7 +513,7 @@ class MultiDict(TypeConversionDict):
 
     def iterlists(self):
         """Like :meth:`items` but returns an iterator."""
-        for key, values in dict.iteritems(self):
+        for key, values in dict.items(self):
             yield key, list(values)
 
     def itervalues(self):
@@ -553,7 +564,7 @@ class MultiDict(TypeConversionDict):
         """
         try:
             return dict.pop(self, key)[0]
-        except KeyError, e:
+        except KeyError as e:
             if default is not _missing:
                 return default
             raise BadRequestKeyError(str(e))
@@ -563,7 +574,7 @@ class MultiDict(TypeConversionDict):
         try:
             item = dict.popitem(self)
             return (item[0], item[1][0])
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
 
     def poplist(self, key):
@@ -580,7 +591,7 @@ class MultiDict(TypeConversionDict):
         """Pop a ``(key, list)`` tuple from the dict."""
         try:
             return dict.popitem(self)
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
 
     def __copy__(self):
@@ -767,7 +778,7 @@ class OrderedMultiDict(MultiDict):
     def pop(self, key, default=_missing):
         try:
             buckets = dict.pop(self, key)
-        except KeyError, e:
+        except KeyError as e:
             if default is not _missing:
                 return default
             raise BadRequestKeyError(str(e))
@@ -778,7 +789,7 @@ class OrderedMultiDict(MultiDict):
     def popitem(self):
         try:
             key, buckets = dict.popitem(self)
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
@@ -787,7 +798,7 @@ class OrderedMultiDict(MultiDict):
     def popitemlist(self):
         try:
             key, buckets = dict.popitem(self)
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)

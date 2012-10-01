@@ -10,7 +10,12 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-from cStringIO import StringIO
+
+try:
+    from cStringIO import StringIO
+except ImportError: # pragma: no cover
+    from io import StringIO
+
 from tempfile import TemporaryFile
 from itertools import chain, repeat
 from functools import update_wrapper

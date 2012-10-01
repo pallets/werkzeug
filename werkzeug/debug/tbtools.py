@@ -419,7 +419,7 @@ class Frame(object):
             code = compile(code, '<interactive>', mode)
         if mode != 'exec':
             return eval(code, self.globals, self.locals)
-        exec code in self.globals, self.locals
+        exec(code, self.globals, self.locals)
 
     @cached_property
     def sourcelines(self):

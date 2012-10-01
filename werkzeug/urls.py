@@ -8,7 +8,16 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import urlparse
+
+import sys
+
+if sys.version_info > (3, ):
+    unicode = str
+
+try:
+    import urlparse
+except ImportError: # pragma: no cover
+    import urllib.parse as urlparse
 
 from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items
@@ -20,11 +29,11 @@ _always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 'abcdefghijklmnopqrstuvwxyz'
                 '0123456789_.-')
 _safe_map = dict((c, c) for c in _always_safe)
-for i in xrange(0x80):
+for i in range(0x80):
     c = chr(i)
     if c not in _safe_map:
         _safe_map[c] = '%%%02X' % i
-_safe_map.update((chr(i), '%%%02X' % i) for i in xrange(0x80, 0x100))
+_safe_map.update((chr(i), '%%%02X' % i) for i in range(0x80, 0x100))
 _safemaps = {}
 
 #: lookup table for encoded characters.
@@ -34,7 +43,11 @@ _hextochr = dict((a + b, chr(int(a + b, 16)))
 
 
 def _quote(s, safe='/', _join=''.join):
-    assert isinstance(s, str), 'quote only works on bytes'
+    if sys.version_info < (3, ):
+        assert isinstance(s, str), 'quote only works on bytes'
+    else:
+        s = s.decode('utf-8')
+
     if not s or not s.rstrip(_always_safe + safe):
         return s
     try:
@@ -146,6 +159,12 @@ def iri_to_uri(iri, charset='utf-8'):
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
+    # print('*** scheme = %r' % scheme)
+    # print('*** hostname = %r' % hostname)
+    # print('*** path = %r' % path)
+    # print('*** query = %r' % query)
+    # print('*** fragment = %r' % fragment)
+    # return path
     return str(urlparse.urlunsplit([scheme, hostname, path, query, fragment]))
 
 

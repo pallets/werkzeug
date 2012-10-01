@@ -11,7 +11,12 @@
 import re
 import os
 import urllib
-import urlparse
+
+try:
+    import urlparse
+except ImportError: # pragma: no cover
+    import urllib.parse
+
 import posixpath
 import mimetypes
 from itertools import chain, repeat
@@ -495,7 +500,12 @@ class ClosingIterator(object):
 
     def __init__(self, iterable, callbacks=None):
         iterator = iter(iterable)
-        self._next = iterator.next
+
+        try:
+            self._next = iterator.next
+        except AttributeError:
+            self._next = iterator.__next__
+
         if callbacks is None:
             callbacks = []
         elif callable(callbacks):

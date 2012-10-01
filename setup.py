@@ -68,6 +68,7 @@ setup(
     author_email='armin.ronacher@active-4.com',
     description='The Swiss Army knife of Python web development',
     long_description=__doc__,
+    use_2to3=True,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',

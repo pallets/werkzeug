@@ -13,7 +13,12 @@ from __future__ import with_statement
 
 import sys
 import unittest
-from cStringIO import StringIO, OutputType
+
+try:
+    from cStringIO import StringIO, OutputType
+except ImportError: # pragma: no cover
+    from io import StringIO
+    OutputType = StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 

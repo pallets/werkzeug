@@ -22,12 +22,22 @@ try:
     from email.utils import parsedate_tz
 except ImportError: # pragma: no cover
     from email.Utils import parsedate_tz
-from urllib2 import parse_http_list as _parse_list_header
+
+try:
+    from urllib2 import parse_http_list as _parse_list_header
+except ImportError: # pragma: nocover
+    pass
+
 from datetime import datetime, timedelta
 try:
     from hashlib import md5
 except ImportError: # pragma: no cover
     from md5 import new as md5
+
+try:
+    unicode
+except NameError: # pragma: no cover
+    unicode = str
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
@@ -240,7 +250,7 @@ def parse_options_header(value):
         return '', {}
 
     parts = _tokenize(';' + value)
-    name = parts.next()[0]
+    name = next(parts)[0]
     extra = dict(parts)
     return name, extra
 
@@ -351,7 +361,7 @@ def parse_authorization_header(value):
     if auth_type == 'basic':
         try:
             username, password = auth_info.decode('base64').split(':', 1)
-        except Exception, e:
+        except Exception as e:
             return
         return Authorization('basic', {'username': username,
                                        'password': password})

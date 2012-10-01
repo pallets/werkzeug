@@ -10,8 +10,20 @@
 """
 import inspect
 from weakref import WeakKeyDictionary
-from cStringIO import StringIO
-from Cookie import SimpleCookie, Morsel, CookieError
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
+try:
+    from Cookie import SimpleCookie, Morsel, CookieError
+except ImportError:
+    from http.cookies import SimpleCookie, Morsel, CookieError
+
 from time import gmtime
 from datetime import datetime, date
 
@@ -202,7 +214,7 @@ def _decode_unicode(value, charset, errors):
         errors = 'strict'
     try:
         return value.decode(charset, errors)
-    except UnicodeError, e:
+    except UnicodeError as e:
         if fallback is not None:
             return value.decode(fallback, 'replace')
         from werkzeug.exceptions import HTTPUnicodeError
