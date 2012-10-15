@@ -17,3 +17,11 @@ bulletin boards, etc.).
 
 Details and example applications are available on the
 `Werkzeug website <http://werkzeug.pocoo.org/>`_.
+
+Build status
+============
+
+.. image:: https://secure.travis-ci.org/mitsuhiko/werkzeug.png?branch=master
+   :target: http://travis-ci.org/mitsuhiko/werkzeug
+
+

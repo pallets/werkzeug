@@ -10,3 +10,4 @@ bench/a
 bench/b
 .coverage
 coverage_out
+.tox
