@@ -618,7 +618,7 @@ def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
                extra_files=None, reloader_interval=1, threaded=False,
                processes=1, request_handler=None, static_files=None,
-               passthrough_errors=False, ssl_context=None):
+               passthrough_errors=False, ssl_context=None, lodgeit_url=None):
     """Start an application using wsgiref and with an optional reloader.  This
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
@@ -640,6 +640,7 @@ def run_simple(hostname, port, application, use_reloader=False,
 
     .. versionadded:: 0.9
        Added command-line interface.
+       `lodgeit_url` was added.
 
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
@@ -673,10 +674,13 @@ def run_simple(hostname, port, application, use_reloader=False,
                         the string ``'adhoc'`` if the server should
                         automatically create one, or `None` to disable SSL
                         (which is the default).
+    :param lodgeit_url: the base URL of the LodgeIt instance to use for pasting
+                        tracebacks.
     """
-    if use_debugger:
+    if use_debugger or lodgeit_url is not None:
         from werkzeug.debug import DebuggedApplication
-        application = DebuggedApplication(application, use_evalex)
+        application = DebuggedApplication(application, evalex=use_evalex,
+                                          lodgeit_url=lodgeit_url)
     if static_files:
         from werkzeug.wsgi import SharedDataMiddleware
         application = SharedDataMiddleware(application, static_files)
