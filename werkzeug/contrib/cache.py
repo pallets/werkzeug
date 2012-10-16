@@ -304,6 +304,13 @@ class MemcachedCache(BaseCache):
     event that a tuple/list is passed, Werkzeug tries to import the best
     available memcache library.
 
+    This cache looks into the following packages/modules to find bindings for
+    memcached:
+
+        - ``pylibmc``
+        - ``google.appengine.api.memcached``
+        - ``memcached``
+
     Implementation notes:  This cache backend works around some limitations in
     memcached to simplify the interface.  For example unicode keys are encoded
     to utf-8 on the fly.  Methods such as :meth:`~BaseCache.get_dict` return
