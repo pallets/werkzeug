@@ -610,6 +610,10 @@ def run_simple(hostname, port, application, use_reloader=False,
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
 
+    This function has a command-line interface too::
+
+        python -m werkzeug.serving --help
+
     .. versionadded:: 0.5
        `static_files` was added to simplify serving of static files as well
        as `passthrough_errors`.
@@ -620,6 +624,9 @@ def run_simple(hostname, port, application, use_reloader=False,
     .. versionadded:: 0.8
        Added support for automatically loading a SSL context from certificate
        file and private key.
+
+    .. versionadded:: 0.9
+       Added command-line interface.
 
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
@@ -683,3 +690,42 @@ def run_simple(hostname, port, application, use_reloader=False,
         run_with_reloader(inner, extra_files, reloader_interval)
     else:
         inner()
+
+def main():
+    '''A simple command-line interface for :py:func:`run_simple`.'''
+
+    # in contrast to argparse, this works at least under Python < 2.7
+    import optparse
+    from werkzeug.utils import import_string
+
+    parser = optparse.OptionParser(usage='Usage: %prog [options] app_module:app_object')
+    parser.add_option('-b', '--bind', dest='address',
+                      help='The hostname:port the app should listen on.')
+    parser.add_option('-d', '--debug', dest='use_debugger',
+                      action='store_true', default=False,
+                      help='Use Werkzeug\'s debugger.')
+    parser.add_option('-r', '--reload', dest='use_reloader',
+                      action='store_true', default=False,
+                      help='Reload Python process if modules change.')
+    options, args = parser.parse_args()
+
+    hostname, port = None, None
+    if options.address:
+        address = options.address.split(':')
+        hostname = address[0]
+        if len(address) > 1:
+            port = address[1]
+
+    if len(args) != 1:
+        print('No application supplied, or too much. See --help')
+        exit(1)
+    app = import_string(args[0])
+
+    run_simple(
+        hostname=(hostname or '127.0.0.1'), port=int(port or 5000),
+        application=app, use_reloader=options.use_reloader,
+        use_debugger=options.use_debugger
+    )
+
+if __name__ == '__main__':
+    main()
