@@ -92,9 +92,7 @@ class DebugReprTestCase(WerkzeugTestCase):
             def __repr__(self):
                 1/0
 
-        assert debug_repr(Foo()) == \
-            u'<span class="brokenrepr">&lt;broken repr (ZeroDivisionError: ' \
-            u'integer division or modulo by zero)&gt;</span>'
+        assert debug_repr(Foo()).startswith(u'<span class="brokenrepr">&lt;broken repr (ZeroDivisionError: ')
 
 
 class DebugHelpersTestCase(WerkzeugTestCase):
