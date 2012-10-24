@@ -239,11 +239,11 @@ class FeedEntry(object):
                not present the URL is used, but one of both is required.
     :param updated: the time the entry was modified the last time.  Must
                     be a :class:`datetime.datetime` object. Required.
-    :param author: the author of the feed.  Must be either a string (the
+    :param author: the author of the entry.  Must be either a string (the
                    name) or a dict with name (required) and uri or
                    email (both optional).  Can be a list of (may be
                    mixed, too) strings and dicts, too, if there are
-                   multiple authors. Required if not every entry has an
+                   multiple authors. Required if the feed does not have an
                    author element.
     :param published: the time the entry was initially published.  Must
                       be a :class:`datetime.datetime` object.
