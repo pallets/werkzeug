@@ -355,7 +355,10 @@ class _SSLConnectionFix(object):
         return getattr(self._con, attrib)
 
     def shutdown(self, arg=None):
-        self._con.shutdown()
+        try:
+            self._con.shutdown()
+        except Exception:
+            pass
 
 
 def select_ip_version(host, port):
