@@ -318,7 +318,7 @@ def make_ssl_devcert(base_path, host=None, cn=None):
 def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
     from OpenSSL import SSL
-    pkey, cert = generate_adhoc_ssl_pair()
+    cert, pkey = generate_adhoc_ssl_pair()
     ctx = SSL.Context(SSL.SSLv23_METHOD)
     ctx.use_privatekey(pkey)
     ctx.use_certificate(cert)
