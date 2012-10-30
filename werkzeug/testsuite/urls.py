@@ -62,8 +62,9 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_sorted_url_encode(self):
         assert urls.url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
-        assert urls.url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
-                          key=lambda x: x[0].lower()) == 'A=1&a=2&B=3&b=4'
+        assert sorted(urls.url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
+                          key=lambda x: x[0].lower()).split('&')) == \
+                ['A=1', 'B=3', 'a=2', 'b=4']
 
     def test_streamed_url_encoding(self):
         out = StringIO()

@@ -307,7 +307,8 @@ class WrappersTestCase(WerkzeugTestCase):
         response.cache_control.must_revalidate = True
         response.cache_control.max_age = 60
         response.headers['Content-Length'] = len(response.data)
-        assert response.headers['Cache-Control'] == 'must-revalidate, max-age=60'
+        assert response.headers['Cache-Control'] in ('must-revalidate, max-age=60',
+                                                     'max-age=60, must-revalidate')
 
         assert 'date' not in response.headers
         env = create_environ()
