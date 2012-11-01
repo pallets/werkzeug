@@ -14,6 +14,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug.wrappers import Response
 from werkzeug.test import create_environ
+from werkzeug._internal import _b
 
 
 class CompatTestCase(WerkzeugTestCase):
@@ -47,7 +48,7 @@ class CompatTestCase(WerkzeugTestCase):
         myresp = MyResponse('Foo')
         resp = Response.from_app(myresp, create_environ(method='GET'))
         assert resp.headers['x-foo'] == 'meh'
-        assert resp.data == 'Foo'
+        assert resp.data == _b('Foo')
 
         warnings.resetwarnings()
 

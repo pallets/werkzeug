@@ -18,6 +18,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.contrib import wrappers
 from werkzeug import routing
 from werkzeug.wrappers import Request, Response
+from werkzeug._internal import _b
 
 
 class WrappersTestCase(WerkzeugTestCase):
@@ -80,7 +81,7 @@ class WrappersTestCase(WerkzeugTestCase):
         resp.mimetype_params['charset'] = 'iso-8859-15'
         assert resp.charset == 'iso-8859-15'
         resp.data = u'Hällo Wörld'
-        assert ''.join(resp.iter_encoded()) == \
+        assert _b('').join(resp.iter_encoded()) == \
                u'Hällo Wörld'.encode('iso-8859-15')
         del resp.headers['content-type']
         try:

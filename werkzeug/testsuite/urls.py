@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
+import sys
 import unittest
 from StringIO import StringIO
 
@@ -92,8 +93,9 @@ class URLsTestCase(WerkzeugTestCase):
         assert x == 'http://example.com/?foo=%2f%2f'
 
     def test_iri_support(self):
-        self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
-        self.assert_raises(UnicodeError, urls.iri_to_uri, 'http://föö.com/')
+        if sys.version_info < (3, ):
+            self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
+            self.assert_raises(UnicodeError, urls.iri_to_uri, 'http://föö.com/')
         assert urls.uri_to_iri('http://xn--n3h.net/') == u'http://\u2603.net/'
         assert urls.uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th') == \
             u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'

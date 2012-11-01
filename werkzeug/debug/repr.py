@@ -22,6 +22,11 @@ except ImportError: # pragma: no cover
     deque = None
 from werkzeug.utils import escape
 
+try:
+    bytes
+except:
+    bytes = str
+
 
 missing = object()
 _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
@@ -74,7 +79,9 @@ class _Helper(object):
             return
         import pydoc
         pydoc.help(topic)
-        rv = sys.stdout.reset().decode('utf-8', 'ignore')
+        rv = sys.stdout.reset()
+        if sys.version_info < (3, ):
+            rv = rv.decode('utf-8', 'ignore')
         paragraphs = _paragraph_re.split(rv)
         if len(paragraphs) > 1:
             title = paragraphs[0]
@@ -135,8 +142,14 @@ class DebugReprGenerator(object):
     del _sequence_repr_maker
 
     def regex_repr(self, obj):
-        pattern = repr(obj.pattern).decode('string-escape', 'ignore')
-        if pattern[:1] == 'u':
+        pattern = repr(obj.pattern)
+        if sys.version_info >= (3, ):
+            pattern = pattern.encode('ascii').decode('unicode-escape', 'ignore')
+        else:
+            pattern = pattern.decode('string-escape', 'ignore')
+        if pattern[:1] == 'b':
+            pattern = 'br' + pattern[1:]
+        elif pattern[:1] == 'u':
             pattern = 'ur' + pattern[1:]
         else:
             pattern = 'r' + pattern
@@ -144,10 +157,16 @@ class DebugReprGenerator(object):
 
     def string_repr(self, obj, limit=70):
         buf = ['<span class="string">']
-        escaped = escape(obj)
+        escaped = (escape(obj) if isinstance(obj, unicode)
+                   else escape(obj.decode('latin1')).encode('latin1'))
         a = repr(escaped[:limit])
         b = repr(escaped[limit:])
-        if isinstance(obj, unicode):
+        if sys.version_info >= (3, ):
+            if isinstance(obj, bytes):
+                buf.append('b')
+                a = a[1:]
+                b = b[1:]
+        elif isinstance(obj, unicode):
             buf.append('u')
             a = a[1:]
             b = b[1:]
@@ -156,7 +175,7 @@ class DebugReprGenerator(object):
         else:
             buf.append(a)
         buf.append('</span>')
-        return _add_subclass_info(u''.join(buf), obj, (str, unicode))
+        return _add_subclass_info(u''.join(buf), obj, (bytes, unicode))
 
     def dict_repr(self, d, recursive, limit=5):
         if recursive:
@@ -178,15 +197,17 @@ class DebugReprGenerator(object):
         return _add_subclass_info(u''.join(buf), d, dict)
 
     def object_repr(self, obj):
-        return u'<span class="object">%s</span>' % \
-               escape(repr(obj).decode('utf-8', 'replace'))
+        tmp = repr(obj)
+        if not isinstance(tmp, unicode):
+            tmp = tmp.decode('utf-8', 'replace')
+        return u'<span class="object">%s</span>' % escape(tmp)
 
     def dispatch_repr(self, obj, recursive):
         if obj is helper:
             return u'<span class="help">%r</span>' % helper
         if isinstance(obj, (int, long, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if isinstance(obj, basestring):
+        if isinstance(obj, (bytes, unicode)):
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)
@@ -209,8 +230,10 @@ class DebugReprGenerator(object):
             info = ''.join(format_exception_only(*sys.exc_info()[:2]))
         except Exception: # pragma: no cover
             info = '?'
+        if not isinstance(info, unicode):
+            info = info.decode('utf-8', 'ignore')
         return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' \
-               u'</span>' % escape(info.decode('utf-8', 'ignore').strip())
+               u'</span>' % escape(info.strip())
 
     def repr(self, obj):
         recursive = False

@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import sys
 import codecs
 import mimetypes
 from itertools import repeat
@@ -493,7 +494,8 @@ class MultiDict(TypeConversionDict):
 
     def iteritems(self, multi=False):
         """Like :meth:`items` but returns an iterator."""
-        for key, values in dict.iteritems(self):
+        items = getattr(dict, 'items', None) or getattr(dict, 'iteritems')
+        for key, values in items(self):
             if multi:
                 for value in values:
                     yield key, value
@@ -502,17 +504,20 @@ class MultiDict(TypeConversionDict):
 
     def iterlists(self):
         """Like :meth:`items` but returns an iterator."""
-        for key, values in dict.iteritems(self):
+        items = getattr(dict, 'items', None) or getattr(dict, 'iteritems')
+        for key, values in items(self):
             yield key, list(values)
 
     def itervalues(self):
         """Like :meth:`values` but returns an iterator."""
-        for values in dict.itervalues(self):
+        values = getattr(dict, 'values', None) or getattr(dict, 'itervalues')
+        for values in values(self):
             yield values[0]
 
     def iterlistvalues(self):
         """Like :meth:`listvalues` but returns an iterator."""
-        return dict.itervalues(self)
+        values = getattr(dict, 'values', None) or getattr(dict, 'itervalues')
+        return values(self)
 
     def copy(self):
         """Return a shallow copy of this object."""
@@ -596,27 +601,27 @@ class _omd_bucket(object):
     a lot of extra memory and slows down access a lot, but makes it
     possible to access elements in O(1) and iterate in O(n).
     """
-    __slots__ = ('prev', 'key', 'value', 'next')
+    __slots__ = ('prev', 'key', 'value', 'next_')
 
     def __init__(self, omd, key, value):
         self.prev = omd._last_bucket
         self.key = key
         self.value = value
-        self.next = None
+        self.next_ = None
 
         if omd._first_bucket is None:
             omd._first_bucket = self
         if omd._last_bucket is not None:
-            omd._last_bucket.next = self
+            omd._last_bucket.next_ = self
         omd._last_bucket = self
 
     def unlink(self, omd):
         if self.prev:
-            self.prev.next = self.next
-        if self.next:
-            self.next.prev = self.prev
+            self.prev.next_ = self.next_
+        if self.next_:
+            self.next_.prev = self.prev
         if omd._first_bucket is self:
-            omd._first_bucket = self.next
+            omd._first_bucket = self.next_
         if omd._last_bucket is self:
             omd._last_bucket = self.prev
 
@@ -705,14 +710,14 @@ class OrderedMultiDict(MultiDict):
         if multi:
             while ptr is not None:
                 yield ptr.key, ptr.value
-                ptr = ptr.next
+                ptr = ptr.next_
         else:
             returned_keys = set()
             while ptr is not None:
                 if ptr.key not in returned_keys:
                     returned_keys.add(ptr.key)
                     yield ptr.key, ptr.value
-                ptr = ptr.next
+                ptr = ptr.next_
 
     def iterlists(self):
         returned_keys = set()
@@ -721,7 +726,7 @@ class OrderedMultiDict(MultiDict):
             if ptr.key not in returned_keys:
                 yield ptr.key, self.getlist(ptr.key)
                 returned_keys.add(ptr.key)
-            ptr = ptr.next
+            ptr = ptr.next_
 
     def iterlistvalues(self):
         for key, values in self.iterlists():
@@ -1132,13 +1137,17 @@ class Headers(object):
             self.set(key, value)
 
     def to_list(self, charset='iso-8859-1'):
-        """Convert the headers into a list and converts the unicode header
-        items to the specified charset.
+        """Convert the headers into a list and converts the header items to str
+        using the specified charset.
 
         :return: list
         """
-        return [(k, isinstance(v, unicode) and v.encode(charset) or str(v))
-                for k, v in self]
+        if sys.version_info >= (3, ):
+            return [(k, v.decode(charset) if isinstance(v, bytes) else str(v))
+                    for k, v in self]
+        else:
+            return [(k, v.encode(charset) if isinstance(v, unicode) else str(v))
+                    for k, v in self]
 
     def copy(self):
         return self.__class__(self._list)
@@ -1579,7 +1588,7 @@ class Accept(ImmutableList):
 
     def values(self):
         """Return a list of the values, not the qualities."""
-        return list(self.itervalues())
+        return list(getattr(self, 'itervalues')())
 
     def itervalues(self):
         """Iterate over all values."""

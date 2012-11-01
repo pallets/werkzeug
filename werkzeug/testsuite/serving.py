@@ -10,7 +10,7 @@
 """
 import sys
 import time
-import urllib
+import urllib2
 import unittest
 from functools import update_wrapper
 from StringIO import StringIO
@@ -18,6 +18,7 @@ from StringIO import StringIO
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import __version__ as version, serving
+from werkzeug._internal import _b
 from werkzeug.testapp import test_app
 from threading import Thread
 
@@ -64,18 +65,21 @@ class ServingTestCase(WerkzeugTestCase):
     @silencestderr
     def test_serving(self):
         server, addr = run_dev_server(test_app)
-        rv = urllib.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        assert 'WSGI Information' in rv
-        assert 'foo=bar&amp;baz=blah' in rv
-        assert ('Werkzeug/%s' % version) in rv
+        rv = urllib2.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+        assert _b('WSGI Information') in rv
+        assert _b('foo=bar&amp;baz=blah') in rv
+        assert _b('Werkzeug/%s' % version) in rv
 
     @silencestderr
     def test_broken_app(self):
         def broken_app(environ, start_response):
             1/0
         server, addr = run_dev_server(broken_app)
-        rv = urllib.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        assert 'Internal Server Error' in rv
+        # XXX: urlopen() in Python 3 raises an Exception on 500
+        opener = urllib2.OpenerDirector()
+        opener.add_handler(urllib2.HTTPHandler())
+        rv = opener.open('http://%s/?foo=bar&baz=blah' % addr).read()
+        assert _b('Internal Server Error') in rv
 
 
 def suite():

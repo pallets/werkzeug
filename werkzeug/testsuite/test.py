@@ -13,10 +13,14 @@ from __future__ import with_statement
 
 import sys
 import unittest
-from cStringIO import StringIO, OutputType
+try:
+    from io import BytesIO
+except ImportError:
+    from cStringIO import StringIO as BytesIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 
+from werkzeug._internal import _b
 from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ, \
     ClientRedirectError, stream_encode_multipart, run_wsgi_app
@@ -91,7 +95,7 @@ class TestTestCase(WerkzeugTestCase):
         c = Client(cookie_app)
         c.set_cookie('localhost', 'foo', 'bar')
         appiter, code, headers = c.open()
-        assert list(appiter) == ['foo=bar']
+        assert list(appiter) == [_b('foo=bar')]
 
     def test_set_cookie_app(self):
         c = Client(cookie_app)
@@ -106,32 +110,32 @@ class TestTestCase(WerkzeugTestCase):
     def test_no_initial_cookie(self):
         c = Client(cookie_app)
         appiter, code, headers = c.open()
-        assert ''.join(appiter) == 'No Cookie'
+        assert _b('').join(appiter) == _b('No Cookie')
 
     def test_resent_cookie(self):
         c = Client(cookie_app)
         c.open()
         appiter, code, headers = c.open()
-        assert ''.join(appiter) == 'test=test'
+        assert _b('').join(appiter) == _b('test=test')
 
     def test_disable_cookies(self):
         c = Client(cookie_app, use_cookies=False)
         c.open()
         appiter, code, headers = c.open()
-        assert ''.join(appiter) == 'No Cookie'
+        assert _b('').join(appiter) == _b('No Cookie')
 
     def test_cookie_for_different_path(self):
         c = Client(cookie_app)
         c.open('/path1')
         appiter, code, headers = c.open('/path2')
-        assert ''.join(appiter) == 'test=test'
+        assert _b('').join(appiter) == _b('test=test')
 
     def test_environ_builder_basics(self):
         b = EnvironBuilder()
         assert b.content_type is None
         b.method = 'POST'
         assert b.content_type == 'application/x-www-form-urlencoded'
-        b.files.add_file('test', StringIO('test contents'), 'test.txt')
+        b.files.add_file('test', BytesIO(_b('test contents')), 'test.txt')
         assert b.files['test'].content_type == 'text/plain'
         assert b.content_type == 'multipart/form-data'
         b.form['test'] = 'normal value'
@@ -144,7 +148,7 @@ class TestTestCase(WerkzeugTestCase):
         assert req.form['test'] == 'normal value'
         assert req.files['test'].content_type == 'text/plain'
         assert req.files['test'].filename == 'test.txt'
-        assert req.files['test'].read() == 'test contents'
+        assert req.files['test'].read() == _b('test contents')
 
     def test_environ_builder_headers(self):
         b = EnvironBuilder(environ_base={'HTTP_USER_AGENT': 'Foo/0.1'},
@@ -198,18 +202,22 @@ class TestTestCase(WerkzeugTestCase):
         assert builder.content_type == 'application/x-www-form-urlencoded'
         builder.form['foo'] = 'bar'
         assert builder.content_type == 'application/x-www-form-urlencoded'
-        builder.files.add_file('blafasel', StringIO('foo'), 'test.txt')
+        builder.files.add_file('blafasel', BytesIO(_b('foo')), 'test.txt')
         assert builder.content_type == 'multipart/form-data'
         req = builder.get_request()
         assert req.form['foo'] == 'bar'
-        assert req.files['blafasel'].read() == 'foo'
+        assert req.files['blafasel'].read() == _b('foo')
 
     def test_environ_builder_stream_switch(self):
         d = MultiDict(dict(foo=u'bar', blub=u'blah', hu=u'hum'))
         for use_tempfile in False, True:
             stream, length, boundary = stream_encode_multipart(
                 d, use_tempfile, threshold=150)
-            assert isinstance(stream, OutputType) != use_tempfile
+
+            # XXX: OutputType is deprecated in Python 3
+            if sys.version_info < (3, ):
+                from cStringIO import OutputType
+                assert isinstance(stream, OutputType) != use_tempfile
 
             form = parse_form_data({'wsgi.input': stream, 'CONTENT_LENGTH': str(length),
                                     'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
@@ -238,7 +246,7 @@ class TestTestCase(WerkzeugTestCase):
         }
         for key, value in expected.iteritems():
             assert env[key] == value
-        assert env['wsgi.input'].read(0) == ''
+        assert env['wsgi.input'].read(0) == _b('')
 
         assert create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'] == ''
 
@@ -262,19 +270,19 @@ class TestTestCase(WerkzeugTestCase):
         c = Client(redirect_with_get_app)
         appiter, code, headers = c.open(environ_overrides=env, follow_redirects=True)
         assert code == '200 OK'
-        assert ''.join(appiter) == 'current url: http://localhost/some/redirect/'
+        assert _b('').join(appiter) == _b('current url: http://localhost/some/redirect/')
 
         # Test that the :cls:`Client` is aware of user defined response wrappers
         c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
         resp = c.get('/', follow_redirects=True)
         assert resp.status_code == 200
-        assert resp.data == 'current url: http://localhost/some/redirect/'
+        assert resp.data == _b('current url: http://localhost/some/redirect/')
 
         # test with URL other than '/' to make sure redirected URL's are correct
         c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
         resp = c.get('/first/request', follow_redirects=True)
         assert resp.status_code == 200
-        assert resp.data == 'current url: http://localhost/some/redirect/'
+        assert resp.data == _b('current url: http://localhost/some/redirect/')
 
     def test_follow_external_redirect(self):
         env = create_environ('/', base_url='http://localhost')
@@ -306,7 +314,7 @@ class TestTestCase(WerkzeugTestCase):
         c = Client(redirect_with_post_app, response_wrapper=BaseResponse)
         resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
         assert resp.status_code == 200
-        assert resp.data == 'current url: http://localhost/some/redirect/'
+        assert resp.data == _b('current url: http://localhost/some/redirect/')
 
     def test_path_info_script_name_unquoting(self):
         def test_app(environ, start_response):
@@ -314,10 +322,10 @@ class TestTestCase(WerkzeugTestCase):
             return [environ['PATH_INFO'] + '\n' + environ['SCRIPT_NAME']]
         c = Client(test_app, response_wrapper=BaseResponse)
         resp = c.get('/foo%40bar')
-        assert resp.data == '/foo@bar\n'
+        assert resp.data == _b('/foo@bar\n')
         c = Client(test_app, response_wrapper=BaseResponse)
         resp = c.get('/foo%40bar', 'http://localhost/bar%40baz')
-        assert resp.data == '/foo@bar\n/bar@baz'
+        assert resp.data == _b('/foo@bar\n/bar@baz')
 
     def test_multi_value_submit(self):
         c = Client(multi_value_post_app, response_wrapper=BaseResponse)
@@ -365,9 +373,12 @@ class TestTestCase(WerkzeugTestCase):
             return response
         client = Client(test_app, Response)
         resp = client.get('/')
-        assert resp.data == '[]'
+        assert resp.data == _b('[]')
         resp = client.get('/')
-        assert resp.data == "[('test1', u'foo'), ('test2', u'bar')]"
+        if sys.version_info >= (3, ):
+            assert resp.data == _b("[('test1', 'foo'), ('test2', 'bar')]")
+        else:
+            assert resp.data == "[('test1', u'foo'), ('test2', u'bar')]"
 
     def test_correct_open_invocation_on_redirect(self):
         class MyClient(Client):
@@ -383,9 +394,9 @@ class TestTestCase(WerkzeugTestCase):
             return Response(str(request.environ['werkzeug._foo']))
 
         c = MyClient(test_app, response_wrapper=Response)
-        self.assert_equal(c.get('/').data, '1')
-        self.assert_equal(c.get('/').data, '2')
-        self.assert_equal(c.get('/').data, '3')
+        self.assert_equal(c.get('/').data, _b('1'))
+        self.assert_equal(c.get('/').data, _b('2'))
+        self.assert_equal(c.get('/').data, _b('3'))
 
 
 def suite():

@@ -49,8 +49,13 @@ from SocketServer import ThreadingMixIn, ForkingMixIn
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 import werkzeug
-from werkzeug._internal import _log
+from werkzeug._internal import _b, _log
 from werkzeug.exceptions import InternalServerError
+
+try:
+    bytes
+except:
+    bytes = str
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
@@ -94,6 +99,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_PORT':          str(self.server.server_address[1]),
             'SERVER_PROTOCOL':      self.request_version
         }
+        if sys.version_info >= (3, ):
+            environ['PATH_INFO'] = unquote(path_info, encoding='latin1')
 
         for key, value in self.headers.items():
             key = 'HTTP_' + key.upper().replace('-', '_')
@@ -128,7 +135,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     self.send_header('Date', self.date_time_string())
                 self.end_headers()
 
-            assert type(data) is str, 'applications must write bytes'
+            assert type(data) is bytes, 'applications must write bytes'
             self.wfile.write(data)
             self.wfile.flush()
 
@@ -224,8 +231,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if message is None:
             message = code in self.responses and self.responses[code][0] or ''
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write("%s %d %s\r\n" %
-                             (self.protocol_version, code, message))
+            self.wfile.write(_b("%s %d %s\r\n" %
+                             (self.protocol_version, code, message)))
 
     def version_string(self):
         return BaseHTTPRequestHandler.version_string(self).strip()

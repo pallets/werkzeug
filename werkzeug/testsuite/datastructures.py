@@ -26,6 +26,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import datastructures
 from werkzeug.exceptions import BadRequestKeyError
+from werkzeug._internal import _b
 
 
 class MutableMultiDictBaseTestCase(WerkzeugTestCase):
@@ -43,7 +44,7 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
             self.assert_equal(type(ud), type(d))
             self.assert_equal(ud, d)
             self.assert_equal(pickle.loads(
-                s.replace('werkzeug.datastructures', 'werkzeug')), d)
+                s.replace(_b('werkzeug.datastructures'), _b('werkzeug'))), d)
             ud['newkey'] = 'bla'
             self.assert_not_equal(ud, d)
 
@@ -213,8 +214,8 @@ class ImmutableDictBaseTestCase(WerkzeugTestCase):
         self.assert_equal(d['bar'], 2)
         self.assert_equal(d['baz'], 3)
         self.assert_equal(sorted(d.keys()), ['bar', 'baz', 'foo'])
-        self.assert_('foo' in d)
-        self.assert_('foox' not in d)
+        self.assertTrue('foo' in d)
+        self.assertTrue('foox' not in d)
         self.assert_equal(len(d), 3)
 
     def test_copies_are_mutable(self):
@@ -225,26 +226,26 @@ class ImmutableDictBaseTestCase(WerkzeugTestCase):
 
         mutable = immutable.copy()
         mutable.pop('a')
-        self.assert_('a' in immutable)
-        self.assert_(mutable is not immutable)
-        self.assert_(copy(immutable) is immutable)
+        self.assertTrue('a' in immutable)
+        self.assertTrue(mutable is not immutable)
+        self.assertTrue(copy(immutable) is immutable)
 
     def test_dict_is_hashable(self):
         cls = self.storage_class
         immutable = cls({'a': 1, 'b': 2})
         immutable2 = cls({'a': 2, 'b': 2})
         x = set([immutable])
-        self.assert_(immutable in x)
-        self.assert_(immutable2 not in x)
+        self.assertTrue(immutable in x)
+        self.assertTrue(immutable2 not in x)
         x.discard(immutable)
-        self.assert_(immutable not in x)
-        self.assert_(immutable2 not in x)
+        self.assertTrue(immutable not in x)
+        self.assertTrue(immutable2 not in x)
         x.add(immutable2)
-        self.assert_(immutable not in x)
-        self.assert_(immutable2 in x)
+        self.assertTrue(immutable not in x)
+        self.assertTrue(immutable2 in x)
         x.add(immutable)
-        self.assert_(immutable in x)
-        self.assert_(immutable2 in x)
+        self.assertTrue(immutable in x)
+        self.assertTrue(immutable2 in x)
 
 
 class ImmutableTypeConversionDictTestCase(ImmutableDictBaseTestCase):
@@ -259,17 +260,17 @@ class ImmutableMultiDictTestCase(ImmutableDictBaseTestCase):
         immutable = cls({'a': [1, 2], 'b': 2})
         immutable2 = cls({'a': [1], 'b': 2})
         x = set([immutable])
-        self.assert_(immutable in x)
-        self.assert_(immutable2 not in x)
+        self.assertTrue(immutable in x)
+        self.assertTrue(immutable2 not in x)
         x.discard(immutable)
-        self.assert_(immutable not in x)
-        self.assert_(immutable2 not in x)
+        self.assertTrue(immutable not in x)
+        self.assertTrue(immutable2 not in x)
         x.add(immutable2)
-        self.assert_(immutable not in x)
-        self.assert_(immutable2 in x)
+        self.assertTrue(immutable not in x)
+        self.assertTrue(immutable2 in x)
         x.add(immutable)
-        self.assert_(immutable in x)
-        self.assert_(immutable2 in x)
+        self.assertTrue(immutable in x)
+        self.assertTrue(immutable2 in x)
 
 
 class ImmutableDictTestCase(ImmutableDictBaseTestCase):

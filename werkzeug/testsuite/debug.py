@@ -17,6 +17,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
      dump, helper
 from werkzeug.debug.console import HTMLStringO
+from werkzeug._internal import _b
 
 
 class DebugReprTestCase(WerkzeugTestCase):
@@ -53,9 +54,14 @@ class DebugReprTestCase(WerkzeugTestCase):
             u'</span></span></span>}'
         assert debug_repr(dict(zip(range(10), [None] * 10))) == \
             u'{<span class="pair"><span class="key"><span class="number">0</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">1</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">2</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">3</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="extended"><span class="pair"><span class="key"><span class="number">4</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">5</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">6</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">7</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">8</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">9</span></span>: <span class="value"><span class="object">None</span></span></span></span>}'
-        assert debug_repr((1, 'zwei', u'drei')) ==\
-            u'(<span class="number">1</span>, <span class="string">\'' \
-            u'zwei\'</span>, <span class="string">u\'drei\'</span>)'
+        if sys.version_info >= (3, ):
+            assert debug_repr((1, 'zwei', _b('drei'))) ==\
+                '(<span class="number">1</span>, <span class="string">\'' \
+                'zwei\'</span>, <span class="string">b\'drei\'</span>)'
+        else:
+            assert debug_repr((1, 'zwei', u'drei')) ==\
+                u'(<span class="number">1</span>, <span class="string">\'' \
+                u'zwei\'</span>, <span class="string">u\'drei\'</span>)'
 
     def test_custom_repr(self):
         class Foo(object):
@@ -73,8 +79,12 @@ class DebugReprTestCase(WerkzeugTestCase):
     def test_regex_repr(self):
         assert debug_repr(re.compile(r'foo\d')) == \
             u're.compile(<span class="string regex">r\'foo\\d\'</span>)'
-        assert debug_repr(re.compile(ur'foo\d')) == \
-            u're.compile(<span class="string regex">ur\'foo\\d\'</span>)'
+        if sys.version_info >= (3, ):
+            assert debug_repr(re.compile(_b(r'foo\d'))) == \
+                're.compile(<span class="string regex">br\'foo\\d\'</span>)'
+        else:
+            assert debug_repr(re.compile(ur'foo\d')) == \
+                u're.compile(<span class="string regex">ur\'foo\\d\'</span>)'
 
     def test_set_repr(self):
         assert debug_repr(frozenset('x')) == \
@@ -92,9 +102,15 @@ class DebugReprTestCase(WerkzeugTestCase):
             def __repr__(self):
                 1/0
 
+        if sys.version_info >= (3, 2):
+            message = u'division by zero'
+        elif sys.version_info >= (3, 1):
+            message = u'int division or modulo by zero'
+        else:
+            message = u'integer division or modulo by zero'
         assert debug_repr(Foo()) == \
             u'<span class="brokenrepr">&lt;broken repr (ZeroDivisionError: ' \
-            u'integer division or modulo by zero)&gt;</span>'
+            u'%s)&gt;</span>' % message
 
 
 class DebugHelpersTestCase(WerkzeugTestCase):

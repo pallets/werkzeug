@@ -17,22 +17,35 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import sys
+from base64 import b64decode
 from time import time
 try:
     from email.utils import parsedate_tz
 except ImportError: # pragma: no cover
     from email.Utils import parsedate_tz
-from urllib2 import parse_http_list as _parse_list_header
+try:
+    from urllib.request import parse_http_list as _parse_list_header
+except ImportError:
+    from urllib2 import parse_http_list as _parse_list_header
 from datetime import datetime, timedelta
 try:
     from hashlib import md5
 except ImportError: # pragma: no cover
     from md5 import new as md5
+try:
+    bytes
+except:
+    bytes = str
+try:
+    next
+except:
+    next = lambda _: _.next()
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
 #: XXX: move to werkzeug.consts or something
-from werkzeug._internal import HTTP_STATUS_CODES, _dump_date, \
+from werkzeug._internal import HTTP_STATUS_CODES, _b, _dump_date, \
      _ExtendedCookie, _ExtendedMorsel, _decode_unicode
 
 
@@ -240,7 +253,7 @@ def parse_options_header(value):
         return '', {}
 
     parts = _tokenize(';' + value)
-    name = parts.next()[0]
+    name = next(parts)[0]
     extra = dict(parts)
     return name, extra
 
@@ -349,12 +362,18 @@ def parse_authorization_header(value):
     except ValueError:
         return
     if auth_type == 'basic':
+        auth_info = auth_info.encode('ascii')
         try:
-            username, password = auth_info.decode('base64').split(':', 1)
+            username, password = b64decode(auth_info).split(_b(':'), 1)
         except Exception, e:
             return
-        return Authorization('basic', {'username': username,
-                                       'password': password})
+        if sys.version_info >= (3, ):
+            return Authorization('basic', {
+                'username': username.decode('latin1'),
+                'password': password.decode('latin1')})
+        else:
+            return Authorization('basic', {'username': username,
+                                           'password': password})
     elif auth_type == 'digest':
         auth_map = parse_dict_header(auth_info)
         for key in 'username', 'realm', 'nonce', 'uri', 'response':
@@ -558,6 +577,8 @@ def parse_etags(value):
 
 def generate_etag(data):
     """Generate an etag for some data."""
+    if isinstance(data, unicode):
+        data = data.encode('utf-8')
     return md5(data).hexdigest()
 
 
@@ -746,8 +767,9 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     # `None` items which we have to skip here.
     for key, value in cookie.iteritems():
         if value.value is not None:
-            result[key] = _decode_unicode(unquote_header_value(value.value),
-                                          charset, errors)
+            result[key] = _decode_unicode(
+                unquote_header_value(value.value).encode('ascii'),
+                charset, errors)
 
     return cls(result)
 
@@ -780,11 +802,16 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                          but expires not.
     """
     try:
-        key = str(key)
-    except UnicodeError:
+        key.encode('ascii')
+    except UnicodeEncodeError:
         raise TypeError('invalid key %r' % key)
-    if isinstance(value, unicode):
-        value = value.encode(charset)
+    try:
+        if isinstance(value, bytes):
+            value = value.decode('ascii')
+        else:
+            value.encode('ascii')
+    except UnicodeError:
+        raise TypeError('invalid value %r' % value)
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
     if isinstance(max_age, timedelta):
