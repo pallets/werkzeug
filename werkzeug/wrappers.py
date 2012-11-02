@@ -47,8 +47,8 @@ from werkzeug._internal import _b, _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 def _run_wsgi_app(*args):

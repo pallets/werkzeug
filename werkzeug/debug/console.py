@@ -17,8 +17,8 @@ from werkzeug.debug.repr import debug_repr, dump, helper
 
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 _local = Local()

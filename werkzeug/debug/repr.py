@@ -19,13 +19,13 @@ from traceback import format_exception_only
 try:
     from collections import deque
 except ImportError: # pragma: no cover
-    deque = None
+    deque = None  # Python < 2.4
 from werkzeug.utils import escape
 
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 missing = object()

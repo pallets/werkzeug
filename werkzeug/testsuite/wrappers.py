@@ -13,8 +13,8 @@ import pickle
 import sys
 try:
     from io import BytesIO
-except:
-    from StringIO import StringIO as BytesIO
+except ImportError:
+    from StringIO import StringIO as BytesIO  # Python < 2.6
 from datetime import datetime
 
 from werkzeug.testsuite import WerkzeugTestCase

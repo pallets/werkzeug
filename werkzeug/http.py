@@ -23,24 +23,25 @@ from time import time
 try:
     from email.utils import parsedate_tz
 except ImportError: # pragma: no cover
-    from email.Utils import parsedate_tz
+    from email.Utils import parsedate_tz  # Python < 2.5
 try:
     from urllib.request import parse_http_list as _parse_list_header
 except ImportError:
-    from urllib2 import parse_http_list as _parse_list_header
+    # not automatically converted by 2to3
+    from urllib2 import parse_http_list as _parse_list_header  # Python < 3
 from datetime import datetime, timedelta
 try:
     from hashlib import md5
 except ImportError: # pragma: no cover
-    from md5 import new as md5
+    from md5 import new as md5  # Python < 2.5
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 try:
     next
-except:
-    next = lambda _: _.next()
+except NameError:
+    next = lambda _: _.next()  # Python < 2.6
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.

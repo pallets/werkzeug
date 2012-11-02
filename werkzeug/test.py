@@ -18,6 +18,8 @@ from tempfile import TemporaryFile
 if sys.version_info > (3, ):
     from io import BytesIO
 else:
+    # Python < 2.6
+    # also needed in order to pass test_environ_builder_stream_switch
     from cStringIO import StringIO as BytesIO
 from cookielib import CookieJar
 from urllib2 import Request as U2Request
@@ -32,8 +34,8 @@ from werkzeug.datastructures import FileMultiDict, MultiDict, \
 
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,

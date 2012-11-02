@@ -54,8 +54,8 @@ from werkzeug.exceptions import InternalServerError
 
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):

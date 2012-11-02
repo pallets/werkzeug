@@ -62,7 +62,7 @@ import tempfile
 try:
     from hashlib import md5
 except ImportError:
-    from md5 import new as md5
+    from md5 import new as md5  # Python < 2.5
 from itertools import izip
 from time import time
 from werkzeug.posixemulation import rename
@@ -71,7 +71,7 @@ from werkzeug._internal import _b
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle
+    import pickle  # Python >= 3
 
 
 def _items(mappingorseq):

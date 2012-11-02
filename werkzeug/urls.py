@@ -10,14 +10,17 @@
 """
 import sys
 import urlparse
-try:
+if sys.version_info >= (3, ):
     from io import TextIOBase
-except ImportError:
-    pass
 
 from werkzeug._internal import _b, _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from werkzeug.wsgi import make_chunk_iter
+
+try:
+    bytes
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 #: list of characters that are always safe in URLs.
@@ -37,14 +40,11 @@ _hexdig = '0123456789ABCDEFabcdef'
 _hextochr = dict((a + b, chr(int(a + b, 16)))
                  for a in _hexdig for b in _hexdig)
 
-try:
-    bytes
-except:
-    bytes = str
 if sys.version_info >= (3, ):
     _always_safe = _always_safe.encode('ascii')
     _safe_map = dict((ord(k), _safe_map[k]) for k in _safe_map)
     _hextochr = dict((k, _hextochr[k].encode('latin1')) for k in _hextochr)
+
 
 def _enforce_in_out(in_type, out_type):
     def decorator(f):

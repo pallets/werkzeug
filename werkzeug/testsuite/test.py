@@ -16,7 +16,7 @@ import unittest
 try:
     from io import BytesIO
 except ImportError:
-    from cStringIO import StringIO as BytesIO
+    from cStringIO import StringIO as BytesIO  # Python < 2.6
 
 from werkzeug.testsuite import WerkzeugTestCase
 

@@ -99,8 +99,8 @@ from werkzeug.security import safe_bytes_cmp, safe_str_cmp
 
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 from hashlib import sha1 as _default_hash

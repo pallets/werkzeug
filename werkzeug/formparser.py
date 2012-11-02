@@ -15,7 +15,7 @@ import sys
 try:
     from io import BytesIO
 except ImportError:
-    from cStringIO import StringIO as BytesIO
+    from cStringIO import StringIO as BytesIO  # Python < 2.6
 from tempfile import TemporaryFile
 from itertools import chain, repeat
 from functools import update_wrapper
@@ -28,8 +28,8 @@ from werkzeug.datastructures import Headers, FileStorage, MultiDict
 from werkzeug.http import parse_options_header
 try:
     bytes
-except:
-    bytes = str
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 #: an iterator that yields empty strings

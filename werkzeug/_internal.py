@@ -14,7 +14,7 @@ from weakref import WeakKeyDictionary
 try:
     from io import BytesIO
 except ImportError:
-    from cStringIO import StringIO as BytesIO
+    from cStringIO import StringIO as BytesIO  # Python < 2.6
 from Cookie import SimpleCookie, Morsel, CookieError
 from time import gmtime
 from datetime import datetime, date
