@@ -641,7 +641,8 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param reloader_interval: the interval for the reloader in seconds.
     :param threaded: should the process handle each request in a separate
                      thread?
-    :param processes: number of processes to spawn.
+    :param processes: if greater than 1 then handle each request in a new process
+                      up to this maximum number of concurrent processes.
     :param request_handler: optional parameter that can be used to replace
                             the default one.  You can use this to replace it
                             with a different
