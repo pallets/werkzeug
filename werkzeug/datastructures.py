@@ -2486,12 +2486,12 @@ class FileStorage(object):
 
     @property
     def content_type(self):
-        """The file's content type.  Usually not available"""
+        """The content-type sent in the header.  Usually not available"""
         return self.headers.get('content-type')
 
     @property
     def content_length(self):
-        """The file's content length.  Usually not available"""
+        """The content-length sent in the header.  Usually not available"""
         return int(self.headers.get('content-length') or 0)
 
     @property
