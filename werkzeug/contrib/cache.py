@@ -446,6 +446,15 @@ class MemcachedCache(BaseCache):
         else:
             return memcache.Client(servers)
 
+        try:
+            import bmemcached
+        except ImportError:
+            pass
+        else:
+            if username and password:
+                return bmemcached.Client(servers, username, password)
+            return bmemcached.Client(servers)
+
 
 # backwards compatibility
 GAEMemcachedCache = MemcachedCache
