@@ -47,6 +47,16 @@ class SimpleCacheTestCase(WerkzeugTestCase):
         c.set_many((i, i*i) for i in xrange(3))
         assert c.get(2) == 4
 
+class MemcachedCacheTestCase(WerkzeugTestCase):
+
+    def test_simple(self):
+        c = cache.MemcachedCache()
+        c.set('foo', 'bar')
+        self.assertEqual(c.get('foo'), 'bar')
+
+    def test_sasl_auth(self):
+        # hard to test this without a local SASL memcached installation
+        pass
 
 class FileSystemCacheTestCase(WerkzeugTestCase):
 
@@ -166,6 +176,7 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(SimpleCacheTestCase))
     suite.addTest(unittest.makeSuite(FileSystemCacheTestCase))
+    suite.addTest(unittest.makeSuite(MemcachedCacheTestCase))
     if redis is not None:
         suite.addTest(unittest.makeSuite(RedisCacheTestCase))
     return suite
