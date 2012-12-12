@@ -296,14 +296,17 @@ class MemcachedCache(BaseCache):
                        applications.  Keep in mind that
                        :meth:`~BaseCache.clear` will also clear keys with a
                        different prefix.
+    :param username: a username for Memcache servers requiring SASL authentication
+    :param password: a password for Memcache servers requiring SASL authentication
+
     """
 
-    def __init__(self, servers=None, default_timeout=300, key_prefix=None):
+    def __init__(self, servers=None, default_timeout=300, key_prefix=None, username=None, password=None):
         BaseCache.__init__(self, default_timeout)
         if servers is None or isinstance(servers, (list, tuple)):
             if servers is None:
                 servers = ['127.0.0.1:11211']
-            self._client = self.import_preferred_memcache_lib(servers)
+            self._client = self.import_preferred_memcache_lib(servers, username, password)
             if self._client is None:
                 raise RuntimeError('no memcache module found')
         else:
@@ -418,13 +421,15 @@ class MemcachedCache(BaseCache):
             key = self.key_prefix + key
         self._client.decr(key, delta)
 
-    def import_preferred_memcache_lib(self, servers):
+    def import_preferred_memcache_lib(self, servers, username, password):
         """Returns an initialized memcache client.  Used by the constructor."""
         try:
             import pylibmc
         except ImportError:
             pass
         else:
+            if username and password:
+                return pylibmc.Client(servers, username, password, binary=True)
             return pylibmc.Client(servers)
 
         try:

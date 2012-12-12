@@ -12,6 +12,7 @@
 from __future__ import with_statement
 
 import unittest
+import tempfile
 from StringIO import StringIO
 from os.path import join, dirname
 
@@ -134,7 +135,7 @@ class FormParserTestCase(WerkzeugTestCase):
                                   method='POST')
         # make sure we have a real file here, because we expect to be
         # on the disk.  > 1024 * 500
-        self.assert_(isinstance(req.files['foo'].stream, file))
+        self.assertIsInstance(req.files['foo'].stream, tempfile._TemporaryFileWrapper)
 
 
 class MultiPartTestCase(WerkzeugTestCase):
