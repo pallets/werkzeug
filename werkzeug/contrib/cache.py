@@ -303,16 +303,16 @@ class MemcachedCache(BaseCache):
 
     def __init__(self, servers=None, default_timeout=300, key_prefix=None, username=None, password=None):
         BaseCache.__init__(self, default_timeout)
-        if servers is None or isinstance(servers, (list, tuple)):
-            if servers is None:
-                servers = ['127.0.0.1:11211']
-            self._client = self.import_preferred_memcache_lib(servers, username, password)
-            if self._client is None:
-                raise RuntimeError('no memcache module found')
+        if servers is None:
+            servers = '127.0.0.1:11211'
+        elif isinstance(servers, str):
+            servers = [servers]
         else:
-            # NOTE: servers is actually an already initialized memcache
-            # client.
             self._client = servers
+
+        self._client = self.import_preferred_memcache_lib(servers, username, password)
+        if self._client is None:
+            raise RuntimeError('no memcache module found')
 
         self.key_prefix = key_prefix
 
@@ -423,6 +423,7 @@ class MemcachedCache(BaseCache):
 
     def import_preferred_memcache_lib(self, servers, username, password):
         """Returns an initialized memcache client.  Used by the constructor."""
+        
         try:
             import pylibmc
         except ImportError:
@@ -452,7 +453,8 @@ class MemcachedCache(BaseCache):
             pass
         else:
             if username and password:
-                return bmemcached.Client(servers, username, password)
+                client = bmemcached.Client(servers, username=username, password=password)
+                return client
             return bmemcached.Client(servers)
 
 
