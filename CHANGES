@@ -1,6 +1,28 @@
 Werkzeug Changelog
 ==================
 
+Version 0.9
+-----------
+
+Release date to be decided, codename to be chosen.
+
+- Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
+  on the limited stream.
+- :class:`~werkzeug.datastructures.ETags` now is nonzero if it
+  contains at least one etag of any kind, including weak ones.
+- Added a workaround for a bug in the stdlib for SSL servers.
+- Improved SSL interface of the devserver so that it can generate
+  certificates easily and load them from files.
+- Refactored test client to invoke the open method on the class
+  for redirects.  This makes subclassing more powerful.
+- :func:`werkzeug.wsgi.make_chunk_iter` and
+  :func:`werkzeug.wsgi.make_line_iter` now support processing of
+  iterators and streams.
+- URL generation by the routing system now no longer quotes
+  ``+``.
+- The :func:`werkzeug.security.generate_password_hash` and
+  check functions now support any of the hashlib algorithms.
+
 Version 0.8.4
 -------------
 

@@ -97,8 +97,6 @@ are available by mixing in various mixin classes or using :class:`Request` and
 
    .. automethod:: _get_file_stream
 
-   .. automethod:: _form_parsing_failed
-
 
 .. autoclass:: BaseResponse
    :members:

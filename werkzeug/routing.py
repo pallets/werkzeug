@@ -100,7 +100,7 @@ import posixpath
 from pprint import pformat
 from urlparse import urljoin
 
-from werkzeug.urls import url_encode, url_decode, url_quote
+from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
@@ -715,7 +715,7 @@ class Rule(RuleFactory):
                     return
                 processed.add(data)
             else:
-                add(url_quote(data, self.map.charset, safe='/:|'))
+                add(url_quote(data, self.map.charset, safe='/:|+'))
         domain_part, url = (u''.join(tmp)).split('|', 1)
 
         if append_unknown:
@@ -771,18 +771,47 @@ class Rule(RuleFactory):
     def match_compare_key(self):
         """The match compare key for sorting.
 
-        Current implementation:
+        Sort the rule by the function:
+        (
+            number of static parts + weight fnc,
+            number of variable parts + weight fnc,
+            number of path parts + weight fnc
+        )
 
-        1.  rules without any arguments come first for performance
-            reasons only as we expect them to match faster and some
-            common ones usually don't have any arguments (index pages etc.)
-        2.  The more complex rules come first so the second argument is the
-            negative length of the number of weights.
-        3.  lastly we order by the actual weights.
+        where the weight function is the sum of the normalized
+        positions of the parts.
 
         :internal:
         """
-        return bool(self.arguments), -len(self._weights), self._weights
+
+
+        def weights(parts):
+            if parts == []:
+                  return (1000,1000,1000)
+
+            weights = [0,0,0]
+            count = len(parts)
+            norm = sum(range(1,count+1))
+
+
+            for part in zip(parts, range(count,0,-1)):
+                  pos = part[1]
+                  part_type = part[0][0]
+                  if part_type == None:
+                        index = 0
+                  elif part_type == 'path':
+                        index = 2
+                  else:
+                        index = 1
+                  weights[index] += 1 + pos / float(norm)
+
+            weights = [round(weight,3) for weight in weights]
+            return tuple(weights)
+
+
+        parts = parse_rule(self.rule)
+        parts = [part for part in parts if part != (None, None, '/')]
+        return weights(parts)
 
     def build_compare_key(self):
         """The build compare key for sorting.
@@ -1201,7 +1230,7 @@ class Map(object):
         in the correct order after things changed.
         """
         if self._remap:
-            self._rules.sort(key=lambda x: x.match_compare_key())
+            self._rules.sort(key=lambda x: x.match_compare_key(), reverse=True)
             for rules in self._rules_by_endpoint.itervalues():
                 rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False
@@ -1503,7 +1532,8 @@ class MapAdapter(object):
             self.url_scheme,
             self.get_host(domain_part),
             posixpath.join(self.script_name[:-1].lstrip('/'),
-                           url_quote(path_info.lstrip('/'), self.map.charset)),
+                           url_quote(path_info.lstrip('/'), self.map.charset,
+                                     safe='/:|+')),
             suffix
         ))
 

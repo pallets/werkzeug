@@ -22,7 +22,6 @@ class SecureCookieTestCase(WerkzeugTestCase):
     def test_basic_support(self):
         c = SecureCookie(secret_key='foo')
         assert c.new
-        print c.modified, c.should_save
         assert not c.modified
         assert not c.should_save
         c['x'] = 42
