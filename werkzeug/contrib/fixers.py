@@ -104,9 +104,26 @@ class ProxyFix(object):
         if forwarded_for:
             return forwarded_for[0]
 
+    def get_protocol(self, environ):
+        """Determines the used protocol with either X-Forwarded-Proto or
+        X-Forwarded-Https.
+
+        .. versionadded:: 0.9
+        """
+        getter = environ.get
+        rv = getter('HTTP_X_FORWARDED_PROTO', '')
+        if not rv:
+            https = getter('HTTP_X_FORWARDED_HTTPS', '')
+            if https == 'on':
+                rv = 'https'
+            elif https == 'off':
+                rv = 'http'
+
+        return rv
+
     def __call__(self, environ, start_response):
         getter = environ.get
-        forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '')
+        forwarded_proto = self.get_protocol(environ)
         forwarded_for = getter('HTTP_X_FORWARDED_FOR', '').split(',')
         forwarded_host = getter('HTTP_X_FORWARDED_HOST', '')
         environ.update({
