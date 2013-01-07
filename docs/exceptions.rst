@@ -44,6 +44,12 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: ImATeapot
 
+.. autoexception:: PreconditionRequired
+
+.. autoexception:: TooManyRequests
+
+.. autoexception:: RequestHeaderFieldsTooLarge
+
 .. autoexception:: InternalServerError
 
 .. autoexception:: NotImplemented
