@@ -195,14 +195,14 @@ class WrappersTestCase(WerkzeugTestCase):
     def test_response_status_codes(self):
         response = wrappers.BaseResponse()
         response.status_code = 404
-        assert response.status == '404 NOT FOUND'
+        assert response.status == '404 Not Found'
         response.status = '200 OK'
         assert response.status_code == 200
         response.status = '999 WTF'
         assert response.status_code == 999
         response.status_code = 588
         assert response.status_code == 588
-        assert response.status == '588 UNKNOWN'
+        assert response.status == '588 Unknown'
         response.status = 'wtf'
         assert response.status_code == 0
 
