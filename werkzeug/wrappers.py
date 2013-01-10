@@ -753,6 +753,7 @@ class BaseResponse(object):
             self._status_code = int(self._status.split(None, 1)[0])
         except ValueError:
             self._status_code = 0
+            self._status = "0 %s" % self._status
     status = property(_get_status, _set_status, doc='The HTTP Status code')
     del _get_status, _set_status
 

@@ -205,6 +205,7 @@ class WrappersTestCase(WerkzeugTestCase):
         assert response.status == '588 UNKNOWN'
         response.status = 'wtf'
         assert response.status_code == 0
+        assert response.status == '0 wtf'
 
     def test_type_forcing(self):
         def wsgi_application(environ, start_response):
