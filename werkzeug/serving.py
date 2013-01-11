@@ -112,7 +112,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             assert headers_set, 'write() before start_response'
             if not headers_sent:
                 status, response_headers = headers_sent[:] = headers_set
-                code, msg = status.split(None, 1)
+                try:
+                    code, msg = status.split(None, 1)
+                except ValueError:
+                    code, msg = status, ""
                 self.send_response(int(code), msg)
                 header_keys = set()
                 for key, value in response_headers:
