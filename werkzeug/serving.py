@@ -61,6 +61,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return 'Werkzeug/' + werkzeug.__version__
 
     def make_environ(self):
+        if self.path.startswith('http'):
+            # we have received an absolute URL, the domain should be discarded (http or https)
+            segments = self.path.split('/')[3:]
+            segments.insert(0,"")  # starts with slash
+            self.path = "/".join(segments)
         if '?' in self.path:
             path_info, query = self.path.split('?', 1)
         else:
