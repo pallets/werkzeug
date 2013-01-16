@@ -355,7 +355,7 @@ class MemcachedCache(BaseCache):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
-        self._client.add(key, value, timeout)
+        return self._client.add(key, value, timeout)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
@@ -364,7 +364,7 @@ class MemcachedCache(BaseCache):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
-        self._client.set(key, value, timeout)
+        return self._client.set(key, value, timeout)
 
     def get_many(self, *keys):
         d = self.get_dict(*keys)
@@ -380,7 +380,7 @@ class MemcachedCache(BaseCache):
             if self.key_prefix:
                 key = self.key_prefix + key
             new_mapping[key] = value
-        self._client.set_multi(new_mapping, timeout)
+        return self._client.set_multi(new_mapping, timeout)
 
     def delete(self, key):
         if isinstance(key, unicode):
@@ -388,7 +388,7 @@ class MemcachedCache(BaseCache):
         if self.key_prefix:
             key = self.key_prefix + key
         if _test_memcached_key(key):
-            self._client.delete(key)
+            return self._client.delete(key)
 
     def delete_many(self, *keys):
         new_keys = []
@@ -399,10 +399,10 @@ class MemcachedCache(BaseCache):
                 key = self.key_prefix + key
             if _test_memcached_key(key):
                 new_keys.append(key)
-        self._client.delete_multi(new_keys)
+        return self._client.delete_multi(new_keys)
 
     def clear(self):
-        self._client.flush_all()
+        return self._client.flush_all()
 
     def inc(self, key, delta=1):
         if isinstance(key, unicode):
