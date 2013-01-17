@@ -151,7 +151,7 @@ class BaseCache(object):
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
         """
-        pass
+        return True
 
     def add(self, key, value, timeout=None):
         """Works like :meth:`set` but does not overwrite the values of already
@@ -162,7 +162,7 @@ class BaseCache(object):
         :param timeout: the cache timeout for the key or the default
                         timeout if not specified.
         """
-        pass
+        return True
 
     def set_many(self, mapping, timeout=None):
         """Sets multiple keys and values from a mapping.
@@ -171,8 +171,10 @@ class BaseCache(object):
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
         """
+        statuses = []
         for key, value in _items(mapping):
-            self.set(key, value, timeout)
+            statuses.append(self.set(key, value, timeout))
+        return all(statuses)
 
     def delete_many(self, *keys):
         """Deletes multiple keys at once.
@@ -180,14 +182,13 @@ class BaseCache(object):
         :param keys: The function accepts multiple keys as positional
                      arguments.
         """
-        for key in keys:
-            self.delete(key)
+        return all(self.delete(key) for key in keys)
 
     def clear(self):
         """Clears the cache.  Keep in mind that not all caches support
         completely clearing the cache.
         """
-        pass
+        return True
 
     def inc(self, key, delta=1):
         """Increments the value of a key by `delta`.  If the key does
@@ -198,7 +199,7 @@ class BaseCache(object):
         :param key: the key to increment.
         :param delta: the delta to add.
         """
-        self.set(key, (self.get(key) or 0) + delta)
+        return self.set(key, (self.get(key) or 0) + delta)
 
     def dec(self, key, delta=1):
         """Decrements the value of a key by `delta`.  If the key does
@@ -209,7 +210,7 @@ class BaseCache(object):
         :param key: the key to increment.
         :param delta: the delta to subtract.
         """
-        self.set(key, (self.get(key) or 0) - delta)
+        return self.set(key, (self.get(key) or 0) - delta)
 
 
 class NullCache(BaseCache):
