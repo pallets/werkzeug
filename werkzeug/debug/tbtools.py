@@ -253,14 +253,19 @@ class Traceback(object):
     def exception(self):
         """String representation of the exception."""
         buf = traceback.format_exception_only(self.exc_type, self.exc_value)
-        return ''.join(buf).strip().decode('utf-8', 'replace')
+        buf = ''.join(buf).strip()
+        if not isinstance(buf, unicode):
+            buf = buf.decode('utf-8', 'replace')
+        return buf
     exception = property(exception)
 
     def log(self, logfile=None):
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
-        tb = self.plaintext.encode('utf-8', 'replace').rstrip() + '\n'
+        tb = self.plaintext.rstrip() + u'\n'
+        if isinstance(tb, unicode):
+            tb = tb.encode('utf-8', 'replace')
         logfile.write(tb)
 
     def paste(self, lodgeit_url):
@@ -439,7 +444,7 @@ class Frame(object):
 
         if source is None:
             try:
-                f = file(self.filename)
+                f = open(self.filename)
             except IOError:
                 return []
             try:

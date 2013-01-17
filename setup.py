@@ -57,8 +57,12 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
+import sys
 
 
+kwargs = {}
+if sys.version_info >= (3, ):
+    kwargs['use_2to3'] = True
 setup(
     name='Werkzeug',
     version='0.9-dev',
@@ -83,5 +87,6 @@ setup(
     include_package_data=True,
     test_suite='werkzeug.testsuite.suite',
     zip_safe=False,
-    platforms='any'
+    platforms='any',
+    **kwargs
 )

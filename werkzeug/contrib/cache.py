@@ -62,15 +62,16 @@ import tempfile
 try:
     from hashlib import md5
 except ImportError:
-    from md5 import new as md5
+    from md5 import new as md5  # Python < 2.5
 from itertools import izip
 from time import time
 from werkzeug.posixemulation import rename
+from werkzeug._internal import _b
 
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle
+    import pickle  # Python >= 3
 
 
 def _items(mappingorseq):
@@ -84,8 +85,11 @@ def _items(mappingorseq):
         ...    assert k*k == v
 
     """
-    return mappingorseq.iteritems() if hasattr(mappingorseq, 'iteritems') \
-        else mappingorseq
+    if hasattr(mappingorseq, 'items'):
+        return mappingorseq.items()
+    if hasattr(mappingorseq, 'iteritems'):
+        return mappingorseq.iteritems()
+    return mappingorseq
 
 
 class BaseCache(object):
@@ -495,7 +499,7 @@ class RedisCache(BaseCache):
         t = type(value)
         if t is int or t is long:
             return str(value)
-        return '!' + pickle.dumps(value)
+        return _b('!') + pickle.dumps(value)
 
     def load_object(self, value):
         """The reversal of :meth:`dump_object`.  This might be callde with
@@ -503,7 +507,7 @@ class RedisCache(BaseCache):
         """
         if value is None:
             return None
-        if value.startswith('!'):
+        if value.startswith(_b('!')):
             return pickle.loads(value[1:])
         try:
             return int(value)
@@ -629,7 +633,7 @@ class FileSystemCache(BaseCache):
                 pass
 
     def _get_filename(self, key):
-        hash = md5(key).hexdigest()
+        hash = md5(_b(key)).hexdigest()
         return os.path.join(self._path, hash)
 
     def get(self, key):

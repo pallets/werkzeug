@@ -18,6 +18,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import exceptions
 from werkzeug.wrappers import Response
+from werkzeug._internal import _b
 
 
 class ExceptionsTestCase(WerkzeugTestCase):
@@ -30,8 +31,8 @@ class ExceptionsTestCase(WerkzeugTestCase):
             resp = e.get_response({})
         else:
             self.fail('exception not raised')
-        self.assert_(resp is orig_resp)
-        self.assert_equal(resp.data, 'Hello World')
+        self.assertTrue(resp is orig_resp)
+        self.assert_equal(resp.data, _b('Hello World'))
 
     def test_aborter(self):
         abort = exceptions.abort
@@ -75,7 +76,7 @@ class ExceptionsTestCase(WerkzeugTestCase):
         exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
         h = dict(exc.get_headers({}))
         self.assert_equal(h['Allow'], 'GET, HEAD, POST')
-        self.assert_('The method DELETE is not allowed' in exc.get_description({
+        self.assertTrue('The method DELETE is not allowed' in exc.get_description({
             'REQUEST_METHOD': 'DELETE'
         }))
 

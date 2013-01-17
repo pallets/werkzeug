@@ -97,6 +97,7 @@
 """
 import re
 import posixpath
+import sys
 from pprint import pformat
 from urlparse import urljoin
 
@@ -816,9 +817,12 @@ class Rule(RuleFactory):
                 tmp.append('<%s>' % data)
             else:
                 tmp.append(data)
+        tmp = u''.join(tmp)
+        if sys.version_info < (3, ):
+            tmp = tmp.encode(charset)
         return '<%s %r%s -> %s>' % (
             self.__class__.__name__,
-            (u''.join(tmp).encode(charset)).lstrip('|'),
+            tmp.lstrip('|'),
             self.methods is not None and ' (%s)' % \
                 ', '.join(self.methods) or '',
             self.endpoint
@@ -1123,6 +1127,7 @@ class Map(object):
             script_name = '/'
         if isinstance(server_name, unicode):
             server_name = server_name.encode('idna')
+        server_name = server_name.decode('ascii')
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme, path_info, default_method, query_args)
 
@@ -1229,7 +1234,7 @@ class MapAdapter(object):
         self.default_method = default_method
         self.query_args = query_args
 
-    def dispatch(self, view_func, path_info=None, method=None,
+    def dispatch(self, view_func, path=None, method=None, path_info=None,
                  catch_http_exceptions=False):
         """Does the complete dispatching process.  `view_func` is called with
         the endpoint and a dict with the values for the view.  It should
@@ -1266,16 +1271,18 @@ class MapAdapter(object):
                           first argument and the value dict as second.  Has
                           to dispatch to the actual view function with this
                           information.  (see above)
-        :param path_info: the path info to use for matching.  Overrides the
-                          path info specified on binding.
+        :param path: the path info to use for matching.  Overrides the
+                     path info specified on binding.
         :param method: the HTTP method used for matching.  Overrides the
                        method specified on binding.
+        :param path_info: same as `path`, but for directly passing
+                          `environ['PATH_INFO']`.
         :param catch_http_exceptions: set to `True` to catch any of the
                                       werkzeug :class:`HTTPException`\s.
         """
         try:
             try:
-                endpoint, args = self.match(path_info, method)
+                endpoint, args = self.match(path, method, path_info=path_info)
             except RequestRedirect, e:
                 return e
             return view_func(endpoint, args)
@@ -1284,8 +1291,8 @@ class MapAdapter(object):
                 return e
             raise
 
-    def match(self, path_info=None, method=None, return_rule=False,
-              query_args=None):
+    def match(self, path=None, method=None, return_rule=False,
+              path_info=None, query_args=None):
         """The usage is simple: you just pass the match method the current
         path info as well as the method (which defaults to `GET`).  The
         following things can then happen:
@@ -1342,12 +1349,16 @@ class MapAdapter(object):
           ...
         NotFound: 404 Not Found
 
-        :param path_info: the path info to use for matching.  Overrides the
-                          path info specified on binding.
+        :param path: the path info to use for matching.  Overrides the
+                     path info specified on binding.
         :param method: the HTTP method used for matching.  Overrides the
                        method specified on binding.
         :param return_rule: return the rule that matched instead of just the
                             endpoint (defaults to `False`).
+        :param path_info: same as `path`, but use this when you pass
+                          `environ['PATH_INFO']` (which is a unicode string
+                          encoded in ISO 8859-1 from the bytestring, as
+                          specified in PEP 3333).
         :param query_args: optional query arguments that are used for
                            automatic redirects as string or dictionary.  It's
                            currently not possible to use the query arguments
@@ -1363,28 +1374,31 @@ class MapAdapter(object):
            `query_args` can now also be a string.
         """
         self.map.update()
+        assert not (path and path_info), \
+               "You can't give both path and path_info"
         if path_info is None:
             path_info = self.path_info
-        if not isinstance(path_info, unicode):
-            path_info = path_info.decode(self.map.charset,
-                                         self.map.encoding_errors)
+        if path is None:
+            path = path_info.encode('latin1')
+        if not isinstance(path, unicode):
+            path = path.decode(self.map.charset, self.map.encoding_errors)
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
 
-        path = u'%s|/%s' % (self.map.host_matching and self.server_name or
-                            self.subdomain, path_info.lstrip('/'))
+        path_ = u'%s|/%s' % (self.map.host_matching and self.server_name or
+                            self.subdomain, path.lstrip('/'))
 
         have_match_for = set()
         for rule in self.map._rules:
             try:
-                rv = rule.match(path)
+                rv = rule.match(path_)
             except RequestSlash:
                 raise RequestRedirect(self.make_redirect_url(
-                    path_info + '/', query_args))
+                    path + '/', query_args))
             except RequestAliasRedirect, e:
                 raise RequestRedirect(self.make_alias_redirect_url(
-                    path, rule.endpoint, e.matched_values, method, query_args))
+                    path_, rule.endpoint, e.matched_values, method, query_args))
             if rv is None:
                 continue
             if rule.methods is not None and method not in rule.methods:
@@ -1422,30 +1436,32 @@ class MapAdapter(object):
             raise MethodNotAllowed(valid_methods=list(have_match_for))
         raise NotFound()
 
-    def test(self, path_info=None, method=None):
+    def test(self, path=None, method=None, path_info=None):
         """Test if a rule would match.  Works like `match` but returns `True`
         if the URL matches, or `False` if it does not exist.
 
-        :param path_info: the path info to use for matching.  Overrides the
-                          path info specified on binding.
+        :param path: the path info to use for matching.  Overrides the
+                     path info specified on binding.
         :param method: the HTTP method used for matching.  Overrides the
                        method specified on binding.
+        :param path_info: same as `path` but for directly passing
+                          `environ['PATH_INFO']`/
         """
         try:
-            self.match(path_info, method)
+            self.match(path, method, path_info=path_info)
         except RequestRedirect:
             pass
         except HTTPException:
             return False
         return True
 
-    def allowed_methods(self, path_info=None):
+    def allowed_methods(self, path=None, path_info=None):
         """Returns the valid methods that match for a given path.
 
         .. versionadded:: 0.7
         """
         try:
-            self.match(path_info, method='--')
+            self.match(path, method='--', path_info=path_info)
         except MethodNotAllowed, e:
             return e.valid_methods
         except HTTPException, e:
@@ -1491,7 +1507,7 @@ class MapAdapter(object):
             query_args = url_encode(query_args, self.map.charset)
         return query_args
 
-    def make_redirect_url(self, path_info, query_args=None, domain_part=None):
+    def make_redirect_url(self, path, query_args=None, domain_part=None):
         """Creates a redirect URL.
 
         :internal:
@@ -1503,7 +1519,7 @@ class MapAdapter(object):
             self.url_scheme,
             self.get_host(domain_part),
             posixpath.join(self.script_name[:-1].lstrip('/'),
-                           url_quote(path_info.lstrip('/'), self.map.charset,
+                           url_quote(path.lstrip('/'), self.map.charset,
                                      safe='/:|+')),
             suffix
         ))

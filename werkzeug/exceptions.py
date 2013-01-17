@@ -142,6 +142,8 @@ class HTTPException(Exception):
         return response(environ, start_response)
 
     def __str__(self):
+        if sys.version_info > (3, ):
+            return self.__unicode__()
         return unicode(self).encode('utf-8')
 
     def __unicode__(self):

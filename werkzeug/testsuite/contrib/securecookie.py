@@ -15,6 +15,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.utils import parse_cookie
 from werkzeug.wrappers import Request, Response
 from werkzeug.contrib.securecookie import SecureCookie
+from werkzeug._internal import _b
 
 
 class SecureCookieTestCase(WerkzeugTestCase):
@@ -47,7 +48,7 @@ class SecureCookieTestCase(WerkzeugTestCase):
         c = SecureCookie.load_cookie(req, secret_key='foo')
         assert c.new
         c['foo'] = 42
-        assert c.secret_key == 'foo'
+        assert c.secret_key == _b('foo')
         c.save_cookie(resp)
 
         req = Request.from_values(headers={

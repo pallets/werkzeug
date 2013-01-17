@@ -143,4 +143,5 @@ def main():
     try:
         unittest.main(testLoader=BetterLoader(), defaultTest='suite')
     except Exception, e:
+        raise
         print 'Error: %s' % e

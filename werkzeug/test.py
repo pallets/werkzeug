@@ -15,17 +15,27 @@ from time import time
 from random import random
 from itertools import chain
 from tempfile import TemporaryFile
-from cStringIO import StringIO
+if sys.version_info > (3, ):
+    from io import BytesIO
+else:
+    # Python < 2.6
+    # also needed in order to pass test_environ_builder_stream_switch
+    from cStringIO import StringIO as BytesIO
 from cookielib import CookieJar
 from urllib2 import Request as U2Request
 
-from werkzeug._internal import _empty_stream, _get_environ
+from werkzeug._internal import _b, _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
      CombinedMultiDict, Headers, FileStorage
+
+try:
+    bytes
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
@@ -36,7 +46,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     """
     if boundary is None:
         boundary = '---------------WerkzeugFormPart_%s%s' % (time(), random())
-    _closure = [StringIO(), 0, False]
+    _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
         def write(string):
@@ -62,8 +72,8 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
 
     for key, values in values.iterlists():
         for value in values:
-            write('--%s\r\nContent-Disposition: form-data; name="%s"' %
-                  (boundary, key))
+            write(_b('--%s\r\nContent-Disposition: form-data; name="%s"' %
+                     (boundary, key)))
             reader = getattr(value, 'read', None)
             if reader is not None:
                 filename = getattr(value, 'filename',
@@ -74,21 +84,23 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                         mimetypes.guess_type(filename)[0] or \
                         'application/octet-stream'
                 if filename is not None:
-                    write('; filename="%s"\r\n' % filename)
+                    write(_b('; filename="%s"\r\n' % filename))
                 else:
                     write('\r\n')
-                write('Content-Type: %s\r\n\r\n' % content_type)
+                write(_b('Content-Type: %s\r\n\r\n' % content_type))
                 while 1:
                     chunk = reader(16384)
                     if not chunk:
                         break
                     write(chunk)
             else:
+                if not isinstance(value, bytes):
+                    value = str(value)
                 if isinstance(value, unicode):
                     value = value.encode(charset)
-                write('\r\n\r\n' + str(value))
-            write('\r\n')
-    write('--%s--\r\n' % boundary)
+                write(_b('\r\n\r\n') + value)
+            write(_b('\r\n'))
+    write(_b('--%s--\r\n' % boundary))
 
     length = int(_closure[0].tell())
     _closure[0].seek(0)
@@ -123,9 +135,16 @@ class _TestCookieHeaders(object):
         headers = []
         name = name.lower()
         for k, v in self.headers:
-            if k.lower() == name:
+            if k.lower() == name.lower():
                 headers.append(v)
         return headers
+
+    def get_all(self, name, default=None):
+        rv = []
+        for k, v in self.headers:
+            if k.lower() == name.lower():
+                rv.append(v)
+        return rv or default or []
 
 
 class _TestCookieResponse(object):
@@ -300,9 +319,11 @@ class EnvironBuilder(object):
 
         if data:
             if input_stream is not None:
-                raise TypeError('can\'t provide input stream and data')
-            if isinstance(data, basestring):
-                self.input_stream = StringIO(data)
+                raise TypeError('can\'t provide both input stream and data')
+            if isinstance(data, unicode):
+                data = data.encode(self.charset)
+            if isinstance(data, bytes):
+                self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)
             else:
@@ -515,8 +536,9 @@ class EnvironBuilder(object):
             content_type += '; boundary="%s"' % boundary
         elif content_type == 'application/x-www-form-urlencoded':
             values = url_encode(self.form, charset=self.charset)
+            values = values.encode('ascii')
             content_length = len(values)
-            input_stream = StringIO(values)
+            input_stream = BytesIO(values)
         else:
             input_stream = _empty_stream
 
@@ -525,6 +547,9 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
+            if sys.version_info >= (3, ):
+                # NOTE: PEP 3333 for Python 3
+                return _unquote(x).decode('latin1')
             if isinstance(x, unicode):
                 x = x.encode(self.charset)
             return _unquote(x)

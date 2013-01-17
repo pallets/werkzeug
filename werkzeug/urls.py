@@ -8,11 +8,19 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import sys
 import urlparse
+if sys.version_info >= (3, ):
+    from io import TextIOBase
 
-from werkzeug._internal import _decode_unicode
+from werkzeug._internal import _b, _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from werkzeug.wsgi import make_chunk_iter
+
+try:
+    bytes
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 #: list of characters that are always safe in URLs.
@@ -32,23 +40,52 @@ _hexdig = '0123456789ABCDEFabcdef'
 _hextochr = dict((a + b, chr(int(a + b, 16)))
                  for a in _hexdig for b in _hexdig)
 
+if sys.version_info >= (3, ):
+    _always_safe = _always_safe.encode('ascii')
+    _safe_map = dict((ord(k), _safe_map[k]) for k in _safe_map)
+    _hextochr = dict((k, _hextochr[k].encode('latin1')) for k in _hextochr)
 
-def _quote(s, safe='/', _join=''.join):
-    assert isinstance(s, str), 'quote only works on bytes'
+
+def _enforce_in_out(in_type, out_type):
+    def decorator(f):
+        def new_f(*args, **kwargs):
+            if in_type is bytes:
+                type_name = 'bytes'
+            else:
+                type_name = in_type.__name__
+            assert isinstance(args[0], in_type), (
+                '%s only works in %s' % (f.__name__, type_name))
+            result = f(*args, **kwargs)
+            if isinstance(result, bytes) and out_type is unicode:
+                return result.decode('latin1')
+            elif isinstance(result, unicode) and out_type is bytes:
+                return result.encode('latin1')
+            return out_type(result)
+        return new_f
+    return decorator
+
+
+@_enforce_in_out(bytes, str)
+def _quote(s, safe=_b('/'), _join=''.join):
+    if isinstance(safe, unicode):
+        safe = safe.encode('ascii')
     if not s or not s.rstrip(_always_safe + safe):
         return s
     try:
         quoter = _safemaps[safe]
     except KeyError:
         safe_map = _safe_map.copy()
-        safe_map.update([(c, c) for c in safe])
+        if sys.version_info > (3, ):
+            safe_map.update([(c, chr(c)) for c in safe])
+        else:
+            safe_map.update([(c, c) for c in safe])
         _safemaps[safe] = quoter = safe_map.__getitem__
     return _join(map(quoter, s))
 
 
-def _quote_plus(s, safe=''):
-    if ' ' in s:
-        return _quote(s, safe + ' ').replace(' ', '+')
+def _quote_plus(s, safe=_b('')):
+    if _b(' ') in s:
+        return _quote(s, safe + _b(' ')).replace(' ', '+')
     return _quote(s, safe)
 
 
@@ -68,20 +105,20 @@ def _safe_urlsplit(s):
     return rv
 
 
-def _unquote(s, unsafe=''):
-    assert isinstance(s, str), 'unquote only works on bytes'
+@_enforce_in_out(str, bytes)
+def _unquote(s, unsafe=_b('')):
     rv = s.split('%')
     if len(rv) == 1:
         return s
-    s = rv[0]
+    s = _b(rv[0])
     for item in rv[1:]:
         try:
             char = _hextochr[item[:2]]
             if char in unsafe:
                 raise KeyError()
-            s += char + item[2:]
+            s += char + _b(item[2:])
         except KeyError:
-            s += '%' + item
+            s += _b('%') + _b(item)
     return s
 
 
@@ -127,8 +164,11 @@ def iri_to_uri(iri, charset='utf-8'):
     iri = unicode(iri)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
-    scheme = scheme.encode('ascii')
     hostname = hostname.encode('idna')
+    if sys.version_info >= (3, ):
+        hostname = hostname.decode('ascii')
+    else:
+        scheme = scheme.encode('ascii')
     if auth:
         if ':' in auth:
             auth, password = auth.split(':', 1)
@@ -141,8 +181,8 @@ def iri_to_uri(iri, charset='utf-8'):
     if port:
         hostname += ':' + port
 
-    path = _quote(path.encode(charset), safe="/:~+%")
-    query = _quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
+    path = _quote(path.encode(charset), safe=_b("/:~+%"))
+    query = _quote(query.encode(charset), safe=_b("=%&[]:;$()+,!?*/"))
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
@@ -170,10 +210,15 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: the charset of the URI
     :param errors: the error handling on decode
     """
-    uri = url_fix(str(uri), charset)
+    if not isinstance(uri, bytes):
+        uri = str(uri)
+    uri = url_fix(uri, charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
-    scheme = _decode_unicode(scheme, 'ascii', errors)
+    if sys.version_info >= (3, ):
+        hostname = hostname.encode('ascii')
+    else:
+        scheme = _decode_unicode(scheme, 'ascii', errors)
 
     try:
         hostname = hostname.decode('idna')
@@ -198,8 +243,8 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         # port should be numeric, but you never know...
         hostname += u':' + port.decode(charset, errors)
 
-    path = _decode_unicode(_unquote(path, '/;?'), charset, errors)
-    query = _decode_unicode(_unquote(query, ';/?:@&=+,$'),
+    path = _decode_unicode(_unquote(path, _b('/;?')), charset, errors)
+    query = _decode_unicode(_unquote(query, _b(';/?:@&=+,$')),
                             charset, errors)
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
@@ -243,7 +288,7 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
 
 
 def url_decode_stream(stream, charset='utf-8', decode_keys=False,
-                      include_empty=True, errors='replace', separator='&',
+                      include_empty=True, errors='replace', separator=_b('&'),
                       cls=None, limit=None, return_iterator=False):
     """Works like :func:`url_decode` but decodes a stream.  The behavior
     of stream and limit follows functions like
@@ -273,7 +318,18 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
         cls = lambda x: x
     elif cls is None:
         cls = MultiDict
-    pair_iter = make_chunk_iter(stream, separator, limit)
+    if sys.version_info >= (3, ) and isinstance(stream, TextIOBase):
+        def decorate(f):
+            def new_f(size):
+                return f(size).encode('ascii')
+            return new_f
+        stream.read = decorate(stream.read)
+        def wrap(iterable):
+            for item in iterable:
+                yield item.decode('ascii')
+        pair_iter = wrap(make_chunk_iter(stream, separator, limit))
+    else:
+        pair_iter = make_chunk_iter(stream, separator, limit)
     return cls(_url_decode_impl(pair_iter, charset, decode_keys,
                                 include_empty, errors))
 
@@ -283,6 +339,8 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
     for pair in pair_iter:
         if not pair:
             continue
+        if sys.version_info >= (3, ) and isinstance(pair, bytes):
+            pair = pair.decode('ascii')
         if '=' in pair:
             key, value = pair.split('=', 1)
         else:
@@ -293,6 +351,9 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
         key = _unquote_plus(key)
         if decode_keys:
             key = _decode_unicode(key, charset, errors)
+        else:
+            # XXX: Python 2 behaviour
+            key = _decode_unicode(key, 'ascii', errors)
         yield key, url_unquote_plus(value, charset, errors)
 
 
@@ -351,18 +412,22 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
 def _url_encode_impl(obj, charset, encode_keys, sort, key):
     iterable = iter_multi_items(obj)
     if sort:
-        iterable = sorted(iterable, key=key)
+        if sys.version_info > (3, ):
+            _key = lambda item: [str(_) for _ in item]
+        else:
+            _key = None
+        iterable = sorted(iterable, key=key or _key)
     for key, value in iterable:
         if value is None:
             continue
-        if encode_keys and isinstance(key, unicode):
-            key = key.encode(charset)
-        else:
-            key = str(key)
+        if not isinstance(key, (bytes, unicode)):
+            key = unicode(key)
+        if isinstance(key, unicode):
+            key = key.encode(charset if encode_keys else 'ascii')
+        if not isinstance(value, (bytes, unicode)):
+            value = unicode(value)
         if isinstance(value, unicode):
             value = value.encode(charset)
-        else:
-            value = str(value)
         yield '%s=%s' % (_quote(key), _quote_plus(value))
 
 
@@ -373,14 +438,14 @@ def url_quote(s, charset='utf-8', safe='/:'):
     :param charset: the charset to be used.
     :param safe: an optional sequence of safe characters.
     """
-    if isinstance(s, unicode):
-        s = s.encode(charset)
-    elif not isinstance(s, str):
-        s = str(s)
+    if not isinstance(s, bytes):
+        s = unicode(s).encode(charset)
+    if not isinstance(safe, bytes):
+        safe = unicode(safe).encode(charset)
     return _quote(s, safe=safe)
 
 
-def url_quote_plus(s, charset='utf-8', safe=''):
+def url_quote_plus(s, charset='utf-8', safe=_b('')):
     """URL encode a single string with the given encoding and convert
     whitespace to "+".
 
@@ -388,10 +453,10 @@ def url_quote_plus(s, charset='utf-8', safe=''):
     :param charset: the charset to be used.
     :param safe: an optional sequence of safe characters.
     """
-    if isinstance(s, unicode):
-        s = s.encode(charset)
-    elif not isinstance(s, str):
-        s = str(s)
+    if not isinstance(s, bytes):
+        s = unicode(s).encode(charset)
+    if not isinstance(safe, bytes):
+        safe = unicode(safe).encode(charset)
     return _quote_plus(s, safe=safe)
 
 
@@ -406,8 +471,6 @@ def url_unquote(s, charset='utf-8', errors='replace'):
     :param charset: the charset to be used.
     :param errors: the error handling for the charset decoding.
     """
-    if isinstance(s, unicode):
-        s = s.encode(charset)
     return _decode_unicode(_unquote(s), charset, errors)
 
 
@@ -423,7 +486,7 @@ def url_unquote_plus(s, charset='utf-8', errors='replace'):
     :param charset: the charset to be used.
     :param errors: the error handling for the charset decoding.
     """
-    if isinstance(s, unicode):
+    if sys.version_info < (3, ) and isinstance(s, unicode):
         s = s.encode(charset)
     return _decode_unicode(_unquote_plus(s), charset, errors)
 
@@ -441,11 +504,11 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    if isinstance(s, unicode):
+    if sys.version_info < (3, ) and isinstance(s, unicode):
         s = s.encode(charset, 'replace')
     scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
-    path = _quote(path, '/%')
-    qs = _quote_plus(qs, ':&%=')
+    path = _quote(_b(path), _b('/%'))
+    qs = _quote_plus(_b(qs), _b(':&%='))
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 

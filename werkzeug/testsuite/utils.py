@@ -21,18 +21,19 @@ from werkzeug.datastructures import Headers
 from werkzeug.http import parse_date, http_date
 from werkzeug.wrappers import BaseResponse
 from werkzeug.test import Client, run_wsgi_app
+from werkzeug._internal import _b
 
 
 class GeneralUtilityTestCase(WerkzeugTestCase):
 
     def test_redirect(self):
         resp = utils.redirect(u'/füübär')
-        assert '/f%C3%BC%C3%BCb%C3%A4r' in resp.data
+        assert _b('/f%C3%BC%C3%BCb%C3%A4r') in resp.data
         assert resp.headers['Location'] == '/f%C3%BC%C3%BCb%C3%A4r'
         assert resp.status_code == 302
 
         resp = utils.redirect(u'http://☃.net/', 307)
-        assert 'http://xn--n3h.net/' in resp.data
+        assert _b('http://xn--n3h.net/') in resp.data
         assert resp.headers['Location'] == 'http://xn--n3h.net/'
         assert resp.status_code == 307
 
@@ -43,11 +44,11 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
     def test_redirect_xss(self):
         location = 'http://example.com/?xss="><script>alert(1)</script>'
         resp = utils.redirect(location)
-        assert '<script>alert(1)</script>' not in resp.data
+        assert _b('<script>alert(1)</script>') not in resp.data
 
         location = 'http://example.com/?xss="onmouseover="alert(1)'
         resp = utils.redirect(location)
-        assert 'href="http://example.com/?xss="onmouseover="alert(1)"' not in resp.data
+        assert _b('href="http://example.com/?xss="onmouseover="alert(1)"') not in resp.data
 
     def test_cached_property(self):
         foo = []

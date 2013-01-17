@@ -21,6 +21,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import codecs
+import sys
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import cached_property
 from werkzeug.http import dump_options_header, parse_options_header
@@ -164,12 +165,16 @@ class ReverseSlashBehaviorRequestMixin(object):
         info in the WSGI environment but will not include a leading slash.
         """
         path = (self.environ.get('PATH_INFO') or '').lstrip('/')
+        if sys.version_info >= (3, ):
+            return path
         return _decode_unicode(path, self.charset, self.encoding_errors)
 
     @cached_property
     def script_root(self):
         """The root path of the script includling a trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/') + '/'
+        if sys.version_info >= (3, ):
+            return path
         return _decode_unicode(path, self.charset, self.encoding_errors)
 
 

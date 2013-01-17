@@ -17,6 +17,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.wrappers import Request, Response
 
 from werkzeug import _internal as internal
+from werkzeug._internal import _b
 from werkzeug.test import create_environ
 
 
@@ -32,8 +33,8 @@ class InternalTestCase(WerkzeugTestCase):
     def test_easteregg(self):
         req = Request.from_values('/?macgybarchakku')
         resp = Response.force_type(internal._easteregg(None), req)
-        assert 'About Werkzeug' in resp.data
-        assert 'the Swiss Army knife of Python web development' in resp.data
+        assert _b('About Werkzeug') in resp.data
+        assert _b('the Swiss Army knife of Python web development') in resp.data
 
     def test_wrapper_internals(self):
         req = Request.from_values(data={'foo': 'bar'}, method='POST')
@@ -58,7 +59,7 @@ class InternalTestCase(WerkzeugTestCase):
         headers = response.get_wsgi_headers(create_environ())
         assert 'Content-Length' not in headers
 
-        response = Response(['Hällo Wörld'])
+        response = Response([_b('Hällo Wörld')])
         headers = response.get_wsgi_headers(create_environ())
         assert 'Content-Length' in headers
 

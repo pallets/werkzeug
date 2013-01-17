@@ -106,8 +106,8 @@ attribute_modules = frozenset(['exceptions', 'routing', 'script'])
 
 
 object_origins = {}
-for module, items in all_by_module.iteritems():
-    for item in items:
+for module in all_by_module:
+    for item in all_by_module[module]:
         object_origins[item] = module
 
 

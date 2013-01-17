@@ -53,6 +53,16 @@ def safe_str_cmp(a, b):
     return rv == 0
 
 
+def safe_bytes_cmp(a, b):
+    """Same as safe_str_cmp, but for bytes"""
+    if len(a) != len(b):
+        return False
+    rv = 0
+    for x, y in izip(a, b):
+        rv |= x ^ y
+    return rv == 0
+
+
 def gen_salt(length):
     """Generate a random string of SALT_CHARS with specified ``length``."""
     if length <= 0:

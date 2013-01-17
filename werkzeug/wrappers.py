@@ -20,6 +20,7 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import sys
 import urlparse
 from datetime import datetime, timedelta
 
@@ -42,8 +43,12 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
      ResponseCacheControl, RequestCacheControl, CallbackDict, \
      ContentRange
-from werkzeug._internal import _empty_stream, _decode_unicode, \
+from werkzeug._internal import _b, _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
+try:
+    bytes
+except NameError:
+    bytes = str  # Python < 2.6
 
 
 def _run_wsgi_app(*args):
@@ -431,6 +436,8 @@ class BaseRequest(object):
         even if the URL root is accessed.
         """
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
+        if sys.version_info >= (3, ):
+            return path
         return _decode_unicode(path, self.url_charset, self.encoding_errors)
 
     @cached_property
@@ -442,6 +449,8 @@ class BaseRequest(object):
     def script_root(self):
         """The root path of the script without the trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
+        if sys.version_info >= (3, ):
+            return path
         return _decode_unicode(path, self.url_charset, self.encoding_errors)
 
     @cached_property
@@ -653,7 +662,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, basestring):
+        elif isinstance(response, (bytes, unicode)):
             self.data = response
         else:
             self.response = response
@@ -765,7 +774,7 @@ class BaseResponse(object):
         :attr:`implicit_sequence_conversion` to `False`.
         """
         self._ensure_sequence()
-        return ''.join(self.iter_encoded())
+        return _b('').join(self.iter_encoded())
     def _set_data(self, value):
         # if an unicode string is set, it's encoded directly so that we
         # can set the content length
@@ -834,8 +843,10 @@ class BaseResponse(object):
         for item in self.response:
             if isinstance(item, unicode):
                 yield item.encode(charset)
+            elif isinstance(item, int) and sys.version_info >= (3, ):
+                yield bytes([item])
             else:
-                yield str(item)
+                yield bytes(item)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None, httponly=False):
@@ -1012,8 +1023,8 @@ class BaseResponse(object):
         if self.automatically_set_content_length and \
            self.is_sequence and content_length is None and status != 304:
             try:
-                content_length = sum(len(str(x)) for x in self.response)
-            except UnicodeError:
+                content_length = sum(len(bytes(x)) for x in self.response)
+            except (TypeError, UnicodeError):
                 # aha, something non-bytestringy in there, too bad, we
                 # can't safely figure out the length of the response.
                 pass

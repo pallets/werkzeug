@@ -16,6 +16,7 @@ import shutil
 
 from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.contrib import cache
+from werkzeug._internal import _b
 
 try:
     import redis
@@ -95,8 +96,8 @@ class RedisCacheTestCase(WerkzeugTestCase):
 
     def test_compat(self):
         c = self.make_cache()
-        c._client.set(c.key_prefix + 'foo', 'Awesome')
-        self.assert_equal(c.get('foo'), 'Awesome')
+        c._client.set(c.key_prefix + 'foo', _b('Awesome'))
+        self.assert_equal(c.get('foo'), _b('Awesome'))
         c._client.set(c.key_prefix + 'foo', '42')
         self.assert_equal(c.get('foo'), 42)
 

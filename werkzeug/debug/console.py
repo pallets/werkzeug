@@ -15,6 +15,11 @@ from werkzeug.utils import escape
 from werkzeug.local import Local
 from werkzeug.debug.repr import debug_repr, dump, helper
 
+try:
+    bytes
+except NameError:
+    bytes = str  # Python < 2.6
+
 
 _local = Local()
 
@@ -50,7 +55,7 @@ class HTMLStringO(object):
         return val
 
     def _write(self, x):
-        if isinstance(x, str):
+        if isinstance(x, bytes):
             x = x.decode('utf-8', 'replace')
         self._buffer.append(x)
 

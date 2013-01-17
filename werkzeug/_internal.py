@@ -9,15 +9,23 @@
     :license: BSD, see LICENSE for more details.
 """
 import inspect
+import sys
 from weakref import WeakKeyDictionary
-from cStringIO import StringIO
+try:
+    from io import BytesIO
+except ImportError:
+    from cStringIO import StringIO as BytesIO  # Python < 2.6
 from Cookie import SimpleCookie, Morsel, CookieError
 from time import gmtime
 from datetime import datetime, date
 
 
+if sys.version_info >= (3, ):
+    _b = lambda _: _ if isinstance(_, bytes) else _.encode('utf-8')
+else:
+    _b = str
 _logger = None
-_empty_stream = StringIO('')
+_empty_stream = BytesIO(_b(''))
 _signature_cache = WeakKeyDictionary()
 _epoch_ord = date(1970, 1, 1).toordinal()
 
@@ -347,7 +355,10 @@ class _DictAccessorProperty(object):
 
 def _easteregg(app):
     """Like the name says.  But who knows how it works?"""
-    gyver = '\n'.join([x + (77 - len(x)) * ' ' for x in '''
+    from base64 import b64decode
+    from zlib import decompress
+    gyver = _b('\n').join([x + (77 - len(x)) * _b(' ') for x in
+        decompress(b64decode(_b('''
 eJyFlzuOJDkMRP06xRjymKgDJCDQStBYT8BCgK4gTwfQ2fcFs2a2FzvZk+hvlcRvRJD148efHt9m
 9Xz94dRY5hGt1nrYcXx7us9qlcP9HHNh28rz8dZj+q4rynVFFPdlY4zH873NKCexrDM6zxxRymzz
 4QIxzK4bth1PV7+uHn6WXZ5C4ka/+prFzx3zWLMHAVZb8RRUxtFXI5DTQ2n3Hi2sNI+HK43AOWSY
@@ -378,7 +389,7 @@ p1qXK3Du2mnr5INXmT/78KI12n11EFBkJHHp0wJyLe9MvPNUGYsf+170maayRoy2lURGHAIapSpQ
 krEDuNoJCHNlZYhKpvw4mspVWxqo415n8cD62N9+EfHrAvqQnINStetek7RY2Urv8nxsnGaZfRr/
 nhXbJ6m/yl1LzYqscDZA9QHLNbdaSTTr+kFg3bC0iYbX/eQy0Bv3h4B50/SGYzKAXkCeOLI3bcAt
 mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
-7f2zLkGNv8b191cD/3vs9Q833z8t'''.decode('base64').decode('zlib').splitlines()])
+7f2zLkGNv8b191cD/3vs9Q833z8t'''))).splitlines()])
     def easteregged(environ, start_response):
         def injecting_start_response(status, headers, exc_info=None):
             headers.append(('X-Powered-By', 'Werkzeug'))

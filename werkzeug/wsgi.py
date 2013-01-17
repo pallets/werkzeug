@@ -20,7 +20,7 @@ from time import time, mktime
 from datetime import datetime
 from functools import partial
 
-from werkzeug._internal import _patch_wrapper
+from werkzeug._internal import _b, _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
 
 
@@ -62,11 +62,11 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     cat = tmp.append
     if host_only:
         return ''.join(tmp) + '/'
-    cat(urllib.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
+    cat(urllib.quote(environ.get('SCRIPT_NAME', '').rstrip('/').encode('latin1')))
     if root_only:
         cat('/')
     else:
-        cat(urllib.quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
+        cat(urllib.quote(('/' + environ.get('PATH_INFO', '').lstrip('/')).encode('latin1')))
         if not strip_querystring:
             qs = environ.get('QUERY_STRING')
             if qs:
@@ -193,12 +193,14 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
                                   same server point to the same
                                   resource.
     """
-    from werkzeug.urls import uri_to_iri, url_fix
+    from werkzeug.urls import uri_to_iri
 
     def _as_iri(obj):
-        if not isinstance(obj, unicode):
-            return uri_to_iri(obj, charset, errors)
-        return obj
+        try:
+            obj.encode('ascii')
+        except UnicodeEncodeError:
+            return obj
+        return uri_to_iri(obj, charset, errors)
 
     def _normalize_netloc(scheme, netloc):
         parts = netloc.split(u'@', 1)[-1].split(u':', 1)
@@ -385,7 +387,7 @@ class SharedDataMiddleware(object):
         return 'wzsdm-%d-%s-%s' % (
             mktime(mtime.timetuple()),
             file_size,
-            adler32(real_filename) & 0xffffffff
+            adler32(_b(real_filename)) & 0xffffffff
         )
 
     def __call__(self, environ, start_response):
@@ -570,6 +572,7 @@ class FileWrapper(object):
         data = self.file.read(self.buffer_size)
         if data:
             return data
+        self.close()
         raise StopIteration()
 
 
@@ -624,20 +627,20 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
             new_buf = []
             for item in chain(buffer, new_data.splitlines(True)):
                 new_buf.append(item)
-                if item and item[-1:] in '\r\n':
-                    yield ''.join(new_buf)
+                if item and item[-1:] in _b('\r\n'):
+                    yield _b('').join(new_buf)
                     new_buf = []
             buffer = new_buf
         if buffer:
-            yield ''.join(buffer)
+            yield _b('').join(buffer)
 
     # This hackery is necessary to merge 'foo\r' and '\n' into one item
     # of 'foo\r\n' if we were unlucky and we hit a chunk boundary.
-    previous = ''
+    previous = _b('')
     for item in _iter_basic_lines():
-        if item == '\n' and previous[-1:] == '\r':
-            previous += '\n'
-            item = ''
+        if item == _b('\n') and previous[-1:] == _b('\r'):
+            previous += _b('\n')
+            item = _b('')
         if previous:
             yield previous
         previous = item
@@ -664,7 +667,9 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
     :param buffer_size: The optional buffer size.
     """
     _read = make_chunk_iter_func(stream, limit, buffer_size)
-    _split = re.compile(r'(%s)' % re.escape(separator)).split
+    if isinstance(separator, unicode):
+        separator = separator.encode('latin1')
+    _split = re.compile(_b('(') + re.escape(separator) + _b(')')).split
     buffer = []
     while 1:
         new_data = _read()
@@ -674,13 +679,13 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
         new_buf = []
         for item in chain(buffer, chunks):
             if item == separator:
-                yield ''.join(new_buf)
+                yield _b('').join(new_buf)
                 new_buf = []
             else:
                 new_buf.append(item)
         buffer = new_buf
     if buffer:
-        yield ''.join(buffer)
+        yield _b('').join(buffer)
 
 
 class LimitedStream(object):
@@ -754,7 +759,7 @@ class LimitedStream(object):
         function.
         """
         if self.silent:
-            return ''
+            return _b('')
         from werkzeug.exceptions import BadRequest
         raise BadRequest('input stream exhausted')
 
