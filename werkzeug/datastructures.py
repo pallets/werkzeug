@@ -1339,7 +1339,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         return list(self.iterlists())
 
     def iterlistvalues(self):
-        return (x[0] for x in self.lists())
+        return (val for key, val in self.iterlists())
 
     def listvalues(self):
         return list(self.iterlistvalues())

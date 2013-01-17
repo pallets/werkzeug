@@ -443,6 +443,18 @@ class CombinedMultiDictTestCase(WerkzeugTestCase):
         x = self.storage_class((md1, md2))
         assert x.lists() == [('foo', ['bar', 'blafasel'])]
 
+    def test_iterables(self):
+        a = datastructures.MultiDict((("key_a", "value_a"),))
+        b = datastructures.MultiDict((("key_b", "value_b"),))
+        ab = datastructures.CombinedMultiDict((a,b))
+
+        assert list(ab.iterlists()) == ab.lists()
+        assert ab.lists() == [('key_a', ['value_a']), ('key_b', ['value_b'])]
+        assert list(ab.iterlistvalues()) == [['value_a'], ['value_b']]
+
+        assert list(ab.iterkeys()) == ab.keys()
+        assert ab.keys() == ["key_a", "key_b"]
+
 
 class HeadersTestCase(WerkzeugTestCase):
     storage_class = datastructures.Headers
