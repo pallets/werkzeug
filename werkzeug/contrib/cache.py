@@ -652,7 +652,7 @@ class FileSystemCache(BaseCache):
     def add(self, key, value, timeout=None):
         filename = self._get_filename(key)
         if not os.path.exists(filename):
-            self.set(key, value, timeout)
+            return self.set(key, value, timeout)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
@@ -671,10 +671,14 @@ class FileSystemCache(BaseCache):
             rename(tmp, filename)
             os.chmod(filename, self._mode)
         except (IOError, OSError):
-            pass
+            return False
+        else:
+            return True
 
     def delete(self, key):
         try:
             os.remove(self._get_filename(key))
         except (IOError, OSError):
-            pass
+            return False
+        else:
+            return True
