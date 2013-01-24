@@ -113,8 +113,9 @@ class BaseCache(object):
         nothing happens.
 
         :param key: the key to delete.
+        :returns: If the key has been deleted.
         """
-        pass
+        return True
 
     def get_many(self, *keys):
         """Returns a list of values for the given keys.
@@ -150,6 +151,7 @@ class BaseCache(object):
         :param value: the value for the key
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
+        :returns: If the key has been set.
         """
         return True
 
@@ -161,6 +163,7 @@ class BaseCache(object):
         :param value: the value for the key
         :param timeout: the cache timeout for the key or the default
                         timeout if not specified.
+        :returns: If the key has been added.
         """
         return True
 
@@ -170,6 +173,7 @@ class BaseCache(object):
         :param mapping: a mapping with the keys/values to set.
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
+        :returns: If all given keys have been set.
         """
         statuses = []
         for key, value in _items(mapping):
@@ -181,12 +185,14 @@ class BaseCache(object):
 
         :param keys: The function accepts multiple keys as positional
                      arguments.
+        :returns: If all given keys have been deleted.
         """
         return all(self.delete(key) for key in keys)
 
     def clear(self):
         """Clears the cache.  Keep in mind that not all caches support
         completely clearing the cache.
+        :returns: If the cache has been cleared.
         """
         return True
 
@@ -198,6 +204,7 @@ class BaseCache(object):
 
         :param key: the key to increment.
         :param delta: the delta to add.
+        :returns: If the value has been increased.
         """
         return self.set(key, (self.get(key) or 0) + delta)
 
@@ -209,6 +216,7 @@ class BaseCache(object):
 
         :param key: the key to increment.
         :param delta: the delta to subtract.
+        :returns: If the value has been decreased.
         """
         return self.set(key, (self.get(key) or 0) - delta)
 
@@ -268,7 +276,7 @@ class SimpleCache(BaseCache):
         self._cache.setdefault(key, item)
 
     def delete(self, key):
-        self._cache.pop(key, None)
+        return self._cache.pop(key, None) is not None
 
 
 _test_memcached_key = re.compile(br'[^\x00-\x21\xff]{1,250}$').match
@@ -410,14 +418,14 @@ class MemcachedCache(BaseCache):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
-        self._client.incr(key, delta)
+        return self._client.incr(key, delta)
 
     def dec(self, key, delta=1):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
-        self._client.decr(key, delta)
+        return self._client.decr(key, delta)
 
     def import_preferred_memcache_lib(self, servers):
         """Returns an initialized memcache client.  Used by the constructor."""
@@ -544,7 +552,7 @@ class RedisCache(BaseCache):
         return pipe.execute()
 
     def delete(self, key):
-        self._client.delete(self.key_prefix + key)
+        return self._client.delete(self.key_prefix + key)
 
     def delete_many(self, *keys):
         if not keys:
@@ -629,7 +637,8 @@ class FileSystemCache(BaseCache):
             try:
                 os.remove(fname)
             except (IOError, OSError):
-                pass
+                return False
+        return True
 
     def _get_filename(self, key):
         if isinstance(key, text_type):
