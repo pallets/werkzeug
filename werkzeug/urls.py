@@ -18,7 +18,7 @@ from werkzeug.wsgi import make_chunk_iter
 #: list of characters that are always safe in URLs.
 _always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 'abcdefghijklmnopqrstuvwxyz'
-                '0123456789_.-')
+                '0123456789_.-+')
 _safe_map = dict((c, c) for c in _always_safe)
 for i in xrange(0x80):
     c = chr(i)

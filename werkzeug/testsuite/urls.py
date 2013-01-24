@@ -91,6 +91,10 @@ class URLsTestCase(WerkzeugTestCase):
         x = urls.url_fix('http://example.com/?foo=%2f%2f')
         assert x == 'http://example.com/?foo=%2f%2f'
 
+        x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+        assert x == 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation'
+        
+
     def test_iri_support(self):
         self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
         self.assert_raises(UnicodeError, urls.iri_to_uri, 'http://föö.com/')
