@@ -484,7 +484,7 @@ class RedisCache(BaseCache):
                 import redis
             except ImportError:
                 raise RuntimeError('no redis module found')
-            self._client = redis.Redis(host=host, port=port, password=password)
+            self._client = redis.Redis(host=host, port=port, password=password, db=db)
         else:
             self._client = host
         self.key_prefix = key_prefix or ''
