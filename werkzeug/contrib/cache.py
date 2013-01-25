@@ -470,13 +470,14 @@ class RedisCache(BaseCache):
                  compatible with the official Python Redis client (redis-py).
     :param port: port number on which Redis server listens for connections.
     :param password: password authentication for the Redis server.
+    :param db: db (zero-based numeric index) on Redis Server to connect.
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`.
     :param key_prefix: A prefix that should be added to all keys.
     """
 
     def __init__(self, host='localhost', port=6379, password=None,
-                 default_timeout=300, key_prefix=None):
+                 db=0, default_timeout=300, key_prefix=None):
         BaseCache.__init__(self, default_timeout)
         if isinstance(host, basestring):
             try:
