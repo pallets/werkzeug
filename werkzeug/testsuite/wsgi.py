@@ -203,6 +203,12 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             'SERVER_PORT':      '81'
         }) == 'foobar.example.com:81'
 
+    def test_get_current_url_unicode(self):
+        env = create_environ()
+        env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=\xcf'
+        rv = wsgi.get_current_url(env)
+        self.assertEqual(rv, 'http://localhost/?foo=bar&baz=blah&meh=%CF')
+
     def test_multi_part_line_breaks(self):
         data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
         test_stream = StringIO(data)

@@ -22,6 +22,8 @@ Release date to be decided, codename to be chosen.
   ``+``.
 - The :func:`werkzeug.security.generate_password_hash` and
   check functions now support any of the hashlib algorithms.
+- `wsgi.get_current_url` is now ascii safe for browsers sending
+  non-ascii data in query strings.
 
 Version 0.8.4
 -------------
