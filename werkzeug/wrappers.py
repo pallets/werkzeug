@@ -1039,12 +1039,14 @@ class BaseResponse(object):
         status = self.status_code
         if environ['REQUEST_METHOD'] == 'HEAD' or \
            100 <= status < 200 or status in (204, 304):
-            return ()
-        if self.direct_passthrough:
+            iterable = ()
+        elif self.direct_passthrough:
             if __debug__:
                 _warn_if_string(self.response)
             return self.response
-        return ClosingIterator(self.iter_encoded(), self.close)
+        else:
+            iterable = self.iter_encoded()
+        return ClosingIterator(iterable, self.close)
 
     def get_wsgi_response(self, environ):
         """Returns the final WSGI response as tuple.  The first item in
