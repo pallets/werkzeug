@@ -23,7 +23,7 @@ was this::
 
     from werkzeug import escape
 
-With Werkzeug 0.7, the recommendated way to import this function is
+With Werkzeug 0.7, the recommended way to import this function is
 directly from the utils module (and with 1.0 this will become mandatory).
 To automatically rewrite all imports one can use the
 `werkzeug-import-rewrite <http://bit.ly/import-rewrite>`_ script.
