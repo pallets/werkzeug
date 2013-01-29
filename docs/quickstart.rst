@@ -253,7 +253,7 @@ code or provide a message as well:
 404
 >>> response.status_code = 400
 >>> response.status
-'400 BAD REQUEST'
+'400 Bad Request'
 
 As you can see attributes work in both directions.  So you can set both
 :attr:`~BaseResponse.status` and `~BaseResponse.status_code` and the
