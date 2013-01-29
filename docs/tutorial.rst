@@ -14,29 +14,29 @@ You can use `pip` to install the required libraries::
     pip install Jinja2 redis
 
 Also make sure to have a redis server running on your local machine.  If
-you are on OS X you can use `brew` to install it::
+you are on OS X, you can use `brew` to install it::
 
     brew install redis
 
-If you are on ubuntu or debian you can use apt-get::
+If you are on Ubuntu or Debian, you can use apt-get::
 
     sudo apt-get install redis
 
-redis was developed for UNIX systems and was never really designed to
-work on windows.  For development purposes the unofficial ports however
-work good enough.  You can get them from `github
+Redis was developed for UNIX systems and was never really designed to
+work on Windows.  For development purposes, the unofficial ports however
+work well enough.  You can get them from `github
 <https://github.com/dmajkic/redis/downloads>`_.
 
 Introducing Shortly
 -------------------
 
-In this tutorial we will together create a simple URL shortener service
+In this tutorial, we will together create a simple URL shortener service
 with Werkzeug.  Please keep in mind that Werkzeug is not a framework, it's
 a library with utilities to create your own framework or application and
-as such very flexible.  The approach we use here is just one of many you
+as such is very flexible.  The approach we use here is just one of many you
 can use.
 
-As data store we will use `redis`_ here instead of a relational database
+As data store, we will use `redis`_ here instead of a relational database
 to keep this simple and because that's the kind of job that `redis`_
 excels at.
 
@@ -54,8 +54,7 @@ Step 0: A Basic WSGI Introduction
 
 Werkzeug is a utility library for WSGI.  WSGI itself is a protocol or
 convention that ensures that your web application can speak with the
-webserver and more importantly and that web applications work nicely
-together.
+webserver and more importantly that web applications work nicely together.
 
 A basic “Hello World” application in WSGI without the help of Werkzeug
 looks like this::
@@ -110,14 +109,14 @@ The shortly folder is not a python package, but just something where we
 drop our files.  Directly into this folder we will then put our main
 module in the following steps. The files inside the static folder are
 available to users of the application via HTTP.  This is the place where
-css and javascript files go. Inside the templates folder we will make
+CSS and JavaScript files go. Inside the templates folder we will make
 Jinja2 look for templates.  The templates you create later in the tutorial
 will go in this directory.
 
 Step 2: The Base Structure
 --------------------------
 
-Now let's get right into and create a module for our application.  Let's
+Now let's get right into it and create a module for our application.  Let's
 create a file called `shortly.py` in the `shortly` folder.  At first we
 will need a bunch of imports.  I will pull in all the imports here, even
 if they are not used right away, to keep it from being confusing::
@@ -209,7 +208,7 @@ Just go to the URL and you should see “Hello World!”.
 Step 3: The Environment
 -----------------------
 
-Now that we have the basic application class we can make the constructor
+Now that we have the basic application class, we can make the constructor
 do something useful and provide a few helpers on there that can come in
 handy.  We will need to be able to render templates and connect to redis,
 so let's extend the class a bit::
@@ -227,15 +226,15 @@ so let's extend the class a bit::
 Step 4: The Routing
 -------------------
 
-Next up is routing.  Routing is the process of match and parse the URL to
+Next up is routing.  Routing is the process of matching and parsing the URL to
 something we can use.  Werkzeug provides a flexible integrated routing
 system which we can use for that.  The way it works is that you create a
 :class:`~werkzeug.routing.Map` instance and add a bunch of
 :class:`~werkzeug.routing.Rule` objects.  Each rule has a pattern it will
 try to match the URL against and an “endpoint”.  The endpoint is typically
 a string and can be used to uniquely identify the URL.  We could also use
-this for automatically reversing the URL, but that's not what we will do
-in this tutorial.
+this to automatically reverse the URL, but that's not what we will do in this
+tutorial.
 
 Just put this into the constructor::
 
@@ -249,10 +248,10 @@ Here we create a URL map with three rules.  ``/`` for the root of the URL
 space where we will just dispatch to a function that implements the logic
 to create a new URL.  And then one that follows the short link to the
 target URL and another one with the same rule but a plus (``+``) at the
-end to short the link details.
+end to show the link details.
 
-So how do we find from the endpoint to a function?  That's up to you.  The
-way we will do it in this tutorial is that we will call the method ``on_``
+So how do we find our way from the endpoint to a function?  That's up to you.
+The way we will do it in this tutorial is by calling the method ``on_``
 + endpoint on the class itself.  Here is how this works::
 
     def dispatch_request(self, request):
@@ -273,13 +272,13 @@ to ``http://localhost:5000/foo`` we will get the following values back::
     endpoint = 'follow_short_link'
     values = {'short_id': u'foo'}
 
-If it does not match anything it will raise a
-:exc:`~werkzeug.exceptions.NotFound` exception which is an
+If it does not match anything, it will raise a
+:exc:`~werkzeug.exceptions.NotFound` exception, which is an
 :exc:`~werkzeug.exceptions.HTTPException`.  All HTTP exceptions are also
 WSGI applications by themselves which render a default error page.  So we
 just catch all of them down and return the error itself.
 
-If all works well we call the function ``on_`` + endpoint and pass it the
+If all works well, we call the function ``on_`` + endpoint and pass it the
 request as argument as well as all the URL arguments as keyword arguments
 and return the response object that method returns.
 
@@ -310,7 +309,7 @@ is good enough::
         parts = urlparse.urlparse(url)
         return parts.scheme in ('http', 'https')
 
-For inserting the URL all we need is this little method on our class::
+For inserting the URL, all we need is this little method on our class::
 
     def insert_url(self, url):
         short_id = self.redis.get('reverse-url:' + url)
@@ -356,16 +355,16 @@ so that we know how often a link was clicked::
         self.redis.incr('click-count:' + short_id)
         return redirect(link_target)
 
-In this case we will raise :exc:`~werkzeug.exceptions.NotFound` exception
-by hand if the URL does not exist which will bubble up to the
+In this case we will raise a :exc:`~werkzeug.exceptions.NotFound` exception
+by hand if the URL does not exist, which will bubble up to the
 ``dispatch_request`` function and be converted into a default 404
 response.
 
 Step 7: Detail View
 -------------------
 
-The link detail view is very similar, just that we render a template
-again.  Additionally to looking up the target we also ask redis for the
+The link detail view is very similar, we just render a template
+again.  In addition to looking up the target, we also ask redis for the
 number of times the link was clicked and let it default to zero if such
 a key does not yet exist::
 
@@ -380,7 +379,7 @@ a key does not yet exist::
             click_count=click_count
         )
 
-Please be aware that redis always works strings, so you have to convert
+Please be aware that redis always works with strings, so you have to convert
 the click count to :class:`int` by hand.
 
 Step 8: Templates
