@@ -47,4 +47,6 @@ Reference
 .. autoclass:: FilesystemSessionStore
    :members: list
 
+.. autoclass:: CacheSessionStore
+
 .. autoclass:: SessionMiddleware
