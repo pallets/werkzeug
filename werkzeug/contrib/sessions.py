@@ -59,7 +59,7 @@ from os import path
 from time import time
 from random import random
 from hashlib import sha1
-from cPickle import dump, load, HIGHEST_PROTOCOL
+from cPickle import dump, dumps, load, loads, HIGHEST_PROTOCOL
 
 from werkzeug.datastructures import CallbackDict
 from werkzeug.utils import dump_cookie, parse_cookie
@@ -286,6 +286,52 @@ class FilesystemSessionStore(SessionStore):
             if match is not None:
                 result.append(match.group(1))
         return result
+
+
+class CacheSessionStore(SessionStore):
+    """Session store which saves sessions using the cache backend.
+
+    .. versionadded:: 0.9
+
+    :param cache: The cache to use for the storage.
+    :type cache: :class:`werkzeug.contrib.cache.BaseCache`
+    :param key_prefix: The prefix which is added before all keys.
+    :param session_class: The session class to use.  Defaults to
+                          :class:`Session`.
+
+    """
+
+    def __init__(self, cache, key_prefix,
+                 session_class=None, renew_missing=False):
+        super(CacheSessionStore, self).__init__(session_class=session_class)
+        self.cache = cache
+        self.key_prefix = key_prefix
+        self.renew_missing = renew_missing
+
+    def get_cache_key(self, sid):
+        return self.key_prefix + sid
+
+    def save(self, session):
+        encoded = dumps(dict(session), HIGHEST_PROTOCOL)
+        self.cache.set(self.get_cache_key(session.sid), encoded)
+
+    def delete(self, session):
+        self.cache.delete(self.get_cache_key(session.sid))
+
+    def get(self, sid):
+        if not self.is_valid_key(sid):
+            return self.new()
+        rawdata = self.cache.get(self.get_cache_key(sid))
+        if rawdata:
+            try:
+                data = loads(rawdata)
+            except Exception:
+                data = {}
+        else:
+            if self.renew_missing:
+                return self.new()
+            data = {}
+        return self.session_class(data, sid, False)
 
 
 class SessionMiddleware(object):
