@@ -88,7 +88,7 @@ class URLsTestCase(WerkzeugTestCase):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
         assert x == 'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)'
 
-	x = urls.url_fix("http://just.a.test/$-_.+!*'(),")
+        x = urls.url_fix("http://just.a.test/$-_.+!*'(),")
         assert x == "http://just.a.test/$-_.+!*'(),"
 
         x = urls.url_fix('http://example.com/?foo=%2f%2f')
