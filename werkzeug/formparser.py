@@ -75,7 +75,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
     :param max_form_memory_size: the maximum number of bytes to be accepted for
                            in-memory stored form data.  If the data
                            exceeds the value specified an
-                           :exc:`~exceptions.RequestURITooLarge`
+                           :exc:`~exceptions.RequestEntityTooLarge`
                            exception is raised.
     :param max_content_length: If this is provided and the transmitted data
                                is longer than this value an
@@ -118,7 +118,7 @@ class FormDataParser(object):
     :param max_form_memory_size: the maximum number of bytes to be accepted for
                            in-memory stored form data.  If the data
                            exceeds the value specified an
-                           :exc:`~exceptions.RequestURITooLarge`
+                           :exc:`~exceptions.RequestEntityTooLarge`
                            exception is raised.
     :param max_content_length: If this is provided and the transmitted data
                                is longer than this value an
