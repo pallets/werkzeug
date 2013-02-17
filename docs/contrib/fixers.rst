@@ -4,7 +4,7 @@ Fixers
 
 .. automodule:: werkzeug.contrib.fixers
 
-.. autoclass:: LighttpdCGIRootFix
+.. autoclass:: CGIRootFix
 
 .. autoclass:: PathInfoFromRequestUriFix
 

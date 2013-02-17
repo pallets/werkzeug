@@ -22,16 +22,19 @@ from werkzeug.http import parse_options_header, parse_cache_control_header, \
 from werkzeug.useragents import UserAgent
 from werkzeug.datastructures import Headers, ResponseCacheControl
 
-
-class LighttpdCGIRootFix(object):
-    """Wrap the application in this middleware if you are using lighttpd
-    with FastCGI or CGI and the application is mounted on the URL root.
+class CGIRootFix(object):
+    """Wrap the application in this middleware if you are using FastCGI or CGI
+    and you have problems with your app root being set to the cgi script's path
+    instead of the path users are going to visit.
 
     :param app: the WSGI application
+    :param app_root: Defaulting to ``'/'``, you can set this to something else
+        if your app is mounted somewhere else.
     """
 
-    def __init__(self, app):
+    def __init__(self, app, app_root='/'):
         self.app = app
+        self.app_root = app_root
 
     def __call__(self, environ, start_response):
         # only set PATH_INFO for older versions of Lighty or if no
@@ -43,8 +46,11 @@ class LighttpdCGIRootFix(object):
            environ['SERVER_SOFTWARE'] < 'lighttpd/1.4.28':
             environ['PATH_INFO'] = environ.get('SCRIPT_NAME', '') + \
                                    environ.get('PATH_INFO', '')
-        environ['SCRIPT_NAME'] = ''
+        environ['SCRIPT_NAME'] = self.app_root.strip('/')
         return self.app(environ, start_response)
+
+# backwards compatibility
+LighttpdCGIRootFix = CGIRootFix
 
 
 class PathInfoFromRequestUriFix(object):
