@@ -12,7 +12,7 @@
 import re
 from cStringIO import StringIO
 from tempfile import TemporaryFile
-from itertools import chain, repeat
+from itertools import chain, repeat, tee
 from functools import update_wrapper
 
 from werkzeug._internal import _decode_unicode, _empty_stream
@@ -358,12 +358,13 @@ class MultiPartParser(object):
         """Observe an element of `form` in `parse`'s result."""
         return (name, val)
 
-    def parse(self, file, boundary, content_length):
+    def parse_parts(self, file, boundary, content_length):
+        """Generate `yield_file` and `yield_form` results, tagged
+        accordingly.
+        """
         next_part = '--' + boundary
         last_part = next_part + '--'
 
-        form = []
-        files = []
         in_memory = 0
 
         iterator = chain(make_line_iter(file, limit=content_length,
@@ -460,12 +461,17 @@ class MultiPartParser(object):
 
             if is_file:
                 container.seek(0)
-                files.append(self.yield_file(
+                yield ('file', self.yield_file(
                         name, FileStorage(container, filename, name,
                                           headers=headers)))
             else:
-                form.append(self.yield_form(
+                yield ('form', self.yield_form(
                         name, _decode_unicode(''.join(container),
                                               part_charset, self.errors)))
 
+    def parse(self, file, boundary, content_length):
+        formstream, filestream = tee(
+            self.parse_parts(file, boundary, content_length), 2)
+        form = (p[1] for p in formstream if p[0] == 'form')
+        files = (p[1] for p in filestream if p[0] == 'file')
         return self.cls(form), self.cls(files)
