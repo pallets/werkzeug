@@ -351,8 +351,8 @@ class MultiPartParser(object):
             self.fail('Boundary longer than buffer size')
 
     def parse_parts(self, file, boundary, content_length):
-        """Generate `yield_file` and `yield_form` results, tagged
-        accordingly.
+        """Generate `('file', (name, val))` and `('form', (name
+        ,val))` parts.
         """
         next_part = '--' + boundary
         last_part = next_part + '--'
