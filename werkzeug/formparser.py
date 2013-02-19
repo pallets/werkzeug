@@ -350,6 +350,14 @@ class MultiPartParser(object):
             # the assert is skipped.
             self.fail('Boundary longer than buffer size')
 
+    def yield_file(self, name, val):
+        """Observe an element of `files` in `parse`'s result."""
+        return (name, val)
+
+    def yield_form(self, name, val):
+        """Observe an element of `form` in `parse`'s result."""
+        return (name, val)
+
     def parse(self, file, boundary, content_length):
         next_part = '--' + boundary
         last_part = next_part + '--'
@@ -452,10 +460,12 @@ class MultiPartParser(object):
 
             if is_file:
                 container.seek(0)
-                files.append((name, FileStorage(container, filename, name,
-                                                headers=headers)))
+                files.append(self.yield_file(
+                        name, FileStorage(container, filename, name,
+                                          headers=headers)))
             else:
-                form.append((name, _decode_unicode(''.join(container),
-                                                   part_charset, self.errors)))
+                form.append(self.yield_form(
+                        name, _decode_unicode(''.join(container),
+                                              part_charset, self.errors)))
 
         return self.cls(form), self.cls(files)
