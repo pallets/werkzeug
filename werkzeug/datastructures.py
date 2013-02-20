@@ -553,7 +553,7 @@ class MultiDict(TypeConversionDict):
         """
         try:
             return dict.pop(self, key)[0]
-        except KeyError, e:
+        except KeyError as e:
             if default is not _missing:
                 return default
             raise BadRequestKeyError(str(e))
@@ -563,7 +563,7 @@ class MultiDict(TypeConversionDict):
         try:
             item = dict.popitem(self)
             return (item[0], item[1][0])
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
 
     def poplist(self, key):
@@ -580,7 +580,7 @@ class MultiDict(TypeConversionDict):
         """Pop a ``(key, list)`` tuple from the dict."""
         try:
             return dict.popitem(self)
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
 
     def __copy__(self):
@@ -767,7 +767,7 @@ class OrderedMultiDict(MultiDict):
     def pop(self, key, default=_missing):
         try:
             buckets = dict.pop(self, key)
-        except KeyError, e:
+        except KeyError as e:
             if default is not _missing:
                 return default
             raise BadRequestKeyError(str(e))
@@ -778,7 +778,7 @@ class OrderedMultiDict(MultiDict):
     def popitem(self):
         try:
             key, buckets = dict.popitem(self)
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
@@ -787,7 +787,7 @@ class OrderedMultiDict(MultiDict):
     def popitemlist(self):
         try:
             key, buckets = dict.popitem(self)
-        except KeyError, e:
+        except KeyError as e:
             raise BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)

@@ -22,7 +22,10 @@ try:
     from email.utils import parsedate_tz
 except ImportError: # pragma: no cover
     from email.Utils import parsedate_tz
-from urllib2 import parse_http_list as _parse_list_header
+try:
+    from urllib2 import parse_http_list as _parse_list_header
+except ImportError: # pragma: no cover
+    from urllib.request import parse_http_list as _parse_list_header
 from datetime import datetime, timedelta
 try:
     from hashlib import md5
@@ -351,7 +354,7 @@ def parse_authorization_header(value):
     if auth_type == 'basic':
         try:
             username, password = auth_info.decode('base64').split(':', 1)
-        except Exception, e:
+        except Exception as e:
             return
         return Authorization('basic', {'username': username,
                                        'password': password})

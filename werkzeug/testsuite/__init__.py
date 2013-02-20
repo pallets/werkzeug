@@ -12,6 +12,7 @@
 from __future__ import with_statement
 
 import unittest
+import six
 from werkzeug.utils import import_string, find_modules
 
 
@@ -86,7 +87,7 @@ class _ExceptionCatcher(object):
             self.test_case.fail('Expected exception of type %r' %
                                 exception_name)
         elif not issubclass(exc_type, self.exc_type):
-            raise exc_type, exc_value, tb
+            six.reraise(exc_type, exc_value, tb)
         return True
 
 
@@ -142,5 +143,9 @@ def main():
     """Runs the testsuite as command line application."""
     try:
         unittest.main(testLoader=BetterLoader(), defaultTest='suite')
-    except Exception, e:
-        print 'Error: %s' % e
+    except Exception:
+        import sys
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+

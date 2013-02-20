@@ -58,6 +58,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
+import six
 from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
 
 
@@ -538,7 +539,7 @@ default_exceptions = {}
 __all__ = ['HTTPException']
 
 def _find_exceptions():
-    for name, obj in globals().iteritems():
+    for name, obj in six.iteritems(globals()):
         try:
             if getattr(obj, 'code', None) is not None:
                 default_exceptions[obj.code] = obj
