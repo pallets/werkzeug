@@ -20,7 +20,10 @@ except ImportError: # pragma: no cover
     try:
         from thread import get_ident
     except ImportError: # pragma: no cover
-        from dummy_thread import get_ident
+        try:
+            from _thread import get_ident
+        except ImportError: # pragma: no cover
+            from dummy_thread import get_ident
 
 
 def release_local(local):

@@ -24,7 +24,7 @@
             request = BaseRequest(environ)
             try:
                 return view(request)
-            except HTTPException, e:
+            except HTTPException as e:
                 return e
 
 

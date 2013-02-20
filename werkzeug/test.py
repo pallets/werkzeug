@@ -9,16 +9,22 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-import urlparse
 import mimetypes
 from time import time
 from random import random
 from itertools import chain
 from tempfile import TemporaryFile
-from cStringIO import StringIO
-from cookielib import CookieJar
-from urllib2 import Request as U2Request
+from io import BytesIO
+try:
+    from urllib2 import Request as U2Request
+except ImportError:
+    from urllib.request import Request as U2Request
 
+import six
+CookieJar = six.moves.http_cookiejar.CookieJar
+
+
+from werkzeug._compat import urlparse
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
@@ -36,7 +42,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     """
     if boundary is None:
         boundary = '---------------WerkzeugFormPart_%s%s' % (time(), random())
-    _closure = [StringIO(), 0, False]
+    _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
         def write(string):
@@ -302,7 +308,7 @@ class EnvironBuilder(object):
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
             if isinstance(data, basestring):
-                self.input_stream = StringIO(data)
+                self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)
             else:
@@ -492,7 +498,7 @@ class EnvironBuilder(object):
         for f in files:
             try:
                 f.close()
-            except Exception, e:
+            except Exception:
                 pass
         self.closed = True
 
@@ -516,7 +522,7 @@ class EnvironBuilder(object):
         elif content_type == 'application/x-www-form-urlencoded':
             values = url_encode(self.form, charset=self.charset)
             content_length = len(values)
-            input_stream = StringIO(values)
+            input_stream = BytesIO(values)
         else:
             input_stream = _empty_stream
 
