@@ -13,7 +13,8 @@ from __future__ import with_statement
 
 import unittest
 from os import path
-from cStringIO import StringIO
+#XXX: py3 verify
+from io import BytesIO as StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 

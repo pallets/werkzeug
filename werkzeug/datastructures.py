@@ -12,6 +12,7 @@ import re
 import codecs
 import mimetypes
 from itertools import repeat
+import six
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 
@@ -853,7 +854,7 @@ class Headers(object):
 
     def __getitem__(self, key, _get_mode=False):
         if not _get_mode:
-            if isinstance(key, (int, long)):
+            if isinstance(key, six.integer_types):
                 return self._list[key]
             elif isinstance(key, slice):
                 return self.__class__(self._list[key])
@@ -979,7 +980,7 @@ class Headers(object):
                 self.add(key, value)
 
     def __delitem__(self, key, _index_operation=True):
-        if _index_operation and isinstance(key, (int, long, slice)):
+        if _index_operation and isinstance(key, (six.integer_types, slice)):
             del self._list[key]
             return
         key = key.lower()
@@ -1007,7 +1008,7 @@ class Headers(object):
         """
         if key is None:
             return self._list.pop()
-        if isinstance(key, (int, long)):
+        if isinstance(key, six.integer_types):
             return self._list.pop(key)
         try:
             rv = self[key]
@@ -1061,7 +1062,7 @@ class Headers(object):
         self._list.append((_key, _value))
 
     def _validate_value(self, value):
-        if isinstance(value, basestring) and ('\n' in value or '\r' in value):
+        if isinstance(value, six.string_types) and ('\n' in value or '\r' in value):
             raise ValueError('Detected newline in header value.  This is '
                 'a potential security problem')
 
@@ -1125,7 +1126,7 @@ class Headers(object):
 
     def __setitem__(self, key, value):
         """Like :meth:`set` but also supports index/slice based setting."""
-        if isinstance(key, (slice, int, long)):
+        if isinstance(key, (slice, six.integer_types)):
             self._validate_value(value)
             self._list[key] = value
         else:

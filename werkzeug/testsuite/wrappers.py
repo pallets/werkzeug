@@ -10,7 +10,8 @@
 """
 import unittest
 import pickle
-from StringIO import StringIO
+#XXX: py3 verify
+from io import BytesIO as StringIO
 from datetime import datetime
 
 from werkzeug.testsuite import WerkzeugTestCase

@@ -10,7 +10,7 @@
 """
 
 import unittest
-from StringIO import StringIO
+from six import StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 
