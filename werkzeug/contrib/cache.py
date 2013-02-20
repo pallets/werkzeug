@@ -63,7 +63,7 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
-from itertools import izip
+from six.moves import zip
 from time import time
 from werkzeug.posixemulation import rename
 
@@ -139,7 +139,7 @@ class BaseCache(object):
         :param keys: The function accepts multiple keys as positional
                      arguments.
         """
-        return dict(izip(keys, self.get_many(*keys)))
+        return dict(zip(keys, self.get_many(*keys)))
 
     def set(self, key, value, timeout=None):
         """Adds a new key/value to the cache (overwrites value, if key already

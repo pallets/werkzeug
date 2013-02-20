@@ -59,7 +59,7 @@ from os import path
 from time import time
 from random import random
 from hashlib import sha1
-from cPickle import dump, load, HIGHEST_PROTOCOL
+from pickle import dump, load, HIGHEST_PROTOCOL
 
 from werkzeug.datastructures import CallbackDict
 from werkzeug.utils import dump_cookie, parse_cookie

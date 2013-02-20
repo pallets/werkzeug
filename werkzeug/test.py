@@ -814,7 +814,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     def start_response(status, headers, exc_info=None):
         if exc_info is not None:
-            raise exc_info[0], exc_info[1], exc_info[2]
+            six.reraise(*exc_info)
         response[:] = [status, headers]
         return buffer.append
 
