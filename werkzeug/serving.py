@@ -50,6 +50,7 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 import werkzeug
 from werkzeug._internal import _log
+from werkzeug.urls import _safe_urlsplit
 from werkzeug.exceptions import InternalServerError
 
 
@@ -61,11 +62,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return 'Werkzeug/' + werkzeug.__version__
 
     def make_environ(self):
-        if '?' in self.path:
-            path_info, query = self.path.split('?', 1)
-        else:
-            path_info = self.path
-            query = ''
+        request_url = _safe_urlsplit(self.path)
 
         def shutdown_server():
             self.server.shutdown_signal = True
@@ -84,8 +81,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_SOFTWARE':      self.server_version,
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
-            'PATH_INFO':            unquote(path_info),
-            'QUERY_STRING':         query,
+            'PATH_INFO':            unquote(request_url.path),
+            'QUERY_STRING':         request_url.query,
             'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
             'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
             'REMOTE_ADDR':          self.client_address[0],
@@ -99,6 +96,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             key = 'HTTP_' + key.upper().replace('-', '_')
             if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 environ[key] = value
+
+        if request_url.netloc:
+            environ['HTTP_HOST'] = request_url.netloc
 
         return environ
 
