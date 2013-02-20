@@ -20,11 +20,11 @@ _always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 'abcdefghijklmnopqrstuvwxyz'
                 '0123456789_.-')
 _safe_map = dict((c, c) for c in _always_safe)
-for i in xrange(0x80):
+for i in range(0x80):
     c = chr(i)
     if c not in _safe_map:
         _safe_map[c] = '%%%02X' % i
-_safe_map.update((chr(i), '%%%02X' % i) for i in xrange(0x80, 0x100))
+_safe_map.update((chr(i), '%%%02X' % i) for i in range(0x80, 0x100))
 _safemaps = {}
 
 #: lookup table for encoded characters.
