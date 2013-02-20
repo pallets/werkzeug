@@ -20,7 +20,7 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import urlparse
+from werkzeug._compat import urlparse
 from datetime import datetime, timedelta
 
 from werkzeug.http import HTTP_STATUS_CODES, \

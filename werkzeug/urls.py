@@ -8,7 +8,7 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import urlparse
+from werkzeug._compat import urlparse
 
 from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items

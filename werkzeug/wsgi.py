@@ -11,7 +11,6 @@
 import re
 import os
 import urllib
-import urlparse
 import posixpath
 import mimetypes
 from itertools import chain, repeat
@@ -20,6 +19,7 @@ from time import time, mktime
 from datetime import datetime
 from functools import partial
 
+from werkzeug._compat import urlparse
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
 
