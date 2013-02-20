@@ -19,7 +19,7 @@ from werkzeug.utils import import_string, find_modules
 def iter_suites(package):
     """Yields all testsuites."""
     for module in find_modules(package, include_packages=True):
-        mod = import_string(module)
+        mod = __import__(module, fromlist=['*'])
         if hasattr(mod, 'suite'):
             yield mod.suite()
 
