@@ -33,7 +33,7 @@ user with the name entered::
         ''')
         return Response(''.join(result), mimetype='text/html')
 
-Alternatively the same application could be use without request and response
+Alternatively the same application could be used without request and response
 objects but by taking advantage of the parsing functions werkzeug provides::
 
     from werkzeug.formparser import parse_form_data

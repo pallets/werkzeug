@@ -1,6 +1,6 @@
-=============
-HTTP Utilties
-=============
+==============
+HTTP Utilities
+==============
 
 .. module:: werkzeug.http
 
@@ -59,7 +59,7 @@ Header Utilities
 
 The following utilities operate on HTTP headers well but do not parse
 them.  They are useful if you're dealing with conditional responses or if
-you want to proxy arbtirary requests but want to remove WSGI-unsupported
+you want to proxy arbitrary requests but want to remove WSGI-unsupported
 hop-by-hop headers.  Also there is a function to create HTTP header
 strings from the parsed data.
 
@@ -109,7 +109,7 @@ Constants
 .. data:: HTTP_STATUS_CODES
 
     A dict of status code -> default status message pairs.  This is used
-    by the wrappers and other places where a integer status code is expanded
+    by the wrappers and other places where an integer status code is expanded
     to a string throughout Werkzeug.
 
 Form Data Parsing
@@ -120,13 +120,13 @@ Form Data Parsing
 Werkzeug provides the form parsing functions separately from the request
 object so that you can access form data from a plain WSGI environment.
 
-The following formats are supported by the form data parser currently:
+The following formats are currently supported by the form data parser:
 
 -   `application/x-www-form-urlencoded`
 -   `multipart/form-data`
 
-Nested multipart is currently not supported (Werkzeug 0.6) albeit unused
-by any of the modern webbrowsers.
+Nested multipart is not currently supported (Werkzeug 0.9), but it isn't used
+by any of the modern web browsers.
 
 Usage example:
 

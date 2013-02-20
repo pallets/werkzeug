@@ -5,7 +5,7 @@ Quickstart
 .. module:: werkzeug
 
 This part of the documentation shows how to use the most important parts of
-Werkzeug.  It's intended as starting point for developers with basic
+Werkzeug.  It's intended as a starting point for developers with basic
 understanding of :pep:`333` (WSGI) and :rfc:`2616` (HTTP).
 
 .. warning::
@@ -21,7 +21,7 @@ understanding of :pep:`333` (WSGI) and :rfc:`2616` (HTTP).
 WSGI Environment
 ================
 
-The WSGI environment contains all the information the user request transmit
+The WSGI environment contains all the information the user request transmits
 to the application.  It is passed to the WSGI application but you can also
 create a WSGI environ dict using the :func:`create_environ` helper:
 
@@ -158,7 +158,7 @@ Let's start with the most useless header: the user agent:
 'en-US'
 
 A more useful header is the accept header.  With this header the browser
-informs the web application what mimetypes it can handle and how good.  All
+informs the web application what mimetypes it can handle and how well.  All
 accept headers are sorted by the quality, the best item being the first:
 
 >>> request.accept_mimetypes.best
@@ -184,16 +184,15 @@ True
 >>> 'utf-8' in request.accept_charsets
 True
 
-Normalization is available, so you can safely use alternative forms
-to perform containment checking:
+Normalization is available, so you can safely use alternative forms to perform
+containment checking:
 
 >>> 'UTF8' in request.accept_charsets
 True
 >>> 'de_AT' in request.accept_languages
 True
 
-E-tags and other conditional headers are available in parsed form
-as well:
+E-tags and other conditional headers are available in parsed form as well:
 
 >>> request.if_modified_since
 datetime.datetime(2009, 2, 20, 10, 10, 25)
@@ -211,7 +210,7 @@ Responses
 =========
 
 Response objects are the opposite of request objects.  They are used to send
-data back to the client.  In reality response objects are nothing more than
+data back to the client.  In reality, response objects are nothing more than
 glorified WSGI applications.
 
 So what you are doing is not *returning* the response objects from your WSGI
@@ -243,7 +242,7 @@ So here is what you can do with them:
 'Hello World!'
 >>> response.headers['content-length'] = len(response.data)
 
-The same way you can modify the status of the response.  Either just the
+You can modify the status of the response in the same way.  Either just the
 code or provide a message as well:
 
 >>> response.status
@@ -313,12 +312,12 @@ method to get all values for a header:
 >>> response.headers.getlist('Set-Cookie')
 ['name=value; Path=/', 'name2=value2; Path=/']
 
-Finally if you have set all the conditional values you can make the
+Finally if you have set all the conditional values, you can make the
 response conditional against a request.  Which means that if the request
 can assure that it has the information already, no data besides the headers
 is sent over the network which saves traffic.  For that you should set at
-least an etag (which is used for comparision) and the date header and then
+least an etag (which is used for comparison) and the date header and then
 call :class:`~BaseRequest.make_conditional` with the request object.
 
 The response is modified accordingly (status code changed, response body
-removed, entitiy headers removed etc.)
+removed, entity headers removed etc.)
