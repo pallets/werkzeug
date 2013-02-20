@@ -13,7 +13,7 @@ import time
 import urllib
 import unittest
 from functools import update_wrapper
-from StringIO import StringIO
+from six import StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 
