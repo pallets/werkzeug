@@ -83,14 +83,14 @@ class LocalTestCase(WerkzeugTestCase):
         assert 2 % ls == 0
 
     def test_local_proxy_operations_strings(self):
-        _foo = "foo"
-        foo = local.LocalProxy(lambda: foo)
-        assert foo + "bar" == "foobar"
-        assert "bar" + foo == "barfoo"
-        assert foo * 2 == "foofoo"
+        foo = "foo"
+        ls = local.LocalProxy(lambda: foo)
+        assert ls + "bar" == "foobar"
+        assert "bar" + ls == "barfoo"
+        assert ls * 2 == "foofoo"
 
-        _foo = "foo %s"
-        assert foo % ("bar",) == "foo bar"
+        foo = "foo %s"
+        assert ls % ("bar",) == "foo bar"
 
     def test_local_stack(self):
         ident = local.get_ident()
