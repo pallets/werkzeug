@@ -64,6 +64,7 @@ try:
 except ImportError:
     from md5 import new as md5
 from six.moves import zip
+from six import PY3
 from time import time
 from werkzeug.posixemulation import rename
 
@@ -630,6 +631,8 @@ class FileSystemCache(BaseCache):
                 pass
 
     def _get_filename(self, key):
+        if PY3 and isinstance(key, str):
+            key = key.encode('utf-8') #XXX unicode review
         hash = md5(key).hexdigest()
         return os.path.join(self._path, hash)
 
