@@ -261,6 +261,13 @@ def parse_multipart_headers(iterable):
     # list was not shared anyways.
     return Headers.linked(result)
 
+_headers = 'headers'.intern()
+_begin_form = 'begin_form'.intern()
+_cont_form = 'cont_form'.intern()
+_end_form = 'end_form'.intern()
+_begin_file = 'begin_file'.intern()
+_cont_file = 'cont_file'.intern()
+_end_file = 'end_file'.intern()
 
 class MultiPartParser(object):
     def __init__(self, stream_factory=None, charset='utf-8', errors='replace',
@@ -350,9 +357,19 @@ class MultiPartParser(object):
             # the assert is skipped.
             self.fail('Boundary longer than buffer size')
 
-    def parse_parts(self, file, boundary, content_length):
-        """Generate `('file', (name, val))` and `('form', (name
-        ,val))` parts.
+    def parse_lines(self, file, boundary, content_length):
+        """Generate parts of
+        ``('headers', headers)``
+        ``('begin_form', name)``
+        ``('cont_form', bytestring)``
+        ``('end_form', None``
+        ``('begin_file', (name, filename))``
+        ``('cont_file', bytestring)``
+        ``('end_file', None)``
+
+        Always obeys the grammar
+        parts = (headers (begin_form cont_form* end_form |
+                          begin_file cont_file* end_file))*
         """
         next_part = '--' + boundary
         last_part = next_part + '--'
@@ -373,6 +390,7 @@ class MultiPartParser(object):
             disposition = headers.get('content-disposition')
             if disposition is None:
                 self.fail('Missing Content-Disposition header')
+            yield (_headers, headers)
             disposition, extra = parse_options_header(disposition)
             transfer_encoding = self.get_part_encoding(headers)
             name = extra.get('name')
@@ -382,19 +400,14 @@ class MultiPartParser(object):
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.
             if filename is None:
-                is_file = False
-                container = []
-                _write = container.append
-                guard_memory = self.max_form_memory_size is not None
+                yield _begin_form, name
 
             # otherwise we parse the rest of the headers and ask the stream
             # factory for something we can write in.
             else:
-                is_file = True
-                guard_memory = False
-                filename, container = self.start_file_streaming(
-                    filename, headers, content_length)
-                _write = container.write
+                yield _begin_file, (name, filename)
+
+            #TODO s11 here
 
             buf = ''
             for line in iterator:
@@ -451,12 +464,39 @@ class MultiPartParser(object):
             if buf not in ('', '\r', '\n', '\r\n'):
                 _write(buf)
 
-            if is_file:
+    def parse_parts(self, file, boundary, content_length):
+        """Generate `('file', (name, val))` and `('form', (name
+        ,val))` parts.
+        """
+        for ellt, ell in self.parse_lines(file, boundary, content_length):
+        # ``('headers', headers)``
+        # ``('begin_form', name)``
+        # ``('cont_form', bytestring)``
+        # ``('end_form', None``
+        # ``('begin_file', (name, filename))``
+        # ``('cont_file', bytestring)``
+        # ``('end_file', None)``
+            if ellt is _headers:
+                headers = ell
+            elif ellt is _begin_file:
+                name, filename = ell
+                is_file = True
+                guard_memory = False
+                filename, container = self.start_file_streaming(
+                    filename, headers, content_length)
+                _write = container.write
+            elif ellt is _cont_file:
+            elif ellt is _end_file:
                 container.seek(0)
                 yield ('file',
                        (name, FileStorage(container, filename, name,
                                           headers=headers)))
-            else:
+            elif ellt is _begin_form:
+                container = []
+                _write = container.append
+                guard_memory = self.max_form_memory_size is not None
+            elif ellt is _cont_form:
+            elif ellt is _end_form:
                 yield ('form',
                        (name, _decode_unicode(''.join(container),
                                               part_charset, self.errors)))
