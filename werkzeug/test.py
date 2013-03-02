@@ -68,7 +68,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
 
     for key, values in values.iterlists():
         for value in values:
-            write('--%s\r\nContent-Disposition: form-data; name="%s"' %
+            write(b'--%s\r\nContent-Disposition: form-data; name="%s"' %
                   (boundary, key))
             reader = getattr(value, 'read', None)
             if reader is not None:
@@ -90,7 +90,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                         break
                     write(chunk)
             else:
-                if isinstance(value, unicode):
+                if isinstance(value, six.text_type):
                     value = value.encode(charset)
                 write('\r\n\r\n' + str(value))
             write('\r\n')
@@ -268,7 +268,7 @@ class EnvironBuilder(object):
         if query_string is None and '?' in path:
             path, query_string = path.split('?', 1)
         self.charset = charset
-        if isinstance(path, unicode):
+        if isinstance(path, six.text_type):  #XXX: review string types
             path = iri_to_uri(path, charset)
         self.path = path
         if base_url is not None:
