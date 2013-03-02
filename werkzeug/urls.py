@@ -8,6 +8,7 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import six
 from werkzeug._compat import urlparse
 
 from werkzeug._internal import _decode_unicode
@@ -69,7 +70,7 @@ def _safe_urlsplit(s):
 
 
 def _unquote(s, unsafe=''):
-    assert isinstance(s, str), 'unquote only works on bytes'
+    assert isinstance(s, six.binary_type), 'unquote only works on bytes'
     rv = s.split('%')
     if len(rv) == 1:
         return s
@@ -124,7 +125,7 @@ def iri_to_uri(iri, charset='utf-8'):
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
-    iri = unicode(iri)
+    iri = six.text_type(iri)  #XXX: py3 review
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = scheme.encode('ascii')
