@@ -238,8 +238,8 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
     def test_dump_options_header(self):
         assert http.dump_options_header('foo', {'bar': 42}) == \
             'foo; bar=42'
-        assert http.dump_options_header('foo', {'bar': 42, 'fizz': None}) == \
-            'foo; bar=42; fizz'
+        assert http.dump_options_header('foo', {'bar': 42, 'fizz': None}) in \
+            ('foo; bar=42; fizz', 'foo; fizz; bar=42')
 
     def test_dump_header(self):
         assert http.dump_header([1, 2, 3]) == '1, 2, 3'
