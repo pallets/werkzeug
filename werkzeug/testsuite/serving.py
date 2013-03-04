@@ -10,7 +10,11 @@
 """
 import sys
 import time
-import urllib
+try:
+    from urllib import urlopen
+except ImportError:  # pragma: no cover
+    from urllib.request import urlopen
+
 import unittest
 from functools import update_wrapper
 from six import StringIO
@@ -20,6 +24,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug import __version__ as version, serving
 from werkzeug.testapp import test_app
 from threading import Thread
+
 
 
 real_make_server = serving.make_server
@@ -64,7 +69,7 @@ class ServingTestCase(WerkzeugTestCase):
     @silencestderr
     def test_serving(self):
         server, addr = run_dev_server(test_app)
-        rv = urllib.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+        rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
         assert 'WSGI Information' in rv
         assert 'foo=bar&amp;baz=blah' in rv
         assert ('Werkzeug/%s' % version) in rv
@@ -74,7 +79,7 @@ class ServingTestCase(WerkzeugTestCase):
         def broken_app(environ, start_response):
             1/0
         server, addr = run_dev_server(broken_app)
-        rv = urllib.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+        rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
         assert 'Internal Server Error' in rv
 
 
