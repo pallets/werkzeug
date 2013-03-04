@@ -44,7 +44,7 @@ class SimpleCacheTestCase(WerkzeugTestCase):
         c = cache.SimpleCache()
         c.set_many({0: 0, 1: 1, 2: 4})
         assert c.get(2) == 4
-        c.set_many((i, i*i) for i in xrange(3))
+        c.set_many((i, i*i) for i in range(3))
         assert c.get(2) == 4
 
 
