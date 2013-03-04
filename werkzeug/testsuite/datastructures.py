@@ -344,7 +344,8 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         assert d.getlist('foo') == [1, 2, 3]
         assert d.getlist('bar') == [42]
         assert d.items() == [('foo', 1), ('bar', 42)]
-        assert d.keys() == list(d) == list(d.iterkeys()) == ['foo', 'bar']
+        #XXX: py3 api pruning?
+        assert list(d.keys()) == list(d) == list(d.iterkeys()) == ['foo', 'bar']
         assert d.items(multi=True) == [('foo', 1), ('foo', 2),
                                        ('bar', 42), ('foo', 3)]
         assert len(d) == 2
