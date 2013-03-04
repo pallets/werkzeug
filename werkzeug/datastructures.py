@@ -700,6 +700,12 @@ class OrderedMultiDict(MultiDict):
     def itervalues(self):
         return (value for key, value in self.iteritems())
 
+    def keys(self):
+        return list(self.iterkeys())
+
+    def values(self):
+        return list(self.itervalues())
+
     def iteritems(self, multi=False):
         ptr = self._first_bucket
         if multi:
