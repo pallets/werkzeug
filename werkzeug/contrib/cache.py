@@ -64,7 +64,8 @@ try:
 except ImportError:
     from md5 import new as md5
 from six.moves import zip
-from six import PY3
+from six import PY3, iteritems
+from six import _iteritems as iteritems_attr
 from time import time
 from werkzeug.posixemulation import rename
 
@@ -85,8 +86,8 @@ def _items(mappingorseq):
         ...    assert k*k == v
 
     """
-    return mappingorseq.iteritems() if hasattr(mappingorseq, 'iteritems') \
-        else mappingorseq
+    return iteritems(mappingorseq) \
+           if hasattr(mappingorseq, iteritems_attr) else mappingorseq
 
 
 class BaseCache(object):
