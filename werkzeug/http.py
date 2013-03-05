@@ -32,6 +32,8 @@ try:
 except ImportError: # pragma: no cover
     from md5 import new as md5
 
+from six import next, iteritems
+
 
 #: HTTP_STATUS_CODES is "exported" from this module.
 #: XXX: move to werkzeug.consts or something
@@ -113,7 +115,7 @@ def dump_options_header(header, options):
     segments = []
     if header is not None:
         segments.append(header)
-    for key, value in options.iteritems():
+    for key, value in iteritems(options):
         if value is None:
             segments.append(key)
         else:
@@ -138,7 +140,7 @@ def dump_header(iterable, allow_token=True):
     """
     if isinstance(iterable, dict):
         items = []
-        for key, value in iterable.iteritems():
+        for key, value in iteritems(iterable):
             if value is None:
                 items.append(key)
             else:
@@ -243,7 +245,7 @@ def parse_options_header(value):
         return '', {}
 
     parts = _tokenize(';' + value)
-    name = parts.next()[0]
+    name = next(parts)[0]
     extra = dict(parts)
     return name, extra
 
@@ -747,7 +749,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     # decode to unicode and skip broken items.  Our extended morsel
     # and extended cookie will catch CookieErrors and convert them to
     # `None` items which we have to skip here.
-    for key, value in cookie.iteritems():
+    for key, value in iteritems(cookie):
         if value.value is not None:
             result[key] = _decode_unicode(unquote_header_value(value.value),
                                           charset, errors)
