@@ -469,9 +469,11 @@ class MultiPartParser(object):
                 _write = container.write
 
             elif ellt == _begin_form:
+                is_file = False
                 container = []
                 _write = container.append
                 guard_memory = self.max_form_memory_size is not None
+                name = ell
 
             elif ellt == _cont:
                 _write(ell)
