@@ -261,7 +261,6 @@ def parse_multipart_headers(iterable):
     # list was not shared anyways.
     return Headers.linked(result)
 
-_headers = intern('headers')
 _begin_form = intern('begin_form')
 _begin_file = intern('begin_file')
 _cont = intern('cont')
@@ -357,15 +356,14 @@ class MultiPartParser(object):
 
     def parse_lines(self, file, boundary, content_length):
         """Generate parts of
-        ``('headers', headers)``
-        ``('begin_form', name)``
-        ``('begin_file', (name, filename))``
+        ``('begin_form', (headers, name))``
+        ``('begin_file', (headers, name, filename))``
         ``('cont', bytestring)``
         ``('end', None)``
 
         Always obeys the grammar
-        parts = (headers (begin_form cont* end |
-                          begin_file cont* end))*
+        parts = ( begin_form cont* end |
+                  begin_file cont* end )*
         """
         next_part = '--' + boundary
         last_part = next_part + '--'
@@ -384,7 +382,6 @@ class MultiPartParser(object):
             disposition = headers.get('content-disposition')
             if disposition is None:
                 self.fail('Missing Content-Disposition header')
-            yield (_headers, headers)
             disposition, extra = parse_options_header(disposition)
             transfer_encoding = self.get_part_encoding(headers)
             name = extra.get('name')
@@ -393,12 +390,12 @@ class MultiPartParser(object):
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.
             if filename is None:
-                yield _begin_form, name
+                yield _begin_form, (headers, name)
 
             # otherwise we parse the rest of the headers and ask the stream
             # factory for something we can write in.
             else:
-                yield _begin_file, (name, filename)
+                yield _begin_file, (headers, name, filename)
 
             buf = ''
             for line in iterator:
@@ -457,11 +454,8 @@ class MultiPartParser(object):
         in_memory = 0
 
         for ellt, ell in self.parse_lines(file, boundary, content_length):
-            if ellt == _headers:
-                headers = ell
-
-            elif ellt == _begin_file:
-                name, filename = ell
+            if ellt == _begin_file:
+                headers, name, filename = ell
                 is_file = True
                 guard_memory = False
                 filename, container = self.start_file_streaming(
@@ -469,11 +463,11 @@ class MultiPartParser(object):
                 _write = container.write
 
             elif ellt == _begin_form:
+                headers, name = ell
                 is_file = False
                 container = []
                 _write = container.append
                 guard_memory = self.max_form_memory_size is not None
-                name = ell
 
             elif ellt == _cont:
                 _write(ell)
