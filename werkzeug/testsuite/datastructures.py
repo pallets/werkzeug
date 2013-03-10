@@ -103,7 +103,7 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
         assert list(sorted(md.keys())) == ['a', 'b', 'c']
         assert list(sorted(iterkeys(md))) == ['a', 'b', 'c']
 
-        assert list(sorted(md.values())) == [1, 2, 3]
+        assert list(sorted(itervalues(md))) == [1, 2, 3]
         assert list(sorted(itervalues(md))) == [1, 2, 3]
 
         assert list(sorted(md.items())) == [('a', 1), ('b', 2), ('c', 3)]
@@ -332,7 +332,7 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         assert len(d) == 1
         d.add('foo', 'baz')
         assert len(d) == 1
-        assert d.items() == [('foo', 'bar')]
+        assert list(iteritems(d)) == [('foo', 'bar')]
         assert list(d) == ['foo']
         assert list(iteritems(d, multi=True)) == \
                 [('foo', 'bar'), ('foo', 'baz')]
@@ -345,7 +345,7 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         d.add('foo', 3)
         assert d.getlist('foo') == [1, 2, 3]
         assert d.getlist('bar') == [42]
-        assert d.items() == [('foo', 1), ('bar', 42)]
+        assert list(iteritems(d)) == [('foo', 1), ('bar', 42)]
 
         expected = ['foo', 'bar']
 
@@ -353,8 +353,8 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         self.assertSequenceEqual(list(d), expected)
         self.assertSequenceEqual(list(iterkeys(d)), expected)
         
-        assert d.items(multi=True) == [('foo', 1), ('foo', 2),
-                                       ('bar', 42), ('foo', 3)]
+        assert list(iteritems(d, multi=True)) == \
+                [('foo', 1), ('foo', 2), ('bar', 42), ('foo', 3)]
         assert len(d) == 2
 
         assert d.pop('foo') == 1
