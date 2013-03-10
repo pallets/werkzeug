@@ -24,7 +24,8 @@ import pickle
 from copy import copy
 from werkzeug.testsuite import WerkzeugTestCase
 from six.moves import xrange
-from werkzeug._compat import iterkeys, itervalues, iteritems
+from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
+        iterlistvalues
 
 from werkzeug import datastructures
 from werkzeug.exceptions import BadRequestKeyError
@@ -114,7 +115,7 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
                [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
 
         assert list(sorted(md.lists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
-        assert list(sorted(md.iterlists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
+        assert list(sorted(iterlists(md))) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
 
         # copy method
         c = md.copy()
@@ -316,8 +317,8 @@ class MultiDictTestCase(MutableMultiDictBaseTestCase):
                    ('a', 1), ('a', 3), ('d', 4), ('c', 3)]
         md = self.storage_class(mapping)
         assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
-        assert list(zip(md, md.iterlistvalues())) == list(md.iterlists())
-        assert list(zip(iterkeys(md), md.iterlistvalues())) == list(md.iterlists())
+        assert list(zip(md, iterlistvalues(md))) == list(iterlists(md))
+        assert list(zip(iterkeys(md), iterlistvalues(md))) == list(iterlists(md))
 
 
 class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
@@ -449,7 +450,7 @@ class CombinedMultiDictTestCase(WerkzeugTestCase):
         md1 = datastructures.MultiDict((("foo", "bar"),))
         md2 = datastructures.MultiDict((("foo", "blafasel"),))
         x = self.storage_class((md1, md2))
-        assert x.lists() == [('foo', ['bar', 'blafasel'])]
+        assert list(iterlists(x)) == [('foo', ['bar', 'blafasel'])]
 
 
 class HeadersTestCase(WerkzeugTestCase):
