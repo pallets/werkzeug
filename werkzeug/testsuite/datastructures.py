@@ -24,6 +24,7 @@ import pickle
 from copy import copy
 from werkzeug.testsuite import WerkzeugTestCase
 from six.moves import xrange
+from werkzeug._compat import iterkeys, itervalues, iteritems
 
 from werkzeug import datastructures
 from werkzeug.exceptions import BadRequestKeyError
@@ -100,16 +101,16 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
 
         # keys, values, items, lists
         assert list(sorted(md.keys())) == ['a', 'b', 'c']
-        assert list(sorted(md.iterkeys())) == ['a', 'b', 'c']
+        assert list(sorted(iterkeys(md))) == ['a', 'b', 'c']
 
         assert list(sorted(md.values())) == [1, 2, 3]
-        assert list(sorted(md.itervalues())) == [1, 2, 3]
+        assert list(sorted(itervalues(md))) == [1, 2, 3]
 
         assert list(sorted(md.items())) == [('a', 1), ('b', 2), ('c', 3)]
         assert list(sorted(md.items(multi=True))) == \
                [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
-        assert list(sorted(md.iteritems())) == [('a', 1), ('b', 2), ('c', 3)]
-        assert list(sorted(md.iteritems(multi=True))) == \
+        assert list(sorted(iteritems(md))) == [('a', 1), ('b', 2), ('c', 3)]
+        assert list(sorted(iteritems(md, multi=True))) == \
                [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
 
         assert list(sorted(md.lists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
@@ -316,7 +317,7 @@ class MultiDictTestCase(MutableMultiDictBaseTestCase):
         md = self.storage_class(mapping)
         assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
         assert list(zip(md, md.iterlistvalues())) == list(md.iterlists())
-        assert list(zip(md.iterkeys(), md.iterlistvalues())) == list(md.iterlists())
+        assert list(zip(iterkeys(md), md.iterlistvalues())) == list(md.iterlists())
 
 
 class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
@@ -333,8 +334,8 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         assert len(d) == 1
         assert d.items() == [('foo', 'bar')]
         assert list(d) == ['foo']
-        assert d.items(multi=True) == [('foo', 'bar'),
-                                       ('foo', 'baz')]
+        assert list(iteritems(d, multi=True)) == \
+                [('foo', 'bar'), ('foo', 'baz')]
         del d['foo']
         assert not d
         assert len(d) == 0
@@ -350,7 +351,7 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
 
         self.assertSequenceEqual(list(d.keys()), expected)
         self.assertSequenceEqual(list(d), expected)
-        self.assertSequenceEqual(list(d.iterkeys()), expected)
+        self.assertSequenceEqual(list(iterkeys(d)), expected)
         
         assert d.items(multi=True) == [('foo', 1), ('foo', 2),
                                        ('bar', 42), ('foo', 3)]
