@@ -15,6 +15,7 @@ import unittest
 from os import path
 #XXX: py3 verify
 from io import BytesIO as StringIO
+from six.moves import xrange
 
 from werkzeug.testsuite import WerkzeugTestCase
 

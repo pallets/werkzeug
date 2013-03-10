@@ -169,7 +169,7 @@ class HTMLBuilder(object):
             raise AttributeError(tag)
         def proxy(*children, **arguments):
             buffer = '<' + tag
-            for key, value in arguments.iteritems():
+            for key, value in six.iteritems(arguments):
                 if value is None:
                     continue
                 if key[-1] == '_':

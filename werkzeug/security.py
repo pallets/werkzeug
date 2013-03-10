@@ -11,7 +11,7 @@
 import os
 import hmac
 import posixpath
-from six.moves import zip
+from six.moves import zip, xrange
 from random import SystemRandom
 
 

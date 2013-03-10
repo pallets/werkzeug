@@ -18,6 +18,7 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
+from six import iteritems, next
 
 from werkzeug._compat import urlparse
 from werkzeug._internal import _patch_wrapper
@@ -321,7 +322,7 @@ class SharedDataMiddleware(object):
         self.exports = {}
         self.cache = cache
         self.cache_timeout = cache_timeout
-        for key, value in exports.iteritems():
+        for key, value in iteritems(exports):
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
             elif isinstance(value, basestring):
@@ -503,7 +504,7 @@ class ClosingIterator(object):
 
     def __init__(self, iterable, callbacks=None):
         iterator = iter(iterable)
-        self._next = iterator.next
+        self._next = partial(next, iterator)
         if callbacks is None:
             callbacks = []
         elif callable(callbacks):
@@ -594,7 +595,8 @@ def make_chunk_iter_func(stream, limit, buffer_size):
     """Helper for the line and chunk iter functions."""
     if hasattr(stream, 'read'):
         return partial(make_limited_stream(stream, limit).read, buffer_size)
-    return iter(chain(stream, repeat(''))).next
+    iterator = iter(chain(stream, repeat('')))
+    return partial(next, iterator)
 
 
 def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
