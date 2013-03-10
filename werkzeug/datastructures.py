@@ -15,6 +15,8 @@ from itertools import repeat
 from six import integer_types, string_types, iteritems, itervalues
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
+from werkzeug._compat import iterkeys, itervalues, iteritems, \
+        dict_iterkeys, dict_itervalues, dict_iteritems
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -29,10 +31,10 @@ def iter_multi_items(mapping):
     without dropping any from more complex structures.
     """
     if isinstance(mapping, MultiDict):
-        for item in mapping.iteritems(multi=True):
+        for item in iteritems(mapping, multi=True):
             yield item
     elif isinstance(mapping, dict):
-        for key, value in mapping.iteritems():
+        for key, value in iteritems(mapping):
             if isinstance(value, (tuple, list)):
                 for value in value:
                     yield key, value
@@ -41,6 +43,38 @@ def iter_multi_items(mapping):
     else:
         for item in mapping:
             yield item
+
+
+def native_dict(cls):
+    if six.PY3:
+        cls.keys = cls._iterkeys
+        cls.values = cls._itervalues
+        cls.items = cls._iteritems
+    else:
+        cls.iterkeys = cls._iterkeys
+        cls.itervalues = cls._itervalues
+        cls.iteritems = cls._iteritems
+
+        def keys(self, *a, **kw):
+            """The same as :py:meth:`iterkeys` but returns a list"""
+            return list(self._iterkeys(*a, **kw))
+
+        def values(self, *a, **kw):
+            """The same as :py:meth:`itervalues` but returns a list"""
+            return list(self._itervalues(*a, **kw))
+
+        def items(self, *a, **kw):
+            """The same as :py:meth:`iteritems` but returns a list"""
+            return list(self._iteritems(*a, **kw))
+
+        cls.keys = getattr(cls, '_keys', keys)
+        cls.values = getattr(cls, '_values', values)
+        cls.items = getattr(cls, '_items', items)
+
+    if getattr(cls, '__iter__', None) is dict.__iter__:
+        cls.__iter__ = cls._iterkeys
+
+    return cls
 
 
 class ImmutableListMixin(object):
@@ -128,7 +162,7 @@ class ImmutableDictMixin(object):
         return type(self), (dict(self),)
 
     def _iter_hashitems(self):
-        return self.iteritems()
+        return iteritems(self)
 
     def __hash__(self):
         if self._hash_cache is not None:
@@ -167,10 +201,10 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
     """
 
     def __reduce_ex__(self, protocol):
-        return type(self), (self.items(multi=True),)
+        return type(self), (list(iteritems(self, multi=True)),)
 
     def _iter_hashitems(self):
-        return self.iteritems(multi=True)
+        return iteritems(self, multi=True)
 
     def add(self, key, value):
         is_immutable(self)
@@ -273,6 +307,7 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
         return self
 
 
+@native_dict
 class MultiDict(TypeConversionDict):
     """A :class:`MultiDict` is a dictionary subclass customized to deal with
     multiple values for the same key which is for example used by the parsing
@@ -319,7 +354,7 @@ class MultiDict(TypeConversionDict):
             dict.__init__(self, ((k, l[:]) for k, l in mapping.iterlists()))
         elif isinstance(mapping, dict):
             tmp = {}
-            for key, value in mapping.iteritems():
+            for key, value in iteritems(mapping):
                 if isinstance(value, (tuple, list)):
                     value = list(value)
                 else:
@@ -338,9 +373,6 @@ class MultiDict(TypeConversionDict):
     def __setstate__(self, value):
         dict.clear(self)
         dict.update(self, value)
-
-    def __iter__(self):
-        return self.iterkeys()
 
     def __getitem__(self, key):
         """Return the first data value for this key;
@@ -493,7 +525,13 @@ class MultiDict(TypeConversionDict):
         return list(self.iterlistvalues())
 
     def iteritems(self, multi=False):
-        """Like :meth:`items` but returns an iterator."""
+        """Return an iterator of ``(key, value)`` pairs.
+
+        :param multi: If set to `True` the iterator returned will have a pair
+            for each value of each key.  Otherwise it will only contain pairs
+            for the first value of each key.
+        """
+
         for key, values in dict.iteritems(self):
             if multi:
                 for value in values:
