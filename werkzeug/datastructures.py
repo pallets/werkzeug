@@ -12,6 +12,7 @@ import re
 import codecs
 import mimetypes
 from itertools import repeat
+import six
 from six import integer_types, string_types, iteritems, itervalues
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
@@ -485,18 +486,6 @@ class MultiDict(TypeConversionDict):
             default_list = dict.__getitem__(self, key)
         return default_list
 
-    def items(self, multi=False):
-        """Return a list of ``(key, value)`` pairs.
-
-        :param multi: If set to `True` the list returned will have a
-                      pair for each value of each key.  Otherwise it
-                      will only contain pairs for the first value of
-                      each key.
-
-        :return: a :class:`list`
-        """
-        return list(self.iteritems(multi))
-
     def lists(self):
         """Return a list of ``(key, values)`` pairs, where values is the list of
         all values associated with the key.
@@ -504,13 +493,6 @@ class MultiDict(TypeConversionDict):
         :return: a :class:`list`
         """
         return list(self.iterlists())
-
-    def values(self):
-        """Returns a list of the first value on every key's value list.
-
-        :return: a :class:`list`.
-        """
-        return [self[key] for key in self.iterkeys()]
 
     def listvalues(self):
         """Return a list of all values associated with a key.  Zipping
@@ -524,7 +506,7 @@ class MultiDict(TypeConversionDict):
         """
         return list(self.iterlistvalues())
 
-    def iteritems(self, multi=False):
+    def _iteritems(self, multi=False):
         """Return an iterator of ``(key, value)`` pairs.
 
         :param multi: If set to `True` the iterator returned will have a pair
@@ -544,8 +526,11 @@ class MultiDict(TypeConversionDict):
         for key, values in dict.iteritems(self):
             yield key, list(values)
 
-    def itervalues(self):
-        """Like :meth:`values` but returns an iterator."""
+    def _iterkeys(self):
+        return dict_iterkeys(self)
+
+    def _itervalues(self):
+        """Returns an iterator of the first value on every key's value list."""
         for values in dict.itervalues(self):
             yield values[0]
 
