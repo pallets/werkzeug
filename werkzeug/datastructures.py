@@ -46,7 +46,7 @@ def iter_multi_items(mapping):
             yield item
 
 
-def native_dict(names):
+def native_itermethods(names):
     def setmethod(cls, name):
         itername = getattr(cls, '_iter%s' % name)
         if six.PY3:
@@ -60,9 +60,6 @@ def native_dict(names):
     def wrap(cls):
         for name in names:
             setmethod(cls, name)
-
-        if getattr(cls, '__iter__', None) is dict.__iter__:
-            cls.__iter__ = cls._iterkeys
 
         return cls
     return wrap
@@ -298,7 +295,7 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
         return self
 
 
-@native_dict(['keys', 'values', 'items', 'lists', 'listvalues'])
+@native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class MultiDict(TypeConversionDict):
     """A :class:`MultiDict` is a dictionary subclass customized to deal with
     multiple values for the same key which is for example used by the parsing
@@ -499,7 +496,9 @@ class MultiDict(TypeConversionDict):
             yield key, list(values)
 
     def _iterkeys(self):
-        return iter(dict_iterkeys(self))
+        return dict_iterkeys(self)
+
+    __iter__ = _iterkeys
 
     def _itervalues(self):
         """Returns an iterator of the first value on every key's value list."""
@@ -624,7 +623,7 @@ class _omd_bucket(object):
             omd._last_bucket = self.prev
 
 
-@native_dict(['keys', 'values', 'items', 'lists', 'listvalues'])
+@native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class OrderedMultiDict(MultiDict):
     """Works like a regular :class:`MultiDict` but preserves the
     order of the fields.  To convert the ordered multi dict into a
@@ -803,7 +802,7 @@ def _options_header_vkw(value, kw):
                                             for k, v in kw.items()))
 
 
-@native_dict(['keys', 'values', 'items'])
+@native_itermethods(['keys', 'values', 'items'])
 class Headers(object):
     """An object that stores some headers.  It has a dict-like interface
     but is ordered and can store the same keys multiple times.
@@ -1241,7 +1240,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         raise TypeError('cannot create %r copies' % self.__class__.__name__)
 
 
-@native_dict(['keys', 'values', 'items', 'lists', 'listvalues'])
+@native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     """A read only :class:`MultiDict` that you can pass multiple :class:`MultiDict`
     instances as sequence and it will combine the return values of all wrapped
@@ -1304,6 +1303,8 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         for d in self.dicts:
             rv.update(d.keys())
         return iter(rv)
+
+    __iter__ = _iterkeys
 
     def _iteritems(self, multi=False):
         found = set()
@@ -1451,7 +1452,7 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
         return self
 
 
-@native_dict(['values'])
+@native_itermethods(['values'])
 class Accept(ImmutableList):
     """An :class:`Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by quality.
