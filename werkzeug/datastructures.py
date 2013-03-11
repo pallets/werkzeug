@@ -16,8 +16,7 @@ import six
 from six import integer_types, string_types, next
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
-from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-        dict_iterkeys, dict_itervalues, dict_iteritems
+from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -480,7 +479,7 @@ class MultiDict(TypeConversionDict):
             for the first value of each key.
         """
 
-        for key, values in dict_iteritems(self):
+        for key, values in iteritems(dict, self):
             if multi:
                 for value in values:
                     yield key, value
@@ -491,17 +490,17 @@ class MultiDict(TypeConversionDict):
         """Return a list of ``(key, values)`` pairs, where values is the list
         of all values associated with the key."""
 
-        for key, values in dict_iteritems(self):
+        for key, values in iteritems(dict, self):
             yield key, list(values)
 
     def keys(self):
-        return dict_iterkeys(self)
+        return iterkeys(dict, self)
 
     __iter__ = keys
 
     def values(self):
         """Returns an iterator of the first value on every key's value list."""
-        for values in dict_itervalues(self):
+        for values in itervalues(dict, self):
             yield values[0]
 
     def listvalues(self):
@@ -513,7 +512,7 @@ class MultiDict(TypeConversionDict):
         True
         """
 
-        return dict_itervalues(self)
+        return itervalues(dict, self)
 
     def copy(self):
         """Return a shallow copy of this object."""
