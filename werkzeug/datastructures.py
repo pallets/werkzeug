@@ -47,18 +47,19 @@ def iter_multi_items(mapping):
 
 
 def native_dict(names):
-    def apply(cls, name):
+    def setmethod(cls, name):
         itername = getattr(cls, '_iter%s' % name)
         if six.PY3:
             setattr(cls, name, itername)
         else:
             setattr(cls, 'iter%s' % name, itername)
             fallback = lambda self, *a, **kw: list(itername(self, *a, **kw))
+            fallback.__doc__ = 'Like :py:meth:`iter%s`, but returns a list.' % name
             setattr(cls, name, getattr(cls, '_%s' % name, fallback))
 
     def wrap(cls):
         for name in names:
-            apply(cls, name)
+            setmethod(cls, name)
 
         if getattr(cls, '__iter__', None) is dict.__iter__:
             cls.__iter__ = cls._iterkeys
