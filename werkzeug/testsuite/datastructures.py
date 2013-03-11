@@ -23,12 +23,47 @@ import unittest
 import pickle
 from copy import copy
 from werkzeug.testsuite import WerkzeugTestCase
+import six
 from six.moves import xrange
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
         iterlistvalues
 
 from werkzeug import datastructures
 from werkzeug.exceptions import BadRequestKeyError
+
+
+class NativeDictDecoratorTestCase(WerkzeugTestCase):
+    def test_basic(self):
+        @datastructures.native_dict(['keys', 'values', 'items'])
+        class StupidDict(object):
+            def _iterkeys(self, multi=1):
+                return iter(['a', 'b', 'c'] * multi)
+
+            def _itervalues(self, multi=1):
+                return iter([1, 2, 3] * multi)
+
+            def _iteritems(self, multi=1):
+                return iter(zip(iterkeys(self, multi=multi),
+                                itervalues(self, multi=multi)))
+
+        d = StupidDict()
+        expected_keys = ['a', 'b', 'c']
+        expected_values = [1, 2, 3]
+        expected_items = list(zip(expected_keys, expected_values))
+
+        assert list(iterkeys(d)) == expected_keys
+        assert list(d._iterkeys()) == expected_keys
+        assert list(itervalues(d)) == expected_values
+        assert list(d._itervalues()) == expected_values
+        assert list(iteritems(d)) == expected_items
+        assert list(d._iteritems()) == expected_items
+
+        assert list(iterkeys(d, 2)) == expected_keys * 2
+        assert list(d._iterkeys(2)) == expected_keys * 2
+        assert list(itervalues(d, 2)) == expected_values * 2
+        assert list(d._itervalues(2)) == expected_values * 2
+        assert list(iteritems(d, 2)) == expected_items * 2
+        assert list(d._iteritems(2)) == expected_items * 2
 
 
 class MutableMultiDictBaseTestCase(WerkzeugTestCase):
@@ -624,4 +659,5 @@ def suite():
     suite.addTest(unittest.makeSuite(HeadersTestCase))
     suite.addTest(unittest.makeSuite(EnvironHeadersTestCase))
     suite.addTest(unittest.makeSuite(HeaderSetTestCase))
+    suite.addTest(unittest.makeSuite(NativeDictDecoratorTestCase))
     return suite
