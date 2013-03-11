@@ -48,14 +48,13 @@ def iter_multi_items(mapping):
 
 def native_itermethods(names):
     def setmethod(cls, name):
-        itername = getattr(cls, '_iter%s' % name)
-        if six.PY3:
-            setattr(cls, name, itername)
-        else:
-            setattr(cls, 'iter%s' % name, itername)
-            fallback = lambda self, *a, **kw: list(itername(self, *a, **kw))
-            fallback.__doc__ = 'Like :py:meth:`iter%s`, but returns a list.' % name
-            setattr(cls, name, getattr(cls, '_%s' % name, fallback))
+        itermethod = getattr(cls, name)
+        if not six.PY3:
+            setattr(cls, 'iter%s' % name, itermethod)
+            listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
+            listmethod.__doc__ = \
+                    'Like :py:meth:`iter%s`, but returns a list.' % name
+            setattr(cls, name, listmethod)
 
     def wrap(cls):
         for name in names:
@@ -473,7 +472,7 @@ class MultiDict(TypeConversionDict):
             default_list = dict.__getitem__(self, key)
         return default_list
 
-    def _iteritems(self, multi=False):
+    def items(self, multi=False):
         """Return an iterator of ``(key, value)`` pairs.
 
         :param multi: If set to `True` the iterator returned will have a pair
@@ -488,24 +487,24 @@ class MultiDict(TypeConversionDict):
             else:
                 yield key, values[0]
 
-    def _iterlists(self):
+    def lists(self):
         """Return a list of ``(key, values)`` pairs, where values is the list
         of all values associated with the key."""
 
         for key, values in dict_iteritems(self):
             yield key, list(values)
 
-    def _iterkeys(self):
+    def keys(self):
         return dict_iterkeys(self)
 
-    __iter__ = _iterkeys
+    __iter__ = keys
 
-    def _itervalues(self):
+    def values(self):
         """Returns an iterator of the first value on every key's value list."""
         for values in dict_itervalues(self):
             yield values[0]
 
-    def _iterlistvalues(self):
+    def listvalues(self):
         """Return an iterator of all values associated with a key.  Zipping
         :meth:`keys` and this is the same as calling :meth:`lists`:
 
@@ -697,13 +696,13 @@ class OrderedMultiDict(MultiDict):
     def __delitem__(self, key):
         self.pop(key)
 
-    def _iterkeys(self):
+    def keys(self):
         return (key for key, value in iteritems(self))
 
-    def _itervalues(self):
+    def values(self):
         return (value for key, value in iteritems(self))
 
-    def _iteritems(self, multi=False):
+    def items(self, multi=False):
         ptr = self._first_bucket
         if multi:
             while ptr is not None:
@@ -717,7 +716,7 @@ class OrderedMultiDict(MultiDict):
                     yield ptr.key, ptr.value
                 ptr = ptr.next
 
-    def _iterlists(self):
+    def lists(self):
         returned_keys = set()
         ptr = self._first_bucket
         while ptr is not None:
@@ -726,7 +725,7 @@ class OrderedMultiDict(MultiDict):
                 returned_keys.add(ptr.key)
             ptr = ptr.next
 
-    def _iterlistvalues(self):
+    def listvalues(self):
         for key, values in iterlists(self):
             yield values
 
@@ -944,17 +943,17 @@ class Headers(object):
         """
         return self.getlist(name)
 
-    def _iteritems(self, lower=False):
+    def items(self, lower=False):
         for key, value in self:
             if lower:
                 key = key.lower()
             yield key, value
 
-    def _iterkeys(self, lower=False):
+    def keys(self, lower=False):
         for key, _ in iteritems(self, lower):
             yield key
 
-    def _itervalues(self):
+    def values(self):
         for _, value in iteritems(self):
             yield value
 
@@ -1298,15 +1297,15 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
             rv.extend(d.getlist(key, type))
         return rv
 
-    def _iterkeys(self):
+    def keys(self):
         rv = set()
         for d in self.dicts:
             rv.update(d.keys())
         return iter(rv)
 
-    __iter__ = _iterkeys
+    __iter__ = keys
 
-    def _iteritems(self, multi=False):
+    def items(self, multi=False):
         found = set()
         for d in self.dicts:
             for key, value in iteritems(d, multi):
@@ -1316,18 +1315,18 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
                     found.add(key)
                     yield key, value
 
-    def _itervalues(self):
+    def values(self):
         for key, value in self.iteritems():
             yield value
 
-    def _iterlists(self):
+    def lists(self):
         rv = {}
         for d in self.dicts:
             for key, values in iterlists(d):
                 rv.setdefault(key, []).extend(values)
         return iteritems(rv)
 
-    def _iterlistvalues(self):
+    def listvalues(self):
         return (x[0] for x in self.lists())
 
     def copy(self):
@@ -1559,7 +1558,7 @@ class Accept(ImmutableList):
         except ValueError:
             return -1
 
-    def _itervalues(self):
+    def values(self):
         """Iterate over all values."""
         for item in self:
             yield item[0]
