@@ -475,8 +475,8 @@ class MultiDict(TypeConversionDict):
         """Return an iterator of ``(key, value)`` pairs.
 
         :param multi: If set to `True` the iterator returned will have a pair
-            for each value of each key.  Otherwise it will only contain pairs
-            for the first value of each key.
+                      for each value of each key.  Otherwise it will only
+                      contain pairs for the first value of each key.
         """
 
         for key, values in iteritems(dict, self):
