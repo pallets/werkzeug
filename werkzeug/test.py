@@ -24,7 +24,7 @@ import six
 CookieJar = six.moves.http_cookiejar.CookieJar
 
 
-from werkzeug._compat import urlparse
+from werkzeug._compat import urlparse, iterlists, iteritems, itervalues
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
@@ -66,7 +66,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
-    for key, values in values.iterlists():
+    for key, values in iterlists(values):
         for value in values:
             write(b'--%s\r\nContent-Disposition: form-data; name="%s"' %
                   (boundary, key))
@@ -177,11 +177,11 @@ def _iter_data(data):
     :class:`EnvironBuilder`.
     """
     if isinstance(data, MultiDict):
-        for key, values in data.iterlists():
+        for key, values in iterlists(data):
             for value in values:
                 yield key, value
     else:
-        for key, values in data.iteritems():
+        for key, values in iteritems(data):
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -492,7 +492,7 @@ class EnvironBuilder(object):
         if self.closed:
             return
         try:
-            files = self.files.itervalues()
+            files = itervalues(self.files)
         except AttributeError:
             files = ()
         for f in files:

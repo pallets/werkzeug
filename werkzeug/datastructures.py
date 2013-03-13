@@ -2335,7 +2335,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         return '%s %s' % (auth_type.title(), ', '.join([
             '%s=%s' % (key, quote_header_value(value,
                        allow_token=key not in self._require_quoting))
-            for key, value in d.iteritems()
+            for key, value in iteritems(d)
         ]))
 
     def __str__(self):
