@@ -32,7 +32,7 @@ from werkzeug import datastructures
 from werkzeug.exceptions import BadRequestKeyError
 
 
-class NativeDictDecoratorTestCase(WerkzeugTestCase):
+class NativeItermethodsTestCase(WerkzeugTestCase):
     def test_basic(self):
         @datastructures.native_itermethods(['keys', 'values', 'items'])
         class StupidDict(object):
@@ -653,5 +653,5 @@ def suite():
     suite.addTest(unittest.makeSuite(HeadersTestCase))
     suite.addTest(unittest.makeSuite(EnvironHeadersTestCase))
     suite.addTest(unittest.makeSuite(HeaderSetTestCase))
-    suite.addTest(unittest.makeSuite(NativeDictDecoratorTestCase))
+    suite.addTest(unittest.makeSuite(NativeItermethodsTestCase))
     return suite
