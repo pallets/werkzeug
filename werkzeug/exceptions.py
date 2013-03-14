@@ -573,7 +573,7 @@ class Aborter(object):
             self.mapping.update(extra)
 
     def __call__(self, code, *args, **kwargs):
-        if not args and not kwargs and not isinstance(code, (int, long)):
+        if not args and not kwargs and not isinstance(code, six.integer_types):
             raise _ProxyException(code)
         if code not in self.mapping:
             raise LookupError('no exception for %r' % code)
