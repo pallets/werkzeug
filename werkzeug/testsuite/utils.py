@@ -13,8 +13,10 @@ from __future__ import with_statement
 
 import unittest
 from datetime import datetime
+from functools import partial
 
 from werkzeug.testsuite import WerkzeugTestCase
+from six import next, Iterator
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
@@ -126,20 +128,20 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         app_iter, status, headers = run_wsgi_app(foo, {})
         assert status == '200 OK'
         assert headers == [('Content-Type', 'text/plain')]
-        assert app_iter.next() == '1'
-        assert app_iter.next() == '2'
-        assert app_iter.next() == '3'
-        self.assert_raises(StopIteration, app_iter.next)
+        assert next(app_iter) == '1'
+        assert next(app_iter) == '2'
+        assert next(app_iter) == '3'
+        self.assert_raises(StopIteration, partial(next, app_iter))
 
         got_close = []
-        class CloseIter(object):
+        class CloseIter(Iterator):
             def __init__(self):
                 self.iterated = False
             def __iter__(self):
                 return self
             def close(self):
                 got_close.append(None)
-            def next(self):
+            def __next__(self):
                 if self.iterated:
                     raise StopIteration()
                 self.iterated = True
@@ -152,8 +154,8 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         app_iter, status, headers = run_wsgi_app(bar, {})
         assert status == '200 OK'
         assert headers == [('Content-Type', 'text/plain')]
-        assert app_iter.next() == 'bar'
-        self.assert_raises(StopIteration, app_iter.next)
+        assert next(app_iter) == 'bar'
+        self.assert_raises(StopIteration, partial(next, app_iter))
         app_iter.close()
 
         assert run_wsgi_app(bar, {}, True)[0] == ['bar']

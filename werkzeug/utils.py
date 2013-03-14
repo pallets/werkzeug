@@ -15,6 +15,7 @@ import os
 import sys
 
 import six
+from six import next
 
 from werkzeug._internal import _iter_modules, _DictAccessorProperty, \
      _parse_signature, _missing
@@ -539,11 +540,11 @@ def bind_arguments(func, args, kwargs):
         multikw = set(extra) & set([x[0] for x in arg_spec])
         if multikw:
             raise TypeError('got multiple values for keyword argument ' +
-                            repr(iter(multikw).next()))
+                            repr(next(iter(multikw))))
         values[kwarg_var] = extra
     elif extra:
         raise TypeError('got unexpected keyword argument ' +
-                        repr(iter(extra).next()))
+                        repr(next(iter(extra))))
     return values
 
 
