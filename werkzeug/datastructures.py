@@ -12,9 +12,11 @@ import re
 import codecs
 import mimetypes
 from itertools import repeat
-from six import integer_types, string_types, iteritems, itervalues
+import six
+from six import integer_types, string_types, next
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
+from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -29,10 +31,10 @@ def iter_multi_items(mapping):
     without dropping any from more complex structures.
     """
     if isinstance(mapping, MultiDict):
-        for item in mapping.iteritems(multi=True):
+        for item in iteritems(mapping, multi=True):
             yield item
     elif isinstance(mapping, dict):
-        for key, value in mapping.iteritems():
+        for key, value in iteritems(mapping):
             if isinstance(value, (tuple, list)):
                 for value in value:
                     yield key, value
@@ -41,6 +43,24 @@ def iter_multi_items(mapping):
     else:
         for item in mapping:
             yield item
+
+
+def native_itermethods(names):
+    def setmethod(cls, name):
+        itermethod = getattr(cls, name)
+        if not six.PY3:
+            setattr(cls, 'iter%s' % name, itermethod)
+            listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
+            listmethod.__doc__ = \
+                    'Like :py:meth:`iter%s`, but returns a list.' % name
+            setattr(cls, name, listmethod)
+
+    def wrap(cls):
+        for name in names:
+            setmethod(cls, name)
+
+        return cls
+    return wrap
 
 
 class ImmutableListMixin(object):
@@ -128,7 +148,7 @@ class ImmutableDictMixin(object):
         return type(self), (dict(self),)
 
     def _iter_hashitems(self):
-        return self.iteritems()
+        return iteritems(self)
 
     def __hash__(self):
         if self._hash_cache is not None:
@@ -167,10 +187,10 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
     """
 
     def __reduce_ex__(self, protocol):
-        return type(self), (self.items(multi=True),)
+        return type(self), (list(iteritems(self, multi=True)),)
 
     def _iter_hashitems(self):
-        return self.iteritems(multi=True)
+        return iteritems(self, multi=True)
 
     def add(self, key, value):
         is_immutable(self)
@@ -273,6 +293,7 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
         return self
 
 
+@native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class MultiDict(TypeConversionDict):
     """A :class:`MultiDict` is a dictionary subclass customized to deal with
     multiple values for the same key which is for example used by the parsing
@@ -316,10 +337,10 @@ class MultiDict(TypeConversionDict):
 
     def __init__(self, mapping=None):
         if isinstance(mapping, MultiDict):
-            dict.__init__(self, ((k, l[:]) for k, l in mapping.iterlists()))
+            dict.__init__(self, ((k, l[:]) for k, l in iterlists(mapping)))
         elif isinstance(mapping, dict):
             tmp = {}
-            for key, value in mapping.iteritems():
+            for key, value in iteritems(mapping):
                 if isinstance(value, (tuple, list)):
                     value = list(value)
                 else:
@@ -338,9 +359,6 @@ class MultiDict(TypeConversionDict):
     def __setstate__(self, value):
         dict.clear(self)
         dict.update(self, value)
-
-    def __iter__(self):
-        return self.iterkeys()
 
     def __getitem__(self, key):
         """Return the first data value for this key;
@@ -454,66 +472,47 @@ class MultiDict(TypeConversionDict):
         return default_list
 
     def items(self, multi=False):
-        """Return a list of ``(key, value)`` pairs.
+        """Return an iterator of ``(key, value)`` pairs.
 
-        :param multi: If set to `True` the list returned will have a
-                      pair for each value of each key.  Otherwise it
-                      will only contain pairs for the first value of
-                      each key.
-
-        :return: a :class:`list`
+        :param multi: If set to `True` the iterator returned will have a pair
+                      for each value of each key.  Otherwise it will only
+                      contain pairs for the first value of each key.
         """
-        return list(self.iteritems(multi))
 
-    def lists(self):
-        """Return a list of ``(key, values)`` pairs, where values is the list of
-        all values associated with the key.
-
-        :return: a :class:`list`
-        """
-        return list(self.iterlists())
-
-    def values(self):
-        """Returns a list of the first value on every key's value list.
-
-        :return: a :class:`list`.
-        """
-        return [self[key] for key in self.iterkeys()]
-
-    def listvalues(self):
-        """Return a list of all values associated with a key.  Zipping
-        :meth:`keys` and this is the same as calling :meth:`lists`:
-
-        >>> d = MultiDict({"foo": [1, 2, 3]})
-        >>> zip(d.keys(), d.listvalues()) == d.lists()
-        True
-
-        :return: a :class:`list`
-        """
-        return list(self.iterlistvalues())
-
-    def iteritems(self, multi=False):
-        """Like :meth:`items` but returns an iterator."""
-        for key, values in dict.iteritems(self):
+        for key, values in iteritems(dict, self):
             if multi:
                 for value in values:
                     yield key, value
             else:
                 yield key, values[0]
 
-    def iterlists(self):
-        """Like :meth:`items` but returns an iterator."""
-        for key, values in dict.iteritems(self):
+    def lists(self):
+        """Return a list of ``(key, values)`` pairs, where values is the list
+        of all values associated with the key."""
+
+        for key, values in iteritems(dict, self):
             yield key, list(values)
 
-    def itervalues(self):
-        """Like :meth:`values` but returns an iterator."""
-        for values in dict.itervalues(self):
+    def keys(self):
+        return iterkeys(dict, self)
+
+    __iter__ = keys
+
+    def values(self):
+        """Returns an iterator of the first value on every key's value list."""
+        for values in itervalues(dict, self):
             yield values[0]
 
-    def iterlistvalues(self):
-        """Like :meth:`listvalues` but returns an iterator."""
-        return dict.itervalues(self)
+    def listvalues(self):
+        """Return an iterator of all values associated with a key.  Zipping
+        :meth:`keys` and this is the same as calling :meth:`lists`:
+
+        >>> d = MultiDict({"foo": [1, 2, 3]})
+        >>> zip(d.keys(), d.listvalues()) == d.lists()
+        True
+        """
+
+        return itervalues(dict, self)
 
     def copy(self):
         """Return a shallow copy of this object."""
@@ -530,7 +529,7 @@ class MultiDict(TypeConversionDict):
         :return: a :class:`dict`
         """
         if flat:
-            return dict(self.iteritems())
+            return dict(iteritems(self))
         return dict(self.lists())
 
     def update(self, other_dict):
@@ -588,7 +587,7 @@ class MultiDict(TypeConversionDict):
         return self.copy()
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.items(multi=True))
+        return '%s(%r)' % (self.__class__.__name__, list(iteritems(self, multi=True)))
 
 
 class _omd_bucket(object):
@@ -622,6 +621,7 @@ class _omd_bucket(object):
             omd._last_bucket = self.prev
 
 
+@native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class OrderedMultiDict(MultiDict):
     """Works like a regular :class:`MultiDict` but preserves the
     order of the fields.  To convert the ordered multi dict into a
@@ -648,23 +648,23 @@ class OrderedMultiDict(MultiDict):
         if not isinstance(other, MultiDict):
             return NotImplemented
         if isinstance(other, OrderedMultiDict):
-            iter1 = self.iteritems(multi=True)
-            iter2 = other.iteritems(multi=True)
+            iter1 = iteritems(self, multi=True)
+            iter2 = iteritems(other, multi=True)
             try:
                 for k1, v1 in iter1:
-                    k2, v2 = iter2.next()
+                    k2, v2 = next(iter2)
                     if k1 != k2 or v1 != v2:
                         return False
             except StopIteration:
                 return False
             try:
-                iter2.next()
+                next(iter2)
             except StopIteration:
                 return True
             return False
         if len(self) != len(other):
             return False
-        for key, values in self.iterlists():
+        for key, values in iterlists(self):
             if other.getlist(key) != values:
                 return False
         return True
@@ -673,10 +673,10 @@ class OrderedMultiDict(MultiDict):
         return not self.__eq__(other)
 
     def __reduce_ex__(self, protocol):
-        return type(self), (self.items(multi=True),)
+        return type(self), (list(iteritems(self, multi=True)),)
 
     def __getstate__(self):
-        return self.items(multi=True)
+        return list(iteritems(self, multi=True))
 
     def __setstate__(self, values):
         dict.clear(self)
@@ -695,13 +695,13 @@ class OrderedMultiDict(MultiDict):
     def __delitem__(self, key):
         self.pop(key)
 
-    def iterkeys(self):
-        return (key for key, value in self.iteritems())
+    def keys(self):
+        return (key for key, value in iteritems(self))
 
-    def itervalues(self):
-        return (value for key, value in self.iteritems())
+    def values(self):
+        return (value for key, value in iteritems(self))
 
-    def iteritems(self, multi=False):
+    def items(self, multi=False):
         ptr = self._first_bucket
         if multi:
             while ptr is not None:
@@ -715,7 +715,7 @@ class OrderedMultiDict(MultiDict):
                     yield ptr.key, ptr.value
                 ptr = ptr.next
 
-    def iterlists(self):
+    def lists(self):
         returned_keys = set()
         ptr = self._first_bucket
         while ptr is not None:
@@ -724,8 +724,8 @@ class OrderedMultiDict(MultiDict):
                 returned_keys.add(ptr.key)
             ptr = ptr.next
 
-    def iterlistvalues(self):
-        for key, values in self.iterlists():
+    def listvalues(self):
+        for key, values in iterlists(self):
             yield values
 
     def add(self, key, value):
@@ -800,6 +800,7 @@ def _options_header_vkw(value, kw):
                                             for k, v in kw.items()))
 
 
+@native_itermethods(['keys', 'values', 'items'])
 class Headers(object):
     """An object that stores some headers.  It has a dict-like interface
     but is ordered and can store the same keys multiple times.
@@ -941,28 +942,19 @@ class Headers(object):
         """
         return self.getlist(name)
 
-    def iteritems(self, lower=False):
+    def items(self, lower=False):
         for key, value in self:
             if lower:
                 key = key.lower()
             yield key, value
 
-    def iterkeys(self, lower=False):
-        for key, _ in self.iteritems(lower):
+    def keys(self, lower=False):
+        for key, _ in iteritems(self, lower):
             yield key
 
-    def itervalues(self):
-        for _, value in self.iteritems():
-            yield value
-
-    def keys(self, lower=False):
-        return list(self.iterkeys(lower))
-
     def values(self):
-        return list(self.itervalues())
-
-    def items(self, lower=False):
-        return list(self.iteritems(lower))
+        for _, value in iteritems(self):
+            yield value
 
     def extend(self, iterable):
         """Extend the headers with a dict or an iterable yielding keys and
@@ -1235,7 +1227,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         return len(list(iter(self)))
 
     def __iter__(self):
-        for key, value in self.environ.iteritems():
+        for key, value in iteritems(self.environ):
             if key.startswith('HTTP_') and key not in \
                ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 yield key[5:].replace('_', '-').title(), value
@@ -1246,6 +1238,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         raise TypeError('cannot create %r copies' % self.__class__.__name__)
 
 
+@native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     """A read only :class:`MultiDict` that you can pass multiple :class:`MultiDict`
     instances as sequence and it will combine the return values of all wrapped
@@ -1307,48 +1300,33 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         rv = set()
         for d in self.dicts:
             rv.update(d.keys())
-        return list(rv)
+        return iter(rv)
 
-    def iteritems(self, multi=False):
+    __iter__ = keys
+
+    def items(self, multi=False):
         found = set()
         for d in self.dicts:
-            for key, value in d.iteritems(multi):
+            for key, value in iteritems(d, multi):
                 if multi:
                     yield key, value
                 elif key not in found:
                     found.add(key)
                     yield key, value
 
-    def itervalues(self):
+    def values(self):
         for key, value in self.iteritems():
             yield value
 
-    def values(self):
-        return list(self.itervalues())
-
-    def items(self, multi=False):
-        return list(self.iteritems(multi))
-
-    def iterlists(self):
+    def lists(self):
         rv = {}
         for d in self.dicts:
-            for key, values in d.iterlists():
+            for key, values in iterlists(d):
                 rv.setdefault(key, []).extend(values)
-        return rv.iteritems()
-
-    def lists(self):
-        return list(self.iterlists())
-
-    def iterlistvalues(self):
-        return (x[0] for x in self.lists())
+        return iteritems(rv)
 
     def listvalues(self):
-        return list(self.iterlistvalues())
-
-    def iterkeys(self):
-        return iter(self.keys())
-
-    __iter__ = iterkeys
+        return (x[0] for x in self.lists())
 
     def copy(self):
         """Return a shallow copy of this object."""
@@ -1459,7 +1437,7 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
     """
 
     def _iter_hashitems(self):
-        return enumerate(self.iteritems(multi=True))
+        return enumerate(iteritems(self, multi=True))
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
@@ -1472,6 +1450,7 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
         return self
 
 
+@native_itermethods(['values'])
 class Accept(ImmutableList):
     """An :class:`Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by quality.
@@ -1579,10 +1558,6 @@ class Accept(ImmutableList):
             return -1
 
     def values(self):
-        """Return a list of the values, not the qualities."""
-        return list(self.itervalues())
-
-    def itervalues(self):
         """Iterate over all values."""
         for item in self:
             yield item[0]
@@ -2360,7 +2335,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         return '%s %s' % (auth_type.title(), ', '.join([
             '%s=%s' % (key, quote_header_value(value,
                        allow_token=key not in self._require_quoting))
-            for key, value in d.iteritems()
+            for key, value in iteritems(d)
         ]))
 
     def __str__(self):

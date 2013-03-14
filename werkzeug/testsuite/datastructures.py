@@ -23,10 +23,41 @@ import unittest
 import pickle
 from copy import copy
 from werkzeug.testsuite import WerkzeugTestCase
+import six
 from six.moves import xrange
+from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
+        iterlistvalues
 
 from werkzeug import datastructures
 from werkzeug.exceptions import BadRequestKeyError
+
+
+class NativeItermethodsTestCase(WerkzeugTestCase):
+    def test_basic(self):
+        @datastructures.native_itermethods(['keys', 'values', 'items'])
+        class StupidDict(object):
+            def keys(self, multi=1):
+                return iter(['a', 'b', 'c'] * multi)
+
+            def values(self, multi=1):
+                return iter([1, 2, 3] * multi)
+
+            def items(self, multi=1):
+                return iter(zip(iterkeys(self, multi=multi),
+                                itervalues(self, multi=multi)))
+
+        d = StupidDict()
+        expected_keys = ['a', 'b', 'c']
+        expected_values = [1, 2, 3]
+        expected_items = list(zip(expected_keys, expected_values))
+
+        assert list(iterkeys(d)) == expected_keys
+        assert list(itervalues(d)) == expected_values
+        assert list(iteritems(d)) == expected_items
+
+        assert list(iterkeys(d, 2)) == expected_keys * 2
+        assert list(itervalues(d, 2)) == expected_values * 2
+        assert list(iteritems(d, 2)) == expected_items * 2
 
 
 class MutableMultiDictBaseTestCase(WerkzeugTestCase):
@@ -100,20 +131,20 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
 
         # keys, values, items, lists
         assert list(sorted(md.keys())) == ['a', 'b', 'c']
-        assert list(sorted(md.iterkeys())) == ['a', 'b', 'c']
+        assert list(sorted(iterkeys(md))) == ['a', 'b', 'c']
 
-        assert list(sorted(md.values())) == [1, 2, 3]
-        assert list(sorted(md.itervalues())) == [1, 2, 3]
+        assert list(sorted(itervalues(md))) == [1, 2, 3]
+        assert list(sorted(itervalues(md))) == [1, 2, 3]
 
         assert list(sorted(md.items())) == [('a', 1), ('b', 2), ('c', 3)]
         assert list(sorted(md.items(multi=True))) == \
                [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
-        assert list(sorted(md.iteritems())) == [('a', 1), ('b', 2), ('c', 3)]
-        assert list(sorted(md.iteritems(multi=True))) == \
+        assert list(sorted(iteritems(md))) == [('a', 1), ('b', 2), ('c', 3)]
+        assert list(sorted(iteritems(md, multi=True))) == \
                [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
 
         assert list(sorted(md.lists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
-        assert list(sorted(md.iterlists())) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
+        assert list(sorted(iterlists(md))) == [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
 
         # copy method
         c = md.copy()
@@ -315,8 +346,8 @@ class MultiDictTestCase(MutableMultiDictBaseTestCase):
                    ('a', 1), ('a', 3), ('d', 4), ('c', 3)]
         md = self.storage_class(mapping)
         assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
-        assert list(zip(md, md.iterlistvalues())) == list(md.iterlists())
-        assert list(zip(md.iterkeys(), md.iterlistvalues())) == list(md.iterlists())
+        assert list(zip(md, iterlistvalues(md))) == list(iterlists(md))
+        assert list(zip(iterkeys(md), iterlistvalues(md))) == list(iterlists(md))
 
 
 class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
@@ -331,10 +362,10 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         assert len(d) == 1
         d.add('foo', 'baz')
         assert len(d) == 1
-        assert d.items() == [('foo', 'bar')]
+        assert list(iteritems(d)) == [('foo', 'bar')]
         assert list(d) == ['foo']
-        assert d.items(multi=True) == [('foo', 'bar'),
-                                       ('foo', 'baz')]
+        assert list(iteritems(d, multi=True)) == \
+                [('foo', 'bar'), ('foo', 'baz')]
         del d['foo']
         assert not d
         assert len(d) == 0
@@ -344,16 +375,16 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         d.add('foo', 3)
         assert d.getlist('foo') == [1, 2, 3]
         assert d.getlist('bar') == [42]
-        assert d.items() == [('foo', 1), ('bar', 42)]
+        assert list(iteritems(d)) == [('foo', 1), ('bar', 42)]
 
         expected = ['foo', 'bar']
 
         self.assertSequenceEqual(list(d.keys()), expected)
         self.assertSequenceEqual(list(d), expected)
-        self.assertSequenceEqual(list(d.iterkeys()), expected)
+        self.assertSequenceEqual(list(iterkeys(d)), expected)
         
-        assert d.items(multi=True) == [('foo', 1), ('foo', 2),
-                                       ('bar', 42), ('foo', 3)]
+        assert list(iteritems(d, multi=True)) == \
+                [('foo', 1), ('foo', 2), ('bar', 42), ('foo', 3)]
         assert len(d) == 2
 
         assert d.pop('foo') == 1
@@ -448,7 +479,7 @@ class CombinedMultiDictTestCase(WerkzeugTestCase):
         md1 = datastructures.MultiDict((("foo", "bar"),))
         md2 = datastructures.MultiDict((("foo", "blafasel"),))
         x = self.storage_class((md1, md2))
-        assert x.lists() == [('foo', ['bar', 'blafasel'])]
+        assert list(iterlists(x)) == [('foo', ['bar', 'blafasel'])]
 
 
 class HeadersTestCase(WerkzeugTestCase):
@@ -622,4 +653,5 @@ def suite():
     suite.addTest(unittest.makeSuite(HeadersTestCase))
     suite.addTest(unittest.makeSuite(EnvironHeadersTestCase))
     suite.addTest(unittest.makeSuite(HeaderSetTestCase))
+    suite.addTest(unittest.makeSuite(NativeItermethodsTestCase))
     return suite
