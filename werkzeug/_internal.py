@@ -11,6 +11,7 @@
 import inspect
 from weakref import WeakKeyDictionary
 from io import BytesIO
+import six
 from six.moves import http_cookies as cookies
 from time import gmtime
 from datetime import datetime, date
@@ -239,7 +240,7 @@ def _dump_date(d, delim):
         d = gmtime()
     elif isinstance(d, datetime):
         d = d.utctimetuple()
-    elif isinstance(d, (int, long, float)):
+    elif isinstance(d, (six.integer_types, float)):
         d = gmtime(d)
     return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
         ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[d.tm_wday],

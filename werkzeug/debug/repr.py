@@ -21,6 +21,7 @@ try:
 except ImportError: # pragma: no cover
     deque = None
 from werkzeug.utils import escape
+import six
 
 
 missing = object()
@@ -184,7 +185,7 @@ class DebugReprGenerator(object):
     def dispatch_repr(self, obj, recursive):
         if obj is helper:
             return u'<span class="help">%r</span>' % helper
-        if isinstance(obj, (int, long, float, complex)):
+        if isinstance(obj, (six.integer_types, float, complex)):
             return u'<span class="number">%r</span>' % obj
         if isinstance(obj, basestring):
             return self.string_repr(obj)
