@@ -18,7 +18,7 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
-from six import iteritems, next
+from six import iteritems, next, Iterator
 
 from werkzeug._compat import urlparse
 from werkzeug._internal import _patch_wrapper
@@ -481,7 +481,7 @@ class DispatcherMiddleware(object):
         return app(environ, start_response)
 
 
-class ClosingIterator(object):
+class ClosingIterator(Iterator):
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of an iterator.  Because it is useful to add
     another close action to a returned iterator and adding a custom iterator
@@ -519,7 +519,7 @@ class ClosingIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         return self._next()
 
     def close(self):
