@@ -31,8 +31,10 @@ try:
     from hashlib import md5
 except ImportError: # pragma: no cover
     from md5 import new as md5
+import base64
 
-from six import next, iteritems
+
+from six import next, iteritems, binary_type
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
@@ -60,6 +62,24 @@ _hop_by_hop_headers = frozenset([
     'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
     'upgrade'
 ])
+
+
+def coerce_bytes_from_wsgi(data):
+    """coerce wsgi unicode repressented bytes to real ones
+    
+    """
+    if not isinstance(data, binary_type):
+        return data.encode('latin1') #XXX: utf8 fallback?
+    else:
+        return data
+
+
+def bytes_to_wsgi(data):
+    assert isinstance(data, binary_type), 'data must be bytes'
+    if isinstance(data, str):
+        return data
+    else:
+        return data.decode('latin1')
 
 
 def quote_header_value(value, extra_chars='', allow_token=True):
@@ -206,6 +226,9 @@ def parse_dict_header(value):
     :return: :class:`dict`
     """
     result = {}
+    if not isinstance(value, str):
+        #XXX: validate
+        value = bytes_to_wsgi(value)
     for item in _parse_list_header(value):
         if '=' not in item:
             result[item] = None
@@ -348,19 +371,21 @@ def parse_authorization_header(value):
     """
     if not value:
         return
+    value = coerce_bytes_from_wsgi(value)
     try:
         auth_type, auth_info = value.split(None, 1)
         auth_type = auth_type.lower()
     except ValueError:
         return
-    if auth_type == 'basic':
+    if auth_type == b'basic':
         try:
-            username, password = auth_info.decode('base64').split(':', 1)
+            username, password = base64.b64decode(auth_info).split(b':', 1)
         except Exception as e:
+            print(e)
             return
-        return Authorization('basic', {'username': username,
-                                       'password': password})
-    elif auth_type == 'digest':
+        return Authorization('basic', {'username':  bytes_to_wsgi(username),
+                                       'password': bytes_to_wsgi(password)})
+    elif auth_type == b'digest':
         auth_map = parse_dict_header(auth_info)
         for key in 'username', 'realm', 'nonce', 'uri', 'response':
             if not key in auth_map:
