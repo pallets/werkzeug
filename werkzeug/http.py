@@ -64,14 +64,13 @@ _hop_by_hop_headers = frozenset([
 ])
 
 
-def coerce_bytes_from_wsgi(data):
-    """coerce wsgi unicode repressented bytes to real ones
+def wsgi_to_bytes(data):
+    """coerce wsgi unicode represented bytes to real ones
     
     """
-    if not isinstance(data, binary_type):
-        return data.encode('latin1') #XXX: utf8 fallback?
-    else:
+    if isinstance(data, binary_type):
         return data
+    return data.encode('latin1') #XXX: utf8 fallback?
 
 
 def bytes_to_wsgi(data):
@@ -371,7 +370,7 @@ def parse_authorization_header(value):
     """
     if not value:
         return
-    value = coerce_bytes_from_wsgi(value)
+    value = wsgi_to_bytes(value)
     try:
         auth_type, auth_info = value.split(None, 1)
         auth_type = auth_type.lower()
