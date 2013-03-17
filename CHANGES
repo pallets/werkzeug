@@ -24,6 +24,7 @@ Release date to be decided, codename to be chosen.
   check functions now support any of the hashlib algorithms.
 - `wsgi.get_current_url` is now ascii safe for browsers sending
   non-ascii data in query strings.
+- improved parsing behavior for :func:`werkzeug.http.parse_options_header`
 
 Version 0.8.4
 -------------
