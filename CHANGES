@@ -25,6 +25,7 @@ Release date to be decided, codename to be chosen.
 - `wsgi.get_current_url` is now ascii safe for browsers sending
   non-ascii data in query strings.
 - improved parsing behavior for :func:`werkzeug.http.parse_options_header`
+- added more operators to local proxies.
 
 Version 0.8.4
 -------------
