@@ -66,6 +66,32 @@ class LocalTestCase(WerkzeugTestCase):
         foo += [1]
         assert list(foo) == [42, 1, 2, 3, 1]
 
+    def test_local_proxy_operations_math(self):
+        foo = 2
+        ls = local.LocalProxy(lambda: foo)
+        assert ls + 1 == 3
+        assert 1 + ls == 3
+        assert ls - 1 == 1
+        assert 1 - ls == -1
+        assert ls * 1 == 2
+        assert 1 * ls == 2
+        assert ls / 1 == 2
+        assert 1.0 / ls == 0.5
+        assert ls // 1.0 == 2.0
+        assert 1.0 // ls == 0.0
+        assert ls % 2 == 0
+        assert 2 % ls == 0
+
+    def test_local_proxy_operations_strings(self):
+        foo = "foo"
+        ls = local.LocalProxy(lambda: foo)
+        assert ls + "bar" == "foobar"
+        assert "bar" + ls == "barfoo"
+        assert ls * 2 == "foofoo"
+
+        foo = "foo %s"
+        assert ls % ("bar",) == "foo bar"
+
     def test_local_stack(self):
         ident = local.get_ident()
 
