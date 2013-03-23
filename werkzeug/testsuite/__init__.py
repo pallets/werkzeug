@@ -71,6 +71,10 @@ class WerkzeugTestCase(unittest.TestCase):
         with catcher:
             callable(*args, **kwargs)
 
+    if not six.PY3:
+        def assertRaisesRegex(self, *args, **kwargs):
+            return self.assertRaisesRegexp(*args, **kwargs)
+
 
 class _ExceptionCatcher(object):
 
