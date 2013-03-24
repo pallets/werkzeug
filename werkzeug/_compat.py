@@ -1,8 +1,5 @@
 
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
+from . import _urlparse as urlparse
 
 import six
 from functools import partial
