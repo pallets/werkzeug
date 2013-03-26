@@ -26,6 +26,8 @@ Release date to be decided, codename to be chosen.
   non-ascii data in query strings.
 - improved parsing behavior for :func:`werkzeug.http.parse_options_header`
 - added more operators to local proxies.
+- added a hook to override the default converter in the routing
+  system.
 
 Version 0.8.4
 -------------
