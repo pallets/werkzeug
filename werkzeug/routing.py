@@ -599,9 +599,9 @@ class Rule(RuleFactory):
 
         .. versionadded:: 0.9
         """
-        if not converter_name in map.converters:
+        if not converter_name in self.map.converters:
             raise LookupError('the converter %r does not exist' % converter_name)
-        return map.converters[converter_name](self.map, *args, **kwargs)
+        return self.map.converters[converter_name](self.map, *args, **kwargs)
 
     def compile(self):
         """Compiles the regular expression and stores it."""
