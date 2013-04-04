@@ -58,6 +58,9 @@ class WerkzeugTestCase(unittest.TestCase):
         unittest.TestCase.tearDown(self)
         self.teardown()
 
+    def assert_line_equal(self, x, y):
+        assert x == y, "lines not equal\n a = %r\n b = %r" % (x, y)
+
     def assert_equal(self, x, y):
         return self.assertEqual(x, y)
 

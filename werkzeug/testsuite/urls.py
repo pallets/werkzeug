@@ -86,10 +86,10 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-        assert x == 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+        self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
         x = urls.url_fix('http://example.com/?foo=%2f%2f')
-        assert x == 'http://example.com/?foo=%2f%2f'
+        self.assert_equal(x, 'http://example.com/?foo=%2f%2f')
 
     def test_iri_support(self):
         self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
