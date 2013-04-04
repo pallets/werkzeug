@@ -16,78 +16,14 @@ from werkzeug.datastructures import MultiDict, iter_multi_items
 from werkzeug.wsgi import make_chunk_iter
 
 
-#: list of characters that are always safe in URLs.
-_always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                'abcdefghijklmnopqrstuvwxyz'
-                '0123456789_.-')
-_safe_map = dict((c, c) for c in _always_safe)
-for i in range(0x80):
-    c = chr(i)
-    if c not in _safe_map:
-        _safe_map[c] = '%%%02X' % i
-_safe_map.update((chr(i), '%%%02X' % i) for i in range(0x80, 0x100))
-_safemaps = {}
+from werkzeug._urlparse import (
+    quote as _quote,
+    quote_plus as _quote_plus,
+    unquote as _unquote,
+    unquote_plus as _unquote_plus,
+    urlsplit as _safe_urlsplit,
+)
 
-#: lookup table for encoded characters.
-_hexdig = '0123456789ABCDEFabcdef'
-_hextochr = dict((a + b, chr(int(a + b, 16)))
-                 for a in _hexdig for b in _hexdig)
-
-
-def _quote(s, safe='/', _join=''.join):
-    assert isinstance(s, str), 'quote only works on bytes'
-    if not s or not s.rstrip(_always_safe + safe):
-        return s
-    try:
-        quoter = _safemaps[safe]
-    except KeyError:
-        safe_map = _safe_map.copy()
-        safe_map.update([(c, c) for c in safe])
-        _safemaps[safe] = quoter = safe_map.__getitem__
-    return _join(map(quoter, s))
-
-
-def _quote_plus(s, safe=''):
-    if ' ' in s:
-        return _quote(s, safe + ' ').replace(' ', '+')
-    return _quote(s, safe)
-
-
-def _safe_urlsplit(s):
-    """the urlparse.urlsplit cache breaks if it contains unicode and
-    we cannot control that.  So we force type cast that thing back
-    to what we think it is.
-    """
-    rv = urlparse.urlsplit(s)
-    # we have to check rv[2] here and not rv[1] as rv[1] will be
-    # an empty bytestring in case no domain was given.
-    if type(rv[2]) is not type(s):
-        assert hasattr(urlparse, 'clear_cache')
-        urlparse.clear_cache()
-        rv = urlparse.urlsplit(s)
-        assert type(rv[2]) is type(s)
-    return rv
-
-
-def _unquote(s, unsafe=''):
-    assert isinstance(s, six.binary_type), 'unquote only works on bytes'
-    rv = s.split('%')
-    if len(rv) == 1:
-        return s
-    s = rv[0]
-    for item in rv[1:]:
-        try:
-            char = _hextochr[item[:2]]
-            if char in unsafe:
-                raise KeyError()
-            s += char + item[2:]
-        except KeyError:
-            s += '%' + item
-    return s
-
-
-def _unquote_plus(s):
-    return _unquote(s.replace('+', ' '))
 
 
 def _uri_split(uri):
