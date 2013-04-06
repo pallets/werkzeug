@@ -621,7 +621,7 @@ _ALWAYS_SAFE_BYTES = (b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 _ALWAYS_SAFE = frozenset(_iter_bytestring(_ALWAYS_SAFE_BYTES))
 _safe_quoters = {}
 
-class Quoter(collections.defaultdict):
+class Quoter(dict):
     """A mapping from bytes (in range(0,256)) to strings.
 
     String values are percent-encoded byte values, unless the key < 128, and
@@ -635,7 +635,7 @@ class Quoter(collections.defaultdict):
 
     def __repr__(self):
         # Without this, will just display as a defaultdict
-        return "<Quoter %r>" % dict(self)
+        return "<Quoter %r>" % dict.__repr__(self)
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.

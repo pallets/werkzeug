@@ -866,7 +866,7 @@ class UrlParseTestCase(WerkzeugTestCase):
         self.assertEqual(url, u'type://host/path')
 
     def test_Quoter_repr(self):
-        quoter = urlparse.Quoter(urlparse._ALWAYS_SAFE)
+        quoter = urlparse.Quoter(b'')
         self.assertIn(u'Quoter', repr(quoter))
 
 
