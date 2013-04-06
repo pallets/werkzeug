@@ -88,8 +88,9 @@ class URLsTestCase(WerkzeugTestCase):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
         self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
+    def test_url_fixing_qs(self):
         x = urls.url_fix('http://example.com/?foo=%2f%2f')
-        self.assert_equal(x, 'http://example.com/?foo=%2f%2f')
+        self.assert_line_equal(x, 'http://example.com/?foo=%2f%2f')
 
     def test_iri_support(self):
         self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
