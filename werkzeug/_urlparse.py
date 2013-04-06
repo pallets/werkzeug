@@ -631,7 +631,7 @@ class Quoter(collections.defaultdict):
     # of cached keys don't call Python code at all).
     def __init__(self, safe):
         """safe: bytes object."""
-        self.safe = _ALWAYS_SAFE.union(safe)
+        self.safe = _ALWAYS_SAFE.union(_iter_bytestring(safe))
 
     def __repr__(self):
         # Without this, will just display as a defaultdict
