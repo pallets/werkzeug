@@ -394,6 +394,12 @@ class MultiPartParser(object):
                 filename, container = self.start_file_streaming(
                     filename, headers, content_length)
                 _write = container.write
+                file_length = headers.get('content-length')
+                if file_length is None:
+                    file_length = 0
+                    count_file_length = True
+                else:
+                    count_file_length = False
 
             buf = ''
             for line in iterator:
@@ -434,6 +440,9 @@ class MultiPartParser(object):
                     cutoff = -1
                 _write(line[:cutoff])
 
+                if is_file and count_file_length:
+                    file_length += len(line)+cutoff
+
                 # if we write into memory and there is a memory size limit we
                 # count the number of bytes in memory and raise an exception if
                 # there is too much data in memory.
@@ -451,9 +460,11 @@ class MultiPartParser(object):
                 _write(buf)
 
             if is_file:
-                container.seek(0)
-                files.append((name, FileStorage(container, filename, name,
-                                                headers=headers)))
+                if filename or file_length:
+                    container.seek(0)
+                    files.append((name, FileStorage(container, filename, name,
+                                                    content_length=file_length,
+                                                    headers=headers)))
             else:
                 form.append((name, _decode_unicode(''.join(container),
                                                    part_charset, self.errors)))
