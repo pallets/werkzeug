@@ -59,6 +59,108 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         assert wsgi.get_host(create_environ('/', 'http://example.org')) \
             == 'example.org'
 
+    def test_get_url_scheme_x_forwarded_https(self):
+        env = {'HTTP_X_FORWARDED_PROTO': 'https',
+               'wsgi.url_scheme': 'http'}
+        self.assert_equal(wsgi.get_url_scheme(env), 'https')
+
+        env = create_environ(
+            '/', 'http://example.org',
+            headers=[('X-Forwarded-Proto', 'https')],
+        )
+        self.assert_equal(wsgi.get_url_scheme(env), 'https')
+
+    def test_get_url_scheme_x_forwarded_http(self):
+        # Not many production servers set up this way around but still
+        env = {'HTTP_X_FORWARDED_PROTO': 'http',
+               'wsgi.url_scheme': 'https'}
+        self.assert_equal(wsgi.get_url_scheme(env), 'http')
+
+        env = create_environ(
+            '/', 'http://example.org',
+            headers=[('X-Forwarded-Proto', 'http')],
+        )
+        self.assert_equal(wsgi.get_url_scheme(env), 'http')
+
+    def test_get_url_scheme_x_forwarded_badness(self):
+        # Request headers can't trick us into badness
+        env = {'HTTP_X_FORWARDED_PROTO': 'http://evil.example.com/',
+               'wsgi.url_scheme': 'http'}
+        self.assert_equal(wsgi.get_url_scheme(env), 'http')
+
+        env = create_environ(
+            '/', 'http://example.org',
+            headers=[('X-Forwarded-Proto', 'http://evil.example.com/')],
+        )
+        self.assert_equal(wsgi.get_url_scheme(env), 'http')
+    
+    def test_get_current_url(self):
+        env = create_environ(
+            '/b?c=d&e=f', 'http://example.org:123/a',
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env),
+            'http://example.org:123/a/b?c=d&e=f'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, root_only=True),
+            'http://example.org:123/a/'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, host_only=True),
+            'http://example.org:123/'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, strip_querystring=True),
+            'http://example.org:123/a/b'
+        )
+
+    def test_get_current_url_x_forwarded(self):
+        env = create_environ(
+            '/b?c=d&e=f', 'http://example.org:123/a',
+            headers=[('X-Forwarded-Host', 'proxy.example.com:456')],
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env),
+            'http://proxy.example.com:456/a/b?c=d&e=f'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, root_only=True),
+            'http://proxy.example.com:456/a/'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, host_only=True),
+            'http://proxy.example.com:456/'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, strip_querystring=True),
+            'http://proxy.example.com:456/a/b'
+        )
+        # Now with proto too
+        env = create_environ(
+            '/b?c=d&e=f', 'http://example.org:123/a',
+            headers=[
+                ('X-Forwarded-Host', 'proxy.example.com:456'),
+                ('X-Forwarded-Proto', 'https'),
+            ],
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env),
+            'https://proxy.example.com:456/a/b?c=d&e=f'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, root_only=True),
+            'https://proxy.example.com:456/a/'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, host_only=True),
+            'https://proxy.example.com:456/'
+        )
+        self.assert_equal(
+            wsgi.get_current_url(env, strip_querystring=True),
+            'https://proxy.example.com:456/a/b'
+        )
+
     def test_responder(self):
         def foo(environ, start_response):
             return BaseResponse('Test')
