@@ -21,7 +21,7 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from datetime import datetime
+from datetime import datetime, tzinfo, timedelta
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
 
@@ -40,9 +40,29 @@ def _make_text_block(name, content, content_type=None):
                                          escape(content), name)
 
 
+class UTC(tzinfo):
+    """UTC tzinfo based on http://docs.python.org/library/datetime.html"""
+
+    def utcoffset(self, dt):
+        return timedelta(0)
+
+    def dst(self, dt):
+        return timedelta(0)
+
+    def tzname(self, dt):
+        return u'UTC'
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
+
+
 def format_iso8601(obj):
-    """Format a datetime object for iso8601"""
-    return obj.strftime('%Y-%m-%dT%H:%M:%SZ')
+    """Format a datetime object for ISO 8601,
+    and assume UTC only if no timezone is given.
+    """
+    if not obj.tzinfo:
+        obj = obj.replace(tzinfo=UTC())
+    return obj.astimezone(UTC()).isoformat()[:19] + 'Z'
 
 
 class AtomFeed(object):
@@ -147,15 +167,18 @@ class AtomFeed(object):
             len(self.entries)
         )
 
-    def generate(self):
+    def generate(self, entry_slice=None):
         """Return a generator that yields pieces of XML."""
+        if not entry_slice:
+            entry_slice = slice(None)
+        entries = self.entries[entry_slice]
         # atom demands either an author element in every entry or a global one
         if not self.author:
-            if False in map(lambda e: bool(e.author), self.entries):
+            if False in map(lambda e: bool(e.author), entries):
                 self.author = ({'name': 'Unknown author'},)
 
         if not self.updated:
-            dates = sorted([entry.updated for entry in self.entries])
+            dates = sorted([entry.updated for entry in entries])
             self.updated = dates and dates[-1] or datetime.utcnow()
 
         yield u'<?xml version="1.0" encoding="utf-8"?>\n'
@@ -198,14 +221,14 @@ class AtomFeed(object):
                 tmp.append(u' version="%s"' % escape(generator_version, True))
             tmp.append(u'>%s</generator>\n' % escape(generator_name))
             yield u''.join(tmp)
-        for entry in self.entries:
+        for entry in entries:
             for line in entry.generate():
                 yield u'  ' + line
         yield u'</feed>\n'
 
-    def to_string(self):
+    def to_string(self, entry_slice=None):
         """Convert the feed into a string."""
-        return u''.join(self.generate())
+        return u''.join(self.generate(entry_slice))
 
     def get_response(self):
         """Return a response object for the feed."""
