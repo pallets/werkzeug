@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+import os
+import tempfile
 from werkzeug import script
 
 def make_app():
     from shorty.application import Shorty
-    return Shorty('sqlite:////tmp/shorty.db')
+    filename = os.path.join(tempfile.gettempdir(), "shorty.db")
+    return Shorty('sqlite:///{0}'.format(filename))
 
 def make_shell():
     from shorty import models, utils
