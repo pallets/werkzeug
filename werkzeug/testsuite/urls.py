@@ -100,6 +100,11 @@ class URLsTestCase(WerkzeugTestCase):
         assert urls.iri_to_uri(u'http://☃.net/') == 'http://xn--n3h.net/'
         assert urls.iri_to_uri(u'http://üser:pässword@☃.net/påth') == \
             'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+        self.assertEqual(urls.iri_to_uri(u'http://☃.net/?q=aع'),
+                         'http://xn--n3h.net/?q=a%D8%B9')
+        self.assertEqual(urls.iri_to_uri(u'http://☃.net/?q=a#bع'),
+                         'http://xn--n3h.net/?q=a#b%D8%B9')
+
 
         assert urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
             u'http://test.com/%3Fmeh?foo=%26%2F'
