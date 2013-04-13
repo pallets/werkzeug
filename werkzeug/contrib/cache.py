@@ -84,8 +84,9 @@ def _items(mappingorseq):
         ...    assert k*k == v
 
     """
-    return mappingorseq.iteritems() if hasattr(mappingorseq, 'iteritems') \
-        else mappingorseq
+    if hasattr(mappingorseq, 'iteritems'):
+        return mappingorseq.iteritems()
+    return mappingorseq
 
 
 class BaseCache(object):
