@@ -43,13 +43,18 @@ def silencestderr(f):
 
 def run_dev_server(application):
     servers = []
+
     def tracking_make_server(*args, **kwargs):
         srv = real_make_server(*args, **kwargs)
         servers.append(srv)
         return srv
     serving.make_server = tracking_make_server
     try:
-        t = Thread(target=serving.run_simple, args=('localhost', 0, application))
+        t = Thread(
+            target=serving.run_simple,
+            args=('localhost', 0, application),
+            kwargs={'passthrough_errors': True},
+        )
         t.setDaemon(True)
         t.start()
         time.sleep(0.25)
@@ -70,9 +75,9 @@ class ServingTestCase(WerkzeugTestCase):
     def test_serving(self):
         server, addr = run_dev_server(test_app)
         rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        assert 'WSGI Information' in rv
-        assert 'foo=bar&amp;baz=blah' in rv
-        assert ('Werkzeug/%s' % version) in rv
+        self.assertIn('WSGI Information', rv)
+        self.assertIn('foo=bar&amp;baz=blah', rv)
+        self.assertIn('Werkzeug/%s' % version, rv)
 
     @silencestderr
     def test_broken_app(self):
