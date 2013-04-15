@@ -89,26 +89,26 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_fixing_qs(self):
-        x = urls.url_fix('http://example.com/?foo=%2f%2f')
-        self.assert_line_equal(x, 'http://example.com/?foo=%2f%2f')
+        x = urls.url_fix(u'http://example.com/?foo=%2f%2f')
+        self.assert_line_equal(x, b'http://example.com/?foo=%2f%2f')
 
     def test_iri_support(self):
         self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
-        self.assert_raises(UnicodeError, urls.iri_to_uri, 'http://föö.com/')
-        assert urls.uri_to_iri('http://xn--n3h.net/') == u'http://\u2603.net/'
-        assert urls.uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th') == \
+        self.assert_raises(UnicodeError, urls.iri_to_uri, u'http://föö.com/'.encode('utf-8'))  # XXX
+        assert urls.uri_to_iri(b'http://xn--n3h.net/') == u'http://\u2603.net/'
+        assert urls.uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th') == \
             u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
-        assert urls.iri_to_uri(u'http://☃.net/') == 'http://xn--n3h.net/'
+        assert urls.iri_to_uri(u'http://☃.net/') == b'http://xn--n3h.net/'
         assert urls.iri_to_uri(u'http://üser:pässword@☃.net/påth') == \
-            'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+            b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
 
-        assert urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
+        assert urls.uri_to_iri(b'http://test.com/%3Fmeh?foo=%26%2F') == \
             u'http://test.com/%3Fmeh?foo=%26%2F'
 
         # this should work as well, might break on 2.4 because of a broken
         # idna codec
-        assert urls.uri_to_iri('/foo') == u'/foo'
-        assert urls.iri_to_uri(u'/foo') == '/foo'
+        assert urls.uri_to_iri(b'/foo') == u'/foo'
+        assert urls.iri_to_uri(u'/foo') == b'/foo'
 
     def test_ordered_multidict_encoding(self):
         d = OrderedMultiDict()
