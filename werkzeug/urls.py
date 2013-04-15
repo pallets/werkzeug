@@ -384,9 +384,9 @@ class Href(object):
         `sort` and `key` were added.
     """
 
-    def __init__(self, base='./', charset='utf-8', sort=False, key=None):
+    def __init__(self, base=u'./', charset='utf-8', sort=False, key=None):
         if not base:
-            base = './'
+            base = u'./'
         self.base = base
         self.charset = charset
         self.sort = sort
@@ -396,8 +396,10 @@ class Href(object):
         if name[:2] == '__':
             raise AttributeError(name)
         base = self.base
-        if base[-1:] != '/':
-            base += '/'
+        if base[-1:] != u'/':
+            base += u'/'
+        if isinstance(name, bytes):
+            name = name.decode(self.charset)
         return Href(urlparse.urljoin(base, name), self.charset, self.sort,
                     self.key)
 

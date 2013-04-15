@@ -137,9 +137,10 @@ class URLsTestCase(WerkzeugTestCase):
         assert x('foo') == 'foo'
 
     def test_href_url_join(self):
-        x = urls.Href('test')
-        assert x('foo:bar') == 'test/foo:bar'
-        assert x('http://example.com/') == 'test/http://example.com/'
+        x = urls.Href(u'test')
+        self.assert_line_equal(x(u'foo:bar'), u'test/foo:bar')
+        self.assert_line_equal(x(u'http://example.com/'), u'test/http://example.com/')
+        self.assert_line_equal(x.a(), 'test/a')
 
     if 0:
         # stdlib bug? :(
