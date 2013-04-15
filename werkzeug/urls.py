@@ -401,6 +401,9 @@ class Href(object):
         return Href(urlparse.urljoin(base, name), self.charset, self.sort,
                     self.key)
 
+    def __quote(self, part):
+        return url_quote(part, encoding=self.charset)
+
     def __call__(self, *path, **query):
         if path and isinstance(path[-1], dict):
             if query:
@@ -410,8 +413,7 @@ class Href(object):
         elif query:
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
-        path = '/'.join([url_quote(x, self.charset) for x in path
-                         if x is not None]).lstrip('/')
+        path = '/'.join(map(self.__quote, filter(None, path))).lstrip('/')
         rv = self.base
         if path:
             if not rv.endswith('/'):
