@@ -98,7 +98,7 @@ def _coerce_args(*args):
         # We special-case the empty string to support the
         # "scheme=''" default argument to some functions
         if arg and isinstance(arg, six.text_type) != str_input:
-            raise TypeError("Cannot mix str and non-str arguments")
+            raise TypeError("Cannot mix str and non-str arguments", args)
     if str_input:
         return args + (_noop,)
     return _decode_args(args) + (_encode_result,)
