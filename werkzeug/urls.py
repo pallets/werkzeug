@@ -65,7 +65,8 @@ def iri_to_uri(iri, charset='utf-8'):
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
-    iri = six.text_type(iri)  #XXX: py3 review
+    #XXX: py3 review
+    iri = six.text_type(iri)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = scheme.encode('ascii')
@@ -221,6 +222,7 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
 
 def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
                      errors):
+    #XXX: review bytes vs unicode again
     for pair in pair_iter:
         if not pair:
             continue
@@ -290,6 +292,7 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
 
 
 def _url_encode_impl(obj, charset, encode_keys, sort, key):
+    #XXX: probably broken badly on 3.x
     iterable = iter_multi_items(obj)
     if sort:
         iterable = sorted(iterable, key=key)
