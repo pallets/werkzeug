@@ -8,7 +8,9 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+from functools import partial
 import six
+
 from werkzeug._compat import urlparse
 
 from werkzeug._internal import _decode_unicode
@@ -17,10 +19,15 @@ from werkzeug.wsgi import make_chunk_iter
 
 
 from werkzeug._urlparse import (
-    quote as url_quote, quote_plus as url_quote_plus,
+    quote as _quote, quote_plus as url_quote_plus,
     unquote as url_unquote, unquote_plus as url_unquote_plus,
     urlsplit as _safe_urlsplit,
 )
+
+
+
+# we also consider : safe since its commonly used
+url_quote = partial(_quote, safe='/:')
 
 
 def _uri_split(uri):
