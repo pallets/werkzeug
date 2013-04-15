@@ -27,7 +27,7 @@ CookieJar = six.moves.http_cookiejar.CookieJar
 from werkzeug._compat import urlparse, iterlists, iteritems, itervalues
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
-from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
+from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
@@ -520,7 +520,9 @@ class EnvironBuilder(object):
                 stream_encode_multipart(values, charset=self.charset)
             content_type += '; boundary="%s"' % boundary
         elif content_type == 'application/x-www-form-urlencoded':
+            #py2v3 review
             values = url_encode(self.form, charset=self.charset)
+            values = values.encode('ascii')
             content_length = len(values)
             input_stream = BytesIO(values)
         else:
@@ -533,7 +535,7 @@ class EnvironBuilder(object):
         def _path_encode(x):
             if isinstance(x, unicode):
                 x = x.encode(self.charset)
-            return _unquote(x)
+            return url_unquote(x)
 
         result.update({
             'REQUEST_METHOD':       self.method,
