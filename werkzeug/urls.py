@@ -8,7 +8,6 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from functools import partial
 import six
 
 from werkzeug._compat import urlparse
@@ -26,8 +25,9 @@ from werkzeug._urlparse import (
 
 
 
-# we also consider : safe since its commonly used
-url_quote = partial(_quote, safe='/:')
+def url_quote(string, safe='/:', encoding=None, errors=None):
+    # we also consider : safe since it's commonly used
+    return _quote(string, safe, encoding, errors)
 
 
 def _uri_split(uri):
