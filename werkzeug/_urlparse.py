@@ -487,6 +487,7 @@ def unquote_to_bytes(string, unsafe=b''):
     for item in bits[1:]:
         try:
             byte = _hextobyte[item[:2]]
+            assert isinstance(unsafe, six.binary_type), unsafe
             if byte in unsafe:
                 raise KeyError()
             append(byte)
@@ -612,7 +613,7 @@ def unquote_plus(string, encoding='utf-8', errors='replace'):
     unquote_plus('%7e/abc+def') -> '~/abc def'
     """
     string = string.replace(u'+', u' ')
-    return unquote(string, encoding, errors)
+    return unquote(string, encoding=encoding, errors=errors)
 
 def _iter_bytestring(string):
     #XXX: replace this with the new six feature
@@ -707,7 +708,7 @@ def quote_plus(string, safe='', encoding=None, errors=None):
         space = u' '
     else:
         space = b' '
-    string = quote(string, safe + space, encoding, errors)
+    string = quote(string, safe=(safe + space), encoding=encoding, errors=errors)
     return string.replace(u' ', u'+')
 
 def quote_from_bytes(bs, safe='/'):

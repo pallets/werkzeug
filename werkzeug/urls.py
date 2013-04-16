@@ -143,9 +143,8 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         # port should be numeric, but you never know...
         hostname += u':' + port.decode(charset, errors)
 
-    path = _decode_unicode(url_unquote(path, unsafe='/;?'), charset, errors)
-    query = _decode_unicode(url_unquote(query, unsafe=';/?:@&=+,$'),
-                            charset, errors)
+    path = url_unquote(path, unsafe=b'/;?', encoding=charset, errors=errors)
+    query = url_unquote(query, unsafe=b';/?:@&=+,$', encoding=charset, errors=errors)
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
 
@@ -329,8 +328,8 @@ def url_fix(s, charset='utf-8'):
     if isinstance(s, six.text_type):
         s = s.encode(charset, 'replace')
     scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
-    path = url_quote(path, '/%').encode('ascii')
-    qs = url_quote_plus(qs, ':&%=').encode('ascii')
+    path = url_quote(path, safe='/%').encode('ascii')
+    qs = url_quote_plus(qs, safe=':&%=').encode('ascii')
     parts = (scheme, netloc, path, qs, anchor)
     #print(repr(parts))
     return urlparse.urlunsplit(parts)
