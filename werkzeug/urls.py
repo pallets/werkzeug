@@ -27,24 +27,27 @@ from werkzeug._urlparse import (
 
 def url_quote(string, safe='/:', encoding=None, errors=None):
     # we also consider : safe since it's commonly used
-    return _quote(string, safe, encoding, errors)
+    return _quote(string, safe=safe, encoding=encoding, errors=errors)
 
 
 def _uri_split(uri):
     """Splits up an URI or IRI."""
+    uri, coerce_rv = urlparse._coerce_args(uri)
     scheme, netloc, path, query, fragment = _safe_urlsplit(uri)
 
     port = None
 
-    if '@' in netloc:
-        auth, hostname = netloc.split('@', 1)
+    if u'@' in netloc:
+        auth, hostname = netloc.split(u'@', 1)
     else:
         auth = None
         hostname = netloc
     if hostname:
-        if ':' in hostname:
-            hostname, port = hostname.split(':', 1)
-    return scheme, auth, hostname, port, path, query, fragment
+        if u':' in hostname:
+            hostname, port = hostname.split(u':', 1)
+
+    rv = scheme, auth, hostname, port, path, query, fragment
+    return tuple(x if x is None else coerce_rv(x) for x in rv)
 
 
 def iri_to_uri(iri, charset='utf-8'):
@@ -56,32 +59,32 @@ def iri_to_uri(iri, charset='utf-8'):
     Examples for IRI versus URI:
 
     >>> iri_to_uri(u'http://☃.net/')
-    'http://xn--n3h.net/'
+    b'http://xn--n3h.net/'
     >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
-    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+    b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
 
     .. versionadded:: 0.6
 
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
-    #XXX: py3 review
-    iri = six.text_type(iri)
+    if not isinstance(iri, six.text_type):
+        iri = iri.decode('ascii')
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = scheme.encode('ascii')
     hostname = hostname.encode('idna')
     if auth:
-        if ':' in auth:
-            auth, password = auth.split(':', 1)
+        if b':' in auth:
+            auth, password = auth.split(b':', 1)
         else:
             password = None
         auth = url_quote(auth.encode(charset))
         if password:
-            auth += ':' + url_quote(password.encode(charset))
-        hostname = auth + '@' + hostname
+            auth += b':' + url_quote(password.encode(charset))
+        hostname = auth + b'@' + hostname
     if port:
-        hostname += ':' + port
+        hostname += b':' + port
 
     path = url_quote(path.encode(charset), safe="/:~+%")
     query = url_quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
@@ -96,14 +99,14 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
 
     Examples for URI versus IRI
 
-    >>> uri_to_iri('http://xn--n3h.net/')
+    >>> uri_to_iri(b'http://xn--n3h.net/')
     u'http://\u2603.net/'
-    >>> uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
+    >>> uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
     u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
 
     Query strings are left unchanged:
 
-    >>> uri_to_iri('/?foo=24&x=%26%2f')
+    >>> uri_to_iri(b'/?foo=24&x=%26%2f')
     u'/?foo=24&x=%26%2f'
 
     .. versionadded:: 0.6
@@ -112,7 +115,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: the charset of the URI
     :param errors: the error handling on decode
     """
-    uri = url_fix(str(uri), charset)
+    uri = url_fix(uri, charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
     scheme = _decode_unicode(scheme, 'ascii', errors)
@@ -140,8 +143,8 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         # port should be numeric, but you never know...
         hostname += u':' + port.decode(charset, errors)
 
-    path = _decode_unicode(url_unquote(path, '/;?'), charset, errors)
-    query = _decode_unicode(url_unquote(query, ';/?:@&=+,$'),
+    path = _decode_unicode(url_unquote(path, unsafe='/;?'), charset, errors)
+    query = _decode_unicode(url_unquote(query, unsafe=';/?:@&=+,$'),
                             charset, errors)
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
