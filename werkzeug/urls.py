@@ -328,14 +328,14 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    if isinstance(s, six.text_type):
-        s = s.encode(charset, 'replace')
-    scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
-    path = url_quote(path, safe='/%').encode('ascii')
-    qs = url_quote_plus(qs, safe=':&%=').encode('ascii')
+    if not isinstance(s, six.text_type):
+        s = s.decode(charset)
+    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
+    path = url_quote(path, safe='/%')
+    qs = url_quote_plus(qs, safe=':&%=')
     parts = (scheme, netloc, path, qs, anchor)
     #print(repr(parts))
-    return urlparse.urlunsplit(parts)
+    return urlparse.urlunsplit(parts).encode('ascii')
 
 
 class Href(object):
