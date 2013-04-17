@@ -75,13 +75,14 @@ def iri_to_uri(iri, charset='utf-8'):
     scheme = scheme.encode('ascii')
     hostname = hostname.encode('idna')
     if auth:
-        if u':' in auth:
-            auth, password = auth.split(u':', 1)
+        auth = auth.encode(charset)
+        if b':' in auth:
+            auth, password = auth.split(b':', 1)
         else:
             password = None
-        auth = url_quote(auth.encode(charset))
+        auth = url_quote(auth).encode(charset)
         if password:
-            auth += b':' + url_quote(password.encode(charset))
+            auth += b':' + url_quote(password).encode(charset)
         hostname = auth + b'@' + hostname
     if port:
         hostname += b':' + port
