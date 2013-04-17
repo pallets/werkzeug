@@ -90,7 +90,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_line_equal(x, b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_fixing_qs(self):
-        x = urls.url_fix(u'http://example.com/?foo=%2f%2f')
+        x = urls.url_fix(b'http://example.com/?foo=%2f%2f')
         self.assert_line_equal(x, b'http://example.com/?foo=%2f%2f')
 
     def test_iri_support(self):
