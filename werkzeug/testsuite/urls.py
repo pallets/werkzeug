@@ -28,7 +28,7 @@ class URLsTestCase(WerkzeugTestCase):
         assert urls.url_unquote_plus('foo+bar') == 'foo bar'
         assert urls.url_encode({'a': None, 'b': 'foo bar'}) == 'b=foo+bar'
         assert urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)') == \
-               'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+               b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
     def test_url_decoding(self):
         x = urls.url_decode('foo=42&bar=23&uni=H%C3%A4nsel')
@@ -87,7 +87,7 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-        self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
+        self.assert_line_equal(x, b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_fixing_qs(self):
         x = urls.url_fix(u'http://example.com/?foo=%2f%2f')
