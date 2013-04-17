@@ -473,6 +473,7 @@ def unquote_to_bytes(string, unsafe=b''):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
+    assert isinstance(unsafe, six.binary_type), unsafe
     if not string:
         # Is it a string-like object?
         string.split
@@ -487,7 +488,6 @@ def unquote_to_bytes(string, unsafe=b''):
     for item in bits[1:]:
         try:
             byte = _hextobyte[item[:2]]
-            assert isinstance(unsafe, six.binary_type), unsafe
             if byte in unsafe:
                 raise KeyError()
             append(byte)
