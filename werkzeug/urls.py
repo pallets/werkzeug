@@ -75,8 +75,8 @@ def iri_to_uri(iri, charset='utf-8'):
     scheme = scheme.encode('ascii')
     hostname = hostname.encode('idna')
     if auth:
-        if b':' in auth:
-            auth, password = auth.split(b':', 1)
+        if u':' in auth:
+            auth, password = auth.split(u':', 1)
         else:
             password = None
         auth = url_quote(auth.encode(charset))
@@ -86,12 +86,15 @@ def iri_to_uri(iri, charset='utf-8'):
     if port:
         hostname += b':' + port
 
-    path = url_quote(path.encode(charset), safe="/:~+%")
-    query = url_quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
+    path = url_quote(path.encode(charset), safe="/:~+%").encode('ascii')
+    query = url_quote(query.encode(charset), safe="=%&[]:;$()+,!?*/").encode('ascii')
+    fragment = fragment.encode('ascii')
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
-    return str(urlparse.urlunsplit([scheme, hostname, path, query, fragment]))
+    rv = urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+    assert isinstance(rv, six.binary_type)
+    return rv
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
