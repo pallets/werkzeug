@@ -130,14 +130,13 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         hostname = hostname.decode('ascii', errors)
 
     if auth:
-        if ':' in auth:
-            auth, password = auth.split(':', 1)
+        if b':' in auth:
+            auth, password = auth.split(b':', 1)
         else:
             password = None
-        auth = _decode_unicode(url_unquote(auth), charset, errors)
+        auth = url_unquote(auth, encoding=charset, errors=errors)
         if password:
-            auth += u':' + _decode_unicode(url_unquote(password),
-                                           charset, errors)
+            auth += u':' + url_unquote(password, encoding=charset, errors=errors)
         hostname = auth + u'@' + hostname
     if port:
         # port should be numeric, but you never know...
