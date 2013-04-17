@@ -69,7 +69,7 @@ def iri_to_uri(iri, charset='utf-8'):
     :param charset: the charset for the URI
     """
     if not isinstance(iri, six.text_type):
-        iri = iri.decode('ascii')
+        raise UnicodeError('Expected IRI, which is a unicode string')
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = scheme.encode('ascii')
@@ -87,9 +87,9 @@ def iri_to_uri(iri, charset='utf-8'):
     if port:
         hostname += b':' + port
 
-    path = url_quote(path.encode(charset), safe="/:~+%").encode('ascii')
-    query = url_quote(query.encode(charset), safe="=%&[]:;$()+,!?*/").encode('ascii')
-    fragment = fragment.encode('ascii')
+    path = url_quote(path, safe="/:~+%", encoding=charset).encode(charset)
+    query = url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset).encode(charset)
+    fragment = fragment.encode(charset)
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
