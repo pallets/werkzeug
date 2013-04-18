@@ -143,7 +143,7 @@ Testing API
 
       The dict used as base for the newly create environ.
 
-   .. attribute:: environ_base
+   .. attribute:: environ_overrides
 
       A dict with values that are used to override the generated environ.
 
