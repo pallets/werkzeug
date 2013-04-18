@@ -347,11 +347,11 @@ class Href(object):
     Positional arguments are appended as individual segments to
     the path of the URL:
 
-    >>> href = Href('/foo')
-    >>> href('bar', 23)
-    '/foo/bar/23'
-    >>> href('foo', bar=23)
-    '/foo/foo?bar=23'
+    >>> href = Href(u'/foo')
+    >>> href(u'bar', 23)
+    u'/foo/bar/23'
+    >>> href(u'foo', bar=23)
+    u'/foo/foo?bar=23'
 
     If any of the arguments (positional or keyword) evaluates to `None` it
     will be skipped.  If no keyword arguments are given the last argument
@@ -360,13 +360,13 @@ class Href(object):
     off the first trailing underscore of the parameter name:
 
     >>> href(is_=42)
-    '/foo?is=42'
-    >>> href({'foo': 'bar'})
-    '/foo?foo=bar'
+    u'/foo?is=42'
+    >>> href({u'foo': u'bar'})
+    u'/foo?foo=bar'
 
     Combining of both methods is not allowed:
 
-    >>> href({'foo': 'bar'}, bar=42)
+    >>> href({u'foo': u'bar'}, bar=42)
     Traceback (most recent call last):
       ...
     TypeError: keyword arguments and query-dicts can't be combined
@@ -375,15 +375,15 @@ class Href(object):
     the attribute name as prefix:
 
     >>> bar_href = href.bar
-    >>> bar_href("blub")
-    '/foo/bar/blub'
+    >>> bar_href(u"blub")
+    u'/foo/bar/blub'
 
     If `sort` is set to `True` the items are sorted by `key` or the default
     sorting algorithm:
 
-    >>> href = Href("/", sort=True)
+    >>> href = Href("u/", sort=True)
     >>> href(a=1, b=2, c=3)
-    '/?a=1&b=2&c=3'
+    u'/?a=1&b=2&c=3'
 
     .. versionadded:: 0.5
         `sort` and `key` were added.
