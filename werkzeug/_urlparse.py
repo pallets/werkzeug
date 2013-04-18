@@ -465,7 +465,7 @@ def urldefrag(url):
     return _coerce_result(DefragResult(defrag, frag))
 
 
-_hexdig = '0123456789ABCDEFabcdef'
+_hexdig = u'0123456789ABCDEFabcdef'
 _hextobyte = dict(((a + b).encode(), six.int2byte(int(a + b, 16)))
                   for a in _hexdig for b in _hexdig)
 
