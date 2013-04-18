@@ -121,27 +121,27 @@ class URLsTestCase(WerkzeugTestCase):
         assert urls.url_encode(d) == 'foo=1&foo=2&foo=3&bar=0&foo=4'
 
     def test_href(self):
-        x = urls.Href('http://www.example.com/')
-        assert x('foo') == 'http://www.example.com/foo'
-        assert x.foo('bar') == 'http://www.example.com/foo/bar'
-        assert x.foo('bar', x=42) == 'http://www.example.com/foo/bar?x=42'
-        assert x.foo('bar', class_=42) == 'http://www.example.com/foo/bar?class=42'
-        assert x.foo('bar', {'class': 42}) == 'http://www.example.com/foo/bar?class=42'
+        x = urls.Href(u'http://www.example.com/')
+        assert x(u'foo') == u'http://www.example.com/foo'
+        assert x.foo(u'bar') == u'http://www.example.com/foo/bar'
+        assert x.foo(u'bar', x=42) == u'http://www.example.com/foo/bar?x=42'
+        assert x.foo(u'bar', class_=42) == u'http://www.example.com/foo/bar?class=42'
+        assert x.foo(u'bar', {u'class': 42}) == u'http://www.example.com/foo/bar?class=42'
         self.assert_raises(AttributeError, lambda: x.__blah__)
 
-        x = urls.Href('blah')
-        assert x.foo('bar') == 'blah/foo/bar'
+        x = urls.Href(u'blah')
+        assert x.foo(u'bar') == u'blah/foo/bar'
 
-        self.assert_raises(TypeError, x.foo, {"foo": 23}, x=42)
+        self.assert_raises(TypeError, x.foo, {u"foo": 23}, x=42)
 
-        x = urls.Href('')
-        assert x('foo') == 'foo'
+        x = urls.Href(u'')
+        assert x(u'foo') == u'foo'
 
     def test_href_url_join(self):
         x = urls.Href(u'test')
         self.assert_line_equal(x(u'foo:bar'), u'test/foo:bar')
         self.assert_line_equal(x(u'http://example.com/'), u'test/http://example.com/')
-        self.assert_line_equal(x.a(), 'test/a')
+        self.assert_line_equal(x.a(), u'test/a')
 
     if 0:
         # stdlib bug? :(
