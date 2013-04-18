@@ -507,7 +507,7 @@ def unquote(string, unsafe=b'', encoding='utf-8', errors='replace'):
     By default, percent-encoded sequences are decoded with UTF-8, and invalid
     sequences are replaced by a placeholder character.
 
-    unquote(b'abc%20def') -> 'abc def'.
+    unquote('abc%20def') -> b'abc def'.
     """
     if not isinstance(string, six.text_type):
         string = string.decode('ascii')
@@ -651,7 +651,7 @@ class Quoter(dict):
         return res
 
 def quote(string, safe='/', encoding=None, errors=None):
-    """quote('abc def') -> 'abc%20def'
+    """quote('abc def') -> u'abc%20def'
 
     Each part of a URL, e.g. the path info, the query, etc., has a
     different set of reserved characters that must be quoted.
