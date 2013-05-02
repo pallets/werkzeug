@@ -98,7 +98,7 @@ class ProfilerMiddleware(object):
 
         if self._profile_dir is not None:
             elapsedms = elapsed * 1000.0
-            prof_filename = os.path.join(self._profile_dir, "%s.%06dms.%d.prof" % ( (environ.get("PATH_INFO").strip("/").replace("/", ".") or "root"), elapsedms, time.time() ) )
+            prof_filename = os.path.join(self._profile_dir, "%s.%s.%06dms.%d.prof" % ( environ['REQUEST_METHOD'], (environ.get("PATH_INFO").strip("/").replace("/", ".") or "root"), elapsedms, time.time() ) )
             p.dump_stats(prof_filename)
 
         else:
