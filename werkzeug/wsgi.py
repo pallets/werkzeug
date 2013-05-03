@@ -528,7 +528,7 @@ class ClosingIterator(object):
 
 class ContentModifier(object):
     """WSGI middleware that changes the content on the fly. Is implemented on a
-    non-buffering way, and handles the gory detais to it for you.
+    non-buffering way, and handles the gory details to it for you.
 
     Usage:
     - overwrite ``response_modifier()`` to transform the chunks from your app
