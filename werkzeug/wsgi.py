@@ -534,7 +534,7 @@ class ContentModifier(object):
     - overwrite ``response_modifier()`` to transform the chunks from your app
     and pass on.
     - overwrite ``header_modifier()`` to handle header changes,
-    like ``Content-Length``, or adding/repleacing new headers.
+    like ``Content-Length``, or adding/replacing new headers.
 
     Examples:
 
