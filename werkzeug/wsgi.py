@@ -553,7 +553,7 @@ class ContentModifier(object):
         class ProudlyYeller(ContentModifier):
             "Leaks information about your backend"
             def header_modifier(self, status, headers, exc_info=None):
-                headers = filter(lambda h: h[0].lower != 'x-powered-by', headers)
+                headers = filter(lambda h: h[0].lower() != 'x-powered-by', headers)
                 headers.append(('X-Powered-By', 'AmazingTech/1.0'))
                 return status, headers, exc_info
 
@@ -585,7 +585,7 @@ class ContentModifier(object):
 
             def header_modifier(self, status, headers, exc_info=None):
                 # Remove ``content-length``, as the size of the body changed
-                headers = filter(lambda h: h[0].lower != 'content-length', headers)
+                headers = filter(lambda h: h[0].lower() != 'content-length', headers)
                 return status, headers, exc_info
     """
 
