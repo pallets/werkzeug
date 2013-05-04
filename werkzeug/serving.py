@@ -585,10 +585,13 @@ def restart_with_reloader():
             return exit_code
 
 
-def run_with_reloader(main_func, extra_files=None, interval=1):
+def run_with_reloader(main_func, extra_files=None, interval=1,
+                      cleanup_func=None):
     """Run the given function in an independent python interpreter."""
     import signal
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
+    if cleanup_func is not None:
+        cleanup_func()
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         thread.start_new_thread(main_func, ())
         try:
@@ -605,7 +608,8 @@ def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
                extra_files=None, reloader_interval=1, threaded=False,
                processes=1, request_handler=None, static_files=None,
-               passthrough_errors=False, ssl_context=None):
+               passthrough_errors=False, ssl_context=None,
+               cleanup_func=None):
     """Start an application using wsgiref and with an optional reloader.  This
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
@@ -660,6 +664,9 @@ def run_simple(hostname, port, application, use_reloader=False,
                         the string ``'adhoc'`` if the server should
                         automatically create one, or `None` to disable SSL
                         (which is the default).
+    :param cleanup_func: A function that will perform some sort of cleanup
+                         before the server is reloaded. This function takes no
+                         arguments.
     """
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
@@ -687,7 +694,7 @@ def run_simple(hostname, port, application, use_reloader=False,
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))
         test_socket.close()
-        run_with_reloader(inner, extra_files, reloader_interval)
+        run_with_reloader(inner, extra_files, reloader_interval, cleanup_func)
     else:
         inner()
 
