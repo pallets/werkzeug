@@ -590,8 +590,6 @@ def run_with_reloader(main_func, extra_files=None, interval=1,
     """Run the given function in an independent python interpreter."""
     import signal
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
-    if cleanup_func is not None:
-        cleanup_func()
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         thread.start_new_thread(main_func, ())
         try:
@@ -599,6 +597,8 @@ def run_with_reloader(main_func, extra_files=None, interval=1,
         except KeyboardInterrupt:
             return
     try:
+        if cleanup_func:
+          cleanup_func()
         sys.exit(restart_with_reloader())
     except KeyboardInterrupt:
         pass
