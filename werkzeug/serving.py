@@ -68,6 +68,12 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             self.server.shutdown_signal = True
 
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
+        if not self.client_address:
+            self.client_address = "<local>"
+        if isinstance(self.client_address, str):
+            self.client_address = (self.client_address, 0)
+        else:
+            pass
         environ = {
             'wsgi.version':         (1, 0),
             'wsgi.url_scheme':      url_scheme,
@@ -231,6 +237,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
     def address_string(self):
+        if not self.client_address:
+            return  "<local>"
+        if isinstance(self.client_address, str):
+            return self.client_address
         return self.client_address[0]
 
     def log_request(self, code='-', size='-'):
@@ -361,7 +371,7 @@ class _SSLConnectionFix(object):
             pass
 
 
-def select_ip_version(host, port):
+def select_address_family(host, port):
     """Returns AF_INET4 or AF_INET6 depending on where to connect to."""
     # disabled due to problems with current ipv6 implementations
     # and various operating systems.  Probably this code also is
@@ -375,7 +385,9 @@ def select_ip_version(host, port):
     ##        return info[0][0]
     ##except socket.gaierror:
     ##    pass
-    if ':' in host and hasattr(socket, 'AF_INET6'):
+    if host.startswith('unix://') or host.startswith('/'):
+        return socket.AF_UNIX
+    elif ':' in host and hasattr(socket, 'AF_INET6'):
         return socket.AF_INET6
     return socket.AF_INET
 
@@ -390,8 +402,15 @@ class BaseWSGIServer(HTTPServer, object):
                  passthrough_errors=False, ssl_context=None):
         if handler is None:
             handler = WSGIRequestHandler
-        self.address_family = select_ip_version(host, port)
-        HTTPServer.__init__(self, (host, int(port)), handler)
+        self.address_family = select_address_family(host, port)
+        port = port or 0
+        bind_to = (host, port)
+        if self.address_family is socket.AF_UNIX:
+            if host.startswith('unix://'):
+                bind_to = host.partition('unix://')[-1]
+            else:
+                bind_to = host
+        HTTPServer.__init__(self, bind_to, handler)
         self.app = app
         self.passthrough_errors = passthrough_errors
         self.shutdown_signal = False
@@ -678,15 +697,24 @@ def run_simple(hostname, port, application, use_reloader=False,
         if ':' in display_hostname:
             display_hostname = '[%s]' % display_hostname
         _log('info', ' * Running on %s://%s:%d/', ssl_context is None
-             and 'http' or 'https', display_hostname, port)
+             and 'http' or 'https', display_hostname, port or 0)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before
         # we spawn a separate Python interpreter and lose this ability.
-        address_family = select_ip_version(hostname, port)
+        address_family = select_address_family(hostname, port)
+        bind_to = (hostname, port)
+        if address_family is socket.AF_UNIX:
+            if hostname.startswith('unix://'):
+                bind_to = hostname.partition('unix://')[-1]
+            else:
+                bind_to = hostname
         test_socket = socket.socket(address_family, socket.SOCK_STREAM)
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        test_socket.bind((hostname, port))
+        test_socket.bind(bind_to)
         test_socket.close()
+        if address_family is socket.AF_UNIX:
+            _log('info', "unlinking...")
+            os.unlink(bind_to)
         run_with_reloader(inner, extra_files, reloader_interval)
     else:
         inner()
