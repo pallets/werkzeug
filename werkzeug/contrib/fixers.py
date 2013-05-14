@@ -25,7 +25,10 @@ from werkzeug.datastructures import Headers, ResponseCacheControl
 class CGIRootFix(object):
     """Wrap the application in this middleware if you are using FastCGI or CGI
     and you have problems with your app root being set to the cgi script's path
-    instead of the path users are going to visit.
+    instead of the path users are going to visit
+
+    .. versionchanged:: 0.9
+       Added `app_root` parameter and renamed from `LighttpdCGIRootFix`.
 
     :param app: the WSGI application
     :param app_root: Defaulting to ``'/'``, you can set this to something else

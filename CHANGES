@@ -36,6 +36,7 @@ Release date to be decided, codename to be chosen.
   before.
 - Added support for fragment handling in URI/IRI functions.
 - Added custom class support for :func:`werkzeug.http.parse_dict_header`.
+- Renamed `LighttpdCGIRootFix` to `CGIRootFix`.
 
 Version 0.8.4
 -------------
