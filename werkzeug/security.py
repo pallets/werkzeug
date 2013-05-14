@@ -73,7 +73,10 @@ def _hash_internal(method, salt, password):
             return None
         if isinstance(salt, unicode):
             salt = salt.encode('utf-8')
-        h = hmac.new(salt, None, _hash_funcs[method])
+        try:
+            h = hmac.new(salt, None, _hash_funcs[method])
+        except ValueError as err:
+            raise ValueError, "MD5 is disabled in FIPS mode (%s)." % err
     else:
         if method not in _hash_funcs:
             return None

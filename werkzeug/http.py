@@ -558,7 +558,10 @@ def parse_etags(value):
 
 def generate_etag(data):
     """Generate an etag for some data."""
-    return md5(data).hexdigest()
+    try:
+        return md5(data).hexdigest()
+    except ValueError as err:
+        raise ValueError, "MD5 is disabled in FIPS mode (%s)." % err
 
 
 def parse_date(value):

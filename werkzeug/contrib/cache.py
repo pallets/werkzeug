@@ -630,7 +630,10 @@ class FileSystemCache(BaseCache):
                 pass
 
     def _get_filename(self, key):
-        hash = md5(key).hexdigest()
+        try:
+            hash = md5(key).hexdigest()
+        except ValueError as err:
+            raise ValueError, "MD5 is disabled in FIPS mode (%s)." % err
         return os.path.join(self._path, hash)
 
     def get(self, key):
