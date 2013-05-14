@@ -65,6 +65,8 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: ClientDisconnected
 
+.. autoexception:: SecurityError
+
 
 Baseclass
 =========

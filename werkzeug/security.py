@@ -13,6 +13,7 @@ import hmac
 import posixpath
 from itertools import izip
 from random import SystemRandom
+from werkzeug.exceptions import BadRequest
 
 
 SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'

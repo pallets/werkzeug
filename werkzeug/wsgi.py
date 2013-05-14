@@ -38,7 +38,7 @@ def responder(f):
 
 
 def get_current_url(environ, root_only=False, strip_querystring=False,
-                    host_only=False):
+                    host_only=False, trusted_hosts=None):
     """A handy helper function that recreates the full URL for the current
     request or parts of it.  Here an example:
 
@@ -53,12 +53,18 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     >>> get_current_url(env, strip_querystring=True)
     'http://localhost/script/'
 
+    This optionally it verifies that the host is in a list of trusted hosts.
+    If the host is not in there it will raise a
+    :exc:`~werkzeug.exceptions.SecurityError`.
+
     :param environ: the WSGI environment to get the current URL from.
     :param root_only: set `True` if you only want the root URL.
     :param strip_querystring: set to `True` if you don't want the querystring.
     :param host_only: set to `True` if the host URL should be returned.
+    :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
+                          for more information.
     """
-    tmp = [environ['wsgi.url_scheme'], '://', get_host(environ)]
+    tmp = [environ['wsgi.url_scheme'], '://', get_host(environ, trusted_hosts)]
     cat = tmp.append
     if host_only:
         return ''.join(tmp) + '/'
@@ -82,21 +88,69 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     return ''.join(tmp)
 
 
-def get_host(environ):
+def host_is_trusted(hostname, trusted_list):
+    """Checks if a host is trusted against a list.  This also takes care
+    of port normalization.
+
+    .. versionadded:: 0.9
+
+    :param hostname: the hostname to check
+    :param trusted_list: a list of hostnames to check against.  If a
+                         hostname starts with a dot it will match against
+                         all subdomains as well.
+    """
+    if not hostname:
+        return False
+
+    if isinstance(trusted_list, basestring):
+        trusted_list = [trusted_list]
+
+    def _normalize(hostname):
+        if ':' in hostname:
+            hostname = hostname.rsplit(':', 1)[0]
+        if isinstance(hostname, unicode):
+            hostname = hostname.encode('idna')
+        return hostname
+
+    hostname = _normalize(hostname)
+    for ref in trusted_list:
+        if ref.startswith('.'):
+            ref = ref[1:]
+            suffix_match = True
+        else:
+            suffix_match = False
+        ref = _normalize(ref)
+        if ref == hostname:
+            return True
+        if suffix_match and hostname.endswith('.' + ref):
+            return True
+    return False
+
+
+def get_host(environ, trusted_hosts=None):
     """Return the real host for the given WSGI environment.  This takes care
-    of the `X-Forwarded-Host` header.
+    of the `X-Forwarded-Host` header.  Optionally it verifies that the host
+    is in a list of trusted hosts.  If the host is not in there it will raise
+    a :exc:`~werkzeug.exceptions.SecurityError`.
 
     :param environ: the WSGI environment to get the host of.
+    :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
+                          for more information.
     """
     if 'HTTP_X_FORWARDED_HOST' in environ:
-        return environ['HTTP_X_FORWARDED_HOST']
+        rv = environ['HTTP_X_FORWARDED_HOST']
     elif 'HTTP_HOST' in environ:
-        return environ['HTTP_HOST']
-    result = environ['SERVER_NAME']
-    if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
-       in (('https', '443'), ('http', '80')):
-        result += ':' + environ['SERVER_PORT']
-    return result
+        rv = environ['HTTP_HOST']
+    else:
+        rv = environ['SERVER_NAME']
+        if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
+           in (('https', '443'), ('http', '80')):
+            rv += ':' + environ['SERVER_PORT']
+    if trusted_hosts is not None:
+        if not host_is_trusted(rv, trusted_hosts):
+            from werkzeug.exceptions import SecurityError
+            raise SecurityError('Host "%s" is not trusted' % rv)
+    return rv
 
 
 def pop_path_info(environ):

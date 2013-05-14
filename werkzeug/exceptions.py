@@ -194,6 +194,14 @@ class ClientDisconnected(BadRequest):
     """
 
 
+class SecurityError(BadRequest):
+    """Raised if something triggers a security error.  This is otherwise
+    exactly like a bad request error.
+
+    .. versionadded:: 0.9
+    """
+
+
 class Unauthorized(HTTPException):
     """*401* `Unauthorized`
 

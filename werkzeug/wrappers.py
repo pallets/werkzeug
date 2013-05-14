@@ -171,6 +171,14 @@ class BaseRequest(object):
     #: the form date parsing.
     form_data_parser_class = FormDataParser
 
+    #: Optionally a list of hosts that is trusted by this request.  By default
+    #: all hosts are trusted which means that whatever the client sends the
+    #: host is will be accepted.  This is the recommended setup as a webserver
+    #: should manually be set up to not route invalid hosts to the application.
+    #:
+    #: .. versionadded:: 0.9
+    trusted_hosts = None
+
     def __init__(self, environ, populate_request=True, shallow=False):
         self.environ = environ
         if populate_request and not shallow:
@@ -447,27 +455,31 @@ class BaseRequest(object):
     @cached_property
     def url(self):
         """The reconstructed current URL"""
-        return get_current_url(self.environ)
+        return get_current_url(self.environ,
+                               trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def base_url(self):
         """Like :attr:`url` but without the querystring"""
-        return get_current_url(self.environ, strip_querystring=True)
+        return get_current_url(self.environ, strip_querystring=True,
+                               trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def url_root(self):
         """The full URL root (with hostname), this is the application root."""
-        return get_current_url(self.environ, True)
+        return get_current_url(self.environ, True,
+                               trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def host_url(self):
         """Just the host with scheme."""
-        return get_current_url(self.environ, host_only=True)
+        return get_current_url(self.environ, host_only=True,
+                               trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def host(self):
         """Just the host including the port if available."""
-        return get_host(self.environ)
+        return get_host(self.environ, trusted_hosts=self.trusted_hosts)
 
     query_string = environ_property('QUERY_STRING', '', read_only=True, doc=
         '''The URL parameters as raw bytestring.''')

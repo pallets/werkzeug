@@ -48,7 +48,6 @@ class ServerFixerTestCase(WerkzeugTestCase):
             assert response.data == 'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
     def test_proxy_fix(self):
-        @fixers.ProxyFix
         @Request.application
         def app(request):
             return Response('%s|%s' % (
@@ -56,6 +55,7 @@ class ServerFixerTestCase(WerkzeugTestCase):
                 # do not use request.host as this fixes too :)
                 request.environ['HTTP_HOST']
             ))
+        app = fixers.ProxyFix(app, num_proxies=2)
         environ = dict(create_environ(),
             HTTP_X_FORWARDED_PROTO="https",
             HTTP_X_FORWARDED_HOST='example.com',

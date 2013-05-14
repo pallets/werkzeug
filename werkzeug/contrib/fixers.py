@@ -83,6 +83,9 @@ class ProxyFix(object):
     application that was not designed with HTTP proxies in mind.  It
     sets `REMOTE_ADDR`, `HTTP_HOST` from `X-Forwarded` headers.
 
+    If you have more than one proxy server in front of your app, set
+    `num_proxies` accordingly.
+
     Do not use this middleware in non-proxy setups for security reasons.
 
     The original values of `REMOTE_ADDR` and `HTTP_HOST` are stored in
@@ -90,19 +93,22 @@ class ProxyFix(object):
     `werkzeug.proxy_fix.orig_http_host`.
 
     :param app: the WSGI application
+    :param num_proxies: the number of proxy servers in front of the app.
     """
 
-    def __init__(self, app):
+    def __init__(self, app, num_proxies=1):
         self.app = app
+        self.num_proxies = num_proxies
 
     def get_remote_addr(self, forwarded_for):
         """Selects the new remote addr from the given list of ips in
-        X-Forwarded-For.  By default the first one is picked.
+        X-Forwarded-For.  By default it picks the one that the `num_proxies`
+        proxy server provides.  Before 0.9 it would always pick the first.
 
         .. versionadded:: 0.8
         """
-        if forwarded_for:
-            return forwarded_for[0]
+        if len(forwarded_for) >= self.num_proxies:
+            return forwarded_for[-1 * self.num_proxies]
 
     def __call__(self, environ, start_response):
         getter = environ.get

@@ -30,6 +30,10 @@ Release date to be decided, codename to be chosen.
   system.
 - The description field of HTTP exceptions is now always escaped.
   Use markup objects to disable that.
+- Added number of proxy argument to the proxy fix to make it more
+  secure out of the box on common proxy setups.  It will by default
+  no longer trust the x-forwarded-for header as much as it did
+  before.
 
 Version 0.8.4
 -------------
