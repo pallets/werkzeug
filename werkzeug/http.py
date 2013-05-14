@@ -179,7 +179,7 @@ def parse_list_header(value):
     return result
 
 
-def parse_dict_header(value):
+def parse_dict_header(value, cls=dict):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
     convert them into a python dict:
 
@@ -198,9 +198,10 @@ def parse_dict_header(value):
     :func:`dump_header` function.
 
     :param value: a string with a dict header.
-    :return: :class:`dict`
+    :param cls: callable to use for storage of parsed results.
+    :return: an instance of `cls`
     """
-    result = {}
+    result = cls()
     for item in _parse_list_header(value):
         if '=' not in item:
             result[item] = None
