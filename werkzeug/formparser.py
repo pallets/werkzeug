@@ -12,7 +12,7 @@
 import re
 from cStringIO import StringIO
 from tempfile import TemporaryFile
-from itertools import chain, repeat
+from itertools import chain, repeat, tee
 from functools import update_wrapper
 
 from werkzeug._internal import _decode_unicode, _empty_stream
@@ -261,6 +261,10 @@ def parse_multipart_headers(iterable):
     # list was not shared anyways.
     return Headers.linked(result)
 
+_begin_form = intern('begin_form')
+_begin_file = intern('begin_file')
+_cont = intern('cont')
+_end = intern('end')
 
 class MultiPartParser(object):
     def __init__(self, stream_factory=None, charset='utf-8', errors='replace',
@@ -350,13 +354,19 @@ class MultiPartParser(object):
             # the assert is skipped.
             self.fail('Boundary longer than buffer size')
 
-    def parse(self, file, boundary, content_length):
+    def parse_lines(self, file, boundary, content_length):
+        """Generate parts of
+        ``('begin_form', (headers, name))``
+        ``('begin_file', (headers, name, filename))``
+        ``('cont', bytestring)``
+        ``('end', None)``
+
+        Always obeys the grammar
+        parts = ( begin_form cont* end |
+                  begin_file cont* end )*
+        """
         next_part = '--' + boundary
         last_part = next_part + '--'
-
-        form = []
-        files = []
-        in_memory = 0
 
         iterator = chain(make_line_iter(file, limit=content_length,
                                         buffer_size=self.buffer_size),
@@ -376,24 +386,16 @@ class MultiPartParser(object):
             transfer_encoding = self.get_part_encoding(headers)
             name = extra.get('name')
             filename = extra.get('filename')
-            part_charset = self.get_part_charset(headers)
 
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.
             if filename is None:
-                is_file = False
-                container = []
-                _write = container.append
-                guard_memory = self.max_form_memory_size is not None
+                yield _begin_form, (headers, name)
 
             # otherwise we parse the rest of the headers and ask the stream
             # factory for something we can write in.
             else:
-                is_file = True
-                guard_memory = False
-                filename, container = self.start_file_streaming(
-                    filename, headers, content_length)
-                _write = container.write
+                yield _begin_file, (headers, name, filename)
 
             buf = ''
             for line in iterator:
@@ -414,7 +416,7 @@ class MultiPartParser(object):
                 # we have something in the buffer from the last iteration.
                 # this is usually a newline delimiter.
                 if buf:
-                    _write(buf)
+                    yield _cont, buf
                     buf = ''
 
                 # If the line ends with windows CRLF we write everything except
@@ -432,15 +434,8 @@ class MultiPartParser(object):
                 else:
                     buf = line[-1]
                     cutoff = -1
-                _write(line[:cutoff])
+                yield _cont, line[:cutoff]
 
-                # if we write into memory and there is a memory size limit we
-                # count the number of bytes in memory and raise an exception if
-                # there is too much data in memory.
-                if guard_memory:
-                    in_memory += len(line)
-                    if in_memory > self.max_form_memory_size:
-                        self.in_memory_threshold_reached(in_memory)
             else: # pragma: no cover
                 raise ValueError('unexpected end of part')
 
@@ -448,14 +443,57 @@ class MultiPartParser(object):
             # character we have to flush it, otherwise we will chop of
             # certain values.
             if buf not in ('', '\r', '\n', '\r\n'):
-                _write(buf)
+                yield _cont, buf
 
-            if is_file:
-                container.seek(0)
-                files.append((name, FileStorage(container, filename, name,
-                                                headers=headers)))
-            else:
-                form.append((name, _decode_unicode(''.join(container),
-                                                   part_charset, self.errors)))
+            yield _end, None
 
+    def parse_parts(self, file, boundary, content_length):
+        """Generate `('file', (name, val))` and `('form', (name
+        ,val))` parts.
+        """
+        in_memory = 0
+
+        for ellt, ell in self.parse_lines(file, boundary, content_length):
+            if ellt == _begin_file:
+                headers, name, filename = ell
+                is_file = True
+                guard_memory = False
+                filename, container = self.start_file_streaming(
+                    filename, headers, content_length)
+                _write = container.write
+
+            elif ellt == _begin_form:
+                headers, name = ell
+                is_file = False
+                container = []
+                _write = container.append
+                guard_memory = self.max_form_memory_size is not None
+
+            elif ellt == _cont:
+                _write(ell)
+                # if we write into memory and there is a memory size limit we
+                # count the number of bytes in memory and raise an exception if
+                # there is too much data in memory.
+                if guard_memory:
+                    in_memory += len(ell)
+                    if in_memory > self.max_form_memory_size:
+                        self.in_memory_threshold_reached(in_memory)
+
+            elif ellt == _end:
+                if is_file:
+                    container.seek(0)
+                    yield ('file',
+                           (name, FileStorage(container, filename, name,
+                                              headers=headers)))
+                else:
+                    part_charset = self.get_part_charset(headers)
+                    yield ('form',
+                           (name, _decode_unicode(''.join(container),
+                                                  part_charset, self.errors)))
+
+    def parse(self, file, boundary, content_length):
+        formstream, filestream = tee(
+            self.parse_parts(file, boundary, content_length), 2)
+        form = (p[1] for p in formstream if p[0] == 'form')
+        files = (p[1] for p in filestream if p[0] == 'file')
         return self.cls(form), self.cls(files)
