@@ -35,6 +35,7 @@ Release date to be decided, codename to be chosen.
   no longer trust the x-forwarded-for header as much as it did
   before.
 - Added support for fragment handling in URI/IRI functions.
+- Added custom class support for :func:`werkzeug.http.parse_dict_header`.
 
 Version 0.8.4
 -------------

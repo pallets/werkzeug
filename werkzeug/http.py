@@ -181,7 +181,8 @@ def parse_list_header(value):
 
 def parse_dict_header(value, cls=dict):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
-    convert them into a python dict:
+    convert them into a python dict (or any other mapping object created from
+    the type with a dict like interface provided by the `cls` arugment):
 
     >>> d = parse_dict_header('foo="is a fish", bar="as well"')
     >>> type(d) is dict
@@ -196,6 +197,9 @@ def parse_dict_header(value, cls=dict):
 
     To create a header from the :class:`dict` again, use the
     :func:`dump_header` function.
+
+    .. versionchanged:: 0.9
+       Added support for `cls` argument.
 
     :param value: a string with a dict header.
     :param cls: callable to use for storage of parsed results.
