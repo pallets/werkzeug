@@ -34,6 +34,7 @@ Release date to be decided, codename to be chosen.
   secure out of the box on common proxy setups.  It will by default
   no longer trust the x-forwarded-for header as much as it did
   before.
+- Added support for fragment handling in URI/IRI functions.
 
 Version 0.8.4
 -------------
