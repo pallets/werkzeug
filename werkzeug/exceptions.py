@@ -97,7 +97,7 @@ class HTTPException(Exception):
     def get_description(self, environ):
         """Get the description."""
         environ = _get_environ(environ)
-        return self.description
+        return '<p>%s</p>' % escape(self.description)
 
     def get_body(self, environ):
         """Get the HTML body."""
