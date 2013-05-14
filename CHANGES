@@ -28,6 +28,8 @@ Release date to be decided, codename to be chosen.
 - added more operators to local proxies.
 - added a hook to override the default converter in the routing
   system.
+- The description field of HTTP exceptions is now always escaped.
+  Use markup objects to disable that.
 
 Version 0.8.4
 -------------
