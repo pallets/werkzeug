@@ -59,10 +59,14 @@ class ProfilerMiddleware(object):
     For the exact meaning of `sort_by` and `restrictions` consult the
     :mod:`profile` documentation.
 
+    .. versionadded:: 0.9
+       Added support for `restrictions` and `profile_dir`.
+
     :param app: the WSGI application to profile.
     :param stream: the stream for the profiled stats.  defaults to stderr.
     :param sort_by: a tuple of columns to sort the result by.
-    :param restrictions: a tuple of profiling strictions, not used if dumping to `profile_dir`.
+    :param restrictions: a tuple of profiling strictions, not used if dumping
+                         to `profile_dir`.
     :param profile_dir: directory name to save pstat files
     """
 
@@ -97,12 +101,16 @@ class ProfilerMiddleware(object):
         elapsed = time.time() - start
 
         if self._profile_dir is not None:
-            elapsedms = elapsed * 1000.0
-            prof_filename = os.path.join(self._profile_dir, "%s.%s.%06dms.%d.prof" % ( environ['REQUEST_METHOD'], (environ.get("PATH_INFO").strip("/").replace("/", ".") or "root"), elapsedms, time.time() ) )
+            prof_filename = os.path.join(self._profile_dir,
+                    '%s.%s.%06dms.%d.prof' % (
+                environ['REQUEST_METHOD'],
+                environ.get('PATH_INFO').strip('/').replace('/', '.') or 'root',
+                elapsed * 1000.0,
+                time.time()
+            ))
             p.dump_stats(prof_filename)
 
         else:
-
             stats = Stats(p, stream=self._stream)
             stats.sort_stats(*self._sort_by)
 

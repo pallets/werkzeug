@@ -38,6 +38,7 @@ Release date to be decided, codename to be chosen.
 - Added custom class support for :func:`werkzeug.http.parse_dict_header`.
 - Renamed `LighttpdCGIRootFix` to `CGIRootFix`.
 - Always treat `+` as safe when fixing URLs as people love misusing them.
+- Added support to profiling into directories in the contrib profiler.
 
 Version 0.8.4
 -------------
