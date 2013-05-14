@@ -99,7 +99,7 @@ def generate_password_hash(password, method='sha1', salt_length=8):
 
     :param password: the password to hash
     :param method: the hash method to use (one that hashlib supports)
-    :param salt_length: the lengt of the salt in letters
+    :param salt_length: the length of the salt in letters
     """
     salt = method != 'plain' and gen_salt(salt_length) or ''
     h = _hash_internal(method, salt, password)
