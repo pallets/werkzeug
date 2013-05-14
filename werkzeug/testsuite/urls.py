@@ -95,11 +95,11 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
         self.assert_raises(UnicodeError, urls.iri_to_uri, 'http://föö.com/')
         assert urls.uri_to_iri('http://xn--n3h.net/') == u'http://\u2603.net/'
-        assert urls.uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th') == \
-            u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
+        assert urls.uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th#%C3%A5nchor') == \
+            u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th#\xe5nchor'
         assert urls.iri_to_uri(u'http://☃.net/') == 'http://xn--n3h.net/'
-        assert urls.iri_to_uri(u'http://üser:pässword@☃.net/påth') == \
-            'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+        assert urls.iri_to_uri(u'http://üser:pässword@☃.net/påth#ånchor') == \
+            'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th#%C3%A5nchor'
 
         assert urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
             u'http://test.com/%3Fmeh?foo=%26%2F'

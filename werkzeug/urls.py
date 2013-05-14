@@ -143,6 +143,7 @@ def iri_to_uri(iri, charset='utf-8'):
 
     path = _quote(path.encode(charset), safe="/:~+%")
     query = _quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
+    fragment = _quote(fragment.encode(charset), safe="=%&[]:;$()+,!?*/")
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
@@ -200,6 +201,8 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
 
     path = _decode_unicode(_unquote(path, '/;?'), charset, errors)
     query = _decode_unicode(_unquote(query, ';/?:@&=+,$'),
+                            charset, errors)
+    fragment = _decode_unicode(_unquote(fragment, ';/?:@&=+,$'),
                             charset, errors)
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
