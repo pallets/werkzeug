@@ -235,6 +235,8 @@ class SecureCookie(ModificationTrackingDict):
         """
         if isinstance(string, unicode):
             string = string.encode('utf-8', 'replace')
+        if isinstance(secret_key, unicode):
+            secret_key = secret_key.encode('utf-8','replace')
         try:
             base64_hash, data = string.split('?', 1)
         except (ValueError, IndexError):
