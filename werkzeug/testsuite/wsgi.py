@@ -46,11 +46,13 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             self.assert_equal(status, '200 OK')
             self.assert_equal(''.join(app_iter).strip(), 'FOUND')
 
-        app_iter, status, headers = run_wsgi_app(app, create_environ('/pkg/debugger.js'))
+        app_iter, status, headers = run_wsgi_app(
+            app, create_environ('/pkg/debugger.js'))
         contents = ''.join(app_iter)
-        assert '$(function() {' in contents
+        self.assert_in('$(function() {', contents)
 
-        app_iter, status, headers = run_wsgi_app(app, create_environ('/missing'))
+        app_iter, status, headers = run_wsgi_app(
+            app, create_environ('/missing'))
         self.assert_equal(status, '404 NOT FOUND')
         self.assert_equal(''.join(app_iter).strip(), 'NOT FOUND')
 
@@ -58,15 +60,17 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
         self.assert_equal(wsgi.get_host(env), 'example.org')
-        assert wsgi.get_host(create_environ('/', 'http://example.org')) \
-            == 'example.org'
+        self.assert_equal(
+            wsgi.get_host(create_environ('/', 'http://example.org')),
+            'example.org')
 
     def test_get_host_validation(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
         self.assert_equal(wsgi.get_host(env, trusted_hosts=['.example.org']),
                           'example.org')
-        self.assert_raises(BadRequest, wsgi.get_host, env, trusted_hosts=['example.com'])
+        self.assert_raises(BadRequest, wsgi.get_host, env,
+                           trusted_hosts=['example.com'])
 
     def test_responder(self):
         def foo(environ, start_response):
@@ -93,7 +97,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         assert_tuple('/foo/a/b', '///c')
         self.assert_equal(pop(), 'c')
         assert_tuple('/foo/a/b///c', '')
-        assert pop() is None
+        self.assert_is_none(pop())
 
     def test_peek_path_info(self):
         env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/aaa/b///c'}
@@ -194,23 +198,23 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
         x = wsgi.extract_path_info('http://example.com/app/',
                                    'https://example.com/a/hello')
-        assert x is None
+        self.assert_is_none(x)
         x = wsgi.extract_path_info('http://example.com/app/',
                                    'https://example.com/app/hello',
                                    collapse_http_schemes=False)
-        assert x is None
+        self.assert_is_none(x)
 
     def test_get_host_fallback(self):
-        assert wsgi.get_host({
+        self.assert_equal(wsgi.get_host({
             'SERVER_NAME':      'foobar.example.com',
             'wsgi.url_scheme':  'http',
             'SERVER_PORT':      '80'
-        }) == 'foobar.example.com'
-        assert wsgi.get_host({
+        }), 'foobar.example.com')
+        self.assert_equal(wsgi.get_host({
             'SERVER_NAME':      'foobar.example.com',
             'wsgi.url_scheme':  'http',
             'SERVER_PORT':      '81'
-        }) == 'foobar.example.com:81'
+        }), 'foobar.example.com:81')
 
     def test_get_current_url_unicode(self):
         env = create_environ()
@@ -221,40 +225,51 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
     def test_multi_part_line_breaks(self):
         data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
         test_stream = StringIO(data)
-        lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=16))
-        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n', 'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
+        lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
+                                         buffer_size=16))
+        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
+                                  'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
 
-        data = 'abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz'
+        data = 'abc\r\nThis line is broken by the buffer length.' \
+            '\r\nFoo bar baz'
         test_stream = StringIO(data)
-        lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=24))
-        self.assert_equal(lines, ['abc\r\n', 'This line is broken by the buffer length.\r\n', 'Foo bar baz'])
+        lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
+                                         buffer_size=24))
+        self.assert_equal(lines, ['abc\r\n', 'This line is broken by the '
+                                  'buffer length.\r\n', 'Foo bar baz'])
 
     def test_multi_part_line_breaks_problematic(self):
         data = 'abc\rdef\r\nghi'
         for x in range(1, 10):
             test_stream = StringIO(data)
-            lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=4))
-            assert lines == ['abc\r', 'def\r\n', 'ghi']
+            lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
+                                             buffer_size=4))
+            self.assert_equal(lines, ['abc\r', 'def\r\n', 'ghi'])
 
     def test_iter_functions_support_iterators(self):
         data = ['abcdef\r\nghi', 'jkl\r\nmnopqrstuvwxyz\r', '\nABCDEFGHIJK']
         lines = list(wsgi.make_line_iter(data))
-        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n', 'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
+        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
+                                  'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
 
     def test_make_chunk_iter(self):
         data = ['abcdefXghi', 'jklXmnopqrstuvwxyzX', 'ABCDEFGHIJK']
         rv = list(wsgi.make_chunk_iter(data, 'X'))
-        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz', 'ABCDEFGHIJK'])
+        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz',
+                               'ABCDEFGHIJK'])
 
         data = 'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
         test_stream = StringIO(data)
-        rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data), buffer_size=4))
-        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz', 'ABCDEFGHIJK'])
+        rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
+                                       buffer_size=4))
+        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz',
+                               'ABCDEFGHIJK'])
 
     def test_lines_longer_buffer_size(self):
         data = '1234567890\n1234567890\n'
         for bufsize in xrange(1, 15):
-            lines = list(wsgi.make_line_iter(StringIO(data), limit=len(data), buffer_size=4))
+            lines = list(wsgi.make_line_iter(StringIO(data), limit=len(data),
+                                             buffer_size=4))
             self.assert_equal(lines, ['1234567890\n', '1234567890\n'])
 
 
