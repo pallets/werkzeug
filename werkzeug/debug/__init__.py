@@ -152,7 +152,7 @@ class DebuggedApplication(object):
         if isfile(filename):
             mimetype = mimetypes.guess_type(filename)[0] \
                 or 'application/octet-stream'
-            f = file(filename, 'rb')
+            f = open(filename, 'rb')
             try:
                 return Response(f.read(), mimetype=mimetype)
             finally:
