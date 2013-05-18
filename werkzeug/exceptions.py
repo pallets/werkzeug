@@ -142,15 +142,19 @@ class HTTPException(Exception):
         response = self.get_response(environ)
         return response(environ, start_response)
 
-    def __str__(self):
-        return unicode(self).encode('utf-8')
-
     def __unicode__(self):
         if 'description' in self.__dict__:
             txt = self.description
         else:
             txt = self.name
         return '%d: %s' % (self.code, txt)
+
+    if six.PY3:
+        __str__ = __unicode__
+    else:
+        def __str__(self):
+            return unicode(self).encode('utf-8')
+
 
     def __repr__(self):
         return '<%s \'%s\'>' % (self.__class__.__name__, self)
