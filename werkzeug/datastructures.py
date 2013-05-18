@@ -1032,11 +1032,21 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        _value = self._unicodify_value(_value)
         self._validate_value(_value)
         self._list.append((_key, _value))
 
+    def _unicodify_value(self, value):
+        if isinstance(value, binary_type):
+            value = value.decode('latin-1')
+        if not isinstance(value, text_type):
+            value = text_type(value)
+        return value
+
     def _validate_value(self, value):
-        if isinstance(value, string_types) and ('\n' in value or '\r' in value):
+        if not isinstance(value, text_type):
+            raise TypeError('Value should be unicode.')
+        if u'\n' in value or u'\r' in value:
             raise ValueError('Detected newline in header value.  This is '
                 'a potential security problem')
 
@@ -1069,6 +1079,7 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        _value = self._unicodify_value(_value)
         self._validate_value(_value)
         if not self._list:
             self._list.append((_key, _value))
@@ -1101,6 +1112,7 @@ class Headers(object):
     def __setitem__(self, key, value):
         """Like :meth:`set` but also supports index/slice based setting."""
         if isinstance(key, (slice, integer_types)):
+            value = self._unicodify_value(value)
             self._validate_value(value)
             self._list[key] = value
         else:
