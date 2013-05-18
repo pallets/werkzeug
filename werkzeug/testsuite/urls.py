@@ -26,7 +26,7 @@ class URLsTestCase(WerkzeugTestCase):
         assert urls.url_unquote(urls.url_quote(u'#%="\xf6')) == u'#%="\xf6'
         assert urls.url_quote_plus('foo bar') == 'foo+bar'
         assert urls.url_unquote_plus('foo+bar') == 'foo bar'
-        assert urls.url_encode({'a': None, 'b': 'foo bar'}) == 'b=foo+bar'
+        assert urls.url_encode({'a': None, 'b': 'foo bar'}) == b'b=foo+bar'
         assert urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)') == \
                b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
@@ -56,10 +56,10 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_encoding(self):
-        assert urls.url_encode({'foo': 'bar 45'}) == 'foo=bar+45'
+        assert urls.url_encode({'foo': 'bar 45'}) == b'foo=bar+45'
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
-        assert urls.url_encode(d, sort=True) == 'bar=23&blah=H%C3%A4nsel&foo=1'
-        assert urls.url_encode(d, sort=True, separator=';') == 'bar=23;blah=H%C3%A4nsel;foo=1'
+        assert urls.url_encode(d, sort=True) == b'bar=23&blah=H%C3%A4nsel&foo=1'
+        assert urls.url_encode(d, sort=True, separator=b';') == b'bar=23;blah=H%C3%A4nsel;foo=1'
 
     def test_sorted_url_encode(self):
         assert urls.url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
@@ -122,7 +122,7 @@ class URLsTestCase(WerkzeugTestCase):
         d.add('foo', 3)
         d.add('bar', 0)
         d.add('foo', 4)
-        assert urls.url_encode(d) == 'foo=1&foo=2&foo=3&bar=0&foo=4'
+        self.assertEqual(urls.url_encode(d), b'foo=1&foo=2&foo=3&bar=0&foo=4')
 
     def test_href(self):
         x = urls.Href(u'http://www.example.com/')
