@@ -131,7 +131,7 @@ class FormParserTestCase(WerkzeugTestCase):
                                   method='POST')
         # make sure we have a real file here, because we expect to be
         # on the disk.  > 1024 * 500
-        self.assert_(hasattr(req.files['foo'].stream, 'fileno'))
+        self.assert_true(hasattr(req.files['foo'].stream, 'fileno'))
 
     def test_streaming_parse(self):
         data = 'x' * (1024 * 600)
@@ -233,8 +233,8 @@ class MultiPartTestCase(WerkzeugTestCase):
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_(not data.files)
-        self.assert_(not data.form)
+        self.assert_true(not data.files)
+        self.assert_true(not data.form)
 
     def test_broken(self):
         data = (
@@ -247,8 +247,8 @@ class MultiPartTestCase(WerkzeugTestCase):
         )
         _, form, files = formparser.parse_form_data(create_environ(data=data,
             method='POST', content_type='multipart/form-data; boundary=foo'))
-        self.assert_(not files)
-        self.assert_(not form)
+        self.assert_true(not files)
+        self.assert_true(not form)
 
         self.assert_raises(ValueError, formparser.parse_form_data,
             create_environ(data=data, method='POST',
@@ -281,7 +281,7 @@ class MultiPartTestCase(WerkzeugTestCase):
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_(not data.files)
+        self.assert_true(not data.files)
         self.assert_equal(data.form['foo'], 'a string')
 
     def test_headers(self):

@@ -47,7 +47,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(a.best_match(['text/html', 'application/xhtml+xml']),
                           'application/xhtml+xml')
         self.assert_equal(a.best_match(['text/html']),  'text/html')
-        self.assert_(a.best_match(['foo/bar']) is None)
+        self.assert_true(a.best_match(['foo/bar']) is None)
         self.assert_equal(a.best_match(['foo/bar', 'bar/foo'],
                           default='foo/bar'),  'foo/bar')
         self.assert_equal(a.best_match(['application/xml', 'text/xml']),  'application/xml')
@@ -64,16 +64,16 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         a = http.parse_accept_header('de-AT,de;q=0.8,en;q=0.5',
                                      datastructures.LanguageAccept)
         self.assert_equal(a.best,  'de-AT')
-        self.assert_('de_AT' in a)
-        self.assert_('en' in a)
+        self.assert_true('de_AT' in a)
+        self.assert_true('en' in a)
         self.assert_equal(a['de-at'], 1)
         self.assert_equal(a['en'], 0.5)
 
     def test_set_header(self):
         hs = http.parse_set_header('foo, Bar, "Blah baz", Hehe')
-        self.assert_('blah baz' in hs)
-        self.assert_('foobar' not in hs)
-        self.assert_('foo' in hs)
+        self.assert_true('blah baz' in hs)
+        self.assert_true('foobar' not in hs)
+        self.assert_true('foo' in hs)
         self.assert_equal(list(hs), ['foo', 'Bar', 'Blah baz', 'Hehe'])
         hs.add('Foo')
         self.assert_equal(hs.to_header(), 'foo, Bar, "Blah baz", Hehe')
@@ -192,8 +192,8 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
     def test_etags_nonzero(self):
         etags = http.parse_etags('w/"foo"')
-        self.assert_(bool(etags))
-        self.assert_(etags.contains_raw('w/"foo"'))
+        self.assert_true(bool(etags))
+        self.assert_true(etags.contains_raw('w/"foo"'))
 
     def test_parse_date(self):
         assert http.parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(1994, 11, 6, 8, 49, 37)

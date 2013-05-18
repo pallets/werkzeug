@@ -62,7 +62,7 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         a = A()
         p = a.prop
         q = a.prop
-        self.assert_(p == q == 42)
+        self.assert_true(p == q == 42)
         self.assert_equal(foo, [42])
 
         foo = []
@@ -76,7 +76,7 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         a = A()
         p = a.prop
         q = a.prop
-        self.assert_(p == q == 42)
+        self.assert_true(p == q == 42)
         self.assert_equal(foo, [42])
 
     def test_environ_property(self):

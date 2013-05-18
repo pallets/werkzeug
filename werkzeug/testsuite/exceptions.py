@@ -30,7 +30,7 @@ class ExceptionsTestCase(WerkzeugTestCase):
             resp = e.get_response({})
         else:
             self.fail('exception not raised')
-        self.assert_(resp is orig_resp)
+        self.assert_true(resp is orig_resp)
         self.assert_equal(resp.data, 'Hello World')
 
     def test_aborter(self):
@@ -75,7 +75,7 @@ class ExceptionsTestCase(WerkzeugTestCase):
         exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
         h = dict(exc.get_headers({}))
         self.assert_equal(h['Allow'], 'GET, HEAD, POST')
-        self.assert_('The method DELETE is not allowed' in exc.get_description({
+        self.assert_true('The method DELETE is not allowed' in exc.get_description({
             'REQUEST_METHOD': 'DELETE'
         }))
 
