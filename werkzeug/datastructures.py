@@ -820,9 +820,7 @@ class Headers(object):
 
     To create a new :class:`Headers` object pass it a list or dict of headers
     which are used as default values.  This does not reuse the list passed
-    to the constructor for internal usage.  To create a :class:`Headers`
-    object that uses as internal storage the list or list-like object you
-    can use the :meth:`linked` class method.
+    to the constructor for internal usage.
 
     :param defaults: The list of default values for the :class:`Headers`.
     """
@@ -836,22 +834,6 @@ class Headers(object):
                 self._list.extend(defaults)
             else:
                 self.extend(defaults)
-
-    @classmethod
-    def linked(cls, headerlist):
-        """Create a new :class:`Headers` object that uses the list of headers
-        passed as internal storage:
-
-        >>> headerlist = [('Content-Length', '40')]
-        >>> headers = Headers.linked(headerlist)
-        >>> headers['Content-Type'] = 'text/html'
-        >>> headerlist
-        [('Content-Length', '40'), ('Content-Type', 'text/html')]
-
-        :param headerlist: The list of headers the class is linked to.
-        :return: new linked :class:`Headers` object.
-        """
-        return cls(_list=headerlist)
 
     def __getitem__(self, key, _get_mode=False):
         if not _get_mode:
@@ -1204,11 +1186,6 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
 
     def __init__(self, environ):
         self.environ = environ
-
-    @classmethod
-    def linked(cls, environ):
-        raise TypeError('%r object is always linked to environment, '
-                        'no separate initializer' % cls.__name__)
 
     def __eq__(self, other):
         return self.environ is other.environ
