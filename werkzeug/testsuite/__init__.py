@@ -11,6 +11,7 @@
 
 from __future__ import with_statement
 
+import sys
 import unittest
 import six
 from werkzeug.utils import import_string, find_modules
@@ -78,26 +79,48 @@ class WerkzeugTestCase(unittest.TestCase):
         def assertRaisesRegex(self, *args, **kwargs):
             return self.assertRaisesRegexp(*args, **kwargs)
 
-    def assert_is_none(self, x):
-        return self.assertIsNone(x)
+    if sys.version_info[:2] == (2, 6):
+        def assert_is_none(self, x):
+            assert x is None, "%r is not None" % (x,)
 
-    def assert_is_not_none(self, x):
-        return self.assertIsNotNone(x)
+        def assert_is_not_none(self, x):
+            assert x is not None, "%r is None" % (x, )
 
-    def assert_in(self, x, y):
-        return self.assertIn(x, y)
+        def assert_in(self, x, y):
+            assert x in y, "%r not in %r" % (x, y)
 
-    def assert_not_in(self, x, y):
-        return self.assertNotIn(x, y)
+        def assert_not_in(self, x, y):
+            assert x not in y, "%r in %r" % (x, y)
 
-    def assert_is(self, x, y):
-        return self.assertIs(x, y)
+        def assert_is_instance(self, x, y):
+            assert isinstance(x, y), "not isinstance(%r, %r)" % (x, y)
 
-    def assert_is_not(self, x, y):
-        return self.assertIsNot(x, y)
+        def assert_is(self, x, y):
+            assert x is y, "%r is not %r" % (x, y)
 
-    def assert_is_instance(self, x, y):
-        return self.assertIsInstance(x, y)
+        def assert_is_not(self, x, y):
+            assert x is not y, "%r is %r" % (x, y)
+    else:
+        def assert_is_none(self, x):
+            return self.assertIsNone(x)
+
+        def assert_is_not_none(self, x):
+            return self.assertIsNotNone(x)
+
+        def assert_in(self, x, y):
+            return self.assertIn(x, y)
+
+        def assert_is_instance(self, x, y):
+            return self.assertIsInstance(x, y)
+
+        def assert_not_in(self, x, y):
+            return self.assertNotIn(x, y)
+
+        def assert_is(self, x, y):
+            return self.assertIs(x, y)
+
+        def assert_is_not(self, x, y):
+            return self.assertIsNot(x, y)
 
     def assert_true(self, x):
         return self.assertTrue(x)
