@@ -152,7 +152,7 @@ class Application(object):
         try:
             # find the callback to which the URL is mapped
             callback, args = request.url_adapter.match(request.path)
-        except (HTTPException, RequestRedirect), e:
+        except (HTTPException, RequestRedirect) as e:
             response = e
         else:
             # check all view processors
@@ -165,7 +165,7 @@ class Application(object):
 
             try:
                 response = callback(request, **args)
-            except Exception, exception:
+            except Exception as exception:
                 # the callback raised some exception, need to process that
                 for processor in reversed(self.processors):
                     # filter it through the exception processor
@@ -272,7 +272,7 @@ class GenshiTemplateLoader(TemplateLoader):
         """Get the template which is at the given name"""
         try:
             return self.loader.load(template_name, encoding=self.encoding)
-        except self.not_found_exception, e:
+        except self.not_found_exception as e:
             # catch the exception raised by Genshi, convert it into a werkzeug
             # exception (for the sake of consistency)
             raise TemplateNotFound(template_name)

@@ -117,7 +117,7 @@ class Parser(object):
             expr = '\xef\xbb\xbf' + expr.encode('utf-8')
         try:
             node = parse(expr, type)
-        except SyntaxError, e:
+        except SyntaxError as e:
             raise TemplateSyntaxError(str(e), self.filename,
                                       self.lineno + e.lineno - 1)
         nodes = [node]
