@@ -240,8 +240,8 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
             key = pair
             value = ''
         key = url_unquote_plus(key)
-        if decode_keys:
-            key = _decode_unicode(key, charset, errors)
+        if not decode_keys:
+            key = key.encode(charset, errors)
         yield key, url_unquote_plus(value, charset, errors)
 
 

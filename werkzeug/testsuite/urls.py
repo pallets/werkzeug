@@ -31,17 +31,17 @@ class URLsTestCase(WerkzeugTestCase):
                b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
     def test_url_decoding(self):
-        x = urls.url_decode('foo=42&bar=23&uni=H%C3%A4nsel')
+        x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel')
         assert x['foo'] == '42'
         assert x['bar'] == '23'
         assert x['uni'] == u'Hänsel'
 
-        x = urls.url_decode('foo=42;bar=23;uni=H%C3%A4nsel', separator=';')
+        x = urls.url_decode(b'foo=42;bar=23;uni=H%C3%A4nsel', separator=';')
         assert x['foo'] == '42'
         assert x['bar'] == '23'
         assert x['uni'] == u'Hänsel'
 
-        x = urls.url_decode('%C3%9Ch=H%C3%A4nsel', decode_keys=True)
+        x = urls.url_decode(b'%C3%9Ch=H%C3%A4nsel', decode_keys=True)
         assert x[u'Üh'] == u'Hänsel'
 
     def test_streamed_url_decoding(self):
