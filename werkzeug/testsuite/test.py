@@ -57,7 +57,7 @@ def redirect_with_get_app(environ, start_response):
 def redirect_with_post_app(environ, start_response):
     req = Request(environ)
     if req.url == 'http://localhost/some/redirect/':
-        self.assert_equal(req.method, 'GET', 'request should be GET')
+        assert req.method == 'GET', 'request should be GET'
         assert not req.form, 'request should not have data'
         response = Response('current url: %s' % req.url)
     else:
