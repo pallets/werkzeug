@@ -77,6 +77,7 @@ _implicit_encoding = 'ascii'
 _implicit_errors = 'strict'
 
 def _noop(obj):
+    assert hasattr(obj, 'encode')
     return obj
 
 def _encode_result(obj, encoding=_implicit_encoding,
@@ -98,7 +99,7 @@ def _coerce_args(*args):
         # We special-case the empty string to support the
         # "scheme=''" default argument to some functions
         if arg and isinstance(arg, six.text_type) != str_input:
-            raise TypeError("Cannot mix str and non-str arguments")
+            raise TypeError("Cannot mix str and non-str arguments", args)
     if str_input:
         return args + (_noop,)
     return _decode_args(args) + (_encode_result,)
@@ -464,20 +465,21 @@ def urldefrag(url):
     return _coerce_result(DefragResult(defrag, frag))
 
 
-_hexdig = '0123456789ABCDEFabcdef'
+_hexdig = u'0123456789ABCDEFabcdef'
 _hextobyte = dict(((a + b).encode(), six.int2byte(int(a + b, 16)))
                   for a in _hexdig for b in _hexdig)
 
-def unquote_to_bytes(string):
+def unquote_to_bytes(string, unsafe=b''):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
+    assert isinstance(unsafe, six.binary_type), unsafe
     if not string:
         # Is it a string-like object?
         string.split
         return b''
     if isinstance(string, six.text_type):
-        string = string.encode('utf-8')
+        string = string.encode('ascii')
     bits = string.split(b'%')
     if len(bits) == 1:
         return string
@@ -485,7 +487,10 @@ def unquote_to_bytes(string):
     append = res.append
     for item in bits[1:]:
         try:
-            append(_hextobyte[item[:2]])
+            byte = _hextobyte[item[:2]]
+            if byte in unsafe:
+                raise KeyError()
+            append(byte)
             append(item[2:])
         except KeyError:
             append(b'%')
@@ -494,7 +499,7 @@ def unquote_to_bytes(string):
 
 _asciire = re.compile('([\x00-\x7f]+)')
 
-def unquote(string, encoding='utf-8', errors='replace'):
+def unquote(string, unsafe=b'', encoding='utf-8', errors='replace'):
     """Replace %xx escapes by their single-character equivalent. The optional
     encoding and errors parameters specify how to decode percent-encoded
     sequences into Unicode characters, as accepted by the bytes.decode()
@@ -502,8 +507,10 @@ def unquote(string, encoding='utf-8', errors='replace'):
     By default, percent-encoded sequences are decoded with UTF-8, and invalid
     sequences are replaced by a placeholder character.
 
-    unquote('abc%20def') -> 'abc def'.
+    unquote('abc%20def') -> b'abc def'.
     """
+    if not isinstance(string, six.text_type):
+        string = string.decode('ascii')
     if u'%' not in string:
         string.split
         return string
@@ -515,9 +522,9 @@ def unquote(string, encoding='utf-8', errors='replace'):
     res = [bits[0]]
     append = res.append
     for i in range(1, len(bits), 2):
-        append(unquote_to_bytes(bits[i]).decode(encoding, errors))
+        append(unquote_to_bytes(bits[i], unsafe=unsafe).decode(encoding, errors))
         append(bits[i + 1])
-    return ''.join(res)
+    return u''.join(res)
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace'):
@@ -606,7 +613,7 @@ def unquote_plus(string, encoding='utf-8', errors='replace'):
     unquote_plus('%7e/abc+def') -> '~/abc def'
     """
     string = string.replace(u'+', u' ')
-    return unquote(string, encoding, errors)
+    return unquote(string, encoding=encoding, errors=errors)
 
 def _iter_bytestring(string):
     #XXX: replace this with the new six feature
@@ -622,7 +629,7 @@ _ALWAYS_SAFE = frozenset(_iter_bytestring(_ALWAYS_SAFE_BYTES))
 _safe_quoters = {}
 
 class Quoter(dict):
-    """A mapping from bytes (in range(0,256)) to strings.
+    """A mapping from bytes (in range(0,256)) to unicode strings.
 
     String values are percent-encoded byte values, unless the key < 128, and
     in the "safe" set (either the specified safe set, or default set).
@@ -644,7 +651,7 @@ class Quoter(dict):
         return res
 
 def quote(string, safe='/', encoding=None, errors=None):
-    """quote('abc def') -> 'abc%20def'
+    """quote('abc def') -> u'abc%20def'
 
     Each part of a URL, e.g. the path info, the query, etc., has a
     different set of reserved characters that must be quoted.
@@ -701,7 +708,7 @@ def quote_plus(string, safe='', encoding=None, errors=None):
         space = u' '
     else:
         space = b' '
-    string = quote(string, safe + space, encoding, errors)
+    string = quote(string, safe=(safe + space), encoding=encoding, errors=errors)
     return string.replace(u' ', u'+')
 
 def quote_from_bytes(bs, safe='/'):
