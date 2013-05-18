@@ -78,6 +78,18 @@ class WerkzeugTestCase(unittest.TestCase):
         def assertRaisesRegex(self, *args, **kwargs):
             return self.assertRaisesRegexp(*args, **kwargs)
 
+    def assert_is_none(self, x):
+        return self.assertIsNone(x)
+
+    def assert_is_not_none(self, x):
+        return self.assertIsNotNone(x)
+
+    def assert_in(self, x, y):
+        return self.assertIn(x, y)
+
+    def assert_not_in(self, x, y):
+        return self.assertNotIn(x, y)
+
 
 class _ExceptionCatcher(object):
 
