@@ -24,7 +24,7 @@ from werkzeug._urlparse import (
 )
 
 
-def url_quote(string, safe='/:', encoding=None, errors=None):
+def url_quote(string, encoding=None, safe='/:', errors=None):
     # we also consider : safe since it's commonly used
     return _quote(string, safe=safe, encoding=encoding, errors=errors)
 
@@ -308,7 +308,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
 
         # we need to ignore encode_keys, because quote takes nothing else than
         # bytes
-        key = to_bytes(key)  
+        key = to_bytes(key)
         value = to_bytes(value)
         rv = bytearray()
         rv += url_quote(to_bytes(key)).encode('ascii')
