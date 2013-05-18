@@ -38,11 +38,8 @@ def form_data_consumer(request):
 
 
 def get_contents(filename):
-    f = open(filename, 'rb')
-    try:
+    with open(filename, 'rb') as f:
         return f.read()
-    finally:
-        f.close()
 
 
 class FormParserTestCase(WerkzeugTestCase):

@@ -21,6 +21,7 @@ except ImportError:
     from urllib.request import Request as U2Request
 
 import six
+from six import string_types
 CookieJar = six.moves.http_cookiejar.CookieJar
 
 
@@ -277,7 +278,7 @@ class EnvironBuilder(object):
             else:
                 base_url = url_fix(base_url, charset)
         self.base_url = base_url
-        if isinstance(query_string, basestring):
+        if isinstance(query_string, string_types):
             self.query_string = query_string
         else:
             if query_string is None:
@@ -307,7 +308,7 @@ class EnvironBuilder(object):
         if data:
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
-            if isinstance(data, basestring):
+            if isinstance(data, string_types):
                 self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)

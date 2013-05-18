@@ -34,7 +34,7 @@ except ImportError: # pragma: no cover
 import base64
 
 
-from six import next, iteritems, binary_type, text_type
+from six import next, iteritems, binary_type, text_type, string_types
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
@@ -675,7 +675,7 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
         return False
 
     unmodified = False
-    if isinstance(last_modified, basestring):
+    if isinstance(last_modified, string_types):
         last_modified = parse_date(last_modified)
 
     # ensure that microsecond is zero because the HTTP spec does not transmit
@@ -824,7 +824,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     if isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
-        if not isinstance(expires, basestring):
+        if not isinstance(expires, string_types):
             expires = cookie_date(expires)
         morsel['expires'] = expires
     elif max_age is not None and sync_expires:

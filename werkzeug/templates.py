@@ -8,6 +8,7 @@ r"""
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD License.
 """
+from six import string_types
 import sys
 import re
 import __builtin__ as builtins
@@ -116,7 +117,7 @@ class Parser(object):
             expr = '\xef\xbb\xbf' + expr.encode('utf-8')
         try:
             node = parse(expr, type)
-        except SyntaxError, e:
+        except SyntaxError as e:
             raise TemplateSyntaxError(str(e), self.filename,
                                       self.lineno + e.lineno - 1)
         nodes = [node]
@@ -363,7 +364,7 @@ class Template(object):
         """
         close = False
         f = file
-        if isinstance(file, basestring):
+        if isinstance(file, string_types):
             f = open(file, 'r')
             close = True
         try:

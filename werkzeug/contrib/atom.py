@@ -22,6 +22,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from datetime import datetime
+from six import string_types
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
 
@@ -115,7 +116,7 @@ class AtomFeed(object):
         self.entries = entries and list(entries) or []
 
         if not hasattr(self.author, '__iter__') \
-           or isinstance(self.author, (basestring, dict)):
+           or isinstance(self.author, string_types + (dict,)):
             self.author = [self.author]
         for i, author in enumerate(self.author):
             if not isinstance(author, dict):
@@ -283,7 +284,7 @@ class FeedEntry(object):
         self.xml_base = kwargs.get('xml_base', feed_url)
 
         if not hasattr(self.author, '__iter__') \
-           or isinstance(self.author, (basestring, dict)):
+           or isinstance(self.author, string_types + (dict,)):
             self.author = [self.author]
         for i, author in enumerate(self.author):
             if not isinstance(author, dict):

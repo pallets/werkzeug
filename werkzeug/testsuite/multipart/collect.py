@@ -12,7 +12,7 @@ def copy_stream(request):
     folder = 'request-%d' % time()
     mkdir(folder)
     environ = request.environ
-    f = file(folder + '/request.txt', 'wb+')
+    f = open(folder + '/request.txt', 'wb+')
     f.write(environ['wsgi.input'].read(int(environ['CONTENT_LENGTH'])))
     f.flush()
     f.seek(0)

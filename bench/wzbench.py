@@ -24,7 +24,7 @@ from types import FunctionType
 # create a new module where we later store all the werkzeug attributes.
 wz = type(sys)('werkzeug_nonlazy')
 sys.path.insert(0, '<DUMMY>')
-null_out = file(os.devnull, 'w')
+null_out = open(os.devnull, 'w')
 
 
 # ±4% are ignored
@@ -80,7 +80,7 @@ def load_werkzeug(path):
 
     # get the real version from the setup file
     try:
-        f = file(os.path.join(path, 'setup.py'))
+        f = open(os.path.join(path, 'setup.py'))
     except IOError:
         pass
     else:
@@ -275,7 +275,7 @@ MULTIPART_ENCODED_DATA = '\n'.join((
     'Content-Disposition: form-data; name=foo; filename=wzbench.py',
     'Content-Type: text/plain',
     '',
-    file(__file__.rstrip('c')).read(),
+    open(__file__.rstrip('c')).read(),
     '--foo--'
 ))
 MULTIDICT = None

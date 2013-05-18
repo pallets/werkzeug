@@ -14,6 +14,7 @@ from __future__ import with_statement
 import sys
 import unittest
 from io import BytesIO
+from werkzeug._compat import iteritems
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -236,10 +237,9 @@ class TestTestCase(WerkzeugTestCase):
             'SERVER_PROTOCOL':      'HTTP/1.1',
             'QUERY_STRING':         'bar=baz'
         }
-        for key, value in expected.iteritems():
+        for key, value in iteritems(expected):
             self.assert_equal(env[key], value)
         self.assert_equal(env['wsgi.input'].read(0), '')
-
         self.assert_equal(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
 
     def test_file_closing(self):

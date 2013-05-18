@@ -76,6 +76,7 @@ import sys
 import inspect
 import getopt
 from os.path import basename
+from werkzeug._compat import iteritems
 
 
 argument_types = {
@@ -170,7 +171,7 @@ def run(namespace=None, action_prefix='action_', args=None):
             fail('Invalid value for \'%s\': %s' % (key, value))
 
     newargs = {}
-    for k, v in arguments.iteritems():
+    for k, v in iteritems(arguments):
         newargs[k.startswith('no_') and k[3:] or k] = v
     arguments = newargs
     return func(**arguments)
@@ -185,7 +186,7 @@ def fail(message, code=-1):
 def find_actions(namespace, action_prefix):
     """Find all the actions in the namespace."""
     actions = {}
-    for key, value in namespace.iteritems():
+    for key, value in iteritems(namespace):
         if key.startswith(action_prefix):
             actions[key[len(action_prefix):]] = analyse_action(value)
     return actions
