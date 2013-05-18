@@ -697,6 +697,8 @@ class OrderedMultiDict(MultiDict):
     def keys(self):
         return (key for key, value in iteritems(self))
 
+    __iter__ = keys
+
     def values(self):
         return (value for key, value in iteritems(self))
 
