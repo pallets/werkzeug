@@ -8,7 +8,6 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from functools import partial
 import six
 
 from werkzeug._compat import urlparse
@@ -25,25 +24,29 @@ from werkzeug._urlparse import (
 )
 
 
-# we also consider : safe since its commonly used
-url_quote = partial(_quote, safe='/:')
+def url_quote(string, safe='/:', encoding=None, errors=None):
+    # we also consider : safe since it's commonly used
+    return _quote(string, safe=safe, encoding=encoding, errors=errors)
 
 
 def _uri_split(uri):
     """Splits up an URI or IRI."""
+    uri, coerce_rv = urlparse._coerce_args(uri)
     scheme, netloc, path, query, fragment = _safe_urlsplit(uri)
 
     port = None
 
-    if '@' in netloc:
-        auth, hostname = netloc.split('@', 1)
+    if u'@' in netloc:
+        auth, hostname = netloc.split(u'@', 1)
     else:
         auth = None
         hostname = netloc
     if hostname:
-        if ':' in hostname:
-            hostname, port = hostname.split(':', 1)
-    return scheme, auth, hostname, port, path, query, fragment
+        if u':' in hostname:
+            hostname, port = hostname.split(u':', 1)
+
+    rv = scheme, auth, hostname, port, path, query, fragment
+    return tuple(x if x is None else coerce_rv(x) for x in rv)
 
 
 def iri_to_uri(iri, charset='utf-8'):
@@ -55,40 +58,43 @@ def iri_to_uri(iri, charset='utf-8'):
     Examples for IRI versus URI:
 
     >>> iri_to_uri(u'http://☃.net/')
-    'http://xn--n3h.net/'
+    b'http://xn--n3h.net/'
     >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
-    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+    b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
 
     .. versionadded:: 0.6
 
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
-    #XXX: py3 review
-    iri = six.text_type(iri)
+    if not isinstance(iri, six.text_type):
+        raise UnicodeError('Expected IRI, which is a unicode string')
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = scheme.encode('ascii')
     hostname = hostname.encode('idna')
     if auth:
-        if ':' in auth:
-            auth, password = auth.split(':', 1)
+        auth = auth.encode(charset)
+        if b':' in auth:
+            auth, password = auth.split(b':', 1)
         else:
             password = None
-        auth = url_quote(auth.encode(charset))
+        auth = url_quote(auth).encode(charset)
         if password:
-            auth += ':' + url_quote(password.encode(charset))
-        hostname = auth + '@' + hostname
+            auth += b':' + url_quote(password).encode(charset)
+        hostname = auth + b'@' + hostname
     if port:
-        hostname += ':' + port
+        hostname += b':' + port
 
-    path = url_quote(path.encode(charset), safe="/:~+%")
-    query = url_quote(query.encode(charset), safe="=%&[]:;$()+,!?*/")
-    fragment = url_quote(fragment.encode(charset), safe="=%&[]:;$()+,!?*/")
+    path = url_quote(path, safe="/:~+%", encoding=charset).encode(charset)
+    query = url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset).encode(charset)
+    fragment = fragment.encode(charset)
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
-    return str(urlparse.urlunsplit([scheme, hostname, path, query, fragment]))
+    rv = urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+    assert isinstance(rv, six.binary_type)
+    return rv
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
@@ -96,14 +102,14 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
 
     Examples for URI versus IRI
 
-    >>> uri_to_iri('http://xn--n3h.net/')
+    >>> uri_to_iri(b'http://xn--n3h.net/')
     u'http://\u2603.net/'
-    >>> uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
+    >>> uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
     u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
 
     Query strings are left unchanged:
 
-    >>> uri_to_iri('/?foo=24&x=%26%2f')
+    >>> uri_to_iri(b'/?foo=24&x=%26%2f')
     u'/?foo=24&x=%26%2f'
 
     .. versionadded:: 0.6
@@ -112,7 +118,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: the charset of the URI
     :param errors: the error handling on decode
     """
-    uri = url_fix(str(uri), charset)
+    uri = url_fix(uri, charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
     scheme = _decode_unicode(scheme, 'ascii', errors)
@@ -127,24 +133,20 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         hostname = hostname.decode('ascii', errors)
 
     if auth:
-        if ':' in auth:
-            auth, password = auth.split(':', 1)
+        if b':' in auth:
+            auth, password = auth.split(b':', 1)
         else:
             password = None
-        auth = _decode_unicode(url_unquote(auth), charset, errors)
+        auth = url_unquote(auth, encoding=charset, errors=errors)
         if password:
-            auth += u':' + _decode_unicode(url_unquote(password),
-                                           charset, errors)
+            auth += u':' + url_unquote(password, encoding=charset, errors=errors)
         hostname = auth + u'@' + hostname
     if port:
         # port should be numeric, but you never know...
         hostname += u':' + port.decode(charset, errors)
 
-    path = _decode_unicode(url_unquote(path, '/;?'), charset, errors)
-    query = _decode_unicode(url_unquote(query, ';/?:@&=+,$'),
-                            charset, errors)
-    fragment = _decode_unicode(_unquote(fragment, ';/?:@&=+,$'),
-                            charset, errors)
+    path = url_unquote(path, unsafe=b'/;?', encoding=charset, errors=errors)
+    query = url_unquote(query, unsafe=b';/?:@&=+,$', encoding=charset, errors=errors)
 
     return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
 
@@ -325,13 +327,14 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    if isinstance(s, six.text_type):
-        s = s.encode(charset, 'replace')
-    scheme, netloc, path, qs, anchor = _safe_urlsplit(s)
-    path = url_quote(path, '/%+').encode('ascii')
-    qs = url_quote_plus(qs, ':&%=').encode('ascii')
+    if not isinstance(s, six.text_type):
+        s = s.decode(charset)
+    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
+    path = url_quote(path, safe='/%')
+    qs = url_quote_plus(qs, safe=':&%=')
     parts = (scheme, netloc, path, qs, anchor)
-    return urlparse.urlunsplit(parts)
+    #print(repr(parts))
+    return urlparse.urlunsplit(parts).encode('ascii')
 
 
 class Href(object):
@@ -343,11 +346,11 @@ class Href(object):
     Positional arguments are appended as individual segments to
     the path of the URL:
 
-    >>> href = Href('/foo')
-    >>> href('bar', 23)
-    '/foo/bar/23'
-    >>> href('foo', bar=23)
-    '/foo/foo?bar=23'
+    >>> href = Href(u'/foo')
+    >>> href(u'bar', 23)
+    u'/foo/bar/23'
+    >>> href(u'foo', bar=23)
+    u'/foo/foo?bar=23'
 
     If any of the arguments (positional or keyword) evaluates to `None` it
     will be skipped.  If no keyword arguments are given the last argument
@@ -356,13 +359,13 @@ class Href(object):
     off the first trailing underscore of the parameter name:
 
     >>> href(is_=42)
-    '/foo?is=42'
-    >>> href({'foo': 'bar'})
-    '/foo?foo=bar'
+    u'/foo?is=42'
+    >>> href({u'foo': u'bar'})
+    u'/foo?foo=bar'
 
     Combining of both methods is not allowed:
 
-    >>> href({'foo': 'bar'}, bar=42)
+    >>> href({u'foo': u'bar'}, bar=42)
     Traceback (most recent call last):
       ...
     TypeError: keyword arguments and query-dicts can't be combined
@@ -371,15 +374,15 @@ class Href(object):
     the attribute name as prefix:
 
     >>> bar_href = href.bar
-    >>> bar_href("blub")
-    '/foo/bar/blub'
+    >>> bar_href(u"blub")
+    u'/foo/bar/blub'
 
     If `sort` is set to `True` the items are sorted by `key` or the default
     sorting algorithm:
 
-    >>> href = Href("/", sort=True)
+    >>> href = Href("u/", sort=True)
     >>> href(a=1, b=2, c=3)
-    '/?a=1&b=2&c=3'
+    u'/?a=1&b=2&c=3'
 
     .. versionadded:: 0.5
         `sort` and `key` were added.

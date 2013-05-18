@@ -820,6 +820,10 @@ class UrlParseTestCase(WerkzeugTestCase):
         result = urlparse.unquote_to_bytes(u'')
         self.assertEqual(result, b'')
 
+    def test_unquote_to_bytes_unsafe(self):
+        result = urlparse.unquote_to_bytes(u'abc%20d%21ef', unsafe=b'!')
+        self.assertEqual(result, b'abc d%21ef')
+
     def test_quote_errors(self):
         self.assertRaises(TypeError, urlparse.quote, b'foo',
                           encoding='utf-8')
