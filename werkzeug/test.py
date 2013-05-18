@@ -727,7 +727,7 @@ class Client(object):
             if status_code not in (301, 302, 303, 305, 307) \
                or not follow_redirects:
                 break
-            new_location = Headers.linked(response[2])['location']
+            new_location = response[2]['location']
             new_redirect_entry = (new_location, status_code)
             if new_redirect_entry in redirect_chain:
                 raise ClientRedirectError('loop detected')
@@ -852,4 +852,4 @@ def run_wsgi_app(app, environ, buffered=False):
             if close_func is not None:
                 app_iter = ClosingIterator(app_iter, close_func)
 
-    return app_iter, response[0], response[1]
+    return app_iter, response[0], Headers(response[1])

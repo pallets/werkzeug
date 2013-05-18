@@ -259,7 +259,7 @@ def parse_multipart_headers(iterable):
 
     # we link the list to the headers, no need to create a copy, the
     # list was not shared anyways.
-    return Headers.linked(result)
+    return Headers(result)
 
 
 _begin_form = 'begin_form'
