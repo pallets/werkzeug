@@ -12,6 +12,7 @@
     :copyright: (c) 2011 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+from six import text_type
 import unittest
 
 from werkzeug.testsuite import WerkzeugTestCase
@@ -31,7 +32,7 @@ class ExceptionsTestCase(WerkzeugTestCase):
         else:
             self.fail('exception not raised')
         self.assert_true(resp is orig_resp)
-        self.assert_equal(resp.data, 'Hello World')
+        self.assert_equal(resp.data, b'Hello World')
 
     def test_aborter(self):
         abort = exceptions.abort
@@ -64,11 +65,11 @@ class ExceptionsTestCase(WerkzeugTestCase):
 
     def test_exception_repr(self):
         exc = exceptions.NotFound()
-        self.assert_equal(unicode(exc), '404: Not Found')
+        self.assert_equal(text_type(exc), '404: Not Found')
         self.assert_equal(repr(exc), "<NotFound '404: Not Found'>")
 
         exc = exceptions.NotFound('Not There')
-        self.assert_equal(unicode(exc), '404: Not There')
+        self.assert_equal(text_type(exc), '404: Not There')
         self.assert_equal(repr(exc), "<NotFound '404: Not There'>")
 
     def test_special_exceptions(self):

@@ -666,7 +666,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, six.string_types):
+        elif isinstance(response, six.string_types + (bytes,)):
             self.data = response
         else:
             self.response = response
@@ -778,7 +778,7 @@ class BaseResponse(object):
         :attr:`implicit_sequence_conversion` to `False`.
         """
         self._ensure_sequence()
-        return ''.join(self.iter_encoded())
+        return b''.join(self.iter_encoded())
     def _set_data(self, value):
         # if an unicode string is set, it's encoded directly so that we
         # can set the content length
@@ -847,6 +847,8 @@ class BaseResponse(object):
         for item in self.response:
             if isinstance(item, six.text_type):
                 yield item.encode(charset)
+            elif isinstance(item, bytes):
+                yield item
             else:
                 yield str(item)
 
