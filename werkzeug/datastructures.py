@@ -1130,7 +1130,7 @@ class Headers(object):
 
         :return: list
         """
-        return [(k, isinstance(v, unicode) and v.encode(charset) or str(v))
+        return [(k, isinstance(v, six.text_type) and v.encode(charset) or str(v))
                 for k, v in self]
 
     def copy(self):
