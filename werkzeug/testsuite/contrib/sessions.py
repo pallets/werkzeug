@@ -16,6 +16,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.contrib.sessions import FilesystemSessionStore
 
 from tempfile import mkdtemp, gettempdir
+from six.moves import xrange
 
 
 class SessionTestCase(WerkzeugTestCase):

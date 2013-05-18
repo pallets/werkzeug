@@ -91,6 +91,7 @@ r"""
 import pickle
 from hmac import new as hmac
 from time import time
+from werkzeug._compat import iteritems
 from werkzeug.urls import url_quote_plus, url_unquote_plus
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.sessions import ModificationTrackingDict
@@ -266,7 +267,7 @@ class SecureCookie(ModificationTrackingDict):
                 items = client_hash = None
             if items is not None and safe_str_cmp(client_hash, mac.digest()):
                 try:
-                    for key, value in items.iteritems():
+                    for key, value in iteritems(items):
                         items[key] = cls.unquote(value)
                 except UnquoteError:
                     items = ()

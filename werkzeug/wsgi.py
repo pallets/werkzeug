@@ -18,7 +18,7 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
-from six import iteritems, next, Iterator, text_type
+from six import iteritems, next, Iterator, text_type, string_types
 
 from werkzeug._compat import urlparse
 from werkzeug._internal import _patch_wrapper
@@ -103,7 +103,7 @@ def host_is_trusted(hostname, trusted_list):
     if not hostname:
         return False
 
-    if isinstance(trusted_list, basestring):
+    if isinstance(trusted_list, string_types):
         trusted_list = [trusted_list]
 
     def _normalize(hostname):
@@ -379,7 +379,7 @@ class SharedDataMiddleware(object):
         for key, value in iteritems(exports):
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
-            elif isinstance(value, basestring):
+            elif isinstance(value, string_types):
                 if os.path.isfile(value):
                     loader = self.get_file_loader(value)
                 else:
@@ -460,7 +460,7 @@ class SharedDataMiddleware(object):
         path = '/'.join([''] + [x for x in cleaned_path.split('/')
                                 if x and x != '..'])
         file_loader = None
-        for search_path, loader in self.exports.iteritems():
+        for search_path, loader in iteritems(self.exports):
             if search_path == path:
                 real_filename, file_loader = loader(None)
                 if file_loader is not None:
@@ -688,8 +688,8 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
             new_buf = []
             for item in chain(buffer, new_data.splitlines(True)):
                 new_buf.append(item)
-                if item and item[-1:] in '\r\n':
-                    yield ''.join(new_buf)
+                if item and item[-1:] in b'\r\n':
+                    yield b''.join(new_buf)
                     new_buf = []
             buffer = new_buf
         if buffer:

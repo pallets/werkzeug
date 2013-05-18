@@ -58,6 +58,7 @@ except ImportError:
 import six
 import werkzeug
 from werkzeug._internal import _log
+from werkzeug._compat import iteritems
 from werkzeug.urls import _safe_urlsplit
 from werkzeug.exceptions import InternalServerError
 
@@ -584,8 +585,8 @@ def restart_with_reloader():
         # environment and subprocess.call does not like this, encode them
         # to latin1 and continue.
         if os.name == 'nt':
-            for key, value in new_environ.iteritems():
-                if isinstance(value, unicode):
+            for key, value in iteritems(new_environ):
+                if isinstance(value, six.text_type):
                     new_environ[key] = value.encode('iso-8859-1')
 
         exit_code = subprocess.call(args, env=new_environ)

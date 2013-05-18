@@ -21,6 +21,7 @@ try:
 except ImportError: # pragma: no cover
     deque = None
 from werkzeug.utils import escape
+from werkzeug._compat import iteritems
 import six
 
 
@@ -164,7 +165,7 @@ class DebugReprGenerator(object):
             return _add_subclass_info(u'{...}', d, dict)
         buf = ['{']
         have_extended_section = False
-        for idx, (key, value) in enumerate(d.iteritems()):
+        for idx, (key, value) in enumerate(iteritems(d)):
             if idx:
                 buf.append(', ')
             if idx == limit - 1:
@@ -187,7 +188,7 @@ class DebugReprGenerator(object):
             return u'<span class="help">%r</span>' % helper
         if isinstance(obj, (six.integer_types, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if isinstance(obj, basestring):
+        if isinstance(obj, six.string_types):
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)
@@ -210,8 +211,10 @@ class DebugReprGenerator(object):
             info = ''.join(format_exception_only(*sys.exc_info()[:2]))
         except Exception: # pragma: no cover
             info = '?'
+        if not six.PY3:
+            info = info.decode('utf-8', 'ignore')
         return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' \
-               u'</span>' % escape(info.decode('utf-8', 'ignore').strip())
+               u'</span>' % escape(info.strip())
 
     def repr(self, obj):
         recursive = False
@@ -233,8 +236,8 @@ class DebugReprGenerator(object):
         if isinstance(obj, dict):
             title = 'Contents of'
             items = []
-            for key, value in obj.iteritems():
-                if not isinstance(key, basestring):
+            for key, value in iteritems(obj):
+                if not isinstance(key, six.string_types):
                     items = None
                     break
                 items.append((key, self.repr(value)))

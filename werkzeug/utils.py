@@ -15,7 +15,7 @@ import os
 import sys
 
 import six
-from six import next
+from six import next, string_types, text_type
 
 from werkzeug._compat import unichr
 from werkzeug._internal import _iter_modules, _DictAccessorProperty, \
@@ -194,7 +194,7 @@ class HTMLBuilder(object):
                 return buffer
             buffer += '>'
 
-            children_as_string = ''.join([unicode(x) for x in children
+            children_as_string = ''.join([text_type(x) for x in children
                                          if x is not None])
 
             if children_as_string:
@@ -250,7 +250,7 @@ def format_string(string, context):
     """
     def lookup_arg(match):
         x = context[match.group(1) or match.group(2)]
-        if not isinstance(x, basestring):
+        if not isinstance(x, string_types):
             x = type(string)(x)
         return x
     return _format_re.sub(lookup_arg, string)
@@ -312,9 +312,9 @@ def escape(s, quote=False):
     if s is None:
         return ''
     elif hasattr(s, '__html__'):
-        return unicode(s.__html__())
-    elif not isinstance(s, basestring):
-        s = unicode(s)
+        return text_type(s.__html__())
+    elif not isinstance(s, string_types):
+        s = text_type(s)
     s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
     if quote:
         s = s.replace('"', "&quot;")

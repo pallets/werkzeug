@@ -107,9 +107,11 @@ from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
+from werkzeug._compat import itervalues, iteritems
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 import six
+from six import string_types
 
 
 _rule_re = re.compile(r'''
@@ -398,14 +400,14 @@ class RuleTemplateFactory(RuleFactory):
                 new_defaults = subdomain = None
                 if rule.defaults:
                     new_defaults = {}
-                    for key, value in rule.defaults.iteritems():
-                        if isinstance(value, basestring):
+                    for key, value in iteritems(rule.defaults):
+                        if isinstance(value, string_types):
                             value = format_string(value, self.context)
                         new_defaults[key] = value
                 if rule.subdomain is not None:
                     subdomain = format_string(rule.subdomain, self.context)
                 new_endpoint = rule.endpoint
-                if isinstance(new_endpoint, basestring):
+                if isinstance(new_endpoint, string_types):
                     new_endpoint = format_string(new_endpoint, self.context)
                 yield Rule(
                     format_string(rule.rule, self.context),
@@ -688,7 +690,7 @@ class Rule(RuleFactory):
                     del groups['__suffix__']
 
                 result = {}
-                for name, value in groups.iteritems():
+                for name, value in iteritems(groups):
                     try:
                         value = self._converters[name].to_python(value)
                     except ValidationError:
@@ -766,7 +768,7 @@ class Rule(RuleFactory):
         # in case defaults are given we ensure taht either the value was
         # skipped or the value is the same as the default value.
         if defaults:
-            for key, value in defaults.iteritems():
+            for key, value in iteritems(defaults):
                 if key in values and value != values[key]:
                     return False
 
@@ -1206,7 +1208,7 @@ class Map(object):
         """
         if self._remap:
             self._rules.sort(key=lambda x: x.match_compare_key())
-            for rules in self._rules_by_endpoint.itervalues():
+            for rules in itervalues(self._rules_by_endpoint):
                 rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False
 
@@ -1402,7 +1404,7 @@ class MapAdapter(object):
                     raise RequestRedirect(redirect_url)
 
             if rule.redirect_to is not None:
-                if isinstance(rule.redirect_to, basestring):
+                if isinstance(rule.redirect_to, string_types):
                     def _handle_match(match):
                         value = rv[match.group(1)]
                         return rule._converters[match.group(1)].to_url(value)
@@ -1491,7 +1493,7 @@ class MapAdapter(object):
                     path, query_args, domain_part=domain_part)
 
     def encode_query_args(self, query_args):
-        if not isinstance(query_args, basestring):
+        if not isinstance(query_args, string_types):
             query_args = url_encode(query_args, self.map.charset)
         return query_args
 
@@ -1602,7 +1604,7 @@ class MapAdapter(object):
             if isinstance(values, MultiDict):
                 valueiter = values.iteritems(multi=True)
             else:
-                valueiter = values.iteritems()
+                valueiter = iteritems(values)
             values = dict((k, v) for k, v in valueiter if v is not None)
         else:
             values = {}
