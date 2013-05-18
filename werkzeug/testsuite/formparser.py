@@ -38,7 +38,7 @@ def form_data_consumer(request):
 
 
 def get_contents(filename):
-    f = file(filename, 'rb')
+    f = open(filename, 'rb')
     try:
         return f.read()
     finally:
