@@ -66,6 +66,8 @@ from werkzeug.utils import dump_cookie, parse_cookie
 from werkzeug.wsgi import ClosingIterator
 from werkzeug.posixemulation import rename
 
+import six
+
 
 _sha1_re = re.compile(r'^[a-f0-9]{40}$')
 
@@ -211,7 +213,7 @@ class FilesystemSessionStore(SessionStore):
         if path is None:
             path = tempfile.gettempdir()
         self.path = path
-        if isinstance(filename_template, unicode):
+        if isinstance(filename_template, six.text_type):
             filename_template = filename_template.encode(
                 sys.getfilesystemencoding() or 'utf-8')
         assert not filename_template.endswith(_fs_transaction_suffix), \
@@ -224,7 +226,7 @@ class FilesystemSessionStore(SessionStore):
         # out of the box, this should be a strict ASCII subset but
         # you might reconfigure the session object to have a more
         # arbitrary string.
-        if isinstance(sid, unicode):
+        if isinstance(sid, six.text_type):
             sid = sid.encode(sys.getfilesystemencoding() or 'utf-8')
         return path.join(self.path, self.filename_template % sid)
 

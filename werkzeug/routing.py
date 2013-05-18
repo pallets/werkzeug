@@ -109,6 +109,8 @@ from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
+import six
+
 
 _rule_re = re.compile(r'''
     (?P<static>[^<]*)                           # static rule data
@@ -1123,7 +1125,7 @@ class Map(object):
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
-        if isinstance(server_name, unicode):
+        if isinstance(server_name, six.text_type):
             server_name = server_name.encode('idna')
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme, path_info, default_method, query_args)
@@ -1367,7 +1369,7 @@ class MapAdapter(object):
         self.map.update()
         if path_info is None:
             path_info = self.path_info
-        if not isinstance(path_info, unicode):
+        if not isinstance(path_info, six.text_type):
             path_info = path_info.decode(self.map.charset,
                                          self.map.encoding_errors)
         if query_args is None:
