@@ -13,7 +13,7 @@ import codecs
 import mimetypes
 from itertools import repeat
 import six
-from six import integer_types, string_types, next
+from six import PY3, integer_types, binary_type, text_type, next
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists
@@ -1119,13 +1119,21 @@ class Headers(object):
             self.set(key, value)
 
     def to_list(self, charset='iso-8859-1'):
-        """Convert the headers into a list and converts the unicode header
-        items to the specified charset.
+        """Convert the headers into a list suitable for WSGI.
+
+        The values are (byte) strings in Python 2, converted with the specified
+        charset, and (unicode) strings in Python 3.
 
         :return: list
         """
-        return [(k, isinstance(v, unicode) and v.encode(charset) or str(v))
-                for k, v in self]
+        result = []
+        for k, v in self:
+            if not PY3 and isinstance(v, unicode):
+                value = v.encode(charset)
+            else:
+                value = v
+            result.append((k, value))
+        return result
 
     def copy(self):
         return self.__class__(self._list)
