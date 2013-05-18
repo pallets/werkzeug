@@ -1206,7 +1206,8 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
     """
 
     def __init__(self, environ):
-        self.environ = environ
+        self.environ = dict((k, _unicodify_value(v))
+                            for k, v in iteritems(environ))
 
     def __eq__(self, other):
         return self.environ is other.environ

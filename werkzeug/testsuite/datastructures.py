@@ -614,6 +614,14 @@ class EnvironHeadersTestCase(WerkzeugTestCase):
         assert not self.storage_class({'wsgi.version': (1, 0)})
         self.assert_equal(len(self.storage_class({'wsgi.version': (1, 0)})), 0)
 
+    def test_return_type(self):
+        # wsgi gives us native strings that contain latin-1
+        headers = self.storage_class({'HTTP_FOO': '\xe2\x9c\x93'})
+        assert isinstance(headers['Foo'], six.text_type)
+        self.assert_equal(headers['Foo'], u"\xe2\x9c\x93")
+        assert type(dict(headers)['Foo']) is type(headers['Foo'])
+        assert dict(headers)['Foo'] == headers['Foo']
+
 
 class HeaderSetTestCase(WerkzeugTestCase):
     storage_class = datastructures.HeaderSet
