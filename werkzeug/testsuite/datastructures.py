@@ -22,7 +22,6 @@ import unittest
 import pickle
 from copy import copy
 from werkzeug.testsuite import WerkzeugTestCase
-import six
 from six.moves import xrange
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
     iterlistvalues
