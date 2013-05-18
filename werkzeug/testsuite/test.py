@@ -328,7 +328,7 @@ class TestTestCase(WerkzeugTestCase):
         self.assert_equal(resp.status_code, 200)
         c = Client(multi_value_post_app, response_wrapper=BaseResponse)
         data = MultiDict({
-            'field': ['val1','val2']
+            'field': ['val1', 'val2']
         })
         resp = c.post('/', data=data)
         self.assert_equal(resp.status_code, 200)
@@ -344,7 +344,7 @@ class TestTestCase(WerkzeugTestCase):
             return ['Hello World!']
         app_iter, status, headers = run_wsgi_app(simple_app, {})
         self.assert_equal(status, '200 OK')
-        self.assert_equal(headers, [('Content-Type', 'text/html')])
+        self.assert_equal(list(headers), [('Content-Type', 'text/html')])
         self.assert_equal(app_iter, ['Hello World!'])
 
         def yielding_app(environ, start_response):
@@ -353,7 +353,7 @@ class TestTestCase(WerkzeugTestCase):
             yield 'World!'
         app_iter, status, headers = run_wsgi_app(yielding_app, {})
         self.assert_equal(status, '200 OK')
-        self.assert_equal(headers, [('Content-Type', 'text/html')])
+        self.assert_equal(list(headers), [('Content-Type', 'text/html')])
         self.assert_equal(list(app_iter), ['Hello ', 'World!'])
 
     def test_multiple_cookies(self):
