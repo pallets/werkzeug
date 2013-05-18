@@ -505,7 +505,7 @@ def unquote(string, unsafe=b'', encoding='utf-8', errors='replace'):
     By default, percent-encoded sequences are decoded with UTF-8, and invalid
     sequences are replaced by a placeholder character.
 
-    unquote('abc%20def') -> b'abc def'.
+    unquote('abc%20def') -> u'abc def'.
     """
     if not isinstance(string, six.text_type):
         string = string.decode('ascii')
