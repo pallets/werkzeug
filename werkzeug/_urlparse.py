@@ -644,7 +644,7 @@ class Quoter(dict):
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.
-        res = six.int2byte(b).decode() if b in self.safe else u'%{:02X}'.format(b)
+        res = six.int2byte(b).decode() if b in self.safe else u'%{0:02X}'.format(b)
         self[b] = res
         return res
 
