@@ -12,8 +12,7 @@ import re
 import codecs
 import mimetypes
 from itertools import repeat
-import six
-from six import PY3, integer_types, binary_type, text_type, next
+from six import PY3, integer_types, string_types, binary_type, text_type, next
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists
@@ -48,7 +47,7 @@ def iter_multi_items(mapping):
 def native_itermethods(names):
     def setmethod(cls, name):
         itermethod = getattr(cls, name)
-        if not six.PY3:
+        if not PY3:
             setattr(cls, 'iter%s' % name, itermethod)
             listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
             listmethod.__doc__ = \
