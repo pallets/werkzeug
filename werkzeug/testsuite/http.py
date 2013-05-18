@@ -12,6 +12,7 @@ import unittest
 from datetime import datetime
 
 from werkzeug.testsuite import WerkzeugTestCase
+from werkzeug._compat import itervalues
 
 from werkzeug import http, datastructures
 from werkzeug.test import create_environ
@@ -21,7 +22,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
     def test_accept(self):
         a = http.parse_accept_header('en-us,ru;q=0.5')
-        self.assert_equal(a.values(), ['en-us', 'ru'])
+        self.assert_equal(list(itervalues(a)), ['en-us', 'ru'])
         self.assert_equal(a.best, 'en-us')
         self.assert_equal(a.find('ru'), 1)
         self.assert_raises(ValueError, a.index, 'de')

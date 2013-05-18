@@ -13,7 +13,9 @@ from __future__ import with_statement
 
 import unittest
 from os import path
-from cStringIO import StringIO
+#XXX: py3 verify
+from io import BytesIO as StringIO
+from six.moves import xrange
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -229,7 +231,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
     def test_multi_part_line_breaks_problematic(self):
         data = 'abc\rdef\r\nghi'
-        for x in xrange(1, 10):
+        for x in range(1, 10):
             test_stream = StringIO(data)
             lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=4))
             assert lines == ['abc\r', 'def\r\n', 'ghi']

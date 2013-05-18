@@ -88,7 +88,7 @@ r"""
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import cPickle as pickle
+import pickle
 from hmac import new as hmac
 from time import time
 from werkzeug.urls import url_quote_plus, url_unquote_plus

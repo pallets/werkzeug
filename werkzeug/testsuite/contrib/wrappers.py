@@ -85,7 +85,7 @@ class WrappersTestCase(WerkzeugTestCase):
         del resp.headers['content-type']
         try:
             resp.charset = 'utf-8'
-        except TypeError, e:
+        except TypeError as e:
             pass
         else:
             assert False, 'expected type error on charset setting without ct'

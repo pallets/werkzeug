@@ -10,7 +10,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-from cStringIO import StringIO
+from io import BytesIO
 from tempfile import TemporaryFile
 from itertools import chain, repeat, tee
 from functools import update_wrapper
@@ -39,7 +39,7 @@ def default_stream_factory(total_content_length, filename, content_type,
     """The stream factory that is used per default."""
     if total_content_length > 1024 * 500:
         return TemporaryFile('wb+')
-    return StringIO()
+    return BytesIO()
 
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',

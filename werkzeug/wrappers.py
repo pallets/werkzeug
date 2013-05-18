@@ -20,8 +20,9 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import urlparse
+from werkzeug._compat import urlparse
 from datetime import datetime, timedelta
+import six
 
 from werkzeug.http import HTTP_STATUS_CODES, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
@@ -59,7 +60,7 @@ def _warn_if_string(iterable):
     """Helper for the response objects to check if the iterable returned
     to the WSGI server is not a string.
     """
-    if isinstance(iterable, basestring):
+    if isinstance(iterable, six.string_types):
         from warnings import warn
         warn(Warning('response iterable was set to a string.  This appears '
                      'to work but means that the server will send the '
@@ -653,7 +654,7 @@ class BaseResponse(object):
             self.headers['Content-Type'] = content_type
         if status is None:
             status = self.default_status
-        if isinstance(status, (int, long)):
+        if isinstance(status, six.integer_types):
             self.status_code = status
         else:
             self.status = status
@@ -665,7 +666,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, basestring):
+        elif isinstance(response, six.string_types):
             self.data = response
         else:
             self.response = response
@@ -1343,7 +1344,7 @@ class ETagResponseMixin(object):
     def _set_content_range(self, value):
         if not value:
             del self.headers['content-range']
-        elif isinstance(value, basestring):
+        elif isinstance(value, six.string_types):
             self.headers['Content-Range'] = value
         else:
             self.headers['Content-Range'] = value.to_header()
@@ -1593,7 +1594,7 @@ class CommonResponseDescriptorsMixin(object):
         def fset(self, value):
             if not value:
                 del self.headers[name]
-            elif isinstance(value, basestring):
+            elif isinstance(value, six.string_types):
                 self.headers[name] = value
             else:
                 self.headers[name] = dump_header(value)

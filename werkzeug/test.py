@@ -9,19 +9,25 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-import urlparse
 import mimetypes
 from time import time
 from random import random
 from itertools import chain
 from tempfile import TemporaryFile
-from cStringIO import StringIO
-from cookielib import CookieJar
-from urllib2 import Request as U2Request
+from io import BytesIO
+try:
+    from urllib2 import Request as U2Request
+except ImportError:
+    from urllib.request import Request as U2Request
 
+import six
+CookieJar = six.moves.http_cookiejar.CookieJar
+
+
+from werkzeug._compat import urlparse, iterlists, iteritems, itervalues
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
-from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
+from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
@@ -36,7 +42,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     """
     if boundary is None:
         boundary = '---------------WerkzeugFormPart_%s%s' % (time(), random())
-    _closure = [StringIO(), 0, False]
+    _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
         def write(string):
@@ -60,9 +66,9 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
-    for key, values in values.iterlists():
+    for key, values in iterlists(values):
         for value in values:
-            write('--%s\r\nContent-Disposition: form-data; name="%s"' %
+            write(b'--%s\r\nContent-Disposition: form-data; name="%s"' %
                   (boundary, key))
             reader = getattr(value, 'read', None)
             if reader is not None:
@@ -84,7 +90,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                         break
                     write(chunk)
             else:
-                if isinstance(value, unicode):
+                if isinstance(value, six.text_type):
                     value = value.encode(charset)
                 write('\r\n\r\n' + str(value))
             write('\r\n')
@@ -171,11 +177,11 @@ def _iter_data(data):
     :class:`EnvironBuilder`.
     """
     if isinstance(data, MultiDict):
-        for key, values in data.iterlists():
+        for key, values in iterlists(data):
             for value in values:
                 yield key, value
     else:
-        for key, values in data.iteritems():
+        for key, values in iteritems(data):
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -262,7 +268,7 @@ class EnvironBuilder(object):
         if query_string is None and '?' in path:
             path, query_string = path.split('?', 1)
         self.charset = charset
-        if isinstance(path, unicode):
+        if isinstance(path, six.text_type):  #XXX: review string types
             path = iri_to_uri(path, charset)
         self.path = path
         if base_url is not None:
@@ -302,7 +308,7 @@ class EnvironBuilder(object):
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
             if isinstance(data, basestring):
-                self.input_stream = StringIO(data)
+                self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)
             else:
@@ -486,13 +492,13 @@ class EnvironBuilder(object):
         if self.closed:
             return
         try:
-            files = self.files.itervalues()
+            files = itervalues(self.files)
         except AttributeError:
             files = ()
         for f in files:
             try:
                 f.close()
-            except Exception, e:
+            except Exception:
                 pass
         self.closed = True
 
@@ -514,9 +520,11 @@ class EnvironBuilder(object):
                 stream_encode_multipart(values, charset=self.charset)
             content_type += '; boundary="%s"' % boundary
         elif content_type == 'application/x-www-form-urlencoded':
+            #py2v3 review
             values = url_encode(self.form, charset=self.charset)
+            values = values.encode('ascii')
             content_length = len(values)
-            input_stream = StringIO(values)
+            input_stream = BytesIO(values)
         else:
             input_stream = _empty_stream
 
@@ -527,7 +535,7 @@ class EnvironBuilder(object):
         def _path_encode(x):
             if isinstance(x, unicode):
                 x = x.encode(self.charset)
-            return _unquote(x)
+            return url_unquote(x)
 
         result.update({
             'REQUEST_METHOD':       self.method,
@@ -814,7 +822,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     def start_response(status, headers, exc_info=None):
         if exc_info is not None:
-            raise exc_info[0], exc_info[1], exc_info[2]
+            six.reraise(*exc_info)
         response[:] = [status, headers]
         return buffer.append
 
@@ -836,7 +844,7 @@ def run_wsgi_app(app, environ, buffered=False):
     # we have a close callable.
     else:
         while not response:
-            buffer.append(app_iter.next())
+            buffer.append(six.next(app_iter))
         if buffer:
             close_func = getattr(app_iter, 'close', None)
             app_iter = chain(buffer, app_iter)

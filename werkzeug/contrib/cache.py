@@ -63,7 +63,9 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
-from itertools import izip
+from six.moves import zip
+from six import PY3, iteritems
+from six import _iteritems as iteritems_attr
 from time import time
 from werkzeug.posixemulation import rename
 
@@ -84,8 +86,8 @@ def _items(mappingorseq):
         ...    assert k*k == v
 
     """
-    return mappingorseq.iteritems() if hasattr(mappingorseq, 'iteritems') \
-        else mappingorseq
+    return iteritems(mappingorseq) \
+           if hasattr(mappingorseq, iteritems_attr) else mappingorseq
 
 
 class BaseCache(object):
@@ -139,7 +141,7 @@ class BaseCache(object):
         :param keys: The function accepts multiple keys as positional
                      arguments.
         """
-        return dict(izip(keys, self.get_many(*keys)))
+        return dict(zip(keys, self.get_many(*keys)))
 
     def set(self, key, value, timeout=None):
         """Adds a new key/value to the cache (overwrites value, if key already
@@ -585,7 +587,7 @@ class FileSystemCache(BaseCache):
     #: used for temporary files by the FileSystemCache
     _fs_transaction_suffix = '.__wz_cache'
 
-    def __init__(self, cache_dir, threshold=500, default_timeout=300, mode=0600):
+    def __init__(self, cache_dir, threshold=500, default_timeout=300, mode=0o600):
         BaseCache.__init__(self, default_timeout)
         self._path = cache_dir
         self._threshold = threshold
@@ -630,6 +632,8 @@ class FileSystemCache(BaseCache):
                 pass
 
     def _get_filename(self, key):
+        if PY3 and isinstance(key, str):
+            key = key.encode('utf-8') #XXX unicode review
         hash = md5(key).hexdigest()
         return os.path.join(self._path, hash)
 

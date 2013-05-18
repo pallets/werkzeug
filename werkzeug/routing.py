@@ -98,7 +98,10 @@
 import re
 import posixpath
 from pprint import pformat
-from urlparse import urljoin
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
@@ -1275,10 +1278,10 @@ class MapAdapter(object):
         try:
             try:
                 endpoint, args = self.match(path_info, method)
-            except RequestRedirect, e:
+            except RequestRedirect as e:
                 return e
             return view_func(endpoint, args)
-        except HTTPException, e:
+        except HTTPException as e:
             if catch_http_exceptions:
                 return e
             raise
@@ -1381,7 +1384,7 @@ class MapAdapter(object):
             except RequestSlash:
                 raise RequestRedirect(self.make_redirect_url(
                     path_info + '/', query_args))
-            except RequestAliasRedirect, e:
+            except RequestAliasRedirect as e:
                 raise RequestRedirect(self.make_alias_redirect_url(
                     path, rule.endpoint, e.matched_values, method, query_args))
             if rv is None:
@@ -1445,9 +1448,9 @@ class MapAdapter(object):
         """
         try:
             self.match(path_info, method='--')
-        except MethodNotAllowed, e:
+        except MethodNotAllowed as e:
             return e.valid_methods
-        except HTTPException, e:
+        except HTTPException as e:
             pass
         return []
 

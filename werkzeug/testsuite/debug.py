@@ -73,7 +73,8 @@ class DebugReprTestCase(WerkzeugTestCase):
     def test_regex_repr(self):
         assert debug_repr(re.compile(r'foo\d')) == \
             u're.compile(<span class="string regex">r\'foo\\d\'</span>)'
-        assert debug_repr(re.compile(ur'foo\d')) == \
+        #XXX: no raw string here cause of a syntax bug in py3.3
+        assert debug_repr(re.compile(u'foo\\d')) == \
             u're.compile(<span class="string regex">ur\'foo\\d\'</span>)'
 
     def test_set_repr(self):

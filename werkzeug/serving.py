@@ -41,13 +41,21 @@ import os
 import socket
 import sys
 import time
-import thread
 import signal
 import subprocess
-from urllib import unquote
-from SocketServer import ThreadingMixIn, ForkingMixIn
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+try:
+    from urllib import unquote
+except ImportError:
+    from urllib.parse import unquote
 
+try:
+    from SocketServer import ThreadingMixIn, ForkingMixIn
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+except ImportError:
+    from socketserver import ThreadingMixIn, ForkingMixIn
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+
+import six
 import werkzeug
 from werkzeug._internal import _log
 from werkzeug.urls import _safe_urlsplit
@@ -136,7 +144,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if exc_info:
                 try:
                     if headers_sent:
-                        raise exc_info[0], exc_info[1], exc_info[2]
+                        six.reraise(*exc_info)
                 finally:
                     exc_info = None
             elif headers_set:
@@ -159,7 +167,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
         try:
             execute(app)
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             self.connection_dropped(e, environ)
         except Exception:
             if self.server.passthrough_errors:
@@ -182,7 +190,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         rv = None
         try:
             rv = BaseHTTPRequestHandler.handle(self)
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             self.connection_dropped(e)
         except Exception:
             if self.server.ssl_context is None or not is_ssl_error():

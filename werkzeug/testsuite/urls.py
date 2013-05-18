@@ -10,7 +10,7 @@
 """
 
 import unittest
-from StringIO import StringIO
+from six import StringIO, next
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -49,10 +49,10 @@ class URLsTestCase(WerkzeugTestCase):
         string = 'a=%s&b=%s&c=%s' % (item1, item2, item2)
         gen = urls.url_decode_stream(StringIO(string), limit=len(string),
                                      return_iterator=True)
-        self.assert_equal(gen.next(), ('a', item1))
-        self.assert_equal(gen.next(), ('b', item2))
-        self.assert_equal(gen.next(), ('c', item2))
-        self.assert_raises(StopIteration, gen.next)
+        self.assert_equal(next(gen), ('a', item1))
+        self.assert_equal(next(gen), ('b', item2))
+        self.assert_equal(next(gen), ('c', item2))
+        self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_encoding(self):
         assert urls.url_encode({'foo': 'bar 45'}) == 'foo=bar+45'
@@ -79,17 +79,18 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_equal(out.getvalue(), 'bar=23;blah=H%C3%A4nsel;foo=1')
 
         gen = urls.url_encode_stream(d, sort=True)
-        self.assert_equal(gen.next(), 'bar=23')
-        self.assert_equal(gen.next(), 'blah=H%C3%A4nsel')
-        self.assert_equal(gen.next(), 'foo=1')
-        self.assert_raises(StopIteration, gen.next)
+        self.assert_equal(next(gen), 'bar=23')
+        self.assert_equal(next(gen), 'blah=H%C3%A4nsel')
+        self.assert_equal(next(gen), 'foo=1')
+        self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-        assert x == 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+        self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
+    def test_url_fixing_qs(self):
         x = urls.url_fix('http://example.com/?foo=%2f%2f')
-        assert x == 'http://example.com/?foo=%2f%2f'
+        self.assert_line_equal(x, 'http://example.com/?foo=%2f%2f')
 
         x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
         assert x == 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation'
@@ -140,9 +141,10 @@ class URLsTestCase(WerkzeugTestCase):
         assert x('foo') == 'foo'
 
     def test_href_url_join(self):
-        x = urls.Href('test')
-        assert x('foo:bar') == 'test/foo:bar'
-        assert x('http://example.com/') == 'test/http://example.com/'
+        x = urls.Href(u'test')
+        self.assert_line_equal(x(u'foo:bar'), u'test/foo:bar')
+        self.assert_line_equal(x(u'http://example.com/'), u'test/http://example.com/')
+        self.assert_line_equal(x.a(), 'test/a')
 
     if 0:
         # stdlib bug? :(
