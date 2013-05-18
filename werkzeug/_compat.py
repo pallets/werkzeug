@@ -2,7 +2,6 @@
 from . import _urlparse as urlparse
 
 import six
-from functools import partial
 
 def iterkeys(d, *a, **kw):
     return iter(getattr(d, six._iterkeys)(*a, **kw))

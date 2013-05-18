@@ -29,8 +29,6 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 import re
 import sys
-import base64
-import collections
 import six
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
