@@ -25,3 +25,8 @@ def iterlists(d, *a, **kw):
 
 def iterlistvalues(d, *a, **kw):
     return getattr(d, _iterlistvalues)(*a, **kw)
+
+try:
+    unichr = unichr # py2
+except NameError:
+    unichr = chr # py3
