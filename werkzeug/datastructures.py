@@ -13,7 +13,7 @@ import codecs
 import mimetypes
 from itertools import repeat
 import six
-from six import integer_types, string_types, next
+from six import PY3, integer_types, binary_type, text_type, next
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists
@@ -820,9 +820,7 @@ class Headers(object):
 
     To create a new :class:`Headers` object pass it a list or dict of headers
     which are used as default values.  This does not reuse the list passed
-    to the constructor for internal usage.  To create a :class:`Headers`
-    object that uses as internal storage the list or list-like object you
-    can use the :meth:`linked` class method.
+    to the constructor for internal usage.
 
     :param defaults: The list of default values for the :class:`Headers`.
     """
@@ -836,22 +834,6 @@ class Headers(object):
                 self._list.extend(defaults)
             else:
                 self.extend(defaults)
-
-    @classmethod
-    def linked(cls, headerlist):
-        """Create a new :class:`Headers` object that uses the list of headers
-        passed as internal storage:
-
-        >>> headerlist = [('Content-Length', '40')]
-        >>> headers = Headers.linked(headerlist)
-        >>> headers['Content-Type'] = 'text/html'
-        >>> headerlist
-        [('Content-Length', '40'), ('Content-Type', 'text/html')]
-
-        :param headerlist: The list of headers the class is linked to.
-        :return: new linked :class:`Headers` object.
-        """
-        return cls(_list=headerlist)
 
     def __getitem__(self, key, _get_mode=False):
         if not _get_mode:
@@ -1050,11 +1032,21 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        _value = self._unicodify_value(_value)
         self._validate_value(_value)
         self._list.append((_key, _value))
 
+    def _unicodify_value(self, value):
+        if isinstance(value, binary_type):
+            value = value.decode('latin-1')
+        if not isinstance(value, text_type):
+            value = text_type(value)
+        return value
+
     def _validate_value(self, value):
-        if isinstance(value, string_types) and ('\n' in value or '\r' in value):
+        if not isinstance(value, text_type):
+            raise TypeError('Value should be unicode.')
+        if u'\n' in value or u'\r' in value:
             raise ValueError('Detected newline in header value.  This is '
                 'a potential security problem')
 
@@ -1087,6 +1079,7 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        _value = self._unicodify_value(_value)
         self._validate_value(_value)
         if not self._list:
             self._list.append((_key, _value))
@@ -1119,19 +1112,28 @@ class Headers(object):
     def __setitem__(self, key, value):
         """Like :meth:`set` but also supports index/slice based setting."""
         if isinstance(key, (slice, integer_types)):
+            value = self._unicodify_value(value)
             self._validate_value(value)
             self._list[key] = value
         else:
             self.set(key, value)
 
     def to_list(self, charset='iso-8859-1'):
-        """Convert the headers into a list and converts the unicode header
-        items to the specified charset.
+        """Convert the headers into a list suitable for WSGI.
+
+        The values are (byte) strings in Python 2, converted with the specified
+        charset, and (unicode) strings in Python 3.
 
         :return: list
         """
-        return [(k, isinstance(v, unicode) and v.encode(charset) or str(v))
-                for k, v in self]
+        result = []
+        for k, v in self:
+            if not PY3 and isinstance(v, unicode):
+                value = v.encode(charset)
+            else:
+                value = v
+            result.append((k, value))
+        return result
 
     def copy(self):
         return self.__class__(self._list)
@@ -1204,11 +1206,6 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
 
     def __init__(self, environ):
         self.environ = environ
-
-    @classmethod
-    def linked(cls, environ):
-        raise TypeError('%r object is always linked to environment, '
-                        'no separate initializer' % cls.__name__)
 
     def __eq__(self, other):
         return self.environ is other.environ

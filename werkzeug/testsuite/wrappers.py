@@ -523,7 +523,7 @@ class WrappersTestCase(WerkzeugTestCase):
         resp = wrappers.Response(u'Hello Wörld!')
 
         def get_content_length(resp):
-            headers = wrappers.Headers.linked(resp.get_wsgi_headers(req.environ))
+            headers = resp.get_wsgi_headers(req.environ)
             return headers.get('content-length', type=int)
 
         def generate_items():
@@ -551,7 +551,7 @@ class WrappersTestCase(WerkzeugTestCase):
         assert resp.is_streamed
         assert not resp.is_sequence
         self.assert_equal(resp.data, u'Hello Wörld!'.encode('utf-8'))
-        self.assert_equal(resp.response, ['Hello ', u'Wörld!'.encode('utf-8')])
+        self.assert_equal(resp.response, [b'Hello ', u'Wörld!'.encode('utf-8')])
         assert not resp.is_streamed
         assert resp.is_sequence
 
@@ -563,7 +563,7 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_raises(RuntimeError, lambda: resp.data)
         resp.make_sequence()
         self.assert_equal(resp.data, u'Hello Wörld!'.encode('utf-8'))
-        self.assert_equal(resp.response, ['Hello ', u'Wörld!'.encode('utf-8')])
+        self.assert_equal(resp.response, [b'Hello ', u'Wörld!'.encode('utf-8')])
         assert not resp.is_streamed
         assert resp.is_sequence
 
