@@ -210,8 +210,10 @@ class DebugReprGenerator(object):
             info = ''.join(format_exception_only(*sys.exc_info()[:2]))
         except Exception: # pragma: no cover
             info = '?'
+        if not six.PY3:
+            info = info.decode('utf-8', 'ignore')
         return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' \
-               u'</span>' % escape(info.decode('utf-8', 'ignore').strip())
+               u'</span>' % escape(info.strip())
 
     def repr(self, obj):
         recursive = False
