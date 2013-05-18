@@ -460,7 +460,7 @@ class CombinedMultiDictTestCase(WerkzeugTestCase):
         self.assert_equal(d.getlist('bar'), ['2', '3'])
 
         self.assert_equal(sorted(d.items()),
-                          [('bar', '2'), ('foo', '1')], d.items())
+                          [('bar', '2'), ('foo', '1')])
         self.assert_equal(sorted(d.items(multi=True)),
                           [('bar', '2'), ('bar', '3'), ('foo', '1')])
         assert 'missingkey' not in d
