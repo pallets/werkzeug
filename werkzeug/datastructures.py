@@ -1122,7 +1122,7 @@ class Headers(object):
         """Convert the headers into a list suitable for WSGI."""
         from warnings import warn
         warn(DeprecationWarning('Method removed, use to_wsgi_list instead'))
-        return self.to_wsgi_list(self)
+        return self.to_wsgi_list()
 
     def to_wsgi_list(self):
         """Convert the headers into a list suitable for WSGI.
