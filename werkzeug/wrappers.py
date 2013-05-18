@@ -847,10 +847,8 @@ class BaseResponse(object):
         for item in self.response:
             if isinstance(item, six.text_type):
                 yield item.encode(charset)
-            elif isinstance(item, bytes):
-                yield item
             else:
-                yield str(item)
+                yield item
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None, httponly=False):
