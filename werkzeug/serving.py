@@ -725,7 +725,7 @@ def main():
             port = address[1]
 
     if len(args) != 1:
-        print 'No application supplied, or too much. See --help'
+        sys.stdout.write('No application supplied, or too much. See --help\n')
         sys.exit(1)
     app = import_string(args[0])
 

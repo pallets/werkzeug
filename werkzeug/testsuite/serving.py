@@ -10,7 +10,10 @@
 """
 import sys
 import time
-import httplib
+try:
+    import httplib
+except ImportError:
+    from http import client as httplib
 try:
     from urllib import urlopen
 except ImportError:  # pragma: no cover

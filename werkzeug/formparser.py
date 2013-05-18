@@ -261,12 +261,15 @@ def parse_multipart_headers(iterable):
     # list was not shared anyways.
     return Headers.linked(result)
 
-_begin_form = intern('begin_form')
-_begin_file = intern('begin_file')
-_cont = intern('cont')
-_end = intern('end')
+
+_begin_form = 'begin_form'
+_begin_file = 'begin_file'
+_cont = 'cont'
+_end = 'end'
+
 
 class MultiPartParser(object):
+
     def __init__(self, stream_factory=None, charset='utf-8', errors='replace',
                  max_form_memory_size=None, cls=None, buffer_size=10 * 1024):
         self.stream_factory = stream_factory
