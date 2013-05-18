@@ -18,7 +18,7 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
-from six import iteritems, next, Iterator
+from six import iteritems, next, Iterator, text_type
 
 from werkzeug._compat import urlparse
 from werkzeug._internal import _patch_wrapper
@@ -109,7 +109,7 @@ def host_is_trusted(hostname, trusted_list):
     def _normalize(hostname):
         if ':' in hostname:
             hostname = hostname.rsplit(':', 1)[0]
-        if isinstance(hostname, unicode):
+        if isinstance(hostname, text_type):
             hostname = hostname.encode('idna')
         return hostname
 
@@ -259,7 +259,7 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
     from werkzeug.urls import uri_to_iri, url_fix
 
     def _as_iri(obj):
-        if not isinstance(obj, unicode):
+        if not isinstance(obj, text_type):
             return uri_to_iri(obj, charset, errors)
         return obj
 

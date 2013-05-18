@@ -272,7 +272,7 @@ class EnvironBuilder(object):
             path = iri_to_uri(path, charset)
         self.path = path
         if base_url is not None:
-            if isinstance(base_url, unicode):
+            if isinstance(base_url, six.text_type):
                 base_url = iri_to_uri(base_url, charset)
             else:
                 base_url = url_fix(base_url, charset)
@@ -533,7 +533,7 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            if isinstance(x, unicode):
+            if isinstance(x, six.text_type):
                 x = x.encode(self.charset)
             return url_unquote(x)
 

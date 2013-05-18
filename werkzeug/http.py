@@ -34,7 +34,7 @@ except ImportError: # pragma: no cover
 import base64
 
 
-from six import next, iteritems, binary_type
+from six import next, iteritems, binary_type, text_type
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
@@ -817,7 +817,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         key = str(key)
     except UnicodeError:
         raise TypeError('invalid key %r' % key)
-    if isinstance(value, unicode):
+    if isinstance(value, text_type):
         value = value.encode(charset)
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
