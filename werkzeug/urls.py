@@ -152,7 +152,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
-               errors='replace', separator='&', cls=None):
+               errors='replace', separator=b'&', cls=None):
     """Parse a querystring and return it as :class:`MultiDict`.  Per default
     only values are decoded into unicode strings.  If `decode_keys` is set to
     `True` the same will happen for keys.
@@ -184,7 +184,9 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     """
     if cls is None:
         cls = MultiDict
-    return cls(_url_decode_impl(str(s).split(separator), charset, decode_keys,
+    if not isinstance(s, six.binary_type):
+        s = s.encode(charset)
+    return cls(_url_decode_impl(s.split(separator), charset, decode_keys,
                                 include_empty, errors))
 
 
@@ -230,16 +232,16 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
     for pair in pair_iter:
         if not pair:
             continue
-        if '=' in pair:
-            key, value = pair.split('=', 1)
+        if b'=' in pair:
+            key, value = pair.split(b'=', 1)
         else:
             if not include_empty:
                 continue
             key = pair
-            value = ''
+            value = b''
         key = url_unquote_plus(key)
-        if decode_keys:
-            key = _decode_unicode(key, charset, errors)
+        if not decode_keys:
+            key = key.encode(charset, errors)
         yield key, url_unquote_plus(value, charset, errors)
 
 
@@ -303,15 +305,16 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
     for key, value in iterable:
         if value is None:
             continue
-        if encode_keys and isinstance(key, six.text_type):
-            key = key.encode(charset)
-        else:
-            key = str(key)
-        if isinstance(value, six.text_type):
-            value = value.encode(charset)
-        else:
-            value = str(value)
-        yield '%s=%s' % (url_quote(key), url_quote_plus(value))
+
+        # we need to ignore encode_keys, because quote takes nothing else than
+        # bytes
+        key = to_bytes(key)  
+        value = to_bytes(value)
+        rv = bytearray()
+        rv += url_quote(to_bytes(key)).encode('ascii')
+        rv += b'='
+        rv += url_quote_plus(to_bytes(value)).encode('ascii')
+        yield bytes(rv)
 
 
 def url_fix(s, charset='utf-8'):
@@ -411,6 +414,7 @@ class Href(object):
         return url_quote(part, encoding=self.charset)
 
     def __call__(self, *path, **query):
+        #XXX: Badly broken on Py3
         if path and isinstance(path[-1], dict):
             if query:
                 raise TypeError('keyword arguments and query-dicts '
@@ -429,3 +433,14 @@ class Href(object):
             rv += '?' + url_encode(query, self.charset, sort=self.sort,
                                    key=self.key)
         return str(rv)
+
+
+# compat
+def to_bytes(x, charset='utf-8'):
+    if six.PY3:
+        if not isinstance(x, bytes):
+            x = str(x).encode(charset)
+        return x
+    if isinstance(x, unicode):
+        return x.encode(charset)
+    return str(x)
