@@ -318,7 +318,9 @@ class EnvironBuilder(object):
         if data:
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
-            if isinstance(data, string_types):
+            if isinstance(data, six.text_type):
+                data = data.encode(self.charset)
+            if isinstance(data, six.binary_type):
                 self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)
