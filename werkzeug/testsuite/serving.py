@@ -10,17 +10,25 @@
 """
 import sys
 import time
-import urllib
-import httplib
+try:
+    import httplib
+except ImportError:
+    from http import client as httplib
+try:
+    from urllib import urlopen
+except ImportError:  # pragma: no cover
+    from urllib.request import urlopen
+
 import unittest
 from functools import update_wrapper
-from StringIO import StringIO
+from six import StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import __version__ as version, serving
 from werkzeug.testapp import test_app
 from threading import Thread
+
 
 
 real_make_server = serving.make_server
@@ -39,13 +47,18 @@ def silencestderr(f):
 
 def run_dev_server(application):
     servers = []
+
     def tracking_make_server(*args, **kwargs):
         srv = real_make_server(*args, **kwargs)
         servers.append(srv)
         return srv
     serving.make_server = tracking_make_server
     try:
-        t = Thread(target=serving.run_simple, args=('localhost', 0, application))
+        t = Thread(
+            target=serving.run_simple,
+            args=('localhost', 0, application),
+            kwargs={'passthrough_errors': True},
+        )
         t.setDaemon(True)
         t.start()
         time.sleep(0.25)
@@ -65,17 +78,17 @@ class ServingTestCase(WerkzeugTestCase):
     @silencestderr
     def test_serving(self):
         server, addr = run_dev_server(test_app)
-        rv = urllib.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        assert 'WSGI Information' in rv
-        assert 'foo=bar&amp;baz=blah' in rv
-        assert ('Werkzeug/%s' % version) in rv
+        rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+        self.assertIn('WSGI Information', rv)
+        self.assertIn('foo=bar&amp;baz=blah', rv)
+        self.assertIn('Werkzeug/%s' % version, rv)
 
     @silencestderr
     def test_broken_app(self):
         def broken_app(environ, start_response):
             1/0
         server, addr = run_dev_server(broken_app)
-        rv = urllib.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+        rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
         assert 'Internal Server Error' in rv
 
     @silencestderr

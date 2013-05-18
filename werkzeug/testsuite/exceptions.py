@@ -26,7 +26,7 @@ class ExceptionsTestCase(WerkzeugTestCase):
         orig_resp = Response('Hello World')
         try:
             exceptions.abort(orig_resp)
-        except exceptions.HTTPException, e:
+        except exceptions.HTTPException as e:
             resp = e.get_response({})
         else:
             self.fail('exception not raised')

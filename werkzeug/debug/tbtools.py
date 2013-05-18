@@ -9,12 +9,14 @@
     :license: BSD.
 """
 import re
+
 import os
 import sys
 import inspect
 import traceback
 import codecs
 from tokenize import TokenError
+import six
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
 
@@ -419,7 +421,7 @@ class Frame(object):
             code = compile(code, '<interactive>', mode)
         if mode != 'exec':
             return eval(code, self.globals, self.locals)
-        exec code in self.globals, self.locals
+        duc.exec_(code, self.globals, self.locals)
 
     @cached_property
     def sourcelines(self):
@@ -439,7 +441,7 @@ class Frame(object):
 
         if source is None:
             try:
-                f = file(self.filename)
+                f = open(self.filename)
             except IOError:
                 return []
             try:

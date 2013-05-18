@@ -11,7 +11,6 @@
 import re
 import os
 import urllib
-import urlparse
 import posixpath
 import mimetypes
 from itertools import chain, repeat
@@ -19,7 +18,9 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
+from six import iteritems, next, Iterator, text_type
 
+from werkzeug._compat import urlparse
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
 
@@ -108,7 +109,7 @@ def host_is_trusted(hostname, trusted_list):
     def _normalize(hostname):
         if ':' in hostname:
             hostname = hostname.rsplit(':', 1)[0]
-        if isinstance(hostname, unicode):
+        if isinstance(hostname, text_type):
             hostname = hostname.encode('idna')
         return hostname
 
@@ -258,7 +259,7 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
     from werkzeug.urls import uri_to_iri, url_fix
 
     def _as_iri(obj):
-        if not isinstance(obj, unicode):
+        if not isinstance(obj, text_type):
             return uri_to_iri(obj, charset, errors)
         return obj
 
@@ -375,7 +376,7 @@ class SharedDataMiddleware(object):
         self.exports = {}
         self.cache = cache
         self.cache_timeout = cache_timeout
-        for key, value in exports.iteritems():
+        for key, value in iteritems(exports):
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
             elif isinstance(value, basestring):
@@ -534,7 +535,7 @@ class DispatcherMiddleware(object):
         return app(environ, start_response)
 
 
-class ClosingIterator(object):
+class ClosingIterator(Iterator):
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of an iterator.  Because it is useful to add
     another close action to a returned iterator and adding a custom iterator
@@ -557,7 +558,7 @@ class ClosingIterator(object):
 
     def __init__(self, iterable, callbacks=None):
         iterator = iter(iterable)
-        self._next = iterator.next
+        self._next = partial(next, iterator)
         if callbacks is None:
             callbacks = []
         elif callable(callbacks):
@@ -572,7 +573,7 @@ class ClosingIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         return self._next()
 
     def close(self):
@@ -648,7 +649,8 @@ def make_chunk_iter_func(stream, limit, buffer_size):
     """Helper for the line and chunk iter functions."""
     if hasattr(stream, 'read'):
         return partial(make_limited_stream(stream, limit).read, buffer_size)
-    return iter(chain(stream, repeat(''))).next
+    iterator = iter(chain(stream, repeat('')))
+    return partial(next, iterator)
 
 
 def make_line_iter(stream, limit=None, buffer_size=10 * 1024):

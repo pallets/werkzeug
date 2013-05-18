@@ -98,13 +98,18 @@
 import re
 import posixpath
 from pprint import pformat
-from urlparse import urljoin
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
 from werkzeug.datastructures import ImmutableDict, MultiDict
+
+import six
 
 
 _rule_re = re.compile(r'''
@@ -1120,7 +1125,7 @@ class Map(object):
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
-        if isinstance(server_name, unicode):
+        if isinstance(server_name, six.text_type):
             server_name = server_name.encode('idna')
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme, path_info, default_method, query_args)
@@ -1275,10 +1280,10 @@ class MapAdapter(object):
         try:
             try:
                 endpoint, args = self.match(path_info, method)
-            except RequestRedirect, e:
+            except RequestRedirect as e:
                 return e
             return view_func(endpoint, args)
-        except HTTPException, e:
+        except HTTPException as e:
             if catch_http_exceptions:
                 return e
             raise
@@ -1364,7 +1369,7 @@ class MapAdapter(object):
         self.map.update()
         if path_info is None:
             path_info = self.path_info
-        if not isinstance(path_info, unicode):
+        if not isinstance(path_info, six.text_type):
             path_info = path_info.decode(self.map.charset,
                                          self.map.encoding_errors)
         if query_args is None:
@@ -1381,7 +1386,7 @@ class MapAdapter(object):
             except RequestSlash:
                 raise RequestRedirect(self.make_redirect_url(
                     path_info + '/', query_args))
-            except RequestAliasRedirect, e:
+            except RequestAliasRedirect as e:
                 raise RequestRedirect(self.make_alias_redirect_url(
                     path, rule.endpoint, e.matched_values, method, query_args))
             if rv is None:
@@ -1445,9 +1450,9 @@ class MapAdapter(object):
         """
         try:
             self.match(path_info, method='--')
-        except MethodNotAllowed, e:
+        except MethodNotAllowed as e:
             return e.valid_methods
-        except HTTPException, e:
+        except HTTPException as e:
             pass
         return []
 

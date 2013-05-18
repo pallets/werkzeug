@@ -44,6 +44,8 @@ try:
 except ImportError:
     greenlet = None
 
+from six import next
+
 
 class IterIO(object):
     """Instances of this object implement an interface compatible with the
@@ -221,7 +223,7 @@ class IterO(IterIO):
         try:
             tmp_end_pos = len(self._buf)
             while new_pos > tmp_end_pos:
-                item = self._gen.next()
+                item = next(self._gen)
                 tmp_end_pos += len(item)
                 buf.append(item)
         except StopIteration:
@@ -242,7 +244,7 @@ class IterO(IterIO):
         try:
             pos = self.pos
             while nl_pos < 0:
-                item = self._gen.next()
+                item = next(self._gen)
                 local_pos = item.find('\n')
                 buf.append(item)
                 if local_pos >= 0:

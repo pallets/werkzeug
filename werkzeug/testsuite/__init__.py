@@ -12,13 +12,14 @@
 from __future__ import with_statement
 
 import unittest
+import six
 from werkzeug.utils import import_string, find_modules
 
 
 def iter_suites(package):
     """Yields all testsuites."""
     for module in find_modules(package, include_packages=True):
-        mod = import_string(module)
+        mod = __import__(module, fromlist=['*'])
         if hasattr(mod, 'suite'):
             yield mod.suite()
 
@@ -57,6 +58,9 @@ class WerkzeugTestCase(unittest.TestCase):
         unittest.TestCase.tearDown(self)
         self.teardown()
 
+    def assert_line_equal(self, x, y):
+        assert x == y, "lines not equal\n a = %r\n b = %r" % (x, y)
+
     def assert_equal(self, x, y):
         return self.assertEqual(x, y)
 
@@ -69,6 +73,31 @@ class WerkzeugTestCase(unittest.TestCase):
             return catcher
         with catcher:
             callable(*args, **kwargs)
+
+    if not six.PY3:
+        def assertRaisesRegex(self, *args, **kwargs):
+            return self.assertRaisesRegexp(*args, **kwargs)
+
+    def assert_is_none(self, x):
+        return self.assertIsNone(x)
+
+    def assert_is_not_none(self, x):
+        return self.assertIsNotNone(x)
+
+    def assert_in(self, x, y):
+        return self.assertIn(x, y)
+
+    def assert_not_in(self, x, y):
+        return self.assertNotIn(x, y)
+
+    def assert_is(self, x, y):
+        return self.assertIs(x, y)
+
+    def assert_is_not(self, x, y):
+        return self.assertIsNot(x, y)
+
+    def assert_is_instance(self, x, y):
+        return self.assertIsInstance(x, y)
 
 
 class _ExceptionCatcher(object):
@@ -86,7 +115,7 @@ class _ExceptionCatcher(object):
             self.test_case.fail('Expected exception of type %r' %
                                 exception_name)
         elif not issubclass(exc_type, self.exc_type):
-            raise exc_type, exc_value, tb
+            six.reraise(exc_type, exc_value, tb)
         return True
 
 
@@ -142,5 +171,9 @@ def main():
     """Runs the testsuite as command line application."""
     try:
         unittest.main(testLoader=BetterLoader(), defaultTest='suite')
-    except Exception, e:
-        print 'Error: %s' % e
+    except Exception:
+        import sys
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+

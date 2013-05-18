@@ -14,6 +14,10 @@ import re
 import os
 import sys
 
+import six
+from six import next
+
+from werkzeug._compat import unichr
 from werkzeug._internal import _iter_modules, _DictAccessorProperty, \
      _parse_signature, _missing
 
@@ -139,7 +143,7 @@ class HTMLBuilder(object):
     u'<p>&lt;foo&gt;</p>'
     """
 
-    from htmlentitydefs import name2codepoint
+    name2codepoint = six.moves.html_entities.name2codepoint
     _entity_re = re.compile(r'&([^;]+);')
     _entities = name2codepoint.copy()
     _entities['apos'] = 39
@@ -167,7 +171,7 @@ class HTMLBuilder(object):
             raise AttributeError(tag)
         def proxy(*children, **arguments):
             buffer = '<' + tag
-            for key, value in arguments.iteritems():
+            for key, value in six.iteritems(arguments):
                 if value is None:
                     continue
                 if key[-1] == '_':
@@ -276,7 +280,7 @@ def secure_filename(filename):
 
     :param filename: the filename to secure
     """
-    if isinstance(filename, unicode):
+    if isinstance(filename, six.text_type):
         from unicodedata import normalize
         filename = normalize('NFKD', filename).encode('ascii', 'ignore')
     for sep in os.path.sep, os.path.altsep:
@@ -354,7 +358,7 @@ def redirect(location, code=302):
     """
     from werkzeug.wrappers import BaseResponse
     display_location = escape(location)
-    if isinstance(location, unicode):
+    if isinstance(location, six.text_type):
         from werkzeug.urls import iri_to_uri
         location = iri_to_uri(location)
     response = BaseResponse(
@@ -396,9 +400,10 @@ def import_string(import_name, silent=False):
                    `None` is returned instead.
     :return: imported object
     """
+    #XXX: py3 review needed
+    assert isinstance(import_name, six.string_types)
     # force the import name to automatically convert to strings
-    if isinstance(import_name, unicode):
-        import_name = str(import_name)
+    import_name = str(import_name)
     try:
         if ':' in import_name:
             module, obj = import_name.split(':', 1)
@@ -408,7 +413,7 @@ def import_string(import_name, silent=False):
             return __import__(import_name)
         # __import__ is not able to handle unicode strings in the fromlist
         # if the module is a package
-        if isinstance(obj, unicode):
+        if not six.PY3 and isinstance(obj, unicode):
             obj = obj.encode('utf-8')
         try:
             return getattr(__import__(module, None, None, [obj]), obj)
@@ -418,9 +423,12 @@ def import_string(import_name, silent=False):
             modname = module + '.' + obj
             __import__(modname)
             return sys.modules[modname]
-    except ImportError, e:
+    except ImportError as e:
         if not silent:
-            raise ImportStringError(import_name, e), None, sys.exc_info()[2]
+            six.reraise(
+                ImportStringError,
+                ImportStringError(import_name, e),
+                sys.exc_info()[2])
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
@@ -533,11 +541,11 @@ def bind_arguments(func, args, kwargs):
         multikw = set(extra) & set([x[0] for x in arg_spec])
         if multikw:
             raise TypeError('got multiple values for keyword argument ' +
-                            repr(iter(multikw).next()))
+                            repr(next(iter(multikw))))
         values[kwarg_var] = extra
     elif extra:
         raise TypeError('got unexpected keyword argument ' +
-                        repr(iter(extra).next()))
+                        repr(next(iter(extra))))
     return values
 
 

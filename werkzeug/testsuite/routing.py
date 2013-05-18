@@ -36,7 +36,7 @@ class RoutingTestCase(WerkzeugTestCase):
         adapter = map.bind('example.org', '/test')
         try:
             adapter.match('/bar')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://example.org/test/bar/'
         else:
             self.fail('Expected request redirect')
@@ -44,7 +44,7 @@ class RoutingTestCase(WerkzeugTestCase):
         adapter = map.bind('example.org', '/')
         try:
             adapter.match('/bar')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://example.org/bar/'
         else:
             self.fail('Expected request redirect')
@@ -52,7 +52,7 @@ class RoutingTestCase(WerkzeugTestCase):
         adapter = map.bind('example.org', '/')
         try:
             adapter.match('/bar', query_args={'aha': 'muhaha'})
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://example.org/bar/?aha=muhaha'
         else:
             self.fail('Expected request redirect')
@@ -60,7 +60,7 @@ class RoutingTestCase(WerkzeugTestCase):
         adapter = map.bind('example.org', '/')
         try:
             adapter.match('/bar', query_args='aha=muhaha')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://example.org/bar/?aha=muhaha'
         else:
             self.fail('Expected request redirect')
@@ -69,7 +69,7 @@ class RoutingTestCase(WerkzeugTestCase):
                                                      'http://example.org/'))
         try:
             adapter.match()
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://example.org/bar/?foo=bar'
         else:
             self.fail('Expected request redirect')
@@ -229,7 +229,7 @@ class RoutingTestCase(WerkzeugTestCase):
         adapter = map.bind('localhost', '/')
         try:
             adapter.match(u'/öäü')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://localhost/%C3%B6%C3%A4%C3%BC/'
         else:
             self.fail('expected request redirect exception')
@@ -240,7 +240,7 @@ class RoutingTestCase(WerkzeugTestCase):
         adapter = map.bind('localhost', '/')
         try:
             adapter.match(u'/foo/42')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://localhost/foo'
         else:
             self.fail('expected request redirect exception')
@@ -251,7 +251,7 @@ class RoutingTestCase(WerkzeugTestCase):
         adapter = map.bind('localhost', '/', subdomain='other')
         try:
             adapter.match(u'/foo/42')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://test.localhost/foo'
         else:
             self.fail('expected request redirect exception')
@@ -516,7 +516,7 @@ class RoutingTestCase(WerkzeugTestCase):
         def ensure_redirect(path, new_url, args=None):
             try:
                 a.match(path, query_args=args)
-            except r.RequestRedirect, e:
+            except r.RequestRedirect as e:
                 assert e.new_url == 'http://example.com' + new_url
             else:
                 assert False, 'expected redirect'
@@ -566,7 +566,7 @@ class RoutingTestCase(WerkzeugTestCase):
         assert a.match('/foo/') == ('x', {'domain': 'example.com', 'page': 1})
         try:
             a.match('/foo')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://www.example.com/foo/'
         else:
             assert False, 'expected redirect'
@@ -576,7 +576,7 @@ class RoutingTestCase(WerkzeugTestCase):
         assert a.match('/2') == ('x', {'domain': 'example.com', 'page': 2})
         try:
             a.match('/1')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             assert e.new_url == 'http://www.example.com/foo/'
         else:
             assert False, 'expected redirect'
@@ -617,7 +617,7 @@ class RoutingTestCase(WerkzeugTestCase):
         a = m.bind(u'☃.example.com')
         try:
             a.match(u'/войти')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             self.assert_equal(e.new_url, 'http://xn--n3h.example.com/'
                               '%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
         endpoint, values = a.match(u'/войти/')
@@ -626,7 +626,7 @@ class RoutingTestCase(WerkzeugTestCase):
 
         try:
             a.match(u'/foo+bar')
-        except r.RequestRedirect, e:
+        except r.RequestRedirect as e:
             self.assert_equal(e.new_url, 'http://xn--n3h.example.com/'
                               'foo+bar/')
         endpoint, values = a.match(u'/foo+bar/')

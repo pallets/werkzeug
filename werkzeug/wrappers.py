@@ -20,8 +20,9 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import urlparse
+from werkzeug._compat import urlparse
 from datetime import datetime, timedelta
+import six
 
 from werkzeug.http import HTTP_STATUS_CODES, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
@@ -59,7 +60,7 @@ def _warn_if_string(iterable):
     """Helper for the response objects to check if the iterable returned
     to the WSGI server is not a string.
     """
-    if isinstance(iterable, basestring):
+    if isinstance(iterable, six.string_types):
         from warnings import warn
         warn(Warning('response iterable was set to a string.  This appears '
                      'to work but means that the server will send the '
@@ -653,7 +654,7 @@ class BaseResponse(object):
             self.headers['Content-Type'] = content_type
         if status is None:
             status = self.default_status
-        if isinstance(status, (int, long)):
+        if isinstance(status, six.integer_types):
             self.status_code = status
         else:
             self.status = status
@@ -665,7 +666,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, basestring):
+        elif isinstance(response, six.string_types):
             self.data = response
         else:
             self.response = response
@@ -781,7 +782,7 @@ class BaseResponse(object):
     def _set_data(self, value):
         # if an unicode string is set, it's encoded directly so that we
         # can set the content length
-        if isinstance(value, unicode):
+        if isinstance(value, six.text_type):
             value = value.encode(self.charset)
         self.response = [value]
         if self.automatically_set_content_length:
@@ -844,7 +845,7 @@ class BaseResponse(object):
         if __debug__:
             _warn_if_string(self.response)
         for item in self.response:
-            if isinstance(item, unicode):
+            if isinstance(item, six.text_type):
                 yield item.encode(charset)
             else:
                 yield str(item)
@@ -992,7 +993,7 @@ class BaseResponse(object):
         # make sure the location header is an absolute URL
         if location is not None:
             old_location = location
-            if isinstance(location, unicode):
+            if isinstance(location, six.text_type):
                 location = iri_to_uri(location)
             if self.autocorrect_location_header:
                 location = urlparse.urljoin(
@@ -1004,7 +1005,7 @@ class BaseResponse(object):
 
         # make sure the content location is a URL
         if content_location is not None and \
-           isinstance(content_location, unicode):
+           isinstance(content_location, six.text_type):
             headers['Content-Location'] = iri_to_uri(content_location)
 
         # remove entity headers and set content length to zero if needed.
@@ -1343,7 +1344,7 @@ class ETagResponseMixin(object):
     def _set_content_range(self, value):
         if not value:
             del self.headers['content-range']
-        elif isinstance(value, basestring):
+        elif isinstance(value, six.string_types):
             self.headers['Content-Range'] = value
         else:
             self.headers['Content-Range'] = value.to_header()
@@ -1593,7 +1594,7 @@ class CommonResponseDescriptorsMixin(object):
         def fset(self, value):
             if not value:
                 del self.headers[name]
-            elif isinstance(value, basestring):
+            elif isinstance(value, six.string_types):
                 self.headers[name] = value
             else:
                 self.headers[name] = dump_header(value)
