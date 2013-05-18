@@ -177,12 +177,12 @@ class WrappersTestCase(WerkzeugTestCase):
     def test_base_response(self):
         # unicode
         response = wrappers.BaseResponse(u'öäü')
-        self.assert_equal(response.data, 'öäü')
+        self.assert_equal(response.data, u'öäü'.encode('utf-8'))
 
         # writing
         response = wrappers.Response('foo')
         response.stream.write('bar')
-        self.assert_equal(response.data, 'foobar')
+        self.assert_equal(response.data, b'foobar')
 
         # set cookie
         response = wrappers.BaseResponse()
