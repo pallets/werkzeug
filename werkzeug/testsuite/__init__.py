@@ -12,7 +12,10 @@
 from __future__ import with_statement
 
 import sys
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 import six
 from werkzeug.utils import import_string, find_modules
 
