@@ -786,7 +786,7 @@ class UrlParseTestCase(WerkzeugTestCase):
         # Sequence and object values.
         result = urlparse.urlencode({u'a': [1, 2], u'b': (3, 4, 5)}, True)
         # we cannot rely on ordering here
-        assert set(result.split(u'&')) == {u'a=1', u'a=2', u'b=3', u'b=4', u'b=5'}
+        assert set(result.split(u'&')) == set([u'a=1', u'a=2', u'b=3', u'b=4', u'b=5'])
 
         class Trivial(object):
             if six.PY3:
