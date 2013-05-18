@@ -96,6 +96,9 @@ class WerkzeugTestCase(unittest.TestCase):
     def assert_is_not(self, x, y):
         return self.assertIsNot(x, y)
 
+    def assert_is_instance(self, x, y):
+        return self.assertIsInstance(x, y)
+
 
 class _ExceptionCatcher(object):
 
