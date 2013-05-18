@@ -21,6 +21,7 @@ try:
 except ImportError: # pragma: no cover
     deque = None
 from werkzeug.utils import escape
+from werkzeug._compat import iteritems
 import six
 
 
@@ -164,7 +165,7 @@ class DebugReprGenerator(object):
             return _add_subclass_info(u'{...}', d, dict)
         buf = ['{']
         have_extended_section = False
-        for idx, (key, value) in enumerate(d.iteritems()):
+        for idx, (key, value) in enumerate(iteritems(d)):
             if idx:
                 buf.append(', ')
             if idx == limit - 1:
@@ -235,7 +236,7 @@ class DebugReprGenerator(object):
         if isinstance(obj, dict):
             title = 'Contents of'
             items = []
-            for key, value in obj.iteritems():
+            for key, value in iteritems(obj):
                 if not isinstance(key, six.string_types):
                     items = None
                     break

@@ -961,7 +961,7 @@ class Headers(object):
         values.
         """
         if isinstance(iterable, dict):
-            for key, value in iterable.iteritems():
+            for key, value in iteritems(iterable):
                 if isinstance(value, (tuple, list)):
                     for v in value:
                         self.add(key, v)
@@ -1315,7 +1315,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
                     yield key, value
 
     def values(self):
-        for key, value in self.iteritems():
+        for key, value in iteritems(self):
             yield value
 
     def lists(self):

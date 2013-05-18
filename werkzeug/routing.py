@@ -107,6 +107,7 @@ from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
+from werkzeug._compat import itervalues, iteritems
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 import six
@@ -399,7 +400,7 @@ class RuleTemplateFactory(RuleFactory):
                 new_defaults = subdomain = None
                 if rule.defaults:
                     new_defaults = {}
-                    for key, value in rule.defaults.iteritems():
+                    for key, value in iteritems(rule.defaults):
                         if isinstance(value, string_types):
                             value = format_string(value, self.context)
                         new_defaults[key] = value
@@ -689,7 +690,7 @@ class Rule(RuleFactory):
                     del groups['__suffix__']
 
                 result = {}
-                for name, value in groups.iteritems():
+                for name, value in iteritems(groups):
                     try:
                         value = self._converters[name].to_python(value)
                     except ValidationError:
@@ -767,7 +768,7 @@ class Rule(RuleFactory):
         # in case defaults are given we ensure taht either the value was
         # skipped or the value is the same as the default value.
         if defaults:
-            for key, value in defaults.iteritems():
+            for key, value in iteritems(defaults):
                 if key in values and value != values[key]:
                     return False
 
@@ -1207,7 +1208,7 @@ class Map(object):
         """
         if self._remap:
             self._rules.sort(key=lambda x: x.match_compare_key())
-            for rules in self._rules_by_endpoint.itervalues():
+            for rules in itervalues(self._rules_by_endpoint):
                 rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False
 
@@ -1603,7 +1604,7 @@ class MapAdapter(object):
             if isinstance(values, MultiDict):
                 valueiter = values.iteritems(multi=True)
             else:
-                valueiter = values.iteritems()
+                valueiter = iteritems(values)
             values = dict((k, v) for k, v in valueiter if v is not None)
         else:
             values = {}

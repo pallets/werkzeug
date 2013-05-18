@@ -342,7 +342,7 @@ class MemcachedCache(BaseCache):
         d = rv = self._client.get_multi(key_mapping.keys())
         if have_encoded_keys or self.key_prefix:
             rv = {}
-            for key, value in d.iteritems():
+            for key, value in iteritems(d):
                 rv[key_mapping[key]] = value
         if len(rv) < len(keys):
             for key in keys:

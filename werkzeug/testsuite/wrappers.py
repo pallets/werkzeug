@@ -13,6 +13,7 @@ import pickle
 #XXX: py3 verify
 from io import BytesIO as StringIO
 from datetime import datetime
+from werkzeug._compat import iteritems
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -54,7 +55,7 @@ def request_demo_app(environ, start_response):
 
 def prepare_environ_pickle(environ):
     result = {}
-    for key, value in environ.iteritems():
+    for key, value in iteritems(environ):
         try:
             pickle.dumps((key, value))
         except Exception:

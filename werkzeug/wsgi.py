@@ -460,7 +460,7 @@ class SharedDataMiddleware(object):
         path = '/'.join([''] + [x for x in cleaned_path.split('/')
                                 if x and x != '..'])
         file_loader = None
-        for search_path, loader in self.exports.iteritems():
+        for search_path, loader in iteritems(self.exports):
             if search_path == path:
                 real_filename, file_loader = loader(None)
                 if file_loader is not None:
