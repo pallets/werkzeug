@@ -110,6 +110,7 @@ from werkzeug._internal import _get_environ
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 import six
+from six import string_types
 
 
 _rule_re = re.compile(r'''
@@ -399,13 +400,13 @@ class RuleTemplateFactory(RuleFactory):
                 if rule.defaults:
                     new_defaults = {}
                     for key, value in rule.defaults.iteritems():
-                        if isinstance(value, basestring):
+                        if isinstance(value, string_types):
                             value = format_string(value, self.context)
                         new_defaults[key] = value
                 if rule.subdomain is not None:
                     subdomain = format_string(rule.subdomain, self.context)
                 new_endpoint = rule.endpoint
-                if isinstance(new_endpoint, basestring):
+                if isinstance(new_endpoint, string_types):
                     new_endpoint = format_string(new_endpoint, self.context)
                 yield Rule(
                     format_string(rule.rule, self.context),
@@ -1402,7 +1403,7 @@ class MapAdapter(object):
                     raise RequestRedirect(redirect_url)
 
             if rule.redirect_to is not None:
-                if isinstance(rule.redirect_to, basestring):
+                if isinstance(rule.redirect_to, string_types):
                     def _handle_match(match):
                         value = rv[match.group(1)]
                         return rule._converters[match.group(1)].to_url(value)
@@ -1491,7 +1492,7 @@ class MapAdapter(object):
                     path, query_args, domain_part=domain_part)
 
     def encode_query_args(self, query_args):
-        if not isinstance(query_args, basestring):
+        if not isinstance(query_args, string_types):
             query_args = url_encode(query_args, self.map.charset)
         return query_args
 

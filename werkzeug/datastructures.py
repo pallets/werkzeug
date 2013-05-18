@@ -1382,7 +1382,7 @@ class FileMultiDict(MultiDict):
         if isinstance(file, FileStorage):
             value = file
         else:
-            if isinstance(file, basestring):
+            if isinstance(file, string_types):
                 if filename is None:
                     filename = file
                 file = open(file, 'rb')
@@ -1503,7 +1503,7 @@ class Accept(ImmutableList):
         to get the quality for the item.  If the item is not in the list, the
         returned quality is ``0``.
         """
-        if isinstance(key, basestring):
+        if isinstance(key, string_types):
             return self.quality(key)
         return list.__getitem__(self, key)
 
@@ -1540,7 +1540,7 @@ class Accept(ImmutableList):
            This used to raise :exc:`IndexError`, which was inconsistent
            with the list API.
         """
-        if isinstance(key, basestring):
+        if isinstance(key, string_types):
             for idx, (item, quality) in enumerate(self):
                 if self._value_matches(key, item):
                     return idx
@@ -2509,7 +2509,7 @@ class FileStorage(object):
         """
         from shutil import copyfileobj
         close_dst = False
-        if isinstance(dst, basestring):
+        if isinstance(dst, string_types):
             dst = open(dst, 'wb')
             close_dst = True
         try:

@@ -366,7 +366,7 @@ class Frame(object):
         info = self.locals.get('__traceback_info__')
         if info is not None:
             try:
-                info = unicode(info)
+                info = six.text_type(info)
             except UnicodeError:
                 info = str(info).decode('utf-8', 'replace')
         self.info = info
@@ -415,8 +415,8 @@ class Frame(object):
 
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
-        if isinstance(code, basestring):
-            if isinstance(code, unicode):
+        if isinstance(code, six.string_types):
+            if not six.PY3 and isinstance(code, unicode):
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
         if mode != 'exec':

@@ -64,7 +64,7 @@ try:
 except ImportError:
     from md5 import new as md5
 from six.moves import zip
-from six import PY3, iteritems
+from six import PY3, iteritems, string_types
 from six import _iteritems as iteritems_attr
 from time import time
 from werkzeug.posixemulation import rename
@@ -481,7 +481,7 @@ class RedisCache(BaseCache):
     def __init__(self, host='localhost', port=6379, password=None,
                  db=0, default_timeout=300, key_prefix=None):
         BaseCache.__init__(self, default_timeout)
-        if isinstance(host, basestring):
+        if isinstance(host, string_types):
             try:
                 import redis
             except ImportError:

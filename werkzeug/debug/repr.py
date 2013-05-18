@@ -187,7 +187,7 @@ class DebugReprGenerator(object):
             return u'<span class="help">%r</span>' % helper
         if isinstance(obj, (six.integer_types, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if isinstance(obj, basestring):
+        if isinstance(obj, six.string_types):
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)
@@ -234,7 +234,7 @@ class DebugReprGenerator(object):
             title = 'Contents of'
             items = []
             for key, value in obj.iteritems():
-                if not isinstance(key, basestring):
+                if not isinstance(key, six.string_types):
                     items = None
                     break
                 items.append((key, self.repr(value)))
