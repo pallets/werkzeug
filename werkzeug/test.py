@@ -46,7 +46,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
-        def write(string):
+        def write_binary(string):
             stream, total_length, on_disk = _closure
             if on_disk:
                 stream.write(string)
@@ -62,14 +62,17 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     _closure[2] = True
                 _closure[1] = total_length + length
     else:
-        write = _closure[0].write
+        write_binary = _closure[0].write
+
+    def write(string):
+        write_binary(string.encode(charset))
 
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
     for key, values in iterlists(values):
         for value in values:
-            write(b'--%s\r\nContent-Disposition: form-data; name="%s"' %
+            write('--%s\r\nContent-Disposition: form-data; name="%s"' %
                   (boundary, key))
             reader = getattr(value, 'read', None)
             if reader is not None:
@@ -89,7 +92,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     chunk = reader(16384)
                     if not chunk:
                         break
-                    write(chunk)
+                    write_binary(chunk)
             else:
                 if isinstance(value, six.text_type):
                     value = value.encode(charset)
@@ -133,6 +136,13 @@ class _TestCookieHeaders(object):
             if k.lower() == name:
                 headers.append(v)
         return headers
+
+    def get_all(self, name, default=None):
+        rv = []
+        for k, v in self.headers:
+            if k.lower() == name.lower():
+                rv.append(v)
+        return rv or default or []
 
 
 class _TestCookieResponse(object):
@@ -308,7 +318,9 @@ class EnvironBuilder(object):
         if data:
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
-            if isinstance(data, string_types):
+            if isinstance(data, six.text_type):
+                data = data.encode(self.charset)
+            if isinstance(data, six.binary_type):
                 self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)
