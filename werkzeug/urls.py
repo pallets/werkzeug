@@ -186,6 +186,8 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
         cls = MultiDict
     if not isinstance(s, six.binary_type):
         s = s.encode(charset)
+    if not isinstance(separator, six.binary_type):
+        separator = separator.encode(charset)
     return cls(_url_decode_impl(s.split(separator), charset, decode_keys,
                                 include_empty, errors))
 
@@ -232,21 +234,23 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
     for pair in pair_iter:
         if not pair:
             continue
-        if b'=' in pair:
-            key, value = pair.split(b'=', 1)
+        if isinstance(pair, six.binary_type):
+            pair = pair.decode(charset, errors)
+        if u'=' in pair:
+            key, value = pair.split(u'=', 1)
         else:
             if not include_empty:
                 continue
             key = pair
-            value = b''
-        key = url_unquote_plus(key)
+            value = u''
+        key = url_unquote_plus(key, encoding=charset, errors=errors)
         if not decode_keys:
             key = key.encode(charset, errors)
         yield key, url_unquote_plus(value, charset, errors)
 
 
 def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
-               separator='&'):
+               separator=u'&'):
     """URL encode a dict/`MultiDict`.  If a value is `None` it will not appear
     in the result string.  Per default only values are encoded into the target
     charset strings.  If `encode_keys` is set to ``True`` unicode keys are
@@ -300,21 +304,13 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
 def _url_encode_impl(obj, charset, encode_keys, sort, key):
     #XXX: probably broken badly on 3.x
     iterable = iter_multi_items(obj)
+    iterable = ((to_bytes(k), to_bytes(v)) for k, v in iterable if v is not None)
     if sort:
         iterable = sorted(iterable, key=key)
-    for key, value in iterable:
-        if value is None:
-            continue
-
-        # we need to ignore encode_keys, because quote takes nothing else than
-        # bytes
-        key = to_bytes(key)
-        value = to_bytes(value)
-        rv = bytearray()
-        rv += url_quote(to_bytes(key)).encode('ascii')
-        rv += b'='
-        rv += url_quote_plus(to_bytes(value)).encode('ascii')
-        yield bytes(rv)
+    # we need to ignore encode_keys, because quote takes nothing else than
+    # bytes
+    return (u'%s=%s' % (url_quote(k), url_quote_plus(v))
+            for k, v in iterable)
 
 
 def url_fix(s, charset='utf-8'):
@@ -421,18 +417,18 @@ class Href(object):
                                 'can\'t be combined')
             query, path = path[-1], path[:-1]
         elif query:
-            query = dict([(k.endswith('_') and k[:-1] or k, v)
+            query = dict([(k.endswith(u'_') and k[:-1] or k, v)
                           for k, v in query.items()])
-        path = '/'.join(map(self.__quote, filter(None, path))).lstrip('/')
+        path = u'/'.join(map(self.__quote, filter(None, path))).lstrip('/')
         rv = self.base
         if path:
-            if not rv.endswith('/'):
-                rv += '/'
-            rv = urlparse.urljoin(rv, './' + path)
+            if not rv.endswith(u'/'):
+                rv += u'/'
+            rv = urlparse.urljoin(rv, u'./' + path)
         if query:
-            rv += '?' + url_encode(query, self.charset, sort=self.sort,
+            rv += u'?' + url_encode(query, self.charset, sort=self.sort,
                                    key=self.key)
-        return str(rv)
+        return rv
 
 
 # compat

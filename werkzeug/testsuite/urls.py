@@ -26,45 +26,46 @@ class URLsTestCase(WerkzeugTestCase):
         assert urls.url_unquote(urls.url_quote(u'#%="\xf6')) == u'#%="\xf6'
         assert urls.url_quote_plus('foo bar') == 'foo+bar'
         assert urls.url_unquote_plus('foo+bar') == 'foo bar'
-        assert urls.url_encode({'a': None, 'b': 'foo bar'}) == b'b=foo+bar'
+        self.assertEqual(urls.url_encode({b'a': None, b'b': b'foo bar'}), u'b=foo+bar')
+        assert urls.url_encode({u'a': None, u'b': u'foo bar'}) == u'b=foo+bar'
         assert urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)') == \
                b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
     def test_url_decoding(self):
         x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel')
-        assert x['foo'] == '42'
-        assert x['bar'] == '23'
-        assert x['uni'] == u'Hänsel'
+        assert x[b'foo'] == u'42'
+        assert x[b'bar'] == u'23'
+        assert x[b'uni'] == u'Hänsel'
 
-        x = urls.url_decode(b'foo=42;bar=23;uni=H%C3%A4nsel', separator=';')
-        assert x['foo'] == '42'
-        assert x['bar'] == '23'
-        assert x['uni'] == u'Hänsel'
+        x = urls.url_decode(b'foo=42;bar=23;uni=H%C3%A4nsel', separator=b';')
+        assert x[b'foo'] == u'42'
+        assert x[b'bar'] == u'23'
+        assert x[b'uni'] == u'Hänsel'
 
         x = urls.url_decode(b'%C3%9Ch=H%C3%A4nsel', decode_keys=True)
         assert x[u'Üh'] == u'Hänsel'
 
     def test_streamed_url_decoding(self):
-        item1 = 'a' * 100000
-        item2 = 'b' * 400
-        string = 'a=%s&b=%s&c=%s' % (item1, item2, item2)
+        item1 = u'a' * 100000
+        item2 = u'b' * 400
+        string = u'a=%s&b=%s&c=%s' % (item1, item2, item2)
         gen = urls.url_decode_stream(StringIO(string), limit=len(string),
                                      return_iterator=True)
-        self.assert_equal(next(gen), ('a', item1))
-        self.assert_equal(next(gen), ('b', item2))
-        self.assert_equal(next(gen), ('c', item2))
+        self.assert_equal(next(gen), (b'a', item1))
+        self.assert_equal(next(gen), (b'b', item2))
+        self.assert_equal(next(gen), (b'c', item2))
         self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_encoding(self):
-        assert urls.url_encode({'foo': 'bar 45'}) == b'foo=bar+45'
+        assert urls.url_encode({'foo': 'bar 45'}) == u'foo=bar+45'
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
-        assert urls.url_encode(d, sort=True) == b'bar=23&blah=H%C3%A4nsel&foo=1'
-        assert urls.url_encode(d, sort=True, separator=b';') == b'bar=23;blah=H%C3%A4nsel;foo=1'
+        assert urls.url_encode(d, sort=True) == u'bar=23&blah=H%C3%A4nsel&foo=1'
+        assert urls.url_encode(d, sort=True, separator=u';') == u'bar=23;blah=H%C3%A4nsel;foo=1'
 
     def test_sorted_url_encode(self):
-        assert urls.url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
-        assert urls.url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
-                          key=lambda x: x[0].lower() + x[0]) == 'A=1&a=2&B=3&b=4'
+        assert urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True) == u'1=1&2=2&a=42&b=23'
+        assert urls.url_encode({u'A': 1, u'a': 2, u'B': 3, 'b': 4}, sort=True,
+                          key=lambda x: x[0].lower() + x[0]) == u'A=1&a=2&B=3&b=4'
 
     def test_streamed_url_encoding(self):
         out = StringIO()
@@ -122,7 +123,7 @@ class URLsTestCase(WerkzeugTestCase):
         d.add('foo', 3)
         d.add('bar', 0)
         d.add('foo', 4)
-        self.assertEqual(urls.url_encode(d), b'foo=1&foo=2&foo=3&bar=0&foo=4')
+        self.assertEqual(urls.url_encode(d), u'foo=1&foo=2&foo=3&bar=0&foo=4')
 
     def test_href(self):
         x = urls.Href(u'http://www.example.com/')
