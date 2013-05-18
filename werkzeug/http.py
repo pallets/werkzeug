@@ -91,6 +91,8 @@ def quote_header_value(value, extra_chars='', allow_token=True):
     :param allow_token: if this is enabled token values are returned
                         unchanged.
     """
+    if isinstance(value, bytes):
+        value = bytes_to_wsgi(value)
     value = str(value)
     if allow_token:
         token_chars = _token_chars | set(extra_chars)
@@ -819,6 +821,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         raise TypeError('invalid key %r' % key)
     if isinstance(value, text_type):
         value = value.encode(charset)
+    
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
     if isinstance(max_age, timedelta):
