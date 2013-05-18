@@ -94,7 +94,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_line_equal(x, b'http://example.com/?foo=%2f%2f')
 
         x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
-        assert x == 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation'
+        self.assertEqual(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
         
 
     def test_iri_support(self):

@@ -152,7 +152,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
-               errors='replace', separator='&', cls=None):
+               errors='replace', separator=b'&', cls=None):
     """Parse a querystring and return it as :class:`MultiDict`.  Per default
     only values are decoded into unicode strings.  If `decode_keys` is set to
     `True` the same will happen for keys.
@@ -184,7 +184,9 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     """
     if cls is None:
         cls = MultiDict
-    return cls(_url_decode_impl(str(s).split(separator), charset, decode_keys,
+    if not isinstance(s, six.binary_type):
+        s = s.encode(charset)
+    return cls(_url_decode_impl(s.split(separator), charset, decode_keys,
                                 include_empty, errors))
 
 
@@ -230,8 +232,8 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
     for pair in pair_iter:
         if not pair:
             continue
-        if '=' in pair:
-            key, value = pair.split('=', 1)
+        if b'=' in pair:
+            key, value = pair.split(b'=', 1)
         else:
             if not include_empty:
                 continue

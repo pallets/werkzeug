@@ -201,6 +201,7 @@ def _decode_unicode(value, charset, errors):
     """Like the regular decode function but this one raises an
     `HTTPUnicodeError` if errors is `strict`."""
     fallback = None
+    assert isinstance(value, six.binary_type), type(value)
     if errors.startswith('fallback:'):
         fallback = errors[9:]
         errors = 'strict'

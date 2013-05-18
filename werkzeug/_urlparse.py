@@ -624,7 +624,7 @@ def _iter_bytestring(string):
 _ALWAYS_SAFE_BYTES = (b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                       b'abcdefghijklmnopqrstuvwxyz'
                       b'0123456789'
-                      b'_.-')
+                      b'_.-+')  # + maybe shouldn't be here
 _ALWAYS_SAFE = frozenset(_iter_bytestring(_ALWAYS_SAFE_BYTES))
 _safe_quoters = {}
 
