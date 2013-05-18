@@ -432,7 +432,7 @@ class BaseWSGIServer(HTTPServer, object):
 
     def handle_error(self, request, client_address):
         if self.passthrough_errors:
-            raise
+            six.reraise(*sys.exc_info())
         else:
             return HTTPServer.handle_error(self, request, client_address)
 
