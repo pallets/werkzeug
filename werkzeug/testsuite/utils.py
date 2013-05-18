@@ -127,7 +127,7 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
 
         app_iter, status, headers = run_wsgi_app(foo, {})
         self.assert_equal(status, '200 OK')
-        self.assert_equal(headers, [('Content-Type', 'text/plain')])
+        self.assert_equal(list(headers), [('Content-Type', 'text/plain')])
         self.assert_equal(next(app_iter), '1')
         self.assert_equal(next(app_iter), '2')
         self.assert_equal(next(app_iter), '3')
@@ -153,7 +153,7 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
 
         app_iter, status, headers = run_wsgi_app(bar, {})
         self.assert_equal(status, '200 OK')
-        self.assert_equal(headers, [('Content-Type', 'text/plain')])
+        self.assert_equal(list(headers), [('Content-Type', 'text/plain')])
         self.assert_equal(next(app_iter), 'bar')
         self.assert_raises(StopIteration, partial(next, app_iter))
         app_iter.close()
