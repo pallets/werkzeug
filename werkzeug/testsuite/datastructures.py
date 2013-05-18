@@ -66,15 +66,15 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
 
         for protocol in xrange(pickle.HIGHEST_PROTOCOL + 1):
             d = cls()
-            d.setlist('foo', [1, 2, 3, 4])
-            d.setlist('bar', 'foo bar baz'.split())
+            d.setlist(b'foo', [1, 2, 3, 4])
+            d.setlist(b'bar', b'foo bar baz'.split())
             s = pickle.dumps(d, protocol)
             ud = pickle.loads(s)
             self.assert_equal(type(ud), type(d))
             self.assert_equal(ud, d)
             self.assert_equal(pickle.loads(
-                s.replace('werkzeug.datastructures', 'werkzeug')), d)
-            ud['newkey'] = 'bla'
+                s.replace(b'werkzeug.datastructures', b'werkzeug')), d)
+            ud[b'newkey'] = b'bla'
             self.assert_not_equal(ud, d)
 
     def test_basic_interface(self):
