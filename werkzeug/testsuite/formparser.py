@@ -12,7 +12,7 @@
 from __future__ import with_statement
 
 import unittest
-from io import BytesIO
+from six import BytesIO
 from os.path import join, dirname
 
 from werkzeug.testsuite import WerkzeugTestCase
@@ -155,7 +155,7 @@ class FormParserTestCase(WerkzeugTestCase):
             parse_functions['multipart/form-data'] = _sf_parse_multipart
         class StreamReq(Request):
             form_data_parser_class = StreamFDP
-        req = StreamReq.from_values(data={'foo': (StringIO(data), 'test.txt')},
+        req = StreamReq.from_values(data={'foo': (BytesIO(data), 'test.txt')},
                                     method='POST')
         self.assert_equal('begin_file', req.files['one'][0])
         self.assert_equal(('foo', 'test.txt'), req.files['one'][1][1:])
