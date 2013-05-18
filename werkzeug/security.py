@@ -15,6 +15,8 @@ from six.moves import zip, xrange
 from random import SystemRandom
 from werkzeug.exceptions import BadRequest
 
+import six
+
 
 SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
@@ -71,14 +73,14 @@ def _hash_internal(method, salt, password):
     if salt:
         if method not in _hash_funcs:
             return None
-        if isinstance(salt, unicode):
+        if isinstance(salt, six.text_type):
             salt = salt.encode('utf-8')
         h = hmac.new(salt, None, _hash_funcs[method])
     else:
         if method not in _hash_funcs:
             return None
         h = _hash_funcs[method]()
-    if isinstance(password, unicode):
+    if isinstance(password, six.text_type):
         password = password.encode('utf-8')
     h.update(password)
     return h.hexdigest()

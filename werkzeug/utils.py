@@ -279,7 +279,7 @@ def secure_filename(filename):
 
     :param filename: the filename to secure
     """
-    if isinstance(filename, unicode):
+    if isinstance(filename, six.text_type):
         from unicodedata import normalize
         filename = normalize('NFKD', filename).encode('ascii', 'ignore')
     for sep in os.path.sep, os.path.altsep:
@@ -357,7 +357,7 @@ def redirect(location, code=302):
     """
     from werkzeug.wrappers import BaseResponse
     display_location = escape(location)
-    if isinstance(location, unicode):
+    if isinstance(location, six.text_type):
         from werkzeug.urls import iri_to_uri
         location = iri_to_uri(location)
     response = BaseResponse(
