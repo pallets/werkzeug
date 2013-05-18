@@ -137,6 +137,13 @@ class _TestCookieHeaders(object):
                 headers.append(v)
         return headers
 
+    def get_all(self, name, default=None):
+        rv = []
+        for k, v in self.headers:
+            if k.lower() == name.lower():
+                rv.append(v)
+        return rv or default or []
+
 
 class _TestCookieResponse(object):
     """Something that looks like a httplib.HTTPResponse, but is actually just an
