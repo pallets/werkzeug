@@ -17,6 +17,7 @@ import sys
 import six
 from six import next
 
+from werkzeug._compat import unichr
 from werkzeug._internal import _iter_modules, _DictAccessorProperty, \
      _parse_signature, _missing
 
