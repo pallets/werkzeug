@@ -76,7 +76,9 @@ class _Helper(object):
             return
         import pydoc
         pydoc.help(topic)
-        rv = sys.stdout.reset().decode('utf-8', 'ignore')
+        rv = sys.stdout.reset()
+        if isinstance(rv, bytes):
+            rv = rv.decode('utf-8', 'ignore')
         paragraphs = _paragraph_re.split(rv)
         if len(paragraphs) > 1:
             title = paragraphs[0]
