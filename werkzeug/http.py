@@ -816,12 +816,10 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
     """
-    try:
-        key = str(key)
-    except UnicodeError:
+    if not isinstance(value, (binary_type, text_type)):
         raise TypeError('invalid key %r' % key)
-    if isinstance(value, text_type):
-        value = value.encode(charset)
+    if isinstance(value, binary_type):
+        value = value.decode(charset)
     
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)

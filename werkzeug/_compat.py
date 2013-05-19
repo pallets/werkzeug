@@ -29,3 +29,13 @@ try:
     unichr = unichr # py2
 except NameError:
     unichr = chr # py3
+
+# please use carefully
+def to_bytes(x, charset='utf-8'):
+    if six.PY3:
+        if not isinstance(x, bytes):
+            x = str(x).encode(charset)
+        return x
+    if isinstance(x, unicode):
+        return x.encode(charset)
+    return str(x)

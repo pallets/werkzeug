@@ -215,7 +215,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         assert headers1 == [('Date', now)]
 
         http.remove_entity_headers(headers2)
-        assert headers2 == datastructures.Headers([('Date', now)])
+        self.assertEqual(headers2, datastructures.Headers([(u'Date', now)]))
 
     def test_remove_hop_by_hop_headers(self):
         headers1 = [('Connection', 'closed'), ('Foo', 'bar'),

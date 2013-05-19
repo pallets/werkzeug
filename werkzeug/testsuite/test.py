@@ -14,7 +14,7 @@ from __future__ import with_statement
 import sys
 import unittest
 from io import BytesIO
-from werkzeug._compat import iteritems
+from werkzeug._compat import iteritems, to_bytes
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -360,14 +360,15 @@ class TestTestCase(WerkzeugTestCase):
         @Request.application
         def test_app(request):
             response = Response(repr(sorted(request.cookies.items())))
-            response.set_cookie('test1', 'foo')
-            response.set_cookie('test2', 'bar')
+            response.set_cookie(b'test1', b'foo')
+            response.set_cookie(b'test2', b'bar')
             return response
         client = Client(test_app, Response)
         resp = client.get('/')
-        self.assert_equal(resp.data, '[]')
+        self.assert_equal(resp.data, b'[]')
         resp = client.get('/')
-        self.assert_equal(resp.data, "[('test1', u'foo'), ('test2', u'bar')]")
+        self.assert_equal(resp.data,
+                          to_bytes(repr([(u'test1', u'foo'), (u'test2', u'bar')])))
 
     def test_correct_open_invocation_on_redirect(self):
         class MyClient(Client):
@@ -383,9 +384,9 @@ class TestTestCase(WerkzeugTestCase):
             return Response(str(request.environ['werkzeug._foo']))
 
         c = MyClient(test_app, response_wrapper=Response)
-        self.assert_equal(c.get('/').data, '1')
-        self.assert_equal(c.get('/').data, '2')
-        self.assert_equal(c.get('/').data, '3')
+        self.assert_equal(c.get('/').data, b'1')
+        self.assert_equal(c.get('/').data, b'2')
+        self.assert_equal(c.get('/').data, b'3')
 
 
 def suite():
