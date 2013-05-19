@@ -215,7 +215,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         assert headers1 == [('Date', now)]
 
         http.remove_entity_headers(headers2)
-        assert headers2 == datastructures.Headers([('Date', now)])
+        self.assertEqual(headers2, datastructures.Headers([(u'Date', now)]))
 
     def test_remove_hop_by_hop_headers(self):
         headers1 = [('Connection', 'closed'), ('Foo', 'bar'),
@@ -265,8 +265,8 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         # etagify from data
         self.assert_raises(TypeError, http.is_resource_modified, env,
                            data='42', etag='23')
-        env['HTTP_IF_NONE_MATCH'] = http.generate_etag('awesome')
-        assert not http.is_resource_modified(env, data='awesome')
+        env['HTTP_IF_NONE_MATCH'] = http.generate_etag(b'awesome')
+        assert not http.is_resource_modified(env, data=b'awesome')
 
         env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(datetime(2008, 1, 1, 12, 30))
         assert not http.is_resource_modified(env,

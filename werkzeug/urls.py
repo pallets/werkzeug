@@ -10,7 +10,7 @@
 """
 import six
 
-from werkzeug._compat import urlparse
+from werkzeug._compat import urlparse, to_bytes
 
 from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items
@@ -429,14 +429,3 @@ class Href(object):
             rv += u'?' + url_encode(query, self.charset, sort=self.sort,
                                    key=self.key)
         return rv
-
-
-# compat
-def to_bytes(x, charset='utf-8'):
-    if six.PY3:
-        if not isinstance(x, bytes):
-            x = str(x).encode(charset)
-        return x
-    if isinstance(x, unicode):
-        return x.encode(charset)
-    return str(x)

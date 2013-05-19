@@ -587,6 +587,19 @@ class HeadersTestCase(WerkzeugTestCase):
             with self.assert_raises(ValueError):
                 h.set('foo', 'test', option=variation)
 
+    def test_slicing(self):
+        # there's nothing wrong with these being native strings
+        # Headers doesn't care about the data types
+        h = self.storage_class()
+        h.set('X-Foo-Poo', 'bleh')
+        h.set('Content-Type', 'application/whocares')
+        h.set('X-Forwarded-For', '192.168.0.123')
+        h[:] = [(k, v) for k, v in h if k.startswith(u'X-')]
+        self.assertEqual(list(h), [
+            ('X-Foo-Poo', 'bleh'),
+            ('X-Forwarded-For', '192.168.0.123')
+        ])
+
 
 class EnvironHeadersTestCase(WerkzeugTestCase):
     storage_class = datastructures.EnvironHeaders

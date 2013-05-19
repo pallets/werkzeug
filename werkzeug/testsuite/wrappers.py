@@ -253,7 +253,7 @@ class WrappersTestCase(WerkzeugTestCase):
             response = SpecialResponse.force_type(orig_resp, fake_env)
             assert response.__class__ is SpecialResponse
             self.assert_equal(response.foo(), 42)
-            self.assert_equal(response.data, 'Hello World!')
+            self.assert_equal(response.data, b'Hello World!')
             self.assert_equal(response.content_type, 'text/html')
 
         # without env, no arbitrary conversion
