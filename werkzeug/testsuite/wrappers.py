@@ -47,9 +47,9 @@ def request_demo_app(environ, start_response):
     start_response('200 OK', [('Content-Type', 'text/plain')])
     return [pickle.dumps({
         'args':             request.args,
-        'args_as_list':     request.args.lists(),
+        'args_as_list':     list(request.args.lists()),
         'form':             request.form,
-        'form_as_list':     request.form.lists(),
+        'form_as_list':     list(request.form.lists()),
         'environ':          prepare_environ_pickle(request.environ),
         'data':             request.data
     })]
