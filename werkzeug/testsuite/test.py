@@ -368,7 +368,7 @@ class TestTestCase(WerkzeugTestCase):
         self.assert_equal(resp.data, b'[]')
         resp = client.get('/')
         self.assert_equal(resp.data,
-                          to_bytes(repr([(u'test1', u'foo'), (u'test2', u'bar')])))
+                          to_bytes(repr([(u'test1', u'foo'), (u'test2', u'bar')]), 'ascii'))
 
     def test_correct_open_invocation_on_redirect(self):
         class MyClient(Client):
