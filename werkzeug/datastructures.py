@@ -1114,9 +1114,14 @@ class Headers(object):
     def __setitem__(self, key, value):
         """Like :meth:`set` but also supports index/slice based setting."""
         if isinstance(key, (slice, integer_types)):
-            value = _unicodify_value(value)
-            self._validate_value(value)
-            self._list[key] = value
+            if isinstance(key, integer_types):
+                value = [value]
+            value = [(k, _unicodify_value(v)) for (k, v) in value]
+            [self._validate_value(v) for (k, v) in value]
+            if isinstance(key, integer_types):
+                self._list[key] = value[0]
+            else:
+                self._list[key] = value
         else:
             self.set(key, value)
 
