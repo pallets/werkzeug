@@ -32,8 +32,8 @@ class InternalTestCase(WerkzeugTestCase):
     def test_easteregg(self):
         req = Request.from_values('/?macgybarchakku')
         resp = Response.force_type(internal._easteregg(None), req)
-        assert 'About Werkzeug' in resp.data
-        assert 'the Swiss Army knife of Python web development' in resp.data
+        assert b'About Werkzeug' in resp.data
+        assert b'the Swiss Army knife of Python web development' in resp.data
 
     def test_wrapper_internals(self):
         req = Request.from_values(data={'foo': 'bar'}, method='POST')
