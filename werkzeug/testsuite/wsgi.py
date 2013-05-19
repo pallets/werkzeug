@@ -74,11 +74,11 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
     def test_responder(self):
         def foo(environ, start_response):
-            return BaseResponse('Test')
+            return BaseResponse(b'Test')
         client = Client(wsgi.responder(foo), BaseResponse)
         response = client.get('/')
         self.assert_equal(response.status_code, 200)
-        self.assert_equal(response.data, 'Test')
+        self.assert_equal(response.data, b'Test')
 
     def test_pop_path_info(self):
         original_env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/a/b///c'}
