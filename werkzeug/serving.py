@@ -156,6 +156,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         def execute(app):
             application_iter = app(environ, start_response)
             try:
+                if six.PY3 and isinstance(application_iter, bytes):
+                    # iterating over bytes' items would give us ints
+                    application_iter = (application_iter,)
                 for data in application_iter:
                     write(data)
                 # make sure the headers are sent

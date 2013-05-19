@@ -107,7 +107,7 @@ class ServingTestCase(WerkzeugTestCase):
         conn = httplib.HTTPConnection(addr)
         conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm')
         res = conn.getresponse()
-        assert res.read() == 'YES'
+        assert res.read() == b'YES'
 
 
 def suite():
