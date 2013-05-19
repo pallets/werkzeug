@@ -156,7 +156,7 @@ def _pythonize(value):
             pass
     if value[:1] == value[-1:] and value[0] in '"\'':
         value = value[1:-1]
-    return unicode(value)
+    return six.text_type(value)
 
 
 def parse_converter_args(argstr):
