@@ -12,6 +12,8 @@ import unittest
 import sys
 import re
 
+import six
+
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
@@ -49,14 +51,14 @@ class DebugReprTestCase(WerkzeugTestCase):
         self.assert_equal(debug_repr({}), u'{}')
         self.assert_equal(debug_repr({'foo': 42}),
             u'{<span class="pair"><span class="key"><span class="string">\'foo\''
-            u'</span></span>: <span class="value"><span class="number">42' 
+            u'</span></span>: <span class="value"><span class="number">42'
             u'</span></span></span>}')
         self.assert_equal(debug_repr(dict(zip(range(10), [None] * 10))),
             u'{<span class="pair"><span class="key"><span class="number">0</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">1</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">2</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">3</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="extended"><span class="pair"><span class="key"><span class="number">4</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">5</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">6</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">7</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">8</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">9</span></span>: <span class="value"><span class="object">None</span></span></span></span>}')
         self.assert_equal(
             debug_repr((1, 'zwei', u'drei')),
             u'(<span class="number">1</span>, <span class="string">\''
-            u'zwei\'</span>, <span class="string">u\'drei\'</span>)')
+            u'zwei\'</span>, <span class="string">%s\'drei\'</span>)' % ('' if six.PY3 else 'u'))
 
     def test_custom_repr(self):
         class Foo(object):
