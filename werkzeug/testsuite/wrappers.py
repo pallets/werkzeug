@@ -398,7 +398,7 @@ class WrappersTestCase(WerkzeugTestCase):
         response.stream.write('Hello ')
         response.stream.write('World!')
         self.assert_equal(response.response, ['Hello ', 'World!'])
-        self.assert_equal(response.data, 'Hello World!')
+        self.assert_equal(response.data, b'Hello World!')
 
     def test_common_response_descriptors_mixin(self):
         response = wrappers.Response()

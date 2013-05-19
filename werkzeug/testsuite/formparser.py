@@ -207,7 +207,7 @@ class MultiPartTestCase(WerkzeugTestCase):
             response = client.post('/?object=text', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary,
                                    content_length=len(data))
-            self.assert_equal(response.data, repr(text))
+            self.assert_equal(response.data, repr(text).encode('ascii'))
 
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer, Response)
