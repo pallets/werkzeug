@@ -17,7 +17,7 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
-from six import iteritems, next, Iterator, text_type, string_types
+from six import iteritems, Iterator, text_type, string_types
 
 from werkzeug._compat import urlparse
 from werkzeug._internal import _patch_wrapper

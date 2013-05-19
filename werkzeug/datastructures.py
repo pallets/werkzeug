@@ -12,7 +12,7 @@ import re
 import codecs
 import mimetypes
 from itertools import repeat
-from six import PY3, integer_types, string_types, binary_type, text_type, next
+from six import PY3, integer_types, string_types, binary_type, text_type
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists

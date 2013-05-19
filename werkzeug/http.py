@@ -34,7 +34,7 @@ except ImportError: # pragma: no cover
 import base64
 
 
-from six import next, iteritems, binary_type, text_type, string_types
+from six import iteritems, binary_type, text_type, string_types
 from werkzeug._compat import to_native
 
 

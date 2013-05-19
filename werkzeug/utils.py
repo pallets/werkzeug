@@ -15,7 +15,7 @@ import os
 import sys
 
 import six
-from six import next, string_types, text_type
+from six import string_types, text_type
 
 from werkzeug._compat import unichr
 from werkzeug._internal import _iter_modules, _DictAccessorProperty, \

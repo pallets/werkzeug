@@ -44,8 +44,6 @@ try:
 except ImportError:
     greenlet = None
 
-from six import next
-
 
 class IterIO(object):
     """Instances of this object implement an interface compatible with the

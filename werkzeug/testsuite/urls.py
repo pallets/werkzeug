@@ -11,7 +11,7 @@
 
 import unittest
 import six
-from six import StringIO, next
+from six import StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 

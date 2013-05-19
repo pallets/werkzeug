@@ -16,7 +16,7 @@ from datetime import datetime
 from functools import partial
 
 from werkzeug.testsuite import WerkzeugTestCase
-from six import next, Iterator, text_type
+from six import Iterator, text_type
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
