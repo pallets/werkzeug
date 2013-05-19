@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import unittest
+from functools import partial
 
 from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.contrib.iterio import IterIO, greenlet
@@ -59,9 +60,9 @@ class IterITestSuite(WerkzeugTestCase):
             out.flush()
             out.write('3\n')
         iterable = IterIO(producer)
-        self.assert_equal(iterable.next(), '1\n2\n')
-        self.assert_equal(iterable.next(), '3\n')
-        self.assert_raises(StopIteration, iterable.next)
+        self.assert_equal(next(iterable), '1\n2\n')
+        self.assert_equal(next(iterable), '3\n')
+        self.assert_raises(StopIteration, partial(next, iterable))
 
 
 def suite():

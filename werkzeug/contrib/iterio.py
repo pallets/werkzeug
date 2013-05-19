@@ -44,8 +44,10 @@ try:
 except ImportError:
     greenlet = None
 
+import six
 
-class IterIO(object):
+
+class IterIO(six.Iterator):
     """Instances of this object implement an interface compatible with the
     standard Python :class:`file` object.  Streams are either read-only or
     write-only depending on how the object is created.
@@ -111,7 +113,7 @@ class IterIO(object):
             raise ValueError('I/O operation on closed file')
         raise IOError(9, 'Bad file descriptor')
 
-    def next(self):
+    def __next__(self):
         if self.closed:
             raise StopIteration()
         line = self.readline()
