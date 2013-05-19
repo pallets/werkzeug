@@ -153,8 +153,8 @@ def get_current_traceback(ignore_system_exceptions=False,
     """
     exc_type, exc_value, tb = sys.exc_info()
     if ignore_system_exceptions and exc_type in system_exceptions:
-        raise
-    for x in xrange(skip):
+        six.reraise(exc_type, exc_value, tb)
+    for x in six.moves.xrange(skip):
         if tb.tb_next is None:
             break
         tb = tb.tb_next
