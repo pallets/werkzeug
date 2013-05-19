@@ -182,8 +182,10 @@ class DebugReprGenerator(object):
         return _add_subclass_info(u''.join(buf), d, dict)
 
     def object_repr(self, obj):
-        return u'<span class="object">%s</span>' % \
-               escape(repr(obj).decode('utf-8', 'replace'))
+        r = repr(obj)
+        if not six.PY3:
+            r = r.decode('utf-8', 'replace')
+        return u'<span class="object">%s</span>' % escape(r)
 
     def dispatch_repr(self, obj, recursive):
         if obj is helper:
