@@ -569,7 +569,7 @@ class EnvironBuilder(object):
             'wsgi.multiprocess':    self.multiprocess,
             'wsgi.run_once':        self.run_once
         })
-        for key, value in self.headers.to_list(self.charset):
+        for key, value in self.headers.to_wsgi_list():
             result['HTTP_%s' % key.upper().replace('-', '_')] = value
         if self.environ_overrides:
             result.update(self.environ_overrides)

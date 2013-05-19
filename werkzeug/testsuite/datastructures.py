@@ -504,7 +504,7 @@ class HeadersTestCase(WerkzeugTestCase):
         self.assert_equal(len(headers.getlist('Content-Type')), 1)
 
         # list conversion
-        self.assert_equal(headers.to_list(), [
+        self.assert_equal(headers.to_wsgi_list(), [
             ('Content-Type', 'foo/bar'),
             ('X-Foo', 'bar')
         ])
