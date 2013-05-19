@@ -151,7 +151,7 @@ class DebugReprGenerator(object):
         escaped = escape(obj)
         a = repr(escaped[:limit])
         b = repr(escaped[limit:])
-        if isinstance(obj, unicode):
+        if isinstance(obj, six.text_type) and not six.PY3:
             buf.append('u')
             a = a[1:]
             b = b[1:]
@@ -160,7 +160,7 @@ class DebugReprGenerator(object):
         else:
             buf.append(a)
         buf.append('</span>')
-        return _add_subclass_info(u''.join(buf), obj, (str, unicode))
+        return _add_subclass_info(u''.join(buf), obj, (bytes, six.text_type))
 
     def dict_repr(self, d, recursive, limit=5):
         if recursive:
