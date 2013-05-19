@@ -15,6 +15,7 @@
 """
 import sys
 import re
+import codecs
 from traceback import format_exception_only
 try:
     from collections import deque
@@ -139,7 +140,11 @@ class DebugReprGenerator(object):
     del _sequence_repr_maker
 
     def regex_repr(self, obj):
-        pattern = repr(obj.pattern).decode('string-escape', 'ignore')
+        pattern = repr(obj.pattern)
+        if six.PY3:
+            pattern = codecs.decode(pattern, 'unicode-escape', 'ignore')
+        else:
+            pattern = pattern.decode('string-escape', 'ignore')
         if pattern[:1] == 'u':
             pattern = 'ur' + pattern[1:]
         else:

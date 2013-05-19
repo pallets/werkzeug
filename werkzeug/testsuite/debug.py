@@ -80,7 +80,8 @@ class DebugReprTestCase(WerkzeugTestCase):
             u're.compile(<span class="string regex">r\'foo\\d\'</span>)')
         #XXX: no raw string here cause of a syntax bug in py3.3
         self.assert_equal(debug_repr(re.compile(u'foo\\d')),
-            u're.compile(<span class="string regex">ur\'foo\\d\'</span>)')
+            u're.compile(<span class="string regex">%sr\'foo\\d\'</span>)' %
+            ('' if six.PY3 else 'u'))
 
     def test_set_repr(self):
         self.assert_equal(debug_repr(frozenset('x')),
