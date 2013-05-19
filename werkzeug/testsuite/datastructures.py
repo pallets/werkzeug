@@ -588,6 +588,8 @@ class HeadersTestCase(WerkzeugTestCase):
                 h.set('foo', 'test', option=variation)
 
     def test_slicing(self):
+        # there's nothing wrong with these being native strings
+        # Headers doesn't care about the data types
         h = self.storage_class()
         h.set('X-Foo-Poo', 'bleh')
         h.set('Content-Type', 'application/whocares')
