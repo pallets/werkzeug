@@ -16,7 +16,7 @@ from datetime import datetime
 from functools import partial
 
 from werkzeug.testsuite import WerkzeugTestCase
-from six import next, Iterator
+from six import next, Iterator, text_type
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
@@ -107,7 +107,7 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
     def test_escape(self):
         class Foo(str):
             def __html__(self):
-                return unicode(self)
+                return text_type(self)
         self.assert_equal(utils.escape(None), '')
         self.assert_equal(utils.escape(42), '42')
         self.assert_equal(utils.escape('<>'), '&lt;&gt;')
