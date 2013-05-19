@@ -125,7 +125,7 @@ class TestTestCase(WerkzeugTestCase):
         c = Client(cookie_app)
         c.open('/path1')
         appiter, code, headers = c.open('/path2')
-        self.assert_equal(''.join(appiter), 'test=test')
+        self.assert_equal(b''.join(appiter), b'test=test')
 
     def test_environ_builder_basics(self):
         b = EnvironBuilder()
@@ -314,10 +314,10 @@ class TestTestCase(WerkzeugTestCase):
             return [environ['PATH_INFO'] + '\n' + environ['SCRIPT_NAME']]
         c = Client(test_app, response_wrapper=BaseResponse)
         resp = c.get('/foo%40bar')
-        self.assert_equal(resp.data, '/foo@bar\n')
+        self.assert_equal(resp.data, b'/foo@bar\n')
         c = Client(test_app, response_wrapper=BaseResponse)
         resp = c.get('/foo%40bar', 'http://localhost/bar%40baz')
-        self.assert_equal(resp.data, '/foo@bar\n/bar@baz')
+        self.assert_equal(resp.data, b'/foo@bar\n/bar@baz')
 
     def test_multi_value_submit(self):
         c = Client(multi_value_post_app, response_wrapper=BaseResponse)
@@ -360,8 +360,8 @@ class TestTestCase(WerkzeugTestCase):
         @Request.application
         def test_app(request):
             response = Response(repr(sorted(request.cookies.items())))
-            response.set_cookie(b'test1', b'foo')
-            response.set_cookie(b'test2', b'bar')
+            response.set_cookie(u'test1', b'foo')
+            response.set_cookie(u'test2', b'bar')
             return response
         client = Client(test_app, Response)
         resp = client.get('/')
