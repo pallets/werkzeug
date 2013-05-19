@@ -2227,6 +2227,8 @@ class ContentRange(object):
     def __nonzero__(self):
         return self.units is not None
 
+    __bool__ = __nonzero__
+
     def __str__(self):
         return self.to_header()
 
