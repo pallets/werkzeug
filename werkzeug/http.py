@@ -35,6 +35,7 @@ import base64
 
 
 from six import next, iteritems, binary_type, text_type, string_types
+from werkzeug._compat import to_native
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
@@ -771,6 +772,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
+    to_native(header, charset)
     if cls is None:
         cls = TypeConversionDict
     cookie = _ExtendedCookie()
@@ -816,13 +818,13 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
     """
-    try:
-        key = str(key)
-    except UnicodeError:
+    if not isinstance(key, (binary_type, text_type)):
         raise TypeError('invalid key %r' % key)
-    if isinstance(value, text_type):
-        value = value.encode(charset)
-    
+    if not isinstance(value, (binary_type, text_type)):
+        raise TypeError('invalid value %r' % value)
+
+    key, value = to_native(key, charset), to_native(value, charset)
+
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
     if isinstance(max_age, timedelta):
