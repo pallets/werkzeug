@@ -304,7 +304,8 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
 def _url_encode_impl(obj, charset, encode_keys, sort, key):
     #XXX: probably broken badly on 3.x
     iterable = iter_multi_items(obj)
-    iterable = ((to_bytes(k), to_bytes(v)) for k, v in iterable if v is not None)
+    iterable = ((to_bytes(k, charset), to_bytes(v, charset))
+                for k, v in iterable if v is not None)
     if sort:
         iterable = sorted(iterable, key=key)
     # we need to ignore encode_keys, because quote takes nothing else than
