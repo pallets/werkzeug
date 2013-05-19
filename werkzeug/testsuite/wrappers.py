@@ -24,6 +24,8 @@ from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
      CombinedMultiDict
 from werkzeug.test import Client, create_environ, run_wsgi_app
 
+import six
+
 
 class RequestTestResponse(wrappers.BaseResponse):
     """Subclass of the normal response class we use to test response
@@ -203,8 +205,8 @@ class WrappersTestCase(WerkzeugTestCase):
 
         # close call forwarding
         closed = []
-        class Iterable(object):
-            def next(self):
+        class Iterable(six.Iterator):
+            def __next__(self):
                 raise StopIteration()
             def __iter__(self):
                 return self
