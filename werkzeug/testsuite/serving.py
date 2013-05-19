@@ -18,6 +18,7 @@ try:
     from urllib import urlopen
 except ImportError:  # pragma: no cover
     from urllib.request import urlopen
+    from urllib.error import HTTPError
 
 import unittest
 from functools import update_wrapper
@@ -86,8 +87,12 @@ class ServingTestCase(WerkzeugTestCase):
         def broken_app(environ, start_response):
             1/0
         server, addr = run_dev_server(broken_app)
-        rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        assert 'Internal Server Error' in rv
+        try:
+            rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+        except HTTPError as e:
+            # In Python3 a 500 response causes an exception
+            rv = e.read()
+        assert b'Internal Server Error' in rv
 
     @silencestderr
     def test_absolute_requests(self):
