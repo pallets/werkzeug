@@ -772,6 +772,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
+    to_native(header, charset)
     if cls is None:
         cls = TypeConversionDict
     cookie = _ExtendedCookie()
@@ -822,7 +823,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     if not isinstance(value, (binary_type, text_type)):
         raise TypeError('invalid value %r' % value)
 
-    key, value = to_native(key), to_native(value)
+    key, value = to_native(key, charset), to_native(value, charset)
 
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
