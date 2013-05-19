@@ -187,7 +187,7 @@ class WrappersTestCase(WerkzeugTestCase):
         # set cookie
         response = wrappers.BaseResponse()
         response.set_cookie('foo', 'bar', 60, 0, '/blub', 'example.org', False)
-        self.assert_equal(response.headers.to_list(), [
+        self.assert_equal(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; expires=Thu, '
              '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub')
@@ -196,7 +196,7 @@ class WrappersTestCase(WerkzeugTestCase):
         # delete cookie
         response = wrappers.BaseResponse()
         response.delete_cookie('foo')
-        self.assert_equal(response.headers.to_list(), [
+        self.assert_equal(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=; expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/')
         ])
