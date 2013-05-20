@@ -135,8 +135,9 @@ class WerkzeugTestCase(unittest.TestCase):
         '''Stricter version of assert_equal that doesn't do implicit conversion
         between unicode and strings'''
         self.assert_equal(x, y)
-        assert issubclass(type(x), type(y)) or issubclass(type(y), type(x))
-        if isinstance(x, (six.binary_type, six.text_type)):
+        assert issubclass(type(x), type(y)) or issubclass(type(y), type(x)), \
+                '%s != %s' % (type(x), type(y))
+        if isinstance(x, (six.binary_type, six.text_type, six.integer_types)):
             return
         elif isinstance(x, (set, dict)):
             x = sorted(x)
