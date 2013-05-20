@@ -1,5 +1,6 @@
 
 from . import _urlparse as urlparse
+from functools import reduce
 
 import six
 
@@ -48,3 +49,7 @@ def to_native(x, charset):
         return x.decode(charset)
     else:
         return x.encode(charset)
+
+def string_join(list):
+    '''concatenate any string type'''
+    return reduce(lambda x, y: x + y, list)
