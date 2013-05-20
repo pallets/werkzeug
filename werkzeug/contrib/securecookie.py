@@ -91,6 +91,7 @@ r"""
 import pickle
 from hmac import new as hmac
 from time import time
+import base64
 from werkzeug._compat import iteritems
 from werkzeug.urls import url_quote_plus, url_unquote_plus
 from werkzeug._internal import _date_to_unix
@@ -177,7 +178,7 @@ class SecureCookie(ModificationTrackingDict):
         if cls.serialization_method is not None:
             value = cls.serialization_method.dumps(value)
         if cls.quote_base64:
-            value = ''.join(value.encode('base64').splitlines()).strip()
+            value = b''.join(base64.b64encode(value).splitlines()).strip()
         return value
 
     @classmethod
