@@ -262,19 +262,19 @@ class TestTestCase(WerkzeugTestCase):
         c = Client(redirect_with_get_app)
         appiter, code, headers = c.open(environ_overrides=env, follow_redirects=True)
         self.assert_equal(code, '200 OK')
-        self.assert_equal(''.join(appiter), 'current url: http://localhost/some/redirect/')
+        self.assert_equal(b''.join(appiter), b'current url: http://localhost/some/redirect/')
 
         # Test that the :cls:`Client` is aware of user defined response wrappers
         c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
         resp = c.get('/', follow_redirects=True)
         self.assert_equal(resp.status_code, 200)
-        self.assert_equal(resp.data, 'current url: http://localhost/some/redirect/')
+        self.assert_equal(resp.data, b'current url: http://localhost/some/redirect/')
 
         # test with URL other than '/' to make sure redirected URL's are correct
         c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
         resp = c.get('/first/request', follow_redirects=True)
         self.assert_equal(resp.status_code, 200)
-        self.assert_equal(resp.data, 'current url: http://localhost/some/redirect/')
+        self.assert_equal(resp.data, b'current url: http://localhost/some/redirect/')
 
     def test_follow_external_redirect(self):
         env = create_environ('/', base_url='http://localhost')
@@ -306,7 +306,7 @@ class TestTestCase(WerkzeugTestCase):
         c = Client(redirect_with_post_app, response_wrapper=BaseResponse)
         resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
         self.assert_equal(resp.status_code, 200)
-        self.assert_equal(resp.data, 'current url: http://localhost/some/redirect/')
+        self.assert_equal(resp.data, b'current url: http://localhost/some/redirect/')
 
     def test_path_info_script_name_unquoting(self):
         def test_app(environ, start_response):
