@@ -13,8 +13,7 @@ from __future__ import with_statement
 
 import unittest
 from os import path
-#XXX: py3 verify
-from io import BytesIO as StringIO
+from io import StringIO
 from contextlib import closing
 from six.moves import xrange
 
