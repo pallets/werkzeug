@@ -600,7 +600,7 @@ def wrap_file(environ, file, buffer_size=8192):
     return environ.get('wsgi.file_wrapper', FileWrapper)(file, buffer_size)
 
 
-class FileWrapper(object):
+class FileWrapper(Iterator):
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
     read.
@@ -629,7 +629,7 @@ class FileWrapper(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         data = self.file.read(self.buffer_size)
         if data:
             return data
