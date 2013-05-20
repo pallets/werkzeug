@@ -23,6 +23,7 @@ import pickle
 from copy import copy
 from werkzeug.testsuite import WerkzeugTestCase
 from six.moves import xrange
+from six import text_type
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
     iterlistvalues
 
@@ -625,6 +626,20 @@ class EnvironHeadersTestCase(WerkzeugTestCase):
         ])
         assert not self.storage_class({'wsgi.version': (1, 0)})
         self.assert_equal(len(self.storage_class({'wsgi.version': (1, 0)})), 0)
+
+    def test_return_type_is_unicode(self):
+        # environ contains native strings; we return unicode
+        headers = self.storage_class({
+            'HTTP_FOO': '\xe2\x9c\x93',
+            'CONTENT_TYPE': 'text/plain',
+        })
+        self.assert_equal(headers['Foo'], u"\xe2\x9c\x93")
+        assert isinstance(headers['Foo'], text_type)
+        assert isinstance(headers['Content-Type'], text_type)
+        iter_output = dict(iter(headers))
+        self.assert_equal(iter_output['Foo'], u"\xe2\x9c\x93")
+        assert isinstance(iter_output['Foo'], text_type)
+        assert isinstance(iter_output['Content-Type'], text_type)
 
 
 class HeaderSetTestCase(WerkzeugTestCase):
