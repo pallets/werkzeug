@@ -92,7 +92,7 @@ class TestTestCase(WerkzeugTestCase):
         c = Client(cookie_app)
         c.set_cookie('localhost', 'foo', 'bar')
         appiter, code, headers = c.open()
-        self.assert_equal(list(appiter), ['foo=bar'])
+        self.assert_equal(list(appiter), [b'foo=bar'])
 
     def test_set_cookie_app(self):
         c = Client(cookie_app)
@@ -107,19 +107,19 @@ class TestTestCase(WerkzeugTestCase):
     def test_no_initial_cookie(self):
         c = Client(cookie_app)
         appiter, code, headers = c.open()
-        self.assert_equal(''.join(appiter), 'No Cookie')
+        self.assert_equal(b''.join(appiter), b'No Cookie')
 
     def test_resent_cookie(self):
         c = Client(cookie_app)
         c.open()
         appiter, code, headers = c.open()
-        self.assert_equal(''.join(appiter), 'test=test')
+        self.assert_equal(b''.join(appiter), b'test=test')
 
     def test_disable_cookies(self):
         c = Client(cookie_app, use_cookies=False)
         c.open()
         appiter, code, headers = c.open()
-        self.assert_equal(''.join(appiter), 'No Cookie')
+        self.assert_equal(b''.join(appiter), b'No Cookie')
 
     def test_cookie_for_different_path(self):
         c = Client(cookie_app)
