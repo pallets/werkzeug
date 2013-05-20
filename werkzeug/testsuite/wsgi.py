@@ -15,6 +15,7 @@ import unittest
 from os import path
 #XXX: py3 verify
 from io import BytesIO as StringIO
+from contextlib import closing
 from six.moves import xrange
 
 from werkzeug.testsuite import WerkzeugTestCase
@@ -44,11 +45,14 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         for p in '/test.txt', '/sources/test.txt':
             app_iter, status, headers = run_wsgi_app(app, create_environ(p))
             self.assert_equal(status, '200 OK')
-            self.assert_equal(b''.join(app_iter).strip(), b'FOUND')
+            with closing(app_iter) as app_iter:
+                data = b''.join(app_iter).strip()
+            self.assert_equal(data, b'FOUND')
 
         app_iter, status, headers = run_wsgi_app(
             app, create_environ('/pkg/debugger.js'))
-        contents = b''.join(app_iter)
+        with closing(app_iter) as app_iter:
+            contents = b''.join(app_iter)
         self.assert_in(b'$(function() {', contents)
 
         app_iter, status, headers = run_wsgi_app(
