@@ -837,7 +837,7 @@ class LimitedStream(object):
         function.
         """
         if self.silent:
-            return ''
+            return b''
         from werkzeug.exceptions import BadRequest
         raise BadRequest('input stream exhausted')
 

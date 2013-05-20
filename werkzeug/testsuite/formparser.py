@@ -111,7 +111,7 @@ class FormParserTestCase(WerkzeugTestCase):
         del env['CONTENT_LENGTH']
 
         stream, form, files = formparser.parse_form_data(env)
-        self.assert_equal(stream.read(), '')
+        self.assert_equal(stream.read(), b'')
         self.assert_equal(len(form), 0)
         self.assert_equal(len(files), 0)
 
@@ -121,7 +121,7 @@ class FormParserTestCase(WerkzeugTestCase):
         del env['CONTENT_LENGTH']
 
         stream, form, files = formparser.parse_form_data(env)
-        self.assert_equal(stream.read(), '')
+        self.assert_equal(stream.read(), b'')
         self.assert_equal(len(form), 0)
         self.assert_equal(len(files), 0)
 

@@ -13,7 +13,7 @@ from __future__ import with_statement
 
 import unittest
 from os import path
-from io import StringIO
+from io import StringIO, BytesIO
 from contextlib import closing
 from six.moves import xrange
 
@@ -113,58 +113,58 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             def on_exhausted(self):
                 raise BadRequest('input stream exhausted')
 
-        io = StringIO('123456')
+        io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
-        self.assert_equal(stream.read(), '123')
+        self.assert_equal(stream.read(), b'123')
         self.assert_raises(BadRequest, stream.read)
 
-        io = StringIO('123456')
+        io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
         self.assert_equal(stream.tell(), 0)
-        self.assert_equal(stream.read(1), '1')
+        self.assert_equal(stream.read(1), b'1')
         self.assert_equal(stream.tell(), 1)
-        self.assert_equal(stream.read(1), '2')
+        self.assert_equal(stream.read(1), b'2')
         self.assert_equal(stream.tell(), 2)
-        self.assert_equal(stream.read(1), '3')
+        self.assert_equal(stream.read(1), b'3')
         self.assert_equal(stream.tell(), 3)
         self.assert_raises(BadRequest, stream.read)
 
-        io = StringIO('123456\nabcdefg')
+        io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readline(), '123456\n')
-        self.assert_equal(stream.readline(), 'ab')
+        self.assert_equal(stream.readline(), b'123456\n')
+        self.assert_equal(stream.readline(), b'ab')
 
-        io = StringIO('123456\nabcdefg')
+        io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readlines(), ['123456\n', 'ab'])
+        self.assert_equal(stream.readlines(), [b'123456\n', b'ab'])
 
-        io = StringIO('123456\nabcdefg')
+        io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readlines(2), ['12'])
-        self.assert_equal(stream.readlines(2), ['34'])
-        self.assert_equal(stream.readlines(), ['56\n', 'ab'])
+        self.assert_equal(stream.readlines(2), [b'12'])
+        self.assert_equal(stream.readlines(2), [b'34'])
+        self.assert_equal(stream.readlines(), [b'56\n', b'ab'])
 
-        io = StringIO('123456\nabcdefg')
+        io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readline(100), '123456\n')
+        self.assert_equal(stream.readline(100), b'123456\n')
 
-        io = StringIO('123456\nabcdefg')
+        io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readlines(100), ['123456\n', 'ab'])
+        self.assert_equal(stream.readlines(100), [b'123456\n', b'ab'])
 
-        io = StringIO('123456')
+        io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        self.assert_equal(stream.read(1), '1')
-        self.assert_equal(stream.read(1), '2')
-        self.assert_equal(stream.read(), '3')
-        self.assert_equal(stream.read(), '')
+        self.assert_equal(stream.read(1), b'1')
+        self.assert_equal(stream.read(1), b'2')
+        self.assert_equal(stream.read(), b'3')
+        self.assert_equal(stream.read(), b'')
 
-        io = StringIO('123456')
+        io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        self.assert_equal(stream.read(-1), '123')
+        self.assert_equal(stream.read(-1), b'123')
 
     def test_limited_stream_disconnection(self):
-        io = StringIO('A bit of content')
+        io = BytesIO(b'A bit of content')
 
         # disconnect detection on out of bytes
         stream = wsgi.LimitedStream(io, 255)
@@ -172,7 +172,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             stream.read()
 
         # disconnect detection because file close
-        io = StringIO('x' * 255)
+        io = BytesIO(b'x' * 255)
         io.close()
         stream = wsgi.LimitedStream(io, 255)
         with self.assert_raises(ClientDisconnected):
