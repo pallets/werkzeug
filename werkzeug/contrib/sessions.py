@@ -182,7 +182,7 @@ class SessionStore(object):
 
 
 #: used for temporary files by the filesystem session store
-_fs_transaction_suffix = '.__wz_sess'
+_fs_transaction_suffix = b'.__wz_sess'
 
 
 class FilesystemSessionStore(SessionStore):
