@@ -137,7 +137,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     self.send_header('Date', self.date_time_string())
                 self.end_headers()
 
-            assert type(data) is str, 'applications must write bytes'
+            assert type(data) is six.binary_type, 'applications must write bytes'
             self.wfile.write(data)
             self.wfile.flush()
 
@@ -156,11 +156,14 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         def execute(app):
             application_iter = app(environ, start_response)
             try:
+                if six.PY3 and isinstance(application_iter, bytes):
+                    # iterating over bytes' items would give us ints
+                    application_iter = (application_iter,)
                 for data in application_iter:
                     write(data)
                 # make sure the headers are sent
                 if not headers_sent:
-                    write('')
+                    write(b'')
             finally:
                 if hasattr(application_iter, 'close'):
                     application_iter.close()
@@ -233,8 +236,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if message is None:
             message = code in self.responses and self.responses[code][0] or ''
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write("%s %d %s\r\n" %
-                             (self.protocol_version, code, message))
+            hdr = "%s %d %s\r\n" % (self.protocol_version, code, message)
+            self.wfile.write(hdr.encode('ascii'))
 
     def version_string(self):
         return BaseHTTPRequestHandler.version_string(self).strip()

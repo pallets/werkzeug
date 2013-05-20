@@ -18,10 +18,12 @@ try:
     from urllib import urlopen
 except ImportError:  # pragma: no cover
     from urllib.request import urlopen
+    from urllib.error import HTTPError
 
 import unittest
 from functools import update_wrapper
 from six import StringIO
+import six
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -54,11 +56,8 @@ def run_dev_server(application):
         return srv
     serving.make_server = tracking_make_server
     try:
-        t = Thread(
-            target=serving.run_simple,
-            args=('localhost', 0, application),
-            kwargs={'passthrough_errors': True},
-        )
+        t = Thread(target=serving.run_simple,
+                   args=('localhost', 0, application))
         t.setDaemon(True)
         t.start()
         time.sleep(0.25)
@@ -66,7 +65,7 @@ def run_dev_server(application):
         serving.make_server = real_make_server
     if not servers:
         return None, None
-    server ,= servers
+    server, = servers
     ip, port = server.socket.getsockname()[:2]
     if ':' in ip:
         ip = '[%s]' % ip
@@ -79,17 +78,21 @@ class ServingTestCase(WerkzeugTestCase):
     def test_serving(self):
         server, addr = run_dev_server(test_app)
         rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        self.assertIn('WSGI Information', rv)
-        self.assertIn('foo=bar&amp;baz=blah', rv)
-        self.assertIn('Werkzeug/%s' % version, rv)
+        self.assertIn(b'WSGI Information', rv)
+        self.assertIn(b'foo=bar&amp;baz=blah', rv)
+        self.assertIn(b'Werkzeug/' + six.b(version), rv)
 
     @silencestderr
     def test_broken_app(self):
         def broken_app(environ, start_response):
             1/0
         server, addr = run_dev_server(broken_app)
-        rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        assert 'Internal Server Error' in rv
+        try:
+            rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+        except HTTPError as e:
+            # In Python3 a 500 response causes an exception
+            rv = e.read()
+        assert b'Internal Server Error' in rv
 
     @silencestderr
     def test_absolute_requests(self):
@@ -98,13 +101,13 @@ class ServingTestCase(WerkzeugTestCase):
             assert environ['PATH_INFO'] == '/index.htm'
             assert environ['SERVER_PORT'] == addr.split(':')[1]
             start_response('200 OK', [('Content-Type', 'text/html')])
-            return 'YES'
+            return b'YES'
 
         server, addr = run_dev_server(asserting_app)
         conn = httplib.HTTPConnection(addr)
         conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm')
         res = conn.getresponse()
-        assert res.read() == 'YES'
+        assert res.read() == b'YES'
 
 
 def suite():
