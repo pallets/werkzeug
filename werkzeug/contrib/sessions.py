@@ -188,7 +188,7 @@ class SessionStore(object):
 
 
 #: used for temporary files by the filesystem session store
-_fs_transaction_suffix = b'.__wz_sess'
+_fs_transaction_suffix = '.__wz_sess'
 
 
 class FilesystemSessionStore(SessionStore):
@@ -219,7 +219,7 @@ class FilesystemSessionStore(SessionStore):
         if path is None:
             path = tempfile.gettempdir()
         self.path = path
-        if isinstance(filename_template, six.text_type):
+        if isinstance(filename_template, six.text_type) and not six.PY3:
             filename_template = filename_template.encode(
                 sys.getfilesystemencoding() or 'utf-8')
         assert not filename_template.endswith(_fs_transaction_suffix), \
@@ -232,7 +232,7 @@ class FilesystemSessionStore(SessionStore):
         # out of the box, this should be a strict ASCII subset but
         # you might reconfigure the session object to have a more
         # arbitrary string.
-        if isinstance(sid, six.text_type):
+        if isinstance(sid, six.text_type) and not six.PY3:
             sid = sid.encode(sys.getfilesystemencoding() or 'utf-8')
         return path.join(self.path, self.filename_template % sid)
 
