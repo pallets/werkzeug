@@ -20,7 +20,7 @@ from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
      ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
-     CombinedMultiDict
+     MIMEAccept, LanguageAccept, CombinedMultiDict
 from werkzeug.test import Client, create_environ, run_wsgi_app
 
 import six
@@ -266,7 +266,7 @@ class WrappersTestCase(WerkzeugTestCase):
             'HTTP_ACCEPT_ENCODING': 'gzip,deflate',
             'HTTP_ACCEPT_LANGUAGE': 'en-us,en;q=0.5'
         })
-        self.assert_equal(request.accept_mimetypes, CharsetAccept([
+        self.assert_equal(request.accept_mimetypes, MIMEAccept([
             ('text/xml', 1), ('image/png', 1), ('application/xml', 1),
             ('application/xhtml+xml', 1), ('text/html', 0.9),
             ('text/plain', 0.8), ('*/*', 0.5)
@@ -274,11 +274,13 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(request.accept_charsets, CharsetAccept([
             ('ISO-8859-1', 1), ('utf-8', 0.7), ('*', 0.7)
         ]))
-        self.assert_strict_equal(request.accept_encodings, CharsetAccept([('gzip', 1), ('deflate', 1)]))
-        self.assert_strict_equal(request.accept_languages, CharsetAccept([('en-us', 1), ('en', 0.5)]))
+        self.assert_strict_equal(request.accept_encodings, CharsetAccept([
+            ('gzip', 1), ('deflate', 1)]))
+        self.assert_strict_equal(request.accept_languages, LanguageAccept([
+            ('en-us', 1), ('en', 0.5)]))
 
         request = wrappers.Request({'HTTP_ACCEPT': ''})
-        self.assert_strict_equal(request.accept_mimetypes, CharsetAccept())
+        self.assert_strict_equal(request.accept_mimetypes, MIMEAccept())
 
     def test_etag_request_mixin(self):
         request = wrappers.Request({
