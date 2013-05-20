@@ -736,23 +736,28 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
     :param buffer_size: The optional buffer size.
     """
     _read = make_chunk_iter_func(stream, limit, buffer_size)
-    _split = re.compile(r'(%s)' % re.escape(separator)).split
+    separator_pattern = r'(%s)' % re.escape(separator)
+    _string_split = re.compile(separator_pattern).split
+    _bytes_split = re.compile(separator_pattern.encode('ascii')).split
     buffer = []
     while 1:
         new_data = _read()
         if not new_data:
             break
-        chunks = _split(new_data)
+        if isinstance(new_data, text_type):
+            chunks = _string_split(new_data)
+        else:
+            chunks = _bytes_split(new_data)
         new_buf = []
         for item in chain(buffer, chunks):
             if item == separator:
-                yield ''.join(new_buf)
+                yield string_join(new_buf)
                 new_buf = []
             else:
                 new_buf.append(item)
         buffer = new_buf
     if buffer:
-        yield ''.join(buffer)
+        yield string_join(buffer)
 
 
 class LimitedStream(object):
