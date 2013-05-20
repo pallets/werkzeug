@@ -15,7 +15,6 @@ import six
 from six.moves import http_cookies as cookies
 from time import gmtime
 from datetime import datetime, date
-from werkzeug._compat import to_native
 
 
 _logger = None
@@ -278,12 +277,6 @@ class _ExtendedMorsel(cookies.Morsel):
         if name is not None:
             self.set(name, value, value)
 
-    def set(self, name, value, coded_value):
-        name = to_native(name, 'utf-8')
-        value = to_native(value, 'utf-8')
-        coded_value = to_native(coded_value, 'utf-8')
-        cookies.Morsel.set(self, name, value, coded_value)
-
     def OutputString(self, attrs=None):
         httponly = self.pop('httponly', False)
         result = cookies.Morsel.OutputString(self, attrs).rstrip('\t ;')
@@ -305,9 +298,6 @@ class _ExtendedCookie(cookies.SimpleCookie):
         except cookies.CookieError:
             pass
         dict.__setitem__(self, key, morsel)
-
-    def load(self, rawdata):
-        cookies.SimpleCookie.load(self, to_native(rawdata, 'utf-8'))
 
 
 class _DictAccessorProperty(object):
