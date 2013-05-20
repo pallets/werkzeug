@@ -15,7 +15,7 @@ try:
 except ImportError:
     from http import client as httplib
 try:
-    from urllib import urlopen
+    from urllib2 import urlopen, HTTPError
 except ImportError:  # pragma: no cover
     from urllib.request import urlopen
     from urllib.error import HTTPError
@@ -88,11 +88,13 @@ class ServingTestCase(WerkzeugTestCase):
             1/0
         server, addr = run_dev_server(broken_app)
         try:
-            rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
+            urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
         except HTTPError as e:
             # In Python3 a 500 response causes an exception
             rv = e.read()
-        assert b'Internal Server Error' in rv
+            assert b'Internal Server Error' in rv
+        else:
+            assert False, 'expected internal server error'
 
     @silencestderr
     def test_absolute_requests(self):
