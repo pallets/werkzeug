@@ -107,7 +107,7 @@ from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
-from werkzeug._compat import itervalues, iteritems, to_unicode
+from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 import six
@@ -721,7 +721,7 @@ class Rule(RuleFactory):
                     return
                 processed.add(data)
             else:
-                add(url_quote(data, self.map.charset, safe='/:|+'))
+                add(url_quote(to_bytes(data, self.map.charset), safe='/:|+'))
         domain_part, url = (u''.join(tmp)).split(u'|', 1)
 
         if append_unknown:
@@ -843,7 +843,7 @@ class BaseConverter(object):
         return value
 
     def to_url(self, value):
-        return url_quote(value, self.map.charset)
+        return url_quote(to_bytes(value, self.map.charset))
 
 
 class UnicodeConverter(BaseConverter):

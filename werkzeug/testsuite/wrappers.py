@@ -93,7 +93,7 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_equal(response['args'], MultiDict([('blub', 'blah')]))
         self.assert_equal(response['args_as_list'], [('blub', ['blah'])])
         self.assert_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
-        self.assert_equal(response['data'], '')
+        self.assert_equal(response['data'], b'')
         # currently we do not guarantee that the values are ordered correctly
         # for post data.
         ## self.assert_equal(response['form_as_list'], [('foo', ['blub hehe']), ('blah', ['42'])])
