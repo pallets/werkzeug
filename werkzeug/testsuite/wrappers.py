@@ -584,7 +584,7 @@ class WrappersTestCase(WerkzeugTestCase):
 
         req = MyRequest.from_values('/?foo=1&bar=0&foo=3')
         self.assert_equal(list(req.args), ['foo', 'bar'])
-        self.assert_equal(req.args.items(multi=True), [
+        self.assert_equal(list(req.args.items(multi=True)), [
             ('foo', '1'),
             ('bar', '0'),
             ('foo', '3')
