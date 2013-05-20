@@ -10,6 +10,7 @@
 """
 import re
 import os
+import sys
 import posixpath
 import mimetypes
 from itertools import chain, repeat
@@ -447,7 +448,7 @@ class SharedDataMiddleware(object):
         return 'wzsdm-%d-%s-%s' % (
             mktime(mtime.timetuple()),
             file_size,
-            adler32(real_filename) & 0xffffffff
+            adler32(real_filename.encode(sys.getfilesystemencoding())) & 0xffffffff
         )
 
     def __call__(self, environ, start_response):
