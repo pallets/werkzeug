@@ -70,7 +70,9 @@ def iri_to_uri(iri, charset='utf-8'):
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = to_native(scheme, 'ascii')
-    hostname = to_native(hostname, 'idna')
+    if not isinstance(hostname, str) and six.PY3:
+        hostname = to_native(hostname, 'ascii')
+    hostname = to_native(hostname.encode('idna'), 'ascii')
     if auth:
         auth = to_native(auth, charset)
         if ':' in auth:
@@ -86,7 +88,7 @@ def iri_to_uri(iri, charset='utf-8'):
 
     path = to_native(url_quote(path, safe="/:~+%"))
     query = to_native(url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset), charset)
-    fragment = to_native(fragment)
+    fragment = to_native(fragment, charset)
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
