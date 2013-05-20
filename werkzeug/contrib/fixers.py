@@ -232,7 +232,7 @@ class InternetExplorerFix(object):
 
     def run_fixed(self, environ, start_response):
         def fixing_start_response(status, headers, exc_info=None):
-            self.fix_headers(environ, Headers.linked(headers), status)
+            self.fix_headers(environ, Headers(_list=headers), status)
             return start_response(status, headers, exc_info)
         return self.app(environ, fixing_start_response)
 
