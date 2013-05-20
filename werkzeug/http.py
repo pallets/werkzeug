@@ -772,7 +772,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
-    to_native(header, charset)
+    header = to_native(header, charset)
     if cls is None:
         cls = TypeConversionDict
     cookie = _ExtendedCookie()

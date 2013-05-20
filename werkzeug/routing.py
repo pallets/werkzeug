@@ -722,7 +722,7 @@ class Rule(RuleFactory):
                 processed.add(data)
             else:
                 add(url_quote(data, self.map.charset, safe='/:|+'))
-        domain_part, url = (u''.join(tmp)).split('|', 1)
+        domain_part, url = (u''.join(tmp)).split(u'|', 1)
 
         if append_unknown:
             query_vars = MultiDict(values)
@@ -731,7 +731,7 @@ class Rule(RuleFactory):
                     del query_vars[key]
 
             if query_vars:
-                url += '?' + url_encode(query_vars, self.map.charset,
+                url += u'?' + url_encode(query_vars, charset=self.map.charset,
                                         sort=self.map.sort_parameters,
                                         key=self.map.sort_key)
 
