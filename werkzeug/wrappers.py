@@ -441,6 +441,8 @@ class BaseRequest(object):
         even if the URL root is accessed.
         """
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
+        if six.PY3:
+            return path
         return _decode_unicode(path, self.url_charset, self.encoding_errors)
 
     @cached_property
@@ -452,6 +454,8 @@ class BaseRequest(object):
     def script_root(self):
         """The root path of the script without the trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
+        if six.PY3:
+            return path
         return _decode_unicode(path, self.url_charset, self.encoding_errors)
 
     @cached_property
