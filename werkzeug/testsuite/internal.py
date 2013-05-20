@@ -56,11 +56,11 @@ class InternalTestCase(WerkzeugTestCase):
         # unicode data does not set content length
         response = Response([u'Hällo Wörld'])
         headers = response.get_wsgi_headers(create_environ())
-        assert 'Content-Length' not in headers
+        assert u'Content-Length' not in headers
 
-        response = Response(['Hällo Wörld'])
+        response = Response([u'Hällo Wörld'.encode('utf-8')])
         headers = response.get_wsgi_headers(create_environ())
-        assert 'Content-Length' in headers
+        assert u'Content-Length' in headers
 
         # check for internal warnings
         filterwarnings('error', category=Warning)

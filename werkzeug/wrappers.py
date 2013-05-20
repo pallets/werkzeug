@@ -45,6 +45,7 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ContentRange
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
+from werkzeug._compat import to_unicode, to_bytes
 
 
 def _run_wsgi_app(*args):
@@ -983,11 +984,11 @@ class BaseResponse(object):
         # speedup.
         for key, value in headers:
             ikey = key.lower()
-            if ikey == 'location':
+            if ikey == u'location':
                 location = value
-            elif ikey == 'content-location':
+            elif ikey == u'content-location':
                 content_location = value
-            elif ikey == 'content-length':
+            elif ikey == u'content-length':
                 content_length = value
 
         # make sure the location header is an absolute URL
@@ -1001,19 +1002,19 @@ class BaseResponse(object):
                     current_url = iri_to_uri(current_url)
                 location = urlparse.urljoin(current_url, location)
             if location != old_location:
-                headers['Location'] = location
+                headers[u'Location'] = location
 
         # make sure the content location is a URL
         if content_location is not None and \
            isinstance(content_location, six.text_type):
-            headers['Content-Location'] = iri_to_uri(content_location)
+            headers[u'Content-Location'] = iri_to_uri(content_location)
 
         # remove entity headers and set content length to zero if needed.
         # Also update content_length accordingly so that the automatic
         # content length detection does not trigger in the following
         # code.
         if 100 <= status < 200 or status == 204:
-            headers['Content-Length'] = content_length = '0'
+            headers['Content-Length'] = content_length = u'0'
         elif status == 304:
             remove_entity_headers(headers)
 
@@ -1025,13 +1026,14 @@ class BaseResponse(object):
         if self.automatically_set_content_length and \
            self.is_sequence and content_length is None and status != 304:
             try:
-                content_length = sum(len(str(x)) for x in self.response)
+                content_length = sum(len(to_bytes(x, 'ascii')) for x in self.response)
             except UnicodeError:
                 # aha, something non-bytestringy in there, too bad, we
                 # can't safely figure out the length of the response.
                 pass
             else:
-                headers['Content-Length'] = str(content_length)
+                # this "casting" actually works
+                headers['Content-Length'] = six.text_type(content_length)
 
         return headers
 
