@@ -80,7 +80,7 @@ class WrappersTestCase(WerkzeugTestCase):
 
         # get requests
         response = client.get('/?foo=bar&foo=hehe')
-        self.assert_strict_equal(response['args'], MultiDict([('foo', 'bar'), ('foo', 'hehe')]))
+        self.assert_strict_equal(response['args'], MultiDict([(u'foo', u'bar'), (u'foo', u'hehe')]))
         self.assert_strict_equal(response['args_as_list'], [('foo', ['bar', 'hehe'])])
         self.assert_strict_equal(response['form'], MultiDict())
         self.assert_strict_equal(response['form_as_list'], [])
@@ -266,7 +266,7 @@ class WrappersTestCase(WerkzeugTestCase):
             'HTTP_ACCEPT_ENCODING': 'gzip,deflate',
             'HTTP_ACCEPT_LANGUAGE': 'en-us,en;q=0.5'
         })
-        self.assert_strict_equal(request.accept_mimetypes, CharsetAccept([
+        self.assert_equal(request.accept_mimetypes, CharsetAccept([
             ('text/xml', 1), ('image/png', 1), ('application/xml', 1),
             ('application/xhtml+xml', 1), ('text/html', 0.9),
             ('text/plain', 0.8), ('*/*', 0.5)
@@ -387,7 +387,7 @@ class WrappersTestCase(WerkzeugTestCase):
         resp = wrappers.Response()
         resp.www_authenticate.type = 'basic'
         resp.www_authenticate.realm = 'Testing'
-        self.assert_strict_equal(resp.headers['WWW-Authenticate'], 'Basic realm="Testing"')
+        self.assert_strict_equal(resp.headers['WWW-Authenticate'], u'Basic realm="Testing"')
         resp.www_authenticate.realm = None
         resp.www_authenticate.type = None
         assert 'WWW-Authenticate' not in resp.headers

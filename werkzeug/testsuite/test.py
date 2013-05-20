@@ -238,7 +238,7 @@ class TestTestCase(WerkzeugTestCase):
             'QUERY_STRING':         'bar=baz'
         }
         for key, value in iteritems(expected):
-            self.assert_strict_equal(env[key], value)
+            self.assert_equal(env[key], value)
         self.assert_strict_equal(env['wsgi.input'].read(0), b'')
         self.assert_strict_equal(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
 

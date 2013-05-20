@@ -285,10 +285,10 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
             dict(http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
                               'c762809248d4beed; a=42')),
             {
-                'CP':           u'null*',
-                'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
-                'a':            u'42',
-                'dismiss-top':  u'6'
+                u'CP':           u'null*',
+                u'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
+                u'a':            u'42',
+                u'dismiss-top':  u'6'
             }
         )
         self.assert_strict_equal(

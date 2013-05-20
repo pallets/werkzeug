@@ -51,7 +51,7 @@ class FormParserTestCase(WerkzeugTestCase):
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_content_length = 400
-        self.assert_strict_equal(req.form['foo'], 'Hello World')
+        self.assert_strict_equal(req.form['foo'], u'Hello World')
 
         req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
@@ -65,7 +65,7 @@ class FormParserTestCase(WerkzeugTestCase):
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_form_memory_size = 400
-        self.assert_strict_equal(req.form['foo'], 'Hello World')
+        self.assert_strict_equal(req.form['foo'], u'Hello World')
 
         data = (b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n'
                 b'Hello World\r\n'
@@ -83,7 +83,7 @@ class FormParserTestCase(WerkzeugTestCase):
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_content_length = 400
-        self.assert_strict_equal(req.form['foo'], 'Hello World')
+        self.assert_strict_equal(req.form['foo'], u'Hello World')
 
         req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
@@ -97,7 +97,7 @@ class FormParserTestCase(WerkzeugTestCase):
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_form_memory_size = 400
-        self.assert_strict_equal(req.form['foo'], 'Hello World')
+        self.assert_strict_equal(req.form['foo'], u'Hello World')
 
     def test_parse_form_data_put_without_content(self):
         # A PUT without a Content-Type header returns empty data
@@ -131,7 +131,7 @@ class FormParserTestCase(WerkzeugTestCase):
                                   method='POST')
         # make sure we have a real file here, because we expect to be
         # on the disk.  > 1024 * 500
-        self.assert_true(hasattr(req.files['foo'].stream, 'fileno'))
+        self.assert_true(hasattr(req.files['foo'].stream, u'fileno'))
 
     def test_streaming_parse(self):
         data = b'x' * (1024 * 600)
