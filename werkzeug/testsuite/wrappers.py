@@ -609,7 +609,7 @@ class WrappersTestCase(WerkzeugTestCase):
 
         assert type(req.args) is dict
         assert type(req.values) is CombinedMultiDict
-        self.assert_equal(req.values[u'foo'], u'baz')
+        self.assert_equal(req.values['foo'], u'baz')
 
         req = wrappers.Request.from_values(headers={
             'Cookie':   'foo=bar'
