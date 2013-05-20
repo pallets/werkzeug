@@ -1,6 +1,5 @@
 
 from . import _urlparse as urlparse
-from functools import reduce
 
 import six
 
