@@ -500,7 +500,7 @@ class WrappersTestCase(WerkzeugTestCase):
             yield "bar"
         resp = wrappers.Response(generate())
         resp.freeze()
-        self.assert_equal(resp.response, ['foo', 'bar'])
+        self.assert_equal(resp.response, [b'foo', b'bar'])
         self.assert_equal(resp.headers['content-length'], '6')
 
     def test_other_method_payload(self):
