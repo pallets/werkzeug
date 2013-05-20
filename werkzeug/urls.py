@@ -84,9 +84,9 @@ def iri_to_uri(iri, charset='utf-8'):
             auth += b':' + url_quote(password).encode(charset)
         hostname = auth + b'@' + hostname
     if port:
-        hostname += b':' + port
+        hostname += b':' + port.encode('ascii')
 
-    path = url_quote(path, safe="/:~+%", encoding=charset).encode(charset)
+    path = url_quote(path, safe="/:~+%").encode(charset)
     query = url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset).encode(charset)
     fragment = fragment.encode(charset)
 
@@ -244,9 +244,10 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
             key = pair
             value = u''
         key = url_unquote_plus(key, encoding=charset, errors=errors)
-        if not decode_keys:
-            key = key.encode(charset, errors)
-        yield key, url_unquote_plus(value, charset, errors)
+        value = url_unquote_plus(value, encoding=charset, errors=errors)
+        # decode_keys is ignored for similar reasons
+        # stated in _url_encode_impl
+        yield key, value
 
 
 def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,

@@ -45,6 +45,7 @@ except ImportError:
     greenlet = None
 
 import six
+from werkzeug._compat import string_join
 
 
 class IterIO(six.Iterator):
@@ -156,12 +157,12 @@ class IterI(IterIO):
         self._buffer.append(s)
 
     def writelines(self, list):
-        self.write(''.join(list))
+        self.write(string_join(list))
 
     def flush(self):
         if self.closed:
             raise ValueError('I/O operation on closed file')
-        data = ''.join(self._buffer)
+        data = string_join(self._buffer)
         self._buffer = []
         self._parent.switch((data,))
 
@@ -207,14 +208,14 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += ''.join(buf)
+            self._buf += string_join(buf)
         self.pos = max(0, pos)
 
     def read(self, n=-1):
         if self.closed:
             raise ValueError('I/O operation on closed file')
         if n < 0:
-            self._buf += ''.join(self._gen)
+            self._buf += string_join(self._gen)
             result = self._buf[self.pos:]
             self.pos += len(result)
             return result
@@ -229,7 +230,7 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += ''.join(buf)
+            self._buf += string_join(buf)
         new_pos = max(0, new_pos)
         try:
             return self._buf[self.pos:new_pos]
@@ -254,7 +255,7 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += ''.join(buf)
+            self._buf += string_join(buf)
         if nl_pos < 0:
             new_pos = len(self._buf)
         else:

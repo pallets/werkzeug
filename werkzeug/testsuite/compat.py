@@ -47,7 +47,7 @@ class CompatTestCase(WerkzeugTestCase):
         myresp = MyResponse('Foo')
         resp = Response.from_app(myresp, create_environ(method='GET'))
         self.assert_equal(resp.headers['x-foo'], 'meh')
-        self.assert_equal(resp.data, 'Foo')
+        self.assert_equal(resp.data, b'Foo')
 
         warnings.resetwarnings()
 
