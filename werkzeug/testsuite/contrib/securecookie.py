@@ -34,12 +34,12 @@ class SecureCookieTestCase(WerkzeugTestCase):
         assert not c2.new
         assert not c2.modified
         assert not c2.should_save
-        assert c2 == c
+        self.assert_equal(c2, c)
 
         c3 = SecureCookie.unserialize(s, b'wrong foo')
         assert not c3.modified
         assert not c3.new
-        assert c3 == {}
+        self.assert_equal(c3, {})
 
     def test_wrapper_support(self):
         req = Request.from_values()
@@ -47,7 +47,7 @@ class SecureCookieTestCase(WerkzeugTestCase):
         c = SecureCookie.load_cookie(req, secret_key=b'foo')
         assert c.new
         c['foo'] = 42
-        assert c.secret_key == b'foo'
+        self.assert_equal(c.secret_key, b'foo')
         c.save_cookie(resp)
 
         req = Request.from_values(headers={
@@ -55,7 +55,7 @@ class SecureCookieTestCase(WerkzeugTestCase):
         })
         c2 = SecureCookie.load_cookie(req, secret_key=b'foo')
         assert not c2.new
-        assert c2 == c
+        self.assert_equal(c2, c)
 
 
 def suite():
