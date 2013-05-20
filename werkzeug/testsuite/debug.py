@@ -106,15 +106,17 @@ class DebugReprTestCase(WerkzeugTestCase):
             u'broken!)&gt;</span>')
 
 
+class Foo(object):
+    x = 42
+    y = 23
+
+    def __init__(self):
+        self.z = 15
+
+
 class DebugHelpersTestCase(WerkzeugTestCase):
 
     def test_object_dumping(self):
-        class Foo(object):
-            x = 42
-            y = 23
-            def __init__(self):
-                self.z = 15
-
         drg = DebugReprGenerator()
         out = drg.dump_object(Foo())
         assert re.search('Details for werkzeug.testsuite.debug.Foo object at', out)
