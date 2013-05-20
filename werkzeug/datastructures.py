@@ -1224,8 +1224,8 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         # used because get() calls it.
         key = key.upper().replace('-', '_')
         if key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
-            return self.environ[key]
-        return self.environ['HTTP_' + key]
+            return _unicodify_value(self.environ[key])
+        return _unicodify_value(self.environ['HTTP_' + key])
 
     def __len__(self):
         # the iter is necessary because otherwise list calls our
@@ -1236,9 +1236,11 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         for key, value in iteritems(self.environ):
             if key.startswith('HTTP_') and key not in \
                ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
-                yield key[5:].replace('_', '-').title(), value
+                yield (key[5:].replace('_', '-').title(),
+                       _unicodify_value(value))
             elif key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
-                yield key.replace('_', '-').title(), value
+                yield (key.replace('_', '-').title(),
+                       _unicodify_value(value))
 
     def copy(self):
         raise TypeError('cannot create %r copies' % self.__class__.__name__)
