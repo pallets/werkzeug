@@ -233,7 +233,7 @@ def parse_dict_header(value, cls=dict):
     :return: an instance of `cls`
     """
     result = cls()
-    if not isinstance(value, str):
+    if not isinstance(value, text_type):
         #XXX: validate
         value = bytes_to_wsgi(value)
     for item in _parse_list_header(value):

@@ -30,8 +30,18 @@ try:
 except NameError:
     unichr = chr # py3
 
+def to_unicode(x, charset):
+    '''please use carefully'''
+    if x is None:
+        return None
+    if isinstance(x, six.text_type):
+        return x
+    return x.decode(charset)
+
 def to_bytes(x, charset):
     '''please use carefully'''
+    if x is None:
+        return None
     if six.PY3:
         if not isinstance(x, bytes):
             x = str(x).encode(charset)
@@ -42,6 +52,8 @@ def to_bytes(x, charset):
 
 def to_native(x, charset):
     '''please use carefully'''
+    if x is None:
+        return None
     if isinstance(x, str):
         return x
     if six.PY3:
