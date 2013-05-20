@@ -84,7 +84,7 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_equal(response['args_as_list'], [('foo', ['bar', 'hehe'])])
         self.assert_equal(response['form'], MultiDict())
         self.assert_equal(response['form_as_list'], [])
-        self.assert_equal(response['data'], '')
+        self.assert_equal(response['data'], b'')
         self.assert_environ(response['environ'], 'GET')
 
         # post requests with form data
@@ -105,11 +105,11 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_equal(response['args'], MultiDict([('blub', 'blah')]))
         self.assert_equal(response['args_as_list'], [('blub', ['blah'])])
         self.assert_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
-        self.assert_equal(response['data'], '')
+        self.assert_equal(response['data'], b'')
         self.assert_environ(response['environ'], 'PATCH')
 
         # post requests with json data
-        json = '{"foo": "bar", "blub": "blah"}'
+        json = b'{"foo": "bar", "blub": "blah"}'
         response = client.post('/?a=b', data=json, content_type='application/json')
         self.assert_equal(response['data'], json)
         self.assert_equal(response['args'], MultiDict([('a', 'b')]))
