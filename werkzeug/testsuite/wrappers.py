@@ -10,8 +10,7 @@
 """
 import unittest
 import pickle
-#XXX: py3 verify
-from io import BytesIO as StringIO
+from io import BytesIO
 from datetime import datetime
 from werkzeug._compat import iteritems
 
@@ -467,9 +466,9 @@ class WrappersTestCase(WerkzeugTestCase):
 
     def test_form_parsing_failed(self):
         data = (
-            '--blah\r\n'
+            b'--blah\r\n'
         )
-        data = wrappers.Request.from_values(input_stream=StringIO(data),
+        data = wrappers.Request.from_values(input_stream=BytesIO(data),
                                             content_length=len(data),
                                             content_type='multipart/form-data; boundary=foo',
                                             method='POST')
@@ -504,8 +503,8 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_equal(resp.headers['content-length'], '6')
 
     def test_other_method_payload(self):
-        data = 'Hello World'
-        req = wrappers.Request.from_values(input_stream=StringIO(data),
+        data = b'Hello World'
+        req = wrappers.Request.from_values(input_stream=BytesIO(data),
                                            content_length=len(data),
                                            content_type='text/plain',
                                            method='WHAT_THE_FUCK')
