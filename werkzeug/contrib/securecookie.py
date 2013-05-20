@@ -217,15 +217,15 @@ class SecureCookie(ModificationTrackingDict):
         result = []
         mac = hmac(self.secret_key, None, self.hash_method)
         for key, value in sorted(self.items()):
-            result.append('%s=%s' % (
+            result.append(('%s=%s' % (
                 url_quote_plus(key),
                 self.quote(value)
-            ))
-            mac.update('|' + result[-1])
-        return '%s?%s' % (
-            mac.digest().encode('base64').strip(),
-            '&'.join(result)
-        )
+            )).encode('ascii'))
+            mac.update(b'|' + result[-1])
+        return b'?'.join([
+            base64.b64encode(mac.digest()).strip(),
+            b'&'.join(result)
+        ])
 
     @classmethod
     def unserialize(cls, string, secret_key):
