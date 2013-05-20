@@ -106,10 +106,10 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_equal(
             urls.uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'),
                             u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th')
-        self.assert_equal(urls.iri_to_uri(u'http://☃.net/'), b'http://xn--n3h.net/')
+        self.assert_equal(urls.iri_to_uri(u'http://☃.net/'), 'http://xn--n3h.net/')
         self.assert_equal(
             urls.iri_to_uri(u'http://üser:pässword@☃.net/påth'),
-                            b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
+                            'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
 
         self.assert_equal(urls.uri_to_iri(b'http://test.com/%3Fmeh?foo=%26%2F'),
                                           u'http://test.com/%3Fmeh?foo=%26%2F')
@@ -117,10 +117,10 @@ class URLsTestCase(WerkzeugTestCase):
         # this should work as well, might break on 2.4 because of a broken
         # idna codec
         self.assert_equal(urls.uri_to_iri(b'/foo'), u'/foo')
-        self.assert_equal(urls.iri_to_uri(u'/foo'), b'/foo')
+        self.assert_equal(urls.iri_to_uri(u'/foo'), '/foo')
 
         self.assert_equal(urls.iri_to_uri(u'http://föö.com:8080/bam/baz'),
-                          b'http://xn--f-1gaa.com:8080/bam/baz')
+                          'http://xn--f-1gaa.com:8080/bam/baz')
 
     def test_ordered_multidict_encoding(self):
         d = OrderedMultiDict()
@@ -172,8 +172,8 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_quoting_of_local_urls(self):
         rv = urls.iri_to_uri(u'/foo\x8f')
-        self.assert_equal(rv, b'/foo%C2%8F')
-        self.assert_is(type(rv), six.binary_type)
+        self.assert_equal(rv, '/foo%C2%8F')
+        self.assert_is(type(rv), str)
 
 
 def suite():
