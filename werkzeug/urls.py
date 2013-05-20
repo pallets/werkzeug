@@ -10,7 +10,7 @@
 """
 import six
 
-from werkzeug._compat import urlparse, to_bytes
+from werkzeug._compat import urlparse, to_bytes, to_native
 
 from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items
@@ -67,33 +67,31 @@ def iri_to_uri(iri, charset='utf-8'):
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
-    if not isinstance(iri, six.text_type):
-        raise UnicodeError('Expected IRI, which is a unicode string')
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
-    scheme = scheme.encode('ascii')
-    hostname = hostname.encode('idna')
+    scheme = to_native(scheme, 'ascii')
+    hostname = to_native(hostname, 'idna')
     if auth:
-        auth = auth.encode(charset)
-        if b':' in auth:
-            auth, password = auth.split(b':', 1)
+        auth = to_native(auth, charset)
+        if ':' in auth:
+            auth, password = auth.split(':', 1)
         else:
             password = None
-        auth = url_quote(auth).encode(charset)
+        auth = to_native(url_quote(auth), charset)
         if password:
-            auth += b':' + url_quote(password).encode(charset)
-        hostname = auth + b'@' + hostname
+            auth += ':' + to_native(url_quote(password))
+        hostname = auth + '@' + hostname
     if port:
-        hostname += b':' + port.encode('ascii')
+        hostname += ':' + to_native(port, 'ascii')
 
-    path = url_quote(path, safe="/:~+%").encode(charset)
-    query = url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset).encode(charset)
-    fragment = fragment.encode(charset)
+    path = to_native(url_quote(path, safe="/:~+%"))
+    query = to_native(url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset), charset)
+    fragment = to_native(fragment)
 
     # this absolutely always must return a string.  Otherwise some parts of
     # the system might perform double quoting (#61)
     rv = urlparse.urlunsplit([scheme, hostname, path, query, fragment])
-    assert isinstance(rv, six.binary_type)
+    assert isinstance(rv, str)
     return rv
 
 
