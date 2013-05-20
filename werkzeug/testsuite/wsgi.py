@@ -13,8 +13,9 @@ from __future__ import with_statement
 
 import unittest
 from os import path
-from io import StringIO, BytesIO
+from io import BytesIO
 from contextlib import closing
+from six import StringIO
 from six.moves import xrange
 
 from werkzeug.testsuite import WerkzeugTestCase
