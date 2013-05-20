@@ -137,7 +137,7 @@ class WerkzeugTestCase(unittest.TestCase):
         self.assert_equal(x, y)
         assert issubclass(type(x), type(y)) or issubclass(type(y), type(x)), \
                 '%s != %s' % (type(x), type(y))
-        if isinstance(x, (six.binary_type, six.text_type, six.integer_types)):
+        if isinstance(x, (six.binary_type, six.text_type, six.integer_types)) or x is None:
             return
         elif isinstance(x, (set, dict)):
             x = sorted(x)
