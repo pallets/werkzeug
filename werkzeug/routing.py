@@ -107,7 +107,7 @@ from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
-from werkzeug._compat import itervalues, iteritems
+from werkzeug._compat import itervalues, iteritems, to_unicode
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 import six
@@ -1225,14 +1225,15 @@ class MapAdapter(object):
     def __init__(self, map, server_name, script_name, subdomain,
                  url_scheme, path_info, default_method, query_args=None):
         self.map = map
-        self.server_name = server_name
-        if not script_name.endswith('/'):
-            script_name += '/'
+        self.server_name = to_unicode(server_name, 'ascii')
+        script_name = to_unicode(script_name, 'ascii')
+        if not script_name.endswith(u'/'):
+            script_name += u'/'
         self.script_name = script_name
-        self.subdomain = subdomain
-        self.url_scheme = url_scheme
-        self.path_info = path_info or u''
-        self.default_method = default_method
+        self.subdomain = to_unicode(subdomain, 'ascii')
+        self.url_scheme = to_unicode(url_scheme, 'ascii')
+        self.path_info = to_unicode(path_info or u'', 'ascii')
+        self.default_method = to_unicode(default_method, 'ascii')
         self.query_args = query_args
 
     def dispatch(self, view_func, path_info=None, method=None,
@@ -1466,11 +1467,13 @@ class MapAdapter(object):
         if self.map.host_matching:
             if domain_part is None:
                 return self.server_name
-            return domain_part
+            return to_unicode(domain_part, 'ascii')
         subdomain = domain_part
         if subdomain is None:
             subdomain = self.subdomain
-        return (subdomain and subdomain + '.' or '') + self.server_name
+        else:
+            subdomain = to_unicode(subdomain, 'ascii')
+        return (subdomain and subdomain + u'.' or u'') + self.server_name
 
     def get_default_redirect(self, rule, method, values, query_args):
         """A helper that returns the URL to redirect to if it finds one.
