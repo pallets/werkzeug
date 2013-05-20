@@ -10,14 +10,15 @@
 """
 import inspect
 from weakref import WeakKeyDictionary
-from cStringIO import StringIO
-from Cookie import SimpleCookie, Morsel, CookieError
+from io import BytesIO
+import six
+from six.moves import http_cookies as cookies
 from time import gmtime
 from datetime import datetime, date
 
 
 _logger = None
-_empty_stream = StringIO('')
+_empty_stream = BytesIO()
 _signature_cache = WeakKeyDictionary()
 _epoch_ord = date(1970, 1, 1).toordinal()
 
@@ -200,12 +201,13 @@ def _decode_unicode(value, charset, errors):
     """Like the regular decode function but this one raises an
     `HTTPUnicodeError` if errors is `strict`."""
     fallback = None
+    assert isinstance(value, six.binary_type), type(value)
     if errors.startswith('fallback:'):
         fallback = errors[9:]
         errors = 'strict'
     try:
         return value.decode(charset, errors)
-    except UnicodeError, e:
+    except UnicodeError as e:
         if fallback is not None:
             return value.decode(fallback, 'replace')
         from werkzeug.exceptions import HTTPUnicodeError
@@ -239,7 +241,7 @@ def _dump_date(d, delim):
         d = gmtime()
     elif isinstance(d, datetime):
         d = d.utctimetuple()
-    elif isinstance(d, (int, long, float)):
+    elif isinstance(d, (six.integer_types, float)):
         d = gmtime(d)
     return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
         ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[d.tm_wday],
@@ -266,24 +268,24 @@ def _date_to_unix(arg):
     return seconds
 
 
-class _ExtendedMorsel(Morsel):
+class _ExtendedMorsel(cookies.Morsel):
     _reserved = {'httponly': 'HttpOnly'}
-    _reserved.update(Morsel._reserved)
+    _reserved.update(cookies.Morsel._reserved)
 
     def __init__(self, name=None, value=None):
-        Morsel.__init__(self)
+        cookies.Morsel.__init__(self)
         if name is not None:
             self.set(name, value, value)
 
     def OutputString(self, attrs=None):
         httponly = self.pop('httponly', False)
-        result = Morsel.OutputString(self, attrs).rstrip('\t ;')
+        result = cookies.Morsel.OutputString(self, attrs).rstrip('\t ;')
         if httponly:
             result += '; HttpOnly'
         return result
 
 
-class _ExtendedCookie(SimpleCookie):
+class _ExtendedCookie(cookies.SimpleCookie):
     """Form of the base cookie that doesn't raise a `CookieError` for
     malformed keys.  This has the advantage that broken cookies submitted
     by nonstandard browsers don't cause the cookie to be empty.
@@ -293,7 +295,7 @@ class _ExtendedCookie(SimpleCookie):
         morsel = self.get(key, _ExtendedMorsel())
         try:
             morsel.set(key, real_value, coded_value)
-        except CookieError:
+        except cookies.CookieError:
             pass
         dict.__setitem__(self, key, morsel)
 
@@ -347,7 +349,13 @@ class _DictAccessorProperty(object):
 
 def _easteregg(app):
     """Like the name says.  But who knows how it works?"""
-    gyver = '\n'.join([x + (77 - len(x)) * ' ' for x in '''
+    def bzzzzzzz(gyver):
+        if not six.PY3:
+            return gyver.decode('base64').decode('zlib')
+        import base64
+        import zlib
+        return zlib.decompress(base64.b64decode(gyver.encode('ascii'))).decode('ascii')
+    gyver = '\n'.join([x + (77 - len(x)) * ' ' for x in bzzzzzzz('''
 eJyFlzuOJDkMRP06xRjymKgDJCDQStBYT8BCgK4gTwfQ2fcFs2a2FzvZk+hvlcRvRJD148efHt9m
 9Xz94dRY5hGt1nrYcXx7us9qlcP9HHNh28rz8dZj+q4rynVFFPdlY4zH873NKCexrDM6zxxRymzz
 4QIxzK4bth1PV7+uHn6WXZ5C4ka/+prFzx3zWLMHAVZb8RRUxtFXI5DTQ2n3Hi2sNI+HK43AOWSY
@@ -378,7 +386,7 @@ p1qXK3Du2mnr5INXmT/78KI12n11EFBkJHHp0wJyLe9MvPNUGYsf+170maayRoy2lURGHAIapSpQ
 krEDuNoJCHNlZYhKpvw4mspVWxqo415n8cD62N9+EfHrAvqQnINStetek7RY2Urv8nxsnGaZfRr/
 nhXbJ6m/yl1LzYqscDZA9QHLNbdaSTTr+kFg3bC0iYbX/eQy0Bv3h4B50/SGYzKAXkCeOLI3bcAt
 mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
-7f2zLkGNv8b191cD/3vs9Q833z8t'''.decode('base64').decode('zlib').splitlines()])
+7f2zLkGNv8b191cD/3vs9Q833z8t''').splitlines()])
     def easteregged(environ, start_response):
         def injecting_start_response(status, headers, exc_info=None):
             headers.append(('X-Powered-By', 'Werkzeug'))

@@ -20,6 +20,7 @@ except ImportError:
 
 from inspect import getmro
 from werkzeug.routing import NumberConverter
+from werkzeug._compat import iteritems
 
 
 def render_template(name_parts, rules, converters):
@@ -190,7 +191,7 @@ def generate_map(map, name='url_map'):
             'data':         data
         } for is_dynamic, data in rule._trace]
         rule_converters = {}
-        for key, converter in rule._converters.iteritems():
+        for key, converter in iteritems(rule._converters):
             js_func = js_to_url_function(converter)
             try:
                 index = converters.index(js_func)

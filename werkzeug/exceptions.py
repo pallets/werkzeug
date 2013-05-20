@@ -24,7 +24,7 @@
             request = BaseRequest(environ)
             try:
                 return view(request)
-            except HTTPException, e:
+            except HTTPException as e:
                 return e
 
 
@@ -58,6 +58,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
+import six
 from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
 
 
@@ -141,15 +142,19 @@ class HTTPException(Exception):
         response = self.get_response(environ)
         return response(environ, start_response)
 
-    def __str__(self):
-        return unicode(self).encode('utf-8')
-
     def __unicode__(self):
         if 'description' in self.__dict__:
             txt = self.description
         else:
             txt = self.name
         return '%d: %s' % (self.code, txt)
+
+    if six.PY3:
+        __str__ = __unicode__
+    else:
+        def __str__(self):
+            return unicode(self).encode('utf-8')
+
 
     def __repr__(self):
         return '<%s \'%s\'>' % (self.__class__.__name__, self)
@@ -546,7 +551,7 @@ default_exceptions = {}
 __all__ = ['HTTPException']
 
 def _find_exceptions():
-    for name, obj in globals().iteritems():
+    for name, obj in six.iteritems(globals()):
         try:
             if getattr(obj, 'code', None) is not None:
                 default_exceptions[obj.code] = obj
@@ -580,7 +585,7 @@ class Aborter(object):
             self.mapping.update(extra)
 
     def __call__(self, code, *args, **kwargs):
-        if not args and not kwargs and not isinstance(code, (int, long)):
+        if not args and not kwargs and not isinstance(code, six.integer_types):
             raise _ProxyException(code)
         if code not in self.mapping:
             raise LookupError('no exception for %r' % code)

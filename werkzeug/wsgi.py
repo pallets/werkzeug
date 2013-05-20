@@ -10,8 +10,7 @@
 """
 import re
 import os
-import urllib
-import urlparse
+import sys
 import posixpath
 import mimetypes
 from itertools import chain, repeat
@@ -19,7 +18,9 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
+from six import iteritems, Iterator, text_type, string_types
 
+from werkzeug._compat import urlparse, string_join
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
 
@@ -68,11 +69,11 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     cat = tmp.append
     if host_only:
         return ''.join(tmp) + '/'
-    cat(urllib.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
+    cat(urlparse.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
     if root_only:
         cat('/')
     else:
-        cat(urllib.quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
+        cat(urlparse.quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
         if not strip_querystring:
             qs = environ.get('QUERY_STRING')
             if qs:
@@ -80,7 +81,10 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
                 # will send us some unicode stuff (I am looking at you IE).
                 # In that case we want to urllib quote it badly.
                 try:
-                    qs.decode('ascii')
+                    if hasattr(qs, 'decode'):
+                        qs.decode('ascii')
+                    else:
+                        qs.encode('ascii')
                 except UnicodeError:
                     qs = ''.join(x > 127 and '%%%02X' % x or c
                                  for x, c in ((ord(x), x) for x in qs))
@@ -102,13 +106,13 @@ def host_is_trusted(hostname, trusted_list):
     if not hostname:
         return False
 
-    if isinstance(trusted_list, basestring):
+    if isinstance(trusted_list, string_types):
         trusted_list = [trusted_list]
 
     def _normalize(hostname):
         if ':' in hostname:
             hostname = hostname.rsplit(':', 1)[0]
-        if isinstance(hostname, unicode):
+        if isinstance(hostname, text_type):
             hostname = hostname.encode('idna')
         return hostname
 
@@ -255,10 +259,10 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
                                   same server point to the same
                                   resource.
     """
-    from werkzeug.urls import uri_to_iri, url_fix
+    from werkzeug.urls import uri_to_iri
 
     def _as_iri(obj):
-        if not isinstance(obj, unicode):
+        if not isinstance(obj, text_type):
             return uri_to_iri(obj, charset, errors)
         return obj
 
@@ -375,10 +379,10 @@ class SharedDataMiddleware(object):
         self.exports = {}
         self.cache = cache
         self.cache_timeout = cache_timeout
-        for key, value in exports.iteritems():
+        for key, value in iteritems(exports):
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
-            elif isinstance(value, basestring):
+            elif isinstance(value, string_types):
                 if os.path.isfile(value):
                     loader = self.get_file_loader(value)
                 else:
@@ -447,7 +451,7 @@ class SharedDataMiddleware(object):
         return 'wzsdm-%d-%s-%s' % (
             mktime(mtime.timetuple()),
             file_size,
-            adler32(real_filename) & 0xffffffff
+            adler32(real_filename.encode(sys.getfilesystemencoding())) & 0xffffffff
         )
 
     def __call__(self, environ, start_response):
@@ -459,7 +463,7 @@ class SharedDataMiddleware(object):
         path = '/'.join([''] + [x for x in cleaned_path.split('/')
                                 if x and x != '..'])
         file_loader = None
-        for search_path, loader in self.exports.iteritems():
+        for search_path, loader in iteritems(self.exports):
             if search_path == path:
                 real_filename, file_loader = loader(None)
                 if file_loader is not None:
@@ -534,7 +538,7 @@ class DispatcherMiddleware(object):
         return app(environ, start_response)
 
 
-class ClosingIterator(object):
+class ClosingIterator(Iterator):
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of an iterator.  Because it is useful to add
     another close action to a returned iterator and adding a custom iterator
@@ -557,7 +561,7 @@ class ClosingIterator(object):
 
     def __init__(self, iterable, callbacks=None):
         iterator = iter(iterable)
-        self._next = iterator.next
+        self._next = partial(next, iterator)
         if callbacks is None:
             callbacks = []
         elif callable(callbacks):
@@ -572,7 +576,7 @@ class ClosingIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         return self._next()
 
     def close(self):
@@ -599,7 +603,7 @@ def wrap_file(environ, file, buffer_size=8192):
     return environ.get('wsgi.file_wrapper', FileWrapper)(file, buffer_size)
 
 
-class FileWrapper(object):
+class FileWrapper(Iterator):
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
     read.
@@ -628,7 +632,7 @@ class FileWrapper(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         data = self.file.read(self.buffer_size)
         if data:
             return data
@@ -648,7 +652,8 @@ def make_chunk_iter_func(stream, limit, buffer_size):
     """Helper for the line and chunk iter functions."""
     if hasattr(stream, 'read'):
         return partial(make_limited_stream(stream, limit).read, buffer_size)
-    return iter(chain(stream, repeat(''))).next
+    iterator = iter(chain(stream, repeat('')))
+    return partial(next, iterator)
 
 
 def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
@@ -686,19 +691,24 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
             new_buf = []
             for item in chain(buffer, new_data.splitlines(True)):
                 new_buf.append(item)
-                if item and item[-1:] in '\r\n':
-                    yield ''.join(new_buf)
-                    new_buf = []
+                if isinstance(item, text_type):
+                    if item and item[-1:] in '\r\n':
+                        yield ''.join(new_buf)
+                        new_buf = []
+                else:
+                    if item and item[-1:] in b'\r\n':
+                        yield b''.join(new_buf)
+                        new_buf = []
             buffer = new_buf
         if buffer:
-            yield ''.join(buffer)
+            yield string_join(buffer)
 
     # This hackery is necessary to merge 'foo\r' and '\n' into one item
     # of 'foo\r\n' if we were unlucky and we hit a chunk boundary.
     previous = ''
     for item in _iter_basic_lines():
-        if item == '\n' and previous[-1:] == '\r':
-            previous += '\n'
+        if item in ['\n', b'\n'] and previous[-1:] in ['\r', b'\r']:
+            previous += item
             item = ''
         if previous:
             yield previous
@@ -726,23 +736,34 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
     :param buffer_size: The optional buffer size.
     """
     _read = make_chunk_iter_func(stream, limit, buffer_size)
-    _split = re.compile(r'(%s)' % re.escape(separator)).split
+    separator_pattern = r'(%s)' % re.escape(separator)
+    _string_split = re.compile(separator_pattern).split
+    _bytes_split = re.compile(separator_pattern.encode('ascii')).split
+    if isinstance(separator, text_type):
+        string_separator = separator
+        bytes_separator = separator.encode('ascii')
+    else:
+        bytes_separator = separator
+        string_separator = separator.decode('ascii')
     buffer = []
     while 1:
         new_data = _read()
         if not new_data:
             break
-        chunks = _split(new_data)
+        if isinstance(new_data, text_type):
+            chunks = _string_split(new_data)
+        else:
+            chunks = _bytes_split(new_data)
         new_buf = []
         for item in chain(buffer, chunks):
-            if item == separator:
-                yield ''.join(new_buf)
+            if item in [string_separator, bytes_separator]:
+                yield string_join(new_buf)
                 new_buf = []
             else:
                 new_buf.append(item)
         buffer = new_buf
     if buffer:
-        yield ''.join(buffer)
+        yield string_join(buffer)
 
 
 class LimitedStream(object):

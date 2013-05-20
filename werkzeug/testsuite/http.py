@@ -12,6 +12,7 @@ import unittest
 from datetime import datetime
 
 from werkzeug.testsuite import WerkzeugTestCase
+from werkzeug._compat import itervalues
 
 from werkzeug import http, datastructures
 from werkzeug.test import create_environ
@@ -21,7 +22,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
     def test_accept(self):
         a = http.parse_accept_header('en-us,ru;q=0.5')
-        self.assert_equal(a.values(), ['en-us', 'ru'])
+        self.assert_equal(list(itervalues(a)), ['en-us', 'ru'])
         self.assert_equal(a.best, 'en-us')
         self.assert_equal(a.find('ru'), 1)
         self.assert_raises(ValueError, a.index, 'de')
@@ -46,7 +47,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(a.best_match(['text/html', 'application/xhtml+xml']),
                           'application/xhtml+xml')
         self.assert_equal(a.best_match(['text/html']),  'text/html')
-        self.assert_(a.best_match(['foo/bar']) is None)
+        self.assert_true(a.best_match(['foo/bar']) is None)
         self.assert_equal(a.best_match(['foo/bar', 'bar/foo'],
                           default='foo/bar'),  'foo/bar')
         self.assert_equal(a.best_match(['application/xml', 'text/xml']),  'application/xml')
@@ -63,16 +64,16 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         a = http.parse_accept_header('de-AT,de;q=0.8,en;q=0.5',
                                      datastructures.LanguageAccept)
         self.assert_equal(a.best,  'de-AT')
-        self.assert_('de_AT' in a)
-        self.assert_('en' in a)
+        self.assert_true('de_AT' in a)
+        self.assert_true('en' in a)
         self.assert_equal(a['de-at'], 1)
         self.assert_equal(a['en'], 0.5)
 
     def test_set_header(self):
         hs = http.parse_set_header('foo, Bar, "Blah baz", Hehe')
-        self.assert_('blah baz' in hs)
-        self.assert_('foobar' not in hs)
-        self.assert_('foo' in hs)
+        self.assert_true('blah baz' in hs)
+        self.assert_true('foobar' not in hs)
+        self.assert_true('foo' in hs)
         self.assert_equal(list(hs), ['foo', 'Bar', 'Blah baz', 'Hehe'])
         hs.add('Foo')
         self.assert_equal(hs.to_header(), 'foo, Bar, "Blah baz", Hehe')
@@ -191,8 +192,8 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
     def test_etags_nonzero(self):
         etags = http.parse_etags('w/"foo"')
-        self.assert_(bool(etags))
-        self.assert_(etags.contains_raw('w/"foo"'))
+        self.assert_true(bool(etags))
+        self.assert_true(etags.contains_raw('w/"foo"'))
 
     def test_parse_date(self):
         assert http.parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(1994, 11, 6, 8, 49, 37)
@@ -214,7 +215,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         assert headers1 == [('Date', now)]
 
         http.remove_entity_headers(headers2)
-        assert headers2 == datastructures.Headers([('Date', now)])
+        self.assertEqual(headers2, datastructures.Headers([(u'Date', now)]))
 
     def test_remove_hop_by_hop_headers(self):
         headers1 = [('Connection', 'closed'), ('Foo', 'bar'),
@@ -264,8 +265,8 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         # etagify from data
         self.assert_raises(TypeError, http.is_resource_modified, env,
                            data='42', etag='23')
-        env['HTTP_IF_NONE_MATCH'] = http.generate_etag('awesome')
-        assert not http.is_resource_modified(env, data='awesome')
+        env['HTTP_IF_NONE_MATCH'] = http.generate_etag(b'awesome')
+        assert not http.is_resource_modified(env, data=b'awesome')
 
         env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(datetime(2008, 1, 1, 12, 30))
         assert not http.is_resource_modified(env,

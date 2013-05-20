@@ -11,6 +11,8 @@
 from werkzeug.wsgi import ClosingIterator
 from werkzeug._internal import _patch_wrapper
 
+import six
+
 # since each thread has its own greenlet we can just use those as identifiers
 # for the context.  If greenlets are not available we fall back to the
 # current thread ident.
@@ -20,7 +22,10 @@ except ImportError: # pragma: no cover
     try:
         from thread import get_ident
     except ImportError: # pragma: no cover
-        from dummy_thread import get_ident
+        try:
+            from _thread import get_ident
+        except ImportError: # pragma: no cover
+            from dummy_thread import get_ident
 
 
 def release_local(local):
@@ -396,7 +401,10 @@ class LocalProxy(object):
     __rsub__ = lambda x, o: o - x._get_current_object()
     __rmul__ = lambda x, o: o * x._get_current_object()
     __rdiv__ = lambda x, o: o / x._get_current_object()
-    __rtruediv__ = lambda x, o: x._get_current_object().__rtruediv__(o)
+    if six.PY3:
+        __rtruediv__ = __rdiv__
+    else:
+        __rtruediv__ = lambda x, o: x._get_current_object().__rtruediv__(o)
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)

@@ -9,19 +9,26 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-import urlparse
 import mimetypes
 from time import time
 from random import random
 from itertools import chain
 from tempfile import TemporaryFile
-from cStringIO import StringIO
-from cookielib import CookieJar
-from urllib2 import Request as U2Request
+from io import BytesIO
+try:
+    from urllib2 import Request as U2Request
+except ImportError:
+    from urllib.request import Request as U2Request
 
+import six
+from six import string_types
+CookieJar = six.moves.http_cookiejar.CookieJar
+
+
+from werkzeug._compat import urlparse, iterlists, iteritems, itervalues
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
-from werkzeug.urls import url_encode, url_fix, iri_to_uri, _unquote
+from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
@@ -36,10 +43,10 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
     """
     if boundary is None:
         boundary = '---------------WerkzeugFormPart_%s%s' % (time(), random())
-    _closure = [StringIO(), 0, False]
+    _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
-        def write(string):
+        def write_binary(string):
             stream, total_length, on_disk = _closure
             if on_disk:
                 stream.write(string)
@@ -55,12 +62,15 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     _closure[2] = True
                 _closure[1] = total_length + length
     else:
-        write = _closure[0].write
+        write_binary = _closure[0].write
+
+    def write(string):
+        write_binary(string.encode(charset))
 
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
-    for key, values in values.iterlists():
+    for key, values in iterlists(values):
         for value in values:
             write('--%s\r\nContent-Disposition: form-data; name="%s"' %
                   (boundary, key))
@@ -82,9 +92,9 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     chunk = reader(16384)
                     if not chunk:
                         break
-                    write(chunk)
+                    write_binary(chunk)
             else:
-                if isinstance(value, unicode):
+                if isinstance(value, six.text_type):
                     value = value.encode(charset)
                 write('\r\n\r\n' + str(value))
             write('\r\n')
@@ -126,6 +136,13 @@ class _TestCookieHeaders(object):
             if k.lower() == name:
                 headers.append(v)
         return headers
+
+    def get_all(self, name, default=None):
+        rv = []
+        for k, v in self.headers:
+            if k.lower() == name.lower():
+                rv.append(v)
+        return rv or default or []
 
 
 class _TestCookieResponse(object):
@@ -171,11 +188,11 @@ def _iter_data(data):
     :class:`EnvironBuilder`.
     """
     if isinstance(data, MultiDict):
-        for key, values in data.iterlists():
+        for key, values in iterlists(data):
             for value in values:
                 yield key, value
     else:
-        for key, values in data.iteritems():
+        for key, values in iteritems(data):
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -262,16 +279,16 @@ class EnvironBuilder(object):
         if query_string is None and '?' in path:
             path, query_string = path.split('?', 1)
         self.charset = charset
-        if isinstance(path, unicode):
+        if isinstance(path, six.text_type):  #XXX: review string types
             path = iri_to_uri(path, charset)
         self.path = path
         if base_url is not None:
-            if isinstance(base_url, unicode):
+            if isinstance(base_url, six.text_type):
                 base_url = iri_to_uri(base_url, charset)
             else:
                 base_url = url_fix(base_url, charset)
         self.base_url = base_url
-        if isinstance(query_string, basestring):
+        if isinstance(query_string, string_types):
             self.query_string = query_string
         else:
             if query_string is None:
@@ -301,8 +318,10 @@ class EnvironBuilder(object):
         if data:
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
-            if isinstance(data, basestring):
-                self.input_stream = StringIO(data)
+            if isinstance(data, six.text_type):
+                data = data.encode(self.charset)
+            if isinstance(data, six.binary_type):
+                self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)
             else:
@@ -486,13 +505,13 @@ class EnvironBuilder(object):
         if self.closed:
             return
         try:
-            files = self.files.itervalues()
+            files = itervalues(self.files)
         except AttributeError:
             files = ()
         for f in files:
             try:
                 f.close()
-            except Exception, e:
+            except Exception:
                 pass
         self.closed = True
 
@@ -514,9 +533,11 @@ class EnvironBuilder(object):
                 stream_encode_multipart(values, charset=self.charset)
             content_type += '; boundary="%s"' % boundary
         elif content_type == 'application/x-www-form-urlencoded':
+            #py2v3 review
             values = url_encode(self.form, charset=self.charset)
+            values = values.encode('ascii')
             content_length = len(values)
-            input_stream = StringIO(values)
+            input_stream = BytesIO(values)
         else:
             input_stream = _empty_stream
 
@@ -525,9 +546,9 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            if isinstance(x, unicode):
+            if isinstance(x, six.text_type):
                 x = x.encode(self.charset)
-            return _unquote(x)
+            return url_unquote(x)
 
         result.update({
             'REQUEST_METHOD':       self.method,
@@ -548,7 +569,7 @@ class EnvironBuilder(object):
             'wsgi.multiprocess':    self.multiprocess,
             'wsgi.run_once':        self.run_once
         })
-        for key, value in self.headers.to_list(self.charset):
+        for key, value in self.headers.to_wsgi_list():
             result['HTTP_%s' % key.upper().replace('-', '_')] = value
         if self.environ_overrides:
             result.update(self.environ_overrides)
@@ -718,7 +739,7 @@ class Client(object):
             if status_code not in (301, 302, 303, 305, 307) \
                or not follow_redirects:
                 break
-            new_location = Headers.linked(response[2])['location']
+            new_location = response[2]['location']
             new_redirect_entry = (new_location, status_code)
             if new_redirect_entry in redirect_chain:
                 raise ClientRedirectError('loop detected')
@@ -814,7 +835,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     def start_response(status, headers, exc_info=None):
         if exc_info is not None:
-            raise exc_info[0], exc_info[1], exc_info[2]
+            six.reraise(*exc_info)
         response[:] = [status, headers]
         return buffer.append
 
@@ -836,11 +857,11 @@ def run_wsgi_app(app, environ, buffered=False):
     # we have a close callable.
     else:
         while not response:
-            buffer.append(app_iter.next())
+            buffer.append(next(app_iter))
         if buffer:
             close_func = getattr(app_iter, 'close', None)
             app_iter = chain(buffer, app_iter)
             if close_func is not None:
                 app_iter = ClosingIterator(app_iter, close_func)
 
-    return app_iter, response[0], response[1]
+    return app_iter, response[0], Headers(response[1])

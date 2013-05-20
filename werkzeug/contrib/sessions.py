@@ -59,12 +59,14 @@ from os import path
 from time import time
 from random import random
 from hashlib import sha1
-from cPickle import dump, load, HIGHEST_PROTOCOL
+from pickle import dump, load, HIGHEST_PROTOCOL
 
 from werkzeug.datastructures import CallbackDict
 from werkzeug.utils import dump_cookie, parse_cookie
 from werkzeug.wsgi import ClosingIterator
 from werkzeug.posixemulation import rename
+
+import six
 
 
 _sha1_re = re.compile(r'^[a-f0-9]{40}$')
@@ -77,7 +79,13 @@ def _urandom():
 
 
 def generate_key(salt=None):
-    return sha1('%s%s%s' % (salt, time(), _urandom())).hexdigest()
+    if salt is None:
+        salt = repr(salt).encode('ascii')
+    return sha1(b''.join([
+        salt,
+        str(time()).encode('ascii'),
+        _urandom()
+    ])).hexdigest()
 
 
 class ModificationTrackingDict(CallbackDict):
@@ -206,12 +214,12 @@ class FilesystemSessionStore(SessionStore):
     """
 
     def __init__(self, path=None, filename_template='werkzeug_%s.sess',
-                 session_class=None, renew_missing=False, mode=0644):
+                 session_class=None, renew_missing=False, mode=0o644):
         SessionStore.__init__(self, session_class)
         if path is None:
             path = tempfile.gettempdir()
         self.path = path
-        if isinstance(filename_template, unicode):
+        if isinstance(filename_template, six.text_type) and not six.PY3:
             filename_template = filename_template.encode(
                 sys.getfilesystemencoding() or 'utf-8')
         assert not filename_template.endswith(_fs_transaction_suffix), \
@@ -224,7 +232,7 @@ class FilesystemSessionStore(SessionStore):
         # out of the box, this should be a strict ASCII subset but
         # you might reconfigure the session object to have a more
         # arbitrary string.
-        if isinstance(sid, unicode):
+        if isinstance(sid, six.text_type) and not six.PY3:
             sid = sid.encode(sys.getfilesystemencoding() or 'utf-8')
         return path.join(self.path, self.filename_template % sid)
 

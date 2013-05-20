@@ -22,12 +22,20 @@ try:
     from email.utils import parsedate_tz
 except ImportError: # pragma: no cover
     from email.Utils import parsedate_tz
-from urllib2 import parse_http_list as _parse_list_header
+try:
+    from urllib2 import parse_http_list as _parse_list_header
+except ImportError: # pragma: no cover
+    from urllib.request import parse_http_list as _parse_list_header
 from datetime import datetime, timedelta
 try:
     from hashlib import md5
 except ImportError: # pragma: no cover
     from md5 import new as md5
+import base64
+
+
+from six import iteritems, binary_type, text_type, string_types
+from werkzeug._compat import to_native, to_unicode
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
@@ -57,6 +65,23 @@ _hop_by_hop_headers = frozenset([
 ])
 
 
+def wsgi_to_bytes(data):
+    """coerce wsgi unicode represented bytes to real ones
+
+    """
+    if isinstance(data, binary_type):
+        return data
+    return data.encode('latin1') #XXX: utf8 fallback?
+
+
+def bytes_to_wsgi(data):
+    assert isinstance(data, binary_type), 'data must be bytes'
+    if isinstance(data, str):
+        return data
+    else:
+        return data.decode('latin1')
+
+
 def quote_header_value(value, extra_chars='', allow_token=True):
     """Quote a header value if necessary.
 
@@ -67,6 +92,8 @@ def quote_header_value(value, extra_chars='', allow_token=True):
     :param allow_token: if this is enabled token values are returned
                         unchanged.
     """
+    if isinstance(value, bytes):
+        value = bytes_to_wsgi(value)
     value = str(value)
     if allow_token:
         token_chars = _token_chars | set(extra_chars)
@@ -110,7 +137,7 @@ def dump_options_header(header, options):
     segments = []
     if header is not None:
         segments.append(header)
-    for key, value in options.iteritems():
+    for key, value in iteritems(options):
         if value is None:
             segments.append(key)
         else:
@@ -135,7 +162,7 @@ def dump_header(iterable, allow_token=True):
     """
     if isinstance(iterable, dict):
         items = []
-        for key, value in iterable.iteritems():
+        for key, value in iteritems(iterable):
             if value is None:
                 items.append(key)
             else:
@@ -206,6 +233,9 @@ def parse_dict_header(value, cls=dict):
     :return: an instance of `cls`
     """
     result = cls()
+    if not isinstance(value, text_type):
+        #XXX: validate
+        value = bytes_to_wsgi(value)
     for item in _parse_list_header(value):
         if '=' not in item:
             result[item] = None
@@ -245,7 +275,7 @@ def parse_options_header(value):
         return '', {}
 
     parts = _tokenize(';' + value)
-    name = parts.next()[0]
+    name = next(parts)[0]
     extra = dict(parts)
     return name, extra
 
@@ -348,19 +378,21 @@ def parse_authorization_header(value):
     """
     if not value:
         return
+    value = wsgi_to_bytes(value)
     try:
         auth_type, auth_info = value.split(None, 1)
         auth_type = auth_type.lower()
     except ValueError:
         return
-    if auth_type == 'basic':
+    if auth_type == b'basic':
         try:
-            username, password = auth_info.decode('base64').split(':', 1)
-        except Exception, e:
+            username, password = base64.b64decode(auth_info).split(b':', 1)
+        except Exception as e:
+            print(e)
             return
-        return Authorization('basic', {'username': username,
-                                       'password': password})
-    elif auth_type == 'digest':
+        return Authorization('basic', {'username':  bytes_to_wsgi(username),
+                                       'password': bytes_to_wsgi(password)})
+    elif auth_type == b'digest':
         auth_map = parse_dict_header(auth_info)
         for key in 'username', 'realm', 'nonce', 'uri', 'response':
             if not key in auth_map:
@@ -646,7 +678,7 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
         return False
 
     unmodified = False
-    if isinstance(last_modified, basestring):
+    if isinstance(last_modified, string_types):
         last_modified = parse_date(last_modified)
 
     # ensure that microsecond is zero because the HTTP spec does not transmit
@@ -740,6 +772,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
+    header = to_native(header, charset)
     if cls is None:
         cls = TypeConversionDict
     cookie = _ExtendedCookie()
@@ -749,10 +782,11 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     # decode to unicode and skip broken items.  Our extended morsel
     # and extended cookie will catch CookieErrors and convert them to
     # `None` items which we have to skip here.
-    for key, value in cookie.iteritems():
+    for key, value in iteritems(cookie):
         if value.value is not None:
-            result[key] = _decode_unicode(unquote_header_value(value.value),
-                                          charset, errors)
+            result[to_unicode(key, 'ascii')] = _decode_unicode(
+                unquote_header_value(value.value).encode('ascii'),
+                charset, errors)
 
     return cls(result)
 
@@ -784,18 +818,19 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
     """
-    try:
-        key = str(key)
-    except UnicodeError:
+    if not isinstance(key, (binary_type, text_type)):
         raise TypeError('invalid key %r' % key)
-    if isinstance(value, unicode):
-        value = value.encode(charset)
+    if not isinstance(value, (binary_type, text_type)):
+        raise TypeError('invalid value %r' % value)
+
+    key, value = to_native(key, charset), to_native(value, charset)
+
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
     if isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
-        if not isinstance(expires, basestring):
+        if not isinstance(expires, string_types):
             expires = cookie_date(expires)
         morsel['expires'] = expires
     elif max_age is not None and sync_expires:

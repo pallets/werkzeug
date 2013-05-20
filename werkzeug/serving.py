@@ -41,15 +41,24 @@ import os
 import socket
 import sys
 import time
-import thread
 import signal
 import subprocess
-from urllib import unquote
-from SocketServer import ThreadingMixIn, ForkingMixIn
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+try:
+    from urllib import unquote
+except ImportError:
+    from urllib.parse import unquote
 
+try:
+    from SocketServer import ThreadingMixIn, ForkingMixIn
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+except ImportError:
+    from socketserver import ThreadingMixIn, ForkingMixIn
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+
+import six
 import werkzeug
 from werkzeug._internal import _log
+from werkzeug._compat import iteritems
 from werkzeug.urls import _safe_urlsplit
 from werkzeug.exceptions import InternalServerError
 
@@ -136,7 +145,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if exc_info:
                 try:
                     if headers_sent:
-                        raise exc_info[0], exc_info[1], exc_info[2]
+                        six.reraise(*exc_info)
                 finally:
                     exc_info = None
             elif headers_set:
@@ -159,7 +168,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
         try:
             execute(app)
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             self.connection_dropped(e, environ)
         except Exception:
             if self.server.passthrough_errors:
@@ -182,7 +191,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         rv = None
         try:
             rv = BaseHTTPRequestHandler.handle(self)
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             self.connection_dropped(e)
         except Exception:
             if self.server.ssl_context is None or not is_ssl_error():
@@ -576,8 +585,8 @@ def restart_with_reloader():
         # environment and subprocess.call does not like this, encode them
         # to latin1 and continue.
         if os.name == 'nt':
-            for key, value in new_environ.iteritems():
-                if isinstance(value, unicode):
+            for key, value in iteritems(new_environ):
+                if isinstance(value, six.text_type):
                     new_environ[key] = value.encode('iso-8859-1')
 
         exit_code = subprocess.call(args, env=new_environ)
@@ -717,7 +726,7 @@ def main():
             port = address[1]
 
     if len(args) != 1:
-        print 'No application supplied, or too much. See --help'
+        sys.stdout.write('No application supplied, or too much. See --help\n')
         sys.exit(1)
     app = import_string(args[0])
 

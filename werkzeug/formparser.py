@@ -10,7 +10,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-from cStringIO import StringIO
+from io import BytesIO
 from tempfile import TemporaryFile
 from itertools import chain, repeat, tee
 from functools import update_wrapper
@@ -39,7 +39,7 @@ def default_stream_factory(total_content_length, filename, content_type,
     """The stream factory that is used per default."""
     if total_content_length > 1024 * 500:
         return TemporaryFile('wb+')
-    return StringIO()
+    return BytesIO()
 
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
@@ -259,14 +259,17 @@ def parse_multipart_headers(iterable):
 
     # we link the list to the headers, no need to create a copy, the
     # list was not shared anyways.
-    return Headers.linked(result)
+    return Headers(result)
 
-_begin_form = intern('begin_form')
-_begin_file = intern('begin_file')
-_cont = intern('cont')
-_end = intern('end')
+
+_begin_form = 'begin_form'
+_begin_file = 'begin_file'
+_cont = 'cont'
+_end = 'end'
+
 
 class MultiPartParser(object):
+
     def __init__(self, stream_factory=None, charset='utf-8', errors='replace',
                  max_form_memory_size=None, cls=None, buffer_size=10 * 1024):
         self.stream_factory = stream_factory

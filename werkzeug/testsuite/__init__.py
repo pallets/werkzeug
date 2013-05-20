@@ -11,14 +11,19 @@
 
 from __future__ import with_statement
 
-import unittest
+import sys
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+import six
 from werkzeug.utils import import_string, find_modules
 
 
 def iter_suites(package):
     """Yields all testsuites."""
     for module in find_modules(package, include_packages=True):
-        mod = import_string(module)
+        mod = __import__(module, fromlist=['*'])
         if hasattr(mod, 'suite'):
             yield mod.suite()
 
@@ -57,6 +62,9 @@ class WerkzeugTestCase(unittest.TestCase):
         unittest.TestCase.tearDown(self)
         self.teardown()
 
+    def assert_line_equal(self, x, y):
+        assert x == y, "lines not equal\n a = %r\n b = %r" % (x, y)
+
     def assert_equal(self, x, y):
         return self.assertEqual(x, y)
 
@@ -69,6 +77,59 @@ class WerkzeugTestCase(unittest.TestCase):
             return catcher
         with catcher:
             callable(*args, **kwargs)
+
+    if not six.PY3:
+        def assertRaisesRegex(self, *args, **kwargs):
+            return self.assertRaisesRegexp(*args, **kwargs)
+
+    if sys.version_info[:2] == (2, 6):
+        def assert_is_none(self, x):
+            assert x is None, "%r is not None" % (x,)
+
+        def assert_is_not_none(self, x):
+            assert x is not None, "%r is None" % (x, )
+
+        def assert_in(self, x, y):
+            assert x in y, "%r not in %r" % (x, y)
+
+        def assert_not_in(self, x, y):
+            assert x not in y, "%r in %r" % (x, y)
+
+        def assert_is_instance(self, x, y):
+            assert isinstance(x, y), "not isinstance(%r, %r)" % (x, y)
+
+        def assert_is(self, x, y):
+            assert x is y, "%r is not %r" % (x, y)
+
+        def assert_is_not(self, x, y):
+            assert x is not y, "%r is %r" % (x, y)
+    else:
+        def assert_is_none(self, x):
+            return self.assertIsNone(x)
+
+        def assert_is_not_none(self, x):
+            return self.assertIsNotNone(x)
+
+        def assert_in(self, x, y):
+            return self.assertIn(x, y)
+
+        def assert_is_instance(self, x, y):
+            return self.assertIsInstance(x, y)
+
+        def assert_not_in(self, x, y):
+            return self.assertNotIn(x, y)
+
+        def assert_is(self, x, y):
+            return self.assertIs(x, y)
+
+        def assert_is_not(self, x, y):
+            return self.assertIsNot(x, y)
+
+    def assert_true(self, x):
+        return self.assertTrue(x)
+
+    def assert_false(self, x):
+        return self.assertFalse(x)
 
 
 class _ExceptionCatcher(object):
@@ -86,7 +147,7 @@ class _ExceptionCatcher(object):
             self.test_case.fail('Expected exception of type %r' %
                                 exception_name)
         elif not issubclass(exc_type, self.exc_type):
-            raise exc_type, exc_value, tb
+            six.reraise(exc_type, exc_value, tb)
         return True
 
 
@@ -142,5 +203,9 @@ def main():
     """Runs the testsuite as command line application."""
     try:
         unittest.main(testLoader=BetterLoader(), defaultTest='suite')
-    except Exception, e:
-        print 'Error: %s' % e
+    except Exception:
+        import sys
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+

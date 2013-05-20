@@ -9,12 +9,14 @@
     :license: BSD.
 """
 import re
+
 import os
 import sys
 import inspect
 import traceback
 import codecs
 from tokenize import TokenError
+import six
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
 
@@ -364,7 +366,7 @@ class Frame(object):
         info = self.locals.get('__traceback_info__')
         if info is not None:
             try:
-                info = unicode(info)
+                info = six.text_type(info)
             except UnicodeError:
                 info = str(info).decode('utf-8', 'replace')
         self.info = info
@@ -413,13 +415,13 @@ class Frame(object):
 
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
-        if isinstance(code, basestring):
-            if isinstance(code, unicode):
+        if isinstance(code, six.string_types):
+            if not six.PY3 and isinstance(code, unicode):
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
         if mode != 'exec':
             return eval(code, self.globals, self.locals)
-        exec code in self.globals, self.locals
+        duc.exec_(code, self.globals, self.locals)
 
     @cached_property
     def sourcelines(self):
@@ -439,7 +441,7 @@ class Frame(object):
 
         if source is None:
             try:
-                f = file(self.filename)
+                f = open(self.filename)
             except IOError:
                 return []
             try:

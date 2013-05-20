@@ -80,12 +80,12 @@ class WrappersTestCase(WerkzeugTestCase):
         resp.mimetype_params['charset'] = 'iso-8859-15'
         assert resp.charset == 'iso-8859-15'
         resp.data = u'Hällo Wörld'
-        assert ''.join(resp.iter_encoded()) == \
+        assert b''.join(resp.iter_encoded()) == \
                u'Hällo Wörld'.encode('iso-8859-15')
         del resp.headers['content-type']
         try:
             resp.charset = 'utf-8'
-        except TypeError, e:
+        except TypeError as e:
             pass
         else:
             assert False, 'expected type error on charset setting without ct'

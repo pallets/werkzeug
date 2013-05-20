@@ -11,6 +11,7 @@
 import sys
 import code
 from types import CodeType
+import six
 from werkzeug.utils import escape
 from werkzeug.local import Local
 from werkzeug.debug.repr import debug_repr, dump, helper
@@ -50,7 +51,7 @@ class HTMLStringO(object):
         return val
 
     def _write(self, x):
-        if isinstance(x, str):
+        if isinstance(x, bytes):
             x = x.decode('utf-8', 'replace')
         self._buffer.append(x)
 
@@ -173,7 +174,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
     def runcode(self, code):
         try:
-            exec code in self.globals, self.locals
+            six.exec_(code, self.globals, self.locals)
         except Exception:
             self.showtraceback()
 

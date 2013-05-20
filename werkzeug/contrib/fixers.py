@@ -16,7 +16,11 @@
     :copyright: Copyright 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from urllib import unquote
+try:
+    from urllib import unquote
+except ImportError:
+    from urllib.parse import unquote
+
 from werkzeug.http import parse_options_header, parse_cache_control_header, \
      parse_set_header
 from werkzeug.useragents import UserAgent
@@ -228,7 +232,7 @@ class InternetExplorerFix(object):
 
     def run_fixed(self, environ, start_response):
         def fixing_start_response(status, headers, exc_info=None):
-            self.fix_headers(environ, Headers.linked(headers), status)
+            self.fix_headers(environ, Headers(_list=headers), status)
             return start_response(status, headers, exc_info)
         return self.app(environ, fixing_start_response)
 

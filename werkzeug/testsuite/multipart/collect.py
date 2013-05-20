@@ -12,7 +12,7 @@ def copy_stream(request):
     folder = 'request-%d' % time()
     mkdir(folder)
     environ = request.environ
-    f = file(folder + '/request.txt', 'wb+')
+    f = open(folder + '/request.txt', 'wb+')
     f.write(environ['wsgi.input'].read(int(environ['CONTENT_LENGTH'])))
     f.flush()
     f.seek(0)
@@ -27,7 +27,7 @@ def stats(request):
     text = request.form['text']
     f1.save(request.stat_folder + '/file1.bin')
     f2.save(request.stat_folder + '/file2.bin')
-    file(request.stat_folder + '/text.txt', 'w').write(text.encode('utf-8'))
+    open(request.stat_folder + '/text.txt', 'w').write(text.encode('utf-8'))
     return Response('Done.')
 
 

@@ -44,8 +44,11 @@ try:
 except ImportError:
     greenlet = None
 
+import six
+from werkzeug._compat import string_join
 
-class IterIO(object):
+
+class IterIO(six.Iterator):
     """Instances of this object implement an interface compatible with the
     standard Python :class:`file` object.  Streams are either read-only or
     write-only depending on how the object is created.
@@ -111,7 +114,7 @@ class IterIO(object):
             raise ValueError('I/O operation on closed file')
         raise IOError(9, 'Bad file descriptor')
 
-    def next(self):
+    def __next__(self):
         if self.closed:
             raise StopIteration()
         line = self.readline()
@@ -154,12 +157,12 @@ class IterI(IterIO):
         self._buffer.append(s)
 
     def writelines(self, list):
-        self.write(''.join(list))
+        self.write(string_join(list))
 
     def flush(self):
         if self.closed:
             raise ValueError('I/O operation on closed file')
-        data = ''.join(self._buffer)
+        data = string_join(self._buffer)
         self._buffer = []
         self._parent.switch((data,))
 
@@ -205,14 +208,14 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += ''.join(buf)
+            self._buf += string_join(buf)
         self.pos = max(0, pos)
 
     def read(self, n=-1):
         if self.closed:
             raise ValueError('I/O operation on closed file')
         if n < 0:
-            self._buf += ''.join(self._gen)
+            self._buf += string_join(self._gen)
             result = self._buf[self.pos:]
             self.pos += len(result)
             return result
@@ -221,13 +224,13 @@ class IterO(IterIO):
         try:
             tmp_end_pos = len(self._buf)
             while new_pos > tmp_end_pos:
-                item = self._gen.next()
+                item = next(self._gen)
                 tmp_end_pos += len(item)
                 buf.append(item)
         except StopIteration:
             pass
         if buf:
-            self._buf += ''.join(buf)
+            self._buf += string_join(buf)
         new_pos = max(0, new_pos)
         try:
             return self._buf[self.pos:new_pos]
@@ -242,7 +245,7 @@ class IterO(IterIO):
         try:
             pos = self.pos
             while nl_pos < 0:
-                item = self._gen.next()
+                item = next(self._gen)
                 local_pos = item.find('\n')
                 buf.append(item)
                 if local_pos >= 0:
@@ -252,7 +255,7 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += ''.join(buf)
+            self._buf += string_join(buf)
         if nl_pos < 0:
             new_pos = len(self._buf)
         else:

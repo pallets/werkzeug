@@ -12,7 +12,7 @@
 from __future__ import with_statement
 
 import unittest
-from StringIO import StringIO
+from six import BytesIO
 from os.path import join, dirname
 
 from werkzeug.testsuite import WerkzeugTestCase
@@ -38,64 +38,61 @@ def form_data_consumer(request):
 
 
 def get_contents(filename):
-    f = file(filename, 'rb')
-    try:
+    with open(filename, 'rb') as f:
         return f.read()
-    finally:
-        f.close()
 
 
 class FormParserTestCase(WerkzeugTestCase):
 
     def test_limiting(self):
-        data = 'foo=Hello+World&bar=baz'
-        req = Request.from_values(input_stream=StringIO(data),
+        data = b'foo=Hello+World&bar=baz'
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_content_length = 400
         self.assert_equal(req.form['foo'], 'Hello World')
 
-        req = Request.from_values(input_stream=StringIO(data),
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_form_memory_size = 7
         self.assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
 
-        req = Request.from_values(input_stream=StringIO(data),
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_form_memory_size = 400
         self.assert_equal(req.form['foo'], 'Hello World')
 
-        data = ('--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n'
-                'Hello World\r\n'
-                '--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n'
-                'bar=baz\r\n--foo--')
-        req = Request.from_values(input_stream=StringIO(data),
+        data = (b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n'
+                b'Hello World\r\n'
+                b'--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n'
+                b'bar=baz\r\n--foo--')
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_content_length = 4
         self.assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
 
-        req = Request.from_values(input_stream=StringIO(data),
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_content_length = 400
         self.assert_equal(req.form['foo'], 'Hello World')
 
-        req = Request.from_values(input_stream=StringIO(data),
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_form_memory_size = 7
         self.assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
 
-        req = Request.from_values(input_stream=StringIO(data),
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
@@ -129,20 +126,20 @@ class FormParserTestCase(WerkzeugTestCase):
         self.assert_equal(len(files), 0)
 
     def test_large_file(self):
-        data = 'x' * (1024 * 600)
-        req = Request.from_values(data={'foo': (StringIO(data), 'test.txt')},
+        data = b'x' * (1024 * 600)
+        req = Request.from_values(data={'foo': (BytesIO(data), 'test.txt')},
                                   method='POST')
         # make sure we have a real file here, because we expect to be
         # on the disk.  > 1024 * 500
-        self.assert_(hasattr(req.files['foo'].stream, 'fileno'))
+        self.assert_true(hasattr(req.files['foo'].stream, 'fileno'))
 
     def test_streaming_parse(self):
-        data = 'x' * (1024 * 600)
+        data = b'x' * (1024 * 600)
         class StreamMPP(formparser.MultiPartParser):
             def parse(self, file, boundary, content_length):
                 i = iter(self.parse_lines(file, boundary, content_length))
-                one = i.next()
-                two = i.next()
+                one = next(i)
+                two = next(i)
                 return self.cls(()), {'one': one, 'two': two}
         class StreamFDP(formparser.FormDataParser):
             def _sf_parse_multipart(self, stream, mimetype,
@@ -158,7 +155,7 @@ class FormParserTestCase(WerkzeugTestCase):
             parse_functions['multipart/form-data'] = _sf_parse_multipart
         class StreamReq(Request):
             form_data_parser_class = StreamFDP
-        req = StreamReq.from_values(data={'foo': (StringIO(data), 'test.txt')},
+        req = StreamReq.from_values(data={'foo': (BytesIO(data), 'test.txt')},
                                     method='POST')
         self.assert_equal('begin_file', req.files['one'][0])
         self.assert_equal(('foo', 'test.txt'), req.files['one'][1][1:])
@@ -210,7 +207,7 @@ class MultiPartTestCase(WerkzeugTestCase):
             response = client.post('/?object=text', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary,
                                    content_length=len(data))
-            self.assert_equal(response.data, repr(text))
+            self.assert_equal(response.data, repr(text).encode('ascii'))
 
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer, Response)
@@ -227,17 +224,17 @@ class MultiPartTestCase(WerkzeugTestCase):
         # This test looks innocent but it was actually timeing out in
         # the Werkzeug 0.5 release version (#394)
         data = (
-            '--foo\r\n'
-            'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n'
-            'Content-Type: text/plain\r\n\r\n'
-            'file contents and no end'
+            b'--foo\r\n'
+            b'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n'
+            b'Content-Type: text/plain\r\n\r\n'
+            b'file contents and no end'
         )
-        data = Request.from_values(input_stream=StringIO(data),
+        data = Request.from_values(input_stream=BytesIO(data),
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_(not data.files)
-        self.assert_(not data.form)
+        self.assert_true(not data.files)
+        self.assert_true(not data.form)
 
     def test_broken(self):
         data = (
@@ -250,8 +247,8 @@ class MultiPartTestCase(WerkzeugTestCase):
         )
         _, form, files = formparser.parse_form_data(create_environ(data=data,
             method='POST', content_type='multipart/form-data; boundary=foo'))
-        self.assert_(not files)
-        self.assert_(not form)
+        self.assert_true(not files)
+        self.assert_true(not form)
 
         self.assert_raises(ValueError, formparser.parse_form_data,
             create_environ(data=data, method='POST',
@@ -260,11 +257,11 @@ class MultiPartTestCase(WerkzeugTestCase):
 
     def test_file_no_content_type(self):
         data = (
-            '--foo\r\n'
-            'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n\r\n'
-            'file contents\r\n--foo--'
+            b'--foo\r\n'
+            b'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n\r\n'
+            b'file contents\r\n--foo--'
         )
-        data = Request.from_values(input_stream=StringIO(data),
+        data = Request.from_values(input_stream=BytesIO(data),
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
@@ -275,26 +272,26 @@ class MultiPartTestCase(WerkzeugTestCase):
         # this test looks innocent but it was actually timeing out in
         # the Werkzeug 0.5 release version (#394)
         data = (
-            '\r\n\r\n--foo\r\n'
-            'Content-Disposition: form-data; name="foo"\r\n\r\n'
-            'a string\r\n'
-            '--foo--'
+            b'\r\n\r\n--foo\r\n'
+            b'Content-Disposition: form-data; name="foo"\r\n\r\n'
+            b'a string\r\n'
+            b'--foo--'
         )
-        data = Request.from_values(input_stream=StringIO(data),
+        data = Request.from_values(input_stream=BytesIO(data),
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_(not data.files)
+        self.assert_true(not data.files)
         self.assert_equal(data.form['foo'], 'a string')
 
     def test_headers(self):
-        data = ('--foo\r\n'
-                'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
-                'X-Custom-Header: blah\r\n'
-                'Content-Type: text/plain; charset=utf-8\r\n\r\n'
-                'file contents, just the contents\r\n'
-                '--foo--')
-        req = Request.from_values(input_stream=StringIO(data),
+        data = (b'--foo\r\n'
+                b'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
+                b'X-Custom-Header: blah\r\n'
+                b'Content-Type: text/plain; charset=utf-8\r\n\r\n'
+                b'file contents, just the contents\r\n'
+                b'--foo--')
+        req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
@@ -306,19 +303,19 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_equal(foo.headers['x-custom-header'], 'blah')
 
     def test_nonstandard_line_endings(self):
-        for nl in '\n', '\r', '\r\n':
+        for nl in b'\n', b'\r', b'\r\n':
             data = nl.join((
-                '--foo',
-                'Content-Disposition: form-data; name=foo',
-                '',
-                'this is just bar',
-                '--foo',
-                'Content-Disposition: form-data; name=bar',
-                '',
-                'blafasel',
-                '--foo--'
+                b'--foo',
+                b'Content-Disposition: form-data; name=foo',
+                b'',
+                b'this is just bar',
+                b'--foo',
+                b'Content-Disposition: form-data; name=bar',
+                b'',
+                b'blafasel',
+                b'--foo--'
             ))
-            req = Request.from_values(input_stream=StringIO(data),
+            req = Request.from_values(input_stream=BytesIO(data),
                                       content_length=len(data),
                                       content_type='multipart/form-data; '
                                       'boundary=foo', method='POST')
@@ -329,18 +326,18 @@ class MultiPartTestCase(WerkzeugTestCase):
         def parse_multipart(stream, boundary, content_length):
             parser = formparser.MultiPartParser(content_length)
             return parser.parse(stream, boundary, content_length)
-        self.assert_raises(ValueError, parse_multipart, StringIO(''), '', 0)
-        self.assert_raises(ValueError, parse_multipart, StringIO(''), 'broken  ', 0)
+        self.assert_raises(ValueError, parse_multipart, BytesIO(), '', 0)
+        self.assert_raises(ValueError, parse_multipart, BytesIO(), 'broken  ', 0)
 
-        data = '--foo\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, parse_multipart, StringIO(data), 'foo', len(data))
+        data = b'--foo\r\n\r\nHello World\r\n--foo--'
+        self.assert_raises(ValueError, parse_multipart, BytesIO(data), 'foo', len(data))
 
-        data = '--foo\r\nContent-Disposition: form-field; name=foo\r\n' \
-               'Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, parse_multipart, StringIO(data), 'foo', len(data))
+        data = b'--foo\r\nContent-Disposition: form-field; name=foo\r\n' \
+               b'Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--'
+        self.assert_raises(ValueError, parse_multipart, BytesIO(data), 'foo', len(data))
 
-        data = '--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n'
-        self.assert_raises(ValueError, parse_multipart, StringIO(data), 'foo', len(data))
+        data = b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n'
+        self.assert_raises(ValueError, parse_multipart, BytesIO(data), 'foo', len(data))
 
         x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
         self.assert_equal(x['foo'], 'bar\n x test')
@@ -350,11 +347,11 @@ class MultiPartTestCase(WerkzeugTestCase):
     def test_bad_newline_bad_newline_assumption(self):
         class ISORequest(Request):
             charset = 'latin1'
-        contents = 'U2vlbmUgbORu'
-        data = '--foo\r\nContent-Disposition: form-data; name="test"\r\n' \
-               'Content-Transfer-Encoding: base64\r\n\r\n' + \
-               contents + '\r\n--foo--'
-        req = ISORequest.from_values(input_stream=StringIO(data),
+        contents = b'U2vlbmUgbORu'
+        data = b'--foo\r\nContent-Disposition: form-data; name="test"\r\n' \
+               b'Content-Transfer-Encoding: base64\r\n\r\n' + \
+               contents + b'\r\n--foo--'
+        req = ISORequest.from_values(input_stream=BytesIO(data),
                                      content_length=len(data),
                                      content_type='multipart/form-data; boundary=foo',
                                      method='POST')
