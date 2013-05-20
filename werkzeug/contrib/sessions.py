@@ -79,7 +79,13 @@ def _urandom():
 
 
 def generate_key(salt=None):
-    return sha1('%s%s%s' % (salt, time(), _urandom())).hexdigest()
+    if salt is None:
+        salt = repr(salt).encode('ascii')
+    return sha1(b''.join([
+        salt,
+        str(time()).encode('ascii'),
+        _urandom()
+    ])).hexdigest()
 
 
 class ModificationTrackingDict(CallbackDict):
