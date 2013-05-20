@@ -739,6 +739,12 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
     separator_pattern = r'(%s)' % re.escape(separator)
     _string_split = re.compile(separator_pattern).split
     _bytes_split = re.compile(separator_pattern.encode('ascii')).split
+    if isinstance(separator, text_type):
+        string_separator = separator
+        bytes_separator = separator.encode('ascii')
+    else:
+        bytes_separator = separator
+        string_separator = separator.decode('ascii')
     buffer = []
     while 1:
         new_data = _read()
@@ -750,7 +756,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
             chunks = _bytes_split(new_data)
         new_buf = []
         for item in chain(buffer, chunks):
-            if item == separator:
+            if item in [string_separator, bytes_separator]:
                 yield string_join(new_buf)
                 new_buf = []
             else:
