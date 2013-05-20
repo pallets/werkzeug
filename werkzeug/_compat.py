@@ -50,8 +50,9 @@ def to_native(x, charset):
     else:
         return x.encode(charset)
 
-def string_join(list, default=''):
+def string_join(iterable, default=''):
     '''concatenate any string type'''
+    list = list(iterable)
     if list:
         if isinstance(list[0], bytes):
             return b''.join(list)
