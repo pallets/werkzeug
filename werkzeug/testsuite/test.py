@@ -142,7 +142,7 @@ class TestTestCase(WerkzeugTestCase):
 
         self.assert_strict_equal(req.url, u'http://localhost/')
         self.assert_strict_equal(req.method, 'POST')
-        self.assert_strict_equal(req.form['test'], 'normal value')
+        self.assert_strict_equal(req.form['test'], u'normal value')
         self.assert_equal(req.files['test'].content_type, 'text/plain')
         self.assert_strict_equal(req.files['test'].filename, 'test.txt')
         self.assert_strict_equal(req.files['test'].read(), 'test contents')
@@ -202,7 +202,7 @@ class TestTestCase(WerkzeugTestCase):
         builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt')
         self.assert_equal(builder.content_type, 'multipart/form-data')
         req = builder.get_request()
-        self.assert_strict_equal(req.form['foo'], 'bar')
+        self.assert_strict_equal(req.form['foo'], u'bar')
         self.assert_strict_equal(req.files['blafasel'].read(), 'foo')
 
     def test_environ_builder_stream_switch(self):

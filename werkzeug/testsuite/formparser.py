@@ -282,7 +282,7 @@ class MultiPartTestCase(WerkzeugTestCase):
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
         self.assert_true(not data.files)
-        self.assert_strict_equal(data.form['foo'], 'a string')
+        self.assert_strict_equal(data.form['foo'], u'a string')
 
     def test_headers(self):
         data = (b'--foo\r\n'
@@ -319,8 +319,8 @@ class MultiPartTestCase(WerkzeugTestCase):
                                       content_length=len(data),
                                       content_type='multipart/form-data; '
                                       'boundary=foo', method='POST')
-            self.assert_strict_equal(req.form['foo'], 'this is just bar')
-            self.assert_strict_equal(req.form['bar'], 'blafasel')
+            self.assert_strict_equal(req.form['foo'], u'this is just bar')
+            self.assert_strict_equal(req.form['bar'], u'blafasel')
 
     def test_failures(self):
         def parse_multipart(stream, boundary, content_length):
