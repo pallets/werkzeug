@@ -376,7 +376,7 @@ class WrappersTestCase(WerkzeugTestCase):
 
         response = WithFreeze('Hello World')
         response.freeze()
-        self.assert_equal(response.get_etag(), (wrappers.generate_etag('Hello World'), False))
+        self.assert_equal(response.get_etag(), (wrappers.generate_etag(b'Hello World'), False))
         response = WithoutFreeze('Hello World')
         response.freeze()
         self.assert_equal(response.get_etag(), (None, None))
