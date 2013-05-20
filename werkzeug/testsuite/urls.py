@@ -34,14 +34,14 @@ class URLsTestCase(WerkzeugTestCase):
     def test_url_decoding(self):
         # decode_keys is ignored by _url_decode_impl
         x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel')
-        self.assert_strict_equal(x[u'foo'], u'42')
-        self.assert_strict_equal(x[u'bar'], u'23')
-        self.assert_strict_equal(x[u'uni'], u'Hänsel')
+        self.assert_strict_equal(x['foo'], u'42')
+        self.assert_strict_equal(x['bar'], u'23')
+        self.assert_strict_equal(x['uni'], u'Hänsel')
 
         x = urls.url_decode(b'foo=42;bar=23;uni=H%C3%A4nsel', separator=b';')
-        self.assert_strict_equal(x[u'foo'], u'42')
-        self.assert_strict_equal(x[u'bar'], u'23')
-        self.assert_strict_equal(x[u'uni'], u'Hänsel')
+        self.assert_strict_equal(x['foo'], u'42')
+        self.assert_strict_equal(x['bar'], u'23')
+        self.assert_strict_equal(x['uni'], u'Hänsel')
 
         x = urls.url_decode(b'%C3%9Ch=H%C3%A4nsel', decode_keys=True)
         self.assert_strict_equal(x[u'Üh'], u'Hänsel')
