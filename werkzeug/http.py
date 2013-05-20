@@ -35,7 +35,7 @@ import base64
 
 
 from six import iteritems, binary_type, text_type, string_types
-from werkzeug._compat import to_native
+from werkzeug._compat import to_native, to_unicode
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
@@ -772,6 +772,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
+    header = to_native(header, charset)
     if cls is None:
         cls = TypeConversionDict
     cookie = _ExtendedCookie()
@@ -783,7 +784,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     # `None` items which we have to skip here.
     for key, value in iteritems(cookie):
         if value.value is not None:
-            result[key] = _decode_unicode(
+            result[to_unicode(key, 'ascii')] = _decode_unicode(
                 unquote_header_value(value.value).encode('ascii'),
                 charset, errors)
 
@@ -821,6 +822,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         raise TypeError('invalid key %r' % key)
     if not isinstance(value, (binary_type, text_type)):
         raise TypeError('invalid value %r' % value)
+
+    key, value = to_native(key, charset), to_native(value, charset)
 
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
