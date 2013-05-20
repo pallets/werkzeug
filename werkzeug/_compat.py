@@ -1,3 +1,4 @@
+import sys
 
 from . import _urlparse as urlparse
 
@@ -50,7 +51,7 @@ def to_bytes(x, charset):
         return x.encode(charset)
     return str(x)
 
-def to_native(x, charset):
+def to_native(x, charset=sys.getdefaultencoding()):
     '''please use carefully'''
     if x is None:
         return None
