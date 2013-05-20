@@ -44,6 +44,7 @@ from werkzeug._internal import HTTP_STATUS_CODES, _dump_date, \
      _ExtendedCookie, _ExtendedMorsel, _decode_unicode
 
 
+_cookie_charset = 'latin1'
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
 _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
@@ -750,8 +751,7 @@ def is_hop_by_hop_header(header):
     return header.lower() in _hop_by_hop_headers
 
 
-def parse_cookie(header, charset='utf-8', errors='replace',
-                 cls=None):
+def parse_cookie(header, errors='replace', cls=None):
     """Parse a cookie.  Either from a string or WSGI environ.
 
     Per default encoding errors are ignored.  If you want a different behavior
@@ -772,7 +772,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
-    header = to_native(header, charset)
+    header = to_native(header, _cookie_charset)
     if cls is None:
         cls = TypeConversionDict
     cookie = _ExtendedCookie()
@@ -784,7 +784,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
     # `None` items which we have to skip here.
     for key, value in iteritems(cookie):
         if value.value is not None:
-            result[to_unicode(key, 'ascii')] = _decode_unicode(
+            result[to_unicode(key, _cookie_charset)] = _decode_unicode(
                 unquote_header_value(value.value).encode('ascii'),
                 charset, errors)
 
@@ -792,8 +792,7 @@ def parse_cookie(header, charset='utf-8', errors='replace',
 
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
-                domain=None, secure=None, httponly=False, charset='utf-8',
-                sync_expires=True):
+                domain=None, secure=None, httponly=False, sync_expires=True):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -823,7 +822,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     if not isinstance(value, (binary_type, text_type)):
         raise TypeError('invalid value %r' % value)
 
-    key, value = to_native(key, charset), to_native(value, charset)
+    key, value = to_native(key, _cookie_charset), to_native(value, _cookie_charset)
 
     value = quote_header_value(value)
     morsel = _ExtendedMorsel(key, value)
