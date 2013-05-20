@@ -131,19 +131,19 @@ class TestTestCase(WerkzeugTestCase):
         b = EnvironBuilder()
         self.assert_is_none(b.content_type)
         b.method = 'POST'
-        self.assert_strict_equal(b.content_type, 'application/x-www-form-urlencoded')
+        self.assert_equal(b.content_type, 'application/x-www-form-urlencoded')
         b.files.add_file('test', BytesIO(b'test contents'), 'test.txt')
-        self.assert_strict_equal(b.files['test'].content_type, 'text/plain')
-        self.assert_strict_equal(b.content_type, 'multipart/form-data')
+        self.assert_equal(b.files['test'].content_type, 'text/plain')
+        self.assert_equal(b.content_type, 'multipart/form-data')
         b.form['test'] = 'normal value'
 
         req = b.get_request()
         b.close()
 
-        self.assert_strict_equal(req.url, 'http://localhost/')
+        self.assert_strict_equal(req.url, u'http://localhost/')
         self.assert_strict_equal(req.method, 'POST')
         self.assert_strict_equal(req.form['test'], 'normal value')
-        self.assert_strict_equal(req.files['test'].content_type, 'text/plain')
+        self.assert_equal(req.files['test'].content_type, 'text/plain')
         self.assert_strict_equal(req.files['test'].filename, 'test.txt')
         self.assert_strict_equal(req.files['test'].read(), 'test contents')
 
@@ -196,11 +196,11 @@ class TestTestCase(WerkzeugTestCase):
         builder = EnvironBuilder()
         self.assert_is_none(builder.content_type)
         builder.method = 'POST'
-        self.assert_strict_equal(builder.content_type, 'application/x-www-form-urlencoded')
+        self.assert_equal(builder.content_type, 'application/x-www-form-urlencoded')
         builder.form['foo'] = 'bar'
-        self.assert_strict_equal(builder.content_type, 'application/x-www-form-urlencoded')
+        self.assert_equal(builder.content_type, 'application/x-www-form-urlencoded')
         builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt')
-        self.assert_strict_equal(builder.content_type, 'multipart/form-data')
+        self.assert_equal(builder.content_type, 'multipart/form-data')
         req = builder.get_request()
         self.assert_strict_equal(req.form['foo'], 'bar')
         self.assert_strict_equal(req.files['blafasel'].read(), 'foo')

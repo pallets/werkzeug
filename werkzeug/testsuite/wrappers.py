@@ -253,7 +253,7 @@ class WrappersTestCase(WerkzeugTestCase):
             assert response.__class__ is SpecialResponse
             self.assert_strict_equal(response.foo(), 42)
             self.assert_strict_equal(response.data, b'Hello World!')
-            self.assert_strict_equal(response.content_type, 'text/html')
+            self.assert_equal(response.content_type, 'text/html')
 
         # without env, no arbitrary conversion
         self.assert_raises(TypeError, SpecialResponse.force_type, wsgi_application)
