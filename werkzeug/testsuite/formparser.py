@@ -134,12 +134,12 @@ class FormParserTestCase(WerkzeugTestCase):
         self.assert_true(hasattr(req.files['foo'].stream, 'fileno'))
 
     def test_streaming_parse(self):
-        data = 'x' * (1024 * 600)
+        data = b'x' * (1024 * 600)
         class StreamMPP(formparser.MultiPartParser):
             def parse(self, file, boundary, content_length):
                 i = iter(self.parse_lines(file, boundary, content_length))
-                one = i.next()
-                two = i.next()
+                one = next(i)
+                two = next(i)
                 return self.cls(()), {'one': one, 'two': two}
         class StreamFDP(formparser.FormDataParser):
             def _sf_parse_multipart(self, stream, mimetype,
