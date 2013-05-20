@@ -76,12 +76,12 @@ class RoutingTestCase(WerkzeugTestCase):
 
     def test_environ_defaults(self):
         environ = create_environ("/foo")
-        self.assert_equal(environ["PATH_INFO"], '/foo')
+        self.assert_strict_equal(environ["PATH_INFO"], '/foo')
         m = r.Map([r.Rule("/foo", endpoint="foo"), r.Rule("/bar", endpoint="bar")])
         a = m.bind_to_environ(environ)
-        self.assert_equal(a.match("/foo"), ('foo', {}))
-        self.assert_equal(a.match(), ('foo', {}))
-        self.assert_equal(a.match("/bar"), ('bar', {}))
+        self.assert_strict_equal(a.match("/foo"), ('foo', {}))
+        self.assert_strict_equal(a.match(), ('foo', {}))
+        self.assert_strict_equal(a.match("/bar"), ('bar', {}))
         self.assert_raises(r.NotFound, a.match, "/bars")
 
     def test_basic_building(self):
@@ -607,7 +607,7 @@ class RoutingTestCase(WerkzeugTestCase):
         exc = r.RequestRedirect('http://www.google.com/')
         exc.code = 307
         env = create_environ()
-        self.assert_equal(exc.get_response(env).status_code, exc.code)
+        self.assert_strict_equal(exc.get_response(env).status_code, exc.code)
 
     def test_unicode_rules(self):
         m = r.Map([
@@ -618,26 +618,26 @@ class RoutingTestCase(WerkzeugTestCase):
         try:
             a.match(u'/войти')
         except r.RequestRedirect as e:
-            self.assert_equal(e.new_url, 'http://xn--n3h.example.com/'
+            self.assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
                               '%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
         endpoint, values = a.match(u'/войти/')
-        self.assert_equal(endpoint, 'enter')
-        self.assert_equal(values, {})
+        self.assert_strict_equal(endpoint, 'enter')
+        self.assert_strict_equal(values, {})
 
         try:
             a.match(u'/foo+bar')
         except r.RequestRedirect as e:
-            self.assert_equal(e.new_url, 'http://xn--n3h.example.com/'
+            self.assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
                               'foo+bar/')
         endpoint, values = a.match(u'/foo+bar/')
-        self.assert_equal(endpoint, 'foobar')
-        self.assert_equal(values, {})
+        self.assert_strict_equal(endpoint, 'foobar')
+        self.assert_strict_equal(values, {})
 
         url = a.build('enter', {}, force_external=True)
-        self.assert_equal(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
+        self.assert_strict_equal(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
 
         url = a.build('foobar', {}, force_external=True)
-        self.assert_equal(url, 'http://xn--n3h.example.com/foo+bar/')
+        self.assert_strict_equal(url, 'http://xn--n3h.example.com/foo+bar/')
 
 
 def suite():

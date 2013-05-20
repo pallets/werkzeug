@@ -131,6 +131,22 @@ class WerkzeugTestCase(unittest.TestCase):
     def assert_false(self, x):
         return self.assertFalse(x)
 
+    def assert_strict_equal(self, x, y):
+        '''Stricter version of assert_equal that doesn't do implicit conversion
+        between unicode and strings'''
+        self.assert_equal(x, y)
+        assert issubclass(type(x), type(y)) or issubclass(type(y), type(x)), \
+                '%s != %s' % (type(x), type(y))
+        if isinstance(x, (six.binary_type, six.text_type, six.integer_types)) or x is None:
+            return
+        elif isinstance(x, (set, dict)) or isinstance(y, (set, dict)):
+            x = sorted(x)
+            y = sorted(y)
+        else:
+            x = list(x)
+            y = list(y)
+        self.assert_equal(repr(x), repr(y))
+
 
 class _ExceptionCatcher(object):
 
