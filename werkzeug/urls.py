@@ -84,9 +84,9 @@ def iri_to_uri(iri, charset='utf-8'):
             auth += b':' + url_quote(password).encode(charset)
         hostname = auth + b'@' + hostname
     if port:
-        hostname += b':' + port
+        hostname += b':' + port.encode('ascii')
 
-    path = url_quote(path, safe="/:~+%", encoding=charset).encode(charset)
+    path = url_quote(path, safe="/:~+%").encode(charset)
     query = url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset).encode(charset)
     fragment = fragment.encode(charset)
 

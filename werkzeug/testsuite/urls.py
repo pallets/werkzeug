@@ -116,6 +116,9 @@ class URLsTestCase(WerkzeugTestCase):
         assert urls.uri_to_iri(b'/foo') == u'/foo'
         assert urls.iri_to_uri(u'/foo') == b'/foo'
 
+        self.assert_equal(urls.iri_to_uri(u'http://föö.com:8080/bam/baz'),
+                          b'http://xn--f-1gaa.com:8080/bam/baz')
+
     def test_ordered_multidict_encoding(self):
         d = OrderedMultiDict()
         d.add('foo', 1)
