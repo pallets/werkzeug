@@ -15,7 +15,8 @@ from itertools import repeat
 from six import PY3, integer_types, string_types, binary_type, text_type
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
-from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists
+from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
+        to_unicode
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -850,7 +851,7 @@ class Headers(object):
                 return self._list[key]
             elif isinstance(key, slice):
                 return self.__class__(self._list[key])
-        ikey = key.lower()
+        ikey = to_unicode(key, 'ascii').lower()
         for k, v in self._list:
             if k.lower() == ikey:
                 return v
