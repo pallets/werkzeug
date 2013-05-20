@@ -17,6 +17,9 @@ release:
 test:
 	python setup.py test
 
+tox-test:
+	tox
+
 coverage:
 	@(nosetests $(TEST_OPTIONS) --with-coverage --cover-package=werkzeug --cover-html --cover-html-dir=coverage_out $(TESTS))
 
