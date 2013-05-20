@@ -32,15 +32,16 @@ class URLsTestCase(WerkzeugTestCase):
                b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
     def test_url_decoding(self):
+        # decode_keys is ignored by _url_decode_impl
         x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel')
-        assert x[b'foo'] == u'42'
-        assert x[b'bar'] == u'23'
-        assert x[b'uni'] == u'Hänsel'
+        assert x[u'foo'] == u'42'
+        assert x[u'bar'] == u'23'
+        assert x[u'uni'] == u'Hänsel'
 
         x = urls.url_decode(b'foo=42;bar=23;uni=H%C3%A4nsel', separator=b';')
-        assert x[b'foo'] == u'42'
-        assert x[b'bar'] == u'23'
-        assert x[b'uni'] == u'Hänsel'
+        assert x[u'foo'] == u'42'
+        assert x[u'bar'] == u'23'
+        assert x[u'uni'] == u'Hänsel'
 
         x = urls.url_decode(b'%C3%9Ch=H%C3%A4nsel', decode_keys=True)
         assert x[u'Üh'] == u'Hänsel'
@@ -51,9 +52,9 @@ class URLsTestCase(WerkzeugTestCase):
         string = u'a=%s&b=%s&c=%s' % (item1, item2, item2)
         gen = urls.url_decode_stream(StringIO(string), limit=len(string),
                                      return_iterator=True)
-        self.assert_equal(next(gen), (b'a', item1))
-        self.assert_equal(next(gen), (b'b', item2))
-        self.assert_equal(next(gen), (b'c', item2))
+        self.assert_equal(next(gen), (u'a', item1))
+        self.assert_equal(next(gen), (u'b', item2))
+        self.assert_equal(next(gen), (u'c', item2))
         self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_encoding(self):
