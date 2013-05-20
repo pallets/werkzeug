@@ -281,24 +281,31 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         assert http.http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'
 
     def test_cookies(self):
-        assert http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
-                            'c762809248d4beed; a=42') == {
-            'CP':           u'null*',
-            'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
-            'a':            u'42',
-            'dismiss-top':  u'6'
-        }
-        assert set(http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,
-                               sync_expires=False).split('; ')) == \
-               set(['HttpOnly', 'Max-Age=360', 'Path=/', 'foo="bar baz blub"'])
-        assert http.parse_cookie('fo234{=bar blub=Blah') == {'blub': 'Blah'}
+        self.assert_strict_equal(
+            dict(http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
+                              'c762809248d4beed; a=42')),
+            {
+                'CP':           u'null*',
+                'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
+                'a':            u'42',
+                'dismiss-top':  u'6'
+            }
+        )
+        self.assert_strict_equal(
+            set(http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,
+                                 sync_expires=False).split('; ')),
+            set(['HttpOnly', 'Max-Age=360', 'Path=/', 'foo="bar baz blub"'])
+        )
+        self.assert_strict_equal(dict(http.parse_cookie('fo234{=bar blub=Blah')),
+                                 {'blub': 'Blah'})
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        assert val == 'foo="?foo"; Path=/'
-        assert http.parse_cookie(val) == {'foo': '?foo'}
+        self.assert_strict_equal(val, u'foo="?foo"; Path=/')
+        self.assert_strict_equal(dict(http.parse_cookie(val)), {u'foo': u'?foo'})
 
-        assert http.parse_cookie(r'foo="foo\054bar"') == {'foo': 'foo,bar'}
+        self.assert_strict_equal(dict(http.parse_cookie(r'foo="foo\054bar"')),
+                                 {u'foo': u'foo,bar'})
 
 
 class RangeTestCase(WerkzeugTestCase):

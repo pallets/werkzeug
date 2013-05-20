@@ -68,95 +68,95 @@ def prepare_environ_pickle(environ):
 class WrappersTestCase(WerkzeugTestCase):
 
     def assert_environ(self, environ, method):
-        self.assert_equal(environ['REQUEST_METHOD'], method)
-        self.assert_equal(environ['PATH_INFO'], '/')
-        self.assert_equal(environ['SCRIPT_NAME'], '')
-        self.assert_equal(environ['SERVER_NAME'], 'localhost')
-        self.assert_equal(environ['wsgi.version'], (1, 0))
-        self.assert_equal(environ['wsgi.url_scheme'], 'http')
+        self.assert_strict_equal(environ['REQUEST_METHOD'], method)
+        self.assert_strict_equal(environ['PATH_INFO'], '/')
+        self.assert_strict_equal(environ['SCRIPT_NAME'], '')
+        self.assert_strict_equal(environ['SERVER_NAME'], 'localhost')
+        self.assert_strict_equal(environ['wsgi.version'], (1, 0))
+        self.assert_strict_equal(environ['wsgi.url_scheme'], 'http')
 
     def test_base_request(self):
         client = Client(request_demo_app, RequestTestResponse)
 
         # get requests
         response = client.get('/?foo=bar&foo=hehe')
-        self.assert_equal(response['args'], MultiDict([('foo', 'bar'), ('foo', 'hehe')]))
-        self.assert_equal(response['args_as_list'], [('foo', ['bar', 'hehe'])])
-        self.assert_equal(response['form'], MultiDict())
-        self.assert_equal(response['form_as_list'], [])
-        self.assert_equal(response['data'], b'')
+        self.assert_strict_equal(response['args'], MultiDict([('foo', 'bar'), ('foo', 'hehe')]))
+        self.assert_strict_equal(response['args_as_list'], [('foo', ['bar', 'hehe'])])
+        self.assert_strict_equal(response['form'], MultiDict())
+        self.assert_strict_equal(response['form_as_list'], [])
+        self.assert_strict_equal(response['data'], b'')
         self.assert_environ(response['environ'], 'GET')
 
         # post requests with form data
         response = client.post('/?blub=blah', data='foo=blub+hehe&blah=42',
                                content_type='application/x-www-form-urlencoded')
-        self.assert_equal(response['args'], MultiDict([('blub', 'blah')]))
-        self.assert_equal(response['args_as_list'], [('blub', ['blah'])])
-        self.assert_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
-        self.assert_equal(response['data'], b'')
+        self.assert_strict_equal(response['args'], MultiDict([('blub', 'blah')]))
+        self.assert_strict_equal(response['args_as_list'], [('blub', ['blah'])])
+        self.assert_strict_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
+        self.assert_strict_equal(response['data'], b'')
         # currently we do not guarantee that the values are ordered correctly
         # for post data.
-        ## self.assert_equal(response['form_as_list'], [('foo', ['blub hehe']), ('blah', ['42'])])
+        ## self.assert_strict_equal(response['form_as_list'], [('foo', ['blub hehe']), ('blah', ['42'])])
         self.assert_environ(response['environ'], 'POST')
 
         # patch requests with form data
         response = client.patch('/?blub=blah', data='foo=blub+hehe&blah=42',
                                 content_type='application/x-www-form-urlencoded')
-        self.assert_equal(response['args'], MultiDict([('blub', 'blah')]))
-        self.assert_equal(response['args_as_list'], [('blub', ['blah'])])
-        self.assert_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
-        self.assert_equal(response['data'], b'')
+        self.assert_strict_equal(response['args'], MultiDict([('blub', 'blah')]))
+        self.assert_strict_equal(response['args_as_list'], [('blub', ['blah'])])
+        self.assert_strict_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
+        self.assert_strict_equal(response['data'], b'')
         self.assert_environ(response['environ'], 'PATCH')
 
         # post requests with json data
         json = b'{"foo": "bar", "blub": "blah"}'
         response = client.post('/?a=b', data=json, content_type='application/json')
-        self.assert_equal(response['data'], json)
-        self.assert_equal(response['args'], MultiDict([('a', 'b')]))
-        self.assert_equal(response['form'], MultiDict())
+        self.assert_strict_equal(response['data'], json)
+        self.assert_strict_equal(response['args'], MultiDict([('a', 'b')]))
+        self.assert_strict_equal(response['form'], MultiDict())
 
     def test_access_route(self):
         req = wrappers.Request.from_values(headers={
             'X-Forwarded-For': '192.168.1.2, 192.168.1.1'
         })
         req.environ['REMOTE_ADDR'] = '192.168.1.3'
-        self.assert_equal(req.access_route, ['192.168.1.2', '192.168.1.1'])
-        self.assert_equal(req.remote_addr, '192.168.1.3')
+        self.assert_strict_equal(req.access_route, ['192.168.1.2', '192.168.1.1'])
+        self.assert_strict_equal(req.remote_addr, '192.168.1.3')
 
         req = wrappers.Request.from_values()
         req.environ['REMOTE_ADDR'] = '192.168.1.3'
-        self.assert_equal(req.access_route, ['192.168.1.3'])
+        self.assert_strict_equal(req.access_route, ['192.168.1.3'])
 
     def test_url_request_descriptors(self):
         req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
-        self.assert_equal(req.path, u'/bar')
-        self.assert_equal(req.full_path, u'/bar?foo=baz')
-        self.assert_equal(req.script_root, u'/test')
-        self.assert_equal(req.url, 'http://example.com/test/bar?foo=baz')
-        self.assert_equal(req.base_url, 'http://example.com/test/bar')
-        self.assert_equal(req.url_root, 'http://example.com/test/')
-        self.assert_equal(req.host_url, 'http://example.com/')
-        self.assert_equal(req.host, 'example.com')
-        self.assert_equal(req.scheme, 'http')
+        self.assert_strict_equal(req.path, u'/bar')
+        self.assert_strict_equal(req.full_path, u'/bar?foo=baz')
+        self.assert_strict_equal(req.script_root, u'/test')
+        self.assert_strict_equal(req.url, 'http://example.com/test/bar?foo=baz')
+        self.assert_strict_equal(req.base_url, 'http://example.com/test/bar')
+        self.assert_strict_equal(req.url_root, 'http://example.com/test/')
+        self.assert_strict_equal(req.host_url, 'http://example.com/')
+        self.assert_strict_equal(req.host, 'example.com')
+        self.assert_strict_equal(req.scheme, 'http')
 
         req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
-        self.assert_equal(req.scheme, 'https')
+        self.assert_strict_equal(req.scheme, 'https')
 
     def test_url_request_descriptors_hosts(self):
         req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
         req.trusted_hosts = ['example.com']
-        self.assert_equal(req.path, u'/bar')
-        self.assert_equal(req.full_path, u'/bar?foo=baz')
-        self.assert_equal(req.script_root, u'/test')
-        self.assert_equal(req.url, 'http://example.com/test/bar?foo=baz')
-        self.assert_equal(req.base_url, 'http://example.com/test/bar')
-        self.assert_equal(req.url_root, 'http://example.com/test/')
-        self.assert_equal(req.host_url, 'http://example.com/')
-        self.assert_equal(req.host, 'example.com')
-        self.assert_equal(req.scheme, 'http')
+        self.assert_strict_equal(req.path, u'/bar')
+        self.assert_strict_equal(req.full_path, u'/bar?foo=baz')
+        self.assert_strict_equal(req.script_root, u'/test')
+        self.assert_strict_equal(req.url, 'http://example.com/test/bar?foo=baz')
+        self.assert_strict_equal(req.base_url, 'http://example.com/test/bar')
+        self.assert_strict_equal(req.url_root, 'http://example.com/test/')
+        self.assert_strict_equal(req.host_url, 'http://example.com/')
+        self.assert_strict_equal(req.host, 'example.com')
+        self.assert_strict_equal(req.scheme, 'http')
 
         req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
-        self.assert_equal(req.scheme, 'https')
+        self.assert_strict_equal(req.scheme, 'https')
 
         req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
         req.trusted_hosts = ['example.org']
@@ -171,24 +171,24 @@ class WrappersTestCase(WerkzeugTestCase):
             'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
         })
         a = request.authorization
-        self.assert_equal(a.type, 'basic')
-        self.assert_equal(a.username, 'Aladdin')
-        self.assert_equal(a.password, 'open sesame')
+        self.assert_strict_equal(a.type, 'basic')
+        self.assert_strict_equal(a.username, 'Aladdin')
+        self.assert_strict_equal(a.password, 'open sesame')
 
     def test_base_response(self):
         # unicode
         response = wrappers.BaseResponse(u'öäü')
-        self.assert_equal(response.data, u'öäü'.encode('utf-8'))
+        self.assert_strict_equal(response.data, u'öäü'.encode('utf-8'))
 
         # writing
         response = wrappers.Response('foo')
         response.stream.write('bar')
-        self.assert_equal(response.data, b'foobar')
+        self.assert_strict_equal(response.data, b'foobar')
 
         # set cookie
         response = wrappers.BaseResponse()
         response.set_cookie('foo', 'bar', 60, 0, '/blub', 'example.org', False)
-        self.assert_equal(response.headers.to_wsgi_list(), [
+        self.assert_strict_equal(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; expires=Thu, '
              '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub')
@@ -197,7 +197,7 @@ class WrappersTestCase(WerkzeugTestCase):
         # delete cookie
         response = wrappers.BaseResponse()
         response.delete_cookie('foo')
-        self.assert_equal(response.headers.to_wsgi_list(), [
+        self.assert_strict_equal(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=; expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/')
         ])
@@ -216,23 +216,23 @@ class WrappersTestCase(WerkzeugTestCase):
         app_iter, status, headers = run_wsgi_app(response,
                                                  create_environ(),
                                                  buffered=True)
-        self.assert_equal(status, '200 OK')
-        self.assert_equal(''.join(app_iter), '')
-        self.assert_equal(len(closed), 2)
+        self.assert_strict_equal(status, '200 OK')
+        self.assert_strict_equal(''.join(app_iter), '')
+        self.assert_strict_equal(len(closed), 2)
 
     def test_response_status_codes(self):
         response = wrappers.BaseResponse()
         response.status_code = 404
-        self.assert_equal(response.status, '404 NOT FOUND')
+        self.assert_strict_equal(response.status, '404 NOT FOUND')
         response.status = '200 OK'
-        self.assert_equal(response.status_code, 200)
+        self.assert_strict_equal(response.status_code, 200)
         response.status = '999 WTF'
-        self.assert_equal(response.status_code, 999)
+        self.assert_strict_equal(response.status_code, 999)
         response.status_code = 588
-        self.assert_equal(response.status_code, 588)
-        self.assert_equal(response.status, '588 UNKNOWN')
+        self.assert_strict_equal(response.status_code, 588)
+        self.assert_strict_equal(response.status, '588 UNKNOWN')
         response.status = 'wtf'
-        self.assert_equal(response.status_code, 0)
+        self.assert_strict_equal(response.status_code, 0)
 
     def test_type_forcing(self):
         def wsgi_application(environ, start_response):
@@ -251,9 +251,9 @@ class WrappersTestCase(WerkzeugTestCase):
         for orig_resp in wsgi_application, base_response:
             response = SpecialResponse.force_type(orig_resp, fake_env)
             assert response.__class__ is SpecialResponse
-            self.assert_equal(response.foo(), 42)
-            self.assert_equal(response.data, b'Hello World!')
-            self.assert_equal(response.content_type, 'text/html')
+            self.assert_strict_equal(response.foo(), 42)
+            self.assert_strict_equal(response.data, b'Hello World!')
+            self.assert_strict_equal(response.content_type, 'text/html')
 
         # without env, no arbitrary conversion
         self.assert_raises(TypeError, SpecialResponse.force_type, wsgi_application)
@@ -266,19 +266,19 @@ class WrappersTestCase(WerkzeugTestCase):
             'HTTP_ACCEPT_ENCODING': 'gzip,deflate',
             'HTTP_ACCEPT_LANGUAGE': 'en-us,en;q=0.5'
         })
-        self.assert_equal(request.accept_mimetypes, CharsetAccept([
+        self.assert_strict_equal(request.accept_mimetypes, CharsetAccept([
             ('text/xml', 1), ('image/png', 1), ('application/xml', 1),
             ('application/xhtml+xml', 1), ('text/html', 0.9),
             ('text/plain', 0.8), ('*/*', 0.5)
         ]))
-        self.assert_equal(request.accept_charsets, CharsetAccept([
+        self.assert_strict_equal(request.accept_charsets, CharsetAccept([
             ('ISO-8859-1', 1), ('utf-8', 0.7), ('*', 0.7)
         ]))
-        self.assert_equal(request.accept_encodings, CharsetAccept([('gzip', 1), ('deflate', 1)]))
-        self.assert_equal(request.accept_languages, CharsetAccept([('en-us', 1), ('en', 0.5)]))
+        self.assert_strict_equal(request.accept_encodings, CharsetAccept([('gzip', 1), ('deflate', 1)]))
+        self.assert_strict_equal(request.accept_languages, CharsetAccept([('en-us', 1), ('en', 0.5)]))
 
         request = wrappers.Request({'HTTP_ACCEPT': ''})
-        self.assert_equal(request.accept_mimetypes, CharsetAccept())
+        self.assert_strict_equal(request.accept_mimetypes, CharsetAccept())
 
     def test_etag_request_mixin(self):
         request = wrappers.Request({
@@ -315,13 +315,13 @@ class WrappersTestCase(WerkzeugTestCase):
         ]
         for ua, browser, platform, version, lang in user_agents:
             request = wrappers.Request({'HTTP_USER_AGENT': ua})
-            self.assert_equal(request.user_agent.browser, browser)
-            self.assert_equal(request.user_agent.platform, platform)
-            self.assert_equal(request.user_agent.version, version)
-            self.assert_equal(request.user_agent.language, lang)
+            self.assert_strict_equal(request.user_agent.browser, browser)
+            self.assert_strict_equal(request.user_agent.platform, platform)
+            self.assert_strict_equal(request.user_agent.version, version)
+            self.assert_strict_equal(request.user_agent.language, lang)
             assert bool(request.user_agent)
-            self.assert_equal(request.user_agent.to_header(), ua)
-            self.assert_equal(str(request.user_agent), ua)
+            self.assert_strict_equal(request.user_agent.to_header(), ua)
+            self.assert_strict_equal(str(request.user_agent), ua)
 
         request = wrappers.Request({'HTTP_USER_AGENT': 'foo'})
         assert not request.user_agent
@@ -375,7 +375,7 @@ class WrappersTestCase(WerkzeugTestCase):
 
         response = WithFreeze('Hello World')
         response.freeze()
-        self.assert_equal(response.get_etag(), (wrappers.generate_etag(b'Hello World'), False))
+        self.assert_strict_equal(response.get_etag(), (wrappers.generate_etag(b'Hello World'), False))
         response = WithoutFreeze('Hello World')
         response.freeze()
         self.assert_equal(response.get_etag(), (None, None))
@@ -387,7 +387,7 @@ class WrappersTestCase(WerkzeugTestCase):
         resp = wrappers.Response()
         resp.www_authenticate.type = 'basic'
         resp.www_authenticate.realm = 'Testing'
-        self.assert_equal(resp.headers['WWW-Authenticate'], 'Basic realm="Testing"')
+        self.assert_strict_equal(resp.headers['WWW-Authenticate'], 'Basic realm="Testing"')
         resp.www_authenticate.realm = None
         resp.www_authenticate.type = None
         assert 'WWW-Authenticate' not in resp.headers
