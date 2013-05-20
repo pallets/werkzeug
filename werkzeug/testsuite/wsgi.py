@@ -9,8 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from __future__ import with_statement
-
 import unittest
 from os import path
 from io import StringIO
@@ -113,58 +111,58 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             def on_exhausted(self):
                 raise BadRequest('input stream exhausted')
 
-        io = StringIO('123456')
+        io = StringIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
-        self.assert_equal(stream.read(), '123')
+        self.assert_equal(stream.read(), b'123')
         self.assert_raises(BadRequest, stream.read)
 
-        io = StringIO('123456')
+        io = StringIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
         self.assert_equal(stream.tell(), 0)
-        self.assert_equal(stream.read(1), '1')
+        self.assert_equal(stream.read(1), b'1')
         self.assert_equal(stream.tell(), 1)
-        self.assert_equal(stream.read(1), '2')
+        self.assert_equal(stream.read(1), b'2')
         self.assert_equal(stream.tell(), 2)
-        self.assert_equal(stream.read(1), '3')
+        self.assert_equal(stream.read(1), b'3')
         self.assert_equal(stream.tell(), 3)
         self.assert_raises(BadRequest, stream.read)
 
-        io = StringIO('123456\nabcdefg')
+        io = StringIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readline(), '123456\n')
-        self.assert_equal(stream.readline(), 'ab')
+        self.assert_equal(stream.readline(), b'123456\n')
+        self.assert_equal(stream.readline(), b'ab')
 
-        io = StringIO('123456\nabcdefg')
+        io = StringIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readlines(), ['123456\n', 'ab'])
+        self.assert_equal(stream.readlines(), [b'123456\n', b'ab'])
 
-        io = StringIO('123456\nabcdefg')
+        io = StringIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readlines(2), ['12'])
-        self.assert_equal(stream.readlines(2), ['34'])
-        self.assert_equal(stream.readlines(), ['56\n', 'ab'])
+        self.assert_equal(stream.readlines(2), [b'12'])
+        self.assert_equal(stream.readlines(2), [b'34'])
+        self.assert_equal(stream.readlines(), [b'56\n', b'ab'])
 
-        io = StringIO('123456\nabcdefg')
+        io = StringIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readline(100), '123456\n')
+        self.assert_equal(stream.readline(100), b'123456\n')
 
-        io = StringIO('123456\nabcdefg')
+        io = StringIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_equal(stream.readlines(100), ['123456\n', 'ab'])
+        self.assert_equal(stream.readlines(100), [b'123456\n', b'ab'])
 
-        io = StringIO('123456')
+        io = StringIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        self.assert_equal(stream.read(1), '1')
-        self.assert_equal(stream.read(1), '2')
-        self.assert_equal(stream.read(), '3')
-        self.assert_equal(stream.read(), '')
+        self.assert_equal(stream.read(1), b'1')
+        self.assert_equal(stream.read(1), b'2')
+        self.assert_equal(stream.read(), b'3')
+        self.assert_equal(stream.read(), b'')
 
-        io = StringIO('123456')
+        io = StringIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        self.assert_equal(stream.read(-1), '123')
+        self.assert_equal(stream.read(-1), b'123')
 
     def test_limited_stream_disconnection(self):
-        io = StringIO('A bit of content')
+        io = StringIO(b'A bit of content')
 
         # disconnect detection on out of bytes
         stream = wsgi.LimitedStream(io, 255)
@@ -172,7 +170,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             stream.read()
 
         # disconnect detection because file close
-        io = StringIO('x' * 255)
+        io = StringIO(b'x' * 255)
         io.close()
         stream = wsgi.LimitedStream(io, 255)
         with self.assert_raises(ClientDisconnected):
@@ -226,54 +224,54 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         self.assertEqual(rv, 'http://localhost/?foo=bar&baz=blah&meh=%CF')
 
     def test_multi_part_line_breaks(self):
-        data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
+        data = b'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
         test_stream = StringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=16))
-        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
-                                  'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
+        self.assert_equal(lines, [b'abcdef\r\n', b'ghijkl\r\n',
+                                  b'mnopqrstuvwxyz\r\n', b'ABCDEFGHIJK'])
 
-        data = 'abc\r\nThis line is broken by the buffer length.' \
-            '\r\nFoo bar baz'
+        data = b'abc\r\nThis line is broken by the buffer length.' \
+            b'\r\nFoo bar baz'
         test_stream = StringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=24))
-        self.assert_equal(lines, ['abc\r\n', 'This line is broken by the '
-                                  'buffer length.\r\n', 'Foo bar baz'])
+        self.assert_equal(lines, [b'abc\r\n', b'This line is broken by the '
+                                  b'buffer length.\r\n', b'Foo bar baz'])
 
     def test_multi_part_line_breaks_problematic(self):
-        data = 'abc\rdef\r\nghi'
+        data = b'abc\rdef\r\nghi'
         for x in range(1, 10):
             test_stream = StringIO(data)
             lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                              buffer_size=4))
-            self.assert_equal(lines, ['abc\r', 'def\r\n', 'ghi'])
+            self.assert_equal(lines, [b'abc\r', b'def\r\n', b'ghi'])
 
     def test_iter_functions_support_iterators(self):
-        data = ['abcdef\r\nghi', 'jkl\r\nmnopqrstuvwxyz\r', '\nABCDEFGHIJK']
+        data = [b'abcdef\r\nghi', b'jkl\r\nmnopqrstuvwxyz\r', b'\nABCDEFGHIJK']
         lines = list(wsgi.make_line_iter(data))
-        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
-                                  'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
+        self.assert_equal(lines, [b'abcdef\r\n', b'ghijkl\r\n',
+                                  b'mnopqrstuvwxyz\r\n', b'ABCDEFGHIJK'])
 
     def test_make_chunk_iter(self):
-        data = ['abcdefXghi', 'jklXmnopqrstuvwxyzX', 'ABCDEFGHIJK']
+        data = [b'abcdefXghi', b'jklXmnopqrstuvwxyzX', b'ABCDEFGHIJK']
         rv = list(wsgi.make_chunk_iter(data, 'X'))
-        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz',
-                               'ABCDEFGHIJK'])
+        self.assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
+                               b'ABCDEFGHIJK'])
 
-        data = 'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
+        data = b'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
         test_stream = StringIO(data)
         rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
                                        buffer_size=4))
-        self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz',
-                               'ABCDEFGHIJK'])
+        self.assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
+                               b'ABCDEFGHIJK'])
 
     def test_lines_longer_buffer_size(self):
-        data = '1234567890\n1234567890\n'
+        data = b'1234567890\n1234567890\n'
         for bufsize in xrange(1, 15):
             lines = list(wsgi.make_line_iter(StringIO(data), limit=len(data),
                                              buffer_size=4))
-            self.assert_equal(lines, ['1234567890\n', '1234567890\n'])
+            self.assert_equal(lines, [b'1234567890\n', b'1234567890\n'])
 
 
 def suite():
