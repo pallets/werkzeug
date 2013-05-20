@@ -20,7 +20,7 @@ from datetime import datetime
 from functools import partial
 from six import iteritems, Iterator, text_type, string_types
 
-from werkzeug._compat import urlparse
+from werkzeug._compat import urlparse, string_join
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
 
@@ -691,19 +691,24 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
             new_buf = []
             for item in chain(buffer, new_data.splitlines(True)):
                 new_buf.append(item)
-                if item and item[-1:] in '\r\n':
-                    yield ''.join(new_buf)
-                    new_buf = []
+                if isinstance(item, text_type):
+                    if item and item[-1:] in '\r\n':
+                        yield ''.join(new_buf)
+                        new_buf = []
+                else:
+                    if item and item[-1:] in b'\r\n':
+                        yield b''.join(new_buf)
+                        new_buf = []
             buffer = new_buf
         if buffer:
-            yield ''.join(buffer)
+            yield string_join(buffer)
 
     # This hackery is necessary to merge 'foo\r' and '\n' into one item
     # of 'foo\r\n' if we were unlucky and we hit a chunk boundary.
     previous = ''
     for item in _iter_basic_lines():
-        if item == '\n' and previous[-1:] == '\r':
-            previous += '\n'
+        if item in ['\n', b'\n'] and previous[-1:] in ['\r', b'\r']:
+            previous += item
             item = ''
         if previous:
             yield previous
