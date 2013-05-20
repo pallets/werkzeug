@@ -239,7 +239,7 @@ class TestTestCase(WerkzeugTestCase):
         }
         for key, value in iteritems(expected):
             self.assert_equal(env[key], value)
-        self.assert_equal(env['wsgi.input'].read(0), '')
+        self.assert_equal(env['wsgi.input'].read(0), b'')
         self.assert_equal(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
 
     def test_file_closing(self):
