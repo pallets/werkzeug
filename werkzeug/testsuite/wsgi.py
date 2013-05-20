@@ -34,7 +34,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
     def test_shared_data_middleware(self):
         def null_application(environ, start_response):
             start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
-            yield 'NOT FOUND'
+            yield b'NOT FOUND'
         app = wsgi.SharedDataMiddleware(null_application, {
             '/':        path.join(path.dirname(__file__), 'res'),
             '/sources': path.join(path.dirname(__file__), 'res'),
@@ -44,17 +44,17 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         for p in '/test.txt', '/sources/test.txt':
             app_iter, status, headers = run_wsgi_app(app, create_environ(p))
             self.assert_equal(status, '200 OK')
-            self.assert_equal(''.join(app_iter).strip(), 'FOUND')
+            self.assert_equal(b''.join(app_iter).strip(), b'FOUND')
 
         app_iter, status, headers = run_wsgi_app(
             app, create_environ('/pkg/debugger.js'))
-        contents = ''.join(app_iter)
-        self.assert_in('$(function() {', contents)
+        contents = b''.join(app_iter)
+        self.assert_in(b'$(function() {', contents)
 
         app_iter, status, headers = run_wsgi_app(
             app, create_environ('/missing'))
         self.assert_equal(status, '404 NOT FOUND')
-        self.assert_equal(''.join(app_iter).strip(), 'NOT FOUND')
+        self.assert_equal(b''.join(app_iter).strip(), b'NOT FOUND')
 
     def test_get_host(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
