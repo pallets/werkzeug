@@ -81,7 +81,10 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
                 # will send us some unicode stuff (I am looking at you IE).
                 # In that case we want to urllib quote it badly.
                 try:
-                    qs.decode('ascii')
+                    if hasattr(qs, 'decode'):
+                        qs.decode('ascii')
+                    else:
+                        qs.encode('ascii')
                 except UnicodeError:
                     qs = ''.join(x > 127 and '%%%02X' % x or c
                                  for x, c in ((ord(x), x) for x in qs))
