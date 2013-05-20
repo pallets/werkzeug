@@ -784,9 +784,8 @@ def parse_cookie(header, errors='replace', cls=None):
     # `None` items which we have to skip here.
     for key, value in iteritems(cookie):
         if value.value is not None:
-            result[to_unicode(key, _cookie_charset)] = _decode_unicode(
-                unquote_header_value(value.value).encode('ascii'),
-                charset, errors)
+            result[to_unicode(key, _cookie_charset)] = \
+                    unquote_header_value(value.value)
 
     return cls(result)
 
