@@ -691,8 +691,8 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
             new_buf = []
             for item in chain(buffer, new_data.splitlines(True)):
                 new_buf.append(item)
-                if item and item[-1:] in b'\r\n':
-                    yield b''.join(new_buf)
+                if item and item[-1:] in '\r\n':
+                    yield ''.join(new_buf)
                     new_buf = []
             buffer = new_buf
         if buffer:
