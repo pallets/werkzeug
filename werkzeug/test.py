@@ -25,7 +25,7 @@ from six import string_types
 CookieJar = six.moves.http_cookiejar.CookieJar
 
 
-from werkzeug._compat import urlparse, iterlists, iteritems, itervalues
+from werkzeug._compat import urlparse, iterlists, iteritems, itervalues, to_native
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote
@@ -94,9 +94,11 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                         break
                     write_binary(chunk)
             else:
-                if isinstance(value, six.text_type):
-                    value = value.encode(charset)
-                write('\r\n\r\n' + str(value))
+                if isinstance(value, string_types):
+                    value = to_native(value, charset)
+                else:
+                    value = str(value)
+                write('\r\n\r\n' + value)
             write('\r\n')
     write('--%s--\r\n' % boundary)
 
