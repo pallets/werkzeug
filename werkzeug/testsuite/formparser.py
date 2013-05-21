@@ -132,6 +132,8 @@ class FormParserTestCase(WerkzeugTestCase):
         # make sure we have a real file here, because we expect to be
         # on the disk.  > 1024 * 500
         self.assert_true(hasattr(req.files['foo'].stream, u'fileno'))
+        # close file to prevent fds from leaking
+        req.files['foo'].close()
 
     def test_streaming_parse(self):
         data = b'x' * (1024 * 600)
