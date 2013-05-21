@@ -20,6 +20,7 @@ from datetime import datetime
 from functools import partial
 from six import iteritems, Iterator, text_type, string_types
 
+import werkzeug.urls
 from werkzeug._compat import urlparse, string_join
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
@@ -68,7 +69,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     tmp = [environ['wsgi.url_scheme'], '://', get_host(environ, trusted_hosts)]
     cat = tmp.append
     if host_only:
-        return ''.join(tmp) + '/'
+        return werkzeug.urls.uri_to_iri(''.join(tmp) + '/')
     cat(urlparse.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
     if root_only:
         cat('/')
@@ -89,7 +90,7 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
                     qs = ''.join(x > 127 and '%%%02X' % x or c
                                  for x, c in ((ord(x), x) for x in qs))
                 cat('?' + qs)
-    return ''.join(tmp)
+    return werkzeug.urls.uri_to_iri(''.join(tmp))
 
 
 def host_is_trusted(hostname, trusted_list):
