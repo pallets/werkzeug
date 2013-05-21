@@ -785,7 +785,7 @@ def parse_cookie(header, errors='replace', cls=None):
     for key, value in iteritems(cookie):
         if value.value is not None:
             result[to_unicode(key, _cookie_charset)] = \
-                    unquote_header_value(value.value)
+                    to_unicode(unquote_header_value(value.value), _cookie_charset)
 
     return cls(result)
 
@@ -848,7 +848,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                  ('max-age', max_age), ('httponly', httponly)):
         if v is not None and v is not False:
             morsel[k] = str(v)
-    return morsel.output(header='').lstrip()
+    return to_unicode(morsel.output(header='').lstrip(), _cookie_charset)
 
 
 def is_byte_range_valid(start, stop, length):

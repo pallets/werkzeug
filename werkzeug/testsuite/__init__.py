@@ -139,12 +139,12 @@ class WerkzeugTestCase(unittest.TestCase):
                 '%s != %s' % (type(x), type(y))
         if isinstance(x, (six.binary_type, six.text_type, six.integer_types)) or x is None:
             return
-        elif isinstance(x, (set, dict)) or isinstance(y, (set, dict)):
+        elif isinstance(x, dict) or isinstance(y, dict):
+            x = sorted(x.items())
+            y = sorted(y.items())
+        elif isinstance(x, set) or isinstance(y, set):
             x = sorted(x)
             y = sorted(y)
-        else:
-            x = list(x)
-            y = list(y)
         self.assert_equal(repr(x), repr(y))
 
 
