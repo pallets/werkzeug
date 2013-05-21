@@ -145,7 +145,7 @@ class TestTestCase(WerkzeugTestCase):
         self.assert_strict_equal(req.form['test'], u'normal value')
         self.assert_equal(req.files['test'].content_type, 'text/plain')
         self.assert_strict_equal(req.files['test'].filename, 'test.txt')
-        self.assert_strict_equal(req.files['test'].read(), 'test contents')
+        self.assert_strict_equal(req.files['test'].read(), b'test contents')
 
     def test_environ_builder_headers(self):
         b = EnvironBuilder(environ_base={'HTTP_USER_AGENT': 'Foo/0.1'},
@@ -203,7 +203,7 @@ class TestTestCase(WerkzeugTestCase):
         self.assert_equal(builder.content_type, 'multipart/form-data')
         req = builder.get_request()
         self.assert_strict_equal(req.form['foo'], u'bar')
-        self.assert_strict_equal(req.files['blafasel'].read(), 'foo')
+        self.assert_strict_equal(req.files['blafasel'].read(), b'foo')
 
     def test_environ_builder_stream_switch(self):
         d = MultiDict(dict(foo=u'bar', blub=u'blah', hu=u'hum'))
