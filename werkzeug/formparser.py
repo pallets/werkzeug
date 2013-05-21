@@ -450,7 +450,7 @@ class MultiPartParser(object):
             # if we have a leftover in the buffer that is not a newline
             # character we have to flush it, otherwise we will chop of
             # certain values.
-            if buf not in ('', '\r', '\n', '\r\n'):
+            if to_native(buf) not in ('', '\r', '\n', '\r\n'):
                 yield _cont, buf
 
             yield _end, None
