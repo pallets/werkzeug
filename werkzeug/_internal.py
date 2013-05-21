@@ -197,11 +197,9 @@ def _patch_wrapper(old, new):
     return new
 
 
-def _decode_unicode(value, charset, errors, sloppy=False):
+def _decode_unicode(value, charset, errors):
     """Like the regular decode function but this one raises an
     `HTTPUnicodeError` if errors is `strict`."""
-    if sloppy and isinstance(value, six.text_type):
-        return value
     fallback = None
     assert isinstance(value, six.binary_type), type(value)
     if errors.startswith('fallback:'):
