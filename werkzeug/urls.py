@@ -67,6 +67,8 @@ def iri_to_uri(iri, charset='utf-8'):
     :param iri: the iri to convert
     :param charset: the charset for the URI
     """
+    if isinstance(iri, bytes):
+        iri = iri.decode(charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = to_native(scheme, 'ascii')
@@ -87,7 +89,11 @@ def iri_to_uri(iri, charset='utf-8'):
         hostname += ':' + to_native(port, 'ascii')
 
     path = to_native(url_quote(path, safe="/:~+%"))
-    query = to_native(url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset), charset)
+    if isinstance(query, bytes):
+        query = url_quote(query, safe="=%&[]:;$()+,!?*/")
+    else:
+        query = url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset)
+    query = to_native(query, charset)
     fragment = to_native(fragment, charset)
 
     # this absolutely always must return a string.  Otherwise some parts of
@@ -338,7 +344,7 @@ def url_fix(s, charset='utf-8'):
     qs = url_quote_plus(qs, safe=':&%=')
     parts = (scheme, netloc, path, qs, anchor)
     #print(repr(parts))
-    return to_native(urlparse.urlunsplit(parts), 'ascii')
+    return to_native(urlparse.urlunsplit(parts), charset)
 
 
 class Href(object):

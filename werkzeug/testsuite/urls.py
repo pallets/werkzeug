@@ -101,7 +101,6 @@ class URLsTestCase(WerkzeugTestCase):
     def test_iri_support(self):
         if not six.PY3:
             self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
-        self.assert_raises(UnicodeError, urls.iri_to_uri, u'http://föö.com/'.encode('utf-8'))  # XXX
         self.assert_strict_equal(urls.uri_to_iri('http://xn--n3h.net/'),
                           u'http://\u2603.net/')
         self.assert_strict_equal(
