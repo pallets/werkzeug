@@ -18,7 +18,7 @@ from functools import update_wrapper
 
 import six
 
-from werkzeug._compat import to_native, to_bytes
+from werkzeug._compat import to_native
 from werkzeug._internal import _decode_unicode, _empty_stream
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import LimitedStream, make_line_iter
@@ -483,7 +483,7 @@ class MultiPartParser(object):
                 guard_memory = self.max_form_memory_size is not None
 
             elif ellt == _cont:
-                _write(to_bytes(ell, self.charset))
+                _write(ell)
                 # if we write into memory and there is a memory size limit we
                 # count the number of bytes in memory and raise an exception if
                 # there is too much data in memory.
