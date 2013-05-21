@@ -121,7 +121,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     uri = url_fix(uri, charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
-    scheme = _decode_unicode(scheme, 'ascii', errors)
+    scheme = _decode_unicode(scheme, 'ascii', errors, sloppy=True)
 
     try:
         hostname = hostname.decode('idna')
