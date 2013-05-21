@@ -335,7 +335,7 @@ def url_fix(s, charset='utf-8'):
     qs = url_quote_plus(qs, safe=':&%=')
     parts = (scheme, netloc, path, qs, anchor)
     #print(repr(parts))
-    return urlparse.urlunsplit(parts).encode('ascii')
+    return to_native(urlparse.urlunsplit(parts), 'ascii')
 
 
 class Href(object):

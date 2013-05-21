@@ -29,7 +29,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_encode({b'a': None, b'b': b'foo bar'}), u'b=foo+bar')
         self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), u'b=foo+bar')
         self.assert_strict_equal(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),
-               b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
+               'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_decoding(self):
         # decode_keys is ignored by _url_decode_impl
@@ -89,19 +89,19 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-        self.assert_line_equal(x, b'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
+        self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_fixing_qs(self):
         x = urls.url_fix(b'http://example.com/?foo=%2f%2f')
-        self.assert_line_equal(x, b'http://example.com/?foo=%2f%2f')
+        self.assert_line_equal(x, 'http://example.com/?foo=%2f%2f')
 
-        x = urls.url_fix(b'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
-        self.assertEqual(x, b'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+        x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+        self.assertEqual(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
 
     def test_iri_support(self):
         self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
         self.assert_raises(UnicodeError, urls.iri_to_uri, u'http://föö.com/'.encode('utf-8'))  # XXX
-        self.assert_strict_equal(urls.uri_to_iri(b'http://xn--n3h.net/'),
+        self.assert_strict_equal(urls.uri_to_iri('http://xn--n3h.net/'),
                           u'http://\u2603.net/')
         self.assert_strict_equal(
             urls.uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'),
@@ -111,7 +111,7 @@ class URLsTestCase(WerkzeugTestCase):
             urls.iri_to_uri(u'http://üser:pässword@☃.net/påth'),
                             'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
 
-        self.assert_strict_equal(urls.uri_to_iri(b'http://test.com/%3Fmeh?foo=%26%2F'),
+        self.assert_strict_equal(urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F'),
                                           u'http://test.com/%3Fmeh?foo=%26%2F')
 
         # this should work as well, might break on 2.4 because of a broken
