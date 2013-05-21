@@ -22,10 +22,10 @@ from werkzeug import urls
 class URLsTestCase(WerkzeugTestCase):
 
     def test_quoting(self):
-        self.assert_strict_equal(urls.url_quote(u'\xf6\xe4\xfc'), '%C3%B6%C3%A4%C3%BC')
+        self.assert_strict_equal(urls.url_quote(u'\xf6\xe4\xfc'), u'%C3%B6%C3%A4%C3%BC')
         self.assert_strict_equal(urls.url_unquote(urls.url_quote(u'#%="\xf6')), u'#%="\xf6')
-        self.assert_strict_equal(urls.url_quote_plus('foo bar'), 'foo+bar')
-        self.assert_strict_equal(urls.url_unquote_plus('foo+bar'), 'foo bar')
+        self.assert_strict_equal(urls.url_quote_plus('foo bar'), u'foo+bar')
+        self.assert_strict_equal(urls.url_unquote_plus('foo+bar'), u'foo bar')
         self.assert_strict_equal(urls.url_encode({b'a': None, b'b': b'foo bar'}), u'b=foo+bar')
         self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), u'b=foo+bar')
         self.assert_strict_equal(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),
@@ -71,20 +71,20 @@ class URLsTestCase(WerkzeugTestCase):
     def test_streamed_url_encoding(self):
         out = StringIO()
         urls.url_encode_stream({'foo': 'bar 45'}, out)
-        self.assert_strict_equal(out.getvalue(), 'foo=bar+45')
+        self.assert_strict_equal(out.getvalue(), u'foo=bar+45')
 
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
         out = StringIO()
         urls.url_encode_stream(d, out, sort=True)
-        self.assert_strict_equal(out.getvalue(), 'bar=23&blah=H%C3%A4nsel&foo=1')
+        self.assert_strict_equal(out.getvalue(), u'bar=23&blah=H%C3%A4nsel&foo=1')
         out = StringIO()
-        urls.url_encode_stream(d, out, sort=True, separator=';')
-        self.assert_strict_equal(out.getvalue(), 'bar=23;blah=H%C3%A4nsel;foo=1')
+        urls.url_encode_stream(d, out, sort=True, separator=u';')
+        self.assert_strict_equal(out.getvalue(), u'bar=23;blah=H%C3%A4nsel;foo=1')
 
         gen = urls.url_encode_stream(d, sort=True)
-        self.assert_strict_equal(next(gen), 'bar=23')
-        self.assert_strict_equal(next(gen), 'blah=H%C3%A4nsel')
-        self.assert_strict_equal(next(gen), 'foo=1')
+        self.assert_strict_equal(next(gen), u'bar=23')
+        self.assert_strict_equal(next(gen), u'blah=H%C3%A4nsel')
+        self.assert_strict_equal(next(gen), u'foo=1')
         self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_fixing(self):

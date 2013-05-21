@@ -224,7 +224,8 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         env = create_environ()
         env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=\xcf'
         rv = wsgi.get_current_url(env)
-        self.assertEqual(rv, 'http://localhost/?foo=bar&baz=blah&meh=%CF')
+        self.assert_strict_equal(rv,
+            u'http://localhost/?foo=bar&baz=blah&meh=\ufffd')
 
     def test_multi_part_line_breaks(self):
         data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
