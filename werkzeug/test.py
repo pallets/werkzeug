@@ -25,7 +25,7 @@ from six import string_types
 CookieJar = six.moves.http_cookiejar.CookieJar
 
 
-from werkzeug._compat import urlparse, iterlists, iteritems, itervalues
+from werkzeug._compat import urlparse, iterlists, iteritems, itervalues, to_native
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote
@@ -546,9 +546,9 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            if isinstance(x, six.text_type):
-                x = x.encode(self.charset)
-            return url_unquote(x)
+            if not isinstance(x, six.text_type):
+                x = x.decode(self.charset)
+            return to_native(url_unquote(x), self.charset)
 
         result.update({
             'REQUEST_METHOD':       self.method,

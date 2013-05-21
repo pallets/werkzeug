@@ -118,7 +118,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: the charset of the URI
     :param errors: the error handling on decode
     """
-    uri = url_fix(uri, charset)
+    uri = to_bytes(url_fix(uri, charset), 'ascii')
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
     scheme = _decode_unicode(scheme, 'ascii', errors, sloppy=True)
