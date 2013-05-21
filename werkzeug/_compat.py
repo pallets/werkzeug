@@ -53,9 +53,7 @@ def to_bytes(x, charset):
 
 def to_native(x, charset=sys.getdefaultencoding()):
     '''please use carefully'''
-    if x is None:
-        return None
-    if isinstance(x, str):
+    if x is None or isinstance(x, str):
         return x
     if six.PY3:
         return x.decode(charset)
