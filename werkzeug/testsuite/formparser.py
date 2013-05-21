@@ -29,10 +29,10 @@ def form_data_consumer(request):
     if result_object == 'text':
         return Response(repr(request.form['text']))
     f = request.files[result_object]
-    return Response('\n'.join((
-        repr(f.filename),
-        repr(f.name),
-        repr(f.content_type),
+    return Response(b'\n'.join((
+        repr(f.filename).encode('ascii'),
+        repr(f.name).encode('ascii'),
+        repr(f.content_type).encode('ascii'),
         f.stream.read()
     )))
 
@@ -149,7 +149,7 @@ class FormParserTestCase(WerkzeugTestCase):
                 form, files = StreamMPP(
                     self.stream_factory, self.charset, self.errors,
                     max_form_memory_size=self.max_form_memory_size,
-                    cls=self.cls).parse(stream, options.get('boundary'),
+                    cls=self.cls).parse(stream, options.get('boundary').encode('ascii'),
                                         content_length)
                 return stream, form, files
             parse_functions = {}
@@ -201,15 +201,15 @@ class MultiPartTestCase(WerkzeugTestCase):
                 response = client.post('/?object=' + field, data=data, content_type=
                                        'multipart/form-data; boundary="%s"' % boundary,
                                        content_length=len(data))
-                lines = response.data.split('\n', 3)
-                self.assert_strict_equal(lines[0], repr(filename))
-                self.assert_strict_equal(lines[1], repr(field))
-                self.assert_strict_equal(lines[2], repr(content_type))
+                lines = response.data.split(b'\n', 3)
+                self.assert_strict_equal(lines[0], repr(filename).encode('ascii'))
+                self.assert_strict_equal(lines[1], repr(field).encode('ascii'))
+                self.assert_strict_equal(lines[2], repr(content_type).encode('ascii'))
                 self.assert_strict_equal(lines[3], get_contents(join(folder, fsname)))
             response = client.post('/?object=text', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary,
                                    content_length=len(data))
-            self.assert_strict_equal(response.data, repr(text).encode('ascii'))
+            self.assert_strict_equal(response.data, repr(text).encode('utf-8'))
 
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer, Response)
@@ -218,9 +218,9 @@ class MultiPartTestCase(WerkzeugTestCase):
         boundary = '---------------------------7da36d1b4a0164'
         response = client.post('/?object=cb_file_upload_multiple', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary, content_length=len(data))
-        lines = response.data.split('\n', 3)
+        lines = response.data.split(b'\n', 3)
         self.assert_strict_equal(lines[0],
-                          repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc'))
+                          repr('Sellersburg Town Council Meeting 02-22-2010doc.doc').encode('ascii'))
 
     def test_end_of_file(self):
         # This test looks innocent but it was actually timeing out in
@@ -328,18 +328,18 @@ class MultiPartTestCase(WerkzeugTestCase):
         def parse_multipart(stream, boundary, content_length):
             parser = formparser.MultiPartParser(content_length)
             return parser.parse(stream, boundary, content_length)
-        self.assert_raises(ValueError, parse_multipart, BytesIO(), '', 0)
-        self.assert_raises(ValueError, parse_multipart, BytesIO(), 'broken  ', 0)
+        self.assert_raises(ValueError, parse_multipart, BytesIO(), b'', 0)
+        self.assert_raises(ValueError, parse_multipart, BytesIO(), b'broken  ', 0)
 
         data = b'--foo\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, parse_multipart, BytesIO(data), 'foo', len(data))
+        self.assert_raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
 
         data = b'--foo\r\nContent-Disposition: form-field; name=foo\r\n' \
                b'Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, parse_multipart, BytesIO(data), 'foo', len(data))
+        self.assert_raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
 
         data = b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n'
-        self.assert_raises(ValueError, parse_multipart, BytesIO(data), 'foo', len(data))
+        self.assert_raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
 
         x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
         self.assert_strict_equal(x['foo'], 'bar\n x test')
@@ -362,20 +362,20 @@ class MultiPartTestCase(WerkzeugTestCase):
 
 class InternalFunctionsTestCase(WerkzeugTestCase):
 
-    def test_lien_parser(self):
+    def test_line_parser(self):
         assert formparser._line_parse('foo') == ('foo', False)
         assert formparser._line_parse('foo\r\n') == ('foo', True)
         assert formparser._line_parse('foo\r') == ('foo', True)
         assert formparser._line_parse('foo\n') == ('foo', True)
 
     def test_find_terminator(self):
-        lineiter = iter('\n\n\nfoo\nbar\nbaz'.splitlines(True))
+        lineiter = iter(b'\n\n\nfoo\nbar\nbaz'.splitlines(True))
         find_terminator = formparser.MultiPartParser()._find_terminator
         line = find_terminator(lineiter)
-        assert line == 'foo'
-        assert list(lineiter) == ['bar\n', 'baz']
-        assert find_terminator([]) == ''
-        assert find_terminator(['']) == ''
+        self.assert_equal(line, b'foo')
+        self.assert_equal(list(lineiter), [b'bar\n', b'baz'])
+        self.assert_equal(find_terminator([]), b'')
+        self.assert_equal(find_terminator([b'']), b'')
 
 
 def suite():

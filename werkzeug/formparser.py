@@ -199,8 +199,10 @@ class FormDataParser(object):
         parser = MultiPartParser(self.stream_factory, self.charset, self.errors,
                                  max_form_memory_size=self.max_form_memory_size,
                                  cls=self.cls)
-        form, files = parser.parse(stream, options.get('boundary'),
-                                   content_length)
+        boundary = options.get('boundary')
+        if isinstance(boundary, six.text_type):
+            boundary = boundary.encode('ascii')
+        form, files = parser.parse(stream, boundary, content_length)
         return _empty_stream, form, files
 
     @exhaust_stream
@@ -229,9 +231,9 @@ def _line_parse(line):
     """Removes line ending characters and returns a tuple (`stripped_line`,
     `is_terminated`).
     """
-    if line[-2:] == '\r\n':
+    if line[-2:] in ['\r\n', b'\r\n']:
         return line[:-2], True
-    elif line[-1:] in '\r\n':
+    elif line[-1:] in ['\r', '\n', b'\r', b'\n']:
         return line[:-1], True
     return line, False
 
@@ -315,7 +317,7 @@ class MultiPartParser(object):
             line = line.strip()
             if line:
                 return line
-        return ''
+        return b''
 
     def fail(self, message):
         raise ValueError(message)
@@ -373,14 +375,14 @@ class MultiPartParser(object):
         parts = ( begin_form cont* end |
                   begin_file cont* end )*
         """
-        next_part = '--' + boundary
-        last_part = next_part + '--'
+        next_part = b'--' + boundary
+        last_part = next_part + b'--'
 
         iterator = chain(make_line_iter(file, limit=content_length,
                                         buffer_size=self.buffer_size),
                          _empty_string_iter)
 
-        terminator = to_native(self._find_terminator(iterator))
+        terminator = self._find_terminator(iterator)
         if terminator != next_part:
             self.fail('Expected boundary at start of multipart data')
 
@@ -405,13 +407,13 @@ class MultiPartParser(object):
             else:
                 yield _begin_file, (headers, name, filename)
 
-            buf = ''
+            buf = b''
             for line in iterator:
                 if not line:
                     self.fail('unexpected end of stream')
 
-                if to_native(line[:2]) == '--':
-                    terminator = to_native(line.rstrip())
+                if line[:2] == b'--':
+                    terminator = line.rstrip()
                     if terminator in (next_part, last_part):
                         break
 
@@ -425,7 +427,7 @@ class MultiPartParser(object):
                 # this is usually a newline delimiter.
                 if buf:
                     yield _cont, buf
-                    buf = ''
+                    buf = b''
 
                 # If the line ends with windows CRLF we write everything except
                 # the last two bytes.  In all other cases however we write
@@ -436,8 +438,8 @@ class MultiPartParser(object):
                 # truncate the stream.  However we do have to make sure that
                 # if something else than a newline is in there we write it
                 # out.
-                if to_native(line[-2:]) == '\r\n':
-                    buf = '\r\n'
+                if line[-2:] == b'\r\n':
+                    buf = b'\r\n'
                     cutoff = -2
                 else:
                     buf = line[-1:]
@@ -450,7 +452,7 @@ class MultiPartParser(object):
             # if we have a leftover in the buffer that is not a newline
             # character we have to flush it, otherwise we will chop of
             # certain values.
-            if to_native(buf) not in ('', '\r', '\n', '\r\n'):
+            if buf not in (b'', b'\r', b'\n', b'\r\n'):
                 yield _cont, buf
 
             yield _end, None
