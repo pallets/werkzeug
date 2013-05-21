@@ -20,7 +20,7 @@ from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
      ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
-     MIMEAccept, LanguageAccept, CombinedMultiDict
+     MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
 from werkzeug.test import Client, create_environ, run_wsgi_app
 
 import six
@@ -81,7 +81,7 @@ class WrappersTestCase(WerkzeugTestCase):
         # get requests
         response = client.get('/?foo=bar&foo=hehe')
         self.assert_strict_equal(response['args'], MultiDict([(u'foo', u'bar'), (u'foo', u'hehe')]))
-        self.assert_strict_equal(response['args_as_list'], [('foo', ['bar', 'hehe'])])
+        self.assert_strict_equal(response['args_as_list'], [(u'foo', [u'bar', u'hehe'])])
         self.assert_strict_equal(response['form'], MultiDict())
         self.assert_strict_equal(response['form_as_list'], [])
         self.assert_strict_equal(response['data'], b'')
@@ -90,9 +90,9 @@ class WrappersTestCase(WerkzeugTestCase):
         # post requests with form data
         response = client.post('/?blub=blah', data='foo=blub+hehe&blah=42',
                                content_type='application/x-www-form-urlencoded')
-        self.assert_strict_equal(response['args'], MultiDict([('blub', 'blah')]))
-        self.assert_strict_equal(response['args_as_list'], [('blub', ['blah'])])
-        self.assert_strict_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
+        self.assert_strict_equal(response['args'], MultiDict([(u'blub', u'blah')]))
+        self.assert_strict_equal(response['args_as_list'], [(u'blub', [u'blah'])])
+        self.assert_strict_equal(response['form'], MultiDict([(u'foo', u'blub hehe'), (u'blah', u'42')]))
         self.assert_strict_equal(response['data'], b'')
         # currently we do not guarantee that the values are ordered correctly
         # for post data.
@@ -102,9 +102,10 @@ class WrappersTestCase(WerkzeugTestCase):
         # patch requests with form data
         response = client.patch('/?blub=blah', data='foo=blub+hehe&blah=42',
                                 content_type='application/x-www-form-urlencoded')
-        self.assert_strict_equal(response['args'], MultiDict([('blub', 'blah')]))
-        self.assert_strict_equal(response['args_as_list'], [('blub', ['blah'])])
-        self.assert_strict_equal(response['form'], MultiDict([('foo', 'blub hehe'), ('blah', '42')]))
+        self.assert_strict_equal(response['args'], MultiDict([(u'blub', u'blah')]))
+        self.assert_strict_equal(response['args_as_list'], [(u'blub', [u'blah'])])
+        self.assert_strict_equal(response['form'],
+                                 MultiDict([(u'foo', u'blub hehe'), (u'blah', u'42')]))
         self.assert_strict_equal(response['data'], b'')
         self.assert_environ(response['environ'], 'PATCH')
 
@@ -112,7 +113,7 @@ class WrappersTestCase(WerkzeugTestCase):
         json = b'{"foo": "bar", "blub": "blah"}'
         response = client.post('/?a=b', data=json, content_type='application/json')
         self.assert_strict_equal(response['data'], json)
-        self.assert_strict_equal(response['args'], MultiDict([('a', 'b')]))
+        self.assert_strict_equal(response['args'], MultiDict([(u'a', u'b')]))
         self.assert_strict_equal(response['form'], MultiDict())
 
     def test_access_route(self):
@@ -120,22 +121,22 @@ class WrappersTestCase(WerkzeugTestCase):
             'X-Forwarded-For': '192.168.1.2, 192.168.1.1'
         })
         req.environ['REMOTE_ADDR'] = '192.168.1.3'
-        self.assert_strict_equal(req.access_route, ['192.168.1.2', '192.168.1.1'])
+        self.assert_equal(req.access_route, ['192.168.1.2', '192.168.1.1'])
         self.assert_strict_equal(req.remote_addr, '192.168.1.3')
 
         req = wrappers.Request.from_values()
         req.environ['REMOTE_ADDR'] = '192.168.1.3'
-        self.assert_strict_equal(req.access_route, ['192.168.1.3'])
+        self.assert_strict_equal(list(req.access_route), ['192.168.1.3'])
 
     def test_url_request_descriptors(self):
         req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
         self.assert_strict_equal(req.path, u'/bar')
         self.assert_strict_equal(req.full_path, u'/bar?foo=baz')
         self.assert_strict_equal(req.script_root, u'/test')
-        self.assert_strict_equal(req.url, 'http://example.com/test/bar?foo=baz')
-        self.assert_strict_equal(req.base_url, 'http://example.com/test/bar')
-        self.assert_strict_equal(req.url_root, 'http://example.com/test/')
-        self.assert_strict_equal(req.host_url, 'http://example.com/')
+        self.assert_strict_equal(req.url, u'http://example.com/test/bar?foo=baz')
+        self.assert_strict_equal(req.base_url, u'http://example.com/test/bar')
+        self.assert_strict_equal(req.url_root, u'http://example.com/test/')
+        self.assert_strict_equal(req.host_url, u'http://example.com/')
         self.assert_strict_equal(req.host, 'example.com')
         self.assert_strict_equal(req.scheme, 'http')
 
@@ -148,10 +149,10 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(req.path, u'/bar')
         self.assert_strict_equal(req.full_path, u'/bar?foo=baz')
         self.assert_strict_equal(req.script_root, u'/test')
-        self.assert_strict_equal(req.url, 'http://example.com/test/bar?foo=baz')
-        self.assert_strict_equal(req.base_url, 'http://example.com/test/bar')
-        self.assert_strict_equal(req.url_root, 'http://example.com/test/')
-        self.assert_strict_equal(req.host_url, 'http://example.com/')
+        self.assert_strict_equal(req.url, u'http://example.com/test/bar?foo=baz')
+        self.assert_strict_equal(req.base_url, u'http://example.com/test/bar')
+        self.assert_strict_equal(req.url_root, u'http://example.com/test/')
+        self.assert_strict_equal(req.host_url, u'http://example.com/')
         self.assert_strict_equal(req.host, 'example.com')
         self.assert_strict_equal(req.scheme, 'http')
 
@@ -274,7 +275,7 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(request.accept_charsets, CharsetAccept([
             ('ISO-8859-1', 1), ('utf-8', 0.7), ('*', 0.7)
         ]))
-        self.assert_strict_equal(request.accept_encodings, CharsetAccept([
+        self.assert_strict_equal(request.accept_encodings, Accept([
             ('gzip', 1), ('deflate', 1)]))
         self.assert_strict_equal(request.accept_languages, LanguageAccept([
             ('en-us', 1), ('en', 0.5)]))

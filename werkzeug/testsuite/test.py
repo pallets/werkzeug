@@ -144,7 +144,7 @@ class TestTestCase(WerkzeugTestCase):
         self.assert_strict_equal(req.method, 'POST')
         self.assert_strict_equal(req.form['test'], u'normal value')
         self.assert_equal(req.files['test'].content_type, 'text/plain')
-        self.assert_strict_equal(req.files['test'].filename, 'test.txt')
+        self.assert_strict_equal(req.files['test'].filename, u'test.txt')
         self.assert_strict_equal(req.files['test'].read(), b'test contents')
 
     def test_environ_builder_headers(self):

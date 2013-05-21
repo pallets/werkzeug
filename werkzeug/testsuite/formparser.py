@@ -267,7 +267,7 @@ class MultiPartTestCase(WerkzeugTestCase):
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_strict_equal(data.files['test'].filename, 'test.txt')
+        self.assert_equal(data.files['test'].filename, 'test.txt')
         self.assert_strict_equal(data.files['test'].read(), b'file contents')
 
     def test_extra_newline(self):
