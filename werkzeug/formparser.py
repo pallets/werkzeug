@@ -10,6 +10,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import codecs
 from io import BytesIO
 from tempfile import TemporaryFile
 from itertools import chain, repeat, tee
@@ -418,8 +419,10 @@ class MultiPartParser(object):
                         break
 
                 if transfer_encoding is not None:
+                    if transfer_encoding == 'base64':
+                        transfer_encoding = 'base64_codec'
                     try:
-                        line = line.decode(transfer_encoding)
+                        line = codecs.decode(line, transfer_encoding)
                     except Exception:
                         self.fail('could not decode transfer encoded chunk')
 
