@@ -848,7 +848,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                  ('max-age', max_age), ('httponly', httponly)):
         if v is not None and v is not False:
             morsel[k] = str(v)
-    return morsel.output(header='').lstrip()
+    return to_unicode(morsel.output(header='').lstrip(), _cookie_charset)
 
 
 def is_byte_range_valid(start, stop, length):
