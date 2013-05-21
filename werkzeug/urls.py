@@ -118,12 +118,15 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: the charset of the URI
     :param errors: the error handling on decode
     """
-    uri = to_bytes(url_fix(uri, charset), 'ascii')
+    uri = url_fix(uri, charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
-    scheme = _decode_unicode(scheme, 'ascii', errors)
+    if not six.PY3:
+        scheme = _decode_unicode(scheme, 'ascii', errors)
 
     try:
+        if six.PY3 and isinstance(hostname, six.text_type):
+            hostname = hostname.encode(charset, errors)
         hostname = hostname.decode('idna')
     except UnicodeError:
         # dammit, that codec raised an error.  Because it does not support
@@ -133,8 +136,8 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         hostname = hostname.decode('ascii', errors)
 
     if auth:
-        if b':' in auth:
-            auth, password = auth.split(b':', 1)
+        if ':' in auth:
+            auth, password = auth.split(':', 1)
         else:
             password = None
         auth = url_unquote(auth, encoding=charset, errors=errors)

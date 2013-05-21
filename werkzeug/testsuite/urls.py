@@ -99,7 +99,8 @@ class URLsTestCase(WerkzeugTestCase):
         self.assertEqual(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
 
     def test_iri_support(self):
-        self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
+        if not six.PY3:
+            self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
         self.assert_raises(UnicodeError, urls.iri_to_uri, u'http://föö.com/'.encode('utf-8'))  # XXX
         self.assert_strict_equal(urls.uri_to_iri('http://xn--n3h.net/'),
                           u'http://\u2603.net/')
