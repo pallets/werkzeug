@@ -15,6 +15,9 @@ from tempfile import TemporaryFile
 from itertools import chain, repeat, tee
 from functools import update_wrapper
 
+import six
+
+from werkzeug._compat import to_native, to_bytes
 from werkzeug._internal import _decode_unicode, _empty_stream
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import LimitedStream, make_line_iter
@@ -244,6 +247,7 @@ def parse_multipart_headers(iterable):
     """
     result = []
     for line in iterable:
+        line = to_native(line)
         line, line_terminated = _line_parse(line)
         if not line_terminated:
             raise ValueError('unexpected end of line in multipart header')
@@ -331,7 +335,8 @@ class MultiPartParser(object):
         return self.charset
 
     def start_file_streaming(self, filename, headers, total_content_length):
-        filename = _decode_unicode(filename, self.charset, self.errors)
+        if isinstance(filename, six.binary_type):
+            filename = _decode_unicode(filename, self.charset, self.errors)
         filename = self._fix_ie_filename(filename)
         content_type = headers.get('content-type')
         try:
@@ -375,7 +380,7 @@ class MultiPartParser(object):
                                         buffer_size=self.buffer_size),
                          _empty_string_iter)
 
-        terminator = self._find_terminator(iterator)
+        terminator = to_native(self._find_terminator(iterator))
         if terminator != next_part:
             self.fail('Expected boundary at start of multipart data')
 
@@ -405,8 +410,8 @@ class MultiPartParser(object):
                 if not line:
                     self.fail('unexpected end of stream')
 
-                if line[:2] == '--':
-                    terminator = line.rstrip()
+                if to_native(line[:2]) == '--':
+                    terminator = to_native(line.rstrip())
                     if terminator in (next_part, last_part):
                         break
 
@@ -431,11 +436,11 @@ class MultiPartParser(object):
                 # truncate the stream.  However we do have to make sure that
                 # if something else than a newline is in there we write it
                 # out.
-                if line[-2:] == '\r\n':
+                if to_native(line[-2:]) == '\r\n':
                     buf = '\r\n'
                     cutoff = -2
                 else:
-                    buf = line[-1]
+                    buf = line[-1:]
                     cutoff = -1
                 yield _cont, line[:cutoff]
 
@@ -473,7 +478,7 @@ class MultiPartParser(object):
                 guard_memory = self.max_form_memory_size is not None
 
             elif ellt == _cont:
-                _write(ell)
+                _write(to_bytes(ell, self.charset))
                 # if we write into memory and there is a memory size limit we
                 # count the number of bytes in memory and raise an exception if
                 # there is too much data in memory.
@@ -491,7 +496,7 @@ class MultiPartParser(object):
                 else:
                     part_charset = self.get_part_charset(headers)
                     yield ('form',
-                           (name, _decode_unicode(''.join(container),
+                           (name, _decode_unicode(b''.join(container),
                                                   part_charset, self.errors)))
 
     def parse(self, file, boundary, content_length):
