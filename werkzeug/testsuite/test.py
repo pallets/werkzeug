@@ -210,7 +210,7 @@ class TestTestCase(WerkzeugTestCase):
         for use_tempfile in False, True:
             stream, length, boundary = stream_encode_multipart(
                 d, use_tempfile, threshold=150)
-            self.assert_is_instance(stream, BytesIO) != use_tempfile
+            self.assert_true(isinstance(stream, BytesIO) != use_tempfile)
 
             form = parse_form_data({'wsgi.input': stream, 'CONTENT_LENGTH': str(length),
                                     'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
