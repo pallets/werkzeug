@@ -35,8 +35,8 @@ def to_unicode(x, charset):
     '''please use carefully'''
     if x is None:
         return None
-    if isinstance(x, six.text_type):
-        return x
+    if not isinstance(x, six.binary_type):
+        return str(x)
     return x.decode(charset)
 
 def to_bytes(x, charset):
