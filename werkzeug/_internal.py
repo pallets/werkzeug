@@ -284,6 +284,11 @@ class _ExtendedMorsel(cookies.Morsel):
             result += '; HttpOnly'
         return result
 
+    if not six.PY3:
+        def output(self, *args, **kwargs):
+            rv = super(_ExtendedMorsel, self).output(*args, **kwargs)
+            return rv.decode('latin-1')
+
 
 class _ExtendedCookie(cookies.SimpleCookie):
     """Form of the base cookie that doesn't raise a `CookieError` for
