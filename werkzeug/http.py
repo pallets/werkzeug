@@ -785,7 +785,7 @@ def parse_cookie(header, errors='replace', cls=None):
     for key, value in iteritems(cookie):
         if value.value is not None:
             result[to_unicode(key, _cookie_charset)] = \
-                    to_unicode(unquote_header_value(value.value), 'latin-1')
+                    to_unicode(unquote_header_value(value.value), _cookie_charset)
 
     return cls(result)
 
