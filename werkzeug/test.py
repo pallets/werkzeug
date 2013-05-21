@@ -281,14 +281,9 @@ class EnvironBuilder(object):
         if query_string is None and '?' in path:
             path, query_string = path.split('?', 1)
         self.charset = charset
-        if not isinstance(path, str):  #XXX: review string types
-            path = iri_to_uri(path, charset)
-        self.path = path
+        self.path = iri_to_uri(path)
         if base_url is not None:
-            if not isinstance(base_url, str):
-                base_url = iri_to_uri(base_url, charset)
-            else:
-                base_url = url_fix(base_url, charset)
+            base_url = iri_to_uri(url_fix(base_url, charset), charset)
         self.base_url = base_url
         if isinstance(query_string, string_types):
             self.query_string = query_string
