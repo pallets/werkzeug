@@ -220,7 +220,7 @@ class MultiPartTestCase(WerkzeugTestCase):
                                    'multipart/form-data; boundary="%s"' % boundary, content_length=len(data))
         lines = response.data.split(b'\n', 3)
         self.assert_strict_equal(lines[0],
-                          repr('Sellersburg Town Council Meeting 02-22-2010doc.doc').encode('ascii'))
+                          repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc').encode('ascii'))
 
     def test_end_of_file(self):
         # This test looks innocent but it was actually timeing out in
