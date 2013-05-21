@@ -844,10 +844,10 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
             "your hosts file and then point your server to run on "
             "\"dev.localhost\" and also set \"domain\" for \"dev.localhost\""
         )
-    for k, v in (('path', path), ('domain', domain), ('secure', secure),
-                 ('max-age', max_age), ('httponly', httponly)):
+    for k, v in ((u'path', path), (u'domain', domain), (u'secure', secure),
+                 (u'max-age', max_age), (u'httponly', httponly)):
         if v is not None and v is not False:
-            morsel[k] = str(v)
+            morsel[k] = to_unicode(v, _cookie_charset)
     return morsel.output(header='').lstrip()
 
 
