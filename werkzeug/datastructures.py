@@ -15,7 +15,7 @@ from itertools import repeat
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-    to_unicode, PY2, text_type, integer_types, string_types
+     PY2, text_type, integer_types, string_types
 
 
 _locale_delim_re = re.compile(r'[_-]')
