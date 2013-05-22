@@ -10,7 +10,7 @@
 """
 from werkzeug.wsgi import ClosingIterator
 from werkzeug._internal import _patch_wrapper
-from werkzeug._compat import PY2
+from werkzeug._compat import PY2, implements_bool
 
 # since each thread has its own greenlet we can just use those as identifiers
 # for the context.  If greenlets are not available we fall back to the
@@ -249,6 +249,7 @@ class LocalManager(object):
         )
 
 
+@implements_bool
 class LocalProxy(object):
     """Acts as a proxy for a werkzeug local.  Forwards all operations to
     a proxied object.  The only operations not supported for forwarding
@@ -316,7 +317,7 @@ class LocalProxy(object):
             return '<%s unbound>' % self.__class__.__name__
         return repr(obj)
 
-    def __nonzero__(self):
+    def __bool__(self):
         try:
             return bool(self._get_current_object())
         except RuntimeError:

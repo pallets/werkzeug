@@ -37,6 +37,11 @@ if PY2:
         cls.__str__ = lambda x: x.__unicode__().encode('utf-8')
         return cls
 
+    def implements_bool(cls):
+        cls.__nonzero__ = cls.__bool__
+        del cls.__bool__
+        return cls
+
     from itertools import imap, izip, ifilter
     xrange = xrange
 
@@ -65,6 +70,7 @@ else:
 
     implements_iterator = _identity
     implements_to_string = _identity
+    implements_bool = _identity
     imap = map
     izip = zip
     ifilter = filter
