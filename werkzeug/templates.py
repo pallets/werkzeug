@@ -8,15 +8,16 @@ r"""
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD License.
 """
-from six import string_types
 import sys
 import re
 import __builtin__ as builtins
 from compiler import ast, parse
 from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
+
 from werkzeug import urls, utils
 from werkzeug._internal import _decode_unicode
+from werkzeug._compat import string_types
 from werkzeug.datastructures import MultiDict
 
 

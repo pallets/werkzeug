@@ -19,13 +19,13 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from six import string_types
 from urlparse import urlparse
 from warnings import warn
 
 from werkzeug.datastructures import Headers
 from werkzeug.http import is_entity_header
 from werkzeug.wsgi import FileWrapper
+from werkzeug._compat import string_types
 
 
 class WSGIWarning(Warning):
