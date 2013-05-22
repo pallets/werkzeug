@@ -10,8 +10,7 @@
 """
 from werkzeug.wsgi import ClosingIterator
 from werkzeug._internal import _patch_wrapper
-
-import six
+from werkzeug._compat import PY2
 
 # since each thread has its own greenlet we can just use those as identifiers
 # for the context.  If greenlets are not available we fall back to the
@@ -401,10 +400,10 @@ class LocalProxy(object):
     __rsub__ = lambda x, o: o - x._get_current_object()
     __rmul__ = lambda x, o: o * x._get_current_object()
     __rdiv__ = lambda x, o: o / x._get_current_object()
-    if six.PY3:
-        __rtruediv__ = __rdiv__
-    else:
+    if PY2:
         __rtruediv__ = lambda x, o: x._get_current_object().__rtruediv__(o)
+    else:
+        __rtruediv__ = __rdiv__
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)

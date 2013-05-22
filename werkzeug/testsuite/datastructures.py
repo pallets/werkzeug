@@ -21,13 +21,11 @@ from __future__ import with_statement
 import unittest
 import pickle
 from copy import copy
-from werkzeug.testsuite import WerkzeugTestCase
-from six.moves import xrange
-from six import text_type
-from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-    iterlistvalues
 
 from werkzeug import datastructures
+from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
+    iterlistvalues, xrange, text_type
+from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.exceptions import BadRequestKeyError
 
 

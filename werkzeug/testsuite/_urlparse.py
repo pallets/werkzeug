@@ -1,7 +1,8 @@
-from werkzeug.testsuite import WerkzeugTestCase
 import unittest
+
 import werkzeug._urlparse as urlparse
-import six
+from werkzeug._compat import PY2
+from werkzeug.testsuite import WerkzeugTestCase
 
 RFC1808_BASE = u"http://a/b/c/d;p?q#f"
 RFC2396_BASE = u"http://a/b/c/d;p?q"
@@ -789,14 +790,14 @@ class UrlParseTestCase(WerkzeugTestCase):
         assert set(result.split(u'&')) == set([u'a=1', u'a=2', u'b=3', u'b=4', u'b=5'])
 
         class Trivial(object):
-            if six.PY3:
-                def __str__(self):
-                    return u'trivial'
-            else:
+            if PY2:
                 def __str__(self):
                     return b'trivial'
 
                 def __unicode__(self):
+                    return u'trivial'
+            else:
+                def __str__(self):
                     return u'trivial'
 
         result = urlparse.urlencode({u'a': Trivial()}, True)

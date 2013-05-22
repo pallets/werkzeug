@@ -8,15 +8,13 @@
     :copyright: (c) 2011 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-
 import unittest
-import six
-from six import StringIO
 
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug.datastructures import OrderedMultiDict
 from werkzeug import urls
+from werkzeug._compat import PY2, text_type, StringIO
 
 
 class URLsTestCase(WerkzeugTestCase):
@@ -99,7 +97,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_equal(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
 
     def test_iri_support(self):
-        if not six.PY3:
+        if PY2:
             self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
         self.assert_strict_equal(urls.uri_to_iri('http://xn--n3h.net/'),
                           u'http://\u2603.net/')
@@ -168,7 +166,7 @@ class URLsTestCase(WerkzeugTestCase):
     def test_url_unquote_plus_unicode(self):
         # was broken in 0.6
         self.assert_strict_equal(urls.url_unquote_plus(u'\x6d'), u'\x6d')
-        self.assert_is(type(urls.url_unquote_plus(u'\x6d')), six.text_type)
+        self.assert_is(type(urls.url_unquote_plus(u'\x6d')), text_type)
 
     def test_quoting_of_local_urls(self):
         rv = urls.iri_to_uri(u'/foo\x8f')

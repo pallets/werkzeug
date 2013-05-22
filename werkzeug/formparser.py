@@ -16,9 +16,7 @@ from tempfile import TemporaryFile
 from itertools import chain, repeat, tee
 from functools import update_wrapper
 
-import six
-
-from werkzeug._compat import to_native
+from werkzeug._compat import to_native, text_type
 from werkzeug._internal import _decode_unicode, _empty_stream
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import LimitedStream, make_line_iter
@@ -201,7 +199,7 @@ class FormDataParser(object):
                                  max_form_memory_size=self.max_form_memory_size,
                                  cls=self.cls)
         boundary = options.get('boundary')
-        if isinstance(boundary, six.text_type):
+        if isinstance(boundary, text_type):
             boundary = boundary.encode('ascii')
         form, files = parser.parse(stream, boundary, content_length)
         return _empty_stream, form, files
@@ -338,7 +336,7 @@ class MultiPartParser(object):
         return self.charset
 
     def start_file_streaming(self, filename, headers, total_content_length):
-        if isinstance(filename, six.binary_type):
+        if isinstance(filename, bytes):
             filename = _decode_unicode(filename, self.charset, self.errors)
         filename = self._fix_ie_filename(filename)
         content_type = headers.get('content-type')

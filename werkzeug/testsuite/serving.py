@@ -22,13 +22,12 @@ except ImportError:  # pragma: no cover
 
 import unittest
 from functools import update_wrapper
-from six import StringIO
-import six
 
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import __version__ as version, serving
 from werkzeug.testapp import test_app
+from werkzeug._compat import StringIO
 from threading import Thread
 
 
@@ -80,7 +79,7 @@ class ServingTestCase(WerkzeugTestCase):
         rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
         self.assert_in(b'WSGI Information', rv)
         self.assert_in(b'foo=bar&amp;baz=blah', rv)
-        self.assert_in(b'Werkzeug/' + six.b(version), rv)
+        self.assert_in(b'Werkzeug/' + version.encode('ascii'), rv)
 
     @silencestderr
     def test_broken_app(self):

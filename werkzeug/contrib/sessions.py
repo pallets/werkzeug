@@ -65,8 +65,7 @@ from werkzeug.datastructures import CallbackDict
 from werkzeug.utils import dump_cookie, parse_cookie
 from werkzeug.wsgi import ClosingIterator
 from werkzeug.posixemulation import rename
-
-import six
+from werkzeug._compat import PY2, text_type
 
 
 _sha1_re = re.compile(r'^[a-f0-9]{40}$')
@@ -219,7 +218,7 @@ class FilesystemSessionStore(SessionStore):
         if path is None:
             path = tempfile.gettempdir()
         self.path = path
-        if isinstance(filename_template, six.text_type) and not six.PY3:
+        if isinstance(filename_template, text_type) and PY2:
             filename_template = filename_template.encode(
                 sys.getfilesystemencoding() or 'utf-8')
         assert not filename_template.endswith(_fs_transaction_suffix), \
@@ -232,7 +231,7 @@ class FilesystemSessionStore(SessionStore):
         # out of the box, this should be a strict ASCII subset but
         # you might reconfigure the session object to have a more
         # arbitrary string.
-        if isinstance(sid, six.text_type) and not six.PY3:
+        if isinstance(sid, text_type) and PY2:
             sid = sid.encode(sys.getfilesystemencoding() or 'utf-8')
         return path.join(self.path, self.filename_template % sid)
 

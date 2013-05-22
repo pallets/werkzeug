@@ -22,8 +22,8 @@ try:
 except ImportError: # pragma: no cover
     deque = None
 from werkzeug.utils import escape
-from werkzeug._compat import iteritems
-import six
+from werkzeug._compat import iteritems, PY2, text_type, integer_types, \
+    string_types
 
 
 missing = object()
@@ -141,10 +141,10 @@ class DebugReprGenerator(object):
 
     def regex_repr(self, obj):
         pattern = repr(obj.pattern)
-        if six.PY3:
-            pattern = codecs.decode(pattern, 'unicode-escape', 'ignore')
-        else:
+        if PY2:
             pattern = pattern.decode('string-escape', 'ignore')
+        else:
+            pattern = codecs.decode(pattern, 'unicode-escape', 'ignore')
         if pattern[:1] == 'u':
             pattern = 'ur' + pattern[1:]
         else:
@@ -156,7 +156,7 @@ class DebugReprGenerator(object):
         escaped = escape(obj)
         a = repr(escaped[:limit])
         b = repr(escaped[limit:])
-        if isinstance(obj, six.text_type) and not six.PY3:
+        if isinstance(obj, text_type) and PY2:
             buf.append('u')
             a = a[1:]
             b = b[1:]
@@ -165,7 +165,7 @@ class DebugReprGenerator(object):
         else:
             buf.append(a)
         buf.append('</span>')
-        return _add_subclass_info(u''.join(buf), obj, (bytes, six.text_type))
+        return _add_subclass_info(u''.join(buf), obj, (bytes, text_type))
 
     def dict_repr(self, d, recursive, limit=5):
         if recursive:
@@ -188,16 +188,16 @@ class DebugReprGenerator(object):
 
     def object_repr(self, obj):
         r = repr(obj)
-        if not six.PY3:
+        if PY2:
             r = r.decode('utf-8', 'replace')
         return u'<span class="object">%s</span>' % escape(r)
 
     def dispatch_repr(self, obj, recursive):
         if obj is helper:
             return u'<span class="help">%r</span>' % helper
-        if isinstance(obj, (six.integer_types, float, complex)):
+        if isinstance(obj, (integer_types, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if isinstance(obj, six.string_types):
+        if isinstance(obj, string_types):
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)
@@ -220,7 +220,7 @@ class DebugReprGenerator(object):
             info = ''.join(format_exception_only(*sys.exc_info()[:2]))
         except Exception: # pragma: no cover
             info = '?'
-        if not six.PY3:
+        if PY2:
             info = info.decode('utf-8', 'ignore')
         return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' \
                u'</span>' % escape(info.strip())
@@ -246,7 +246,7 @@ class DebugReprGenerator(object):
             title = 'Contents of'
             items = []
             for key, value in iteritems(obj):
-                if not isinstance(key, six.string_types):
+                if not isinstance(key, string_types):
                     items = None
                     break
                 items.append((key, self.repr(value)))

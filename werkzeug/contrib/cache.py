@@ -63,16 +63,14 @@ try:
     from hashlib import md5
 except ImportError:
     from md5 import new as md5
-from six.moves import zip
-from six import PY3, iteritems, string_types
-from six import _iteritems as iteritems_attr
 from time import time
-from werkzeug.posixemulation import rename
-
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+from werkzeug._compat import iteritems, string_types, text_type
+from werkzeug.posixemulation import rename
 
 
 def _items(mappingorseq):
@@ -86,8 +84,11 @@ def _items(mappingorseq):
         ...    assert k*k == v
 
     """
-    return iteritems(mappingorseq) \
-           if hasattr(mappingorseq, iteritems_attr) else mappingorseq
+    if hasattr(mappingorseq, "iteritems"):
+        return mappingorseq.iteritems()
+    elif hasattr(mappingorseq, "items"):
+        return mappingorseq.items()
+    return mappingorseq
 
 
 class BaseCache(object):
@@ -247,7 +248,6 @@ class SimpleCache(BaseCache):
                     self._cache.pop(key, None)
 
     def get(self, key):
-        now = time()
         expires, value = self._cache.get(key, (0, None))
         if expires > time():
             return pickle.loads(value)
@@ -632,7 +632,7 @@ class FileSystemCache(BaseCache):
                 pass
 
     def _get_filename(self, key):
-        if PY3 and isinstance(key, str):
+        if isinstance(key, text_type):
             key = key.encode('utf-8') #XXX unicode review
         hash = md5(key).hexdigest()
         return os.path.join(self._path, hash)

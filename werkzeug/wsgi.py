@@ -18,9 +18,10 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
-from six import iteritems, Iterator, text_type, string_types
 
-from werkzeug._compat import urlparse, string_join
+from werkzeug import _urlparse as urlparse
+from werkzeug._compat import string_join, iteritems, text_type, string_types, \
+    implements_iterator
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
 
@@ -539,7 +540,8 @@ class DispatcherMiddleware(object):
         return app(environ, start_response)
 
 
-class ClosingIterator(Iterator):
+@implements_iterator
+class ClosingIterator(object):
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of an iterator.  Because it is useful to add
     another close action to a returned iterator and adding a custom iterator
@@ -604,7 +606,8 @@ def wrap_file(environ, file, buffer_size=8192):
     return environ.get('wsgi.file_wrapper', FileWrapper)(file, buffer_size)
 
 
-class FileWrapper(Iterator):
+@implements_iterator
+class FileWrapper(object):
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
     read.

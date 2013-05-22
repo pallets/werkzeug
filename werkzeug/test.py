@@ -19,13 +19,14 @@ try:
     from urllib2 import Request as U2Request
 except ImportError:
     from urllib.request import Request as U2Request
+try:
+    from http.cookiejar import CookieJar
+except ImportError: # Py2
+    from cookielib import CookieJar
 
-import six
-from six import string_types
-CookieJar = six.moves.http_cookiejar.CookieJar
-
-
-from werkzeug._compat import urlparse, iterlists, iteritems, itervalues, to_native
+from werkzeug import _urlparse as urlparse
+from werkzeug._compat import iterlists, iteritems, itervalues, to_native, \
+    string_types, text_type, reraise
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote
@@ -315,9 +316,9 @@ class EnvironBuilder(object):
         if data:
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
-            if isinstance(data, six.text_type):
+            if isinstance(data, text_type):
                 data = data.encode(self.charset)
-            if isinstance(data, six.binary_type):
+            if isinstance(data, bytes):
                 self.input_stream = BytesIO(data)
                 if self.content_length is None:
                     self.content_length = len(data)
@@ -543,7 +544,7 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            if not isinstance(x, six.text_type):
+            if not isinstance(x, text_type):
                 x = x.decode(self.charset)
             return to_native(url_unquote(x), self.charset)
 
@@ -832,7 +833,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     def start_response(status, headers, exc_info=None):
         if exc_info is not None:
-            six.reraise(*exc_info)
+            reraise(*exc_info)
         response[:] = [status, headers]
         return buffer.append
 

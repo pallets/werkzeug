@@ -9,12 +9,16 @@
     :license: BSD, see LICENSE for more details.
 """
 import inspect
-from weakref import WeakKeyDictionary
 from io import BytesIO
-import six
-from six.moves import http_cookies as cookies
 from time import gmtime
+from weakref import WeakKeyDictionary
 from datetime import datetime, date
+try:
+    from http import cookies
+except ImportError:
+    import Cookie as cookies
+
+from werkzeug._compat import PY2, integer_types
 
 
 _logger = None
@@ -201,7 +205,7 @@ def _decode_unicode(value, charset, errors):
     """Like the regular decode function but this one raises an
     `HTTPUnicodeError` if errors is `strict`."""
     fallback = None
-    assert isinstance(value, six.binary_type), type(value)
+    assert isinstance(value, bytes), type(value)
     if errors.startswith('fallback:'):
         fallback = errors[9:]
         errors = 'strict'
@@ -241,7 +245,7 @@ def _dump_date(d, delim):
         d = gmtime()
     elif isinstance(d, datetime):
         d = d.utctimetuple()
-    elif isinstance(d, (six.integer_types, float)):
+    elif isinstance(d, (integer_types, float)):
         d = gmtime(d)
     return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
         ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[d.tm_wday],
@@ -350,7 +354,7 @@ class _DictAccessorProperty(object):
 def _easteregg(app):
     """Like the name says.  But who knows how it works?"""
     def bzzzzzzz(gyver):
-        if not six.PY3:
+        if PY2:
             return gyver.decode('base64').decode('zlib')
         import base64
         import zlib

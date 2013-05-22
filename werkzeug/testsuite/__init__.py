@@ -14,8 +14,9 @@ from __future__ import with_statement
 import re
 import sys
 import unittest
-import six
-from werkzeug.utils import import_string, find_modules
+
+from werkzeug.utils import find_modules
+from werkzeug._compat import text_type, integer_types, reraise
 
 
 def iter_suites(package):
@@ -156,7 +157,7 @@ class WerkzeugTestCase(unittest.TestCase):
         self.assert_equal(x, y)
         assert issubclass(type(x), type(y)) or issubclass(type(y), type(x)), \
                 '%s != %s' % (type(x), type(y))
-        if isinstance(x, (six.binary_type, six.text_type, six.integer_types)) or x is None:
+        if isinstance(x, (bytes, text_type, integer_types)) or x is None:
             return
         elif isinstance(x, dict) or isinstance(y, dict):
             x = sorted(x.items())
@@ -183,7 +184,7 @@ class _ExceptionCatcher(object):
             self.test_case.fail('Expected exception of type %r' %
                                 exception_name)
         elif not issubclass(exc_type, self.exc_type):
-            six.reraise(exc_type, exc_value, tb)
+            reraise(exc_type, exc_value, tb)
         self.exc_value = exc_value
         return True
 
@@ -245,4 +246,3 @@ def main():
         import traceback
         traceback.print_exc()
         sys.exit(1)
-

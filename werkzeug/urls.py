@@ -8,15 +8,11 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import six
-
-from werkzeug._compat import urlparse, to_bytes, to_native
-
+from werkzeug import _urlparse as urlparse
+from werkzeug._compat import to_bytes, to_native, text_type, PY2
 from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from werkzeug.wsgi import make_chunk_iter
-
-
 from werkzeug._urlparse import (
     quote as _quote, quote_plus as url_quote_plus,
     unquote as url_unquote, unquote_plus as url_unquote_plus,
@@ -72,8 +68,8 @@ def iri_to_uri(iri, charset='utf-8'):
     scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
 
     scheme = to_native(scheme, 'ascii')
-    if not isinstance(hostname, str) and six.PY3:
-        hostname = to_native(hostname, 'ascii')
+    if isinstance(hostname, text_type) and not PY2:
+        hostname = to_native(hostname, charset)
     hostname = to_native(hostname.encode('idna'), 'ascii')
     if auth:
         auth = to_native(auth, charset)
@@ -127,11 +123,11 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     uri = url_fix(uri, charset)
     scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
 
-    if not six.PY3:
+    if PY2:
         scheme = _decode_unicode(scheme, 'ascii', errors)
 
     try:
-        if six.PY3 and isinstance(hostname, six.text_type):
+        if not PY2 and isinstance(hostname, text_type):
             hostname = hostname.encode(charset, errors)
         hostname = hostname.decode('idna')
     except UnicodeError:
@@ -193,9 +189,9 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     """
     if cls is None:
         cls = MultiDict
-    if not isinstance(s, six.binary_type):
+    if not isinstance(s, bytes):
         s = s.encode(charset)
-    if not isinstance(separator, six.binary_type):
+    if not isinstance(separator, bytes):
         separator = separator.encode(charset)
     return cls(_url_decode_impl(s.split(separator), charset, decode_keys,
                                 include_empty, errors))
@@ -243,7 +239,7 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
     for pair in pair_iter:
         if not pair:
             continue
-        if isinstance(pair, six.binary_type):
+        if isinstance(pair, bytes):
             pair = pair.decode(charset, errors)
         if u'=' in pair:
             key, value = pair.split(u'=', 1)
@@ -337,7 +333,7 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    if not isinstance(s, six.text_type):
+    if not isinstance(s, text_type):
         s = s.decode(charset)
     scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
     path = url_quote(path, safe='/%')

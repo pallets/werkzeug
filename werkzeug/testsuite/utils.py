@@ -16,13 +16,13 @@ from datetime import datetime
 from functools import partial
 
 from werkzeug.testsuite import WerkzeugTestCase
-from six import Iterator, text_type
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
 from werkzeug.http import parse_date, http_date
 from werkzeug.wrappers import BaseResponse
 from werkzeug.test import Client, run_wsgi_app
+from werkzeug._compat import text_type, implements_iterator
 
 
 class GeneralUtilityTestCase(WerkzeugTestCase):
@@ -134,7 +134,8 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_raises(StopIteration, partial(next, app_iter))
 
         got_close = []
-        class CloseIter(Iterator):
+        @implements_iterator
+        class CloseIter(object):
             def __init__(self):
                 self.iterated = False
             def __iter__(self):

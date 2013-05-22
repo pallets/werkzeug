@@ -12,13 +12,11 @@ import unittest
 import sys
 import re
 
-import six
-
 from werkzeug.testsuite import WerkzeugTestCase
-
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
+from werkzeug._compat import PY2
 
 
 class DebugReprTestCase(WerkzeugTestCase):
@@ -58,7 +56,7 @@ class DebugReprTestCase(WerkzeugTestCase):
         self.assert_equal(
             debug_repr((1, 'zwei', u'drei')),
             u'(<span class="number">1</span>, <span class="string">\''
-            u'zwei\'</span>, <span class="string">%s\'drei\'</span>)' % ('' if six.PY3 else 'u'))
+            u'zwei\'</span>, <span class="string">%s\'drei\'</span>)' % ('u' if PY2 else ''))
 
     def test_custom_repr(self):
         class Foo(object):
@@ -81,7 +79,7 @@ class DebugReprTestCase(WerkzeugTestCase):
         #XXX: no raw string here cause of a syntax bug in py3.3
         self.assert_equal(debug_repr(re.compile(u'foo\\d')),
             u're.compile(<span class="string regex">%sr\'foo\\d\'</span>)' %
-            ('' if six.PY3 else 'u'))
+            ('u' if PY2 else ''))
 
     def test_set_repr(self):
         self.assert_equal(debug_repr(frozenset('x')),

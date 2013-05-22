@@ -11,11 +11,10 @@
 import os
 import hmac
 import posixpath
-from six.moves import zip, xrange
 from random import SystemRandom
-from werkzeug.exceptions import BadRequest
 
-import six
+from werkzeug.exceptions import BadRequest
+from werkzeug._compat import xrange, PY2, text_type, izip
 
 
 SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -51,11 +50,11 @@ def safe_str_cmp(a, b):
     if len(a) != len(b):
         return False
     rv = 0
-    if six.PY3 and isinstance(a, bytes) and isinstance(b, bytes):
-        for x, y in zip(a, b):
+    if isinstance(a, bytes) and isinstance(b, bytes) and not PY2:
+        for x, y in izip(a, b):
             rv |= x ^ y
     else:
-        for x, y in zip(a, b):
+        for x, y in izip(a, b):
             rv |= ord(x) ^ ord(y)
     return rv == 0
 
@@ -77,14 +76,14 @@ def _hash_internal(method, salt, password):
     if salt:
         if method not in _hash_funcs:
             return None
-        if isinstance(salt, six.text_type):
+        if isinstance(salt, text_type):
             salt = salt.encode('utf-8')
         h = hmac.new(salt, None, _hash_funcs[method])
     else:
         if method not in _hash_funcs:
             return None
         h = _hash_funcs[method]()
-    if isinstance(password, six.text_type):
+    if isinstance(password, text_type):
         password = password.encode('utf-8')
     h.update(password)
     return h.hexdigest()

@@ -34,14 +34,14 @@ except ImportError: # pragma: no cover
 import base64
 
 
-from six import iteritems, binary_type, text_type, string_types
-from werkzeug._compat import to_native, to_unicode
+from werkzeug._compat import to_native, to_unicode, iteritems, text_type, \
+    string_types
 
 
 #: HTTP_STATUS_CODES is "exported" from this module.
 #: XXX: move to werkzeug.consts or something
 from werkzeug._internal import HTTP_STATUS_CODES, _dump_date, \
-     _ExtendedCookie, _ExtendedMorsel, _decode_unicode
+     _ExtendedCookie, _ExtendedMorsel
 
 
 _cookie_charset = 'latin1'
@@ -70,13 +70,13 @@ def wsgi_to_bytes(data):
     """coerce wsgi unicode represented bytes to real ones
 
     """
-    if isinstance(data, binary_type):
+    if isinstance(data, bytes):
         return data
     return data.encode('latin1') #XXX: utf8 fallback?
 
 
 def bytes_to_wsgi(data):
-    assert isinstance(data, binary_type), 'data must be bytes'
+    assert isinstance(data, bytes), 'data must be bytes'
     if isinstance(data, str):
         return data
     else:
@@ -816,9 +816,9 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
     """
-    if not isinstance(key, (binary_type, text_type)):
+    if not isinstance(key, (bytes, text_type)):
         raise TypeError('invalid key %r' % key)
-    if not isinstance(value, (binary_type, text_type)):
+    if not isinstance(value, (bytes, text_type)):
         raise TypeError('invalid value %r' % value)
 
     key, value = to_native(key, _cookie_charset), to_native(value, _cookie_charset)

@@ -29,7 +29,8 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 import re
 import sys
-import six
+
+from werkzeug._compat import text_type, int2byte, iteritems, reraise, PY2
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
@@ -92,11 +93,11 @@ def _coerce_args(*args):
     # an appropriate result coercion function
     #   - noop for str inputs
     #   - encoding function otherwise
-    str_input = isinstance(args[0], six.text_type)
+    str_input = isinstance(args[0], text_type)
     for arg in args[1:]:
         # We special-case the empty string to support the
         # "scheme=''" default argument to some functions
-        if arg and isinstance(arg, six.text_type) != str_input:
+        if arg and isinstance(arg, text_type) != str_input:
             raise TypeError("Cannot mix str and non-str arguments", args)
     if str_input:
         return args + (_noop,)
@@ -464,19 +465,19 @@ def urldefrag(url):
 
 
 _hexdig = u'0123456789ABCDEFabcdef'
-_hextobyte = dict(((a + b).encode(), six.int2byte(int(a + b, 16)))
+_hextobyte = dict(((a + b).encode(), int2byte(int(a + b, 16)))
                   for a in _hexdig for b in _hexdig)
 
 def unquote_to_bytes(string, unsafe=b''):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
-    assert isinstance(unsafe, six.binary_type), unsafe
+    assert isinstance(unsafe, bytes), unsafe
     if not string:
         # Is it a string-like object?
         string.split
         return b''
-    if isinstance(string, six.text_type):
+    if isinstance(string, text_type):
         string = string.encode('ascii')
     bits = string.split(b'%')
     if len(bits) == 1:
@@ -507,7 +508,7 @@ def unquote(string, unsafe=b'', encoding='utf-8', errors='replace'):
 
     unquote('abc%20def') -> u'abc def'.
     """
-    if not isinstance(string, six.text_type):
+    if not isinstance(string, text_type):
         string = string.decode('ascii')
     if u'%' not in string:
         string.split
@@ -614,8 +615,7 @@ def unquote_plus(string, encoding='utf-8', errors='replace'):
     return unquote(string, encoding=encoding, errors=errors)
 
 def _iter_bytestring(string):
-    #XXX: replace this with the new six feature
-    if six.PY3 or isinstance(string, bytearray):
+    if isinstance(string, bytearray) or not PY2:
         return iter(string)
     return iter(map(ord, string))
 
@@ -644,7 +644,7 @@ class Quoter(dict):
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.
-        res = six.int2byte(b).decode() if b in self.safe else u'%{0:02X}'.format(b)
+        res = int2byte(b).decode() if b in self.safe else u'%{0:02X}'.format(b)
         self[b] = res
         return res
 
@@ -677,7 +677,7 @@ def quote(string, safe='/', encoding=None, errors=None):
     By default, encoding='utf-8' (characters are encoded with UTF-8), and
     errors='strict' (unsupported characters raise a UnicodeEncodeError).
     """
-    if isinstance(string, six.text_type):
+    if isinstance(string, text_type):
         if not string:
             return string
         if encoding is None:
@@ -699,10 +699,10 @@ def quote_plus(string, safe='', encoding=None, errors=None):
     """
     # Check if ' ' in string, where string may either be a str or bytes.  If
     # there are no spaces, the regular quote will produce the right answer.
-    if ((isinstance(string, six.text_type) and u' ' not in string) or
-        (isinstance(string, six.binary_type) and b' ' not in string)):
+    if ((isinstance(string, text_type) and u' ' not in string) or
+        (isinstance(string, bytes) and b' ' not in string)):
         return quote(string, safe, encoding, errors)
-    if isinstance(safe, six.text_type):
+    if isinstance(safe, text_type):
         space = u' '
     else:
         space = b' '
@@ -718,11 +718,11 @@ def quote_from_bytes(bs, safe='/'):
         raise TypeError("quote_from_bytes() expected bytes")
     if not bs:
         return u''
-    if isinstance(safe, six.text_type):
+    if isinstance(safe, text_type):
         # Normalize 'safe' by converting to bytes and removing non-ASCII chars
         safe = safe.encode('ascii', 'ignore')
     else:
-        safe = b''.join(six.int2byte(c) for c in _iter_bytestring(safe) if c < 128)
+        safe = b''.join(int2byte(c) for c in _iter_bytestring(safe) if c < 128)
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
     try:
@@ -747,7 +747,7 @@ def urlencode(query, doseq=False, safe=u'', encoding=None, errors=None):
     """
 
     if hasattr(query, "items"):
-        query = six.iteritems(query)
+        query = iteritems(query)
     else:
         # It's a bother at times that strings and string-like objects are
         # sequences.
@@ -763,49 +763,49 @@ def urlencode(query, doseq=False, safe=u'', encoding=None, errors=None):
         except TypeError:
             ty, va, tb = sys.exc_info()
             va = TypeError("not a valid non-string sequence or mapping object")
-            six.reraise(ty, va, tb)
+            reraise(ty, va, tb)
 
     l = []
     if not doseq:
         for k, v in query:
-            if isinstance(k, six.binary_type):
+            if isinstance(k, bytes):
                 k = quote_plus(k, safe)
             else:
-                k = quote_plus(six.text_type(k), safe, encoding, errors)
+                k = quote_plus(text_type(k), safe, encoding, errors)
 
-            if isinstance(v, six.binary_type):
+            if isinstance(v, bytes):
                 v = quote_plus(v, safe)
             else:
-                v = quote_plus(six.text_type(v), safe, encoding, errors)
+                v = quote_plus(text_type(v), safe, encoding, errors)
             l.append(k + u'=' + v)
     else:
         for k, v in query:
-            if isinstance(k, six.binary_type):
+            if isinstance(k, bytes):
                 k = quote_plus(k, safe)
             else:
-                k = quote_plus(six.text_type(k), safe, encoding, errors)
+                k = quote_plus(text_type(k), safe, encoding, errors)
 
-            if isinstance(v, six.binary_type):
+            if isinstance(v, bytes):
                 v = quote_plus(v, safe)
                 l.append(k + u'=' + v)
-            elif isinstance(v, six.text_type):
+            elif isinstance(v, text_type):
                 v = quote_plus(v, safe, encoding, errors)
                 l.append(k + u'=' + v)
             else:
                 try:
                     # Is this a sufficient test for sequence-ness?
-                    x = len(v)
+                    len(v)
                 except TypeError:
                     # not a sequence
-                    v = quote_plus(six.text_type(v), safe, encoding, errors)
+                    v = quote_plus(text_type(v), safe, encoding, errors)
                     l.append(k + u'=' + v)
                 else:
                     # loop over the sequence
                     for elt in v:
-                        if isinstance(elt, six.binary_type):
+                        if isinstance(elt, bytes):
                             elt = quote_plus(elt, safe)
                         else:
-                            elt = quote_plus(six.text_type(elt), safe, encoding, errors)
+                            elt = quote_plus(text_type(elt), safe, encoding, errors)
                         l.append(k + u'=' + elt)
     return u'&'.join(l)
 
@@ -829,7 +829,7 @@ def to_bytes(url):
     # Most URL schemes require ASCII. If that changes, the conversion
     # can be relaxed.
     # XXX get rid of to_bytes()
-    if isinstance(url, six.text_type):
+    if isinstance(url, text_type):
         try:
             url = url.encode("ASCII").decode()
         except UnicodeError:

@@ -16,7 +16,8 @@
 """
 from types import ModuleType
 import sys
-import six
+
+from werkzeug._compat import iteritems
 
 # the version.  Usually set automatically by a script.
 __version__ = '0.9-dev'
@@ -106,7 +107,7 @@ attribute_modules = frozenset(['exceptions', 'routing', 'script'])
 
 
 object_origins = {}
-for module, items in six.iteritems(all_by_module):
+for module, items in iteritems(all_by_module):
     for item in items:
         object_origins[item] = module
 

@@ -13,11 +13,13 @@
 import re
 import os
 import sys
+try:
+    from html.entities import name2codepoint
+except ImportError:
+    from htmlentitydefs import name2codepoint
 
-import six
-from six import string_types, text_type
-
-from werkzeug._compat import unichr
+from werkzeug._compat import unichr, text_type, string_types, iteritems, \
+    reraise, PY2
 from werkzeug._internal import _iter_modules, _DictAccessorProperty, \
      _parse_signature, _missing
 
@@ -143,7 +145,6 @@ class HTMLBuilder(object):
     u'<p>&lt;foo&gt;</p>'
     """
 
-    name2codepoint = six.moves.html_entities.name2codepoint
     _entity_re = re.compile(r'&([^;]+);')
     _entities = name2codepoint.copy()
     _entities['apos'] = 39
@@ -158,7 +159,6 @@ class HTMLBuilder(object):
     ])
     _plaintext_elements = set(['textarea'])
     _c_like_cdata = set(['script', 'style'])
-    del name2codepoint
 
     def __init__(self, dialect):
         self._dialect = dialect
@@ -171,7 +171,7 @@ class HTMLBuilder(object):
             raise AttributeError(tag)
         def proxy(*children, **arguments):
             buffer = '<' + tag
-            for key, value in six.iteritems(arguments):
+            for key, value in iteritems(arguments):
                 if value is None:
                     continue
                 if key[-1] == '_':
@@ -280,7 +280,7 @@ def secure_filename(filename):
 
     :param filename: the filename to secure
     """
-    if isinstance(filename, six.text_type):
+    if isinstance(filename, text_type):
         from unicodedata import normalize
         filename = normalize('NFKD', filename).encode('ascii', 'ignore')
     for sep in os.path.sep, os.path.altsep:
@@ -358,7 +358,7 @@ def redirect(location, code=302):
     """
     from werkzeug.wrappers import BaseResponse
     display_location = escape(location)
-    if isinstance(location, six.text_type):
+    if isinstance(location, text_type):
         from werkzeug.urls import iri_to_uri
         location = iri_to_uri(location)
     response = BaseResponse(
@@ -401,7 +401,7 @@ def import_string(import_name, silent=False):
     :return: imported object
     """
     #XXX: py3 review needed
-    assert isinstance(import_name, six.string_types)
+    assert isinstance(import_name, string_types)
     # force the import name to automatically convert to strings
     import_name = str(import_name)
     try:
@@ -413,7 +413,7 @@ def import_string(import_name, silent=False):
             return __import__(import_name)
         # __import__ is not able to handle unicode strings in the fromlist
         # if the module is a package
-        if not six.PY3 and isinstance(obj, unicode):
+        if PY2 and isinstance(obj, unicode):
             obj = obj.encode('utf-8')
         try:
             return getattr(__import__(module, None, None, [obj]), obj)
@@ -425,7 +425,7 @@ def import_string(import_name, silent=False):
             return sys.modules[modname]
     except ImportError as e:
         if not silent:
-            six.reraise(
+            reraise(
                 ImportStringError,
                 ImportStringError(import_name, e),
                 sys.exc_info()[2])

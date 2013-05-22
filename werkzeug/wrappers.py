@@ -20,9 +20,7 @@
     :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug._compat import urlparse
 from datetime import datetime, timedelta
-import six
 
 from werkzeug.http import HTTP_STATUS_CODES, \
      parse_accept_header, parse_cache_control_header, parse_etags, \
@@ -45,7 +43,9 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ContentRange
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
-from werkzeug._compat import to_unicode, to_bytes
+from werkzeug._compat import to_bytes, string_types, PY2, text_type, \
+    integer_types
+from werkzeug import _urlparse as urlparse
 
 
 def _run_wsgi_app(*args):
@@ -61,7 +61,7 @@ def _warn_if_string(iterable):
     """Helper for the response objects to check if the iterable returned
     to the WSGI server is not a string.
     """
-    if isinstance(iterable, six.string_types):
+    if isinstance(iterable, string_types):
         from warnings import warn
         warn(Warning('response iterable was set to a string.  This appears '
                      'to work but means that the server will send the '
@@ -441,9 +441,9 @@ class BaseRequest(object):
         even if the URL root is accessed.
         """
         path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
-        if six.PY3:
-            return path
-        return _decode_unicode(path, self.url_charset, self.encoding_errors)
+        if PY2:
+            return _decode_unicode(path, self.url_charset, self.encoding_errors)
+        return path
 
     @cached_property
     def full_path(self):
@@ -454,9 +454,9 @@ class BaseRequest(object):
     def script_root(self):
         """The root path of the script without the trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
-        if six.PY3:
-            return path
-        return _decode_unicode(path, self.url_charset, self.encoding_errors)
+        if PY2:
+            return _decode_unicode(path, self.url_charset, self.encoding_errors)
+        return path
 
     @cached_property
     def url(self):
@@ -659,7 +659,7 @@ class BaseResponse(object):
             self.headers['Content-Type'] = content_type
         if status is None:
             status = self.default_status
-        if isinstance(status, six.integer_types):
+        if isinstance(status, integer_types):
             self.status_code = status
         else:
             self.status = status
@@ -671,7 +671,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, six.string_types + (bytes,)):
+        elif isinstance(response, string_types + (bytes,)):
             self.data = response
         else:
             self.response = response
@@ -787,7 +787,7 @@ class BaseResponse(object):
     def _set_data(self, value):
         # if an unicode string is set, it's encoded directly so that we
         # can set the content length
-        if isinstance(value, six.text_type):
+        if isinstance(value, text_type):
             value = value.encode(self.charset)
         self.response = [value]
         if self.automatically_set_content_length:
@@ -850,7 +850,7 @@ class BaseResponse(object):
         if __debug__:
             _warn_if_string(self.response)
         for item in self.response:
-            if isinstance(item, six.text_type):
+            if isinstance(item, text_type):
                 yield item.encode(charset)
             else:
                 yield item
@@ -998,11 +998,11 @@ class BaseResponse(object):
         # make sure the location header is an absolute URL
         if location is not None:
             old_location = location
-            if isinstance(location, six.text_type):
+            if isinstance(location, text_type):
                 location = iri_to_uri(location)
             if self.autocorrect_location_header:
                 current_url = get_current_url(environ, root_only=True)
-                if isinstance(current_url, six.text_type):
+                if isinstance(current_url, text_type):
                     current_url = iri_to_uri(current_url)
                 location = urlparse.urljoin(current_url, location)
             if location != old_location:
@@ -1010,7 +1010,7 @@ class BaseResponse(object):
 
         # make sure the content location is a URL
         if content_location is not None and \
-           isinstance(content_location, six.text_type):
+           isinstance(content_location, text_type):
             headers[u'Content-Location'] = iri_to_uri(content_location)
 
         # remove entity headers and set content length to zero if needed.
@@ -1037,7 +1037,7 @@ class BaseResponse(object):
                 pass
             else:
                 # this "casting" actually works
-                headers['Content-Length'] = six.text_type(content_length)
+                headers['Content-Length'] = text_type(content_length)
 
         return headers
 
@@ -1355,7 +1355,7 @@ class ETagResponseMixin(object):
     def _set_content_range(self, value):
         if not value:
             del self.headers['content-range']
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, string_types):
             self.headers['Content-Range'] = value
         else:
             self.headers['Content-Range'] = value.to_header()
@@ -1605,7 +1605,7 @@ class CommonResponseDescriptorsMixin(object):
         def fset(self, value):
             if not value:
                 del self.headers[name]
-            elif isinstance(value, six.string_types):
+            elif isinstance(value, string_types):
                 self.headers[name] = value
             else:
                 self.headers[name] = dump_header(value)

@@ -44,6 +44,10 @@ import time
 import signal
 import subprocess
 try:
+    from _thread import start_new_thread
+except ImportError:
+    from thread import start_new_thread
+try:
     from urllib import unquote
 except ImportError:
     from urllib.parse import unquote
@@ -55,10 +59,9 @@ except ImportError:
     from socketserver import ThreadingMixIn, ForkingMixIn
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
-import six
 import werkzeug
 from werkzeug._internal import _log
-from werkzeug._compat import iteritems
+from werkzeug._compat import iteritems, PY2, reraise, text_type
 from werkzeug.urls import _safe_urlsplit
 from werkzeug.exceptions import InternalServerError
 
@@ -137,7 +140,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     self.send_header('Date', self.date_time_string())
                 self.end_headers()
 
-            assert type(data) is six.binary_type, 'applications must write bytes'
+            assert type(data) is bytes, 'applications must write bytes'
             self.wfile.write(data)
             self.wfile.flush()
 
@@ -145,7 +148,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if exc_info:
                 try:
                     if headers_sent:
-                        six.reraise(*exc_info)
+                        reraise(*exc_info)
                 finally:
                     exc_info = None
             elif headers_set:
@@ -156,7 +159,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         def execute(app):
             application_iter = app(environ, start_response)
             try:
-                if six.PY3 and isinstance(application_iter, bytes):
+                # XXX: Is this actually correct?
+                if not PY2 and isinstance(application_iter, bytes):
                     # iterating over bytes' items would give us ints
                     application_iter = (application_iter,)
                 for data in application_iter:
@@ -589,7 +593,7 @@ def restart_with_reloader():
         # to latin1 and continue.
         if os.name == 'nt':
             for key, value in iteritems(new_environ):
-                if isinstance(value, six.text_type):
+                if isinstance(value, text_type):
                     new_environ[key] = value.encode('iso-8859-1')
 
         exit_code = subprocess.call(args, env=new_environ)
@@ -602,7 +606,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
     import signal
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        thread.start_new_thread(main_func, ())
+        start_new_thread(main_func, ())
         try:
             reloader_loop(extra_files, interval)
         except KeyboardInterrupt:

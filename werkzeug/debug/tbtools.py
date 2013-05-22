@@ -16,10 +16,10 @@ import inspect
 import traceback
 import codecs
 from tokenize import TokenError
-import six
-from six.moves import xrange
+
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
+from werkzeug._compat import xrange, PY2, text_type, string_types
 
 _coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
 _line_re = re.compile(r'^(.*?)$(?m)')
@@ -257,7 +257,7 @@ class Traceback(object):
         """String representation of the exception."""
         buf = traceback.format_exception_only(self.exc_type, self.exc_value)
         rv = ''.join(buf).strip()
-        return rv if six.PY3 else  rv.decode('utf-8', 'replace')
+        return rv.decode('utf-8', 'replace') if PY2 else rv
     exception = property(exception)
 
     def log(self, logfile=None):
@@ -276,7 +276,6 @@ class Traceback(object):
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
         title = ''
-        description = ''
         frames = []
         classes = ['traceback']
         if not self.frames:
@@ -368,7 +367,7 @@ class Frame(object):
         info = self.locals.get('__traceback_info__')
         if info is not None:
             try:
-                info = six.text_type(info)
+                info = text_type(info)
             except UnicodeError:
                 info = str(info).decode('utf-8', 'replace')
         self.info = info
@@ -417,8 +416,8 @@ class Frame(object):
 
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
-        if isinstance(code, six.string_types):
-            if not six.PY3 and isinstance(code, unicode):
+        if isinstance(code, string_types):
+            if PY2 and isinstance(code, unicode):
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
         if mode != 'exec':
@@ -452,7 +451,7 @@ class Frame(object):
                 f.close()
 
         # already unicode?  return right away
-        if isinstance(source, six.text_type):
+        if isinstance(source, text_type):
             return source.splitlines()
 
         # yes. it should be ascii, but we don't want to reject too many

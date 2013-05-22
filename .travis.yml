@@ -5,6 +5,5 @@ python:
   - "pypy"
   - "3.3"
 install:
-  - "pip install six"
   - "python setup.py install"
 script: python setup.py test

@@ -12,11 +12,10 @@ import re
 import codecs
 import mimetypes
 from itertools import repeat
-from six import PY3, integer_types, string_types, binary_type, text_type
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-        to_unicode
+    to_unicode, PY2, text_type, integer_types, string_types
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -48,7 +47,7 @@ def iter_multi_items(mapping):
 def native_itermethods(names):
     def setmethod(cls, name):
         itermethod = getattr(cls, name)
-        if not PY3:
+        if PY2:
             setattr(cls, 'iter%s' % name, itermethod)
             listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
             listmethod.__doc__ = \
@@ -803,7 +802,7 @@ def _options_header_vkw(value, kw):
 
 
 def _unicodify_value(value):
-    if isinstance(value, binary_type):
+    if isinstance(value, bytes):
         value = value.decode('latin-1')
     if not isinstance(value, text_type):
         value = text_type(value)
@@ -1140,7 +1139,7 @@ class Headers(object):
 
         :return: list
         """
-        if not PY3:
+        if PY2:
             return [(k, v.encode('latin1')) for k, v in self]
         return list(self)
 

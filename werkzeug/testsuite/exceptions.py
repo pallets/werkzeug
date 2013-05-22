@@ -12,13 +12,13 @@
     :copyright: (c) 2011 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from six import text_type
 import unittest
 
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import exceptions
 from werkzeug.wrappers import Response
+from werkzeug._compat import text_type
 
 
 class ExceptionsTestCase(WerkzeugTestCase):

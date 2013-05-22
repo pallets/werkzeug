@@ -8,15 +8,9 @@
     :copyright: (c) 2011 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-
-from __future__ import with_statement
-
 import unittest
 from os import path
-from io import BytesIO
 from contextlib import closing
-from six import StringIO
-from six.moves import xrange
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -24,6 +18,7 @@ from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug import wsgi
+from werkzeug._compat import xrange, BytesIO, NativeStringIO
 
 
 class WSGIUtilsTestCase(WerkzeugTestCase):
@@ -229,7 +224,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
     def test_multi_part_line_breaks(self):
         data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
-        test_stream = StringIO(data)
+        test_stream = NativeStringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=16))
         self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
@@ -237,7 +232,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
         data = 'abc\r\nThis line is broken by the buffer length.' \
             '\r\nFoo bar baz'
-        test_stream = StringIO(data)
+        test_stream = NativeStringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=24))
         self.assert_equal(lines, ['abc\r\n', 'This line is broken by the '
@@ -246,7 +241,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
     def test_multi_part_line_breaks_problematic(self):
         data = 'abc\rdef\r\nghi'
         for x in range(1, 10):
-            test_stream = StringIO(data)
+            test_stream = NativeStringIO(data)
             lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                              buffer_size=4))
             self.assert_equal(lines, ['abc\r', 'def\r\n', 'ghi'])
@@ -264,7 +259,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
                                'ABCDEFGHIJK'])
 
         data = 'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
-        test_stream = StringIO(data)
+        test_stream = NativeStringIO(data)
         rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
                                        buffer_size=4))
         self.assert_equal(rv, ['abcdef', 'ghijkl', 'mnopqrstuvwxyz',
@@ -273,7 +268,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
     def test_lines_longer_buffer_size(self):
         data = '1234567890\n1234567890\n'
         for bufsize in xrange(1, 15):
-            lines = list(wsgi.make_line_iter(StringIO(data), limit=len(data),
+            lines = list(wsgi.make_line_iter(NativeStringIO(data), limit=len(data),
                                              buffer_size=4))
             self.assert_equal(lines, ['1234567890\n', '1234567890\n'])
 

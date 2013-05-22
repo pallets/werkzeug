@@ -21,16 +21,16 @@
     :license: BSD, see LICENSE for more details.
 """
 import codecs
-from werkzeug.exceptions import BadRequest
-from werkzeug.utils import cached_property
-from werkzeug.http import dump_options_header, parse_options_header
-from werkzeug._internal import _decode_unicode
 try:
     from simplejson import loads
 except ImportError:
     from json import loads
 
-import six
+from werkzeug.exceptions import BadRequest
+from werkzeug.utils import cached_property
+from werkzeug.http import dump_options_header, parse_options_header
+from werkzeug._internal import _decode_unicode
+from werkzeug._compat import PY2
 
 
 def is_known_charset(charset):
@@ -166,17 +166,17 @@ class ReverseSlashBehaviorRequestMixin(object):
         info in the WSGI environment but will not include a leading slash.
         """
         path = (self.environ.get('PATH_INFO') or '').lstrip('/')
-        if six.PY3:
-            return path
-        return _decode_unicode(path, self.charset, self.encoding_errors)
+        if PY2:
+            return _decode_unicode(path, self.charset, self.encoding_errors)
+        return path
 
     @cached_property
     def script_root(self):
         """The root path of the script includling a trailing slash."""
         path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/') + '/'
-        if six.PY3:
-            return path
-        return _decode_unicode(path, self.charset, self.encoding_errors)
+        if PY2:
+            return _decode_unicode(path, self.charset, self.encoding_errors)
+        return path
 
 
 class DynamicCharsetRequestMixin(object):

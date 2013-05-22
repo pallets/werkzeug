@@ -44,11 +44,11 @@ try:
 except ImportError:
     greenlet = None
 
-import six
-from werkzeug._compat import string_join
+from werkzeug._compat import string_join, implements_iterator
 
 
-class IterIO(six.Iterator):
+@implements_iterator
+class IterIO(object):
     """Instances of this object implement an interface compatible with the
     standard Python :class:`file` object.  Streams are either read-only or
     write-only depending on how the object is created.

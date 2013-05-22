@@ -89,19 +89,17 @@ r"""
     :license: BSD, see LICENSE for more details.
 """
 import pickle
+import base64
 from hmac import new as hmac
 from time import time
-import base64
-from werkzeug._compat import iteritems
+from hashlib import sha1 as _default_hash
+
+from werkzeug._compat import iteritems, text_type
 from werkzeug.urls import url_quote_plus, url_unquote_plus
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.sessions import ModificationTrackingDict
 from werkzeug.security import safe_str_cmp
 from werkzeug._compat import to_native
-
-import six
-
-from hashlib import sha1 as _default_hash
 
 
 class UnquoteError(Exception):
@@ -237,9 +235,9 @@ class SecureCookie(ModificationTrackingDict):
         :param secret_key: the secret key used to serialize the cookie.
         :return: a new :class:`SecureCookie`.
         """
-        if isinstance(string, six.text_type):
+        if isinstance(string, text_type):
             string = string.encode('utf-8', 'replace')
-        if isinstance(secret_key, six.text_type):
+        if isinstance(secret_key, text_type):
             secret_key = secret_key.encode('utf-8', 'replace')
         try:
             base64_hash, data = string.split(b'?', 1)

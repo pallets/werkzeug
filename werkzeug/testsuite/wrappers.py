@@ -22,8 +22,7 @@ from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
      ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
      MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
 from werkzeug.test import Client, create_environ, run_wsgi_app
-
-import six
+from werkzeug._compat import implements_iterator, text_type
 
 
 class RequestTestResponse(wrappers.BaseResponse):
@@ -205,7 +204,8 @@ class WrappersTestCase(WerkzeugTestCase):
 
         # close call forwarding
         closed = []
-        class Iterable(six.Iterator):
+        @implements_iterator
+        class Iterable(object):
             def __next__(self):
                 raise StopIteration()
             def __iter__(self):
@@ -379,7 +379,7 @@ class WrappersTestCase(WerkzeugTestCase):
         response = WithFreeze('Hello World')
         response.freeze()
         self.assert_strict_equal(response.get_etag(),
-            (six.text_type(wrappers.generate_etag(b'Hello World')), False))
+            (text_type(wrappers.generate_etag(b'Hello World')), False))
         response = WithoutFreeze('Hello World')
         response.freeze()
         self.assert_equal(response.get_etag(), (None, None))

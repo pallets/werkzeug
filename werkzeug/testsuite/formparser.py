@@ -12,7 +12,7 @@
 from __future__ import with_statement
 
 import unittest
-from six import BytesIO
+from io import BytesIO
 from os.path import join, dirname
 
 from werkzeug.testsuite import WerkzeugTestCase
