@@ -385,9 +385,9 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
 
         expected = ['foo', 'bar']
 
-        self.assertSequenceEqual(list(d.keys()), expected)
-        self.assertSequenceEqual(list(d), expected)
-        self.assertSequenceEqual(list(iterkeys(d)), expected)
+        self.assert_sequence_equal(list(d.keys()), expected)
+        self.assert_sequence_equal(list(d), expected)
+        self.assert_sequence_equal(list(iterkeys(d)), expected)
 
         self.assert_equal(list(iteritems(d, multi=True)),
                           [('foo', 1), ('foo', 2), ('bar', 42), ('foo', 3)])
@@ -596,7 +596,7 @@ class HeadersTestCase(WerkzeugTestCase):
         h.set('Content-Type', 'application/whocares')
         h.set('X-Forwarded-For', '192.168.0.123')
         h[:] = [(k, v) for k, v in h if k.startswith(u'X-')]
-        self.assertEqual(list(h), [
+        self.assert_equal(list(h), [
             ('X-Foo-Poo', 'bleh'),
             ('X-Forwarded-For', '192.168.0.123')
         ])

@@ -78,9 +78,9 @@ class ServingTestCase(WerkzeugTestCase):
     def test_serving(self):
         server, addr = run_dev_server(test_app)
         rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        self.assertIn(b'WSGI Information', rv)
-        self.assertIn(b'foo=bar&amp;baz=blah', rv)
-        self.assertIn(b'Werkzeug/' + six.b(version), rv)
+        self.assert_in(b'WSGI Information', rv)
+        self.assert_in(b'foo=bar&amp;baz=blah', rv)
+        self.assert_in(b'Werkzeug/' + six.b(version), rv)
 
     @silencestderr
     def test_broken_app(self):

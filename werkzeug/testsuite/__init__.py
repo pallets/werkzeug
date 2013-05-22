@@ -65,8 +65,8 @@ class WerkzeugTestCase(unittest.TestCase):
     def assert_line_equal(self, x, y):
         assert x == y, "lines not equal\n a = %r\n b = %r" % (x, y)
 
-    def assert_equal(self, x, y):
-        return self.assertEqual(x, y)
+    def assert_equal(self, x, y, msg=None):
+        return self.assertEqual(x, y, msg)
 
     def assert_not_equal(self, x, y):
         return self.assertNotEqual(x, y)
@@ -130,6 +130,12 @@ class WerkzeugTestCase(unittest.TestCase):
 
     def assert_false(self, x):
         return self.assertFalse(x)
+
+    def assert_raises_regex(self, *args, **kwargs):
+        return self.assertRaisesRegex(*args, **kwargs)
+
+    def assert_sequence_equal(self, x, y):
+        return self.assertSequenceEqual(x, y)
 
     def assert_strict_equal(self, x, y):
         '''Stricter version of assert_equal that doesn't do implicit conversion

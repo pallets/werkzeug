@@ -513,7 +513,7 @@ class WrappersTestCase(WerkzeugTestCase):
                                            content_type='text/plain',
                                            method='WHAT_THE_FUCK')
         self.assert_equal(req.data, data)
-        self.assertIsInstance(req.stream, wrappers.LimitedStream)
+        self.assert_is_instance(req.stream, wrappers.LimitedStream)
 
     def test_urlfication(self):
         resp = wrappers.Response()
@@ -592,8 +592,8 @@ class WrappersTestCase(WerkzeugTestCase):
             ('bar', '0'),
             ('foo', '3')
         ])
-        self.assertIsInstance(req.args, ImmutableOrderedMultiDict)
-        self.assertIsInstance(req.values, CombinedMultiDict)
+        self.assert_is_instance(req.args, ImmutableOrderedMultiDict)
+        self.assert_is_instance(req.values, CombinedMultiDict)
         self.assert_equal(req.values['foo'], '1')
         self.assert_equal(req.values.getlist('foo'), ['1', '3'])
 

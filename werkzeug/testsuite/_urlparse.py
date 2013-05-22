@@ -40,62 +40,62 @@ class UrlParseTestCase(WerkzeugTestCase):
 
     def checkRoundtrips(self, url, parsed, split):
         result = urlparse.urlparse(url)
-        self.assertEqual(result, parsed)
+        self.assert_equal(result, parsed)
         t = (result.scheme, result.netloc, result.path,
              result.params, result.query, result.fragment)
-        self.assertEqual(t, parsed)
+        self.assert_equal(t, parsed)
         # put it back together and it should be the same
         result2 = urlparse.urlunparse(result)
-        self.assertEqual(result2, url)
-        self.assertEqual(result2, result.geturl())
+        self.assert_equal(result2, url)
+        self.assert_equal(result2, result.geturl())
 
         # the result of geturl() is a fixpoint; we can always parse it
         # again to get the same result:
         result3 = urlparse.urlparse(result.geturl())
-        self.assertEqual(result3.geturl(), result.geturl())
-        self.assertEqual(result3,          result)
-        self.assertEqual(result3.scheme,   result.scheme)
-        self.assertEqual(result3.netloc,   result.netloc)
-        self.assertEqual(result3.path,     result.path)
-        self.assertEqual(result3.params,   result.params)
-        self.assertEqual(result3.query,    result.query)
-        self.assertEqual(result3.fragment, result.fragment)
-        self.assertEqual(result3.username, result.username)
-        self.assertEqual(result3.password, result.password)
-        self.assertEqual(result3.hostname, result.hostname)
-        self.assertEqual(result3.port,     result.port)
+        self.assert_equal(result3.geturl(), result.geturl())
+        self.assert_equal(result3,          result)
+        self.assert_equal(result3.scheme,   result.scheme)
+        self.assert_equal(result3.netloc,   result.netloc)
+        self.assert_equal(result3.path,     result.path)
+        self.assert_equal(result3.params,   result.params)
+        self.assert_equal(result3.query,    result.query)
+        self.assert_equal(result3.fragment, result.fragment)
+        self.assert_equal(result3.username, result.username)
+        self.assert_equal(result3.password, result.password)
+        self.assert_equal(result3.hostname, result.hostname)
+        self.assert_equal(result3.port,     result.port)
 
         # check the roundtrip using urlsplit() as well
         result = urlparse.urlsplit(url)
-        self.assertEqual(result, split)
+        self.assert_equal(result, split)
         t = (result.scheme, result.netloc, result.path,
              result.query, result.fragment)
-        self.assertEqual(t, split)
+        self.assert_equal(t, split)
         result2 = urlparse.urlunsplit(result)
-        self.assertEqual(result2, url)
-        self.assertEqual(result2, result.geturl())
+        self.assert_equal(result2, url)
+        self.assert_equal(result2, result.geturl())
 
         # check the fixpoint property of re-parsing the result of geturl()
         result3 = urlparse.urlsplit(result.geturl())
-        self.assertEqual(result3.geturl(), result.geturl())
-        self.assertEqual(result3,          result)
-        self.assertEqual(result3.scheme,   result.scheme)
-        self.assertEqual(result3.netloc,   result.netloc)
-        self.assertEqual(result3.path,     result.path)
-        self.assertEqual(result3.query,    result.query)
-        self.assertEqual(result3.fragment, result.fragment)
-        self.assertEqual(result3.username, result.username)
-        self.assertEqual(result3.password, result.password)
-        self.assertEqual(result3.hostname, result.hostname)
-        self.assertEqual(result3.port,     result.port)
+        self.assert_equal(result3.geturl(), result.geturl())
+        self.assert_equal(result3,          result)
+        self.assert_equal(result3.scheme,   result.scheme)
+        self.assert_equal(result3.netloc,   result.netloc)
+        self.assert_equal(result3.path,     result.path)
+        self.assert_equal(result3.query,    result.query)
+        self.assert_equal(result3.fragment, result.fragment)
+        self.assert_equal(result3.username, result.username)
+        self.assert_equal(result3.password, result.password)
+        self.assert_equal(result3.hostname, result.hostname)
+        self.assert_equal(result3.port,     result.port)
 
     def test_qsl(self):
         for orig, expect in parse_qsl_test_cases:
             result = urlparse.parse_qsl(orig, keep_blank_values=True)
-            self.assertEqual(result, expect, "Error parsing %r" % orig)
+            self.assert_equal(result, expect, "Error parsing %r" % orig)
             expect_without_blanks = [v for v in expect if len(v[1])]
             result = urlparse.parse_qsl(orig, keep_blank_values=False)
-            self.assertEqual(result, expect_without_blanks,
+            self.assert_equal(result, expect_without_blanks,
                             "Error parsing %r" % orig)
 
     def test_roundtrips(self):
@@ -173,10 +173,10 @@ class UrlParseTestCase(WerkzeugTestCase):
 
     def checkJoin(self, base, relurl, expected):
         str_components = (base, relurl, expected)
-        self.assertEqual(urlparse.urljoin(base, relurl), expected)
+        self.assert_equal(urlparse.urljoin(base, relurl), expected)
         bytes_components = baseb, relurlb, expectedb = [
                             x.encode('ascii') for x in str_components]
-        self.assertEqual(urlparse.urljoin(baseb, relurlb), expectedb)
+        self.assert_equal(urlparse.urljoin(baseb, relurlb), expectedb)
 
     def test_unparse_parse(self):
         str_cases = [
@@ -185,8 +185,8 @@ class UrlParseTestCase(WerkzeugTestCase):
         ]
         bytes_cases = [x.encode('ascii') for x in str_cases]
         for u in str_cases + bytes_cases:
-            self.assertEqual(urlparse.urlunsplit(urlparse.urlsplit(u)), u)
-            self.assertEqual(urlparse.urlunparse(urlparse.urlparse(u)), u)
+            self.assert_equal(urlparse.urlunsplit(urlparse.urlsplit(u)), u)
+            self.assert_equal(urlparse.urlunparse(urlparse.urlparse(u)), u)
 
     def test_RFC1808(self):
         # "normal" cases from RFC 1808:
@@ -235,7 +235,7 @@ class UrlParseTestCase(WerkzeugTestCase):
 
     def test_RFC2368(self):
         # Issue 11467: path that starts with a number is not parsed correctly
-        self.assertEqual(urlparse.urlparse(u'mailto:1337@example.org'),
+        self.assert_equal(urlparse.urlparse(u'mailto:1337@example.org'),
                 (u'mailto', u'', u'1337@example.org', u'', u'', u''))
 
     def test_RFC2396(self):
@@ -404,7 +404,7 @@ class UrlParseTestCase(WerkzeugTestCase):
         bytes_cases = [_encode(x) for x in str_cases]
         for url, hostname, port in str_cases + bytes_cases:
             urlparsed = urlparse.urlparse(url)
-            self.assertEqual((urlparsed.hostname, urlparsed.port) , (hostname, port))
+            self.assert_equal((urlparsed.hostname, urlparsed.port) , (hostname, port))
 
         str_cases = [
                 u'http://::12.34.56.78]/',
@@ -414,7 +414,7 @@ class UrlParseTestCase(WerkzeugTestCase):
                 u'http://[::ffff:12.34.56.78']
         bytes_cases = [x.encode('ascii') for x in str_cases]
         for invalid_url in str_cases + bytes_cases:
-            self.assertRaises(ValueError, urlparse.urlparse, invalid_url)
+            self.assert_raises(ValueError, urlparse.urlparse, invalid_url)
 
     def test_urldefrag(self):
         str_cases = [
@@ -434,40 +434,40 @@ class UrlParseTestCase(WerkzeugTestCase):
         bytes_cases = [_encode(x) for x in str_cases]
         for url, defrag, frag in str_cases + bytes_cases:
             result = urlparse.urldefrag(url)
-            self.assertEqual(result.geturl(), url)
-            self.assertEqual(result, (defrag, frag))
-            self.assertEqual(result.url, defrag)
-            self.assertEqual(result.fragment, frag)
+            self.assert_equal(result.geturl(), url)
+            self.assert_equal(result, (defrag, frag))
+            self.assert_equal(result.url, defrag)
+            self.assert_equal(result.fragment, frag)
 
     def test_urlsplit_attributes(self):
         url = u"HTTP://WWW.PYTHON.ORG/doc/#frag"
         p = urlparse.urlsplit(url)
-        self.assertEqual(p.scheme, u"http")
-        self.assertEqual(p.netloc, u"WWW.PYTHON.ORG")
-        self.assertEqual(p.path, u"/doc/")
-        self.assertEqual(p.query, u"")
-        self.assertEqual(p.fragment, u"frag")
-        self.assertEqual(p.username, None)
-        self.assertEqual(p.password, None)
-        self.assertEqual(p.hostname, u"www.python.org")
-        self.assertEqual(p.port, None)
+        self.assert_equal(p.scheme, u"http")
+        self.assert_equal(p.netloc, u"WWW.PYTHON.ORG")
+        self.assert_equal(p.path, u"/doc/")
+        self.assert_equal(p.query, u"")
+        self.assert_equal(p.fragment, u"frag")
+        self.assert_equal(p.username, None)
+        self.assert_equal(p.password, None)
+        self.assert_equal(p.hostname, u"www.python.org")
+        self.assert_equal(p.port, None)
         # geturl() won't return exactly the original URL in this case
         # since the scheme is always case-normalized
         # We handle this by ignoring the first 4 characters of the URL
-        self.assertEqual(p.geturl()[4:], url[4:])
+        self.assert_equal(p.geturl()[4:], url[4:])
 
         url = u"http://User:Pass@www.python.org:080/doc/?query=yes#frag"
         p = urlparse.urlsplit(url)
-        self.assertEqual(p.scheme, u"http")
-        self.assertEqual(p.netloc, u"User:Pass@www.python.org:080")
-        self.assertEqual(p.path, u"/doc/")
-        self.assertEqual(p.query, u"query=yes")
-        self.assertEqual(p.fragment, u"frag")
-        self.assertEqual(p.username, u"User")
-        self.assertEqual(p.password, u"Pass")
-        self.assertEqual(p.hostname, u"www.python.org")
-        self.assertEqual(p.port, 80)
-        self.assertEqual(p.geturl(), url)
+        self.assert_equal(p.scheme, u"http")
+        self.assert_equal(p.netloc, u"User:Pass@www.python.org:080")
+        self.assert_equal(p.path, u"/doc/")
+        self.assert_equal(p.query, u"query=yes")
+        self.assert_equal(p.fragment, u"frag")
+        self.assert_equal(p.username, u"User")
+        self.assert_equal(p.password, u"Pass")
+        self.assert_equal(p.hostname, u"www.python.org")
+        self.assert_equal(p.port, 80)
+        self.assert_equal(p.geturl(), url)
 
         # Addressing issue1698, which suggests Username can contain
         # "@" characters.  Though not RFC compliant, many ftp sites allow
@@ -475,80 +475,80 @@ class UrlParseTestCase(WerkzeugTestCase):
 
         url = u"http://User@example.com:Pass@www.python.org:080/doc/?query=yes#frag"
         p = urlparse.urlsplit(url)
-        self.assertEqual(p.scheme, u"http")
-        self.assertEqual(p.netloc, u"User@example.com:Pass@www.python.org:080")
-        self.assertEqual(p.path, u"/doc/")
-        self.assertEqual(p.query, u"query=yes")
-        self.assertEqual(p.fragment, u"frag")
-        self.assertEqual(p.username, u"User@example.com")
-        self.assertEqual(p.password, u"Pass")
-        self.assertEqual(p.hostname, u"www.python.org")
-        self.assertEqual(p.port, 80)
-        self.assertEqual(p.geturl(), url)
+        self.assert_equal(p.scheme, u"http")
+        self.assert_equal(p.netloc, u"User@example.com:Pass@www.python.org:080")
+        self.assert_equal(p.path, u"/doc/")
+        self.assert_equal(p.query, u"query=yes")
+        self.assert_equal(p.fragment, u"frag")
+        self.assert_equal(p.username, u"User@example.com")
+        self.assert_equal(p.password, u"Pass")
+        self.assert_equal(p.hostname, u"www.python.org")
+        self.assert_equal(p.port, 80)
+        self.assert_equal(p.geturl(), url)
 
         # And check them all again, only with bytes this time
         url = b"HTTP://WWW.PYTHON.ORG/doc/#frag"
         p = urlparse.urlsplit(url)
-        self.assertEqual(p.scheme, b"http")
-        self.assertEqual(p.netloc, b"WWW.PYTHON.ORG")
-        self.assertEqual(p.path, b"/doc/")
-        self.assertEqual(p.query, b"")
-        self.assertEqual(p.fragment, b"frag")
-        self.assertEqual(p.username, None)
-        self.assertEqual(p.password, None)
-        self.assertEqual(p.hostname, b"www.python.org")
-        self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl()[4:], url[4:])
+        self.assert_equal(p.scheme, b"http")
+        self.assert_equal(p.netloc, b"WWW.PYTHON.ORG")
+        self.assert_equal(p.path, b"/doc/")
+        self.assert_equal(p.query, b"")
+        self.assert_equal(p.fragment, b"frag")
+        self.assert_equal(p.username, None)
+        self.assert_equal(p.password, None)
+        self.assert_equal(p.hostname, b"www.python.org")
+        self.assert_equal(p.port, None)
+        self.assert_equal(p.geturl()[4:], url[4:])
 
         url = b"http://User:Pass@www.python.org:080/doc/?query=yes#frag"
         p = urlparse.urlsplit(url)
-        self.assertEqual(p.scheme, b"http")
-        self.assertEqual(p.netloc, b"User:Pass@www.python.org:080")
-        self.assertEqual(p.path, b"/doc/")
-        self.assertEqual(p.query, b"query=yes")
-        self.assertEqual(p.fragment, b"frag")
-        self.assertEqual(p.username, b"User")
-        self.assertEqual(p.password, b"Pass")
-        self.assertEqual(p.hostname, b"www.python.org")
-        self.assertEqual(p.port, 80)
-        self.assertEqual(p.geturl(), url)
+        self.assert_equal(p.scheme, b"http")
+        self.assert_equal(p.netloc, b"User:Pass@www.python.org:080")
+        self.assert_equal(p.path, b"/doc/")
+        self.assert_equal(p.query, b"query=yes")
+        self.assert_equal(p.fragment, b"frag")
+        self.assert_equal(p.username, b"User")
+        self.assert_equal(p.password, b"Pass")
+        self.assert_equal(p.hostname, b"www.python.org")
+        self.assert_equal(p.port, 80)
+        self.assert_equal(p.geturl(), url)
 
         url = b"http://User@example.com:Pass@www.python.org:080/doc/?query=yes#frag"
         p = urlparse.urlsplit(url)
-        self.assertEqual(p.scheme, b"http")
-        self.assertEqual(p.netloc, b"User@example.com:Pass@www.python.org:080")
-        self.assertEqual(p.path, b"/doc/")
-        self.assertEqual(p.query, b"query=yes")
-        self.assertEqual(p.fragment, b"frag")
-        self.assertEqual(p.username, b"User@example.com")
-        self.assertEqual(p.password, b"Pass")
-        self.assertEqual(p.hostname, b"www.python.org")
-        self.assertEqual(p.port, 80)
-        self.assertEqual(p.geturl(), url)
+        self.assert_equal(p.scheme, b"http")
+        self.assert_equal(p.netloc, b"User@example.com:Pass@www.python.org:080")
+        self.assert_equal(p.path, b"/doc/")
+        self.assert_equal(p.query, b"query=yes")
+        self.assert_equal(p.fragment, b"frag")
+        self.assert_equal(p.username, b"User@example.com")
+        self.assert_equal(p.password, b"Pass")
+        self.assert_equal(p.hostname, b"www.python.org")
+        self.assert_equal(p.port, 80)
+        self.assert_equal(p.geturl(), url)
 
         # Verify an illegal port is returned as None
         url = b"HTTP://WWW.PYTHON.ORG:65536/doc/#frag"
         p = urlparse.urlsplit(url)
-        self.assertEqual(p.port, None)
+        self.assert_equal(p.port, None)
 
     def test_attributes_bad_port(self):
         """Check handling of non-integer ports."""
         p = urlparse.urlsplit(u"http://www.example.net:foo")
-        self.assertEqual(p.netloc, u"www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
+        self.assert_equal(p.netloc, u"www.example.net:foo")
+        self.assert_raises(ValueError, lambda: p.port)
 
         p = urlparse.urlparse(u"http://www.example.net:foo")
-        self.assertEqual(p.netloc, u"www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
+        self.assert_equal(p.netloc, u"www.example.net:foo")
+        self.assert_raises(ValueError, lambda: p.port)
 
         # Once again, repeat ourselves to test bytes
         p = urlparse.urlsplit(b"http://www.example.net:foo")
-        self.assertEqual(p.netloc, b"www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
+        self.assert_equal(p.netloc, b"www.example.net:foo")
+        self.assert_raises(ValueError, lambda: p.port)
 
         p = urlparse.urlparse(b"http://www.example.net:foo")
-        self.assertEqual(p.netloc, b"www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
+        self.assert_equal(p.netloc, b"www.example.net:foo")
+        self.assert_raises(ValueError, lambda: p.port)
 
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
@@ -558,44 +558,44 @@ class UrlParseTestCase(WerkzeugTestCase):
         # should be left empty.
         uri = u"sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15"
         p = urlparse.urlsplit(uri)
-        self.assertEqual(p.netloc, u"")
-        self.assertEqual(p.username, None)
-        self.assertEqual(p.password, None)
-        self.assertEqual(p.hostname, None)
-        self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), uri)
+        self.assert_equal(p.netloc, u"")
+        self.assert_equal(p.username, None)
+        self.assert_equal(p.password, None)
+        self.assert_equal(p.hostname, None)
+        self.assert_equal(p.port, None)
+        self.assert_equal(p.geturl(), uri)
 
         p = urlparse.urlparse(uri)
-        self.assertEqual(p.netloc, u"")
-        self.assertEqual(p.username, None)
-        self.assertEqual(p.password, None)
-        self.assertEqual(p.hostname, None)
-        self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), uri)
+        self.assert_equal(p.netloc, u"")
+        self.assert_equal(p.username, None)
+        self.assert_equal(p.password, None)
+        self.assert_equal(p.hostname, None)
+        self.assert_equal(p.port, None)
+        self.assert_equal(p.geturl(), uri)
 
         # You guessed it, repeating the test with bytes input
         uri = b"sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15"
         p = urlparse.urlsplit(uri)
-        self.assertEqual(p.netloc, b"")
-        self.assertEqual(p.username, None)
-        self.assertEqual(p.password, None)
-        self.assertEqual(p.hostname, None)
-        self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), uri)
+        self.assert_equal(p.netloc, b"")
+        self.assert_equal(p.username, None)
+        self.assert_equal(p.password, None)
+        self.assert_equal(p.hostname, None)
+        self.assert_equal(p.port, None)
+        self.assert_equal(p.geturl(), uri)
 
         p = urlparse.urlparse(uri)
-        self.assertEqual(p.netloc, b"")
-        self.assertEqual(p.username, None)
-        self.assertEqual(p.password, None)
-        self.assertEqual(p.hostname, None)
-        self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), uri)
+        self.assert_equal(p.netloc, b"")
+        self.assert_equal(p.username, None)
+        self.assert_equal(p.password, None)
+        self.assert_equal(p.hostname, None)
+        self.assert_equal(p.port, None)
+        self.assert_equal(p.geturl(), uri)
 
     def test_noslash(self):
         # Issue 1637: http://foo.com?query is legal
-        self.assertEqual(urlparse.urlparse("http://example.com?blahblah=/foo"),
+        self.assert_equal(urlparse.urlparse("http://example.com?blahblah=/foo"),
                          (u'http', u'example.com', u'', u'', u'blahblah=/foo', u''))
-        self.assertEqual(urlparse.urlparse(b"http://example.com?blahblah=/foo"),
+        self.assert_equal(urlparse.urlparse(b"http://example.com?blahblah=/foo"),
                          (b'http', b'example.com', b'', b'', b'blahblah=/foo', b''))
 
     def test_withoutscheme(self):
@@ -603,109 +603,109 @@ class UrlParseTestCase(WerkzeugTestCase):
         # Issue 754016: urlparse goes wrong with IP:port without scheme
         # RFC 1808 specifies that netloc should start with //, urlparse expects
         # the same, otherwise it classifies the portion of url as path.
-        self.assertEqual(urlparse.urlparse("path"),
+        self.assert_equal(urlparse.urlparse("path"),
                 (u'',u'',u'path',u'',u'',u''))
-        self.assertEqual(urlparse.urlparse("//www.python.org:80"),
+        self.assert_equal(urlparse.urlparse("//www.python.org:80"),
                 (u'',u'www.python.org:80',u'',u'',u'',u''))
-        self.assertEqual(urlparse.urlparse("http://www.python.org:80"),
+        self.assert_equal(urlparse.urlparse("http://www.python.org:80"),
                 (u'http',u'www.python.org:80',u'',u'',u'',u''))
         # Repeat for bytes input
-        self.assertEqual(urlparse.urlparse(b"path"),
+        self.assert_equal(urlparse.urlparse(b"path"),
                 (b'',b'',b'path',b'',b'',b''))
-        self.assertEqual(urlparse.urlparse(b"//www.python.org:80"),
+        self.assert_equal(urlparse.urlparse(b"//www.python.org:80"),
                 (b'',b'www.python.org:80',b'',b'',b'',b''))
-        self.assertEqual(urlparse.urlparse(b"http://www.python.org:80"),
+        self.assert_equal(urlparse.urlparse(b"http://www.python.org:80"),
                 (b'http',b'www.python.org:80',b'',b'',b'',b''))
 
     def test_portseparator(self):
         # Issue 754016 makes changes for port separator ':' from scheme separator
-        self.assertEqual(urlparse.urlparse("path:80"),
+        self.assert_equal(urlparse.urlparse("path:80"),
                 (u'',u'',u'path:80',u'',u'',u''))
-        self.assertEqual(urlparse.urlparse("http:"),(u'http',u'',u'',u'',u'',u''))
-        self.assertEqual(urlparse.urlparse("https:"),(u'https',u'',u'',u'',u'',u''))
-        self.assertEqual(urlparse.urlparse("http://www.python.org:80"),
+        self.assert_equal(urlparse.urlparse("http:"),(u'http',u'',u'',u'',u'',u''))
+        self.assert_equal(urlparse.urlparse("https:"),(u'https',u'',u'',u'',u'',u''))
+        self.assert_equal(urlparse.urlparse("http://www.python.org:80"),
                 (u'http',u'www.python.org:80',u'',u'',u'',u''))
         # As usual, need to check bytes input as well
-        self.assertEqual(urlparse.urlparse(b"path:80"),
+        self.assert_equal(urlparse.urlparse(b"path:80"),
                 (b'',b'',b'path:80',b'',b'',b''))
-        self.assertEqual(urlparse.urlparse(b"http:"),(b'http',b'',b'',b'',b'',b''))
-        self.assertEqual(urlparse.urlparse(b"https:"),(b'https',b'',b'',b'',b'',b''))
-        self.assertEqual(urlparse.urlparse(b"http://www.python.org:80"),
+        self.assert_equal(urlparse.urlparse(b"http:"),(b'http',b'',b'',b'',b'',b''))
+        self.assert_equal(urlparse.urlparse(b"https:"),(b'https',b'',b'',b'',b'',b''))
+        self.assert_equal(urlparse.urlparse(b"http://www.python.org:80"),
                 (b'http',b'www.python.org:80',b'',b'',b'',b''))
 
     def test_usingsys(self):
         # Issue 3314: sys module is used in the error
-        self.assertRaises(TypeError, urlparse.urlencode, "foo")
+        self.assert_raises(TypeError, urlparse.urlencode, "foo")
 
     def test_anyscheme(self):
         # Issue 7904: s3://foo.com/stuff has netloc "foo.com".
-        self.assertEqual(urlparse.urlparse("s3://foo.com/stuff"),
+        self.assert_equal(urlparse.urlparse("s3://foo.com/stuff"),
                          (u's3', u'foo.com', u'/stuff', u'', u'', u''))
-        self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff"),
+        self.assert_equal(urlparse.urlparse("x-newscheme://foo.com/stuff"),
                          (u'x-newscheme', u'foo.com', u'/stuff', u'', u'', u''))
-        self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff?query#fragment"),
+        self.assert_equal(urlparse.urlparse("x-newscheme://foo.com/stuff?query#fragment"),
                          (u'x-newscheme', u'foo.com', u'/stuff', u'', u'query', u'fragment'))
-        self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff?query"),
+        self.assert_equal(urlparse.urlparse("x-newscheme://foo.com/stuff?query"),
                          (u'x-newscheme', u'foo.com', u'/stuff', u'', u'query', u''))
 
         # And for bytes...
-        self.assertEqual(urlparse.urlparse(b"s3://foo.com/stuff"),
+        self.assert_equal(urlparse.urlparse(b"s3://foo.com/stuff"),
                          (b's3', b'foo.com', b'/stuff', b'', b'', b''))
-        self.assertEqual(urlparse.urlparse(b"x-newscheme://foo.com/stuff"),
+        self.assert_equal(urlparse.urlparse(b"x-newscheme://foo.com/stuff"),
                          (b'x-newscheme', b'foo.com', b'/stuff', b'', b'', b''))
-        self.assertEqual(urlparse.urlparse(b"x-newscheme://foo.com/stuff?query#fragment"),
+        self.assert_equal(urlparse.urlparse(b"x-newscheme://foo.com/stuff?query#fragment"),
                          (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b'fragment'))
-        self.assertEqual(urlparse.urlparse(b"x-newscheme://foo.com/stuff?query"),
+        self.assert_equal(urlparse.urlparse(b"x-newscheme://foo.com/stuff?query"),
                          (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b''))
 
     def test_mixed_types_rejected(self):
         # Several functions that process either strings or ASCII encoded bytes
         # accept multiple arguments. Check they reject mixed type input
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlparse(u"www.python.org", b"http")
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlparse(b"www.python.org", u"http")
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlsplit(u"www.python.org", b"http")
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlsplit(b"www.python.org", u"http")
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlunparse(( b"http", u"www.python.org",u"",u"",u"",u""))
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlunparse((u"http", b"www.python.org",u"",u"",u"",u""))
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlunsplit((b"http", u"www.python.org",u"",u"",u""))
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urlunsplit((u"http", b"www.python.org",u"",u"",u""))
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urljoin(u"http://python.org", b"http://python.org")
-        with self.assertRaisesRegex(TypeError, "Cannot mix str"):
+        with self.assert_raises_regex(TypeError, "Cannot mix str"):
             urlparse.urljoin(b"http://python.org", u"http://python.org")
 
     def _check_result_type(self, str_type):
         num_args = len(str_type._fields)
         bytes_type = str_type._encoded_counterpart
-        self.assertIs(bytes_type._decoded_counterpart, str_type)
+        self.assert_is(bytes_type._decoded_counterpart, str_type)
         str_args = (u'',) * num_args
         bytes_args = (b'',) * num_args
         str_result = str_type(*str_args)
         bytes_result = bytes_type(*bytes_args)
         encoding = 'ascii'
         errors = 'strict'
-        self.assertEqual(str_result, str_args)
-        self.assertEqual(bytes_result.decode(), str_args)
-        self.assertEqual(bytes_result.decode(), str_result)
-        self.assertEqual(bytes_result.decode(encoding), str_args)
-        self.assertEqual(bytes_result.decode(encoding), str_result)
-        self.assertEqual(bytes_result.decode(encoding, errors), str_args)
-        self.assertEqual(bytes_result.decode(encoding, errors), str_result)
-        self.assertEqual(bytes_result, bytes_args)
-        self.assertEqual(str_result.encode(), bytes_args)
-        self.assertEqual(str_result.encode(), bytes_result)
-        self.assertEqual(str_result.encode(encoding), bytes_args)
-        self.assertEqual(str_result.encode(encoding), bytes_result)
-        self.assertEqual(str_result.encode(encoding, errors), bytes_args)
-        self.assertEqual(str_result.encode(encoding, errors), bytes_result)
+        self.assert_equal(str_result, str_args)
+        self.assert_equal(bytes_result.decode(), str_args)
+        self.assert_equal(bytes_result.decode(), str_result)
+        self.assert_equal(bytes_result.decode(encoding), str_args)
+        self.assert_equal(bytes_result.decode(encoding), str_result)
+        self.assert_equal(bytes_result.decode(encoding, errors), str_args)
+        self.assert_equal(bytes_result.decode(encoding, errors), str_result)
+        self.assert_equal(bytes_result, bytes_args)
+        self.assert_equal(str_result.encode(), bytes_args)
+        self.assert_equal(str_result.encode(), bytes_result)
+        self.assert_equal(str_result.encode(encoding), bytes_args)
+        self.assert_equal(str_result.encode(encoding), bytes_result)
+        self.assert_equal(str_result.encode(encoding, errors), bytes_args)
+        self.assert_equal(str_result.encode(encoding, errors), bytes_result)
 
     def test_result_pairs(self):
         # Check encoding and decoding between result pairs
@@ -719,66 +719,66 @@ class UrlParseTestCase(WerkzeugTestCase):
 
     def test_parse_qs_encoding(self):
         result = urlparse.parse_qs(u"key=\u0141%E9", encoding="latin-1")
-        self.assertEqual(result, {u'key': [u'\u0141\xE9']})
+        self.assert_equal(result, {u'key': [u'\u0141\xE9']})
         result = urlparse.parse_qs(u"key=\u0141%C3%A9", encoding="utf-8")
-        self.assertEqual(result, {u'key': [u'\u0141\xE9']})
+        self.assert_equal(result, {u'key': [u'\u0141\xE9']})
         result = urlparse.parse_qs(u"key=\u0141%C3%A9", encoding="ascii")
-        self.assertEqual(result, {u'key': [u'\u0141\ufffd\ufffd']})
+        self.assert_equal(result, {u'key': [u'\u0141\ufffd\ufffd']})
         result = urlparse.parse_qs(u"key=\u0141%E9-", encoding="ascii")
-        self.assertEqual(result, {u'key': [u'\u0141\ufffd-']})
+        self.assert_equal(result, {u'key': [u'\u0141\ufffd-']})
         result = urlparse.parse_qs(u"key=\u0141%E9-", encoding="ascii",
                                                           errors="ignore")
-        self.assertEqual(result, {u'key': [u'\u0141-']})
+        self.assert_equal(result, {u'key': [u'\u0141-']})
 
     def test_parse_qsl_encoding(self):
         result = urlparse.parse_qsl(u"key=\u0141%E9", encoding="latin-1")
-        self.assertEqual(result, [(u'key', u'\u0141\xE9')])
+        self.assert_equal(result, [(u'key', u'\u0141\xE9')])
         result = urlparse.parse_qsl(u"key=\u0141%C3%A9", encoding="utf-8")
-        self.assertEqual(result, [(u'key', u'\u0141\xE9')])
+        self.assert_equal(result, [(u'key', u'\u0141\xE9')])
         result = urlparse.parse_qsl(u"key=\u0141%C3%A9", encoding="ascii")
-        self.assertEqual(result, [(u'key', u'\u0141\ufffd\ufffd')])
+        self.assert_equal(result, [(u'key', u'\u0141\ufffd\ufffd')])
         result = urlparse.parse_qsl(u"key=\u0141%E9-", encoding="ascii")
-        self.assertEqual(result, [(u'key', u'\u0141\ufffd-')])
+        self.assert_equal(result, [(u'key', u'\u0141\ufffd-')])
         result = urlparse.parse_qsl(u"key=\u0141%E9-", encoding="ascii",
                                                           errors="ignore")
-        self.assertEqual(result, [(u'key', u'\u0141-')])
+        self.assert_equal(result, [(u'key', u'\u0141-')])
 
     def test_splitnport(self):
         # Normal cases are exercised by other tests; ensure that we also
         # catch cases with no port specified. (testcase ensuring coverage)
         result = urlparse.splitnport(u'parrot:88')
-        self.assertEqual(result, (u'parrot', 88))
+        self.assert_equal(result, (u'parrot', 88))
         result = urlparse.splitnport(u'parrot')
-        self.assertEqual(result, (u'parrot', -1))
+        self.assert_equal(result, (u'parrot', -1))
         result = urlparse.splitnport(u'parrot', 55)
-        self.assertEqual(result, (u'parrot', 55))
+        self.assert_equal(result, (u'parrot', 55))
         result = urlparse.splitnport(u'parrot:')
-        self.assertEqual(result, (u'parrot', None))
+        self.assert_equal(result, (u'parrot', None))
 
     def test_splitquery(self):
         # Normal cases are exercised by other tests; ensure that we also
         # catch cases with no port specified (testcase ensuring coverage)
         result = urlparse.splitquery(u'http://python.org/fake?foo=bar')
-        self.assertEqual(result, (u'http://python.org/fake', u'foo=bar'))
+        self.assert_equal(result, (u'http://python.org/fake', u'foo=bar'))
         result = urlparse.splitquery(u'http://python.org/fake?foo=bar?')
-        self.assertEqual(result, (u'http://python.org/fake?foo=bar', u''))
+        self.assert_equal(result, (u'http://python.org/fake?foo=bar', u''))
         result = urlparse.splitquery(u'http://python.org/fake')
-        self.assertEqual(result, (u'http://python.org/fake', None))
+        self.assert_equal(result, (u'http://python.org/fake', None))
 
     def test_splitvalue(self):
         # Normal cases are exercised by other tests; test pathological cases
         # with no key/value pairs. (testcase ensuring coverage)
         result = urlparse.splitvalue(u'foo=bar')
-        self.assertEqual(result, (u'foo', u'bar'))
+        self.assert_equal(result, (u'foo', u'bar'))
         result = urlparse.splitvalue(u'foo=')
-        self.assertEqual(result, (u'foo', u''))
+        self.assert_equal(result, (u'foo', u''))
         result = urlparse.splitvalue(u'foobar')
-        self.assertEqual(result, (u'foobar', None))
+        self.assert_equal(result, (u'foobar', None))
 
     def test_to_bytes(self):
         result = urlparse.to_bytes(u'http://www.python.org')
-        self.assertEqual(result, u'http://www.python.org')
-        self.assertRaises(UnicodeError, urlparse.to_bytes,
+        self.assert_equal(result, u'http://www.python.org')
+        self.assert_raises(UnicodeError, urlparse.to_bytes,
                           u'http://www.python.org/medi\u00e6val')
 
     def test_urlencode_sequences(self):
@@ -800,78 +800,78 @@ class UrlParseTestCase(WerkzeugTestCase):
                     return u'trivial'
 
         result = urlparse.urlencode({u'a': Trivial()}, True)
-        self.assertEqual(result, u'a=trivial')
+        self.assert_equal(result, u'a=trivial')
 
     def test_quote_from_bytes(self):
-        self.assertRaises(TypeError, urlparse.quote_from_bytes, u'foo')
+        self.assert_raises(TypeError, urlparse.quote_from_bytes, u'foo')
         result = urlparse.quote_from_bytes(b'archaeological arcana')
-        self.assertEqual(result, u'archaeological%20arcana')
+        self.assert_equal(result, u'archaeological%20arcana')
         result = urlparse.quote_from_bytes(b'')
-        self.assertEqual(result, u'')
+        self.assert_equal(result, u'')
 
         result = urlparse.quote_from_bytes(bytearray(b'archaeological arcana'))
-        self.assertEqual(result, u'archaeological%20arcana')
+        self.assert_equal(result, u'archaeological%20arcana')
         result = urlparse.quote_from_bytes(bytearray())
-        self.assertEqual(result, u'')
+        self.assert_equal(result, u'')
 
     def test_unquote_to_bytes(self):
         result = urlparse.unquote_to_bytes(u'abc%20def')
-        self.assertEqual(result, b'abc def')
+        self.assert_equal(result, b'abc def')
         result = urlparse.unquote_to_bytes(u'')
-        self.assertEqual(result, b'')
+        self.assert_equal(result, b'')
 
     def test_unquote_to_bytes_unsafe(self):
         result = urlparse.unquote_to_bytes(u'abc%20d%21ef', unsafe=b'!')
-        self.assertEqual(result, b'abc d%21ef')
+        self.assert_equal(result, b'abc d%21ef')
 
     def test_quote_errors(self):
-        self.assertRaises(TypeError, urlparse.quote, b'foo',
+        self.assert_raises(TypeError, urlparse.quote, b'foo',
                           encoding='utf-8')
-        self.assertRaises(TypeError, urlparse.quote, b'foo', errors='strict')
+        self.assert_raises(TypeError, urlparse.quote, b'foo', errors='strict')
 
     def test_issue14072(self):
         p1 = urlparse.urlsplit(u'tel:+31-641044153')
-        self.assertEqual(p1.scheme, u'tel')
-        self.assertEqual(p1.path, u'+31-641044153')
+        self.assert_equal(p1.scheme, u'tel')
+        self.assert_equal(p1.path, u'+31-641044153')
         p2 = urlparse.urlsplit(u'tel:+31641044153')
-        self.assertEqual(p2.scheme, u'tel')
-        self.assertEqual(p2.path, u'+31641044153')
+        self.assert_equal(p2.scheme, u'tel')
+        self.assert_equal(p2.path, u'+31641044153')
         # assert the behavior for urlparse
         p1 = urlparse.urlparse(u'tel:+31-641044153')
-        self.assertEqual(p1.scheme, u'tel')
-        self.assertEqual(p1.path, u'+31-641044153')
+        self.assert_equal(p1.scheme, u'tel')
+        self.assert_equal(p1.path, u'+31-641044153')
         p2 = urlparse.urlparse(u'tel:+31641044153')
-        self.assertEqual(p2.scheme, u'tel')
-        self.assertEqual(p2.path, u'+31641044153')
+        self.assert_equal(p2.scheme, u'tel')
+        self.assert_equal(p2.path, u'+31641044153')
 
     def test_telurl_params(self):
         p1 = urlparse.urlparse(u'tel:123-4;phone-context=+1-650-516')
-        self.assertEqual(p1.scheme, u'tel')
-        self.assertEqual(p1.path, u'123-4')
-        self.assertEqual(p1.params, u'phone-context=+1-650-516')
+        self.assert_equal(p1.scheme, u'tel')
+        self.assert_equal(p1.path, u'123-4')
+        self.assert_equal(p1.params, u'phone-context=+1-650-516')
 
         p1 = urlparse.urlparse(u'tel:+1-201-555-0123')
-        self.assertEqual(p1.scheme, u'tel')
-        self.assertEqual(p1.path, u'+1-201-555-0123')
-        self.assertEqual(p1.params, u'')
+        self.assert_equal(p1.scheme, u'tel')
+        self.assert_equal(p1.path, u'+1-201-555-0123')
+        self.assert_equal(p1.params, u'')
 
         p1 = urlparse.urlparse(u'tel:7042;phone-context=example.com')
-        self.assertEqual(p1.scheme, u'tel')
-        self.assertEqual(p1.path, u'7042')
-        self.assertEqual(p1.params, u'phone-context=example.com')
+        self.assert_equal(p1.scheme, u'tel')
+        self.assert_equal(p1.path, u'7042')
+        self.assert_equal(p1.params, u'phone-context=example.com')
 
         p1 = urlparse.urlparse(u'tel:863-1234;phone-context=+1-914-555')
-        self.assertEqual(p1.scheme, u'tel')
-        self.assertEqual(p1.path, u'863-1234')
-        self.assertEqual(p1.params, u'phone-context=+1-914-555')
+        self.assert_equal(p1.scheme, u'tel')
+        self.assert_equal(p1.path, u'863-1234')
+        self.assert_equal(p1.params, u'phone-context=+1-914-555')
 
     def test_unwrap(self):
         url = urlparse.unwrap(u'<URL:type://host/path>')
-        self.assertEqual(url, u'type://host/path')
+        self.assert_equal(url, u'type://host/path')
 
     def test_Quoter_repr(self):
         quoter = urlparse.Quoter(b'')
-        self.assertIn(u'Quoter', repr(quoter))
+        self.assert_in(u'Quoter', repr(quoter))
 
 
 def suite():

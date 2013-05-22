@@ -96,7 +96,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_line_equal(x, 'http://example.com/?foo=%2f%2f')
 
         x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
-        self.assertEqual(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+        self.assert_equal(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
 
     def test_iri_support(self):
         if not six.PY3:
@@ -129,7 +129,7 @@ class URLsTestCase(WerkzeugTestCase):
         d.add('foo', 3)
         d.add('bar', 0)
         d.add('foo', 4)
-        self.assertEqual(urls.url_encode(d), u'foo=1&foo=2&foo=3&bar=0&foo=4')
+        self.assert_equal(urls.url_encode(d), u'foo=1&foo=2&foo=3&bar=0&foo=4')
 
     def test_href(self):
         x = urls.Href(u'http://www.example.com/')
