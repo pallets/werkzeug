@@ -850,7 +850,9 @@ class Headers(object):
                 return self._list[key]
             elif isinstance(key, slice):
                 return self.__class__(self._list[key])
-        ikey = to_unicode(key, 'ascii').lower()
+        if not isinstance(key, string_types):
+            raise BadRequestKeyError(key)
+        ikey = key.lower()
         for k, v in self._list:
             if k.lower() == ikey:
                 return v
