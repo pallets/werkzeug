@@ -45,19 +45,19 @@ def iter_multi_items(mapping):
 
 
 def native_itermethods(names):
+    if not PY2:
+        return lambda x: x
     def setmethod(cls, name):
         itermethod = getattr(cls, name)
-        if PY2:
-            setattr(cls, 'iter%s' % name, itermethod)
-            listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
-            listmethod.__doc__ = \
-                    'Like :py:meth:`iter%s`, but returns a list.' % name
-            setattr(cls, name, listmethod)
+        setattr(cls, 'iter%s' % name, itermethod)
+        listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
+        listmethod.__doc__ = \
+                'Like :py:meth:`iter%s`, but returns a list.' % name
+        setattr(cls, name, listmethod)
 
     def wrap(cls):
         for name in names:
             setmethod(cls, name)
-
         return cls
     return wrap
 
