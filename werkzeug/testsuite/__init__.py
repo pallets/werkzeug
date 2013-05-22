@@ -11,11 +11,9 @@
 
 from __future__ import with_statement
 
+import re
 import sys
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 import six
 from werkzeug.utils import import_string, find_modules
 
@@ -78,64 +76,79 @@ class WerkzeugTestCase(unittest.TestCase):
         with catcher:
             callable(*args, **kwargs)
 
-    if not six.PY3:
+    if sys.version_info[:2] == (2, 6):
+        def assertIsNone(self, x):
+            assert x is None, "%r is not None" % (x,)
+
+        def assertIsNotNone(self, x):
+            assert x is not None, "%r is None" % (x, )
+
+        def assertIn(self, x, y):
+            assert x in y, "%r not in %r" % (x, y)
+
+        def assertNotIn(self, x, y):
+            assert x not in y, "%r in %r" % (x, y)
+
+        def assertIsInstance(self, x, y):
+            assert isinstance(x, y), "not isinstance(%r, %r)" % (x, y)
+
+        def assertIs(self, x, y):
+            assert x is y, "%r is not %r" % (x, y)
+
+        def assertIsNot(self, x, y):
+            assert x is not y, "%r is %r" % (x, y)
+
+        def assertSequenceEqual(self, x, y):
+            self.assertEqual(x, y)
+
+        def assertRaisesRegex(self, exc_type, regex, *args, **kwargs):
+            catcher = _ExceptionCatcher(self, exc_type)
+            if not args:
+                return catcher
+            elif callable(args[0]):
+                with catcher:
+                    args[0](*args[1:], **kwargs)
+                if args[0] is not None:
+                    assert re.search(args[0], catcher.exc_value[0])
+            else:
+                raise NotImplementedError()
+
+    elif sys.version_info[0] == 2:
         def assertRaisesRegex(self, *args, **kwargs):
             return self.assertRaisesRegexp(*args, **kwargs)
 
-    if sys.version_info[:2] == (2, 6):
-        def assert_is_none(self, x):
-            assert x is None, "%r is not None" % (x,)
+    def assert_is_none(self, x):
+        self.assertIsNone(x)
 
-        def assert_is_not_none(self, x):
-            assert x is not None, "%r is None" % (x, )
+    def assert_is_not_none(self, x):
+        self.assertIsNotNone(x)
 
-        def assert_in(self, x, y):
-            assert x in y, "%r not in %r" % (x, y)
+    def assert_in(self, x, y):
+        self.assertIn(x, y)
 
-        def assert_not_in(self, x, y):
-            assert x not in y, "%r in %r" % (x, y)
+    def assert_is_instance(self, x, y):
+        self.assertIsInstance(x, y)
 
-        def assert_is_instance(self, x, y):
-            assert isinstance(x, y), "not isinstance(%r, %r)" % (x, y)
+    def assert_not_in(self, x, y):
+        self.assertNotIn(x, y)
 
-        def assert_is(self, x, y):
-            assert x is y, "%r is not %r" % (x, y)
+    def assert_is(self, x, y):
+        self.assertIs(x, y)
 
-        def assert_is_not(self, x, y):
-            assert x is not y, "%r is %r" % (x, y)
-    else:
-        def assert_is_none(self, x):
-            return self.assertIsNone(x)
-
-        def assert_is_not_none(self, x):
-            return self.assertIsNotNone(x)
-
-        def assert_in(self, x, y):
-            return self.assertIn(x, y)
-
-        def assert_is_instance(self, x, y):
-            return self.assertIsInstance(x, y)
-
-        def assert_not_in(self, x, y):
-            return self.assertNotIn(x, y)
-
-        def assert_is(self, x, y):
-            return self.assertIs(x, y)
-
-        def assert_is_not(self, x, y):
-            return self.assertIsNot(x, y)
+    def assert_is_not(self, x, y):
+        self.assertIsNot(x, y)
 
     def assert_true(self, x):
-        return self.assertTrue(x)
+        self.assertTrue(x)
 
     def assert_false(self, x):
-        return self.assertFalse(x)
+        self.assertFalse(x)
 
     def assert_raises_regex(self, *args, **kwargs):
         return self.assertRaisesRegex(*args, **kwargs)
 
     def assert_sequence_equal(self, x, y):
-        return self.assertSequenceEqual(x, y)
+        self.assertSequenceEqual(x, y)
 
     def assert_strict_equal(self, x, y):
         '''Stricter version of assert_equal that doesn't do implicit conversion
@@ -159,6 +172,7 @@ class _ExceptionCatcher(object):
     def __init__(self, test_case, exc_type):
         self.test_case = test_case
         self.exc_type = exc_type
+        self.exc_value = None
 
     def __enter__(self):
         return self
@@ -170,6 +184,7 @@ class _ExceptionCatcher(object):
                                 exception_name)
         elif not issubclass(exc_type, self.exc_type):
             six.reraise(exc_type, exc_value, tb)
+        self.exc_value = exc_value
         return True
 
 
