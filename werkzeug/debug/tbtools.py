@@ -264,7 +264,9 @@ class Traceback(object):
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
-        tb = self.plaintext.encode('utf-8', 'replace').rstrip() + '\n'
+        tb = self.plaintext.rstrip() + u'\n'
+        if PY2:
+            tb.encode('utf-8', 'replace')
         logfile.write(tb)
 
     def paste(self, lodgeit_url):
