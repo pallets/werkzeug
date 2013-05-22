@@ -60,9 +60,10 @@
 import sys
 
 from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
-from werkzeug._compat import PY2, iteritems, integer_types
+from werkzeug._compat import PY2, iteritems, integer_types, implements_to_string
 
 
+@implements_to_string
 class HTTPException(Exception):
     """
     Baseclass for all HTTP exceptions.  This exception can be called as WSGI
@@ -143,19 +144,12 @@ class HTTPException(Exception):
         response = self.get_response(environ)
         return response(environ, start_response)
 
-    def __unicode__(self):
+    def __str__(self):
         if 'description' in self.__dict__:
             txt = self.description
         else:
             txt = self.name
         return '%d: %s' % (self.code, txt)
-
-    if PY2:
-        def __str__(self):
-            return unicode(self).encode('utf-8')
-    else:
-        __str__ = __unicode__
-
 
     def __repr__(self):
         return '<%s \'%s\'>' % (self.__class__.__name__, self)

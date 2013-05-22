@@ -25,6 +25,7 @@ from datetime import datetime
 from six import string_types
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
+from werkzeug._compat import implements_to_string
 
 
 XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
@@ -46,6 +47,7 @@ def format_iso8601(obj):
     return obj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
+@implements_to_string
 class AtomFeed(object):
     """A helper class that creates Atom feeds.
 
@@ -216,13 +218,11 @@ class AtomFeed(object):
         """Use the class as WSGI response object."""
         return self.get_response()(environ, start_response)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.to_string()
 
-    def __str__(self):
-        return self.to_string().encode('utf-8')
 
-
+@implements_to_string
 class FeedEntry(object):
     """Represents a single entry in a feed.
 
@@ -343,8 +343,5 @@ class FeedEntry(object):
         """Convert the feed item into a unicode object."""
         return u''.join(self.generate())
 
-    def __unicode__(self):
-        return self.to_string()
-
     def __str__(self):
-        return self.to_string().encode('utf-8')
+        return self.to_string()

@@ -32,6 +32,11 @@ if PY2:
         del cls.__next__
         return cls
 
+    def implements_to_string(cls):
+        cls.__unicode__ = cls.__str__
+        cls.__str__ = lambda x: x.__unicode__().encode('utf-8')
+        return cls
+
     from itertools import imap, izip, ifilter
     xrange = xrange
     def exec_(code, globals=None, locals=None):
@@ -68,6 +73,7 @@ else:
         raise value
 
     implements_iterator = _identity
+    implements_to_string = _identity
     imap = map
     izip = zip
     ifilter = filter

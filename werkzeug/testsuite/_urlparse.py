@@ -1,7 +1,7 @@
 import unittest
 
 import werkzeug._urlparse as urlparse
-from werkzeug._compat import PY2
+from werkzeug._compat import implements_to_string
 from werkzeug.testsuite import WerkzeugTestCase
 
 RFC1808_BASE = u"http://a/b/c/d;p?q#f"
@@ -789,16 +789,10 @@ class UrlParseTestCase(WerkzeugTestCase):
         # we cannot rely on ordering here
         assert set(result.split(u'&')) == set([u'a=1', u'a=2', u'b=3', u'b=4', u'b=5'])
 
+        @implements_to_string
         class Trivial(object):
-            if PY2:
-                def __str__(self):
-                    return b'trivial'
-
-                def __unicode__(self):
-                    return u'trivial'
-            else:
-                def __str__(self):
-                    return u'trivial'
+            def __str__(self):
+                return u'trivial'
 
         result = urlparse.urlencode({u'a': Trivial()}, True)
         self.assert_equal(result, u'a=trivial')
