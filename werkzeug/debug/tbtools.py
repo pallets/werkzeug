@@ -21,6 +21,7 @@ from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
 from werkzeug._compat import xrange, PY2, text_type, string_types
 
+
 _coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
 _line_re = re.compile(r'^(.*?)$(?m)')
 _funcdef_re = re.compile(r'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
@@ -420,9 +421,7 @@ class Frame(object):
             if PY2 and isinstance(code, unicode):
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
-        if mode != 'exec':
-            return eval(code, self.globals, self.locals)
-        duc.exec_(code, self.globals, self.locals)
+        return eval(code, self.globals, self.locals)
 
     @cached_property
     def sourcelines(self):

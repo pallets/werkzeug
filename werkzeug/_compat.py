@@ -39,15 +39,6 @@ if PY2:
 
     from itertools import imap, izip, ifilter
     xrange = xrange
-    def exec_(code, globals=None, locals=None):
-        if globals is None:
-            caller = sys._getframe(1)
-            globals = caller.f_globals
-            if locals is None:
-                locals = caller.f_locals
-        elif locals is None:
-            locals = globals
-        exec('exec code in globals, locals')
 
     from StringIO import StringIO, StringIO as BytesIO
     NativeStringIO = BytesIO
@@ -78,7 +69,6 @@ else:
     izip = zip
     ifilter = filter
     xrange = range
-    exec_ = getattr(builtins, 'exec')
 
     from io import StringIO, BytesIO
     NativeStringIO = StringIO

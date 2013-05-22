@@ -12,7 +12,6 @@ import sys
 import code
 from types import CodeType
 
-from werkzeug._compat import exec_
 from werkzeug.utils import escape
 from werkzeug.local import Local
 from werkzeug.debug.repr import debug_repr, dump, helper
@@ -175,7 +174,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
     def runcode(self, code):
         try:
-            exec_(code, self.globals, self.locals)
+            eval(code, self.globals, self.locals)
         except Exception:
             self.showtraceback()
 
