@@ -22,10 +22,10 @@
     :license: BSD, see LICENSE for more details.
 """
 from datetime import datetime
-from six import string_types
+
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
-from werkzeug._compat import implements_to_string
+from werkzeug._compat import implements_to_string, string_types
 
 
 XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
