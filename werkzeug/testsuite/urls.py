@@ -90,10 +90,10 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_url_fixing_qs(self):
         x = urls.url_fix(b'http://example.com/?foo=%2f%2f')
-        self.assert_line_equal(x, 'http://example.com/?foo=%2f%2f')
+        self.assert_line_equal(x, b'http://example.com/?foo=%2f%2f')
 
         x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
-        self.assert_equal(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+        self.assert_equal(x, b'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
 
     def test_iri_support(self):
         if PY2:
