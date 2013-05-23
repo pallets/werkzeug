@@ -310,12 +310,7 @@ def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
     """
     if isinstance(string, bytes):
         string = string.decode('ascii') # uri -> iri
-    bits = _ascii_re.split(string)
-    result = [bits[0]]
-    for i in xrange(1, len(bits), 2):
-        result.append(unquote_to_bytes(bits[i], unsafe).decode(charset, errors))
-        result.append(bits[i + 1])
-    return u''.join(result)
+    return unquote_to_bytes(string, unsafe).decode(charset, errors)
 
 
 def url_unquote_plus(s, charset='utf-8', errors='replace'):

@@ -109,7 +109,7 @@ class URLsTestCase(WerkzeugTestCase):
                             b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
 
         self.assert_strict_equal(urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F'),
-                                          b'http://test.com/%3Fmeh?foo=%26%2F')
+                                          u'http://test.com/%3Fmeh?foo=%26%2F')
 
         # this should work as well, might break on 2.4 because of a broken
         # idna codec
