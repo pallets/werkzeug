@@ -561,7 +561,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             # Force coercion-like behavior on native strings
             key = url_quote(key, 'ascii')
         else:
-            key = url_quote(key, charset)
+            key = url_quote(str(key), charset)
         if not isinstance(value, string_types):
             value = str(value)
         yield key + b"=" + url_quote_plus(value)
