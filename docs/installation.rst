@@ -2,11 +2,11 @@
 Installation
 ============
 
-Werkzeug requires at least Python 2.4 to work correctly though we
+Werkzeug requires at least Python 2.4 to work correctly, though we
 recommend upgrading to 2.5 or higher.  Werkzeug currently does not support
 Python 3 and there are no direct plans on supporting it for the time
-being.  If you wish to use Werkzeug on Python 3 please contact the
-developers.
+being.  If you wish to use Werkzeug on Python 3, please `contact the
+developers <http://werkzeug.pocoo.org/community/>`_.
 
 
 Installing a released version

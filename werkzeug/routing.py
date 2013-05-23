@@ -203,22 +203,6 @@ def parse_rule(rule):
         yield None, None, remaining
 
 
-def get_converter(map, name, args):
-    """Create a new converter for the given arguments or raise
-    exception if the converter does not exist.
-
-    :internal:
-    """
-    if not name in map.converters:
-        raise LookupError('the converter %r does not exist' % name)
-    if args:
-        args, kwargs = parse_converter_args(args)
-    else:
-        args = ()
-        kwargs = {}
-    return map.converters[name](map, *args, **kwargs)
-
-
 class RoutingException(Exception):
     """Special exceptions that require the application to redirect, notifying
     about missing urls, etc.
@@ -610,6 +594,15 @@ class Rule(RuleFactory):
             self.subdomain = map.default_subdomain
         self.compile()
 
+    def get_converter(self, variable_name, converter_name, args, kwargs):
+        """Looks up the converter for the given parameter.
+
+        .. versionadded:: 0.9
+        """
+        if not converter_name in self.map.converters:
+            raise LookupError('the converter %r does not exist' % converter_name)
+        return self.map.converters[converter_name](self.map, *args, **kwargs)
+
     def compile(self):
         """Compiles the regular expression and stores it."""
         assert self.map is not None, 'rule not bound'
@@ -633,7 +626,13 @@ class Rule(RuleFactory):
                         if part:
                             self._weights.append((0, -len(part)))
                 else:
-                    convobj = get_converter(self.map, converter, arguments)
+                    if arguments:
+                        c_args, c_kwargs = parse_converter_args(arguments)
+                    else:
+                        c_args = ()
+                        c_kwargs = {}
+                    convobj = self.get_converter(
+                        variable, converter, c_args, c_kwargs)
                     regex_parts.append('(?P<%s>%s)' % (variable, convobj.regex))
                     self._converters[variable] = convobj
                     self._trace.append((True, variable))

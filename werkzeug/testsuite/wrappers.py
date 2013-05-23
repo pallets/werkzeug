@@ -16,6 +16,7 @@ from datetime import datetime
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import wrappers
+from werkzeug.exceptions import SecurityError
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
      ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
      CombinedMultiDict
@@ -137,6 +138,30 @@ class WrappersTestCase(WerkzeugTestCase):
 
         req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
         assert req.scheme == 'https'
+
+    def test_url_request_descriptors_hosts(self):
+        req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
+        req.trusted_hosts = ['example.com']
+        assert req.path == u'/bar'
+        assert req.full_path == u'/bar?foo=baz'
+        assert req.script_root == u'/test'
+        assert req.url == 'http://example.com/test/bar?foo=baz'
+        assert req.base_url == 'http://example.com/test/bar'
+        assert req.url_root == 'http://example.com/test/'
+        assert req.host_url == 'http://example.com/'
+        assert req.host == 'example.com'
+        assert req.scheme == 'http'
+
+        req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
+        assert req.scheme == 'https'
+
+        req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
+        req.trusted_hosts = ['example.org']
+        self.assert_raises(SecurityError, lambda: req.url)
+        self.assert_raises(SecurityError, lambda: req.base_url)
+        self.assert_raises(SecurityError, lambda: req.url_root)
+        self.assert_raises(SecurityError, lambda: req.host_url)
+        self.assert_raises(SecurityError, lambda: req.host)
 
     def test_authorization_mixin(self):
         request = wrappers.Request.from_values(headers={
@@ -307,7 +332,8 @@ class WrappersTestCase(WerkzeugTestCase):
         response.cache_control.must_revalidate = True
         response.cache_control.max_age = 60
         response.headers['Content-Length'] = len(response.data)
-        assert response.headers['Cache-Control'] == 'must-revalidate, max-age=60'
+        assert response.headers['Cache-Control'] in ('must-revalidate, max-age=60',
+                                                     'max-age=60, must-revalidate')
 
         assert 'date' not in response.headers
         env = create_environ()

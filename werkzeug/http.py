@@ -42,7 +42,7 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
 _quoted_string_re = r'"[^"\\]*(?:\\.[^"\\]*)*"'
-_option_header_piece_re = re.compile(r';\s*([^\s;=]+|%s)\s*(?:=\s*([^;]+|%s))?\s*' %
+_option_header_piece_re = re.compile(r';\s*(%s|[^\s;=]+)\s*(?:=\s*(%s|[^;]+))?\s*' %
     (_quoted_string_re, _quoted_string_re))
 
 _entity_headers = frozenset([
@@ -179,9 +179,10 @@ def parse_list_header(value):
     return result
 
 
-def parse_dict_header(value):
+def parse_dict_header(value, cls=dict):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
-    convert them into a python dict:
+    convert them into a python dict (or any other mapping object created from
+    the type with a dict like interface provided by the `cls` arugment):
 
     >>> d = parse_dict_header('foo="is a fish", bar="as well"')
     >>> type(d) is dict
@@ -197,10 +198,14 @@ def parse_dict_header(value):
     To create a header from the :class:`dict` again, use the
     :func:`dump_header` function.
 
+    .. versionchanged:: 0.9
+       Added support for `cls` argument.
+
     :param value: a string with a dict header.
-    :return: :class:`dict`
+    :param cls: callable to use for storage of parsed results.
+    :return: an instance of `cls`
     """
-    result = {}
+    result = cls()
     for item in _parse_list_header(value):
         if '=' not in item:
             result[item] = None
@@ -216,8 +221,8 @@ def parse_options_header(value):
     """Parse a ``Content-Type`` like header into a tuple with the content
     type and the options:
 
-    >>> parse_options_header('Content-Type: text/html; mimetype=text/html')
-    ('Content-Type:', {'mimetype': 'text/html'})
+    >>> parse_options_header('text/html; charset=utf8')
+    ('text/html', {'charset': 'utf8'})
 
     This should not be used to parse ``Cache-Control`` like headers that use
     a slightly different format.  For these headers use the

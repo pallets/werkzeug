@@ -30,14 +30,22 @@ def path_check_app(request):
 
 class ServerFixerTestCase(WerkzeugTestCase):
 
-    def test_lighttpd_cgi_root_fix(self):
-        app = fixers.LighttpdCGIRootFix(path_check_app)
+    def test_cgi_root_fix(self):
+        app = fixers.CGIRootFix(path_check_app)
         response = Response.from_app(app, dict(create_environ(),
             SCRIPT_NAME='/foo',
             PATH_INFO='/bar',
             SERVER_SOFTWARE='lighttpd/1.4.27'
         ))
         assert response.data == 'PATH_INFO: /foo/bar\nSCRIPT_NAME: '
+
+    def test_cgi_root_fix_custom_app_root(self):
+        app = fixers.CGIRootFix(path_check_app, app_root='/baz/poop/')
+        response = Response.from_app(app, dict(create_environ(),
+            SCRIPT_NAME='/foo',
+            PATH_INFO='/bar'
+        ))
+        assert response.data == 'PATH_INFO: /foo/bar\nSCRIPT_NAME: baz/poop'
 
     def test_path_info_from_request_uri_fix(self):
         app = fixers.PathInfoFromRequestUriFix(path_check_app)
@@ -48,7 +56,6 @@ class ServerFixerTestCase(WerkzeugTestCase):
             assert response.data == 'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
     def test_proxy_fix(self):
-        @fixers.ProxyFix
         @Request.application
         def app(request):
             return Response('%s|%s' % (
@@ -56,6 +63,7 @@ class ServerFixerTestCase(WerkzeugTestCase):
                 # do not use request.host as this fixes too :)
                 request.environ['HTTP_HOST']
             ))
+        app = fixers.ProxyFix(app, num_proxies=2)
         environ = dict(create_environ(),
             HTTP_X_FORWARDED_PROTO="https",
             HTTP_X_FORWARDED_HOST='example.com',

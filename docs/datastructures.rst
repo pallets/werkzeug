@@ -128,14 +128,6 @@ Others
 
       The name of the form field.
 
-   .. attribute:: content_type
-
-      The content type (mimetype) of the file.
-
-   .. attribute:: content_length
-
-      The length of the file in bytes.
-
    .. attribute:: headers
 
       The multipart headers as :class:`Headers` object.  This usually contains

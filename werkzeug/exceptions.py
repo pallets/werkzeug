@@ -97,7 +97,7 @@ class HTTPException(Exception):
     def get_description(self, environ):
         """Get the description."""
         environ = _get_environ(environ)
-        return self.description
+        return '<p>%s</p>' % escape(self.description)
 
     def get_body(self, environ):
         """Get the HTML body."""
@@ -191,6 +191,14 @@ class ClientDisconnected(BadRequest):
     is gone.
 
     .. versionadded:: 0.8
+    """
+
+
+class SecurityError(BadRequest):
+    """Raised if something triggers a security error.  This is otherwise
+    exactly like a bad request error.
+
+    .. versionadded:: 0.9
     """
 
 
@@ -434,6 +442,49 @@ class UnprocessableEntity(HTTPException):
     code = 422
     description = (
         '<p>The request was well-formed but was unable to be followed due to semantic errors.'
+    )    
+
+class PreconditionRequired(HTTPException):
+    """*428* `Precondition Required`
+
+    The server requires this request to be conditional, typically to prevent
+    the lost update problem, which is a race condition between two or more
+    clients attempting to update a resource through PUT or DELETE. By requiring
+    each client to include a conditional header ("If-Match" or "If-Unmodified-
+    Since") with the proper value retained from a recent GET request, the
+    server ensures that each client has at least seen the previous revision of
+    the resource.
+    """
+    code = 428
+    description = (
+        '<p>This request is required to be conditional; try using "If-Match" '
+        'or "If-Unmodified-Since".'
+    )    
+
+class TooManyRequests(HTTPException):
+    """*429* `Too Many Requests`
+
+    The server is limiting the rate at which this user receives responses, and
+    this request exceeds that rate. (The server may use any convenient method
+    to identify users and their request rates). The server may include a
+    "Retry-After" header to indicate how long the user should wait before
+    retrying.
+    """
+    code = 429
+    description = (
+        '<p>This user has exceeded an allotted request count. Try again later.'
+    )    
+
+class RequestHeaderFieldsTooLarge(HTTPException):
+    """*431* `Request Header Fields Too Large`
+
+    The server refuses to process the request because the header fields are too
+    large. One or more individual fields may be too large, or the set of all
+    headers is too large.
+    """
+    code = 431
+    description = (
+        '<p>One or more header fields exceeds the maximum size.'
     )    
 
 

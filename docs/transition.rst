@@ -18,12 +18,12 @@ making this transition.
 Automatically Rewriting Imports
 -------------------------------
 
-For instance Werkzeug < 0.7 the recommended way to use the escape function
+For instance, with Werkzeug < 0.7 the recommended way to use the escape function
 was this::
 
     from werkzeug import escape
 
-With Werkzeug 0.7 the recommendated way to import this function is
+With Werkzeug 0.7, the recommended way to import this function is
 directly from the utils module (and with 1.0 this will become mandatory).
 To automatically rewrite all imports one can use the
 `werkzeug-import-rewrite <http://bit.ly/import-rewrite>`_ script.
@@ -37,7 +37,7 @@ file.  Example patch file creation::
 To apply the patch one of the following methods work:
 
 hg:
-    
+
     ::
 
         hg import new-imports.udiff
@@ -57,7 +57,7 @@ patch:
 Stop Using Deprecated Things
 ----------------------------
 
-A few things in Werkzeug will stop being supported and for other's we're
+A few things in Werkzeug will stop being supported and for others, we're
 suggesting alternatives even if they will stick around for a longer time.
 
 Do not use:

@@ -46,6 +46,8 @@ information or perform common manipulations:
 
 .. autofunction:: extract_path_info
 
+.. autofunction:: host_is_trusted
+
 Convenience Helpers
 ===================
 

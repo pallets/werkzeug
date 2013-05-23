@@ -63,7 +63,7 @@ class URLsTestCase(WerkzeugTestCase):
     def test_sorted_url_encode(self):
         assert urls.url_encode({"a": 42, "b": 23, 1: 1, 2: 2}, sort=True) == '1=1&2=2&a=42&b=23'
         assert urls.url_encode({'A': 1, 'a': 2, 'B': 3, 'b': 4}, sort=True,
-                          key=lambda x: x[0].lower()) == 'A=1&a=2&B=3&b=4'
+                          key=lambda x: x[0].lower() + x[0]) == 'A=1&a=2&B=3&b=4'
 
     def test_streamed_url_encoding(self):
         out = StringIO()
@@ -91,15 +91,19 @@ class URLsTestCase(WerkzeugTestCase):
         x = urls.url_fix('http://example.com/?foo=%2f%2f')
         assert x == 'http://example.com/?foo=%2f%2f'
 
+        x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+        assert x == 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation'
+        
+
     def test_iri_support(self):
         self.assert_raises(UnicodeError, urls.uri_to_iri, u'http://föö.com/')
         self.assert_raises(UnicodeError, urls.iri_to_uri, 'http://föö.com/')
         assert urls.uri_to_iri('http://xn--n3h.net/') == u'http://\u2603.net/'
-        assert urls.uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th') == \
-            u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
+        assert urls.uri_to_iri('http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th#%C3%A5nchor') == \
+            u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th#\xe5nchor'
         assert urls.iri_to_uri(u'http://☃.net/') == 'http://xn--n3h.net/'
-        assert urls.iri_to_uri(u'http://üser:pässword@☃.net/påth') == \
-            'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+        assert urls.iri_to_uri(u'http://üser:pässword@☃.net/påth#ånchor') == \
+            'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th#%C3%A5nchor'
 
         assert urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F') == \
             u'http://test.com/%3Fmeh?foo=%26%2F'

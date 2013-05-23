@@ -59,6 +59,13 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         assert wsgi.get_host(create_environ('/', 'http://example.org')) \
             == 'example.org'
 
+    def test_get_host_validation(self):
+        env = {'HTTP_X_FORWARDED_HOST': 'example.org',
+               'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
+        self.assert_equal(wsgi.get_host(env, trusted_hosts=['.example.org']),
+                          'example.org')
+        self.assert_raises(BadRequest, wsgi.get_host, env, trusted_hosts=['example.com'])
+
     def test_responder(self):
         def foo(environ, start_response):
             return BaseResponse('Test')
@@ -202,6 +209,12 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             'wsgi.url_scheme':  'http',
             'SERVER_PORT':      '81'
         }) == 'foobar.example.com:81'
+
+    def test_get_current_url_unicode(self):
+        env = create_environ()
+        env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=\xcf'
+        rv = wsgi.get_current_url(env)
+        self.assertEqual(rv, 'http://localhost/?foo=bar&baz=blah&meh=%CF')
 
     def test_multi_part_line_breaks(self):
         data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'

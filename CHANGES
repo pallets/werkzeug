@@ -22,6 +22,23 @@ Release date to be decided, codename to be chosen.
   ``+``.
 - The :func:`werkzeug.security.generate_password_hash` and
   check functions now support any of the hashlib algorithms.
+- `wsgi.get_current_url` is now ascii safe for browsers sending
+  non-ascii data in query strings.
+- improved parsing behavior for :func:`werkzeug.http.parse_options_header`
+- added more operators to local proxies.
+- added a hook to override the default converter in the routing
+  system.
+- The description field of HTTP exceptions is now always escaped.
+  Use markup objects to disable that.
+- Added number of proxy argument to the proxy fix to make it more
+  secure out of the box on common proxy setups.  It will by default
+  no longer trust the x-forwarded-for header as much as it did
+  before.
+- Added support for fragment handling in URI/IRI functions.
+- Added custom class support for :func:`werkzeug.http.parse_dict_header`.
+- Renamed `LighttpdCGIRootFix` to `CGIRootFix`.
+- Always treat `+` as safe when fixing URLs as people love misusing them.
+- Added support to profiling into directories in the contrib profiler.
 
 Version 0.8.4
 -------------

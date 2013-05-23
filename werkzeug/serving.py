@@ -50,6 +50,7 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 import werkzeug
 from werkzeug._internal import _log
+from werkzeug.urls import _safe_urlsplit
 from werkzeug.exceptions import InternalServerError
 
 
@@ -61,11 +62,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return 'Werkzeug/' + werkzeug.__version__
 
     def make_environ(self):
-        if '?' in self.path:
-            path_info, query = self.path.split('?', 1)
-        else:
-            path_info = self.path
-            query = ''
+        request_url = _safe_urlsplit(self.path)
 
         def shutdown_server():
             self.server.shutdown_signal = True
@@ -84,8 +81,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_SOFTWARE':      self.server_version,
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
-            'PATH_INFO':            unquote(path_info),
-            'QUERY_STRING':         query,
+            'PATH_INFO':            unquote(request_url.path),
+            'QUERY_STRING':         request_url.query,
             'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
             'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
             'REMOTE_ADDR':          self.client_address[0],
@@ -99,6 +96,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             key = 'HTTP_' + key.upper().replace('-', '_')
             if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 environ[key] = value
+
+        if request_url.netloc:
+            environ['HTTP_HOST'] = request_url.netloc
 
         return environ
 
@@ -318,7 +318,7 @@ def make_ssl_devcert(base_path, host=None, cn=None):
 def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
     from OpenSSL import SSL
-    pkey, cert = generate_adhoc_ssl_pair()
+    cert, pkey = generate_adhoc_ssl_pair()
     ctx = SSL.Context(SSL.SSLv23_METHOD)
     ctx.use_privatekey(pkey)
     ctx.use_certificate(cert)
@@ -355,7 +355,10 @@ class _SSLConnectionFix(object):
         return getattr(self._con, attrib)
 
     def shutdown(self, arg=None):
-        self._con.shutdown()
+        try:
+            self._con.shutdown()
+        except Exception:
+            pass
 
 
 def select_ip_version(host, port):
@@ -607,6 +610,10 @@ def run_simple(hostname, port, application, use_reloader=False,
     wraps `wsgiref` to fix the wrong default reporting of the multithreaded
     WSGI variable and adds optional multithreading and fork support.
 
+    This function has a command-line interface too::
+
+        python -m werkzeug.serving --help
+
     .. versionadded:: 0.5
        `static_files` was added to simplify serving of static files as well
        as `passthrough_errors`.
@@ -617,6 +624,9 @@ def run_simple(hostname, port, application, use_reloader=False,
     .. versionadded:: 0.8
        Added support for automatically loading a SSL context from certificate
        file and private key.
+
+    .. versionadded:: 0.9
+       Added command-line interface.
 
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
@@ -631,7 +641,8 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param reloader_interval: the interval for the reloader in seconds.
     :param threaded: should the process handle each request in a separate
                      thread?
-    :param processes: number of processes to spawn.
+    :param processes: if greater than 1 then handle each request in a new process
+                      up to this maximum number of concurrent processes.
     :param request_handler: optional parameter that can be used to replace
                             the default one.  You can use this to replace it
                             with a different
@@ -679,3 +690,42 @@ def run_simple(hostname, port, application, use_reloader=False,
         run_with_reloader(inner, extra_files, reloader_interval)
     else:
         inner()
+
+def main():
+    '''A simple command-line interface for :py:func:`run_simple`.'''
+
+    # in contrast to argparse, this works at least under Python < 2.7
+    import optparse
+    from werkzeug.utils import import_string
+
+    parser = optparse.OptionParser(usage='Usage: %prog [options] app_module:app_object')
+    parser.add_option('-b', '--bind', dest='address',
+                      help='The hostname:port the app should listen on.')
+    parser.add_option('-d', '--debug', dest='use_debugger',
+                      action='store_true', default=False,
+                      help='Use Werkzeug\'s debugger.')
+    parser.add_option('-r', '--reload', dest='use_reloader',
+                      action='store_true', default=False,
+                      help='Reload Python process if modules change.')
+    options, args = parser.parse_args()
+
+    hostname, port = None, None
+    if options.address:
+        address = options.address.split(':')
+        hostname = address[0]
+        if len(address) > 1:
+            port = address[1]
+
+    if len(args) != 1:
+        print 'No application supplied, or too much. See --help'
+        sys.exit(1)
+    app = import_string(args[0])
+
+    run_simple(
+        hostname=(hostname or '127.0.0.1'), port=int(port or 5000),
+        application=app, use_reloader=options.use_reloader,
+        use_debugger=options.use_debugger
+    )
+
+if __name__ == '__main__':
+    main()

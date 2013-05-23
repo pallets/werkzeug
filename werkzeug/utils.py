@@ -308,7 +308,7 @@ def escape(s, quote=False):
     if s is None:
         return ''
     elif hasattr(s, '__html__'):
-        return s.__html__()
+        return unicode(s.__html__())
     elif not isinstance(s, basestring):
         s = unicode(s)
     s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
@@ -390,9 +390,6 @@ def import_string(import_name, silent=False):
     or with a colon as object delimiter (``xml.sax.saxutils:escape``).
 
     If `silent` is True the return value will be `None` if the import fails.
-
-    For better debugging we recommend the new :func:`import_module`
-    function to be used instead.
 
     :param import_name: the dotted name for the object to import.
     :param silent: if set to `True` import errors are ignored and

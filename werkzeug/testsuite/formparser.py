@@ -134,7 +134,36 @@ class FormParserTestCase(WerkzeugTestCase):
                                   method='POST')
         # make sure we have a real file here, because we expect to be
         # on the disk.  > 1024 * 500
-        self.assert_(isinstance(req.files['foo'].stream, file))
+        self.assert_(hasattr(req.files['foo'].stream, 'fileno'))
+
+    def test_streaming_parse(self):
+        data = 'x' * (1024 * 600)
+        class StreamMPP(formparser.MultiPartParser):
+            def parse(self, file, boundary, content_length):
+                i = iter(self.parse_lines(file, boundary, content_length))
+                one = i.next()
+                two = i.next()
+                return self.cls(()), {'one': one, 'two': two}
+        class StreamFDP(formparser.FormDataParser):
+            def _sf_parse_multipart(self, stream, mimetype,
+                                    content_length, options):
+                form, files = StreamMPP(
+                    self.stream_factory, self.charset, self.errors,
+                    max_form_memory_size=self.max_form_memory_size,
+                    cls=self.cls).parse(stream, options.get('boundary'),
+                                        content_length)
+                return stream, form, files
+            parse_functions = {}
+            parse_functions.update(formparser.FormDataParser.parse_functions)
+            parse_functions['multipart/form-data'] = _sf_parse_multipart
+        class StreamReq(Request):
+            form_data_parser_class = StreamFDP
+        req = StreamReq.from_values(data={'foo': (StringIO(data), 'test.txt')},
+                                    method='POST')
+        self.assert_equal('begin_file', req.files['one'][0])
+        self.assert_equal(('foo', 'test.txt'), req.files['one'][1][1:])
+        self.assert_equal('cont', req.files['two'][0])
+        self.assert_equal(data, req.files['two'][1])
 
 
 class MultiPartTestCase(WerkzeugTestCase):

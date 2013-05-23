@@ -11,6 +11,7 @@
 import sys
 import time
 import urllib
+import httplib
 import unittest
 from functools import update_wrapper
 from StringIO import StringIO
@@ -76,6 +77,21 @@ class ServingTestCase(WerkzeugTestCase):
         server, addr = run_dev_server(broken_app)
         rv = urllib.urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
         assert 'Internal Server Error' in rv
+
+    @silencestderr
+    def test_absolute_requests(self):
+        def asserting_app(environ, start_response):
+            assert environ['HTTP_HOST'] == 'surelynotexisting.example.com:1337'
+            assert environ['PATH_INFO'] == '/index.htm'
+            assert environ['SERVER_PORT'] == addr.split(':')[1]
+            start_response('200 OK', [('Content-Type', 'text/html')])
+            return 'YES'
+
+        server, addr = run_dev_server(asserting_app)
+        conn = httplib.HTTPConnection(addr)
+        conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm')
+        res = conn.getresponse()
+        assert res.read() == 'YES'
 
 
 def suite():
