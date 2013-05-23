@@ -775,17 +775,17 @@ class Href(object):
                 raise TypeError('keyword arguments and query-dicts '
                                 'can\'t be combined')
                 query, path = path[-1], path[:-1]
-            elif query:
-                query = dict([(k.endswith('_') and k[:-1] or k, v)
-                              for k, v in query.items()])
-            path = '/'.join([to_native(url_quote(x, self.charset))
-                             for x in path if x is not None]).lstrip('/')
-            rv = self.base
-            if path:
-                if not rv.endswith('/'):
-                    rv += '/'
-                rv = urljoin(rv, './' + path)
-            if query:
-                rv += '?' + to_native(url_encode(query, self.charset,
-                                                 sort=self.sort, key=self.key))
+        elif query:
+            query = dict([(k.endswith('_') and k[:-1] or k, v)
+                          for k, v in query.items()])
+        path = '/'.join([to_native(url_quote(x, self.charset))
+                         for x in path if x is not None]).lstrip('/')
+        rv = self.base
+        if path:
+            if not rv.endswith('/'):
+                rv += '/'
+            rv = urljoin(rv, './' + path)
+        if query:
+            rv += '?' + to_native(url_encode(query, self.charset,
+                                             sort=self.sort, key=self.key))
         return rv
