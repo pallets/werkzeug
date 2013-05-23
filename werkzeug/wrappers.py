@@ -45,7 +45,7 @@ from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
 from werkzeug._compat import to_bytes, string_types, PY2, text_type, \
      integer_types
-from werkzeug import _urlparse as urlparse
+from werkzeug import urls as urlparse
 
 
 def _run_wsgi_app(*args):

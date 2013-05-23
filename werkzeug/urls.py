@@ -5,104 +5,348 @@
 
     This module implements various URL related functions.
 
-    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
+    Parts of this module are based on the Lib/urllib/parse.py module of the
+    Python 3.x standard library, licensed under the `PSF 2 License`_ using the
+    following copyright notice::
+
+        Copyright © 2001-2013 Python Software Foundation; All Rights Reserved
+
+    .. _PSF 2 License: http://docs.python.org/3/license.html
+
+    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug import _urlparse as urlparse
-from werkzeug._compat import to_bytes, to_native, to_unicode, text_type, PY2
-from werkzeug._internal import _decode_unicode
+import re
+
+from werkzeug._compat import text_type, xrange, PY2, to_native, to_unicode, \
+    int2byte
 from werkzeug.datastructures import MultiDict, iter_multi_items
-from werkzeug.wsgi import make_chunk_iter
-from werkzeug._urlparse import (
-    quote as _quote, quote_plus as url_quote_plus,
-    unquote as url_unquote, unquote_plus as url_unquote_plus,
-    urlsplit as _safe_urlsplit,
+
+
+#: Characters valid in scheme names
+SCHEME_CHARS = frozenset(
+    'abcdefghijklmnopqrstuvwxyz'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    '0123456789'
+    '+-.'
 )
 
+#: Characters that are safe in any part of an URL.
+ALWAYS_SAFE = frozenset(
+    'abcdefghijklmnopqrstuvwxyz'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    '0123456789'
+    '_.-'
+)
 
-def url_quote(string, encoding=None, safe='/:', errors=None):
-    # we also consider : safe since it's commonly used
-    return _quote(string, safe=safe, encoding=encoding, errors=errors)
+#: Schemes that use a netloc as part of their URL.
+USES_NETLOC = frozenset([
+    'ftp', 'http', 'gopher', 'nntp', 'telnet', 'imap', 'wais', 'file', 'mms',
+    'https', 'shttp', 'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '', 'svn',
+    'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh'
+])
+
+#: Schemes that use relative paths as part of their URL.
+USES_RELATIVE = frozenset([
+    'ftp', 'http', 'gopher', 'nntp', 'imap', 'wais', 'file', 'https', 'shttp',
+    'mms', 'prospero', 'rtsp', 'rtspu', '', 'sftp', 'svn', 'svn+ssh'
+])
+
+#: Schemes that use params as part of their URL.
+USES_PARAMS = frozenset([
+    'ftp', 'hdl', 'prospero', 'http', 'imap', 'https', 'shttp', 'rtsp',
+    'rtspu', 'sip', 'sips', 'mms', '', 'sftp', 'tel'
+])
 
 
-def _uri_split(uri):
-    """Splits up an URI or IRI."""
-    uri, coerce_rv = urlparse._coerce_args(uri)
-    scheme, netloc, path, query, fragment = _safe_urlsplit(uri)
+def _splitnetloc(iri, start=0):
+    delim = len(iri) # position of end of domain part of iri, default is end
+    for c in '/?#':  # look for delimiters; the order is NOT important
+        wdelim = iri.find(c, start)      # find first of this delim
+        if wdelim >= 0:                  # if found
+            delim = min(delim, wdelim)   # use earliest delim position
+    return iri[start:delim], iri[delim:] # return (domain, rest)
 
-    port = None
 
-    if u'@' in netloc:
+def irisplit(iri, scheme=u'', allow_fragments=True):
+    if not (isinstance(iri, text_type) and isinstance(scheme, text_type)):
+        raise TypeError('iri and scheme must be bytes')
+    netloc = query = fragment = u''
+    i = iri.find(u':')
+    if i > 0:
+        if iri[:i] == u'http': # optimize the common case
+            scheme = iri[:i].lower()
+            iri = iri[i+1:]
+            if iri[:2] == u'//':
+                netloc, iri = _splitnetloc(iri, 2)
+                if ((u'[' in netloc and u']' not in netloc) or
+                    (u']' in netloc and u'[' not in netloc)):
+                    raise ValueError('Invalid IPv6 URL')
+            if allow_fragments and u'#' in iri:
+                iri, fragment = iri.split(u'#', 1)
+            if u'?' in iri:
+                iri, query = iri.split(u'?', 1)
+            return scheme, netloc, iri, query, fragment
+        for c in iri[:i]:
+            if c not in SCHEME_CHARS:
+                break
+        else:
+            # make sure "iri" is not actually a port number (in which case
+            # "scheme" is really part of the path)
+            rest = iri[i+1:]
+            if not rest or any(c not in u'0123456789' for c in rest):
+                # not a port number
+                scheme, iri = iri[:i].lower(), rest
+
+    if iri[:2] == u'//':
+        netloc, iri = _splitnetloc(iri, 2)
+        if ((u'[' in netloc and u']' not in netloc) or
+            (u']' in netloc and u'[' not in netloc)):
+            raise ValueError('Invalid IPv6 URL')
+    if allow_fragments and u'#' in iri:
+        iri, fragment = iri.split(u'#', 1)
+    if u'?' in iri:
+        url, query = iri.split(u'?', 1)
+    return scheme, netloc, iri, query, fragment
+
+
+def urisplit(uri, scheme=b'', allow_fragments=True):
+    if not (isinstance(uri, bytes) and isinstance(scheme, bytes)):
+        raise TypeError('uri and scheme must be bytes')
+    return irisplit(
+        uri.decode('ascii'),
+        scheme.decode('ascii'),
+        allow_fragments
+    ).encode('ascii')
+
+
+def urlsplit(url, scheme='', allow_fragments=True):
+    # XXX: ascii -> default encoding?
+    if isinstance(url, text_type):
+        if not isinstance(scheme, text_type):
+            scheme = scheme.decode('ascii')
+        return irisplit(url, scheme, allow_fragments)
+    elif isinstance(url, bytes):
+        if not isinstance(scheme, bytes):
+            scheme = scheme.encode('ascii')
+        return urisplit(url, scheme, allow_fragments)
+    else:
+        raise TypeError('url must be a string')
+
+
+def url_quote(string, safe='/', charset='utf-8', errors='strict'):
+    """URL encode a single string with a given encoding.
+
+    :param s: the string to quote.
+    :param charset: the charset to be used.
+    :param safe: an optional sequence of safe characters.
+    """
+    return quote(string, safe, charset, errors)
+
+
+def quote(string, safe='/', charset='utf-8', errors='strict'):
+    if isinstance(string, text_type):
+        string = string.encode(charset, errors)
+    string = bytearray(string)
+    safe = set(
+        int2byte(char) if isinstance(char, int) else char
+        for char in ALWAYS_SAFE.union(safe)
+    )
+    safe = set(b"".join(
+        char.encode(charset, 'replace') if hasattr(char, 'encode') else char
+        for char in safe
+    ))
+    return b''.join(
+        (int2byte(char) if isinstance(char, int) else char)
+        if char in safe else '%%%x' % char
+        for char in string
+    )
+
+
+def url_quote_plus(string, charset='utf-8', safe=''):
+    """URL encode a single string with the given encoding and convert
+    whitespace to "+".
+
+    :param s: The string to quote.
+    :param charset: The charset to be used.
+    :param safe: An optional sequence of safe characters.
+    """
+    return url_quote(string, set(safe).union([' ']), charset).replace(b' ', b'+')
+
+
+def urlunsplit(components):
+    if all(isinstance(component, text_type) for component in components):
+        return iriunsplit(components)
+    elif all(isinstance(component, bytes) for component in components):
+        return uriunsplit(components)
+    raise TypeError('mixed type components: %r' % components)
+
+
+def iriunsplit(components):
+    if not all(isinstance(component, text_type) for component in components):
+        raise TypeError('expected unicode components: %r' % components)
+    scheme, netloc, url, query, fragment = components
+    if netloc or (scheme and scheme in USES_NETLOC and url[:2] != u'//'):
+        if url and url[:1] != u'/':
+            url = u'/' + url
+        url = u'//' + (netloc or u'') + url
+    if scheme:
+        url = scheme + u':' + url
+    if query:
+        url = url + u'?' + query
+    if fragment:
+        url = url + u'#' + fragment
+    return url
+
+
+def uriunsplit(components):
+    if not all(isinstance(component, bytes) for component in components):
+        raise TypeError('expected bytes components: %r' % components)
+    return iriunsplit(
+        [component.decode('ascii') for component in components]
+    ).encode('ascii')
+
+
+def _url_split(url):
+    scheme, netloc, path, query, fragment = urlsplit(url)
+
+    if isinstance(netloc, text_type) and u'@' in netloc:
         auth, hostname = netloc.split(u'@', 1)
+    elif isinstance(netloc, bytes) and b'@' in netloc:
+        auth, hostname = netloc.split(u'b', 1)
     else:
         auth = None
         hostname = netloc
+
+    port = None
     if hostname:
-        if u':' in hostname:
+        if isinstance(hostname, text_type) and u':' in hostname:
             hostname, port = hostname.split(u':', 1)
+        elif isinstance(hostname, bytes) and b':' in hostname:
+            hostname, port = hostname.split(b':', 1)
+    return scheme, auth, hostname, port, path, query, fragment
 
-    rv = scheme, auth, hostname, port, path, query, fragment
-    return tuple(x if x is None else coerce_rv(x) for x in rv)
 
-
-def iri_to_uri(iri, charset='utf-8'):
-    r"""Converts any unicode based IRI to an acceptable ASCII URI.  Werkzeug
-    always uses utf-8 URLs internally because this is what browsers and HTTP
-    do as well.  In some places where it accepts an URL it also accepts a
-    unicode IRI and converts it into a URI.
+def iri_to_uri(iri, charset='utf-8', errors='strict'):
+    r"""
+    Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
+    uses utf-8 URLs internally because this is what browsers and HTTP do as
+    well. In some places where it accepts an URL it also accepts a unicode IRI
+    and converts it into a URI.
 
     Examples for IRI versus URI:
 
     >>> iri_to_uri(u'http://☃.net/')
-    b'http://xn--n3h.net/'
+    'http://xn--n3h.net/'
     >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
-    b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
 
     .. versionadded:: 0.6
 
-    :param iri: the iri to convert
-    :param charset: the charset for the URI
+    :param iri: The IRI to convert.
+    :param charset: The charset for the URI.
     """
     if isinstance(iri, bytes):
-        iri = iri.decode(charset)
-    scheme, auth, hostname, port, path, query, fragment = _uri_split(iri)
+        iri = iri.decode('ascii') # iri is really an uri
+    scheme, auth, hostname, port, path, query, fragment = _url_split(iri)
 
-    scheme = to_native(scheme, 'ascii')
-    if isinstance(hostname, text_type) and not PY2:
-        hostname = to_native(hostname, charset)
-    hostname = to_native(hostname.encode('idna'), 'ascii')
+    scheme = scheme.encode(charset, errors)
+    hostname = hostname.encode('idna')
+
     if auth:
-        auth = to_native(auth, charset)
-        if ':' in auth:
+        if u':' in auth:
             auth, password = auth.split(':', 1)
         else:
             password = None
-        auth = to_native(url_quote(auth), charset)
+        auth = url_quote(auth, charset, errors)
         if password:
-            auth += ':' + to_native(url_quote(password))
-        hostname = auth + '@' + hostname
+            auth += b':' + url_quote(password, charset, errors)
+        hostname += auth + b'@' + hostname
     if port:
-        hostname += ':' + to_native(port, 'ascii')
+        hostname += b':' + port.encode(charset, errors)
 
-    path = to_native(url_quote(path, safe="/:~+%"))
-    if isinstance(query, bytes):
-        query = url_quote(query, safe="=%&[]:;$()+,!?*/")
+    path = url_quote(path, '/:~+%', charset, errors)
+    query = url_quote(query, '%&[]:;$*()+,!?*/', charset, errors)
+    fragment = url_quote(query, '=%&[]:;$()+,!?*/', charset, errors)
+
+    return urlunsplit((scheme, hostname, path, query, fragment))
+
+
+_hexdigits = '0123456789ABCDEFabcdef'
+_hextobyte = dict(
+    ((a + b).encode(), bytes([int(a + b, 16)]))
+    for a in _hexdigits for b in _hexdigits
+)
+def unquote_to_bytes(string):
+    if isinstance(string, text_type):
+        string = string.encode('utf-8')
+    bits = string.split(b'%')
+    result = [bits[0]]
+    for item in bits[1:]:
+        try:
+            result.append(_hextobyte[item[:2]])
+            result.append(item[:2])
+        except KeyError:
+            result.append(b'%')
+            result.append(item)
+    return b''.join(result)
+
+
+_ascii_re = re.compile(to_unicode(r'([\x00-\x7f]+)', 'ascii'))
+def url_unquote(string, charset='utf-8', errors='replace'):
+    """URL decode a single string with a given decoding.
+
+    Per default encoding errors are ignored.  If you want a different behavior
+    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
+    `HTTPUnicodeError` is raised.
+
+    :param s: the string to unquote.
+    :param charset: the charset to be used.
+    :param errors: the error handling for the charset decoding.
+    """
+    if isinstance(string, bytes):
+        string = string.decode('ascii') # uri -> iri
+    bits = _ascii_re.split(string)
+    result = [bits[0]]
+    for i in xrange(1, len(bits), 2):
+        result.append(unquote_to_bytes(bits[i]).decode(charset, errors))
+        result.append(bits[i + 1])
+    return u''.join(result)
+
+
+def url_unquote_plus(s, charset='utf-8', errors='replace'):
+    """URL decode a single string with the given `charset` and decode "+" to
+    whitespace.
+
+    Per default encoding errors are ignored.  If you want a different behavior
+    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
+    :exc:`HTTPUnicodeError` is raised.
+
+    :param s: The string to unquote.
+    :param charsert: The charset to be used.
+    :param errors: The error handling for the `charset` decoding.
+    """
+    if isinstance(s, text_type):
+        s = s.replace(u'+', u' ')
     else:
-        query = url_quote(query, safe="=%&[]:;$()+,!?*/", encoding=charset)
-    query = to_native(query, charset)
-    fragment = to_native(fragment, charset)
+        s = s.replace(b'+', b' ')
+    return url_unquote(s, charset, errors)
 
-    # this absolutely always must return a string.  Otherwise some parts of
-    # the system might perform double quoting (#61)
-    rv = urlparse.urlunsplit([scheme, hostname, path, query, fragment])
-    assert isinstance(rv, str)
-    return rv
+
+def url_fix(s, charset='utf-8'):
+    if isinstance(s, text_type):
+        s = s.encode(charset, 'replace')
+    scheme, netloc, path, qs, anchor = urlsplit(s)
+    path = url_quote(path, '/%')
+    qs = url_quote_plus(path, ':&%=')
+    return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
-    r"""Converts a URI in a given charset to a IRI.
+    r"""
+    Converts a URI in a given charset to a IRI.
 
-    Examples for URI versus IRI
+    Examples for URI versus IRI:
 
     >>> uri_to_iri(b'http://xn--n3h.net/')
     u'http://\u2603.net/'
@@ -111,54 +355,46 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
 
     Query strings are left unchanged:
 
-    >>> uri_to_iri(b'/?foo=24&x=%26%2f')
+    >>> uri_to_iri('/?foo=24&x=%26%2f')
     u'/?foo=24&x=%26%2f'
 
     .. versionadded:: 0.6
 
-    :param uri: the URI to convert
-    :param charset: the charset of the URI
-    :param errors: the error handling on decode
+    :param uri: The URI to convert.
+    :param charset: The charset of the URI.
+    :param errors: The error handling on decode.
     """
-    uri = url_fix(uri, charset)
-    scheme, auth, hostname, port, path, query, fragment = _uri_split(uri)
+    if isinstance(uri, text_type):
+        uri = uri.encode('ascii') # iri -> uri
+    uri = url_fix(uri)
+    scheme, auth, hostname, port, path, query, fragment = _url_split(uri)
 
-    if PY2:
-        scheme = _decode_unicode(scheme, 'ascii', errors)
-
-    try:
-        if not PY2 and isinstance(hostname, text_type):
-            hostname = hostname.encode(charset, errors)
-        hostname = hostname.decode('idna')
-    except UnicodeError:
-        # dammit, that codec raised an error.  Because it does not support
-        # any error handling we have to fake it.... badly
-        if errors not in ('ignore', 'replace'):
-            raise
-        hostname = hostname.decode('ascii', errors)
+    scheme = scheme.decode(charset, errors)
+    hostname = hostname.decode('idna')
 
     if auth:
-        if ':' in auth:
-            auth, password = auth.split(':', 1)
+        if b':' in auth:
+            auth, password = auth.split(b':', 1)
         else:
             password = None
-        auth = url_unquote(auth, encoding=charset, errors=errors)
+        auth = url_unquote(auth, charset, errors)
         if password:
-            auth += u':' + url_unquote(password, encoding=charset, errors=errors)
+            auth += u':' + url_unquote(password, charset, errors)
         hostname = auth + u'@' + hostname
+
     if port:
-        # port should be numeric, but you never know...
-        hostname += u':' + to_unicode(port, charset)
+        hostname += u':' + port.decode(charset, errors)
 
-    path = url_unquote(path, unsafe=b'/;?', encoding=charset, errors=errors)
-    query = url_unquote(query, unsafe=b';/?:@&=+,$', encoding=charset, errors=errors)
-
-    return urlparse.urlunsplit([scheme, hostname, path, query, fragment])
+    path = url_unquote(path, '/;?', charset, errors)
+    query = url_unquote(query, ';/?:@&=+,$', charset, errors)
+    fragment = url_unquote(fragment, ';/?:@&=+,$', charset, errors)
+    return urlunsplit((scheme, hostname, path, query, fragment))
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
-               errors='replace', separator=b'&', cls=None):
-    """Parse a querystring and return it as :class:`MultiDict`.  Per default
+               errors='replace', separator='&', cls=None):
+    """
+    Parse a querystring and return it as :class:`MultiDict`.  Per default
     only values are decoded into unicode strings.  If `decode_keys` is set to
     `True` the same will happen for keys.
 
@@ -189,10 +425,10 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     """
     if cls is None:
         cls = MultiDict
-    if not isinstance(s, bytes):
-        s = s.encode(charset)
-    if not isinstance(separator, bytes):
-        separator = separator.encode(charset)
+    if isinstance(s, text_type) and not isinstance(separator, text_type):
+        separator = separator.decode('ascii')
+    elif isinstance(s, bytes) and not isinstance(separator, bytes):
+        separator = separator.encode('ascii')
     return cls(_url_decode_impl(s.split(separator), charset, decode_keys,
                                 include_empty, errors))
 
@@ -211,7 +447,7 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
     :param stream: a stream with the encoded querystring
     :param charset: the charset of the query string.
     :param decode_keys: set to `True` if you want the keys to be decoded
-                        as well.
+                        as well. (Ignored on Python 3.x)
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
     :param errors: the decoding error behavior.
@@ -224,6 +460,7 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
                             and an iterator over all decoded pairs is
                             returned
     """
+    from werkzeug.wsgi import make_chunk_iter
     if return_iterator:
         cls = lambda x: x
     elif cls is None:
@@ -233,14 +470,12 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
                                 include_empty, errors))
 
 
-def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
-                     errors):
-    #XXX: review bytes vs unicode again
+def _url_decode_impl(pair_iter, charset, decode_keys, include_empty, errors):
     for pair in pair_iter:
         if not pair:
             continue
         if isinstance(pair, bytes):
-            pair = pair.decode(charset, errors)
+            pair = pair.decode('ascii')
         if u'=' in pair:
             key, value = pair.split(u'=', 1)
         else:
@@ -248,15 +483,15 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty,
                 continue
             key = pair
             value = u''
-        key = url_unquote_plus(key, encoding=charset, errors=errors)
-        value = url_unquote_plus(value, encoding=charset, errors=errors)
-        # decode_keys is ignored for similar reasons
-        # stated in _url_encode_impl
-        yield key, value
+        key = url_unquote_plus(key, charset, errors)
+        if PY2 and not decode_keys:
+            # Force key into a native string.
+            key = key.encode('ascii')
+        yield key, url_unquote_plus(value, charset, errors)
 
 
 def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
-               separator=u'&'):
+               separator=b'&'):
     """URL encode a dict/`MultiDict`.  If a value is `None` it will not appear
     in the result string.  Per default only values are encoded into the target
     charset strings.  If `encode_keys` is set to ``True`` unicode keys are
@@ -270,7 +505,8 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
 
     :param obj: the object to encode into a query string.
     :param charset: the charset of the query string.
-    :param encode_keys: set to `True` if you have unicode keys.
+    :param encode_keys: set to `True` if you have unicode keys. (Ignored on
+                        Python 3.x)
     :param sort: set to `True` if you want parameters to be sorted by `key`.
     :param separator: the separator to be used for the pairs.
     :param key: an optional function to be used for sorting.  For more details
@@ -280,7 +516,7 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
 
 
 def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
-                      sort=False, key=None, separator='&'):
+                      sort=False, key=None, separator=b'&'):
     """Like :meth:`url_encode` but writes the results to a stream
     object.  If the stream is `None` a generator over all encoded
     pairs is returned.
@@ -292,7 +528,8 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
                    an iterator over the encoded pairs should be returned.  In
                    that case the separator argument is ignored.
     :param charset: the charset of the query string.
-    :param encode_keys: set to `True` if you have unicode keys.
+    :param encode_keys: set to `True` if you have unicode keys. (Ignored on
+                        Python 3.x)
     :param sort: set to `True` if you want parameters to be sorted by `key`.
     :param separator: the separator to be used for the pairs.
     :param key: an optional function to be used for sorting.  For more details
@@ -308,39 +545,161 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
 
 
 def _url_encode_impl(obj, charset, encode_keys, sort, key):
-    #XXX: probably broken badly on 3.x
     iterable = iter_multi_items(obj)
-    iterable = ((to_bytes(k, charset), to_bytes(v, charset))
-                for k, v in iterable if v is not None)
     if sort:
         iterable = sorted(iterable, key=key)
-    # we need to ignore encode_keys, because quote takes nothing else than
-    # bytes
-    return (u'%s=%s' % (url_quote(k), url_quote_plus(v))
-            for k, v in iterable)
+    for key, value in iterable:
+        if value is None:
+            continue
+        if PY2 and not encode_keys:
+            # Force coercion-like behavior on native strings
+            key = url_quote(key, 'ascii')
+        else:
+            key = url_quote(key, charset)
+        yield key + b"=" + url_quote_plus(value)
 
 
-def url_fix(s, charset='utf-8'):
-    r"""Sometimes you get an URL by a user that just isn't a real URL because
-    it contains unsafe characters like ' ' and so on.  This function can fix
-    some of the problems in a similar way browsers handle data entered by the
-    user:
+def _splitparams(iri):
+    if u'/' in iri:
+        i = iri.find(u';', iri.rfind(u'/'))
+        if i < 0:
+            return iri, u''
+    else:
+        i = iri.find(u';')
+    return iri[:i], iri[i+1:]
 
-    >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-    'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
 
-    :param s: the string with the URL to fix.
-    :param charset: The target charset for the URL if the url was given as
-                    unicode string.
-    """
-    if not isinstance(s, text_type):
-        s = s.decode(charset)
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
-    path = url_quote(path, safe='/%')
-    qs = url_quote_plus(qs, safe=':&%=')
-    parts = (scheme, netloc, path, qs, anchor)
-    #print(repr(parts))
-    return to_native(urlparse.urlunsplit(parts), charset)
+def iriparse(iri, scheme=u'', allow_fragments=True):
+    scheme, netloc, url, query, fragment = urlsplit(iri, scheme, allow_fragments)
+    if scheme in USES_PARAMS and u';' in iri:
+        iri, params = _splitparams(iri)
+    else:
+        params = u''
+    return scheme, netloc, url, params, query, fragment
+
+
+def uriparse(uri, scheme=b'', allow_fragments=True):
+    return iriparse(
+        uri.decode('ascii'),
+        scheme.decode('ascii'),
+        allow_fragments
+    ).encode('ascii')
+
+
+def urlparse(url, scheme='', allow_fragments=True):
+    """Parse a URL into 6 components:
+    <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
+    Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
+    Note that we don't break the components up in smaller bits
+    (e.g. netloc is a single string) and we don't expand % escapes."""
+    # XXX: ascii -> default encoding?
+    if isinstance(url, text_type):
+        if not isinstance(scheme, text_type):
+            scheme = scheme.decode('ascii')
+        return iriparse(url, scheme, allow_fragments)
+    elif isinstance(url, bytes):
+        if not isinstance(scheme, bytes):
+            scheme = scheme.encode('ascii')
+        return uriparse(url, scheme, allow_fragments)
+    raise TypeError('url must be a string: %r' % url)
+
+
+def iriunparse(components):
+    if not all(isinstance(component, text_type) for component in components):
+        raise TypeError('expected unicode components: %r' % components)
+    scheme, netloc, iri, params, query, fragment = components
+    if params:
+        iri = u'%s;%s' % (iri, params)
+    return urlunsplit((scheme, netloc, iri, query, fragment))
+
+
+def uriunparse(components):
+    if not all(isinstance(component, bytes) for component in components):
+        raise TypeError('expected bytes components: %r' % components)
+    return iriunparse(
+        [component.decode('ascii') for component in components]
+    ).encode('ascii')
+
+
+def urlunparse(components):
+    """Put a parsed URL back together again. This may result in a slightly
+    different, but equivalent URL, if the URL that was parsed originally had
+    redundant delimiters, e.g. a ? with an empty query (the draft states that
+    these are equivalent)."""
+    if all(isinstance(component, text_type) for component in components):
+        return iriunparse(components)
+    elif all(isinstance(component, text_type) for component in components):
+        return uriunparse(components)
+    else:
+        raise TypeError('mixed type components: %r' % components)
+
+
+def urljoin(base, url, allow_fragments=True):
+    """Join a base URL and a possibly relative URL to form an absolute
+    interpretation of the latter."""
+    if isinstance(base, text_type) and isinstance(url, text_type):
+        return irijoin(base, url, allow_fragments)
+    elif isinstance(base, bytes) and isinstance(url, bytes):
+        return urijoin(base, url, allow_fragments)
+    raise TypeError('base and url have different types')
+
+
+def urijoin(base, url, allow_fragments=True):
+    if not (isinstance(base, bytes) and isinstance(url, bytes)):
+        raise TypeError('base and url must be bytes')
+    return irijoin(base.decode('ascii'), url.decode('ascii')).encode('ascii')
+
+
+def irijoin(base, url, allow_fragments=True):
+    if not (isinstance(base, text_type) and isinstance(url, text_type)):
+        raise TypeError('base and url must be unicode')
+    if not base:
+        return url
+    if not url:
+        return base
+    bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
+        urlparse(base, u'', allow_fragments)
+    scheme, netloc, path, params, query, fragment = \
+        urlparse(base, bscheme, allow_fragments)
+    if scheme != bscheme or scheme not in USES_RELATIVE:
+        return url
+    if scheme in USES_NETLOC:
+        if netloc:
+            return urlunparse((scheme, netloc, path, params, query, fragment))
+
+        netloc = bnetloc
+    if path[:1] == u'/':
+        return urlunparse((scheme, netloc, path, params, query, fragment))
+
+    if not path and not params:
+        path = bpath
+        params = bparams
+        if not query:
+            query = bquery
+        return urlunparse((scheme, netloc, path, params, query, fragment))
+    segments = bpath.split(u'/')[:-1] + path.split(u'/')
+    # XXX The stuff below is bogus in various ways...
+    if segments[-1] == u'.':
+        segments[-1] = u''
+    while u'.' in segments:
+        segments.remove(u'.')
+    while True:
+        i = 1
+        n = len(segments) - 1
+        while i < n:
+            if (segments[i] == u'..'
+                and segments[i-1] not in (u'', u'..')):
+                del segments[i-1:i+1]
+                break
+            i = i + 1
+        else:
+            break
+    if segments == [u'', u'..']:
+        segments[-1] = ''
+    elif len(segments) >= 2 and segments[-1] == u'..':
+        segments[-2:] = [u'']
+    return urlunparse((scheme, netloc, u'/'.join(segments), params, query,
+                       fragment))
 
 
 class Href(object):
@@ -352,11 +711,11 @@ class Href(object):
     Positional arguments are appended as individual segments to
     the path of the URL:
 
-    >>> href = Href(u'/foo')
-    >>> href(u'bar', 23)
-    u'/foo/bar/23'
-    >>> href(u'foo', bar=23)
-    u'/foo/foo?bar=23'
+    >>> href = Href('/foo')
+    >>> href('bar', 23)
+    '/foo/bar/23'
+    >>> href('foo', bar=23)
+    '/foo/foo?bar=23'
 
     If any of the arguments (positional or keyword) evaluates to `None` it
     will be skipped.  If no keyword arguments are given the last argument
@@ -365,13 +724,13 @@ class Href(object):
     off the first trailing underscore of the parameter name:
 
     >>> href(is_=42)
-    u'/foo?is=42'
-    >>> href({u'foo': u'bar'})
-    u'/foo?foo=bar'
+    '/foo?is=42'
+    >>> href({'foo': 'bar'})
+    '/foo?foo=bar'
 
     Combining of both methods is not allowed:
 
-    >>> href({u'foo': u'bar'}, bar=42)
+    >>> href({'foo': 'bar'}, bar=42)
     Traceback (most recent call last):
       ...
     TypeError: keyword arguments and query-dicts can't be combined
@@ -380,23 +739,23 @@ class Href(object):
     the attribute name as prefix:
 
     >>> bar_href = href.bar
-    >>> bar_href(u"blub")
-    u'/foo/bar/blub'
+    >>> bar_href("blub")
+    '/foo/bar/blub'
 
     If `sort` is set to `True` the items are sorted by `key` or the default
     sorting algorithm:
 
-    >>> href = Href("u/", sort=True)
+    >>> href = Href("/", sort=True)
     >>> href(a=1, b=2, c=3)
-    u'/?a=1&b=2&c=3'
+    '/?a=1&b=2&c=3'
 
     .. versionadded:: 0.5
         `sort` and `key` were added.
     """
 
-    def __init__(self, base=u'./', charset='utf-8', sort=False, key=None):
+    def __init__(self, base='./', charset='utf-8', sort=False, key=None):
         if not base:
-            base = u'./'
+            base = './'
         self.base = base
         self.charset = charset
         self.sort = sort
@@ -406,33 +765,27 @@ class Href(object):
         if name[:2] == '__':
             raise AttributeError(name)
         base = self.base
-        if base[-1:] != u'/':
-            base += u'/'
-        if isinstance(name, bytes):
-            name = name.decode(self.charset)
-        return Href(urlparse.urljoin(base, name), self.charset, self.sort,
-                    self.key)
-
-    def __quote(self, part):
-        return url_quote(part, encoding=self.charset)
+        if base[-1:] != '/':
+            base += '/'
+        return Href(urljoin(base, name), self.charset, self.sort, self.key)
 
     def __call__(self, *path, **query):
-        #XXX: Badly broken on Py3
         if path and isinstance(path[-1], dict):
             if query:
                 raise TypeError('keyword arguments and query-dicts '
                                 'can\'t be combined')
-            query, path = path[-1], path[:-1]
-        elif query:
-            query = dict([(k.endswith(u'_') and k[:-1] or k, v)
-                          for k, v in query.items()])
-        path = u'/'.join(map(self.__quote, filter(None, path))).lstrip('/')
-        rv = self.base
-        if path:
-            if not rv.endswith(u'/'):
-                rv += u'/'
-            rv = urlparse.urljoin(rv, u'./' + path)
-        if query:
-            rv += u'?' + url_encode(query, self.charset, sort=self.sort,
-                                   key=self.key)
+                query, path = path[-1], path[:-1]
+            elif query:
+                query = dict([(k.endswith('_') and k[:-1] or k, v)
+                              for k, v in query.items()])
+            path = '/'.join([to_native(url_quote(x, self.charset))
+                             for x in path if x is not None]).lstrip('/')
+            rv = self.base
+            if path:
+                if not rv.endswith('/'):
+                    rv += '/'
+                rv = urljoin(rv, './' + path)
+            if query:
+                rv += '?' + to_native(url_encode(query, self.charset,
+                                                 sort=self.sort, key=self.key))
         return rv
