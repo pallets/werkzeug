@@ -30,7 +30,6 @@ class URLsTestCase(WerkzeugTestCase):
                'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_decoding(self):
-        # decode_keys is ignored by _url_decode_impl
         x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel')
         self.assert_strict_equal(x['foo'], u'42')
         self.assert_strict_equal(x['bar'], u'23')
