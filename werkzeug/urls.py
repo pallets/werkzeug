@@ -272,7 +272,7 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
 
 _hexdigits = '0123456789ABCDEFabcdef'
 _hextobyte = dict(
-    ((a + b).encode(), bytes([int(a + b, 16)]))
+    ((a + b).encode(), int2byte(int(a + b, 16)))
     for a in _hexdigits for b in _hexdigits
 )
 def unquote_to_bytes(string, unsafe=''):
