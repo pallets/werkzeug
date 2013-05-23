@@ -19,7 +19,7 @@
 import re
 
 from werkzeug._compat import text_type, xrange, PY2, to_native, to_unicode, \
-    int2byte
+    int2byte, string_types
 from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
@@ -556,6 +556,8 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             key = url_quote(key, 'ascii')
         else:
             key = url_quote(key, charset)
+        if not isinstance(value, string_types):
+            value = str(value)
         yield key + b"=" + url_quote_plus(value)
 
 
