@@ -277,14 +277,20 @@ _hextobyte = dict(
     ((a + b).encode(), bytes([int(a + b, 16)]))
     for a in _hexdigits for b in _hexdigits
 )
-def unquote_to_bytes(string):
+def unquote_to_bytes(string, unsafe=''):
     if isinstance(string, text_type):
         string = string.encode('utf-8')
+    if isinstance(unsafe, text_type):
+        unsafe = unsafe.encode('utf-8')
+    unsafe = frozenset(unsafe)
     bits = string.split(b'%')
     result = [bits[0]]
     for item in bits[1:]:
         try:
-            result.append(_hextobyte[item[:2]])
+            char = _hextobyte[item[2:]]
+            if char in unsafe:
+                raise KeyError()
+            result.append(char)
             result.append(item[:2])
         except KeyError:
             result.append(b'%')
@@ -293,7 +299,7 @@ def unquote_to_bytes(string):
 
 
 _ascii_re = re.compile(to_unicode(r'([\x00-\x7f]+)', 'ascii'))
-def url_unquote(string, charset='utf-8', errors='replace'):
+def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
     """URL decode a single string with a given decoding.
 
     Per default encoding errors are ignored.  If you want a different behavior
@@ -309,7 +315,7 @@ def url_unquote(string, charset='utf-8', errors='replace'):
     bits = _ascii_re.split(string)
     result = [bits[0]]
     for i in xrange(1, len(bits), 2):
-        result.append(unquote_to_bytes(bits[i]).decode(charset, errors))
+        result.append(unquote_to_bytes(bits[i], unsafe).decode(charset, errors))
         result.append(bits[i + 1])
     return u''.join(result)
 
@@ -385,9 +391,9 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     if port:
         hostname += u':' + port.decode(charset, errors)
 
-    path = url_unquote(path, '/;?', charset, errors)
-    query = url_unquote(query, ';/?:@&=+,$', charset, errors)
-    fragment = url_unquote(fragment, ';/?:@&=+,$', charset, errors)
+    path = url_unquote(path, charset, errors, '/;?')
+    query = url_unquote(query, charset, errors, ';/?:@&=+,$')
+    fragment = url_unquote(fragment, charset, errors, ';/?:@&=+,$')
     return urlunsplit((scheme, hostname, path, query, fragment))
 
 
