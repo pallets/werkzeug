@@ -18,8 +18,7 @@
 """
 import re
 
-from werkzeug._compat import text_type, PY2, to_native, to_unicode, int2byte, \
-    imap
+from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap
 from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
@@ -767,8 +766,8 @@ class Href(object):
         if name[:2] == '__':
             raise AttributeError(name)
         base = self.base
-        if base[-1:] != '/':
-            base += '/'
+        if base[-1:] != u'/':
+            base += u'/'
         return Href(urljoin(base, name), self.charset, self.sort, self.key)
 
     def __call__(self, *path, **query):
@@ -780,14 +779,14 @@ class Href(object):
         elif query:
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
-        path = '/'.join([to_native(url_quote(x, self.charset))
-                         for x in path if x is not None]).lstrip('/')
+        path = u'/'.join([url_quote(x, self.charset).decode('ascii')
+                         for x in path if x is not None]).lstrip(u'/')
         rv = self.base
         if path:
-            if not rv.endswith('/'):
-                rv += '/'
-            rv = urljoin(rv, './' + path)
+            if not rv.endswith(u'/'):
+                rv += u'/'
+            rv = urljoin(rv, u'./' + path)
         if query:
-            rv += '?' + to_native(url_encode(query, self.charset,
-                                             sort=self.sort, key=self.key))
+            rv += u'?' + url_encode(query, self.charset, sort=self.sort,
+                                    key=self.key).decode('ascii')
         return rv
