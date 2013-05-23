@@ -18,8 +18,8 @@
 """
 import re
 
-from werkzeug._compat import text_type, xrange, PY2, to_native, to_unicode, \
-    int2byte, imap
+from werkzeug._compat import text_type, PY2, to_native, to_unicode, int2byte, \
+    imap
 from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
