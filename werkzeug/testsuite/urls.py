@@ -20,7 +20,7 @@ from werkzeug._compat import PY2, text_type, StringIO
 class URLsTestCase(WerkzeugTestCase):
 
     def test_quoting(self):
-        self.assert_strict_equal(urls.url_quote(u'\xf6\xe4\xfc'), u'%C3%B6%C3%A4%C3%BC')
+        self.assert_strict_equal(urls.url_quote(u'\xf6\xe4\xfc'), b'%C3%B6%C3%A4%C3%BC')
         self.assert_strict_equal(urls.url_unquote(urls.url_quote(u'#%="\xf6')), u'#%="\xf6')
         self.assert_strict_equal(urls.url_quote_plus('foo bar'), u'foo+bar')
         self.assert_strict_equal(urls.url_unquote_plus('foo+bar'), u'foo bar')
@@ -56,10 +56,10 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_encoding(self):
-        self.assert_strict_equal(urls.url_encode({'foo': 'bar 45'}), u'foo=bar+45')
+        self.assert_strict_equal(urls.url_encode({'foo': 'bar 45'}), b'foo=bar+45')
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
-        self.assert_strict_equal(urls.url_encode(d, sort=True), u'bar=23&blah=H%C3%A4nsel&foo=1')
-        self.assert_strict_equal(urls.url_encode(d, sort=True, separator=u';'), u'bar=23;blah=H%C3%A4nsel;foo=1')
+        self.assert_strict_equal(urls.url_encode(d, sort=True), b'bar=23&blah=H%C3%A4nsel&foo=1')
+        self.assert_strict_equal(urls.url_encode(d, sort=True, separator=u';'), b'bar=23;blah=H%C3%A4nsel;foo=1')
 
     def test_sorted_url_encode(self):
         self.assert_strict_equal(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True), u'1=1&2=2&a=42&b=23')
@@ -127,7 +127,7 @@ class URLsTestCase(WerkzeugTestCase):
         d.add('foo', 3)
         d.add('bar', 0)
         d.add('foo', 4)
-        self.assert_equal(urls.url_encode(d), u'foo=1&foo=2&foo=3&bar=0&foo=4')
+        self.assert_equal(urls.url_encode(d), b'foo=1&foo=2&foo=3&bar=0&foo=4')
 
     def test_href(self):
         x = urls.Href(u'http://www.example.com/')
@@ -170,8 +170,8 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_quoting_of_local_urls(self):
         rv = urls.iri_to_uri(u'/foo\x8f')
-        self.assert_strict_equal(rv, '/foo%C2%8F')
-        self.assert_is(type(rv), str)
+        self.assert_strict_equal(rv, b'/foo%C2%8F')
+        self.assert_is(type(rv), bytes)
 
 
 def suite():
