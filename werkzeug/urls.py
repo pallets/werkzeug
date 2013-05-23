@@ -211,7 +211,7 @@ def _url_split(url):
     if isinstance(netloc, text_type) and u'@' in netloc:
         auth, hostname = netloc.split(u'@', 1)
     elif isinstance(netloc, bytes) and b'@' in netloc:
-        auth, hostname = netloc.split(u'b', 1)
+        auth, hostname = netloc.split(b'@', 1)
     else:
         auth = None
         hostname = netloc

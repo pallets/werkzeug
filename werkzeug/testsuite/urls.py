@@ -103,21 +103,21 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(
             urls.uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'),
                             u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th')
-        self.assert_strict_equal(urls.iri_to_uri(u'http://☃.net/'), 'http://xn--n3h.net/')
+        self.assert_strict_equal(urls.iri_to_uri(u'http://☃.net/'), b'http://xn--n3h.net/')
         self.assert_strict_equal(
             urls.iri_to_uri(u'http://üser:pässword@☃.net/påth'),
-                            'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
+                            b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
 
         self.assert_strict_equal(urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F'),
-                                          u'http://test.com/%3Fmeh?foo=%26%2F')
+                                          b'http://test.com/%3Fmeh?foo=%26%2F')
 
         # this should work as well, might break on 2.4 because of a broken
         # idna codec
         self.assert_strict_equal(urls.uri_to_iri(b'/foo'), u'/foo')
-        self.assert_strict_equal(urls.iri_to_uri(u'/foo'), '/foo')
+        self.assert_strict_equal(urls.iri_to_uri(u'/foo'), b'/foo')
 
         self.assert_strict_equal(urls.iri_to_uri(u'http://föö.com:8080/bam/baz'),
-                          'http://xn--f-1gaa.com:8080/bam/baz')
+                          b'http://xn--f-1gaa.com:8080/bam/baz')
 
     def test_ordered_multidict_encoding(self):
         d = OrderedMultiDict()
