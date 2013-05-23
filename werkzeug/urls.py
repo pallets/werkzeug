@@ -19,7 +19,7 @@
 import re
 
 from werkzeug._compat import text_type, xrange, PY2, to_native, to_unicode, \
-    int2byte, string_types, imap
+    int2byte, imap
 from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
@@ -516,6 +516,8 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
     """
+    if isinstance(separator, text_type):
+        separator = separator.encode(charset)
     return separator.join(_url_encode_impl(obj, charset, encode_keys, sort, key))
 
 
@@ -539,6 +541,8 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
     """
+    if isinstance(separator, text_type):
+        separator = separator.encode(charset)
     gen = _url_encode_impl(obj, charset, encode_keys, sort, key)
     if stream is None:
         return gen
@@ -555,14 +559,11 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
     for key, value in iterable:
         if value is None:
             continue
-        if PY2 and not encode_keys:
-            # Force coercion-like behavior on native strings
-            key = url_quote(key, 'ascii')
-        else:
-            key = url_quote(str(key), charset)
-        if not isinstance(value, string_types):
-            value = str(value)
-        yield key + b'=' + url_quote_plus(value)
+        if not isinstance(key, bytes):
+            key = text_type(key).encode(charset)
+        if not isinstance(value, bytes):
+            value = text_type(value).encode(charset)
+        yield url_quote(key) + b'=' + url_quote_plus(value)
 
 
 def _splitparams(iri):
