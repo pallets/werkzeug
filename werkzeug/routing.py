@@ -1371,8 +1371,8 @@ class MapAdapter(object):
             query_args = self.query_args
         method = (method or self.default_method).upper()
 
-        path = u'%s|/%s' % (self.map.host_matching and self.server_name or
-                            self.subdomain, path_info.lstrip('/'))
+        path = u'%s|%s' % (self.map.host_matching and self.server_name or
+                           self.subdomain, path_info)
 
         have_match_for = set()
         for rule in self.map._rules:
