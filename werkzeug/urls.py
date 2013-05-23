@@ -151,10 +151,10 @@ def quote(string, safe='/', charset='utf-8', errors='strict'):
         int2byte(char) if isinstance(char, int) else char
         for char in ALWAYS_SAFE.union(safe)
     )
-    safe = set(b"".join(
+    safe = set(
         char.encode(charset, 'replace') if hasattr(char, 'encode') else char
         for char in safe
-    ))
+    )
     return b''.join(
         char if char in safe else ('%%%X' % ord(char)).encode('ascii')
         for char in imap(int2byte, bytearray(string))
@@ -562,7 +562,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             key = url_quote(str(key), charset)
         if not isinstance(value, string_types):
             value = str(value)
-        yield key + b"=" + url_quote_plus(value)
+        yield key + b'=' + url_quote_plus(value)
 
 
 def _splitparams(iri):
