@@ -158,7 +158,7 @@ def quote(string, safe='/', charset='utf-8', errors='strict'):
     ))
     return b''.join(
         (int2byte(char) if isinstance(char, int) else char)
-        if char in safe else '%%%x' % char
+        if char in safe else ('%%%x' % char).encode('ascii')
         for char in string
     )
 
