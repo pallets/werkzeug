@@ -19,7 +19,7 @@
 import re
 
 from werkzeug._compat import text_type, xrange, PY2, to_native, to_unicode, \
-    int2byte, string_types
+    int2byte, string_types, imap
 from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
@@ -147,7 +147,6 @@ def url_quote(string, safe='/', charset='utf-8', errors='strict'):
 def quote(string, safe='/', charset='utf-8', errors='strict'):
     if isinstance(string, text_type):
         string = string.encode(charset, errors)
-    string = bytearray(string)
     safe = set(
         int2byte(char) if isinstance(char, int) else char
         for char in ALWAYS_SAFE.union(safe)
@@ -157,9 +156,8 @@ def quote(string, safe='/', charset='utf-8', errors='strict'):
         for char in safe
     ))
     return b''.join(
-        (int2byte(char) if isinstance(char, int) else char)
-        if char in safe else ('%%%X' % char).encode('ascii')
-        for char in string
+        char if char in safe else ('%%%X' % ord(char)).encode('ascii')
+        for char in imap(int2byte, bytearray(string))
     )
 
 
