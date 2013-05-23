@@ -267,7 +267,7 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
 
     path = url_quote(path, '/:~+%', charset, errors)
     query = url_quote(query, '%&[]:;$*()+,!?*/', charset, errors)
-    fragment = url_quote(query, '=%&[]:;$()+,!?*/', charset, errors)
+    fragment = url_quote(fragment, '=%&[]:;$()+,!?*/', charset, errors)
 
     return urlunsplit((scheme, hostname, path, query, fragment))
 
