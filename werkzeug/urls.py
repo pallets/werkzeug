@@ -9,7 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug import _urlparse as urlparse
-from werkzeug._compat import to_bytes, to_native, text_type, PY2
+from werkzeug._compat import to_bytes, to_native, to_unicode, text_type, PY2
 from werkzeug._internal import _decode_unicode
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from werkzeug.wsgi import make_chunk_iter
@@ -148,7 +148,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         hostname = auth + u'@' + hostname
     if port:
         # port should be numeric, but you never know...
-        hostname += u':' + port.decode(charset, errors)
+        hostname += u':' + to_unicode(port, charset)
 
     path = url_unquote(path, unsafe=b'/;?', encoding=charset, errors=errors)
     query = url_unquote(query, unsafe=b';/?:@&=+,$', encoding=charset, errors=errors)
