@@ -113,11 +113,11 @@ def irisplit(iri, scheme=u'', allow_fragments=True):
 def urisplit(uri, scheme=b'', allow_fragments=True):
     if not (isinstance(uri, bytes) and isinstance(scheme, bytes)):
         raise TypeError('uri and scheme must be bytes')
-    return irisplit(
+    return tuple(component.encode('ascii') for component in irisplit(
         uri.decode('ascii'),
         scheme.decode('ascii'),
         allow_fragments
-    ).encode('ascii')
+    ))
 
 
 def urlsplit(url, scheme='', allow_fragments=True):
