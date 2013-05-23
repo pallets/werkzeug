@@ -259,7 +259,7 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
         auth = url_quote(auth, charset=charset, errors=errors)
         if password:
             auth += b':' + url_quote(password, charset=charset, errors=errors)
-        hostname += auth + b'@' + hostname
+        hostname = auth + b'@' + hostname
     if port:
         hostname += b':' + port.encode(charset, errors)
 
