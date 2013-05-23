@@ -337,8 +337,8 @@ def url_fix(s, charset='utf-8'):
     if isinstance(s, text_type):
         s = s.encode(charset, 'replace')
     scheme, netloc, path, qs, anchor = urlsplit(s)
-    path = url_quote(path, '/%')
-    qs = url_quote_plus(path, ':&%=')
+    path = url_quote(path, safe='/%')
+    qs = url_quote_plus(path, safe=':&%=')
     return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
