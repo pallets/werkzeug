@@ -579,11 +579,11 @@ def iriparse(iri, scheme=u'', allow_fragments=True):
 
 
 def uriparse(uri, scheme=b'', allow_fragments=True):
-    return iriparse(
+    return tuple(component.encode('ascii') for component in iriparse(
         uri.decode('ascii'),
         scheme.decode('ascii'),
         allow_fragments
-    ).encode('ascii')
+    ))
 
 
 def urlparse(url, scheme='', allow_fragments=True):
