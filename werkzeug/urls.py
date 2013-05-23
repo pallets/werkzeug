@@ -285,11 +285,11 @@ def unquote_to_bytes(string, unsafe=''):
     result = [bits[0]]
     for item in bits[1:]:
         try:
-            char = _hextobyte[item[2:]]
+            char = _hextobyte[item[:2]]
             if char in unsafe:
                 raise KeyError()
             result.append(char)
-            result.append(item[:2])
+            result.append(item[2:])
         except KeyError:
             result.append(b'%')
             result.append(item)
