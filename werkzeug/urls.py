@@ -133,7 +133,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
         raise TypeError('url must be a string')
 
 
-def url_quote(string, safe='/', charset='utf-8', errors='strict'):
+def url_quote(string, safe='/:', charset='utf-8', errors='strict'):
     """URL encode a single string with a given encoding.
 
     :param s: the string to quote.
