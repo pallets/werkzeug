@@ -753,9 +753,9 @@ class Href(object):
         `sort` and `key` were added.
     """
 
-    def __init__(self, base='./', charset='utf-8', sort=False, key=None):
+    def __init__(self, base=u'./', charset='utf-8', sort=False, key=None):
         if not base:
-            base = './'
+            base = u'./'
         self.base = base
         self.charset = charset
         self.sort = sort
@@ -767,6 +767,8 @@ class Href(object):
         base = self.base
         if base[-1:] != u'/':
             base += u'/'
+        if PY2:
+            name = name.decode('ascii')
         return Href(urljoin(base, name), self.charset, self.sort, self.key)
 
     def __call__(self, *path, **query):
@@ -774,7 +776,7 @@ class Href(object):
             if query:
                 raise TypeError('keyword arguments and query-dicts '
                                 'can\'t be combined')
-                query, path = path[-1], path[:-1]
+            query, path = path[-1], path[:-1]
         elif query:
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
