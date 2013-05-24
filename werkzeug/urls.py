@@ -661,7 +661,7 @@ def irijoin(base, url, allow_fragments=True):
     bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
         urlparse(base, u'', allow_fragments)
     scheme, netloc, path, params, query, fragment = \
-        urlparse(base, bscheme, allow_fragments)
+        urlparse(url, bscheme, allow_fragments)
     if scheme != bscheme or scheme not in USES_RELATIVE:
         return url
     if scheme in USES_NETLOC:
@@ -682,8 +682,7 @@ def irijoin(base, url, allow_fragments=True):
     # XXX The stuff below is bogus in various ways...
     if segments[-1] == u'.':
         segments[-1] = u''
-    while u'.' in segments:
-        segments.remove(u'.')
+    segments = [segment for segment in segments if segment != u'.']
     while True:
         i = 1
         n = len(segments) - 1
@@ -692,7 +691,7 @@ def irijoin(base, url, allow_fragments=True):
                 and segments[i-1] not in (u'', u'..')):
                 del segments[i-1:i+1]
                 break
-            i = i + 1
+            i += 1
         else:
             break
     if segments == [u'', u'..']:
