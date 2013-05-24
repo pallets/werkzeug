@@ -18,7 +18,7 @@
 """
 import re
 
-from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap
+from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap, iter_bytes_as_bytes
 from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
@@ -279,7 +279,7 @@ def unquote_to_bytes(string, unsafe=''):
         string = string.encode('utf-8')
     if isinstance(unsafe, text_type):
         unsafe = unsafe.encode('utf-8')
-    unsafe = frozenset(unsafe)
+    unsafe = frozenset(iter_bytes_as_bytes(unsafe))
     bits = string.split(b'%')
     result = [bits[0]]
     for item in bits[1:]:
