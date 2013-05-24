@@ -61,7 +61,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_encode(d, sort=True, separator=u';'), b'bar=23;blah=H%C3%A4nsel;foo=1')
 
     def test_sorted_url_encode(self):
-        self.assert_strict_equal(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True), b'1=1&2=2&a=42&b=23')
+        self.assert_strict_equal(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True, key=lambda i: text_type(i[0])), b'1=1&2=2&a=42&b=23')
         self.assert_strict_equal(urls.url_encode({u'A': 1, u'a': 2, u'B': 3, 'b': 4}, sort=True,
                           key=lambda x: x[0].lower() + x[0]), b'A=1&a=2&B=3&b=4')
 
