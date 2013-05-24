@@ -121,3 +121,9 @@ def string_join(iterable, default=''):
             return b''.join(l)
         return u''.join(l)
     return default
+
+def iter_bytes_as_bytes(iterable):
+    '''
+    list(iter_bytes_as_bytes(b'abc')) -> [b'a', b'b', b'c']
+    '''
+    return ((int2byte(x) if isinstance(x, int) else x) for x in iterable)
