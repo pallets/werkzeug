@@ -778,7 +778,7 @@ class Href(object):
         elif query:
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
-        path = u'/'.join([url_quote(x, self.charset).decode('ascii')
+        path = u'/'.join([url_quote(x, charset=self.charset).decode('ascii')
                          for x in path if x is not None]).lstrip(u'/')
         rv = self.base
         if path:
