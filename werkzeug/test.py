@@ -284,7 +284,7 @@ class EnvironBuilder(object):
         self.charset = charset
         self.path = iri_to_uri(path)
         if base_url is not None:
-            base_url = iri_to_uri(url_fix(base_url, charset), charset)
+            base_url = url_fix(iri_to_uri(base_url, charset), charset)
         self.base_url = base_url
         if isinstance(query_string, string_types):
             self.query_string = query_string

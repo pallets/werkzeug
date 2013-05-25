@@ -79,8 +79,8 @@ class WrappersTestCase(WerkzeugTestCase):
 
         # get requests
         response = client.get('/?foo=bar&foo=hehe')
-        self.assert_strict_equal(response['args'], MultiDict([(u'foo', u'bar'), (u'foo', u'hehe')]))
-        self.assert_strict_equal(response['args_as_list'], [(u'foo', [u'bar', u'hehe'])])
+        self.assert_strict_equal(response['args'], MultiDict([('foo', u'bar'), ('foo', u'hehe')]))
+        self.assert_strict_equal(response['args_as_list'], [('foo', [u'bar', u'hehe'])])
         self.assert_strict_equal(response['form'], MultiDict())
         self.assert_strict_equal(response['form_as_list'], [])
         self.assert_strict_equal(response['data'], b'')
@@ -89,9 +89,9 @@ class WrappersTestCase(WerkzeugTestCase):
         # post requests with form data
         response = client.post('/?blub=blah', data='foo=blub+hehe&blah=42',
                                content_type='application/x-www-form-urlencoded')
-        self.assert_strict_equal(response['args'], MultiDict([(u'blub', u'blah')]))
-        self.assert_strict_equal(response['args_as_list'], [(u'blub', [u'blah'])])
-        self.assert_strict_equal(response['form'], MultiDict([(u'foo', u'blub hehe'), (u'blah', u'42')]))
+        self.assert_strict_equal(response['args'], MultiDict([('blub', u'blah')]))
+        self.assert_strict_equal(response['args_as_list'], [('blub', [u'blah'])])
+        self.assert_strict_equal(response['form'], MultiDict([('foo', u'blub hehe'), ('blah', u'42')]))
         self.assert_strict_equal(response['data'], b'')
         # currently we do not guarantee that the values are ordered correctly
         # for post data.
@@ -101,10 +101,10 @@ class WrappersTestCase(WerkzeugTestCase):
         # patch requests with form data
         response = client.patch('/?blub=blah', data='foo=blub+hehe&blah=42',
                                 content_type='application/x-www-form-urlencoded')
-        self.assert_strict_equal(response['args'], MultiDict([(u'blub', u'blah')]))
-        self.assert_strict_equal(response['args_as_list'], [(u'blub', [u'blah'])])
+        self.assert_strict_equal(response['args'], MultiDict([('blub', u'blah')]))
+        self.assert_strict_equal(response['args_as_list'], [('blub', [u'blah'])])
         self.assert_strict_equal(response['form'],
-                                 MultiDict([(u'foo', u'blub hehe'), (u'blah', u'42')]))
+                                 MultiDict([('foo', u'blub hehe'), ('blah', u'42')]))
         self.assert_strict_equal(response['data'], b'')
         self.assert_environ(response['environ'], 'PATCH')
 
@@ -112,7 +112,7 @@ class WrappersTestCase(WerkzeugTestCase):
         json = b'{"foo": "bar", "blub": "blah"}'
         response = client.post('/?a=b', data=json, content_type='application/json')
         self.assert_strict_equal(response['data'], json)
-        self.assert_strict_equal(response['args'], MultiDict([(u'a', u'b')]))
+        self.assert_strict_equal(response['args'], MultiDict([('a', u'b')]))
         self.assert_strict_equal(response['form'], MultiDict())
 
     def test_access_route(self):
