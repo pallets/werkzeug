@@ -19,7 +19,7 @@
 import re
 
 from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap, \
-    iter_bytes_as_bytes
+    iter_bytes_as_bytes, to_native, to_bytes
 from werkzeug.datastructures import MultiDict, iter_multi_items
 
 
@@ -113,7 +113,7 @@ def irisplit(iri, scheme=u'', allow_fragments=True):
 def urisplit(uri, scheme=b'', allow_fragments=True):
     if not (isinstance(uri, bytes) and isinstance(scheme, bytes)):
         raise TypeError('uri and scheme must be bytes')
-    return tuple(component.encode('ascii') for component in irisplit(
+    return tuple(to_native(component, 'ascii') for component in irisplit(
         uri.decode('ascii'),
         scheme.decode('ascii'),
         allow_fragments
@@ -151,10 +151,10 @@ def quote(string, safe='/', charset='utf-8', errors='strict'):
         char.encode(charset, 'replace') if hasattr(char, 'encode') else char
         for char in iter_bytes_as_bytes(ALWAYS_SAFE.union(safe))
     )
-    return b''.join(
+    return to_native(b''.join(
         char if char in safe else ('%%%X' % ord(char)).encode('ascii')
         for char in imap(int2byte, bytearray(string))
-    )
+    ), 'ascii')
 
 
 def url_quote_plus(string, charset='utf-8', safe=''):
@@ -165,7 +165,7 @@ def url_quote_plus(string, charset='utf-8', safe=''):
     :param charset: The charset to be used.
     :param safe: An optional sequence of safe characters.
     """
-    return url_quote(string, set(safe).union([' ']), charset).replace(b' ', b'+')
+    return url_quote(string, set(safe).union([' ']), charset).replace(' ', '+')
 
 
 def urlunsplit(components):
@@ -196,9 +196,9 @@ def iriunsplit(components):
 def uriunsplit(components):
     if not all(isinstance(component, bytes) for component in components):
         raise TypeError('expected bytes components: %r' % components)
-    return iriunsplit(
+    return to_native(iriunsplit(
         [component.decode('ascii') for component in components]
-    ).encode('ascii')
+    ), 'ascii')
 
 
 def _url_split(url):
@@ -244,8 +244,8 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
         iri = iri.decode('ascii') # iri is really an uri
     scheme, auth, hostname, port, path, query, fragment = _url_split(iri)
 
-    scheme = scheme.encode(charset, errors)
-    hostname = hostname.encode('idna')
+    scheme = to_native(scheme, charset)
+    hostname = to_native(hostname.encode('idna'), 'ascii')
 
     if auth:
         if u':' in auth:
@@ -254,10 +254,10 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
             password = None
         auth = url_quote(auth, charset=charset, errors=errors)
         if password:
-            auth += b':' + url_quote(password, charset=charset, errors=errors)
-        hostname = auth + b'@' + hostname
+            auth += ':' + url_quote(password, charset=charset, errors=errors)
+        hostname = auth + '@' + hostname
     if port:
-        hostname += b':' + port.encode(charset, errors)
+        hostname += ':' + to_native(port, charset)
 
     path = url_quote(path, '/:~+%', charset, errors)
     query = url_quote(query, '%&[]:;$*()+,!?*/', charset, errors)
@@ -330,12 +330,11 @@ def url_unquote_plus(s, charset='utf-8', errors='replace'):
 
 def url_fix(s, charset='utf-8'):
     scheme, netloc, path, qs, anchor = urlsplit(s)
+    scheme = to_native(scheme, charset)
+    netloc = to_native(netloc, charset)
     path = url_quote(path, safe='/%', charset=charset)
-    if isinstance(s, text_type):
-        path = path.decode('ascii')
     qs = url_quote_plus(qs, safe=':&%=', charset=charset)
-    if isinstance(s, text_type):
-        qs = qs.decode('ascii')
+    anchor = to_native(anchor, charset)
     return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
@@ -366,12 +365,12 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     uri = url_fix(uri)
     scheme, auth, hostname, port, path, query, fragment = _url_split(uri)
 
-    scheme = scheme.decode(charset, errors)
-    hostname = hostname.decode('idna')
+    scheme = to_unicode(scheme, charset)
+    hostname = to_bytes(hostname, 'ascii').decode('idna')
 
     if auth:
-        if b':' in auth:
-            auth, password = auth.split(b':', 1)
+        if ':' in auth:
+            auth, password = auth.split(':', 1)
         else:
             password = None
         auth = url_unquote(auth, charset, errors)
@@ -509,8 +508,7 @@ def url_encode(obj, charset='utf-8', encode_keys=False, sort=False, key=None,
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
     """
-    if isinstance(separator, text_type):
-        separator = separator.encode(charset)
+    separator = to_native(separator, 'ascii')
     return separator.join(_url_encode_impl(obj, charset, encode_keys, sort, key))
 
 
@@ -534,8 +532,7 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
     """
-    if isinstance(separator, text_type):
-        separator = separator.encode(charset)
+    separator = to_native(separator, 'ascii')
     gen = _url_encode_impl(obj, charset, encode_keys, sort, key)
     if stream is None:
         return gen
@@ -556,7 +553,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             key = text_type(key).encode(charset)
         if not isinstance(value, bytes):
             value = text_type(value).encode(charset)
-        yield url_quote(key) + b'=' + url_quote_plus(value)
+        yield url_quote(key) + '=' + url_quote_plus(value)
 
 
 def _splitparams(iri):
@@ -579,7 +576,7 @@ def iriparse(iri, scheme=u'', allow_fragments=True):
 
 
 def uriparse(uri, scheme=b'', allow_fragments=True):
-    return tuple(component.encode('ascii') for component in iriparse(
+    return tuple(to_native(component, 'ascii') for component in iriparse(
         uri.decode('ascii'),
         scheme.decode('ascii'),
         allow_fragments
@@ -616,9 +613,9 @@ def iriunparse(components):
 def uriunparse(components):
     if not all(isinstance(component, bytes) for component in components):
         raise TypeError('expected bytes components: %r' % components)
-    return iriunparse(
+    return to_native(iriunparse(
         [component.decode('ascii') for component in components]
-    ).encode('ascii')
+    ), 'ascii')
 
 
 def urlunparse(components):
@@ -647,7 +644,7 @@ def urljoin(base, url, allow_fragments=True):
 def urijoin(base, url, allow_fragments=True):
     if not (isinstance(base, bytes) and isinstance(url, bytes)):
         raise TypeError('base and url must be bytes')
-    return irijoin(base.decode('ascii'), url.decode('ascii')).encode('ascii')
+    return to_native(irijoin(base.decode('ascii'), url.decode('ascii')), 'ascii')
 
 
 def irijoin(base, url, allow_fragments=True):
@@ -779,7 +776,7 @@ class Href(object):
         elif query:
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
-        path = u'/'.join([url_quote(x, charset=self.charset).decode('ascii')
+        path = u'/'.join([to_unicode(url_quote(x, charset=self.charset), 'ascii')
                          for x in path if x is not None]).lstrip(u'/')
         rv = self.base
         if path:
@@ -787,6 +784,6 @@ class Href(object):
                 rv += u'/'
             rv = urljoin(rv, u'./' + path)
         if query:
-            rv += u'?' + url_encode(query, self.charset, sort=self.sort,
-                                    key=self.key).decode('ascii')
+            rv += u'?' + to_unicode(url_encode(query, self.charset, sort=self.sort,
+                                               key=self.key), 'ascii')
         return rv
