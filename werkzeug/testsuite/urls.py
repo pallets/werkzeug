@@ -27,7 +27,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_encode({b'a': None, b'b': b'foo bar'}), b'b=foo+bar')
         self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), b'b=foo+bar')
         self.assert_strict_equal(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),
-               'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
+               u'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_decoding(self):
         x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel')
