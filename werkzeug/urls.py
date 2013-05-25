@@ -138,14 +138,14 @@ def urlsplit(url, scheme='', allow_fragments=True):
         raise TypeError('url must be a string')
 
 
-def url_quote(string, safe='/:', charset='utf-8', errors='strict'):
+def url_quote(string, charset='utf-8', safe='/:'):
     """URL encode a single string with a given encoding.
 
     :param s: the string to quote.
     :param charset: the charset to be used.
     :param safe: an optional sequence of safe characters.
     """
-    return quote(string, safe, charset, errors)
+    return quote(string, safe, charset)
 
 
 def quote(string, safe='/', charset='utf-8', errors='strict'):
@@ -169,7 +169,7 @@ def url_quote_plus(string, charset='utf-8', safe=''):
     :param charset: The charset to be used.
     :param safe: An optional sequence of safe characters.
     """
-    return url_quote(string, set(safe).union([' ']), charset).replace(' ', '+')
+    return url_quote(string, charset, set(safe).union([' '])).replace(' ', '+')
 
 
 def urlunsplit(components):
@@ -256,16 +256,16 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
             auth, password = auth.split(':', 1)
         else:
             password = None
-        auth = url_quote(auth, charset=charset, errors=errors)
+        auth = url_quote(auth, charset)
         if password:
-            auth += ':' + url_quote(password, charset=charset, errors=errors)
+            auth += ':' + url_quote(password, charset)
         hostname = auth + '@' + hostname
     if port:
         hostname += ':' + to_native(port, charset)
 
-    path = url_quote(path, '/:~+%', charset, errors)
-    query = url_quote(query, '%&[]:;$*()+,!?*/', charset, errors)
-    fragment = url_quote(fragment, '=%&[]:;$()+,!?*/', charset, errors)
+    path = url_quote(path, charset, '/:~+%')
+    query = url_quote(query, charset, '%&[]:;$*()+,!?*/')
+    fragment = url_quote(fragment, charset, '=%&[]:;$()+,!?*/')
 
     return urlunsplit((scheme, hostname, path, query, fragment))
 
@@ -336,8 +336,8 @@ def url_fix(s, charset='utf-8'):
     scheme, netloc, path, qs, anchor = urlsplit(s)
     scheme = to_native(scheme, charset)
     netloc = to_native(netloc, charset)
-    path = url_quote(path, safe='/%', charset=charset)
-    qs = url_quote_plus(qs, safe=':&%=', charset=charset)
+    path = url_quote(path, charset, '/%')
+    qs = url_quote_plus(qs, charset, ':&%=')
     anchor = to_native(anchor, charset)
     return urlunsplit((scheme, netloc, path, qs, anchor))
 
@@ -780,7 +780,7 @@ class Href(object):
         elif query:
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
-        path = u'/'.join([to_unicode(url_quote(x, charset=self.charset), 'ascii')
+        path = u'/'.join([to_unicode(url_quote(x, self.charset), 'ascii')
                          for x in path if x is not None]).lstrip(u'/')
         rv = self.base
         if path:
