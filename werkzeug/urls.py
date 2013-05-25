@@ -148,12 +148,8 @@ def quote(string, safe='/', charset='utf-8', errors='strict'):
     if isinstance(string, text_type):
         string = string.encode(charset, errors)
     safe = set(
-        int2byte(char) if isinstance(char, int) else char
-        for char in ALWAYS_SAFE.union(safe)
-    )
-    safe = set(
         char.encode(charset, 'replace') if hasattr(char, 'encode') else char
-        for char in safe
+        for char in iter_bytes_as_bytes(ALWAYS_SAFE.union(safe))
     )
     return b''.join(
         char if char in safe else ('%%%X' % ord(char)).encode('ascii')
