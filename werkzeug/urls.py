@@ -21,6 +21,7 @@ import re
 from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap, \
     iter_bytes_as_bytes, to_native, to_bytes
 from werkzeug.datastructures import MultiDict, iter_multi_items
+from collections import namedtuple
 
 
 #: Characters valid in scheme names
@@ -58,6 +59,9 @@ USES_PARAMS = frozenset([
     'rtspu', 'sip', 'sips', 'mms', '', 'sftp', 'tel'
 ])
 
+SplitResult = namedtuple('SplitResult',
+                         ['scheme', 'netloc', 'path', 'query', 'fragment'])
+
 
 def _splitnetloc(iri, start=0):
     delim = len(iri) # position of end of domain part of iri, default is end
@@ -86,7 +90,7 @@ def irisplit(iri, scheme=u'', allow_fragments=True):
                 iri, fragment = iri.split(u'#', 1)
             if u'?' in iri:
                 iri, query = iri.split(u'?', 1)
-            return scheme, netloc, iri, query, fragment
+            return SplitResult(scheme, netloc, iri, query, fragment)
         for c in iri[:i]:
             if c not in SCHEME_CHARS:
                 break
@@ -106,14 +110,14 @@ def irisplit(iri, scheme=u'', allow_fragments=True):
     if allow_fragments and u'#' in iri:
         iri, fragment = iri.split(u'#', 1)
     if u'?' in iri:
-        url, query = iri.split(u'?', 1)
-    return scheme, netloc, iri, query, fragment
+        iri, query = iri.split(u'?', 1)
+    return SplitResult(scheme, netloc, iri, query, fragment)
 
 
 def urisplit(uri, scheme=b'', allow_fragments=True):
     if not (isinstance(uri, bytes) and isinstance(scheme, bytes)):
         raise TypeError('uri and scheme must be bytes')
-    return tuple(to_native(component, 'ascii') for component in irisplit(
+    return SplitResult._make(to_native(component, 'ascii') for component in irisplit(
         uri.decode('ascii'),
         scheme.decode('ascii'),
         allow_fragments

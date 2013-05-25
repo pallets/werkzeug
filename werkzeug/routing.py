@@ -1510,7 +1510,7 @@ class MapAdapter(object):
             self.url_scheme,
             self.get_host(domain_part),
             posixpath.join(self.script_name[:-1].lstrip('/'),
-                           url_quote(path_info.lstrip('/'), self.map.charset,
+                           url_quote(path_info.lstrip('/'), charset=self.map.charset,
                                      safe='/:|+')),
             suffix
         ))
