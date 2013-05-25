@@ -47,10 +47,6 @@ try:
     from _thread import start_new_thread
 except ImportError:
     from thread import start_new_thread
-try:
-    from urllib import unquote
-except ImportError:
-    from urllib.parse import unquote
 
 try:
     from SocketServer import ThreadingMixIn, ForkingMixIn
@@ -62,7 +58,7 @@ except ImportError:
 import werkzeug
 from werkzeug._internal import _log
 from werkzeug._compat import iteritems, PY2, reraise, text_type
-from werkzeug.urls import urlsplit
+from werkzeug.urls import urlsplit, url_unquote
 from werkzeug.exceptions import InternalServerError
 
 
@@ -93,7 +89,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_SOFTWARE':      self.server_version,
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
-            'PATH_INFO':            unquote(request_url.path),
+            'PATH_INFO':            url_unquote(request_url.path),
             'QUERY_STRING':         request_url.query,
             'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
             'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
