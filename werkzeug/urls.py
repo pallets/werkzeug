@@ -333,11 +333,13 @@ def url_unquote_plus(s, charset='utf-8', errors='replace'):
 
 
 def url_fix(s, charset='utf-8'):
-    if isinstance(s, text_type):
-        s = s.encode(charset, 'replace')
     scheme, netloc, path, qs, anchor = urlsplit(s)
-    path = url_quote(path, safe='/%')
-    qs = url_quote_plus(qs, safe=':&%=')
+    path = url_quote(path, safe='/%', charset=charset)
+    if isinstance(s, text_type):
+        path = path.decode('ascii')
+    qs = url_quote_plus(qs, safe=':&%=', charset=charset)
+    if isinstance(s, text_type):
+        qs = qs.decode('ascii')
     return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
