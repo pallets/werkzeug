@@ -165,7 +165,12 @@ class WerkzeugTestCase(unittest.TestCase):
         elif isinstance(x, set) or isinstance(y, set):
             x = sorted(x)
             y = sorted(y)
-        self.assert_equal(repr(x), repr(y))
+        rx, ry = repr(x), repr(y)
+        if rx != ry:
+            rx = rx[:200] + (rx[200:] and '...')
+            ry = ry[:200] + (ry[200:] and '...')
+            raise AssertionError(rx, ry)
+        assert repr(x) == repr(y), repr((x, y))[:200]
 
 
 class _ExceptionCatcher(object):

@@ -24,7 +24,7 @@ try:
 except ImportError: # Py2
     from cookielib import CookieJar
 
-from werkzeug import _urlparse as urlparse
+from werkzeug import urls as urlparse
 from werkzeug._compat import iterlists, iteritems, itervalues, to_native, \
     string_types, text_type, reraise
 from werkzeug._internal import _empty_stream, _get_environ
@@ -284,7 +284,7 @@ class EnvironBuilder(object):
         self.charset = charset
         self.path = iri_to_uri(path)
         if base_url is not None:
-            base_url = iri_to_uri(url_fix(base_url, charset), charset)
+            base_url = url_fix(iri_to_uri(base_url, charset), charset)
         self.base_url = base_url
         if isinstance(query_string, string_types):
             self.query_string = query_string

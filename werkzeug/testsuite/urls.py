@@ -14,23 +14,22 @@ from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug.datastructures import OrderedMultiDict
 from werkzeug import urls
-from werkzeug._compat import PY2, text_type, StringIO
+from werkzeug._compat import PY2, text_type, NativeStringIO, BytesIO
 
 
 class URLsTestCase(WerkzeugTestCase):
 
     def test_quoting(self):
-        self.assert_strict_equal(urls.url_quote(u'\xf6\xe4\xfc'), u'%C3%B6%C3%A4%C3%BC')
+        self.assert_strict_equal(urls.url_quote(u'\xf6\xe4\xfc'), '%C3%B6%C3%A4%C3%BC')
         self.assert_strict_equal(urls.url_unquote(urls.url_quote(u'#%="\xf6')), u'#%="\xf6')
-        self.assert_strict_equal(urls.url_quote_plus('foo bar'), u'foo+bar')
+        self.assert_strict_equal(urls.url_quote_plus('foo bar'), 'foo+bar')
         self.assert_strict_equal(urls.url_unquote_plus('foo+bar'), u'foo bar')
-        self.assert_strict_equal(urls.url_encode({b'a': None, b'b': b'foo bar'}), u'b=foo+bar')
-        self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), u'b=foo+bar')
+        self.assert_strict_equal(urls.url_encode({b'a': None, b'b': b'foo bar'}), 'b=foo+bar')
+        self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), 'b=foo+bar')
         self.assert_strict_equal(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),
                'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
 
     def test_url_decoding(self):
-        # decode_keys is ignored by _url_decode_impl
         x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel')
         self.assert_strict_equal(x['foo'], u'42')
         self.assert_strict_equal(x['bar'], u'23')
@@ -47,42 +46,42 @@ class URLsTestCase(WerkzeugTestCase):
     def test_streamed_url_decoding(self):
         item1 = u'a' * 100000
         item2 = u'b' * 400
-        string = u'a=%s&b=%s&c=%s' % (item1, item2, item2)
-        gen = urls.url_decode_stream(StringIO(string), limit=len(string),
+        string = ('a=%s&b=%s&c=%s' % (item1, item2, item2)).encode('ascii')
+        gen = urls.url_decode_stream(BytesIO(string), limit=len(string),
                                      return_iterator=True)
-        self.assert_strict_equal(next(gen), (u'a', item1))
-        self.assert_strict_equal(next(gen), (u'b', item2))
-        self.assert_strict_equal(next(gen), (u'c', item2))
+        self.assert_strict_equal(next(gen), ('a', item1))
+        self.assert_strict_equal(next(gen), ('b', item2))
+        self.assert_strict_equal(next(gen), ('c', item2))
         self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_encoding(self):
-        self.assert_strict_equal(urls.url_encode({'foo': 'bar 45'}), u'foo=bar+45')
+        self.assert_strict_equal(urls.url_encode({'foo': 'bar 45'}), 'foo=bar+45')
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
-        self.assert_strict_equal(urls.url_encode(d, sort=True), u'bar=23&blah=H%C3%A4nsel&foo=1')
-        self.assert_strict_equal(urls.url_encode(d, sort=True, separator=u';'), u'bar=23;blah=H%C3%A4nsel;foo=1')
+        self.assert_strict_equal(urls.url_encode(d, sort=True), 'bar=23&blah=H%C3%A4nsel&foo=1')
+        self.assert_strict_equal(urls.url_encode(d, sort=True, separator=u';'), 'bar=23;blah=H%C3%A4nsel;foo=1')
 
     def test_sorted_url_encode(self):
-        self.assert_strict_equal(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True), u'1=1&2=2&a=42&b=23')
+        self.assert_strict_equal(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True, key=lambda i: text_type(i[0])), '1=1&2=2&a=42&b=23')
         self.assert_strict_equal(urls.url_encode({u'A': 1, u'a': 2, u'B': 3, 'b': 4}, sort=True,
-                          key=lambda x: x[0].lower() + x[0]), u'A=1&a=2&B=3&b=4')
+                          key=lambda x: x[0].lower() + x[0]), 'A=1&a=2&B=3&b=4')
 
     def test_streamed_url_encoding(self):
-        out = StringIO()
+        out = NativeStringIO()
         urls.url_encode_stream({'foo': 'bar 45'}, out)
-        self.assert_strict_equal(out.getvalue(), u'foo=bar+45')
+        self.assert_strict_equal(out.getvalue(), 'foo=bar+45')
 
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
-        out = StringIO()
+        out = NativeStringIO()
         urls.url_encode_stream(d, out, sort=True)
-        self.assert_strict_equal(out.getvalue(), u'bar=23&blah=H%C3%A4nsel&foo=1')
-        out = StringIO()
+        self.assert_strict_equal(out.getvalue(), 'bar=23&blah=H%C3%A4nsel&foo=1')
+        out = NativeStringIO()
         urls.url_encode_stream(d, out, sort=True, separator=u';')
-        self.assert_strict_equal(out.getvalue(), u'bar=23;blah=H%C3%A4nsel;foo=1')
+        self.assert_strict_equal(out.getvalue(), 'bar=23;blah=H%C3%A4nsel;foo=1')
 
         gen = urls.url_encode_stream(d, sort=True)
-        self.assert_strict_equal(next(gen), u'bar=23')
-        self.assert_strict_equal(next(gen), u'blah=H%C3%A4nsel')
-        self.assert_strict_equal(next(gen), u'foo=1')
+        self.assert_strict_equal(next(gen), 'bar=23')
+        self.assert_strict_equal(next(gen), 'blah=H%C3%A4nsel')
+        self.assert_strict_equal(next(gen), 'foo=1')
         self.assert_raises(StopIteration, lambda: next(gen))
 
     def test_url_fixing(self):
@@ -127,7 +126,7 @@ class URLsTestCase(WerkzeugTestCase):
         d.add('foo', 3)
         d.add('bar', 0)
         d.add('foo', 4)
-        self.assert_equal(urls.url_encode(d), u'foo=1&foo=2&foo=3&bar=0&foo=4')
+        self.assert_equal(urls.url_encode(d), 'foo=1&foo=2&foo=3&bar=0&foo=4')
 
     def test_href(self):
         x = urls.Href(u'http://www.example.com/')

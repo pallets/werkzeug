@@ -19,7 +19,7 @@ from time import time, mktime
 from datetime import datetime
 from functools import partial
 
-from werkzeug import _urlparse as urlparse
+from werkzeug import urls as urlparse
 from werkzeug._compat import string_join, iteritems, text_type, string_types, \
     implements_iterator
 from werkzeug._internal import _patch_wrapper
