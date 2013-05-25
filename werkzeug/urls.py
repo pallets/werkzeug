@@ -36,7 +36,7 @@ ALWAYS_SAFE = frozenset(
     'abcdefghijklmnopqrstuvwxyz'
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     '0123456789'
-    '_.-'
+    '_.-+'
 )
 
 #: Schemes that use a netloc as part of their URL.
