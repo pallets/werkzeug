@@ -510,7 +510,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
         hostname = auth + u'@' + hostname
 
     if port:
-        hostname += u':' + port.decode(charset, errors)
+        hostname += u':' + to_unicode(port, charset)
 
     path = url_unquote(path, charset, errors, '/;?')
     query = url_unquote(query, charset, errors, ';/?:@&=+,$')
