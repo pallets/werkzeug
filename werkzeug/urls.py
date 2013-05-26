@@ -110,6 +110,13 @@ class URL(_URLTuple):
         """The password if it was part of the URL, `None` otherwise."""
         return self._split_auth()[1]
 
+    def decode_query(self, *args, **kwargs):
+        """Decodes the query part of the URL.  Ths is a shortcut for
+        calling :func:`url_decode` on the query argument.  The arguments and
+        keyword arguments are forwarded to :func:`url_decode` unchanged.
+        """
+        return url_decode(self.query or '', *args, **kwargs)
+
     def _split_netloc(self):
         if '@' in self.netloc:
             return self.netloc.split('@', 1)
