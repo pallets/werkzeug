@@ -80,12 +80,12 @@ else:
     NativeStringIO = StringIO
 
 
-def to_unicode(x, charset):
+def to_unicode(x, charset=sys.getdefaultencoding()):
     '''please use carefully'''
     if x is None:
         return None
     if not isinstance(x, bytes):
-        return str(x)
+        return text_type(x)
     return x.decode(charset)
 
 
@@ -103,14 +103,14 @@ def to_bytes(x, charset):
         return x
 
 
-def to_native(x, charset=sys.getdefaultencoding()):
+def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
     '''please use carefully'''
     if x is None or isinstance(x, str):
         return x
     if PY2:
-        return x.encode(charset)
+        return x.encode(charset, errors)
     else:
-        return x.decode(charset)
+        return x.decode(charset, errors)
 
 
 def string_join(iterable, default=''):
@@ -128,3 +128,12 @@ def iter_bytes_as_bytes(iterable):
     list(iter_bytes_as_bytes(b'abc')) -> [b'a', b'b', b'c']
     '''
     return ((int2byte(x) if isinstance(x, int) else x) for x in iterable)
+
+
+def coerce_string(string, reference):
+    """Coerces a native string into the reference type."""
+    assert isinstance(string, str), 'Given string is not a native string'
+    reference_type = type(reference)
+    if not isinstance(string, reference_type) and reference_type is bytes:
+        string = string.encode('ascii')
+    return string

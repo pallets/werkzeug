@@ -8,8 +8,10 @@
     :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import re
 from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap, \
-     iter_bytes_as_bytes, to_native, to_bytes, implements_to_string
+     iter_bytes_as_bytes, to_native, to_bytes, implements_to_string, \
+     coerce_string
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
 
@@ -29,13 +31,8 @@ from collections import namedtuple
 # dropping that part anyways.
 
 
-#: Characters valid in scheme names
-SCHEME_CHARS = frozenset(
-    'abcdefghijklmnopqrstuvwxyz'
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    '0123456789'
-    '+-.'
-)
+# A regular expression for what a valid schema looks like
+_scheme_re = re.compile(r'^[a-zA-Z0-9+-.]+$')
 
 #: Characters that are safe in any part of an URL.
 ALWAYS_SAFE = frozenset(
@@ -89,7 +86,7 @@ class URL(_URLTuple):
         otherwise.  This does not fill in default ports.
         """
         try:
-            return int(self._split_host()[1])
+            return int(to_native(self._split_host()[1]))
         except (ValueError, TypeError):
             return None
 
@@ -137,7 +134,7 @@ class URL(_URLTuple):
         calling :func:`url_decode` on the query argument.  The arguments and
         keyword arguments are forwarded to :func:`url_decode` unchanged.
         """
-        return url_decode(self.query or '', *args, **kwargs)
+        return url_decode(self.query, *args, **kwargs)
 
     def join(self, *args, **kwargs):
         """Joins this URL with another one.  This is just a convenience
@@ -156,128 +153,41 @@ class URL(_URLTuple):
         return self.to_url()
 
     def _split_netloc(self):
-        if '@' in self.netloc:
-            return self.netloc.split('@', 1)
+        sign = coerce_string('@', self.netloc)
+        if sign in self.netloc:
+            return self.netloc.split(sign, 1)
         return None, self.netloc
 
     def _split_auth(self):
         auth = self._split_netloc()[0]
         if not auth:
             return None, None
-        return auth.split(':', 1)
+        sign = coerce_string(':', auth)
+        return auth.split(sign, 1)
 
     def _split_host(self):
         rv = self._split_netloc()[1]
         if not rv:
             return None, None
-        if not rv.startswith('['):
-            if ':' in rv:
-                return rv.split(':', 1)
+
+        lbracket = coerce_string('[', rv)
+        colon = coerce_string(':', rv)
+
+        if not rv.startswith(lbracket):
+            if colon in rv:
+                return rv.split(colon, 1)
             return rv, None
 
-        idx = rv.find(']')
+        rbracket = coerce_string(']', rv)
+        idx = rv.find(rbracket)
         if idx < 0:
             return rv, None
 
         host = rv[1:idx]
-        rest = rv[idx:]
-        if rest.startswith(']:'):
-            return host, rest[2:]
+        rest = rv[idx + 1:]
+        if rest.startswith(colon):
+            return host, rest[1:]
         return host, None
-
-
-def _splitnetloc(iri, start=0):
-    delim = len(iri) # position of end of domain part of iri, default is end
-    for c in '/?#':  # look for delimiters; the order is NOT important
-        wdelim = iri.find(c, start)      # find first of this delim
-        if wdelim >= 0:                  # if found
-            delim = min(delim, wdelim)   # use earliest delim position
-    return iri[start:delim], iri[delim:] # return (domain, rest)
-
-
-def _iriparse(iri, scheme=u'', allow_fragments=True):
-    if not (isinstance(iri, text_type) and isinstance(scheme, text_type)):
-        raise TypeError('iri and scheme must be unicode')
-    netloc = query = fragment = u''
-    i = iri.find(u':')
-    if i > 0:
-        if iri[:i] == u'http': # optimize the common case
-            scheme = iri[:i].lower()
-            iri = iri[i + 1:]
-            if iri[:2] == u'//':
-                netloc, iri = _splitnetloc(iri, 2)
-                if ((u'[' in netloc and u']' not in netloc) or
-                    (u']' in netloc and u'[' not in netloc)):
-                    raise ValueError('Invalid IPv6 URL')
-            if allow_fragments and u'#' in iri:
-                iri, fragment = iri.split(u'#', 1)
-            if u'?' in iri:
-                iri, query = iri.split(u'?', 1)
-            return URL(scheme, netloc, iri, query, fragment)
-        for c in iri[:i]:
-            if c not in SCHEME_CHARS:
-                break
-        else:
-            # make sure "iri" is not actually a port number (in which case
-            # "scheme" is really part of the path)
-            rest = iri[i + 1:]
-            if not rest or any(c not in u'0123456789' for c in rest):
-                # not a port number
-                scheme, iri = iri[:i].lower(), rest
-
-    if iri[:2] == u'//':
-        netloc, iri = _splitnetloc(iri, 2)
-        if ((u'[' in netloc and u']' not in netloc) or
-            (u']' in netloc and u'[' not in netloc)):
-            raise ValueError('Invalid IPv6 URL')
-    if allow_fragments and u'#' in iri:
-        iri, fragment = iri.split(u'#', 1)
-    if u'?' in iri:
-        iri, query = iri.split(u'?', 1)
-    return URL(scheme, netloc, iri, query, fragment)
-
-
-def _uriparse(uri, scheme=b'', allow_fragments=True):
-    if not (isinstance(uri, bytes) and isinstance(scheme, bytes)):
-        raise TypeError('uri and scheme must be bytes')
-    return URL._make(to_native(component, 'ascii') for component in _iriparse(
-        uri.decode('ascii'),
-        scheme.decode('ascii'),
-        allow_fragments
-    ))
-
-
-def _iriunparse(components):
-    if not all(isinstance(component, text_type) for component in components):
-        raise TypeError('expected unicode components: %r' % components)
-    scheme, netloc, path, query, fragment = components
-    url = u''
-
-    # We generally treat file:///x and file:/x the same which is also
-    # what browsers seem to do.  This also allows us to ignore a schema
-    # register for netloc utilization or having to differenciate between
-    # empty and missing netloc.
-    if netloc or (scheme and path.startswith(u'/')):
-        if path and path[:1] != u'/':
-            path = u'/' + path
-        url = u'//' + (netloc or u'') + path
-    elif path:
-        url += path
-    if scheme:
-        url = scheme + u':' + url
-    if query:
-        url = url + u'?' + query
-    if fragment:
-        url = url + u'#' + fragment
-    return url
-
-
-def _uriunparse(components):
-    if not all(isinstance(component, bytes) for component in components):
-        raise TypeError('expected bytes components: %r' % components)
-    return to_native(_iriunparse(
-        [component.decode('ascii') for component in components]
-    ), 'ascii')
 
 
 def _url_split(url):
@@ -362,15 +272,38 @@ def url_parse(url, scheme='', allow_fragments=True):
                             from the URL.
     """
     if isinstance(url, text_type):
-        if not isinstance(scheme, text_type):
-            scheme = scheme.decode('ascii')
-        return _iriparse(url, scheme, allow_fragments)
-    elif isinstance(url, bytes):
-        if not isinstance(scheme, bytes):
-            scheme = scheme.encode('ascii')
-        return _uriparse(url, scheme, allow_fragments)
+        s = lambda x: x
+        scheme = to_unicode(scheme)
     else:
-        raise TypeError('url must be a string')
+        s = lambda x: x.encode('ascii')
+        scheme = to_bytes(scheme, 'ascii')
+
+    netloc = query = fragment = type(url)()
+    i = url.find(s(':'))
+    if i > 0 and _scheme_re.match(to_native(url[:i], errors='replace')):
+        # make sure "iri" is not actually a port number (in which case
+        # "scheme" is really part of the path)
+        rest = url[i + 1:]
+        if not rest or any(c not in s('0123456789') for c in rest):
+            # not a port number
+            scheme, url = url[:i].lower(), rest
+
+    if url[:2] == s('//'):
+        delim = len(url)
+        for c in s('/?#'):
+            wdelim = url.find(c, 2)
+            if wdelim >= 0:
+                delim = min(delim, wdelim)
+        netloc, url = url[2:delim], url[delim:]
+        if ((s('[') in netloc and s(']') not in netloc) or
+            (s(']') in netloc and s('[') not in netloc)):
+            raise ValueError('Invalid IPv6 URL')
+
+    if allow_fragments and s('#') in url:
+        url, fragment = url.split(s('#'), 1)
+    if s('?') in url:
+        url, query = url.split(s('?'), 1)
+    return URL(scheme, netloc, url, query, fragment)
 
 
 def url_quote(string, charset='utf-8', safe='/:'):
@@ -401,11 +334,37 @@ def url_unparse(components):
     :param components: the parsed URL as tuple which should be converted
                        into a URL string.
     """
-    if all(isinstance(component, text_type) for component in components):
-        return _iriunparse(components)
-    elif all(isinstance(component, bytes) for component in components):
-        return _uriunparse(components)
-    raise TypeError('mixed type components: %r' % components)
+    scheme, netloc, path, query, fragment = components
+
+    # Helper functionality to operate on the correct string types.  On
+    # unparsing the types in the URL have to be consistent.
+    reference_type = type(scheme)
+    if not all(isinstance(x, reference_type) for x in components):
+        raise TypeError('Inconsistent string types for unparsing: %s'
+                        % repr(components))
+    url = reference_type()
+    if reference_type is text_type:
+        s = lambda x: x
+    else:
+        s = lambda x: x.encode('ascii')
+
+    # We generally treat file:///x and file:/x the same which is also
+    # what browsers seem to do.  This also allows us to ignore a schema
+    # register for netloc utilization or having to differenciate between
+    # empty and missing netloc.
+    if netloc or (scheme and path.startswith(s('/'))):
+        if path and path[:1] != s('/'):
+            path = s('/') + path
+        url = s('//') + (netloc or s('')) + path
+    elif path:
+        url += path
+    if scheme:
+        url = scheme + s(':') + url
+    if query:
+        url = url + s('?') + query
+    if fragment:
+        url = url + s('#') + fragment
+    return url
 
 
 def iri_to_uri(iri, charset='utf-8', errors='strict'):

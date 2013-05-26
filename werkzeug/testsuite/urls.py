@@ -190,6 +190,20 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(rv.host, u'\N{SNOWMAN}.com')
         self.assert_strict_equal(rv.ascii_host, 'xn--n3h.com')
 
+    def test_url_attributes_bytes(self):
+        rv = urls.url_parse(b'http://foo%3a:bar%3a@[::1]:80/123?x=y#frag')
+        self.assert_strict_equal(rv.scheme, b'http')
+        self.assert_strict_equal(rv.auth, b'foo%3a:bar%3a')
+        self.assert_strict_equal(rv.username, u'foo:')
+        self.assert_strict_equal(rv.password, u'bar:')
+        self.assert_strict_equal(rv.raw_username, b'foo%3a')
+        self.assert_strict_equal(rv.raw_password, b'bar%3a')
+        self.assert_strict_equal(rv.host, b'::1')
+        self.assert_equal(rv.port, 80)
+        self.assert_strict_equal(rv.path, b'/123')
+        self.assert_strict_equal(rv.query, b'x=y')
+        self.assert_strict_equal(rv.fragment, b'frag')
+
     def test_url_joining(self):
         self.assert_strict_equal(urls.url_join('/foo', '/bar'), '/bar')
         self.assert_strict_equal(urls.url_join('http://example.com/foo', '/bar'),
