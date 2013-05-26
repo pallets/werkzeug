@@ -66,6 +66,9 @@ _hextobyte = dict(
 SplitResult = namedtuple('SplitResult',
                          ['scheme', 'netloc', 'path', 'query', 'fragment'])
 
+ParseResult = namedtuple('ParseResult',
+                         ['scheme', 'netloc', 'path', 'params', 'query', 'fragment'])
+
 
 def _splitnetloc(iri, start=0):
     delim = len(iri) # position of end of domain part of iri, default is end
@@ -573,15 +576,15 @@ def _iriparse(iri, scheme=u'', allow_fragments=True):
         iri, params = _splitparams(iri)
     else:
         params = u''
-    return scheme, netloc, url, params, query, fragment
+    return ParseResult(scheme, netloc, url, params, query, fragment)
 
 
 def _uriparse(uri, scheme=b'', allow_fragments=True):
-    return tuple(to_native(component, 'ascii') for component in _iriparse(
+    return ParseResult(*(to_native(component, 'ascii') for component in _iriparse(
         uri.decode('ascii'),
         scheme.decode('ascii'),
         allow_fragments
-    ))
+    )))
 
 
 def _iriunparse(components):
