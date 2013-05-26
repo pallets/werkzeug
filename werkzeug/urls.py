@@ -296,7 +296,6 @@ def unquote_to_bytes(string, unsafe=''):
     return b''.join(result)
 
 
-_ascii_re = re.compile(to_unicode(r'([\x00-\x7f]+)', 'ascii'))
 def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
     """URL decode a single string with a given decoding.
 
