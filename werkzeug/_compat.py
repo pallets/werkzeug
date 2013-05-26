@@ -122,6 +122,7 @@ def string_join(iterable, default=''):
         return u''.join(l)
     return default
 
+
 def iter_bytes_as_bytes(iterable):
     '''
     list(iter_bytes_as_bytes(b'abc')) -> [b'a', b'b', b'c']

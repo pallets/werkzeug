@@ -19,7 +19,7 @@ from time import time, mktime
 from datetime import datetime
 from functools import partial
 
-from werkzeug import urls as urlparse
+from werkzeug import urls
 from werkzeug._compat import string_join, iteritems, text_type, string_types, \
     implements_iterator
 from werkzeug._internal import _patch_wrapper
@@ -71,11 +71,11 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     cat = tmp.append
     if host_only:
         return uri_to_iri(''.join(tmp) + '/')
-    cat(urlparse.quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
+    cat(urls.url_quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
     if root_only:
         cat('/')
     else:
-        cat(urlparse.quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
+        cat(urls.url_quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
         if not strip_querystring:
             qs = environ.get('QUERY_STRING')
             if qs:
@@ -289,9 +289,9 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
                                              root_only=True)
     base_iri = _as_iri(environ_or_baseurl)
     base_scheme, base_netloc, base_path, = \
-        urlparse.urlsplit(base_iri)[:3]
+        urls.url_split(base_iri)[:3]
     cur_scheme, cur_netloc, cur_path, = \
-        urlparse.urlsplit(urlparse.urljoin(base_iri, path))[:3]
+        urls.url_split(urls.url_join(base_iri, path))[:3]
 
     # normalize the network location
     base_netloc = _normalize_netloc(base_scheme, base_netloc)

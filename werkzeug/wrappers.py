@@ -30,7 +30,7 @@ from werkzeug.http import HTTP_STATUS_CODES, \
      parse_options_header, dump_options_header, http_date, \
      parse_if_range_header, parse_cookie, dump_cookie, \
      parse_range_header, parse_content_range_header, dump_header
-from werkzeug.urls import url_decode, iri_to_uri
+from werkzeug.urls import url_decode, iri_to_uri, url_join
 from werkzeug.formparser import FormDataParser, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      header_property, get_content_type
@@ -45,7 +45,6 @@ from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
 from werkzeug._compat import to_bytes, string_types, PY2, text_type, \
      integer_types
-from werkzeug import urls as urlparse
 
 
 def _run_wsgi_app(*args):
@@ -1004,7 +1003,7 @@ class BaseResponse(object):
                 current_url = get_current_url(environ, root_only=True)
                 if isinstance(current_url, text_type):
                     current_url = iri_to_uri(current_url)
-                location = urlparse.urljoin(current_url, location)
+                location = url_join(current_url, location)
             if location != old_location:
                 headers[u'Location'] = location
 
