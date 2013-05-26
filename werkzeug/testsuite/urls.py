@@ -173,16 +173,22 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_is(type(rv), str)
 
     def test_url_attributes(self):
-        rv = urls.url_parse('http://foo:bar@[::1]:80/123?x=y#frag')
+        rv = urls.url_parse('http://foo%3a:bar%3a@[::1]:80/123?x=y#frag')
         self.assert_strict_equal(rv.scheme, 'http')
-        self.assert_strict_equal(rv.auth, 'foo:bar')
-        self.assert_strict_equal(rv.username, 'foo')
-        self.assert_strict_equal(rv.password, 'bar')
+        self.assert_strict_equal(rv.auth, 'foo%3a:bar%3a')
+        self.assert_strict_equal(rv.username, u'foo:')
+        self.assert_strict_equal(rv.password, u'bar:')
+        self.assert_strict_equal(rv.raw_username, 'foo%3a')
+        self.assert_strict_equal(rv.raw_password, 'bar%3a')
         self.assert_strict_equal(rv.host, '::1')
         self.assert_equal(rv.port, 80)
         self.assert_strict_equal(rv.path, '/123')
         self.assert_strict_equal(rv.query, 'x=y')
         self.assert_strict_equal(rv.fragment, 'frag')
+
+        rv = urls.url_parse(u'http://\N{SNOWMAN}.com/')
+        self.assert_strict_equal(rv.host, u'\N{SNOWMAN}.com')
+        self.assert_strict_equal(rv.ascii_host, 'xn--n3h.com')
 
 
 def suite():

@@ -84,6 +84,17 @@ class URL(_URLTuple):
         return self._split_host()[0]
 
     @property
+    def ascii_host(self):
+        """Works exactly like :attr:`host` but will return a result that
+        is restricted to ASCII.  This is useful for socket operations
+        when the URL might include internationalized characters.
+        """
+        rv = self.host
+        if rv is not None and isinstance(rv, text_type):
+            rv = to_native(rv.encode('idna'), 'ascii')
+        return rv
+
+    @property
     def port(self):
         """The port in the URL as an integer if it was present, `None`
         otherwise.  This does not fill in default ports.
@@ -102,12 +113,34 @@ class URL(_URLTuple):
 
     @property
     def username(self):
-        """The username if it was part of the URL, `None` otherwise."""
+        """The username if it was part of the URL, `None` otherwise.
+        This undergoes URL decoding and will always be a unicode string.
+        """
+        rv = self._split_auth()[0]
+        if rv is not None:
+            return url_unquote(rv)
+
+    @property
+    def raw_username(self):
+        """The username if it was part of the URL, `None` otherwise.
+        Unlike :attr:`username` this one is not being decoded.
+        """
         return self._split_auth()[0]
 
     @property
     def password(self):
-        """The password if it was part of the URL, `None` otherwise."""
+        """The password if it was part of the URL, `None` otherwise.
+        This undergoes URL decoding and will always be a unicode string.
+        """
+        rv = self._split_auth()[1]
+        if rv is not None:
+            return url_unquote(rv)
+
+    @property
+    def raw_password(self):
+        """The password if it was part of the URL, `None` otherwise.
+        Unlike :attr:`password` this one is not being decoded.
+        """
         return self._split_auth()[1]
 
     def decode_query(self, *args, **kwargs):
