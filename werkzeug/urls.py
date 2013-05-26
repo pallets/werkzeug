@@ -63,8 +63,7 @@ _hextobyte = dict(
     for a in _hexdigits for b in _hexdigits
 )
 
-SplitResult = namedtuple('SplitResult',
-                         ['scheme', 'netloc', 'path', 'query', 'fragment'])
+URL = namedtuple('URL', ['scheme', 'netloc', 'path', 'query', 'fragment'])
 
 
 def _splitnetloc(iri, start=0):
@@ -76,7 +75,7 @@ def _splitnetloc(iri, start=0):
     return iri[start:delim], iri[delim:] # return (domain, rest)
 
 
-def _irisplit(iri, scheme=u'', allow_fragments=True):
+def _iriparse(iri, scheme=u'', allow_fragments=True):
     if not (isinstance(iri, text_type) and isinstance(scheme, text_type)):
         raise TypeError('iri and scheme must be unicode')
     netloc = query = fragment = u''
@@ -94,7 +93,7 @@ def _irisplit(iri, scheme=u'', allow_fragments=True):
                 iri, fragment = iri.split(u'#', 1)
             if u'?' in iri:
                 iri, query = iri.split(u'?', 1)
-            return SplitResult(scheme, netloc, iri, query, fragment)
+            return URL(scheme, netloc, iri, query, fragment)
         for c in iri[:i]:
             if c not in SCHEME_CHARS:
                 break
@@ -115,20 +114,20 @@ def _irisplit(iri, scheme=u'', allow_fragments=True):
         iri, fragment = iri.split(u'#', 1)
     if u'?' in iri:
         iri, query = iri.split(u'?', 1)
-    return SplitResult(scheme, netloc, iri, query, fragment)
+    return URL(scheme, netloc, iri, query, fragment)
 
 
-def _urisplit(uri, scheme=b'', allow_fragments=True):
+def _uriparse(uri, scheme=b'', allow_fragments=True):
     if not (isinstance(uri, bytes) and isinstance(scheme, bytes)):
         raise TypeError('uri and scheme must be bytes')
-    return SplitResult._make(to_native(component, 'ascii') for component in _irisplit(
+    return URL._make(to_native(component, 'ascii') for component in _iriparse(
         uri.decode('ascii'),
         scheme.decode('ascii'),
         allow_fragments
     ))
 
 
-def _iriunsplit(components):
+def _iriunparse(components):
     if not all(isinstance(component, text_type) for component in components):
         raise TypeError('expected unicode components: %r' % components)
     scheme, netloc, url, query, fragment = components
@@ -145,16 +144,16 @@ def _iriunsplit(components):
     return url
 
 
-def _uriunsplit(components):
+def _uriunparse(components):
     if not all(isinstance(component, bytes) for component in components):
         raise TypeError('expected bytes components: %r' % components)
-    return to_native(_iriunsplit(
+    return to_native(_iriunparse(
         [component.decode('ascii') for component in components]
     ), 'ascii')
 
 
 def _url_split(url):
-    scheme, netloc, path, query, fragment = url_split(url)
+    scheme, netloc, path, query, fragment = url_parse(url)
 
     if isinstance(netloc, text_type) and u'@' in netloc:
         auth, hostname = netloc.split(u'@', 1)
@@ -207,15 +206,15 @@ def _quote(string, safe='/', charset='utf-8', errors='strict'):
     ), 'ascii')
 
 
-def url_split(url, scheme='', allow_fragments=True):
+def url_parse(url, scheme='', allow_fragments=True):
     if isinstance(url, text_type):
         if not isinstance(scheme, text_type):
             scheme = scheme.decode('ascii')
-        return _irisplit(url, scheme, allow_fragments)
+        return _iriparse(url, scheme, allow_fragments)
     elif isinstance(url, bytes):
         if not isinstance(scheme, bytes):
             scheme = scheme.encode('ascii')
-        return _urisplit(url, scheme, allow_fragments)
+        return _uriparse(url, scheme, allow_fragments)
     else:
         raise TypeError('url must be a string')
 
@@ -241,11 +240,11 @@ def url_quote_plus(string, charset='utf-8', safe=''):
     return url_quote(string, charset, set(safe).union([' '])).replace(' ', '+')
 
 
-def url_unsplit(components):
+def url_unparse(components):
     if all(isinstance(component, text_type) for component in components):
-        return _iriunsplit(components)
+        return _iriunparse(components)
     elif all(isinstance(component, bytes) for component in components):
-        return _uriunsplit(components)
+        return _uriunparse(components)
     raise TypeError('mixed type components: %r' % components)
 
 
@@ -291,7 +290,7 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
     query = url_quote(query, charset, '%&[]:;$*()+,!?*/')
     fragment = url_quote(fragment, charset, '=%&[]:;$()+,!?*/')
 
-    return url_unsplit((scheme, hostname, path, query, fragment))
+    return url_unparse((scheme, hostname, path, query, fragment))
 
 
 def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
@@ -330,13 +329,13 @@ def url_unquote_plus(s, charset='utf-8', errors='replace'):
 
 
 def url_fix(s, charset='utf-8'):
-    scheme, netloc, path, qs, anchor = url_split(s)
+    scheme, netloc, path, qs, anchor = url_parse(s)
     scheme = to_native(scheme, charset)
     netloc = to_native(netloc, charset)
     path = url_quote(path, charset, '/%')
     qs = url_quote_plus(qs, charset, ':&%=')
     anchor = to_native(anchor, charset)
-    return url_unsplit((scheme, netloc, path, qs, anchor))
+    return url_unparse((scheme, netloc, path, qs, anchor))
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
@@ -385,7 +384,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     path = url_unquote(path, charset, errors, '/;?')
     query = url_unquote(query, charset, errors, ';/?:@&=+,$')
     fragment = url_unquote(fragment, charset, errors, ';/?:@&=+,$')
-    return url_unsplit((scheme, hostname, path, query, fragment))
+    return url_unparse((scheme, hostname, path, query, fragment))
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
@@ -591,24 +590,24 @@ def _irijoin(base, url, allow_fragments=True):
     if not url:
         return base
     bscheme, bnetloc, bpath, bquery, bfragment = \
-        url_split(base, u'', allow_fragments)
+        url_parse(base, u'', allow_fragments)
     scheme, netloc, path, query, fragment = \
-        url_split(url, bscheme, allow_fragments)
+        url_parse(url, bscheme, allow_fragments)
     if scheme != bscheme or scheme not in USES_RELATIVE:
         return url
     if scheme in USES_NETLOC:
         if netloc:
-            return url_unsplit((scheme, netloc, path, query, fragment))
+            return url_unparse((scheme, netloc, path, query, fragment))
 
         netloc = bnetloc
     if path[:1] == u'/':
-        return url_unsplit((scheme, netloc, path, query, fragment))
+        return url_unparse((scheme, netloc, path, query, fragment))
 
     if not path:
         path = bpath
         if not query:
             query = bquery
-        return url_unsplit((scheme, netloc, path, query, fragment))
+        return url_unparse((scheme, netloc, path, query, fragment))
     segments = bpath.split(u'/')[:-1] + path.split(u'/')
     # XXX The stuff below is bogus in various ways...
     if segments[-1] == u'.':
@@ -629,7 +628,7 @@ def _irijoin(base, url, allow_fragments=True):
         segments[-1] = ''
     elif len(segments) >= 2 and segments[-1] == u'..':
         segments[-2:] = [u'']
-    return url_unsplit((scheme, netloc, u'/'.join(segments), query, fragment))
+    return url_unparse((scheme, netloc, u'/'.join(segments), query, fragment))
 
 
 class Href(object):

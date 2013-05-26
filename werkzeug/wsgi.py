@@ -289,9 +289,9 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
                                              root_only=True)
     base_iri = _as_iri(environ_or_baseurl)
     base_scheme, base_netloc, base_path, = \
-        urls.url_split(base_iri)[:3]
+        urls.url_parse(base_iri)[:3]
     cur_scheme, cur_netloc, cur_path, = \
-        urls.url_split(urls.url_join(base_iri, path))[:3]
+        urls.url_parse(urls.url_join(base_iri, path))[:3]
 
     # normalize the network location
     base_netloc = _normalize_netloc(base_scheme, base_netloc)

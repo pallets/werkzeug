@@ -58,7 +58,7 @@ except ImportError:
 import werkzeug
 from werkzeug._internal import _log
 from werkzeug._compat import iteritems, PY2, reraise, text_type
-from werkzeug.urls import url_split, url_unquote
+from werkzeug.urls import url_parse, url_unquote
 from werkzeug.exceptions import InternalServerError
 
 
@@ -70,7 +70,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return 'Werkzeug/' + werkzeug.__version__
 
     def make_environ(self):
-        request_url = url_split(self.path)
+        request_url = url_parse(self.path)
 
         def shutdown_server():
             self.server.shutdown_signal = True

@@ -30,7 +30,7 @@ from werkzeug._compat import iterlists, iteritems, itervalues, to_native, \
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
-     url_unsplit, url_split
+     url_unparse, url_parse
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
@@ -349,7 +349,7 @@ class EnvironBuilder(object):
             self.files.add_file(key, value)
 
     def _get_base_url(self):
-        return url_unsplit((self.url_scheme, self.host,
+        return url_unparse((self.url_scheme, self.host,
                             self.script_root, '', '')).rstrip('/') + '/'
 
     def _set_base_url(self, value):
@@ -358,7 +358,7 @@ class EnvironBuilder(object):
             netloc = 'localhost'
             script_root = ''
         else:
-            scheme, netloc, script_root, qs, anchor = url_split(value)
+            scheme, netloc, script_root, qs, anchor = url_parse(value)
             if qs or anchor:
                 raise ValueError('base url must not contain a query string '
                                  'or fragment')
@@ -661,8 +661,8 @@ class Client(object):
         """Resolves a single redirect and triggers the request again
         directly on this redirect client.
         """
-        scheme, netloc, script_root, qs, anchor = url_split(new_location)
-        base_url = url_unsplit((scheme, netloc, '', '', '')).rstrip('/') + '/'
+        scheme, netloc, script_root, qs, anchor = url_parse(new_location)
+        base_url = url_unparse((scheme, netloc, '', '', '')).rstrip('/') + '/'
 
         cur_server_name = netloc.split(':', 1)[0].split('.')
         real_server_name = get_host(environ).rsplit(':', 1)[0].split('.')
