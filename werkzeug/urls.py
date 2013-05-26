@@ -9,7 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap, \
-     iter_bytes_as_bytes, to_native, to_bytes
+     iter_bytes_as_bytes, to_native, to_bytes, implements_to_string
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
 
@@ -56,6 +56,7 @@ _URLTuple = namedtuple('_URLTuple',
     ['scheme', 'netloc', 'path', 'query', 'fragment'])
 
 
+@implements_to_string
 class URL(_URLTuple):
     """Represents a parsed URL.  This behaves like a regular tuple but
     also has some extra attributes that give further insight into the
@@ -137,6 +138,22 @@ class URL(_URLTuple):
         keyword arguments are forwarded to :func:`url_decode` unchanged.
         """
         return url_decode(self.query or '', *args, **kwargs)
+
+    def join(self, *args, **kwargs):
+        """Joins this URL with another one.  This is just a convenience
+        function for calling into :meth:`url_join` and then parsing the
+        return value again.
+        """
+        return url_parse(url_join(self, *args, **kwargs))
+
+    def to_url(self):
+        """Returns a URL string.  This is just a convenience function
+        for calling :meth:`url_unparse` for this URL.
+        """
+        return url_unparse(self)
+
+    def __str__(self):
+        return self.to_url()
 
     def _split_netloc(self):
         if '@' in self.netloc:
@@ -233,11 +250,19 @@ def _uriparse(uri, scheme=b'', allow_fragments=True):
 def _iriunparse(components):
     if not all(isinstance(component, text_type) for component in components):
         raise TypeError('expected unicode components: %r' % components)
-    scheme, netloc, url, query, fragment = components
-    if netloc or (scheme and url[:2] != u'//'):
-        if url and url[:1] != u'/':
-            url = u'/' + url
-        url = u'//' + (netloc or u'') + url
+    scheme, netloc, path, query, fragment = components
+    url = u''
+
+    # We generally treat file:///x and file:/x the same which is also
+    # what browsers seem to do.  This also allows us to ignore a schema
+    # register for netloc utilization or having to differenciate between
+    # empty and missing netloc.
+    if netloc or (scheme and path.startswith(u'/')):
+        if path and path[:1] != u'/':
+            path = u'/' + path
+        url = u'//' + (netloc or u'') + path
+    elif path:
+        url += path
     if scheme:
         url = scheme + u':' + url
     if query:
@@ -309,7 +334,28 @@ def _quote(string, safe='/', charset='utf-8', errors='strict'):
     ), 'ascii')
 
 
+def _url_encode_impl(obj, charset, encode_keys, sort, key):
+    iterable = iter_multi_items(obj)
+    if sort:
+        iterable = sorted(iterable, key=key)
+    for key, value in iterable:
+        if value is None:
+            continue
+        if not isinstance(key, bytes):
+            key = text_type(key).encode(charset)
+        if not isinstance(value, bytes):
+            value = text_type(value).encode(charset)
+        yield url_quote(key) + '=' + url_quote_plus(value)
+
+
 def url_parse(url, scheme='', allow_fragments=True):
+    """Parses a URL from a string into a :class:`URL` tuple.  If the URL
+    is lacking a scheme it can be provided as second argument, otherwise
+    it's ignored.  Optionally fragments can be stripped from the URL
+    by setting `allow_fragments` to `False`.
+
+    The inverse of this function is :func:`url_unparse`.
+    """
     if isinstance(url, text_type):
         if not isinstance(scheme, text_type):
             scheme = scheme.decode('ascii')
@@ -344,6 +390,9 @@ def url_quote_plus(string, charset='utf-8', safe=''):
 
 
 def url_unparse(components):
+    """Parses a URL into a :class:`URL` tuple that gives access to the
+    individual parts of it.
+    """
     if all(isinstance(component, text_type) for component in components):
         return _iriunparse(components)
     elif all(isinstance(component, bytes) for component in components):
@@ -432,6 +481,18 @@ def url_unquote_plus(s, charset='utf-8', errors='replace'):
 
 
 def url_fix(s, charset='utf-8'):
+    r"""Sometimes you get an URL by a user that just isn't a real URL because
+    it contains unsafe characters like ' ' and so on. This function can fix
+    some of the problems in a similar way browsers handle data entered by the
+    user:
+
+    >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
+    'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+
+    :param s: the string with the URL to fix.
+    :param charset: The target charset for the URL if the url was given as
+    unicode string.
+    """
     scheme, netloc, path, qs, anchor = url_parse(s)
     scheme = to_native(scheme, charset)
     netloc = to_native(netloc, charset)
@@ -645,33 +706,13 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
         stream.write(chunk)
 
 
-def _url_encode_impl(obj, charset, encode_keys, sort, key):
-    iterable = iter_multi_items(obj)
-    if sort:
-        iterable = sorted(iterable, key=key)
-    for key, value in iterable:
-        if value is None:
-            continue
-        if not isinstance(key, bytes):
-            key = text_type(key).encode(charset)
-        if not isinstance(value, bytes):
-            value = text_type(value).encode(charset)
-        yield url_quote(key) + '=' + url_quote_plus(value)
-
-
-def _splitparams(iri):
-    if u'/' in iri:
-        i = iri.find(u';', iri.rfind(u'/'))
-        if i < 0:
-            return iri, u''
-    else:
-        i = iri.find(u';')
-    return iri[:i], iri[i + 1:]
-
-
 def url_join(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter."""
+    if isinstance(base, tuple):
+        base = url_unparse(base)
+    if isinstance(url, tuple):
+        url = url_unparse(url)
     if isinstance(base, text_type) and isinstance(url, text_type):
         return _irijoin(base, url, allow_fragments)
     elif isinstance(base, bytes) and isinstance(url, bytes):
@@ -679,10 +720,11 @@ def url_join(base, url, allow_fragments=True):
     raise TypeError('base and url have different types')
 
 
-def _urijoin(base, url, allow_fragments=True):
+def _urijoin(base, url, *args, **kwargs):
     if not (isinstance(base, bytes) and isinstance(url, bytes)):
         raise TypeError('base and url must be bytes')
-    return to_native(_irijoin(base.decode('ascii'), url.decode('ascii')), 'ascii')
+    return to_native(_irijoin(base.decode('ascii'), url.decode('ascii'),
+                              *args, **kwargs), 'ascii')
 
 
 def _irijoin(base, url, allow_fragments=True):
@@ -693,7 +735,7 @@ def _irijoin(base, url, allow_fragments=True):
     if not url:
         return base
     bscheme, bnetloc, bpath, bquery, bfragment = \
-        url_parse(base, u'', allow_fragments)
+        url_parse(base, allow_fragments=allow_fragments)
     scheme, netloc, path, query, fragment = \
         url_parse(url, bscheme, allow_fragments)
     if scheme != bscheme:
@@ -715,7 +757,7 @@ def _irijoin(base, url, allow_fragments=True):
     if segments[-1] == u'.':
         segments[-1] = u''
     segments = [segment for segment in segments if segment != u'.']
-    while True:
+    while 1:
         i = 1
         n = len(segments) - 1
         while i < n:

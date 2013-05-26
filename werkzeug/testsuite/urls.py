@@ -190,6 +190,17 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(rv.host, u'\N{SNOWMAN}.com')
         self.assert_strict_equal(rv.ascii_host, 'xn--n3h.com')
 
+    def test_url_joining(self):
+        self.assert_strict_equal(urls.url_join('/foo', '/bar'), '/bar')
+        self.assert_strict_equal(urls.url_join('http://example.com/foo', '/bar'),
+                                 'http://example.com/bar')
+        self.assert_strict_equal(urls.url_join('file:///tmp/', 'test.html'),
+                                 'file:///tmp/test.html')
+        self.assert_strict_equal(urls.url_join('file:///tmp/x', 'test.html'),
+                                 'file:///tmp/test.html')
+        self.assert_strict_equal(urls.url_join('file:///tmp/x', '../../../x.html'),
+                                 'file:///../../x.html')
+
 
 def suite():
     suite = unittest.TestSuite()
