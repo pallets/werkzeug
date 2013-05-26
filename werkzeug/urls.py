@@ -66,9 +66,6 @@ _hextobyte = dict(
 SplitResult = namedtuple('SplitResult',
                          ['scheme', 'netloc', 'path', 'query', 'fragment'])
 
-ParseResult = namedtuple('ParseResult',
-                         ['scheme', 'netloc', 'path', 'params', 'query', 'fragment'])
-
 
 def _splitnetloc(iri, start=0):
     delim = len(iri) # position of end of domain part of iri, default is end
@@ -570,71 +567,6 @@ def _splitparams(iri):
     return iri[:i], iri[i+1:]
 
 
-def _iriparse(iri, scheme=u'', allow_fragments=True):
-    scheme, netloc, url, query, fragment = url_split(iri, scheme, allow_fragments)
-    if scheme in USES_PARAMS and u';' in iri:
-        iri, params = _splitparams(iri)
-    else:
-        params = u''
-    return ParseResult(scheme, netloc, url, params, query, fragment)
-
-
-def _uriparse(uri, scheme=b'', allow_fragments=True):
-    return ParseResult(*(to_native(component, 'ascii') for component in _iriparse(
-        uri.decode('ascii'),
-        scheme.decode('ascii'),
-        allow_fragments
-    )))
-
-
-def _iriunparse(components):
-    if not all(isinstance(component, text_type) for component in components):
-        raise TypeError('expected unicode components: %r' % components)
-    scheme, netloc, iri, params, query, fragment = components
-    if params:
-        iri = u'%s;%s' % (iri, params)
-    return url_unsplit((scheme, netloc, iri, query, fragment))
-
-
-def _uriunparse(components):
-    if not all(isinstance(component, bytes) for component in components):
-        raise TypeError('expected bytes components: %r' % components)
-    return to_native(_iriunparse(
-        [component.decode('ascii') for component in components]
-    ), 'ascii')
-
-
-def url_parse(url, scheme='', allow_fragments=True):
-    """Parse a URL into 6 components:
-    <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-    Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
-    Note that we don't break the components up in smaller bits
-    (e.g. netloc is a single string) and we don't expand % escapes."""
-    # XXX: ascii -> default encoding?
-    if isinstance(url, text_type):
-        if not isinstance(scheme, text_type):
-            scheme = scheme.decode('ascii')
-        return _iriparse(url, scheme, allow_fragments)
-    elif isinstance(url, bytes):
-        if not isinstance(scheme, bytes):
-            scheme = scheme.encode('ascii')
-        return _uriparse(url, scheme, allow_fragments)
-    raise TypeError('url must be a string: %r' % url)
-
-
-def url_unparse(components):
-    """Put a parsed URL back together again. This may result in a slightly
-    different, but equivalent URL, if the URL that was parsed originally had
-    redundant delimiters, e.g. a ? with an empty query (the draft states that
-    these are equivalent)."""
-    if all(isinstance(component, text_type) for component in components):
-        return _iriunparse(components)
-    elif all(isinstance(component, text_type) for component in components):
-        return _uriunparse(components)
-    else:
-        raise TypeError('mixed type components: %r' % components)
-
-
 def url_join(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter."""
@@ -658,26 +590,25 @@ def _irijoin(base, url, allow_fragments=True):
         return url
     if not url:
         return base
-    bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
-        url_parse(base, u'', allow_fragments)
-    scheme, netloc, path, params, query, fragment = \
-        url_parse(url, bscheme, allow_fragments)
+    bscheme, bnetloc, bpath, bquery, bfragment = \
+        url_split(base, u'', allow_fragments)
+    scheme, netloc, path, query, fragment = \
+        url_split(url, bscheme, allow_fragments)
     if scheme != bscheme or scheme not in USES_RELATIVE:
         return url
     if scheme in USES_NETLOC:
         if netloc:
-            return url_unparse((scheme, netloc, path, params, query, fragment))
+            return url_unsplit((scheme, netloc, path, query, fragment))
 
         netloc = bnetloc
     if path[:1] == u'/':
-        return url_unparse((scheme, netloc, path, params, query, fragment))
+        return url_unsplit((scheme, netloc, path, query, fragment))
 
-    if not path and not params:
+    if not path:
         path = bpath
-        params = bparams
         if not query:
             query = bquery
-        return url_unparse((scheme, netloc, path, params, query, fragment))
+        return url_unsplit((scheme, netloc, path, query, fragment))
     segments = bpath.split(u'/')[:-1] + path.split(u'/')
     # XXX The stuff below is bogus in various ways...
     if segments[-1] == u'.':
@@ -698,8 +629,7 @@ def _irijoin(base, url, allow_fragments=True):
         segments[-1] = ''
     elif len(segments) >= 2 and segments[-1] == u'..':
         segments[-2:] = [u'']
-    return url_unparse((scheme, netloc, u'/'.join(segments), params, query,
-                        fragment))
+    return url_unsplit((scheme, netloc, u'/'.join(segments), query, fragment))
 
 
 class Href(object):
