@@ -84,7 +84,7 @@ class ServingTestCase(WerkzeugTestCase):
     @silencestderr
     def test_broken_app(self):
         def broken_app(environ, start_response):
-            1/0
+            1 // 0
         server, addr = run_dev_server(broken_app)
         try:
             urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
