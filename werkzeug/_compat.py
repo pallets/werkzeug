@@ -81,7 +81,7 @@ else:
 
 
 def to_unicode(x, charset=sys.getdefaultencoding()):
-    '''please use carefully'''
+    """please use carefully"""
     if x is None:
         return None
     if not isinstance(x, bytes):
@@ -90,7 +90,7 @@ def to_unicode(x, charset=sys.getdefaultencoding()):
 
 
 def to_bytes(x, charset):
-    '''please use carefully'''
+    """please use carefully"""
     if x is None:
         return None
     if PY2:
@@ -103,8 +103,8 @@ def to_bytes(x, charset):
         return x
 
 
-def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
-    '''please use carefully'''
+def to_native(x, charset=sys.getdefaultencoding(), errors="strict"):
+    """please use carefully"""
     if x is None or isinstance(x, str):
         return x
     if PY2:
@@ -113,20 +113,18 @@ def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
         return x.decode(charset, errors)
 
 
-def string_join(iterable, default=''):
-    '''concatenate any string type'''
+def string_join(iterable, default=""):
+    """concatenate any string type"""
     l = list(iterable)
     if l:
         if isinstance(l[0], bytes):
-            return b''.join(l)
-        return u''.join(l)
+            return b"".join(l)
+        return u"".join(l)
     return default
 
 
 def iter_bytes_as_bytes(iterable):
-    '''
-    list(iter_bytes_as_bytes(b'abc')) -> [b'a', b'b', b'c']
-    '''
+    # XXX: optimize
     return ((int2byte(x) if isinstance(x, int) else x) for x in iterable)
 
 
