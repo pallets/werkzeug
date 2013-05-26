@@ -6,4 +6,4 @@ python:
   - "3.3"
 install:
   - "python setup.py install"
-script: python setup.py test
+script: make test

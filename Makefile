@@ -15,7 +15,7 @@ release:
 	python scripts/make-release.py
 
 test:
-	python setup.py test
+	python run-tests.py
 
 tox-test:
 	tox
