@@ -57,6 +57,12 @@ USES_PARAMS = frozenset([
     'rtspu', 'sip', 'sips', 'mms', '', 'sftp', 'tel'
 ])
 
+_hexdigits = '0123456789ABCDEFabcdef'
+_hextobyte = dict(
+    ((a + b).encode(), int2byte(int(a + b, 16)))
+    for a in _hexdigits for b in _hexdigits
+)
+
 SplitResult = namedtuple('SplitResult',
                          ['scheme', 'netloc', 'path', 'query', 'fragment'])
 
@@ -122,61 +128,6 @@ def _urisplit(uri, scheme=b'', allow_fragments=True):
     ))
 
 
-def url_split(url, scheme='', allow_fragments=True):
-    if isinstance(url, text_type):
-        if not isinstance(scheme, text_type):
-            scheme = scheme.decode('ascii')
-        return _irisplit(url, scheme, allow_fragments)
-    elif isinstance(url, bytes):
-        if not isinstance(scheme, bytes):
-            scheme = scheme.encode('ascii')
-        return _urisplit(url, scheme, allow_fragments)
-    else:
-        raise TypeError('url must be a string')
-
-
-def _quote(string, safe='/', charset='utf-8', errors='strict'):
-    if isinstance(string, text_type):
-        string = string.encode(charset, errors)
-    safe = set(
-        char.encode(charset, 'replace') if hasattr(char, 'encode') else char
-        for char in iter_bytes_as_bytes(ALWAYS_SAFE.union(safe))
-    )
-    return to_native(b''.join(
-        char if char in safe else ('%%%X' % ord(char)).encode('ascii')
-        for char in imap(int2byte, bytearray(string))
-    ), 'ascii')
-
-
-def url_quote(string, charset='utf-8', safe='/:'):
-    """URL encode a single string with a given encoding.
-
-    :param s: the string to quote.
-    :param charset: the charset to be used.
-    :param safe: an optional sequence of safe characters.
-    """
-    return _quote(string, safe, charset)
-
-
-def url_quote_plus(string, charset='utf-8', safe=''):
-    """URL encode a single string with the given encoding and convert
-    whitespace to "+".
-
-    :param s: The string to quote.
-    :param charset: The charset to be used.
-    :param safe: An optional sequence of safe characters.
-    """
-    return url_quote(string, charset, set(safe).union([' '])).replace(' ', '+')
-
-
-def url_unsplit(components):
-    if all(isinstance(component, text_type) for component in components):
-        return _iriunsplit(components)
-    elif all(isinstance(component, bytes) for component in components):
-        return _uriunsplit(components)
-    raise TypeError('mixed type components: %r' % components)
-
-
 def _iriunsplit(components):
     if not all(isinstance(component, text_type) for component in components):
         raise TypeError('expected unicode components: %r' % components)
@@ -222,6 +173,82 @@ def _url_split(url):
     return scheme, auth, hostname, port, path, query, fragment
 
 
+def _unquote_to_bytes(string, unsafe=''):
+    if isinstance(string, text_type):
+        string = string.encode('utf-8')
+    if isinstance(unsafe, text_type):
+        unsafe = unsafe.encode('utf-8')
+    unsafe = frozenset(iter_bytes_as_bytes(unsafe))
+    bits = string.split(b'%')
+    result = [bits[0]]
+    for item in bits[1:]:
+        try:
+            char = _hextobyte[item[:2]]
+            if char in unsafe:
+                raise KeyError()
+            result.append(char)
+            result.append(item[2:])
+        except KeyError:
+            result.append(b'%')
+            result.append(item)
+    return b''.join(result)
+
+
+def _quote(string, safe='/', charset='utf-8', errors='strict'):
+    if isinstance(string, text_type):
+        string = string.encode(charset, errors)
+    safe = set(
+        char.encode(charset, 'replace') if hasattr(char, 'encode') else char
+        for char in iter_bytes_as_bytes(ALWAYS_SAFE.union(safe))
+    )
+    return to_native(b''.join(
+        char if char in safe else ('%%%X' % ord(char)).encode('ascii')
+        for char in imap(int2byte, bytearray(string))
+    ), 'ascii')
+
+
+def url_split(url, scheme='', allow_fragments=True):
+    if isinstance(url, text_type):
+        if not isinstance(scheme, text_type):
+            scheme = scheme.decode('ascii')
+        return _irisplit(url, scheme, allow_fragments)
+    elif isinstance(url, bytes):
+        if not isinstance(scheme, bytes):
+            scheme = scheme.encode('ascii')
+        return _urisplit(url, scheme, allow_fragments)
+    else:
+        raise TypeError('url must be a string')
+
+
+def url_quote(string, charset='utf-8', safe='/:'):
+    """URL encode a single string with a given encoding.
+
+    :param s: the string to quote.
+    :param charset: the charset to be used.
+    :param safe: an optional sequence of safe characters.
+    """
+    return _quote(string, safe, charset)
+
+
+def url_quote_plus(string, charset='utf-8', safe=''):
+    """URL encode a single string with the given encoding and convert
+    whitespace to "+".
+
+    :param s: The string to quote.
+    :param charset: The charset to be used.
+    :param safe: An optional sequence of safe characters.
+    """
+    return url_quote(string, charset, set(safe).union([' '])).replace(' ', '+')
+
+
+def url_unsplit(components):
+    if all(isinstance(component, text_type) for component in components):
+        return _iriunsplit(components)
+    elif all(isinstance(component, bytes) for component in components):
+        return _uriunsplit(components)
+    raise TypeError('mixed type components: %r' % components)
+
+
 def iri_to_uri(iri, charset='utf-8', errors='strict'):
     r"""
     Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
@@ -265,32 +292,6 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
     fragment = url_quote(fragment, charset, '=%&[]:;$()+,!?*/')
 
     return url_unsplit((scheme, hostname, path, query, fragment))
-
-
-_hexdigits = '0123456789ABCDEFabcdef'
-_hextobyte = dict(
-    ((a + b).encode(), int2byte(int(a + b, 16)))
-    for a in _hexdigits for b in _hexdigits
-)
-def _unquote_to_bytes(string, unsafe=''):
-    if isinstance(string, text_type):
-        string = string.encode('utf-8')
-    if isinstance(unsafe, text_type):
-        unsafe = unsafe.encode('utf-8')
-    unsafe = frozenset(iter_bytes_as_bytes(unsafe))
-    bits = string.split(b'%')
-    result = [bits[0]]
-    for item in bits[1:]:
-        try:
-            char = _hextobyte[item[:2]]
-            if char in unsafe:
-                raise KeyError()
-            result.append(char)
-            result.append(item[2:])
-        except KeyError:
-            result.append(b'%')
-            result.append(item)
-    return b''.join(result)
 
 
 def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
@@ -583,6 +584,23 @@ def _uriparse(uri, scheme=b'', allow_fragments=True):
     ))
 
 
+def _iriunparse(components):
+    if not all(isinstance(component, text_type) for component in components):
+        raise TypeError('expected unicode components: %r' % components)
+    scheme, netloc, iri, params, query, fragment = components
+    if params:
+        iri = u'%s;%s' % (iri, params)
+    return url_unsplit((scheme, netloc, iri, query, fragment))
+
+
+def _uriunparse(components):
+    if not all(isinstance(component, bytes) for component in components):
+        raise TypeError('expected bytes components: %r' % components)
+    return to_native(_iriunparse(
+        [component.decode('ascii') for component in components]
+    ), 'ascii')
+
+
 def url_parse(url, scheme='', allow_fragments=True):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
@@ -599,23 +617,6 @@ def url_parse(url, scheme='', allow_fragments=True):
             scheme = scheme.encode('ascii')
         return _uriparse(url, scheme, allow_fragments)
     raise TypeError('url must be a string: %r' % url)
-
-
-def _iriunparse(components):
-    if not all(isinstance(component, text_type) for component in components):
-        raise TypeError('expected unicode components: %r' % components)
-    scheme, netloc, iri, params, query, fragment = components
-    if params:
-        iri = u'%s;%s' % (iri, params)
-    return url_unsplit((scheme, netloc, iri, query, fragment))
-
-
-def _uriunparse(components):
-    if not all(isinstance(component, bytes) for component in components):
-        raise TypeError('expected bytes components: %r' % components)
-    return to_native(_iriunparse(
-        [component.decode('ascii') for component in components]
-    ), 'ascii')
 
 
 def url_unparse(components):
