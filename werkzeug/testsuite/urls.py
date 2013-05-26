@@ -172,6 +172,18 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(rv, '/foo%C2%8F')
         self.assert_is(type(rv), str)
 
+    def test_url_attributes(self):
+        rv = urls.url_parse('http://foo:bar@[::1]:80/123?x=y#frag')
+        self.assert_strict_equal(rv.scheme, 'http')
+        self.assert_strict_equal(rv.auth, 'foo:bar')
+        self.assert_strict_equal(rv.username, 'foo')
+        self.assert_strict_equal(rv.password, 'bar')
+        self.assert_strict_equal(rv.host, '::1')
+        self.assert_equal(rv.port, 80)
+        self.assert_strict_equal(rv.path, '/123')
+        self.assert_strict_equal(rv.query, 'x=y')
+        self.assert_strict_equal(rv.fragment, 'frag')
+
 
 def suite():
     suite = unittest.TestSuite()

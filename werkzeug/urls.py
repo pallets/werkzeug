@@ -17,7 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap, \
-    iter_bytes_as_bytes, to_native, to_bytes
+     iter_bytes_as_bytes, to_native, to_bytes
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
 
@@ -63,7 +63,82 @@ _hextobyte = dict(
     for a in _hexdigits for b in _hexdigits
 )
 
-URL = namedtuple('URL', ['scheme', 'netloc', 'path', 'query', 'fragment'])
+
+_URLTuple = namedtuple('_URLTuple',
+    ['scheme', 'netloc', 'path', 'query', 'fragment'])
+
+
+class URL(_URLTuple):
+    """Represents a parsed URL.  This behaves like a regular tuple but
+    also has some extra attributes that give further insight into the
+    URL.
+    """
+    __slots__ = ()
+
+    @property
+    def host(self):
+        """The host part of the URL if available, otherwise `None`.  The
+        host is either the hostname or the IP address mentioned in the
+        URL.  It will not contain the port.
+        """
+        return self._split_host()[0]
+
+    @property
+    def port(self):
+        """The port in the URL as an integer if it was present, `None`
+        otherwise.  This does not fill in default ports.
+        """
+        try:
+            return int(self._split_host()[1])
+        except (ValueError, TypeError):
+            return None
+
+    @property
+    def auth(self):
+        """The authentication part in the URL if available, `None`
+        otherwise.
+        """
+        return self._split_netloc()[0]
+
+    @property
+    def username(self):
+        """The username if it was part of the URL, `None` otherwise."""
+        return self._split_auth()[0]
+
+    @property
+    def password(self):
+        """The password if it was part of the URL, `None` otherwise."""
+        return self._split_auth()[1]
+
+    def _split_netloc(self):
+        if '@' in self.netloc:
+            return self.netloc.split('@', 1)
+        return None, self.netloc
+
+    def _split_auth(self):
+        auth = self._split_netloc()[0]
+        if not auth:
+            return None, None
+        return auth.split(':', 1)
+
+    def _split_host(self):
+        rv = self._split_netloc()[1]
+        if not rv:
+            return None, None
+        if not rv.startswith('['):
+            if ':' in rv:
+                return rv.split(':', 1)
+            return rv, None
+
+        idx = rv.find(']')
+        if idx < 0:
+            return rv, None
+
+        host = rv[1:idx]
+        rest = rv[idx:]
+        if rest.startswith(']:'):
+            return host, rest[2:]
+        return host, None
 
 
 def _splitnetloc(iri, start=0):
