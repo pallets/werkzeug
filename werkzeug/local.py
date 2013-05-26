@@ -346,11 +346,14 @@ class LocalProxy(object):
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
-    def __setslice__(self, i, j, seq):
-        self._get_current_object()[i:j] = seq
+    if PY2:
+        __getslice__ = lambda x, i, j: x._get_current_object()[i:j]
 
-    def __delslice__(self, i, j):
-        del self._get_current_object()[i:j]
+        def __setslice__(self, i, j, seq):
+            self._get_current_object()[i:j] = seq
+
+        def __delslice__(self, i, j):
+            del self._get_current_object()[i:j]
 
     __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
     __delattr__ = lambda x, n: delattr(x._get_current_object(), n)
@@ -368,7 +371,6 @@ class LocalProxy(object):
     __getitem__ = lambda x, i: x._get_current_object()[i]
     __iter__ = lambda x: iter(x._get_current_object())
     __contains__ = lambda x, i: i in x._get_current_object()
-    __getslice__ = lambda x, i, j: x._get_current_object()[i:j]
     __add__ = lambda x, o: x._get_current_object() + o
     __sub__ = lambda x, o: x._get_current_object() - o
     __mul__ = lambda x, o: x._get_current_object() * o
