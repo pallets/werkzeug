@@ -45,25 +45,6 @@ ALWAYS_SAFE = frozenset(
     '_.-+'
 )
 
-#: Schemes that use a netloc as part of their URL.
-USES_NETLOC = frozenset([
-    'ftp', 'http', 'gopher', 'nntp', 'telnet', 'imap', 'wais', 'file', 'mms',
-    'https', 'shttp', 'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '', 'svn',
-    'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh'
-])
-
-#: Schemes that use relative paths as part of their URL.
-USES_RELATIVE = frozenset([
-    'ftp', 'http', 'gopher', 'nntp', 'imap', 'wais', 'file', 'https', 'shttp',
-    'mms', 'prospero', 'rtsp', 'rtspu', '', 'sftp', 'svn', 'svn+ssh'
-])
-
-#: Schemes that use params as part of their URL.
-USES_PARAMS = frozenset([
-    'ftp', 'hdl', 'prospero', 'http', 'imap', 'https', 'shttp', 'rtsp',
-    'rtspu', 'sip', 'sips', 'mms', '', 'sftp', 'tel'
-])
-
 _hexdigits = '0123456789ABCDEFabcdef'
 _hextobyte = dict(
     ((a + b).encode(), int2byte(int(a + b, 16)))
@@ -253,7 +234,7 @@ def _iriunparse(components):
     if not all(isinstance(component, text_type) for component in components):
         raise TypeError('expected unicode components: %r' % components)
     scheme, netloc, url, query, fragment = components
-    if netloc or (scheme and scheme in USES_NETLOC and url[:2] != u'//'):
+    if netloc or (scheme and url[:2] != u'//'):
         if url and url[:1] != u'/':
             url = u'/' + url
         url = u'//' + (netloc or u'') + url
@@ -715,13 +696,12 @@ def _irijoin(base, url, allow_fragments=True):
         url_parse(base, u'', allow_fragments)
     scheme, netloc, path, query, fragment = \
         url_parse(url, bscheme, allow_fragments)
-    if scheme != bscheme or scheme not in USES_RELATIVE:
+    if scheme != bscheme:
         return url
-    if scheme in USES_NETLOC:
-        if netloc:
-            return url_unparse((scheme, netloc, path, query, fragment))
+    if netloc:
+        return url_unparse((scheme, netloc, path, query, fragment))
+    netloc = bnetloc
 
-        netloc = bnetloc
     if path[:1] == u'/':
         return url_unparse((scheme, netloc, path, query, fragment))
 
