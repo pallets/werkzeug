@@ -186,7 +186,7 @@ def _iriparse(iri, scheme=u'', allow_fragments=True):
     if i > 0:
         if iri[:i] == u'http': # optimize the common case
             scheme = iri[:i].lower()
-            iri = iri[i+1:]
+            iri = iri[i + 1:]
             if iri[:2] == u'//':
                 netloc, iri = _splitnetloc(iri, 2)
                 if ((u'[' in netloc and u']' not in netloc) or
@@ -203,7 +203,7 @@ def _iriparse(iri, scheme=u'', allow_fragments=True):
         else:
             # make sure "iri" is not actually a port number (in which case
             # "scheme" is really part of the path)
-            rest = iri[i+1:]
+            rest = iri[i + 1:]
             if not rest or any(c not in u'0123456789' for c in rest):
                 # not a port number
                 scheme, iri = iri[:i].lower(), rest
@@ -666,7 +666,7 @@ def _splitparams(iri):
             return iri, u''
     else:
         i = iri.find(u';')
-    return iri[:i], iri[i+1:]
+    return iri[:i], iri[i + 1:]
 
 
 def url_join(base, url, allow_fragments=True):
@@ -720,8 +720,8 @@ def _irijoin(base, url, allow_fragments=True):
         n = len(segments) - 1
         while i < n:
             if (segments[i] == u'..'
-                and segments[i-1] not in (u'', u'..')):
-                del segments[i-1:i+1]
+                and segments[i - 1] not in (u'', u'..')):
+                del segments[i - 1:i + 1]
                 break
             i += 1
         else:
