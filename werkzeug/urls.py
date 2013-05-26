@@ -355,6 +355,11 @@ def url_parse(url, scheme='', allow_fragments=True):
     by setting `allow_fragments` to `False`.
 
     The inverse of this function is :func:`url_unparse`.
+
+    :param url: the URL to parse.
+    :param scheme: the default schema to use if the URL is schemaless.
+    :param allow_fragments: if set to `False` a fragment will be removed
+                            from the URL.
     """
     if isinstance(url, text_type):
         if not isinstance(scheme, text_type):
@@ -390,8 +395,11 @@ def url_quote_plus(string, charset='utf-8', safe=''):
 
 
 def url_unparse(components):
-    """Parses a URL into a :class:`URL` tuple that gives access to the
-    individual parts of it.
+    """The reverse operation to :meth:`url_parse`.  This accepts arbitrary
+    as well as :class:`URL` tuples and returns a URL as a string.
+
+    :param components: the parsed URL as tuple which should be converted
+                       into a URL string.
     """
     if all(isinstance(component, text_type) for component in components):
         return _iriunparse(components)
@@ -708,7 +716,12 @@ def url_encode_stream(obj, stream=None, charset='utf-8', encode_keys=False,
 
 def url_join(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
-    interpretation of the latter."""
+    interpretation of the latter.
+
+    :param base: the base URL for the join operation.
+    :param url: the URL to join.
+    :param allow_fragments: indicates weather fragments should be allowed.
+    """
     if isinstance(base, tuple):
         base = url_unparse(base)
     if isinstance(url, tuple):
