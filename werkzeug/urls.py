@@ -16,8 +16,6 @@
     :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import re
-
 from werkzeug._compat import text_type, PY2, to_unicode, int2byte, imap, \
     iter_bytes_as_bytes, to_native, to_bytes
 from werkzeug.datastructures import MultiDict, iter_multi_items
