@@ -47,6 +47,12 @@ class URLsTestCase(WerkzeugTestCase):
         x = urls.url_decode(b'%C3%9Ch=H%C3%A4nsel', decode_keys=True)
         self.assert_strict_equal(x[u'Üh'], u'Hänsel')
 
+    def test_url_bytes_decoding(self):
+        x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel', charset=None)
+        self.assert_strict_equal(x[b'foo'], b'42')
+        self.assert_strict_equal(x[b'bar'], b'23')
+        self.assert_strict_equal(x[b'uni'], 'Hänsel'.encode('utf-8'))
+
     def test_streamed_url_decoding(self):
         item1 = u'a' * 100000
         item2 = u'b' * 400
