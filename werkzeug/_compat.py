@@ -66,11 +66,12 @@ if PY2:
         except UnicodeError:
             return s
 
-    def wsgi_decoding_dance(s, charset='utf-8'):
-        return s
+    def wsgi_decoding_dance(s, charset='utf-8', errors='replace'):
+        return s.decode(charset)
 
-    def wsgi_encoding_dance(s, charset='utf-8'):
-        return s
+    def wsgi_encoding_dance(s, charset='utf-8', errors='replace'):
+        return s.encode(charset)
+
 else:
     unichr = chr
     text_type = str
@@ -119,11 +120,11 @@ else:
 
     try_coerce_native = _identity
 
-    def wsgi_decoding_dance(s, charset='utf-8'):
-        return s.encode('latin1').decode(charset)
+    def wsgi_decoding_dance(s, charset='utf-8', errors='replace'):
+        return s.encode('latin1').decode(charset, errors)
 
-    def wsgi_encoding_dance(s, charset='utf-8'):
-        return s.encode(charset).decode('latin1')
+    def wsgi_encoding_dance(s, charset='utf-8', errors='replace'):
+        return s.encode(charset).decode('latin1', errors)
 
 
 def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict'):

@@ -17,7 +17,7 @@ from itertools import chain, repeat, tee
 from functools import update_wrapper
 
 from werkzeug._compat import to_native, text_type
-from werkzeug._internal import _decode_unicode, _empty_stream
+from werkzeug._internal import _empty_stream
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import LimitedStream, make_line_iter
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -337,7 +337,7 @@ class MultiPartParser(object):
 
     def start_file_streaming(self, filename, headers, total_content_length):
         if isinstance(filename, bytes):
-            filename = _decode_unicode(filename, self.charset, self.errors)
+            filename = filename.decode(self.charset, self.errors)
         filename = self._fix_ie_filename(filename)
         content_type = headers.get('content-type')
         try:
@@ -499,8 +499,8 @@ class MultiPartParser(object):
                 else:
                     part_charset = self.get_part_charset(headers)
                     yield ('form',
-                           (name, _decode_unicode(b''.join(container),
-                                                  part_charset, self.errors)))
+                           (name, b''.join(container).decode(
+                                part_charset, self.errors)))
 
     def parse(self, file, boundary, content_length):
         formstream, filestream = tee(

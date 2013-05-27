@@ -201,23 +201,6 @@ def _patch_wrapper(old, new):
     return new
 
 
-def _decode_unicode(value, charset, errors):
-    """Like the regular decode function but this one raises an
-    `HTTPUnicodeError` if errors is `strict`."""
-    fallback = None
-    assert isinstance(value, bytes), type(value)
-    if errors.startswith('fallback:'):
-        fallback = errors[9:]
-        errors = 'strict'
-    try:
-        return value.decode(charset, errors)
-    except UnicodeError as e:
-        if fallback is not None:
-            return value.decode(fallback, 'replace')
-        from werkzeug.exceptions import HTTPUnicodeError
-        raise HTTPUnicodeError(str(e))
-
-
 def _iter_modules(path):
     """Iterate over all modules in a package."""
     import os

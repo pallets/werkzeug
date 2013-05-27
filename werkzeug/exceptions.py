@@ -557,11 +557,6 @@ _find_exceptions()
 del _find_exceptions
 
 
-#: raised by the request functions if they were unable to decode the
-#: incoming data properly.
-HTTPUnicodeError = BadRequest.wrap(UnicodeError, 'HTTPUnicodeError')
-
-
 class Aborter(object):
     """
     When passed a dict of code -> exception items it can be used as
