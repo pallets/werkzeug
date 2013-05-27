@@ -47,7 +47,7 @@ if PY2:
     NativeStringIO = BytesIO
 
     def make_literal_wrapper(reference):
-        return reference
+        return lambda x: x
 
     def normalize_string_tuple(tup):
         """Normalizes a string tuple to a common type.  As by Python 2

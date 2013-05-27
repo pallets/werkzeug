@@ -83,7 +83,7 @@ class _URLMixin(object):
         """
         rv = self._split_auth()[0]
         if rv is not None:
-            return url_unquote(rv)
+            return _url_unquote_legacy(rv)
 
     @property
     def raw_username(self):
@@ -99,7 +99,7 @@ class _URLMixin(object):
         """
         rv = self._split_auth()[1]
         if rv is not None:
-            return url_unquote(rv)
+            return _url_unquote_legacy(rv)
 
     @property
     def raw_password(self):
@@ -129,14 +129,11 @@ class _URLMixin(object):
         """
         return url_unparse(self)
 
-    def decode_netloc(self, charset='utf-8', errors='strict'):
-        """Decodes the netloc part into a string.  The charset and
-        error parameters are exclusively being used for the
-        embedded authentication information.
-        """
+    def decode_netloc(self):
+        """Decodes the netloc part into a string."""
         rv = self.host or ''
         try:
-            rv = to_bytes(rv, charset).decode('idna')
+            rv = to_bytes(rv, 'utf-8').decode('idna')
         except (AttributeError, TypeError, UnicodeError):
             pass
 
@@ -146,8 +143,8 @@ class _URLMixin(object):
         if port is not None:
             rv = '%s:%d' % (rv, port)
         auth = ':'.join(filter(None, [
-            url_unquote(self.raw_username or '', charset, errors, '/:%@'),
-            url_unquote(self.raw_password or '', charset, errors, '/:%@'),
+            _url_unquote_legacy(self.raw_username or '', '/:%@'),
+            _url_unquote_legacy(self.raw_password or '', '/:%@'),
         ]))
         if auth:
             rv = '%s@%s' % (auth, rv)
@@ -223,12 +220,8 @@ class URL(_URLTuple, _URLMixin):
     def __str__(self):
         return self.to_url()
 
-    def encode_netloc(self, charset='utf-8', errors='strict'):
-        """Encodes the netloc part to the given charset.  The charset
-        only applies to the auth part in the netloc if it's present.
-        The actual return value of this function is always an ascii
-        string.
-        """
+    def encode_netloc(self):
+        """Encodes the netloc part to an ASCII safe URL as bytes."""
         rv = self.ascii_host or ''
         if ':' in rv:
             rv = '[%s]' % rv
@@ -236,8 +229,8 @@ class URL(_URLTuple, _URLMixin):
         if port is not None:
             rv = '%s:%d' % (rv, port)
         auth = ':'.join(filter(None, [
-            url_quote(self.raw_username or '', charset, errors, '/:%'),
-            url_quote(self.raw_password or '', charset, errors, '/:%'),
+            url_quote(self.raw_username or '', 'utf-8', 'strict', '/:%'),
+            url_quote(self.raw_password or '', 'utf-8', 'strict', '/:%'),
         ]))
         if auth:
             rv = '%s@%s' % (auth, rv)
@@ -249,7 +242,7 @@ class URL(_URLTuple, _URLMixin):
         """
         return BytesURL(
             self.scheme.encode('ascii'),
-            self.encode_netloc(charset, errors),
+            self.encode_netloc(),
             self.path.encode(charset, errors),
             self.query.encode(charset, errors),
             self.fragment.encode(charset, errors)
@@ -267,10 +260,8 @@ class BytesURL(_URLTuple, _URLMixin):
     def __str__(self):
         return self.to_url().decode('utf-8', 'replace')
 
-    def encode_netloc(self, charset='utf-8', errors='replace'):
-        """Returns the netloc unchanged.  This method exists for constency
-        with unicode representations of URLs.
-        """
+    def encode_netloc(self):
+        """Returns the netloc unchanged as bytes."""
         return self.netloc
 
     def decode(self, charset='utf-8', errors='replace'):
@@ -279,7 +270,7 @@ class BytesURL(_URLTuple, _URLMixin):
         """
         return URL(
             self.scheme.decode('ascii'),
-            self.decode_netloc(charset, errors),
+            self.decode_netloc(),
             self.path.decode(charset, errors),
             self.query.decode(charset, errors),
             self.fragment.decode(charset, errors)
@@ -319,6 +310,14 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
         if not isinstance(value, bytes):
             value = text_type(value).encode(charset)
         yield url_quote(key) + '=' + url_quote_plus(value)
+
+
+def _url_unquote_legacy(value, unsafe=''):
+    try:
+        return url_unquote(value, charset='utf-8',
+                           errors='strict', unsafe=unsafe)
+    except UnicodeError:
+        return url_unquote(value, charset='latin1', unsafe=unsafe)
 
 
 def url_parse(url, scheme=None, allow_fragments=True):
@@ -514,7 +513,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     path = url_unquote(uri.path, charset, errors, '/;?')
     query = url_unquote(uri.query, charset, errors, ';/?:@&=+,$')
     fragment = url_unquote(uri.fragment, charset, errors, ';/?:@&=+,$')
-    return url_unparse((uri.scheme, uri.decode_netloc(charset, errors),
+    return url_unparse((uri.scheme, uri.decode_netloc(),
                         path, query, fragment))
 
 
@@ -541,7 +540,7 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
         iri = url_unparse(iri)
     iri = url_parse(to_unicode(iri, charset, errors))
 
-    netloc = iri.encode_netloc(charset, errors).decode('ascii')
+    netloc = iri.encode_netloc().decode('ascii')
     path = url_quote(iri.path, charset, errors, '/:~+%')
     query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
     fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')
