@@ -645,9 +645,7 @@ class FileWrapper(object):
 
 def make_limited_stream(stream, limit):
     """Makes a stream limited."""
-    if not isinstance(stream, LimitedStream):
-        if limit is None:
-            raise TypeError('stream not limited and no limit provided.')
+    if not isinstance(stream, LimitedStream) and limit is not None:
         stream = LimitedStream(stream, limit)
     return stream
 
@@ -724,7 +722,7 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
 def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
     """Works like :func:`make_line_iter` but accepts a separator
     which divides chunks.  If you want newline based processing
-    you should use :func:`make_limited_stream` instead as it
+    you should use :func:`make_line_iter` instead as it
     supports arbitrary newline markers.
 
     .. versionadded:: 0.8
@@ -736,7 +734,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
     :param separator: the separator that divides chunks.
     :param limit: the limit in bytes for the stream.  (Usually
                   content length.  Not necessary if the `stream`
-                  is a :class:`LimitedStream`.
+                  is otherwise already limited).
     :param buffer_size: The optional buffer size.
     """
     _read = make_chunk_iter_func(stream, limit, buffer_size)
