@@ -26,7 +26,7 @@ except ImportError: # Py2
     from cookielib import CookieJar
 
 from werkzeug._compat import iterlists, iteritems, itervalues, to_native, \
-    string_types, text_type, reraise
+    string_types, text_type, reraise, wsgi_encoding_dance
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
@@ -545,9 +545,7 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            if not isinstance(x, text_type):
-                x = x.decode(self.charset)
-            return to_native(url_unquote(x), self.charset)
+            return wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
 
         result.update({
             'REQUEST_METHOD':       self.method,

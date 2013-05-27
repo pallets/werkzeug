@@ -389,6 +389,11 @@ class TestTestCase(WerkzeugTestCase):
         self.assert_strict_equal(c.get('/').data, b'2')
         self.assert_strict_equal(c.get('/').data, b'3')
 
+    def test_correct_encoding(self):
+        req = Request.from_values(u'/\N{SNOWMAN}', u'http://example.com/foo')
+        self.assert_strict_equal(req.script_root, u'/foo')
+        self.assert_strict_equal(req.path, u'/\N{SNOWMAN}')
+
 
 def suite():
     suite = unittest.TestSuite()
