@@ -482,7 +482,7 @@ def url_fix(s, charset='utf-8'):
     scheme, netloc, path, qs, anchor = url_parse(to_unicode(s, charset, 'replace'))
     path = url_quote(path, charset, safe='/%')
     qs = url_quote_plus(qs, charset, safe=':&%=')
-    return url_unparse((scheme, netloc, path, qs, anchor))
+    return to_native(url_unparse((scheme, netloc, path, qs, anchor)))
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
@@ -545,8 +545,8 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
     query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
     fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')
 
-    return url_unparse((iri.scheme, netloc,
-                        path, query, fragment))
+    return to_native(url_unparse((iri.scheme, netloc,
+                                  path, query, fragment)))
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
