@@ -1,4 +1,5 @@
 import sys
+import operator
 try:
     import builtins
 except ImportError:
@@ -21,9 +22,7 @@ if PY2:
 
     iterlists = lambda d, *args, **kwargs: d.iterlists(*args, **kwargs)
     iterlistvalues = lambda d, *args, **kwargs: d.iterlistvalues(*args, **kwargs)
-
-    def int2byte(i):
-        return chr(i)
+    int_to_byte = chr
 
     exec('def reraise(tp, value, tb=None):\n raise tp, value, tb')
 
@@ -60,8 +59,7 @@ else:
     iterlists = lambda d, *args, **kwargs: iter(d.lists(*args, **kwargs))
     iterlistvalues = lambda d, *args, **kwargs: iter(d.listvalues(*args, **kwargs))
 
-    def int2byte(i):
-        return bytes((i, ))
+    int_to_byte = operator.methodcaller('to_bytes', 1, 'big')
 
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:
@@ -89,7 +87,7 @@ def to_unicode(x, charset=sys.getdefaultencoding()):
     return x.decode(charset)
 
 
-def to_bytes(x, charset):
+def to_bytes(x, charset=sys.getdefaultencoding()):
     """please use carefully"""
     if x is None:
         return None
@@ -125,13 +123,22 @@ def string_join(iterable, default=""):
 
 def iter_bytes_as_bytes(iterable):
     # XXX: optimize
-    return ((int2byte(x) if isinstance(x, int) else x) for x in iterable)
+    return ((int_to_byte(x) if isinstance(x, int) else x) for x in iterable)
 
 
 def coerce_string(string, reference):
-    """Coerces a native string into the reference type."""
+    """Coerces a native string into the reference string type.."""
     assert isinstance(string, str), 'Given string is not a native string'
     reference_type = type(reference)
     if not isinstance(string, reference_type) and reference_type is bytes:
         string = string.encode('ascii')
     return string
+
+
+def normalize_string_tuple(tup):
+    """Normalizes a string tuple to a common type.  As by Python 2
+    rules upgrades to unicode are implicit.
+    """
+    if any(isinstance(x, text_type) for x in tup):
+        return tuple(to_unicode(x) for x in tup)
+    return tup
