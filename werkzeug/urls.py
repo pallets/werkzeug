@@ -834,9 +834,9 @@ class Href(object):
         `sort` and `key` were added.
     """
 
-    def __init__(self, base=u'./', charset='utf-8', sort=False, key=None):
+    def __init__(self, base='./', charset='utf-8', sort=False, key=None):
         if not base:
-            base = u'./'
+            base = './'
         self.base = base
         self.charset = charset
         self.sort = sort
@@ -846,8 +846,8 @@ class Href(object):
         if name[:2] == '__':
             raise AttributeError(name)
         base = self.base
-        if base[-1:] != u'/':
-            base += u'/'
+        if base[-1:] != '/':
+            base += '/'
         if PY2:
             name = name.decode('ascii')
         return Href(url_join(base, name), self.charset, self.sort, self.key)
@@ -861,14 +861,14 @@ class Href(object):
         elif query:
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
-        path = u'/'.join([to_unicode(url_quote(x, self.charset), 'ascii')
-                         for x in path if x is not None]).lstrip(u'/')
+        path = '/'.join([to_unicode(url_quote(x, self.charset), 'ascii')
+                        for x in path if x is not None]).lstrip('/')
         rv = self.base
         if path:
-            if not rv.endswith(u'/'):
-                rv += u'/'
-            rv = url_join(rv, u'./' + path)
+            if not rv.endswith('/'):
+                rv += '/'
+            rv = url_join(rv, './' + path)
         if query:
-            rv += u'?' + to_unicode(url_encode(query, self.charset, sort=self.sort,
-                                               key=self.key), 'ascii')
+            rv += '?' + to_unicode(url_encode(query, self.charset, sort=self.sort,
+                                              key=self.key), 'ascii')
         return to_native(rv)

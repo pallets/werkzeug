@@ -51,7 +51,7 @@ class URLsTestCase(WerkzeugTestCase):
         x = urls.url_decode(b'foo=42&bar=23&uni=H%C3%A4nsel', charset=None)
         self.assert_strict_equal(x[b'foo'], b'42')
         self.assert_strict_equal(x[b'bar'], b'23')
-        self.assert_strict_equal(x[b'uni'], 'Hänsel'.encode('utf-8'))
+        self.assert_strict_equal(x[b'uni'], u'Hänsel'.encode('utf-8'))
 
     def test_streamed_url_decoding(self):
         item1 = u'a' * 100000
