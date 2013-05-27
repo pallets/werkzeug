@@ -16,31 +16,12 @@ from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
 
 
-# XXX XXX XXX
-# Parts of this module were originally based on the Lib/urllib/parse.py module
-# of the Python 3.x standard library, licensed under the `PSF 2 License`_ using the
-# following copyright notice::
-#
-#     Copyright © 2001-2013 Python Software Foundation; All Rights Reserved
-#
-# .. _PSF 2 License: http://docs.python.org/3/license.html
-#
-# The goal is to diverge enough from that implementation that we can remove that
-# copyright notice and be a pure BSD library.  Considering there are currently
-# limitations with the way the parsing and joining works we would prefer on
-# dropping that part anyways.
-
-
 # A regular expression for what a valid schema looks like
 _scheme_re = re.compile(r'^[a-zA-Z0-9+-.]+$')
 
-#: Characters that are safe in any part of an URL.
-ALWAYS_SAFE = (
-    b'abcdefghijklmnopqrstuvwxyz'
-    b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    b'0123456789'
-    b'_.-+'
-)
+# Characters that are safe in any part of an URL.
+_always_safe = (b'abcdefghijklmnopqrstuvwxyz'
+                b'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-+')
 
 _hexdigits = '0123456789ABCDEFabcdef'
 _hextobyte = dict(
@@ -382,7 +363,7 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:'):
         string = string.encode(charset, errors)
     if isinstance(safe, text_type):
         safe = safe.encode(charset, errors)
-    safe = frozenset(bytearray(safe) + ALWAYS_SAFE)
+    safe = frozenset(bytearray(safe) + _always_safe)
     rv = bytearray()
     for char in bytearray(string):
         if char in safe:
