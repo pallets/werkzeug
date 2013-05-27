@@ -232,8 +232,9 @@ class InternetExplorerFix(object):
 
     def run_fixed(self, environ, start_response):
         def fixing_start_response(status, headers, exc_info=None):
-            self.fix_headers(environ, Headers(_list=headers), status)
-            return start_response(status, headers, exc_info)
+            headers = Headers(headers)
+            self.fix_headers(environ, headers, status)
+            return start_response(status, headers.to_wsgi_list(), exc_info)
         return self.app(environ, fixing_start_response)
 
     def __call__(self, environ, start_response):
