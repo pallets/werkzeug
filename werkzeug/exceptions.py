@@ -151,11 +151,7 @@ class HTTPException(Exception):
         return response(environ, start_response)
 
     def __str__(self):
-        if 'description' in self.__dict__:
-            txt = self.description
-        else:
-            txt = self.name
-        return '%d: %s' % (self.code, txt)
+        return '%d: %s' % (self.code, self.name)
 
     def __repr__(self):
         return '<%s \'%s\'>' % (self.__class__.__name__, self)

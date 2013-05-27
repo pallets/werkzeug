@@ -69,8 +69,8 @@ class ExceptionsTestCase(WerkzeugTestCase):
         self.assert_equal(repr(exc), "<NotFound '404: Not Found'>")
 
         exc = exceptions.NotFound('Not There')
-        self.assert_equal(text_type(exc), '404: Not There')
-        self.assert_equal(repr(exc), "<NotFound '404: Not There'>")
+        self.assert_equal(text_type(exc), '404: Not Found')
+        self.assert_equal(repr(exc), "<NotFound '404: Not Found'>")
 
     def test_special_exceptions(self):
         exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
