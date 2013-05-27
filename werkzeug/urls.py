@@ -433,19 +433,18 @@ def url_unparse(components):
 
 
 def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
-    """URL decode a single string with a given decoding.
-
-    Per default encoding errors are ignored.  If you want a different behavior
-    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
-    `HTTPUnicodeError` is raised.
+    """URL decode a single string with a given encoding.  If the charset
+    is set to `None` no unicode decoding is performed and raw bytes
+    are returned.
 
     :param s: the string to unquote.
     :param charset: the charset to be used.
     :param errors: the error handling for the charset decoding.
     """
-    if isinstance(string, bytes):
-        string = string.decode('ascii') # uri -> iri
-    return _unquote_to_bytes(string, unsafe).decode(charset, errors)
+    rv = _unquote_to_bytes(string, unsafe)
+    if charset is not None:
+        rv = rv.decode(charset, errors)
+    return rv
 
 
 def url_unquote_plus(s, charset='utf-8', errors='replace'):
