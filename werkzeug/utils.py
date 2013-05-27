@@ -184,7 +184,7 @@ class HTMLBuilder(object):
                     else:
                         value = ''
                 else:
-                    value = '="' + escape(value, True) + '"'
+                    value = '="' + escape(value) + '"'
                 buffer += ' ' + key + value
             if not children and tag in self._empty_elements:
                 if self._dialect == 'xhtml':
@@ -299,15 +299,16 @@ def secure_filename(filename):
     return filename
 
 
-def escape(s, quote=False):
-    """Replace special characters "&", "<" and ">" to HTML-safe sequences.  If
-    the optional flag `quote` is `True`, the quotation mark character (") is
-    also translated.
+def escape(s, quote=None):
+    """Replace special characters "&", "<", ">" and (") to HTML-safe sequences.
 
     There is a special handling for `None` which escapes to an empty string.
 
+    .. versionchanged:: 0.9
+       `quote` is now implicitly on.
+
     :param s: the string to escape.
-    :param quote: set to true to also escape double quotes.
+    :param quote: ignored.
     """
     if s is None:
         return ''
@@ -315,9 +316,11 @@ def escape(s, quote=False):
         return text_type(s.__html__())
     elif not isinstance(s, string_types):
         s = text_type(s)
-    s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-    if quote:
-        s = s.replace('"', "&quot;")
+    if quote is not None:
+        from warnings import warn
+        warn(DeprecationWarning('quote parameter is implicit now'), stacklevel=2)
+    s = s.replace('&', '&amp;').replace('<', '&lt;') \
+        .replace('>', '&gt;').replace('"', "&quot;")
     return s
 
 
@@ -356,18 +359,18 @@ def redirect(location, code=302):
     :param location: the location the response should redirect to.
     :param code: the redirect status code. defaults to 302.
     """
-    from werkzeug.wrappers import BaseResponse
+    from werkzeug.wrappers import Response
     display_location = escape(location)
     if isinstance(location, text_type):
         from werkzeug.urls import iri_to_uri
         location = iri_to_uri(location)
-    response = BaseResponse(
+    response = Response(
         '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
         '<title>Redirecting...</title>\n'
         '<h1>Redirecting...</h1>\n'
         '<p>You should be redirected automatically to target URL: '
         '<a href="%s">%s</a>.  If not click the link.' %
-        (escape(location, True), display_location), code, mimetype='text/html')
+        (escape(location), display_location), code, mimetype='text/html')
     response.headers['Location'] = location
     return response
 

@@ -39,6 +39,7 @@ Release date to be decided, codename to be chosen.
 - Renamed `LighttpdCGIRootFix` to `CGIRootFix`.
 - Always treat `+` as safe when fixing URLs as people love misusing them.
 - Added support to profiling into directories in the contrib profiler.
+- The escape function now by default escapes quotes.
 
 Version 0.8.4
 -------------

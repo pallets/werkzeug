@@ -111,8 +111,7 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(utils.escape(None), '')
         self.assert_equal(utils.escape(42), '42')
         self.assert_equal(utils.escape('<>'), '&lt;&gt;')
-        self.assert_equal(utils.escape('"foo"'), '"foo"')
-        self.assert_equal(utils.escape('"foo"', True), '&quot;foo&quot;')
+        self.assert_equal(utils.escape('"foo"'), '&quot;foo&quot;')
         self.assert_equal(utils.escape(Foo('<foo>')), '<foo>')
 
     def test_unescape(self):
