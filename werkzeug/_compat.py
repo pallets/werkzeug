@@ -72,6 +72,20 @@ if PY2:
     def wsgi_encoding_dance(s, charset='utf-8', errors='replace'):
         return s.encode(charset)
 
+    def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
+        """please use carefully"""
+        if x is None:
+            return None
+        if isinstance(x, unicode):
+            return x.encode(charset, errors)
+        return str(x)
+
+    def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
+        """please use carefully"""
+        if x is None or isinstance(x, str):
+            return x
+        return x.encode(charset, errors)
+
 else:
     unichr = chr
     text_type = str
@@ -126,6 +140,20 @@ else:
     def wsgi_encoding_dance(s, charset='utf-8', errors='replace'):
         return s.encode(charset).decode('latin1', errors)
 
+    def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
+        """please use carefully"""
+        if x is None:
+            return None
+        if not isinstance(x, bytes):
+            x = str(x).encode(charset, errors)
+        return x
+
+    def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
+        """please use carefully"""
+        if x is None or isinstance(x, str):
+            return x
+        return x.decode(charset, errors)
+
 
 def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict'):
     """please use carefully"""
@@ -134,30 +162,6 @@ def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict'):
     if not isinstance(x, bytes):
         return text_type(x)
     return x.decode(charset, errors)
-
-
-def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
-    """please use carefully"""
-    if x is None:
-        return None
-    if PY2:
-        if isinstance(x, unicode):
-            return x.encode(charset, errors)
-        return str(x)
-    else:
-        if not isinstance(x, bytes):
-            x = str(x).encode(charset, errors)
-        return x
-
-
-def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
-    """please use carefully"""
-    if x is None or isinstance(x, str):
-        return x
-    if PY2:
-        return x.encode(charset, errors)
-    else:
-        return x.decode(charset, errors)
 
 
 def string_join(iterable, default=''):
