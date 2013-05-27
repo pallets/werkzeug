@@ -553,9 +553,11 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
                errors='replace', separator='&', cls=None):
     """
-    Parse a querystring and return it as :class:`MultiDict`.  Per default
-    only values are decoded into unicode strings.  If `decode_keys` is set to
-    `True` the same will happen for keys.
+    Parse a querystring and return it as :class:`MultiDict`.  There is a
+    difference in key decoding on different Python versions.  On Python 3
+    keys will always be fully decoded whereas on Python 2, keys will
+    remain bytestrings if they fit into ASCII.  On 2.x keys can be forced
+    to be unicode by setting `decode_keys` to `True`.
 
     Per default a missing value for a key will default to an empty key.  If
     you don't want that behavior you can set `include_empty` to `False`.
@@ -573,8 +575,10 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
 
     :param s: a string with the query string to decode.
     :param charset: the charset of the query string.
-    :param decode_keys: set to `True` if you want the keys to be decoded
-                        as well.
+    :param decode_keys: Used on Python 2.x to control weather keys should
+                        be forced to be unicode objects.  If set to `True`
+                        then keys will be unicode in all cases, otherwise
+                        they remain `str` if they fit into ASCII.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
     :param errors: the decoding error behavior.
@@ -605,8 +609,10 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
 
     :param stream: a stream with the encoded querystring
     :param charset: the charset of the query string.
-    :param decode_keys: set to `True` if you want the keys to be decoded
-                        as well. (Ignored on Python 3.x)
+    :param decode_keys: Used on Python 2.x to control weather keys should
+                        be forced to be unicode objects.  If set to `True`
+                        then keys will be unicode in all cases, otherwise
+                        they remain `str` if they fit into ASCII.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
     :param errors: the decoding error behavior.
