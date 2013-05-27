@@ -60,7 +60,7 @@
 import sys
 
 from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
-from werkzeug._compat import PY2, iteritems, integer_types, implements_to_string
+from werkzeug._compat import iteritems, integer_types, implements_to_string
 
 
 @implements_to_string
@@ -174,8 +174,8 @@ class BadRequest(HTTPException):
     """
     code = 400
     description = (
-        '<p>The browser (or proxy) sent a request that this server could '
-        'not understand.</p>'
+        'The browser (or proxy) sent a request that this server could '
+        'not understand.'
     )
 
 
@@ -210,12 +210,10 @@ class Unauthorized(HTTPException):
     """
     code = 401
     description = (
-        '<p>The server could not verify that you are authorized to access '
+        'The server could not verify that you are authorized to access '
         'the URL requested.  You either supplied the wrong credentials (e.g. '
         'a bad password), or your browser doesn\'t understand how to supply '
-        'the credentials required.</p><p>In case you are allowed to request '
-        'the document, please check your user-id and password and try '
-        'again.</p>'
+        'the credentials required.'
     )
 
 
@@ -227,8 +225,8 @@ class Forbidden(HTTPException):
     """
     code = 403
     description = (
-        '<p>You don\'t have the permission to access the requested resource. '
-        'It is either read-protected or not readable by the server.</p>'
+        'You don\'t have the permission to access the requested resource. '
+        'It is either read-protected or not readable by the server.'
     )
 
 
@@ -239,9 +237,9 @@ class NotFound(HTTPException):
     """
     code = 404
     description = (
-        '<p>The requested URL was not found on the server.</p>'
-        '<p>If you entered the URL manually please check your spelling and '
-        'try again.</p>'
+        'The requested URL was not found on the server.  '
+        'If you entered the URL manually please check your spelling and '
+        'try again.'
     )
 
 
@@ -283,11 +281,11 @@ class NotAcceptable(HTTPException):
     code = 406
 
     description = (
-        '<p>The resource identified by the request is only capable of '
+        'The resource identified by the request is only capable of '
         'generating response entities which have content characteristics '
         'not acceptable according to the accept headers sent in the '
-        'request.</p>'
-        )
+        'request.'
+    )
 
 
 class RequestTimeout(HTTPException):
@@ -297,8 +295,8 @@ class RequestTimeout(HTTPException):
     """
     code = 408
     description = (
-        '<p>The server closed the network connection because the browser '
-        'didn\'t finish the request within the specified time.</p>'
+        'The server closed the network connection because the browser '
+        'didn\'t finish the request within the specified time.'
     )
 
 
@@ -312,7 +310,7 @@ class Conflict(HTTPException):
     """
     code = 409
     description = (
-        '<p>A conflict happened while processing the request.  The resource '
+        'A conflict happened while processing the request.  The resource '
         'might have been modified while the request was being processed.'
     )
 
@@ -324,7 +322,7 @@ class Gone(HTTPException):
     """
     code = 410
     description = (
-        '<p>The requested URL is no longer available on this server and '
+        'The requested URL is no longer available on this server and '
         'there is no forwarding address.</p><p>If you followed a link '
         'from a foreign page, please contact the author of this page.'
     )
@@ -338,8 +336,8 @@ class LengthRequired(HTTPException):
     """
     code = 411
     description = (
-        '<p>A request with this method requires a valid <code>Content-'
-        'Length</code> header.</p>'
+        'A request with this method requires a valid <code>Content-'
+        'Length</code> header.'
     )
 
 
@@ -351,8 +349,8 @@ class PreconditionFailed(HTTPException):
     """
     code = 412
     description = (
-        '<p>The precondition on the request for the URL failed positive '
-        'evaluation.</p>'
+        'The precondition on the request for the URL failed positive '
+        'evaluation.'
     )
 
 
@@ -364,7 +362,7 @@ class RequestEntityTooLarge(HTTPException):
     """
     code = 413
     description = (
-        '<p>The data value transmitted exceeds the capacity limit.</p>'
+        'The data value transmitted exceeds the capacity limit.'
     )
 
 
@@ -375,8 +373,8 @@ class RequestURITooLarge(HTTPException):
     """
     code = 414
     description = (
-        '<p>The length of the requested URL exceeds the capacity limit '
-        'for this server.  The request cannot be processed.</p>'
+        'The length of the requested URL exceeds the capacity limit '
+        'for this server.  The request cannot be processed.'
     )
 
 
@@ -388,8 +386,8 @@ class UnsupportedMediaType(HTTPException):
     """
     code = 415
     description = (
-        '<p>The server does not support the media type transmitted in '
-        'the request.</p>'
+        'The server does not support the media type transmitted in '
+        'the request.'
     )
 
 
@@ -403,7 +401,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
     """
     code = 416
     description = (
-        '<p>The server cannot provide the requested range.'
+        'The server cannot provide the requested range.'
     )
 
 
@@ -416,7 +414,7 @@ class ExpectationFailed(HTTPException):
     """
     code = 417
     description = (
-        '<p>The server could not meet the requirements of the Expect header'
+        'The server could not meet the requirements of the Expect header'
     )
 
 
@@ -430,9 +428,10 @@ class ImATeapot(HTTPException):
     """
     code = 418
     description = (
-        '<p>This server is a teapot, not a coffee machine'
+        'This server is a teapot, not a coffee machine'
     )
-    
+
+
 class UnprocessableEntity(HTTPException):
     """*422* `Unprocessable Entity`
 
@@ -441,8 +440,10 @@ class UnprocessableEntity(HTTPException):
     """
     code = 422
     description = (
-        '<p>The request was well-formed but was unable to be followed due to semantic errors.'
-    )    
+        'The request was well-formed but was unable to be followed '
+        'due to semantic errors.'
+    )
+
 
 class PreconditionRequired(HTTPException):
     """*428* `Precondition Required`
@@ -457,9 +458,10 @@ class PreconditionRequired(HTTPException):
     """
     code = 428
     description = (
-        '<p>This request is required to be conditional; try using "If-Match" '
+        'This request is required to be conditional; try using "If-Match" '
         'or "If-Unmodified-Since".'
-    )    
+    )
+
 
 class TooManyRequests(HTTPException):
     """*429* `Too Many Requests`
@@ -472,8 +474,9 @@ class TooManyRequests(HTTPException):
     """
     code = 429
     description = (
-        '<p>This user has exceeded an allotted request count. Try again later.'
-    )    
+        'This user has exceeded an allotted request count. Try again later.'
+    )
+
 
 class RequestHeaderFieldsTooLarge(HTTPException):
     """*431* `Request Header Fields Too Large`
@@ -484,8 +487,8 @@ class RequestHeaderFieldsTooLarge(HTTPException):
     """
     code = 431
     description = (
-        '<p>One or more header fields exceeds the maximum size.'
-    )    
+        'One or more header fields exceeds the maximum size.'
+    )
 
 
 class InternalServerError(HTTPException):
@@ -496,9 +499,9 @@ class InternalServerError(HTTPException):
     """
     code = 500
     description = (
-        '<p>The server encountered an internal error and was unable to '
+        'The server encountered an internal error and was unable to '
         'complete your request.  Either the server is overloaded or there '
-        'is an error in the application.</p>'
+        'is an error in the application.'
     )
 
 
@@ -510,8 +513,8 @@ class NotImplemented(HTTPException):
     """
     code = 501
     description = (
-        '<p>The server does not support the action requested by the '
-        'browser.</p>'
+        'The server does not support the action requested by the '
+        'browser.'
     )
 
 
@@ -524,8 +527,8 @@ class BadGateway(HTTPException):
     """
     code = 502
     description = (
-        '<p>The proxy server received an invalid response from an upstream '
-        'server.</p>'
+        'The proxy server received an invalid response from an upstream '
+        'server.'
     )
 
 
@@ -536,9 +539,9 @@ class ServiceUnavailable(HTTPException):
     """
     code = 503
     description = (
-        '<p>The server is temporarily unable to service your request due to '
+        'The server is temporarily unable to service your request due to '
         'maintenance downtime or capacity problems.  Please try again '
-        'later.</p>'
+        'later.'
     )
 
 
