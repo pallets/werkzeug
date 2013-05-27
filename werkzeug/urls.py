@@ -168,6 +168,14 @@ class _URLMixin(object):
             rv = '%s@%s' % (auth, rv)
         return rv
 
+    def to_uri(self):
+        """Returns a :class:`BytesURL` object that holds a URI."""
+        return url_parse(iri_to_uri(self).encode('ascii'))
+
+    def to_iri(self):
+        """Returns a :class:`URL` object that holds a IRI."""
+        return url_parse(uri_to_iri(self))
+
     def _split_netloc(self):
         if self._at in self.netloc:
             return self.netloc.split(self._at, 1)
@@ -251,12 +259,15 @@ class URL(_URLTuple, _URLMixin):
 
 
 class BytesURL(_URLTuple, _URLMixin):
-    """Representes a parsed URL in bytes."""
+    """Represents a parsed URL in bytes."""
     __slots__ = ()
     _at = b'@'
     _colon = b':'
     _lbracket = b'['
     _rbracket = b']'
+
+    def __str__(self):
+        return self.to_url().decode('utf-8', 'replace')
 
     def encode_netloc(self, charset='utf-8', errors='replace'):
         """Returns the netloc unchanged.  This method exists for constency
@@ -499,6 +510,8 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: The charset of the URI.
     :param errors: The error handling on decode.
     """
+    if isinstance(uri, tuple):
+        uri = url_unparse(uri)
     uri = url_parse(to_unicode(uri, charset))
     path = url_unquote(uri.path, charset, errors, '/;?')
     query = url_unquote(uri.query, charset, errors, ';/?:@&=+,$')
@@ -526,6 +539,8 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
     :param iri: The IRI to convert.
     :param charset: The charset for the URI.
     """
+    if isinstance(iri, tuple):
+        iri = url_unparse(iri)
     iri = url_parse(to_unicode(iri, charset, errors))
 
     netloc = iri.encode_netloc(charset, errors).decode('ascii')
