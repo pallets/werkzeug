@@ -9,9 +9,9 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-from werkzeug._compat import text_type, PY2, to_unicode, int_to_byte, imap, \
-     iter_bytes_as_bytes, to_native, to_bytes, implements_to_string, \
-     coerce_string, normalize_string_tuple
+from werkzeug._compat import text_type, PY2, to_unicode, \
+     to_native, to_bytes, implements_to_string, \
+     normalize_string_tuple, make_literal_wrapper
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
 
@@ -53,12 +53,7 @@ _URLTuple = namedtuple('_URLTuple',
     ['scheme', 'netloc', 'path', 'query', 'fragment'])
 
 
-@implements_to_string
-class URL(_URLTuple):
-    """Represents a parsed URL.  This behaves like a regular tuple but
-    also has some extra attributes that give further insight into the
-    URL.
-    """
+class _URLMixin(object):
     __slots__ = ()
 
     @property
@@ -72,13 +67,27 @@ class URL(_URLTuple):
     @property
     def ascii_host(self):
         """Works exactly like :attr:`host` but will return a result that
-        is restricted to ASCII.  This is useful for socket operations
-        when the URL might include internationalized characters.
+        is restricted to ASCII.  If it finds a netloc that is not ASCII
+        it will attempt to idna decode it.  This is useful for socket
+        operations when the URL might include internationalized characters.
         """
         rv = self.host
         if rv is not None and isinstance(rv, text_type):
-            rv = to_native(rv.encode('idna'), 'ascii')
-        return rv
+            rv = rv.encode('idna')
+        return to_native(rv, 'ascii', 'ignore')
+
+    @property
+    def ascii_netloc(self):
+        """Works exactly like :attr:`netloc` but returns the result in ASCII.
+        """
+        host = self.ascii_host
+        if host is not None:
+            if ':' in host:
+                host = '[%s]' % host
+            port = self.port
+            if port is not None:
+                return '%s:%d' % (host, port)
+            return host
 
     @property
     def port(self):
@@ -86,9 +95,11 @@ class URL(_URLTuple):
         otherwise.  This does not fill in default ports.
         """
         try:
-            return int(to_native(self._split_host()[1]))
+            rv = int(to_native(self._split_host()[1]))
+            if 0 <= rv <= 65535:
+                return rv
         except (ValueError, TypeError):
-            return None
+            pass
 
     @property
     def auth(self):
@@ -149,45 +160,87 @@ class URL(_URLTuple):
         """
         return url_unparse(self)
 
-    def __str__(self):
-        return self.to_url()
-
     def _split_netloc(self):
-        sign = coerce_string('@', self.netloc)
-        if sign in self.netloc:
-            return self.netloc.split(sign, 1)
+        if self._at in self.netloc:
+            return self.netloc.split(self._at, 1)
         return None, self.netloc
 
     def _split_auth(self):
         auth = self._split_netloc()[0]
         if not auth:
             return None, None
-        sign = coerce_string(':', auth)
-        return auth.split(sign, 1)
+        if self._colon not in auth:
+            return auth, None
+        return auth.split(self._colon, 1)
 
     def _split_host(self):
         rv = self._split_netloc()[1]
         if not rv:
             return None, None
 
-        lbracket = coerce_string('[', rv)
-        colon = coerce_string(':', rv)
-
-        if not rv.startswith(lbracket):
-            if colon in rv:
-                return rv.split(colon, 1)
+        if not rv.startswith(self._lbracket):
+            if self._colon in rv:
+                return rv.split(self._colon, 1)
             return rv, None
 
-        rbracket = coerce_string(']', rv)
-        idx = rv.find(rbracket)
+        idx = rv.find(self._rbracket)
         if idx < 0:
             return rv, None
 
         host = rv[1:idx]
         rest = rv[idx + 1:]
-        if rest.startswith(colon):
+        if rest.startswith(self._colon):
             return host, rest[1:]
         return host, None
+
+
+@implements_to_string
+class URL(_URLTuple, _URLMixin):
+    """Represents a parsed URL.  This behaves like a regular tuple but
+    also has some extra attributes that give further insight into the
+    URL.
+    """
+    __slots__ = ()
+    _at = '@'
+    _colon = ':'
+    _lbracket = '['
+    _rbracket = ']'
+
+    def __str__(self):
+        return self.to_url()
+
+    def encode(self, charset='utf-8', errors='replace'):
+        """Encodes the URL to a tuple made out of bytes.  The charset is
+        only being used for the path, query and fragment.
+        """
+        return BytesURL(
+            self.scheme.encode('ascii'),
+            self.ascii_netloc.encode('ascii'),
+            self.path.encode(charset, errors),
+            self.query.encode(charset, errors),
+            self.fragment.encode(charset, errors)
+        )
+
+
+class BytesURL(_URLTuple, _URLMixin):
+    """Representes a parsed URL in bytes."""
+    __slots__ = ()
+    _at = b'@'
+    _colon = b':'
+    _lbracket = b'['
+    _rbracket = b']'
+
+    def decode(self, charset='utf-8', errors='replace'):
+        """Decodes the URL to a tuple made out of strings.  The charset is
+        only being used for the path, query and fragment.
+        """
+        return URL(
+            self.scheme.decode('ascii'),
+            self.netloc.decode('ascii'),
+            self.path.decode(charset, errors),
+            self.query.decode(charset, errors),
+            self.fragment.decode(charset, errors)
+        )
 
 
 def _url_split(url):
@@ -245,7 +298,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
         yield url_quote(key) + '=' + url_quote_plus(value)
 
 
-def url_parse(url, scheme='', allow_fragments=True):
+def url_parse(url, scheme=None, allow_fragments=True):
     """Parses a URL from a string into a :class:`URL` tuple.  If the URL
     is lacking a scheme it can be provided as second argument, otherwise
     it's ignored.  Optionally fragments can be stripped from the URL
@@ -258,13 +311,11 @@ def url_parse(url, scheme='', allow_fragments=True):
     :param allow_fragments: if set to `False` a fragment will be removed
                             from the URL.
     """
-    if isinstance(url, text_type):
-        s = lambda x: x
-        scheme = to_unicode(scheme)
-    else:
-        s = lambda x: x.encode('ascii')
-        scheme = to_bytes(scheme, 'ascii')
+    s = make_literal_wrapper(url)
+    is_text_based = isinstance(url, text_type)
 
+    if scheme is None:
+        scheme = s('')
     netloc = query = fragment = s('')
     i = url.find(s(':'))
     if i > 0 and _scheme_re.match(to_native(url[:i], errors='replace')):
@@ -290,7 +341,9 @@ def url_parse(url, scheme='', allow_fragments=True):
         url, fragment = url.split(s('#'), 1)
     if s('?') in url:
         url, query = url.split(s('?'), 1)
-    return URL(scheme, netloc, url, query, fragment)
+
+    result_type = is_text_based and URL or BytesURL
+    return result_type(scheme, netloc, url, query, fragment)
 
 
 def url_quote(string, charset='utf-8', errors='strict', safe='/:'):
@@ -334,13 +387,8 @@ def url_unparse(components):
     """
     scheme, netloc, path, query, fragment = \
         normalize_string_tuple(components)
-
-    if isinstance(scheme, text_type):
-        url = u''
-        s = lambda x: x
-    else:
-        url = b''
-        s = lambda x: x.encode('ascii')
+    s = make_literal_wrapper(scheme)
+    url = s('')
 
     # We generally treat file:///x and file:/x the same which is also
     # what browsers seem to do.  This also allows us to ignore a schema

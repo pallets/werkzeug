@@ -22,7 +22,6 @@ if PY2:
 
     iterlists = lambda d, *args, **kwargs: d.iterlists(*args, **kwargs)
     iterlistvalues = lambda d, *args, **kwargs: d.iterlistvalues(*args, **kwargs)
-    int_to_byte = chr
 
     exec('def reraise(tp, value, tb=None):\n raise tp, value, tb')
 
@@ -46,6 +45,17 @@ if PY2:
 
     from StringIO import StringIO, StringIO as BytesIO
     NativeStringIO = BytesIO
+
+    def make_literal_wrapper(reference):
+        return reference
+
+    def normalize_string_tuple(tup):
+        """Normalizes a string tuple to a common type.  As by Python 2
+        rules upgrades to unicode are implicit.
+        """
+        if any(isinstance(x, text_type) for x in tup):
+            return tuple(to_unicode(x) for x in tup)
+        return tup
 else:
     unichr = chr
     text_type = str
@@ -58,8 +68,6 @@ else:
 
     iterlists = lambda d, *args, **kwargs: iter(d.lists(*args, **kwargs))
     iterlistvalues = lambda d, *args, **kwargs: iter(d.listvalues(*args, **kwargs))
-
-    int_to_byte = operator.methodcaller('to_bytes', 1, 'big')
 
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:
@@ -76,6 +84,22 @@ else:
 
     from io import StringIO, BytesIO
     NativeStringIO = StringIO
+
+    def make_literal_wrapper(reference):
+        if isinstance(reference, text_type):
+            return lambda x: x
+        return lambda x: x.encode('latin1')
+
+    def normalize_string_tuple(tup):
+        """Ensures that all types in the tuple are either strings
+        or bytes.
+        """
+        tupiter = iter(tup)
+        is_text = isinstance(next(tupiter, None), text_type)
+        for arg in tupiter:
+            if isinstance(arg, text_type) != is_text:
+                raise TypeError('Cannot mix str and bytes arguments')
+        return tup
 
 
 def to_unicode(x, charset=sys.getdefaultencoding()):
@@ -119,26 +143,3 @@ def string_join(iterable, default=""):
             return b"".join(l)
         return u"".join(l)
     return default
-
-
-def iter_bytes_as_bytes(iterable):
-    # XXX: optimize
-    return ((int_to_byte(x) if isinstance(x, int) else x) for x in iterable)
-
-
-def coerce_string(string, reference):
-    """Coerces a native string into the reference string type.."""
-    assert isinstance(string, str), 'Given string is not a native string'
-    reference_type = type(reference)
-    if not isinstance(string, reference_type) and reference_type is bytes:
-        string = string.encode('ascii')
-    return string
-
-
-def normalize_string_tuple(tup):
-    """Normalizes a string tuple to a common type.  As by Python 2
-    rules upgrades to unicode are implicit.
-    """
-    if any(isinstance(x, text_type) for x in tup):
-        return tuple(to_unicode(x) for x in tup)
-    return tup
