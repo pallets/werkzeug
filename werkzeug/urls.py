@@ -848,8 +848,6 @@ class Href(object):
         base = self.base
         if base[-1:] != '/':
             base += '/'
-        if PY2:
-            name = name.decode('ascii')
         return Href(url_join(base, name), self.charset, self.sort, self.key)
 
     def __call__(self, *path, **query):
