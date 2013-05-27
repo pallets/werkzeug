@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import posixpath
 from werkzeug._compat import text_type, PY2, to_unicode, \
      to_native, to_bytes, implements_to_string, \
      normalize_string_tuple, make_literal_wrapper
@@ -736,34 +737,40 @@ def url_join(base, url, allow_fragments=True):
     netloc = bnetloc
 
     if path[:1] == s('/'):
-        return url_unparse((scheme, netloc, path, query, fragment))
-
-    if not path:
-        path = bpath
+        segments = path.split(s('/'))
+    elif not path:
+        segments = bpath.split(s('/'))
         if not query:
             query = bquery
-        return url_unparse((scheme, netloc, path, query, fragment))
-    segments = bpath.split(s('/'))[:-1] + path.split(s('/'))
-    # XXX The stuff below is bogus in various ways...
+    else:
+        segments = bpath.split(s('/'))[:-1] + path.split(s('/'))
+
+    # If the rightmost part is "./" we want to keep the slash but
+    # remove the dot.
     if segments[-1] == s('.'):
         segments[-1] = s('')
+
+    # Resolve ".." and "."
     segments = [segment for segment in segments if segment != s('.')]
     while 1:
         i = 1
         n = len(segments) - 1
         while i < n:
-            if (segments[i] == s('..')
-                and segments[i - 1] not in (s(''), s('..'))):
+            if segments[i] == s('..') and \
+               segments[i - 1] not in (s(''), s('..')):
                 del segments[i - 1:i + 1]
                 break
             i += 1
         else:
             break
-    if segments == [s(''), s('..')]:
-        segments[-1] = s('')
-    elif len(segments) >= 2 and segments[-1] == s('..'):
-        segments[-2:] = [s('')]
-    return url_unparse((scheme, netloc, s('/').join(segments), query, fragment))
+
+    # Remove trailing ".." if the URL is absolute
+    unwanted_marker = [s(''), s('..')]
+    while segments[:2] == unwanted_marker:
+        del segments[1]
+
+    path = s('/').join(segments)
+    return url_unparse((scheme, netloc, path, query, fragment))
 
 
 class Href(object):
@@ -854,4 +861,4 @@ class Href(object):
         if query:
             rv += u'?' + to_unicode(url_encode(query, self.charset, sort=self.sort,
                                                key=self.key), 'ascii')
-        return rv
+        return to_native(rv)

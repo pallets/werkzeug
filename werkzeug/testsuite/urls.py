@@ -127,21 +127,21 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_equal(urls.url_encode(d), 'foo=1&foo=2&foo=3&bar=0&foo=4')
 
     def test_href(self):
-        x = urls.Href(u'http://www.example.com/')
-        self.assert_strict_equal(x(u'foo'), u'http://www.example.com/foo')
-        self.assert_strict_equal(x.foo(u'bar'), u'http://www.example.com/foo/bar')
-        self.assert_strict_equal(x.foo(u'bar', x=42), u'http://www.example.com/foo/bar?x=42')
-        self.assert_strict_equal(x.foo(u'bar', class_=42), u'http://www.example.com/foo/bar?class=42')
-        self.assert_strict_equal(x.foo(u'bar', {u'class': 42}), u'http://www.example.com/foo/bar?class=42')
+        x = urls.Href('http://www.example.com/')
+        self.assert_strict_equal(x(u'foo'), 'http://www.example.com/foo')
+        self.assert_strict_equal(x.foo(u'bar'), 'http://www.example.com/foo/bar')
+        self.assert_strict_equal(x.foo(u'bar', x=42), 'http://www.example.com/foo/bar?x=42')
+        self.assert_strict_equal(x.foo(u'bar', class_=42), 'http://www.example.com/foo/bar?class=42')
+        self.assert_strict_equal(x.foo(u'bar', {u'class': 42}), 'http://www.example.com/foo/bar?class=42')
         self.assert_raises(AttributeError, lambda: x.__blah__)
 
-        x = urls.Href(u'blah')
-        self.assert_strict_equal(x.foo(u'bar'), u'blah/foo/bar')
+        x = urls.Href('blah')
+        self.assert_strict_equal(x.foo(u'bar'), 'blah/foo/bar')
 
         self.assert_raises(TypeError, x.foo, {u"foo": 23}, x=42)
 
-        x = urls.Href(u'')
-        self.assert_strict_equal(x(u'foo'), u'foo')
+        x = urls.Href('')
+        self.assert_strict_equal(x('foo'), 'foo')
 
     def test_href_url_join(self):
         x = urls.Href(u'test')
@@ -149,16 +149,14 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_line_equal(x(u'http://example.com/'), u'test/http://example.com/')
         self.assert_line_equal(x.a(), u'test/a')
 
-    if 0:
-        # stdlib bug? :(
-        def test_href_past_root(self):
-            base_href = urls.Href('http://www.blagga.com/1/2/3')
-            self.assert_strict_equal(base_href('../foo'), 'http://www.blagga.com/1/2/foo')
-            self.assert_strict_equal(base_href('../../foo'), 'http://www.blagga.com/1/foo')
-            self.assert_strict_equal(base_href('../../../foo'), 'http://www.blagga.com/foo')
-            self.assert_strict_equal(base_href('../../../../foo'), 'http://www.blagga.com/foo')
-            self.assert_strict_equal(base_href('../../../../../foo'), 'http://www.blagga.com/foo')
-            self.assert_strict_equal(base_href('../../../../../../foo'), 'http://www.blagga.com/foo')
+    def test_href_past_root(self):
+        base_href = urls.Href('http://www.blagga.com/1/2/3')
+        self.assert_strict_equal(base_href('../foo'), 'http://www.blagga.com/1/2/foo')
+        self.assert_strict_equal(base_href('../../foo'), 'http://www.blagga.com/1/foo')
+        self.assert_strict_equal(base_href('../../../foo'), 'http://www.blagga.com/foo')
+        self.assert_strict_equal(base_href('../../../../foo'), 'http://www.blagga.com/foo')
+        self.assert_strict_equal(base_href('../../../../../foo'), 'http://www.blagga.com/foo')
+        self.assert_strict_equal(base_href('../../../../../../foo'), 'http://www.blagga.com/foo')
 
     def test_url_unquote_plus_unicode(self):
         # was broken in 0.6
@@ -211,7 +209,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_join('file:///tmp/x', 'test.html'),
                                  'file:///tmp/test.html')
         self.assert_strict_equal(urls.url_join('file:///tmp/x', '../../../x.html'),
-                                 'file:///../../x.html')
+                                 'file:///x.html')
 
 
 def suite():
