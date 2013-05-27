@@ -123,13 +123,17 @@ class _URLMixin(object):
         return url_parse(url_join(self, *args, **kwargs))
 
     def to_url(self):
-        """Returns a URL string.  This is just a convenience function
+        """Returns a URL string or bytes depending on the type of the
+        information stored.  This is just a convenience function
         for calling :meth:`url_unparse` for this URL.
         """
         return url_unparse(self)
 
     def decode_netloc(self, charset='utf-8', errors='strict'):
-        """Decodes the netloc part into a string."""
+        """Decodes the netloc part into a string.  The charset and
+        error parameters are exclusively being used for the
+        embedded authentication information.
+        """
         rv = self.host or ''
         try:
             rv = to_bytes(rv, charset).decode('idna')
@@ -149,12 +153,25 @@ class _URLMixin(object):
             rv = '%s@%s' % (auth, rv)
         return rv
 
-    def to_uri(self):
-        """Returns a :class:`BytesURL` object that holds a URI."""
+    def to_uri_tuple(self):
+        """Returns a :class:`BytesURL` tuple that holds a URI.  This will
+        encode all the information in the URL properly to ASCII under the
+        rules a webbrowser would follow.
+
+        It's usually more interesting to directly call :meth:`iri_to_uri` which
+        will return a string.
+        """
         return url_parse(iri_to_uri(self).encode('ascii'))
 
-    def to_iri(self):
-        """Returns a :class:`URL` object that holds a IRI."""
+    def to_iri_tuple(self):
+        """Returns a :class:`URL` tuple that holds a IRI.  This will try
+        to decode as much information as possible in the URL without
+        losing information similar to how a webbrowser does it for the
+        URL bar.
+
+        It's usually more interesting to directly call :meth:`uri_to_iri` which
+        will return a string.
+        """
         return url_parse(uri_to_iri(self))
 
     def _split_netloc(self):
