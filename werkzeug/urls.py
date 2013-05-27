@@ -11,7 +11,7 @@
 import re
 import posixpath
 from werkzeug._compat import text_type, PY2, to_unicode, \
-     to_native, to_bytes, implements_to_string, \
+     to_native, to_bytes, implements_to_string, try_coerce_native, \
      normalize_string_tuple, make_literal_wrapper
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
@@ -644,8 +644,7 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty, errors):
             value = u''
         key = url_unquote_plus(key, charset, errors)
         if PY2 and not decode_keys:
-            # Force key into a native string.
-            key = key.encode('ascii')
+            key = try_coerce_native(key)
         yield key, url_unquote_plus(value, charset, errors)
 
 

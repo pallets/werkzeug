@@ -56,6 +56,15 @@ if PY2:
         if any(isinstance(x, text_type) for x in tup):
             return tuple(to_unicode(x) for x in tup)
         return tup
+
+    def try_coerce_native(s):
+        """Try to coerce a unicode string to native if possible, otherwise
+        leave it as unicode.
+        """
+        try:
+            return str(s)
+        except UnicodeError:
+            return s
 else:
     unichr = chr
     text_type = str
@@ -101,6 +110,8 @@ else:
                 raise TypeError('Cannot mix str and bytes arguments (got %s)'
                     % repr(tup))
         return tup
+
+    try_coerce_native = _identity
 
 
 def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict'):
