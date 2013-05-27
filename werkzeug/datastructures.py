@@ -834,10 +834,8 @@ class Headers(object):
     :param defaults: The list of default values for the :class:`Headers`.
     """
 
-    def __init__(self, defaults=None, _list=None):
-        if _list is None:
-            _list = []
-        self._list = _list
+    def __init__(self, defaults=None):
+        self._list = []
         if defaults is not None:
             if isinstance(defaults, (list, Headers)):
                 self._list.extend(defaults)
@@ -1130,7 +1128,8 @@ class Headers(object):
     def to_list(self, charset='iso-8859-1'):
         """Convert the headers into a list suitable for WSGI."""
         from warnings import warn
-        warn(DeprecationWarning('Method removed, use to_wsgi_list instead'))
+        warn(DeprecationWarning('Method removed, use to_wsgi_list instead'),
+             stacklevel=2)
         return self.to_wsgi_list()
 
     def to_wsgi_list(self):
