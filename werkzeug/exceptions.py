@@ -59,8 +59,15 @@
 """
 import sys
 
+# Because of bootstrapping reasons we need to manually patch ourselves
+# onto our parent module.
+import werkzeug
+werkzeug.exceptions = sys.modules[__name__]
+
 from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
 from werkzeug._compat import iteritems, integer_types, implements_to_string
+
+from werkzeug.wrappers import Response
 
 
 @implements_to_string
@@ -123,16 +130,15 @@ class HTTPException(Exception):
         """Get a response object.
 
         :param environ: the environ for the request.
-        :return: a :class:`BaseResponse` object or a subclass thereof.
+        :return: a :class:`Response` object or a subclass thereof.
         """
         # lazily imported for various reasons.  For one, we can use the exceptions
         # with custom responses (testing exception instances against types) and
         # so we don't ever have to import the wrappers, but also because there
         # are circular dependencies when bootstrapping the module.
         environ = _get_environ(environ)
-        from werkzeug.wrappers import BaseResponse
         headers = self.get_headers(environ)
-        return BaseResponse(self.get_body(environ), self.code, headers)
+        return Response(self.get_body(environ), self.code, headers)
 
     def __call__(self, environ, start_response):
         """Call the exception as WSGI application.

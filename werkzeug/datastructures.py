@@ -368,7 +368,7 @@ class MultiDict(TypeConversionDict):
         """
         if key in self:
             return dict.__getitem__(self, key)[0]
-        raise BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError(key)
 
     def __setitem__(self, key, value):
         """Like :meth:`add` but removes an existing key first.
@@ -555,7 +555,7 @@ class MultiDict(TypeConversionDict):
         except KeyError as e:
             if default is not _missing:
                 return default
-            raise BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(str(e))
 
     def popitem(self):
         """Pop an item from the dict."""
@@ -563,7 +563,7 @@ class MultiDict(TypeConversionDict):
             item = dict.popitem(self)
             return (item[0], item[1][0])
         except KeyError as e:
-            raise BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(str(e))
 
     def poplist(self, key):
         """Pop the list for a key from the dict.  If the key is not in the dict
@@ -580,7 +580,7 @@ class MultiDict(TypeConversionDict):
         try:
             return dict.popitem(self)
         except KeyError as e:
-            raise BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(str(e))
 
     def __copy__(self):
         return self.copy()
@@ -685,7 +685,7 @@ class OrderedMultiDict(MultiDict):
     def __getitem__(self, key):
         if key in self:
             return dict.__getitem__(self, key)[0].value
-        raise BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError(key)
 
     def __setitem__(self, key, value):
         self.poplist(key)
@@ -772,7 +772,7 @@ class OrderedMultiDict(MultiDict):
         except KeyError as e:
             if default is not _missing:
                 return default
-            raise BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
         return buckets[0].value
@@ -781,7 +781,7 @@ class OrderedMultiDict(MultiDict):
         try:
             key, buckets = dict.popitem(self)
         except KeyError as e:
-            raise BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
         return key, buckets[0].value
@@ -790,7 +790,7 @@ class OrderedMultiDict(MultiDict):
         try:
             key, buckets = dict.popitem(self)
         except KeyError as e:
-            raise BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(str(e))
         for bucket in buckets:
             bucket.unlink(self)
         return key, [x.value for x in buckets]
@@ -851,7 +851,7 @@ class Headers(object):
             elif isinstance(key, slice):
                 return self.__class__(self._list[key])
         if not isinstance(key, string_types):
-            raise BadRequestKeyError(key)
+            raise exceptions.BadRequestKeyError(key)
         ikey = key.lower()
         for k, v in self._list:
             if k.lower() == ikey:
@@ -861,7 +861,7 @@ class Headers(object):
         # key error instead of our special one.
         if _get_mode:
             raise KeyError()
-        raise BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError(key)
 
     def __eq__(self, other):
         return other.__class__ is self.__class__ and \
@@ -1286,7 +1286,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         for d in self.dicts:
             if key in d:
                 return d[key]
-        raise BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError(key)
 
     def get(self, key, default=None, type=None):
         for d in self.dicts:
@@ -2557,4 +2557,4 @@ class FileStorage(object):
 from werkzeug.http import dump_options_header, dump_header, generate_etag, \
      quote_header_value, parse_set_header, unquote_etag, quote_etag, \
      parse_options_header, http_date, is_byte_range_valid
-from werkzeug.exceptions import BadRequestKeyError
+from werkzeug import exceptions

@@ -20,7 +20,6 @@ from werkzeug._compat import to_native, text_type
 from werkzeug._internal import _empty_stream
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import LimitedStream, make_line_iter
-from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import Headers, FileStorage, MultiDict
 from werkzeug.http import parse_options_header
 
@@ -178,7 +177,7 @@ class FormDataParser(object):
         """
         if self.max_content_length is not None and \
            content_length > self.max_content_length:
-            raise RequestEntityTooLarge()
+            raise exceptions.RequestEntityTooLarge()
         if options is None:
             options = {}
         input_stream = LimitedStream(stream, content_length)
@@ -208,7 +207,7 @@ class FormDataParser(object):
     def _parse_urlencoded(self, stream, mimetype, content_length, options):
         if self.max_form_memory_size is not None and \
            content_length > self.max_form_memory_size:
-            raise RequestEntityTooLarge()
+            raise exceptions.RequestEntityTooLarge()
         form = url_decode_stream(stream, self.charset,
                                  errors=self.errors, cls=self.cls)
         return _empty_stream, form, self.cls()
@@ -349,7 +348,7 @@ class MultiPartParser(object):
         return filename, container
 
     def in_memory_threshold_reached(self, bytes):
-        raise RequestEntityTooLarge()
+        raise exceptions.RequestEntityTooLarge()
 
     def validate_boundary(self, boundary):
         if not boundary:
@@ -508,3 +507,6 @@ class MultiPartParser(object):
         form = (p[1] for p in formstream if p[0] == 'form')
         files = (p[1] for p in filestream if p[0] == 'file')
         return self.cls(form), self.cls(files)
+
+
+from werkzeug import exceptions
