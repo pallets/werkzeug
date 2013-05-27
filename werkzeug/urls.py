@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-import posixpath
 from werkzeug._compat import text_type, PY2, to_unicode, \
      to_native, to_bytes, implements_to_string, try_coerce_native, \
      normalize_string_tuple, make_literal_wrapper
@@ -438,7 +437,8 @@ def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
     are returned.
 
     :param s: the string to unquote.
-    :param charset: the charset to be used.
+    :param charset: the charset of the query string.  If set to `None`
+                    no unicode decoding will take place.
     :param errors: the error handling for the charset decoding.
     """
     rv = _unquote_to_bytes(string, unsafe)
@@ -456,7 +456,8 @@ def url_unquote_plus(s, charset='utf-8', errors='replace'):
     :exc:`HTTPUnicodeError` is raised.
 
     :param s: The string to unquote.
-    :param charsert: The charset to be used.
+    :param charset: the charset of the query string.  If set to `None`
+                    no unicode decoding will take place.
     :param errors: The error handling for the `charset` decoding.
     """
     if isinstance(s, text_type):
@@ -558,6 +559,9 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     remain bytestrings if they fit into ASCII.  On 2.x keys can be forced
     to be unicode by setting `decode_keys` to `True`.
 
+    If the charset is set to `None` no unicode decoding will happen and
+    raw bytes will be returned.
+
     Per default a missing value for a key will default to an empty key.  If
     you don't want that behavior you can set `include_empty` to `False`.
 
@@ -573,7 +577,8 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
        The `cls` parameter was added.
 
     :param s: a string with the query string to decode.
-    :param charset: the charset of the query string.
+    :param charset: the charset of the query string.  If set to `None`
+                    no unicode decoding will take place.
     :param decode_keys: Used on Python 2.x to control weather keys should
                         be forced to be unicode objects.  If set to `True`
                         then keys will be unicode in all cases, otherwise
@@ -588,9 +593,9 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     if cls is None:
         cls = MultiDict
     if isinstance(s, text_type) and not isinstance(separator, text_type):
-        separator = separator.decode('ascii')
+        separator = separator.decode(charset or 'ascii')
     elif isinstance(s, bytes) and not isinstance(separator, bytes):
-        separator = separator.encode('ascii')
+        separator = separator.encode(charset or 'ascii')
     return cls(_url_decode_impl(s.split(separator), charset, decode_keys,
                                 include_empty, errors))
 
@@ -607,7 +612,8 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
     .. versionadded:: 0.8
 
     :param stream: a stream with the encoded querystring
-    :param charset: the charset of the query string.
+    :param charset: the charset of the query string.  If set to `None`
+                    no unicode decoding will take place.
     :param decode_keys: Used on Python 2.x to control weather keys should
                         be forced to be unicode objects.  If set to `True`
                         then keys will be unicode in all cases, otherwise
@@ -648,7 +654,7 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty, errors):
             key = pair
             value = u''
         key = url_unquote_plus(key, charset, errors)
-        if PY2 and not decode_keys:
+        if charset is not None and PY2 and not decode_keys:
             key = try_coerce_native(key)
         yield key, url_unquote_plus(value, charset, errors)
 
