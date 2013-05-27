@@ -81,10 +81,11 @@ class HTTPException(Exception):
     code = None
     description = None
 
-    def __init__(self, description=None):
-        Exception.__init__(self, '%d %s' % (self.code, self.name))
+    def __init__(self, description=None, response=None):
+        Exception.__init__(self)
         if description is not None:
             self.description = description
+        self.response = response
 
     @classmethod
     def wrap(cls, exception, name=None):
@@ -92,8 +93,8 @@ class HTTPException(Exception):
         also is a subclass of `BadRequest`.
         """
         class newcls(cls, exception):
-            def __init__(self, arg=None, description=None):
-                cls.__init__(self, description)
+            def __init__(self, arg=None, *args, **kwargs):
+                cls.__init__(self, *args, **kwargs)
                 exception.__init__(self, arg)
         newcls.__module__ = sys._getframe(1).f_globals.get('__name__')
         newcls.__name__ = name or cls.__name__ + exception.__name__
@@ -102,7 +103,7 @@ class HTTPException(Exception):
     @property
     def name(self):
         """The status name."""
-        return HTTP_STATUS_CODES[self.code]
+        return HTTP_STATUS_CODES.get(self.code, 'Unknown Error')
 
     def get_description(self, environ):
         """Get the description."""
@@ -127,15 +128,14 @@ class HTTPException(Exception):
         return [('Content-Type', 'text/html')]
 
     def get_response(self, environ):
-        """Get a response object.
+        """Get a response object.  If one was passed to the exception
+        it's returned directly.
 
         :param environ: the environ for the request.
         :return: a :class:`Response` object or a subclass thereof.
         """
-        # lazily imported for various reasons.  For one, we can use the exceptions
-        # with custom responses (testing exception instances against types) and
-        # so we don't ever have to import the wrappers, but also because there
-        # are circular dependencies when bootstrapping the module.
+        if self.response is not None:
+            return self.response
         environ = _get_environ(environ)
         headers = self.get_headers(environ)
         return Response(self.get_body(environ), self.code, headers)
@@ -159,17 +159,6 @@ class HTTPException(Exception):
 
     def __repr__(self):
         return '<%s \'%s\'>' % (self.__class__.__name__, self)
-
-
-class _ProxyException(HTTPException):
-    """An HTTP exception that expands renders a WSGI application on error."""
-
-    def __init__(self, response):
-        Exception.__init__(self, 'proxy exception for %r' % response)
-        self.response = response
-
-    def get_response(self, environ):
-        return self.response
 
 
 class BadRequest(HTTPException):
@@ -585,7 +574,7 @@ class Aborter(object):
 
     def __call__(self, code, *args, **kwargs):
         if not args and not kwargs and not isinstance(code, integer_types):
-            raise _ProxyException(code)
+            raise HTTPException(response=code)
         if code not in self.mapping:
             raise LookupError('no exception for %r' % code)
         raise self.mapping[code](*args, **kwargs)
