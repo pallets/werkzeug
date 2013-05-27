@@ -98,34 +98,35 @@ else:
         is_text = isinstance(next(tupiter, None), text_type)
         for arg in tupiter:
             if isinstance(arg, text_type) != is_text:
-                raise TypeError('Cannot mix str and bytes arguments')
+                raise TypeError('Cannot mix str and bytes arguments (got %s)'
+                    % repr(tup))
         return tup
 
 
-def to_unicode(x, charset=sys.getdefaultencoding()):
+def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict'):
     """please use carefully"""
     if x is None:
         return None
     if not isinstance(x, bytes):
         return text_type(x)
-    return x.decode(charset)
+    return x.decode(charset, errors)
 
 
-def to_bytes(x, charset=sys.getdefaultencoding()):
+def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
     """please use carefully"""
     if x is None:
         return None
     if PY2:
         if isinstance(x, unicode):
-            return x.encode(charset)
+            return x.encode(charset, errors)
         return str(x)
     else:
         if not isinstance(x, bytes):
-            x = str(x).encode(charset)
+            x = str(x).encode(charset, errors)
         return x
 
 
-def to_native(x, charset=sys.getdefaultencoding(), errors="strict"):
+def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
     """please use carefully"""
     if x is None or isinstance(x, str):
         return x
@@ -135,7 +136,7 @@ def to_native(x, charset=sys.getdefaultencoding(), errors="strict"):
         return x.decode(charset, errors)
 
 
-def string_join(iterable, default=""):
+def string_join(iterable, default=''):
     """concatenate any string type"""
     l = list(iterable)
     if l:

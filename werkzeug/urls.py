@@ -77,19 +77,6 @@ class _URLMixin(object):
         return to_native(rv, 'ascii', 'ignore')
 
     @property
-    def ascii_netloc(self):
-        """Works exactly like :attr:`netloc` but returns the result in ASCII.
-        """
-        host = self.ascii_host
-        if host is not None:
-            if ':' in host:
-                host = '[%s]' % host
-            port = self.port
-            if port is not None:
-                return '%s:%d' % (host, port)
-            return host
-
-    @property
     def port(self):
         """The port in the URL as an integer if it was present, `None`
         otherwise.  This does not fill in default ports.
@@ -160,6 +147,27 @@ class _URLMixin(object):
         """
         return url_unparse(self)
 
+    def decode_netloc(self, charset='utf-8', errors='strict'):
+        """Decodes the netloc part into a string."""
+        rv = self.host or ''
+        try:
+            rv = to_bytes(rv, charset).decode('idna')
+        except (AttributeError, TypeError, UnicodeError):
+            pass
+
+        if ':' in rv:
+            rv = '[%s]' % rv
+        port = self.port
+        if port is not None:
+            rv = '%s:%d' % (rv, port)
+        auth = ':'.join(filter(None, [
+            url_unquote(self.raw_username or '', charset, errors, '/:%@'),
+            url_unquote(self.raw_password or '', charset, errors, '/:%@'),
+        ]))
+        if auth:
+            rv = '%s@%s' % (auth, rv)
+        return rv
+
     def _split_netloc(self):
         if self._at in self.netloc:
             return self.netloc.split(self._at, 1)
@@ -209,13 +217,33 @@ class URL(_URLTuple, _URLMixin):
     def __str__(self):
         return self.to_url()
 
+    def encode_netloc(self, charset='utf-8', errors='strict'):
+        """Encodes the netloc part to the given charset.  The charset
+        only applies to the auth part in the netloc if it's present.
+        The actual return value of this function is always an ascii
+        string.
+        """
+        rv = self.ascii_host or ''
+        if ':' in rv:
+            rv = '[%s]' % rv
+        port = self.port
+        if port is not None:
+            rv = '%s:%d' % (rv, port)
+        auth = ':'.join(filter(None, [
+            url_quote(self.raw_username or '', charset, errors, '/:%'),
+            url_quote(self.raw_password or '', charset, errors, '/:%'),
+        ]))
+        if auth:
+            rv = '%s@%s' % (auth, rv)
+        return rv.encode('ascii')
+
     def encode(self, charset='utf-8', errors='replace'):
         """Encodes the URL to a tuple made out of bytes.  The charset is
         only being used for the path, query and fragment.
         """
         return BytesURL(
             self.scheme.encode('ascii'),
-            self.ascii_netloc.encode('ascii'),
+            self.encode_netloc(charset, errors),
             self.path.encode(charset, errors),
             self.query.encode(charset, errors),
             self.fragment.encode(charset, errors)
@@ -230,37 +258,23 @@ class BytesURL(_URLTuple, _URLMixin):
     _lbracket = b'['
     _rbracket = b']'
 
+    def encode_netloc(self, charset='utf-8', errors='replace'):
+        """Returns the netloc unchanged.  This method exists for constency
+        with unicode representations of URLs.
+        """
+        return self.netloc
+
     def decode(self, charset='utf-8', errors='replace'):
         """Decodes the URL to a tuple made out of strings.  The charset is
         only being used for the path, query and fragment.
         """
         return URL(
             self.scheme.decode('ascii'),
-            self.netloc.decode('ascii'),
+            self.decode_netloc(charset, errors),
             self.path.decode(charset, errors),
             self.query.decode(charset, errors),
             self.fragment.decode(charset, errors)
         )
-
-
-def _url_split(url):
-    scheme, netloc, path, query, fragment = url_parse(url)
-
-    if isinstance(netloc, text_type) and u'@' in netloc:
-        auth, hostname = netloc.split(u'@', 1)
-    elif isinstance(netloc, bytes) and b'@' in netloc:
-        auth, hostname = netloc.split(b'@', 1)
-    else:
-        auth = None
-        hostname = netloc
-
-    port = None
-    if hostname:
-        if isinstance(hostname, text_type) and u':' in hostname:
-            hostname, port = hostname.split(u':', 1)
-        elif isinstance(hostname, bytes) and b':' in hostname:
-            hostname, port = hostname.split(b':', 1)
-    return scheme, auth, hostname, port, path, query, fragment
 
 
 def _unquote_to_bytes(string, unsafe=''):
@@ -409,51 +423,6 @@ def url_unparse(components):
     return url
 
 
-def iri_to_uri(iri, charset='utf-8', errors='strict'):
-    r"""
-    Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
-    uses utf-8 URLs internally because this is what browsers and HTTP do as
-    well. In some places where it accepts an URL it also accepts a unicode IRI
-    and converts it into a URI.
-
-    Examples for IRI versus URI:
-
-    >>> iri_to_uri(u'http://☃.net/')
-    'http://xn--n3h.net/'
-    >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
-    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
-
-    .. versionadded:: 0.6
-
-    :param iri: The IRI to convert.
-    :param charset: The charset for the URI.
-    """
-    if isinstance(iri, bytes):
-        iri = iri.decode('ascii') # iri is really an uri
-    scheme, auth, hostname, port, path, query, fragment = _url_split(iri)
-
-    scheme = to_native(scheme, charset)
-    hostname = to_native(hostname.encode('idna'), 'ascii')
-
-    if auth:
-        if u':' in auth:
-            auth, password = auth.split(':', 1)
-        else:
-            password = None
-        auth = url_quote(auth, charset)
-        if password:
-            auth += ':' + url_quote(password, charset)
-        hostname = auth + '@' + hostname
-    if port:
-        hostname += ':' + to_native(port, charset)
-
-    path = url_quote(path, charset, errors, '/:~+%')
-    query = url_quote(query, charset, errors, '%&[]:;$*()+,!?*/')
-    fragment = url_quote(fragment, charset, errors, '=%&[]:;$()+,!?*/')
-
-    return url_unparse((scheme, hostname, path, query, fragment))
-
-
 def url_unquote(string, charset='utf-8', errors='replace', unsafe=''):
     """URL decode a single string with a given decoding.
 
@@ -500,14 +469,11 @@ def url_fix(s, charset='utf-8'):
 
     :param s: the string with the URL to fix.
     :param charset: The target charset for the URL if the url was given as
-    unicode string.
+                    unicode string.
     """
-    scheme, netloc, path, qs, anchor = url_parse(s)
-    scheme = to_native(scheme, charset)
-    netloc = to_native(netloc, charset)
+    scheme, netloc, path, qs, anchor = url_parse(to_unicode(s, charset, 'replace'))
     path = url_quote(path, charset, safe='/%')
     qs = url_quote_plus(qs, charset, safe=':&%=')
-    anchor = to_native(anchor, charset)
     return url_unparse((scheme, netloc, path, qs, anchor))
 
 
@@ -533,31 +499,42 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     :param charset: The charset of the URI.
     :param errors: The error handling on decode.
     """
-    if isinstance(uri, text_type):
-        uri = uri.encode('ascii') # iri -> uri
-    uri = url_fix(uri)
-    scheme, auth, hostname, port, path, query, fragment = _url_split(uri)
+    uri = url_parse(to_unicode(uri, charset))
+    path = url_unquote(uri.path, charset, errors, '/;?')
+    query = url_unquote(uri.query, charset, errors, ';/?:@&=+,$')
+    fragment = url_unquote(uri.fragment, charset, errors, ';/?:@&=+,$')
+    return url_unparse((uri.scheme, uri.decode_netloc(charset, errors),
+                        path, query, fragment))
 
-    scheme = to_unicode(scheme, charset)
-    hostname = to_bytes(hostname, 'ascii').decode('idna')
 
-    if auth:
-        if ':' in auth:
-            auth, password = auth.split(':', 1)
-        else:
-            password = None
-        auth = url_unquote(auth, charset, errors)
-        if password:
-            auth += u':' + url_unquote(password, charset, errors)
-        hostname = auth + u'@' + hostname
+def iri_to_uri(iri, charset='utf-8', errors='strict'):
+    r"""
+    Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
+    uses utf-8 URLs internally because this is what browsers and HTTP do as
+    well. In some places where it accepts an URL it also accepts a unicode IRI
+    and converts it into a URI.
 
-    if port:
-        hostname += u':' + to_unicode(port, charset)
+    Examples for IRI versus URI:
 
-    path = url_unquote(path, charset, errors, '/;?')
-    query = url_unquote(query, charset, errors, ';/?:@&=+,$')
-    fragment = url_unquote(fragment, charset, errors, ';/?:@&=+,$')
-    return url_unparse((scheme, hostname, path, query, fragment))
+    >>> iri_to_uri(u'http://☃.net/')
+    'http://xn--n3h.net/'
+    >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
+    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+
+    .. versionadded:: 0.6
+
+    :param iri: The IRI to convert.
+    :param charset: The charset for the URI.
+    """
+    iri = url_parse(to_unicode(iri, charset, errors))
+
+    netloc = iri.encode_netloc(charset, errors).decode('ascii')
+    path = url_quote(iri.path, charset, errors, '/:~+%')
+    query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
+    fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')
+
+    return url_unparse((iri.scheme, netloc,
+                        path, query, fragment))
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
@@ -728,12 +705,8 @@ def url_join(base, url, allow_fragments=True):
     if isinstance(url, tuple):
         url = url_unparse(url)
 
-    if isinstance(base, text_type):
-        s = lambda x: x
-        url = to_unicode(url)
-    else:
-        s = lambda x: x.encode('ascii')
-        url = to_bytes(url, 'ascii')
+    base, url = normalize_string_tuple((base, url))
+    s = make_literal_wrapper(base)
 
     if not base:
         return url
