@@ -44,7 +44,7 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
 from werkzeug._internal import _empty_stream, _decode_unicode, \
      _patch_wrapper, _get_environ
 from werkzeug._compat import to_bytes, string_types, PY2, text_type, \
-     integer_types
+     integer_types, wsgi_decoding_dance
 
 
 def _run_wsgi_app(*args):
@@ -439,10 +439,8 @@ class BaseRequest(object):
         info in the WSGI environment but will always include a leading slash,
         even if the URL root is accessed.
         """
-        path = '/' + (self.environ.get('PATH_INFO') or '').lstrip('/')
-        if PY2:
-            return _decode_unicode(path, self.url_charset, self.encoding_errors)
-        return path
+        raw_path = wsgi_decoding_dance(self.environ.get('PATH_INFO') or '')
+        return '/' + raw_path.lstrip('/')
 
     @cached_property
     def full_path(self):
@@ -452,10 +450,8 @@ class BaseRequest(object):
     @cached_property
     def script_root(self):
         """The root path of the script without the trailing slash."""
-        path = (self.environ.get('SCRIPT_NAME') or '').rstrip('/')
-        if PY2:
-            return _decode_unicode(path, self.url_charset, self.encoding_errors)
-        return path
+        raw_path = wsgi_decoding_dance(self.environ.get('SCRIPT_NAME') or '')
+        return raw_path.rstrip('/')
 
     @cached_property
     def url(self):
