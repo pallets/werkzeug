@@ -64,6 +64,9 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(next(gen), ('c', item2))
         self.assert_raises(StopIteration, lambda: next(gen))
 
+    def test_stream_decoding_string_fails(self):
+        self.assert_raises(TypeError, urls.url_decode_stream, 'testing')
+
     def test_url_encoding(self):
         self.assert_strict_equal(urls.url_encode({'foo': 'bar 45'}), 'foo=bar+45')
         d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
@@ -71,7 +74,8 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_encode(d, sort=True, separator=u';'), 'bar=23;blah=H%C3%A4nsel;foo=1')
 
     def test_sorted_url_encode(self):
-        self.assert_strict_equal(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True, key=lambda i: text_type(i[0])), '1=1&2=2&a=42&b=23')
+        self.assert_strict_equal(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2},
+            sort=True, key=lambda i: text_type(i[0])), '1=1&2=2&a=42&b=23')
         self.assert_strict_equal(urls.url_encode({u'A': 1, u'a': 2, u'B': 3, 'b': 4}, sort=True,
                           key=lambda x: x[0].lower() + x[0]), 'A=1&a=2&B=3&b=4')
 
