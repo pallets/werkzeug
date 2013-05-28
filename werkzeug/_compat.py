@@ -50,15 +50,15 @@ if PY2:
         return lambda x: x
 
     def normalize_string_tuple(tup):
-        """Normalizes a string tuple to a common type.  As by Python 2
-        rules upgrades to unicode are implicit.
+        """Normalizes a string tuple to a common type. Following Python 2
+        rules, upgrades to unicode are implicit.
         """
         if any(isinstance(x, text_type) for x in tup):
             return tuple(to_unicode(x) for x in tup)
         return tup
 
     def try_coerce_native(s):
-        """Try to coerce a unicode string to native if possible, otherwise
+        """Try to coerce a unicode string to native if possible. Otherwise,
         leave it as unicode.
         """
         try:
