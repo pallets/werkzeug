@@ -19,32 +19,32 @@ class IterOTestSuite(WerkzeugTestCase):
 
     def test_basic_native(self):
         io = IterIO(["Hello", "World", "1", "2", "3"])
-        assert io.tell() == 0
-        assert io.read(2) == "He"
-        assert io.tell() == 2
-        assert io.read(3) == "llo"
-        assert io.tell() == 5
+        self.assert_equal(io.tell(), 0)
+        self.assert_equal(io.read(2), "He")
+        self.assert_equal(io.tell(), 2)
+        self.assert_equal(io.read(3), "llo")
+        self.assert_equal(io.tell(), 5)
         io.seek(0)
-        assert io.read(5) == "Hello"
-        assert io.tell() == 5
-        assert io._buf == "Hello"
-        assert io.read() == "World123"
-        assert io.tell() == 13
+        self.assert_equal(io.read(5), "Hello")
+        self.assert_equal(io.tell(), 5)
+        self.assert_equal(io._buf, "Hello")
+        self.assert_equal(io.read(), "World123")
+        self.assert_equal(io.tell(), 13)
         io.close()
         assert io.closed
 
         io = IterIO(["Hello\n", "World!"])
-        assert io.readline() == 'Hello\n'
-        assert io._buf == 'Hello\n'
-        assert io.read() == 'World!'
-        assert io._buf == 'Hello\nWorld!'
-        assert io.tell() == 12
+        self.assert_equal(io.readline(), 'Hello\n')
+        self.assert_equal(io._buf, 'Hello\n')
+        self.assert_equal(io.read(), 'World!')
+        self.assert_equal(io._buf, 'Hello\nWorld!')
+        self.assert_equal(io.tell(), 12)
         io.seek(0)
-        assert io.readlines() == ['Hello\n', 'World!']
+        self.assert_equal(io.readlines(), ['Hello\n', 'World!'])
 
         io = IterIO(["foo\n", "bar"])
         io.seek(-4, 2)
-        assert io.read(4) == '\nbar'
+        self.assert_equal(io.read(4), '\nbar')
 
         self.assert_raises(IOError, io.seek, 2, 100)
         io.close()
@@ -52,32 +52,32 @@ class IterOTestSuite(WerkzeugTestCase):
 
     def test_basic_bytes(self):
         io = IterIO([b"Hello", b"World", b"1", b"2", b"3"])
-        assert io.tell() == 0
-        assert io.read(2) == b"He"
-        assert io.tell() == 2
-        assert io.read(3) == b"llo"
-        assert io.tell() == 5
+        self.assert_equal(io.tell(), 0)
+        self.assert_equal(io.read(2), b"He")
+        self.assert_equal(io.tell(), 2)
+        self.assert_equal(io.read(3), b"llo")
+        self.assert_equal(io.tell(), 5)
         io.seek(0)
-        assert io.read(5) == b"Hello"
-        assert io.tell() == 5
-        assert io._buf == b"Hello"
-        assert io.read() == b"World123"
-        assert io.tell() == 13
+        self.assert_equal(io.read(5), b"Hello")
+        self.assert_equal(io.tell(), 5)
+        self.assert_equal(io._buf, b"Hello")
+        self.assert_equal(io.read(), b"World123")
+        self.assert_equal(io.tell(), 13)
         io.close()
         assert io.closed
 
         io = IterIO([b"Hello\n", b"World!"])
-        assert io.readline() == b'Hello\n'
-        assert io._buf == b'Hello\n'
-        assert io.read() == b'World!'
-        assert io._buf == b'Hello\nWorld!'
-        assert io.tell() == 12
+        self.assert_equal(io.readline(), b'Hello\n')
+        self.assert_equal(io._buf, b'Hello\n')
+        self.assert_equal(io.read(), b'World!')
+        self.assert_equal(io._buf, b'Hello\nWorld!')
+        self.assert_equal(io.tell(), 12)
         io.seek(0)
-        assert io.readlines() == [b'Hello\n', b'World!']
+        self.assert_equal(io.readlines(), [b'Hello\n', b'World!'])
 
         io = IterIO([b"foo\n", b"bar"])
         io.seek(-4, 2)
-        assert io.read(4) == b'\nbar'
+        self.assert_equal(io.read(4), b'\nbar')
 
         self.assert_raises(IOError, io.seek, 2, 100)
         io.close()
@@ -85,32 +85,32 @@ class IterOTestSuite(WerkzeugTestCase):
 
     def test_basic_unicode(self):
         io = IterIO([u"Hello", u"World", u"1", u"2", u"3"])
-        assert io.tell() == 0
-        assert io.read(2) == u"He"
-        assert io.tell() == 2
-        assert io.read(3) == u"llo"
-        assert io.tell() == 5
+        self.assert_equal(io.tell(), 0)
+        self.assert_equal(io.read(2), u"He")
+        self.assert_equal(io.tell(), 2)
+        self.assert_equal(io.read(3), u"llo")
+        self.assert_equal(io.tell(), 5)
         io.seek(0)
-        assert io.read(5) == u"Hello"
-        assert io.tell() == 5
-        assert io._buf == u"Hello"
-        assert io.read() == u"World123"
-        assert io.tell() == 13
+        self.assert_equal(io.read(5), u"Hello")
+        self.assert_equal(io.tell(), 5)
+        self.assert_equal(io._buf, u"Hello")
+        self.assert_equal(io.read(), u"World123")
+        self.assert_equal(io.tell(), 13)
         io.close()
         assert io.closed
 
         io = IterIO([u"Hello\n", u"World!"])
-        assert io.readline() == u'Hello\n'
-        assert io._buf == u'Hello\n'
-        assert io.read() == u'World!'
-        assert io._buf == u'Hello\nWorld!'
-        assert io.tell() == 12
+        self.assert_equal(io.readline(), u'Hello\n')
+        self.assert_equal(io._buf, u'Hello\n')
+        self.assert_equal(io.read(), u'World!')
+        self.assert_equal(io._buf, u'Hello\nWorld!')
+        self.assert_equal(io.tell(), 12)
         io.seek(0)
-        assert io.readlines() == [u'Hello\n', u'World!']
+        self.assert_equal(io.readlines(), [u'Hello\n', u'World!'])
 
         io = IterIO([u"foo\n", u"bar"])
         io.seek(-4, 2)
-        assert io.read(4) == u'\nbar'
+        self.assert_equal(io.read(4), u'\nbar')
 
         self.assert_raises(IOError, io.seek, 2, 100)
         io.close()
