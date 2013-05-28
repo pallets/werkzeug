@@ -173,13 +173,21 @@ class IterO(IterIO):
     def __new__(cls, gen):
         self = object.__new__(cls)
         self._gen = gen
-        self._buf = ''
+        self._buf = None
         self.closed = False
         self.pos = 0
         return self
 
     def __iter__(self):
         return self
+
+    def _buf_append(self, string):
+        '''Replace string directly without appending to an empty string,
+        avoiding type issues.'''
+        if not self._buf:
+            self._buf = string
+        else:
+            self._buf += string
 
     def close(self):
         if not self.closed:
@@ -208,14 +216,14 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += string_join(buf)
+            self._buf_append(string_join(buf))
         self.pos = max(0, pos)
 
     def read(self, n=-1):
         if self.closed:
             raise ValueError('I/O operation on closed file')
         if n < 0:
-            self._buf += string_join(self._gen)
+            self._buf_append(string_join(self._gen))
             result = self._buf[self.pos:]
             self.pos += len(result)
             return result
@@ -230,7 +238,7 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += string_join(buf)
+            self._buf_append(string_join(buf))
         new_pos = max(0, new_pos)
         try:
             return self._buf[self.pos:new_pos]
@@ -240,13 +248,19 @@ class IterO(IterIO):
     def readline(self, length=None):
         if self.closed:
             raise ValueError('I/O operation on closed file')
-        nl_pos = self._buf.find('\n', self.pos)
+
+        nl_pos = -1
+        if self._buf:
+            nl_pos = self._buf.find(
+                b'\n' if isinstance(self._buf, bytes) else u'\n',
+                self.pos
+            )
         buf = []
         try:
             pos = self.pos
             while nl_pos < 0:
                 item = next(self._gen)
-                local_pos = item.find('\n')
+                local_pos = item.find(b'\n' if isinstance(item, bytes) else u'\n')
                 buf.append(item)
                 if local_pos >= 0:
                     nl_pos = pos + local_pos
@@ -255,7 +269,7 @@ class IterO(IterIO):
         except StopIteration:
             pass
         if buf:
-            self._buf += string_join(buf)
+            self._buf_append(string_join(buf))
         if nl_pos < 0:
             new_pos = len(self._buf)
         else:
