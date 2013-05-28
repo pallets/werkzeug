@@ -5,7 +5,7 @@
 
     This module provides various traceback related utility functions.
 
-    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 import re
