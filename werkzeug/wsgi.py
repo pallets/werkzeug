@@ -20,7 +20,7 @@ from datetime import datetime
 from functools import partial
 
 from werkzeug import urls
-from werkzeug._compat import string_join, iteritems, text_type, string_types, \
+from werkzeug._compat import iteritems, text_type, string_types, \
      implements_iterator, make_literal_wrapper, to_unicode, to_bytes
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
@@ -789,7 +789,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
                 new_buf.append(item)
         buffer = new_buf
     if buffer:
-        yield string_join(buffer)
+        yield _join(buffer)
 
 
 class LimitedStream(object):
@@ -863,7 +863,9 @@ class LimitedStream(object):
         function.
         """
         if self.silent:
-            return b''
+            # Read null bytes from the stream so that we get the
+            # correct end of stream marker.
+            return self._read(0)
         from werkzeug.exceptions import BadRequest
         raise BadRequest('input stream exhausted')
 

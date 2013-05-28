@@ -162,13 +162,3 @@ def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict'):
     if not isinstance(x, bytes):
         return text_type(x)
     return x.decode(charset, errors)
-
-
-def string_join(iterable, default=''):
-    """concatenate any string type"""
-    l = list(iterable)
-    if l:
-        if isinstance(l[0], bytes):
-            return b"".join(l)
-        return u"".join(l)
-    return default

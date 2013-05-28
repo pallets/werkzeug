@@ -116,6 +116,35 @@ class IterOTestSuite(WerkzeugTestCase):
         io.close()
         self.assert_raises(ValueError, io.read)
 
+    def test_sentinel_cases(self):
+        io = IterIO([])
+        self.assert_strict_equal(io.read(), '')
+        io = IterIO([], b'')
+        self.assert_strict_equal(io.read(), b'')
+        io = IterIO([], u'')
+        self.assert_strict_equal(io.read(), u'')
+
+        io = IterIO([])
+        self.assert_strict_equal(io.read(), '')
+        io = IterIO([b''])
+        self.assert_strict_equal(io.read(), b'')
+        io = IterIO([u''])
+        self.assert_strict_equal(io.read(), u'')
+
+        io = IterIO([])
+        self.assert_strict_equal(io.readline(), '')
+        io = IterIO([], b'')
+        self.assert_strict_equal(io.readline(), b'')
+        io = IterIO([], u'')
+        self.assert_strict_equal(io.readline(), u'')
+
+        io = IterIO([])
+        self.assert_strict_equal(io.readline(), '')
+        io = IterIO([b''])
+        self.assert_strict_equal(io.readline(), b'')
+        io = IterIO([u''])
+        self.assert_strict_equal(io.readline(), u'')
+
 
 class IterITestSuite(WerkzeugTestCase):
 
@@ -128,7 +157,23 @@ class IterITestSuite(WerkzeugTestCase):
         iterable = IterIO(producer)
         self.assert_equal(next(iterable), '1\n2\n')
         self.assert_equal(next(iterable), '3\n')
-        self.assert_raises(StopIteration, partial(next, iterable))
+        self.assert_raises(StopIteration, next, iterable)
+
+    def test_sentinel_cases(self):
+        def producer_dummy_flush(out):
+            out.flush()
+        iterable = IterIO(producer_dummy_flush)
+        self.assert_strict_equal(next(iterable), '')
+
+        def producer_empty(out):
+            pass
+        iterable = IterIO(producer_empty)
+        self.assert_raises(StopIteration, next, iterable)
+
+        iterable = IterIO(producer_dummy_flush, b'')
+        self.assert_strict_equal(next(iterable), b'')
+        iterable = IterIO(producer_dummy_flush, u'')
+        self.assert_strict_equal(next(iterable), u'')
 
 
 def suite():
