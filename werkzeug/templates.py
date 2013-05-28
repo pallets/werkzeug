@@ -16,7 +16,6 @@ from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 
 from werkzeug import urls, utils
-from werkzeug._internal import _decode_unicode
 from werkzeug._compat import string_types
 from werkzeug.datastructures import MultiDict
 
@@ -286,8 +285,8 @@ class Context(object):
         self._write(self.to_unicode(value))
 
     def to_unicode(self, value):
-        if isinstance(value, str):
-            return _decode_unicode(value, self.charset, self.errors)
+        if isinstance(value, bytes):
+            return value.decode(self.charset, self.errors)
         return unicode(value)
 
     def get_value(self, as_unicode=True):
@@ -337,8 +336,8 @@ class Template(object):
 
     def __init__(self, source, filename='<template>', charset='utf-8',
                  errors='strict', unicode_mode=True):
-        if isinstance(source, str):
-            source = _decode_unicode(source, charset, errors)
+        if isinstance(source, bytes):
+            source = source.decode(charset, errors)
         if isinstance(filename, unicode):
             filename = filename.encode('utf-8')
         node = Parser(tokenize(u'\n'.join(source.splitlines()),
@@ -369,7 +368,7 @@ class Template(object):
             f = open(file, 'r')
             close = True
         try:
-            data = _decode_unicode(f.read(), charset, errors)
+            data = f.read().decode(charset, errors)
         finally:
             if close:
                 f.close()

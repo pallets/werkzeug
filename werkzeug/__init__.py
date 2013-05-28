@@ -148,3 +148,8 @@ new_module.__dict__.update({
     '__all__':          tuple(object_origins) + tuple(attribute_modules),
     '__docformat__':    'restructuredtext en'
 })
+
+
+# Due to bootstrapping issues we need to import exceptions here.
+# Don't ask :-(
+__import__('werkzeug.exceptions')
