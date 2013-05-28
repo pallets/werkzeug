@@ -230,7 +230,7 @@ class IterO(IterIO):
         new_pos = self.pos + n
         buf = []
         try:
-            tmp_end_pos = len(self._buf)
+            tmp_end_pos = 0 if self._buf is None else len(self._buf)
             while new_pos > tmp_end_pos:
                 item = next(self._gen)
                 tmp_end_pos += len(item)
