@@ -615,9 +615,9 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
     :param charset: the charset of the query string.  If set to `None`
                     no unicode decoding will take place.
     :param decode_keys: Used on Python 2.x to control whether keys should
-                        be forced to be unicode objects.  If set to `True`
-                        then keys will be unicode in all cases, otherwise
-                        they remain `str` if they fit into ASCII.
+                        be forced to be unicode objects.  If set to `True`,
+                        keys will be unicode in all cases. Otherwise, they
+                        remain `str` if they fit into ASCII.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
     :param errors: the decoding error behavior.
