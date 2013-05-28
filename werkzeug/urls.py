@@ -152,8 +152,8 @@ class _URLMixin(object):
 
     def to_uri_tuple(self):
         """Returns a :class:`BytesURL` tuple that holds a URI.  This will
-        encode all the information in the URL properly to ASCII under the
-        rules a webbrowser would follow.
+        encode all the information in the URL properly to ASCII using the
+        rules a web browser would follow.
 
         It's usually more interesting to directly call :meth:`iri_to_uri` which
         will return a string.
@@ -163,7 +163,7 @@ class _URLMixin(object):
     def to_iri_tuple(self):
         """Returns a :class:`URL` tuple that holds a IRI.  This will try
         to decode as much information as possible in the URL without
-        losing information similar to how a webbrowser does it for the
+        losing information similar to how a web browser does it for the
         URL bar.
 
         It's usually more interesting to directly call :meth:`uri_to_iri` which
@@ -579,7 +579,7 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
     :param s: a string with the query string to decode.
     :param charset: the charset of the query string.  If set to `None`
                     no unicode decoding will take place.
-    :param decode_keys: Used on Python 2.x to control weather keys should
+    :param decode_keys: Used on Python 2.x to control whether keys should
                         be forced to be unicode objects.  If set to `True`
                         then keys will be unicode in all cases, otherwise
                         they remain `str` if they fit into ASCII.
@@ -614,7 +614,7 @@ def url_decode_stream(stream, charset='utf-8', decode_keys=False,
     :param stream: a stream with the encoded querystring
     :param charset: the charset of the query string.  If set to `None`
                     no unicode decoding will take place.
-    :param decode_keys: Used on Python 2.x to control weather keys should
+    :param decode_keys: Used on Python 2.x to control whether keys should
                         be forced to be unicode objects.  If set to `True`
                         then keys will be unicode in all cases, otherwise
                         they remain `str` if they fit into ASCII.
@@ -721,7 +721,7 @@ def url_join(base, url, allow_fragments=True):
 
     :param base: the base URL for the join operation.
     :param url: the URL to join.
-    :param allow_fragments: indicates weather fragments should be allowed.
+    :param allow_fragments: indicates whether fragments should be allowed.
     """
     if isinstance(base, tuple):
         base = url_unparse(base)
