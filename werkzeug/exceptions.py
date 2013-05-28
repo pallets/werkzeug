@@ -65,7 +65,8 @@ import werkzeug
 werkzeug.exceptions = sys.modules[__name__]
 
 from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
-from werkzeug._compat import iteritems, integer_types, implements_to_string
+from werkzeug._compat import iteritems, integer_types, text_type, \
+     implements_to_string
 
 from werkzeug.wrappers import Response
 
@@ -105,38 +106,40 @@ class HTTPException(Exception):
         """The status name."""
         return HTTP_STATUS_CODES.get(self.code, 'Unknown Error')
 
-    def get_description(self, environ):
+    def get_description(self, environ=None):
         """Get the description."""
-        environ = _get_environ(environ)
-        return '<p>%s</p>' % escape(self.description)
+        return u'<p>%s</p>' % escape(self.description)
 
-    def get_body(self, environ):
+    def get_body(self, environ=None):
         """Get the HTML body."""
-        return (
-            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-            '<title>%(code)s %(name)s</title>\n'
-            '<h1>%(name)s</h1>\n'
-            '%(description)s\n'
+        return text_type((
+            u'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+            u'<title>%(code)s %(name)s</title>\n'
+            u'<h1>%(name)s</h1>\n'
+            u'%(description)s\n'
         ) % {
             'code':         self.code,
             'name':         escape(self.name),
             'description':  self.get_description(environ)
-        }
+        })
 
-    def get_headers(self, environ):
+    def get_headers(self, environ=None):
         """Get a list of headers."""
         return [('Content-Type', 'text/html')]
 
-    def get_response(self, environ):
+    def get_response(self, environ=None):
         """Get a response object.  If one was passed to the exception
         it's returned directly.
 
-        :param environ: the environ for the request.
+        :param environ: the optional environ for the request.  This
+                        can be used to modify the response depending
+                        on how the request looked like.
         :return: a :class:`Response` object or a subclass thereof.
         """
         if self.response is not None:
             return self.response
-        environ = _get_environ(environ)
+        if environ is not None:
+            environ = _get_environ(environ)
         headers = self.get_headers(environ)
         return Response(self.get_body(environ), self.code, headers)
 
@@ -245,6 +248,7 @@ class MethodNotAllowed(HTTPException):
     methods in the header which you can do with that list.
     """
     code = 405
+    description = 'The method is not allowed for the requested URL.'
 
     def __init__(self, valid_methods=None, description=None):
         """Takes an optional list of valid http methods
@@ -257,10 +261,6 @@ class MethodNotAllowed(HTTPException):
         if self.valid_methods:
             headers.append(('Allow', ', '.join(self.valid_methods)))
         return headers
-
-    def get_description(self, environ):
-        m = escape(environ.get('REQUEST_METHOD', 'GET'))
-        return '<p>The method %s is not allowed for the requested URL.</p>' % m
 
 
 class NotAcceptable(HTTPException):

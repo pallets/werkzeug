@@ -41,6 +41,8 @@ Release date to be decided, codename to be chosen.
 - Added support to profiling into directories in the contrib profiler.
 - The escape function now by default escapes quotes.
 - Changed repr of exceptions to be less magical.
+- Simplified exception interface to no longer require environemnts
+  to be passed to recieve the response object.
 
 Version 0.8.4
 -------------

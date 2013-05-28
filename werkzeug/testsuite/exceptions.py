@@ -76,9 +76,7 @@ class ExceptionsTestCase(WerkzeugTestCase):
         exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
         h = dict(exc.get_headers({}))
         self.assert_equal(h['Allow'], 'GET, HEAD, POST')
-        self.assert_true('The method DELETE is not allowed' in exc.get_description({
-            'REQUEST_METHOD': 'DELETE'
-        }))
+        self.assert_true('The method is not allowed' in exc.get_description())
 
 
 def suite():
