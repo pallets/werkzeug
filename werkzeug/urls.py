@@ -322,8 +322,8 @@ def _url_unquote_legacy(value, unsafe=''):
 
 def url_parse(url, scheme=None, allow_fragments=True):
     """Parses a URL from a string into a :class:`URL` tuple.  If the URL
-    is lacking a scheme it can be provided as second argument, otherwise
-    it's ignored.  Optionally fragments can be stripped from the URL
+    is lacking a scheme it can be provided as second argument. Otherwise,
+    it is ignored.  Optionally fragments can be stripped from the URL
     by setting `allow_fragments` to `False`.
 
     The inverse of this function is :func:`url_unparse`.
@@ -581,7 +581,7 @@ def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
                     no unicode decoding will take place.
     :param decode_keys: Used on Python 2.x to control whether keys should
                         be forced to be unicode objects.  If set to `True`
-                        then keys will be unicode in all cases, otherwise
+                        then keys will be unicode in all cases. Otherwise,
                         they remain `str` if they fit into ASCII.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
