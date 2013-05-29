@@ -83,7 +83,7 @@ class IterIO(object):
     Note for Python 3: due to the incompatible interface of bytes and
     streams you should set the sentinel value explicitly to an empty
     bytestring (``b''``) if you are expecting to deal with bytes as
-    otherwise the end of the stream is marked with the strong sentinel
+    otherwise the end of the stream is marked with the wrong sentinel
     value.
 
     .. versionadded:: 0.9
