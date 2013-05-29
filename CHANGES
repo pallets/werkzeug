@@ -44,6 +44,7 @@ Release date to be decided, codename to be chosen.
 - Simplified exception interface to no longer require environmnts
   to be passed to recieve the response object.
 - Added sentinel argument to IterIO objects.
+- Added pbkdf2 support for the security module.
 
 Version 0.8.4
 -------------
