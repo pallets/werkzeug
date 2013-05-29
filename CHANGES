@@ -48,6 +48,8 @@ Release date to be decided, codename to be chosen.
 - Added a plain request type that disables all form parsing to only
   leave the stream behind.
 - Removed support for deprecated `fix_headers`.
+- Removed support for deprecated `header_list`.
+- Removed support for deprecated parameter for `iter_encoded`.
 
 Version 0.8.4
 -------------

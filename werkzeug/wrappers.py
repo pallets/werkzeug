@@ -827,21 +827,12 @@ class BaseResponse(object):
             if close is not None:
                 self.call_on_close(close)
 
-    def iter_encoded(self, charset=None):
+    def iter_encoded(self):
         """Iter the response encoded with the encoding of the response.
         If the response object is invoked as WSGI application the return
         value of this method is used as application iterator unless
         :attr:`direct_passthrough` was activated.
-
-        .. versionchanged:: 0.6
-
-           The `charset` parameter was deprecated and became a no-op.
         """
-        # XXX: deprecated
-        if __debug__ and charset is not None: # pragma: no cover
-            from warnings import warn
-            warn(DeprecationWarning('charset was deprecated and is ignored.'),
-                 stacklevel=2)
         charset = self.charset
         if __debug__:
             _warn_if_string(self.response)
@@ -884,15 +875,6 @@ class BaseResponse(object):
                        domain, that domain has to be defined here.
         """
         self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
-
-    @property
-    def header_list(self): # pragma: no cover
-        # XXX: deprecated
-        if __debug__:
-            from warnings import warn
-            warn(DeprecationWarning('header_list is deprecated'),
-                 stacklevel=2)
-        return self.headers.to_wsgi_list()
 
     @property
     def is_streamed(self):
