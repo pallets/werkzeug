@@ -18,7 +18,7 @@ try:
 except ImportError:
     import Cookie as cookies
 
-from werkzeug._compat import PY2, integer_types
+from werkzeug._compat import integer_types
 
 
 _logger = None
