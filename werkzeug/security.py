@@ -13,7 +13,6 @@ import hmac
 import posixpath
 from random import SystemRandom
 
-from werkzeug.exceptions import BadRequest
 from werkzeug._compat import xrange, PY2, text_type, izip
 
 
@@ -39,6 +38,9 @@ def _find_hashlib_algorithms():
 _hash_funcs = _find_hashlib_algorithms()
 
 
+_builtin_safe_str_cmp = getattr(hmac, 'digest_compare', None)
+
+
 def safe_str_cmp(a, b):
     """This function compares strings in somewhat constant time.  This
     requires that the length of at least one string is known in advance.
@@ -47,6 +49,8 @@ def safe_str_cmp(a, b):
 
     .. versionadded:: 0.7
     """
+    if _builtin_safe_str_cmp is not None:
+        return _builtin_safe_str_cmp(a, b)
     if len(a) != len(b):
         return False
     rv = 0
