@@ -47,6 +47,7 @@ Release date to be decided, codename to be chosen.
 - Added pbkdf2 support for the security module.
 - Added a plain request type that disables all form parsing to only
   leave the stream behind.
+- Removed support for deprecated `fix_headers`.
 
 Version 0.8.4
 -------------
