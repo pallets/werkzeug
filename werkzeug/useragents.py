@@ -19,6 +19,7 @@ class UserAgentParser(object):
 
     platforms = (
         ('iphone|ios', 'iphone'),
+        ('ipad', 'ipad'),
         (r'darwin|mac|os\s*x', 'macos'),
         ('win', 'windows'),
         (r'android', 'android'),
@@ -107,6 +108,7 @@ class UserAgent(object):
        -   `bsd`
        -   `hpux`
        -   `iphone`
+       -   `ipad`
        -   `irix`
        -   `linux`
        -   `macos`
