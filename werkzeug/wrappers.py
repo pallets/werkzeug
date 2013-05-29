@@ -1215,6 +1215,19 @@ class AuthorizationMixin(object):
         return parse_authorization_header(header)
 
 
+class StreamOnlyMixin(object):
+    """If mixed in before the request object this will change the bahavior
+    of it to disable handling of form parsing.  This disables the
+    :attr:`files`, :attr:`form` and :attr:`data` attributes and will just
+    provide a :attr:`stream` attribute that however is always available.
+
+    .. versionadded:: 0.9
+    """
+
+    data = files = form = property()
+    want_form_data_parsed = False
+
+
 class ETagResponseMixin(object):
     """Adds extra functionality to a response object for etag and cache
     handling.  This mixin requires an object with at least a `headers`
@@ -1626,6 +1639,13 @@ class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
     - :class:`UserAgentMixin` for user agent introspection
     - :class:`AuthorizationMixin` for http auth handling
     - :class:`CommonRequestDescriptorsMixin` for common headers
+    """
+
+
+class PlainRequest(StreamOnlyMixin, Request):
+    """A request object without special form parsing capabilities.
+
+    .. versionadded:: 0.9
     """
 
 

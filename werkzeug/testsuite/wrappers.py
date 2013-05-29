@@ -175,6 +175,16 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(a.username, 'Aladdin')
         self.assert_strict_equal(a.password, 'open sesame')
 
+    def test_stream_only_mixing(self):
+        request = wrappers.PlainRequest.from_values(
+            data=b'foo=blub+hehe',
+            content_type='application/x-www-form-urlencoded'
+        )
+        self.assert_raises(AttributeError, lambda: request.files)
+        self.assert_raises(AttributeError, lambda: request.form)
+        self.assert_raises(AttributeError, lambda: request.data)
+        self.assert_strict_equal(request.stream.read(), b'foo=blub+hehe')
+
     def test_base_response(self):
         # unicode
         response = wrappers.BaseResponse(u'öäü')

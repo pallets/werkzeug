@@ -45,6 +45,8 @@ Release date to be decided, codename to be chosen.
   to be passed to recieve the response object.
 - Added sentinel argument to IterIO objects.
 - Added pbkdf2 support for the security module.
+- Added a plain request type that disables all form parsing to only
+  leave the stream behind.
 
 Version 0.8.4
 -------------
