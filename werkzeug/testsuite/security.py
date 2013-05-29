@@ -58,6 +58,8 @@ class SecurityTestCase(WerkzeugTestCase):
             self.assert_equal(rv, expected)
 
         # From RFC 6070
+        check('password', 'salt', 1, None,
+              '0c60c80f961f0e71f3a9b524af6012062fe037a6')
         check('password', 'salt', 1, 20,
               '0c60c80f961f0e71f3a9b524af6012062fe037a6')
         check('password', 'salt', 2, 20,
