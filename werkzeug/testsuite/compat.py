@@ -33,24 +33,6 @@ class CompatTestCase(WerkzeugTestCase):
                 continue
             getattr(werkzeug, key)
 
-    def test_fix_headers_in_response(self):
-        # ignore some warnings werkzeug emits for backwards compat
-        for msg in ['called into deprecated fix_headers',
-                    'fix_headers changed behavior']:
-            warnings.filterwarnings('ignore', message=msg,
-                                    category=DeprecationWarning)
-
-        class MyResponse(Response):
-            def fix_headers(self, environ):
-                Response.fix_headers(self, environ)
-                self.headers['x-foo'] = "meh"
-        myresp = MyResponse('Foo')
-        resp = Response.from_app(myresp, create_environ(method='GET'))
-        self.assert_equal(resp.headers['x-foo'], 'meh')
-        self.assert_equal(resp.data, b'Foo')
-
-        warnings.resetwarnings()
-
 
 def suite():
     suite = unittest.TestSuite()

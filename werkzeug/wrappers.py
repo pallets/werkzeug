@@ -940,15 +940,6 @@ class BaseResponse(object):
         self.response = list(self.iter_encoded())
         self.headers['Content-Length'] = str(sum(map(len, self.response)))
 
-    def fix_headers(self, environ):
-        # XXX: deprecated
-        if __debug__:
-            from warnings import warn
-            warn(DeprecationWarning('called into deprecated fix_headers baseclass '
-                                    'method.  Use get_wsgi_headers instead.'),
-                 stacklevel=2)
-        self.headers[:] = self.get_wsgi_headers(environ)
-
     def get_wsgi_headers(self, environ):
         """This is automatically called right before the response is started
         and returns headers modified for the given environment.  It returns a
@@ -1076,25 +1067,7 @@ class BaseResponse(object):
         :param environ: the WSGI environment of the request.
         :return: an ``(app_iter, status, headers)`` tuple.
         """
-        # XXX: code for backwards compatibility with custom fix_headers
-        # methods.
-        if hasattr(self.fix_headers, "func_code"):
-            is_custom_fix_headers = self.fix_headers.func_code is not \
-                    BaseResponse.fix_headers.func_code
-        else:
-            is_custom_fix_headers = self.fix_headers.__code__ is not \
-                    BaseResponse.fix_headers.__code__
-        if is_custom_fix_headers:
-            if __debug__:
-                from warnings import warn
-                warn(DeprecationWarning('fix_headers changed behavior in 0.6 '
-                                        'and is now called get_wsgi_headers. '
-                                        'See documentation for more details.'),
-                     stacklevel=2)
-            self.fix_headers(environ)
-            headers = self.headers
-        else:
-            headers = self.get_wsgi_headers(environ)
+        headers = self.get_wsgi_headers(environ)
         app_iter = self.get_app_iter(environ)
         return app_iter, self.status, headers.to_wsgi_list()
 
