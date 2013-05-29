@@ -334,15 +334,13 @@ class _DictAccessorProperty(object):
         )
 
 
-def _easteregg(app):
+def _easteregg(app=None):
     """Like the name says.  But who knows how it works?"""
     def bzzzzzzz(gyver):
-        if PY2:
-            return gyver.decode('base64').decode('zlib')
         import base64
         import zlib
-        return zlib.decompress(base64.b64decode(gyver.encode('ascii'))).decode('ascii')
-    gyver = '\n'.join([x + (77 - len(x)) * ' ' for x in bzzzzzzz('''
+        return zlib.decompress(base64.b64decode(gyver)).decode('ascii')
+    gyver = u'\n'.join([x + (77 - len(x)) * u' ' for x in bzzzzzzz(b'''
 eJyFlzuOJDkMRP06xRjymKgDJCDQStBYT8BCgK4gTwfQ2fcFs2a2FzvZk+hvlcRvRJD148efHt9m
 9Xz94dRY5hGt1nrYcXx7us9qlcP9HHNh28rz8dZj+q4rynVFFPdlY4zH873NKCexrDM6zxxRymzz
 4QIxzK4bth1PV7+uHn6WXZ5C4ka/+prFzx3zWLMHAVZb8RRUxtFXI5DTQ2n3Hi2sNI+HK43AOWSY
@@ -378,10 +376,10 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
         def injecting_start_response(status, headers, exc_info=None):
             headers.append(('X-Powered-By', 'Werkzeug'))
             return start_response(status, headers, exc_info)
-        if environ.get('QUERY_STRING') != 'macgybarchakku':
+        if app is not None and environ.get('QUERY_STRING') != 'macgybarchakku':
             return app(environ, injecting_start_response)
         injecting_start_response('200 OK', [('Content-Type', 'text/html')])
-        return ['''
+        return [(u'''
 <!DOCTYPE html>
 <html>
 <head>
@@ -399,5 +397,5 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
 <p>the Swiss Army knife of Python web development.</p>
 <pre>%s\n\n\n</pre>
 </body>
-</html>''' % gyver]
+</html>''' % gyver).encode('latin1')]
     return easteregged
