@@ -73,15 +73,15 @@ if PY2:
         return s.encode(charset)
 
     def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
-        """please use carefully"""
         if x is None:
             return None
+        if isinstance(x, (bytes, bytearray, buffer)):
+            return bytes(x)
         if isinstance(x, unicode):
             return x.encode(charset, errors)
-        return str(x)
+        raise TypeError('Expected bytes')
 
     def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
-        """please use carefully"""
         if x is None or isinstance(x, str):
             return x
         return x.encode(charset, errors)
@@ -141,22 +141,21 @@ else:
         return s.encode(charset).decode('latin1', errors)
 
     def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
-        """please use carefully"""
         if x is None:
             return None
-        if not isinstance(x, bytes):
-            x = str(x).encode(charset, errors)
-        return x
+        if isinstance(x, (bytes, bytearray, memoryview)):
+            return bytes(x)
+        if isinstance(x, str):
+            return x.encode(charset, errors)
+        raise TypeError('Expected bytes')
 
     def to_native(x, charset=sys.getdefaultencoding(), errors='strict'):
-        """please use carefully"""
         if x is None or isinstance(x, str):
             return x
         return x.decode(charset, errors)
 
 
 def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict'):
-    """please use carefully"""
     if x is None:
         return None
     if not isinstance(x, bytes):
