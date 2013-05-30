@@ -802,14 +802,6 @@ class LimitedStream(object):
     output.  Otherwise :meth:`readlines` will try to read past the
     limit.
 
-    The `silent` parameter has no effect if :meth:`is_exhausted` is
-    overriden by a subclass.
-
-    .. versionchanged:: 0.6
-       Non-silent usage was deprecated because it causes confusion.
-       If you want that, override :meth:`is_exhausted` and raise a
-       :exc:`~exceptions.BadRequest` yourself.
-
     .. admonition:: Note on WSGI compliance
 
        calls to :meth:`readline` and :meth:`readlines` are not
@@ -830,22 +822,13 @@ class LimitedStream(object):
     :param limit: the limit for the stream, must not be longer than
                   what the string can provide if the stream does not
                   end with `EOF` (like `wsgi.input`)
-    :param silent: If set to `True` the stream will allow reading
-                   past the limit and will return an empty string.
     """
 
-    def __init__(self, stream, limit, silent=True):
+    def __init__(self, stream, limit):
         self._read = stream.read
         self._readline = stream.readline
         self._pos = 0
         self.limit = limit
-        self.silent = silent
-        if not silent:
-            from warnings import warn
-            warn(DeprecationWarning('non-silent usage of the '
-            'LimitedStream is deprecated.  If you want to '
-            'continue to use the stream in non-silent usage '
-            'override on_exhausted.'), stacklevel=2)
 
     def __iter__(self):
         return self
@@ -860,12 +843,9 @@ class LimitedStream(object):
         The return value of this function is returned from the reading
         function.
         """
-        if self.silent:
-            # Read null bytes from the stream so that we get the
-            # correct end of stream marker.
-            return self._read(0)
-        from werkzeug.exceptions import BadRequest
-        raise BadRequest('input stream exhausted')
+        # Read null bytes from the stream so that we get the
+        # correct end of stream marker.
+        return self._read(0)
 
     def on_disconnect(self):
         """What should happen if a disconnect is detected?  The return
