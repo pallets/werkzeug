@@ -392,7 +392,7 @@ class Template(object):
         if kwargs:
             ns.update(kwargs)
         context = Context(ns, self.charset, self.errors)
-        exec self.code in context.runtime, context
+        exec(self.code, context.runtime, context)
         return context.get_value(self.unicode_mode)
 
     def substitute(self, *args, **kwargs):
