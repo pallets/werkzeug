@@ -58,6 +58,7 @@ Release date to be decided, codename to be chosen.
   associated resources.
 - Conditional request handling or access to the data property on responses no
   longer ignores direct passthrough mode.
+- Removed werkzeug.templates and werkzeug.contrib.kickstart.
 
 Version 0.8.4
 -------------
