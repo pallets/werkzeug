@@ -241,7 +241,8 @@ class BaseRequest(object):
     def application(cls, f):
         """Decorate a function as responder that accepts the request as first
         argument.  This works like the :func:`responder` decorator but the
-        function is passed the request object as first argument::
+        function is passed the request object as first argument and the
+        request object will be closed automatically::
 
             @Request.application
             def my_wsgi_app(request):
@@ -255,7 +256,11 @@ class BaseRequest(object):
         #: the request.  The return value is then called with the latest
         #: two arguments.  This makes it possible to use this decorator for
         #: both methods and standalone WSGI functions.
-        return _patch_wrapper(f, lambda *a: f(*a[:-2]+(cls(a[-2]),))(*a[-2:]))
+        def application(*args):
+            request = cls(args[-2])
+            with request:
+                return f(*args[:-2] + (request,))(*args[-2:])
+        return _patch_wrapper(f, application)
 
     def _get_file_stream(self, total_content_length, content_type, filename=None,
                         content_length=None):
