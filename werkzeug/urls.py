@@ -644,15 +644,15 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty, errors):
     for pair in pair_iter:
         if not pair:
             continue
-        if isinstance(pair, bytes):
-            pair = pair.decode('ascii')
-        if u'=' in pair:
-            key, value = pair.split(u'=', 1)
+        s = make_literal_wrapper(pair)
+        equal = s('=')
+        if equal in pair:
+            key, value = pair.split(equal, 1)
         else:
             if not include_empty:
                 continue
             key = pair
-            value = u''
+            value = s('')
         key = url_unquote_plus(key, charset, errors)
         if charset is not None and PY2 and not decode_keys:
             key = try_coerce_native(key)

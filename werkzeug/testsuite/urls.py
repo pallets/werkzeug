@@ -225,6 +225,11 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_join('file:///tmp/x', '../../../x.html'),
                                  'file:///x.html')
 
+    def test_partial_unencoded_decode(self):
+        ref = u'foo=정상처리'.encode('euc-kr')
+        x = urls.url_decode(ref, charset='euc-kr')
+        self.assert_strict_equal(x['foo'], u'정상처리')
+
 
 def suite():
     suite = unittest.TestSuite()
