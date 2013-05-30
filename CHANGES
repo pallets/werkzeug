@@ -52,6 +52,8 @@ Release date to be decided, codename to be chosen.
 - Removed support for deprecated parameter for `iter_encoded`.
 - Removed support for deprecated non-silent usage of the limited
   stream object.
+- Removed support for previous dummy `writable` parameter on
+  the cached property.
 - Added support for explicitly closing request objects to close
   associated resources.
 
