@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import sys
 import codecs
 import mimetypes
 from itertools import repeat
@@ -2461,7 +2462,8 @@ class FileStorage(object):
             # This might not be if the name attribute is bytes due to the
             # file being opened from the bytes API.
             if not PY2 and isinstance(filename, bytes):
-                filename = filename.decode('utf-8', 'replace')
+                filename = filename.decode(sys.getfilesystemencoding(),
+                                           'replace')
 
         self.filename = filename
         if headers is None:
