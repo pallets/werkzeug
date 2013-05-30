@@ -11,7 +11,8 @@
 import re
 from werkzeug._compat import text_type, PY2, to_unicode, \
      to_native, to_bytes, implements_to_string, try_coerce_native, \
-     normalize_string_tuple, make_literal_wrapper
+     normalize_string_tuple, make_literal_wrapper, \
+     fix_tuple_repr
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
 
@@ -30,8 +31,8 @@ _hextobyte = dict(
 )
 
 
-_URLTuple = namedtuple('_URLTuple',
-    ['scheme', 'netloc', 'path', 'query', 'fragment'])
+_URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
+    ['scheme', 'netloc', 'path', 'query', 'fragment']))
 
 
 class _URLMixin(object):

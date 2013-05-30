@@ -25,6 +25,16 @@ if PY2:
 
     exec('def reraise(tp, value, tb=None):\n raise tp, value, tb')
 
+    def fix_tuple_repr(obj):
+        def __repr__(self):
+            cls = self.__class__
+            return '%s(%s)' % (cls.__name__, ', '.join(
+                '%s=%r' % (field, self[index])
+                for index, field in enumerate(cls._fields)
+            ))
+        obj.__repr__ = __repr__
+        return obj
+
     def implements_iterator(cls):
         cls.next = cls.__next__
         del cls.__next__
@@ -108,6 +118,7 @@ else:
             raise value.with_traceback(tb)
         raise value
 
+    fix_tuple_repr = _identity
     implements_iterator = _identity
     implements_to_string = _identity
     implements_bool = _identity
