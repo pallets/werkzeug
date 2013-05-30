@@ -56,8 +56,8 @@ Release date to be decided, codename to be chosen.
   the cached property.
 - Added support for explicitly closing request objects to close
   associated resources.
-- Conditional converts or access to the data property on responses
-  no longer ignores direct passthrough mode.
+- Conditional request handling or access to the data property on responses no
+  longer ignores direct passthrough mode.
 
 Version 0.8.4
 -------------
