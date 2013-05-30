@@ -50,6 +50,8 @@ Release date to be decided, codename to be chosen.
 - Removed support for deprecated `fix_headers`.
 - Removed support for deprecated `header_list`.
 - Removed support for deprecated parameter for `iter_encoded`.
+- Added support for explicitly closing request objects to close
+  associated resources.
 
 Version 0.8.4
 -------------

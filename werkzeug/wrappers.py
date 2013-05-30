@@ -40,7 +40,7 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
      ResponseCacheControl, RequestCacheControl, CallbackDict, \
-     ContentRange
+     ContentRange, iter_multi_items
 from werkzeug._internal import _empty_stream, _patch_wrapper, _get_environ
 from werkzeug._compat import to_bytes, string_types, text_type, \
      integer_types, wsgi_decoding_dance
@@ -341,6 +341,23 @@ class BaseRequest(object):
         # our cached_property non-data descriptor.
         d = self.__dict__
         d['stream'], d['form'], d['files'] = data
+
+    def close(self):
+        """Closes associated resources of this request object.  This
+        closes all file handles explicitly.  You can also use the request
+        object in a with statement with will automatically close it.
+
+        .. versionadded:: 0.9
+        """
+        files = self.__dict__.get('files')
+        for key, value in iter_multi_items(files or ()):
+            value.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.close()
 
     @cached_property
     def stream(self):

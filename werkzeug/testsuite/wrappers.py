@@ -489,6 +489,45 @@ class WrappersTestCase(WerkzeugTestCase):
         assert not data.files
         assert not data.form
 
+    def test_file_closing(self):
+        data = (b'--foo\r\n'
+                b'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
+                b'Content-Type: text/plain; charset=utf-8\r\n\r\n'
+                b'file contents, just the contents\r\n'
+                b'--foo--')
+        req = wrappers.Request.from_values(
+            input_stream=BytesIO(data),
+            content_length=len(data),
+            content_type='multipart/form-data; boundary=foo',
+            method='POST'
+        )
+        foo = req.files['foo']
+        self.assert_strict_equal(foo.mimetype, 'text/plain')
+        self.assert_strict_equal(foo.filename, 'foo.txt')
+
+        self.assert_equal(foo.closed, False)
+        req.close()
+        self.assert_equal(foo.closed, True)
+
+    def test_file_closing_with(self):
+        data = (b'--foo\r\n'
+                b'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
+                b'Content-Type: text/plain; charset=utf-8\r\n\r\n'
+                b'file contents, just the contents\r\n'
+                b'--foo--')
+        req = wrappers.Request.from_values(
+            input_stream=BytesIO(data),
+            content_length=len(data),
+            content_type='multipart/form-data; boundary=foo',
+            method='POST'
+        )
+        with req:
+            foo = req.files['foo']
+            self.assert_strict_equal(foo.mimetype, 'text/plain')
+            self.assert_strict_equal(foo.filename, 'foo.txt')
+
+        self.assert_equal(foo.closed, True)
+
     def test_url_charset_reflection(self):
         req = wrappers.Request.from_values()
         req.charset = 'utf-7'
