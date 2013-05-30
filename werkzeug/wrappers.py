@@ -43,7 +43,7 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ContentRange, iter_multi_items
 from werkzeug._internal import _empty_stream, _patch_wrapper, _get_environ
 from werkzeug._compat import to_bytes, string_types, text_type, \
-     integer_types, wsgi_decoding_dance
+     integer_types, wsgi_decoding_dance, wsgi_get_bytes
 
 
 def _run_wsgi_app(*args):
@@ -387,7 +387,7 @@ class BaseRequest(object):
         :attr:`parameter_storage_class` to a different type.  This might
         be necessary if the order of the form data is important.
         """
-        return url_decode(self.environ.get('QUERY_STRING', ''),
+        return url_decode(wsgi_get_bytes(self.environ.get('QUERY_STRING', '')),
                           self.url_charset, errors=self.encoding_errors,
                           cls=self.parameter_storage_class)
 

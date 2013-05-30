@@ -26,7 +26,8 @@ except ImportError: # Py2
     from cookielib import CookieJar
 
 from werkzeug._compat import iterlists, iteritems, itervalues, to_native, \
-    string_types, text_type, reraise, wsgi_encoding_dance
+     string_types, text_type, reraise, wsgi_encoding_dance, \
+     make_literal_wrapper
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
@@ -280,14 +281,15 @@ class EnvironBuilder(object):
                  content_length=None, errors_stream=None, multithread=False,
                  multiprocess=False, run_once=False, headers=None, data=None,
                  environ_base=None, environ_overrides=None, charset='utf-8'):
-        if query_string is None and '?' in path:
-            path, query_string = path.split('?', 1)
+        path_s = make_literal_wrapper(path)
+        if query_string is None and path_s('?') in path:
+            path, query_string = path.split(path_s('?'), 1)
         self.charset = charset
         self.path = iri_to_uri(path)
         if base_url is not None:
             base_url = url_fix(iri_to_uri(base_url, charset), charset)
         self.base_url = base_url
-        if isinstance(query_string, string_types):
+        if isinstance(query_string, (bytes, text_type)):
             self.query_string = query_string
         else:
             if query_string is None:
@@ -547,11 +549,13 @@ class EnvironBuilder(object):
         def _path_encode(x):
             return wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
 
+        qs = wsgi_encoding_dance(self.query_string)
+
         result.update({
             'REQUEST_METHOD':       self.method,
             'SCRIPT_NAME':          _path_encode(self.script_root),
             'PATH_INFO':            _path_encode(self.path),
-            'QUERY_STRING':         self.query_string,
+            'QUERY_STRING':         qs,
             'SERVER_NAME':          self.server_name,
             'SERVER_PORT':          str(self.server_port),
             'HTTP_HOST':            self.host,

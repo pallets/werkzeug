@@ -66,10 +66,14 @@ if PY2:
         except UnicodeError:
             return s
 
+    wsgi_get_bytes = _identity
+
     def wsgi_decoding_dance(s, charset='utf-8', errors='replace'):
         return s.decode(charset)
 
     def wsgi_encoding_dance(s, charset='utf-8', errors='replace'):
+        if isinstance(s, bytes):
+            return s
         return s.encode(charset)
 
     def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
@@ -134,10 +138,15 @@ else:
 
     try_coerce_native = _identity
 
+    def wsgi_get_bytes(s):
+        return s.encode('latin1')
+
     def wsgi_decoding_dance(s, charset='utf-8', errors='replace'):
         return s.encode('latin1').decode(charset, errors)
 
     def wsgi_encoding_dance(s, charset='utf-8', errors='replace'):
+        if isinstance(s, bytes):
+            return s.decode('latin1', errors)
         return s.encode(charset).decode('latin1', errors)
 
     def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):

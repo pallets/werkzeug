@@ -737,6 +737,12 @@ class WrappersTestCase(WerkzeugTestCase):
         resp.headers['Location'] = '/test'
         self.assert_equal(resp.get_wsgi_headers(env)['Location'], 'http://localhost/test')
 
+    def test_modified_url_encoding(self):
+        class ModifiedRequest(wrappers.Request):
+            url_charset = 'euc-kr'
+
+        req = ModifiedRequest.from_values(u'/?foo=정상처리'.encode('euc-kr'))
+        self.assert_strict_equal(req.args['foo'], u'정상처리')
 
 def suite():
     suite = unittest.TestSuite()
