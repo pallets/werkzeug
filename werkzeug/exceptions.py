@@ -64,7 +64,7 @@ import sys
 import werkzeug
 werkzeug.exceptions = sys.modules[__name__]
 
-from werkzeug._internal import HTTP_STATUS_CODES, _get_environ
+from werkzeug._internal import _get_environ
 from werkzeug._compat import iteritems, integer_types, text_type, \
      implements_to_string
 
@@ -585,3 +585,4 @@ BadRequestKeyError = BadRequest.wrap(KeyError)
 
 # imported here because of circular dependencies of werkzeug.utils
 from werkzeug.utils import escape
+from werkzeug.http import HTTP_STATUS_CODES
