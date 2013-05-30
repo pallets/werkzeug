@@ -813,6 +813,14 @@ class BaseResponse(object):
     data = property(_get_data, _set_data, doc=_get_data.__doc__)
     del _get_data, _set_data
 
+    def calculate_content_length(self):
+        """Returns the content length if available or `None` otherwise."""
+        try:
+            self._ensure_sequence()
+        except RuntimeError:
+            return None
+        return sum(len(x) for x in self.response)
+
     def _ensure_sequence(self, mutable=False):
         """This method can be called by methods that need a sequence.  If
         `mutable` is true, it will also ensure that the response sequence
@@ -825,6 +833,10 @@ class BaseResponse(object):
             if mutable and not isinstance(self.response, list):
                 self.response = list(self.response)
             return
+        if self.direct_passthrough:
+            raise RuntimeError('Attempted implicit sequence conversion '
+                               'but the response object is in direct '
+                               'passthrough mode.')
         if not self.implicit_sequence_conversion:
             raise RuntimeError('The response object required the iterable '
                                'to be a sequence, but the implicit '
@@ -1286,7 +1298,9 @@ class ETagResponseMixin(object):
             if 'date' not in self.headers:
                 self.headers['Date'] = http_date()
             if 'content-length' not in self.headers:
-                self.headers['Content-Length'] = len(self.data)
+                length = self.calculate_content_length()
+                if length is not None:
+                    self.headers['Content-Length'] = length
             if not is_resource_modified(environ, self.headers.get('etag'), None,
                                         self.headers.get('last-modified')):
                 self.status_code = 304
