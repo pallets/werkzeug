@@ -656,18 +656,16 @@ def _make_chunk_iter(stream, limit, buffer_size):
         raise TypeError('Passed a string or byte object instead of '
                         'true iterator or stream.')
     if not hasattr(stream, 'read'):
-        def generate():
-            for item in stream:
-                if item:
-                    yield item
-    else:
-        def generate(_read=make_limited_stream(stream, limit).read):
-            while 1:
-                item = _read(buffer_size)
-                if not item:
-                    break
+        for item in stream:
+            if item:
                 yield item
-    return generate()
+        return
+    _read = make_limited_stream(stream, limit).read
+    while 1:
+        item = _read(buffer_size)
+        if not item:
+            break
+        yield item
 
 
 def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
