@@ -14,17 +14,14 @@ from werkzeug._compat import PY2, implements_bool
 
 # since each thread has its own greenlet we can just use those as identifiers
 # for the context.  If greenlets are not available we fall back to the
-# current thread ident.
+# current thread ident depending on where it is.
 try:
     from greenlet import getcurrent as get_ident
-except ImportError: # pragma: no cover
+except ImportError:
     try:
         from thread import get_ident
-    except ImportError: # pragma: no cover
-        try:
-            from _thread import get_ident
-        except ImportError: # pragma: no cover
-            from dummy_thread import get_ident
+    except ImportError:
+        from _thread import get_ident
 
 
 def release_local(local):
