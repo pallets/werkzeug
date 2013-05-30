@@ -15,7 +15,7 @@ from itertools import repeat
 
 from werkzeug._internal import _proxy_repr, _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-     PY2, text_type, integer_types, string_types
+     PY2, text_type, integer_types, string_types, make_literal_wrapper
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -2453,8 +2453,15 @@ class FileStorage(object):
         # special filenames with angular brackets.
         if filename is None:
             filename = getattr(stream, 'name', None)
-            if filename and filename[0] == '<' and filename[-1] == '>':
+            s = make_literal_wrapper(filename)
+            if filename and filename[0] == s('<') and filename[-1] == s('>'):
                 filename = None
+
+            # On Python 3 we want to make sure the filename is always unicode.
+            # This might not be if the name attribute is bytes due to the
+            # file being opened from the bytes API.
+            if not PY2 and isinstance(filename, bytes):
+                filename = filename.decode('utf-8', 'replace')
 
         self.filename = filename
         if headers is None:
