@@ -502,8 +502,8 @@ class WrappersTestCase(WerkzeugTestCase):
             method='POST'
         )
         foo = req.files['foo']
-        self.assert_strict_equal(foo.mimetype, 'text/plain')
-        self.assert_strict_equal(foo.filename, 'foo.txt')
+        self.assert_equal(foo.mimetype, 'text/plain')
+        self.assert_equal(foo.filename, 'foo.txt')
 
         self.assert_equal(foo.closed, False)
         req.close()
@@ -523,8 +523,8 @@ class WrappersTestCase(WerkzeugTestCase):
         )
         with req:
             foo = req.files['foo']
-            self.assert_strict_equal(foo.mimetype, 'text/plain')
-            self.assert_strict_equal(foo.filename, 'foo.txt')
+            self.assert_equal(foo.mimetype, 'text/plain')
+            self.assert_equal(foo.filename, 'foo.txt')
 
         self.assert_equal(foo.closed, True)
 
