@@ -1,5 +1,4 @@
 import sys
-import operator
 try:
     import builtins
 except ImportError:
