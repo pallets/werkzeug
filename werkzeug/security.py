@@ -100,7 +100,7 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
         rv = u = _pseudorandom(salt + _pack_int(block))
         for i in xrange(iterations - 1):
             u = _pseudorandom(bytes(u))
-            rv = starmap(xor, izip(rv, u))
+            rv = bytes(starmap(xor, izip(rv, u)))
         buf.extend(rv)
     return bytes(buf[:keylen])
 
