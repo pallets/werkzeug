@@ -259,6 +259,14 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(foo.__name__, 'foo')
         self.assert_equal(foo.__module__, __name__)
 
+    def test_secure_filename(self):
+        self.assert_equal(utils.secure_filename('My cool movie.mov'),
+                          'My_cool_movie.mov')
+        self.assert_equal(utils.secure_filename('../../../etc/passwd'),
+                          'etc_passwd')
+        self.assert_equal(utils.secure_filename(u'i contain cool \xfcml\xe4uts.txt'),
+                          'i_contain_cool_umlauts.txt')
+
 
 def suite():
     suite = unittest.TestSuite()
