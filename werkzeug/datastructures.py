@@ -1335,7 +1335,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         return iteritems(rv)
 
     def listvalues(self):
-        return (x[0] for x in self.lists())
+        return (x[1] for x in self.lists())
 
     def copy(self):
         """Return a shallow copy of this object."""

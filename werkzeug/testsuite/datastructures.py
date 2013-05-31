@@ -443,6 +443,18 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         with self.assert_raises(BadRequestKeyError):
             d.popitemlist()
 
+    def test_iterables(self):
+        a = datastructures.MultiDict((("key_a", "value_a"),))
+        b = datastructures.MultiDict((("key_b", "value_b"),))
+        ab = datastructures.CombinedMultiDict((a,b))
+
+        self.assert_equal(list(ab.iterlists()), ab.lists())
+        self.assert_equal(ab.lists(), [('key_a', ['value_a']), ('key_b', ['value_b'])])
+        self.assert_equal(list(ab.iterlistvalues()), [['value_a'], ['value_b']])
+
+        self.assert_equal(list(ab.iterkeys()), ab.keys())
+        self.assert_equal(ab.keys(), ["key_a", "key_b"])
+
 
 class CombinedMultiDictTestCase(WerkzeugTestCase):
     storage_class = datastructures.CombinedMultiDict
