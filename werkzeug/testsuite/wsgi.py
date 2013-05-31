@@ -63,6 +63,14 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             wsgi.get_host(create_environ('/', 'http://example.org')),
             'example.org')
 
+    def test_get_host_multiple_forwarded(self):
+        env = {'HTTP_X_FORWARDED_HOST': 'example.com, example.org',
+               'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
+        self.assert_equal(wsgi.get_host(env), 'example.com')
+        self.assert_equal(
+            wsgi.get_host(create_environ('/', 'http://example.com')),
+            'example.com')
+
     def test_get_host_validation(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}

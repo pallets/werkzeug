@@ -59,6 +59,8 @@ Release date to be decided, codename to be chosen.
 - Conditional request handling or access to the data property on responses no
   longer ignores direct passthrough mode.
 - Removed werkzeug.templates and werkzeug.contrib.kickstart.
+- Changed host lookup logic for forwarded hosts to allow lists of
+  hosts in which case only the first one is picked up.
 
 Version 0.8.4
 -------------

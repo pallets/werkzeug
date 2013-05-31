@@ -144,7 +144,7 @@ def get_host(environ, trusted_hosts=None):
                           for more information.
     """
     if 'HTTP_X_FORWARDED_HOST' in environ:
-        rv = environ['HTTP_X_FORWARDED_HOST']
+        rv = environ['HTTP_X_FORWARDED_HOST'].split(',')[0].strip()
     elif 'HTTP_HOST' in environ:
         rv = environ['HTTP_HOST']
     else:
