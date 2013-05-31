@@ -244,6 +244,7 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(response.status, '588 UNKNOWN')
         response.status = 'wtf'
         self.assert_strict_equal(response.status_code, 0)
+        self.assert_strict_equal(response.status, '0 wtf')
 
     def test_type_forcing(self):
         def wsgi_application(environ, start_response):
