@@ -14,7 +14,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug.datastructures import OrderedMultiDict
 from werkzeug import urls
-from werkzeug._compat import PY2, text_type, NativeStringIO, BytesIO
+from werkzeug._compat import text_type, NativeStringIO, BytesIO
 
 
 class URLsTestCase(WerkzeugTestCase):
@@ -27,7 +27,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_encode({b'a': None, b'b': b'foo bar'}), 'b=foo+bar')
         self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), 'b=foo+bar')
         self.assert_strict_equal(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),
-               'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
+               'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)')
 
     def test_bytes_unquoting(self):
         self.assert_strict_equal(urls.url_unquote(urls.url_quote(
@@ -100,7 +100,10 @@ class URLsTestCase(WerkzeugTestCase):
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-        self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29')
+        self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)')
+
+        x = urls.url_fix("http://just.a.test/$-_.+!*'(),")
+        self.assert_equal(x, "http://just.a.test/$-_.+!*'(),")
 
     def test_url_fixing_qs(self):
         x = urls.url_fix(b'http://example.com/?foo=%2f%2f')

@@ -20,6 +20,7 @@ Release date to be decided, codename to be chosen.
   iterators and streams.
 - URL generation by the routing system now no longer quotes
   ``+``.
+- URL fixing now no longer quotes certain reserved characters.
 - The :func:`werkzeug.security.generate_password_hash` and
   check functions now support any of the hashlib algorithms.
 - `wsgi.get_current_url` is now ascii safe for browsers sending

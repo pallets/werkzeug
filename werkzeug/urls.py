@@ -475,15 +475,15 @@ def url_fix(s, charset='utf-8'):
     user:
 
     >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-    'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+    'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)'
 
     :param s: the string with the URL to fix.
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
     scheme, netloc, path, qs, anchor = url_parse(to_unicode(s, charset, 'replace'))
-    path = url_quote(path, charset, safe='/%')
-    qs = url_quote_plus(qs, charset, safe=':&%=')
+    path = url_quote(path, charset, safe='/%+$!*\'(),')
+    qs = url_quote_plus(qs, charset, safe=':&%=+$!*\'(),')
     return to_native(url_unparse((scheme, netloc, path, qs, anchor)))
 
 
