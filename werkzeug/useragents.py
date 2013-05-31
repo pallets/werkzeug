@@ -31,7 +31,8 @@ class UserAgentParser(object):
         ('aix', 'aix'),
         ('sco|unix_sv', 'sco'),
         ('bsd', 'bsd'),
-        ('amiga', 'amiga')
+        ('amiga', 'amiga'),
+        ('blackberry|playbook', 'blackberry')
     )
     browsers = (
         ('googlebot', 'google'),
