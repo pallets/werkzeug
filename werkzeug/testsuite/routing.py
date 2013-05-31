@@ -84,6 +84,17 @@ class RoutingTestCase(WerkzeugTestCase):
         self.assert_strict_equal(a.match("/bar"), ('bar', {}))
         self.assert_raises(r.NotFound, a.match, "/bars")
 
+    def test_environ_nonascii_pathinfo(self):
+        environ = create_environ('/лошадь')
+        m = r.Map([
+            r.Rule('/', endpoint='index'),
+            r.Rule(u'/лошадь', endpoint='horse')
+        ])
+        a = m.bind_to_environ(environ)
+        self.assert_strict_equal(a.match('/'), ('index', {}))
+        self.assert_strict_equal(a.match('/лошадь'), ('horse', {}))
+        self.assert_raises(r.NotFound, a.match, '/барсук')
+
     def test_basic_building(self):
         map = r.Map([
             r.Rule('/', endpoint='index'),
