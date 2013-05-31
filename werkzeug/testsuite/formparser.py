@@ -21,6 +21,7 @@ from werkzeug import formparser
 from werkzeug.test import create_environ, Client
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.datastructures import MultiDict
 
 
 @Request.application
@@ -328,7 +329,6 @@ class MultiPartTestCase(WerkzeugTestCase):
         def parse_multipart(stream, boundary, content_length):
             parser = formparser.MultiPartParser(content_length)
             return parser.parse(stream, boundary, content_length)
-        self.assert_raises(ValueError, parse_multipart, BytesIO(), b'', 0)
         self.assert_raises(ValueError, parse_multipart, BytesIO(), b'broken  ', 0)
 
         data = b'--foo\r\n\r\nHello World\r\n--foo--'
@@ -358,6 +358,22 @@ class MultiPartTestCase(WerkzeugTestCase):
                                      content_type='multipart/form-data; boundary=foo',
                                      method='POST')
         self.assert_strict_equal(req.form['test'], u'Sk\xe5ne l\xe4n')
+
+    def test_empty_multipart(self):
+        from werkzeug.formparser import parse_form_data
+        from StringIO import StringIO
+
+        environ = {}
+        data = '--boundary--'
+        environ['REQUEST_METHOD'] = 'POST'
+        environ['CONTENT_TYPE'] = 'multipart/form-data; boundary=boundary'
+        environ['CONTENT_LENGTH'] = str(len(data))
+        environ['wsgi.input'] = StringIO(data)
+        stream, form, files = parse_form_data(environ, silent=False)
+        rv = stream.read()
+        self.assert_equal(rv, b'')
+        self.assert_equal(form, MultiDict())
+        self.assert_equal(files, MultiDict())
 
 
 class InternalFunctionsTestCase(WerkzeugTestCase):

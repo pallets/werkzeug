@@ -381,7 +381,10 @@ class MultiPartParser(object):
                          _empty_string_iter)
 
         terminator = self._find_terminator(iterator)
-        if terminator != next_part:
+
+        if terminator == last_part:
+            return
+        elif terminator != next_part:
             self.fail('Expected boundary at start of multipart data')
 
         while terminator != last_part:
@@ -458,8 +461,8 @@ class MultiPartParser(object):
             yield _end, None
 
     def parse_parts(self, file, boundary, content_length):
-        """Generate `('file', (name, val))` and `('form', (name
-        ,val))` parts.
+        """Generate ``('file', (name, val))`` and
+        ``('form', (name, val))`` parts.
         """
         in_memory = 0
 
