@@ -12,7 +12,6 @@
 from __future__ import with_statement
 
 import unittest
-from io import BytesIO
 from os.path import join, dirname
 
 from werkzeug.testsuite import WerkzeugTestCase
@@ -23,7 +22,7 @@ from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data
-from werkzeug._compat import StringIO
+from werkzeug._compat import BytesIO
 
 
 @Request.application
@@ -363,11 +362,11 @@ class MultiPartTestCase(WerkzeugTestCase):
 
     def test_empty_multipart(self):
         environ = {}
-        data = '--boundary--'
+        data = b'--boundary--'
         environ['REQUEST_METHOD'] = 'POST'
         environ['CONTENT_TYPE'] = 'multipart/form-data; boundary=boundary'
         environ['CONTENT_LENGTH'] = str(len(data))
-        environ['wsgi.input'] = StringIO(data)
+        environ['wsgi.input'] = BytesIO(data)
         stream, form, files = parse_form_data(environ, silent=False)
         rv = stream.read()
         self.assert_equal(rv, b'')

@@ -270,10 +270,10 @@ class URLsTestCase(WerkzeugTestCase):
         tests = [
             u'http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713',
             u'http://xn--f-rgao.com/\u2610/fred?utf8=\N{CHECK MARK}',
-            'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93',
+            b'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93',
             u'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93',
             u'http://föñ.com/\u2610/fred?utf8=%E2%9C%93',
-            'http://xn--f-rgao.com/\xe2\x98\x90/fred?utf8=\xe2\x9c\x93',
+            b'http://xn--f-rgao.com/\xe2\x98\x90/fred?utf8=\xe2\x9c\x93',
         ]
 
         for test in tests:

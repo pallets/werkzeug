@@ -448,13 +448,13 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         b = datastructures.MultiDict((("key_b", "value_b"),))
         ab = datastructures.CombinedMultiDict((a,b))
 
-        self.assert_equal(list(ab.lists()), [('key_a', ['value_a']), ('key_b', ['value_b'])])
-        self.assert_equal(list(ab.listvalues()), [['value_a'], ['value_b']])
-        self.assert_equal(list(ab.keys()), ["key_a", "key_b"])
+        self.assert_equal(sorted(ab.lists()), [('key_a', ['value_a']), ('key_b', ['value_b'])])
+        self.assert_equal(sorted(ab.listvalues()), [['value_a'], ['value_b']])
+        self.assert_equal(sorted(ab.keys()), ["key_a", "key_b"])
 
-        self.assert_equal(list(iterlists(ab)), [('key_a', ['value_a']), ('key_b', ['value_b'])])
-        self.assert_equal(list(iterlistvalues(ab)), [['value_a'], ['value_b']])
-        self.assert_equal(list(iterkeys(ab)), ["key_a", "key_b"])
+        self.assert_equal(sorted(iterlists(ab)), [('key_a', ['value_a']), ('key_b', ['value_b'])])
+        self.assert_equal(sorted(iterlistvalues(ab)), [['value_a'], ['value_b']])
+        self.assert_equal(sorted(iterkeys(ab)), ["key_a", "key_b"])
 
 
 class CombinedMultiDictTestCase(WerkzeugTestCase):
