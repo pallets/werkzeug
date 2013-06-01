@@ -22,6 +22,8 @@ from werkzeug.test import create_environ, Client
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict
+from werkzeug.formparser import parse_form_data
+from werkzeug._compat import StringIO
 
 
 @Request.application
@@ -360,9 +362,6 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_strict_equal(req.form['test'], u'Sk\xe5ne l\xe4n')
 
     def test_empty_multipart(self):
-        from werkzeug.formparser import parse_form_data
-        from StringIO import StringIO
-
         environ = {}
         data = '--boundary--'
         environ['REQUEST_METHOD'] = 'POST'
