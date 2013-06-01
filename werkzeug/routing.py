@@ -108,7 +108,7 @@ from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
 from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
-    text_type, string_types
+    text_type, string_types, PY2
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 
@@ -807,8 +807,11 @@ class Rule(RuleFactory):
         return self.rule
 
     def __str__(self):
-        charset = self.map is not None and self.map.charset or 'utf-8'
-        return unicode(self).encode(charset)
+        if PY2:
+            charset = self.map is not None and self.map.charset or 'utf-8'
+            return unicode(self).encode(charset)
+        else:
+            return self.rule
 
     def __repr__(self):
         if self.map is None:
