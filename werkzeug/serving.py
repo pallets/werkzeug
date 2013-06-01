@@ -43,7 +43,11 @@ import sys
 import time
 import signal
 import subprocess
-from threading import Thread
+
+try:
+    import thread
+except ImportError:
+    import _thread as thread
 
 try:
     from SocketServer import ThreadingMixIn, ForkingMixIn
@@ -604,7 +608,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1):
     import signal
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        Thread(target=main_func).start()
+        thread.start_new_thread(main_func, ())
         try:
             reloader_loop(extra_files, interval)
         except KeyboardInterrupt:
