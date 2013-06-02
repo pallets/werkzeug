@@ -43,7 +43,8 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ContentRange, iter_multi_items
 from werkzeug._internal import _empty_stream, _patch_wrapper, _get_environ
 from werkzeug._compat import to_bytes, string_types, text_type, \
-     integer_types, wsgi_decoding_dance, wsgi_get_bytes
+     integer_types, wsgi_decoding_dance, wsgi_get_bytes, \
+     to_unicode
 
 
 def _run_wsgi_app(*args):
@@ -467,7 +468,7 @@ class BaseRequest(object):
     @cached_property
     def full_path(self):
         """Requested path as unicode, including the query string."""
-        return self.path + u'?' + self.query_string
+        return self.path + u'?' + to_unicode(self.query_string, self.url_charset)
 
     @cached_property
     def script_root(self):
@@ -505,7 +506,8 @@ class BaseRequest(object):
         """Just the host including the port if available."""
         return get_host(self.environ, trusted_hosts=self.trusted_hosts)
 
-    query_string = environ_property('QUERY_STRING', '', read_only=True, doc=
+    query_string = environ_property('QUERY_STRING', '', read_only=True,
+        load_func=wsgi_get_bytes, doc=
         '''The URL parameters as raw bytestring.''')
     method = environ_property('REQUEST_METHOD', 'GET', read_only=True, doc=
         '''The transmission method. (For example ``'GET'`` or ``'POST'``).''')

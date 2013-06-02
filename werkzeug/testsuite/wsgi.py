@@ -107,10 +107,27 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         self.assert_is_none(pop())
 
     def test_peek_path_info(self):
-        env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/aaa/b///c'}
+        env = {
+            'SCRIPT_NAME': '/foo',
+            'PATH_INFO': '/aaa/b///c'
+        }
 
         self.assert_equal(wsgi.peek_path_info(env), 'aaa')
         self.assert_equal(wsgi.peek_path_info(env), 'aaa')
+        self.assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
+        self.assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
+
+    def test_path_info_and_script_name_fetching(self):
+        env = create_environ(u'/\N{SNOWMAN}', u'http://example.com/\N{COMET}/')
+        self.assert_equal(wsgi.get_path_info(env), u'/\N{SNOWMAN}')
+        self.assert_equal(wsgi.get_path_info(env, charset=None), u'/\N{SNOWMAN}'.encode('utf-8'))
+        self.assert_equal(wsgi.get_script_name(env), u'/\N{COMET}')
+        self.assert_equal(wsgi.get_script_name(env, charset=None), u'/\N{COMET}'.encode('utf-8'))
+
+    def test_query_string_fetching(self):
+        env = create_environ(u'/?\N{SNOWMAN}=\N{COMET}')
+        qs = wsgi.get_query_string(env)
+        self.assert_strict_equal(qs, '%E2%98%83=%E2%98%84')
 
     def test_limited_stream(self):
         class RaisingLimitedStream(wsgi.LimitedStream):

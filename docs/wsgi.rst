@@ -40,6 +40,12 @@ information or perform common manipulations:
 
 .. autofunction:: get_current_url
 
+.. autofunction:: get_query_string
+
+.. autofunction:: get_script_name
+
+.. autofunction:: get_path_info
+
 .. autofunction:: pop_path_info
 
 .. autofunction:: peek_path_info

@@ -93,7 +93,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
             'PATH_INFO':            wsgi_encoding_dance(path_info),
-            'QUERY_STRING':         request_url.query,
+            'QUERY_STRING':         wsgi_encoding_dance(request_url.query),
             'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
             'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
             'REMOTE_ADDR':          self.client_address[0],

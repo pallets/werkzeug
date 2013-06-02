@@ -115,6 +115,10 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(response['args'], MultiDict([('a', u'b')]))
         self.assert_strict_equal(response['form'], MultiDict())
 
+    def test_query_string_is_bytes(self):
+        req = wrappers.Request.from_values(u'/?foo=%2f')
+        self.assert_strict_equal(req.query_string, b'foo=%2f')
+
     def test_access_route(self):
         req = wrappers.Request.from_values(headers={
             'X-Forwarded-For': '192.168.1.2, 192.168.1.1'

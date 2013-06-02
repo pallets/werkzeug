@@ -19,11 +19,12 @@ from time import time, mktime
 from datetime import datetime
 from functools import partial
 
-from werkzeug import urls
 from werkzeug._compat import iteritems, text_type, string_types, \
-     implements_iterator, make_literal_wrapper, to_unicode, to_bytes
+     implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
+     wsgi_get_bytes, try_coerce_native
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
+from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
 
 
 def responder(f):
@@ -66,30 +67,17 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
                           for more information.
     """
-    from werkzeug.urls import uri_to_iri
     tmp = [environ['wsgi.url_scheme'], '://', get_host(environ, trusted_hosts)]
     cat = tmp.append
     if host_only:
         return uri_to_iri(''.join(tmp) + '/')
-    cat(urls.url_quote(environ.get('SCRIPT_NAME', '').rstrip('/')))
-    if root_only:
-        cat('/')
-    else:
-        cat(urls.url_quote('/' + environ.get('PATH_INFO', '').lstrip('/')))
+    cat(url_quote(wsgi_get_bytes(environ.get('SCRIPT_NAME', ''))).rstrip('/'))
+    cat('/')
+    if not root_only:
+        cat(url_quote(wsgi_get_bytes(environ.get('PATH_INFO', '')).lstrip(b'/')))
         if not strip_querystring:
-            qs = environ.get('QUERY_STRING')
+            qs = get_query_string(environ)
             if qs:
-                # QUERY_STRING really should be ascii safe but some browsers
-                # will send us some unicode stuff (I am looking at you IE).
-                # In that case we want to urllib quote it badly.
-                try:
-                    if hasattr(qs, 'decode'):
-                        qs.decode('ascii')
-                    else:
-                        qs.encode('ascii')
-                except UnicodeError:
-                    qs = ''.join(x > 127 and '%%%02X' % x or c
-                                 for x, c in ((ord(x), x) for x in qs))
                 cat('?' + qs)
     return uri_to_iri(''.join(tmp))
 
@@ -159,9 +147,62 @@ def get_host(environ, trusted_hosts=None):
     return rv
 
 
-def pop_path_info(environ):
+def get_query_string(environ):
+    """Returns the `QUERY_STRING` from the WSGI environment.  This also takes
+    care about the WSGI decoding dance on Python 3 environments as a
+    native string.  The string returned will be restricted to ASCII
+    characters.
+
+    .. versionadded:: 0.9
+
+    :param environ: the WSGI environment object to get the query string from.
+    """
+    qs = wsgi_get_bytes(environ.get('QUERY_STRING', ''))
+    # QUERY_STRING really should be ascii safe but some browsers
+    # will send us some unicode stuff (I am looking at you IE).
+    # In that case we want to urllib quote it badly.
+    return try_coerce_native(url_quote(qs, safe=':&%=+$!*\'(),'))
+
+
+def get_path_info(environ, charset='utf-8', errors='replace'):
+    """Returns the `PATH_INFO` from the WSGI environment and properly
+    decodes it.  This also takes care about the WSGI decoding dance
+    on Python 3 environments.  if the `charset` is set to `None` a
+    bytestring is returned.
+
+    .. versionadded:: 0.9
+
+    :param environ: the WSGI environment object to get the path from.
+    :param charset: the charset for the path info, or `None` if no
+                    decoding should be performed.
+    :param errors: the decoding error handling.
+    """
+    path = wsgi_get_bytes(environ.get('PATH_INFO', ''))
+    return to_unicode(path, charset, errors, allow_none_charset=True)
+
+
+def get_script_name(environ, charset='utf-8', errors='replace'):
+    """Returns the `SCRIPT_NAME` from the WSGI environment and properly
+    decodes it.  This also takes care about the WSGI decoding dance
+    on Python 3 environments.  if the `charset` is set to `None` a
+    bytestring is returned.
+
+    .. versionadded:: 0.9
+
+    :param environ: the WSGI environment object to get the path from.
+    :param charset: the charset for the path, or `None` if no
+                    decoding should be performed.
+    :param errors: the decoding error handling.
+    """
+    path = wsgi_get_bytes(environ.get('SCRIPT_NAME', ''))
+    return to_unicode(path, charset, errors, allow_none_charset=True)
+
+
+def pop_path_info(environ, charset='utf-8', errors='replace'):
     """Removes and returns the next segment of `PATH_INFO`, pushing it onto
     `SCRIPT_NAME`.  Returns `None` if there is nothing left on `PATH_INFO`.
+
+    If the `charset` is set to `None` a bytestring is returned.
 
     If there are empty segments (``'/foo//bar``) these are ignored but
     properly pushed to the `SCRIPT_NAME`:
@@ -177,6 +218,10 @@ def pop_path_info(environ):
     '/foo/a/b'
 
     .. versionadded:: 0.5
+
+    .. versionchanged:: 0.9
+       The path is now decoded and a charset and encoding
+       parameter can be provided.
 
     :param environ: the WSGI environment that is modified.
     """
@@ -195,15 +240,17 @@ def pop_path_info(environ):
     if '/' not in path:
         environ['PATH_INFO'] = ''
         environ['SCRIPT_NAME'] = script_name + path
-        return path
+        rv = wsgi_get_bytes(path)
+    else:
+        segment, path = path.split('/', 1)
+        environ['PATH_INFO'] = '/' + path
+        environ['SCRIPT_NAME'] = script_name + segment
+        rv = wsgi_get_bytes(segment)
 
-    segment, path = path.split('/', 1)
-    environ['PATH_INFO'] = '/' + path
-    environ['SCRIPT_NAME'] = script_name + segment
-    return segment
+    return to_unicode(rv, charset, errors, allow_none_charset=True)
 
 
-def peek_path_info(environ):
+def peek_path_info(environ, charset='utf-8', errors='replace'):
     """Returns the next segment on the `PATH_INFO` or `None` if there
     is none.  Works like :func:`pop_path_info` without modifying the
     environment:
@@ -214,13 +261,20 @@ def peek_path_info(environ):
     >>> peek_path_info(env)
     'a'
 
+    If the `charset` is set to `None` a bytestring is returned.
+
     .. versionadded:: 0.5
+
+    .. versionchanged:: 0.9
+       The path is now decoded and a charset and encoding
+       parameter can be provided.
 
     :param environ: the WSGI environment that is checked.
     """
     segments = environ.get('PATH_INFO', '').lstrip('/').split('/', 1)
     if segments:
-        return segments[0]
+        return to_unicode(wsgi_get_bytes(segments[0]),
+                          charset, errors, allow_none_charset=True)
 
 
 def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
@@ -261,13 +315,6 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
                                   same server point to the same
                                   resource.
     """
-    from werkzeug.urls import uri_to_iri
-
-    def _as_iri(obj):
-        if not isinstance(obj, text_type):
-            return uri_to_iri(obj, charset, errors)
-        return obj
-
     def _normalize_netloc(scheme, netloc):
         parts = netloc.split(u'@', 1)[-1].split(u':', 1)
         if len(parts) == 2:
@@ -283,15 +330,14 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
         return netloc
 
     # make sure whatever we are working on is a IRI and parse it
-    path = _as_iri(path_or_url)
+    path = uri_to_iri(path_or_url, charset, errors)
     if isinstance(environ_or_baseurl, dict):
         environ_or_baseurl = get_current_url(environ_or_baseurl,
                                              root_only=True)
-    base_iri = _as_iri(environ_or_baseurl)
-    base_scheme, base_netloc, base_path, = \
-        urls.url_parse(base_iri)[:3]
+    base_iri = uri_to_iri(environ_or_baseurl, charset, errors)
+    base_scheme, base_netloc, base_path = url_parse(base_iri)[:3]
     cur_scheme, cur_netloc, cur_path, = \
-        urls.url_parse(urls.url_join(base_iri, path))[:3]
+        url_parse(url_join(base_iri, path))[:3]
 
     # normalize the network location
     base_netloc = _normalize_netloc(base_scheme, base_netloc)
