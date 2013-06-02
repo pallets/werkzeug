@@ -823,14 +823,22 @@ class Rule(RuleFactory):
                 tmp.append('<%s>' % data)
             else:
                 tmp.append(data)
-        return '<%s %r%s -> %s>' % (
-            self.__class__.__name__,
-            (u''.join(tmp).encode(charset)).lstrip('|'),
-            self.methods is not None and ' (%s)' % \
-                ', '.join(self.methods) or '',
-            self.endpoint
-        )
 
+        if PY2:
+            return '<%s %r%s -> %s>' % (
+                self.__class__.__name__,
+                (u''.join(tmp).encode(charset)).lstrip('|'),
+                self.methods is not None and ' (%s)' % \
+                    ', '.join(self.methods) or '',
+                self.endpoint
+            )
+        else:
+            return "<{0} '{1}'{2} -> {3}>".format(
+                self.__class__.__name__,
+                (''.join(tmp)).lstrip('|'),
+                self.methods is not None and ' ({})'.format(
+                    ', '.join(self.methods) or ''),
+                self.endpoint)
 
 class BaseConverter(object):
     """Base class for all converters."""
