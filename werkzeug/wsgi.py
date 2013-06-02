@@ -21,7 +21,7 @@ from functools import partial
 
 from werkzeug._compat import iteritems, text_type, string_types, \
      implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
-     wsgi_get_bytes, try_coerce_native
+     wsgi_get_bytes, try_coerce_native, implements_iterator
 from werkzeug._internal import _patch_wrapper
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
@@ -836,6 +836,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
         yield _join(buffer)
 
 
+@implements_iterator
 class LimitedStream(object):
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it
@@ -982,8 +983,8 @@ class LimitedStream(object):
         """
         return self._pos
 
-    def next(self):
+    def __next__(self):
         line = self.readline()
-        if line is None:
+        if not line:
             raise StopIteration()
         return line

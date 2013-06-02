@@ -192,6 +192,10 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         stream = wsgi.LimitedStream(io, 0)
         self.assert_strict_equal(stream.read(-1), u'')
 
+        io = StringIO(u'123\n456\n')
+        stream = wsgi.LimitedStream(io, 8)
+        self.assert_strict_equal(list(stream), [u'123\n', u'456\n'])
+
     def test_limited_stream_disconnection(self):
         io = BytesIO(b'A bit of content')
 
