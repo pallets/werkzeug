@@ -690,6 +690,14 @@ class ImmutableListTestCase(WerkzeugTestCase):
 
 
 def make_call_asserter(assert_equal_func, func=None):
+    """Utility to assert a certain number of function calls.
+
+    >>> assert_calls, func = make_call_asserter(self.assert_equal)
+    >>> with assert_calls(2):
+            func()
+            func()
+    """
+
     calls = [0]
 
     @contextmanager
