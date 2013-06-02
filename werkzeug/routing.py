@@ -108,7 +108,8 @@ from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
 from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
-    text_type, string_types
+     text_type, string_types, native_string_result, \
+     implements_to_string
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 
@@ -418,6 +419,7 @@ class RuleTemplateFactory(RuleFactory):
                 )
 
 
+@implements_to_string
 class Rule(RuleFactory):
     """A Rule represents one URL pattern.  There are some options for `Rule`
     that change the way it behaves and are passed to the `Rule` constructor.
@@ -803,28 +805,24 @@ class Rule(RuleFactory):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.rule
 
-    def __str__(self):
-        charset = self.map is not None and self.map.charset or 'utf-8'
-        return unicode(self).encode(charset)
-
+    @native_string_result
     def __repr__(self):
         if self.map is None:
-            return '<%s (unbound)>' % self.__class__.__name__
-        charset = self.map is not None and self.map.charset or 'utf-8'
+            return u'<%s (unbound)>' % self.__class__.__name__
         tmp = []
         for is_dynamic, data in self._trace:
             if is_dynamic:
-                tmp.append('<%s>' % data)
+                tmp.append(u'<%s>' % data)
             else:
                 tmp.append(data)
-        return '<%s %r%s -> %s>' % (
+        return u'<%s %s%s -> %s>' % (
             self.__class__.__name__,
-            (u''.join(tmp).encode(charset)).lstrip('|'),
-            self.methods is not None and ' (%s)' % \
-                ', '.join(self.methods) or '',
+            repr((u''.join(tmp)).lstrip(u'|')).lstrip(u'u'),
+            self.methods is not None and u' (%s)' % \
+                u', '.join(self.methods) or u'',
             self.endpoint
         )
 

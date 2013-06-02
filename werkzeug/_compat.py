@@ -1,4 +1,5 @@
 import sys
+import functools
 try:
     import builtins
 except ImportError:
@@ -43,6 +44,11 @@ if PY2:
         cls.__unicode__ = cls.__str__
         cls.__str__ = lambda x: x.__unicode__().encode('utf-8')
         return cls
+
+    def native_string_result(func):
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs).encode('utf-8')
+        return functools.update_wrapper(wrapper, func)
 
     def implements_bool(cls):
         cls.__nonzero__ = cls.__bool__
@@ -121,6 +127,7 @@ else:
     implements_iterator = _identity
     implements_to_string = _identity
     implements_bool = _identity
+    native_string_result = _identity
     imap = map
     izip = zip
     ifilter = filter

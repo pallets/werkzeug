@@ -650,6 +650,15 @@ class RoutingTestCase(WerkzeugTestCase):
         url = a.build('foobar', {}, force_external=True)
         self.assert_strict_equal(url, 'http://xn--n3h.example.com/foo+bar/')
 
+    def test_map_repr(self):
+        m = r.Map([
+            r.Rule(u'/wat', endpoint='enter'),
+            r.Rule(u'/woop', endpoint='foobar')
+        ])
+        rv = repr(m)
+        self.assert_strict_equal(rv,
+            "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])")
+
 
 def suite():
     suite = unittest.TestSuite()
