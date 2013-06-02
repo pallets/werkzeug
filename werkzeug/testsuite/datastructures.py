@@ -20,6 +20,7 @@ from __future__ import with_statement
 
 import unittest
 import pickle
+from contextlib import contextmanager
 from copy import copy
 
 from werkzeug import datastructures
@@ -688,6 +689,71 @@ class ImmutableListTestCase(WerkzeugTestCase):
         self.assert_not_equal(t, l)
 
 
+def make_call_asserter(assert_equal_func, func=None):
+    """Utility to assert a certain number of function calls.
+
+    >>> assert_calls, func = make_call_asserter(self.assert_equal)
+    >>> with assert_calls(2):
+            func()
+            func()
+    """
+
+    calls = [0]
+
+    @contextmanager
+    def asserter(count, msg=None):
+        calls[0] = 0
+        yield
+        assert_equal_func(calls[0], count, msg)
+
+    def wrapped(*args, **kwargs):
+        calls[0] += 1
+        if func is not None:
+            return func(*args, **kwargs)
+
+    return asserter, wrapped
+
+
+class CallbackDictTestCase(WerkzeugTestCase):
+    storage_class = datastructures.CallbackDict
+
+    def test_callback_dict_reads(self):
+        assert_calls, func = make_call_asserter(self.assert_equal)
+        initial = {'a': 'foo', 'b': 'bar'}
+        dct = self.storage_class(initial=initial, on_update=func)
+        with assert_calls(0, 'callback triggered by read-only method'):
+            # read-only methods
+            dct['a']
+            dct.get('a')
+            self.assert_raises(KeyError, lambda: dct['x'])
+            'a' in dct
+            list(iter(dct))
+            dct.copy()
+        with assert_calls(0, 'callback triggered without modification'):
+            # methods that may write but don't
+            dct.pop('z', None)
+            dct.setdefault('a')
+
+    def test_callback_dict_writes(self):
+        assert_calls, func = make_call_asserter(self.assert_equal)
+        initial = {'a': 'foo', 'b': 'bar'}
+        dct = self.storage_class(initial=initial, on_update=func)
+        with assert_calls(8, 'callback not triggered by write method'):
+            # always-write methods
+            dct['z'] = 123
+            dct['z'] = 123  # must trigger again
+            del dct['z']
+            dct.pop('b', None)
+            dct.setdefault('x')
+            dct.popitem()
+            dct.update([])
+            dct.clear()
+        with assert_calls(0, 'callback triggered by failed del'):
+            self.assert_raises(KeyError, lambda: dct.__delitem__('x'))
+        with assert_calls(0, 'callback triggered by failed pop'):
+            self.assert_raises(KeyError, lambda: dct.pop('x'))
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(MultiDictTestCase))
@@ -701,4 +767,5 @@ def suite():
     suite.addTest(unittest.makeSuite(EnvironHeadersTestCase))
     suite.addTest(unittest.makeSuite(HeaderSetTestCase))
     suite.addTest(unittest.makeSuite(NativeItermethodsTestCase))
+    suite.addTest(unittest.makeSuite(CallbackDictTestCase))
     return suite
