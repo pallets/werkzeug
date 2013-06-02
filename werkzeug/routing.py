@@ -109,7 +109,7 @@ from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ
 from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
      text_type, string_types, native_string_result, \
-     implements_to_string
+     implements_to_string, wsgi_decoding_dance
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 
@@ -1193,10 +1193,19 @@ class Map(object):
                 subdomain = '<invalid>'
             else:
                 subdomain = '.'.join(filter(None, cur_server_name[:offset]))
-        return Map.bind(self, server_name, environ.get('SCRIPT_NAME'),
+
+        def _get_wsgi_string(name):
+            val = environ.get(name)
+            if val is not None:
+                return wsgi_decoding_dance(val, self.charset)
+
+        script_name = _get_wsgi_string('SCRIPT_NAME')
+        path_info = _get_wsgi_string('PATH_INFO')
+        query_args = _get_wsgi_string('QUERY_STRING')
+        return Map.bind(self, server_name, script_name,
                         subdomain, environ['wsgi.url_scheme'],
-                        environ['REQUEST_METHOD'], environ.get('PATH_INFO'),
-                        query_args=environ.get('QUERY_STRING', ''))
+                        environ['REQUEST_METHOD'], path_info,
+                        query_args=query_args)
 
     def update(self):
         """Called before matching and building to keep the compiled rules
@@ -1221,15 +1230,15 @@ class MapAdapter(object):
     def __init__(self, map, server_name, script_name, subdomain,
                  url_scheme, path_info, default_method, query_args=None):
         self.map = map
-        self.server_name = to_unicode(server_name, 'ascii')
-        script_name = to_unicode(script_name, 'ascii')
+        self.server_name = to_unicode(server_name)
+        script_name = to_unicode(script_name)
         if not script_name.endswith(u'/'):
             script_name += u'/'
         self.script_name = script_name
-        self.subdomain = to_unicode(subdomain, 'ascii')
-        self.url_scheme = to_unicode(url_scheme, 'ascii')
-        self.path_info = to_unicode(path_info or u'', 'utf-8')
-        self.default_method = to_unicode(default_method, 'ascii')
+        self.subdomain = to_unicode(subdomain)
+        self.url_scheme = to_unicode(url_scheme)
+        self.path_info = to_unicode(path_info)
+        self.default_method = to_unicode(default_method)
         self.query_args = query_args
 
     def dispatch(self, view_func, path_info=None, method=None,
@@ -1368,9 +1377,8 @@ class MapAdapter(object):
         self.map.update()
         if path_info is None:
             path_info = self.path_info
-        if not isinstance(path_info, text_type):
-            path_info = path_info.decode(self.map.charset,
-                                         self.map.encoding_errors)
+        else:
+            path_info = to_unicode(path_info, self.map.charset)
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
