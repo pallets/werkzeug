@@ -817,7 +817,7 @@ def _options_header_vkw(value, kw):
                                             for k, v in kw.items()))
 
 
-def _unicodify_value(value):
+def _unicodify_header_value(value):
     if isinstance(value, bytes):
         value = value.decode('latin-1')
     if not isinstance(value, text_type):
@@ -1057,7 +1057,7 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
-        _value = _unicodify_value(_value)
+        _value = _unicodify_header_value(_value)
         self._validate_value(_value)
         self._list.append((_key, _value))
 
@@ -1097,7 +1097,7 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
-        _value = _unicodify_value(_value)
+        _value = _unicodify_header_value(_value)
         self._validate_value(_value)
         if not self._list:
             self._list.append((_key, _value))
@@ -1132,7 +1132,7 @@ class Headers(object):
         if isinstance(key, (slice, integer_types)):
             if isinstance(key, integer_types):
                 value = [value]
-            value = [(k, _unicodify_value(v)) for (k, v) in value]
+            value = [(k, _unicodify_header_value(v)) for (k, v) in value]
             [self._validate_value(v) for (k, v) in value]
             if isinstance(key, integer_types):
                 self._list[key] = value[0]
@@ -1240,8 +1240,8 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         # used because get() calls it.
         key = key.upper().replace('-', '_')
         if key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
-            return _unicodify_value(self.environ[key])
-        return _unicodify_value(self.environ['HTTP_' + key])
+            return _unicodify_header_value(self.environ[key])
+        return _unicodify_header_value(self.environ['HTTP_' + key])
 
     def __len__(self):
         # the iter is necessary because otherwise list calls our
@@ -1253,10 +1253,10 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
             if key.startswith('HTTP_') and key not in \
                ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 yield (key[5:].replace('_', '-').title(),
-                       _unicodify_value(value))
+                       _unicodify_header_value(value))
             elif key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
                 yield (key.replace('_', '-').title(),
-                       _unicodify_value(value))
+                       _unicodify_header_value(value))
 
     def copy(self):
         raise TypeError('cannot create %r copies' % self.__class__.__name__)
