@@ -729,6 +729,10 @@ class CallbackDictTestCase(WerkzeugTestCase):
             'a' in dct
             list(iter(dct))
             dct.copy()
+        with assert_calls(0, 'callback triggered without modification'):
+            # methods that may write but don't
+            dct.pop('z', None)
+            dct.setdefault('a')
 
     def test_callback_dict_writes(self):
         assert_calls, func = make_call_asserter(self.assert_equal)
@@ -744,8 +748,10 @@ class CallbackDictTestCase(WerkzeugTestCase):
             dct.popitem()
             dct.update([])
             dct.clear()
-        with assert_calls(0, 'callback triggered by failed write'):
+        with assert_calls(0, 'callback triggered by failed del'):
             self.assert_raises(KeyError, lambda: dct.__delitem__('x'))
+        with assert_calls(0, 'callback triggered by failed pop'):
+            self.assert_raises(KeyError, lambda: dct.pop('x'))
 
 
 def suite():
