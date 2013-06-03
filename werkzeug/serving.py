@@ -61,7 +61,7 @@ from werkzeug._internal import _log
 from werkzeug._compat import iteritems, PY2, reraise, text_type, \
      wsgi_encoding_dance
 from werkzeug.urls import url_parse, url_unquote
-from werkzeug.exceptions import InternalServerError
+from werkzeug.exceptions import InternalServerError, BadRequest
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
@@ -79,6 +79,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
         path_info = url_unquote(request_url.path)
+
         environ = {
             'wsgi.version':         (1, 0),
             'wsgi.url_scheme':      url_scheme,
@@ -114,7 +115,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return environ
 
     def run_wsgi(self):
-        app = self.server.app
         environ = self.make_environ()
         headers_set = []
         headers_sent = []
@@ -158,16 +158,21 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             headers_set[:] = [status, response_headers]
             return write
 
+        def app_proxy(environ, start_response):
+            # We reject an invalid content length here because it can cause
+            # problems with how WSGI apps respond to values in it.
+            content_length = environ['CONTENT_LENGTH']
+            if content_length and not content_length.isdigit():
+                resp = BadRequest()
+            else:
+                resp = self.server.app
+            return resp(environ, start_response)
+
         def execute(app):
             application_iter = app(environ, start_response)
             try:
-                # XXX: Is this actually correct?
-                if not PY2 and isinstance(application_iter, bytes):
-                    # iterating over bytes' items would give us ints
-                    application_iter = (application_iter,)
                 for data in application_iter:
                     write(data)
-                # make sure the headers are sent
                 if not headers_sent:
                     write(b'')
             finally:
@@ -176,7 +181,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                 application_iter = None
 
         try:
-            execute(app)
+            execute(app_proxy)
         except (socket.error, socket.timeout) as e:
             self.connection_dropped(e, environ)
         except Exception:
