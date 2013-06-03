@@ -183,6 +183,9 @@ def get_input_stream(environ, safe_fallback=True):
     # If the content length is negative we're dealing with a WSGI
     # server that gives us a chunked response already dechunked which
     # however means we don't know the actual content length.
+    #
+    # XXX: check this behavior against gunicorn/mod_wsgi and other
+    # WSGI servers to make a better decision
     if content_length == -1:
         return stream
 
