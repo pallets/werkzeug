@@ -18,6 +18,13 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial
+try:
+    from collections import OrderedDict
+except ImportError:
+    try:
+        from ordereddict import OrderedDict
+    except ImportError:
+        OrderedDict = None
 
 from werkzeug._compat import iteritems, text_type, string_types, \
      implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
@@ -424,10 +431,10 @@ class SharedDataMiddleware(object):
     def __init__(self, app, exports, disallow=None, cache=True,
                  cache_timeout=60 * 60 * 12, fallback_mimetype='text/plain'):
         self.app = app
-        self.exports = {}
+        self.exports = OrderedDict() if OrderedDict else {}
         self.cache = cache
         self.cache_timeout = cache_timeout
-        for key, value in iteritems(exports):
+        for key, value in getattr(exports, 'iteritems', exports.__iter__)():
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
             elif isinstance(value, string_types):
