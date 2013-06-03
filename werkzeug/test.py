@@ -784,6 +784,16 @@ class Client(object):
         kw['method'] = 'DELETE'
         return self.open(*args, **kw)
 
+    def options(self, *args, **kw):
+        """Like open but method is enforced to OPTIONS."""
+        kw['method'] = 'OPTIONS'
+        return self.open(*args, **kw)
+
+    def trace(self, *args, **kw):
+        """Like open but method is enforced to TRACE."""
+        kw['method'] = 'TRACE'
+        return self.open(*args, **kw)
+
     def __repr__(self):
         return '<%s %r>' % (
             self.__class__.__name__,
