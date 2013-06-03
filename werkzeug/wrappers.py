@@ -1441,6 +1441,22 @@ class CommonRequestDescriptorsMixin(object):
          entity-body in bytes or, in the case of the HEAD method, the size of
          the entity-body that would have been sent had the request been a
          GET.''')
+    content_encoding = environ_property('HTTP_CONTENT_ENCODING', doc='''
+        The Content-Encoding entity-header field is used as a modifier to the
+        media-type.  When present, its value indicates what additional content
+        codings have been applied to the entity-body, and thus what decoding
+        mechanisms must be applied in order to obtain the media-type
+        referenced by the Content-Type header field.
+
+        .. versionadded:: 0.9''')
+    content_md5 = environ_property('HTTP_CONTENT_MD5', doc='''
+         The Content-MD5 entity-header field, as defined in RFC 1864, is an
+         MD5 digest of the entity-body for the purpose of providing an
+         end-to-end message integrity check (MIC) of the entity-body.  (Note:
+         a MIC is good for detecting accidental modification of the
+         entity-body in transit, but is not proof against malicious attacks.)
+
+        .. versionadded:: 0.9''')
     referrer = environ_property('HTTP_REFERER', doc='''
         The Referer[sic] request-header field allows the client to specify,
         for the server's benefit, the address (URI) of the resource from which

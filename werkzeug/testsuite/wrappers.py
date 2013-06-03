@@ -466,7 +466,9 @@ class WrappersTestCase(WerkzeugTestCase):
             'Referer':      'http://www.example.com/',
             'Date':         'Sat, 28 Feb 2009 19:04:35 GMT',
             'Max-Forwards': '10',
-            'Pragma':       'no-cache'
+            'Pragma':       'no-cache',
+            'Content-Encoding': 'gzip',
+            'Content-MD5':      '9a3bc6dbc47a70db25b84c6e5867a072'
         })
 
         self.assert_equal(request.content_type, 'text/html; charset=utf-8')
@@ -476,7 +478,9 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_equal(request.referrer, 'http://www.example.com/')
         self.assert_equal(request.date, datetime(2009, 2, 28, 19, 4, 35))
         self.assert_equal(request.max_forwards, 10)
-        assert 'no-cache' in request.pragma
+        self.assert_true('no-cache' in request.pragma)
+        self.assert_equal(request.content_encoding, 'gzip')
+        self.assert_equal(request.content_md5, '9a3bc6dbc47a70db25b84c6e5867a072')
 
     def test_shallow_mode(self):
         request = wrappers.Request({'QUERY_STRING': 'foo=bar'}, shallow=True)

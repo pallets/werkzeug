@@ -67,6 +67,8 @@ Release date to be decided, codename to be chosen.
   `wsgi.peek_path_info` functions perform unicode decoding.  This
   was necessary to avoid having to expose the WSGI encoding dance
   on Python 3.
+- Added `content_encoding` and `content_md5` to the request object's
+  common request descriptor mixin.
 
 Version 0.8.4
 -------------
