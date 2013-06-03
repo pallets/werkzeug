@@ -185,8 +185,8 @@ class WrappersTestCase(WerkzeugTestCase):
             data=b'foo=blub+hehe',
             content_type='application/x-www-form-urlencoded'
         )
-        self.assert_equal(request.files.items(), [])
-        self.assert_equal(request.form.items(), [])
+        self.assert_equal(list(request.files.items()), [])
+        self.assert_equal(list(request.form.items()), [])
         self.assert_raises(AttributeError, lambda: request.data)
         self.assert_strict_equal(request.stream.read(), b'foo=blub+hehe')
 
