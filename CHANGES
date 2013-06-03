@@ -69,6 +69,7 @@ Release date to be decided, codename to be chosen.
   on Python 3.
 - Added `content_encoding` and `content_md5` to the request object's
   common request descriptor mixin.
+- added `options` and `trace` to the test client.
 
 Version 0.8.4
 -------------
