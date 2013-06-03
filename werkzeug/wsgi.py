@@ -21,8 +21,8 @@ from functools import partial
 
 from werkzeug._compat import iteritems, text_type, string_types, \
      implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
-     wsgi_get_bytes, try_coerce_native, implements_iterator
-from werkzeug._internal import _patch_wrapper
+     wsgi_get_bytes, try_coerce_native
+from werkzeug._internal import _patch_wrapper, _empty_stream
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
 
@@ -145,6 +145,52 @@ def get_host(environ, trusted_hosts=None):
             from werkzeug.exceptions import SecurityError
             raise SecurityError('Host "%s" is not trusted' % rv)
     return rv
+
+
+def get_content_length(environ):
+    """Returns the content length from the WSGI environment as
+    integer.  If it's not available `None` is returned.
+
+    .. versionadded:: 0.9
+
+    :param environ: the WSGI environ to fetch the content length from.
+    """
+    content_length = environ.get('CONTENT_LENGTH')
+    if content_length is not None:
+        try:
+            return int(content_length)
+        except (ValueError, TypeError):
+            pass
+
+
+def get_input_stream(environ, safe_fallback=True):
+    """Returns the input stream from the WSGI environment and wraps it
+    in the most sensible way possible.  The stream returned is not the
+    raw WSGI stream in most cases but one that is safe to read from
+    without taking into account the content length.
+
+    .. versionadded:: 0.9
+
+    :param environ: the WSGI environ to fetch the stream from.
+    :param safe: indicates weather the function should use an empty
+                 stream as safe fallback or just return the original
+                 WSGI input stream if it can't wrap it safely.  The
+                 default is to return an empty string in those cases.
+    """
+    stream = environ['wsgi.input']
+    content_length = get_content_length(environ)
+
+    # If the content length is negative we're dealing with a WSGI
+    # server that gives us a chunked response already dechunked which
+    # however means we don't know the actual content length.
+    if content_length == -1:
+        return stream
+
+    if content_length is None:
+        return safe_fallback and _empty_stream or stream
+
+    # Otherwise limit the stream to the content length
+    return LimitedStream(stream, content_length)
 
 
 def get_query_string(environ):

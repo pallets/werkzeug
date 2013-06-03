@@ -17,9 +17,9 @@ from itertools import chain, repeat, tee
 from functools import update_wrapper
 
 from werkzeug._compat import to_native, text_type
-from werkzeug._internal import _empty_stream
 from werkzeug.urls import url_decode_stream
-from werkzeug.wsgi import LimitedStream, make_line_iter
+from werkzeug.wsgi import make_line_iter, \
+     get_input_stream, get_content_length
 from werkzeug.datastructures import Headers, FileStorage, MultiDict
 from werkzeug.http import parse_options_header
 
@@ -98,7 +98,9 @@ def exhaust_stream(f):
         try:
             return f(self, stream, *args, **kwargs)
         finally:
-            stream.exhaust()
+            exhaust = getattr(stream, 'exhaust', None)
+            if exhaust is not None:
+                exhaust()
     return update_wrapper(wrapper, f)
 
 
@@ -156,13 +158,10 @@ class FormDataParser(object):
         :return: A tuple in the form ``(stream, form, files)``.
         """
         content_type = environ.get('CONTENT_TYPE', '')
+        content_length = get_content_length(environ)
         mimetype, options = parse_options_header(content_type)
-        try:
-            content_length = int(environ['CONTENT_LENGTH'])
-        except (KeyError, ValueError):
-            content_length = 0
-        stream = environ['wsgi.input']
-        return self.parse(stream, mimetype, content_length, options)
+        return self.parse(get_input_stream(environ), mimetype,
+                          content_length, options)
 
     def parse(self, stream, mimetype, content_length, options=None):
         """Parses the information from the given stream, mimetype,
@@ -176,21 +175,22 @@ class FormDataParser(object):
         :return: A tuple in the form ``(stream, form, files)``.
         """
         if self.max_content_length is not None and \
+           content_length is not None and \
            content_length > self.max_content_length:
             raise exceptions.RequestEntityTooLarge()
         if options is None:
             options = {}
-        input_stream = LimitedStream(stream, content_length)
 
         parse_func = self.get_parse_func(mimetype, options)
         if parse_func is not None:
             try:
-                return parse_func(self, input_stream, mimetype,
+                return parse_func(self, stream, mimetype,
                                   content_length, options)
             except ValueError:
                 if not self.silent:
                     raise
-        return input_stream, self.cls(), self.cls()
+
+        return stream, self.cls(), self.cls()
 
     @exhaust_stream
     def _parse_multipart(self, stream, mimetype, content_length, options):
@@ -201,16 +201,17 @@ class FormDataParser(object):
         if isinstance(boundary, text_type):
             boundary = boundary.encode('ascii')
         form, files = parser.parse(stream, boundary, content_length)
-        return _empty_stream, form, files
+        return stream, form, files
 
     @exhaust_stream
     def _parse_urlencoded(self, stream, mimetype, content_length, options):
         if self.max_form_memory_size is not None and \
+           content_length is not None and \
            content_length > self.max_form_memory_size:
             raise exceptions.RequestEntityTooLarge()
         form = url_decode_stream(stream, self.charset,
                                  errors=self.errors, cls=self.cls)
-        return _empty_stream, form, self.cls()
+        return stream, form, self.cls()
 
     #: mapping of mimetypes to parsing functions
     parse_functions = {

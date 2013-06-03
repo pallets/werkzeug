@@ -18,6 +18,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError
+from werkzeug.wsgi import LimitedStream
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
      ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
      MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
@@ -184,8 +185,8 @@ class WrappersTestCase(WerkzeugTestCase):
             data=b'foo=blub+hehe',
             content_type='application/x-www-form-urlencoded'
         )
-        self.assert_raises(AttributeError, lambda: request.files)
-        self.assert_raises(AttributeError, lambda: request.form)
+        self.assert_equal(request.files.items(), [])
+        self.assert_equal(request.form.items(), [])
         self.assert_raises(AttributeError, lambda: request.data)
         self.assert_strict_equal(request.stream.read(), b'foo=blub+hehe')
 
@@ -571,7 +572,7 @@ class WrappersTestCase(WerkzeugTestCase):
                                            content_type='text/plain',
                                            method='WHAT_THE_FUCK')
         self.assert_equal(req.data, data)
-        self.assert_is_instance(req.stream, wrappers.LimitedStream)
+        self.assert_is_instance(req.stream, LimitedStream)
 
     def test_urlfication(self):
         resp = wrappers.Response()

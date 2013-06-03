@@ -70,6 +70,12 @@ Release date to be decided, codename to be chosen.
 - Added `content_encoding` and `content_md5` to the request object's
   common request descriptor mixin.
 - added `options` and `trace` to the test client.
+- Overhauled the utilization of the input stream to be easier to use
+  and better to extend.  The detection of content payload on the input
+  side is now more compliant with HTTP by detecting off the content
+  type header instead of the request method.  This also now means that
+  the stream property on the request class is always available instead
+  of just when the parsing fails.
 
 Version 0.8.4
 -------------

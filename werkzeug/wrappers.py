@@ -34,14 +34,14 @@ from werkzeug.urls import url_decode, iri_to_uri, url_join
 from werkzeug.formparser import FormDataParser, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
      header_property, get_content_type
-from werkzeug.wsgi import get_current_url, get_host, LimitedStream, \
-     ClosingIterator
+from werkzeug.wsgi import get_current_url, get_host, \
+     ClosingIterator, get_input_stream, get_content_length
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
      ResponseCacheControl, RequestCacheControl, CallbackDict, \
      ContentRange, iter_multi_items
-from werkzeug._internal import _empty_stream, _patch_wrapper, _get_environ
+from werkzeug._internal import _patch_wrapper, _get_environ
 from werkzeug._compat import to_bytes, string_types, text_type, \
      integer_types, wsgi_decoding_dance, wsgi_get_bytes, \
      to_unicode
@@ -67,6 +67,13 @@ def _warn_if_string(iterable):
                      'data to the client char, by char.  This is almost '
                      'never intended behavior, use response.data to assign '
                      'strings to the response object.'), stacklevel=2)
+
+
+def _assert_not_shallow(request):
+    if request.shallow:
+        raise RuntimeError('A shallow request tried to consume '
+                           'form data.  If you really want to do '
+                           'that, set `shallow` to False.')
 
 
 class BaseRequest(object):
@@ -180,6 +187,12 @@ class BaseRequest(object):
     #: .. versionadded:: 0.9
     trusted_hosts = None
 
+    #: Indicates weather the data descriptor should be allowed to read and
+    #: buffer up the input stream.  By default it's enabled.
+    #:
+    #: .. versionadded:: 0.9
+    disable_data_descriptor = False
+
     def __init__(self, environ, populate_request=True, shallow=False):
         self.environ = environ
         if populate_request and not shallow:
@@ -289,13 +302,12 @@ class BaseRequest(object):
 
     @property
     def want_form_data_parsed(self):
-        """Returns True if the request method is ``POST``, ``PUT`` or
-        ``PATCH``.  Can be overriden to support other HTTP methods that
-        should carry form data.
+        """Returns True if the request method carries content.  As of
+        Werkzeug 0.9 this will be the case if a content type is transmitted.
 
         .. versionadded:: 0.8
         """
-        return self.environ['REQUEST_METHOD'] in ('POST', 'PUT', 'PATCH')
+        return bool(self.environ.get('CONTENT_TYPE'))
 
     def make_form_data_parser(self):
         """Creates the form data parser.  Instanciates the
@@ -319,28 +331,20 @@ class BaseRequest(object):
         .. versionadded:: 0.8
         """
         # abort early if we have already consumed the stream
-        if 'stream' in self.__dict__:
+        if 'form' in self.__dict__:
             return
-        if self.shallow:
-            raise RuntimeError('A shallow request tried to consume '
-                               'form data.  If you really want to do '
-                               'that, set `shallow` to False.')
-        data = None
-        stream = _empty_stream
-        if self.want_form_data_parsed:
-            parser = self.make_form_data_parser()
-            data = parser.parse_from_environ(self.environ)
-        else:
-            # if we have a content length header we are able to properly
-            # guard the incoming stream, no matter what request method is
-            # used.
-            content_length = self.headers.get('content-length', type=int)
-            if content_length is not None:
-                stream = LimitedStream(self.environ['wsgi.input'],
-                                       content_length)
 
-        if data is None:
-            data = (stream, self.parameter_storage_class(),
+        _assert_not_shallow(self)
+
+        if self.want_form_data_parsed:
+            content_type = self.environ.get('CONTENT_TYPE', '')
+            content_length = get_content_length(self.environ)
+            mimetype, options = parse_options_header(content_type)
+            parser = self.make_form_data_parser()
+            data = parser.parse(self.stream, mimetype,
+                                content_length, options)
+        else:
+            data = (self.stream, self.parameter_storage_class(),
                     self.parameter_storage_class())
 
         # inject the values into the instance dict so that we bypass
@@ -367,14 +371,19 @@ class BaseRequest(object):
 
     @cached_property
     def stream(self):
-        """The parsed stream if the submitted data was not multipart or
-        urlencoded form data.  This stream is the stream left by the form data
-        parser module after parsing.  This is *not* the WSGI input stream but
-        a wrapper around it that ensures the caller does not accidentally
-        read past `Content-Length`.
+        """The stream to read incoming data from.  Unlike :attr:`input_stream`
+        this stream is properly guarded that you can't accidentally read past
+        the length of the input.  Werkzeug will internally always refer to
+        this stream to read data which makes it possible to wrap this
+        object with a stream that does filtering.
+
+        .. versionchanged:: 0.9
+           This stream is now always available but might be consumed by the
+           form parser later on.  Previously the stream was only set if no
+           parsing happened.
         """
-        self._load_form_data()
-        return self.stream
+        _assert_not_shallow(self)
+        return get_input_stream(self.environ)
 
     input_stream = environ_property('wsgi.input', 'The WSGI input stream.\n'
         'In general it\'s a bad idea to use this one because you can easily '
@@ -401,6 +410,8 @@ class BaseRequest(object):
 
         To circumvent that make sure to check the content length first.
         """
+        if self.disable_data_descriptor:
+            raise AttributeError('data descriptor is disabled')
         return self.stream.read()
 
     @cached_property
@@ -1243,7 +1254,7 @@ class StreamOnlyMixin(object):
     .. versionadded:: 0.9
     """
 
-    data = files = form = property()
+    disable_data_descriptor = True
     want_form_data_parsed = False
 
 
@@ -1432,15 +1443,20 @@ class CommonRequestDescriptorsMixin(object):
     """
 
     content_type = environ_property('CONTENT_TYPE', doc='''
-         The Content-Type entity-header field indicates the media type of
-         the entity-body sent to the recipient or, in the case of the HEAD
-         method, the media type that would have been sent had the request
-         been a GET.''')
-    content_length = environ_property('CONTENT_LENGTH', None, int, str, doc='''
-         The Content-Length entity-header field indicates the size of the
-         entity-body in bytes or, in the case of the HEAD method, the size of
-         the entity-body that would have been sent had the request been a
-         GET.''')
+        The Content-Type entity-header field indicates the media type of
+        the entity-body sent to the recipient or, in the case of the HEAD
+        method, the media type that would have been sent had the request
+        been a GET.''')
+
+    @cached_property
+    def content_length(self):
+        """The Content-Length entity-header field indicates the size of the
+        entity-body in bytes or, in the case of the HEAD method, the size of
+        the entity-body that would have been sent had the request been a
+        GET.
+        """
+        return get_content_length(self.environ)
+
     content_encoding = environ_property('HTTP_CONTENT_ENCODING', doc='''
         The Content-Encoding entity-header field is used as a modifier to the
         media-type.  When present, its value indicates what additional content
