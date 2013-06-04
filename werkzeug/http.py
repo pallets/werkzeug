@@ -27,17 +27,16 @@ try:
 except ImportError: # pragma: no cover
     from urllib.request import parse_http_list as _parse_list_header
 from datetime import datetime, timedelta
-try:
-    from hashlib import md5
-except ImportError: # pragma: no cover
-    from md5 import new as md5
+from hashlib import md5
 import base64
 
-from werkzeug._internal import _dump_date, _ExtendedCookie, _ExtendedMorsel
-from werkzeug._compat import to_native, to_unicode, iteritems, text_type, \
-    string_types
+from werkzeug import _cookies
+from werkzeug._internal import _dump_date
+from werkzeug._compat import to_unicode, iteritems, text_type, \
+     string_types, try_coerce_native, to_bytes, PY2
 
 
+# incorrect
 _cookie_charset = 'latin1'
 _accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
 _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -441,7 +440,6 @@ def parse_authorization_header(value):
         try:
             username, password = base64.b64decode(auth_info).split(b':', 1)
         except Exception as e:
-            print(e)
             return
         return Authorization('basic', {'username':  bytes_to_wsgi(username),
                                        'password': bytes_to_wsgi(password)})
@@ -803,7 +801,7 @@ def is_hop_by_hop_header(header):
     return header.lower() in _hop_by_hop_headers
 
 
-def parse_cookie(header, errors='replace', cls=None):
+def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
     """Parse a cookie.  Either from a string or WSGI environ.
 
     Per default encoding errors are ignored.  If you want a different behavior
@@ -824,26 +822,31 @@ def parse_cookie(header, errors='replace', cls=None):
     """
     if isinstance(header, dict):
         header = header.get('HTTP_COOKIE', '')
-    header = to_native(header, _cookie_charset)
+    elif header is None:
+        header = ''
+
+    # If the value is an unicode string it's mangled through latin1.  This
+    # is done because on PEP 3333 on Python 3 all headers are assumed latin1
+    # which however is incorrect for cookies, which are sent in page encoding.
+    # As a result we
+    if isinstance(header, text_type):
+        header = header.encode('latin1', 'replace')
+
     if cls is None:
         cls = TypeConversionDict
-    cookie = _ExtendedCookie()
-    cookie.load(header)
-    result = {}
 
-    # decode to unicode and skip broken items.  Our extended morsel
-    # and extended cookie will catch CookieErrors and convert them to
-    # `None` items which we have to skip here.
-    for key, value in iteritems(cookie):
-        if value.value is not None:
-            result[to_unicode(key, _cookie_charset)] = \
-                    to_unicode(unquote_header_value(value.value), _cookie_charset)
+    def _parse_pairs():
+        for key, val in _cookies._cookie_parse_impl(header):
+            key = to_unicode(key, charset, errors, allow_none_charset=True)
+            val = to_unicode(val, charset, errors, allow_none_charset=True)
+            yield try_coerce_native(key), val
 
-    return cls(result)
+    return cls(_parse_pairs())
 
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
-                domain=None, secure=None, httponly=False, sync_expires=True):
+                domain=None, secure=False, httponly=False,
+                charset='utf-8', sync_expires=True):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -868,39 +871,55 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
     """
-    if not isinstance(key, (bytes, text_type)):
-        raise TypeError('invalid key %r' % key)
-    if not isinstance(value, (bytes, text_type)):
-        raise TypeError('invalid value %r' % value)
+    key = to_bytes(key, charset)
+    value = to_bytes(value, charset)
 
-    key, value = to_native(key, _cookie_charset), to_native(value, _cookie_charset)
-
-    value = quote_header_value(value)
-    morsel = _ExtendedMorsel(key, value)
+    if path is not None:
+        path = iri_to_uri(path, charset)
+    domain = _cookies._make_cookie_domain(domain)
     if isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
         if not isinstance(expires, string_types):
             expires = cookie_date(expires)
-        morsel['expires'] = expires
     elif max_age is not None and sync_expires:
-        morsel['expires'] = cookie_date(time() + max_age)
-    if domain and ':' in domain:
-        # The port part of the domain should NOT be used. Strip it
-        domain = domain.split(':', 1)[0]
-    if domain:
-        assert '.' in domain, (
-            "Setting \"domain\" for a cookie on a server running localy (ex: "
-            "localhost) is not supportted by complying browsers. You should "
-            "have something like: \"127.0.0.1 localhost dev.localhost\" on "
-            "your hosts file and then point your server to run on "
-            "\"dev.localhost\" and also set \"domain\" for \"dev.localhost\""
-        )
-    for k, v in (('path', path), ('domain', domain), ('secure', secure),
-                 ('max-age', max_age), ('httponly', httponly)):
-        if v is not None and v is not False:
-            morsel[k] = str(v)
-    return to_unicode(morsel.output(header='').lstrip(), _cookie_charset)
+        expires = to_bytes(cookie_date(time() + max_age))
+
+    buf = [_cookies._quote(key) + b'=' + _cookies._quote(value)]
+
+    # XXX: In theory all of these parameters that are not marked with `None`
+    # should be quoted.  Because stdlib did not quote it before I did not
+    # want to introduce quoting there now.
+    for k, v, q in (
+                    (b'Domain', domain, True),
+                    (b'Expires', expires, False,),
+                    (b'Max-Age', max_age, False),
+                    (b'Secure', secure, None),
+                    (b'HttpOnly', httponly, None),
+                    (b'Path', path, False)):
+        tmp = bytearray(_cookies._quote(k))
+
+        # Boolean attribute
+        if q is None:
+            if not v:
+                continue
+        else:
+            if v is None:
+                continue
+            if not isinstance(v, (bytes, bytearray)):
+                v = to_bytes(text_type(v), charset)
+            if q:
+                v = _cookies._quote(v)
+            tmp += b'=' + v
+        buf.append(bytes(tmp))
+
+    # The return value will be an incorrectly encoded latin1 header on
+    # Python 3 for consistency with the headers object and a bytestring
+    # on Python 2 because that's how the API makes more sense.
+    rv = b'; '.join(buf)
+    if not PY2:
+        rv = rv.decode('latin1')
+    return rv
 
 
 def is_byte_range_valid(start, stop, length):
@@ -929,3 +948,4 @@ from werkzeug.datastructures import Accept, HeaderSet, ETags, Authorization, \
 # backwards compatible imports
 from werkzeug.datastructures import MIMEAccept, CharsetAccept, \
      LanguageAccept, Headers
+from werkzeug.urls import iri_to_uri

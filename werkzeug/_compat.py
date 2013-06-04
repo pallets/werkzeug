@@ -23,6 +23,8 @@ if PY2:
     iterlists = lambda d, *args, **kwargs: d.iterlists(*args, **kwargs)
     iterlistvalues = lambda d, *args, **kwargs: d.iterlistvalues(*args, **kwargs)
 
+    iter_bytes = lambda x: iter(x)
+
     exec('def reraise(tp, value, tb=None):\n raise tp, value, tb')
 
     def fix_tuple_repr(obj):
@@ -117,6 +119,10 @@ else:
 
     iterlists = lambda d, *args, **kwargs: iter(d.lists(*args, **kwargs))
     iterlistvalues = lambda d, *args, **kwargs: iter(d.listvalues(*args, **kwargs))
+
+    def iter_bytes(b):
+        for c in b:
+            yield bytes((c,))
 
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:

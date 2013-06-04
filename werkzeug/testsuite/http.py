@@ -285,10 +285,10 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
             dict(http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
                               'c762809248d4beed; a=42')),
             {
-                u'CP':           u'null*',
-                u'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
-                u'a':            u'42',
-                u'dismiss-top':  u'6'
+                'CP':           u'null*',
+                'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
+                'a':            u'42',
+                'dismiss-top':  u'6'
             }
         )
         self.assert_strict_equal(
@@ -297,15 +297,15 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
             set([u'HttpOnly', u'Max-Age=360', u'Path=/', u'foo="bar baz blub"'])
         )
         self.assert_strict_equal(dict(http.parse_cookie('fo234{=bar blub=Blah')),
-                                 {u'blub': u'Blah'})
+                                 {'fo234{': u'bar', 'blub': u'Blah'})
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        self.assert_strict_equal(val, u'foo="?foo"; Path=/')
-        self.assert_strict_equal(dict(http.parse_cookie(val)), {u'foo': u'?foo'})
+        self.assert_strict_equal(val, 'foo="?foo"; Path=/')
+        self.assert_strict_equal(dict(http.parse_cookie(val)), {'foo': u'?foo'})
 
         self.assert_strict_equal(dict(http.parse_cookie(r'foo="foo\054bar"')),
-                                 {u'foo': u'foo,bar'})
+                                 {'foo': u'foo,bar'})
 
 
 class RangeTestCase(WerkzeugTestCase):

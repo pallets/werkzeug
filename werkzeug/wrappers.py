@@ -457,6 +457,7 @@ class BaseRequest(object):
     def cookies(self):
         """Read only access to the retrieved cookie values as dictionary."""
         return parse_cookie(self.environ, self.charset,
+                            self.encoding_errors,
                             cls=self.dict_storage_class)
 
     @cached_property
