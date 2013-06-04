@@ -42,6 +42,16 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(resp.headers['Location'], 'http://example.com/')
         self.assert_equal(resp.status_code, 305)
 
+    def test_redirect_no_unicode_header_keys(self):
+        # Make sure all headers are native keys.  This was a bug at one point
+        # due to an incorrect conversion.
+        resp = utils.redirect('http://example.com/', 305)
+        for key, value in resp.headers.items():
+            self.assert_equal(type(key), str)
+            self.assert_equal(type(value), text_type)
+        self.assert_equal(resp.headers['Location'], 'http://example.com/')
+        self.assert_equal(resp.status_code, 305)
+
     def test_redirect_xss(self):
         location = 'http://example.com/?xss="><script>alert(1)</script>'
         resp = utils.redirect(location)

@@ -1023,12 +1023,12 @@ class BaseResponse(object):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
             if location != old_location:
-                headers[u'Location'] = location
+                headers['Location'] = location
 
         # make sure the content location is a URL
         if content_location is not None and \
            isinstance(content_location, text_type):
-            headers[u'Content-Location'] = iri_to_uri(content_location)
+            headers['Content-Location'] = iri_to_uri(content_location)
 
         # remove entity headers and set content length to zero if needed.
         # Also update content_length accordingly so that the automatic
