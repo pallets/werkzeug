@@ -311,6 +311,15 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
         self.assert_strict_equal(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
 
+    def test_cookie_unicode_dumping(self):
+        val = http.dump_cookie('foo', u'\N{SNOWMAN}')
+        h = datastructures.Headers()
+        h.add('Set-Cookie', val)
+        self.assert_equal(h['Set-Cookie'], 'foo="\\342\\230\\203"; Path=/')
+
+        cookies = http.parse_cookie(h['Set-Cookie'])
+        self.assert_equal(cookies['foo'], u'\N{SNOWMAN}')
+
 
 class RangeTestCase(WerkzeugTestCase):
 
