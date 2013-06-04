@@ -738,13 +738,6 @@ class FileWrapper(object):
         raise StopIteration()
 
 
-def make_limited_stream(stream, limit):
-    """Makes a stream limited."""
-    if not isinstance(stream, LimitedStream) and limit is not None:
-        stream = LimitedStream(stream, limit)
-    return stream
-
-
 def _make_chunk_iter(stream, limit, buffer_size):
     """Helper for the line and chunk iter functions."""
     if isinstance(stream, (bytes, bytearray, text_type)):
@@ -755,7 +748,9 @@ def _make_chunk_iter(stream, limit, buffer_size):
             if item:
                 yield item
         return
-    _read = make_limited_stream(stream, limit).read
+    if not isinstance(stream, LimitedStream) and limit is not None:
+        stream = LimitedStream(stream, limit)
+    _read = stream.read
     while 1:
         item = _read(buffer_size)
         if not item:
