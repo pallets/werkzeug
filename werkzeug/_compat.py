@@ -61,7 +61,8 @@ if PY2:
     from itertools import imap, izip, ifilter
     xrange = xrange
 
-    from StringIO import StringIO, StringIO as BytesIO
+    from StringIO import StringIO
+    from cStringIO import StringIO as BytesIO
     NativeStringIO = BytesIO
 
     def make_literal_wrapper(reference):

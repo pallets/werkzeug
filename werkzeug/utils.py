@@ -13,6 +13,7 @@
 import re
 import os
 import sys
+import pkgutil
 try:
     from html.entities import name2codepoint
 except ImportError:
@@ -20,7 +21,7 @@ except ImportError:
 
 from werkzeug._compat import unichr, text_type, string_types, iteritems, \
     reraise, PY2
-from werkzeug._internal import _iter_modules, _DictAccessorProperty, \
+from werkzeug._internal import _DictAccessorProperty, \
      _parse_signature, _missing
 
 
@@ -443,7 +444,7 @@ def find_modules(import_path, include_packages=False, recursive=False):
     if path is None:
         raise ValueError('%r is not a package' % import_path)
     basename = module.__name__ + '.'
-    for modname, ispkg in _iter_modules(path):
+    for importer, modname, ispkg in pkgutil.iter_modules(path):
         modname = basename + modname
         if ispkg:
             if include_packages:

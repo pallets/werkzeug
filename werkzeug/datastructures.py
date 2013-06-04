@@ -14,7 +14,7 @@ import codecs
 import mimetypes
 from itertools import repeat
 
-from werkzeug._internal import _proxy_repr, _missing, _empty_stream
+from werkzeug._internal import _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
      PY2, text_type, integer_types, string_types, make_literal_wrapper
 
@@ -126,7 +126,11 @@ class ImmutableList(ImmutableListMixin, list):
     :private:
     """
 
-    __repr__ = _proxy_repr(list)
+    def __repr__(self):
+        return '%s(%s)' % (
+            self.__class__.__name__,
+            dict.__repr__(self),
+        )
 
 
 class ImmutableDictMixin(object):
@@ -1424,7 +1428,11 @@ class ImmutableDict(ImmutableDictMixin, dict):
     .. versionadded:: 0.5
     """
 
-    __repr__ = _proxy_repr(dict)
+    def __repr__(self):
+        return '%s(%s)' % (
+            self.__class__.__name__,
+            dict.__repr__(self),
+        )
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that

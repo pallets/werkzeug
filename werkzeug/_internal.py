@@ -11,12 +11,11 @@
 import re
 import string
 import inspect
-from io import BytesIO
 from time import gmtime
 from weakref import WeakKeyDictionary
 from datetime import datetime, date
 
-from werkzeug._compat import integer_types, iter_bytes, text_type
+from werkzeug._compat import integer_types, iter_bytes, text_type, BytesIO
 
 
 _logger = None
@@ -127,12 +126,6 @@ class _Missing(object):
 _missing = _Missing()
 
 
-def _proxy_repr(cls):
-    def proxy_repr(self):
-        return '%s(%s)' % (self.__class__.__name__, cls.__repr__(self))
-    return proxy_repr
-
-
 def _get_environ(obj):
     env = getattr(obj, 'environ', obj)
     assert isinstance(env, dict), \
@@ -217,40 +210,6 @@ def _parse_signature(func):
                arguments, vararg_var, kwarg_var
     _signature_cache[func] = parse
     return parse
-
-
-def _patch_wrapper(old, new):
-    """Helper function that forwards all the function details to the
-    decorated function."""
-    try:
-        new.__name__ = old.__name__
-        new.__module__ = old.__module__
-        new.__doc__ = old.__doc__
-        new.__dict__ = old.__dict__
-    except Exception:
-        pass
-    return new
-
-
-def _iter_modules(path):
-    """Iterate over all modules in a package."""
-    import os
-    import pkgutil
-    if hasattr(pkgutil, 'iter_modules'):
-        for importer, modname, ispkg in pkgutil.iter_modules(path):
-            yield modname, ispkg
-        return
-    from inspect import getmodulename
-    from pydoc import ispackage
-    found = set()
-    for path in path:
-        for filename in os.listdir(path):
-            p = os.path.join(path, filename)
-            modname = getmodulename(filename)
-            if modname and modname != '__init__':
-                if modname not in found:
-                    found.add(modname)
-                    yield modname, ispackage(modname)
 
 
 def _dump_date(d, delim):

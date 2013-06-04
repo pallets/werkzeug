@@ -17,12 +17,12 @@ from itertools import chain
 from zlib import adler32
 from time import time, mktime
 from datetime import datetime
-from functools import partial
+from functools import partial, update_wrapper
 
 from werkzeug._compat import iteritems, text_type, string_types, \
      implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
      wsgi_get_bytes, try_coerce_native
-from werkzeug._internal import _patch_wrapper, _empty_stream
+from werkzeug._internal import _empty_stream
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
 
@@ -37,7 +37,7 @@ def responder(f):
         def application(environ, start_response):
             return Response('Hello World!')
     """
-    return _patch_wrapper(f, lambda *a: f(*a)(*a[-2:]))
+    return update_wrapper(lambda *a: f(*a)(*a[-2:]), f)
 
 
 def get_current_url(environ, root_only=False, strip_querystring=False,

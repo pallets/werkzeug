@@ -8,8 +8,8 @@
     :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+from functools import update_wrapper
 from werkzeug.wsgi import ClosingIterator
-from werkzeug._internal import _patch_wrapper
 from werkzeug._compat import PY2, implements_bool
 
 # since each thread has its own greenlet we can just use those as identifiers
@@ -237,7 +237,7 @@ class LocalManager(object):
         will have all the arguments copied from the inner application
         (name, docstring, module).
         """
-        return _patch_wrapper(func, self.make_middleware(func))
+        return update_wrapper(self.make_middleware(func), func)
 
     def __repr__(self):
         return '<%s storages: %d>' % (

@@ -20,6 +20,7 @@
     :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+from functools import update_wrapper
 from datetime import datetime, timedelta
 
 from werkzeug.http import HTTP_STATUS_CODES, \
@@ -41,7 +42,7 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
      ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
      ResponseCacheControl, RequestCacheControl, CallbackDict, \
      ContentRange, iter_multi_items
-from werkzeug._internal import _patch_wrapper, _get_environ
+from werkzeug._internal import _get_environ
 from werkzeug._compat import to_bytes, string_types, text_type, \
      integer_types, wsgi_decoding_dance, wsgi_get_bytes, \
      to_unicode
@@ -274,7 +275,7 @@ class BaseRequest(object):
             request = cls(args[-2])
             with request:
                 return f(*args[:-2] + (request,))(*args[-2:])
-        return _patch_wrapper(f, application)
+        return update_wrapper(application, f)
 
     def _get_file_stream(self, total_content_length, content_type, filename=None,
                         content_length=None):
