@@ -12,7 +12,6 @@ import unittest
 import shutil
 from tempfile import mkdtemp, gettempdir
 
-from werkzeug._compat import xrange
 from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.contrib.sessions import FilesystemSessionStore
 
@@ -66,7 +65,7 @@ class SessionTestCase(WerkzeugTestCase):
     def test_fs_session_lising(self):
         store = FilesystemSessionStore(self.session_folder, renew_missing=True)
         sessions = set()
-        for x in xrange(10):
+        for x in range(10):
             sess = store.new()
             store.save(sess)
             sessions.add(sess.sid)

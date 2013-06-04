@@ -16,6 +16,7 @@ if PY2:
     text_type = unicode
     string_types = (str, unicode)
     integer_types = (int, long)
+    int_to_byte = chr
 
     iterkeys = lambda d, *args, **kwargs: d.iterkeys(*args, **kwargs)
     itervalues = lambda d, *args, **kwargs: d.itervalues(*args, **kwargs)
@@ -59,7 +60,7 @@ if PY2:
         return cls
 
     from itertools import imap, izip, ifilter
-    xrange = xrange
+    range_type = xrange
 
     from StringIO import StringIO
     from cStringIO import StringIO as BytesIO
@@ -122,10 +123,10 @@ else:
     iterlists = lambda d, *args, **kwargs: iter(d.lists(*args, **kwargs))
     iterlistvalues = lambda d, *args, **kwargs: iter(d.listvalues(*args, **kwargs))
 
-    _int_to_byte = operator.methodcaller('to_bytes', 1, 'big')
+    int_to_byte = operator.methodcaller('to_bytes', 1, 'big')
 
     def iter_bytes(b):
-        return map(_int_to_byte, b)
+        return map(int_to_byte, b)
 
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:
@@ -140,7 +141,7 @@ else:
     imap = map
     izip = zip
     ifilter = filter
-    xrange = range
+    range_type = range
 
     from io import StringIO, BytesIO
     NativeStringIO = StringIO

@@ -18,7 +18,7 @@ from random import SystemRandom
 from operator import xor
 from itertools import starmap
 
-from werkzeug._compat import xrange, PY2, text_type, izip, to_bytes, \
+from werkzeug._compat import range_type, PY2, text_type, izip, to_bytes, \
      string_types, to_native
 
 
@@ -96,9 +96,9 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
         h.update(x)
         return bytearray(h.digest())
     buf = bytearray()
-    for block in xrange(1, -(-keylen // mac.digest_size) + 1):
+    for block in range_type(1, -(-keylen // mac.digest_size) + 1):
         rv = u = _pseudorandom(salt + _pack_int(block))
-        for i in xrange(iterations - 1):
+        for i in range_type(iterations - 1):
             u = _pseudorandom(bytes(u))
             rv = bytearray(starmap(xor, izip(rv, u)))
         buf.extend(rv)
@@ -131,7 +131,7 @@ def gen_salt(length):
     """Generate a random string of SALT_CHARS with specified ``length``."""
     if length <= 0:
         raise ValueError('requested salt of length <= 0')
-    return ''.join(_sys_rng.choice(SALT_CHARS) for _ in xrange(length))
+    return ''.join(_sys_rng.choice(SALT_CHARS) for _ in range_type(length))
 
 
 def _hash_internal(method, salt, password):

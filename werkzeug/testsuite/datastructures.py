@@ -25,7 +25,7 @@ from copy import copy
 
 from werkzeug import datastructures
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-    iterlistvalues, xrange, text_type
+     iterlistvalues, text_type
 from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.exceptions import BadRequestKeyError
 
@@ -64,7 +64,7 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
     def test_pickle(self):
         cls = self.storage_class
 
-        for protocol in xrange(pickle.HIGHEST_PROTOCOL + 1):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
             d = cls()
             d.setlist(b'foo', [1, 2, 3, 4])
             d.setlist(b'bar', b'foo bar baz'.split())

@@ -19,7 +19,7 @@ from tokenize import TokenError
 
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
-from werkzeug._compat import xrange, PY2, text_type, string_types
+from werkzeug._compat import range_type, PY2, text_type, string_types
 
 
 _coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
@@ -156,7 +156,7 @@ def get_current_traceback(ignore_system_exceptions=False,
     exc_type, exc_value, tb = sys.exc_info()
     if ignore_system_exceptions and exc_type in system_exceptions:
         raise
-    for x in xrange(skip):
+    for x in range_type(skip):
         if tb.tb_next is None:
             break
         tb = tb.tb_next

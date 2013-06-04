@@ -18,7 +18,7 @@ from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug import wsgi
-from werkzeug._compat import xrange, StringIO, BytesIO, NativeStringIO
+from werkzeug._compat import StringIO, BytesIO, NativeStringIO
 
 
 class WSGIUtilsTestCase(WerkzeugTestCase):
@@ -333,7 +333,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
     def test_lines_longer_buffer_size(self):
         data = '1234567890\n1234567890\n'
-        for bufsize in xrange(1, 15):
+        for bufsize in range(1, 15):
             lines = list(wsgi.make_line_iter(NativeStringIO(data), limit=len(data),
                                              buffer_size=4))
             self.assert_equal(lines, ['1234567890\n', '1234567890\n'])
