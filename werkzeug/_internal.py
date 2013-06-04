@@ -97,7 +97,7 @@ _cookie_quoting_map = {
 
 _octal_re = re.compile(b'\\\\[0-3][0-7][0-7]')
 _quote_re = re.compile(b'[\\\\].')
-_legal_cookie_chars_re  = b'[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]'
+_legal_cookie_chars_re = b'[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]'
 _cookie_re = re.compile(b"""
     (?x)                                    # This is a verbose pattern
     (?P<key>                                # Start of group 'key'
