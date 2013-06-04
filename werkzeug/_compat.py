@@ -1,4 +1,5 @@
 import sys
+import operator
 import functools
 try:
     import builtins
@@ -120,9 +121,10 @@ else:
     iterlists = lambda d, *args, **kwargs: iter(d.lists(*args, **kwargs))
     iterlistvalues = lambda d, *args, **kwargs: iter(d.listvalues(*args, **kwargs))
 
+    _int_to_byte = operator.methodcaller('to_bytes', 1, 'big')
+
     def iter_bytes(b):
-        for c in b:
-            yield bytes((c,))
+        return map(_int_to_byte, b)
 
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:
