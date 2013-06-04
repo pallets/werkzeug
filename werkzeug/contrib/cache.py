@@ -59,10 +59,7 @@
 import os
 import re
 import tempfile
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import new as md5
+from hashlib import md5
 from time import time
 try:
     import cPickle as pickle
