@@ -851,6 +851,12 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
 
+    On Python 3 the return value of this function will be a string
+    encoded to `charset` encoding tunneled through a latin1
+    encoded unicode string.  This is done because this is how the
+    PEP 3333 headers operate.  On Python 2 the return value will be
+    a regular bytestring in `charset` encoding.
+
     :param max_age: should be a number of seconds, or `None` (default) if
                     the cookie should last only as long as the client's
                     browser session.  Additionally `timedelta` objects
