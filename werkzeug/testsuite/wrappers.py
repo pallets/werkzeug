@@ -358,7 +358,7 @@ class WrappersTestCase(WerkzeugTestCase):
         req = wrappers.Request.from_values('/', method='POST', data=data,
             content_type='application/x-www-form-urlencoded')
         req.stream = LowercasingStream(req.stream)
-        self.assert_equal(req.form['foo'], b'hello world')
+        self.assert_equal(req.form['foo'], 'hello world')
 
     def test_etag_response_mixin(self):
         response = wrappers.Response('Hello World')
