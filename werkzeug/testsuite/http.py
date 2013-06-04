@@ -307,6 +307,10 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         self.assert_strict_equal(dict(http.parse_cookie(r'foo="foo\054bar"')),
                                  {'foo': u'foo,bar'})
 
+    def test_cookie_domain_resolving(self):
+        val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
+
 
 class RangeTestCase(WerkzeugTestCase):
 
