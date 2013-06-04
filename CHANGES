@@ -76,6 +76,8 @@ Release date to be decided, codename to be chosen.
   type header instead of the request method.  This also now means that
   the stream property on the request class is always available instead
   of just when the parsing fails.
+- Added support for using :class:`werkzeug.wrappers.BaseResponse` in a with
+  statement.
 
 Version 0.8.4
 -------------

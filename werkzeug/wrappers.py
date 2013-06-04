@@ -951,11 +951,22 @@ class BaseResponse(object):
         return isinstance(self.response, (tuple, list))
 
     def close(self):
-        """Close the wrapped response if possible."""
+        """Close the wrapped response if possible.  You can also use the object
+        in a with statement which will automatically close it.
+
+        .. versionadded:: 0.9
+           Can now be used in a with statement.
+        """
         if hasattr(self.response, 'close'):
             self.response.close()
         for func in self._on_close:
             func()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.close()
 
     def freeze(self):
         """Call this method if you want to make your response object ready for
