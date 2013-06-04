@@ -896,8 +896,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     # XXX: In theory all of these parameters that are not marked with `None`
     # should be quoted.  Because stdlib did not quote it before I did not
     # want to introduce quoting there now.
-    for k, v, q in (
-                    (b'Domain', domain, True),
+    for k, v, q in ((b'Domain', domain, True),
                     (b'Expires', expires, False,),
                     (b'Max-Age', max_age, False),
                     (b'Secure', secure, None),
