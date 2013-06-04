@@ -27,8 +27,8 @@ _cookie_params = set((b'expires', b'path', b'comment',
                       b'max-age', b'secure', b'httponly',
                       b'version'))
 _legal_cookie_chars = set(iter_bytes((string.ascii_letters +
-                               string.digits +
-                               u"!#$%&'*+-.^_`|~:").encode('ascii')))
+                                      string.digits +
+                                      u"!#$%&'*+-.^_`|~:").encode('ascii')))
 
 _cookie_quoting_map = {
     b'\000' : b'\\000',  b'\001' : b'\\001',  b'\002' : b'\\002',
