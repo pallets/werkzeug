@@ -24,9 +24,13 @@ class StreamLimitMiddleware(object):
     data.
 
     Default is 10MB
+
+    .. versionchanged:: 0.9
+       Deprecated middleware.
     """
 
     def __init__(self, app, maximum_size=1024 * 1024 * 10):
+        warn(DeprecationWarning('This middleware is deprecated'))
         self.app = app
         self.maximum_size = maximum_size
 
