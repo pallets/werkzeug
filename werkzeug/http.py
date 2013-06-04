@@ -17,7 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-from time import time
+from time import time, gmtime
 try:
     from email.utils import parsedate_tz
 except ImportError: # pragma: no cover
@@ -30,10 +30,11 @@ from datetime import datetime, timedelta
 from hashlib import md5
 import base64
 
-from werkzeug._internal import _dump_date, _cookie_quote, \
-     _cookie_unquote, _make_cookie_domain, _cookie_parse_impl
+from werkzeug._internal import _cookie_quote, _make_cookie_domain, \
+     _cookie_parse_impl
 from werkzeug._compat import to_unicode, iteritems, text_type, \
-     string_types, try_coerce_native, to_bytes, PY2
+     string_types, try_coerce_native, to_bytes, PY2, \
+     integer_types
 
 
 # incorrect
@@ -680,6 +681,23 @@ def parse_date(value):
                        timedelta(seconds=t[-1] or 0)
             except (ValueError, OverflowError):
                 return None
+
+
+def _dump_date(d, delim):
+    """Used for `http_date` and `cookie_date`."""
+    if d is None:
+        d = gmtime()
+    elif isinstance(d, datetime):
+        d = d.utctimetuple()
+    elif isinstance(d, (integer_types, float)):
+        d = gmtime(d)
+    return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
+        ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[d.tm_wday],
+        d.tm_mday, delim,
+        ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+         'Oct', 'Nov', 'Dec')[d.tm_mon - 1],
+        delim, str(d.tm_year), d.tm_hour, d.tm_min, d.tm_sec
+    )
 
 
 def cookie_date(expires=None):
