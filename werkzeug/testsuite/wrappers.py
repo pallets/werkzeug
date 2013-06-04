@@ -345,6 +345,21 @@ class WrappersTestCase(WerkzeugTestCase):
         request = wrappers.Request({'HTTP_USER_AGENT': 'foo'})
         assert not request.user_agent
 
+    def test_stream_wrapping(self):
+        class LowercasingStream(object):
+            def __init__(self, stream):
+                self._stream = stream
+            def read(self, size=-1):
+                return self._stream.read(size).lower()
+            def readline(self, size=-1):
+                return self._stream.readline(size).lower()
+
+        data = b'foo=Hello+World'
+        req = wrappers.Request.from_values('/', method='POST', data=data,
+            content_type='application/x-www-form-urlencoded')
+        req.stream = LowercasingStream(req.stream)
+        self.assert_equal(req.form['foo'], b'hello world')
+
     def test_etag_response_mixin(self):
         response = wrappers.Response('Hello World')
         self.assert_equal(response.get_etag(), (None, None))
