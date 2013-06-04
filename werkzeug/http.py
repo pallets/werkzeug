@@ -30,8 +30,8 @@ from datetime import datetime, timedelta
 from hashlib import md5
 import base64
 
-from werkzeug import _cookies
-from werkzeug._internal import _dump_date
+from werkzeug._internal import _dump_date, _cookie_quote, \
+     _cookie_unquote, _make_cookie_domain, _cookie_parse_impl
 from werkzeug._compat import to_unicode, iteritems, text_type, \
      string_types, try_coerce_native, to_bytes, PY2
 
@@ -836,7 +836,7 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
         cls = TypeConversionDict
 
     def _parse_pairs():
-        for key, val in _cookies._cookie_parse_impl(header):
+        for key, val in _cookie_parse_impl(header):
             key = to_unicode(key, charset, errors, allow_none_charset=True)
             val = to_unicode(val, charset, errors, allow_none_charset=True)
             yield try_coerce_native(key), val
@@ -882,7 +882,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
 
     if path is not None:
         path = iri_to_uri(path, charset)
-    domain = _cookies._make_cookie_domain(domain)
+    domain = _make_cookie_domain(domain)
     if isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
@@ -891,7 +891,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     elif max_age is not None and sync_expires:
         expires = to_bytes(cookie_date(time() + max_age))
 
-    buf = [_cookies._quote(key) + b'=' + _cookies._quote(value)]
+    buf = [_cookie_quote(key) + b'=' + _cookie_quote(value)]
 
     # XXX: In theory all of these parameters that are not marked with `None`
     # should be quoted.  Because stdlib did not quote it before I did not
@@ -902,7 +902,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                     (b'Secure', secure, None),
                     (b'HttpOnly', httponly, None),
                     (b'Path', path, False)):
-        tmp = bytearray(_cookies._quote(k))
+        tmp = bytearray(k)
 
         # Boolean attribute
         if q is None:
@@ -914,7 +914,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
             if not isinstance(v, (bytes, bytearray)):
                 v = to_bytes(text_type(v), charset)
             if q:
-                v = _cookies._quote(v)
+                v = _cookie_quote(v)
             tmp += b'=' + v
         buf.append(bytes(tmp))
 
