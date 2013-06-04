@@ -920,20 +920,20 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                     (b'Secure', secure, None),
                     (b'HttpOnly', httponly, None),
                     (b'Path', path, False)):
-        tmp = bytearray(k)
-
-        # Boolean attribute
         if q is None:
-            if not v:
-                continue
-        else:
-            if v is None:
-                continue
-            if not isinstance(v, (bytes, bytearray)):
-                v = to_bytes(text_type(v), charset)
-            if q:
-                v = _cookie_quote(v)
-            tmp += b'=' + v
+            if v:
+                buf.append(k)
+            continue
+
+        if v is None:
+            continue
+
+        tmp = bytearray(k)
+        if not isinstance(v, (bytes, bytearray)):
+            v = to_bytes(text_type(v), charset)
+        if q:
+            v = _cookie_quote(v)
+        tmp += b'=' + v
         buf.append(bytes(tmp))
 
     # The return value will be an incorrectly encoded latin1 header on
