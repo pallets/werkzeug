@@ -102,7 +102,7 @@ class ServingTestCase(WerkzeugTestCase):
             assert environ['PATH_INFO'] == '/index.htm'
             assert environ['SERVER_PORT'] == addr.split(':')[1]
             start_response('200 OK', [('Content-Type', 'text/html')])
-            return b'YES'
+            return [b'YES']
 
         server, addr = run_dev_server(asserting_app)
         conn = httplib.HTTPConnection(addr)
