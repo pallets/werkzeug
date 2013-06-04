@@ -236,6 +236,13 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(''.join(app_iter), '')
         self.assert_strict_equal(len(closed), 2)
 
+        # with statement
+        del closed[:]
+        response = wrappers.BaseResponse(Iterable())
+        with response:
+            pass
+        self.assert_equal(len(closed), 1)
+
     def test_response_status_codes(self):
         response = wrappers.BaseResponse()
         response.status_code = 404
