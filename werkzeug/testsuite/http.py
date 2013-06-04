@@ -296,7 +296,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
                                  sync_expires=False).split(u'; ')),
             set([u'HttpOnly', u'Max-Age=360', u'Path=/', u'foo="bar baz blub"'])
         )
-        self.assert_strict_equal(dict(http.parse_cookie('fo234{=bar blub=Blah')),
+        self.assert_strict_equal(dict(http.parse_cookie('fo234{=bar; blub=Blah')),
                                  {'fo234{': u'bar', 'blub': u'Blah'})
 
     def test_cookie_quoting(self):
@@ -319,6 +319,13 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
         cookies = http.parse_cookie(h['Set-Cookie'])
         self.assert_equal(cookies['foo'], u'\N{SNOWMAN}')
+
+    def test_cookie_unicode_parsing(self):
+        # This is actually a correct test.  This is what is being submitted
+        # by firefox if you set an unicode cookie and we get the cookie sent
+        # in on Python 3 under PEP 3333.
+        cookies = http.parse_cookie(u'fÃ¶=fÃ¶')
+        self.assert_equal(cookies[u'fö'], u'fö')
 
 
 class RangeTestCase(WerkzeugTestCase):

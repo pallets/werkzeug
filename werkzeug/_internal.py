@@ -14,7 +14,7 @@ import inspect
 from weakref import WeakKeyDictionary
 from datetime import datetime, date
 
-from werkzeug._compat import integer_types, iter_bytes, text_type, BytesIO
+from werkzeug._compat import iter_bytes, text_type, BytesIO
 
 
 _logger = None
@@ -97,20 +97,14 @@ _cookie_quoting_map = {
 _octal_re = re.compile(b'\\\\[0-3][0-7][0-7]')
 _quote_re = re.compile(b'[\\\\].')
 _legal_cookie_chars_re = b'[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]'
-_cookie_re = re.compile(b"""
-    (?x)                                    # This is a verbose pattern
-    (?P<key>                                # Start of group 'key'
-    """ + _legal_cookie_chars_re + b"""+?   # Any word of at least one letter
-    )                                       # End of group 'key'
-    \s*=\s*                                 # Equal Sign
-    (?P<val>                                # Start of group 'val'
-    "(?:[^\\\\"]|\\\\.)*"                   # Any doublequoted string
-    |                                       # or
-    \w{3},\s[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
-    |                                       # or
-    """ + _legal_cookie_chars_re + b"""*    # Any word or empty string
-    )                                       # End of group 'val'
-    \s*;?                                   # Probably ending in a semi-colon
+_cookie_re = re.compile(b"""(?x)
+    (?P<key>[^=]+)
+    \s*=\s*
+    (?P<val>
+        "(?:[^\\\\"]|\\\\.)*" |
+         (?:.*?)
+    )
+    \s*;
 """)
 
 
@@ -334,11 +328,11 @@ def _cookie_parse_impl(b):
     n = len(b)
 
     while 0 <= i < n:
-        match = _cookie_re.search(b, i)
+        match = _cookie_re.search(b + b';', i)
         if not match:
             break
 
-        key = match.group('key')
+        key = match.group('key').strip()
         value = match.group('val')
         i = match.end(0)
 
