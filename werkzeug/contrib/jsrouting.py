@@ -182,6 +182,8 @@ def generate_map(map, name='url_map'):
     defined in your map to users. If your rules contain sensitive
     information, don't use JavaScript generation!
     """
+    from warnings import warn
+    warn(DeprecationWarning('This module is deprecated'))
     map.update()
     rules = []
     converters = []
