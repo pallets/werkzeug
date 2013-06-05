@@ -10,9 +10,10 @@
 """
 import re
 from werkzeug._compat import text_type, PY2, to_unicode, \
-     to_native, to_bytes, implements_to_string, try_coerce_native, \
+     to_native, implements_to_string, try_coerce_native, \
      normalize_string_tuple, make_literal_wrapper, \
      fix_tuple_repr
+from werkzeug._internal import _encode_idna, _decode_idna
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
 
@@ -55,7 +56,7 @@ class _URLMixin(object):
         """
         rv = self.host
         if rv is not None and isinstance(rv, text_type):
-            rv = rv.encode('idna')
+            rv = _encode_idna(rv)
         return to_native(rv, 'ascii', 'ignore')
 
     @property
@@ -132,11 +133,7 @@ class _URLMixin(object):
 
     def decode_netloc(self):
         """Decodes the netloc part into a string."""
-        rv = self.host or ''
-        try:
-            rv = to_bytes(rv, 'utf-8').decode('idna')
-        except (AttributeError, TypeError, UnicodeError):
-            pass
+        rv = _decode_idna(self.host or '')
 
         if ':' in rv:
             rv = '[%s]' % rv

@@ -334,6 +334,16 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         cookies = http.parse_cookie(u'fÃ¶=fÃ¶')
         self.assert_equal(cookies[u'fö'], u'fö')
 
+    def test_cookie_domain_encoding(self):
+        val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
+
+        val = http.dump_cookie('foo', 'bar', domain=u'.\N{SNOWMAN}.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=.xn--n3h.com; Path=/')
+
+        val = http.dump_cookie('foo', 'bar', domain=u'.foo.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=.foo.com; Path=/')
+
 
 class RangeTestCase(WerkzeugTestCase):
 

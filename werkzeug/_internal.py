@@ -16,7 +16,7 @@ from datetime import datetime, date
 from itertools import chain
 
 from werkzeug._compat import iter_bytes, text_type, BytesIO, int_to_byte, \
-     range_type
+     range_type, to_native
 
 
 _logger = None
@@ -286,11 +286,52 @@ def _cookie_parse_impl(b):
             yield _cookie_unquote(key), _cookie_unquote(value)
 
 
+def _encode_idna(domain):
+    # If we're given bytes, make sure they fit into ASCII
+    if not isinstance(domain, text_type):
+        domain.decode('ascii')
+        return domain
+
+    # Otherwise check if it's already ascii, then return
+    try:
+        return domain.encode('ascii')
+    except UnicodeError:
+        pass
+
+    # Otherwise encode each part separately
+    parts = domain.split('.')
+    for idx, part in enumerate(parts):
+        parts[idx] = part.encode('idna')
+    return b'.'.join(parts)
+
+
+def _decode_idna(domain):
+    # If the input is a string try to encode it to ascii to
+    # do the idna decoding.  if that fails because of an
+    # unicode error, then we already have a decoded idna domain
+    if isinstance(domain, text_type):
+        try:
+            domain = domain.encode('ascii')
+        except UnicodeError:
+            return domain
+
+    # Decode each part separately.  If a part fails, try to
+    # decode it with ascii and silently ignore errors.  This makes
+    # most sense because the idna codec does not have error handling
+    parts = domain.split(b'.')
+    for idx, part in enumerate(parts):
+        try:
+            parts[idx] = part.decode('idna')
+        except UnicodeError:
+            parts[idx] = part.decode('ascii', 'ignore')
+
+    return '.'.join(parts)
+
+
 def _make_cookie_domain(domain):
     if domain is None:
         return None
-    if isinstance(domain, text_type):
-        domain = domain.encode('idna')
+    domain = _encode_idna(domain)
     if b':' in domain:
         domain = domain.split(b':', 1)[0]
     if b'.' in domain:

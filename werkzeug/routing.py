@@ -106,7 +106,7 @@ except ImportError:
 from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
-from werkzeug._internal import _get_environ
+from werkzeug._internal import _get_environ, _encode_idna
 from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
      text_type, string_types, native_string_result, \
      implements_to_string, wsgi_decoding_dance
@@ -1123,8 +1123,7 @@ class Map(object):
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
-        if isinstance(server_name, text_type):
-            server_name = server_name.encode('idna')
+        server_name = _encode_idna(server_name)
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme, path_info, default_method, query_args)
 
