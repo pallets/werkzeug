@@ -26,9 +26,9 @@ _epoch_ord = date(1970, 1, 1).toordinal()
 _cookie_params = set((b'expires', b'path', b'comment',
                       b'max-age', b'secure', b'httponly',
                       b'version'))
-_legal_cookie_chars = set(iter_bytes((string.ascii_letters +
-                                      string.digits +
-                                      u"!#$%&'*+-.^_`|~:").encode('ascii')))
+_legal_cookie_chars = (string.ascii_letters +
+                       string.digits +
+                       u"!#$%&'*+-.^_`|~:").encode('ascii')
 
 _cookie_quoting_map = {
     b',' : b'\\054',
@@ -223,9 +223,8 @@ def _cookie_quote(b):
     for char in iter_bytes(b):
         if char not in _legal_cookie_chars:
             all_legal = False
-            _push(_lookup(char, char))
-        else:
-            _push(char)
+            char = _lookup(char, char)
+        _push(char)
 
     if all_legal:
         return bytes(buf)
@@ -273,7 +272,7 @@ def _cookie_parse_impl(b):
     i = 0
     n = len(b)
 
-    while 0 <= i < n:
+    while i < n:
         match = _cookie_re.search(b + b';', i)
         if not match:
             break
@@ -290,17 +289,12 @@ def _cookie_parse_impl(b):
 def _make_cookie_domain(domain):
     if domain is None:
         return None
-
     if isinstance(domain, text_type):
         domain = domain.encode('idna')
-
-    # The port part of the domain should NOT be used. Strip it
     if b':' in domain:
         domain = domain.split(b':', 1)[0]
-
     if b'.' in domain:
         return domain
-
     raise ValueError(
         'Setting \'domain\' for a cookie on a server running localy (ex: '
         'localhost) is not supportted by complying browsers. You should '
