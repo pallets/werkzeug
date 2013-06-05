@@ -12,7 +12,7 @@ import unittest
 from datetime import datetime
 
 from werkzeug.testsuite import WerkzeugTestCase
-from werkzeug._compat import itervalues
+from werkzeug._compat import itervalues, wsgi_encoding_dance
 
 from werkzeug import http, datastructures
 from werkzeug.test import create_environ
@@ -319,6 +319,13 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
         cookies = http.parse_cookie(h['Set-Cookie'])
         self.assert_equal(cookies['foo'], u'\N{SNOWMAN}')
+
+    def test_cookie_unicode_keys(self):
+        # Yes, this is technically against the spec but happens
+        val = http.dump_cookie(u'fö', u'fö')
+        self.assert_equal(val, wsgi_encoding_dance(u'fö="f\\303\\266"; Path=/', 'utf-8'))
+        cookies = http.parse_cookie(val)
+        self.assert_equal(cookies[u'fö'], u'fö')
 
     def test_cookie_unicode_parsing(self):
         # This is actually a correct test.  This is what is being submitted

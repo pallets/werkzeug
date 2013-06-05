@@ -876,6 +876,11 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     string is returned it's tunneled through latin1 as required by
     PEP 3333.
 
+    The return value is not ASCII safe if the key contains unicode
+    characters.  This is technically against the specification but
+    happens in the wild.  It's strongly recommended to not use
+    non-ASCII values for the keys.
+
     :param max_age: should be a number of seconds, or `None` (default) if
                     the cookie should last only as long as the client's
                     browser session.  Additionally `timedelta` objects
@@ -910,7 +915,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     elif max_age is not None and sync_expires:
         expires = to_bytes(cookie_date(time() + max_age))
 
-    buf = [_cookie_quote(key) + b'=' + _cookie_quote(value)]
+    buf = [key + b'=' + _cookie_quote(value)]
 
     # XXX: In theory all of these parameters that are not marked with `None`
     # should be quoted.  Because stdlib did not quote it before I did not
