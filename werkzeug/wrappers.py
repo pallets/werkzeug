@@ -77,6 +77,14 @@ def _assert_not_shallow(request):
                            'that, set `shallow` to False.')
 
 
+def _iter_encoded(iterable, charset):
+    for item in iterable:
+        if isinstance(item, text_type):
+            yield item.encode(charset)
+        else:
+            yield item
+
+
 class BaseRequest(object):
     """Very basic request object.  This does not implement advanced stuff like
     entity tag parsing or cache controls.  The request object is created with
@@ -886,11 +894,10 @@ class BaseResponse(object):
         charset = self.charset
         if __debug__:
             _warn_if_string(self.response)
-        for item in self.response:
-            if isinstance(item, text_type):
-                yield item.encode(charset)
-            else:
-                yield item
+        # Encode in a separate function so that self.response is fetched
+        # early.  This allows us to wrap the response with the return
+        # value from get_app_iter or iter_encoded.
+        return _iter_encoded(self.response, self.charset)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
                    path='/', domain=None, secure=None, httponly=False):

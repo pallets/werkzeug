@@ -481,7 +481,6 @@ class WrappersTestCase(WerkzeugTestCase):
         response.content_language.add('fr')
         self.assert_equal(response.headers['Content-Language'], 'en-US, fr')
 
-
     def test_common_request_descriptors_mixin(self):
         request = wrappers.Request.from_values(content_type='text/html; charset=utf-8',
                                                content_length='23',
@@ -577,6 +576,20 @@ class WrappersTestCase(WerkzeugTestCase):
                 yield None
         r = wrappers.Response(gen())
         assert r.is_streamed
+
+    def test_response_iter_wrapping(self):
+        def uppercasing(iterator):
+            for item in iterator:
+                yield item.upper()
+        def generator():
+            yield 'foo'
+            yield 'bar'
+        req = wrappers.Request.from_values()
+        resp = wrappers.Response(generator())
+        del resp.headers['Content-Length']
+        resp.response = uppercasing(resp.iter_encoded())
+        actual_resp = wrappers.Response.from_app(resp, req.environ, buffered=True)
+        self.assertEqual(actual_resp.data, b'FOOBAR')
 
     def test_response_freeze(self):
         def generate():

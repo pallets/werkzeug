@@ -78,6 +78,8 @@ Release date to be decided, codename to be chosen.
   of just when the parsing fails.
 - Added support for using :class:`werkzeug.wrappers.BaseResponse` in a with
   statement.
+- Changed `get_app_iter` to fetch the response early so that it does not
+  fail.
 
 Version 0.8.4
 -------------
