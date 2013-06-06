@@ -156,7 +156,7 @@ def get_content_length(environ):
     content_length = environ.get('CONTENT_LENGTH')
     if content_length is not None:
         try:
-            return int(content_length)
+            return max(0, int(content_length))
         except (ValueError, TypeError):
             pass
 
@@ -178,15 +178,16 @@ def get_input_stream(environ, safe_fallback=True):
     stream = environ['wsgi.input']
     content_length = get_content_length(environ)
 
-    # If the content length is negative we're dealing with a WSGI
-    # server that gives us a chunked response already dechunked which
-    # however means we don't know the actual content length.
-    #
-    # XXX: check this behavior against gunicorn/mod_wsgi and other
-    # WSGI servers to make a better decision
-    if content_length == -1:
+    # A wsgi extension that tells us if the input is terminated.  In
+    # that case we return the stream unchanged as we know we can savely
+    # read it until the end.
+    if environ.get('wsgi.input_terminated'):
         return stream
 
+    # If we don't have a content length we fall back to an empty stream
+    # in case of a safe fallback, otherwise we return the stream unchanged.
+    # The non-safe fallback is not recommended but might be useful in
+    # some situations.
     if content_length is None:
         return safe_fallback and _empty_stream or stream
 

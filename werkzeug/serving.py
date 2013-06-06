@@ -158,16 +158,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             headers_set[:] = [status, response_headers]
             return write
 
-        def app_proxy(environ, start_response):
-            # We reject an invalid content length here because it can cause
-            # problems with how WSGI apps respond to values in it.
-            content_length = environ['CONTENT_LENGTH']
-            if content_length and not content_length.isdigit():
-                resp = BadRequest()
-            else:
-                resp = self.server.app
-            return resp(environ, start_response)
-
         def execute(app):
             application_iter = app(environ, start_response)
             try:
@@ -181,7 +171,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                 application_iter = None
 
         try:
-            execute(app_proxy)
+            execute(self.server.app)
         except (socket.error, socket.timeout) as e:
             self.connection_dropped(e, environ)
         except Exception:
