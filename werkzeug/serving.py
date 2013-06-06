@@ -598,7 +598,7 @@ def restart_with_reloader():
         # a weird bug on windows. sometimes unicode strings end up in the
         # environment and subprocess.call does not like this, encode them
         # to latin1 and continue.
-        if os.name == 'nt':
+        if os.name == 'nt' and PY2:
             for key, value in iteritems(new_environ):
                 if isinstance(value, text_type):
                     new_environ[key] = value.encode('iso-8859-1')
