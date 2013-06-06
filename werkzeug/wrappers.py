@@ -45,7 +45,7 @@ from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
 from werkzeug._internal import _get_environ
 from werkzeug._compat import to_bytes, string_types, text_type, \
      integer_types, wsgi_decoding_dance, wsgi_get_bytes, \
-     to_unicode
+     to_unicode, to_native
 
 
 def _run_wsgi_app(*args):
@@ -712,7 +712,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, string_types + (bytes,)):
+        elif isinstance(response, (text_type, bytes, bytearray)):
             self.data = response
         else:
             self.response = response
@@ -807,12 +807,12 @@ class BaseResponse(object):
     def _get_status(self):
         return self._status
     def _set_status(self, value):
-        self._status = value
+        self._status = to_native(value)
         try:
             self._status_code = int(self._status.split(None, 1)[0])
         except ValueError:
             self._status_code = 0
-            self._status = "0 %s" % self._status
+            self._status = '0 %s' % self._status
     status = property(_get_status, _set_status, doc='The HTTP Status code')
     del _get_status, _set_status
 
@@ -831,6 +831,8 @@ class BaseResponse(object):
         # can set the content length
         if isinstance(value, text_type):
             value = value.encode(self.charset)
+        else:
+            value = bytes(value)
         self.response = [value]
         if self.automatically_set_content_length:
             self.headers['Content-Length'] = str(len(value))
@@ -1073,8 +1075,7 @@ class BaseResponse(object):
                 # can't safely figure out the length of the response.
                 pass
             else:
-                # this "casting" actually works
-                headers['Content-Length'] = text_type(content_length)
+                headers['Content-Length'] = str(content_length)
 
         return headers
 
