@@ -484,7 +484,9 @@ def make_server(host, port, app=None, threaded=False, processes=1,
 
 
 def _iter_module_files():
-    for module in sys.modules.values():
+    # The list call is necessary on Python 3 in case the module
+    # dictionary modifies during iteration.
+    for module in list(sys.modules.values()):
         filename = getattr(module, '__file__', None)
         if filename:
             old = None
