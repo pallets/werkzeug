@@ -34,7 +34,7 @@ class RequestTestResponse(wrappers.BaseResponse):
 
     def __init__(self, response, status, headers):
         wrappers.BaseResponse.__init__(self, response, status, headers)
-        self.body_data = pickle.loads(self.data)
+        self.body_data = pickle.loads(self.get_data())
 
     def __getitem__(self, key):
         return self.body_data[key]
@@ -50,7 +50,7 @@ def request_demo_app(environ, start_response):
         'form':             request.form,
         'form_as_list':     list(request.form.lists()),
         'environ':          prepare_environ_pickle(request.environ),
-        'data':             request.data
+        'data':             request.get_data()
     })]
 
 
@@ -193,12 +193,12 @@ class WrappersTestCase(WerkzeugTestCase):
     def test_base_response(self):
         # unicode
         response = wrappers.BaseResponse(u'öäü')
-        self.assert_strict_equal(response.data, u'öäü'.encode('utf-8'))
+        self.assert_strict_equal(response.get_data(), u'öäü'.encode('utf-8'))
 
         # writing
         response = wrappers.Response('foo')
         response.stream.write('bar')
-        self.assert_strict_equal(response.data, b'foobar')
+        self.assert_strict_equal(response.get_data(), b'foobar')
 
         # set cookie
         response = wrappers.BaseResponse()
@@ -276,7 +276,7 @@ class WrappersTestCase(WerkzeugTestCase):
             response = SpecialResponse.force_type(orig_resp, fake_env)
             assert response.__class__ is SpecialResponse
             self.assert_strict_equal(response.foo(), 42)
-            self.assert_strict_equal(response.data, b'Hello World!')
+            self.assert_strict_equal(response.get_data(), b'Hello World!')
             self.assert_equal(response.content_type, 'text/html')
 
         # without env, no arbitrary conversion
@@ -375,7 +375,7 @@ class WrappersTestCase(WerkzeugTestCase):
         assert not response.cache_control
         response.cache_control.must_revalidate = True
         response.cache_control.max_age = 60
-        response.headers['Content-Length'] = len(response.data)
+        response.headers['Content-Length'] = len(response.get_data())
         assert response.headers['Cache-Control'] in ('must-revalidate, max-age=60',
                                                      'max-age=60, must-revalidate')
 
@@ -439,7 +439,7 @@ class WrappersTestCase(WerkzeugTestCase):
         response.stream.write('Hello ')
         response.stream.write('World!')
         self.assert_equal(response.response, ['Hello ', 'World!'])
-        self.assert_equal(response.data, b'Hello World!')
+        self.assert_equal(response.get_data(), b'Hello World!')
 
     def test_common_response_descriptors_mixin(self):
         response = wrappers.Response()
@@ -589,7 +589,7 @@ class WrappersTestCase(WerkzeugTestCase):
         del resp.headers['Content-Length']
         resp.response = uppercasing(resp.iter_encoded())
         actual_resp = wrappers.Response.from_app(resp, req.environ, buffered=True)
-        self.assertEqual(actual_resp.data, b'FOOBAR')
+        self.assertEqual(actual_resp.get_data(), b'FOOBAR')
 
     def test_response_freeze(self):
         def generate():
@@ -606,7 +606,7 @@ class WrappersTestCase(WerkzeugTestCase):
                                            content_length=len(data),
                                            content_type='text/plain',
                                            method='WHAT_THE_FUCK')
-        self.assert_equal(req.data, data)
+        self.assert_equal(req.get_data(), data)
         self.assert_is_instance(req.stream, LimitedStream)
 
     def test_urlfication(self):
@@ -633,15 +633,15 @@ class WrappersTestCase(WerkzeugTestCase):
         # werkzeug encodes when set to `data` now, which happens
         # if a string is passed to the response object.
         self.assert_equal(resp.response, [u'Hello Wörld!'.encode('utf-8')])
-        self.assert_equal(resp.data, u'Hello Wörld!'.encode('utf-8'))
+        self.assert_equal(resp.get_data(), u'Hello Wörld!'.encode('utf-8'))
         self.assert_equal(get_content_length(resp), 13)
         assert not resp.is_streamed
         assert resp.is_sequence
 
         # try the same for manual assignment
-        resp.data = u'Wörd'
+        resp.set_data(u'Wörd')
         self.assert_equal(resp.response, [u'Wörd'.encode('utf-8')])
-        self.assert_equal(resp.data, u'Wörd'.encode('utf-8'))
+        self.assert_equal(resp.get_data(), u'Wörd'.encode('utf-8'))
         self.assert_equal(get_content_length(resp), 5)
         assert not resp.is_streamed
         assert resp.is_sequence
@@ -650,7 +650,7 @@ class WrappersTestCase(WerkzeugTestCase):
         resp.response = generate_items()
         assert resp.is_streamed
         assert not resp.is_sequence
-        self.assert_equal(resp.data, u'Hello Wörld!'.encode('utf-8'))
+        self.assert_equal(resp.get_data(), u'Hello Wörld!'.encode('utf-8'))
         self.assert_equal(resp.response, [b'Hello ', u'Wörld!'.encode('utf-8')])
         assert not resp.is_streamed
         assert resp.is_sequence
@@ -660,9 +660,9 @@ class WrappersTestCase(WerkzeugTestCase):
         resp.implicit_sequence_conversion = False
         assert resp.is_streamed
         assert not resp.is_sequence
-        self.assert_raises(RuntimeError, lambda: resp.data)
+        self.assert_raises(RuntimeError, lambda: resp.get_data())
         resp.make_sequence()
-        self.assert_equal(resp.data, u'Hello Wörld!'.encode('utf-8'))
+        self.assert_equal(resp.get_data(), u'Hello Wörld!'.encode('utf-8'))
         self.assert_equal(resp.response, [b'Hello ', u'Wörld!'.encode('utf-8')])
         assert not resp.is_streamed
         assert resp.is_sequence

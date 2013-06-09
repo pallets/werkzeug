@@ -203,7 +203,7 @@ class MultiPartTestCase(WerkzeugTestCase):
                 response = client.post('/?object=' + field, data=data, content_type=
                                        'multipart/form-data; boundary="%s"' % boundary,
                                        content_length=len(data))
-                lines = response.data.split(b'\n', 3)
+                lines = response.get_data().split(b'\n', 3)
                 self.assert_strict_equal(lines[0], repr(filename).encode('ascii'))
                 self.assert_strict_equal(lines[1], repr(field).encode('ascii'))
                 self.assert_strict_equal(lines[2], repr(content_type).encode('ascii'))
@@ -211,7 +211,7 @@ class MultiPartTestCase(WerkzeugTestCase):
             response = client.post('/?object=text', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary,
                                    content_length=len(data))
-            self.assert_strict_equal(response.data, repr(text).encode('utf-8'))
+            self.assert_strict_equal(response.get_data(), repr(text).encode('utf-8'))
 
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer, Response)
@@ -220,7 +220,7 @@ class MultiPartTestCase(WerkzeugTestCase):
         boundary = '---------------------------7da36d1b4a0164'
         response = client.post('/?object=cb_file_upload_multiple', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary, content_length=len(data))
-        lines = response.data.split(b'\n', 3)
+        lines = response.get_data().split(b'\n', 3)
         self.assert_strict_equal(lines[0],
                           repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc').encode('ascii'))
 

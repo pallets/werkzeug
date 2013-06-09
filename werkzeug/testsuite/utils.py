@@ -29,12 +29,12 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
 
     def test_redirect(self):
         resp = utils.redirect(u'/füübär')
-        self.assert_in(b'/f%C3%BC%C3%BCb%C3%A4r', resp.data)
+        self.assert_in(b'/f%C3%BC%C3%BCb%C3%A4r', resp.get_data())
         self.assert_equal(resp.headers['Location'], '/f%C3%BC%C3%BCb%C3%A4r')
         self.assert_equal(resp.status_code, 302)
 
         resp = utils.redirect(u'http://☃.net/', 307)
-        self.assert_in(b'http://xn--n3h.net/', resp.data)
+        self.assert_in(b'http://xn--n3h.net/', resp.get_data())
         self.assert_equal(resp.headers['Location'], 'http://xn--n3h.net/')
         self.assert_equal(resp.status_code, 307)
 
@@ -55,11 +55,11 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
     def test_redirect_xss(self):
         location = 'http://example.com/?xss="><script>alert(1)</script>'
         resp = utils.redirect(location)
-        self.assert_not_in(b'<script>alert(1)</script>', resp.data)
+        self.assert_not_in(b'<script>alert(1)</script>', resp.get_data())
 
         location = 'http://example.com/?xss="onmouseover="alert(1)'
         resp = utils.redirect(location)
-        self.assert_not_in(b'href="http://example.com/?xss="onmouseover="alert(1)"', resp.data)
+        self.assert_not_in(b'href="http://example.com/?xss="onmouseover="alert(1)"', resp.get_data())
 
     def test_cached_property(self):
         foo = []

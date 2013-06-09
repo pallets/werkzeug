@@ -66,10 +66,10 @@ The standard Werkzeug parsing behavior handles three cases:
     points to a :class:`LimitedStream` with the input data for further
     processing.
 
-Special note on the :attr:`~BaseRequest.data` attribute: Accessing this
-loads the full request data into memory.  This is only safe to do if
-the :attr:`~BaseRequest.max_content_length` is set.  Also you can *either*
-read the stream *or* access :attr:`~BaseRequest.data`.
+Special note on the :attr:`~BaseRequest.get_data` method: Calling this
+loads the full request data into memory.  This is only safe to do if the
+:attr:`~BaseRequest.max_content_length` is set.  Also you can *either*
+read the stream *or* call :meth:`~BaseRequest.get_data`.
 
 
 Limiting Request Data

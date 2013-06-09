@@ -412,16 +412,33 @@ class BaseRequest(object):
 
     @cached_property
     def data(self):
-        """This reads the buffered incoming data from the client into the
-        string.  Usually it's a bad idea to access :attr:`data` because a client
-        could send dozens of megabytes or more to cause memory problems on the
-        server.
-
-        To circumvent that make sure to check the content length first.
-        """
         if self.disable_data_descriptor:
             raise AttributeError('data descriptor is disabled')
-        return self.stream.read()
+        # XXX: this should eventually be deprecated.
+        return self.get_data()
+
+    def get_data(self, cache=True, as_text=False):
+        """This reads the buffered incoming data from the client into one
+        bytestring.  By default this is cached but that behavior can be
+        changed by setting `cache` to `False`.
+
+        Usually it's a bad idea to call this method without checking the
+        content length first as a client could send dozens of megabytes or more
+        to cause memory problems on the server.
+
+        If `as_text` is set to `True` the return value will be a decoded
+        unicode string.
+
+        .. versionadded:: 0.9
+        """
+        rv = getattr(self, '_cached_data', None)
+        if rv is None:
+            rv = self.stream.read()
+            if cache:
+                self._cached_data = rv
+        if as_text:
+            rv = rv.decode(self.charset, self.encoding_errors)
+        return rv
 
     @cached_property
     def form(self):
@@ -713,7 +730,7 @@ class BaseResponse(object):
         if response is None:
             self.response = []
         elif isinstance(response, (text_type, bytes, bytearray)):
-            self.data = response
+            self.set_data(response)
         else:
             self.response = response
 
@@ -816,17 +833,32 @@ class BaseResponse(object):
     status = property(_get_status, _set_status, doc='The HTTP Status code')
     del _get_status, _set_status
 
-    def _get_data(self):
-        """The string representation of the request body.  Whenever you access
+    def get_data(self, as_text=False):
+        """The string representation of the request body.  Whenever you call
         this property the request iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
 
         This behavior can be disabled by setting
         :attr:`implicit_sequence_conversion` to `False`.
+
+        If `as_text` is set to `True` the return value will be a decoded
+        unicode string.
+
+        .. versionadded:: 0.9
         """
         self._ensure_sequence()
-        return b''.join(self.iter_encoded())
-    def _set_data(self, value):
+        rv = b''.join(self.iter_encoded())
+        if as_text:
+            rv = rv.decode(self.charset)
+        return rv
+
+    def set_data(self, value):
+        """Sets a new string as response.  The value set must either by a
+        unicode or bytestring.  If a unicode string is set it's encoded
+        automatically to the charset of the response (utf-8 by default).
+
+        .. versionadded:: 0.9
+        """
         # if an unicode string is set, it's encoded directly so that we
         # can set the content length
         if isinstance(value, text_type):
@@ -836,8 +868,11 @@ class BaseResponse(object):
         self.response = [value]
         if self.automatically_set_content_length:
             self.headers['Content-Length'] = str(len(value))
-    data = property(_get_data, _set_data, doc=_get_data.__doc__)
-    del _get_data, _set_data
+
+    data = property(get_data, set_data, doc='''
+        A descriptor that calls :meth:`get_data` and :meth:`set_data`.  This
+        should not be used and will eventually get deprecated.
+        ''')
 
     def calculate_content_length(self):
         """Returns the content length if available or `None` otherwise."""
@@ -1269,8 +1304,8 @@ class AuthorizationMixin(object):
 class StreamOnlyMixin(object):
     """If mixed in before the request object this will change the bahavior
     of it to disable handling of form parsing.  This disables the
-    :attr:`files`, :attr:`form` and :attr:`data` attributes and will just
-    provide a :attr:`stream` attribute that however is always available.
+    :attr:`files`, :attr:`form` attributes and will just provide a
+    :attr:`stream` attribute that however is always available.
 
     .. versionadded:: 0.9
     """
@@ -1344,7 +1379,7 @@ class ETagResponseMixin(object):
     def add_etag(self, overwrite=False, weak=False):
         """Add an etag for the current response if there is none yet."""
         if overwrite or 'etag' not in self.headers:
-            self.set_etag(generate_etag(self.data), weak)
+            self.set_etag(generate_etag(self.get_data()), weak)
 
     def set_etag(self, etag, weak=False):
         """Set the etag, and override the old one if there was one."""

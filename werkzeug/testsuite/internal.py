@@ -32,8 +32,8 @@ class InternalTestCase(WerkzeugTestCase):
     def test_easteregg(self):
         req = Request.from_values('/?macgybarchakku')
         resp = Response.force_type(internal._easteregg(None), req)
-        assert b'About Werkzeug' in resp.data
-        assert b'the Swiss Army knife of Python web development' in resp.data
+        assert b'About Werkzeug' in resp.get_data()
+        assert b'the Swiss Army knife of Python web development' in resp.get_data()
 
     def test_wrapper_internals(self):
         req = Request.from_values(data={'foo': 'bar'}, method='POST')
@@ -48,7 +48,7 @@ class InternalTestCase(WerkzeugTestCase):
         assert repr(req) == "<Request 'http://localhost/' [POST]>"
         resp = Response()
         assert repr(resp) == '<Response 0 bytes [200 OK]>'
-        resp.data = 'Hello World!'
+        resp.set_data('Hello World!')
         assert repr(resp) == '<Response 12 bytes [200 OK]>'
         resp.response = iter(['Test'])
         assert repr(resp) == '<Response streamed [200 OK]>'

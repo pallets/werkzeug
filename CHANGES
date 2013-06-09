@@ -80,6 +80,9 @@ Release date to be decided, codename to be chosen.
   statement.
 - Changed `get_app_iter` to fetch the response early so that it does not
   fail when wrapping a response iterable.  This makes filtering easier.
+- Introduced `get_data` and `set_data` methods for responses.
+- Introduced `get_data` for requests.
+- Soft deprecated the `data` descriptors for request and response objects.
 
 Version 0.8.4
 -------------
