@@ -15,6 +15,14 @@ are listed there in detail.
 API Changes
 ===========
 
+`0.9`
+    -   Soft-deprecated the :attr:`BaseRequest.data` and
+        :attr:`BaseResponse.data` attributes and introduced new methods
+        to interact with entity data.  This will allows in the future to
+        make better APIs to deal with request and response entity
+        bodies.  So far there is no deprecation warning but users are
+        strongly encouraged to update.
+
 `0.6.2`
     -   renamed the attribute `implicit_seqence_conversion` attribute of
         the request object to `implicit_sequence_conversion`.  Because
