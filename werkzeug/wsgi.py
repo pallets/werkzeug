@@ -434,7 +434,7 @@ class SharedDataMiddleware(object):
         self.exports = OrderedDict() if OrderedDict else {}
         self.cache = cache
         self.cache_timeout = cache_timeout
-        iterator = exports.iteritems() if isinstance(exports, dict) else exports
+        iterator = iteritems(exports) if isinstance(exports, dict) else exports
         for key, value in iterator:
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
