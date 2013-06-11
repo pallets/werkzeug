@@ -10,15 +10,6 @@ you can fake a WSGI environment and call the application with a dummy
 `start_response` and iterate over the application iterator but there are
 argumentably better ways to interact with an application.
 
-Werkzeug provides an object called `Client` which you can pass a WSGI
-application (and optionally a response wrapper) which you can use to send
-virtual requests to the application.
-
-A response wrapper is a callable that takes three arguments: the application
-iterator, the status and finally a list of headers.  The default response
-wrapper returns a tuple.  Because response objects have the same signature
-you can use them as response wrapper, ideally by subclassing them and hooking
-in test functionality.
 
 Diving In
 =========
