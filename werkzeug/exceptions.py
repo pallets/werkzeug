@@ -102,6 +102,10 @@ class HTTPException(Exception):
         return newcls
 
     @property
+    def status_code(self):
+        return self.code
+
+    @property
     def name(self):
         """The status name."""
         return HTTP_STATUS_CODES.get(self.code, 'Unknown Error')
