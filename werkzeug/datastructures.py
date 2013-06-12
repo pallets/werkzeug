@@ -888,7 +888,7 @@ class Headers(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def get(self, key, default=None, type=None):
+    def get(self, key, default=None, type=None, as_bytes=False):
         """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
         return it or raise a :exc:`ValueError` if that is not possible.  In
@@ -902,6 +902,9 @@ class Headers(object):
         If a headers object is bound you must not add unicode strings
         because no encoding takes place.
 
+        .. versionadded:: 0.9
+           Added support for `as_bytes`.
+
         :param key: The key to be looked up.
         :param default: The default value to be returned if the key can't
                         be looked up.  If not further specified `None` is
@@ -909,11 +912,14 @@ class Headers(object):
         :param type: A callable that is used to cast the value in the
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the default value is returned.
+        :param as_bytes: return bytes instead of unicode strings.
         """
         try:
             rv = self.__getitem__(key, _get_mode=True)
         except KeyError:
             return default
+        if as_bytes:
+            rv = rv.encode('latin1')
         if type is None:
             return rv
         try:
@@ -921,22 +927,28 @@ class Headers(object):
         except ValueError:
             return default
 
-    def getlist(self, key, type=None):
+    def getlist(self, key, type=None, as_bytes=False):
         """Return the list of items for a given key. If that key is not in the
         :class:`Headers`, the return value will be an empty list.  Just as
         :meth:`get` :meth:`getlist` accepts a `type` parameter.  All items will
         be converted with the callable defined there.
+
+        .. versionadded:: 0.9
+           Added support for `as_bytes`.
 
         :param key: The key to be looked up.
         :param type: A callable that is used to cast the value in the
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the value will be removed from the list.
         :return: a :class:`list` of all the values for the key.
+        :param as_bytes: return bytes instead of unicode strings.
         """
         ikey = key.lower()
         result = []
         for k, v in self:
             if k.lower() == ikey:
+                if as_bytes:
+                    v = v.encode('latin1')
                 if type is not None:
                     try:
                         v = type(v)

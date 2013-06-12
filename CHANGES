@@ -83,6 +83,8 @@ Release date to be decided, codename to be chosen.
 - Introduced `get_data` and `set_data` methods for responses.
 - Introduced `get_data` for requests.
 - Soft deprecated the `data` descriptors for request and response objects.
+- Added `as_bytes` operations to some of the headers to simplify working
+  with things like cookies.
 
 Version 0.8.4
 -------------

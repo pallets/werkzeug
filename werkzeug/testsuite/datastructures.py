@@ -613,6 +613,14 @@ class HeadersTestCase(WerkzeugTestCase):
             ('X-Forwarded-For', '192.168.0.123')
         ])
 
+    def test_bytes_operations(self):
+        h = self.storage_class()
+        h.set('X-Foo-Poo', 'bleh')
+        h.set('X-Whoops', b'\xff')
+
+        self.assert_equal(h.get('x-foo-poo', as_bytes=True), b'bleh')
+        self.assert_equal(h.get('x-whoops', as_bytes=True), b'\xff')
+
 
 class EnvironHeadersTestCase(WerkzeugTestCase):
     storage_class = datastructures.EnvironHeaders
@@ -652,6 +660,15 @@ class EnvironHeadersTestCase(WerkzeugTestCase):
         self.assert_equal(iter_output['Foo'], u"\xe2\x9c\x93")
         assert isinstance(iter_output['Foo'], text_type)
         assert isinstance(iter_output['Content-Type'], text_type)
+
+    def test_bytes_operations(self):
+        foo_val = '\xff'
+        h = self.storage_class({
+            'HTTP_X_FOO': foo_val
+        })
+
+        self.assert_equal(h.get('x-foo', as_bytes=True), b'\xff')
+        self.assert_equal(h.get('x-foo'), '\xff')
 
 
 class HeaderSetTestCase(WerkzeugTestCase):
