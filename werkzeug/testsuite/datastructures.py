@@ -668,7 +668,7 @@ class EnvironHeadersTestCase(WerkzeugTestCase):
         })
 
         self.assert_equal(h.get('x-foo', as_bytes=True), b'\xff')
-        self.assert_equal(h.get('x-foo'), '\xff')
+        self.assert_equal(h.get('x-foo'), u'\xff')
 
 
 class HeaderSetTestCase(WerkzeugTestCase):
