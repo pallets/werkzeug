@@ -42,9 +42,7 @@ class _URLMixin(object):
     def replace(self, **kwargs):
         """Return an URL with the same values, except for those parameters
         given new values by whichever keyword arguments are specified."""
-        fields = [kwargs.get(field, getattr(self, field)) for field in
-                  _URLTuple._fields]
-        return type(self)(*fields)
+        return self._replace(**kwargs)
 
     @property
     def host(self):
