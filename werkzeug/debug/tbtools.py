@@ -12,6 +12,7 @@ import re
 
 import os
 import sys
+import json
 import inspect
 import traceback
 import codecs
@@ -75,11 +76,12 @@ PAGE_HTML = HEADER + u'''\
 <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
 %(summary)s
 <div class="plain">
-  <form action="%(lodgeit_url)s" method="post">
+  <form action="/?__debugger__=yes&amp;cmd=paste" method="post">
     <p>
       <input type="hidden" name="language" value="pytb">
       This is the Copy/Paste friendly version of the traceback.  <span
-      class="pastemessage">You can also paste this traceback into LodgeIt:
+      class="pastemessage">You can also paste this traceback into
+      a <a href="https://gist.github.com/">gist</a>:
       <input type="submit" value="create paste"></span>
     </p>
     <textarea cols="50" rows="10" name="code" readonly>%(plaintext)s</textarea>
@@ -270,11 +272,28 @@ class Traceback(object):
             tb.encode('utf-8', 'replace')
         logfile.write(tb)
 
-    def paste(self, lodgeit_url):
+    def paste(self):
         """Create a paste and return the paste id."""
-        from xmlrpclib import ServerProxy
-        srv = ServerProxy('%sxmlrpc/' % lodgeit_url)
-        return srv.pastes.newPaste('pytb', self.plaintext, '', '', '', True)
+        data = json.dumps({
+            'description': 'Werkzeug Internal Server Error',
+            'public': False,
+            'files': {
+                'traceback.txt': {
+                    'content': self.plaintext
+                }
+            }
+        }).encode('utf-8')
+        try:
+            from urllib2 import urlopen
+        except ImportError:
+            from urllib.request import urlopen
+        rv = urlopen('https://api.github.com/gists', data=data)
+        resp = json.loads(rv.read().decode('utf-8'))
+        rv.close()
+        return {
+            'url': resp['html_url'],
+            'id': resp['id']
+        }
 
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
@@ -308,14 +327,12 @@ class Traceback(object):
             'description':  description_wrapper % escape(self.exception)
         }
 
-    def render_full(self, evalex=False, lodgeit_url=None,
-                    secret=None):
+    def render_full(self, evalex=False, secret=None):
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
         return PAGE_HTML % {
             'evalex':           evalex and 'true' or 'false',
             'console':          'false',
-            'lodgeit_url':      escape(lodgeit_url),
             'title':            exc,
             'exception':        exc,
             'exception_type':   escape(self.exception_type),

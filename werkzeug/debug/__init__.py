@@ -8,6 +8,7 @@
     :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import json
 import mimetypes
 from os.path import join, dirname, basename, isfile
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
@@ -41,8 +42,8 @@ class DebuggedApplication(object):
     The `evalex` keyword argument allows evaluating expressions in a
     traceback's frame context.
 
-    .. versionadded:: 0.7
-       The `lodgeit_url` parameter was added.
+    .. versionadded:: 0.9
+       The `lodgeit_url` parameter was deprecated.
 
     :param app: the WSGI application to run debugged.
     :param evalex: enable exception evaluation feature (interactive
@@ -57,8 +58,6 @@ class DebuggedApplication(object):
     :param show_hidden_frames: by default hidden traceback frames are skipped.
                                You can show them by setting this parameter
                                to `True`.
-    :param lodgeit_url: the base URL of the LodgeIt instance to use for
-                        pasting tracebacks.
     """
 
     # this class is public
@@ -66,8 +65,10 @@ class DebuggedApplication(object):
 
     def __init__(self, app, evalex=False, request_key='werkzeug.request',
                  console_path='/console', console_init_func=None,
-                 show_hidden_frames=False,
-                 lodgeit_url='http://paste.pocoo.org/'):
+                 show_hidden_frames=False, lodgeit_url=None):
+        if lodgeit_url is not None:
+            from warnings import warn
+            warn(DeprecationWarning('Werkzeug now pastes into gists.'))
         if not console_init_func:
             console_init_func = dict
         self.app = app
@@ -78,7 +79,6 @@ class DebuggedApplication(object):
         self.console_path = console_path
         self.console_init_func = console_init_func
         self.show_hidden_frames = show_hidden_frames
-        self.lodgeit_url = lodgeit_url
         self.secret = gen_salt(20)
 
     def debug_application(self, environ, start_response):
@@ -118,7 +118,6 @@ class DebuggedApplication(object):
                     'sent.\n')
             else:
                 yield traceback.render_full(evalex=self.evalex,
-                                            lodgeit_url=self.lodgeit_url,
                                             secret=self.secret) \
                                .encode('utf-8', 'replace')
 
@@ -137,10 +136,8 @@ class DebuggedApplication(object):
 
     def paste_traceback(self, request, traceback):
         """Paste the traceback and return a JSON response."""
-        paste_id = traceback.paste(self.lodgeit_url)
-        return Response('{"url": "%sshow/%s/", "id": "%s"}'
-                        % (self.lodgeit_url, paste_id, paste_id),
-                        mimetype='application/json')
+        rv = traceback.paste()
+        return Response(json.dumps(rv), mimetype='application/json')
 
     def get_source(self, request, frame):
         """Render the source viewer."""

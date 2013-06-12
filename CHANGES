@@ -85,6 +85,8 @@ Release date to be decided, codename to be chosen.
 - Soft deprecated the `data` descriptors for request and response objects.
 - Added `as_bytes` operations to some of the headers to simplify working
   with things like cookies.
+- Made the debugger paste tracebacks into github's gist service as
+  private pastes.
 
 Version 0.8.4
 -------------
