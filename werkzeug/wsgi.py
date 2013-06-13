@@ -21,7 +21,7 @@ from functools import partial, update_wrapper
 
 from werkzeug._compat import iteritems, text_type, string_types, \
      implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
-     wsgi_get_bytes, try_coerce_native
+     wsgi_get_bytes, try_coerce_native, PY2
 from werkzeug._internal import _empty_stream, _encode_idna
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
@@ -553,8 +553,11 @@ class SharedDataMiddleware(object):
         )
 
     def __call__(self, environ, start_response):
+        cleaned_path = get_path_info(environ)
+        if PY2:
+            cleaned_path = cleaned_path.encode(sys.getfilesystemencoding())
         # sanitize the path for non unix systems
-        cleaned_path = environ.get('PATH_INFO', '').strip('/')
+        cleaned_path = cleaned_path.strip('/')
         for sep in os.sep, os.altsep:
             if sep and sep != '/':
                 cleaned_path = cleaned_path.replace(sep, '/')
