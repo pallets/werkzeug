@@ -39,6 +39,11 @@ _URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
 class _URLMixin(object):
     __slots__ = ()
 
+    def replace(self, **kwargs):
+        """Return an URL with the same values, except for those parameters
+        given new values by whichever keyword arguments are specified."""
+        return self._replace(**kwargs)
+
     @property
     def host(self):
         """The host part of the URL if available, otherwise `None`.  The

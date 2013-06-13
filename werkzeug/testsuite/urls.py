@@ -19,6 +19,13 @@ from werkzeug._compat import text_type, NativeStringIO, BytesIO
 
 class URLsTestCase(WerkzeugTestCase):
 
+    def test_replace(self):
+        url = urls.url_parse('http://de.wikipedia.org/wiki/Troll')
+        self.assert_strict_equal(url.replace(query='foo=bar'),
+                                 urls.url_parse('http://de.wikipedia.org/wiki/Troll?foo=bar'))
+        self.assert_strict_equal(url.replace(scheme='https'),
+                                 urls.url_parse('https://de.wikipedia.org/wiki/Troll'))
+
     def test_quoting(self):
         self.assert_strict_equal(urls.url_quote(u'\xf6\xe4\xfc'), '%C3%B6%C3%A4%C3%BC')
         self.assert_strict_equal(urls.url_unquote(urls.url_quote(u'#%="\xf6')), u'#%="\xf6')
