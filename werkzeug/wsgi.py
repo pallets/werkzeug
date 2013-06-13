@@ -544,10 +544,12 @@ class SharedDataMiddleware(object):
         return loader
 
     def generate_etag(self, mtime, file_size, real_filename):
+        if not isinstance(real_filename, bytes):
+            real_filename = real_filename.encode(sys.getfilesystemencoding())
         return 'wzsdm-%d-%s-%s' % (
             mktime(mtime.timetuple()),
             file_size,
-            adler32(real_filename.encode(sys.getfilesystemencoding())) & 0xffffffff
+            adler32(real_filename) & 0xffffffff
         )
 
     def __call__(self, environ, start_response):

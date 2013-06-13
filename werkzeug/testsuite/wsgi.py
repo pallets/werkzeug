@@ -12,13 +12,13 @@ import unittest
 from os import path
 from contextlib import closing
 
-from werkzeug.testsuite import WerkzeugTestCase
+from werkzeug.testsuite import WerkzeugTestCase, get_temporary_directory
 
 from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug import wsgi
-from werkzeug._compat import StringIO, BytesIO, NativeStringIO
+from werkzeug._compat import StringIO, BytesIO, NativeStringIO, to_native
 
 
 class WSGIUtilsTestCase(WerkzeugTestCase):
@@ -31,13 +31,19 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         def null_application(environ, start_response):
             start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
             yield b'NOT FOUND'
+
+        test_dir = get_temporary_directory()
+        with open(path.join(test_dir, to_native(u'äöü', 'utf-8')), 'w') as test_file:
+            test_file.write(u'FOUND')
+
         app = wsgi.SharedDataMiddleware(null_application, {
             '/':        path.join(path.dirname(__file__), 'res'),
             '/sources': path.join(path.dirname(__file__), 'res'),
-            '/pkg':     ('werkzeug.debug', 'shared')
+            '/pkg':     ('werkzeug.debug', 'shared'),
+            '/foo':     test_dir
         })
 
-        for p in '/test.txt', '/sources/test.txt':
+        for p in '/test.txt', '/sources/test.txt', '/foo/äöü':
             app_iter, status, headers = run_wsgi_app(app, create_environ(p))
             self.assert_equal(status, '200 OK')
             with closing(app_iter) as app_iter:
@@ -54,6 +60,7 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
             app, create_environ('/missing'))
         self.assert_equal(status, '404 NOT FOUND')
         self.assert_equal(b''.join(app_iter).strip(), b'NOT FOUND')
+
 
     def test_get_host(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',

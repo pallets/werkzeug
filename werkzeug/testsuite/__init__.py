@@ -14,9 +14,23 @@ from __future__ import with_statement
 import re
 import sys
 import unittest
+import shutil
+import tempfile
+import atexit
 
 from werkzeug.utils import find_modules
 from werkzeug._compat import text_type, integer_types, reraise
+
+
+def get_temporary_directory():
+    directory = tempfile.mkdtemp()
+    @atexit.register
+    def remove_directory():
+        try:
+            shutil.rmtree(directory)
+        except EnvironmentError:
+            pass
+    return directory
 
 
 def iter_suites(package):
