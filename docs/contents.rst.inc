@@ -65,17 +65,6 @@ as part of the `contrib` module:
 
    contrib/index
 
-Deprecated Modules
-------------------
-
-These modules were deprecated and will disappear with Werkzeug 1.0:
-
-.. toctree::
-   :maxdepth: 3
-
-   script
-   templates
-
 Additional Information
 ----------------------
 
