@@ -8,6 +8,8 @@ Bugfix release, relase date to be decided.
 
 - Fixed an issue with integers no longer being accepted in certain
   parts of the routing system or URL quoting functions.
+- Fixed an issue with `url_quote` not producing the right escape
+  codes for single digit codepoints.
 
 Version 0.9
 -----------
