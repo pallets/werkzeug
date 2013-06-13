@@ -858,7 +858,7 @@ class Headers(object):
        multi dicts do it.  The main difference is that bytes can be set as
        well which will automatically be latin1 decoded.
 
-    .. versionmodified:: 0.9
+    .. versionchanged:: 0.9
        The :meth:`linked` function was removed without replacement as it
        was an API that does not support the changes to the encoding model.
     """
