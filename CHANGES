@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.9
 -----------
 
-Release date to be decided, codename to be chosen.
+Released on June 13nd 2013, codename Planierraupe.
 
 - Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
   on the limited stream.
