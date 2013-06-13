@@ -35,6 +35,7 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), 'b=foo+bar')
         self.assert_strict_equal(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),
                'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)')
+        self.assert_strict_equal(urls.url_quote_plus(42), '42')
 
     def test_bytes_unquoting(self):
         self.assert_strict_equal(urls.url_unquote(urls.url_quote(

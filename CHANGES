@@ -6,6 +6,9 @@ Version 0.9.1
 
 Bugfix release, relase date to be decided.
 
+- Fixed an issue with integers no longer being accepted in certain
+  parts of the routing system or URL quoting functions.
+
 Version 0.9
 -----------
 
