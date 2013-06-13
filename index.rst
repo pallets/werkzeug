@@ -54,9 +54,8 @@ In the Box
 A Strong Foundation
 -------------------
 
-Werkzeug is the base of frameworks such as `Flask`_, `tipfy`_  and many
-more, as well as in house frameworks developed for commercial products and
-websites.
+Werkzeug is the base of frameworks such as `Flask`_ and more, as well as
+in house frameworks developed for commercial products and websites.
 
 What other people say
 ---------------------
@@ -83,4 +82,3 @@ developers, visit the `IRC channel </community/#irc-channel>`_ or join the
 
 
 .. _Flask: http://flask.pocoo.org/
-.. _tipfy: http://www.tipfy.org/
