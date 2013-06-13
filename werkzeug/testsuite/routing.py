@@ -359,6 +359,13 @@ class RoutingTestCase(WerkzeugTestCase):
             ('/test4-meh', '', 'test4baz')
         ])
 
+    def test_non_string_parts(self):
+        m = r.Map([
+            r.Rule('/<foo>', endpoint='foo')
+        ])
+        a = m.bind('example.com')
+        self.assert_equal(a.build('foo', {'foo': 42}), '/42')
+
     def test_complex_routing_rules(self):
         m = r.Map([
             r.Rule('/', endpoint='index'),

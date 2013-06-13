@@ -378,6 +378,8 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:'):
     :param charset: the charset to be used.
     :param safe: an optional sequence of safe characters.
     """
+    if not isinstance(string, (text_type, bytes, bytearray)):
+        string = text_type(string)
     if isinstance(string, text_type):
         string = string.encode(charset, errors)
     if isinstance(safe, text_type):
@@ -388,7 +390,7 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:'):
         if char in safe:
             rv.append(char)
         else:
-            rv.extend(('%%%X' % char).encode('ascii'))
+            rv.extend(('%%%02X' % char).encode('ascii'))
     return to_native(bytes(rv))
 
 

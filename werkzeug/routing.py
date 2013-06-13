@@ -839,7 +839,7 @@ class BaseConverter(object):
         return value
 
     def to_url(self, value):
-        return url_quote(to_bytes(value, self.map.charset))
+        return url_quote(value, charset=self.map.charset)
 
 
 class UnicodeConverter(BaseConverter):
