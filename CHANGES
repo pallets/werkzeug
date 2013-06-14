@@ -15,6 +15,11 @@ Bugfix release, relase date to be decided.
   cases.
 - Properly handle `Expect: 100-continue` in the development server
   to resolve issues with curl.
+- Automatically exhaust the input stream on request close.  This should
+  fix issues where not touching request files results in a timeout.
+- Fixed exhausting of streams not doing anything if a non-limited
+  stream was passed into the multipart parser.
+- Raised the buffer sizes for the multipart parser.
 
 Version 0.9
 -----------

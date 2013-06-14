@@ -101,6 +101,11 @@ def exhaust_stream(f):
             exhaust = getattr(stream, 'exhaust', None)
             if exhaust is not None:
                 exhaust()
+            else:
+                while 1:
+                    chunk = stream.read(1024 * 64)
+                    if not chunk:
+                        break
     return update_wrapper(wrapper, f)
 
 
@@ -276,7 +281,7 @@ _end = 'end'
 class MultiPartParser(object):
 
     def __init__(self, stream_factory=None, charset='utf-8', errors='replace',
-                 max_form_memory_size=None, cls=None, buffer_size=10 * 1024):
+                 max_form_memory_size=None, cls=None, buffer_size=64 * 1024):
         self.stream_factory = stream_factory
         self.charset = charset
         self.errors = errors
