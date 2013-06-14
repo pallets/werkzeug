@@ -9,7 +9,7 @@ Release date and codename to be decided
 Version 0.9.1
 -------------
 
-Bugfix release, relase date to be decided.
+(bugfix release, released on June 14th 2013)
 
 - Fixed an issue with integers no longer being accepted in certain
   parts of the routing system or URL quoting functions.
@@ -18,6 +18,13 @@ Bugfix release, relase date to be decided.
 - Fixed an issue with :class:`~werkzeug.wsgi.SharedDataMiddleware` not
   reading the path correctly and breaking on etag generation in some
   cases.
+- Properly handle `Expect: 100-continue` in the development server
+  to resolve issues with curl.
+- Automatically exhaust the input stream on request close.  This should
+  fix issues where not touching request files results in a timeout.
+- Fixed exhausting of streams not doing anything if a non-limited
+  stream was passed into the multipart parser.
+- Raised the buffer sizes for the multipart parser.
 
 Version 0.9
 -----------

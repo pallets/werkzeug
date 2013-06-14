@@ -115,6 +115,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return environ
 
     def run_wsgi(self):
+        if self.headers.get('Expect', '').lower().strip() == '100-continue':
+            self.wfile.write(b'HTTP/1.1 100 Continue\r\n\r\n')
+
         environ = self.make_environ()
         headers_set = []
         headers_sent = []

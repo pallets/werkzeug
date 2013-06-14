@@ -951,7 +951,7 @@ class LimitedStream(object):
         from werkzeug.exceptions import ClientDisconnected
         raise ClientDisconnected()
 
-    def exhaust(self, chunk_size=1024 * 16):
+    def exhaust(self, chunk_size=1024 * 64):
         """Exhaust the stream.  This consumes all the data left until the
         limit is reached.
 
