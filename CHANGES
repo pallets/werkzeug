@@ -13,6 +13,8 @@ Bugfix release, relase date to be decided.
 - Fixed an issue with :class:`~werkzeug.wsgi.SharedDataMiddleware` not
   reading the path correctly and breaking on etag generation in some
   cases.
+- Properly handle `Expect: 100-continue` in the development server
+  to resolve issues with curl.
 
 Version 0.9
 -----------
