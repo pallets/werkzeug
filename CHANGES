@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.9.1
 -------------
 
-Bugfix release, relase date to be decided.
+(bugfix release, released on June 14th 2013)
 
 - Fixed an issue with integers no longer being accepted in certain
   parts of the routing system or URL quoting functions.
