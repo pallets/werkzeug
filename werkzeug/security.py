@@ -130,7 +130,7 @@ def safe_str_cmp(a, b):
 def gen_salt(length):
     """Generate a random string of SALT_CHARS with specified ``length``."""
     if length <= 0:
-        raise ValueError('requested salt of length <= 0')
+        raise ValueError('Salt length must be positive')
     return ''.join(_sys_rng.choice(SALT_CHARS) for _ in range_type(length))
 
 
