@@ -66,7 +66,7 @@ try:
 except ImportError:
     import pickle
 
-from werkzeug._compat import iteritems, string_types, text_type
+from werkzeug._compat import iteritems, string_types, text_type, integer_types
 from werkzeug.posixemulation import rename
 
 
@@ -493,9 +493,9 @@ class RedisCache(BaseCache):
         integers as regular string and pickle dumps everything else.
         """
         t = type(value)
-        if t is int or t is long:
-            return str(value)
-        return '!' + pickle.dumps(value)
+        if t in integer_types:
+            return str(value).encode('ascii')
+        return b'!' + pickle.dumps(value)
 
     def load_object(self, value):
         """The reversal of :meth:`dump_object`.  This might be callde with
@@ -503,7 +503,7 @@ class RedisCache(BaseCache):
         """
         if value is None:
             return None
-        if value.startswith('!'):
+        if value.startswith(b'!'):
             return pickle.loads(value[1:])
         try:
             return int(value)
