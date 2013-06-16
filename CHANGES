@@ -16,6 +16,8 @@ Version 0.9.2
   `'+'` correctly.
 - Ported remaining parts of :class:`~werkzeug.contrib.RedisCache` to
   Python 3.3.
+- Ported remaining parts of :class:`~werkzeug.contrib.MemcachedCache` to
+  Python 3.3
 
 Version 0.9.1
 -------------
