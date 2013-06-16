@@ -6,6 +6,15 @@ Version 0.10
 
 Release date and codename to be decided
 
+Version 0.9.2
+-------------
+
+(bugfix release, release date to be decided)
+
+- Added `unsafe` parameter to :func:`~werkzeug.urls.url_quote`.
+- Fixed an issue with :func:`~werkzeug.urls.url_quote_plus` not quoting
+  `'+'` correctly.
+
 Version 0.9.1
 -------------
 
