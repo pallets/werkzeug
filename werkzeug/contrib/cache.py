@@ -66,7 +66,8 @@ try:
 except ImportError:
     import pickle
 
-from werkzeug._compat import iteritems, string_types, text_type, integer_types
+from werkzeug._compat import iteritems, string_types, text_type, \
+     integer_types, to_bytes
 from werkzeug.posixemulation import rename
 
 
@@ -269,7 +270,7 @@ class SimpleCache(BaseCache):
         self._cache.pop(key, None)
 
 
-_test_memcached_key = re.compile(r'[^\x00-\x21\xff]{1,250}$').match
+_test_memcached_key = re.compile(br'[^\x00-\x21\xff]{1,250}$').match
 
 class MemcachedCache(BaseCache):
     """A cache that uses memcached as backend.
@@ -310,10 +311,10 @@ class MemcachedCache(BaseCache):
             # client.
             self._client = servers
 
-        self.key_prefix = key_prefix
+        self.key_prefix = to_bytes(key_prefix)
 
     def get(self, key):
-        if isinstance(key, unicode):
+        if isinstance(key, text_type):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
@@ -350,7 +351,7 @@ class MemcachedCache(BaseCache):
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        if isinstance(key, unicode):
+        if isinstance(key, text_type):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
@@ -359,7 +360,7 @@ class MemcachedCache(BaseCache):
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        if isinstance(key, unicode):
+        if isinstance(key, text_type):
             key = key.encode('utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
@@ -374,7 +375,7 @@ class MemcachedCache(BaseCache):
             timeout = self.default_timeout
         new_mapping = {}
         for key, value in _items(mapping):
-            if isinstance(key, unicode):
+            if isinstance(key, text_type):
                 key = key.encode('utf-8')
             if self.key_prefix:
                 key = self.key_prefix + key

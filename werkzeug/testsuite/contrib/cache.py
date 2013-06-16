@@ -181,7 +181,7 @@ class MemcachedCacheTestCase(WerkzeugTestCase):
 
     def test_compat(self):
         c = self.make_cache()
-        c._client.set(c.key_prefix + 'foo', 'bar')
+        c._client.set(c.key_prefix + b'foo', 'bar')
         self.assert_equal(c.get('foo'), 'bar')
 
     def test_get_set(self):
