@@ -95,9 +95,9 @@ class RedisCacheTestCase(WerkzeugTestCase):
 
     def test_compat(self):
         c = self.make_cache()
-        c._client.set(c.key_prefix + 'foo', 'Awesome')
-        self.assert_equal(c.get('foo'), 'Awesome')
-        c._client.set(c.key_prefix + 'foo', '42')
+        c._client.set(c.key_prefix + 'foo', b'Awesome')
+        self.assert_equal(c.get('foo'), b'Awesome')
+        c._client.set(c.key_prefix + 'foo', b'42')
         self.assert_equal(c.get('foo'), 42)
 
     def test_get_set(self):
@@ -149,10 +149,9 @@ class RedisCacheTestCase(WerkzeugTestCase):
     def test_inc_dec(self):
         c = self.make_cache()
         c.set('foo', 1)
-        assert c.inc('foo') == 2
-        assert c.dec('foo') == 1
+        self.assert_equal(c.inc('foo'), 2)
+        self.assert_equal(c.dec('foo'), 1)
         c.delete('foo')
-
 
     def test_true_false(self):
         c = self.make_cache()
