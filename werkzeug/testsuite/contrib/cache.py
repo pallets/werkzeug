@@ -26,6 +26,16 @@ try:
         redis = None
 except ImportError:
     redis = None
+try:
+    import pylibmc as memcache
+except ImportError:
+    try:
+        from google.appengine.api import memcache
+    except ImportError:
+        try:
+            import memcache
+        except ImportError:
+            memcache = None
 
 
 class SimpleCacheTestCase(WerkzeugTestCase):
@@ -161,10 +171,87 @@ class RedisCacheTestCase(WerkzeugTestCase):
         assert c.get('bar') == False
 
 
+class MemcachedCacheTestCase(WerkzeugTestCase):
+
+    def make_cache(self):
+        return cache.MemcachedCache(key_prefix='werkzeug-test-case:')
+
+    def teardown(self):
+        self.make_cache().clear()
+
+    def test_compat(self):
+        c = self.make_cache()
+        c._client.set(c.key_prefix + 'foo', 'bar')
+        self.assert_equal(c.get('foo'), 'bar')
+
+    def test_get_set(self):
+        c = self.make_cache()
+        c.set('foo', 'bar')
+        self.assert_equal(c.get('foo'), 'bar')
+
+    def test_get_many(self):
+        c = self.make_cache()
+        c.set('foo', 'bar')
+        c.set('spam', 'eggs')
+        self.assert_equal(c.get_many('foo', 'spam'), ['bar', 'eggs'])
+
+    def test_set_many(self):
+        c = self.make_cache()
+        c.set_many({'foo': 'bar', 'spam': 'eggs'})
+        self.assert_equal(c.get('foo'), 'bar')
+        self.assert_equal(c.get('spam'), 'eggs')
+
+    def test_expire(self):
+        c = self.make_cache()
+        c.set('foo', 'bar', 1)
+        time.sleep(2)
+        self.assert_is_none(c.get('foo'))
+
+    def test_add(self):
+        c = self.make_cache()
+        c.add('foo', 'bar')
+        self.assert_equal(c.get('foo'), 'bar')
+        c.add('foo', 'baz')
+        self.assert_equal(c.get('foo'), 'bar')
+
+    def test_delete(self):
+        c = self.make_cache()
+        c.add('foo', 'bar')
+        self.assert_equal(c.get('foo'), 'bar')
+        c.delete('foo')
+        self.assert_is_none(c.get('foo'))
+
+    def test_delete_many(self):
+        c = self.make_cache()
+        c.add('foo', 'bar')
+        c.add('spam', 'eggs')
+        c.delete_many('foo', 'spam')
+        self.assert_is_none(c.get('foo'))
+        self.assert_is_none(c.get('spam'))
+
+    def test_inc_dec(self):
+        c = self.make_cache()
+        c.set('foo', 1)
+        # XXX: Is this an intended difference?
+        c.inc('foo')
+        self.assert_equal(c.get('foo'), 2)
+        c.dec('foo')
+        self.assert_equal(c.get('foo'), 1)
+
+    def test_true_false(self):
+        c = self.make_cache()
+        c.set('foo', True)
+        self.assert_equal(c.get('foo'), True)
+        c.set('bar', False)
+        self.assert_equal(c.get('bar'), False)
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(SimpleCacheTestCase))
     suite.addTest(unittest.makeSuite(FileSystemCacheTestCase))
     if redis is not None:
         suite.addTest(unittest.makeSuite(RedisCacheTestCase))
+    if memcache is not None:
+        suite.addTest(unittest.makeSuite(MemcachedCacheTestCase))
     return suite
