@@ -31,6 +31,8 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.url_unquote(urls.url_quote(u'#%="\xf6')), u'#%="\xf6')
         self.assert_strict_equal(urls.url_quote_plus('foo bar'), 'foo+bar')
         self.assert_strict_equal(urls.url_unquote_plus('foo+bar'), u'foo bar')
+        self.assert_strict_equal(urls.url_quote_plus('foo+bar'), 'foo%2Bbar')
+        self.assert_strict_equal(urls.url_unquote_plus('foo%2Bbar'), u'foo+bar')
         self.assert_strict_equal(urls.url_encode({b'a': None, b'b': b'foo bar'}), 'b=foo+bar')
         self.assert_strict_equal(urls.url_encode({u'a': None, u'b': u'foo bar'}), 'b=foo+bar')
         self.assert_strict_equal(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),

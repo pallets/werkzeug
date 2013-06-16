@@ -371,12 +371,16 @@ def url_parse(url, scheme=None, allow_fragments=True):
     return result_type(scheme, netloc, url, query, fragment)
 
 
-def url_quote(string, charset='utf-8', errors='strict', safe='/:'):
+def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):
     """URL encode a single string with a given encoding.
 
     :param s: the string to quote.
     :param charset: the charset to be used.
     :param safe: an optional sequence of safe characters.
+    :param unsafe: an optional sequence of unsafe characters.
+
+    .. versionadded:: 0.9.2
+       The `unsafe` parameter was added.
     """
     if not isinstance(string, (text_type, bytes, bytearray)):
         string = text_type(string)
@@ -384,7 +388,9 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:'):
         string = string.encode(charset, errors)
     if isinstance(safe, text_type):
         safe = safe.encode(charset, errors)
-    safe = frozenset(bytearray(safe) + _always_safe)
+    if isinstance(unsafe, text_type):
+        unsafe = unsafe.encode(charset, errors)
+    safe = frozenset(bytearray(safe) + _always_safe) - frozenset(bytearray(unsafe))
     rv = bytearray()
     for char in bytearray(string):
         if char in safe:
@@ -402,7 +408,7 @@ def url_quote_plus(string, charset='utf-8', errors='strict', safe=''):
     :param charset: The charset to be used.
     :param safe: An optional sequence of safe characters.
     """
-    return url_quote(string, charset, errors, safe + ' ').replace(' ', '+')
+    return url_quote(string, charset, errors, safe + ' ', '+').replace(' ', '+')
 
 
 def url_unparse(components):
