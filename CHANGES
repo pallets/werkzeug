@@ -19,6 +19,7 @@ Version 0.9.2
 - Ported remaining parts of :class:`~werkzeug.contrib.MemcachedCache` to
   Python 3.3
 - Fixed a deprecation warning in the contrib atom module.
+- Use correct name for stdlib secure string comparision function.
 
 Version 0.9.1
 -------------
