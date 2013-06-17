@@ -27,7 +27,7 @@ except ImportError: # Py2
 
 from werkzeug._compat import iterlists, iteritems, itervalues, to_native, \
      string_types, text_type, reraise, wsgi_encoding_dance, \
-     make_literal_wrapper
+     make_literal_wrapper, to_unicode
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
@@ -98,9 +98,9 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     write_binary(chunk)
             else:
                 if isinstance(value, string_types):
-                    value = to_native(value, charset)
+                    value = to_unicode(value, charset)
                 else:
-                    value = str(value)
+                    value = text_type(value)
                 write('\r\n\r\n' + value)
             write('\r\n')
     write('--%s--\r\n' % boundary)
