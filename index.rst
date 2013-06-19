@@ -42,8 +42,7 @@ In the Box
 -   Easy to use request and response objects
 -   Interactive JavaScript based in-browser debugger
 -   100% WSGI 1.0 compatible
--   Supports Python from 2.4 up to 2.7.  If you are interested in Python 3
-    support, please contact us.
+-   Supports Python 2.6, 2.7 and 3.3.
 -   Unicode support
 -   Basic session and signed cookie support
 -   URI and IRI utilities with unicode awareness
