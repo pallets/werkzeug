@@ -10,6 +10,10 @@ install:
 
 script: make test
 
+branches:
+  except:
+    - website
+
 notifications:
   email: false
   irc:
