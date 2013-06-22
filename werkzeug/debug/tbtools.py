@@ -49,6 +49,7 @@ HEADER = u'''\
     <script type="text/javascript" src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
     <script type="text/javascript" src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
+      $.noConflict();
       var TRACEBACK = %(traceback_id)d,
           CONSOLE_MODE = %(console)s,
           EVALEX = %(evalex)s,
