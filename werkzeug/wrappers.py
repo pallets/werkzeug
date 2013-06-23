@@ -982,7 +982,7 @@ class BaseResponse(object):
         """
         try:
             len(self.response)
-        except TypeError:
+        except (TypeError, AttributeError):
             return True
         return False
 
