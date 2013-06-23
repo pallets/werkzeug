@@ -17,6 +17,8 @@ Version 0.9.2
 - Use correct name for stdlib secure string comparision function.
 - Fixed a wrong reference in the docstring of
   :func:`~werkzeug.local.release_local`.
+- Fixed an `AttributeError` that sometimes occurred when accessing the
+  :attr:`werkzeug.wrappers.BaseResponse.is_streamed` attribute.
 
 
 Version 0.9.1
