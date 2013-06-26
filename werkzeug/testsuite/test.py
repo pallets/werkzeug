@@ -86,6 +86,14 @@ def multi_value_post_app(environ, start_response):
     return response(environ, start_response)
 
 
+def file_post_app(environ, start_response):
+    req = Request(environ)
+    with open(__file__, 'rb') as fb:
+        assert req.files['file'].read() == fb.read()
+    response = Response('ok')
+    return response(environ, start_response)
+
+
 class TestTestCase(WerkzeugTestCase):
 
     def test_cookie_forging(self):
@@ -331,6 +339,23 @@ class TestTestCase(WerkzeugTestCase):
         data = MultiDict({
             'field': ['val1', 'val2']
         })
+        resp = c.post('/', data=data)
+        self.assert_strict_equal(resp.status_code, 200)
+
+    def test_file_submit(self):
+        c = Client(file_post_app, response_wrapper=BaseResponse)
+        data = {
+            'file': (__file__,)
+        }
+        resp = c.post('/', data=data)
+        self.assert_strict_equal(resp.status_code, 200)
+
+    def test_file_and_str_submit(self):
+        c = Client(file_post_app, response_wrapper=BaseResponse)
+        data = {
+            'file': (__file__,),
+            'str': 'föö-bar'
+        }
         resp = c.post('/', data=data)
         self.assert_strict_equal(resp.status_code, 200)
 
