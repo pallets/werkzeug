@@ -527,7 +527,8 @@ class RedisCache(BaseCache):
         try:
             import redis
             #redis.StrictRedis reverses the 2nd and 3rd arguments to setex
-            if isinstance(self._client, redis.StrictRedis):
+            if isinstance(self._client, redis.StrictRedis) \
+                    and not isinstance(self._client, redis.Redis):
                 (dump, timeout) = (timeout, dump)
         except ImportError:
             pass
@@ -550,7 +551,8 @@ class RedisCache(BaseCache):
             try:
                 import redis
                 #redis.StrictRedis reverses the 2nd and 3rd arguments to setex
-                if isinstance(self._client, redis.StrictRedis):
+                if isinstance(self._client, redis.StrictRedis) \
+                        and not isinstance(self._client, redis.Redis):
                     (dump, timeout) = (timeout, dump)
             except ImportError:
                 pass
