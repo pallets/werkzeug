@@ -19,6 +19,8 @@ Version 0.9.2
 - Ported remaining parts of :class:`~werkzeug.contrib.MemcachedCache` to
   Python 3.3
 - Fixed a deprecation warning in the contrib atom module.
+- Fixed a regression with setting of content types through the
+  headers dictionary instead with the content type parameter.
 - Use correct name for stdlib secure string comparision function.
 - Fixed a wrong reference in the docstring of
   :func:`~werkzeug.local.release_local`.

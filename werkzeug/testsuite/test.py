@@ -160,6 +160,15 @@ class TestTestCase(WerkzeugTestCase):
         env = b.get_environ()
         self.assert_strict_equal(env['HTTP_USER_AGENT'], 'Bar/1.0')
 
+    def test_environ_builder_headers_content_type(self):
+        b = EnvironBuilder(headers={'Content-Type': 'text/plain'})
+        env = b.get_environ()
+        self.assert_equal(env['CONTENT_TYPE'], 'text/plain')
+        b = EnvironBuilder(content_type='text/html',
+                           headers={'Content-Type': 'text/plain'})
+        env = b.get_environ()
+        self.assert_equal(env['CONTENT_TYPE'], 'text/html')
+
     def test_environ_builder_paths(self):
         b = EnvironBuilder(path='/foo', base_url='http://example.com/')
         self.assert_strict_equal(b.base_url, 'http://example.com/')
