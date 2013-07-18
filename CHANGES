@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.9.2
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on June 18th 2013)
 
 - Added `unsafe` parameter to :func:`~werkzeug.urls.url_quote`.
 - Fixed an issue with :func:`~werkzeug.urls.url_quote_plus` not quoting
