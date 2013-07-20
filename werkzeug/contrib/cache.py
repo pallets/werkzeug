@@ -524,6 +524,14 @@ class RedisCache(BaseCache):
         if timeout is None:
             timeout = self.default_timeout
         dump = self.dump_object(value)
+        try:
+            import redis
+            #redis.StrictRedis reverses the 2nd and 3rd arguments to setex
+            if isinstance(self._client, redis.StrictRedis) \
+                    and not isinstance(self._client, redis.Redis):
+                (dump, timeout) = (timeout, dump)
+        except ImportError:
+            pass
         self._client.setex(self.key_prefix + key, dump, timeout)
 
     def add(self, key, value, timeout=None):
@@ -540,6 +548,14 @@ class RedisCache(BaseCache):
         pipe = self._client.pipeline()
         for key, value in _items(mapping):
             dump = self.dump_object(value)
+            try:
+                import redis
+                #redis.StrictRedis reverses the 2nd and 3rd arguments to setex
+                if isinstance(self._client, redis.StrictRedis) \
+                        and not isinstance(self._client, redis.Redis):
+                    (dump, timeout) = (timeout, dump)
+            except ImportError:
+                pass
             pipe.setex(self.key_prefix + key, dump, timeout)
         pipe.execute()
 
