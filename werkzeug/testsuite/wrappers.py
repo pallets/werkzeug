@@ -11,7 +11,7 @@
 import unittest
 import pickle
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug._compat import iteritems
 
 from werkzeug.testsuite import WerkzeugTestCase
@@ -507,10 +507,18 @@ class WrappersTestCase(WerkzeugTestCase):
         response.content_length = '42'
         self.assert_equal(response.content_length, 42)
 
-        for attr in 'date', 'age', 'expires':
+        for attr in 'date', 'expires':
             assert getattr(response, attr) is None
             setattr(response, attr, now)
             self.assert_equal(getattr(response, attr), now)
+
+        assert response.age is None
+        age_td = timedelta(days=1, minutes=3, seconds=5)
+        response.age = age_td
+        self.assert_equal(response.age, age_td)
+        age_int = 42
+        response.age = age_int
+        self.assert_equal(response.age, timedelta(seconds=age_int))
 
         assert response.retry_after is None
         response.retry_after = now

@@ -729,6 +729,49 @@ def http_date(timestamp=None):
     return _dump_date(timestamp, ' ')
 
 
+def parse_age(value=None):
+    """Parses a base-10 integer count of seconds into a timedelta.
+
+    If parsing fails, the return value is `None`.
+
+    :param value: a string consisting of an integer represented in base-10
+    :return: a :class:`datetime.timedelta` object or `None`.
+    """
+    if not value:
+        return None
+    try:
+        seconds = int(value)
+    except ValueError:
+        return None
+    if seconds < 0:
+        return None
+    try:
+        return timedelta(seconds=seconds)
+    except OverflowError:
+        return None
+
+
+def dump_age(age=None):
+    """Formats the duration as a base-10 integer.
+
+    :param age: should be an integer number of seconds,
+                a :class:`datetime.timedelta` object, or,
+                if the age is unknown, `None` (default).
+    """
+    if age is None:
+        return
+    if isinstance(age, timedelta):
+        # do the equivalent of Python 2.7's timedelta.total_seconds(),
+        # but disregarding fractional seconds
+        age = age.seconds + (age.days * 24 * 3600)
+
+    age = int(age)
+    if age < 0:
+        raise ValueError('age cannot be negative')
+
+    return str(age)
+
+
 def is_resource_modified(environ, etag=None, data=None, last_modified=None):
     """Convenience method for conditional requests.
 
