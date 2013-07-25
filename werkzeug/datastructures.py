@@ -1182,7 +1182,7 @@ class Headers(object):
         :return: list
         """
         if PY2:
-            return [(k, v.encode('latin1')) for k, v in self]
+            return [(k.encode('latin1'), v.encode('latin1')) for k, v in self]
         return list(self)
 
     def copy(self):

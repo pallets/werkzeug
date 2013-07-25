@@ -621,6 +621,17 @@ class HeadersTestCase(WerkzeugTestCase):
         self.assert_equal(h.get('x-foo-poo', as_bytes=True), b'bleh')
         self.assert_equal(h.get('x-whoops', as_bytes=True), b'\xff')
 
+    def test_compliance_to_flup(self):
+        PY2 = datastructures.PY2
+        try:
+            datastructures.PY2 = True
+            h = self.storage_class()
+            h.set(u'X-Foo-Poo', u'bleh')
+            data = h.to_wsgi_list()[0]
+            self.assertTrue(isinstance(data[0], str)) # key X-Foo-Poo
+            self.assertTrue(isinstance(data[1], str)) # value bleh
+        finally:
+            datastructures.PY2 = PY2
 
 class EnvironHeadersTestCase(WerkzeugTestCase):
     storage_class = datastructures.EnvironHeaders
