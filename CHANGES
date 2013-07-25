@@ -6,6 +6,14 @@ Version 0.9.3
 
 (bugfix release, release date to be decided)
 
+- Restored beahvior of the ``data`` descriptor of the request class to pre 0.9
+  behavior.  This now also means that ``.data`` and ``.get_data()`` have
+  different behavior.  New code should use ``.get_data()`` always.
+
+  In addition to that there is now a flag for the ``.get_data()`` method that
+  controls what should happen with form data parsing and the form parser will
+  honor cached data.  This makes dealing with custom form data more consistent.
+
 Version 0.9.2
 -------------
 

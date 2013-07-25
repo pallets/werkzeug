@@ -367,6 +367,44 @@ class WrappersTestCase(WerkzeugTestCase):
         req.stream = LowercasingStream(req.stream)
         self.assert_equal(req.form['foo'], 'hello world')
 
+    def test_data_descriptor_triggers_parsing(self):
+        data = b'foo=Hello+World'
+        req = wrappers.Request.from_values('/', method='POST', data=data,
+            content_type='application/x-www-form-urlencoded')
+
+        self.assert_equal(req.data, b'')
+        self.assert_equal(req.form['foo'], u'Hello World')
+
+    def test_get_data_method_parsing_caching_behavior(self):
+        data = b'foo=Hello+World'
+        req = wrappers.Request.from_values('/', method='POST', data=data,
+            content_type='application/x-www-form-urlencoded')
+
+        # get_data() caches, so form stays available
+        self.assert_equal(req.get_data(), data)
+        self.assert_equal(req.form['foo'], u'Hello World')
+        self.assert_equal(req.get_data(), data)
+
+        # here we access the form data first, caching is bypassed
+        req = wrappers.Request.from_values('/', method='POST', data=data,
+            content_type='application/x-www-form-urlencoded')
+        self.assert_equal(req.form['foo'], u'Hello World')
+        self.assert_equal(req.get_data(), b'')
+
+        # Another case is uncached get data which trashes everything
+        req = wrappers.Request.from_values('/', method='POST', data=data,
+            content_type='application/x-www-form-urlencoded')
+        self.assert_equal(req.get_data(cache=False), data)
+        self.assert_equal(req.get_data(cache=False), b'')
+        self.assert_equal(req.form, {})
+
+        # Or we can implicitly start the form parser which is similar to
+        # the old .data behavior
+        req = wrappers.Request.from_values('/', method='POST', data=data,
+            content_type='application/x-www-form-urlencoded')
+        self.assert_equal(req.get_data(parse_form_data=True), b'')
+        self.assert_equal(req.form['foo'], u'Hello World')
+
     def test_etag_response_mixin(self):
         response = wrappers.Response('Hello World')
         self.assert_equal(response.get_etag(), (None, None))
