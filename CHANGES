@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.9.3
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on July 25th 2013)
 
 - Restored beahvior of the ``data`` descriptor of the request class to pre 0.9
   behavior.  This now also means that ``.data`` and ``.get_data()`` have
