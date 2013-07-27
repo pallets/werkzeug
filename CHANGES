@@ -6,6 +6,9 @@ Version 0.10
 
 Release date and codename to be decided
 
+- Changed the error handling of and improved testsuite for the caches in
+  ``contrib.cache``.
+
 Version 0.9.4
 -------------
 
@@ -18,7 +21,7 @@ Version 0.9.3
 
 (bugfix release, released on July 25th 2013)
 
-- Restored beahvior of the ``data`` descriptor of the request class to pre 0.9
+- Restored behavior of the ``data`` descriptor of the request class to pre 0.9
   behavior.  This now also means that ``.data`` and ``.get_data()`` have
   different behavior.  New code should use ``.get_data()`` always.
 
