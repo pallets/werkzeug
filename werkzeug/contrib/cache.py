@@ -49,20 +49,6 @@
     >>> c.get("missing") is None
     True
 
-    Error Behavior
-    ==============
-
-    - `get` and `get_many` replace all non-existent or corrupted (e.g.
-      unpickling fails) values with `None`. A return value for `get_many` could
-      look like `[None, None, None, ...]` while `get` would return just `None`.
-
-    - `add`, `set` and `set_many` return either `True` or `False`, or raise
-      `PickleError`.
-
-    - `inc`, `dec` return the new value or `None` on failure.
-
-    - `clear`, `remove`, return either `True` or `False`.
-
     Please keep in mind that you have to create the cache and put it somewhere
     you have access to it (either as a module global you can import or you just
     put it into your WSGI application).
@@ -113,8 +99,8 @@ class BaseCache(object):
         self.default_timeout = default_timeout
 
     def get(self, key):
-        """Looks up key in the cache and returns the value for it.
-        If the key does not exist `None` is returned instead.
+        """Looks up key in the cache and returns the value for it.  If the key
+        does not exist or is unreadable `None` is returned instead.
 
         :param key: the key to be looked up.
         """
@@ -135,8 +121,8 @@ class BaseCache(object):
 
             foo, bar = cache.get_many("foo", "bar")
 
-        If a key can't be looked up `None` is returned for that key
-        instead.
+        If a key does not exist or is unreadable `None` is returned for that
+        key instead.
 
         :param keys: The function accepts multiple keys as positional
                      arguments.
@@ -163,7 +149,9 @@ class BaseCache(object):
         :param value: the value for the key
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
-        :returns: If the key has been set.
+        :returns: ``True`` if key has been updated, ``False`` for backend
+                  errors. Pickling errors, however, will raise a subclass of
+                  ``pickle.PickleError``.
         """
         return True
 
@@ -175,7 +163,9 @@ class BaseCache(object):
         :param value: the value for the key
         :param timeout: the cache timeout for the key or the default
                         timeout if not specified.
-        :returns: If the key has been added.
+        :returns: Same as :meth:`set`, but also returns `False` for already
+                  existing keys.
+        :rtype: boolean
         """
         return True
 
@@ -186,6 +176,7 @@ class BaseCache(object):
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
         :returns: If all given keys have been set.
+        :rtype: boolean
         """
         rv = True
         for key, value in _items(mapping):
@@ -199,6 +190,7 @@ class BaseCache(object):
         :param keys: The function accepts multiple keys as positional
                      arguments.
         :returns: If all given keys have been deleted.
+        :rtype: boolean
         """
         return all(self.delete(key) for key in keys)
 
@@ -206,6 +198,7 @@ class BaseCache(object):
         """Clears the cache.  Keep in mind that not all caches support
         completely clearing the cache.
         :returns: If the cache has been cleared.
+        :rtype: boolean
         """
         return True
 
@@ -217,7 +210,7 @@ class BaseCache(object):
 
         :param key: the key to increment.
         :param delta: the delta to add.
-        :returns: If the value has been increased.
+        :returns: The new value or `None` for backend errors.
         """
         value = (self.get(key) or 0) + delta
         return value if self.set(key, value) else None
@@ -230,7 +223,7 @@ class BaseCache(object):
 
         :param key: the key to increment.
         :param delta: the delta to subtract.
-        :returns: If the value has been decreased.
+        :returns: The new value or `None` for backend errors.
         """
         value = (self.get(key) or 0) - delta
         return value if self.set(key, value) else None
