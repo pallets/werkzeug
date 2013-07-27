@@ -59,7 +59,7 @@
     - `add`, `set` and `set_many` return either `True` or `False`, or raise
       `PickleError`.
 
-    - `inc`, `dec` return the new value.
+    - `inc`, `dec` return the new value or `None` on failure.
 
     - `clear`, `remove`, return either `True` or `False`.
 
