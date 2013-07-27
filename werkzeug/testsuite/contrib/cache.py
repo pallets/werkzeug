@@ -114,8 +114,8 @@ class CacheTestCase(WerkzeugTestCase):
     def test_generic_inc_dec(self):
         c = self.make_cache()
         assert c.set('foo', 1)
-        assert c.inc('foo') == 2
-        assert c.dec('foo') == 1
+        assert c.inc('foo') == c.get('foo') == 2
+        assert c.dec('foo') == c.get('foo') == 1
         assert c.delete('foo')
 
     def test_generic_true_false(self):
@@ -128,7 +128,6 @@ class CacheTestCase(WerkzeugTestCase):
 
 class SimpleCacheTestCase(CacheTestCase):
     make_cache = cache.SimpleCache
-    pass
 
 
 class FileSystemCacheTestCase(CacheTestCase):
@@ -185,69 +184,8 @@ class MemcachedCacheTestCase(CacheTestCase):
 
     def test_compat(self):
         c = self.make_cache()
-        c._client.set(c.key_prefix + b'foo', 'bar')
+        assert c._client.set(c.key_prefix + b'foo', 'bar')
         self.assert_equal(c.get('foo'), 'bar')
-
-    def test_get_set(self):
-        c = self.make_cache()
-        c.set('foo', 'bar')
-        self.assert_equal(c.get('foo'), 'bar')
-
-    def test_get_many(self):
-        c = self.make_cache()
-        c.set('foo', 'bar')
-        c.set('spam', 'eggs')
-        self.assert_equal(c.get_many('foo', 'spam'), ['bar', 'eggs'])
-
-    def test_set_many(self):
-        c = self.make_cache()
-        c.set_many({'foo': 'bar', 'spam': 'eggs'})
-        self.assert_equal(c.get('foo'), 'bar')
-        self.assert_equal(c.get('spam'), 'eggs')
-
-    def test_expire(self):
-        c = self.make_cache()
-        c.set('foo', 'bar', 1)
-        time.sleep(2)
-        self.assert_is_none(c.get('foo'))
-
-    def test_add(self):
-        c = self.make_cache()
-        c.add('foo', 'bar')
-        self.assert_equal(c.get('foo'), 'bar')
-        c.add('foo', 'baz')
-        self.assert_equal(c.get('foo'), 'bar')
-
-    def test_delete(self):
-        c = self.make_cache()
-        c.add('foo', 'bar')
-        self.assert_equal(c.get('foo'), 'bar')
-        c.delete('foo')
-        self.assert_is_none(c.get('foo'))
-
-    def test_delete_many(self):
-        c = self.make_cache()
-        c.add('foo', 'bar')
-        c.add('spam', 'eggs')
-        c.delete_many('foo', 'spam')
-        self.assert_is_none(c.get('foo'))
-        self.assert_is_none(c.get('spam'))
-
-    def test_inc_dec(self):
-        c = self.make_cache()
-        assert c.set('foo', 1)
-        # XXX: Is this an intended difference?
-        assert c.inc('foo') == 2
-        self.assert_equal(c.get('foo'), 2)
-        assert c.dec('foo') == 1
-        self.assert_equal(c.get('foo'), 1)
-
-    def test_true_false(self):
-        c = self.make_cache()
-        c.set('foo', True)
-        self.assert_equal(c.get('foo'), True)
-        c.set('bar', False)
-        self.assert_equal(c.get('bar'), False)
 
 
 def suite():

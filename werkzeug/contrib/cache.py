@@ -219,7 +219,8 @@ class BaseCache(object):
         :param delta: the delta to add.
         :returns: If the value has been increased.
         """
-        return self.set(key, (self.get(key) or 0) + delta)
+        value = (self.get(key) or 0) + delta
+        return value if self.set(key, value) else None
 
     def dec(self, key, delta=1):
         """Decrements the value of a key by `delta`.  If the key does
@@ -231,7 +232,8 @@ class BaseCache(object):
         :param delta: the delta to subtract.
         :returns: If the value has been decreased.
         """
-        return self.set(key, (self.get(key) or 0) - delta)
+        value = (self.get(key) or 0) - delta
+        return value if self.set(key, value) else None
 
 
 class NullCache(BaseCache):
@@ -290,6 +292,8 @@ class SimpleCache(BaseCache):
             self._prune()
         item = (time() + timeout, pickle.dumps(value,
             pickle.HIGHEST_PROTOCOL))
+        if key in self._cache:
+            return False
         self._cache.setdefault(key, item)
         return True
 
@@ -407,7 +411,8 @@ class MemcachedCache(BaseCache):
             if self.key_prefix:
                 key = self.key_prefix + key
             new_mapping[key] = value
-        return self._client.set_multi(new_mapping, timeout)
+        failed_keys = self._client.set_multi(new_mapping, timeout)
+        return not failed_keys
 
     def delete(self, key):
         if isinstance(key, unicode):
