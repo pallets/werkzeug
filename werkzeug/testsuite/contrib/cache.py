@@ -68,7 +68,7 @@ class FileSystemCacheTestCase(WerkzeugTestCase):
                 assert c.set(str(i), i * i)
             for i in range(3):
                 result = c.get(str(i))
-                assert result == i * i
+                assert result == i * i, result
         finally:
             shutil.rmtree(tmp_dir)
 

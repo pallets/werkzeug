@@ -189,7 +189,7 @@ class BaseCache(object):
         """
         rv = True
         for key, value in _items(mapping):
-            if not self.set(key, value, timeout)):
+            if not self.set(key, value, timeout):
                 rv = False
         return rv
 
@@ -281,6 +281,7 @@ class SimpleCache(BaseCache):
         self._prune()
         self._cache[key] = (time() + timeout, pickle.dumps(value,
             pickle.HIGHEST_PROTOCOL))
+        return True
 
     def add(self, key, value, timeout=None):
         if timeout is None:
@@ -290,6 +291,7 @@ class SimpleCache(BaseCache):
         item = (time() + timeout, pickle.dumps(value,
             pickle.HIGHEST_PROTOCOL))
         self._cache.setdefault(key, item)
+        return True
 
     def delete(self, key):
         return self._cache.pop(key, None) is not None
@@ -662,10 +664,11 @@ class FileSystemCache(BaseCache):
         filename = self._get_filename(key)
         try:
             with open(filename, 'rb') as f:
-                p = pickle.load(f)
-                if p >= time():
-                    return p
-            os.remove(filename)
+                if pickle.load(f) >= time():
+                    return pickle.load(f)
+                else:
+                    os.remove(filename)
+                    return None
         except (IOError, OSError, pickle.PickleError):
             return None
 
@@ -683,12 +686,9 @@ class FileSystemCache(BaseCache):
         try:
             fd, tmp = tempfile.mkstemp(suffix=self._fs_transaction_suffix,
                                        dir=self._path)
-            f = os.fdopen(fd, 'wb')
-            try:
+            with os.fdopen(fd, 'wb') as f:
                 pickle.dump(int(time() + timeout), f, 1)
                 pickle.dump(value, f, pickle.HIGHEST_PROTOCOL)
-            finally:
-                f.close()
             rename(tmp, filename)
             os.chmod(filename, self._mode)
         except (IOError, OSError):
