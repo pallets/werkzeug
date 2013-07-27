@@ -49,6 +49,18 @@
     >>> c.get("missing") is None
     True
 
+    Error Behavior
+    ==============
+
+    - `get` and `get_many` replace all non-existent or corrupted (e.g.
+      unpickling fails) values with `None`. A return value for `get_many` could
+      look like `[None, None, None, ...]` while `get` would return just `None`.
+
+    - `set` and `set_many` return either `True` or `False`, or raise
+      `PickleError`.
+
+    - `clear` and `remove` return either `True` or `False`.
+
     Please keep in mind that you have to create the cache and put it somewhere
     you have access to it (either as a module global you can import or you just
     put it into your WSGI application).
