@@ -56,10 +56,10 @@
       unpickling fails) values with `None`. A return value for `get_many` could
       look like `[None, None, None, ...]` while `get` would return just `None`.
 
-    - `set` and `set_many` return either `True` or `False`, or raise
+    - `add`, `set` and `set_many` return either `True` or `False`, or raise
       `PickleError`.
 
-    - `clear` and `remove` return either `True` or `False`.
+    - `clear`, `remove`, `inc`, `dec` return either `True` or `False`.
 
     Please keep in mind that you have to create the cache and put it somewhere
     you have access to it (either as a module global you can import or you just
@@ -187,10 +187,11 @@ class BaseCache(object):
                         it uses the default timeout).
         :returns: If all given keys have been set.
         """
-        statuses = []
+        rv = True
         for key, value in _items(mapping):
-            statuses.append(self.set(key, value, timeout))
-        return all(statuses)
+            if not self.set(key, value, timeout)):
+                rv = False
+        return rv
 
     def delete_many(self, *keys):
         """Deletes multiple keys at once.
@@ -267,9 +268,12 @@ class SimpleCache(BaseCache):
                     self._cache.pop(key, None)
 
     def get(self, key):
-        expires, value = self._cache.get(key, (0, None))
-        if expires > time():
-            return pickle.loads(value)
+        try:
+            expires, value = self._cache[key]
+            if expires > time():
+                return pickle.loads(value)
+        except (KeyError, pickle.PickleError):
+            return None
 
     def set(self, key, value, timeout=None):
         if timeout is None:
@@ -526,7 +530,10 @@ class RedisCache(BaseCache):
         if value is None:
             return None
         if value.startswith(b'!'):
-            return pickle.loads(value[1:])
+            try:
+                return pickle.loads(value[1:])
+            except pickle.PickleError:
+                return None
         try:
             return int(value)
         except ValueError:
@@ -544,36 +551,24 @@ class RedisCache(BaseCache):
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        try:
-            dump = self.dump_object(value)
-        except pickle.PickleError:
-            return False
-        else:
-            return self._client.setex(self.key_prefix + key, dump, timeout)
+        dump = self.dump_object(value)
+        return self._client.setex(self.key_prefix + key, dump, timeout)
 
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        try:
-            dump = self.dump_object(value)
-        except pickle.PickleError:
-            return False
-        else:
-            added = self._client.setnx(self.key_prefix + key, dump)
-            return added and self._client.expire(self.key_prefix + key, timeout)
+        dump = self.dump_object(value)
+        added = self._client.setnx(self.key_prefix + key, dump)
+        return added and self._client.expire(self.key_prefix + key, timeout)
 
     def set_many(self, mapping, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
         pipe = self._client.pipeline()
-        try:
-            for key, value in _items(mapping):
-                dump = self.dump_object(value)
-                pipe.setex(self.key_prefix + key, dump, timeout)
-        except pickle.PickleError:
-            return False
-        else:
-            return pipe.execute()
+        for key, value in _items(mapping):
+            dump = self.dump_object(value)
+            pipe.setex(self.key_prefix + key, dump, timeout)
+        return pipe.execute()
 
     def delete(self, key):
         return self._client.delete(self.key_prefix + key)
@@ -671,13 +666,14 @@ class FileSystemCache(BaseCache):
                 if p >= time():
                     return p
             os.remove(filename)
-        except (IOError, OSError):
+        except (IOError, OSError, pickle.PickleError):
             return None
 
     def add(self, key, value, timeout=None):
         filename = self._get_filename(key)
         if not os.path.exists(filename):
             return self.set(key, value, timeout)
+        return False
 
     def set(self, key, value, timeout=None):
         if timeout is None:
