@@ -532,24 +532,36 @@ class RedisCache(BaseCache):
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        dump = self.dump_object(value)
-        return self._client.setex(self.key_prefix + key, dump, timeout)
+        try:
+            dump = self.dump_object(value)
+        except pickle.PickleError:
+            return False
+        else:
+            return self._client.setex(self.key_prefix + key, dump, timeout)
 
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        dump = self.dump_object(value)
-        added = self._client.setnx(self.key_prefix + key, dump)
-        return added and self._client.expire(self.key_prefix + key, timeout)
+        try:
+            dump = self.dump_object(value)
+        except pickle.PickleError:
+            return False
+        else:
+            added = self._client.setnx(self.key_prefix + key, dump)
+            return added and self._client.expire(self.key_prefix + key, timeout)
 
     def set_many(self, mapping, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
         pipe = self._client.pipeline()
-        for key, value in _items(mapping):
-            dump = self.dump_object(value)
-            pipe.setex(self.key_prefix + key, dump, timeout)
-        return pipe.execute()
+        try:
+            for key, value in _items(mapping):
+                dump = self.dump_object(value)
+                pipe.setex(self.key_prefix + key, dump, timeout)
+        except pickle.PickleError:
+            return False
+        else:
+            return pipe.execute()
 
     def delete(self, key):
         return self._client.delete(self.key_prefix + key)
