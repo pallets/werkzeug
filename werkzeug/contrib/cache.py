@@ -625,24 +625,17 @@ class FileSystemCache(BaseCache):
         entries = self._list_dir()
         if len(entries) > self._threshold:
             now = time()
-            for idx, fname in enumerate(entries):
-                remove = False
-                f = None
-                try:
-                    try:
-                        f = open(fname, 'rb')
+            try:
+                for idx, fname in enumerate(entries):
+                    remove = False
+                    with open(fname, 'rb') as f:
                         expires = pickle.load(f)
-                        remove = expires <= now or idx % 3 == 0
-                    finally:
-                        if f is not None:
-                            f.close()
-                except Exception:
-                    pass
-                if remove:
-                    try:
+                    remove = expires <= now or idx % 3 == 0
+
+                    if remove:
                         os.remove(fname)
-                    except (IOError, OSError):
-                        pass
+            except (IOError, OSError):
+                pass
 
     def clear(self):
         for fname in self._list_dir():
@@ -661,14 +654,12 @@ class FileSystemCache(BaseCache):
     def get(self, key):
         filename = self._get_filename(key)
         try:
-            f = open(filename, 'rb')
-            try:
-                if pickle.load(f) >= time():
-                    return pickle.load(f)
-            finally:
-                f.close()
+            with open(filename, 'rb') as f:
+                p = pickle.load(f)
+                if p >= time():
+                    return p
             os.remove(filename)
-        except Exception:
+        except (IOError, OSError):
             return None
 
     def add(self, key, value, timeout=None):
