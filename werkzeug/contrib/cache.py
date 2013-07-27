@@ -59,7 +59,9 @@
     - `add`, `set` and `set_many` return either `True` or `False`, or raise
       `PickleError`.
 
-    - `clear`, `remove`, `inc`, `dec` return either `True` or `False`.
+    - `inc`, `dec` return the new value.
+
+    - `clear`, `remove`, return either `True` or `False`.
 
     Please keep in mind that you have to create the cache and put it somewhere
     you have access to it (either as a module global you can import or you just
@@ -75,7 +77,7 @@ from hashlib import md5
 from time import time
 try:
     import cPickle as pickle
-except ImportError:
+except ImportError:  # pragma: no cover
     import pickle
 
 from werkzeug._compat import iteritems, string_types, text_type, \
@@ -94,10 +96,8 @@ def _items(mappingorseq):
         ...    assert k*k == v
 
     """
-    if hasattr(mappingorseq, "iteritems"):
-        return mappingorseq.iteritems()
-    elif hasattr(mappingorseq, "items"):
-        return mappingorseq.items()
+    if hasattr(mappingorseq, 'items'):
+        return iteritems(mappingorseq)
     return mappingorseq
 
 

@@ -37,11 +37,11 @@ except ImportError:
         except ImportError:
             memcache = None
 
-
-class SimpleCacheTestCase(WerkzeugTestCase):
+class CacheTestCase(WerkzeugTestCase):
+    make_cache = None
 
     def test_get_dict(self):
-        c = cache.SimpleCache()
+        c = self.make_cache()
         assert c.set('a', 'a')
         assert c.set('b', 'b')
         d = c.get_dict('a', 'b')
@@ -49,6 +49,10 @@ class SimpleCacheTestCase(WerkzeugTestCase):
         assert 'a' == d['a']
         assert 'b' in d
         assert 'b' == d['b']
+
+
+class SimpleCacheTestCase(CacheTestCase):
+    make_cache = cache.SimpleCache
 
     def test_set_many(self):
         c = cache.SimpleCache()
@@ -58,45 +62,46 @@ class SimpleCacheTestCase(WerkzeugTestCase):
         assert c.get(2) == 4
 
 
-class FileSystemCacheTestCase(WerkzeugTestCase):
+class FileSystemCacheTestCase(CacheTestCase):
+    tmp_dir = None
+
+    def make_cache(self, **kwargs):
+        if self.tmp_dir is None:
+            self.tmp_dir = tempfile.mkdtemp()
+        return cache.FileSystemCache(cache_dir=self.tmp_dir, **kwargs)
+
+    def teardown(self):
+        if self.tmp_dir is not None:
+            shutil.rmtree(self.tmp_dir)
 
     def test_set_get(self):
-        tmp_dir = tempfile.mkdtemp()
-        try:
-            c = cache.FileSystemCache(cache_dir=tmp_dir)
-            for i in range(3):
-                assert c.set(str(i), i * i)
-            for i in range(3):
-                result = c.get(str(i))
-                assert result == i * i, result
-        finally:
-            shutil.rmtree(tmp_dir)
+        c = self.make_cache()
+        for i in range(3):
+            assert c.set(str(i), i * i)
+        for i in range(3):
+            result = c.get(str(i))
+            assert result == i * i, result
 
     def test_filesystemcache_prune(self):
         THRESHOLD = 13
-        tmp_dir = tempfile.mkdtemp()
-        c = cache.FileSystemCache(cache_dir=tmp_dir, threshold=THRESHOLD)
+        c = self.make_cache(threshold=THRESHOLD)
         for i in range(2 * THRESHOLD):
             assert c.set(str(i), i)
-        cache_files = os.listdir(tmp_dir)
-        shutil.rmtree(tmp_dir)
+        cache_files = os.listdir(self.tmp_dir)
         assert len(cache_files) <= THRESHOLD
 
 
     def test_filesystemcache_clear(self):
-        tmp_dir = tempfile.mkdtemp()
-        c = cache.FileSystemCache(cache_dir=tmp_dir)
+        c = self.make_cache()
         assert c.set('foo', 'bar')
-        cache_files = os.listdir(tmp_dir)
+        cache_files = os.listdir(self.tmp_dir)
         assert len(cache_files) == 1
         assert c.clear()
-        cache_files = os.listdir(tmp_dir)
+        cache_files = os.listdir(self.tmp_dir)
         assert len(cache_files) == 0
-        shutil.rmtree(tmp_dir)
 
 
-class RedisCacheTestCase(WerkzeugTestCase):
-
+class RedisCacheTestCase(CacheTestCase):
     def make_cache(self):
         return cache.RedisCache(key_prefix='werkzeug-test-case:')
 
@@ -138,7 +143,7 @@ class RedisCacheTestCase(WerkzeugTestCase):
         # sanity check that add() works like set()
         assert c.add('foo', 'bar')
         assert c.get('foo') == 'bar'
-        assert c.add('foo', 'qux')
+        assert not c.add('foo', 'qux')
         assert c.get('foo') == 'bar'
 
     def test_delete(self):
@@ -171,8 +176,7 @@ class RedisCacheTestCase(WerkzeugTestCase):
         assert c.get('bar') == False
 
 
-class MemcachedCacheTestCase(WerkzeugTestCase):
-
+class MemcachedCacheTestCase(CacheTestCase):
     def make_cache(self):
         return cache.MemcachedCache(key_prefix='werkzeug-test-case:')
 
@@ -231,11 +235,11 @@ class MemcachedCacheTestCase(WerkzeugTestCase):
 
     def test_inc_dec(self):
         c = self.make_cache()
-        c.set('foo', 1)
+        assert c.set('foo', 1)
         # XXX: Is this an intended difference?
-        c.inc('foo')
+        assert c.inc('foo') == 2
         self.assert_equal(c.get('foo'), 2)
-        c.dec('foo')
+        assert c.dec('foo') == 1
         self.assert_equal(c.get('foo'), 1)
 
     def test_true_false(self):
