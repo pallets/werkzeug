@@ -74,7 +74,7 @@ class CacheTestCase(WerkzeugTestCase):
         c = self.make_cache()
         assert c.set('foo', ['bar'])
         assert c.set('spam', 'eggs')
-        assert c.get_many('foo', 'spam') == [['bar'], 'eggs']
+        self.assert_equal(list(c.get_many('foo', 'spam')), [['bar'], 'eggs'])
 
     def test_generic_set_many(self):
         c = self.make_cache()
@@ -170,7 +170,7 @@ class RedisCacheTestCase(CacheTestCase):
     def test_compat(self):
         c = self.make_cache()
         assert c._client.set(c.key_prefix + 'foo', 'Awesome')
-        self.assert_equal(c.get('foo'), 'Awesome')
+        self.assert_equal(c.get('foo'), b'Awesome')
         assert c._client.set(c.key_prefix + 'foo', '42')
         self.assert_equal(c.get('foo'), 42)
     
