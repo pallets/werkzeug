@@ -40,7 +40,7 @@ except ImportError:
 class CacheTestCase(WerkzeugTestCase):
     make_cache = None
 
-    def test_get_dict(self):
+    def test_generic_get_dict(self):
         c = self.make_cache()
         assert c.set('a', 'a')
         assert c.set('b', 'b')
@@ -50,16 +50,85 @@ class CacheTestCase(WerkzeugTestCase):
         assert 'b' in d
         assert 'b' == d['b']
 
-
-class SimpleCacheTestCase(CacheTestCase):
-    make_cache = cache.SimpleCache
-
-    def test_set_many(self):
-        c = cache.SimpleCache()
+    def test_generic_set_many(self):
+        c = self.make_cache()
         assert c.set_many({0: 0, 1: 1, 2: 4})
         assert c.get(2) == 4
         assert c.set_many((i, i*i) for i in range(3))
         assert c.get(2) == 4
+
+    def test_generic_set_get(self):
+        c = self.make_cache()
+        for i in range(3):
+            assert c.set(str(i), i * i)
+        for i in range(3):
+            result = c.get(str(i))
+            assert result == i * i, result
+
+    def test_generic_get_set(self):
+        c = self.make_cache()
+        assert c.set('foo', ['bar'])
+        assert c.get('foo') == ['bar']
+
+    def test_generic_get_many(self):
+        c = self.make_cache()
+        assert c.set('foo', ['bar'])
+        assert c.set('spam', 'eggs')
+        assert c.get_many('foo', 'spam') == [['bar'], 'eggs']
+
+    def test_generic_set_many(self):
+        c = self.make_cache()
+        assert c.set_many({'foo': 'bar', 'spam': ['eggs']})
+        assert c.get('foo') == 'bar'
+        assert c.get('spam') == ['eggs']
+
+    def test_generic_expire(self):
+        c = self.make_cache()
+        assert c.set('foo', 'bar', 1)
+        time.sleep(2)
+        assert c.get('foo') is None
+
+    def test_generic_add(self):
+        c = self.make_cache()
+        # sanity check that add() works like set()
+        assert c.add('foo', 'bar')
+        assert c.get('foo') == 'bar'
+        assert not c.add('foo', 'qux')
+        assert c.get('foo') == 'bar'
+
+    def test_generic_delete(self):
+        c = self.make_cache()
+        assert c.add('foo', 'bar')
+        assert c.get('foo') == 'bar'
+        assert c.delete('foo')
+        assert c.get('foo') is None
+
+    def test_generic_delete_many(self):
+        c = self.make_cache()
+        assert c.add('foo', 'bar')
+        assert c.add('spam', 'eggs')
+        assert c.delete_many('foo', 'spam')
+        assert c.get('foo') is None
+        assert c.get('spam') is None
+
+    def test_generic_inc_dec(self):
+        c = self.make_cache()
+        assert c.set('foo', 1)
+        assert c.inc('foo') == 2
+        assert c.dec('foo') == 1
+        assert c.delete('foo')
+
+    def test_generic_true_false(self):
+        c = self.make_cache()
+        assert c.set('foo', True)
+        assert c.get('foo') == True
+        assert c.set('bar', False)
+        assert c.get('bar') == False
+
+
+class SimpleCacheTestCase(CacheTestCase):
+    make_cache = cache.SimpleCache
+    pass
 
 
 class FileSystemCacheTestCase(CacheTestCase):
@@ -73,15 +142,7 @@ class FileSystemCacheTestCase(CacheTestCase):
     def teardown(self):
         if self.tmp_dir is not None:
             shutil.rmtree(self.tmp_dir)
-
-    def test_set_get(self):
-        c = self.make_cache()
-        for i in range(3):
-            assert c.set(str(i), i * i)
-        for i in range(3):
-            result = c.get(str(i))
-            assert result == i * i, result
-
+    
     def test_filesystemcache_prune(self):
         THRESHOLD = 13
         c = self.make_cache(threshold=THRESHOLD)
@@ -89,7 +150,6 @@ class FileSystemCacheTestCase(CacheTestCase):
             assert c.set(str(i), i)
         cache_files = os.listdir(self.tmp_dir)
         assert len(cache_files) <= THRESHOLD
-
 
     def test_filesystemcache_clear(self):
         c = self.make_cache()
@@ -114,67 +174,7 @@ class RedisCacheTestCase(CacheTestCase):
         self.assert_equal(c.get('foo'), 'Awesome')
         assert c._client.set(c.key_prefix + 'foo', '42')
         self.assert_equal(c.get('foo'), 42)
-
-    def test_get_set(self):
-        c = self.make_cache()
-        assert c.set('foo', ['bar'])
-        assert c.get('foo') == ['bar']
-
-    def test_get_many(self):
-        c = self.make_cache()
-        assert c.set('foo', ['bar'])
-        assert c.set('spam', 'eggs')
-        assert c.get_many('foo', 'spam') == [['bar'], 'eggs']
-
-    def test_set_many(self):
-        c = self.make_cache()
-        assert c.set_many({'foo': 'bar', 'spam': ['eggs']})
-        assert c.get('foo') == 'bar'
-        assert c.get('spam') == ['eggs']
-
-    def test_expire(self):
-        c = self.make_cache()
-        assert c.set('foo', 'bar', 1)
-        time.sleep(2)
-        assert c.get('foo') is None
-
-    def test_add(self):
-        c = self.make_cache()
-        # sanity check that add() works like set()
-        assert c.add('foo', 'bar')
-        assert c.get('foo') == 'bar'
-        assert not c.add('foo', 'qux')
-        assert c.get('foo') == 'bar'
-
-    def test_delete(self):
-        c = self.make_cache()
-        assert c.add('foo', 'bar')
-        assert c.get('foo') == 'bar'
-        assert c.delete('foo')
-        assert c.get('foo') is None
-
-    def test_delete_many(self):
-        c = self.make_cache()
-        assert c.add('foo', 'bar')
-        assert c.add('spam', 'eggs')
-        assert c.delete_many('foo', 'spam')
-        assert c.get('foo') is None
-        assert c.get('spam') is None
-
-    def test_inc_dec(self):
-        c = self.make_cache()
-        assert c.set('foo', 1)
-        assert c.inc('foo') == 2
-        assert c.dec('foo') == 1
-        assert c.delete('foo')
-
-    def test_true_false(self):
-        c = self.make_cache()
-        assert c.set('foo', True)
-        assert c.get('foo') == True
-        assert c.set('bar', False)
-        assert c.get('bar') == False
-
+    
 
 class MemcachedCacheTestCase(CacheTestCase):
     def make_cache(self):
