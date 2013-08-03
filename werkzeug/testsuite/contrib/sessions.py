@@ -13,8 +13,10 @@ import shutil
 from tempfile import mkdtemp, gettempdir
 
 from werkzeug.testsuite import WerkzeugTestCase
-from werkzeug.contrib.sessions import FilesystemSessionStore
+from werkzeug.contrib.sessions import FilesystemSessionStore, SessionMiddleware
 
+from werkzeug.test import Client
+from werkzeug.wrappers import BaseResponse
 
 
 class SessionTestCase(WerkzeugTestCase):
@@ -73,6 +75,20 @@ class SessionTestCase(WerkzeugTestCase):
         listed_sessions = set(store.list())
         assert sessions == listed_sessions
 
+    def test_sessionmiddleware_setcookie(self):
+        def application(environ, start_response):
+            start_response('200 OK', [('Content-Type', 'text/html')])
+            session = environ['werkzeug.session']
+            if session.new:
+                session['visit_count'] = 0
+            yield '%s' % session['visit_count']
+            session['visit_count'] += 1
+
+        store = FilesystemSessionStore(self.session_folder)
+        app = SessionMiddleware(application, store)
+        c = Client(app, BaseResponse)
+        resp = c.get('/')
+        self.assertIn('Set-Cookie', resp.headers)
 
 def suite():
     suite = unittest.TestSuite()
