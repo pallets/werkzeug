@@ -23,11 +23,14 @@ class MemorySessionStore(SessionStore):
 
 
 def application(environ, start_response):
-    start_response('200 OK', [('Content-Type', 'text/html')])
     session = environ['werkzeug.session']
-    yield '<title>Session Example</title><h1>Session Example</h1>'
     if session.new:
         session['visit_count'] = 0
+
+    start_response('200 OK', [('Content-Type', 'text/html')])
+
+    yield '<title>Session Example</title><h1>Session Example</h1>'
+    if session.new:
         yield '<p>This is a new session.</p>'
     session['visit_count'] += 1
     yield '<p>You visited this page %d times.</p>' % session['visit_count']
