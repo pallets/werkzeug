@@ -15,6 +15,8 @@ Version 0.9.4
 (bugfix release, release date to be decided)
 
 - Fixed an issue with Python 3.3 and an edge case in cookie parsing.
+- Fixed decoding errors not handled properly through the WSGI
+  decoding dance.
 
 Version 0.9.3
 -------------
