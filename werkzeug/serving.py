@@ -501,7 +501,12 @@ def _iter_module_files():
             else:
                 if filename[-4:] in ('.pyc', '.pyo'):
                     filename = filename[:-1]
-                yield filename
+
+                # Make sure that gevent semaphore as gevent core are excluded from the list
+                # If included, @werkzeug.serving.run_with_reloader is completely unusable. It will 
+                # detect change in gevent/_semaphore.so and gevent/core.so every second
+                if not filename.endswith('gevent/_semaphore.so') and not filename.endswith('gevent/core.so'):
+                    yield filename
 
 
 def _reloader_stat_loop(extra_files=None, interval=1):
