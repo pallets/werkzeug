@@ -150,10 +150,10 @@ class TestTestCase(WerkzeugTestCase):
     def test_environ_builder_headers(self):
         b = EnvironBuilder(environ_base={'HTTP_USER_AGENT': 'Foo/0.1'},
                            environ_overrides={'wsgi.version': (1, 1)})
-        b.headers['X-Suck-My-Dick'] = 'very well sir'
+        b.headers['X-Beat-My-Horse'] = 'very well sir'
         env = b.get_environ()
         self.assert_strict_equal(env['HTTP_USER_AGENT'], 'Foo/0.1')
-        self.assert_strict_equal(env['HTTP_X_SUCK_MY_DICK'], 'very well sir')
+        self.assert_strict_equal(env['HTTP_X_BEAT_MY_HORSE'], 'very well sir')
         self.assert_strict_equal(env['wsgi.version'], (1, 1))
 
         b.headers['User-Agent'] = 'Bar/1.0'
