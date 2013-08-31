@@ -97,7 +97,7 @@ class ProfilerMiddleware(object):
         p = Profile()
         start = time.time()
         p.runcall(runapp)
-        body = ''.join(response_body)
+        body = b''.join(response_body)
         elapsed = time.time() - start
 
         if self._profile_dir is not None:
