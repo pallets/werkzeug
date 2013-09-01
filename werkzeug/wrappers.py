@@ -1136,7 +1136,8 @@ class BaseResponse(object):
         if self.automatically_set_content_length and \
            self.is_sequence and content_length is None and status != 304:
             try:
-                content_length = sum(len(to_bytes(x, 'ascii')) for x in self.response)
+                content_length = sum(len(to_bytes(x, 'ascii'))
+                                     for x in self.response)
             except UnicodeError:
                 # aha, something non-bytestringy in there, too bad, we
                 # can't safely figure out the length of the response.
