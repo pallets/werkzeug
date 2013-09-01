@@ -9,6 +9,14 @@ Release date and codename to be decided
 - Changed the error handling of and improved testsuite for the caches in
   ``contrib.cache``.
 
+Version 0.9.5
+-------------
+
+(bugfix release, release date to be decided)
+
+- Forward charset argument from request objects to the environ
+  builder.
+
 Version 0.9.4
 -------------
 

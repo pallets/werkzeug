@@ -254,6 +254,7 @@ class BaseRequest(object):
         """
         from werkzeug.test import EnvironBuilder
         charset = kwargs.pop('charset', cls.charset)
+        kwargs['charset'] = charset
         builder = EnvironBuilder(*args, **kwargs)
         try:
             return builder.get_request(cls)
