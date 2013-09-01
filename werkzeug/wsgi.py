@@ -397,7 +397,7 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
             if scheme not in (u'http', u'https'):
                 return None
     else:
-        if not (base_scheme in (u'http', u'https') and \
+        if not (base_scheme in (u'http', u'https') and
                 base_scheme == cur_scheme):
             return None
 
