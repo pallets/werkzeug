@@ -961,7 +961,6 @@ class BaseResponse(object):
         value of this method is used as application iterator unless
         :attr:`direct_passthrough` was activated.
         """
-        charset = self.charset
         if __debug__:
             _warn_if_string(self.response)
         # Encode in a separate function so that self.response is fetched
