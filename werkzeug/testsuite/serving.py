@@ -8,6 +8,7 @@
     :copyright: (c) 2013 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import os
 import sys
 import time
 try:
@@ -28,7 +29,7 @@ try:
 except ImportError:
     OpenSSL = None
 
-from werkzeug.testsuite import WerkzeugTestCase
+from werkzeug.testsuite import WerkzeugTestCase, get_temporary_directory
 
 from werkzeug import __version__ as version, serving
 from werkzeug.testapp import test_app
@@ -127,6 +128,12 @@ class ServingTestCase(WerkzeugTestCase):
             connection.request('GET', '/')
             response = connection.getresponse()
             assert response.read() == b'hello'
+
+        def test_make_ssl_devcert(self):
+            certificate, private_key = serving.make_ssl_devcert(
+                get_temporary_directory())
+            assert os.path.isfile(certificate)
+            assert os.path.isfile(private_key)
 
 
 def suite():

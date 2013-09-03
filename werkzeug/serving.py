@@ -323,9 +323,9 @@ def make_ssl_devcert(base_path, host=None, cn=None):
     cert_file = base_path + '.crt'
     pkey_file = base_path + '.key'
 
-    with open(cert_file, 'w') as f:
+    with open(cert_file, 'wb') as f:
         f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-    with open(pkey_file, 'w') as f:
+    with open(pkey_file, 'wb') as f:
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
 
     return cert_file, pkey_file
