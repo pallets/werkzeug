@@ -277,7 +277,7 @@ def generate_adhoc_ssl_pair(cn=None):
         cn = '*'
 
     cert = crypto.X509()
-    cert.set_serial_number(int(random() * sys.maxint))
+    cert.set_serial_number(int(random() * sys.maxsize))
     cert.gmtime_adj_notBefore(0)
     cert.gmtime_adj_notAfter(60 * 60 * 24 * 365)
 
