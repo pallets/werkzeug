@@ -16,6 +16,7 @@ Version 0.9.5
 
 - Forward charset argument from request objects to the environ
   builder.
+- Fixed error handling for missing boundaries in multipart data.
 
 Version 0.9.4
 -------------
