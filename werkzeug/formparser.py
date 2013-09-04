@@ -203,6 +203,8 @@ class FormDataParser(object):
                                  max_form_memory_size=self.max_form_memory_size,
                                  cls=self.cls)
         boundary = options.get('boundary')
+        if boundary is None:
+            raise ValueError('Missing boundary')
         if isinstance(boundary, text_type):
             boundary = boundary.encode('ascii')
         form, files = parser.parse(stream, boundary, content_length)
