@@ -8,6 +8,10 @@ Release date and codename to be decided
 
 - Changed the error handling of and improved testsuite for the caches in
   ``contrib.cache``.
+- Fixed a bug on Python 3 when creating adhoc ssl contexts, due to `sys.maxint`
+  not being defined.
+- Fixed a bug on Python 3, that caused
+  :func:`~werkzeug.serving.make_ssl_devcert` to fail with an exception.
 
 Version 0.9.5
 -------------

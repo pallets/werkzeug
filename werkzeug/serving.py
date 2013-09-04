@@ -277,7 +277,7 @@ def generate_adhoc_ssl_pair(cn=None):
         cn = '*'
 
     cert = crypto.X509()
-    cert.set_serial_number(int(random() * sys.maxint))
+    cert.set_serial_number(int(random() * sys.maxsize))
     cert.gmtime_adj_notBefore(0)
     cert.gmtime_adj_notAfter(60 * 60 * 24 * 365)
 
@@ -323,9 +323,9 @@ def make_ssl_devcert(base_path, host=None, cn=None):
     cert_file = base_path + '.crt'
     pkey_file = base_path + '.key'
 
-    with open(cert_file, 'w') as f:
+    with open(cert_file, 'wb') as f:
         f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-    with open(pkey_file, 'w') as f:
+    with open(pkey_file, 'wb') as f:
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
 
     return cert_file, pkey_file

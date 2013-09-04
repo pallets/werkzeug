@@ -8,6 +8,7 @@
     :copyright: (c) 2013 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import os
 import sys
 import time
 try:
@@ -23,7 +24,12 @@ except ImportError:  # pragma: no cover
 import unittest
 from functools import update_wrapper
 
-from werkzeug.testsuite import WerkzeugTestCase
+try:
+    import OpenSSL
+except ImportError:
+    OpenSSL = None
+
+from werkzeug.testsuite import WerkzeugTestCase, get_temporary_directory
 
 from werkzeug import __version__ as version, serving
 from werkzeug.testapp import test_app
@@ -46,7 +52,7 @@ def silencestderr(f):
     return update_wrapper(new_func, f)
 
 
-def run_dev_server(application):
+def run_dev_server(application, *args, **kwargs):
     servers = []
 
     def tracking_make_server(*args, **kwargs):
@@ -56,7 +62,8 @@ def run_dev_server(application):
     serving.make_server = tracking_make_server
     try:
         t = Thread(target=serving.run_simple,
-                   args=('localhost', 0, application))
+                   args=('localhost', 0, application) + args,
+                   kwargs=kwargs)
         t.setDaemon(True)
         t.start()
         time.sleep(0.25)
@@ -109,6 +116,24 @@ class ServingTestCase(WerkzeugTestCase):
         conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm')
         res = conn.getresponse()
         assert res.read() == b'YES'
+
+    if OpenSSL is not None:
+        def test_ssl_context_adhoc(self):
+            def hello(environ, start_response):
+                start_response('200 OK', [('Content-Type', 'text/html')])
+                return [b'hello']
+            server, addr = run_dev_server(hello, ssl_context='adhoc')
+            assert addr is not None
+            connection = httplib.HTTPSConnection(addr)
+            connection.request('GET', '/')
+            response = connection.getresponse()
+            assert response.read() == b'hello'
+
+        def test_make_ssl_devcert(self):
+            certificate, private_key = serving.make_ssl_devcert(
+                get_temporary_directory())
+            assert os.path.isfile(certificate)
+            assert os.path.isfile(private_key)
 
 
 def suite():
