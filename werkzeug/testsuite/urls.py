@@ -146,7 +146,7 @@ class URLsTestCase(WerkzeugTestCase):
                           'http://xn--f-1gaa.com:8080/bam/baz')
 
     def test_iri_safe_quoting(self):
-        uri = b'http://xn--f-1gaa.com/%2F%25?q=%C3%B6&x=%3D%25#%25'
+        uri = 'http://xn--f-1gaa.com/%2F%25?q=%C3%B6&x=%3D%25#%25'
         iri = u'http://föö.com/%2F%25?q=ö&x=%3D%25#%25'
         self.assert_strict_equal(urls.uri_to_iri(uri), iri)
         self.assert_strict_equal(urls.iri_to_uri(urls.uri_to_iri(uri)), uri)
