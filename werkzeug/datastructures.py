@@ -540,7 +540,7 @@ class MultiDict(TypeConversionDict):
     def deepcopy(self, memo=None):
         """Return a deep copy of this object."""
         from copy import deepcopy
-        return self.__class__(deepcopy(dict(self), memo))
+        return self.__class__(deepcopy(self.to_dict(flat=False), memo))
 
     def to_dict(self, flat=True):
         """Return the contents as regular dict.  If `flat` is `True` the
