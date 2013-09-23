@@ -12,6 +12,7 @@ import re
 import sys
 import codecs
 import mimetypes
+from copy import deepcopy
 from itertools import repeat
 
 from werkzeug._internal import _missing, _empty_stream
@@ -539,7 +540,6 @@ class MultiDict(TypeConversionDict):
 
     def deepcopy(self, memo=None):
         """Return a deep copy of this object."""
-        from copy import deepcopy
         return self.__class__(deepcopy(self.to_dict(flat=False), memo))
 
     def to_dict(self, flat=True):
