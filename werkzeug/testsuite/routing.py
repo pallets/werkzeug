@@ -666,6 +666,11 @@ class RoutingTestCase(WerkzeugTestCase):
         self.assert_strict_equal(rv,
             "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])")
 
+    def test_mapadapterpath_info_is_none(self):
+        m = r.Map([])
+        ma = m.bind('example.org', path_info=None)
+        self.assert_strict_equal(ma.path_info, u'')
+
 
 def suite():
     suite = unittest.TestSuite()
