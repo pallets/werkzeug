@@ -91,6 +91,13 @@ class WerkzeugTestCase(unittest.TestCase):
         with catcher:
             callable(*args, **kwargs)
 
+    def assert_raises_exact(self, exc_type, callable=None, *args, **kwargs):
+        catcher = _ExceptionCatcher(self, exc_type, exact=True)
+        if callable is None:
+            return catcher
+        with catcher:
+            callable(*args, **kwargs)
+
     if sys.version_info[:2] == (2, 6):
         def assertIsNone(self, x):
             assert x is None, "%r is not None" % (x,)
@@ -189,10 +196,11 @@ class WerkzeugTestCase(unittest.TestCase):
 
 class _ExceptionCatcher(object):
 
-    def __init__(self, test_case, exc_type):
+    def __init__(self, test_case, exc_type, exact=False):
         self.test_case = test_case
         self.exc_type = exc_type
         self.exc_value = None
+        self.exact = exact
 
     def __enter__(self):
         return self
@@ -202,7 +210,9 @@ class _ExceptionCatcher(object):
         if exc_type is None:
             self.test_case.fail('Expected exception of type %r' %
                                 exception_name)
-        elif not issubclass(exc_type, self.exc_type):
+        elif not self.exact and not issubclass(exc_type, self.exc_type):
+            reraise(exc_type, exc_value, tb)
+        elif self.exact and not exc_type is self.exc_type:
             reraise(exc_type, exc_value, tb)
         self.exc_value = exc_value
         return True
