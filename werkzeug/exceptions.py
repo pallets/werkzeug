@@ -545,7 +545,7 @@ def _find_exceptions():
             if obj.__bases__[0] != HTTPException:
                 # only register direct subclasses of HTTPException
                 continue
-            if getattr(obj, 'code', None) is not None:
+            if obj.code is not None:
                 default_exceptions[obj.code] = obj
                 __all__.append(obj.__name__)
         except (TypeError, AttributeError): # pragma: no cover
