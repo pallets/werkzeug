@@ -542,10 +542,13 @@ __all__ = ['HTTPException']
 def _find_exceptions():
     for name, obj in iteritems(globals()):
         try:
+            if obj.__bases__[0] != HTTPException:
+                # only register direct subclasses of HTTPException
+                continue
             if getattr(obj, 'code', None) is not None:
                 default_exceptions[obj.code] = obj
                 __all__.append(obj.__name__)
-        except TypeError: # pragma: no cover
+        except (TypeError, AttributeError): # pragma: no cover
             continue
 _find_exceptions()
 del _find_exceptions
