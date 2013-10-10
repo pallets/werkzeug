@@ -157,9 +157,7 @@ def get_current_traceback(ignore_system_exceptions=False,
             break
         tb = tb.tb_next
 
-    TB = Traceback
-    if hasattr(exc_value, "werkzeug_debug_traceback"):
-        TB = exc_value.werkzeug_debug_traceback
+    TB = getattr(exc_value, "werkzeug_debug_traceback", Traceback)
     tb = TB(exc_type, exc_value, tb)
 
     if not show_hidden_frames:
