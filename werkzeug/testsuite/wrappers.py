@@ -344,7 +344,10 @@ class WrappersTestCase(WerkzeugTestCase):
              '(KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3',
              'safari', 'iphone', '419.3', 'en'),
             ('Bot Googlebot/2.1 ( http://www.googlebot.com/bot.html)',
-             'google', None, '2.1', None)
+             'google', None, '2.1', None),
+            ('Mozilla/5.0 (X11; CrOS armv7l 3701.81.0) AppleWebKit/537.31 '
+             '(KHTML, like Gecko) Chrome/26.0.1410.57 Safari/537.31',
+             'chrome', 'chromeos', '26.0.1410.57', None)
         ]
         for ua, browser, platform, version, lang in user_agents:
             request = wrappers.Request({'HTTP_USER_AGENT': ua})
