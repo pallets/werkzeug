@@ -9,6 +9,7 @@ Version 0.9.5
 - Forward charset argument from request objects to the environ
   builder.
 - Fixed error handling for missing boundaries in multipart data.
+- Fixed session creation on systems without ``os.urandom()``.
 
 Version 0.9.4
 -------------

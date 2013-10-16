@@ -8,6 +8,7 @@
     :copyright: (c) 2013 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import os
 import unittest
 import shutil
 from tempfile import mkdtemp, gettempdir
@@ -53,6 +54,16 @@ class SessionTestCase(WerkzeugTestCase):
         x2 = store.get(x.sid)
         # the session is not new when it was used previously.
         assert not x2.new
+
+    def test_non_urandom(self):
+        urandom = os.urandom
+        del os.urandom
+        try:
+            store = FilesystemSessionStore(self.session_folder)
+            store.new()
+        finally:
+            os.urandom = urandom
+
 
     def test_renewing_fs_session(self):
         store = FilesystemSessionStore(self.session_folder, renew_missing=True)

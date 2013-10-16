@@ -74,7 +74,7 @@ _sha1_re = re.compile(r'^[a-f0-9]{40}$')
 def _urandom():
     if hasattr(os, 'urandom'):
         return os.urandom(30)
-    return random()
+    return text_type(random()).encode('ascii')
 
 
 def generate_key(salt=None):
