@@ -536,6 +536,30 @@ class ServiceUnavailable(HTTPException):
     )
 
 
+class GatewayTimeout(HTTPException):
+    """*504* `Gateway Timeout`
+
+    Status code you should return if a connection to an upstream server
+    times out.
+    """
+    code = 504
+    description = (
+        'The connection to an upstream server timed out.'
+    )
+
+
+class HTTPVersionNotSupported(HTTPException):
+    """*505* `HTTP Version Not Supported`
+
+    The server does not support the HTTP protocol version used in the request.
+    """
+    code = 505
+    description = (
+        'The server does not support the HTTP protocol version used in the '
+        'request.'
+    )
+
+
 default_exceptions = {}
 __all__ = ['HTTPException']
 
