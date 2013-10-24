@@ -98,12 +98,8 @@
 import re
 import posixpath
 from pprint import pformat
-try:
-    from urlparse import urljoin
-except ImportError:
-    from urllib.parse import urljoin
 
-from werkzeug.urls import url_encode, url_quote
+from werkzeug.urls import url_encode, url_quote, url_unquote, url_join
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ, _encode_idna
@@ -1391,7 +1387,8 @@ class MapAdapter(object):
                 rv = rule.match(path)
             except RequestSlash:
                 raise RequestRedirect(self.make_redirect_url(
-                    path_info + '/', query_args))
+                    url_quote(path_info, self.map.charset,
+                              safe='/:|+') + '/', query_args))
             except RequestAliasRedirect as e:
                 raise RequestRedirect(self.make_alias_redirect_url(
                     path, rule.endpoint, e.matched_values, method, query_args))
@@ -1416,7 +1413,7 @@ class MapAdapter(object):
                                                        rule.redirect_to)
                 else:
                     redirect_url = rule.redirect_to(self, **rv)
-                raise RequestRedirect(str(urljoin('%s://%s%s%s' % (
+                raise RequestRedirect(str(url_join('%s://%s%s%s' % (
                     self.url_scheme,
                     self.subdomain and self.subdomain + '.' or '',
                     self.server_name,
@@ -1515,8 +1512,7 @@ class MapAdapter(object):
             self.url_scheme,
             self.get_host(domain_part),
             posixpath.join(self.script_name[:-1].lstrip('/'),
-                           url_quote(path_info.lstrip('/'), self.map.charset,
-                                     safe='/:|+')),
+                           path_info.lstrip('/')),
             suffix
         ))
 
@@ -1626,7 +1622,7 @@ class MapAdapter(object):
         if not force_external and (
             (self.map.host_matching and host == self.server_name) or
             (not self.map.host_matching and domain_part == self.subdomain)):
-            return str(urljoin(self.script_name, './' + path.lstrip('/')))
+            return str(url_join(self.script_name, './' + path.lstrip('/')))
         return str('%s://%s%s/%s' % (
             self.url_scheme,
             host,
