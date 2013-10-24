@@ -1254,7 +1254,7 @@ class MapAdapter(object):
         self.script_name = script_name
         self.subdomain = to_unicode(subdomain)
         self.url_scheme = to_unicode(url_scheme)
-        self.path_info = to_unicode(path_info)
+        self.path_info = to_unicode(path_info or u'')
         self.default_method = to_unicode(default_method)
         self.query_args = query_args
 
