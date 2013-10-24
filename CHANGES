@@ -12,6 +12,7 @@ Release date and codename to be decided
   not being defined.
 - Fixed a bug on Python 3, that caused
   :func:`~werkzeug.serving.make_ssl_devcert` to fail with an exception.
+- Added exceptions for 504 and 505.
 
 Version 0.9.5
 -------------
