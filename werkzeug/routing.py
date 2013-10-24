@@ -102,6 +102,7 @@ try:
     from urlparse import urljoin
 except ImportError:
     from urllib.parse import urljoin
+import uuid
 
 from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import redirect, format_string
@@ -971,6 +972,22 @@ class FloatConverter(NumberConverter):
         NumberConverter.__init__(self, map, 0, min, max)
 
 
+class UUIDConverter(BaseConverter):
+    """This converter only accepts UUID strings::
+
+        Rule('/object/<uuid:identifier>')
+
+    :param map: the :class:`Map`.
+    """
+    regex = r'[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}'
+
+    def to_python(self, value):
+        return uuid.UUID(value)
+
+    def to_url(self, value):
+        return str(value)
+
+
 #: the default converter mapping for the map.
 DEFAULT_CONVERTERS = {
     'default':          UnicodeConverter,
@@ -978,7 +995,8 @@ DEFAULT_CONVERTERS = {
     'any':              AnyConverter,
     'path':             PathConverter,
     'int':              IntegerConverter,
-    'float':            FloatConverter
+    'float':            FloatConverter,
+    'uuid':             UUIDConverter
 }
 
 
