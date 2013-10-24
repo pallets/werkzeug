@@ -10,6 +10,7 @@ Version 0.9.5
   builder.
 - Fixed error handling for missing boundaries in multipart data.
 - Fixed session creation on systems without ``os.urandom()``.
+- Fixed pluses in dictionary keys not being properly URL encoded.
 
 Version 0.9.4
 -------------
