@@ -99,7 +99,7 @@ import re
 import posixpath
 from pprint import pformat
 
-from werkzeug.urls import url_encode, url_quote, url_unquote, url_join
+from werkzeug.urls import url_encode, url_quote, url_join
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ, _encode_idna
@@ -131,7 +131,7 @@ _converter_args_re = re.compile(r'''
         \w+|
         [urUR]?(?P<stringval>"[^"]*?"|'[^']*')
     )\s*,
-''', re.VERBOSE|re.UNICODE)
+''', re.VERBOSE | re.UNICODE)
 
 
 _PYTHON_CONSTANTS = {
@@ -653,7 +653,7 @@ class Rule(RuleFactory):
             return
         regex = r'^%s%s$' % (
             u''.join(regex_parts),
-            (not self.is_leaf or not self.strict_slashes) and \
+            (not self.is_leaf or not self.strict_slashes) and
                 '(?<!/)(?P<__suffix__>/?)' or ''
         )
         self._regex = re.compile(regex, re.UNICODE)
@@ -739,8 +739,8 @@ class Rule(RuleFactory):
         :internal:
         """
         return not self.build_only and self.defaults and \
-               self.endpoint == rule.endpoint and self != rule and \
-               self.arguments == rule.arguments
+            self.endpoint == rule.endpoint and self != rule and \
+            self.arguments == rule.arguments
 
     def suitable_for(self, values, method=None):
         """Check if the dict of values has enough data for url generation.
@@ -792,7 +792,7 @@ class Rule(RuleFactory):
         :internal:
         """
         return self.alias and 1 or 0, -len(self.arguments), \
-               -len(self.defaults or ())
+            -len(self.defaults or ())
 
     def __eq__(self, other):
         return self.__class__ is other.__class__ and \
@@ -817,7 +817,7 @@ class Rule(RuleFactory):
         return u'<%s %s%s -> %s>' % (
             self.__class__.__name__,
             repr((u''.join(tmp)).lstrip(u'|')).lstrip(u'u'),
-            self.methods is not None and u' (%s)' % \
+            self.methods is not None and u' (%s)' %
                 u', '.join(self.methods) or u'',
             self.endpoint
         )
@@ -1523,7 +1523,7 @@ class MapAdapter(object):
         if query_args:
             url += '?' + self.encode_query_args(query_args)
         assert url != path, 'detected invalid alias setting.  No canonical ' \
-               'URL found'
+            'URL found'
         return url
 
     def _partial_build(self, endpoint, values, method, append_unknown):
@@ -1621,7 +1621,7 @@ class MapAdapter(object):
         # shortcut this.
         if not force_external and (
             (self.map.host_matching and host == self.server_name) or
-            (not self.map.host_matching and domain_part == self.subdomain)):
+             (not self.map.host_matching and domain_part == self.subdomain)):
             return str(url_join(self.script_name, './' + path.lstrip('/')))
         return str('%s://%s%s/%s' % (
             self.url_scheme,
