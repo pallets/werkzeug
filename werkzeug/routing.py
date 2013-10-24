@@ -103,7 +103,7 @@ try:
 except ImportError:
     from urllib.parse import urljoin
 
-from werkzeug.urls import url_encode, url_quote
+from werkzeug.urls import url_encode, url_quote, url_unquote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ, _encode_idna
@@ -1495,8 +1495,9 @@ class MapAdapter(object):
                r.suitable_for(values, method):
                 values.update(r.defaults)
                 domain_part, path = r.build(values)
+                path_info = url_unquote(path, self.map.charset)
                 return self.make_redirect_url(
-                    path, query_args, domain_part=domain_part)
+                    path_info, query_args, domain_part=domain_part)
 
     def encode_query_args(self, query_args):
         if not isinstance(query_args, string_types):
