@@ -160,6 +160,11 @@ class URLsTestCase(WerkzeugTestCase):
         d.add('foo', 4)
         self.assert_equal(urls.url_encode(d), 'foo=1&foo=2&foo=3&bar=0&foo=4')
 
+    def test_multidict_encoding(self):
+        d = OrderedMultiDict()
+        d.add('2013-10-10T23:26:05.657975+0000', '2013-10-10T23:26:05.657975+0000')
+        self.assert_equal(urls.url_encode(d), '2013-10-10T23%3A26%3A05.657975%2B0000=2013-10-10T23%3A26%3A05.657975%2B0000')
+
     def test_href(self):
         x = urls.Href('http://www.example.com/')
         self.assert_strict_equal(x(u'foo'), 'http://www.example.com/foo')
