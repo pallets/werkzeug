@@ -18,6 +18,7 @@ class UserAgentParser(object):
     """A simple user agent parser.  Used by the `UserAgent`."""
 
     platforms = (
+        ('cros', 'chromeos'),
         ('iphone|ios', 'iphone'),
         ('ipad', 'ipad'),
         (r'darwin|mac|os\s*x', 'macos'),
@@ -107,6 +108,7 @@ class UserAgent(object):
        -   `amiga`
        -   `android`
        -   `bsd`
+       -   `chromeos`
        -   `hpux`
        -   `iphone`
        -   `ipad`
