@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import unittest
+import uuid
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -421,6 +422,14 @@ class RoutingTestCase(WerkzeugTestCase):
         assert a.match('/b/2') == ('b', {'b': '2'})
         assert a.match('/c/3') == ('c', {'c': '3'})
         assert 'foo' not in r.Map.default_converters
+
+    def test_uuid_converter(self):
+        m = r.Map([
+            r.Rule('/a/<uuid:a_uuid>', endpoint='a')
+        ])
+        a = m.bind('example.org', '/')
+        rooute, kwargs =  a.match('/a/a8098c1a-f86e-11da-bd1a-00112444be1e')
+        assert type(kwargs['a_uuid']) == uuid.UUID
 
     def test_build_append_unknown(self):
         map = r.Map([

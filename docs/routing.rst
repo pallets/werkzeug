@@ -103,6 +103,8 @@ Here a list of converters that come with Werkzeug:
 
 .. autoclass:: FloatConverter
 
+.. autoclass:: UUIDConverter
+
 
 Maps, Rules and Adapters
 ========================

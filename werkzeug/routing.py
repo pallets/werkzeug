@@ -96,7 +96,9 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import uuid
 import posixpath
+
 from pprint import pformat
 
 from werkzeug.urls import url_encode, url_quote, url_join
@@ -967,6 +969,25 @@ class FloatConverter(NumberConverter):
         NumberConverter.__init__(self, map, 0, min, max)
 
 
+class UUIDConverter(BaseConverter):
+    """This converter only accepts UUID strings::
+
+        Rule('/object/<uuid:identifier>')
+
+    .. versionadded:: 0.10
+
+    :param map: the :class:`Map`.
+    """
+    regex = r'[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-' \
+            r'[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}'
+
+    def to_python(self, value):
+        return uuid.UUID(value)
+
+    def to_url(self, value):
+        return str(value)
+
+
 #: the default converter mapping for the map.
 DEFAULT_CONVERTERS = {
     'default':          UnicodeConverter,
@@ -974,7 +995,8 @@ DEFAULT_CONVERTERS = {
     'any':              AnyConverter,
     'path':             PathConverter,
     'int':              IntegerConverter,
-    'float':            FloatConverter
+    'float':            FloatConverter,
+    'uuid':             UUIDConverter,
 }
 
 
