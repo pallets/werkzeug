@@ -21,7 +21,7 @@ from __future__ import with_statement
 import unittest
 import pickle
 from contextlib import contextmanager
-from copy import copy
+from copy import copy, deepcopy
 
 from werkzeug import datastructures
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
@@ -155,6 +155,16 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
 
         # copy method 2
         c = copy(md)
+        self.assert_equal(c['a'], 1)
+        self.assert_equal(c.getlist('a'), [1, 2, 3])
+        
+        # deepcopy method
+        c = md.deepcopy()
+        self.assert_equal(c['a'], 1)
+        self.assert_equal(c.getlist('a'), [1, 2, 3])
+        
+        # deepcopy method 2
+        c = deepcopy(md)
         self.assert_equal(c['a'], 1)
         self.assert_equal(c.getlist('a'), [1, 2, 3])
 
