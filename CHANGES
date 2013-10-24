@@ -25,6 +25,8 @@ Version 0.9.5
 - Fixed error handling for missing boundaries in multipart data.
 - Fixed session creation on systems without ``os.urandom()``.
 - Fixed pluses in dictionary keys not being properly URL encoded.
+- Fixed a problem with deepcopy not working for multi dicts.
+- Fixed a double quoting issue on redirects.
 
 Version 0.9.4
 -------------
