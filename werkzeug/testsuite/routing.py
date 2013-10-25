@@ -639,6 +639,25 @@ class RoutingTestCase(WerkzeugTestCase):
         url = a.build('foobar', {}, force_external=True)
         self.assert_equal(url, 'http://xn--n3h.example.com/foo+bar/')
 
+    def test_empty_path_info(self):
+        m = r.Map([
+            r.Rule("/", endpoint="index"),
+        ])
+        b = m.bind("example.com", script_name="/approot")
+        try:
+            b.match("")
+        except r.RequestRedirect, e:
+            self.assertEqual(e.new_url, "http://example.com/approot/")
+        else:
+            self.fail("RequestRedirect not raised")
+        a = m.bind("example.com")
+        try:
+            a.match("")
+        except r.RequestRedirect, e:
+            self.assertEqual(e.new_url, "http://example.com/")
+        else:
+            self.fail("RequestRedirect not raised")
+
 
 def suite():
     suite = unittest.TestSuite()
