@@ -5,13 +5,14 @@
 
     HTTP parsing utilities.
 
-    :copyright: (c) 2011 by Armin Ronacher.
+    :copyright: (c) 2013 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 import unittest
 from datetime import datetime
 
 from werkzeug.testsuite import WerkzeugTestCase
+from werkzeug._compat import itervalues, wsgi_encoding_dance
 
 from werkzeug import http, datastructures
 from werkzeug.test import create_environ
@@ -21,7 +22,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
     def test_accept(self):
         a = http.parse_accept_header('en-us,ru;q=0.5')
-        self.assert_equal(a.values(), ['en-us', 'ru'])
+        self.assert_equal(list(itervalues(a)), ['en-us', 'ru'])
         self.assert_equal(a.best, 'en-us')
         self.assert_equal(a.find('ru'), 1)
         self.assert_raises(ValueError, a.index, 'de')
@@ -46,7 +47,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(a.best_match(['text/html', 'application/xhtml+xml']),
                           'application/xhtml+xml')
         self.assert_equal(a.best_match(['text/html']),  'text/html')
-        self.assert_(a.best_match(['foo/bar']) is None)
+        self.assert_true(a.best_match(['foo/bar']) is None)
         self.assert_equal(a.best_match(['foo/bar', 'bar/foo'],
                           default='foo/bar'),  'foo/bar')
         self.assert_equal(a.best_match(['application/xml', 'text/xml']),  'application/xml')
@@ -63,16 +64,16 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         a = http.parse_accept_header('de-AT,de;q=0.8,en;q=0.5',
                                      datastructures.LanguageAccept)
         self.assert_equal(a.best,  'de-AT')
-        self.assert_('de_AT' in a)
-        self.assert_('en' in a)
+        self.assert_true('de_AT' in a)
+        self.assert_true('en' in a)
         self.assert_equal(a['de-at'], 1)
         self.assert_equal(a['en'], 0.5)
 
     def test_set_header(self):
         hs = http.parse_set_header('foo, Bar, "Blah baz", Hehe')
-        self.assert_('blah baz' in hs)
-        self.assert_('foobar' not in hs)
-        self.assert_('foo' in hs)
+        self.assert_true('blah baz' in hs)
+        self.assert_true('foobar' not in hs)
+        self.assert_true('foo' in hs)
         self.assert_equal(list(hs), ['foo', 'Bar', 'Blah baz', 'Hehe'])
         hs.add('Foo')
         self.assert_equal(hs.to_header(), 'foo, Bar, "Blah baz", Hehe')
@@ -191,8 +192,8 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
 
     def test_etags_nonzero(self):
         etags = http.parse_etags('w/"foo"')
-        self.assert_(bool(etags))
-        self.assert_(etags.contains_raw('w/"foo"'))
+        self.assert_true(bool(etags))
+        self.assert_true(etags.contains_raw('w/"foo"'))
 
     def test_parse_date(self):
         assert http.parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(1994, 11, 6, 8, 49, 37)
@@ -214,7 +215,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         assert headers1 == [('Date', now)]
 
         http.remove_entity_headers(headers2)
-        assert headers2 == datastructures.Headers([('Date', now)])
+        self.assert_equal(headers2, datastructures.Headers([(u'Date', now)]))
 
     def test_remove_hop_by_hop_headers(self):
         headers1 = [('Connection', 'closed'), ('Foo', 'bar'),
@@ -264,8 +265,8 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         # etagify from data
         self.assert_raises(TypeError, http.is_resource_modified, env,
                            data='42', etag='23')
-        env['HTTP_IF_NONE_MATCH'] = http.generate_etag('awesome')
-        assert not http.is_resource_modified(env, data='awesome')
+        env['HTTP_IF_NONE_MATCH'] = http.generate_etag(b'awesome')
+        assert not http.is_resource_modified(env, data=b'awesome')
 
         env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(datetime(2008, 1, 1, 12, 30))
         assert not http.is_resource_modified(env,
@@ -280,24 +281,69 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         assert http.http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'
 
     def test_cookies(self):
-        assert http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
-                            'c762809248d4beed; a=42') == {
-            'CP':           u'null*',
-            'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
-            'a':            u'42',
-            'dismiss-top':  u'6'
-        }
-        assert set(http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,
-                               sync_expires=False).split('; ')) == \
-               set(['HttpOnly', 'Max-Age=360', 'Path=/', 'foo="bar baz blub"'])
-        assert http.parse_cookie('fo234{=bar blub=Blah') == {'blub': 'Blah'}
+        self.assert_strict_equal(
+            dict(http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
+                              'c762809248d4beed; a=42; b="\\\";"')),
+            {
+                'CP':           u'null*',
+                'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
+                'a':            u'42',
+                'dismiss-top':  u'6',
+                'b':            u'\";'
+            }
+        )
+        self.assert_strict_equal(
+            set(http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,
+                                 sync_expires=False).split(u'; ')),
+            set([u'HttpOnly', u'Max-Age=360', u'Path=/', u'foo="bar baz blub"'])
+        )
+        self.assert_strict_equal(dict(http.parse_cookie('fo234{=bar; blub=Blah')),
+                                 {'fo234{': u'bar', 'blub': u'Blah'})
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        assert val == 'foo="?foo"; Path=/'
-        assert http.parse_cookie(val) == {'foo': '?foo'}
+        self.assert_strict_equal(val, 'foo="?foo"; Path=/')
+        self.assert_strict_equal(dict(http.parse_cookie(val)), {'foo': u'?foo'})
 
-        assert http.parse_cookie(r'foo="foo\054bar"') == {'foo': 'foo,bar'}
+        self.assert_strict_equal(dict(http.parse_cookie(r'foo="foo\054bar"')),
+                                 {'foo': u'foo,bar'})
+
+    def test_cookie_domain_resolving(self):
+        val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
+
+    def test_cookie_unicode_dumping(self):
+        val = http.dump_cookie('foo', u'\N{SNOWMAN}')
+        h = datastructures.Headers()
+        h.add('Set-Cookie', val)
+        self.assert_equal(h['Set-Cookie'], 'foo="\\342\\230\\203"; Path=/')
+
+        cookies = http.parse_cookie(h['Set-Cookie'])
+        self.assert_equal(cookies['foo'], u'\N{SNOWMAN}')
+
+    def test_cookie_unicode_keys(self):
+        # Yes, this is technically against the spec but happens
+        val = http.dump_cookie(u'fö', u'fö')
+        self.assert_equal(val, wsgi_encoding_dance(u'fö="f\\303\\266"; Path=/', 'utf-8'))
+        cookies = http.parse_cookie(val)
+        self.assert_equal(cookies[u'fö'], u'fö')
+
+    def test_cookie_unicode_parsing(self):
+        # This is actually a correct test.  This is what is being submitted
+        # by firefox if you set an unicode cookie and we get the cookie sent
+        # in on Python 3 under PEP 3333.
+        cookies = http.parse_cookie(u'fÃ¶=fÃ¶')
+        self.assert_equal(cookies[u'fö'], u'fö')
+
+    def test_cookie_domain_encoding(self):
+        val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
+
+        val = http.dump_cookie('foo', 'bar', domain=u'.\N{SNOWMAN}.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=.xn--n3h.com; Path=/')
+
+        val = http.dump_cookie('foo', 'bar', domain=u'.foo.com')
+        self.assert_strict_equal(val, 'foo=bar; Domain=.foo.com; Path=/')
 
 
 class RangeTestCase(WerkzeugTestCase):

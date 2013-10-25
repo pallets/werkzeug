@@ -5,6 +5,7 @@ dist
 *.pyc
 *.pyo
 env
+.tox
 docs/_build
 bench/a
 bench/b

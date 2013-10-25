@@ -2,11 +2,11 @@
 Installation
 ============
 
-Werkzeug requires at least Python 2.4 to work correctly, though we
-recommend upgrading to 2.5 or higher.  Werkzeug currently does not support
-Python 3 and there are no direct plans on supporting it for the time
-being.  If you wish to use Werkzeug on Python 3, please `contact the
-developers <http://werkzeug.pocoo.org/community/>`_.
+Werkzeug requires at least Python 2.6 to work correctly.  If you do need
+to support an older version you can download an older version of Werkzeug
+though we strongly recommend against that.  Werkzeug currently has
+experimental support for Python 3.  For more information about the
+Python 3 support see :ref:`python3`.
 
 
 Installing a released version
@@ -17,11 +17,11 @@ As a Python egg (via easy_install or pip)
 
 You can install the most recent Werkzeug version using `easy_install`_::
 
-    sudo easy_install Werkzeug
+    easy_install Werkzeug
 
 Alternatively you can also use pip::
 
-    sudo pip install Werkzeug
+    pip install Werkzeug
 
 Either way we strongly recommend using these tools in combination with
 :ref:`virtualenv`.
@@ -34,7 +34,7 @@ From the tarball release
 
 1.  Download the most recent tarball from the `download page`_.
 2.  Unpack the tarball.
-3.  ``sudo python setup.py install``
+3.  ``python setup.py install``
 
 Note that the last command will automatically download and install
 `setuptools`_ if you don't already have it installed.  This requires a working
@@ -50,7 +50,7 @@ Installing the development version
 1.  Install `Git`_
 2.  ``git clone git://github.com/mitsuhiko/werkzeug.git``
 3.  ``cd werkzeug``
-4.  ``ln -s werkzeug /usr/lib/python2.X/site-packages``
+4.  ``pip install --editable .``
 
 .. _virtualenv:
 
@@ -127,7 +127,7 @@ your virtualenv::
 
 A few seconds later you are good to go.
 
-.. _download page: http://werkzeug.pocoo.org/download
+.. _download page: https://pypi.python.org/pypi/Werkzeug
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _Git: http://git-scm.org/

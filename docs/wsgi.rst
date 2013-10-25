@@ -38,7 +38,17 @@ information or perform common manipulations:
 
 .. autofunction:: get_host
 
+.. autofunction:: get_content_length
+
+.. autofunction:: get_input_stream
+
 .. autofunction:: get_current_url
+
+.. autofunction:: get_query_string
+
+.. autofunction:: get_script_name
+
+.. autofunction:: get_path_info
 
 .. autofunction:: pop_path_info
 

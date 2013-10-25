@@ -1,10 +1,102 @@
 Werkzeug Changelog
 ==================
 
+Version 0.10
+------------
+
+Release date and codename to be decided
+
+- Changed the error handling of and improved testsuite for the caches in
+  ``contrib.cache``.
+- Fixed a bug on Python 3 when creating adhoc ssl contexts, due to `sys.maxint`
+  not being defined.
+- Fixed a bug on Python 3, that caused
+  :func:`~werkzeug.serving.make_ssl_devcert` to fail with an exception.
+- Added exceptions for 504 and 505.
+- Added support for ChromeOS detection.
+- Added UUID converter to the routing system.
+
+Version 0.9.5
+-------------
+
+(bugfix release, release date to be decided)
+
+- Forward charset argument from request objects to the environ
+  builder.
+- Fixed error handling for missing boundaries in multipart data.
+- Fixed session creation on systems without ``os.urandom()``.
+- Fixed pluses in dictionary keys not being properly URL encoded.
+- Fixed a problem with deepcopy not working for multi dicts.
+- Fixed a double quoting issue on redirects.
+
+Version 0.9.4
+-------------
+
+(bugfix release, released on August 26th 2013)
+
+- Fixed an issue with Python 3.3 and an edge case in cookie parsing.
+- Fixed decoding errors not handled properly through the WSGI
+  decoding dance.
+- Fixed URI to IRI conversion incorrectly decoding percent signs.
+
+Version 0.9.3
+-------------
+
+(bugfix release, released on July 25th 2013)
+
+- Restored behavior of the ``data`` descriptor of the request class to pre 0.9
+  behavior.  This now also means that ``.data`` and ``.get_data()`` have
+  different behavior.  New code should use ``.get_data()`` always.
+
+  In addition to that there is now a flag for the ``.get_data()`` method that
+  controls what should happen with form data parsing and the form parser will
+  honor cached data.  This makes dealing with custom form data more consistent.
+
+Version 0.9.2
+-------------
+
+(bugfix release, released on July 18th 2013)
+
+- Added `unsafe` parameter to :func:`~werkzeug.urls.url_quote`.
+- Fixed an issue with :func:`~werkzeug.urls.url_quote_plus` not quoting
+  `'+'` correctly.
+- Ported remaining parts of :class:`~werkzeug.contrib.RedisCache` to
+  Python 3.3.
+- Ported remaining parts of :class:`~werkzeug.contrib.MemcachedCache` to
+  Python 3.3
+- Fixed a deprecation warning in the contrib atom module.
+- Fixed a regression with setting of content types through the
+  headers dictionary instead with the content type parameter.
+- Use correct name for stdlib secure string comparision function.
+- Fixed a wrong reference in the docstring of
+  :func:`~werkzeug.local.release_local`.
+- Fixed an `AttributeError` that sometimes occurred when accessing the
+  :attr:`werkzeug.wrappers.BaseResponse.is_streamed` attribute.
+
+Version 0.9.1
+-------------
+
+(bugfix release, released on June 14th 2013)
+
+- Fixed an issue with integers no longer being accepted in certain
+  parts of the routing system or URL quoting functions.
+- Fixed an issue with `url_quote` not producing the right escape
+  codes for single digit codepoints.
+- Fixed an issue with :class:`~werkzeug.wsgi.SharedDataMiddleware` not
+  reading the path correctly and breaking on etag generation in some
+  cases.
+- Properly handle `Expect: 100-continue` in the development server
+  to resolve issues with curl.
+- Automatically exhaust the input stream on request close.  This should
+  fix issues where not touching request files results in a timeout.
+- Fixed exhausting of streams not doing anything if a non-limited
+  stream was passed into the multipart parser.
+- Raised the buffer sizes for the multipart parser.
+
 Version 0.9
 -----------
 
-Release date to be decided, codename to be chosen.
+Released on June 13nd 2013, codename Planierraupe.
 
 - Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
   on the limited stream.
@@ -20,6 +112,7 @@ Release date to be decided, codename to be chosen.
   iterators and streams.
 - URL generation by the routing system now no longer quotes
   ``+``.
+- URL fixing now no longer quotes certain reserved characters.
 - The :func:`werkzeug.security.generate_password_hash` and
   check functions now support any of the hashlib algorithms.
 - `wsgi.get_current_url` is now ascii safe for browsers sending
@@ -39,6 +132,53 @@ Release date to be decided, codename to be chosen.
 - Renamed `LighttpdCGIRootFix` to `CGIRootFix`.
 - Always treat `+` as safe when fixing URLs as people love misusing them.
 - Added support to profiling into directories in the contrib profiler.
+- The escape function now by default escapes quotes.
+- Changed repr of exceptions to be less magical.
+- Simplified exception interface to no longer require environmnts
+  to be passed to recieve the response object.
+- Added sentinel argument to IterIO objects.
+- Added pbkdf2 support for the security module.
+- Added a plain request type that disables all form parsing to only
+  leave the stream behind.
+- Removed support for deprecated `fix_headers`.
+- Removed support for deprecated `header_list`.
+- Removed support for deprecated parameter for `iter_encoded`.
+- Removed support for deprecated non-silent usage of the limited
+  stream object.
+- Removed support for previous dummy `writable` parameter on
+  the cached property.
+- Added support for explicitly closing request objects to close
+  associated resources.
+- Conditional request handling or access to the data property on responses no
+  longer ignores direct passthrough mode.
+- Removed werkzeug.templates and werkzeug.contrib.kickstart.
+- Changed host lookup logic for forwarded hosts to allow lists of
+  hosts in which case only the first one is picked up.
+- Added `wsgi.get_query_string`, `wsgi.get_path_info` and
+  `wsgi.get_script_name` and made the `wsgi.pop_path_info` and
+  `wsgi.peek_path_info` functions perform unicode decoding.  This
+  was necessary to avoid having to expose the WSGI encoding dance
+  on Python 3.
+- Added `content_encoding` and `content_md5` to the request object's
+  common request descriptor mixin.
+- added `options` and `trace` to the test client.
+- Overhauled the utilization of the input stream to be easier to use
+  and better to extend.  The detection of content payload on the input
+  side is now more compliant with HTTP by detecting off the content
+  type header instead of the request method.  This also now means that
+  the stream property on the request class is always available instead
+  of just when the parsing fails.
+- Added support for using :class:`werkzeug.wrappers.BaseResponse` in a with
+  statement.
+- Changed `get_app_iter` to fetch the response early so that it does not
+  fail when wrapping a response iterable.  This makes filtering easier.
+- Introduced `get_data` and `set_data` methods for responses.
+- Introduced `get_data` for requests.
+- Soft deprecated the `data` descriptors for request and response objects.
+- Added `as_bytes` operations to some of the headers to simplify working
+  with things like cookies.
+- Made the debugger paste tracebacks into github's gist service as
+  private pastes.
 
 Version 0.8.4
 -------------

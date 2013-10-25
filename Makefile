@@ -15,7 +15,10 @@ release:
 	python scripts/make-release.py
 
 test:
-	python setup.py test
+	python run-tests.py
+
+tox-test:
+	tox
 
 coverage:
 	@(nosetests $(TEST_OPTIONS) --with-coverage --cover-package=werkzeug --cover-html --cover-html-dir=coverage_out $(TESTS))
