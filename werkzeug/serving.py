@@ -39,6 +39,7 @@ from __future__ import with_statement
 
 import os
 import socket
+import ssl
 import sys
 import time
 import signal
@@ -333,20 +334,27 @@ def make_ssl_devcert(base_path, host=None, cn=None):
 
 def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
-    from OpenSSL import SSL
+    import tempfile
     cert, pkey = generate_adhoc_ssl_pair()
-    ctx = SSL.Context(SSL.SSLv23_METHOD)
-    ctx.use_privatekey(pkey)
-    ctx.use_certificate(cert)
+    cert_handle, cert_file = tempfile.mkstemp()
+    pkey_handle, pkey_file = tempfile.mkstemp()
+    os.write(cert_handle, cert)
+    os.write(pkey_handle, key)
+    os.close(cert_handle)
+    os.close(pkey_handle)
+    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    ctx.load_cert_chain(cert_file.name, pkey_file.name)
+    os.unlink(cert_file)
+    os.unlink(pkey_file)
     return ctx
 
 
-def load_ssl_context(cert_file, pkey_file):
-    """Loads an SSL context from a certificate and private key file."""
-    from OpenSSL import SSL
-    ctx = SSL.Context(SSL.SSLv23_METHOD)
-    ctx.use_certificate_file(cert_file)
-    ctx.use_privatekey_file(pkey_file)
+def load_ssl_context(cert_file, pkey_file, protocol=None):
+    """Loads SSL context from cert/private key files and optional protocol."""
+    if not protocol:
+        protocol = ssl.PROTOCOL_SSLv23
+    ctx = ssl.SSLContext(protocol)
+    ctx.load_cert_chain(cert_file, pkey_file)
     return ctx
 
 
@@ -354,27 +362,7 @@ def is_ssl_error(error=None):
     """Checks if the given error (or the current one) is an SSL error."""
     if error is None:
         error = sys.exc_info()[1]
-    from OpenSSL import SSL
-    return isinstance(error, SSL.Error)
-
-
-class _SSLConnectionFix(object):
-    """Wrapper around SSL connection to provide a working makefile()."""
-
-    def __init__(self, con):
-        self._con = con
-
-    def makefile(self, mode, bufsize):
-        return socket._fileobject(self._con, mode, bufsize)
-
-    def __getattr__(self, attrib):
-        return getattr(self._con, attrib)
-
-    def shutdown(self, arg=None):
-        try:
-            self._con.shutdown()
-        except Exception:
-            pass
+    return isinstance(error, ssl.SSLError)
 
 
 def select_ip_version(host, port):
@@ -413,16 +401,11 @@ class BaseWSGIServer(HTTPServer, object):
         self.shutdown_signal = False
 
         if ssl_context is not None:
-            try:
-                from OpenSSL import tsafe
-            except ImportError:
-                raise TypeError('SSL is not available if the OpenSSL '
-                                'library is not installed.')
             if isinstance(ssl_context, tuple):
                 ssl_context = load_ssl_context(*ssl_context)
             if ssl_context == 'adhoc':
                 ssl_context = generate_adhoc_ssl_context()
-            self.socket = tsafe.Connection(ssl_context, self.socket)
+            self.socket = ssl_context.wrap_socket(self.socket, server_side=True)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None
@@ -448,7 +431,7 @@ class BaseWSGIServer(HTTPServer, object):
     def get_request(self):
         con, info = self.socket.accept()
         if self.ssl_context is not None:
-            con = _SSLConnectionFix(con)
+            con = self.ssl_context.wrap_socket(con, server_side=True)
         return con, info
 
 
@@ -674,11 +657,11 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param passthrough_errors: set this to `True` to disable the error catching.
                                This means that the server will die on errors but
                                it can be useful to hook debuggers in (pdb etc.)
-    :param ssl_context: an SSL context for the connection. Either an OpenSSL
-                        context, a tuple in the form ``(cert_file, pkey_file)``,
-                        the string ``'adhoc'`` if the server should
-                        automatically create one, or `None` to disable SSL
-                        (which is the default).
+    :param ssl_context: an SSL context for the connection. Either an
+                        ssl.SSLContext, a tuple in the form ``(cert_file,
+                        pkey_file)``, the string ``'adhoc'`` if the server
+                        should automatically create one, or `None` to disable
+                        SSL (which is the default).
     """
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
