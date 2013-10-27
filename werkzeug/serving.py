@@ -351,7 +351,7 @@ def generate_adhoc_ssl_context():
 
 def load_ssl_context(cert_file, pkey_file, protocol=None):
     """Loads SSL context from cert/private key files and optional protocol."""
-    if not protocol:
+    if protocol is None:
         protocol = ssl.PROTOCOL_SSLv23
     ctx = ssl.SSLContext(protocol)
     ctx.load_cert_chain(cert_file, pkey_file)
@@ -428,8 +428,6 @@ class BaseWSGIServer(HTTPServer, object):
 
     def get_request(self):
         con, info = self.socket.accept()
-        if self.ssl_context is not None:
-            con = self.ssl_context.wrap_socket(con, server_side=True)
         return con, info
 
 
