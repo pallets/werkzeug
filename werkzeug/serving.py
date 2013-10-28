@@ -334,16 +334,17 @@ def make_ssl_devcert(base_path, host=None, cn=None):
 
 def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
+    from OpenSSL import crypto
     import tempfile
     cert, pkey = generate_adhoc_ssl_pair()
     cert_handle, cert_file = tempfile.mkstemp()
     pkey_handle, pkey_file = tempfile.mkstemp()
-    os.write(cert_handle, cert)
-    os.write(pkey_handle, key)
+    os.write(cert_handle, crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+    os.write(pkey_handle, crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
     os.close(cert_handle)
     os.close(pkey_handle)
     ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-    ctx.load_cert_chain(cert_file.name, pkey_file.name)
+    ctx.load_cert_chain(cert_file, pkey_file)
     os.unlink(cert_file)
     os.unlink(pkey_file)
     return ctx
