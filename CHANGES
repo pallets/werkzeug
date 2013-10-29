@@ -28,6 +28,7 @@ Version 0.9.5
 - Fixed pluses in dictionary keys not being properly URL encoded.
 - Fixed a problem with deepcopy not working for multi dicts.
 - Fixed a double quoting issue on redirects.
+- Fixed a problem with unicode keys appearing in headers on 2.x.
 
 Version 0.9.4
 -------------
