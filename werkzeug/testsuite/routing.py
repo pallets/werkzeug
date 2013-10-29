@@ -647,7 +647,7 @@ class RoutingTestCase(WerkzeugTestCase):
             adapter.match('/foo bar/page/1')
         except r.RequestRedirect as e:
             response = e.get_response({})
-            self.assert_strict_equal(response.headers['location'],
+            self.assert_strict_equal(str(response.headers['location']),
                                      'http://example.com/foo%20bar')
         else:
             self.fail('Expected redirect')
