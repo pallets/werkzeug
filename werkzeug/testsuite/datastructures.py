@@ -25,7 +25,7 @@ from copy import copy, deepcopy
 
 from werkzeug import datastructures
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-     iterlistvalues, text_type
+     iterlistvalues, text_type, PY2
 from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.exceptions import BadRequestKeyError
 
@@ -630,6 +630,18 @@ class HeadersTestCase(WerkzeugTestCase):
 
         self.assert_equal(h.get('x-foo-poo', as_bytes=True), b'bleh')
         self.assert_equal(h.get('x-whoops', as_bytes=True), b'\xff')
+
+    def test_to_wsgi_list(self):
+        h = self.storage_class()
+        h.set(u'Key', u'Value')
+        for key, value in h.to_wsgi_list():
+            if PY2:
+                self.assert_strict_equal(key, b'Key')
+                self.assert_strict_equal(value, b'Value')
+            else:
+                self.assert_strict_equal(key, u'Key')
+                self.assert_strict_equal(value, u'Value')
+
 
 
 class EnvironHeadersTestCase(WerkzeugTestCase):
