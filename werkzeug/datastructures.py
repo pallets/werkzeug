@@ -17,7 +17,8 @@ from itertools import repeat
 
 from werkzeug._internal import _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-     PY2, text_type, integer_types, string_types, make_literal_wrapper
+     PY2, text_type, integer_types, string_types, make_literal_wrapper, \
+     to_native
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -1190,7 +1191,7 @@ class Headers(object):
         :return: list
         """
         if PY2:
-            return [(k, v.encode('latin1')) for k, v in self]
+            return [(to_native(k), v.encode('latin1')) for k, v in self]
         return list(self)
 
     def copy(self):
