@@ -15,6 +15,7 @@ Release date and codename to be decided
 - Added exceptions for 504 and 505.
 - Added support for ChromeOS detection.
 - Added UUID converter to the routing system.
+- Added message that explains how to quit the server.
 
 Version 0.9.5
 -------------
