@@ -511,6 +511,16 @@ class CombinedMultiDictTestCase(WerkzeugTestCase):
         x = self.storage_class((md1, md2))
         self.assert_equal(list(iterlists(x)), [('foo', ['bar', 'blafasel'])])
 
+    def test_length(self):
+        d1 = datastructures.MultiDict([('foo', '1')])
+        d2 = datastructures.MultiDict([('bar', '2')])
+        assert len(d1) == len(d2) == 1
+        d = self.storage_class([d1, d2])
+        assert len(d) == 2
+        d1.clear()
+        assert len(d1) == 0
+        assert len(d) == 1
+
 
 class HeadersTestCase(WerkzeugTestCase):
     storage_class = datastructures.Headers

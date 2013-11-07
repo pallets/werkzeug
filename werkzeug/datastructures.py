@@ -1354,11 +1354,20 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
             rv.extend(d.getlist(key, type))
         return rv
 
-    def keys(self):
+    def _keys_impl(self):
+        """This function exists so __len__ can be implemented more efficiently,
+        saving one list creation from an iterator.
+        
+        Using this for Python 2's ``dict.keys`` behavior would be useless since
+        `dict.keys` in Python 2 returns a list, while we have a set here.
+        """
         rv = set()
         for d in self.dicts:
-            rv.update(d.keys())
-        return iter(rv)
+            rv.update(iterkeys(d))
+        return rv
+
+    def keys(self):
+        return iter(self._keys_impl())
 
     __iter__ = keys
 
@@ -1406,7 +1415,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         return rv
 
     def __len__(self):
-        return len(self.keys())
+        return len(self._keys_impl())
 
     def __contains__(self, key):
         for d in self.dicts:
