@@ -16,6 +16,8 @@ Release date and codename to be decided
 - Added support for ChromeOS detection.
 - Added UUID converter to the routing system.
 - Added message that explains how to quit the server.
+- Fixed a bug on Python 2, that caused ``len`` for 
+  :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
 
 Version 0.9.5
 -------------
