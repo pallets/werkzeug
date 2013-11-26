@@ -61,6 +61,16 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         resp = utils.redirect(location)
         self.assert_not_in(b'href="http://example.com/?xss="onmouseover="alert(1)"', resp.get_data())
 
+    def test_redirect_with_custom_Response(self):
+        class MyResponse(BaseResponse):
+            pass
+
+        location = "http://example.com/redirect"
+        resp = utils.redirect(location, Response=MyResponse)
+
+        self.assert_is_instance(resp, MyResponse)
+        self.assert_equal(resp.headers['Location'], location)
+
     def test_cached_property(self):
         foo = []
         class A(object):
