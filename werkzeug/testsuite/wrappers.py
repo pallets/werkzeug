@@ -122,13 +122,13 @@ class WrappersTestCase(WerkzeugTestCase):
 
     def test_request_repr(self):
         req = wrappers.Request.from_values('/foobar')
-        self.assert_strict_equal("<Request 'http://localhost/foobar' [GET]>", repr(req))
+        self.assert_equal("<Request 'http://localhost/foobar' [GET]>", repr(req))
         # test with non-ascii characters
         req = wrappers.Request.from_values('/привет')
-        self.assert_strict_equal("<Request 'http://localhost/привет' [GET]>", repr(req))
-        # test with unicode charset
+        self.assert_equal("<Request 'http://localhost/привет' [GET]>", repr(req))
+        # test with unicode type for python 2
         req = wrappers.Request.from_values(u'/привет')
-        self.assert_strict_equal("<Request 'http://localhost/привет' [GET]>", repr(req))
+        self.assert_equal("<Request 'http://localhost/привет' [GET]>", repr(req))
 
     def test_access_route(self):
         req = wrappers.Request.from_values(headers={
