@@ -377,7 +377,7 @@ class Frame(object):
         # if it's a file on the file system resolve the real filename.
         if os.path.isfile(fn):
             fn = os.path.realpath(fn)
-        self.filename = fn
+        self.filename = fn.decode('utf-8')
         self.module = self.globals.get('__name__')
         self.loader = self.globals.get('__loader__')
         self.code = tb.tb_frame.f_code
