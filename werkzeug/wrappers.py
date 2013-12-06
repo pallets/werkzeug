@@ -600,6 +600,14 @@ class BaseRequest(object):
         """The remote address of the client."""
         return self.environ.get('REMOTE_ADDR')
 
+    @property
+    def is_local(self):
+        """True if the request is local"""
+        if self.remote_addr:
+            return self.remote_addr in ["127.0.0.1", "::1", self.environ.get("SERVER_ADDR")]
+        else:
+            return False
+
     remote_user = environ_property('REMOTE_USER', doc='''
         If the server supports user authentication, and the script is
         protected, this attribute contains the username the user has
