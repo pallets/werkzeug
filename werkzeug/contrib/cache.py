@@ -58,6 +58,7 @@
 """
 import os
 import re
+import errno
 import tempfile
 from hashlib import md5
 from time import time
@@ -619,8 +620,12 @@ class FileSystemCache(BaseCache):
         self._path = cache_dir
         self._threshold = threshold
         self._mode = mode
-        if not os.path.exists(self._path):
+
+        try:
             os.makedirs(self._path)
+        except OSError as ex:
+            if ex.errno != errno.EEXIST:
+                raise
 
     def _list_dir(self):
         """return a list of (fully qualified) cache filenames
