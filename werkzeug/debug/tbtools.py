@@ -479,7 +479,7 @@ class Frame(object):
             source = source[3:]
         else:
             for idx, match in enumerate(_line_re.finditer(source)):
-                match = _line_re.search(match.group())
+                match = _coding_re.search(match.group())
                 if match is not None:
                     charset = match.group(1)
                     break
