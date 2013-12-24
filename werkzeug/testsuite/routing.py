@@ -367,6 +367,23 @@ class RoutingTestCase(WerkzeugTestCase):
         a = m.bind('example.com')
         self.assert_equal(a.build('foo', {'foo': 42}), '/42')
 
+    def test_not_unquote_slashes(self):
+        m = r.Map([
+            r.Rule('/<foo>', endpoint='foo'),
+            r.Rule('/file:<bar>', endpoint='bar'),
+            r.Rule('/<path:foo>/<bar>', endpoint='foobar'),
+            r.Rule('/mixed/<path:mixed>', endpoint='mixed')
+        ])
+        a = m.bind('example.com')
+        # %2F is a quoted /
+        self.assert_equal(a.match('/a%2Fb%2Fc'), ('foo', {'foo': 'a/b/c'}))
+        self.assert_equal(a.match('/%2Fb%2Fc'), ('foo', {'foo': '/b/c'}))
+        self.assert_equal(a.match('/%2Fb%2F'), ('foo', {'foo': '/b/'}))
+        self.assert_equal(a.match('/file:a%2Fb'), ('bar', {'bar': 'a/b'}))
+        self.assert_equal(a.match('/a/b/%2Fb%2F'), ('foobar', {'foo': 'a/b', 'bar': '/b/'}))
+        self.assert_equal(a.match('/mixed/a%2Fb/c'), ('mixed', {'mixed': 'a/b/c'}))
+        self.assert_equal(a.match('/mixed/%2F/%2Fa'), ('mixed', {'mixed': '///a'}))
+
     def test_complex_routing_rules(self):
         m = r.Map([
             r.Rule('/', endpoint='index'),

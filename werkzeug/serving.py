@@ -78,7 +78,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             self.server.shutdown_signal = True
 
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
-        path_info = url_unquote(request_url.path)
+        path_info = url_unquote(request_url.path, unsafe='/')
 
         environ = {
             'wsgi.version':         (1, 0),
