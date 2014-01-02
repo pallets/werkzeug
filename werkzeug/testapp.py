@@ -6,7 +6,7 @@
     Provide a small test application that can be used to test a WSGI server
     and check it for WSGI compliance.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import os

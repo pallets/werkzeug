@@ -7,7 +7,7 @@
     Changes the deprecated werkzeug imports to the full canonical imports.
     This is a terrible hack, don't trust the diff untested.
 
-    :copyright: (c) 2013 by the Werkzeug Team.
+    :copyright: (c) 2014 by the Werkzeug Team.
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement
