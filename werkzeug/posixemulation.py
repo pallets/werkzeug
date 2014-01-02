@@ -14,7 +14,7 @@ r"""
     This module was introduced in 0.6.1 and is not a public interface.
     It might become one in later versions of Werkzeug.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import sys

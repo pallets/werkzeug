@@ -5,7 +5,7 @@
 
     Ensure that old stuff does not break on update.
 
-    :copyright: (c) 2013 by Armin Ronacher.
+    :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 import unittest
