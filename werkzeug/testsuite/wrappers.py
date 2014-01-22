@@ -581,6 +581,7 @@ class WrappersTestCase(WerkzeugTestCase):
             method='POST'
         )
         foo = req.files['foo']
+        self.assert_equal(req.values_with_files["foo"], foo)
         self.assert_equal(foo.mimetype, 'text/plain')
         self.assert_equal(foo.filename, 'foo.txt')
 
