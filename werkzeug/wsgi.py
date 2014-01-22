@@ -509,12 +509,13 @@ class SharedDataMiddleware(object):
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
     def get_package_loader(self, package, package_path):
-        from pkg_resources import DefaultProvider, ResourceManager, \
-             get_provider
+        from pkg_resources import DefaultProvider, ZipProvider, \
+             ResourceManager, get_provider
         loadtime = datetime.utcnow()
         provider = get_provider(package)
         manager = ResourceManager()
         filesystem_bound = isinstance(provider, DefaultProvider)
+        zip_bound = isinstance(provider, ZipProvider)
         def loader(path):
             if path is None:
                 return None, None
@@ -525,10 +526,19 @@ class SharedDataMiddleware(object):
             if filesystem_bound:
                 return basename, self._opener(
                     provider.get_resource_filename(manager, path))
+            file_size = 0
+            if zip_bound:
+                zip_path = "/".join([
+                    package.replace(".", "/"),
+                    path
+                ])
+                file_zip_info = provider.zipinfo.get(zip_path)
+                if file_zip_info:
+                    file_size = file_zip_info.file_size
             return basename, lambda: (
                 provider.get_resource_stream(manager, path),
                 loadtime,
-                0
+                file_size
             )
         return loader
 
