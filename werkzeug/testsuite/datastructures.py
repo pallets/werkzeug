@@ -803,6 +803,17 @@ class CallbackDictTestCase(WerkzeugTestCase):
             self.assert_raises(KeyError, lambda: dct.pop('x'))
 
 
+class CacheControlTestCase(WerkzeugTestCase):
+    def test_repr(self):
+        cc = datastructures.RequestCacheControl(
+            [("max-age", "0"), ("private", "True")],
+        )
+        self.assert_equal(
+            repr(cc),
+            "<RequestCacheControl max-age='0' private='True'>",
+        )
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(MultiDictTestCase))
@@ -817,4 +828,5 @@ def suite():
     suite.addTest(unittest.makeSuite(HeaderSetTestCase))
     suite.addTest(unittest.makeSuite(NativeItermethodsTestCase))
     suite.addTest(unittest.makeSuite(CallbackDictTestCase))
+    suite.addTest(unittest.makeSuite(CacheControlTestCase))
     return suite
