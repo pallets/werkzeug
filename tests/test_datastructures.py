@@ -812,3 +812,11 @@ class TestCallbackDict(object):
             pytest.raises(KeyError, lambda: dct.__delitem__('x'))
         with assert_calls(0, 'callback triggered by failed pop'):
             pytest.raises(KeyError, lambda: dct.pop('x'))
+
+
+class TestCacheControl(object):
+    def test_repr(self):
+        cc = datastructures.RequestCacheControl(
+            [("max-age", "0"), ("private", "True")],
+        )
+        assert repr(cc) == "<RequestCacheControl max-age='0' private='True'>"
