@@ -8,6 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import io
 import unittest
 import sys
 import re
@@ -16,6 +17,7 @@ from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
+from werkzeug.debug.tbtools import Traceback
 from werkzeug._compat import PY2
 
 
@@ -165,8 +167,26 @@ class DebugHelpersTestCase(WerkzeugTestCase):
         self.assert_in('__delitem__', x)
 
 
+class TracebackTestCase(WerkzeugTestCase):
+
+    def setup(self):
+        try:
+            1/0
+        except ZeroDivisionError:
+            self.traceback = Traceback(*sys.exc_info())
+
+    def test_log(self):
+        buffer_ = io.BytesIO() if PY2 else io.StringIO()
+        self.traceback.log(buffer_)
+        self.assert_equal(
+            buffer_.getvalue().strip(),
+            self.traceback.plaintext.strip()
+        )
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(DebugReprTestCase))
     suite.addTest(unittest.makeSuite(DebugHelpersTestCase))
+    suite.addTest(unittest.makeSuite(TracebackTestCase))
     return suite
