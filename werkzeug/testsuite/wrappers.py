@@ -837,6 +837,28 @@ class WrappersTestCase(WerkzeugTestCase):
         req = ModifiedRequest.from_values(u'/?foo=정상처리'.encode('euc-kr'))
         self.assert_strict_equal(req.args['foo'], u'정상처리')
 
+    def test_is_local(self):
+        req = wrappers.Request.from_values()
+        self.assertFalse(req.is_local)
+
+        req = wrappers.Request.from_values()
+        req.environ['REMOTE_ADDR'] = '192.168.1.3'
+        self.assertFalse(req.is_local)
+
+        req = wrappers.Request.from_values()
+        req.environ["REMOTE_ADDR"] = "127.0.0.1"
+        self.assertTrue(req.is_local)
+
+        req = wrappers.Request.from_values()
+        req.environ["REMOTE_ADDR"] = "::1"
+        self.assertTrue(req.is_local)
+
+        req = wrappers.Request.from_values()
+        req.environ['REMOTE_ADDR'] = '192.168.1.3'
+        req.environ['SERVER_ADDR'] = '192.168.1.3'
+        self.assertTrue(req.is_local)
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(WrappersTestCase))
