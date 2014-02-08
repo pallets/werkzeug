@@ -639,7 +639,7 @@ class RoutingTestCase(WerkzeugTestCase):
         except r.RequestRedirect as e:
             response = e.get_response({})
             self.assert_strict_equal(response.headers['location'],
-                                     'http://example.com/foo%20bar')
+                                     u'http://example.com/foo%20bar')
         else:
             self.fail('Expected redirect')
 
