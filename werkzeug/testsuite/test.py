@@ -425,6 +425,18 @@ class TestTestCase(WerkzeugTestCase):
         self.assert_strict_equal(req.script_root, u'/foo')
         self.assert_strict_equal(req.path, u'/\N{SNOWMAN}')
 
+    def test_full_url_requests_with_args(self):
+        base = 'http://example.com/'
+
+        @Request.application
+        def test_app(request):
+            return Response(request.args['x'])
+        client = Client(test_app, Response)
+        resp = client.get('/?x=42', base)
+        self.assert_strict_equal(resp.data, b'42')
+        resp = client.get('http://www.example.com/?x=23', base)
+        self.assert_strict_equal(resp.data, b'23')
+
 
 def suite():
     suite = unittest.TestSuite()
