@@ -131,7 +131,7 @@ class ImmutableList(ImmutableListMixin, list):
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
-            dict.__repr__(self),
+            list.__repr__(self),
         )
 
 
@@ -1357,7 +1357,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     def _keys_impl(self):
         """This function exists so __len__ can be implemented more efficiently,
         saving one list creation from an iterator.
-        
+
         Using this for Python 2's ``dict.keys`` behavior would be useless since
         `dict.keys` in Python 2 returns a list, while we have a set here.
         """
