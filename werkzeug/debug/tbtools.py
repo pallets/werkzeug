@@ -460,7 +460,7 @@ class Frame(object):
 
         if source is None:
             try:
-                f = open(self.filename)
+                f = open(self.filename, encoding='utf8', errors='replace')
             except IOError:
                 return []
             try:
