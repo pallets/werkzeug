@@ -5,7 +5,7 @@
 
     This module provides mixins and classes with an immutable interface.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import re
@@ -17,7 +17,8 @@ from itertools import repeat
 
 from werkzeug._internal import _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-     PY2, text_type, integer_types, string_types, make_literal_wrapper
+     PY2, text_type, integer_types, string_types, make_literal_wrapper, \
+     to_native
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -1190,7 +1191,7 @@ class Headers(object):
         :return: list
         """
         if PY2:
-            return [(k, v.encode('latin1')) for k, v in self]
+            return [(to_native(k), v.encode('latin1')) for k, v in self]
         return list(self)
 
     def copy(self):
@@ -1353,11 +1354,20 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
             rv.extend(d.getlist(key, type))
         return rv
 
-    def keys(self):
+    def _keys_impl(self):
+        """This function exists so __len__ can be implemented more efficiently,
+        saving one list creation from an iterator.
+        
+        Using this for Python 2's ``dict.keys`` behavior would be useless since
+        `dict.keys` in Python 2 returns a list, while we have a set here.
+        """
         rv = set()
         for d in self.dicts:
-            rv.update(d.keys())
-        return iter(rv)
+            rv.update(iterkeys(d))
+        return rv
+
+    def keys(self):
+        return iter(self._keys_impl())
 
     __iter__ = keys
 
@@ -1405,7 +1415,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         return rv
 
     def __len__(self):
-        return len(self.keys())
+        return len(self._keys_impl())
 
     def __contains__(self, key):
         for d in self.dicts:

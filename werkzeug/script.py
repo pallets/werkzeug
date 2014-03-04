@@ -67,7 +67,7 @@ r'''
     or as named parameters, pretty much like Python function calls.
 
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 '''
 from __future__ import print_function

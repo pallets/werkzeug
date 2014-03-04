@@ -5,7 +5,7 @@
 
     Tests the testing tools.
 
-    :copyright: (c) 2013 by Armin Ronacher.
+    :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 
@@ -23,7 +23,7 @@ from werkzeug.test import Client, EnvironBuilder, create_environ, \
     ClientRedirectError, stream_encode_multipart, run_wsgi_app
 from werkzeug.utils import redirect
 from werkzeug.formparser import parse_form_data
-from werkzeug.datastructures import MultiDict
+from werkzeug.datastructures import MultiDict, FileStorage
 
 
 def cookie_app(environ, start_response):
@@ -227,6 +227,28 @@ class TestTestCase(WerkzeugTestCase):
             self.assert_strict_equal(form, d)
             stream.close()
 
+    def test_environ_builder_unicode_file_mix(self):
+        for use_tempfile in False, True:
+            f = FileStorage(BytesIO(u'\N{SNOWMAN}'.encode('utf-8')),
+                            'snowman.txt')
+            d = MultiDict(dict(f=f, s=u'\N{SNOWMAN}'))
+            stream, length, boundary = stream_encode_multipart(
+                d, use_tempfile, threshold=150)
+            self.assert_true(isinstance(stream, BytesIO) != use_tempfile)
+
+            _, form, files = parse_form_data({
+                'wsgi.input': stream,
+                'CONTENT_LENGTH': str(length),
+                'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
+                                    boundary
+            })
+            self.assert_strict_equal(form['s'], u'\N{SNOWMAN}')
+            self.assert_strict_equal(files['f'].name, 'f')
+            self.assert_strict_equal(files['f'].filename, u'snowman.txt')
+            self.assert_strict_equal(files['f'].read(),
+                                     u'\N{SNOWMAN}'.encode('utf-8'))
+            stream.close()
+
     def test_create_environ(self):
         env = create_environ('/foo?bar=baz', 'http://example.org/')
         expected = {
@@ -402,6 +424,18 @@ class TestTestCase(WerkzeugTestCase):
         req = Request.from_values(u'/\N{SNOWMAN}', u'http://example.com/foo')
         self.assert_strict_equal(req.script_root, u'/foo')
         self.assert_strict_equal(req.path, u'/\N{SNOWMAN}')
+
+    def test_full_url_requests_with_args(self):
+        base = 'http://example.com/'
+
+        @Request.application
+        def test_app(request):
+            return Response(request.args['x'])
+        client = Client(test_app, Response)
+        resp = client.get('/?x=42', base)
+        self.assert_strict_equal(resp.data, b'42')
+        resp = client.get('http://www.example.com/?x=23', base)
+        self.assert_strict_equal(resp.data, b'23')
 
 
 def suite():

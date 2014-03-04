@@ -32,7 +32,7 @@
     instead of a simple start file.
 
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement
@@ -695,8 +695,9 @@ def run_simple(hostname, port, application, use_reloader=False,
         display_hostname = hostname != '*' and hostname or 'localhost'
         if ':' in display_hostname:
             display_hostname = '[%s]' % display_hostname
-        _log('info', ' * Running on %s://%s:%d/', ssl_context is None
-             and 'http' or 'https', display_hostname, port)
+        quit_msg = '(Press CTRL+C to quit)'
+        _log('info', ' * Running on %s://%s:%d/ %s', ssl_context is None
+             and 'http' or 'https', display_hostname, port, quit_msg)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before
         # we spawn a separate Python interpreter and lose this ability.

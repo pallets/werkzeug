@@ -5,7 +5,7 @@
 
     Routing tests.
 
-    :copyright: (c) 2013 by Armin Ronacher.
+    :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 import unittest
@@ -648,7 +648,7 @@ class RoutingTestCase(WerkzeugTestCase):
         except r.RequestRedirect as e:
             response = e.get_response({})
             self.assert_strict_equal(response.headers['location'],
-                                     'http://example.com/foo%20bar')
+                                     u'http://example.com/foo%20bar')
         else:
             self.fail('Expected redirect')
 
