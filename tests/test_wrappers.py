@@ -164,7 +164,7 @@ def test_url_request_descriptors():
 
 
 def test_url_request_descriptors_query_quoting():
-    next = 'http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2F'
+    next = 'http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash'
     req = wrappers.Request.from_values('/bar?next=' + next, 'http://example.com/')
     assert req.path == u'/bar'
     strict_eq(req.full_path, u'/bar?next=' + next)
