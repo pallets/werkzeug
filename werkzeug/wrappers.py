@@ -78,11 +78,12 @@ def _assert_not_shallow(request):
 
 
 def _iter_encoded(iterable, charset):
-    for item in iterable:
-        if isinstance(item, text_type):
-            yield item.encode(charset)
-        else:
-            yield item
+    if iterable is not None:
+        for item in iterable:
+            if isinstance(item, text_type):
+                yield item.encode(charset)
+            else:
+                yield item
 
 
 class BaseRequest(object):
