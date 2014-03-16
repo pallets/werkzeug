@@ -22,6 +22,7 @@ Version 0.9.7
   ``werkzeug.contrib.cache.MemcachedCache`` (issue ``#533``).
 - Fix bug where ``werkzeug.exceptions.abort`` would raise an arbitrary subclass
   of the expected class (issue ``#422``).
+- Fix broken ``jsrouting`` (due to removal of ``werkzeug.templates``)
 
 Version 0.9.6
 -------------
