@@ -305,7 +305,10 @@ class IterO(IterIO):
             nl_pos = self._buf.find(_newline(self._buf), self.pos)
         buf = []
         try:
-            pos = self.pos
+            if self._buf is None:
+                pos = self.pos
+            else:
+                pos = len(self._buf)
             while nl_pos < 0:
                 item = next(self._gen)
                 local_pos = item.find(_newline(item))
