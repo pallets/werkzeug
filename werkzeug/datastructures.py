@@ -131,7 +131,7 @@ class ImmutableList(ImmutableListMixin, list):
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
-            dict.__repr__(self),
+            list.__repr__(self),
         )
 
 

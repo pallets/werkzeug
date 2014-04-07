@@ -64,16 +64,26 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
     def test_pickle(self):
         cls = self.storage_class
 
-        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-            d = cls()
+        def create_instance(module=None):
+            if module is None:
+                d = cls()
+            else:
+                old = cls.__module__
+                cls.__module__ = module
+                d = cls()
+                cls.__module__ = old
             d.setlist(b'foo', [1, 2, 3, 4])
             d.setlist(b'bar', b'foo bar baz'.split())
+            return d
+
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            d = create_instance()
             s = pickle.dumps(d, protocol)
             ud = pickle.loads(s)
             self.assert_equal(type(ud), type(d))
             self.assert_equal(ud, d)
-            self.assert_equal(pickle.loads(
-                s.replace(b'werkzeug.datastructures', b'werkzeug')), d)
+            alternative = pickle.dumps(create_instance('werkzeug'), protocol)
+            self.assert_equal(pickle.loads(alternative), d)
             ud[b'newkey'] = b'bla'
             self.assert_not_equal(ud, d)
 
