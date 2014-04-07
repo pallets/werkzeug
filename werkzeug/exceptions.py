@@ -313,9 +313,9 @@ class Gone(HTTPException):
     """
     code = 410
     description = (
-        'The requested URL is no longer available on this server and '
-        'there is no forwarding address.</p><p>If you followed a link '
-        'from a foreign page, please contact the author of this page.'
+        'The requested URL is no longer available on this server and there '
+        'is no forwarding address. If you followed a link from a foreign '
+        'page, please contact the author of this page.'
     )
 
 
