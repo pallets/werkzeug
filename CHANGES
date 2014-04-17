@@ -18,6 +18,8 @@ Release date and codename to be decided
 - Added message that explains how to quit the server.
 - Fixed a bug on Python 2, that caused ``len`` for 
   :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
+- Added support for stdlib pbkdf2 hmac if a compatible digest
+  is found.
 
 Version 0.9.5
 -------------
