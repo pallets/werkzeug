@@ -91,6 +91,8 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
         hashfunc = _hash_funcs[hashfunc]
     elif not hashfunc:
         hashfunc = hashlib.sha1
+    data = to_bytes(data)
+    salt = to_bytes(salt)
 
     # If we're on Python with pbkdf2_hmac we can try to use it for
     # compatible digests.
@@ -102,8 +104,7 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
                                        data, salt, iterations,
                                        keylen)
 
-    salt = to_bytes(salt)
-    mac = hmac.HMAC(to_bytes(data), None, hashfunc)
+    mac = hmac.HMAC(data, None, hashfunc)
     if not keylen:
         keylen = mac.digest_size
     def _pseudorandom(x, mac=mac):
