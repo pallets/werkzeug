@@ -460,7 +460,12 @@ class Frame(object):
 
         if source is None:
             try:
-                f = open(self.filename)
+                # input file should be ascii, but it may be not.
+                # this probably needs better handling (and/or sniffing
+                # the file encoding
+                # or opening it as binary
+                # and doing the conversion later
+                f = open(self.filename, encoding='utf-8')
             except IOError:
                 return []
             try:
