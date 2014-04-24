@@ -140,7 +140,7 @@ class TestTestCase(WerkzeugTestCase):
         req = b.get_request()
         b.close()
 
-        self.assert_strict_equal(req.url, u'http://localhost/')
+        self.assert_strict_equal(req.url, 'http://localhost/')
         self.assert_strict_equal(req.method, 'POST')
         self.assert_strict_equal(req.form['test'], u'normal value')
         self.assert_equal(req.files['test'].content_type, 'text/plain')

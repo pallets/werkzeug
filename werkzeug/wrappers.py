@@ -550,27 +550,27 @@ class BaseRequest(object):
 
     @cached_property
     def url(self):
-        """The reconstructed current URL"""
+        """The reconstructed current URL (a URI, actually)."""
         return get_current_url(self.environ,
-                               trusted_hosts=self.trusted_hosts)
+                               trusted_hosts=self.trusted_hosts, iri=False)
 
     @cached_property
     def base_url(self):
         """Like :attr:`url` but without the querystring"""
         return get_current_url(self.environ, strip_querystring=True,
-                               trusted_hosts=self.trusted_hosts)
+                               trusted_hosts=self.trusted_hosts, iri=False)
 
     @cached_property
     def url_root(self):
         """The full URL root (with hostname), this is the application root."""
         return get_current_url(self.environ, True,
-                               trusted_hosts=self.trusted_hosts)
+                               trusted_hosts=self.trusted_hosts, iri=False)
 
     @cached_property
     def host_url(self):
         """Just the host with scheme."""
         return get_current_url(self.environ, host_only=True,
-                               trusted_hosts=self.trusted_hosts)
+                               trusted_hosts=self.trusted_hosts, iri=False)
 
     @cached_property
     def host(self):

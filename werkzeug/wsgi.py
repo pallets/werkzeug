@@ -41,7 +41,7 @@ def responder(f):
 
 
 def get_current_url(environ, root_only=False, strip_querystring=False,
-                    host_only=False, trusted_hosts=None):
+                    host_only=False, trusted_hosts=None, iri=True):
     """A handy helper function that recreates the full URL for the current
     request or parts of it.  Here an example:
 
@@ -70,7 +70,10 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     tmp = [environ['wsgi.url_scheme'], '://', get_host(environ, trusted_hosts)]
     cat = tmp.append
     if host_only:
-        return uri_to_iri(''.join(tmp) + '/')
+        if iri:
+            return uri_to_iri(''.join(tmp) + '/')
+        else:
+            return ''.join(tmp) + '/'
     cat(url_quote(wsgi_get_bytes(environ.get('SCRIPT_NAME', ''))).rstrip('/'))
     cat('/')
     if not root_only:
@@ -79,8 +82,10 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
             qs = get_query_string(environ)
             if qs:
                 cat('?' + qs)
-    return uri_to_iri(''.join(tmp))
-
+    if iri:
+        return uri_to_iri(''.join(tmp))
+    else:
+        return ''.join(tmp)
 
 def host_is_trusted(hostname, trusted_list):
     """Checks if a host is trusted against a list.  This also takes care

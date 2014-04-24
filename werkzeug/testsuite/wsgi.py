@@ -266,6 +266,20 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(rv,
             u'http://localhost/?foo=bar&baz=blah&meh=\ufffd')
 
+    def test_get_current_url_percent_to_uri(self):
+        env = create_environ()
+        env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=%C3%A9'
+        rv = wsgi.get_current_url(env, iri=False)
+        self.assert_strict_equal(rv,
+            'http://localhost/?foo=bar&baz=blah&meh=%C3%A9')
+
+    def test_get_current_url_percent_to_iri(self):
+        env = create_environ()
+        env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=%C3%A9'
+        rv = wsgi.get_current_url(env, iri=True)
+        self.assert_strict_equal(rv,
+            u'http://localhost/?foo=bar&baz=blah&meh=\xe9')
+
     def test_multi_part_line_breaks(self):
         data = 'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
         test_stream = NativeStringIO(data)
