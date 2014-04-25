@@ -5,7 +5,7 @@
 
     Tests for the response and request objects.
 
-    :copyright: (c) 2013 by Armin Ronacher.
+    :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 import unittest
@@ -146,6 +146,13 @@ class WrappersTestCase(WerkzeugTestCase):
 
         req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
         self.assert_strict_equal(req.scheme, 'https')
+
+    def test_url_request_descriptors_query_quoting(self):
+        next = 'http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2F'
+        req = wrappers.Request.from_values('/bar?next=' + next, 'http://example.com/')
+        self.assert_equal(req.path, u'/bar')
+        self.assert_strict_equal(req.full_path, u'/bar?next=' + next)
+        self.assert_strict_equal(req.url, 'http://example.com/bar?next=' + next)
 
     def test_url_request_descriptors_hosts(self):
         req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
@@ -337,7 +344,12 @@ class WrappersTestCase(WerkzeugTestCase):
              '(KHTML, like Gecko) Version/3.0 Mobile/1A543a Safari/419.3',
              'safari', 'iphone', '419.3', 'en'),
             ('Bot Googlebot/2.1 ( http://www.googlebot.com/bot.html)',
-             'google', None, '2.1', None)
+             'google', None, '2.1', None),
+            ('Mozilla/5.0 (X11; CrOS armv7l 3701.81.0) AppleWebKit/537.31 '
+             '(KHTML, like Gecko) Chrome/26.0.1410.57 Safari/537.31',
+             'chrome', 'chromeos', '26.0.1410.57', None),
+            ('Mozilla/5.0 (Windows NT 6.3; Trident/7.0; .NET4.0E; rv:11.0) like Gecko',
+             'msie', 'windows', '11.0', None)
         ]
         for ua, browser, platform, version, lang in user_agents:
             request = wrappers.Request({'HTTP_USER_AGENT': ua})
