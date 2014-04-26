@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.wrappers
+    tests.wrappers
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests for the response and request objects.
@@ -14,7 +14,7 @@ from io import BytesIO
 from datetime import datetime
 from werkzeug._compat import iteritems
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError
@@ -65,7 +65,7 @@ def prepare_environ_pickle(environ):
     return result
 
 
-class WrappersTestCase(WerkzeugTestCase):
+class TestWrappers(WerkzeugTests):
 
     def assert_environ(self, environ, method):
         self.assert_strict_equal(environ['REQUEST_METHOD'], method)
@@ -841,5 +841,5 @@ class WrappersTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(WrappersTestCase))
+    suite.addTest(unittest.makeSuite(TestWrappers))
     return suite

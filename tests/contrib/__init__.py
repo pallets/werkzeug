@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.contrib
+    tests.contrib
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the contrib modules.
@@ -9,7 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import unittest
-from werkzeug.testsuite import iter_suites
+from tests import iter_suites
 
 
 def suite():

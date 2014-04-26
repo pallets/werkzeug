@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.wsgi
+    tests.wsgi
     ~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the WSGI utilities.
@@ -12,7 +12,7 @@ import unittest
 from os import path
 from contextlib import closing
 
-from werkzeug.testsuite import WerkzeugTestCase, get_temporary_directory
+from tests import WerkzeugTests, get_temporary_directory
 
 from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
@@ -21,7 +21,7 @@ from werkzeug import wsgi
 from werkzeug._compat import StringIO, BytesIO, NativeStringIO, to_native
 
 
-class WSGIUtilsTestCase(WerkzeugTestCase):
+class TestWSGIUtils(WerkzeugTests):
 
     def test_shareddatamiddleware_get_file_loader(self):
         app = wsgi.SharedDataMiddleware(None, {})
@@ -348,5 +348,5 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(WSGIUtilsTestCase))
+    suite.addTest(unittest.makeSuite(TestWSGIUtils))
     return suite

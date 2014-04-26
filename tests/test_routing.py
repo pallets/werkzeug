@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.routing
+    tests.routing
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Routing tests.
@@ -11,7 +11,7 @@
 import unittest
 import uuid
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug import routing as r
 from werkzeug.wrappers import Response
@@ -19,7 +19,7 @@ from werkzeug.datastructures import ImmutableDict
 from werkzeug.test import create_environ
 
 
-class RoutingTestCase(WerkzeugTestCase):
+class TestRouting(WerkzeugTests):
 
     def test_basic_routing(self):
         map = r.Map([
@@ -694,5 +694,5 @@ class RoutingTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(RoutingTestCase))
+    suite.addTest(unittest.makeSuite(TestRouting))
     return suite

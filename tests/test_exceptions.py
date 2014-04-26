@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.exceptions
+    tests.exceptions
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     The tests for the exception classes.
@@ -14,14 +14,14 @@
 """
 import unittest
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug import exceptions
 from werkzeug.wrappers import Response
 from werkzeug._compat import text_type
 
 
-class ExceptionsTestCase(WerkzeugTestCase):
+class TestExceptions(WerkzeugTests):
 
     def test_proxy_exception(self):
         orig_resp = Response('Hello World')
@@ -83,5 +83,5 @@ class ExceptionsTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ExceptionsTestCase))
+    suite.addTest(unittest.makeSuite(TestExceptions))
     return suite

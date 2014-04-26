@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.fixers
+    tests.fixers
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Server / Browser fixers.
@@ -10,7 +10,7 @@
 """
 import unittest
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
 
@@ -28,7 +28,7 @@ def path_check_app(request):
     ))
 
 
-class ServerFixerTestCase(WerkzeugTestCase):
+class TestServerFixer(WerkzeugTests):
 
     def test_cgi_root_fix(self):
         app = fixers.CGIRootFix(path_check_app)
@@ -112,7 +112,7 @@ class ServerFixerTestCase(WerkzeugTestCase):
         assert response.headers['X-Bar'] == '42'
 
 
-class BrowserFixerTestCase(WerkzeugTestCase):
+class TestBrowserFixer(WerkzeugTests):
 
     def test_ie_fixes(self):
         @fixers.InternetExplorerFix
@@ -188,6 +188,6 @@ class BrowserFixerTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ServerFixerTestCase))
-    suite.addTest(unittest.makeSuite(BrowserFixerTestCase))
+    suite.addTest(unittest.makeSuite(TestServerFixer))
+    suite.addTest(unittest.makeSuite(TestBrowserFixer))
     return suite

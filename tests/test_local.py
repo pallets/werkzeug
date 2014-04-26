@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.local
+    tests.local
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
     Local and local proxy tests.
@@ -12,12 +12,12 @@ import time
 import unittest
 from threading import Thread
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug import local
 
 
-class LocalTestCase(WerkzeugTestCase):
+class TestLocal(WerkzeugTests):
 
     def test_basic_local(self):
         l = local.Local()
@@ -155,5 +155,5 @@ class LocalTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(LocalTestCase))
+    suite.addTest(unittest.makeSuite(TestLocal))
     return suite

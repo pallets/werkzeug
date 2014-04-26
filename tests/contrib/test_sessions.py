@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.sessions
+    tests.sessions
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Added tests for the sessions.
@@ -13,12 +13,12 @@ import unittest
 import shutil
 from tempfile import mkdtemp, gettempdir
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 from werkzeug.contrib.sessions import FilesystemSessionStore
 
 
 
-class SessionTestCase(WerkzeugTestCase):
+class TestSession(WerkzeugTests):
 
     def setup(self):
         self.session_folder = mkdtemp()
@@ -87,5 +87,5 @@ class SessionTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SessionTestCase))
+    suite.addTest(unittest.makeSuite(TestSession))
     return suite

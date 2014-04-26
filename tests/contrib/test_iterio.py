@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.iterio
+    tests.iterio
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the iterio object.
@@ -11,11 +11,11 @@
 import unittest
 from functools import partial
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests, skipif
 from werkzeug.contrib.iterio import IterIO, greenlet
 
 
-class IterOTestSuite(WerkzeugTestCase):
+class IterOTestSuite(WerkzeugTests):
 
     def test_basic_native(self):
         io = IterIO(["Hello", "World", "1", "2", "3"])
@@ -153,8 +153,8 @@ class IterOTestSuite(WerkzeugTestCase):
         self.assert_strict_equal(io.readline(), u'')
 
 
-class IterITestSuite(WerkzeugTestCase):
-
+@skipif(greenlet is None)
+class IterITestSuite(WerkzeugTests):
     def test_basic(self):
         def producer(out):
             out.write('1\n')
@@ -186,6 +186,5 @@ class IterITestSuite(WerkzeugTestCase):
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(IterOTestSuite))
-    if greenlet is not None:
-        suite.addTest(unittest.makeSuite(IterITestSuite))
+    suite.addTest(unittest.makeSuite(IterITestSuite))
     return suite

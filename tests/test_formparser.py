@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.formparser
+    tests.formparser
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the form parsing facilities.
@@ -14,7 +14,7 @@ from __future__ import with_statement
 import unittest
 from os.path import join, dirname
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client
@@ -44,7 +44,7 @@ def get_contents(filename):
         return f.read()
 
 
-class FormParserTestCase(WerkzeugTestCase):
+class TestFormParser(WerkzeugTests):
 
     def test_limiting(self):
         data = b'foo=Hello+World&bar=baz'
@@ -178,7 +178,7 @@ class FormParserTestCase(WerkzeugTestCase):
         self.assert_strict_equal(data, req.files['two'][1])
 
 
-class MultiPartTestCase(WerkzeugTestCase):
+class TestMultiPart(WerkzeugTests):
 
     def test_basic(self):
         resources = join(dirname(__file__), 'multipart')
@@ -385,7 +385,7 @@ class MultiPartTestCase(WerkzeugTestCase):
         self.assert_equal(files, MultiDict())
 
 
-class InternalFunctionsTestCase(WerkzeugTestCase):
+class TestInternalFunctions(WerkzeugTests):
 
     def test_line_parser(self):
         assert formparser._line_parse('foo') == ('foo', False)
@@ -405,7 +405,7 @@ class InternalFunctionsTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(FormParserTestCase))
-    suite.addTest(unittest.makeSuite(MultiPartTestCase))
-    suite.addTest(unittest.makeSuite(InternalFunctionsTestCase))
+    suite.addTest(unittest.makeSuite(TestFormParser))
+    suite.addTest(unittest.makeSuite(TestMultiPart))
+    suite.addTest(unittest.makeSuite(TestInternalFunctions))
     return suite

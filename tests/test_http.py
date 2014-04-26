@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.http
+    tests.http
     ~~~~~~~~~~~~~~~~~~~~~~~
 
     HTTP parsing utilities.
@@ -11,14 +11,14 @@
 import unittest
 from datetime import datetime
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 from werkzeug._compat import itervalues, wsgi_encoding_dance
 
 from werkzeug import http, datastructures
 from werkzeug.test import create_environ
 
 
-class HTTPUtilityTestCase(WerkzeugTestCase):
+class TestHTTPUtility(WerkzeugTests):
 
     def test_accept(self):
         a = http.parse_accept_header('en-us,ru;q=0.5')
@@ -346,7 +346,7 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
         self.assert_strict_equal(val, 'foo=bar; Domain=.foo.com; Path=/')
 
 
-class RangeTestCase(WerkzeugTestCase):
+class TestRange(WerkzeugTests):
 
     def test_if_range_parsing(self):
         rv = http.parse_if_range_header('"Test"')
@@ -377,7 +377,7 @@ class RangeTestCase(WerkzeugTestCase):
             assert rv.date is None
             assert rv.to_header() == ''
 
-    def test_range_parsing():
+    def test_range_parsing(self):
         rv = http.parse_range_header('bytes=52')
         assert rv is None
 
@@ -406,7 +406,7 @@ class RangeTestCase(WerkzeugTestCase):
         assert rv.ranges == [(0, 1000)]
         assert rv.to_header() == 'awesomes=0-999'
 
-    def test_content_range_parsing():
+    def test_content_range_parsing(self):
         rv = http.parse_content_range_header('bytes 0-98/*')
         assert rv.units == 'bytes'
         assert rv.start == 0
@@ -431,7 +431,7 @@ class RangeTestCase(WerkzeugTestCase):
         assert rv.units == 'bytes'
 
 
-class RegressionTestCase(WerkzeugTestCase):
+class TestRegression(WerkzeugTests):
 
     def test_best_match_works(self):
         # was a bug in 0.6
@@ -444,6 +444,6 @@ class RegressionTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(HTTPUtilityTestCase))
-    suite.addTest(unittest.makeSuite(RegressionTestCase))
+    suite.addTest(unittest.makeSuite(TestHTTPUtility))
+    suite.addTest(unittest.makeSuite(TestRegression))
     return suite

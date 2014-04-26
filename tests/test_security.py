@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.security
+    tests.security
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the security helpers.
@@ -11,13 +11,13 @@
 import os
 import unittest
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug.security import check_password_hash, generate_password_hash, \
      safe_join, pbkdf2_hex, safe_str_cmp
 
 
-class SecurityTestCase(WerkzeugTestCase):
+class TestSecurity(WerkzeugTests):
 
     def test_safe_str_cmp(self):
         assert safe_str_cmp('a', 'a') is True
@@ -101,5 +101,5 @@ class SecurityTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SecurityTestCase))
+    suite.addTest(unittest.makeSuite(TestSecurity))
     return suite

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.cache
+    tests.cache
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the cache system
@@ -14,7 +14,7 @@ import unittest
 import tempfile
 import shutil
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests, skipif
 from werkzeug.contrib import cache
 
 try:
@@ -37,7 +37,7 @@ except ImportError:
         except ImportError:
             memcache = None
 
-class CacheTestCase(WerkzeugTestCase):
+class CacheTests(object):
     make_cache = None
 
     def test_generic_get_dict(self):
@@ -126,11 +126,11 @@ class CacheTestCase(WerkzeugTestCase):
         assert c.get('bar') == False
 
 
-class SimpleCacheTestCase(CacheTestCase):
+class TestSimpleCache(WerkzeugTests, CacheTests):
     make_cache = cache.SimpleCache
 
 
-class FileSystemCacheTestCase(CacheTestCase):
+class TestFileSystemCache(WerkzeugTests, CacheTests):
     tmp_dir = None
 
     def make_cache(self, **kwargs):
@@ -160,7 +160,8 @@ class FileSystemCacheTestCase(CacheTestCase):
         assert len(cache_files) == 0
 
 
-class RedisCacheTestCase(CacheTestCase):
+@skipif(redis is None)
+class TestRedisCache(WerkzeugTests, CacheTests):
     def make_cache(self):
         return cache.RedisCache(key_prefix='werkzeug-test-case:')
 
@@ -173,9 +174,10 @@ class RedisCacheTestCase(CacheTestCase):
         self.assert_equal(c.get('foo'), b'Awesome')
         assert c._client.set(c.key_prefix + 'foo', '42')
         self.assert_equal(c.get('foo'), 42)
-    
 
-class MemcachedCacheTestCase(CacheTestCase):
+
+@skipif(memcache is None)
+class TestMemcachedCache(WerkzeugTests, CacheTests):
     def make_cache(self):
         return cache.MemcachedCache(key_prefix='werkzeug-test-case:')
 
@@ -190,10 +192,8 @@ class MemcachedCacheTestCase(CacheTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SimpleCacheTestCase))
-    suite.addTest(unittest.makeSuite(FileSystemCacheTestCase))
-    if redis is not None:
-        suite.addTest(unittest.makeSuite(RedisCacheTestCase))
-    if memcache is not None:
-        suite.addTest(unittest.makeSuite(MemcachedCacheTestCase))
+    suite.addTest(unittest.makeSuite(TestSimpleCache))
+    suite.addTest(unittest.makeSuite(TestFileSystemCache))
+    suite.addTest(unittest.makeSuite(TestRedisCache))
+    suite.addTest(unittest.makeSuite(TestMemcachedCache))
     return suite

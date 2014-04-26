@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.securecookie
+    tests.securecookie
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the secure cookie.
@@ -10,14 +10,14 @@
 """
 import unittest
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug.utils import parse_cookie
 from werkzeug.wrappers import Request, Response
 from werkzeug.contrib.securecookie import SecureCookie
 
 
-class SecureCookieTestCase(WerkzeugTestCase):
+class TestSecureCookie(WerkzeugTests):
 
     def test_basic_support(self):
         c = SecureCookie(secret_key=b'foo')
@@ -60,5 +60,5 @@ class SecureCookieTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SecureCookieTestCase))
+    suite.addTest(unittest.makeSuite(TestSecureCookie))
     return suite

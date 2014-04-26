@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.contrib.wrappers
+    tests.contrib.wrappers
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Added tests for the sessions.
@@ -13,14 +13,14 @@ from __future__ import with_statement
 
 import unittest
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug.contrib import wrappers
 from werkzeug import routing
 from werkzeug.wrappers import Request, Response
 
 
-class WrappersTestCase(WerkzeugTestCase):
+class TestWrappers(WerkzeugTests):
 
     def test_reverse_slash_behavior(self):
         class MyRequest(wrappers.ReverseSlashBehaviorRequestMixin, Request):
@@ -93,5 +93,5 @@ class WrappersTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(WrappersTestCase))
+    suite.addTest(unittest.makeSuite(TestWrappers))
     return suite

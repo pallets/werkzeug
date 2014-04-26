@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.utils
+    tests.utils
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
     General utilities.
@@ -15,7 +15,7 @@ import unittest
 from datetime import datetime
 from functools import partial
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
@@ -25,7 +25,7 @@ from werkzeug.test import Client, run_wsgi_app
 from werkzeug._compat import text_type, implements_iterator
 
 
-class GeneralUtilityTestCase(WerkzeugTestCase):
+class TestGeneralUtility(WerkzeugTests):
 
     def test_redirect(self):
         resp = utils.redirect(u'/füübär')
@@ -279,5 +279,5 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(GeneralUtilityTestCase))
+    suite.addTest(unittest.makeSuite(TestGeneralUtility))
     return suite

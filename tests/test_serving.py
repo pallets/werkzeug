@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.serving
+    tests.serving
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Added serving tests.
@@ -29,10 +29,10 @@ try:
 except ImportError:
     OpenSSL = None
 
-from werkzeug.testsuite import WerkzeugTestCase, get_temporary_directory
+from tests import WerkzeugTests, get_temporary_directory
 
 from werkzeug import __version__ as version, serving
-from werkzeug.testapp import test_app
+from werkzeug.testapp import test_app as _test_app
 from werkzeug._compat import StringIO
 from threading import Thread
 
@@ -78,11 +78,11 @@ def run_dev_server(application, *args, **kwargs):
     return server, '%s:%d'  % (ip, port)
 
 
-class ServingTestCase(WerkzeugTestCase):
+class TestServing(WerkzeugTests):
 
     @silencestderr
     def test_serving(self):
-        server, addr = run_dev_server(test_app)
+        server, addr = run_dev_server(_test_app)
         rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
         self.assert_in(b'WSGI Information', rv)
         self.assert_in(b'foo=bar&amp;baz=blah', rv)
@@ -138,5 +138,5 @@ class ServingTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ServingTestCase))
+    suite.addTest(unittest.makeSuite(TestServing))
     return suite

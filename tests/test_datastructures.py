@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.datastructures
+    tests.datastructures
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the functionality of the provided Werkzeug
@@ -26,11 +26,11 @@ from copy import copy, deepcopy
 from werkzeug import datastructures
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
      iterlistvalues, text_type, PY2
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 from werkzeug.exceptions import BadRequestKeyError
 
 
-class NativeItermethodsTestCase(WerkzeugTestCase):
+class TestNativeItermethods(WerkzeugTests):
     def test_basic(self):
         @datastructures.native_itermethods(['keys', 'values', 'items'])
         class StupidDict(object):
@@ -58,7 +58,7 @@ class NativeItermethodsTestCase(WerkzeugTestCase):
         self.assert_equal(list(iteritems(d, 2)), expected_items * 2)
 
 
-class MutableMultiDictBaseTestCase(WerkzeugTestCase):
+class MutableMultiDictBaseTests(object):
     storage_class = None
 
     def test_pickle(self):
@@ -254,7 +254,7 @@ class MutableMultiDictBaseTestCase(WerkzeugTestCase):
         self.assert_equal(md.getlist('foo'), [1, 2])
 
 
-class ImmutableDictBaseTestCase(WerkzeugTestCase):
+class ImmutableDictBaseTests(object):
     storage_class = None
 
     def test_follows_dict_interface(self):
@@ -301,11 +301,11 @@ class ImmutableDictBaseTestCase(WerkzeugTestCase):
         self.assert_true(immutable2 in x)
 
 
-class ImmutableTypeConversionDictTestCase(ImmutableDictBaseTestCase):
+class TestImmutableTypeConversionDict(WerkzeugTests, ImmutableDictBaseTests):
     storage_class = datastructures.ImmutableTypeConversionDict
 
 
-class ImmutableMultiDictTestCase(ImmutableDictBaseTestCase):
+class TestImmutableMultiDict(WerkzeugTests, ImmutableDictBaseTests):
     storage_class = datastructures.ImmutableMultiDict
 
     def test_multidict_is_hashable(self):
@@ -326,11 +326,11 @@ class ImmutableMultiDictTestCase(ImmutableDictBaseTestCase):
         self.assert_true(immutable2 in x)
 
 
-class ImmutableDictTestCase(ImmutableDictBaseTestCase):
+class TestImmutableDict(WerkzeugTests, ImmutableDictBaseTests):
     storage_class = datastructures.ImmutableDict
 
 
-class ImmutableOrderedMultiDictTestCase(ImmutableDictBaseTestCase):
+class TestImmutableOrderedMultiDict(WerkzeugTests, ImmutableDictBaseTests):
     storage_class = datastructures.ImmutableOrderedMultiDict
 
     def test_ordered_multidict_is_hashable(self):
@@ -339,7 +339,7 @@ class ImmutableOrderedMultiDictTestCase(ImmutableDictBaseTestCase):
         self.assert_not_equal(hash(a), hash(b))
 
 
-class MultiDictTestCase(MutableMultiDictBaseTestCase):
+class TestMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
     storage_class = datastructures.MultiDict
 
     def test_multidict_pop(self):
@@ -375,7 +375,7 @@ class MultiDictTestCase(MutableMultiDictBaseTestCase):
                           list(iterlists(md)))
 
 
-class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
+class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
     storage_class = datastructures.OrderedMultiDict
 
     def test_ordered_interface(self):
@@ -478,7 +478,7 @@ class OrderedMultiDictTestCase(MutableMultiDictBaseTestCase):
         self.assert_equal(sorted(iterkeys(ab)), ["key_a", "key_b"])
 
 
-class CombinedMultiDictTestCase(WerkzeugTestCase):
+class TestCombinedMultiDict(WerkzeugTests):
     storage_class = datastructures.CombinedMultiDict
 
     def test_basic_interface(self):
@@ -532,7 +532,7 @@ class CombinedMultiDictTestCase(WerkzeugTestCase):
         assert len(d) == 1
 
 
-class HeadersTestCase(WerkzeugTestCase):
+class TestHeaders(WerkzeugTests):
     storage_class = datastructures.Headers
 
     def test_basic_interface(self):
@@ -664,7 +664,7 @@ class HeadersTestCase(WerkzeugTestCase):
 
 
 
-class EnvironHeadersTestCase(WerkzeugTestCase):
+class TestEnvironHeaders(WerkzeugTests):
     storage_class = datastructures.EnvironHeaders
 
     def test_basic_interface(self):
@@ -713,7 +713,7 @@ class EnvironHeadersTestCase(WerkzeugTestCase):
         self.assert_equal(h.get('x-foo'), u'\xff')
 
 
-class HeaderSetTestCase(WerkzeugTestCase):
+class TestHeaderSet(WerkzeugTests):
     storage_class = datastructures.HeaderSet
 
     def test_basic_interface(self):
@@ -738,7 +738,7 @@ class HeaderSetTestCase(WerkzeugTestCase):
         assert not hs
 
 
-class ImmutableListTestCase(WerkzeugTestCase):
+class TestImmutableList(WerkzeugTests):
     storage_class = datastructures.ImmutableList
 
     def test_list_hashable(self):
@@ -773,7 +773,7 @@ def make_call_asserter(assert_equal_func, func=None):
     return asserter, wrapped
 
 
-class CallbackDictTestCase(WerkzeugTestCase):
+class TestCallbackDict(WerkzeugTests):
     storage_class = datastructures.CallbackDict
 
     def test_callback_dict_reads(self):
@@ -815,16 +815,16 @@ class CallbackDictTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(MultiDictTestCase))
-    suite.addTest(unittest.makeSuite(OrderedMultiDictTestCase))
-    suite.addTest(unittest.makeSuite(CombinedMultiDictTestCase))
-    suite.addTest(unittest.makeSuite(ImmutableTypeConversionDictTestCase))
-    suite.addTest(unittest.makeSuite(ImmutableMultiDictTestCase))
-    suite.addTest(unittest.makeSuite(ImmutableDictTestCase))
-    suite.addTest(unittest.makeSuite(ImmutableOrderedMultiDictTestCase))
-    suite.addTest(unittest.makeSuite(HeadersTestCase))
-    suite.addTest(unittest.makeSuite(EnvironHeadersTestCase))
-    suite.addTest(unittest.makeSuite(HeaderSetTestCase))
-    suite.addTest(unittest.makeSuite(NativeItermethodsTestCase))
-    suite.addTest(unittest.makeSuite(CallbackDictTestCase))
+    suite.addTest(unittest.makeSuite(TestMultiDict))
+    suite.addTest(unittest.makeSuite(TestOrderedMultiDict))
+    suite.addTest(unittest.makeSuite(TestCombinedMultiDict))
+    suite.addTest(unittest.makeSuite(TestImmutableTypeConversionDict))
+    suite.addTest(unittest.makeSuite(TestImmutableMultiDict))
+    suite.addTest(unittest.makeSuite(TestImmutableDict))
+    suite.addTest(unittest.makeSuite(TestImmutableOrderedMultiDict))
+    suite.addTest(unittest.makeSuite(TestHeaders))
+    suite.addTest(unittest.makeSuite(TestEnvironHeaders))
+    suite.addTest(unittest.makeSuite(TestHeaderSet))
+    suite.addTest(unittest.makeSuite(TestNativeItermethods))
+    suite.addTest(unittest.makeSuite(TestCallbackDict))
     return suite

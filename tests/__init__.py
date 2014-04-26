@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite
+    tests
     ~~~~~~~~~~~~~~~~~~
 
     Contains all test Werkzeug tests.
@@ -41,6 +41,15 @@ def iter_suites(package):
             yield mod.suite()
 
 
+def skipif(cond):
+    def wrapper(cls):
+        if cond:
+            return WerkzeugTests
+        return cls
+
+    return wrapper
+
+
 def find_all_tests(suite):
     """Yields all the tests and their names from a given suite."""
     suites = [suite]
@@ -56,7 +65,7 @@ def find_all_tests(suite):
             )
 
 
-class WerkzeugTestCase(unittest.TestCase):
+class WerkzeugTests(unittest.TestCase):
     """Baseclass for all the tests that Werkzeug uses.  Use these
     methods for testing instead of the camelcased ones in the
     baseclass for consistency.
@@ -72,7 +81,6 @@ class WerkzeugTestCase(unittest.TestCase):
         self.setup()
 
     def tearDown(self):
-        unittest.TestCase.tearDown(self)
         self.teardown()
 
     def assert_line_equal(self, x, y):
@@ -213,7 +221,7 @@ class BetterLoader(unittest.TestLoader):
     up tests from different sources and we're doing this programmatically
     which breaks the default loading logic so this is required anyways.
     Secondly this loader has a nicer interpolation for test names than the
-    default one so you can just do ``run-tests.py ViewTestCase`` and it
+    default one so you can just do ``run-tests.py TestView`` and it
     will work.
     """
 

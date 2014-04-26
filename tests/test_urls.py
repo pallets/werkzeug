@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.urls
+    tests.urls
     ~~~~~~~~~~~~~~~~~~~~~~~
 
     URL helper tests.
@@ -10,14 +10,14 @@
 """
 import unittest
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug.datastructures import OrderedMultiDict
 from werkzeug import urls
 from werkzeug._compat import text_type, NativeStringIO, BytesIO
 
 
-class URLsTestCase(WerkzeugTestCase):
+class TestURLs(WerkzeugTests):
 
     def test_replace(self):
         url = urls.url_parse('http://de.wikipedia.org/wiki/Troll')
@@ -318,5 +318,5 @@ class URLsTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(URLsTestCase))
+    suite.addTest(unittest.makeSuite(TestURLs))
     return suite

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.internal
+    tests.internal
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Internal tests.
@@ -13,14 +13,14 @@ import unittest
 from datetime import datetime
 from warnings import filterwarnings, resetwarnings
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 from werkzeug.wrappers import Request, Response
 
 from werkzeug import _internal as internal
 from werkzeug.test import create_environ
 
 
-class InternalTestCase(WerkzeugTestCase):
+class TestInternal(WerkzeugTests):
 
     def test_date_to_unix(self):
         assert internal._date_to_unix(datetime(1970, 1, 1)) == 0
@@ -77,5 +77,5 @@ class InternalTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(InternalTestCase))
+    suite.addTest(unittest.makeSuite(TestInternal))
     return suite

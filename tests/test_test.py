@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.test
+    tests.test
     ~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests the testing tools.
@@ -16,7 +16,7 @@ import unittest
 from io import BytesIO
 from werkzeug._compat import iteritems, to_bytes
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ, \
@@ -86,7 +86,7 @@ def multi_value_post_app(environ, start_response):
     return response(environ, start_response)
 
 
-class TestTestCase(WerkzeugTestCase):
+class TestTest(WerkzeugTests):
 
     def test_cookie_forging(self):
         c = Client(cookie_app)
@@ -440,5 +440,5 @@ class TestTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestTestCase))
+    suite.addTest(unittest.makeSuite(TestTest))
     return suite

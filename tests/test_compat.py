@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.compat
+    tests.compat
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Ensure that old stuff does not break on update.
@@ -10,13 +10,13 @@
 """
 import unittest
 import warnings
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 
 from werkzeug.wrappers import Response
 from werkzeug.test import create_environ
 
 
-class CompatTestCase(WerkzeugTestCase):
+class TestCompat(WerkzeugTests):
 
     def test_old_imports(self):
         from werkzeug.utils import Headers, MultiDict, CombinedMultiDict, \
@@ -36,5 +36,5 @@ class CompatTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(CompatTestCase))
+    suite.addTest(unittest.makeSuite(TestCompat))
     return suite

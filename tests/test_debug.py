@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    werkzeug.testsuite.debug
+    tests.debug
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
     Tests some debug utilities.
@@ -12,14 +12,14 @@ import unittest
 import sys
 import re
 
-from werkzeug.testsuite import WerkzeugTestCase
+from tests import WerkzeugTests
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
 from werkzeug._compat import PY2
 
 
-class DebugReprTestCase(WerkzeugTestCase):
+class TestDebugRepr(WerkzeugTests):
 
     def test_basic_repr(self):
         self.assert_equal(debug_repr([]), u'[]')
@@ -70,7 +70,7 @@ class DebugReprTestCase(WerkzeugTestCase):
             pass
         self.assert_equal(
             debug_repr(MyList([1, 2])),
-            u'<span class="module">werkzeug.testsuite.debug.</span>MyList(['
+            u'<span class="module">tests.test_debug.</span>MyList(['
             u'<span class="number">1</span>, <span class="number">2</span>])')
 
     def test_regex_repr(self):
@@ -112,12 +112,12 @@ class Foo(object):
         self.z = 15
 
 
-class DebugHelpersTestCase(WerkzeugTestCase):
+class TestDebugHelpers(WerkzeugTests):
 
     def test_object_dumping(self):
         drg = DebugReprGenerator()
         out = drg.dump_object(Foo())
-        assert re.search('Details for werkzeug.testsuite.debug.Foo object at', out)
+        assert re.search('Details for tests.test_debug.Foo object at', out)
         assert re.search('<th>x.*<span class="number">42</span>(?s)', out)
         assert re.search('<th>y.*<span class="number">23</span>(?s)', out)
         assert re.search('<th>z.*<span class="number">15</span>(?s)', out)
@@ -167,6 +167,6 @@ class DebugHelpersTestCase(WerkzeugTestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DebugReprTestCase))
-    suite.addTest(unittest.makeSuite(DebugHelpersTestCase))
+    suite.addTest(unittest.makeSuite(TestDebugRepr))
+    suite.addTest(unittest.makeSuite(TestDebugHelpers))
     return suite
