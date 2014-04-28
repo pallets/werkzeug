@@ -120,6 +120,10 @@ class WrappersTestCase(WerkzeugTestCase):
         req = wrappers.Request.from_values(u'/?foo=%2f')
         self.assert_strict_equal(req.query_string, b'foo=%2f')
 
+    def test_iri_is_unicode(self):
+        req = wrappers.Request.from_values('/bar?foo=%c3%a9', 'http://example.com/test')
+        self.assert_strict_equal(req.iri, u'http://example.com/test/bar?foo=é')
+
     def test_access_route(self):
         req = wrappers.Request.from_values(headers={
             'X-Forwarded-For': '192.168.1.2, 192.168.1.1'

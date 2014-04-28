@@ -526,6 +526,12 @@ class BaseRequest(object):
         return EnvironHeaders(self.environ)
 
     @cached_property
+    def iri(self):
+        """The reconstructed current IRI."""
+        return get_current_url(self.environ,
+                               trusted_hosts=self.trusted_hosts, iri=True)
+
+    @cached_property
     def path(self):
         """Requested path as unicode.  This works a bit like the regular path
         info in the WSGI environment but will always include a leading slash,
