@@ -436,7 +436,8 @@ class BaseWSGIServer(HTTPServer, object):
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
-        self.server_close()
+        finally:
+            self.server_close()
 
     def handle_error(self, request, client_address):
         if self.passthrough_errors:
