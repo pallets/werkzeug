@@ -14,3 +14,4 @@ server such as Apache or lighttpd.
    mod_wsgi
    fastcgi
    proxying
+   django
