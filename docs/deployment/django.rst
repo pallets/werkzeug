@@ -10,7 +10,7 @@ Django has hooks for inserting middleware applications at the request,
 response and WSGI levels. The key to deploying Werkzeug is to wrap it as
 middleware around a WSGI application.
 
-Modifying a `wsgi` application file
+Modifying a WSGI application file
 ===================================
 
 First, install the Werkzeug package with `pip`.
