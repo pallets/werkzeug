@@ -269,7 +269,7 @@ class Traceback(object):
             logfile = sys.stderr
         tb = self.plaintext.rstrip() + u'\n'
         if PY2:
-            tb.encode('utf-8', 'replace')
+            tb = tb.encode('utf-8', 'replace')
         logfile.write(tb)
 
     def paste(self):
