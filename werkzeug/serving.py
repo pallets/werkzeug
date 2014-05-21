@@ -63,7 +63,7 @@ except ImportError:
 
 import werkzeug
 from werkzeug._internal import _log
-from werkzeug._compat import reraise, wsgi_encoding_dance
+from werkzeug._compat import reraise, wsgi_encoding_dance, string_types
 from werkzeug.urls import url_parse, url_unquote
 from werkzeug.exceptions import InternalServerError
 
@@ -555,7 +555,8 @@ def run_simple(hostname, port, application, use_reloader=False,
 
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
-    :param application: the WSGI application to execute
+    :param application: the WSGI application to execute, or the dotted name from
+                        where it can be imported.
     :param use_reloader: should the server automatically restart the python
                          process if modules were changed?
     :param use_debugger: should the werkzeug debugging system be used?
@@ -589,6 +590,13 @@ def run_simple(hostname, port, application, use_reloader=False,
                         the server should automatically create one, or ``None``
                         to disable SSL (which is the default).
     """
+    if isinstance(application, string_types):
+        if use_reloader:
+            from werkzeug.wsgi import ImportedAppMiddleware
+            application = ImportedAppMiddleware(application)
+        else:
+            from werkzeug.utils import import_string
+            application = import_string(application)
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
         application = DebuggedApplication(application, use_evalex)
@@ -617,7 +625,7 @@ def run_simple(hostname, port, application, use_reloader=False,
         test_socket.bind((hostname, port))
         test_socket.close()
 
-        from ._reloader import run_with_reloader
+        from werkzeug._reloader import run_with_reloader
         run_with_reloader(inner, extra_files, reloader_interval,
                           reloader_type)
     else:
@@ -636,7 +644,6 @@ def main():
 
     # in contrast to argparse, this works at least under Python < 2.7
     import optparse
-    from werkzeug.utils import import_string
 
     parser = optparse.OptionParser(
         usage='Usage: %prog [options] app_module:app_object')
@@ -660,11 +667,10 @@ def main():
     if len(args) != 1:
         sys.stdout.write('No application supplied, or too much. See --help\n')
         sys.exit(1)
-    app = import_string(args[0])
 
     run_simple(
         hostname=(hostname or '127.0.0.1'), port=int(port or 5000),
-        application=app, use_reloader=options.use_reloader,
+        application=args[0], use_reloader=options.use_reloader,
         use_debugger=options.use_debugger
     )
 

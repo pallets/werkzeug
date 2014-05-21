@@ -18,6 +18,7 @@ from zlib import adler32
 from time import time, mktime
 from datetime import datetime
 from functools import partial, update_wrapper
+from threading import Lock
 
 from werkzeug._compat import iteritems, text_type, string_types, \
      implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
@@ -645,6 +646,31 @@ class DispatcherMiddleware(object):
         environ['SCRIPT_NAME'] = original_script_name + script
         environ['PATH_INFO'] = path_info
         return app(environ, start_response)
+
+
+class ImportedAppMiddleware(object):
+    """Allows lazy loading of an application."""
+
+    def __init__(self, app_string):
+        self.app_string = app_string
+        self.app = None
+        self._lock = Lock()
+
+    def _load(self):
+        from werkzeug.utils import import_string
+        with self._lock:
+            if self.app is None:
+                self.app = import_string(self.app_string)
+
+    def __getattr__(self, name):
+        if self.app is None:
+            self._load()
+        return self.app.__getattribute__(name)
+
+    def __call__(self, environ, start_response):
+        if self.app is None:
+            self._load()
+        return self.app(environ, start_response)
 
 
 @implements_iterator
