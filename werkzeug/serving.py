@@ -112,7 +112,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
 
-        for key, value in os.environ.iteritems():
+        for key, value in os.environ.items():
             if key not in environ:
                 environ[key] = value
 
