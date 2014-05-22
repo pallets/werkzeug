@@ -3,6 +3,7 @@ import sys
 import time
 import subprocess
 import threading
+import pickle
 from itertools import chain
 
 from werkzeug._internal import _log
@@ -97,6 +98,18 @@ class ReloaderLoop(object):
             args = [sys.executable] + sys.argv
             new_environ = os.environ.copy()
             new_environ['WERKZEUG_RUN_MAIN'] = 'true'
+
+            # if the app was started as python -m werkzeug.serving mod:app
+            # sys.path[0] is empty (i.e. points to the current directory).
+            # But because the script directory in args[1] is expanded to
+            # /<path>/werkzeug/serving.py the restarted app will have
+            # werkzeug's directory in sys.path[0] instead, and the current
+            # directory won't be in sys.path at all. To avoid  this problem
+            # here we save the state of sys.path to restore in the restarted
+            # application.
+            abs_sys_path = [os.path.abspath(p) for p in sys.path]
+            new_environ['WERKZEUG_SYS_PATH'] = pickle.dumps(
+                abs_sys_path, protocol=0).decode('utf-8')
 
             # a weird bug on windows. sometimes unicode strings end up in the
             # environment and subprocess.call does not like this, encode them
@@ -213,6 +226,10 @@ def run_with_reloader(main_func, extra_files=None, interval=1,
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     try:
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+            # restore original sys.path from parent app
+            if os.environ.get('WERKZEUG_SYS_PATH'):
+                sys.path = pickle.loads(
+                    os.environ['WERKZEUG_SYS_PATH'].encode("utf-8"))
             t = threading.Thread(target=main_func, args=())
             t.setDaemon(True)
             t.start()
