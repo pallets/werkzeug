@@ -1,14 +1,25 @@
 language: python
-python:
-  - "2.6"
-  - "2.7"
-  - "pypy"
-  - "3.3"
+python: 2.7
+
+env:
+  - TOX_ENV=py26
+  - TOX_ENV=py27
+  - TOX_ENV=pypy
+  - TOX_ENV=py33
+  - TOX_ENV=py34
 
 install:
-  - "python setup.py install"
+  # Travis uses an outdated PyPy, this installs the most recent one.
+  - "[[ ${TOX_ENV} == pypy ]] && sudo add-apt-repository -y ppa:pypy/ppa || true"
+  - "[[ ${TOX_ENV} == pypy ]] && sudo apt-get -y update && sudo apt-get -y install pypy || true"
+  - "[[ ${TOX_ENV} == pypy ]] && sudo rm -rf /usr/local/pypy/bin || true"
+  # Travis doesn't provide Python 3.4, install it.
+  - "[[ ${TOX_ENV} == py34 ]] || [[ ${TOX_ENV} == docs-code-python34 ]] && sudo add-apt-repository -y ppa:fkrull/deadsnakes || true"
+  - "[[ ${TOX_ENV} == py34 ]] || [[ ${TOX_ENV} == docs-code-python34 ]] && sudo apt-get -y update && sudo apt-get -y install python3.4-dev || true"
+  - pip install tox
 
-script: make test
+script:
+  - tox -e $TOX_ENV
 
 branches:
   except:

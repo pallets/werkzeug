@@ -65,6 +65,10 @@ def pbkdf2_hex(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
     return to_native(codecs.encode(rv, 'hex_codec'))
 
 
+_has_native_pbdkf2 = hasattr(hashlib, 'pbkdf2_hmac') and \
+        hasattr(hashlib, 'algorithms_available')
+
+
 def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
                keylen=None, hashfunc=None):
     """Returns a binary digest for the PBKDF2 hash algorithm of `data`
@@ -87,8 +91,20 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
         hashfunc = _hash_funcs[hashfunc]
     elif not hashfunc:
         hashfunc = hashlib.sha1
+    data = to_bytes(data)
     salt = to_bytes(salt)
-    mac = hmac.HMAC(to_bytes(data), None, hashfunc)
+
+    # If we're on Python with pbkdf2_hmac we can try to use it for
+    # compatible digests.
+    if _has_native_pbdkf2:
+        _test_hash = hashfunc()
+        if hasattr(_test_hash, 'name') and \
+           _test_hash.name in hashlib.algorithms_available:
+            return hashlib.pbkdf2_hmac(_test_hash.name,
+                                       data, salt, iterations,
+                                       keylen)
+
+    mac = hmac.HMAC(data, None, hashfunc)
     if not keylen:
         keylen = mac.digest_size
     def _pseudorandom(x, mac=mac):

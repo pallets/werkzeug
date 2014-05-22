@@ -131,7 +131,7 @@ class ImmutableList(ImmutableListMixin, list):
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
-            dict.__repr__(self),
+            list.__repr__(self),
         )
 
 
@@ -827,7 +827,7 @@ class OrderedMultiDict(MultiDict):
 
 def _options_header_vkw(value, kw):
     return dump_options_header(value, dict((k.replace('_', '-'), v)
-                                            for k, v in kw.items()))
+                                           for k, v in kw.items()))
 
 
 def _unicodify_header_value(value):
