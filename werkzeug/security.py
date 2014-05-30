@@ -130,7 +130,8 @@ def safe_str_cmp(a, b):
     .. versionadded:: 0.7
     """
     if _builtin_safe_str_cmp is not None:
-        return _builtin_safe_str_cmp(a, b)
+        return _builtin_safe_str_cmp(text_type(a), text_type(b))
+		# Python2's version of that code dies when one is Unicode and the other is not
     if len(a) != len(b):
         return False
     rv = 0
