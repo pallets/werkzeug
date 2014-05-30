@@ -130,7 +130,11 @@ def safe_str_cmp(a, b):
     .. versionadded:: 0.7
     """
     if _builtin_safe_str_cmp is not None:
-        return _builtin_safe_str_cmp(a, b)
+        # Comparing buffers and strings does not work
+        if type(a) is type(b):
+            return _builtin_safe_str_cmp(a, b)
+        else:
+            return _builtin_safe_str_cmp(to_bytes(a), to_bytes(b))
     if len(a) != len(b):
         return False
     rv = 0
