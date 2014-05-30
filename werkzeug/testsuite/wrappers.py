@@ -347,7 +347,9 @@ class WrappersTestCase(WerkzeugTestCase):
              'google', None, '2.1', None),
             ('Mozilla/5.0 (X11; CrOS armv7l 3701.81.0) AppleWebKit/537.31 '
              '(KHTML, like Gecko) Chrome/26.0.1410.57 Safari/537.31',
-             'chrome', 'chromeos', '26.0.1410.57', None)
+             'chrome', 'chromeos', '26.0.1410.57', None),
+            ('Mozilla/5.0 (Windows NT 6.3; Trident/7.0; .NET4.0E; rv:11.0) like Gecko',
+             'msie', 'windows', '11.0', None)
         ]
         for ua, browser, platform, version, lang in user_agents:
             request = wrappers.Request({'HTTP_USER_AGENT': ua})

@@ -180,7 +180,6 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_is(utils.import_string('cgi:escape'), cgi.escape)
         self.assert_is_none(utils.import_string('XXXXXXXXXXXX', True))
         self.assert_is_none(utils.import_string('cgi.XXXXXXXXXXXX', True))
-        self.assert_is(utils.import_string(u'cgi.escape'), cgi.escape)
         self.assert_is(utils.import_string(u'werkzeug.debug.DebuggedApplication'), DebuggedApplication)
         self.assert_raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
         self.assert_raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
