@@ -1659,7 +1659,8 @@ class Accept(ImmutableList):
             for client_item, quality in self:
                 if quality <= best_quality:
                     break
-                if self._value_matches(server_item, client_item):
+                if (self._value_matches(server_item, client_item)
+                    and quality > 0):
                     best_quality = quality
                     result = server_item
         return result
