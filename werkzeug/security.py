@@ -130,7 +130,7 @@ def safe_str_cmp(a, b):
     .. versionadded:: 0.7
     """
     if _builtin_safe_str_cmp is not None:
-        return _builtin_safe_str_cmp(a, b)
+        return _builtin_safe_str_cmp(bytes(a), bytes(b))
     if len(a) != len(b):
         return False
     rv = 0
@@ -243,7 +243,7 @@ def check_password_hash(pwhash, password):
 def safe_join(directory, filename):
     """Safely join `directory` and `filename`.  If this cannot be done,
     this function returns ``None``.
-
+safe_str_cmp
     :param directory: the base directory.
     :param filename: the untrusted filename relative to that directory.
     """
