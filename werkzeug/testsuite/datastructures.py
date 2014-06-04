@@ -775,7 +775,7 @@ def make_call_asserter(assert_equal_func, func=None):
 
 class CallbackDictTestCase(WerkzeugTestCase):
     storage_class = datastructures.CallbackDict
-
+ 
     def test_callback_dict_reads(self):
         assert_calls, func = make_call_asserter(self.assert_equal)
         initial = {'a': 'foo', 'b': 'bar'}
@@ -813,6 +813,68 @@ class CallbackDictTestCase(WerkzeugTestCase):
             self.assert_raises(KeyError, lambda: dct.pop('x'))
 
 
+class AcceptTestCase(WerkzeugTestCase):
+    storage_class = datastructures.Accept
+
+    def test_accept_basic(self):
+        accept = self.storage_class([('tinker', 0), ('tailor', 0.333), ('soldier', 0.667), ('sailor', 1)])
+        # check __getitem__ on indices
+        self.assert_equal(accept[3], ('tinker', 0))
+        self.assert_equal(accept[2], ('tailor', 0.333))
+        self.assert_equal(accept[1], ('soldier', 0.667))
+        self.assert_equal(accept[0], ('sailor', 1))
+        # check __getitem__ on string
+        self.assert_equal(accept['tinker'], 0)
+        self.assert_equal(accept['tailor'], 0.333)
+        self.assert_equal(accept['soldier'], 0.667)
+        self.assert_equal(accept['sailor'], 1)
+        self.assert_equal(accept['spy'], 0)
+        # check quality method
+        self.assert_equal(accept.quality('tinker'), 0)
+        self.assert_equal(accept.quality('tailor'), 0.333)
+        self.assert_equal(accept.quality('soldier'), 0.667)
+        self.assert_equal(accept.quality('sailor'), 1)
+        self.assert_equal(accept.quality('spy'), 0)
+        # check __contains__
+        self.assert_true('sailor' in accept)
+        self.assert_false('spy' in accept)
+        # check index method
+        self.assert_equal(accept.index('tinker'), 3)
+        self.assert_equal(accept.index('tailor'), 2)
+        self.assert_equal(accept.index('soldier'), 1)
+        self.assert_equal(accept.index('sailor'), 0)
+        with self.assert_raises(ValueError):
+            accept.index('spy')
+        # check find method
+        self.assert_equal(accept.find('tinker'), 3)
+        self.assert_equal(accept.find('tailor'), 2)
+        self.assert_equal(accept.find('soldier'), 1)
+        self.assert_equal(accept.find('sailor'), 0)
+        self.assert_equal(accept.find('spy'), -1)
+        # check to_header method
+        self.assert_equal(accept.to_header(), 'sailor,soldier;q=0.667,tailor;q=0.333,tinker;q=0')
+        # check best_match method
+        self.assert_equal(accept.best_match(['tinker','tailor','soldier','sailor'], default=None), 'sailor')
+        self.assert_equal(accept.best_match(['tinker','tailor','soldier'], default=None), 'soldier')
+        self.assert_equal(accept.best_match(['tinker','tailor'], default=None), 'tailor')
+        self.assert_is_none(accept.best_match(['tinker'], default=None))
+        self.assert_equal(accept.best_match(['tinker'], default='x'), 'x')
+
+    def test_accept_wildcard(self):
+        accept = self.storage_class([('*', 0), ('asterisk', 1)])
+        self.assert_true('*' in accept)
+        self.assert_equal(accept.best_match(['asterisk','star'], default=None), 'asterisk')
+        self.assert_equal(accept.best_match(['star'], default=None), None)
+
+#    @unittest.expectedFailure
+#    def test_accept_wildcard_specificity(self):
+#        accept = self.storage_class([('asterisk', 0), ('star', 0.5), ('*', 1)])
+#        self.assert_equal(accept.best_match(['star','asterisk'], default=None), 'star')
+#        self.assert_equal(accept.best_match(['asterisk','star'], default=None), 'star')
+#        self.assert_equal(accept.best_match(['asterisk','times'], default=None), 'times')
+#        self.assert_equal(accept.best_match(['asterisk'], default=None), None)
+        
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(MultiDictTestCase))
@@ -827,4 +889,5 @@ def suite():
     suite.addTest(unittest.makeSuite(HeaderSetTestCase))
     suite.addTest(unittest.makeSuite(NativeItermethodsTestCase))
     suite.addTest(unittest.makeSuite(CallbackDictTestCase))
+    suite.addTest(unittest.makeSuite(AcceptTestCase))
     return suite
