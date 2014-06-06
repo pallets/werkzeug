@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.9.5
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on June 7th 2013)
 
 - Forward charset argument from request objects to the environ
   builder.
