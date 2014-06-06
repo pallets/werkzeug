@@ -586,7 +586,49 @@ def restart_with_reloader():
     """
     while 1:
         _log('info', ' * Restarting with reloader')
-        args = [sys.executable] + sys.argv
+
+        is_jython = False
+        is_windows = False
+
+        if sys.executable:
+            args = [sys.executable] + sys.argv
+        else:
+            #Standalone Jython won't refresh properly
+            #https://gist.github.com/paolodina/b98c3f3a159024584e13
+            import platform
+
+            #Check if platform is jython
+            if platform.python_implementation().lower() == 'jython':
+                import java
+                
+                #when running Jython with -jar, rt.jar doesn't get imported
+                try:
+                    import java.lang.management as mgmt
+                except ImportError:
+                    _log('info', "ERROR: java.lang.management namespace is broken. Please make sure your CLASSPATH includes rt.jar.")
+                    raise ImportError
+
+                is_jython = True
+                
+                #get the args passed to the java exe and the classpath
+                bean = mgmt.ManagementFactory.getRuntimeMXBean()
+                
+                input_args = bean.getInputArguments()
+                classpath = [bean.getClassPath()]
+                if len(classpath) > 0:
+                    classpath.insert(0, '-cp')
+                    
+                #check if we're on Windows
+                os_bean = mgmt.ManagementFactory.getOperatingSystemMXBean()
+                os_name = os_bean.getName().lower()
+                
+                is_windows = os_name.startswith('windows')
+                
+                #get the Java exe name
+                java_exe = os.path.join(java.lang.System.getProperty('java.home'), 'bin', 'java')
+
+                args = [java_exe] + classpath + input_args + ['org.python.util.jython'] + sys.argv 
+
         new_environ = os.environ.copy()
         new_environ['WERKZEUG_RUN_MAIN'] = 'true'
 
@@ -598,7 +640,7 @@ def restart_with_reloader():
                 if isinstance(value, text_type):
                     new_environ[key] = value.encode('iso-8859-1')
 
-        exit_code = subprocess.call(args, env=new_environ)
+        exit_code = subprocess.call(args, env=new_environ, shell=(is_jython and is_windows))
         if exit_code != 3:
             return exit_code
 
