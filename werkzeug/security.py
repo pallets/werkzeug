@@ -129,17 +129,25 @@ def safe_str_cmp(a, b):
 
     .. versionadded:: 0.7
     """
+    if isinstance(a, text_type):
+        a = a.encode('utf-8')
+    if isinstance(b, text_type):
+        b = b.encode('utf-8')
+
     if _builtin_safe_str_cmp is not None:
         return _builtin_safe_str_cmp(a, b)
+
     if len(a) != len(b):
         return False
+
     rv = 0
-    if isinstance(a, bytes) and isinstance(b, bytes) and not PY2:
-        for x, y in izip(a, b):
-            rv |= x ^ y
-    else:
+    if PY2:
         for x, y in izip(a, b):
             rv |= ord(x) ^ ord(y)
+    else:
+        for x, y in izip(a, b):
+            rv |= x ^ y
+
     return rv == 0
 
 
