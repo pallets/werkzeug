@@ -14,10 +14,18 @@ import unittest
 from werkzeug.testsuite import WerkzeugTestCase
 
 from werkzeug.security import check_password_hash, generate_password_hash, \
-     safe_join, pbkdf2_hex
+     safe_join, pbkdf2_hex, safe_str_cmp
 
 
 class SecurityTestCase(WerkzeugTestCase):
+
+    def test_safe_str_cmp(self):
+        assert safe_str_cmp('a', 'a') is True
+        assert safe_str_cmp(b'a', u'a') is True
+        assert safe_str_cmp('a', 'b') is False
+        assert safe_str_cmp(b'aaa', 'aa') is False
+        assert safe_str_cmp(b'aaa', 'bbb') is False
+        assert safe_str_cmp(b'aaa', u'aaa') is True
 
     def test_password_hashing(self):
         hash0 = generate_password_hash('default')
