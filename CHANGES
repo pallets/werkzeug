@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.9.6
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on June 7th 2014)
 
 - Added a safe conversion for IRI to URI conversion and use that
   internally to work around issues with spec violations for
