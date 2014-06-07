@@ -21,6 +21,15 @@ Release date and codename to be decided
 - Added support for stdlib pbkdf2 hmac if a compatible digest
   is found.
 
+Version 0.9.6
+-------------
+
+(bugfix release, released on June 7th 2014)
+
+- Added a safe conversion for IRI to URI conversion and use that
+  internally to work around issues with spec violations for
+  protocols such as ``itms-service``.
+
 Version 0.9.5
 -------------
 
