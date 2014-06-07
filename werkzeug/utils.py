@@ -352,8 +352,10 @@ def redirect(location, code=302):
     from werkzeug.wrappers import Response
     display_location = escape(location)
     if isinstance(location, text_type):
+        # Safe conversion is necessary here as we might redirect
+        # to a broken URI scheme (for instance itms-services).
         from werkzeug.urls import iri_to_uri
-        location = iri_to_uri(location)
+        location = iri_to_uri(location, safe_conversion=True)
     response = Response(
         '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
         '<title>Redirecting...</title>\n'

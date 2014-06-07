@@ -529,7 +529,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
                         path, query, fragment))
 
 
-def iri_to_uri(iri, charset='utf-8', errors='strict'):
+def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):
     r"""
     Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
     uses utf-8 URLs internally because this is what browsers and HTTP do as
@@ -543,13 +543,46 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
     >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
     'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
 
+    There is a general problem with IRI and URI conversion with some
+    protocols that appear in the wild that are in violation of the URI
+    specification.  In places where Werkzeug goes through a forced IRI to
+    URI conversion it will set the `safe_conversion` flag which will
+    not perform a conversion if the end result is already ASCII.  This
+    can mean that the return value is not an entirely correct URI but
+    it will not destroy such invalid URLs in the process.
+
+    As an example consider the following two IRIs::
+
+      magnet:?xt=uri:whatever
+      itms-services://?action=download-manifest
+
+    The internal representation after parsing of those URLs is the same
+    and there is no way to reconstruct the original one.  If safe
+    conversion is enabled however this function becomes a noop for both of
+    those strings as they both can be considered URIs.
+
     .. versionadded:: 0.6
+
+    .. versionchanged:: 0.9.6
+       The `safe_conversion` parameter was added.
 
     :param iri: The IRI to convert.
     :param charset: The charset for the URI.
+    :param safe_conversion: indicates if a safe conversion should take place.
+                            For more information see the explanation above.
     """
     if isinstance(iri, tuple):
         iri = url_unparse(iri)
+
+    if safe_conversion:
+        try:
+            native_iri = to_native(iri)
+            ascii_iri = to_native(iri).encode('ascii')
+            if ascii_iri.split() == [ascii_iri]:
+                return native_iri
+        except UnicodeError:
+            pass
+
     iri = url_parse(to_unicode(iri, charset, errors))
 
     netloc = iri.encode_netloc().decode('ascii')

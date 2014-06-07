@@ -1105,7 +1105,10 @@ class BaseResponse(object):
         if location is not None:
             old_location = location
             if isinstance(location, text_type):
-                location = iri_to_uri(location)
+                # Safe conversion is necessary here as we might redirect
+                # to a broken URI scheme (for instance itms-services).
+                location = iri_to_uri(location, safe_conversion=True)
+
             if self.autocorrect_location_header:
                 current_url = get_current_url(environ, root_only=True)
                 if isinstance(current_url, text_type):
