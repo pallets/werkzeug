@@ -358,8 +358,8 @@ def url_parse(url, scheme=None, allow_fragments=True):
             if wdelim >= 0:
                 delim = min(delim, wdelim)
         netloc, url = url[2:delim], url[delim:]
-        if ((s('[') in netloc and s(']') not in netloc) or
-            (s(']') in netloc and s('[') not in netloc)):
+        if (s('[') in netloc and s(']') not in netloc) or \
+           (s(']') in netloc and s('[') not in netloc):
             raise ValueError('Invalid IPv6 URL')
 
     if allow_fragments and s('#') in url:
