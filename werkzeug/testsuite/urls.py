@@ -145,6 +145,15 @@ class URLsTestCase(WerkzeugTestCase):
         self.assert_strict_equal(urls.iri_to_uri(u'http://föö.com:8080/bam/baz'),
                           'http://xn--f-1gaa.com:8080/bam/baz')
 
+    def test_iri_safe_conversion(self):
+        self.assert_strict_equal(urls.iri_to_uri(u'magnet:?foo=bar'),
+                                 'magnet:?foo=bar')
+        self.assert_strict_equal(urls.iri_to_uri(u'itms-service://?foo=bar'),
+                                 'itms-service:?foo=bar')
+        self.assert_strict_equal(urls.iri_to_uri(u'itms-service://?foo=bar',
+                                                 safe_conversion=True),
+                                 'itms-service://?foo=bar')
+
     def test_iri_safe_quoting(self):
         uri = 'http://xn--f-1gaa.com/%2F%25?q=%C3%B6&x=%3D%25#%25'
         iri = u'http://föö.com/%2F%25?q=ö&x=%3D%25#%25'

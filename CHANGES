@@ -6,6 +6,10 @@ Version 0.9.6
 
 (bugfix release, release date to be decided)
 
+- Added a safe conversion for IRI to URI conversion and use that
+  internally to work around issues with spec violations for
+  protocols such as ``itms-service``.
+
 Version 0.9.5
 -------------
 
