@@ -637,9 +637,10 @@ def detect_executable():
         bean = mgmt.ManagementFactory.getRuntimeMXBean()
         
         input_args = bean.getInputArguments()
-        classpath = [bean.getClassPath()]
-        if len(classpath) > 0:
-            classpath.insert(0, '-cp')
+        cp_string = bean.getClassPath()
+        classpath = []
+        if cp_string:
+            classpath += ['-cp', cp_string]
             
         #Check if we're on Windows
         os_bean = mgmt.ManagementFactory.getOperatingSystemMXBean()
