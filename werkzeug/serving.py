@@ -621,7 +621,7 @@ def detect_executable():
     if platform.python_implementation().lower() == 'jython':
         import java
         
-        #when running Jython with -jar, rt.jar doesn't get imported
+        #When running Jython with -jar, rt.jar doesn't get imported
         try:
             import java.lang.management as mgmt
         except ImportError:
@@ -630,7 +630,7 @@ def detect_executable():
 
         is_jython = True
         
-        #get the args passed to the java exe and the classpath
+        #Get the args passed to the java exe and the classpath
         bean = mgmt.ManagementFactory.getRuntimeMXBean()
         
         input_args = bean.getInputArguments()
@@ -638,13 +638,13 @@ def detect_executable():
         if len(classpath) > 0:
             classpath.insert(0, '-cp')
             
-        #check if we're on Windows
+        #Check if we're on Windows
         os_bean = mgmt.ManagementFactory.getOperatingSystemMXBean()
         os_name = os_bean.getName().lower()
         
         is_windows = os_name.startswith('windows')
         
-        #get the Java exe name
+        #Get the Java exe name
         java_exe = os.path.join(java.lang.System.getProperty('java.home'), 'bin', 'java')
 
         args = [java_exe] + classpath + input_args + ['org.python.util.jython'] + sys.argv 
