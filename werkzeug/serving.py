@@ -649,8 +649,6 @@ def detect_executable():
 
         args = [java_exe] + classpath + input_args + ['org.python.util.jython'] + sys.argv 
         
-        print "args: {0}".format(args)
-        
         return args, (is_windows and is_jython)
 
 def run_with_reloader(main_func, extra_files=None, interval=1):
