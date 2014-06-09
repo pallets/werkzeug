@@ -610,6 +610,9 @@ def restart_with_reloader():
             return exit_code
 
 def detect_executable():
+    '''When sys.executable is None, try to detect how Python was started.
+    Currently only supports Jython.
+    '''
     #Standalone Jython won't refresh properly
     #https://gist.github.com/paolodina/b98c3f3a159024584e13
     import platform
@@ -649,6 +652,7 @@ def detect_executable():
 
         args = [java_exe] + classpath + input_args + ['org.python.util.jython'] + sys.argv 
         
+        #Return args and whether shell is required
         return args, (is_windows and is_jython)
 
 def run_with_reloader(main_func, extra_files=None, interval=1):
