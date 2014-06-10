@@ -281,8 +281,7 @@ class SimpleCache(BaseCache):
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        if len(self._cache) > self._threshold:
-            self._prune()
+        self._prune()
         item = (time() + timeout, pickle.dumps(value,
             pickle.HIGHEST_PROTOCOL))
         if key in self._cache:
