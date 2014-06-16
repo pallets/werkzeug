@@ -15,6 +15,20 @@ are listed there in detail.
 API Changes
 ===========
 
+`0.9`
+    -   Soft-deprecated the :attr:`BaseRequest.data` and
+        :attr:`BaseResponse.data` attributes and introduced new methods
+        to interact with entity data.  This will allows in the future to
+        make better APIs to deal with request and response entity
+        bodies.  So far there is no deprecation warning but users are
+        strongly encouraged to update.
+    -   The :class:`Headers` and :class:`EnvironHeaders` datastructures
+        are now designed to operate on unicode data.  This is a backwards
+        incomaptible change and was necessary for the Python 3 support.
+    -   The :class:`Headers` object no longer supports in-place operations
+        through the old ``linked`` method.  This has been removed without
+        replacement due to changes on the encoding model.
+
 `0.6.2`
     -   renamed the attribute `implicit_seqence_conversion` attribute of
         the request object to `implicit_sequence_conversion`.  Because

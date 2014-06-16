@@ -6,7 +6,7 @@
     Provide a small test application that can be used to test a WSGI server
     and check it for WSGI compliance.
 
-    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import os
@@ -15,9 +15,10 @@ import werkzeug
 from textwrap import wrap
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 from werkzeug.utils import escape
+import base64
 
-
-logo = Response('''R0lGODlhoACgAOMIAAEDACwpAEpCAGdgAJaKAM28AOnVAP3rAP/////////
+logo = Response(base64.b64decode(
+'''R0lGODlhoACgAOMIAAEDACwpAEpCAGdgAJaKAM28AOnVAP3rAP/////////
 //////////////////////yH5BAEKAAgALAAAAACgAKAAAAT+EMlJq704680R+F0ojmRpnuj0rWnrv
 nB8rbRs33gu0bzu/0AObxgsGn3D5HHJbCUFyqZ0ukkSDlAidctNFg7gbI9LZlrBaHGtzAae0eloe25
 7w9EDOX2fst/xenyCIn5/gFqDiVVDV4aGeYiKkhSFjnCQY5OTlZaXgZp8nJ2ekaB0SQOjqphrpnOiq
@@ -50,7 +51,7 @@ UpyGlhjBUljyjHhWpf8OFaXwhp9O4T1gU9UeyPPa8A2l0p1kNqPXEVRm1AOs1oAGZU596t6SOR2mcB
 Oco1srWtkaVrMUzIErrKri85keKqRQYX9VX0/eAUK1hrSu6HMEX3Qh2sCh0q0D2CtnUqS4hj62sE/z
 aDs2Sg7MBS6xnQeooc2R2tC9YrKpEi9pLXfYXp20tDCpSP8rKlrD4axprb9u1Df5hSbz9QU0cRpfgn
 kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
-='''.decode('base64'), mimetype='image/png')
+='''), mimetype='image/png')
 
 
 TEMPLATE = u'''\
@@ -155,9 +156,8 @@ def render_testapp(req):
     except ImportError:
         eggs = ()
     else:
-        eggs = list(pkg_resources.working_set)
-        eggs.sort(lambda a, b: cmp(a.project_name.lower(),
-                                   b.project_name.lower()))
+        eggs = sorted(pkg_resources.working_set,
+                      key=lambda x: x.project_name.lower())
     python_eggs = []
     for egg in eggs:
         try:
@@ -170,8 +170,8 @@ def render_testapp(req):
         ))
 
     wsgi_env = []
-    sorted_environ = req.environ.items()
-    sorted_environ.sort(key=lambda x: repr(x[0]).lower())
+    sorted_environ = sorted(req.environ.items(),
+                            key=lambda x: repr(x[0]).lower())
     for key, value in sorted_environ:
         wsgi_env.append('<tr><th>%s<td><code>%s</code>' % (
             escape(str(key)),
@@ -190,7 +190,7 @@ def render_testapp(req):
             escape(item)
         ))
 
-    return TEMPLATE % {
+    return (TEMPLATE % {
         'python_version':   '<br>'.join(escape(sys.version).splitlines()),
         'platform':         escape(sys.platform),
         'os':               escape(os.name),
@@ -200,7 +200,7 @@ def render_testapp(req):
         'python_eggs':      '\n'.join(python_eggs),
         'wsgi_env':         '\n'.join(wsgi_env),
         'sys_path':         '\n'.join(sys_path)
-    }
+    }).encode('utf-8')
 
 
 def test_app(environ, start_response):

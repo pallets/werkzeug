@@ -5,7 +5,7 @@
 
     Added tests for the sessions.
 
-    :copyright: (c) 2011 by Armin Ronacher.
+    :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 
@@ -79,13 +79,13 @@ class WrappersTestCase(WerkzeugTestCase):
         assert resp.mimetype_params == {'charset': 'utf-8'}
         resp.mimetype_params['charset'] = 'iso-8859-15'
         assert resp.charset == 'iso-8859-15'
-        resp.data = u'Hällo Wörld'
-        assert ''.join(resp.iter_encoded()) == \
+        resp.set_data(u'Hällo Wörld')
+        assert b''.join(resp.iter_encoded()) == \
                u'Hällo Wörld'.encode('iso-8859-15')
         del resp.headers['content-type']
         try:
             resp.charset = 'utf-8'
-        except TypeError, e:
+        except TypeError as e:
             pass
         else:
             assert False, 'expected type error on charset setting without ct'

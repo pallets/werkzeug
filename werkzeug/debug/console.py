@@ -5,12 +5,13 @@
 
     Interactive console support.
 
-    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 import sys
 import code
 from types import CodeType
+
 from werkzeug.utils import escape
 from werkzeug.local import Local
 from werkzeug.debug.repr import debug_repr, dump, helper
@@ -50,7 +51,7 @@ class HTMLStringO(object):
         return val
 
     def _write(self, x):
-        if isinstance(x, str):
+        if isinstance(x, bytes):
             x = x.decode('utf-8', 'replace')
         self._buffer.append(x)
 
@@ -173,7 +174,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
     def runcode(self, code):
         try:
-            exec code in self.globals, self.locals
+            eval(code, self.globals, self.locals)
         except Exception:
             self.showtraceback()
 

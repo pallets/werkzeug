@@ -99,3 +99,7 @@ Security Helpers
 .. autofunction:: safe_str_cmp
 
 .. autofunction:: safe_join
+
+.. autofunction:: pbkdf2_hex
+
+.. autofunction:: pbkdf2_bin

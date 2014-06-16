@@ -5,7 +5,7 @@
 
     Server / Browser fixers.
 
-    :copyright: (c) 2011 by Armin Ronacher.
+    :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 import unittest
@@ -30,14 +30,23 @@ def path_check_app(request):
 
 class ServerFixerTestCase(WerkzeugTestCase):
 
-    def test_lighttpd_cgi_root_fix(self):
-        app = fixers.LighttpdCGIRootFix(path_check_app)
+    def test_cgi_root_fix(self):
+        app = fixers.CGIRootFix(path_check_app)
         response = Response.from_app(app, dict(create_environ(),
             SCRIPT_NAME='/foo',
             PATH_INFO='/bar',
             SERVER_SOFTWARE='lighttpd/1.4.27'
         ))
-        assert response.data == 'PATH_INFO: /foo/bar\nSCRIPT_NAME: '
+        self.assert_equal(response.get_data(),
+                          b'PATH_INFO: /foo/bar\nSCRIPT_NAME: ')
+
+    def test_cgi_root_fix_custom_app_root(self):
+        app = fixers.CGIRootFix(path_check_app, app_root='/baz/poop/')
+        response = Response.from_app(app, dict(create_environ(),
+            SCRIPT_NAME='/foo',
+            PATH_INFO='/bar'
+        ))
+        self.assert_equal(response.get_data(), b'PATH_INFO: /foo/bar\nSCRIPT_NAME: baz/poop')
 
     def test_path_info_from_request_uri_fix(self):
         app = fixers.PathInfoFromRequestUriFix(path_check_app)
@@ -45,10 +54,9 @@ class ServerFixerTestCase(WerkzeugTestCase):
             env = dict(create_environ(), SCRIPT_NAME='/test', PATH_INFO='/?????')
             env[key] = '/test/foo%25bar?drop=this'
             response = Response.from_app(app, env)
-            assert response.data == 'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
+            self.assert_equal(response.get_data(), b'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test')
 
     def test_proxy_fix(self):
-        @fixers.ProxyFix
         @Request.application
         def app(request):
             return Response('%s|%s' % (
@@ -56,6 +64,7 @@ class ServerFixerTestCase(WerkzeugTestCase):
                 # do not use request.host as this fixes too :)
                 request.environ['HTTP_HOST']
             ))
+        app = fixers.ProxyFix(app, num_proxies=2)
         environ = dict(create_environ(),
             HTTP_X_FORWARDED_PROTO="https",
             HTTP_X_FORWARDED_HOST='example.com',
@@ -66,7 +75,7 @@ class ServerFixerTestCase(WerkzeugTestCase):
 
         response = Response.from_app(app, environ)
 
-        assert response.data == '1.2.3.4|example.com'
+        self.assert_equal(response.get_data(), b'1.2.3.4|example.com')
 
         # And we must check that if it is a redirection it is
         # correctly done:
@@ -88,7 +97,7 @@ class ServerFixerTestCase(WerkzeugTestCase):
         )
 
         response = Response.from_app(app, environ)
-        self.assert_equal(response.data, '127.0.0.1')
+        self.assert_strict_equal(response.get_data(), b'127.0.0.1')
 
     def test_header_rewriter_fix(self):
         @Request.application
@@ -120,7 +129,7 @@ class BrowserFixerTestCase(WerkzeugTestCase):
         ])
 
         # IE gets no vary
-        assert response.data == 'binary data here'
+        self.assert_equal(response.get_data(), b'binary data here')
         assert 'vary' not in response.headers
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
         assert response.headers['content-type'] == 'application/vnd.ms-excel'
@@ -128,7 +137,7 @@ class BrowserFixerTestCase(WerkzeugTestCase):
         # other browsers do
         c = Client(application, Response)
         response = c.get('/')
-        assert response.data == 'binary data here'
+        self.assert_equal(response.get_data(), b'binary data here')
         assert 'vary' in response.headers
 
         cc = ResponseCacheControl()
@@ -150,7 +159,7 @@ class BrowserFixerTestCase(WerkzeugTestCase):
         response = c.get('/', headers=[
             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)')
         ])
-        assert response.data == 'binary data here'
+        self.assert_equal(response.get_data(), b'binary data here')
         assert 'pragma' not in response.headers
         assert 'cache-control' not in response.headers
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
@@ -161,21 +170,20 @@ class BrowserFixerTestCase(WerkzeugTestCase):
         response = c.get('/', headers=[
             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)')
         ])
-        assert response.data == 'binary data here'
+        self.assert_equal(response.get_data(), b'binary data here')
         assert response.headers['pragma'] == 'x-foo'
         assert response.headers['cache-control'] == 'proxy-revalidate'
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
 
         # regular browsers get everything
         response = c.get('/')
-        assert response.data == 'binary data here'
+        self.assert_equal(response.get_data(), b'binary data here')
         assert response.headers['pragma'] == 'no-cache, x-foo'
         cc = parse_cache_control_header(response.headers['cache-control'],
                                         cls=ResponseCacheControl)
         assert cc.no_cache
         assert cc.proxy_revalidate
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
-
 
 
 def suite():

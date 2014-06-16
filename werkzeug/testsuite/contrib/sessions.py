@@ -5,17 +5,17 @@
 
     Added tests for the sessions.
 
-    :copyright: (c) 2011 by Armin Ronacher.
+    :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import os
 import unittest
 import shutil
+from tempfile import mkdtemp, gettempdir
 
 from werkzeug.testsuite import WerkzeugTestCase
-
 from werkzeug.contrib.sessions import FilesystemSessionStore
 
-from tempfile import mkdtemp, gettempdir
 
 
 class SessionTestCase(WerkzeugTestCase):
@@ -55,6 +55,16 @@ class SessionTestCase(WerkzeugTestCase):
         # the session is not new when it was used previously.
         assert not x2.new
 
+    def test_non_urandom(self):
+        urandom = os.urandom
+        del os.urandom
+        try:
+            store = FilesystemSessionStore(self.session_folder)
+            store.new()
+        finally:
+            os.urandom = urandom
+
+
     def test_renewing_fs_session(self):
         store = FilesystemSessionStore(self.session_folder, renew_missing=True)
         x = store.new()
@@ -66,7 +76,7 @@ class SessionTestCase(WerkzeugTestCase):
     def test_fs_session_lising(self):
         store = FilesystemSessionStore(self.session_folder, renew_missing=True)
         sessions = set()
-        for x in xrange(10):
+        for x in range(10):
             sess = store.new()
             store.save(sess)
             sessions.add(sess.sid)

@@ -12,6 +12,7 @@ should start here.
    tutorial
    levels
    quickstart
+   python3
 
 Serving and Testing
 -------------------
@@ -63,17 +64,6 @@ as part of the `contrib` module:
    :maxdepth: 3
 
    contrib/index
-
-Deprecated Modules
-------------------
-
-These modules were deprecated and will disappear with Werkzeug 1.0:
-
-.. toctree::
-   :maxdepth: 3
-
-   script
-   templates
 
 Additional Information
 ----------------------
