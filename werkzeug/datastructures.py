@@ -2608,6 +2608,7 @@ class FileStorage(object):
 
     def __nonzero__(self):
         return bool(self.filename)
+    __bool__ = __nonzero__
 
     def __getattr__(self, name):
         return getattr(self.stream, name)
