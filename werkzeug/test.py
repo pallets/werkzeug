@@ -549,7 +549,7 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            return wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
+            return wsgi_encoding_dance(url_unquote(x, self.charset, unsafe='/'), self.charset)
 
         qs = wsgi_encoding_dance(self.query_string)
 

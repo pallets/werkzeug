@@ -834,6 +834,7 @@ class BaseConverter(object):
         self.map = map
 
     def to_python(self, value):
+        value = value.replace('%2F', '/')
         return value
 
     def to_url(self, value):
