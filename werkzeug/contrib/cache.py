@@ -342,7 +342,7 @@ class MemcachedCache(BaseCache):
         if self.key_prefix:
             key = self.key_prefix + key
         # memcached doesn't support keys longer than that.  Because often
-        # checks for so long keys can occour because it's tested from user
+        # checks for so long keys can occur because it's tested from user
         # submitted data etc we fail silently for getting.
         if _test_memcached_key(key):
             return self._client.get(key)
@@ -374,6 +374,7 @@ class MemcachedCache(BaseCache):
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
+        timeout += int(time())
         if isinstance(key, text_type):
             key = key.encode('utf-8')
         if self.key_prefix:
@@ -383,6 +384,7 @@ class MemcachedCache(BaseCache):
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
+        timeout += int(time())
         if isinstance(key, text_type):
             key = key.encode('utf-8')
         if self.key_prefix:
@@ -396,6 +398,7 @@ class MemcachedCache(BaseCache):
     def set_many(self, mapping, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
+        timeout += int(time())
         new_mapping = {}
         for key, value in _items(mapping):
             if isinstance(key, text_type):
