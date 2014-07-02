@@ -148,7 +148,7 @@ class WrappersTestCase(WerkzeugTestCase):
         self.assert_strict_equal(req.scheme, 'https')
 
     def test_url_request_descriptors_query_quoting(self):
-        next = 'http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2F'
+        next = 'http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash'
         req = wrappers.Request.from_values('/bar?next=' + next, 'http://example.com/')
         self.assert_equal(req.path, u'/bar')
         self.assert_strict_equal(req.full_path, u'/bar?next=' + next)
