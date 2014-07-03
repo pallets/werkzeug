@@ -253,14 +253,14 @@ class WrappersTestCase(WerkzeugTestCase):
     def test_response_status_codes(self):
         response = wrappers.BaseResponse()
         response.status_code = 404
-        self.assert_strict_equal(response.status, '404 NOT FOUND')
+        self.assert_strict_equal(response.status, '404 Not Found')
         response.status = '200 OK'
         self.assert_strict_equal(response.status_code, 200)
         response.status = '999 WTF'
         self.assert_strict_equal(response.status_code, 999)
         response.status_code = 588
         self.assert_strict_equal(response.status_code, 588)
-        self.assert_strict_equal(response.status, '588 UNKNOWN')
+        self.assert_strict_equal(response.status, '588 Unknown')
         response.status = 'wtf'
         self.assert_strict_equal(response.status_code, 0)
         self.assert_strict_equal(response.status, '0 wtf')
