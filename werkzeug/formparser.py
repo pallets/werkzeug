@@ -415,6 +415,26 @@ class MultiPartParser(object):
             name = extra.get('name')
             filename = extra.get('filename')
 
+            # we can deal with continuation lines for filename
+            # according to RFC 2231.
+            # See <a href="http://tools.ietf.org/html/rfc2231">RFC 2231</a>
+            # for details.
+            if filename is None:
+                rfc2231_filename_continuations = [('form-data', '')]
+                # deal with up to 10 filename continuations.
+                for x in range(10):
+                    filename_part = extra.get('filename*%d*' % x)
+                    if filename_part is not None:
+                        rfc2231_filename_continuations.append(
+                            ('filename*%d*' % x, filename_part))
+                if len(rfc2231_filename_continuations) > 1:
+                    from email.utils import decode_params
+                    # 'decode_params' returns a list of tuples like,
+                    # [('form-data', ''),
+                    #  ('filename', ('us-ascii', '', '"foo.txt"'))]
+                    params = decode_params(rfc2231_filename_continuations)
+                    filename = params[1][1][2]
+
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.
             if filename is None:
