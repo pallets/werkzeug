@@ -410,14 +410,24 @@ def import_string(import_name, silent=False):
         # if the module is a package
         if PY2 and isinstance(obj, unicode):
             obj = obj.encode('utf-8')
+
+        # Don't mask out AttributeErrors during import
         try:
-            return getattr(__import__(module, None, None, [obj]), obj)
-        except (ImportError, AttributeError):
-            # support importing modules not yet set up by the parent module
-            # (or package for that matter)
-            modname = module + '.' + obj
-            __import__(modname)
-            return sys.modules[modname]
+            mod = __import__(module, None, None, [obj])
+        except ImportError:
+            mod = None
+
+        if mod:
+            try:
+                return getattr(mod, obj)
+            except AttributeError:
+                pass
+
+        # support importing modules not yet set up by the parent module
+        # (or package for that matter)
+        modname = module + '.' + obj
+        __import__(modname)
+        return sys.modules[modname]
     except ImportError as e:
         if not silent:
             reraise(

@@ -36,9 +36,10 @@ def get_temporary_directory():
 def iter_suites(package):
     """Yields all testsuites."""
     for module in find_modules(package, include_packages=True):
-        mod = __import__(module, fromlist=['*'])
-        if hasattr(mod, 'suite'):
-            yield mod.suite()
+        if module != 'werkzeug.testsuite.foo':
+            mod = __import__(module, fromlist=['*'])
+            if hasattr(mod, 'suite'):
+                yield mod.suite()
 
 
 def find_all_tests(suite):
