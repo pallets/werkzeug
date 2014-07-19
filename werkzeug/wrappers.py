@@ -495,6 +495,16 @@ class BaseRequest(object):
         return CombinedMultiDict(args)
 
     @cached_property
+    def values_with_files(self):
+        """Combined multi dict for :attr:`values` and :attr:`files`."""
+        args = []
+        for d in self.values, self.files:
+            if not isinstance(d, MultiDict):
+                d = MultiDict(d)
+            args.append(d)
+        return CombinedMultiDict(args)
+
+    @cached_property
     def files(self):
         """:class:`~werkzeug.datastructures.MultiDict` object containing
         all uploaded files.  Each key in :attr:`files` is the name from the
