@@ -308,6 +308,22 @@ def test_follow_redirect():
     strict_eq(resp.status_code, 200)
     strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
 
+def test_follow_redirect_with_post_307():
+    def redirect_with_post_307_app(environ, start_response):
+        req = Request(environ)
+        if req.url == 'http://localhost/some/redirect/':
+            assert req.method == 'POST', 'request should be POST'
+            assert not req.form, 'request should not have data'
+            response = Response('current url: %s' % req.url)
+        else:
+            response = redirect('http://localhost/some/redirect/', code=307)
+            return response(environ, start_response)
+
+    c = Client(redirect_with_post_307_app, response_wrapper=BaseResponse)
+    resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
+    assert resp.status_code == 200
+    assert resp.data == b'current url: http://localhost/some/redirect/'
+
 def test_follow_external_redirect():
     env = create_environ('/', base_url='http://localhost')
     c = Client(external_redirect_demo_app)
