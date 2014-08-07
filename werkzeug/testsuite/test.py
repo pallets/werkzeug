@@ -64,6 +64,15 @@ def redirect_with_post_app(environ, start_response):
         response = redirect('http://localhost/some/redirect/')
     return response(environ, start_response)
 
+def redirect_with_post_307_app(environ, start_response):
+    req = Request(environ)
+    if req.url == 'http://localhost/some/redirect/':
+        assert req.method == 'POST', 'request should be POST'
+        assert not req.form, 'request should not have data'
+        response = Response('current url: %s' % req.url)
+    else:
+        response = redirect('http://localhost/some/redirect/', code=307)
+    return response(environ, start_response)
 
 def external_redirect_demo_app(environ, start_response):
     response = redirect('http://example.com/')
@@ -336,6 +345,12 @@ class TestTestCase(WerkzeugTestCase):
 
     def test_follow_redirect_with_post(self):
         c = Client(redirect_with_post_app, response_wrapper=BaseResponse)
+        resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
+        self.assert_strict_equal(resp.status_code, 200)
+        self.assert_strict_equal(resp.data, b'current url: http://localhost/some/redirect/')
+
+    def test_follow_redirect_with_post_307(self):
+        c = Client(redirect_with_post_307_app, response_wrapper=BaseResponse)
         resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
         self.assert_strict_equal(resp.status_code, 200)
         self.assert_strict_equal(resp.data, b'current url: http://localhost/some/redirect/')
