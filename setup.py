@@ -79,10 +79,8 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib',
-              'werkzeug.testsuite', 'werkzeug.testsuite.contrib'],
+    packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib'],
     include_package_data=True,
-    test_suite='werkzeug.testsuite.suite',
     zip_safe=False,
     platforms='any'
 )
