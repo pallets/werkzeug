@@ -19,6 +19,8 @@
 from __future__ import with_statement
 
 import pytest
+from tests import assert_equal, assert_strict_equal
+
 
 import pickle
 from contextlib import contextmanager
@@ -54,9 +56,9 @@ class TestNativeItermethods(WerkzeugTests):
         assert list(itervalues(d)) == expected_values
         assert list(iteritems(d)) == expected_items
 
-        self.assert_equal(list(iterkeys(d, 2)), expected_keys * 2)
-        self.assert_equal(list(itervalues(d, 2)), expected_values * 2)
-        self.assert_equal(list(iteritems(d, 2)), expected_items * 2)
+        assert_equal(list(iterkeys(d, 2)), expected_keys * 2)
+        assert_equal(list(itervalues(d, 2)), expected_values * 2)
+        assert_equal(list(iteritems(d, 2)), expected_items * 2)
 
 
 class MutableMultiDictBaseTests(object):
@@ -104,8 +106,8 @@ class MutableMultiDictBaseTests(object):
         assert md.get('a') == 1
 
         # list getitem
-        self.assert_equal(md.getlist('a'), [1, 2, 1, 3])
-        self.assert_equal(md.getlist('d'), [3, 4])
+        assert_equal(md.getlist('a'), [1, 2, 1, 3])
+        assert_equal(md.getlist('d'), [3, 4])
         # do not raise if key not found
         assert md.getlist('x') == []
 
@@ -116,7 +118,7 @@ class MutableMultiDictBaseTests(object):
         # list setitem
         md.setlist('a', [1, 2, 3])
         assert md['a'] == 1
-        self.assert_equal(md.getlist('a'), [1, 2, 3])
+        assert_equal(md.getlist('a'), [1, 2, 3])
 
         # verify that it does not change original lists
         l1 = [1, 2, 3]
@@ -125,7 +127,7 @@ class MutableMultiDictBaseTests(object):
         assert md['a'] == 1
 
         # setdefault, setlistdefault
-        self.assert_equal(md.setdefault('u', 23), 23)
+        assert_equal(md.setdefault('u', 23), 23)
         assert md.getlist('u') == [23]
         del md['u']
 
@@ -139,63 +141,63 @@ class MutableMultiDictBaseTests(object):
         assert md.getlist('d') == []
 
         # keys, values, items, lists
-        self.assert_equal(list(sorted(md.keys())), ['a', 'b', 'c'])
-        self.assert_equal(list(sorted(iterkeys(md))), ['a', 'b', 'c'])
+        assert_equal(list(sorted(md.keys())), ['a', 'b', 'c'])
+        assert_equal(list(sorted(iterkeys(md))), ['a', 'b', 'c'])
 
-        self.assert_equal(list(sorted(itervalues(md))), [1, 2, 3])
-        self.assert_equal(list(sorted(itervalues(md))), [1, 2, 3])
+        assert_equal(list(sorted(itervalues(md))), [1, 2, 3])
+        assert_equal(list(sorted(itervalues(md))), [1, 2, 3])
 
-        self.assert_equal(list(sorted(md.items())),
+        assert_equal(list(sorted(md.items())),
                           [('a', 1), ('b', 2), ('c', 3)])
-        self.assert_equal(list(sorted(md.items(multi=True))),
+        assert_equal(list(sorted(md.items(multi=True))),
                           [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)])
-        self.assert_equal(list(sorted(iteritems(md))),
+        assert_equal(list(sorted(iteritems(md))),
                           [('a', 1), ('b', 2), ('c', 3)])
-        self.assert_equal(list(sorted(iteritems(md, multi=True))),
+        assert_equal(list(sorted(iteritems(md, multi=True))),
                           [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)])
 
-        self.assert_equal(list(sorted(md.lists())),
+        assert_equal(list(sorted(md.lists())),
                           [('a', [1, 2, 3]), ('b', [2]), ('c', [3])])
-        self.assert_equal(list(sorted(iterlists(md))),
+        assert_equal(list(sorted(iterlists(md))),
                           [('a', [1, 2, 3]), ('b', [2]), ('c', [3])])
 
         # copy method
         c = md.copy()
         assert c['a'] == 1
-        self.assert_equal(c.getlist('a'), [1, 2, 3])
+        assert_equal(c.getlist('a'), [1, 2, 3])
 
         # copy method 2
         c = copy(md)
         assert c['a'] == 1
-        self.assert_equal(c.getlist('a'), [1, 2, 3])
+        assert_equal(c.getlist('a'), [1, 2, 3])
         
         # deepcopy method
         c = md.deepcopy()
         assert c['a'] == 1
-        self.assert_equal(c.getlist('a'), [1, 2, 3])
+        assert_equal(c.getlist('a'), [1, 2, 3])
         
         # deepcopy method 2
         c = deepcopy(md)
         assert c['a'] == 1
-        self.assert_equal(c.getlist('a'), [1, 2, 3])
+        assert_equal(c.getlist('a'), [1, 2, 3])
 
         # update with a multidict
         od = self.storage_class([('a', 4), ('a', 5), ('y', 0)])
         md.update(od)
-        self.assert_equal(md.getlist('a'), [1, 2, 3, 4, 5])
+        assert_equal(md.getlist('a'), [1, 2, 3, 4, 5])
         assert md.getlist('y') == [0]
 
         # update with a regular dict
         md = c
         od = {'a': 4, 'y': 0}
         md.update(od)
-        self.assert_equal(md.getlist('a'), [1, 2, 3, 4])
+        assert_equal(md.getlist('a'), [1, 2, 3, 4])
         assert md.getlist('y') == [0]
 
         # pop, poplist, popitem, popitemlist
         assert md.pop('y') == 0
         assert 'y' not in md
-        self.assert_equal(md.poplist('a'), [1, 2, 3, 4])
+        assert_equal(md.poplist('a'), [1, 2, 3, 4])
         assert 'a' not in md
         assert md.poplist('missing') == []
 
@@ -207,8 +209,8 @@ class MutableMultiDictBaseTests(object):
 
         # type conversion
         md = self.storage_class({'a': '4', 'b': ['2', '3']})
-        self.assert_equal(md.get('a', type=int), 4)
-        self.assert_equal(md.getlist('b', type=int), [2, 3])
+        assert_equal(md.get('a', type=int), 4)
+        assert_equal(md.getlist('b', type=int), [2, 3])
 
         # repr
         md = self.storage_class([('a', 1), ('a', 2), ('b', 3)])
@@ -219,23 +221,23 @@ class MutableMultiDictBaseTests(object):
         # add and getlist
         md.add('c', '42')
         md.add('c', '23')
-        self.assert_equal(md.getlist('c'), ['42', '23'])
+        assert_equal(md.getlist('c'), ['42', '23'])
         md.add('c', 'blah')
-        self.assert_equal(md.getlist('c', type=int), [42, 23])
+        assert_equal(md.getlist('c', type=int), [42, 23])
 
         # setdefault
         md = self.storage_class()
         md.setdefault('x', []).append(42)
         md.setdefault('x', []).append(23)
-        self.assert_equal(md['x'], [42, 23])
+        assert_equal(md['x'], [42, 23])
 
         # to dict
         md = self.storage_class()
         md['foo'] = 42
         md.add('bar', 1)
         md.add('bar', 2)
-        self.assert_equal(md.to_dict(), {'foo': 42, 'bar': 1})
-        self.assert_equal(md.to_dict(flat=False), {'foo': [42], 'bar': [1, 2]})
+        assert_equal(md.to_dict(), {'foo': 42, 'bar': 1})
+        assert_equal(md.to_dict(flat=False), {'foo': [42], 'bar': [1, 2]})
 
         # popitem from empty dict
         with pytest.raises(KeyError):
@@ -252,7 +254,7 @@ class MutableMultiDictBaseTests(object):
         md = self.storage_class()
         md['foo'] = 42
         md.setlist('foo', [1, 2])
-        self.assert_equal(md.getlist('foo'), [1, 2])
+        assert_equal(md.getlist('foo'), [1, 2])
 
 
 class ImmutableDictBaseTests(object):
@@ -267,7 +269,7 @@ class ImmutableDictBaseTests(object):
         assert d['foo'] == 1
         assert d['bar'] == 2
         assert d['baz'] == 3
-        self.assert_equal(sorted(d.keys()), ['bar', 'baz', 'foo'])
+        assert_equal(sorted(d.keys()), ['bar', 'baz', 'foo'])
         assert 'foo' in d
         assert 'foox' not in d
         assert len(d) == 3
@@ -349,10 +351,10 @@ class TestMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         assert d.pop('foo') == 1
         assert not d
         d = make_d()
-        self.assert_equal(d.pop('foo', 32), 1)
+        assert_equal(d.pop('foo', 32), 1)
         assert not d
         d = make_d()
-        self.assert_equal(d.pop('foos', 32), 32)
+        assert_equal(d.pop('foos', 32), 32)
         assert d
 
         with pytest.raises(KeyError):
@@ -360,19 +362,19 @@ class TestMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
 
     def test_setlistdefault(self):
         md = self.storage_class()
-        self.assert_equal(md.setlistdefault('u', [-1, -2]), [-1, -2])
-        self.assert_equal(md.getlist('u'), [-1, -2])
+        assert_equal(md.setlistdefault('u', [-1, -2]), [-1, -2])
+        assert_equal(md.getlist('u'), [-1, -2])
         assert md['u'] == -1
 
     def test_iter_interfaces(self):
         mapping = [('a', 1), ('b', 2), ('a', 2), ('d', 3),
                    ('a', 1), ('a', 3), ('d', 4), ('c', 3)]
         md = self.storage_class(mapping)
-        self.assert_equal(list(zip(md.keys(), md.listvalues())),
+        assert_equal(list(zip(md.keys(), md.listvalues())),
                           list(md.lists()))
-        self.assert_equal(list(zip(md, iterlistvalues(md))),
+        assert_equal(list(zip(md, iterlistvalues(md))),
                           list(iterlists(md)))
-        self.assert_equal(list(zip(iterkeys(md), iterlistvalues(md))),
+        assert_equal(list(zip(iterkeys(md), iterlistvalues(md))),
                           list(iterlists(md)))
 
 
@@ -388,9 +390,9 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         assert len(d) == 1
         d.add('foo', 'baz')
         assert len(d) == 1
-        self.assert_equal(list(iteritems(d)), [('foo', 'bar')])
+        assert_equal(list(iteritems(d)), [('foo', 'bar')])
         assert list(d) == ['foo']
-        self.assert_equal(list(iteritems(d, multi=True)),
+        assert_equal(list(iteritems(d, multi=True)),
                           [('foo', 'bar'), ('foo', 'baz')])
         del d['foo']
         assert not d
@@ -399,9 +401,9 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
 
         d.update([('foo', 1), ('foo', 2), ('bar', 42)])
         d.add('foo', 3)
-        self.assert_equal(d.getlist('foo'), [1, 2, 3])
+        assert_equal(d.getlist('foo'), [1, 2, 3])
         assert d.getlist('bar') == [42]
-        self.assert_equal(list(iteritems(d)), [('foo', 1), ('bar', 42)])
+        assert_equal(list(iteritems(d)), [('foo', 1), ('bar', 42)])
 
         expected = ['foo', 'bar']
 
@@ -409,13 +411,13 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         assert list(d) == expected
         assert list(iterkeys(d)) == expected
 
-        self.assert_equal(list(iteritems(d, multi=True)),
+        assert_equal(list(iteritems(d, multi=True)),
                           [('foo', 1), ('foo', 2), ('bar', 42), ('foo', 3)])
         assert len(d) == 2
 
         assert d.pop('foo') == 1
         assert d.pop('blafasel', None) is None
-        self.assert_equal(d.pop('blafasel', 42), 42)
+        assert_equal(d.pop('blafasel', 42), 42)
         assert len(d) == 1
         assert d.poplist('bar') == [42]
         assert not d
@@ -434,13 +436,13 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
 
         d.update({'blah': [1, 2, 3]})
         assert d['blah'] == 1
-        self.assert_equal(d.getlist('blah'), [1, 2, 3])
+        assert_equal(d.getlist('blah'), [1, 2, 3])
 
         # setlist works
         d = self.storage_class()
         d['foo'] = 42
         d.setlist('foo', [1, 2])
-        self.assert_equal(d.getlist('foo'), [1, 2])
+        assert_equal(d.getlist('foo'), [1, 2])
 
         with pytest.raises(BadRequestKeyError):
             d.pop('missing')
@@ -452,7 +454,7 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         d.add('foo', 23)
         d.add('foo', 42)
         d.add('foo', 1)
-        self.assert_equal(d.popitem(), ('foo', 23))
+        assert_equal(d.popitem(), ('foo', 23))
         with pytest.raises(BadRequestKeyError):
             d.popitem()
         assert not d
@@ -460,7 +462,7 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         d.add('foo', 23)
         d.add('foo', 42)
         d.add('foo', 1)
-        self.assert_equal(d.popitemlist(), ('foo', [23, 42, 1]))
+        assert_equal(d.popitemlist(), ('foo', [23, 42, 1]))
 
         with pytest.raises(BadRequestKeyError):
             d.popitemlist()
@@ -470,13 +472,13 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         b = datastructures.MultiDict((("key_b", "value_b"),))
         ab = datastructures.CombinedMultiDict((a,b))
 
-        self.assert_equal(sorted(ab.lists()), [('key_a', ['value_a']), ('key_b', ['value_b'])])
-        self.assert_equal(sorted(ab.listvalues()), [['value_a'], ['value_b']])
-        self.assert_equal(sorted(ab.keys()), ["key_a", "key_b"])
+        assert_equal(sorted(ab.lists()), [('key_a', ['value_a']), ('key_b', ['value_b'])])
+        assert_equal(sorted(ab.listvalues()), [['value_a'], ['value_b']])
+        assert_equal(sorted(ab.keys()), ["key_a", "key_b"])
 
-        self.assert_equal(sorted(iterlists(ab)), [('key_a', ['value_a']), ('key_b', ['value_b'])])
-        self.assert_equal(sorted(iterlistvalues(ab)), [['value_a'], ['value_b']])
-        self.assert_equal(sorted(iterkeys(ab)), ["key_a", "key_b"])
+        assert_equal(sorted(iterlists(ab)), [('key_a', ['value_a']), ('key_b', ['value_b'])])
+        assert_equal(sorted(iterlistvalues(ab)), [['value_a'], ['value_b']])
+        assert_equal(sorted(iterkeys(ab)), ["key_a", "key_b"])
 
 
 class TestCombinedMultiDict(WerkzeugTests):
@@ -490,18 +492,18 @@ class TestCombinedMultiDict(WerkzeugTests):
         # lookup
         assert d['foo'] == '1'
         assert d['bar'] == '2'
-        self.assert_equal(d.getlist('bar'), ['2', '3'])
+        assert_equal(d.getlist('bar'), ['2', '3'])
 
-        self.assert_equal(sorted(d.items()),
+        assert_equal(sorted(d.items()),
                           [('bar', '2'), ('foo', '1')])
-        self.assert_equal(sorted(d.items(multi=True)),
+        assert_equal(sorted(d.items(multi=True)),
                           [('bar', '2'), ('bar', '3'), ('foo', '1')])
         assert 'missingkey' not in d
         assert 'foo' in d
 
         # type lookup
-        self.assert_equal(d.get('foo', type=int), 1)
-        self.assert_equal(d.getlist('bar', type=int), [2, 3])
+        assert_equal(d.get('foo', type=int), 1)
+        assert_equal(d.getlist('bar', type=int), [2, 3])
 
         # get key errors for missing stuff
         with pytest.raises(KeyError):
@@ -520,7 +522,7 @@ class TestCombinedMultiDict(WerkzeugTests):
         md1 = datastructures.MultiDict((("foo", "bar"),))
         md2 = datastructures.MultiDict((("foo", "blafasel"),))
         x = self.storage_class((md1, md2))
-        self.assert_equal(list(iterlists(x)), [('foo', ['bar', 'blafasel'])])
+        assert_equal(list(iterlists(x)), [('foo', ['bar', 'blafasel'])])
 
     def test_length(self):
         d1 = datastructures.MultiDict([('foo', '1')])
@@ -548,11 +550,11 @@ class TestHeaders(WerkzeugTests):
         assert len(headers.getlist('Content-Type')) == 1
 
         # list conversion
-        self.assert_equal(headers.to_wsgi_list(), [
+        assert_equal(headers.to_wsgi_list(), [
             ('Content-Type', 'foo/bar'),
             ('X-Foo', 'bar')
         ])
-        self.assert_equal(str(headers), (
+        assert_equal(str(headers), (
             "Content-Type: foo/bar\r\n"
             "X-Foo: bar\r\n"
             "\r\n"))
@@ -560,7 +562,7 @@ class TestHeaders(WerkzeugTests):
 
         # extended add
         headers.add('Content-Disposition', 'attachment', filename='foo')
-        self.assert_equal(headers['Content-Disposition'],
+        assert_equal(headers['Content-Disposition'],
                           'attachment; filename=foo')
 
         headers.add('x', 'y', z='"')
@@ -574,38 +576,38 @@ class TestHeaders(WerkzeugTests):
             ('X-Bar',        '1'),
             ('X-Bar',        '2')
         ])
-        self.assert_equal(headers.getlist('x-bar'), ['1', '2'])
+        assert_equal(headers.getlist('x-bar'), ['1', '2'])
         assert headers.get('x-Bar') == '1'
         assert headers.get('Content-Type') == 'text/plain'
 
-        self.assert_equal(headers.setdefault('X-Foo', 'nope'), 'bar')
-        self.assert_equal(headers.setdefault('X-Bar', 'nope'), '1')
-        self.assert_equal(headers.setdefault('X-Baz', 'quux'), 'quux')
-        self.assert_equal(headers.setdefault('X-Baz', 'nope'), 'quux')
+        assert_equal(headers.setdefault('X-Foo', 'nope'), 'bar')
+        assert_equal(headers.setdefault('X-Bar', 'nope'), '1')
+        assert_equal(headers.setdefault('X-Baz', 'quux'), 'quux')
+        assert_equal(headers.setdefault('X-Baz', 'nope'), 'quux')
         headers.pop('X-Baz')
 
         # type conversion
-        self.assert_equal(headers.get('x-bar', type=int), 1)
-        self.assert_equal(headers.getlist('x-bar', type=int), [1, 2])
+        assert_equal(headers.get('x-bar', type=int), 1)
+        assert_equal(headers.getlist('x-bar', type=int), [1, 2])
 
         # list like operations
-        self.assert_equal(headers[0], ('Content-Type', 'text/plain'))
-        self.assert_equal(headers[:1], self.storage_class([('Content-Type', 'text/plain')]))
+        assert_equal(headers[0], ('Content-Type', 'text/plain'))
+        assert_equal(headers[:1], self.storage_class([('Content-Type', 'text/plain')]))
         del headers[:2]
         del headers[-1]
-        self.assert_equal(headers, self.storage_class([('X-Bar', '1')]))
+        assert_equal(headers, self.storage_class([('X-Bar', '1')]))
 
     def test_copying(self):
         a = self.storage_class([('foo', 'bar')])
         b = a.copy()
         a.add('foo', 'baz')
-        self.assert_equal(a.getlist('foo'), ['bar', 'baz'])
+        assert_equal(a.getlist('foo'), ['bar', 'baz'])
         assert b.getlist('foo') == ['bar']
 
     def test_popping(self):
         headers = self.storage_class([('a', 1)])
         assert headers.pop('a') == 1
-        self.assert_equal(headers.pop('b', 2), 2)
+        assert_equal(headers.pop('b', 2), 2)
 
         with pytest.raises(KeyError):
             headers.pop('c')
@@ -639,7 +641,7 @@ class TestHeaders(WerkzeugTests):
         h.set('Content-Type', 'application/whocares')
         h.set('X-Forwarded-For', '192.168.0.123')
         h[:] = [(k, v) for k, v in h if k.startswith(u'X-')]
-        self.assert_equal(list(h), [
+        assert_equal(list(h), [
             ('X-Foo-Poo', 'bleh'),
             ('X-Forwarded-For', '192.168.0.123')
         ])
@@ -649,19 +651,19 @@ class TestHeaders(WerkzeugTests):
         h.set('X-Foo-Poo', 'bleh')
         h.set('X-Whoops', b'\xff')
 
-        self.assert_equal(h.get('x-foo-poo', as_bytes=True), b'bleh')
-        self.assert_equal(h.get('x-whoops', as_bytes=True), b'\xff')
+        assert_equal(h.get('x-foo-poo', as_bytes=True), b'bleh')
+        assert_equal(h.get('x-whoops', as_bytes=True), b'\xff')
 
     def test_to_wsgi_list(self):
         h = self.storage_class()
         h.set(u'Key', u'Value')
         for key, value in h.to_wsgi_list():
             if PY2:
-                self.assert_strict_equal(key, b'Key')
-                self.assert_strict_equal(value, b'Value')
+                assert_strict_equal(key, b'Key')
+                assert_strict_equal(value, b'Value')
             else:
-                self.assert_strict_equal(key, u'Key')
-                self.assert_strict_equal(value, u'Value')
+                assert_strict_equal(key, u'Key')
+                assert_strict_equal(value, u'Value')
 
 
 
@@ -682,13 +684,13 @@ class TestEnvironHeaders(WerkzeugTests):
         headers = self.storage_class(broken_env)
         assert headers
         assert len(headers) == 3
-        self.assert_equal(sorted(headers), [
+        assert_equal(sorted(headers), [
             ('Accept', '*'),
             ('Content-Length', '0'),
             ('Content-Type', 'text/html')
         ])
         assert not self.storage_class({'wsgi.version': (1, 0)})
-        self.assert_equal(len(self.storage_class({'wsgi.version': (1, 0)})), 0)
+        assert_equal(len(self.storage_class({'wsgi.version': (1, 0)})), 0)
 
     def test_return_type_is_unicode(self):
         # environ contains native strings; we return unicode
@@ -710,7 +712,7 @@ class TestEnvironHeaders(WerkzeugTests):
             'HTTP_X_FOO': foo_val
         })
 
-        self.assert_equal(h.get('x-foo', as_bytes=True), b'\xff')
+        assert_equal(h.get('x-foo', as_bytes=True), b'\xff')
         assert h.get('x-foo') == u'\xff'
 
 

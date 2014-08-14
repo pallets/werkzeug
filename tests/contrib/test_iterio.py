@@ -11,11 +11,11 @@
 import pytest
 from functools import partial
 
-from tests import WerkzeugTests
+from tests import WerkzeugTests, assert_equal, assert_strict_equal
 from werkzeug.contrib.iterio import IterIO, greenlet
 
 
-class IterOTestSuite(WerkzeugTests):
+class TestIterO(WerkzeugTests):
 
     def test_basic_native(self):
         io = IterIO(["Hello", "World", "1", "2", "3"])
@@ -40,14 +40,14 @@ class IterOTestSuite(WerkzeugTests):
         assert io._buf == 'Hello\nWorld!'
         assert io.tell() == 12
         io.seek(0)
-        self.assert_equal(io.readlines(), ['Hello\n', 'World!'])
+        assert_equal(io.readlines(), ['Hello\n', 'World!'])
 
         io = IterIO(['Line one\nLine ', 'two\nLine three'])
-        self.assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
         io = IterIO(iter('Line one\nLine two\nLine three'))
-        self.assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
         io = IterIO(['Line one\nL', 'ine', ' two', '\nLine three'])
-        self.assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
 
         io = IterIO(["foo\n", "bar"])
         io.seek(-4, 2)
@@ -80,7 +80,7 @@ class IterOTestSuite(WerkzeugTests):
         assert io._buf == b'Hello\nWorld!'
         assert io.tell() == 12
         io.seek(0)
-        self.assert_equal(io.readlines(), [b'Hello\n', b'World!'])
+        assert_equal(io.readlines(), [b'Hello\n', b'World!'])
 
         io = IterIO([b"foo\n", b"bar"])
         io.seek(-4, 2)
@@ -113,7 +113,7 @@ class IterOTestSuite(WerkzeugTests):
         assert io._buf == u'Hello\nWorld!'
         assert io.tell() == 12
         io.seek(0)
-        self.assert_equal(io.readlines(), [u'Hello\n', u'World!'])
+        assert_equal(io.readlines(), [u'Hello\n', u'World!'])
 
         io = IterIO([u"foo\n", u"bar"])
         io.seek(-4, 2)
@@ -125,36 +125,36 @@ class IterOTestSuite(WerkzeugTests):
 
     def test_sentinel_cases(self):
         io = IterIO([])
-        self.assert_strict_equal(io.read(), '')
+        assert_strict_equal(io.read(), '')
         io = IterIO([], b'')
-        self.assert_strict_equal(io.read(), b'')
+        assert_strict_equal(io.read(), b'')
         io = IterIO([], u'')
-        self.assert_strict_equal(io.read(), u'')
+        assert_strict_equal(io.read(), u'')
 
         io = IterIO([])
-        self.assert_strict_equal(io.read(), '')
+        assert_strict_equal(io.read(), '')
         io = IterIO([b''])
-        self.assert_strict_equal(io.read(), b'')
+        assert_strict_equal(io.read(), b'')
         io = IterIO([u''])
-        self.assert_strict_equal(io.read(), u'')
+        assert_strict_equal(io.read(), u'')
 
         io = IterIO([])
-        self.assert_strict_equal(io.readline(), '')
+        assert_strict_equal(io.readline(), '')
         io = IterIO([], b'')
-        self.assert_strict_equal(io.readline(), b'')
+        assert_strict_equal(io.readline(), b'')
         io = IterIO([], u'')
-        self.assert_strict_equal(io.readline(), u'')
+        assert_strict_equal(io.readline(), u'')
 
         io = IterIO([])
-        self.assert_strict_equal(io.readline(), '')
+        assert_strict_equal(io.readline(), '')
         io = IterIO([b''])
-        self.assert_strict_equal(io.readline(), b'')
+        assert_strict_equal(io.readline(), b'')
         io = IterIO([u''])
-        self.assert_strict_equal(io.readline(), u'')
+        assert_strict_equal(io.readline(), u'')
 
 
 @pytest.mark.skipif(greenlet is None, reason='Greenlet is not installed.')
-class IterITestSuite(WerkzeugTests):
+class TestIterI(WerkzeugTests):
     def test_basic(self):
         def producer(out):
             out.write('1\n')
@@ -170,7 +170,7 @@ class IterITestSuite(WerkzeugTests):
         def producer_dummy_flush(out):
             out.flush()
         iterable = IterIO(producer_dummy_flush)
-        self.assert_strict_equal(next(iterable), '')
+        assert_strict_equal(next(iterable), '')
 
         def producer_empty(out):
             pass
@@ -178,6 +178,6 @@ class IterITestSuite(WerkzeugTests):
         pytest.raises(StopIteration, next, iterable)
 
         iterable = IterIO(producer_dummy_flush, b'')
-        self.assert_strict_equal(next(iterable), b'')
+        assert_strict_equal(next(iterable), b'')
         iterable = IterIO(producer_dummy_flush, u'')
-        self.assert_strict_equal(next(iterable), u'')
+        assert_strict_equal(next(iterable), u'')

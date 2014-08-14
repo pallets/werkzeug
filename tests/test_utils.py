@@ -15,7 +15,7 @@ import pytest
 from datetime import datetime
 from functools import partial
 
-from tests import WerkzeugTests
+from tests import WerkzeugTests, assert_equal
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
@@ -112,7 +112,7 @@ class TestGeneralUtility(WerkzeugTests):
         assert a.broken_number == None
         assert a.date is None
         a.date = datetime(2008, 1, 22, 10, 0, 0, 0)
-        self.assert_equal(a.environ['date'], 'Tue, 22 Jan 2008 10:00:00 GMT')
+        assert_equal(a.environ['date'], 'Tue, 22 Jan 2008 10:00:00 GMT')
 
     def test_escape(self):
         class Foo(str):
@@ -136,7 +136,7 @@ class TestGeneralUtility(WerkzeugTests):
 
         app_iter, status, headers = run_wsgi_app(foo, {})
         assert status == '200 OK'
-        self.assert_equal(list(headers), [('Content-Type', 'text/plain')])
+        assert_equal(list(headers), [('Content-Type', 'text/plain')])
         assert next(app_iter) == '1'
         assert next(app_iter) == '2'
         assert next(app_iter) == '3'
@@ -163,12 +163,12 @@ class TestGeneralUtility(WerkzeugTests):
 
         app_iter, status, headers = run_wsgi_app(bar, {})
         assert status == '200 OK'
-        self.assert_equal(list(headers), [('Content-Type', 'text/plain')])
+        assert_equal(list(headers), [('Content-Type', 'text/plain')])
         assert next(app_iter) == 'bar'
         pytest.raises(StopIteration, partial(next, app_iter))
         app_iter.close()
 
-        self.assert_equal(run_wsgi_app(bar, {}, True)[0], ['bar'])
+        assert_equal(run_wsgi_app(bar, {}, True)[0], ['bar'])
 
         assert len(got_close) == 2
 
@@ -185,7 +185,7 @@ class TestGeneralUtility(WerkzeugTests):
         pytest.raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
     def test_find_modules(self):
-        self.assert_equal(list(utils.find_modules('werkzeug.debug')), \
+        assert_equal(list(utils.find_modules('werkzeug.debug')), \
             ['werkzeug.debug.console', 'werkzeug.debug.repr',
              'werkzeug.debug.tbtools'])
 
@@ -193,12 +193,12 @@ class TestGeneralUtility(WerkzeugTests):
         html = utils.html
         xhtml = utils.xhtml
         assert html.p('Hello World') == '<p>Hello World</p>'
-        self.assert_equal(html.a('Test', href='#'), '<a href="#">Test</a>')
+        assert_equal(html.a('Test', href='#'), '<a href="#">Test</a>')
         assert html.br() == '<br>'
         assert xhtml.br() == '<br />'
         assert html.img(src='foo') == '<img src="foo">'
         assert xhtml.img(src='foo') == '<img src="foo" />'
-        self.assert_equal(html.html(
+        assert_equal(html.html(
             html.head(
                 html.title('foo'),
                 html.script(type='text/javascript')
@@ -212,9 +212,9 @@ class TestGeneralUtility(WerkzeugTests):
         assert xhtml.input(disabled='') == '<input />'
         assert html.input(disabled=None) == '<input>'
         assert xhtml.input(disabled=None) == '<input />'
-        self.assert_equal(html.script('alert("Hello World");'), '<script>' \
+        assert_equal(html.script('alert("Hello World");'), '<script>' \
             'alert("Hello World");</script>')
-        self.assert_equal(xhtml.script('alert("Hello World");'), '<script>' \
+        assert_equal(xhtml.script('alert("Hello World");'), '<script>' \
             '/*<![CDATA[*/alert("Hello World");/*]]>*/</script>')
 
     def test_validate_arguments(self):
@@ -222,15 +222,15 @@ class TestGeneralUtility(WerkzeugTests):
         take_two = lambda a, b: None
         take_two_one_default = lambda a, b=0: None
 
-        self.assert_equal(utils.validate_arguments(take_two, (1, 2,), {}), ((1, 2), {}))
-        self.assert_equal(utils.validate_arguments(take_two, (1,), {'b': 2}), ((1, 2), {}))
-        self.assert_equal(utils.validate_arguments(take_two_one_default, (1,), {}), ((1, 0), {}))
-        self.assert_equal(utils.validate_arguments(take_two_one_default, (1, 2), {}), ((1, 2), {}))
+        assert_equal(utils.validate_arguments(take_two, (1, 2,), {}), ((1, 2), {}))
+        assert_equal(utils.validate_arguments(take_two, (1,), {'b': 2}), ((1, 2), {}))
+        assert_equal(utils.validate_arguments(take_two_one_default, (1,), {}), ((1, 0), {}))
+        assert_equal(utils.validate_arguments(take_two_one_default, (1, 2), {}), ((1, 2), {}))
 
         pytest.raises(utils.ArgumentValidationError,
             utils.validate_arguments, take_two, (), {})
 
-        self.assert_equal(utils.validate_arguments(take_none, (1, 2,), {'c': 3}), ((), {}))
+        assert_equal(utils.validate_arguments(take_none, (1, 2,), {'c': 3}), ((), {}))
         pytest.raises(utils.ArgumentValidationError,
                utils.validate_arguments, take_none, (1,), {}, drop_extra=False)
         pytest.raises(utils.ArgumentValidationError,
@@ -244,7 +244,7 @@ class TestGeneralUtility(WerkzeugTests):
         ])
         headers['blub'] = 'hehe'
         headers['blafasel'] = 'humm'
-        self.assert_equal(headers, Headers([
+        assert_equal(headers, Headers([
             ('Content-Type', 'text/html'),
             ('Foo', 'bar'),
             ('blub', 'hehe'),
@@ -269,9 +269,9 @@ class TestGeneralUtility(WerkzeugTests):
         assert foo.__module__ == __name__
 
     def test_secure_filename(self):
-        self.assert_equal(utils.secure_filename('My cool movie.mov'),
+        assert_equal(utils.secure_filename('My cool movie.mov'),
                           'My_cool_movie.mov')
-        self.assert_equal(utils.secure_filename('../../../etc/passwd'),
+        assert_equal(utils.secure_filename('../../../etc/passwd'),
                           'etc_passwd')
-        self.assert_equal(utils.secure_filename(u'i contain cool \xfcml\xe4uts.txt'),
+        assert_equal(utils.secure_filename(u'i contain cool \xfcml\xe4uts.txt'),
                           'i_contain_cool_umlauts.txt')

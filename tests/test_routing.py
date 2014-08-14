@@ -12,7 +12,7 @@ import pytest
 
 import uuid
 
-from tests import WerkzeugTests
+from tests import WerkzeugTests, assert_equal, assert_strict_equal
 
 from werkzeug import routing as r
 from werkzeug.wrappers import Response
@@ -78,12 +78,12 @@ class TestRouting(WerkzeugTests):
 
     def test_environ_defaults(self):
         environ = create_environ("/foo")
-        self.assert_strict_equal(environ["PATH_INFO"], '/foo')
+        assert_strict_equal(environ["PATH_INFO"], '/foo')
         m = r.Map([r.Rule("/foo", endpoint="foo"), r.Rule("/bar", endpoint="bar")])
         a = m.bind_to_environ(environ)
-        self.assert_strict_equal(a.match("/foo"), ('foo', {}))
-        self.assert_strict_equal(a.match(), ('foo', {}))
-        self.assert_strict_equal(a.match("/bar"), ('bar', {}))
+        assert_strict_equal(a.match("/foo"), ('foo', {}))
+        assert_strict_equal(a.match(), ('foo', {}))
+        assert_strict_equal(a.match("/bar"), ('bar', {}))
         pytest.raises(r.NotFound, a.match, "/bars")
 
     def test_environ_nonascii_pathinfo(self):
@@ -93,8 +93,8 @@ class TestRouting(WerkzeugTests):
             r.Rule(u'/лошадь', endpoint='horse')
         ])
         a = m.bind_to_environ(environ)
-        self.assert_strict_equal(a.match(u'/'), ('index', {}))
-        self.assert_strict_equal(a.match(u'/лошадь'), ('horse', {}))
+        assert_strict_equal(a.match(u'/'), ('index', {}))
+        assert_strict_equal(a.match(u'/лошадь'), ('horse', {}))
         pytest.raises(r.NotFound, a.match, u'/барсук')
 
     def test_basic_building(self):
@@ -366,7 +366,7 @@ class TestRouting(WerkzeugTests):
             r.Rule('/<foo>', endpoint='foo')
         ])
         a = m.bind('example.com')
-        self.assert_equal(a.build('foo', {'foo': 42}), '/42')
+        assert_equal(a.build('foo', {'foo': 42}), '/42')
 
     def test_complex_routing_rules(self):
         m = r.Map([
@@ -635,7 +635,7 @@ class TestRouting(WerkzeugTests):
         exc = r.RequestRedirect('http://www.google.com/')
         exc.code = 307
         env = create_environ()
-        self.assert_strict_equal(exc.get_response(env).status_code, exc.code)
+        assert_strict_equal(exc.get_response(env).status_code, exc.code)
 
     def test_redirect_path_quoting(self):
         url_map = r.Map([
@@ -648,7 +648,7 @@ class TestRouting(WerkzeugTests):
             adapter.match('/foo bar/page/1')
         except r.RequestRedirect as e:
             response = e.get_response({})
-            self.assert_strict_equal(response.headers['location'],
+            assert_strict_equal(response.headers['location'],
                                      u'http://example.com/foo%20bar')
         else:
             self.fail('Expected redirect')
@@ -662,26 +662,26 @@ class TestRouting(WerkzeugTests):
         try:
             a.match(u'/войти')
         except r.RequestRedirect as e:
-            self.assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
+            assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
                               '%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
         endpoint, values = a.match(u'/войти/')
-        self.assert_strict_equal(endpoint, 'enter')
-        self.assert_strict_equal(values, {})
+        assert_strict_equal(endpoint, 'enter')
+        assert_strict_equal(values, {})
 
         try:
             a.match(u'/foo+bar')
         except r.RequestRedirect as e:
-            self.assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
+            assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
                               'foo+bar/')
         endpoint, values = a.match(u'/foo+bar/')
-        self.assert_strict_equal(endpoint, 'foobar')
-        self.assert_strict_equal(values, {})
+        assert_strict_equal(endpoint, 'foobar')
+        assert_strict_equal(values, {})
 
         url = a.build('enter', {}, force_external=True)
-        self.assert_strict_equal(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
+        assert_strict_equal(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
 
         url = a.build('foobar', {}, force_external=True)
-        self.assert_strict_equal(url, 'http://xn--n3h.example.com/foo+bar/')
+        assert_strict_equal(url, 'http://xn--n3h.example.com/foo+bar/')
 
     def test_map_repr(self):
         m = r.Map([
@@ -689,5 +689,5 @@ class TestRouting(WerkzeugTests):
             r.Rule(u'/woop', endpoint='foobar')
         ])
         rv = repr(m)
-        self.assert_strict_equal(rv,
+        assert_strict_equal(rv,
             "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])")

@@ -8,7 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from tests import WerkzeugTests
+from tests import WerkzeugTests, assert_equal, assert_strict_equal
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
 
@@ -35,7 +35,7 @@ class TestServerFixer(WerkzeugTests):
             PATH_INFO='/bar',
             SERVER_SOFTWARE='lighttpd/1.4.27'
         ))
-        self.assert_equal(response.get_data(),
+        assert_equal(response.get_data(),
                           b'PATH_INFO: /foo/bar\nSCRIPT_NAME: ')
 
     def test_cgi_root_fix_custom_app_root(self):
@@ -95,7 +95,7 @@ class TestServerFixer(WerkzeugTests):
         )
 
         response = Response.from_app(app, environ)
-        self.assert_strict_equal(response.get_data(), b'127.0.0.1')
+        assert_strict_equal(response.get_data(), b'127.0.0.1')
 
     def test_header_rewriter_fix(self):
         @Request.application

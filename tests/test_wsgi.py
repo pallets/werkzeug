@@ -13,7 +13,7 @@ import pytest
 from os import path
 from contextlib import closing
 
-from tests import WerkzeugTests
+from tests import WerkzeugTests, assert_equal, assert_strict_equal
 
 from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
@@ -67,7 +67,7 @@ class TestWSGIUtils(WerkzeugTests):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
         assert wsgi.get_host(env) == 'example.org'
-        self.assert_equal(
+        assert_equal(
             wsgi.get_host(create_environ('/', 'http://example.org')),
             'example.org')
 
@@ -75,14 +75,14 @@ class TestWSGIUtils(WerkzeugTests):
         env = {'HTTP_X_FORWARDED_HOST': 'example.com, example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
         assert wsgi.get_host(env) == 'example.com'
-        self.assert_equal(
+        assert_equal(
             wsgi.get_host(create_environ('/', 'http://example.com')),
             'example.com')
 
     def test_get_host_validation(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
-        self.assert_equal(wsgi.get_host(env, trusted_hosts=['.example.org']),
+        assert_equal(wsgi.get_host(env, trusted_hosts=['.example.org']),
                           'example.org')
         pytest.raises(BadRequest, wsgi.get_host, env,
                            trusted_hosts=['example.com'])
@@ -122,20 +122,20 @@ class TestWSGIUtils(WerkzeugTests):
 
         assert wsgi.peek_path_info(env) == 'aaa'
         assert wsgi.peek_path_info(env) == 'aaa'
-        self.assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
-        self.assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
+        assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
+        assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
 
     def test_path_info_and_script_name_fetching(self):
         env = create_environ(u'/\N{SNOWMAN}', u'http://example.com/\N{COMET}/')
         assert wsgi.get_path_info(env) == u'/\N{SNOWMAN}'
-        self.assert_equal(wsgi.get_path_info(env, charset=None), u'/\N{SNOWMAN}'.encode('utf-8'))
+        assert_equal(wsgi.get_path_info(env, charset=None), u'/\N{SNOWMAN}'.encode('utf-8'))
         assert wsgi.get_script_name(env) == u'/\N{COMET}'
-        self.assert_equal(wsgi.get_script_name(env, charset=None), u'/\N{COMET}'.encode('utf-8'))
+        assert_equal(wsgi.get_script_name(env, charset=None), u'/\N{COMET}'.encode('utf-8'))
 
     def test_query_string_fetching(self):
         env = create_environ(u'/?\N{SNOWMAN}=\N{COMET}')
         qs = wsgi.get_query_string(env)
-        self.assert_strict_equal(qs, '%E2%98%83=%E2%98%84')
+        assert_strict_equal(qs, '%E2%98%83=%E2%98%84')
 
     def test_limited_stream(self):
         class RaisingLimitedStream(wsgi.LimitedStream):
@@ -144,65 +144,65 @@ class TestWSGIUtils(WerkzeugTests):
 
         io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
-        self.assert_strict_equal(stream.read(), b'123')
+        assert_strict_equal(stream.read(), b'123')
         pytest.raises(BadRequest, stream.read)
 
         io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
-        self.assert_strict_equal(stream.tell(), 0)
-        self.assert_strict_equal(stream.read(1), b'1')
-        self.assert_strict_equal(stream.tell(), 1)
-        self.assert_strict_equal(stream.read(1), b'2')
-        self.assert_strict_equal(stream.tell(), 2)
-        self.assert_strict_equal(stream.read(1), b'3')
-        self.assert_strict_equal(stream.tell(), 3)
+        assert_strict_equal(stream.tell(), 0)
+        assert_strict_equal(stream.read(1), b'1')
+        assert_strict_equal(stream.tell(), 1)
+        assert_strict_equal(stream.read(1), b'2')
+        assert_strict_equal(stream.tell(), 2)
+        assert_strict_equal(stream.read(1), b'3')
+        assert_strict_equal(stream.tell(), 3)
         pytest.raises(BadRequest, stream.read)
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_strict_equal(stream.readline(), b'123456\n')
-        self.assert_strict_equal(stream.readline(), b'ab')
+        assert_strict_equal(stream.readline(), b'123456\n')
+        assert_strict_equal(stream.readline(), b'ab')
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_strict_equal(stream.readlines(), [b'123456\n', b'ab'])
+        assert_strict_equal(stream.readlines(), [b'123456\n', b'ab'])
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_strict_equal(stream.readlines(2), [b'12'])
-        self.assert_strict_equal(stream.readlines(2), [b'34'])
-        self.assert_strict_equal(stream.readlines(), [b'56\n', b'ab'])
+        assert_strict_equal(stream.readlines(2), [b'12'])
+        assert_strict_equal(stream.readlines(2), [b'34'])
+        assert_strict_equal(stream.readlines(), [b'56\n', b'ab'])
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_strict_equal(stream.readline(100), b'123456\n')
+        assert_strict_equal(stream.readline(100), b'123456\n')
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        self.assert_strict_equal(stream.readlines(100), [b'123456\n', b'ab'])
+        assert_strict_equal(stream.readlines(100), [b'123456\n', b'ab'])
 
         io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        self.assert_strict_equal(stream.read(1), b'1')
-        self.assert_strict_equal(stream.read(1), b'2')
-        self.assert_strict_equal(stream.read(), b'3')
-        self.assert_strict_equal(stream.read(), b'')
+        assert_strict_equal(stream.read(1), b'1')
+        assert_strict_equal(stream.read(1), b'2')
+        assert_strict_equal(stream.read(), b'3')
+        assert_strict_equal(stream.read(), b'')
 
         io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        self.assert_strict_equal(stream.read(-1), b'123')
+        assert_strict_equal(stream.read(-1), b'123')
 
         io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 0)
-        self.assert_strict_equal(stream.read(-1), b'')
+        assert_strict_equal(stream.read(-1), b'')
 
         io = StringIO(u'123456')
         stream = wsgi.LimitedStream(io, 0)
-        self.assert_strict_equal(stream.read(-1), u'')
+        assert_strict_equal(stream.read(-1), u'')
 
         io = StringIO(u'123\n456\n')
         stream = wsgi.LimitedStream(io, 8)
-        self.assert_strict_equal(list(stream), [u'123\n', u'456\n'])
+        assert_strict_equal(list(stream), [u'123\n', u'456\n'])
 
     def test_limited_stream_disconnection(self):
         io = BytesIO(b'A bit of content')
@@ -249,12 +249,12 @@ class TestWSGIUtils(WerkzeugTests):
         assert x is None
 
     def test_get_host_fallback(self):
-        self.assert_equal(wsgi.get_host({
+        assert_equal(wsgi.get_host({
             'SERVER_NAME':      'foobar.example.com',
             'wsgi.url_scheme':  'http',
             'SERVER_PORT':      '80'
         }), 'foobar.example.com')
-        self.assert_equal(wsgi.get_host({
+        assert_equal(wsgi.get_host({
             'SERVER_NAME':      'foobar.example.com',
             'wsgi.url_scheme':  'http',
             'SERVER_PORT':      '81'
@@ -264,7 +264,7 @@ class TestWSGIUtils(WerkzeugTests):
         env = create_environ()
         env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=\xcf'
         rv = wsgi.get_current_url(env)
-        self.assert_strict_equal(rv,
+        assert_strict_equal(rv,
             u'http://localhost/?foo=bar&baz=blah&meh=\ufffd')
 
     def test_multi_part_line_breaks(self):
@@ -272,7 +272,7 @@ class TestWSGIUtils(WerkzeugTests):
         test_stream = NativeStringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=16))
-        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
+        assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
                                   'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
 
         data = 'abc\r\nThis line is broken by the buffer length.' \
@@ -280,7 +280,7 @@ class TestWSGIUtils(WerkzeugTests):
         test_stream = NativeStringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=24))
-        self.assert_equal(lines, ['abc\r\n', 'This line is broken by the '
+        assert_equal(lines, ['abc\r\n', 'This line is broken by the '
                                   'buffer length.\r\n', 'Foo bar baz'])
 
     def test_multi_part_line_breaks_bytes(self):
@@ -288,7 +288,7 @@ class TestWSGIUtils(WerkzeugTests):
         test_stream = BytesIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=16))
-        self.assert_equal(lines, [b'abcdef\r\n', b'ghijkl\r\n',
+        assert_equal(lines, [b'abcdef\r\n', b'ghijkl\r\n',
                                   b'mnopqrstuvwxyz\r\n', b'ABCDEFGHIJK'])
 
         data = b'abc\r\nThis line is broken by the buffer length.' \
@@ -296,7 +296,7 @@ class TestWSGIUtils(WerkzeugTests):
         test_stream = BytesIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=24))
-        self.assert_equal(lines, [b'abc\r\n', b'This line is broken by the '
+        assert_equal(lines, [b'abc\r\n', b'This line is broken by the '
                                   b'buffer length.\r\n', b'Foo bar baz'])
 
     def test_multi_part_line_breaks_problematic(self):
@@ -305,38 +305,38 @@ class TestWSGIUtils(WerkzeugTests):
             test_stream = NativeStringIO(data)
             lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                              buffer_size=4))
-            self.assert_equal(lines, ['abc\r', 'def\r\n', 'ghi'])
+            assert_equal(lines, ['abc\r', 'def\r\n', 'ghi'])
 
     def test_iter_functions_support_iterators(self):
         data = ['abcdef\r\nghi', 'jkl\r\nmnopqrstuvwxyz\r', '\nABCDEFGHIJK']
         lines = list(wsgi.make_line_iter(data))
-        self.assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
+        assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
                                   'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
 
     def test_make_chunk_iter(self):
         data = [u'abcdefXghi', u'jklXmnopqrstuvwxyzX', u'ABCDEFGHIJK']
         rv = list(wsgi.make_chunk_iter(data, 'X'))
-        self.assert_equal(rv, [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz',
+        assert_equal(rv, [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz',
                                u'ABCDEFGHIJK'])
 
         data = u'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
         test_stream = StringIO(data)
         rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
                                        buffer_size=4))
-        self.assert_equal(rv, [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz',
+        assert_equal(rv, [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz',
                                u'ABCDEFGHIJK'])
 
     def test_make_chunk_iter_bytes(self):
         data = [b'abcdefXghi', b'jklXmnopqrstuvwxyzX', b'ABCDEFGHIJK']
         rv = list(wsgi.make_chunk_iter(data, 'X'))
-        self.assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
+        assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
                                b'ABCDEFGHIJK'])
 
         data = b'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
         test_stream = BytesIO(data)
         rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
                                        buffer_size=4))
-        self.assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
+        assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
                                b'ABCDEFGHIJK'])
 
     def test_lines_longer_buffer_size(self):
@@ -344,4 +344,4 @@ class TestWSGIUtils(WerkzeugTests):
         for bufsize in range(1, 15):
             lines = list(wsgi.make_line_iter(NativeStringIO(data), limit=len(data),
                                              buffer_size=4))
-            self.assert_equal(lines, ['1234567890\n', '1234567890\n'])
+            assert_equal(lines, ['1234567890\n', '1234567890\n'])

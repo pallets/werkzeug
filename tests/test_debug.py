@@ -11,7 +11,7 @@
 import sys
 import re
 
-from tests import WerkzeugTests
+from tests import WerkzeugTests, assert_equal
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
@@ -22,15 +22,15 @@ class TestDebugRepr(WerkzeugTests):
 
     def test_basic_repr(self):
         assert debug_repr([]) == u'[]'
-        self.assert_equal(debug_repr([1, 2]),
+        assert_equal(debug_repr([1, 2]),
             u'[<span class="number">1</span>, <span class="number">2</span>]')
-        self.assert_equal(debug_repr([1, 'test']),
+        assert_equal(debug_repr([1, 'test']),
             u'[<span class="number">1</span>, <span class="string">\'test\'</span>]')
-        self.assert_equal(debug_repr([None]),
+        assert_equal(debug_repr([None]),
             u'[<span class="object">None</span>]')
 
     def test_sequence_repr(self):
-        self.assert_equal(debug_repr(list(range(20))), (
+        assert_equal(debug_repr(list(range(20))), (
             u'[<span class="number">0</span>, <span class="number">1</span>, '
             u'<span class="number">2</span>, <span class="number">3</span>, '
             u'<span class="number">4</span>, <span class="number">5</span>, '
@@ -46,13 +46,13 @@ class TestDebugRepr(WerkzeugTests):
 
     def test_mapping_repr(self):
         assert debug_repr({}) == u'{}'
-        self.assert_equal(debug_repr({'foo': 42}),
+        assert_equal(debug_repr({'foo': 42}),
             u'{<span class="pair"><span class="key"><span class="string">\'foo\''
             u'</span></span>: <span class="value"><span class="number">42'
             u'</span></span></span>}')
-        self.assert_equal(debug_repr(dict(zip(range(10), [None] * 10))),
+        assert_equal(debug_repr(dict(zip(range(10), [None] * 10))),
             u'{<span class="pair"><span class="key"><span class="number">0</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">1</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">2</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">3</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="extended"><span class="pair"><span class="key"><span class="number">4</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">5</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">6</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">7</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">8</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">9</span></span>: <span class="value"><span class="object">None</span></span></span></span>}')
-        self.assert_equal(
+        assert_equal(
             debug_repr((1, 'zwei', u'drei')),
             u'(<span class="number">1</span>, <span class="string">\''
             u'zwei\'</span>, <span class="string">%s\'drei\'</span>)' % ('u' if PY2 else ''))
@@ -61,35 +61,35 @@ class TestDebugRepr(WerkzeugTests):
         class Foo(object):
             def __repr__(self):
                 return '<Foo 42>'
-        self.assert_equal(debug_repr(Foo()),
+        assert_equal(debug_repr(Foo()),
                           '<span class="object">&lt;Foo 42&gt;</span>')
 
     def test_list_subclass_repr(self):
         class MyList(list):
             pass
-        self.assert_equal(
+        assert_equal(
             debug_repr(MyList([1, 2])),
             u'<span class="module">tests.test_debug.</span>MyList(['
             u'<span class="number">1</span>, <span class="number">2</span>])')
 
     def test_regex_repr(self):
-        self.assert_equal(debug_repr(re.compile(r'foo\d')),
+        assert_equal(debug_repr(re.compile(r'foo\d')),
             u're.compile(<span class="string regex">r\'foo\\d\'</span>)')
         #XXX: no raw string here cause of a syntax bug in py3.3
-        self.assert_equal(debug_repr(re.compile(u'foo\\d')),
+        assert_equal(debug_repr(re.compile(u'foo\\d')),
             u're.compile(<span class="string regex">%sr\'foo\\d\'</span>)' %
             ('u' if PY2 else ''))
 
     def test_set_repr(self):
-        self.assert_equal(debug_repr(frozenset('x')),
+        assert_equal(debug_repr(frozenset('x')),
             u'frozenset([<span class="string">\'x\'</span>])')
-        self.assert_equal(debug_repr(set('x')),
+        assert_equal(debug_repr(set('x')),
             u'set([<span class="string">\'x\'</span>])')
 
     def test_recursive_repr(self):
         a = [1]
         a.append(a)
-        self.assert_equal(debug_repr(a),
+        assert_equal(debug_repr(a),
                           u'[<span class="number">1</span>, [...]]')
 
     def test_broken_repr(self):
@@ -97,7 +97,7 @@ class TestDebugRepr(WerkzeugTests):
             def __repr__(self):
                 raise Exception('broken!')
 
-        self.assert_equal(
+        assert_equal(
             debug_repr(Foo()),
             u'<span class="brokenrepr">&lt;broken repr (Exception: '
             u'broken!)&gt;</span>')

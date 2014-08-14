@@ -14,7 +14,7 @@
 """
 import pytest
 
-from tests import WerkzeugTests
+from tests import WerkzeugTests, assert_equal
 
 from werkzeug import exceptions
 from werkzeug.wrappers import Response
@@ -77,5 +77,5 @@ class TestExceptions(WerkzeugTests):
     def test_special_exceptions(self):
         exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
         h = dict(exc.get_headers({}))
-        self.assert_equal(h['Allow'], 'GET, HEAD, POST')
+        assert_equal(h['Allow'], 'GET, HEAD, POST')
         assert 'The method is not allowed' in exc.get_description()
