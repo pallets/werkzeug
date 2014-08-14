@@ -8,19 +8,21 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import pytest
 import os
 import time
 import unittest
 import tempfile
 import shutil
 
-from tests import WerkzeugTests, skipif
+from tests import WerkzeugTests
 from werkzeug.contrib import cache
 
 try:
     import redis
 except ImportError:
     redis = None
+
 try:
     import pylibmc as memcache
 except ImportError:
@@ -136,7 +138,7 @@ class TestFileSystemCache(WerkzeugTests, CacheTests):
     def teardown(self):
         if self.tmp_dir is not None:
             shutil.rmtree(self.tmp_dir)
-    
+
     def test_filesystemcache_prune(self):
         THRESHOLD = 13
         c = self.make_cache(threshold=THRESHOLD)
@@ -155,7 +157,7 @@ class TestFileSystemCache(WerkzeugTests, CacheTests):
         assert len(cache_files) == 0
 
 
-@skipif(redis is None)
+@pytest.mark.skipif(redis is None, reason='Redis is not installed.')
 class TestRedisCache(WerkzeugTests, CacheTests):
     def make_cache(self):
         return cache.RedisCache(key_prefix='werkzeug-test-case:')
@@ -171,7 +173,7 @@ class TestRedisCache(WerkzeugTests, CacheTests):
         self.assert_equal(c.get('foo'), 42)
 
 
-@skipif(memcache is None)
+@pytest.mark.skipif(memcache is None, reason='Memcache is not installed.')
 class TestMemcachedCache(WerkzeugTests, CacheTests):
     def make_cache(self):
         return cache.MemcachedCache(key_prefix='werkzeug-test-case:')

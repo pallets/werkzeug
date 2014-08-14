@@ -41,15 +41,6 @@ def iter_suites(package):
             yield mod.suite()
 
 
-def skipif(cond):
-    def wrapper(cls):
-        if cond:
-            return WerkzeugTests
-        return cls
-
-    return wrapper
-
-
 def find_all_tests(suite):
     """Yields all the tests and their names from a given suite."""
     suites = [suite]

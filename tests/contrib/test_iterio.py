@@ -8,10 +8,11 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import pytest
 import unittest
 from functools import partial
 
-from tests import WerkzeugTests, skipif
+from tests import WerkzeugTests
 from werkzeug.contrib.iterio import IterIO, greenlet
 
 
@@ -153,7 +154,7 @@ class IterOTestSuite(WerkzeugTests):
         self.assert_strict_equal(io.readline(), u'')
 
 
-@skipif(greenlet is None)
+@pytest.mark.skipif(greenlet is None, reason='Greenlet is not installed.')
 class IterITestSuite(WerkzeugTests):
     def test_basic(self):
         def producer(out):
