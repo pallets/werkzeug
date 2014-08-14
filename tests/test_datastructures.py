@@ -749,10 +749,12 @@ class TestImmutableList(WerkzeugTests):
         assert t != l
 
 
-def make_call_asserter(assert_equal_func, func=None):
+def make_call_asserter(func=None):
     """Utility to assert a certain number of function calls.
 
-    >>> assert_calls, func = make_call_asserter(self.assert_equal)
+    :param func: Additional callback for each function call.
+
+    >>> assert_calls, func = make_call_asserter()
     >>> with assert_calls(2):
             func()
             func()
@@ -764,7 +766,7 @@ def make_call_asserter(assert_equal_func, func=None):
     def asserter(count, msg=None):
         calls[0] = 0
         yield
-        assert_equal_func(calls[0], count, msg)
+        assert calls[0] == count
 
     def wrapped(*args, **kwargs):
         calls[0] += 1
@@ -778,7 +780,7 @@ class TestCallbackDict(WerkzeugTests):
     storage_class = datastructures.CallbackDict
 
     def test_callback_dict_reads(self):
-        assert_calls, func = make_call_asserter(self.assert_equal)
+        assert_calls, func = make_call_asserter()
         initial = {'a': 'foo', 'b': 'bar'}
         dct = self.storage_class(initial=initial, on_update=func)
         with assert_calls(0, 'callback triggered by read-only method'):
@@ -795,7 +797,7 @@ class TestCallbackDict(WerkzeugTests):
             dct.setdefault('a')
 
     def test_callback_dict_writes(self):
-        assert_calls, func = make_call_asserter(self.assert_equal)
+        assert_calls, func = make_call_asserter()
         initial = {'a': 'foo', 'b': 'bar'}
         dct = self.storage_class(initial=initial, on_update=func)
         with assert_calls(8, 'callback not triggered by write method'):

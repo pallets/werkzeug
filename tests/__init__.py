@@ -19,8 +19,8 @@ class WerkzeugTests(object):
     baseclass for consistency.
     """
 
-    def assert_equal(self, x, y, msg=None):
-        assert x == y, msg
+    def assert_equal(self, x, y):
+        assert x == y
 
     def assert_strict_equal(self, x, y):
         '''Stricter version of assert_equal that doesn't do implicit conversion
