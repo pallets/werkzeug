@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.serving
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~
 
     Added serving tests.
 
@@ -21,7 +21,6 @@ except ImportError:  # pragma: no cover
     from urllib.request import urlopen
     from urllib.error import HTTPError
 
-import unittest
 from functools import update_wrapper
 
 try:

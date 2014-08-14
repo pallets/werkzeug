@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.cache
-    ~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~
 
     Tests the cache system
 
@@ -11,7 +11,6 @@
 import pytest
 import os
 import time
-import unittest
 import tempfile
 import shutil
 

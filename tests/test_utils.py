@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """
     tests.utils
-    ~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~
 
     General utilities.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-
 from __future__ import with_statement
 
-import unittest
+import pytest
+
 from datetime import datetime
 from functools import partial
 
@@ -107,7 +107,7 @@ class TestGeneralUtility(WerkzeugTests):
         self.assert_equal(a.missing, 'spam')
         def test_assign():
             a.read_only = 'something'
-        self.assert_raises(AttributeError, test_assign)
+        pytest.raises(AttributeError, test_assign)
         self.assert_equal(a.number, 42)
         self.assert_equal(a.broken_number, None)
         self.assert_is_none(a.date)
@@ -140,7 +140,7 @@ class TestGeneralUtility(WerkzeugTests):
         self.assert_equal(next(app_iter), '1')
         self.assert_equal(next(app_iter), '2')
         self.assert_equal(next(app_iter), '3')
-        self.assert_raises(StopIteration, partial(next, app_iter))
+        pytest.raises(StopIteration, partial(next, app_iter))
 
         got_close = []
         @implements_iterator
@@ -165,7 +165,7 @@ class TestGeneralUtility(WerkzeugTests):
         self.assert_equal(status, '200 OK')
         self.assert_equal(list(headers), [('Content-Type', 'text/plain')])
         self.assert_equal(next(app_iter), 'bar')
-        self.assert_raises(StopIteration, partial(next, app_iter))
+        pytest.raises(StopIteration, partial(next, app_iter))
         app_iter.close()
 
         self.assert_equal(run_wsgi_app(bar, {}, True)[0], ['bar'])
@@ -181,8 +181,8 @@ class TestGeneralUtility(WerkzeugTests):
         self.assert_is_none(utils.import_string('XXXXXXXXXXXX', True))
         self.assert_is_none(utils.import_string('cgi.XXXXXXXXXXXX', True))
         self.assert_is(utils.import_string(u'werkzeug.debug.DebuggedApplication'), DebuggedApplication)
-        self.assert_raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
-        self.assert_raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
+        pytest.raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
+        pytest.raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
     def test_find_modules(self):
         self.assert_equal(list(utils.find_modules('werkzeug.debug')), \
@@ -227,13 +227,13 @@ class TestGeneralUtility(WerkzeugTests):
         self.assert_equal(utils.validate_arguments(take_two_one_default, (1,), {}), ((1, 0), {}))
         self.assert_equal(utils.validate_arguments(take_two_one_default, (1, 2), {}), ((1, 2), {}))
 
-        self.assert_raises(utils.ArgumentValidationError,
+        pytest.raises(utils.ArgumentValidationError,
             utils.validate_arguments, take_two, (), {})
 
         self.assert_equal(utils.validate_arguments(take_none, (1, 2,), {'c': 3}), ((), {}))
-        self.assert_raises(utils.ArgumentValidationError,
+        pytest.raises(utils.ArgumentValidationError,
                utils.validate_arguments, take_none, (1,), {}, drop_extra=False)
-        self.assert_raises(utils.ArgumentValidationError,
+        pytest.raises(utils.ArgumentValidationError,
                utils.validate_arguments, take_none, (), {'a': 1}, drop_extra=False)
 
     def test_header_set_duplication_bug(self):

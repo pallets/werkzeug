@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
     tests.routing
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~
 
     Routing tests.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
+import pytest
+
 import uuid
 
 from tests import WerkzeugTests
@@ -31,8 +32,8 @@ class TestRouting(WerkzeugTests):
         assert adapter.match('/') == ('index', {})
         assert adapter.match('/foo') == ('foo', {})
         assert adapter.match('/bar/') == ('bar', {})
-        self.assert_raises(r.RequestRedirect, lambda: adapter.match('/bar'))
-        self.assert_raises(r.NotFound, lambda: adapter.match('/blub'))
+        pytest.raises(r.RequestRedirect, lambda: adapter.match('/bar'))
+        pytest.raises(r.NotFound, lambda: adapter.match('/blub'))
 
         adapter = map.bind('example.org', '/test')
         try:
@@ -83,7 +84,7 @@ class TestRouting(WerkzeugTests):
         self.assert_strict_equal(a.match("/foo"), ('foo', {}))
         self.assert_strict_equal(a.match(), ('foo', {}))
         self.assert_strict_equal(a.match("/bar"), ('bar', {}))
-        self.assert_raises(r.NotFound, a.match, "/bars")
+        pytest.raises(r.NotFound, a.match, "/bars")
 
     def test_environ_nonascii_pathinfo(self):
         environ = create_environ(u'/лошадь')
@@ -94,7 +95,7 @@ class TestRouting(WerkzeugTests):
         a = m.bind_to_environ(environ)
         self.assert_strict_equal(a.match(u'/'), ('index', {}))
         self.assert_strict_equal(a.match(u'/лошадь'), ('horse', {}))
-        self.assert_raises(r.NotFound, a.match, u'/барсук')
+        pytest.raises(r.NotFound, a.match, u'/барсук')
 
     def test_basic_building(self):
         map = r.Map([
@@ -115,7 +116,7 @@ class TestRouting(WerkzeugTests):
         assert adapter.build('barf', {'bazf': 0.815}) == 'http://example.org/bar/0.815'
         assert adapter.build('barp', {'bazp': 'la/di'}) == 'http://example.org/bar/la/di'
         assert adapter.build('blah', {}) == '/hehe'
-        self.assert_raises(r.BuildError, lambda: adapter.build('urks'))
+        pytest.raises(r.BuildError, lambda: adapter.build('urks'))
 
         adapter = map.bind('example.org', '/test', subdomain='blah')
         assert adapter.build('index', {}) == 'http://example.org/test/'
@@ -134,7 +135,7 @@ class TestRouting(WerkzeugTests):
         adapter = map.bind('example.org', '/')
 
         assert adapter.match('/foo/') == ('foo', {'page': 1})
-        self.assert_raises(r.RequestRedirect, lambda: adapter.match('/foo/1'))
+        pytest.raises(r.RequestRedirect, lambda: adapter.match('/foo/1'))
         assert adapter.match('/foo/2') == ('foo', {'page': 2})
         assert adapter.build('foo', {}) == '/foo/'
         assert adapter.build('foo', {'page': 1}) == '/foo/'
@@ -173,7 +174,7 @@ class TestRouting(WerkzeugTests):
         adapter = map.bind('example.org', '/')
 
         assert adapter.match('/') == ('page', {'name':'FrontPage'})
-        self.assert_raises(r.RequestRedirect, lambda: adapter.match('/FrontPage'))
+        pytest.raises(r.RequestRedirect, lambda: adapter.match('/FrontPage'))
         assert adapter.match('/Special') == ('special', {})
         assert adapter.match('/2007') == ('year', {'year':2007})
         assert adapter.match('/Some/Page') == ('page', {'name':'Some/Page'})
@@ -206,7 +207,7 @@ class TestRouting(WerkzeugTests):
         assert dispatch('/').data == b"('root', {})"
         assert dispatch('/foo').status_code == 301
         raise_this = r.NotFound()
-        self.assert_raises(r.NotFound, lambda: dispatch('/bar'))
+        pytest.raises(r.NotFound, lambda: dispatch('/bar'))
         assert dispatch('/bar', True).status_code == 404
 
     def test_http_host_before_server_name(self):
@@ -466,7 +467,7 @@ class TestRouting(WerkzeugTests):
         ])
         adapter = url_map.bind('example.org')
         assert adapter.match('/get', method='HEAD') == ('a', {})
-        self.assert_raises(r.MethodNotAllowed, adapter.match,
+        pytest.raises(r.MethodNotAllowed, adapter.match,
                            '/post', method='HEAD')
 
     def test_protocol_joining_bug(self):

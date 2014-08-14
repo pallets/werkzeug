@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 """
     tests.fixers
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~
 
     Server / Browser fixers.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
-
 from tests import WerkzeugTests
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header

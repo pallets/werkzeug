@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.security
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~
 
     Tests the security helpers.
 
@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
-import unittest
 
 from tests import WerkzeugTests
 

@@ -8,8 +8,9 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import pytest
+
 import time
-import unittest
 from threading import Thread
 
 from tests import WerkzeugTests
@@ -38,8 +39,8 @@ class TestLocal(WerkzeugTests):
         def delfoo():
             del l.foo
         delfoo()
-        self.assert_raises(AttributeError, lambda: l.foo)
-        self.assert_raises(AttributeError, delfoo)
+        pytest.raises(AttributeError, lambda: l.foo)
+        pytest.raises(AttributeError, delfoo)
 
         local.release_local(l)
 

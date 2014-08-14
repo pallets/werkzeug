@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
     tests.wsgi
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~
 
     Tests the WSGI utilities.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
+import pytest
+
 from os import path
 from contextlib import closing
 
@@ -83,7 +84,7 @@ class TestWSGIUtils(WerkzeugTests):
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
         self.assert_equal(wsgi.get_host(env, trusted_hosts=['.example.org']),
                           'example.org')
-        self.assert_raises(BadRequest, wsgi.get_host, env,
+        pytest.raises(BadRequest, wsgi.get_host, env,
                            trusted_hosts=['example.com'])
 
     def test_responder(self):
@@ -144,7 +145,7 @@ class TestWSGIUtils(WerkzeugTests):
         io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
         self.assert_strict_equal(stream.read(), b'123')
-        self.assert_raises(BadRequest, stream.read)
+        pytest.raises(BadRequest, stream.read)
 
         io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
@@ -155,7 +156,7 @@ class TestWSGIUtils(WerkzeugTests):
         self.assert_strict_equal(stream.tell(), 2)
         self.assert_strict_equal(stream.read(1), b'3')
         self.assert_strict_equal(stream.tell(), 3)
-        self.assert_raises(BadRequest, stream.read)
+        pytest.raises(BadRequest, stream.read)
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
@@ -208,14 +209,14 @@ class TestWSGIUtils(WerkzeugTests):
 
         # disconnect detection on out of bytes
         stream = wsgi.LimitedStream(io, 255)
-        with self.assert_raises(ClientDisconnected):
+        with pytest.raises(ClientDisconnected):
             stream.read()
 
         # disconnect detection because file close
         io = BytesIO(b'x' * 255)
         io.close()
         stream = wsgi.LimitedStream(io, 255)
-        with self.assert_raises(ClientDisconnected):
+        with pytest.raises(ClientDisconnected):
             stream.read()
 
     def test_path_info_extraction(self):

@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
     tests.http
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~
 
     HTTP parsing utilities.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
+import pytest
+
 from datetime import datetime
 
 from tests import WerkzeugTests
@@ -25,7 +26,7 @@ class TestHTTPUtility(WerkzeugTests):
         self.assert_equal(list(itervalues(a)), ['en-us', 'ru'])
         self.assert_equal(a.best, 'en-us')
         self.assert_equal(a.find('ru'), 1)
-        self.assert_raises(ValueError, a.index, 'de')
+        pytest.raises(ValueError, a.index, 'de')
         self.assert_equal(a.to_header(), 'en-us,ru;q=0.5')
 
     def test_mime_accept(self):
@@ -34,7 +35,7 @@ class TestHTTPUtility(WerkzeugTests):
                                      'text/html;q=0.9,text/plain;q=0.8,'
                                      'image/png,*/*;q=0.5',
                                      datastructures.MIMEAccept)
-        self.assert_raises(ValueError, lambda: a['missing'])
+        pytest.raises(ValueError, lambda: a['missing'])
         self.assert_equal(a['image/png'],  1)
         self.assert_equal(a['text/plain'],  0.8)
         self.assert_equal(a['foo/bar'],  0.5)
@@ -263,7 +264,7 @@ class TestHTTPUtility(WerkzeugTests):
         env['REQUEST_METHOD'] = 'GET'
 
         # etagify from data
-        self.assert_raises(TypeError, http.is_resource_modified, env,
+        pytest.raises(TypeError, http.is_resource_modified, env,
                            data='42', etag='23')
         env['HTTP_IF_NONE_MATCH'] = http.generate_etag(b'awesome')
         assert not http.is_resource_modified(env, data=b'awesome')

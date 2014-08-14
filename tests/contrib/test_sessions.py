@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.sessions
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~
 
     Added tests for the sessions.
 
@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
-import unittest
 import shutil
 from tempfile import mkdtemp, gettempdir
 

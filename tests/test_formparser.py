@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """
     tests.formparser
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~
 
     Tests the form parsing facilities.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-
 from __future__ import with_statement
 
-import unittest
+import pytest
+
 from os.path import join, dirname
 
 from tests import WerkzeugTests
@@ -60,7 +60,7 @@ class TestFormParser(WerkzeugTests):
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_form_memory_size = 7
-        self.assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
+        pytest.raises(RequestEntityTooLarge, lambda: req.form['foo'])
 
         req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
@@ -78,7 +78,7 @@ class TestFormParser(WerkzeugTests):
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_content_length = 4
-        self.assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
+        pytest.raises(RequestEntityTooLarge, lambda: req.form['foo'])
 
         req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
@@ -92,7 +92,7 @@ class TestFormParser(WerkzeugTests):
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_form_memory_size = 7
-        self.assert_raises(RequestEntityTooLarge, lambda: req.form['foo'])
+        pytest.raises(RequestEntityTooLarge, lambda: req.form['foo'])
 
         req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
@@ -265,7 +265,7 @@ class TestMultiPart(WerkzeugTests):
         self.assert_true(not files)
         self.assert_true(not form)
 
-        self.assert_raises(ValueError, formparser.parse_form_data,
+        pytest.raises(ValueError, formparser.parse_form_data,
             create_environ(data=data, method='POST',
                       content_type='multipart/form-data; boundary=foo'),
                       silent=False)
@@ -341,21 +341,21 @@ class TestMultiPart(WerkzeugTests):
         def parse_multipart(stream, boundary, content_length):
             parser = formparser.MultiPartParser(content_length)
             return parser.parse(stream, boundary, content_length)
-        self.assert_raises(ValueError, parse_multipart, BytesIO(), b'broken  ', 0)
+        pytest.raises(ValueError, parse_multipart, BytesIO(), b'broken  ', 0)
 
         data = b'--foo\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
+        pytest.raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
 
         data = b'--foo\r\nContent-Disposition: form-field; name=foo\r\n' \
                b'Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--'
-        self.assert_raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
+        pytest.raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
 
         data = b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n'
-        self.assert_raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
+        pytest.raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
 
         x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
         self.assert_strict_equal(x['foo'], 'bar\n x test')
-        self.assert_raises(ValueError, formparser.parse_multipart_headers,
+        pytest.raises(ValueError, formparser.parse_multipart_headers,
                            ['foo: bar\r\n', ' x test'])
 
     def test_bad_newline_bad_newline_assumption(self):

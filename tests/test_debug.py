@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
     tests.debug
-    ~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~
 
     Tests some debug utilities.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
 import sys
 import re
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.exceptions
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~
 
     The tests for the exception classes.
 
@@ -12,7 +12,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
+import pytest
 
 from tests import WerkzeugTests
 
@@ -36,34 +36,34 @@ class TestExceptions(WerkzeugTests):
 
     def test_aborter(self):
         abort = exceptions.abort
-        self.assert_raises(exceptions.BadRequest, abort, 400)
-        self.assert_raises(exceptions.Unauthorized, abort, 401)
-        self.assert_raises(exceptions.Forbidden, abort, 403)
-        self.assert_raises(exceptions.NotFound, abort, 404)
-        self.assert_raises(exceptions.MethodNotAllowed, abort, 405, ['GET', 'HEAD'])
-        self.assert_raises(exceptions.NotAcceptable, abort, 406)
-        self.assert_raises(exceptions.RequestTimeout, abort, 408)
-        self.assert_raises(exceptions.Gone, abort, 410)
-        self.assert_raises(exceptions.LengthRequired, abort, 411)
-        self.assert_raises(exceptions.PreconditionFailed, abort, 412)
-        self.assert_raises(exceptions.RequestEntityTooLarge, abort, 413)
-        self.assert_raises(exceptions.RequestURITooLarge, abort, 414)
-        self.assert_raises(exceptions.UnsupportedMediaType, abort, 415)
-        self.assert_raises(exceptions.UnprocessableEntity, abort, 422)
-        self.assert_raises(exceptions.InternalServerError, abort, 500)
-        self.assert_raises(exceptions.NotImplemented, abort, 501)
-        self.assert_raises(exceptions.BadGateway, abort, 502)
-        self.assert_raises(exceptions.ServiceUnavailable, abort, 503)
-        self.assert_raises(exceptions.GatewayTimeout, abort, 504)
-        self.assert_raises(exceptions.HTTPVersionNotSupported, abort, 505)
+        pytest.raises(exceptions.BadRequest, abort, 400)
+        pytest.raises(exceptions.Unauthorized, abort, 401)
+        pytest.raises(exceptions.Forbidden, abort, 403)
+        pytest.raises(exceptions.NotFound, abort, 404)
+        pytest.raises(exceptions.MethodNotAllowed, abort, 405, ['GET', 'HEAD'])
+        pytest.raises(exceptions.NotAcceptable, abort, 406)
+        pytest.raises(exceptions.RequestTimeout, abort, 408)
+        pytest.raises(exceptions.Gone, abort, 410)
+        pytest.raises(exceptions.LengthRequired, abort, 411)
+        pytest.raises(exceptions.PreconditionFailed, abort, 412)
+        pytest.raises(exceptions.RequestEntityTooLarge, abort, 413)
+        pytest.raises(exceptions.RequestURITooLarge, abort, 414)
+        pytest.raises(exceptions.UnsupportedMediaType, abort, 415)
+        pytest.raises(exceptions.UnprocessableEntity, abort, 422)
+        pytest.raises(exceptions.InternalServerError, abort, 500)
+        pytest.raises(exceptions.NotImplemented, abort, 501)
+        pytest.raises(exceptions.BadGateway, abort, 502)
+        pytest.raises(exceptions.ServiceUnavailable, abort, 503)
+        pytest.raises(exceptions.GatewayTimeout, abort, 504)
+        pytest.raises(exceptions.HTTPVersionNotSupported, abort, 505)
 
         myabort = exceptions.Aborter({1: exceptions.NotFound})
-        self.assert_raises(LookupError, myabort, 404)
-        self.assert_raises(exceptions.NotFound, myabort, 1)
+        pytest.raises(LookupError, myabort, 404)
+        pytest.raises(exceptions.NotFound, myabort, 1)
 
         myabort = exceptions.Aborter(extra={1: exceptions.NotFound})
-        self.assert_raises(exceptions.NotFound, myabort, 404)
-        self.assert_raises(exceptions.NotFound, myabort, 1)
+        pytest.raises(exceptions.NotFound, myabort, 404)
+        pytest.raises(exceptions.NotFound, myabort, 1)
 
     def test_exception_repr(self):
         exc = exceptions.NotFound()

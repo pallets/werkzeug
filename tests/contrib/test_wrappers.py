@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.contrib.wrappers
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~
 
     Added tests for the sessions.
 
@@ -10,8 +10,6 @@
 """
 
 from __future__ import with_statement
-
-import unittest
 
 from tests import WerkzeugTests
 

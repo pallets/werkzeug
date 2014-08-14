@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
     tests.urls
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~
 
     URL helper tests.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
+import pytest
 
 from tests import WerkzeugTests
 
@@ -73,10 +73,10 @@ class TestURLs(WerkzeugTests):
         self.assert_strict_equal(next(gen), ('a', item1))
         self.assert_strict_equal(next(gen), ('b', item2))
         self.assert_strict_equal(next(gen), ('c', item2))
-        self.assert_raises(StopIteration, lambda: next(gen))
+        pytest.raises(StopIteration, lambda: next(gen))
 
     def test_stream_decoding_string_fails(self):
-        self.assert_raises(TypeError, urls.url_decode_stream, 'testing')
+        pytest.raises(TypeError, urls.url_decode_stream, 'testing')
 
     def test_url_encoding(self):
         self.assert_strict_equal(urls.url_encode({'foo': 'bar 45'}), 'foo=bar+45')
@@ -107,7 +107,7 @@ class TestURLs(WerkzeugTests):
         self.assert_strict_equal(next(gen), 'bar=23')
         self.assert_strict_equal(next(gen), 'blah=H%C3%A4nsel')
         self.assert_strict_equal(next(gen), 'foo=1')
-        self.assert_raises(StopIteration, lambda: next(gen))
+        pytest.raises(StopIteration, lambda: next(gen))
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
@@ -181,12 +181,12 @@ class TestURLs(WerkzeugTests):
         self.assert_strict_equal(x.foo(u'bar', x=42), 'http://www.example.com/foo/bar?x=42')
         self.assert_strict_equal(x.foo(u'bar', class_=42), 'http://www.example.com/foo/bar?class=42')
         self.assert_strict_equal(x.foo(u'bar', {u'class': 42}), 'http://www.example.com/foo/bar?class=42')
-        self.assert_raises(AttributeError, lambda: x.__blah__)
+        pytest.raises(AttributeError, lambda: x.__blah__)
 
         x = urls.Href('blah')
         self.assert_strict_equal(x.foo(u'bar'), 'blah/foo/bar')
 
-        self.assert_raises(TypeError, x.foo, {u"foo": 23}, x=42)
+        pytest.raises(TypeError, x.foo, {u"foo": 23}, x=42)
 
         x = urls.Href('')
         self.assert_strict_equal(x('foo'), 'foo')

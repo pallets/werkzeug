@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.datastructures
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~
 
     Tests the functionality of the provided Werkzeug
     datastructures.
@@ -18,7 +18,8 @@
 
 from __future__ import with_statement
 
-import unittest
+import pytest
+
 import pickle
 from contextlib import contextmanager
 from copy import copy, deepcopy
@@ -98,7 +99,7 @@ class MutableMultiDictBaseTests(object):
         # simple getitem gives the first value
         self.assert_equal(md['a'], 1)
         self.assert_equal(md['c'], 3)
-        with self.assert_raises(KeyError):
+        with pytest.raises(KeyError):
             md['e']
         self.assert_equal(md.get('a'), 1)
 
@@ -132,7 +133,7 @@ class MutableMultiDictBaseTests(object):
 
         # delitem
         del md['u']
-        with self.assert_raises(KeyError):
+        with pytest.raises(KeyError):
             md['u']
         del md['d']
         self.assert_equal(md.getlist('d'), [])
@@ -237,14 +238,14 @@ class MutableMultiDictBaseTests(object):
         self.assert_equal(md.to_dict(flat=False), {'foo': [42], 'bar': [1, 2]})
 
         # popitem from empty dict
-        with self.assert_raises(KeyError):
+        with pytest.raises(KeyError):
             self.storage_class().popitem()
 
-        with self.assert_raises(KeyError):
+        with pytest.raises(KeyError):
             self.storage_class().popitemlist()
 
         # key errors are of a special type
-        with self.assert_raises(BadRequestKeyError):
+        with pytest.raises(BadRequestKeyError):
             self.storage_class()[42]
 
         # setlist works
@@ -274,7 +275,7 @@ class ImmutableDictBaseTests(object):
     def test_copies_are_mutable(self):
         cls = self.storage_class
         immutable = cls({'a': 1})
-        with self.assert_raises(TypeError):
+        with pytest.raises(TypeError):
             immutable.pop('a')
 
         mutable = immutable.copy()
@@ -354,7 +355,7 @@ class TestMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         self.assert_equal(d.pop('foos', 32), 32)
         assert d
 
-        with self.assert_raises(KeyError):
+        with pytest.raises(KeyError):
             d.pop('foos')
 
     def test_setlistdefault(self):
@@ -441,9 +442,9 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         d.setlist('foo', [1, 2])
         self.assert_equal(d.getlist('foo'), [1, 2])
 
-        with self.assert_raises(BadRequestKeyError):
+        with pytest.raises(BadRequestKeyError):
             d.pop('missing')
-        with self.assert_raises(BadRequestKeyError):
+        with pytest.raises(BadRequestKeyError):
             d['missing']
 
         # popping
@@ -452,7 +453,7 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         d.add('foo', 42)
         d.add('foo', 1)
         self.assert_equal(d.popitem(), ('foo', 23))
-        with self.assert_raises(BadRequestKeyError):
+        with pytest.raises(BadRequestKeyError):
             d.popitem()
         assert not d
 
@@ -461,7 +462,7 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         d.add('foo', 1)
         self.assert_equal(d.popitemlist(), ('foo', [23, 42, 1]))
 
-        with self.assert_raises(BadRequestKeyError):
+        with pytest.raises(BadRequestKeyError):
             d.popitemlist()
 
     def test_iterables(self):
@@ -503,16 +504,16 @@ class TestCombinedMultiDict(WerkzeugTests):
         self.assert_equal(d.getlist('bar', type=int), [2, 3])
 
         # get key errors for missing stuff
-        with self.assert_raises(KeyError):
+        with pytest.raises(KeyError):
             d['missing']
 
         # make sure that they are immutable
-        with self.assert_raises(TypeError):
+        with pytest.raises(TypeError):
             d['foo'] = 'blub'
 
         # copies are immutable
         d = d.copy()
-        with self.assert_raises(TypeError):
+        with pytest.raises(TypeError):
             d['foo'] = 'blub'
 
         # make sure lists merges
@@ -606,7 +607,7 @@ class TestHeaders(WerkzeugTests):
         self.assert_equal(headers.pop('a'), 1)
         self.assert_equal(headers.pop('b', 2), 2)
 
-        with self.assert_raises(KeyError):
+        with pytest.raises(KeyError):
             headers.pop('c')
 
     def test_set_arguments(self):
@@ -619,15 +620,15 @@ class TestHeaders(WerkzeugTests):
         h = self.storage_class()
 
         for variation in 'foo\nbar', 'foo\r\nbar', 'foo\rbar':
-            with self.assert_raises(ValueError):
+            with pytest.raises(ValueError):
                 h['foo'] = variation
-            with self.assert_raises(ValueError):
+            with pytest.raises(ValueError):
                 h.add('foo', variation)
-            with self.assert_raises(ValueError):
+            with pytest.raises(ValueError):
                 h.add('foo', 'test', option=variation)
-            with self.assert_raises(ValueError):
+            with pytest.raises(ValueError):
                 h.set('foo', variation)
-            with self.assert_raises(ValueError):
+            with pytest.raises(ValueError):
                 h.set('foo', 'test', option=variation)
 
     def test_slicing(self):
@@ -729,7 +730,7 @@ class TestHeaderSet(WerkzeugTests):
         assert hs.find('foo') < 0
         self.assert_equal(hs.find('bar'), 0)
 
-        with self.assert_raises(IndexError):
+        with pytest.raises(IndexError):
             hs.index('missing')
 
         self.assert_equal(hs.index('bar'), 0)
@@ -784,7 +785,7 @@ class TestCallbackDict(WerkzeugTests):
             # read-only methods
             dct['a']
             dct.get('a')
-            self.assert_raises(KeyError, lambda: dct['x'])
+            pytest.raises(KeyError, lambda: dct['x'])
             'a' in dct
             list(iter(dct))
             dct.copy()
@@ -808,6 +809,6 @@ class TestCallbackDict(WerkzeugTests):
             dct.update([])
             dct.clear()
         with assert_calls(0, 'callback triggered by failed del'):
-            self.assert_raises(KeyError, lambda: dct.__delitem__('x'))
+            pytest.raises(KeyError, lambda: dct.__delitem__('x'))
         with assert_calls(0, 'callback triggered by failed pop'):
-            self.assert_raises(KeyError, lambda: dct.pop('x'))
+            pytest.raises(KeyError, lambda: dct.pop('x'))

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.iterio
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~
 
     Tests the iterio object.
 
@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import pytest
-import unittest
 from functools import partial
 
 from tests import WerkzeugTests
@@ -54,9 +53,9 @@ class IterOTestSuite(WerkzeugTests):
         io.seek(-4, 2)
         self.assert_equal(io.read(4), '\nbar')
 
-        self.assert_raises(IOError, io.seek, 2, 100)
+        pytest.raises(IOError, io.seek, 2, 100)
         io.close()
-        self.assert_raises(ValueError, io.read)
+        pytest.raises(ValueError, io.read)
 
     def test_basic_bytes(self):
         io = IterIO([b"Hello", b"World", b"1", b"2", b"3"])
@@ -87,9 +86,9 @@ class IterOTestSuite(WerkzeugTests):
         io.seek(-4, 2)
         self.assert_equal(io.read(4), b'\nbar')
 
-        self.assert_raises(IOError, io.seek, 2, 100)
+        pytest.raises(IOError, io.seek, 2, 100)
         io.close()
-        self.assert_raises(ValueError, io.read)
+        pytest.raises(ValueError, io.read)
 
     def test_basic_unicode(self):
         io = IterIO([u"Hello", u"World", u"1", u"2", u"3"])
@@ -120,9 +119,9 @@ class IterOTestSuite(WerkzeugTests):
         io.seek(-4, 2)
         self.assert_equal(io.read(4), u'\nbar')
 
-        self.assert_raises(IOError, io.seek, 2, 100)
+        pytest.raises(IOError, io.seek, 2, 100)
         io.close()
-        self.assert_raises(ValueError, io.read)
+        pytest.raises(ValueError, io.read)
 
     def test_sentinel_cases(self):
         io = IterIO([])
@@ -165,7 +164,7 @@ class IterITestSuite(WerkzeugTests):
         iterable = IterIO(producer)
         self.assert_equal(next(iterable), '1\n2\n')
         self.assert_equal(next(iterable), '3\n')
-        self.assert_raises(StopIteration, next, iterable)
+        pytest.raises(StopIteration, next, iterable)
 
     def test_sentinel_cases(self):
         def producer_dummy_flush(out):
@@ -176,7 +175,7 @@ class IterITestSuite(WerkzeugTests):
         def producer_empty(out):
             pass
         iterable = IterIO(producer_empty)
-        self.assert_raises(StopIteration, next, iterable)
+        pytest.raises(StopIteration, next, iterable)
 
         iterable = IterIO(producer_dummy_flush, b'')
         self.assert_strict_equal(next(iterable), b'')

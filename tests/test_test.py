@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     tests.test
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~
 
     Tests the testing tools.
 
@@ -11,8 +11,9 @@
 
 from __future__ import with_statement
 
+import pytest
+
 import sys
-import unittest
 from io import BytesIO
 from werkzeug._compat import iteritems, to_bytes
 
@@ -311,7 +312,7 @@ class TestTest(WerkzeugTests):
     def test_follow_external_redirect(self):
         env = create_environ('/', base_url='http://localhost')
         c = Client(external_redirect_demo_app)
-        self.assert_raises(RuntimeError, lambda:
+        pytest.raises(RuntimeError, lambda:
             c.get(environ_overrides=env, follow_redirects=True))
 
     def test_follow_external_redirect_on_same_subdomain(self):
@@ -321,17 +322,17 @@ class TestTest(WerkzeugTests):
 
         # check that this does not work for real external domains
         env = create_environ('/', base_url='http://localhost')
-        self.assert_raises(RuntimeError, lambda:
+        pytest.raises(RuntimeError, lambda:
             c.get(environ_overrides=env, follow_redirects=True))
 
         # check that subdomain redirects fail if no `allow_subdomain_redirects` is applied
         c = Client(external_subdomain_redirect_demo_app)
-        self.assert_raises(RuntimeError, lambda:
+        pytest.raises(RuntimeError, lambda:
             c.get(environ_overrides=env, follow_redirects=True))
 
     def test_follow_redirect_loop(self):
         c = Client(redirect_loop_app, response_wrapper=BaseResponse)
-        with self.assert_raises(ClientRedirectError):
+        with pytest.raises(ClientRedirectError):
             resp = c.get('/', follow_redirects=True)
 
     def test_follow_redirect_with_post(self):

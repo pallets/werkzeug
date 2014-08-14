@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
     tests.wrappers
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~
 
     Tests for the response and request objects.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
+import pytest
+
 import pickle
 from io import BytesIO
 from datetime import datetime
@@ -172,11 +173,11 @@ class TestWrappers(WerkzeugTests):
 
         req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
         req.trusted_hosts = ['example.org']
-        self.assert_raises(SecurityError, lambda: req.url)
-        self.assert_raises(SecurityError, lambda: req.base_url)
-        self.assert_raises(SecurityError, lambda: req.url_root)
-        self.assert_raises(SecurityError, lambda: req.host_url)
-        self.assert_raises(SecurityError, lambda: req.host)
+        pytest.raises(SecurityError, lambda: req.url)
+        pytest.raises(SecurityError, lambda: req.base_url)
+        pytest.raises(SecurityError, lambda: req.url_root)
+        pytest.raises(SecurityError, lambda: req.host_url)
+        pytest.raises(SecurityError, lambda: req.host)
 
     def test_authorization_mixin(self):
         request = wrappers.Request.from_values(headers={
@@ -194,7 +195,7 @@ class TestWrappers(WerkzeugTests):
         )
         self.assert_equal(list(request.files.items()), [])
         self.assert_equal(list(request.form.items()), [])
-        self.assert_raises(AttributeError, lambda: request.data)
+        pytest.raises(AttributeError, lambda: request.data)
         self.assert_strict_equal(request.stream.read(), b'foo=blub+hehe')
 
     def test_base_response(self):
@@ -287,7 +288,7 @@ class TestWrappers(WerkzeugTests):
             self.assert_equal(response.content_type, 'text/html')
 
         # without env, no arbitrary conversion
-        self.assert_raises(TypeError, SpecialResponse.force_type, wsgi_application)
+        pytest.raises(TypeError, SpecialResponse.force_type, wsgi_application)
 
     def test_accept_mixin(self):
         request = wrappers.Request({
@@ -557,7 +558,7 @@ class TestWrappers(WerkzeugTests):
     def test_shallow_mode(self):
         request = wrappers.Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
         self.assert_equal(request.args['foo'], 'bar')
-        self.assert_raises(RuntimeError, lambda: request.form['foo'])
+        pytest.raises(RuntimeError, lambda: request.form['foo'])
 
     def test_form_parsing_failed(self):
         data = (
@@ -639,7 +640,7 @@ class TestWrappers(WerkzeugTests):
         del resp.headers['Content-Length']
         resp.response = uppercasing(resp.iter_encoded())
         actual_resp = wrappers.Response.from_app(resp, req.environ, buffered=True)
-        self.assertEqual(actual_resp.get_data(), b'FOOBAR')
+        self.assert_equal(actual_resp.get_data(), b'FOOBAR')
 
     def test_response_freeze(self):
         def generate():
@@ -710,7 +711,7 @@ class TestWrappers(WerkzeugTests):
         resp.implicit_sequence_conversion = False
         assert resp.is_streamed
         assert not resp.is_sequence
-        self.assert_raises(RuntimeError, lambda: resp.get_data())
+        pytest.raises(RuntimeError, lambda: resp.get_data())
         resp.make_sequence()
         self.assert_equal(resp.get_data(), u'Hello Wörld!'.encode('utf-8'))
         self.assert_equal(resp.response, [b'Hello ', u'Wörld!'.encode('utf-8')])

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
     tests.internal
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~
 
     Internal tests.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
+import pytest
 
 from datetime import datetime
 from warnings import filterwarnings, resetwarnings
@@ -67,9 +67,9 @@ class TestInternal(WerkzeugTests):
         response = Response()
         environ = create_environ()
         response.response = 'What the...?'
-        self.assert_raises(Warning, lambda: list(response.iter_encoded()))
-        self.assert_raises(Warning, lambda: list(response.get_app_iter(environ)))
+        pytest.raises(Warning, lambda: list(response.iter_encoded()))
+        pytest.raises(Warning, lambda: list(response.get_app_iter(environ)))
         response.direct_passthrough = True
-        self.assert_raises(Warning, lambda: list(response.iter_encoded()))
-        self.assert_raises(Warning, lambda: list(response.get_app_iter(environ)))
+        pytest.raises(Warning, lambda: list(response.iter_encoded()))
+        pytest.raises(Warning, lambda: list(response.get_app_iter(environ)))
         resetwarnings()

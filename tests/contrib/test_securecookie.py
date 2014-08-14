@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 """
     tests.securecookie
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~
 
     Tests the secure cookie.
 
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import unittest
-
 from tests import WerkzeugTests
 
 from werkzeug.utils import parse_cookie
