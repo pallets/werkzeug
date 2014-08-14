@@ -8,15 +8,9 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-
 from __future__ import with_statement
 
-import re
-import shutil
-import tempfile
-import atexit
-
-from werkzeug._compat import text_type, integer_types, reraise
+from werkzeug._compat import text_type, integer_types
 
 
 class WerkzeugTests(object):
@@ -24,17 +18,6 @@ class WerkzeugTests(object):
     methods for testing instead of the camelcased ones in the
     baseclass for consistency.
     """
-
-    def setup(self):
-        pass
-    def teardown(self):
-        pass
-
-    def setUp(self):
-        self.setup()
-
-    def tearDown(self):
-        self.teardown()
 
     def assert_equal(self, x, y, msg=None):
         assert x == y, msg
