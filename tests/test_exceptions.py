@@ -79,9 +79,3 @@ class TestExceptions(WerkzeugTests):
         h = dict(exc.get_headers({}))
         self.assert_equal(h['Allow'], 'GET, HEAD, POST')
         self.assert_true('The method is not allowed' in exc.get_description())
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestExceptions))
-    return suite

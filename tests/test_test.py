@@ -436,9 +436,3 @@ class TestTest(WerkzeugTests):
         self.assert_strict_equal(resp.data, b'42')
         resp = client.get('http://www.example.com/?x=23', base)
         self.assert_strict_equal(resp.data, b'23')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestTest))
-    return suite

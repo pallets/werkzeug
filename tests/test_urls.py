@@ -314,9 +314,3 @@ class TestURLs(WerkzeugTests):
             self.assert_equal(urls.iri_to_uri(urls.uri_to_iri(test)), uri)
             self.assert_equal(urls.uri_to_iri(urls.uri_to_iri(test)), iri)
             self.assert_equal(urls.iri_to_uri(urls.iri_to_uri(test)), uri)
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestURLs))
-    return suite

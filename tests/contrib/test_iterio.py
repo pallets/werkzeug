@@ -182,10 +182,3 @@ class IterITestSuite(WerkzeugTests):
         self.assert_strict_equal(next(iterable), b'')
         iterable = IterIO(producer_dummy_flush, u'')
         self.assert_strict_equal(next(iterable), u'')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(IterOTestSuite))
-    suite.addTest(unittest.makeSuite(IterITestSuite))
-    return suite

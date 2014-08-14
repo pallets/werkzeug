@@ -134,9 +134,3 @@ class TestServing(WerkzeugTests):
                 get_temporary_directory())
             assert os.path.isfile(certificate)
             assert os.path.isfile(private_key)
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestServing))
-    return suite

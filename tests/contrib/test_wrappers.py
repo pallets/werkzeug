@@ -89,9 +89,3 @@ class TestWrappers(WerkzeugTests):
             pass
         else:
             assert False, 'expected type error on charset setting without ct'
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestWrappers))
-    return suite

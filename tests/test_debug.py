@@ -163,10 +163,3 @@ class TestDebugHelpers(WerkzeugTests):
 
         self.assert_in('Help on list object', x)
         self.assert_in('__delitem__', x)
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestDebugRepr))
-    suite.addTest(unittest.makeSuite(TestDebugHelpers))
-    return suite

@@ -440,10 +440,3 @@ class TestRegression(WerkzeugTests):
                                      'image/png,*/*;q=0.5',
                                      datastructures.MIMEAccept).best_match(['foo/bar'])
         self.assert_equal(rv, 'foo/bar')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestHTTPUtility))
-    suite.addTest(unittest.makeSuite(TestRegression))
-    return suite

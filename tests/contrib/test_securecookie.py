@@ -56,9 +56,3 @@ class TestSecureCookie(WerkzeugTests):
         c2 = SecureCookie.load_cookie(req, secret_key=b'foo')
         assert not c2.new
         self.assert_equal(c2, c)
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestSecureCookie))
-    return suite

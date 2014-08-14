@@ -811,20 +811,3 @@ class TestCallbackDict(WerkzeugTests):
             self.assert_raises(KeyError, lambda: dct.__delitem__('x'))
         with assert_calls(0, 'callback triggered by failed pop'):
             self.assert_raises(KeyError, lambda: dct.pop('x'))
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestMultiDict))
-    suite.addTest(unittest.makeSuite(TestOrderedMultiDict))
-    suite.addTest(unittest.makeSuite(TestCombinedMultiDict))
-    suite.addTest(unittest.makeSuite(TestImmutableTypeConversionDict))
-    suite.addTest(unittest.makeSuite(TestImmutableMultiDict))
-    suite.addTest(unittest.makeSuite(TestImmutableDict))
-    suite.addTest(unittest.makeSuite(TestImmutableOrderedMultiDict))
-    suite.addTest(unittest.makeSuite(TestHeaders))
-    suite.addTest(unittest.makeSuite(TestEnvironHeaders))
-    suite.addTest(unittest.makeSuite(TestHeaderSet))
-    suite.addTest(unittest.makeSuite(TestNativeItermethods))
-    suite.addTest(unittest.makeSuite(TestCallbackDict))
-    return suite

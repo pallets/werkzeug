@@ -97,9 +97,3 @@ class TestSecurity(WerkzeugTests):
               '139c30c0966bc32ba55fdbf212530ac9c5ec59f1a452f5cc9ad940fea0598ed1')
         check('X' * 65, 'pass phrase exceeds block size', 1200, 32,
               '9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestSecurity))
-    return suite

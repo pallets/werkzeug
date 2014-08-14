@@ -32,9 +32,3 @@ class TestCompat(WerkzeugTests):
             if key in ('templates', 'Template'):
                 continue
             getattr(werkzeug, key)
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestCompat))
-    return suite

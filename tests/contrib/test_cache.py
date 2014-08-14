@@ -185,12 +185,3 @@ class TestMemcachedCache(WerkzeugTests, CacheTests):
         c = self.make_cache()
         assert c._client.set(c.key_prefix + b'foo', 'bar')
         self.assert_equal(c.get('foo'), 'bar')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestSimpleCache))
-    suite.addTest(unittest.makeSuite(TestFileSystemCache))
-    suite.addTest(unittest.makeSuite(TestRedisCache))
-    suite.addTest(unittest.makeSuite(TestMemcachedCache))
-    return suite

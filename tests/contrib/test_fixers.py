@@ -184,10 +184,3 @@ class TestBrowserFixer(WerkzeugTests):
         assert cc.no_cache
         assert cc.proxy_revalidate
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestServerFixer))
-    suite.addTest(unittest.makeSuite(TestBrowserFixer))
-    return suite

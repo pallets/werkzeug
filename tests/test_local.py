@@ -151,9 +151,3 @@ class TestLocal(WerkzeugTests):
         assert stack.top['foo'] == 23
         stack.pop()
         assert stack.top is None
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestLocal))
-    return suite

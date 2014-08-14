@@ -73,9 +73,3 @@ class TestInternal(WerkzeugTests):
         self.assert_raises(Warning, lambda: list(response.iter_encoded()))
         self.assert_raises(Warning, lambda: list(response.get_app_iter(environ)))
         resetwarnings()
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestInternal))
-    return suite

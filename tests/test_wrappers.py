@@ -838,8 +838,3 @@ class TestWrappers(WerkzeugTests):
 
         req = ModifiedRequest.from_values(u'/?foo=정상처리'.encode('euc-kr'))
         self.assert_strict_equal(req.args['foo'], u'정상처리')
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestWrappers))
-    return suite

@@ -401,11 +401,3 @@ class TestInternalFunctions(WerkzeugTests):
         self.assert_equal(list(lineiter), [b'bar\n', b'baz'])
         self.assert_equal(find_terminator([]), b'')
         self.assert_equal(find_terminator([b'']), b'')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestFormParser))
-    suite.addTest(unittest.makeSuite(TestMultiPart))
-    suite.addTest(unittest.makeSuite(TestInternalFunctions))
-    return suite

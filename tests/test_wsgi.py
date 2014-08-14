@@ -344,9 +344,3 @@ class TestWSGIUtils(WerkzeugTests):
             lines = list(wsgi.make_line_iter(NativeStringIO(data), limit=len(data),
                                              buffer_size=4))
             self.assert_equal(lines, ['1234567890\n', '1234567890\n'])
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestWSGIUtils))
-    return suite

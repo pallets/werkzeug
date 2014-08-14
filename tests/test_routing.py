@@ -690,9 +690,3 @@ class TestRouting(WerkzeugTests):
         rv = repr(m)
         self.assert_strict_equal(rv,
             "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])")
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRouting))
-    return suite

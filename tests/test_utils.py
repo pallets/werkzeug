@@ -275,9 +275,3 @@ class TestGeneralUtility(WerkzeugTests):
                           'etc_passwd')
         self.assert_equal(utils.secure_filename(u'i contain cool \xfcml\xe4uts.txt'),
                           'i_contain_cool_umlauts.txt')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGeneralUtility))
-    return suite

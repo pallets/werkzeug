@@ -83,9 +83,3 @@ class TestSession(WerkzeugTests):
 
         listed_sessions = set(store.list())
         assert sessions == listed_sessions
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestSession))
-    return suite
