@@ -46,27 +46,27 @@ class TestWSGIUtils(WerkzeugTests):
 
         for p in '/test.txt', '/sources/test.txt', '/foo/äöü':
             app_iter, status, headers = run_wsgi_app(app, create_environ(p))
-            self.assert_equal(status, '200 OK')
+            assert status == '200 OK'
             with closing(app_iter) as app_iter:
                 data = b''.join(app_iter).strip()
-            self.assert_equal(data, b'FOUND')
+            assert data == b'FOUND'
 
         app_iter, status, headers = run_wsgi_app(
             app, create_environ('/pkg/debugger.js'))
         with closing(app_iter) as app_iter:
             contents = b''.join(app_iter)
-        self.assert_in(b'$(function() {', contents)
+        assert b'$(function() {' in contents
 
         app_iter, status, headers = run_wsgi_app(
             app, create_environ('/missing'))
-        self.assert_equal(status, '404 NOT FOUND')
-        self.assert_equal(b''.join(app_iter).strip(), b'NOT FOUND')
+        assert status == '404 NOT FOUND'
+        assert b''.join(app_iter).strip() == b'NOT FOUND'
 
 
     def test_get_host(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
-        self.assert_equal(wsgi.get_host(env), 'example.org')
+        assert wsgi.get_host(env) == 'example.org'
         self.assert_equal(
             wsgi.get_host(create_environ('/', 'http://example.org')),
             'example.org')
@@ -74,7 +74,7 @@ class TestWSGIUtils(WerkzeugTests):
     def test_get_host_multiple_forwarded(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.com, example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
-        self.assert_equal(wsgi.get_host(env), 'example.com')
+        assert wsgi.get_host(env) == 'example.com'
         self.assert_equal(
             wsgi.get_host(create_environ('/', 'http://example.com')),
             'example.com')
@@ -92,27 +92,27 @@ class TestWSGIUtils(WerkzeugTests):
             return BaseResponse(b'Test')
         client = Client(wsgi.responder(foo), BaseResponse)
         response = client.get('/')
-        self.assert_equal(response.status_code, 200)
-        self.assert_equal(response.data, b'Test')
+        assert response.status_code == 200
+        assert response.data == b'Test'
 
     def test_pop_path_info(self):
         original_env = {'SCRIPT_NAME': '/foo', 'PATH_INFO': '/a/b///c'}
 
         # regular path info popping
         def assert_tuple(script_name, path_info):
-            self.assert_equal(env.get('SCRIPT_NAME'), script_name)
-            self.assert_equal(env.get('PATH_INFO'), path_info)
+            assert env.get('SCRIPT_NAME') == script_name
+            assert env.get('PATH_INFO') == path_info
         env = original_env.copy()
         pop = lambda: wsgi.pop_path_info(env)
 
         assert_tuple('/foo', '/a/b///c')
-        self.assert_equal(pop(), 'a')
+        assert pop() == 'a'
         assert_tuple('/foo/a', '/b///c')
-        self.assert_equal(pop(), 'b')
+        assert pop() == 'b'
         assert_tuple('/foo/a/b', '///c')
-        self.assert_equal(pop(), 'c')
+        assert pop() == 'c'
         assert_tuple('/foo/a/b///c', '')
-        self.assert_is_none(pop())
+        assert pop() is None
 
     def test_peek_path_info(self):
         env = {
@@ -120,16 +120,16 @@ class TestWSGIUtils(WerkzeugTests):
             'PATH_INFO': '/aaa/b///c'
         }
 
-        self.assert_equal(wsgi.peek_path_info(env), 'aaa')
-        self.assert_equal(wsgi.peek_path_info(env), 'aaa')
+        assert wsgi.peek_path_info(env) == 'aaa'
+        assert wsgi.peek_path_info(env) == 'aaa'
         self.assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
         self.assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
 
     def test_path_info_and_script_name_fetching(self):
         env = create_environ(u'/\N{SNOWMAN}', u'http://example.com/\N{COMET}/')
-        self.assert_equal(wsgi.get_path_info(env), u'/\N{SNOWMAN}')
+        assert wsgi.get_path_info(env) == u'/\N{SNOWMAN}'
         self.assert_equal(wsgi.get_path_info(env, charset=None), u'/\N{SNOWMAN}'.encode('utf-8'))
-        self.assert_equal(wsgi.get_script_name(env), u'/\N{COMET}')
+        assert wsgi.get_script_name(env) == u'/\N{COMET}'
         self.assert_equal(wsgi.get_script_name(env, charset=None), u'/\N{COMET}'.encode('utf-8'))
 
     def test_query_string_fetching(self):
@@ -221,32 +221,32 @@ class TestWSGIUtils(WerkzeugTests):
 
     def test_path_info_extraction(self):
         x = wsgi.extract_path_info('http://example.com/app', '/app/hello')
-        self.assert_equal(x, u'/hello')
+        assert x == u'/hello'
         x = wsgi.extract_path_info('http://example.com/app',
                                    'https://example.com/app/hello')
-        self.assert_equal(x, u'/hello')
+        assert x == u'/hello'
         x = wsgi.extract_path_info('http://example.com/app/',
                                    'https://example.com/app/hello')
-        self.assert_equal(x, u'/hello')
+        assert x == u'/hello'
         x = wsgi.extract_path_info('http://example.com/app/',
                                    'https://example.com/app')
-        self.assert_equal(x, u'/')
+        assert x == u'/'
         x = wsgi.extract_path_info(u'http://☃.net/', u'/fööbär')
-        self.assert_equal(x, u'/fööbär')
+        assert x == u'/fööbär'
         x = wsgi.extract_path_info(u'http://☃.net/x', u'http://☃.net/x/fööbär')
-        self.assert_equal(x, u'/fööbär')
+        assert x == u'/fööbär'
 
         env = create_environ(u'/fööbär', u'http://☃.net/x/')
         x = wsgi.extract_path_info(env, u'http://☃.net/x/fööbär')
-        self.assert_equal(x, u'/fööbär')
+        assert x == u'/fööbär'
 
         x = wsgi.extract_path_info('http://example.com/app/',
                                    'https://example.com/a/hello')
-        self.assert_is_none(x)
+        assert x is None
         x = wsgi.extract_path_info('http://example.com/app/',
                                    'https://example.com/app/hello',
                                    collapse_http_schemes=False)
-        self.assert_is_none(x)
+        assert x is None
 
     def test_get_host_fallback(self):
         self.assert_equal(wsgi.get_host({

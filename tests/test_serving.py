@@ -83,9 +83,9 @@ class TestServing(WerkzeugTests):
     def test_serving(self):
         server, addr = run_dev_server(_test_app)
         rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-        self.assert_in(b'WSGI Information', rv)
-        self.assert_in(b'foo=bar&amp;baz=blah', rv)
-        self.assert_in(b'Werkzeug/' + version.encode('ascii'), rv)
+        assert b'WSGI Information' in rv
+        assert b'foo=bar&amp;baz=blah' in rv
+        assert b'Werkzeug/' + version.encode('ascii') in rv
 
     @silencestderr
     def test_broken_app(self):

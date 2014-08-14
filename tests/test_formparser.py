@@ -110,7 +110,7 @@ class TestFormParser(WerkzeugTests):
                                   content_length=len(data),
                                   content_type='multipart/form-data',
                                   method='POST')
-        self.assert_equal(req.form, {})
+        assert req.form == {}
 
     def test_parse_form_data_put_without_content(self):
         # A PUT without a Content-Type header returns empty data
@@ -144,7 +144,7 @@ class TestFormParser(WerkzeugTests):
                                   method='POST')
         # make sure we have a real file here, because we expect to be
         # on the disk.  > 1024 * 500
-        self.assert_true(hasattr(req.files['foo'].stream, u'fileno'))
+        assert hasattr(req.files['foo'].stream, u'fileno')
         # close file to prevent fds from leaking
         req.files['foo'].close()
 
@@ -248,8 +248,8 @@ class TestMultiPart(WerkzeugTests):
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_true(not data.files)
-        self.assert_true(not data.form)
+        assert not data.files
+        assert not data.form
 
     def test_broken(self):
         data = (
@@ -262,8 +262,8 @@ class TestMultiPart(WerkzeugTests):
         )
         _, form, files = formparser.parse_form_data(create_environ(data=data,
             method='POST', content_type='multipart/form-data; boundary=foo'))
-        self.assert_true(not files)
-        self.assert_true(not form)
+        assert not files
+        assert not form
 
         pytest.raises(ValueError, formparser.parse_form_data,
             create_environ(data=data, method='POST',
@@ -280,7 +280,7 @@ class TestMultiPart(WerkzeugTests):
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_equal(data.files['test'].filename, 'test.txt')
+        assert data.files['test'].filename == 'test.txt'
         self.assert_strict_equal(data.files['test'].read(), b'file contents')
 
     def test_extra_newline(self):
@@ -296,7 +296,7 @@ class TestMultiPart(WerkzeugTests):
                                    content_length=len(data),
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
-        self.assert_true(not data.files)
+        assert not data.files
         self.assert_strict_equal(data.form['foo'], u'a string')
 
     def test_headers(self):
@@ -380,9 +380,9 @@ class TestMultiPart(WerkzeugTests):
         environ['wsgi.input'] = BytesIO(data)
         stream, form, files = parse_form_data(environ, silent=False)
         rv = stream.read()
-        self.assert_equal(rv, b'')
-        self.assert_equal(form, MultiDict())
-        self.assert_equal(files, MultiDict())
+        assert rv == b''
+        assert form == MultiDict()
+        assert files == MultiDict()
 
 
 class TestInternalFunctions(WerkzeugTests):
@@ -397,7 +397,7 @@ class TestInternalFunctions(WerkzeugTests):
         lineiter = iter(b'\n\n\nfoo\nbar\nbaz'.splitlines(True))
         find_terminator = formparser.MultiPartParser()._find_terminator
         line = find_terminator(lineiter)
-        self.assert_equal(line, b'foo')
+        assert line == b'foo'
         self.assert_equal(list(lineiter), [b'bar\n', b'baz'])
-        self.assert_equal(find_terminator([]), b'')
-        self.assert_equal(find_terminator([b'']), b'')
+        assert find_terminator([]) == b''
+        assert find_terminator([b'']) == b''

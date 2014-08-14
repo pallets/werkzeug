@@ -24,8 +24,8 @@ class TestHTTPUtility(WerkzeugTests):
     def test_accept(self):
         a = http.parse_accept_header('en-us,ru;q=0.5')
         self.assert_equal(list(itervalues(a)), ['en-us', 'ru'])
-        self.assert_equal(a.best, 'en-us')
-        self.assert_equal(a.find('ru'), 1)
+        assert a.best == 'en-us'
+        assert a.find('ru') == 1
         pytest.raises(ValueError, a.index, 'de')
         self.assert_equal(a.to_header(), 'en-us,ru;q=0.5')
 
@@ -36,9 +36,9 @@ class TestHTTPUtility(WerkzeugTests):
                                      'image/png,*/*;q=0.5',
                                      datastructures.MIMEAccept)
         pytest.raises(ValueError, lambda: a['missing'])
-        self.assert_equal(a['image/png'],  1)
-        self.assert_equal(a['text/plain'],  0.8)
-        self.assert_equal(a['foo/bar'],  0.5)
+        assert a['image/png'] ==  1
+        assert a['text/plain'] ==  0.8
+        assert a['foo/bar'] ==  0.5
         self.assert_equal(a[a.find('foo/bar')],  ('*/*', 0.5))
 
     def test_accept_matches(self):
@@ -47,8 +47,8 @@ class TestHTTPUtility(WerkzeugTests):
                                     'image/png', datastructures.MIMEAccept)
         self.assert_equal(a.best_match(['text/html', 'application/xhtml+xml']),
                           'application/xhtml+xml')
-        self.assert_equal(a.best_match(['text/html']),  'text/html')
-        self.assert_true(a.best_match(['foo/bar']) is None)
+        assert a.best_match(['text/html']) ==  'text/html'
+        assert a.best_match(['foo/bar']) is None
         self.assert_equal(a.best_match(['foo/bar', 'bar/foo'],
                           default='foo/bar'),  'foo/bar')
         self.assert_equal(a.best_match(['application/xml', 'text/xml']),  'application/xml')
@@ -56,25 +56,25 @@ class TestHTTPUtility(WerkzeugTests):
     def test_charset_accept(self):
         a = http.parse_accept_header('ISO-8859-1,utf-8;q=0.7,*;q=0.7',
                                      datastructures.CharsetAccept)
-        self.assert_equal(a['iso-8859-1'], a['iso8859-1'])
-        self.assert_equal(a['iso-8859-1'], 1)
-        self.assert_equal(a['UTF8'], 0.7)
-        self.assert_equal(a['ebcdic'], 0.7)
+        assert a['iso-8859-1'] == a['iso8859-1']
+        assert a['iso-8859-1'] == 1
+        assert a['UTF8'] == 0.7
+        assert a['ebcdic'] == 0.7
 
     def test_language_accept(self):
         a = http.parse_accept_header('de-AT,de;q=0.8,en;q=0.5',
                                      datastructures.LanguageAccept)
-        self.assert_equal(a.best,  'de-AT')
-        self.assert_true('de_AT' in a)
-        self.assert_true('en' in a)
-        self.assert_equal(a['de-at'], 1)
-        self.assert_equal(a['en'], 0.5)
+        assert a.best ==  'de-AT'
+        assert 'de_AT' in a
+        assert 'en' in a
+        assert a['de-at'] == 1
+        assert a['en'] == 0.5
 
     def test_set_header(self):
         hs = http.parse_set_header('foo, Bar, "Blah baz", Hehe')
-        self.assert_true('blah baz' in hs)
-        self.assert_true('foobar' not in hs)
-        self.assert_true('foo' in hs)
+        assert 'blah baz' in hs
+        assert 'foobar' not in hs
+        assert 'foo' in hs
         self.assert_equal(list(hs), ['foo', 'Bar', 'Blah baz', 'Hehe'])
         hs.add('Foo')
         self.assert_equal(hs.to_header(), 'foo, Bar, "Blah baz", Hehe')
@@ -193,8 +193,8 @@ class TestHTTPUtility(WerkzeugTests):
 
     def test_etags_nonzero(self):
         etags = http.parse_etags('w/"foo"')
-        self.assert_true(bool(etags))
-        self.assert_true(etags.contains_raw('w/"foo"'))
+        assert bool(etags)
+        assert etags.contains_raw('w/"foo"')
 
     def test_parse_date(self):
         assert http.parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(1994, 11, 6, 8, 49, 37)
@@ -317,24 +317,24 @@ class TestHTTPUtility(WerkzeugTests):
         val = http.dump_cookie('foo', u'\N{SNOWMAN}')
         h = datastructures.Headers()
         h.add('Set-Cookie', val)
-        self.assert_equal(h['Set-Cookie'], 'foo="\\342\\230\\203"; Path=/')
+        assert h['Set-Cookie'] == 'foo="\\342\\230\\203"; Path=/'
 
         cookies = http.parse_cookie(h['Set-Cookie'])
-        self.assert_equal(cookies['foo'], u'\N{SNOWMAN}')
+        assert cookies['foo'] == u'\N{SNOWMAN}'
 
     def test_cookie_unicode_keys(self):
         # Yes, this is technically against the spec but happens
         val = http.dump_cookie(u'fö', u'fö')
         self.assert_equal(val, wsgi_encoding_dance(u'fö="f\\303\\266"; Path=/', 'utf-8'))
         cookies = http.parse_cookie(val)
-        self.assert_equal(cookies[u'fö'], u'fö')
+        assert cookies[u'fö'] == u'fö'
 
     def test_cookie_unicode_parsing(self):
         # This is actually a correct test.  This is what is being submitted
         # by firefox if you set an unicode cookie and we get the cookie sent
         # in on Python 3 under PEP 3333.
         cookies = http.parse_cookie(u'fÃ¶=fÃ¶')
-        self.assert_equal(cookies[u'fö'], u'fö')
+        assert cookies[u'fö'] == u'fö'
 
     def test_cookie_domain_encoding(self):
         val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
@@ -440,4 +440,4 @@ class TestRegression(WerkzeugTests):
                                      'text/html;q=0.9,text/plain;q=0.8,'
                                      'image/png,*/*;q=0.5',
                                      datastructures.MIMEAccept).best_match(['foo/bar'])
-        self.assert_equal(rv, 'foo/bar')
+        assert rv == 'foo/bar'

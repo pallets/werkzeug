@@ -111,17 +111,17 @@ class TestURLs(WerkzeugTests):
 
     def test_url_fixing(self):
         x = urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
-        self.assert_line_equal(x, 'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)')
+        assert x == 'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)'
 
         x = urls.url_fix("http://just.a.test/$-_.+!*'(),")
         self.assert_equal(x, "http://just.a.test/$-_.+!*'(),")
 
     def test_url_fixing_qs(self):
         x = urls.url_fix(b'http://example.com/?foo=%2f%2f')
-        self.assert_line_equal(x, 'http://example.com/?foo=%2f%2f')
+        assert x == 'http://example.com/?foo=%2f%2f'
 
         x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
-        self.assert_equal(x, 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+        assert x == 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation'
 
     def test_iri_support(self):
         self.assert_strict_equal(urls.uri_to_iri('http://xn--n3h.net/'),
@@ -167,12 +167,12 @@ class TestURLs(WerkzeugTests):
         d.add('foo', 3)
         d.add('bar', 0)
         d.add('foo', 4)
-        self.assert_equal(urls.url_encode(d), 'foo=1&foo=2&foo=3&bar=0&foo=4')
+        assert urls.url_encode(d) == 'foo=1&foo=2&foo=3&bar=0&foo=4'
 
     def test_multidict_encoding(self):
         d = OrderedMultiDict()
         d.add('2013-10-10T23:26:05.657975+0000', '2013-10-10T23:26:05.657975+0000')
-        self.assert_equal(urls.url_encode(d), '2013-10-10T23%3A26%3A05.657975%2B0000=2013-10-10T23%3A26%3A05.657975%2B0000')
+        assert urls.url_encode(d) == '2013-10-10T23%3A26%3A05.657975%2B0000=2013-10-10T23%3A26%3A05.657975%2B0000'
 
     def test_href(self):
         x = urls.Href('http://www.example.com/')
@@ -193,9 +193,9 @@ class TestURLs(WerkzeugTests):
 
     def test_href_url_join(self):
         x = urls.Href(u'test')
-        self.assert_line_equal(x(u'foo:bar'), u'test/foo:bar')
-        self.assert_line_equal(x(u'http://example.com/'), u'test/http://example.com/')
-        self.assert_line_equal(x.a(), u'test/a')
+        assert x(u'foo:bar') == u'test/foo:bar'
+        assert x(u'http://example.com/') == u'test/http://example.com/'
+        assert x.a() == u'test/a'
 
     def test_href_past_root(self):
         base_href = urls.Href('http://www.blagga.com/1/2/3')
@@ -209,12 +209,12 @@ class TestURLs(WerkzeugTests):
     def test_url_unquote_plus_unicode(self):
         # was broken in 0.6
         self.assert_strict_equal(urls.url_unquote_plus(u'\x6d'), u'\x6d')
-        self.assert_is(type(urls.url_unquote_plus(u'\x6d')), text_type)
+        assert type(urls.url_unquote_plus(u'\x6d')) is text_type
 
     def test_quoting_of_local_urls(self):
         rv = urls.iri_to_uri(u'/foo\x8f')
         self.assert_strict_equal(rv, '/foo%C2%8F')
-        self.assert_is(type(rv), str)
+        assert type(rv) is str
 
     def test_url_attributes(self):
         rv = urls.url_parse('http://foo%3a:bar%3a@[::1]:80/123?x=y#frag')
@@ -225,7 +225,7 @@ class TestURLs(WerkzeugTests):
         self.assert_strict_equal(rv.raw_username, 'foo%3a')
         self.assert_strict_equal(rv.raw_password, 'bar%3a')
         self.assert_strict_equal(rv.host, '::1')
-        self.assert_equal(rv.port, 80)
+        assert rv.port == 80
         self.assert_strict_equal(rv.path, '/123')
         self.assert_strict_equal(rv.query, 'x=y')
         self.assert_strict_equal(rv.fragment, 'frag')
@@ -243,7 +243,7 @@ class TestURLs(WerkzeugTests):
         self.assert_strict_equal(rv.raw_username, b'foo%3a')
         self.assert_strict_equal(rv.raw_password, b'bar%3a')
         self.assert_strict_equal(rv.host, b'::1')
-        self.assert_equal(rv.port, 80)
+        assert rv.port == 80
         self.assert_strict_equal(rv.path, b'/123')
         self.assert_strict_equal(rv.query, b'x=y')
         self.assert_strict_equal(rv.fragment, b'frag')
@@ -267,32 +267,32 @@ class TestURLs(WerkzeugTests):
     def test_iri_to_uri_idempotence_ascii_only(self):
         uri = u'http://www.idempoten.ce'
         uri = urls.iri_to_uri(uri)
-        self.assert_equal(urls.iri_to_uri(uri), uri)
+        assert urls.iri_to_uri(uri) == uri
 
     def test_iri_to_uri_idempotence_non_ascii(self):
         uri = u'http://\N{SNOWMAN}/\N{SNOWMAN}'
         uri = urls.iri_to_uri(uri)
-        self.assert_equal(urls.iri_to_uri(uri), uri)
+        assert urls.iri_to_uri(uri) == uri
 
     def test_uri_to_iri_idempotence_ascii_only(self):
         uri = 'http://www.idempoten.ce'
         uri = urls.uri_to_iri(uri)
-        self.assert_equal(urls.uri_to_iri(uri), uri)
+        assert urls.uri_to_iri(uri) == uri
 
     def test_uri_to_iri_idempotence_non_ascii(self):
         uri = 'http://xn--n3h/%E2%98%83'
         uri = urls.uri_to_iri(uri)
-        self.assert_equal(urls.uri_to_iri(uri), uri)
+        assert urls.uri_to_iri(uri) == uri
 
     def test_iri_to_uri_to_iri(self):
         iri = u'http://föö.com/'
         uri = urls.iri_to_uri(iri)
-        self.assert_equal(urls.uri_to_iri(uri), iri)
+        assert urls.uri_to_iri(uri) == iri
 
     def test_uri_to_iri_to_uri(self):
         uri = 'http://xn--f-rgao.com/%C3%9E'
         iri = urls.uri_to_iri(uri)
-        self.assert_equal(urls.iri_to_uri(iri), uri)
+        assert urls.iri_to_uri(iri) == uri
 
     def test_uri_iri_normalization(self):
         uri = 'http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93'
@@ -308,9 +308,9 @@ class TestURLs(WerkzeugTests):
         ]
 
         for test in tests:
-            self.assert_equal(urls.uri_to_iri(test), iri)
-            self.assert_equal(urls.iri_to_uri(test), uri)
-            self.assert_equal(urls.uri_to_iri(urls.iri_to_uri(test)), iri)
-            self.assert_equal(urls.iri_to_uri(urls.uri_to_iri(test)), uri)
-            self.assert_equal(urls.uri_to_iri(urls.uri_to_iri(test)), iri)
-            self.assert_equal(urls.iri_to_uri(urls.iri_to_uri(test)), uri)
+            assert urls.uri_to_iri(test) == iri
+            assert urls.iri_to_uri(test) == uri
+            assert urls.uri_to_iri(urls.iri_to_uri(test)) == iri
+            assert urls.iri_to_uri(urls.uri_to_iri(test)) == uri
+            assert urls.uri_to_iri(urls.uri_to_iri(test)) == iri
+            assert urls.iri_to_uri(urls.iri_to_uri(test)) == uri

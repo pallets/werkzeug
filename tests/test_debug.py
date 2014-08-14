@@ -21,7 +21,7 @@ from werkzeug._compat import PY2
 class TestDebugRepr(WerkzeugTests):
 
     def test_basic_repr(self):
-        self.assert_equal(debug_repr([]), u'[]')
+        assert debug_repr([]) == u'[]'
         self.assert_equal(debug_repr([1, 2]),
             u'[<span class="number">1</span>, <span class="number">2</span>]')
         self.assert_equal(debug_repr([1, 'test']),
@@ -45,7 +45,7 @@ class TestDebugRepr(WerkzeugTests):
         ))
 
     def test_mapping_repr(self):
-        self.assert_equal(debug_repr({}), u'{}')
+        assert debug_repr({}) == u'{}'
         self.assert_equal(debug_repr({'foo': 42}),
             u'{<span class="pair"><span class="key"><span class="string">\'foo\''
             u'</span></span>: <span class="value"><span class="number">42'
@@ -145,11 +145,11 @@ class TestDebugHelpers(WerkzeugTests):
         finally:
             sys.stdout = old
 
-        self.assert_in('Details for list object at', x)
-        self.assert_in('<span class="number">1</span>', x)
-        self.assert_in('Local variables in frame', y)
-        self.assert_in('<th>x', y)
-        self.assert_in('<th>old', y)
+        assert 'Details for list object at' in x
+        assert '<span class="number">1</span>' in x
+        assert 'Local variables in frame' in y
+        assert '<th>x' in y
+        assert '<th>old' in y
 
     def test_debug_help(self):
         old = sys.stdout
@@ -160,5 +160,5 @@ class TestDebugHelpers(WerkzeugTests):
         finally:
             sys.stdout = old
 
-        self.assert_in('Help on list object', x)
-        self.assert_in('__delitem__', x)
+        assert 'Help on list object' in x
+        assert '__delitem__' in x

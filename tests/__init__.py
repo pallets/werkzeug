@@ -22,42 +22,10 @@ class WerkzeugTests(object):
     def assert_equal(self, x, y, msg=None):
         assert x == y, msg
 
-    assert_sequence_equal = assert_line_equal = assert_equal
-
-    def assert_not_equal(self, x, y):
-        assert x != y
-
-    def assert_is_none(self, x):
-        assert x is None
-
-    def assert_is_not_none(self, x):
-        assert x is not None
-
-    def assert_in(self, x, y):
-        assert x in y
-
-    def assert_is_instance(self, x, y):
-        assert isinstance(x, y)
-
-    def assert_not_in(self, x, y):
-        assert x not in y
-
-    def assert_is(self, x, y):
-        assert x is y
-
-    def assert_is_not(self, x, y):
-        assert x is not y
-
-    def assert_true(self, x):
-        assert x
-
-    def assert_false(self, x):
-        assert not x
-
     def assert_strict_equal(self, x, y):
         '''Stricter version of assert_equal that doesn't do implicit conversion
         between unicode and strings'''
-        self.assert_equal(x, y)
+        assert x == y
         assert issubclass(type(x), type(y)) or issubclass(type(y), type(x)), \
             '%s != %s' % (type(x), type(y))
         if isinstance(x, (bytes, text_type, integer_types)) or x is None:

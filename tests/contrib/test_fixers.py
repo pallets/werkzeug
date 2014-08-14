@@ -44,7 +44,7 @@ class TestServerFixer(WerkzeugTests):
             SCRIPT_NAME='/foo',
             PATH_INFO='/bar'
         ))
-        self.assert_equal(response.get_data(), b'PATH_INFO: /foo/bar\nSCRIPT_NAME: baz/poop')
+        assert response.get_data() == b'PATH_INFO: /foo/bar\nSCRIPT_NAME: baz/poop'
 
     def test_path_info_from_request_uri_fix(self):
         app = fixers.PathInfoFromRequestUriFix(path_check_app)
@@ -52,7 +52,7 @@ class TestServerFixer(WerkzeugTests):
             env = dict(create_environ(), SCRIPT_NAME='/test', PATH_INFO='/?????')
             env[key] = '/test/foo%25bar?drop=this'
             response = Response.from_app(app, env)
-            self.assert_equal(response.get_data(), b'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test')
+            assert response.get_data() == b'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
     def test_proxy_fix(self):
         @Request.application
@@ -73,7 +73,7 @@ class TestServerFixer(WerkzeugTests):
 
         response = Response.from_app(app, environ)
 
-        self.assert_equal(response.get_data(), b'1.2.3.4|example.com')
+        assert response.get_data() == b'1.2.3.4|example.com'
 
         # And we must check that if it is a redirection it is
         # correctly done:
@@ -127,7 +127,7 @@ class TestBrowserFixer(WerkzeugTests):
         ])
 
         # IE gets no vary
-        self.assert_equal(response.get_data(), b'binary data here')
+        assert response.get_data() == b'binary data here'
         assert 'vary' not in response.headers
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
         assert response.headers['content-type'] == 'application/vnd.ms-excel'
@@ -135,7 +135,7 @@ class TestBrowserFixer(WerkzeugTests):
         # other browsers do
         c = Client(application, Response)
         response = c.get('/')
-        self.assert_equal(response.get_data(), b'binary data here')
+        assert response.get_data() == b'binary data here'
         assert 'vary' in response.headers
 
         cc = ResponseCacheControl()
@@ -157,7 +157,7 @@ class TestBrowserFixer(WerkzeugTests):
         response = c.get('/', headers=[
             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)')
         ])
-        self.assert_equal(response.get_data(), b'binary data here')
+        assert response.get_data() == b'binary data here'
         assert 'pragma' not in response.headers
         assert 'cache-control' not in response.headers
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
@@ -168,14 +168,14 @@ class TestBrowserFixer(WerkzeugTests):
         response = c.get('/', headers=[
             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)')
         ])
-        self.assert_equal(response.get_data(), b'binary data here')
+        assert response.get_data() == b'binary data here'
         assert response.headers['pragma'] == 'x-foo'
         assert response.headers['cache-control'] == 'proxy-revalidate'
         assert response.headers['content-disposition'] == 'attachment; filename=foo.xls'
 
         # regular browsers get everything
         response = c.get('/')
-        self.assert_equal(response.get_data(), b'binary data here')
+        assert response.get_data() == b'binary data here'
         assert response.headers['pragma'] == 'no-cache, x-foo'
         cc = parse_cache_control_header(response.headers['cache-control'],
                                         cls=ResponseCacheControl)

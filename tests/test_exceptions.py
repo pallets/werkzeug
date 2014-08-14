@@ -31,8 +31,8 @@ class TestExceptions(WerkzeugTests):
             resp = e.get_response({})
         else:
             self.fail('exception not raised')
-        self.assert_true(resp is orig_resp)
-        self.assert_equal(resp.get_data(), b'Hello World')
+        assert resp is orig_resp
+        assert resp.get_data() == b'Hello World'
 
     def test_aborter(self):
         abort = exceptions.abort
@@ -67,15 +67,15 @@ class TestExceptions(WerkzeugTests):
 
     def test_exception_repr(self):
         exc = exceptions.NotFound()
-        self.assert_equal(text_type(exc), '404: Not Found')
-        self.assert_equal(repr(exc), "<NotFound '404: Not Found'>")
+        assert text_type(exc) == '404: Not Found'
+        assert repr(exc) == "<NotFound '404: Not Found'>"
 
         exc = exceptions.NotFound('Not There')
-        self.assert_equal(text_type(exc), '404: Not Found')
-        self.assert_equal(repr(exc), "<NotFound '404: Not Found'>")
+        assert text_type(exc) == '404: Not Found'
+        assert repr(exc) == "<NotFound '404: Not Found'>"
 
     def test_special_exceptions(self):
         exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
         h = dict(exc.get_headers({}))
         self.assert_equal(h['Allow'], 'GET, HEAD, POST')
-        self.assert_true('The method is not allowed' in exc.get_description())
+        assert 'The method is not allowed' in exc.get_description()

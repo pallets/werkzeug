@@ -98,12 +98,12 @@ class TestTest(WerkzeugTests):
     def test_set_cookie_app(self):
         c = Client(cookie_app)
         appiter, code, headers = c.open()
-        self.assert_in('Set-Cookie', dict(headers))
+        assert 'Set-Cookie' in dict(headers)
 
     def test_cookiejar_stores_cookie(self):
         c = Client(cookie_app)
         appiter, code, headers = c.open()
-        self.assert_in('test', c.cookie_jar._cookies['localhost.local']['/'])
+        assert 'test' in c.cookie_jar._cookies['localhost.local']['/']
 
     def test_no_initial_cookie(self):
         c = Client(cookie_app)
@@ -130,12 +130,12 @@ class TestTest(WerkzeugTests):
 
     def test_environ_builder_basics(self):
         b = EnvironBuilder()
-        self.assert_is_none(b.content_type)
+        assert b.content_type is None
         b.method = 'POST'
-        self.assert_equal(b.content_type, 'application/x-www-form-urlencoded')
+        assert b.content_type == 'application/x-www-form-urlencoded'
         b.files.add_file('test', BytesIO(b'test contents'), 'test.txt')
-        self.assert_equal(b.files['test'].content_type, 'text/plain')
-        self.assert_equal(b.content_type, 'multipart/form-data')
+        assert b.files['test'].content_type == 'text/plain'
+        assert b.content_type == 'multipart/form-data'
         b.form['test'] = 'normal value'
 
         req = b.get_request()
@@ -144,7 +144,7 @@ class TestTest(WerkzeugTests):
         self.assert_strict_equal(req.url, u'http://localhost/')
         self.assert_strict_equal(req.method, 'POST')
         self.assert_strict_equal(req.form['test'], u'normal value')
-        self.assert_equal(req.files['test'].content_type, 'text/plain')
+        assert req.files['test'].content_type == 'text/plain'
         self.assert_strict_equal(req.files['test'].filename, u'test.txt')
         self.assert_strict_equal(req.files['test'].read(), b'test contents')
 
@@ -164,11 +164,11 @@ class TestTest(WerkzeugTests):
     def test_environ_builder_headers_content_type(self):
         b = EnvironBuilder(headers={'Content-Type': 'text/plain'})
         env = b.get_environ()
-        self.assert_equal(env['CONTENT_TYPE'], 'text/plain')
+        assert env['CONTENT_TYPE'] == 'text/plain'
         b = EnvironBuilder(content_type='text/html',
                            headers={'Content-Type': 'text/plain'})
         env = b.get_environ()
-        self.assert_equal(env['CONTENT_TYPE'], 'text/html')
+        assert env['CONTENT_TYPE'] == 'text/html'
 
     def test_environ_builder_paths(self):
         b = EnvironBuilder(path='/foo', base_url='http://example.com/')
@@ -204,13 +204,13 @@ class TestTest(WerkzeugTests):
 
     def test_environ_builder_content_type(self):
         builder = EnvironBuilder()
-        self.assert_is_none(builder.content_type)
+        assert builder.content_type is None
         builder.method = 'POST'
-        self.assert_equal(builder.content_type, 'application/x-www-form-urlencoded')
+        assert builder.content_type == 'application/x-www-form-urlencoded'
         builder.form['foo'] = 'bar'
-        self.assert_equal(builder.content_type, 'application/x-www-form-urlencoded')
+        assert builder.content_type == 'application/x-www-form-urlencoded'
         builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt')
-        self.assert_equal(builder.content_type, 'multipart/form-data')
+        assert builder.content_type == 'multipart/form-data'
         req = builder.get_request()
         self.assert_strict_equal(req.form['foo'], u'bar')
         self.assert_strict_equal(req.files['blafasel'].read(), b'foo')
@@ -220,7 +220,7 @@ class TestTest(WerkzeugTests):
         for use_tempfile in False, True:
             stream, length, boundary = stream_encode_multipart(
                 d, use_tempfile, threshold=150)
-            self.assert_true(isinstance(stream, BytesIO) != use_tempfile)
+            assert isinstance(stream, BytesIO) != use_tempfile
 
             form = parse_form_data({'wsgi.input': stream, 'CONTENT_LENGTH': str(length),
                                     'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
@@ -235,7 +235,7 @@ class TestTest(WerkzeugTests):
             d = MultiDict(dict(f=f, s=u'\N{SNOWMAN}'))
             stream, length, boundary = stream_encode_multipart(
                 d, use_tempfile, threshold=150)
-            self.assert_true(isinstance(stream, BytesIO) != use_tempfile)
+            assert isinstance(stream, BytesIO) != use_tempfile
 
             _, form, files = parse_form_data({
                 'wsgi.input': stream,
@@ -271,7 +271,7 @@ class TestTest(WerkzeugTests):
             'QUERY_STRING':         'bar=baz'
         }
         for key, value in iteritems(expected):
-            self.assert_equal(env[key], value)
+            assert env[key] == value
         self.assert_strict_equal(env['wsgi.input'].read(0), b'')
         self.assert_strict_equal(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
 

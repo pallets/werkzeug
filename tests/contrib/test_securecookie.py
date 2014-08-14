@@ -32,12 +32,12 @@ class TestSecureCookie(WerkzeugTests):
         assert not c2.new
         assert not c2.modified
         assert not c2.should_save
-        self.assert_equal(c2, c)
+        assert c2 == c
 
         c3 = SecureCookie.unserialize(s, b'wrong foo')
         assert not c3.modified
         assert not c3.new
-        self.assert_equal(c3, {})
+        assert c3 == {}
 
     def test_wrapper_support(self):
         req = Request.from_values()
@@ -45,7 +45,7 @@ class TestSecureCookie(WerkzeugTests):
         c = SecureCookie.load_cookie(req, secret_key=b'foo')
         assert c.new
         c['foo'] = 42
-        self.assert_equal(c.secret_key, b'foo')
+        assert c.secret_key == b'foo'
         c.save_cookie(resp)
 
         req = Request.from_values(headers={
@@ -53,4 +53,4 @@ class TestSecureCookie(WerkzeugTests):
         })
         c2 = SecureCookie.load_cookie(req, secret_key=b'foo')
         assert not c2.new
-        self.assert_equal(c2, c)
+        assert c2 == c

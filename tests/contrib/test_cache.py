@@ -157,9 +157,9 @@ class TestRedisCache(WerkzeugTests, CacheTests):
 
     def test_compat(self, c):
         assert c._client.set(c.key_prefix + 'foo', 'Awesome')
-        self.assert_equal(c.get('foo'), b'Awesome')
+        assert c.get('foo') == b'Awesome'
         assert c._client.set(c.key_prefix + 'foo', '42')
-        self.assert_equal(c.get('foo'), 42)
+        assert c.get('foo') == 42
 
 
 @pytest.mark.skipif(memcache is None, reason='Memcache is not installed.')
@@ -173,4 +173,4 @@ class TestMemcachedCache(WerkzeugTests, CacheTests):
 
     def test_compat(self, c):
         assert c._client.set(c.key_prefix + b'foo', 'bar')
-        self.assert_equal(c.get('foo'), 'bar')
+        assert c.get('foo') == 'bar'

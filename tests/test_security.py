@@ -62,7 +62,7 @@ class TestSecurity(WerkzeugTests):
     def test_pbkdf2(self):
         def check(data, salt, iterations, keylen, expected):
             rv = pbkdf2_hex(data, salt, iterations, keylen)
-            self.assert_equal(rv, expected)
+            assert rv == expected
 
         # From RFC 6070
         check('password', 'salt', 1, None,

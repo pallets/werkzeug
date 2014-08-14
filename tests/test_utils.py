@@ -29,37 +29,37 @@ class TestGeneralUtility(WerkzeugTests):
 
     def test_redirect(self):
         resp = utils.redirect(u'/füübär')
-        self.assert_in(b'/f%C3%BC%C3%BCb%C3%A4r', resp.get_data())
-        self.assert_equal(resp.headers['Location'], '/f%C3%BC%C3%BCb%C3%A4r')
-        self.assert_equal(resp.status_code, 302)
+        assert b'/f%C3%BC%C3%BCb%C3%A4r' in resp.get_data()
+        assert resp.headers['Location'] == '/f%C3%BC%C3%BCb%C3%A4r'
+        assert resp.status_code == 302
 
         resp = utils.redirect(u'http://☃.net/', 307)
-        self.assert_in(b'http://xn--n3h.net/', resp.get_data())
-        self.assert_equal(resp.headers['Location'], 'http://xn--n3h.net/')
-        self.assert_equal(resp.status_code, 307)
+        assert b'http://xn--n3h.net/' in resp.get_data()
+        assert resp.headers['Location'] == 'http://xn--n3h.net/'
+        assert resp.status_code == 307
 
         resp = utils.redirect('http://example.com/', 305)
-        self.assert_equal(resp.headers['Location'], 'http://example.com/')
-        self.assert_equal(resp.status_code, 305)
+        assert resp.headers['Location'] == 'http://example.com/'
+        assert resp.status_code == 305
 
     def test_redirect_no_unicode_header_keys(self):
         # Make sure all headers are native keys.  This was a bug at one point
         # due to an incorrect conversion.
         resp = utils.redirect('http://example.com/', 305)
         for key, value in resp.headers.items():
-            self.assert_equal(type(key), str)
-            self.assert_equal(type(value), text_type)
-        self.assert_equal(resp.headers['Location'], 'http://example.com/')
-        self.assert_equal(resp.status_code, 305)
+            assert type(key) == str
+            assert type(value) == text_type
+        assert resp.headers['Location'] == 'http://example.com/'
+        assert resp.status_code == 305
 
     def test_redirect_xss(self):
         location = 'http://example.com/?xss="><script>alert(1)</script>'
         resp = utils.redirect(location)
-        self.assert_not_in(b'<script>alert(1)</script>', resp.get_data())
+        assert b'<script>alert(1)</script>' not in resp.get_data()
 
         location = 'http://example.com/?xss="onmouseover="alert(1)'
         resp = utils.redirect(location)
-        self.assert_not_in(b'href="http://example.com/?xss="onmouseover="alert(1)"', resp.get_data())
+        assert b'href="http://example.com/?xss="onmouseover="alert(1)"' not in resp.get_data()
 
     def test_cached_property(self):
         foo = []
@@ -72,8 +72,8 @@ class TestGeneralUtility(WerkzeugTests):
         a = A()
         p = a.prop
         q = a.prop
-        self.assert_true(p == q == 42)
-        self.assert_equal(foo, [42])
+        assert p == q == 42
+        assert foo == [42]
 
         foo = []
         class A(object):
@@ -86,8 +86,8 @@ class TestGeneralUtility(WerkzeugTests):
         a = A()
         p = a.prop
         q = a.prop
-        self.assert_true(p == q == 42)
-        self.assert_equal(foo, [42])
+        assert p == q == 42
+        assert foo == [42]
 
     def test_environ_property(self):
         class A(object):
@@ -103,14 +103,14 @@ class TestGeneralUtility(WerkzeugTests):
             foo = utils.environ_property('foo')
 
         a = A()
-        self.assert_equal(a.string, 'abc')
-        self.assert_equal(a.missing, 'spam')
+        assert a.string == 'abc'
+        assert a.missing == 'spam'
         def test_assign():
             a.read_only = 'something'
         pytest.raises(AttributeError, test_assign)
-        self.assert_equal(a.number, 42)
-        self.assert_equal(a.broken_number, None)
-        self.assert_is_none(a.date)
+        assert a.number == 42
+        assert a.broken_number == None
+        assert a.date is None
         a.date = datetime(2008, 1, 22, 10, 0, 0, 0)
         self.assert_equal(a.environ['date'], 'Tue, 22 Jan 2008 10:00:00 GMT')
 
@@ -118,14 +118,14 @@ class TestGeneralUtility(WerkzeugTests):
         class Foo(str):
             def __html__(self):
                 return text_type(self)
-        self.assert_equal(utils.escape(None), '')
-        self.assert_equal(utils.escape(42), '42')
-        self.assert_equal(utils.escape('<>'), '&lt;&gt;')
-        self.assert_equal(utils.escape('"foo"'), '&quot;foo&quot;')
-        self.assert_equal(utils.escape(Foo('<foo>')), '<foo>')
+        assert utils.escape(None) == ''
+        assert utils.escape(42) == '42'
+        assert utils.escape('<>') == '&lt;&gt;'
+        assert utils.escape('"foo"') == '&quot;foo&quot;'
+        assert utils.escape(Foo('<foo>')) == '<foo>'
 
     def test_unescape(self):
-        self.assert_equal(utils.unescape('&lt;&auml;&gt;'), u'<ä>')
+        assert utils.unescape('&lt;&auml;&gt;') == u'<ä>'
 
     def test_run_wsgi_app(self):
         def foo(environ, start_response):
@@ -135,11 +135,11 @@ class TestGeneralUtility(WerkzeugTests):
             yield '3'
 
         app_iter, status, headers = run_wsgi_app(foo, {})
-        self.assert_equal(status, '200 OK')
+        assert status == '200 OK'
         self.assert_equal(list(headers), [('Content-Type', 'text/plain')])
-        self.assert_equal(next(app_iter), '1')
-        self.assert_equal(next(app_iter), '2')
-        self.assert_equal(next(app_iter), '3')
+        assert next(app_iter) == '1'
+        assert next(app_iter) == '2'
+        assert next(app_iter) == '3'
         pytest.raises(StopIteration, partial(next, app_iter))
 
         got_close = []
@@ -162,25 +162,25 @@ class TestGeneralUtility(WerkzeugTests):
             return CloseIter()
 
         app_iter, status, headers = run_wsgi_app(bar, {})
-        self.assert_equal(status, '200 OK')
+        assert status == '200 OK'
         self.assert_equal(list(headers), [('Content-Type', 'text/plain')])
-        self.assert_equal(next(app_iter), 'bar')
+        assert next(app_iter) == 'bar'
         pytest.raises(StopIteration, partial(next, app_iter))
         app_iter.close()
 
         self.assert_equal(run_wsgi_app(bar, {}, True)[0], ['bar'])
 
-        self.assert_equal(len(got_close), 2)
+        assert len(got_close) == 2
 
     def test_import_string(self):
         import cgi
         from werkzeug.debug import DebuggedApplication
-        self.assert_is(utils.import_string('cgi.escape'), cgi.escape)
-        self.assert_is(utils.import_string(u'cgi.escape'), cgi.escape)
-        self.assert_is(utils.import_string('cgi:escape'), cgi.escape)
-        self.assert_is_none(utils.import_string('XXXXXXXXXXXX', True))
-        self.assert_is_none(utils.import_string('cgi.XXXXXXXXXXXX', True))
-        self.assert_is(utils.import_string(u'werkzeug.debug.DebuggedApplication'), DebuggedApplication)
+        assert utils.import_string('cgi.escape') is cgi.escape
+        assert utils.import_string(u'cgi.escape') is cgi.escape
+        assert utils.import_string('cgi:escape') is cgi.escape
+        assert utils.import_string('XXXXXXXXXXXX', True) is None
+        assert utils.import_string('cgi.XXXXXXXXXXXX', True) is None
+        assert utils.import_string(u'werkzeug.debug.DebuggedApplication') is DebuggedApplication
         pytest.raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
         pytest.raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
@@ -192,12 +192,12 @@ class TestGeneralUtility(WerkzeugTests):
     def test_html_builder(self):
         html = utils.html
         xhtml = utils.xhtml
-        self.assert_equal(html.p('Hello World'), '<p>Hello World</p>')
+        assert html.p('Hello World') == '<p>Hello World</p>'
         self.assert_equal(html.a('Test', href='#'), '<a href="#">Test</a>')
-        self.assert_equal(html.br(), '<br>')
-        self.assert_equal(xhtml.br(), '<br />')
-        self.assert_equal(html.img(src='foo'), '<img src="foo">')
-        self.assert_equal(xhtml.img(src='foo'), '<img src="foo" />')
+        assert html.br() == '<br>'
+        assert xhtml.br() == '<br />'
+        assert html.img(src='foo') == '<img src="foo">'
+        assert xhtml.img(src='foo') == '<img src="foo" />'
         self.assert_equal(html.html(
             html.head(
                 html.title('foo'),
@@ -205,13 +205,13 @@ class TestGeneralUtility(WerkzeugTests):
             )
         ), '<html><head><title>foo</title><script type="text/javascript">'
            '</script></head></html>')
-        self.assert_equal(html('<foo>'), '&lt;foo&gt;')
-        self.assert_equal(html.input(disabled=True), '<input disabled>')
-        self.assert_equal(xhtml.input(disabled=True), '<input disabled="disabled" />')
-        self.assert_equal(html.input(disabled=''), '<input>')
-        self.assert_equal(xhtml.input(disabled=''), '<input />')
-        self.assert_equal(html.input(disabled=None), '<input>')
-        self.assert_equal(xhtml.input(disabled=None), '<input />')
+        assert html('<foo>') == '&lt;foo&gt;'
+        assert html.input(disabled=True) == '<input disabled>'
+        assert xhtml.input(disabled=True) == '<input disabled="disabled" />'
+        assert html.input(disabled='') == '<input>'
+        assert xhtml.input(disabled='') == '<input />'
+        assert html.input(disabled=None) == '<input>'
+        assert xhtml.input(disabled=None) == '<input />'
         self.assert_equal(html.script('alert("Hello World");'), '<script>' \
             'alert("Hello World");</script>')
         self.assert_equal(xhtml.script('alert("Hello World");'), '<script>' \
@@ -256,17 +256,17 @@ class TestGeneralUtility(WerkzeugTests):
             return utils.append_slash_redirect(env)(env, sr)
         client = Client(app, BaseResponse)
         response = client.get('foo', base_url='http://example.org/app')
-        self.assert_equal(response.status_code, 301)
-        self.assert_equal(response.headers['Location'], 'http://example.org/app/foo/')
+        assert response.status_code == 301
+        assert response.headers['Location'] == 'http://example.org/app/foo/'
 
     def test_cached_property_doc(self):
         @utils.cached_property
         def foo():
             """testing"""
             return 42
-        self.assert_equal(foo.__doc__, 'testing')
-        self.assert_equal(foo.__name__, 'foo')
-        self.assert_equal(foo.__module__, __name__)
+        assert foo.__doc__ == 'testing'
+        assert foo.__name__ == 'foo'
+        assert foo.__module__ == __name__
 
     def test_secure_filename(self):
         self.assert_equal(utils.secure_filename('My cool movie.mov'),
