@@ -28,7 +28,7 @@ try:
 except ImportError:
     OpenSSL = None
 
-from tests import WerkzeugTests, get_temporary_directory
+from tests import WerkzeugTests
 
 from werkzeug import __version__ as version, serving
 from werkzeug.testapp import test_app as _test_app
@@ -128,8 +128,8 @@ class TestServing(WerkzeugTests):
             response = connection.getresponse()
             assert response.read() == b'hello'
 
-        def test_make_ssl_devcert(self):
-            certificate, private_key = serving.make_ssl_devcert(
-                get_temporary_directory())
+        def test_make_ssl_devcert(self, tmpdir):
+            certificate, private_key = \
+                serving.make_ssl_devcert(str(tmpdir))
             assert os.path.isfile(certificate)
             assert os.path.isfile(private_key)

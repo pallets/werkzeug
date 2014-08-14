@@ -13,7 +13,7 @@ import pytest
 from os import path
 from contextlib import closing
 
-from tests import WerkzeugTests, get_temporary_directory
+from tests import WerkzeugTests
 
 from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
@@ -28,12 +28,12 @@ class TestWSGIUtils(WerkzeugTests):
         app = wsgi.SharedDataMiddleware(None, {})
         assert callable(app.get_file_loader('foo'))
 
-    def test_shared_data_middleware(self):
+    def test_shared_data_middleware(self, tmpdir):
         def null_application(environ, start_response):
             start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
             yield b'NOT FOUND'
 
-        test_dir = get_temporary_directory()
+        test_dir = str(tmpdir)
         with open(path.join(test_dir, to_native(u'äöü', 'utf-8')), 'w') as test_file:
             test_file.write(u'FOUND')
 

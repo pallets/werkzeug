@@ -19,18 +19,6 @@ import atexit
 from werkzeug._compat import text_type, integer_types, reraise
 
 
-def get_temporary_directory():
-    directory = tempfile.mkdtemp()
-
-    @atexit.register
-    def remove_directory():
-        try:
-            shutil.rmtree(directory)
-        except EnvironmentError:
-            pass
-    return directory
-
-
 class WerkzeugTests(object):
     """Baseclass for all the tests that Werkzeug uses.  Use these
     methods for testing instead of the camelcased ones in the
