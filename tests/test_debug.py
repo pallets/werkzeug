@@ -11,14 +11,14 @@
 import sys
 import re
 
-from tests import WerkzeugTests, assert_equal
+from tests import assert_equal
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
 from werkzeug._compat import PY2
 
 
-class TestDebugRepr(WerkzeugTests):
+class TestDebugRepr(object):
 
     def test_basic_repr(self):
         assert debug_repr([]) == u'[]'
@@ -111,7 +111,7 @@ class Foo(object):
         self.z = 15
 
 
-class TestDebugHelpers(WerkzeugTests):
+class TestDebugHelpers(object):
 
     def test_object_dumping(self):
         drg = DebugReprGenerator()
