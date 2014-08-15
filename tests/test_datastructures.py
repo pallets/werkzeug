@@ -6,6 +6,9 @@
     Tests the functionality of the provided Werkzeug
     datastructures.
 
+    Classes prefixed with an underscore are mixins and are not discovered by
+    the test runner.
+
     TODO:
 
     -   FileMultiDict
@@ -29,11 +32,10 @@ from copy import copy, deepcopy
 from werkzeug import datastructures
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
      iterlistvalues, text_type, PY2
-from tests import WerkzeugTests
 from werkzeug.exceptions import BadRequestKeyError
 
 
-class TestNativeItermethods(WerkzeugTests):
+class TestNativeItermethods(object):
     def test_basic(self):
         @datastructures.native_itermethods(['keys', 'values', 'items'])
         class StupidDict(object):
@@ -61,7 +63,7 @@ class TestNativeItermethods(WerkzeugTests):
         assert_equal(list(iteritems(d, 2)), expected_items * 2)
 
 
-class MutableMultiDictBaseTests(object):
+class _MutableMultiDictTests(object):
     storage_class = None
 
     def test_pickle(self):
@@ -257,7 +259,7 @@ class MutableMultiDictBaseTests(object):
         assert_equal(md.getlist('foo'), [1, 2])
 
 
-class ImmutableDictBaseTests(object):
+class _ImmutableDictTests(object):
     storage_class = None
 
     def test_follows_dict_interface(self):
@@ -304,11 +306,11 @@ class ImmutableDictBaseTests(object):
         assert immutable2 in x
 
 
-class TestImmutableTypeConversionDict(WerkzeugTests, ImmutableDictBaseTests):
+class TestImmutableTypeConversionDict(_ImmutableDictTests):
     storage_class = datastructures.ImmutableTypeConversionDict
 
 
-class TestImmutableMultiDict(WerkzeugTests, ImmutableDictBaseTests):
+class TestImmutableMultiDict(_ImmutableDictTests):
     storage_class = datastructures.ImmutableMultiDict
 
     def test_multidict_is_hashable(self):
@@ -329,11 +331,11 @@ class TestImmutableMultiDict(WerkzeugTests, ImmutableDictBaseTests):
         assert immutable2 in x
 
 
-class TestImmutableDict(WerkzeugTests, ImmutableDictBaseTests):
+class TestImmutableDict(_ImmutableDictTests):
     storage_class = datastructures.ImmutableDict
 
 
-class TestImmutableOrderedMultiDict(WerkzeugTests, ImmutableDictBaseTests):
+class TestImmutableOrderedMultiDict(_ImmutableDictTests):
     storage_class = datastructures.ImmutableOrderedMultiDict
 
     def test_ordered_multidict_is_hashable(self):
@@ -342,7 +344,7 @@ class TestImmutableOrderedMultiDict(WerkzeugTests, ImmutableDictBaseTests):
         assert hash(a) != hash(b)
 
 
-class TestMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
+class TestMultiDict(_MutableMultiDictTests):
     storage_class = datastructures.MultiDict
 
     def test_multidict_pop(self):
@@ -378,7 +380,7 @@ class TestMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
                           list(iterlists(md)))
 
 
-class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
+class TestOrderedMultiDict(_MutableMultiDictTests):
     storage_class = datastructures.OrderedMultiDict
 
     def test_ordered_interface(self):
@@ -481,7 +483,7 @@ class TestOrderedMultiDict(WerkzeugTests, MutableMultiDictBaseTests):
         assert_equal(sorted(iterkeys(ab)), ["key_a", "key_b"])
 
 
-class TestCombinedMultiDict(WerkzeugTests):
+class TestCombinedMultiDict(object):
     storage_class = datastructures.CombinedMultiDict
 
     def test_basic_interface(self):
@@ -535,7 +537,7 @@ class TestCombinedMultiDict(WerkzeugTests):
         assert len(d) == 1
 
 
-class TestHeaders(WerkzeugTests):
+class TestHeaders(object):
     storage_class = datastructures.Headers
 
     def test_basic_interface(self):
@@ -666,8 +668,7 @@ class TestHeaders(WerkzeugTests):
                 strict_eq(value, u'Value')
 
 
-
-class TestEnvironHeaders(WerkzeugTests):
+class TestEnvironHeaders(object):
     storage_class = datastructures.EnvironHeaders
 
     def test_basic_interface(self):
@@ -716,7 +717,7 @@ class TestEnvironHeaders(WerkzeugTests):
         assert h.get('x-foo') == u'\xff'
 
 
-class TestHeaderSet(WerkzeugTests):
+class TestHeaderSet(object):
     storage_class = datastructures.HeaderSet
 
     def test_basic_interface(self):
@@ -741,7 +742,7 @@ class TestHeaderSet(WerkzeugTests):
         assert not hs
 
 
-class TestImmutableList(WerkzeugTests):
+class TestImmutableList(object):
     storage_class = datastructures.ImmutableList
 
     def test_list_hashable(self):
@@ -778,7 +779,7 @@ def make_call_asserter(func=None):
     return asserter, wrapped
 
 
-class TestCallbackDict(WerkzeugTests):
+class TestCallbackDict(object):
     storage_class = datastructures.CallbackDict
 
     def test_callback_dict_reads(self):
