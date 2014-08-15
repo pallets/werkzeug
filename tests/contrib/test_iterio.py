@@ -11,7 +11,7 @@
 import pytest
 from functools import partial
 
-from tests import WerkzeugTests, assert_equal, assert_strict_equal
+from tests import WerkzeugTests, assert_equal, strict_eq
 from werkzeug.contrib.iterio import IterIO, greenlet
 
 
@@ -125,32 +125,32 @@ class TestIterO(WerkzeugTests):
 
     def test_sentinel_cases(self):
         io = IterIO([])
-        assert_strict_equal(io.read(), '')
+        strict_eq(io.read(), '')
         io = IterIO([], b'')
-        assert_strict_equal(io.read(), b'')
+        strict_eq(io.read(), b'')
         io = IterIO([], u'')
-        assert_strict_equal(io.read(), u'')
+        strict_eq(io.read(), u'')
 
         io = IterIO([])
-        assert_strict_equal(io.read(), '')
+        strict_eq(io.read(), '')
         io = IterIO([b''])
-        assert_strict_equal(io.read(), b'')
+        strict_eq(io.read(), b'')
         io = IterIO([u''])
-        assert_strict_equal(io.read(), u'')
+        strict_eq(io.read(), u'')
 
         io = IterIO([])
-        assert_strict_equal(io.readline(), '')
+        strict_eq(io.readline(), '')
         io = IterIO([], b'')
-        assert_strict_equal(io.readline(), b'')
+        strict_eq(io.readline(), b'')
         io = IterIO([], u'')
-        assert_strict_equal(io.readline(), u'')
+        strict_eq(io.readline(), u'')
 
         io = IterIO([])
-        assert_strict_equal(io.readline(), '')
+        strict_eq(io.readline(), '')
         io = IterIO([b''])
-        assert_strict_equal(io.readline(), b'')
+        strict_eq(io.readline(), b'')
         io = IterIO([u''])
-        assert_strict_equal(io.readline(), u'')
+        strict_eq(io.readline(), u'')
 
 
 @pytest.mark.skipif(greenlet is None, reason='Greenlet is not installed.')
@@ -170,7 +170,7 @@ class TestIterI(WerkzeugTests):
         def producer_dummy_flush(out):
             out.flush()
         iterable = IterIO(producer_dummy_flush)
-        assert_strict_equal(next(iterable), '')
+        strict_eq(next(iterable), '')
 
         def producer_empty(out):
             pass
@@ -178,6 +178,6 @@ class TestIterI(WerkzeugTests):
         pytest.raises(StopIteration, next, iterable)
 
         iterable = IterIO(producer_dummy_flush, b'')
-        assert_strict_equal(next(iterable), b'')
+        strict_eq(next(iterable), b'')
         iterable = IterIO(producer_dummy_flush, u'')
-        assert_strict_equal(next(iterable), u'')
+        strict_eq(next(iterable), u'')

@@ -14,7 +14,7 @@ import pytest
 
 from os.path import join, dirname
 
-from tests import WerkzeugTests, assert_equal, assert_strict_equal
+from tests import WerkzeugTests, assert_equal, strict_eq
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client
@@ -53,7 +53,7 @@ class TestFormParser(WerkzeugTests):
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_content_length = 400
-        assert_strict_equal(req.form['foo'], u'Hello World')
+        strict_eq(req.form['foo'], u'Hello World')
 
         req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
@@ -67,7 +67,7 @@ class TestFormParser(WerkzeugTests):
                                   content_type='application/x-www-form-urlencoded',
                                   method='POST')
         req.max_form_memory_size = 400
-        assert_strict_equal(req.form['foo'], u'Hello World')
+        strict_eq(req.form['foo'], u'Hello World')
 
         data = (b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n'
                 b'Hello World\r\n'
@@ -85,7 +85,7 @@ class TestFormParser(WerkzeugTests):
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_content_length = 400
-        assert_strict_equal(req.form['foo'], u'Hello World')
+        strict_eq(req.form['foo'], u'Hello World')
 
         req = Request.from_values(input_stream=BytesIO(data),
                                   content_length=len(data),
@@ -99,7 +99,7 @@ class TestFormParser(WerkzeugTests):
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         req.max_form_memory_size = 400
-        assert_strict_equal(req.form['foo'], u'Hello World')
+        strict_eq(req.form['foo'], u'Hello World')
 
     def test_missing_multipart_boundary(self):
         data = (b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n'
@@ -124,9 +124,9 @@ class TestFormParser(WerkzeugTests):
         del env['CONTENT_LENGTH']
 
         stream, form, files = formparser.parse_form_data(env)
-        assert_strict_equal(stream.read(), b'')
-        assert_strict_equal(len(form), 0)
-        assert_strict_equal(len(files), 0)
+        strict_eq(stream.read(), b'')
+        strict_eq(len(form), 0)
+        strict_eq(len(files), 0)
 
     def test_parse_form_data_get_without_content(self):
         env = create_environ('/foo', 'http://example.org/', method='GET')
@@ -134,9 +134,9 @@ class TestFormParser(WerkzeugTests):
         del env['CONTENT_LENGTH']
 
         stream, form, files = formparser.parse_form_data(env)
-        assert_strict_equal(stream.read(), b'')
-        assert_strict_equal(len(form), 0)
-        assert_strict_equal(len(files), 0)
+        strict_eq(stream.read(), b'')
+        strict_eq(len(form), 0)
+        strict_eq(len(files), 0)
 
     def test_large_file(self):
         data = b'x' * (1024 * 600)
@@ -172,10 +172,10 @@ class TestFormParser(WerkzeugTests):
             form_data_parser_class = StreamFDP
         req = StreamReq.from_values(data={'foo': (BytesIO(data), 'test.txt')},
                                     method='POST')
-        assert_strict_equal('begin_file', req.files['one'][0])
-        assert_strict_equal(('foo', 'test.txt'), req.files['one'][1][1:])
-        assert_strict_equal('cont', req.files['two'][0])
-        assert_strict_equal(data, req.files['two'][1])
+        strict_eq('begin_file', req.files['one'][0])
+        strict_eq(('foo', 'test.txt'), req.files['one'][1][1:])
+        strict_eq('cont', req.files['two'][0])
+        strict_eq(data, req.files['two'][1])
 
 
 class TestMultiPart(WerkzeugTests):
@@ -215,14 +215,14 @@ class TestMultiPart(WerkzeugTests):
                                        'multipart/form-data; boundary="%s"' % boundary,
                                        content_length=len(data))
                 lines = response.get_data().split(b'\n', 3)
-                assert_strict_equal(lines[0], repr(filename).encode('ascii'))
-                assert_strict_equal(lines[1], repr(field).encode('ascii'))
-                assert_strict_equal(lines[2], repr(content_type).encode('ascii'))
-                assert_strict_equal(lines[3], get_contents(join(folder, fsname)))
+                strict_eq(lines[0], repr(filename).encode('ascii'))
+                strict_eq(lines[1], repr(field).encode('ascii'))
+                strict_eq(lines[2], repr(content_type).encode('ascii'))
+                strict_eq(lines[3], get_contents(join(folder, fsname)))
             response = client.post('/?object=text', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary,
                                    content_length=len(data))
-            assert_strict_equal(response.get_data(), repr(text).encode('utf-8'))
+            strict_eq(response.get_data(), repr(text).encode('utf-8'))
 
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer, Response)
@@ -232,7 +232,7 @@ class TestMultiPart(WerkzeugTests):
         response = client.post('/?object=cb_file_upload_multiple', data=data, content_type=
                                    'multipart/form-data; boundary="%s"' % boundary, content_length=len(data))
         lines = response.get_data().split(b'\n', 3)
-        assert_strict_equal(lines[0],
+        strict_eq(lines[0],
                           repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc').encode('ascii'))
 
     def test_end_of_file(self):
@@ -281,7 +281,7 @@ class TestMultiPart(WerkzeugTests):
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
         assert data.files['test'].filename == 'test.txt'
-        assert_strict_equal(data.files['test'].read(), b'file contents')
+        strict_eq(data.files['test'].read(), b'file contents')
 
     def test_extra_newline(self):
         # this test looks innocent but it was actually timeing out in
@@ -297,7 +297,7 @@ class TestMultiPart(WerkzeugTests):
                                    content_type='multipart/form-data; boundary=foo',
                                    method='POST')
         assert not data.files
-        assert_strict_equal(data.form['foo'], u'a string')
+        strict_eq(data.form['foo'], u'a string')
 
     def test_headers(self):
         data = (b'--foo\r\n'
@@ -311,11 +311,11 @@ class TestMultiPart(WerkzeugTests):
                                   content_type='multipart/form-data; boundary=foo',
                                   method='POST')
         foo = req.files['foo']
-        assert_strict_equal(foo.mimetype, 'text/plain')
-        assert_strict_equal(foo.mimetype_params, {'charset': 'utf-8'})
-        assert_strict_equal(foo.headers['content-type'], foo.content_type)
-        assert_strict_equal(foo.content_type, 'text/plain; charset=utf-8')
-        assert_strict_equal(foo.headers['x-custom-header'], 'blah')
+        strict_eq(foo.mimetype, 'text/plain')
+        strict_eq(foo.mimetype_params, {'charset': 'utf-8'})
+        strict_eq(foo.headers['content-type'], foo.content_type)
+        strict_eq(foo.content_type, 'text/plain; charset=utf-8')
+        strict_eq(foo.headers['x-custom-header'], 'blah')
 
     def test_nonstandard_line_endings(self):
         for nl in b'\n', b'\r', b'\r\n':
@@ -334,8 +334,8 @@ class TestMultiPart(WerkzeugTests):
                                       content_length=len(data),
                                       content_type='multipart/form-data; '
                                       'boundary=foo', method='POST')
-            assert_strict_equal(req.form['foo'], u'this is just bar')
-            assert_strict_equal(req.form['bar'], u'blafasel')
+            strict_eq(req.form['foo'], u'this is just bar')
+            strict_eq(req.form['bar'], u'blafasel')
 
     def test_failures(self):
         def parse_multipart(stream, boundary, content_length):
@@ -354,7 +354,7 @@ class TestMultiPart(WerkzeugTests):
         pytest.raises(ValueError, parse_multipart, BytesIO(data), b'foo', len(data))
 
         x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
-        assert_strict_equal(x['foo'], 'bar\n x test')
+        strict_eq(x['foo'], 'bar\n x test')
         pytest.raises(ValueError, formparser.parse_multipart_headers,
                            ['foo: bar\r\n', ' x test'])
 
@@ -369,7 +369,7 @@ class TestMultiPart(WerkzeugTests):
                                      content_length=len(data),
                                      content_type='multipart/form-data; boundary=foo',
                                      method='POST')
-        assert_strict_equal(req.form['test'], u'Sk\xe5ne l\xe4n')
+        strict_eq(req.form['test'], u'Sk\xe5ne l\xe4n')
 
     def test_empty_multipart(self):
         environ = {}

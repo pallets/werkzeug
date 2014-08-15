@@ -12,7 +12,7 @@ import pytest
 
 import uuid
 
-from tests import WerkzeugTests, assert_equal, assert_strict_equal
+from tests import WerkzeugTests, assert_equal, strict_eq
 
 from werkzeug import routing as r
 from werkzeug.wrappers import Response
@@ -78,12 +78,12 @@ class TestRouting(WerkzeugTests):
 
     def test_environ_defaults(self):
         environ = create_environ("/foo")
-        assert_strict_equal(environ["PATH_INFO"], '/foo')
+        strict_eq(environ["PATH_INFO"], '/foo')
         m = r.Map([r.Rule("/foo", endpoint="foo"), r.Rule("/bar", endpoint="bar")])
         a = m.bind_to_environ(environ)
-        assert_strict_equal(a.match("/foo"), ('foo', {}))
-        assert_strict_equal(a.match(), ('foo', {}))
-        assert_strict_equal(a.match("/bar"), ('bar', {}))
+        strict_eq(a.match("/foo"), ('foo', {}))
+        strict_eq(a.match(), ('foo', {}))
+        strict_eq(a.match("/bar"), ('bar', {}))
         pytest.raises(r.NotFound, a.match, "/bars")
 
     def test_environ_nonascii_pathinfo(self):
@@ -93,8 +93,8 @@ class TestRouting(WerkzeugTests):
             r.Rule(u'/лошадь', endpoint='horse')
         ])
         a = m.bind_to_environ(environ)
-        assert_strict_equal(a.match(u'/'), ('index', {}))
-        assert_strict_equal(a.match(u'/лошадь'), ('horse', {}))
+        strict_eq(a.match(u'/'), ('index', {}))
+        strict_eq(a.match(u'/лошадь'), ('horse', {}))
         pytest.raises(r.NotFound, a.match, u'/барсук')
 
     def test_basic_building(self):
@@ -635,7 +635,7 @@ class TestRouting(WerkzeugTests):
         exc = r.RequestRedirect('http://www.google.com/')
         exc.code = 307
         env = create_environ()
-        assert_strict_equal(exc.get_response(env).status_code, exc.code)
+        strict_eq(exc.get_response(env).status_code, exc.code)
 
     def test_redirect_path_quoting(self):
         url_map = r.Map([
@@ -648,7 +648,7 @@ class TestRouting(WerkzeugTests):
             adapter.match('/foo bar/page/1')
         except r.RequestRedirect as e:
             response = e.get_response({})
-            assert_strict_equal(response.headers['location'],
+            strict_eq(response.headers['location'],
                                      u'http://example.com/foo%20bar')
         else:
             self.fail('Expected redirect')
@@ -662,26 +662,26 @@ class TestRouting(WerkzeugTests):
         try:
             a.match(u'/войти')
         except r.RequestRedirect as e:
-            assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
+            strict_eq(e.new_url, 'http://xn--n3h.example.com/'
                               '%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
         endpoint, values = a.match(u'/войти/')
-        assert_strict_equal(endpoint, 'enter')
-        assert_strict_equal(values, {})
+        strict_eq(endpoint, 'enter')
+        strict_eq(values, {})
 
         try:
             a.match(u'/foo+bar')
         except r.RequestRedirect as e:
-            assert_strict_equal(e.new_url, 'http://xn--n3h.example.com/'
+            strict_eq(e.new_url, 'http://xn--n3h.example.com/'
                               'foo+bar/')
         endpoint, values = a.match(u'/foo+bar/')
-        assert_strict_equal(endpoint, 'foobar')
-        assert_strict_equal(values, {})
+        strict_eq(endpoint, 'foobar')
+        strict_eq(values, {})
 
         url = a.build('enter', {}, force_external=True)
-        assert_strict_equal(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
+        strict_eq(url, 'http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/')
 
         url = a.build('foobar', {}, force_external=True)
-        assert_strict_equal(url, 'http://xn--n3h.example.com/foo+bar/')
+        strict_eq(url, 'http://xn--n3h.example.com/foo+bar/')
 
     def test_map_repr(self):
         m = r.Map([
@@ -689,5 +689,5 @@ class TestRouting(WerkzeugTests):
             r.Rule(u'/woop', endpoint='foobar')
         ])
         rv = repr(m)
-        assert_strict_equal(rv,
+        strict_eq(rv,
             "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])")

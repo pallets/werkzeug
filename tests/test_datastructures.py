@@ -19,7 +19,7 @@
 from __future__ import with_statement
 
 import pytest
-from tests import assert_equal, assert_strict_equal
+from tests import assert_equal, strict_eq
 
 
 import pickle
@@ -659,11 +659,11 @@ class TestHeaders(WerkzeugTests):
         h.set(u'Key', u'Value')
         for key, value in h.to_wsgi_list():
             if PY2:
-                assert_strict_equal(key, b'Key')
-                assert_strict_equal(value, b'Value')
+                strict_eq(key, b'Key')
+                strict_eq(value, b'Value')
             else:
-                assert_strict_equal(key, u'Key')
-                assert_strict_equal(value, u'Value')
+                strict_eq(key, u'Key')
+                strict_eq(value, u'Value')
 
 
 

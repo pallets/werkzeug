@@ -12,7 +12,7 @@ import pytest
 
 from datetime import datetime
 
-from tests import WerkzeugTests, assert_equal, assert_strict_equal
+from tests import WerkzeugTests, assert_equal, strict_eq
 from werkzeug._compat import itervalues, wsgi_encoding_dance
 
 from werkzeug import http, datastructures
@@ -282,7 +282,7 @@ class TestHTTPUtility(WerkzeugTests):
         assert http.http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'
 
     def test_cookies(self):
-        assert_strict_equal(
+        strict_eq(
             dict(http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
                               'c762809248d4beed; a=42; b="\\\";"')),
             {
@@ -293,25 +293,25 @@ class TestHTTPUtility(WerkzeugTests):
                 'b':            u'\";'
             }
         )
-        assert_strict_equal(
+        strict_eq(
             set(http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,
                                  sync_expires=False).split(u'; ')),
             set([u'HttpOnly', u'Max-Age=360', u'Path=/', u'foo="bar baz blub"'])
         )
-        assert_strict_equal(dict(http.parse_cookie('fo234{=bar; blub=Blah')),
+        strict_eq(dict(http.parse_cookie('fo234{=bar; blub=Blah')),
                                  {'fo234{': u'bar', 'blub': u'Blah'})
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        assert_strict_equal(val, 'foo="?foo"; Path=/')
-        assert_strict_equal(dict(http.parse_cookie(val)), {'foo': u'?foo'})
+        strict_eq(val, 'foo="?foo"; Path=/')
+        strict_eq(dict(http.parse_cookie(val)), {'foo': u'?foo'})
 
-        assert_strict_equal(dict(http.parse_cookie(r'foo="foo\054bar"')),
+        strict_eq(dict(http.parse_cookie(r'foo="foo\054bar"')),
                                  {'foo': u'foo,bar'})
 
     def test_cookie_domain_resolving(self):
         val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
-        assert_strict_equal(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
+        strict_eq(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
 
     def test_cookie_unicode_dumping(self):
         val = http.dump_cookie('foo', u'\N{SNOWMAN}')
@@ -338,13 +338,13 @@ class TestHTTPUtility(WerkzeugTests):
 
     def test_cookie_domain_encoding(self):
         val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
-        assert_strict_equal(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
+        strict_eq(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
 
         val = http.dump_cookie('foo', 'bar', domain=u'.\N{SNOWMAN}.com')
-        assert_strict_equal(val, 'foo=bar; Domain=.xn--n3h.com; Path=/')
+        strict_eq(val, 'foo=bar; Domain=.xn--n3h.com; Path=/')
 
         val = http.dump_cookie('foo', 'bar', domain=u'.foo.com')
-        assert_strict_equal(val, 'foo=bar; Domain=.foo.com; Path=/')
+        strict_eq(val, 'foo=bar; Domain=.foo.com; Path=/')
 
 
 class TestRange(WerkzeugTests):

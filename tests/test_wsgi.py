@@ -13,7 +13,7 @@ import pytest
 from os import path
 from contextlib import closing
 
-from tests import WerkzeugTests, assert_equal, assert_strict_equal
+from tests import WerkzeugTests, assert_equal, strict_eq
 
 from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
@@ -135,7 +135,7 @@ class TestWSGIUtils(WerkzeugTests):
     def test_query_string_fetching(self):
         env = create_environ(u'/?\N{SNOWMAN}=\N{COMET}')
         qs = wsgi.get_query_string(env)
-        assert_strict_equal(qs, '%E2%98%83=%E2%98%84')
+        strict_eq(qs, '%E2%98%83=%E2%98%84')
 
     def test_limited_stream(self):
         class RaisingLimitedStream(wsgi.LimitedStream):
@@ -144,65 +144,65 @@ class TestWSGIUtils(WerkzeugTests):
 
         io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
-        assert_strict_equal(stream.read(), b'123')
+        strict_eq(stream.read(), b'123')
         pytest.raises(BadRequest, stream.read)
 
         io = BytesIO(b'123456')
         stream = RaisingLimitedStream(io, 3)
-        assert_strict_equal(stream.tell(), 0)
-        assert_strict_equal(stream.read(1), b'1')
-        assert_strict_equal(stream.tell(), 1)
-        assert_strict_equal(stream.read(1), b'2')
-        assert_strict_equal(stream.tell(), 2)
-        assert_strict_equal(stream.read(1), b'3')
-        assert_strict_equal(stream.tell(), 3)
+        strict_eq(stream.tell(), 0)
+        strict_eq(stream.read(1), b'1')
+        strict_eq(stream.tell(), 1)
+        strict_eq(stream.read(1), b'2')
+        strict_eq(stream.tell(), 2)
+        strict_eq(stream.read(1), b'3')
+        strict_eq(stream.tell(), 3)
         pytest.raises(BadRequest, stream.read)
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        assert_strict_equal(stream.readline(), b'123456\n')
-        assert_strict_equal(stream.readline(), b'ab')
+        strict_eq(stream.readline(), b'123456\n')
+        strict_eq(stream.readline(), b'ab')
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        assert_strict_equal(stream.readlines(), [b'123456\n', b'ab'])
+        strict_eq(stream.readlines(), [b'123456\n', b'ab'])
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        assert_strict_equal(stream.readlines(2), [b'12'])
-        assert_strict_equal(stream.readlines(2), [b'34'])
-        assert_strict_equal(stream.readlines(), [b'56\n', b'ab'])
+        strict_eq(stream.readlines(2), [b'12'])
+        strict_eq(stream.readlines(2), [b'34'])
+        strict_eq(stream.readlines(), [b'56\n', b'ab'])
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        assert_strict_equal(stream.readline(100), b'123456\n')
+        strict_eq(stream.readline(100), b'123456\n')
 
         io = BytesIO(b'123456\nabcdefg')
         stream = wsgi.LimitedStream(io, 9)
-        assert_strict_equal(stream.readlines(100), [b'123456\n', b'ab'])
+        strict_eq(stream.readlines(100), [b'123456\n', b'ab'])
 
         io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        assert_strict_equal(stream.read(1), b'1')
-        assert_strict_equal(stream.read(1), b'2')
-        assert_strict_equal(stream.read(), b'3')
-        assert_strict_equal(stream.read(), b'')
+        strict_eq(stream.read(1), b'1')
+        strict_eq(stream.read(1), b'2')
+        strict_eq(stream.read(), b'3')
+        strict_eq(stream.read(), b'')
 
         io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 3)
-        assert_strict_equal(stream.read(-1), b'123')
+        strict_eq(stream.read(-1), b'123')
 
         io = BytesIO(b'123456')
         stream = wsgi.LimitedStream(io, 0)
-        assert_strict_equal(stream.read(-1), b'')
+        strict_eq(stream.read(-1), b'')
 
         io = StringIO(u'123456')
         stream = wsgi.LimitedStream(io, 0)
-        assert_strict_equal(stream.read(-1), u'')
+        strict_eq(stream.read(-1), u'')
 
         io = StringIO(u'123\n456\n')
         stream = wsgi.LimitedStream(io, 8)
-        assert_strict_equal(list(stream), [u'123\n', u'456\n'])
+        strict_eq(list(stream), [u'123\n', u'456\n'])
 
     def test_limited_stream_disconnection(self):
         io = BytesIO(b'A bit of content')
@@ -264,7 +264,7 @@ class TestWSGIUtils(WerkzeugTests):
         env = create_environ()
         env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=\xcf'
         rv = wsgi.get_current_url(env)
-        assert_strict_equal(rv,
+        strict_eq(rv,
             u'http://localhost/?foo=bar&baz=blah&meh=\ufffd')
 
     def test_multi_part_line_breaks(self):

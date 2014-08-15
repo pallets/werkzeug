@@ -8,7 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from tests import WerkzeugTests, assert_equal, assert_strict_equal
+from tests import WerkzeugTests, assert_equal, strict_eq
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
 
@@ -95,7 +95,7 @@ class TestServerFixer(WerkzeugTests):
         )
 
         response = Response.from_app(app, environ)
-        assert_strict_equal(response.get_data(), b'127.0.0.1')
+        strict_eq(response.get_data(), b'127.0.0.1')
 
     def test_header_rewriter_fix(self):
         @Request.application

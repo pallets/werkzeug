@@ -17,7 +17,7 @@ import sys
 from io import BytesIO
 from werkzeug._compat import iteritems, to_bytes
 
-from tests import WerkzeugTests, assert_strict_equal
+from tests import WerkzeugTests, strict_eq
 
 from werkzeug.wrappers import Request, Response, BaseResponse
 from werkzeug.test import Client, EnvironBuilder, create_environ, \
@@ -93,7 +93,7 @@ class TestTest(WerkzeugTests):
         c = Client(cookie_app)
         c.set_cookie('localhost', 'foo', 'bar')
         appiter, code, headers = c.open()
-        assert_strict_equal(list(appiter), [b'foo=bar'])
+        strict_eq(list(appiter), [b'foo=bar'])
 
     def test_set_cookie_app(self):
         c = Client(cookie_app)
@@ -108,25 +108,25 @@ class TestTest(WerkzeugTests):
     def test_no_initial_cookie(self):
         c = Client(cookie_app)
         appiter, code, headers = c.open()
-        assert_strict_equal(b''.join(appiter), b'No Cookie')
+        strict_eq(b''.join(appiter), b'No Cookie')
 
     def test_resent_cookie(self):
         c = Client(cookie_app)
         c.open()
         appiter, code, headers = c.open()
-        assert_strict_equal(b''.join(appiter), b'test=test')
+        strict_eq(b''.join(appiter), b'test=test')
 
     def test_disable_cookies(self):
         c = Client(cookie_app, use_cookies=False)
         c.open()
         appiter, code, headers = c.open()
-        assert_strict_equal(b''.join(appiter), b'No Cookie')
+        strict_eq(b''.join(appiter), b'No Cookie')
 
     def test_cookie_for_different_path(self):
         c = Client(cookie_app)
         c.open('/path1')
         appiter, code, headers = c.open('/path2')
-        assert_strict_equal(b''.join(appiter), b'test=test')
+        strict_eq(b''.join(appiter), b'test=test')
 
     def test_environ_builder_basics(self):
         b = EnvironBuilder()
@@ -141,25 +141,25 @@ class TestTest(WerkzeugTests):
         req = b.get_request()
         b.close()
 
-        assert_strict_equal(req.url, u'http://localhost/')
-        assert_strict_equal(req.method, 'POST')
-        assert_strict_equal(req.form['test'], u'normal value')
+        strict_eq(req.url, u'http://localhost/')
+        strict_eq(req.method, 'POST')
+        strict_eq(req.form['test'], u'normal value')
         assert req.files['test'].content_type == 'text/plain'
-        assert_strict_equal(req.files['test'].filename, u'test.txt')
-        assert_strict_equal(req.files['test'].read(), b'test contents')
+        strict_eq(req.files['test'].filename, u'test.txt')
+        strict_eq(req.files['test'].read(), b'test contents')
 
     def test_environ_builder_headers(self):
         b = EnvironBuilder(environ_base={'HTTP_USER_AGENT': 'Foo/0.1'},
                            environ_overrides={'wsgi.version': (1, 1)})
         b.headers['X-Beat-My-Horse'] = 'very well sir'
         env = b.get_environ()
-        assert_strict_equal(env['HTTP_USER_AGENT'], 'Foo/0.1')
-        assert_strict_equal(env['HTTP_X_BEAT_MY_HORSE'], 'very well sir')
-        assert_strict_equal(env['wsgi.version'], (1, 1))
+        strict_eq(env['HTTP_USER_AGENT'], 'Foo/0.1')
+        strict_eq(env['HTTP_X_BEAT_MY_HORSE'], 'very well sir')
+        strict_eq(env['wsgi.version'], (1, 1))
 
         b.headers['User-Agent'] = 'Bar/1.0'
         env = b.get_environ()
-        assert_strict_equal(env['HTTP_USER_AGENT'], 'Bar/1.0')
+        strict_eq(env['HTTP_USER_AGENT'], 'Bar/1.0')
 
     def test_environ_builder_headers_content_type(self):
         b = EnvironBuilder(headers={'Content-Type': 'text/plain'})
@@ -172,35 +172,35 @@ class TestTest(WerkzeugTests):
 
     def test_environ_builder_paths(self):
         b = EnvironBuilder(path='/foo', base_url='http://example.com/')
-        assert_strict_equal(b.base_url, 'http://example.com/')
-        assert_strict_equal(b.path, '/foo')
-        assert_strict_equal(b.script_root, '')
-        assert_strict_equal(b.host, 'example.com')
+        strict_eq(b.base_url, 'http://example.com/')
+        strict_eq(b.path, '/foo')
+        strict_eq(b.script_root, '')
+        strict_eq(b.host, 'example.com')
 
         b = EnvironBuilder(path='/foo', base_url='http://example.com/bar')
-        assert_strict_equal(b.base_url, 'http://example.com/bar/')
-        assert_strict_equal(b.path, '/foo')
-        assert_strict_equal(b.script_root, '/bar')
-        assert_strict_equal(b.host, 'example.com')
+        strict_eq(b.base_url, 'http://example.com/bar/')
+        strict_eq(b.path, '/foo')
+        strict_eq(b.script_root, '/bar')
+        strict_eq(b.host, 'example.com')
 
         b.host = 'localhost'
-        assert_strict_equal(b.base_url, 'http://localhost/bar/')
+        strict_eq(b.base_url, 'http://localhost/bar/')
         b.base_url = 'http://localhost:8080/'
-        assert_strict_equal(b.host, 'localhost:8080')
-        assert_strict_equal(b.server_name, 'localhost')
-        assert_strict_equal(b.server_port, 8080)
+        strict_eq(b.host, 'localhost:8080')
+        strict_eq(b.server_name, 'localhost')
+        strict_eq(b.server_port, 8080)
 
         b.host = 'foo.invalid'
         b.url_scheme = 'https'
         b.script_root = '/test'
         env = b.get_environ()
-        assert_strict_equal(env['SERVER_NAME'], 'foo.invalid')
-        assert_strict_equal(env['SERVER_PORT'], '443')
-        assert_strict_equal(env['SCRIPT_NAME'], '/test')
-        assert_strict_equal(env['PATH_INFO'], '/foo')
-        assert_strict_equal(env['HTTP_HOST'], 'foo.invalid')
-        assert_strict_equal(env['wsgi.url_scheme'], 'https')
-        assert_strict_equal(b.base_url, 'https://foo.invalid/test/')
+        strict_eq(env['SERVER_NAME'], 'foo.invalid')
+        strict_eq(env['SERVER_PORT'], '443')
+        strict_eq(env['SCRIPT_NAME'], '/test')
+        strict_eq(env['PATH_INFO'], '/foo')
+        strict_eq(env['HTTP_HOST'], 'foo.invalid')
+        strict_eq(env['wsgi.url_scheme'], 'https')
+        strict_eq(b.base_url, 'https://foo.invalid/test/')
 
     def test_environ_builder_content_type(self):
         builder = EnvironBuilder()
@@ -212,8 +212,8 @@ class TestTest(WerkzeugTests):
         builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt')
         assert builder.content_type == 'multipart/form-data'
         req = builder.get_request()
-        assert_strict_equal(req.form['foo'], u'bar')
-        assert_strict_equal(req.files['blafasel'].read(), b'foo')
+        strict_eq(req.form['foo'], u'bar')
+        strict_eq(req.files['blafasel'].read(), b'foo')
 
     def test_environ_builder_stream_switch(self):
         d = MultiDict(dict(foo=u'bar', blub=u'blah', hu=u'hum'))
@@ -225,7 +225,7 @@ class TestTest(WerkzeugTests):
             form = parse_form_data({'wsgi.input': stream, 'CONTENT_LENGTH': str(length),
                                     'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
                                     boundary})[1]
-            assert_strict_equal(form, d)
+            strict_eq(form, d)
             stream.close()
 
     def test_environ_builder_unicode_file_mix(self):
@@ -243,10 +243,10 @@ class TestTest(WerkzeugTests):
                 'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
                                     boundary
             })
-            assert_strict_equal(form['s'], u'\N{SNOWMAN}')
-            assert_strict_equal(files['f'].name, 'f')
-            assert_strict_equal(files['f'].filename, u'snowman.txt')
-            assert_strict_equal(files['f'].read(),
+            strict_eq(form['s'], u'\N{SNOWMAN}')
+            strict_eq(files['f'].name, 'f')
+            strict_eq(files['f'].filename, u'snowman.txt')
+            strict_eq(files['f'].read(),
                                      u'\N{SNOWMAN}'.encode('utf-8'))
             stream.close()
 
@@ -272,8 +272,8 @@ class TestTest(WerkzeugTests):
         }
         for key, value in iteritems(expected):
             assert env[key] == value
-        assert_strict_equal(env['wsgi.input'].read(0), b'')
-        assert_strict_equal(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
+        strict_eq(env['wsgi.input'].read(0), b'')
+        strict_eq(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
 
     def test_file_closing(self):
         closed = []
@@ -284,30 +284,30 @@ class TestTest(WerkzeugTests):
                 closed.append(self)
 
         env = create_environ(data={'foo': SpecialInput()})
-        assert_strict_equal(len(closed), 1)
+        strict_eq(len(closed), 1)
         builder = EnvironBuilder()
         builder.files.add_file('blah', SpecialInput())
         builder.close()
-        assert_strict_equal(len(closed), 2)
+        strict_eq(len(closed), 2)
 
     def test_follow_redirect(self):
         env = create_environ('/', base_url='http://localhost')
         c = Client(redirect_with_get_app)
         appiter, code, headers = c.open(environ_overrides=env, follow_redirects=True)
-        assert_strict_equal(code, '200 OK')
-        assert_strict_equal(b''.join(appiter), b'current url: http://localhost/some/redirect/')
+        strict_eq(code, '200 OK')
+        strict_eq(b''.join(appiter), b'current url: http://localhost/some/redirect/')
 
         # Test that the :cls:`Client` is aware of user defined response wrappers
         c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
         resp = c.get('/', follow_redirects=True)
-        assert_strict_equal(resp.status_code, 200)
-        assert_strict_equal(resp.data, b'current url: http://localhost/some/redirect/')
+        strict_eq(resp.status_code, 200)
+        strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
 
         # test with URL other than '/' to make sure redirected URL's are correct
         c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
         resp = c.get('/first/request', follow_redirects=True)
-        assert_strict_equal(resp.status_code, 200)
-        assert_strict_equal(resp.data, b'current url: http://localhost/some/redirect/')
+        strict_eq(resp.status_code, 200)
+        strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
 
     def test_follow_external_redirect(self):
         env = create_environ('/', base_url='http://localhost')
@@ -338,8 +338,8 @@ class TestTest(WerkzeugTests):
     def test_follow_redirect_with_post(self):
         c = Client(redirect_with_post_app, response_wrapper=BaseResponse)
         resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
-        assert_strict_equal(resp.status_code, 200)
-        assert_strict_equal(resp.data, b'current url: http://localhost/some/redirect/')
+        strict_eq(resp.status_code, 200)
+        strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
 
     def test_path_info_script_name_unquoting(self):
         def test_app(environ, start_response):
@@ -347,10 +347,10 @@ class TestTest(WerkzeugTests):
             return [environ['PATH_INFO'] + '\n' + environ['SCRIPT_NAME']]
         c = Client(test_app, response_wrapper=BaseResponse)
         resp = c.get('/foo%40bar')
-        assert_strict_equal(resp.data, b'/foo@bar\n')
+        strict_eq(resp.data, b'/foo@bar\n')
         c = Client(test_app, response_wrapper=BaseResponse)
         resp = c.get('/foo%40bar', 'http://localhost/bar%40baz')
-        assert_strict_equal(resp.data, b'/foo@bar\n/bar@baz')
+        strict_eq(resp.data, b'/foo@bar\n/bar@baz')
 
     def test_multi_value_submit(self):
         c = Client(multi_value_post_app, response_wrapper=BaseResponse)
@@ -358,36 +358,36 @@ class TestTest(WerkzeugTests):
             'field': ['val1','val2']
         }
         resp = c.post('/', data=data)
-        assert_strict_equal(resp.status_code, 200)
+        strict_eq(resp.status_code, 200)
         c = Client(multi_value_post_app, response_wrapper=BaseResponse)
         data = MultiDict({
             'field': ['val1', 'val2']
         })
         resp = c.post('/', data=data)
-        assert_strict_equal(resp.status_code, 200)
+        strict_eq(resp.status_code, 200)
 
     def test_iri_support(self):
         b = EnvironBuilder(u'/föö-bar', base_url=u'http://☃.net/')
-        assert_strict_equal(b.path, '/f%C3%B6%C3%B6-bar')
-        assert_strict_equal(b.base_url, 'http://xn--n3h.net/')
+        strict_eq(b.path, '/f%C3%B6%C3%B6-bar')
+        strict_eq(b.base_url, 'http://xn--n3h.net/')
 
     def test_run_wsgi_apps(self):
         def simple_app(environ, start_response):
             start_response('200 OK', [('Content-Type', 'text/html')])
             return ['Hello World!']
         app_iter, status, headers = run_wsgi_app(simple_app, {})
-        assert_strict_equal(status, '200 OK')
-        assert_strict_equal(list(headers), [('Content-Type', 'text/html')])
-        assert_strict_equal(app_iter, ['Hello World!'])
+        strict_eq(status, '200 OK')
+        strict_eq(list(headers), [('Content-Type', 'text/html')])
+        strict_eq(app_iter, ['Hello World!'])
 
         def yielding_app(environ, start_response):
             start_response('200 OK', [('Content-Type', 'text/html')])
             yield 'Hello '
             yield 'World!'
         app_iter, status, headers = run_wsgi_app(yielding_app, {})
-        assert_strict_equal(status, '200 OK')
-        assert_strict_equal(list(headers), [('Content-Type', 'text/html')])
-        assert_strict_equal(list(app_iter), ['Hello ', 'World!'])
+        strict_eq(status, '200 OK')
+        strict_eq(list(headers), [('Content-Type', 'text/html')])
+        strict_eq(list(app_iter), ['Hello ', 'World!'])
 
     def test_multiple_cookies(self):
         @Request.application
@@ -398,9 +398,9 @@ class TestTest(WerkzeugTests):
             return response
         client = Client(test_app, Response)
         resp = client.get('/')
-        assert_strict_equal(resp.data, b'[]')
+        strict_eq(resp.data, b'[]')
         resp = client.get('/')
-        assert_strict_equal(resp.data,
+        strict_eq(resp.data,
                           to_bytes(repr([('test1', u'foo'), ('test2', u'bar')]), 'ascii'))
 
     def test_correct_open_invocation_on_redirect(self):
@@ -417,14 +417,14 @@ class TestTest(WerkzeugTests):
             return Response(str(request.environ['werkzeug._foo']))
 
         c = MyClient(test_app, response_wrapper=Response)
-        assert_strict_equal(c.get('/').data, b'1')
-        assert_strict_equal(c.get('/').data, b'2')
-        assert_strict_equal(c.get('/').data, b'3')
+        strict_eq(c.get('/').data, b'1')
+        strict_eq(c.get('/').data, b'2')
+        strict_eq(c.get('/').data, b'3')
 
     def test_correct_encoding(self):
         req = Request.from_values(u'/\N{SNOWMAN}', u'http://example.com/foo')
-        assert_strict_equal(req.script_root, u'/foo')
-        assert_strict_equal(req.path, u'/\N{SNOWMAN}')
+        strict_eq(req.script_root, u'/foo')
+        strict_eq(req.path, u'/\N{SNOWMAN}')
 
     def test_full_url_requests_with_args(self):
         base = 'http://example.com/'
@@ -434,6 +434,6 @@ class TestTest(WerkzeugTests):
             return Response(request.args['x'])
         client = Client(test_app, Response)
         resp = client.get('/?x=42', base)
-        assert_strict_equal(resp.data, b'42')
+        strict_eq(resp.data, b'42')
         resp = client.get('http://www.example.com/?x=23', base)
-        assert_strict_equal(resp.data, b'23')
+        strict_eq(resp.data, b'23')

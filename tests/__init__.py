@@ -10,33 +10,24 @@
 """
 from __future__ import with_statement
 
-from werkzeug._compat import text_type, integer_types
+from werkzeug._compat import text_type
 
 
 def assert_equal(x, y):
     assert x == y
 
 
-def assert_strict_equal(x, y):
-    '''Stricter version of assert_equal that doesn't do implicit conversion
-    between unicode and strings'''
+def strict_eq(x, y):
+    '''Equality test bypassing the implicit string conversion in Python 2'''
     assert x == y
-    assert issubclass(type(x), type(y)) or issubclass(type(y), type(x)), \
-        '%s != %s' % (type(x), type(y))
-    if isinstance(x, (bytes, text_type, integer_types)) or x is None:
-        return
-    elif isinstance(x, dict) or isinstance(y, dict):
+    assert issubclass(type(x), type(y)) or issubclass(type(y), type(x))
+    if isinstance(x, dict) and isinstance(y, dict):
         x = sorted(x.items())
         y = sorted(y.items())
-    elif isinstance(x, set) or isinstance(y, set):
+    elif isinstance(x, set) and isinstance(y, set):
         x = sorted(x)
         y = sorted(y)
-    rx, ry = repr(x), repr(y)
-    if rx != ry:
-        rx = rx[:200] + (rx[200:] and '...')
-        ry = ry[:200] + (ry[200:] and '...')
-        raise AssertionError(rx, ry)
-    assert repr(x) == repr(y), repr((x, y))[:200]
+    assert repr(x) == repr(y)
 
 
 class WerkzeugTests(object):
