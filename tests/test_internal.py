@@ -13,7 +13,6 @@ import pytest
 from datetime import datetime
 from warnings import filterwarnings, resetwarnings
 
-from tests import WerkzeugTests
 from werkzeug.wrappers import Request, Response
 
 from werkzeug import _internal as internal
