@@ -28,10 +28,3 @@ def strict_eq(x, y):
         x = sorted(x)
         y = sorted(y)
     assert repr(x) == repr(y)
-
-
-class WerkzeugTests(object):
-    """Baseclass for all the tests that Werkzeug uses.  Use these
-    methods for testing instead of the camelcased ones in the
-    baseclass for consistency.
-    """

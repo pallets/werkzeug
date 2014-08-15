@@ -12,14 +12,14 @@ import pytest
 
 from datetime import datetime
 
-from tests import WerkzeugTests, assert_equal, strict_eq
+from tests import assert_equal, strict_eq
 from werkzeug._compat import itervalues, wsgi_encoding_dance
 
 from werkzeug import http, datastructures
 from werkzeug.test import create_environ
 
 
-class TestHTTPUtility(WerkzeugTests):
+class TestHTTPUtility(object):
 
     def test_accept(self):
         a = http.parse_accept_header('en-us,ru;q=0.5')
@@ -347,7 +347,7 @@ class TestHTTPUtility(WerkzeugTests):
         strict_eq(val, 'foo=bar; Domain=.foo.com; Path=/')
 
 
-class TestRange(WerkzeugTests):
+class TestRange(object):
 
     def test_if_range_parsing(self):
         rv = http.parse_if_range_header('"Test"')
@@ -432,7 +432,7 @@ class TestRange(WerkzeugTests):
         assert rv.units == 'bytes'
 
 
-class TestRegression(WerkzeugTests):
+class TestRegression(object):
 
     def test_best_match_works(self):
         # was a bug in 0.6

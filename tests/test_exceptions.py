@@ -14,7 +14,7 @@
 """
 import pytest
 
-from tests import WerkzeugTests, assert_equal
+from tests import assert_equal
 
 from werkzeug import exceptions
 from werkzeug.wrappers import Response

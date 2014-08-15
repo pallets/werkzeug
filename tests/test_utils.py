@@ -15,7 +15,7 @@ import pytest
 from datetime import datetime
 from functools import partial
 
-from tests import WerkzeugTests, assert_equal
+from tests import assert_equal
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers

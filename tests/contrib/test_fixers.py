@@ -8,7 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from tests import WerkzeugTests, assert_equal, strict_eq
+from tests import assert_equal, strict_eq
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
 
@@ -26,7 +26,7 @@ def path_check_app(request):
     ))
 
 
-class TestServerFixer(WerkzeugTests):
+class TestServerFixer(object):
 
     def test_cgi_root_fix(self):
         app = fixers.CGIRootFix(path_check_app)
@@ -110,7 +110,7 @@ class TestServerFixer(WerkzeugTests):
         assert response.headers['X-Bar'] == '42'
 
 
-class TestBrowserFixer(WerkzeugTests):
+class TestBrowserFixer(object):
 
     def test_ie_fixes(self):
         @fixers.InternetExplorerFix

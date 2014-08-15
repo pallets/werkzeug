@@ -8,7 +8,6 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from tests import WerkzeugTests
 
 from werkzeug.utils import parse_cookie
 from werkzeug.wrappers import Request, Response

@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import warnings
-from tests import WerkzeugTests
 
 from werkzeug.wrappers import Response
 from werkzeug.test import create_environ

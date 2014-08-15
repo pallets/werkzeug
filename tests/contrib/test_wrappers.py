@@ -11,8 +11,6 @@
 
 from __future__ import with_statement
 
-from tests import WerkzeugTests
-
 from werkzeug.contrib import wrappers
 from werkzeug import routing
 from werkzeug.wrappers import Request, Response

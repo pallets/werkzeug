@@ -14,7 +14,7 @@ import time
 import tempfile
 import shutil
 
-from tests import WerkzeugTests, assert_equal
+from tests import assert_equal
 from werkzeug.contrib import cache
 
 try:
@@ -118,13 +118,13 @@ class CacheTests(object):
         assert c.get('bar') == False
 
 
-class TestSimpleCache(WerkzeugTests, CacheTests):
+class TestSimpleCache(CacheTests):
     @pytest.fixture
     def make_cache(self):
         return cache.SimpleCache
 
 
-class TestFileSystemCache(WerkzeugTests, CacheTests):
+class TestFileSystemCache(CacheTests):
     @pytest.fixture
     def make_cache(self, tmpdir):
         return lambda **kw: cache.FileSystemCache(cache_dir=str(tmpdir), **kw)
@@ -147,7 +147,7 @@ class TestFileSystemCache(WerkzeugTests, CacheTests):
 
 
 @pytest.mark.skipif(redis is None, reason='Redis is not installed.')
-class TestRedisCache(WerkzeugTests, CacheTests):
+class TestRedisCache(CacheTests):
 
     @pytest.fixture
     def make_cache(self, request):
@@ -163,7 +163,7 @@ class TestRedisCache(WerkzeugTests, CacheTests):
 
 
 @pytest.mark.skipif(memcache is None, reason='Memcache is not installed.')
-class TestMemcachedCache(WerkzeugTests, CacheTests):
+class TestMemcachedCache(CacheTests):
 
     @pytest.fixture
     def make_cache(self, request):

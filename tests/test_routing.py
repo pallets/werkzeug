@@ -12,7 +12,7 @@ import pytest
 
 import uuid
 
-from tests import WerkzeugTests, assert_equal, strict_eq
+from tests import assert_equal, strict_eq
 
 from werkzeug import routing as r
 from werkzeug.wrappers import Response
@@ -20,7 +20,7 @@ from werkzeug.datastructures import ImmutableDict
 from werkzeug.test import create_environ
 
 
-class TestRouting(WerkzeugTests):
+class TestRouting(object):
 
     def test_basic_routing(self):
         map = r.Map([

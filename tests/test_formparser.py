@@ -14,7 +14,7 @@ import pytest
 
 from os.path import join, dirname
 
-from tests import WerkzeugTests, assert_equal, strict_eq
+from tests import assert_equal, strict_eq
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client
@@ -44,7 +44,7 @@ def get_contents(filename):
         return f.read()
 
 
-class TestFormParser(WerkzeugTests):
+class TestFormParser(object):
 
     def test_limiting(self):
         data = b'foo=Hello+World&bar=baz'
@@ -178,7 +178,7 @@ class TestFormParser(WerkzeugTests):
         strict_eq(data, req.files['two'][1])
 
 
-class TestMultiPart(WerkzeugTests):
+class TestMultiPart(object):
 
     def test_basic(self):
         resources = join(dirname(__file__), 'multipart')
@@ -385,7 +385,7 @@ class TestMultiPart(WerkzeugTests):
         assert files == MultiDict()
 
 
-class TestInternalFunctions(WerkzeugTests):
+class TestInternalFunctions(object):
 
     def test_line_parser(self):
         assert formparser._line_parse('foo') == ('foo', False)

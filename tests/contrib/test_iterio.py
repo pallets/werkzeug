@@ -11,11 +11,11 @@
 import pytest
 from functools import partial
 
-from tests import WerkzeugTests, assert_equal, strict_eq
+from tests import assert_equal, strict_eq
 from werkzeug.contrib.iterio import IterIO, greenlet
 
 
-class TestIterO(WerkzeugTests):
+class TestIterO(object):
 
     def test_basic_native(self):
         io = IterIO(["Hello", "World", "1", "2", "3"])
@@ -154,7 +154,7 @@ class TestIterO(WerkzeugTests):
 
 
 @pytest.mark.skipif(greenlet is None, reason='Greenlet is not installed.')
-class TestIterI(WerkzeugTests):
+class TestIterI(object):
     def test_basic(self):
         def producer(out):
             out.write('1\n')

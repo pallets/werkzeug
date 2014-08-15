@@ -10,8 +10,6 @@
 """
 import os
 
-from tests import WerkzeugTests
-
 from werkzeug.security import check_password_hash, generate_password_hash, \
      safe_join, pbkdf2_hex, safe_str_cmp
 

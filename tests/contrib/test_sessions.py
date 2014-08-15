@@ -13,7 +13,6 @@ import os
 import shutil
 from tempfile import gettempdir
 
-from tests import WerkzeugTests
 from werkzeug.contrib.sessions import FilesystemSessionStore
 
 
