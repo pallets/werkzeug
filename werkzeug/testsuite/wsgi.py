@@ -62,6 +62,33 @@ class WSGIUtilsTestCase(WerkzeugTestCase):
         self.assert_equal(b''.join(app_iter).strip(), b'NOT FOUND')
 
 
+    def test_contentmodifier_middleware(self):
+        def hello_application(environ, start_response):
+            start_response("200 OK", [("Content-type", "text/plain")])
+            return ["<html><head><title>Hello World!</title></head></html>\n",]
+        app = wsgi.ContentModifier(hello_application)
+
+        app_iter, status, headers = run_wsgi_app(app, create_environ('/test.txt'))
+        self.assert_equal(status, '200 OK')
+        self.assert_equal(''.join(app_iter).strip(), '<html><head><title>Hello World!</title></head></html>')
+
+        class ContentUpper(wsgi.ContentModifier):
+            "MAKES THE VISITOR CRY"
+            def response_modifier(self, app_iter):
+                for line in app_iter:
+                    yield line.upper()
+            def header_modifier(self, status, headers, exc_info=None):
+                headers = filter(lambda h: h[0].lower != 'content-type', headers)
+                headers.append(('Content-Type', 'text/UPPERCASED'))
+                return status, headers, exc_info
+
+        app = ContentUpper(hello_application)
+
+        app_iter, status, headers = run_wsgi_app(app, create_environ('/test.txt'))
+        self.assert_equal(status, '200 OK')
+        assert ('Content-Type', 'text/UPPERCASED') in headers
+        self.assert_equal(''.join(app_iter).strip(), '<HTML><HEAD><TITLE>HELLO WORLD!</TITLE></HEAD></HTML>')
+
     def test_get_host(self):
         env = {'HTTP_X_FORWARDED_HOST': 'example.org',
                'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
