@@ -586,7 +586,11 @@ def restart_with_reloader():
     """
     while 1:
         _log('info', ' * Restarting with reloader')
-        args = [sys.executable] + sys.argv
+        args = [sys.executable]
+        if getattr(sys, 'frozen', False):
+            args.extend(sys.argv[1:])
+        else:
+            args.extend(sys.argv)
         new_environ = os.environ.copy()
         new_environ['WERKZEUG_RUN_MAIN'] = 'true'
 
