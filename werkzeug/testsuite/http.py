@@ -292,12 +292,13 @@ class HTTPUtilityTestCase(WerkzeugTestCase):
                 'b':            u'\";'
             }
         )
-        self.assert_strict_equal(
-            set(http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,
-                                 sync_expires=False).split(u'; ')),
-            set([u'HttpOnly', u'Max-Age=360', u'Path=/', u'foo="bar baz blub"'])
-        )
-        self.assert_strict_equal(dict(http.parse_cookie('fo234{=bar; blub=Blah')),
+        rv = http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,
+                              sync_expires=False)
+        assert type(rv) is str
+        assert set(rv.split('; ')) == set(['HttpOnly', 'Max-Age=360',
+                                           'Path=/', 'foo="bar baz blub"'])
+
+        strict_eq(dict(http.parse_cookie('fo234{=bar; blub=Blah')),
                                  {'fo234{': u'bar', 'blub': u'Blah'})
 
     def test_cookie_quoting(self):
