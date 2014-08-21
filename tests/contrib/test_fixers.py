@@ -8,7 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
 

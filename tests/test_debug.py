@@ -11,7 +11,6 @@
 import sys
 import re
 
-from tests import assert_equal
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO

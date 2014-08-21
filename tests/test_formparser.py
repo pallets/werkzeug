@@ -14,7 +14,7 @@ import pytest
 
 from os.path import join, dirname
 
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client

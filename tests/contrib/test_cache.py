@@ -14,7 +14,6 @@ import time
 import tempfile
 import shutil
 
-from tests import assert_equal
 from werkzeug.contrib import cache
 
 try:

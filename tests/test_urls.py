@@ -10,7 +10,7 @@
 """
 import pytest
 
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 
 from werkzeug.datastructures import OrderedMultiDict
 from werkzeug import urls

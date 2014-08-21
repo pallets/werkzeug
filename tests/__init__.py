@@ -13,10 +13,6 @@ from __future__ import with_statement
 from werkzeug._compat import text_type
 
 
-def assert_equal(x, y):
-    assert x == y
-
-
 def strict_eq(x, y):
     '''Equality test bypassing the implicit string conversion in Python 2'''
     assert x == y

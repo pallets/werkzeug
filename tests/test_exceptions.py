@@ -14,8 +14,6 @@
 """
 import pytest
 
-from tests import assert_equal
-
 from werkzeug import exceptions
 from werkzeug.wrappers import Response
 from werkzeug._compat import text_type

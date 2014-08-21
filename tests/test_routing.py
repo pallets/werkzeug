@@ -12,7 +12,7 @@ import pytest
 
 import uuid
 
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 
 from werkzeug import routing as r
 from werkzeug.wrappers import Response

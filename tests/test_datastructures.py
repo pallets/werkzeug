@@ -22,7 +22,7 @@
 from __future__ import with_statement
 
 import pytest
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 
 
 import pickle

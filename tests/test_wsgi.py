@@ -13,7 +13,7 @@ import pytest
 from os import path
 from contextlib import closing
 
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 
 from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected

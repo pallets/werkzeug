@@ -12,7 +12,7 @@ import pytest
 
 from datetime import datetime
 
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 from werkzeug._compat import itervalues, wsgi_encoding_dance
 
 from werkzeug import http, datastructures

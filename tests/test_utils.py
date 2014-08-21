@@ -15,8 +15,6 @@ import pytest
 from datetime import datetime
 from functools import partial
 
-from tests import assert_equal
-
 from werkzeug import utils
 from werkzeug.datastructures import Headers
 from werkzeug.http import parse_date, http_date

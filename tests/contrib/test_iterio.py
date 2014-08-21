@@ -11,7 +11,7 @@
 import pytest
 from functools import partial
 
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 from werkzeug.contrib.iterio import IterIO, greenlet
 
 

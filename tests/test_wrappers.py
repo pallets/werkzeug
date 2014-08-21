@@ -15,7 +15,7 @@ from io import BytesIO
 from datetime import datetime
 from werkzeug._compat import iteritems
 
-from tests import assert_equal, strict_eq
+from tests import strict_eq
 
 from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError
