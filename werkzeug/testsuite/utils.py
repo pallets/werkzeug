@@ -276,6 +276,13 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_equal(utils.secure_filename(u'i contain cool \xfcml\xe4uts.txt'),
                           'i_contain_cool_umlauts.txt')
 
+        long_filename = 'To l%sng.txt' % ('o' * 260)
+        self.assert_true(len(utils.secure_filename(long_filename)) < 255)
+        self.assert_equal(
+            utils.secure_filename(long_filename, length=10, ext_length=3),
+            'To_looo.xt'
+        )
+
 
 def suite():
     suite = unittest.TestSuite()

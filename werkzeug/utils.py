@@ -244,7 +244,7 @@ def format_string(string, context):
     return _format_re.sub(lookup_arg, string)
 
 
-def secure_filename(filename):
+def secure_filename(filename, length=160, ext_length=20):
     r"""Pass it a filename and it will return a secure version of it.  This
     filename can then safely be stored on a regular file system and passed
     to :func:`os.path.join`.  The filename returned is an ASCII only string
@@ -267,7 +267,10 @@ def secure_filename(filename):
     .. versionadded:: 0.5
 
     :param filename: the filename to secure
+    :param length: maximum length of filename
+    :param ext_length: maximum length of file extenstion
     """
+    assert length > ext_length, 'length should be greater than ext_length'
     if isinstance(filename, text_type):
         from unicodedata import normalize
         filename = normalize('NFKD', filename).encode('ascii', 'ignore')
@@ -285,6 +288,17 @@ def secure_filename(filename):
     if os.name == 'nt' and filename and \
        filename.split('.')[0].upper() in _windows_device_files:
         filename = '_' + filename
+
+    if len(filename) > length:
+        root, ext = os.path.splitext(filename)
+        if len(ext) > ext_length:
+            ext = ext[len(ext) - ext_length:]
+            if ext and not ext.startswith('.'):
+                ext = '.' + ext[1:]
+
+        root_length = length - len(ext)
+        root = root[:root_length]
+        filename = "%s%s" % (root, ext)
 
     return filename
 
