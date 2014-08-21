@@ -125,7 +125,7 @@ def test_access_route():
         'X-Forwarded-For': '192.168.1.2, 192.168.1.1'
     })
     req.environ['REMOTE_ADDR'] = '192.168.1.3'
-    assert_equal(req.access_route, ['192.168.1.2', '192.168.1.1'])
+    assert req.access_route == ['192.168.1.2', '192.168.1.1']
     strict_eq(req.remote_addr, '192.168.1.3')
 
     req = wrappers.Request.from_values()
@@ -330,8 +330,8 @@ def test_etag_request_mixin():
         assert etags.contains_weak('foo')
         assert not etags.contains('foo')
 
-    assert_equal(request.if_modified_since, datetime(2008, 1, 22, 11, 18, 44))
-    assert_equal(request.if_unmodified_since, datetime(2008, 1, 22, 11, 18, 44))
+    assert request.if_modified_since == datetime(2008, 1, 22, 11, 18, 44)
+    assert request.if_unmodified_since == datetime(2008, 1, 22, 11, 18, 44)
 
 def test_user_agent_mixin():
     user_agents = [
@@ -419,9 +419,9 @@ def test_get_data_method_parsing_caching_behavior():
 
 def test_etag_response_mixin():
     response = wrappers.Response('Hello World')
-    assert_equal(response.get_etag(), (None, None))
+    assert response.get_etag() == (None, None)
     response.add_etag()
-    assert_equal(response.get_etag(), ('b10a8db164e0754105b7a99be72e3fe5', False))
+    assert response.get_etag() == ('b10a8db164e0754105b7a99be72e3fe5', False)
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60
@@ -470,10 +470,10 @@ def test_etag_response_mixin_freezing():
         (text_type(wrappers.generate_etag(b'Hello World')), False))
     response = WithoutFreeze('Hello World')
     response.freeze()
-    assert_equal(response.get_etag(), (None, None))
+    assert response.get_etag() == (None, None)
     response = wrappers.Response('Hello World')
     response.freeze()
-    assert_equal(response.get_etag(), (None, None))
+    assert response.get_etag() == (None, None)
 
 def test_authenticate_mixin():
     resp = wrappers.Response()
@@ -488,7 +488,7 @@ def test_response_stream_mixin():
     response = wrappers.Response()
     response.stream.write('Hello ')
     response.stream.write('World!')
-    assert_equal(response.response, ['Hello ', 'World!'])
+    assert response.response == ['Hello ', 'World!']
     assert response.get_data() == b'Hello World!'
 
 def test_common_response_descriptors_mixin():
@@ -510,7 +510,7 @@ def test_common_response_descriptors_mixin():
     for attr in 'date', 'age', 'expires':
         assert getattr(response, attr) is None
         setattr(response, attr, now)
-        assert_equal(getattr(response, attr), now)
+        assert getattr(response, attr) == now
 
     assert response.retry_after is None
     response.retry_after = now
@@ -520,16 +520,16 @@ def test_common_response_descriptors_mixin():
     response.vary.add('Cookie')
     response.vary.add('Content-Language')
     assert 'cookie' in response.vary
-    assert_equal(response.vary.to_header(), 'Cookie, Content-Language')
+    assert response.vary.to_header() == 'Cookie, Content-Language'
     response.headers['Vary'] = 'Content-Encoding'
     assert response.vary.as_set() == set(['content-encoding'])
 
     response.allow.update(['GET', 'POST'])
-    assert_equal(response.headers['Allow'], 'GET, POST')
+    assert response.headers['Allow'] == 'GET, POST'
 
     response.content_language.add('en-US')
     response.content_language.add('fr')
-    assert_equal(response.headers['Content-Language'], 'en-US, fr')
+    assert response.headers['Content-Language'] == 'en-US, fr'
 
 def test_common_request_descriptors_mixin():
     request = wrappers.Request.from_values(
@@ -550,7 +550,7 @@ def test_common_request_descriptors_mixin():
     assert request.mimetype_params == {'charset': 'utf-8'}
     assert request.content_length == 23
     assert request.referrer == 'http://www.example.com/'
-    assert_equal(request.date, datetime(2009, 2, 28, 19, 4, 35))
+    assert request.date == datetime(2009, 2, 28, 19, 4, 35)
     assert request.max_forwards == 10
     assert 'no-cache' in request.pragma
     assert request.content_encoding == 'gzip'
@@ -651,7 +651,7 @@ def test_response_freeze():
         yield "bar"
     resp = wrappers.Response(generate())
     resp.freeze()
-    assert_equal(resp.response, [b'foo', b'bar'])
+    assert resp.response == [b'foo', b'bar']
     assert resp.headers['content-length'] == '6'
 
 def test_other_method_payload():
@@ -705,7 +705,7 @@ def test_new_response_iterator_behavior():
     assert resp.is_streamed
     assert not resp.is_sequence
     assert resp.get_data() == u'Hello Wörld!'.encode('utf-8')
-    assert_equal(resp.response, [b'Hello ', u'Wörld!'.encode('utf-8')])
+    assert resp.response == [b'Hello ', u'Wörld!'.encode('utf-8')]
     assert not resp.is_streamed
     assert resp.is_sequence
 
@@ -717,7 +717,7 @@ def test_new_response_iterator_behavior():
     pytest.raises(RuntimeError, lambda: resp.get_data())
     resp.make_sequence()
     assert resp.get_data() == u'Hello Wörld!'.encode('utf-8')
-    assert_equal(resp.response, [b'Hello ', u'Wörld!'.encode('utf-8')])
+    assert resp.response == [b'Hello ', u'Wörld!'.encode('utf-8')]
     assert not resp.is_streamed
     assert resp.is_sequence
 
@@ -727,14 +727,14 @@ def test_new_response_iterator_behavior():
         resp.response = ("foo", "bar")
         assert resp.is_sequence
         resp.stream.write('baz')
-        assert_equal(resp.response, ['foo', 'bar', 'baz'])
+        assert resp.response == ['foo', 'bar', 'baz']
 
 def test_form_data_ordering():
     class MyRequest(wrappers.Request):
         parameter_storage_class = ImmutableOrderedMultiDict
 
     req = MyRequest.from_values('/?foo=1&bar=0&foo=3')
-    assert_equal(list(req.args), ['foo', 'bar'])
+    assert list(req.args) == ['foo', 'bar']
     assert_equal(list(req.args.items(multi=True)), [
         ('foo', '1'),
         ('bar', '0'),
@@ -743,7 +743,7 @@ def test_form_data_ordering():
     assert isinstance(req.args, ImmutableOrderedMultiDict)
     assert isinstance(req.values, CombinedMultiDict)
     assert req.values['foo'] == '1'
-    assert_equal(req.values.getlist('foo'), ['1', '3'])
+    assert req.values.getlist('foo') == ['1', '3']
 
 def test_storage_classes():
     class MyRequest(wrappers.Request):
@@ -787,7 +787,7 @@ def test_ranges():
     req = wrappers.Request.from_values()
     assert req.range is None
     req = wrappers.Request.from_values(headers={'Range': 'bytes=0-499'})
-    assert_equal(req.range.ranges, [(0, 500)])
+    assert req.range.ranges == [(0, 500)]
 
     resp = wrappers.Response()
     resp.content_range = req.range.make_content_range(1000)

@@ -73,7 +73,7 @@ class CacheTests(object):
     def test_generic_get_many(self, c):
         assert c.set('foo', ['bar'])
         assert c.set('spam', 'eggs')
-        assert_equal(list(c.get_many('foo', 'spam')), [['bar'], 'eggs'])
+        assert list(c.get_many('foo', 'spam')) == [['bar'], 'eggs']
 
     def test_generic_set_many(self, c):
         assert c.set_many({'foo': 'bar', 'spam': ['eggs']})

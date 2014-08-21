@@ -40,14 +40,14 @@ class TestIterO(object):
         assert io._buf == 'Hello\nWorld!'
         assert io.tell() == 12
         io.seek(0)
-        assert_equal(io.readlines(), ['Hello\n', 'World!'])
+        assert io.readlines() == ['Hello\n', 'World!']
 
         io = IterIO(['Line one\nLine ', 'two\nLine three'])
-        assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        assert list(io) == ['Line one\n', 'Line two\n', 'Line three']
         io = IterIO(iter('Line one\nLine two\nLine three'))
-        assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        assert list(io) == ['Line one\n', 'Line two\n', 'Line three']
         io = IterIO(['Line one\nL', 'ine', ' two', '\nLine three'])
-        assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        assert list(io) == ['Line one\n', 'Line two\n', 'Line three']
 
         io = IterIO(["foo\n", "bar"])
         io.seek(-4, 2)
@@ -80,7 +80,7 @@ class TestIterO(object):
         assert io._buf == b'Hello\nWorld!'
         assert io.tell() == 12
         io.seek(0)
-        assert_equal(io.readlines(), [b'Hello\n', b'World!'])
+        assert io.readlines() == [b'Hello\n', b'World!']
 
         io = IterIO([b"foo\n", b"bar"])
         io.seek(-4, 2)
@@ -113,7 +113,7 @@ class TestIterO(object):
         assert io._buf == u'Hello\nWorld!'
         assert io.tell() == 12
         io.seek(0)
-        assert_equal(io.readlines(), [u'Hello\n', u'World!'])
+        assert io.readlines() == [u'Hello\n', u'World!']
 
         io = IterIO([u"foo\n", u"bar"])
         io.seek(-4, 2)

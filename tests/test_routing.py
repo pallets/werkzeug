@@ -343,7 +343,7 @@ def test_non_string_parts():
         r.Rule('/<foo>', endpoint='foo')
     ])
     a = m.bind('example.com')
-    assert_equal(a.build('foo', {'foo': 42}), '/42')
+    assert a.build('foo', {'foo': 42}) == '/42'
 
 def test_complex_routing_rules():
     m = r.Map([

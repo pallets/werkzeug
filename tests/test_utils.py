@@ -110,7 +110,7 @@ def test_environ_property():
     assert a.broken_number == None
     assert a.date is None
     a.date = datetime(2008, 1, 22, 10, 0, 0, 0)
-    assert_equal(a.environ['date'], 'Tue, 22 Jan 2008 10:00:00 GMT')
+    assert a.environ['date'] == 'Tue, 22 Jan 2008 10:00:00 GMT'
 
 def test_escape():
     class Foo(str):
@@ -134,7 +134,7 @@ def test_run_wsgi_app():
 
     app_iter, status, headers = run_wsgi_app(foo, {})
     assert status == '200 OK'
-    assert_equal(list(headers), [('Content-Type', 'text/plain')])
+    assert list(headers) == [('Content-Type', 'text/plain')]
     assert next(app_iter) == '1'
     assert next(app_iter) == '2'
     assert next(app_iter) == '3'
@@ -161,12 +161,12 @@ def test_run_wsgi_app():
 
     app_iter, status, headers = run_wsgi_app(bar, {})
     assert status == '200 OK'
-    assert_equal(list(headers), [('Content-Type', 'text/plain')])
+    assert list(headers) == [('Content-Type', 'text/plain')]
     assert next(app_iter) == 'bar'
     pytest.raises(StopIteration, partial(next, app_iter))
     app_iter.close()
 
-    assert_equal(run_wsgi_app(bar, {}, True)[0], ['bar'])
+    assert run_wsgi_app(bar, {}, True)[0] == ['bar']
 
     assert len(got_close) == 2
 
@@ -191,7 +191,7 @@ def test_html_builder():
     html = utils.html
     xhtml = utils.xhtml
     assert html.p('Hello World') == '<p>Hello World</p>'
-    assert_equal(html.a('Test', href='#'), '<a href="#">Test</a>')
+    assert html.a('Test', href='#') == '<a href="#">Test</a>'
     assert html.br() == '<br>'
     assert xhtml.br() == '<br />'
     assert html.img(src='foo') == '<img src="foo">'
@@ -220,15 +220,15 @@ def test_validate_arguments():
     take_two = lambda a, b: None
     take_two_one_default = lambda a, b=0: None
 
-    assert_equal(utils.validate_arguments(take_two, (1, 2,), {}), ((1, 2), {}))
-    assert_equal(utils.validate_arguments(take_two, (1,), {'b': 2}), ((1, 2), {}))
-    assert_equal(utils.validate_arguments(take_two_one_default, (1,), {}), ((1, 0), {}))
-    assert_equal(utils.validate_arguments(take_two_one_default, (1, 2), {}), ((1, 2), {}))
+    assert utils.validate_arguments(take_two, (1, 2,), {}) == ((1, 2), {})
+    assert utils.validate_arguments(take_two, (1,), {'b': 2}) == ((1, 2), {})
+    assert utils.validate_arguments(take_two_one_default, (1,), {}) == ((1, 0), {})
+    assert utils.validate_arguments(take_two_one_default, (1, 2), {}) == ((1, 2), {})
 
     pytest.raises(utils.ArgumentValidationError,
         utils.validate_arguments, take_two, (), {})
 
-    assert_equal(utils.validate_arguments(take_none, (1, 2,), {'c': 3}), ((), {}))
+    assert utils.validate_arguments(take_none, (1, 2,), {'c': 3}) == ((), {})
     pytest.raises(utils.ArgumentValidationError,
            utils.validate_arguments, take_none, (1,), {}, drop_extra=False)
     pytest.raises(utils.ArgumentValidationError,

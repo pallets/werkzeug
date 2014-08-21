@@ -122,7 +122,7 @@ def test_url_fixing():
     assert x == 'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)'
 
     x = urls.url_fix("http://just.a.test/$-_.+!*'(),")
-    assert_equal(x, "http://just.a.test/$-_.+!*'(),")
+    assert x == "http://just.a.test/$-_.+!*'(),"
 
 
 def test_url_fixing_qs():

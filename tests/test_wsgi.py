@@ -120,15 +120,15 @@ def test_peek_path_info():
 
     assert wsgi.peek_path_info(env) == 'aaa'
     assert wsgi.peek_path_info(env) == 'aaa'
-    assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
-    assert_equal(wsgi.peek_path_info(env, charset=None), b'aaa')
+    assert wsgi.peek_path_info(env, charset=None) == b'aaa'
+    assert wsgi.peek_path_info(env, charset=None) == b'aaa'
 
 def test_path_info_and_script_name_fetching():
     env = create_environ(u'/\N{SNOWMAN}', u'http://example.com/\N{COMET}/')
     assert wsgi.get_path_info(env) == u'/\N{SNOWMAN}'
-    assert_equal(wsgi.get_path_info(env, charset=None), u'/\N{SNOWMAN}'.encode('utf-8'))
+    assert wsgi.get_path_info(env, charset=None) == u'/\N{SNOWMAN}'.encode('utf-8')
     assert wsgi.get_script_name(env) == u'/\N{COMET}'
-    assert_equal(wsgi.get_script_name(env, charset=None), u'/\N{COMET}'.encode('utf-8'))
+    assert wsgi.get_script_name(env, charset=None) == u'/\N{COMET}'.encode('utf-8')
 
 def test_query_string_fetching():
     env = create_environ(u'/?\N{SNOWMAN}=\N{COMET}')
@@ -303,7 +303,7 @@ def test_multi_part_line_breaks_problematic():
         test_stream = NativeStringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                          buffer_size=4))
-        assert_equal(lines, ['abc\r', 'def\r\n', 'ghi'])
+        assert lines == ['abc\r', 'def\r\n', 'ghi']
 
 def test_iter_functions_support_iterators():
     data = ['abcdef\r\nghi', 'jkl\r\nmnopqrstuvwxyz\r', '\nABCDEFGHIJK']
@@ -342,4 +342,4 @@ def test_lines_longer_buffer_size():
     for bufsize in range(1, 15):
         lines = list(wsgi.make_line_iter(NativeStringIO(data), limit=len(data),
                                          buffer_size=4))
-        assert_equal(lines, ['1234567890\n', '1234567890\n'])
+        assert lines == ['1234567890\n', '1234567890\n']

@@ -398,6 +398,6 @@ class TestInternalFunctions(object):
         find_terminator = formparser.MultiPartParser()._find_terminator
         line = find_terminator(lineiter)
         assert line == b'foo'
-        assert_equal(list(lineiter), [b'bar\n', b'baz'])
+        assert list(lineiter) == [b'bar\n', b'baz']
         assert find_terminator([]) == b''
         assert find_terminator([b'']) == b''

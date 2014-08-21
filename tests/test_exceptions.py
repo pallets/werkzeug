@@ -72,5 +72,5 @@ def test_exception_repr():
 def test_special_exceptions():
     exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
     h = dict(exc.get_headers({}))
-    assert_equal(h['Allow'], 'GET, HEAD, POST')
+    assert h['Allow'] == 'GET, HEAD, POST'
     assert 'The method is not allowed' in exc.get_description()

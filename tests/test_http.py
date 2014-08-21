@@ -23,11 +23,11 @@ class TestHTTPUtility(object):
 
     def test_accept(self):
         a = http.parse_accept_header('en-us,ru;q=0.5')
-        assert_equal(list(itervalues(a)), ['en-us', 'ru'])
+        assert list(itervalues(a)) == ['en-us', 'ru']
         assert a.best == 'en-us'
         assert a.find('ru') == 1
         pytest.raises(ValueError, a.index, 'de')
-        assert_equal(a.to_header(), 'en-us,ru;q=0.5')
+        assert a.to_header() == 'en-us,ru;q=0.5'
 
     def test_mime_accept(self):
         a = http.parse_accept_header('text/xml,application/xml,'
@@ -39,7 +39,7 @@ class TestHTTPUtility(object):
         assert a['image/png'] ==  1
         assert a['text/plain'] ==  0.8
         assert a['foo/bar'] ==  0.5
-        assert_equal(a[a.find('foo/bar')],  ('*/*', 0.5))
+        assert a[a.find('foo/bar')] ==  ('*/*', 0.5)
 
     def test_accept_matches(self):
         a = http.parse_accept_header('text/xml,application/xml,application/xhtml+xml,'
@@ -51,7 +51,7 @@ class TestHTTPUtility(object):
         assert a.best_match(['foo/bar']) is None
         assert_equal(a.best_match(['foo/bar', 'bar/foo'],
                           default='foo/bar'),  'foo/bar')
-        assert_equal(a.best_match(['application/xml', 'text/xml']),  'application/xml')
+        assert a.best_match(['application/xml', 'text/xml']) == 'application/xml'
 
     def test_charset_accept(self):
         a = http.parse_accept_header('ISO-8859-1,utf-8;q=0.7,*;q=0.7',
@@ -75,17 +75,17 @@ class TestHTTPUtility(object):
         assert 'blah baz' in hs
         assert 'foobar' not in hs
         assert 'foo' in hs
-        assert_equal(list(hs), ['foo', 'Bar', 'Blah baz', 'Hehe'])
+        assert list(hs) == ['foo', 'Bar', 'Blah baz', 'Hehe']
         hs.add('Foo')
-        assert_equal(hs.to_header(), 'foo, Bar, "Blah baz", Hehe')
+        assert hs.to_header() == 'foo, Bar, "Blah baz", Hehe'
 
     def test_list_header(self):
         hl = http.parse_list_header('foo baz, blah')
-        assert_equal(hl, ['foo baz', 'blah'])
+        assert hl == ['foo baz', 'blah']
 
     def test_dict_header(self):
         d = http.parse_dict_header('foo="bar baz", blah=42')
-        assert_equal(d, {'foo': 'bar baz', 'blah': '42'})
+        assert d == {'foo': 'bar baz', 'blah': '42'}
 
     def test_cache_control_header(self):
         cc = http.parse_cache_control_header('max-age=0, no-cache')
@@ -216,7 +216,7 @@ class TestHTTPUtility(object):
         assert headers1 == [('Date', now)]
 
         http.remove_entity_headers(headers2)
-        assert_equal(headers2, datastructures.Headers([(u'Date', now)]))
+        assert headers2 == datastructures.Headers([(u'Date', now)])
 
     def test_remove_hop_by_hop_headers(self):
         headers1 = [('Connection', 'closed'), ('Foo', 'bar'),
@@ -326,7 +326,7 @@ class TestHTTPUtility(object):
     def test_cookie_unicode_keys(self):
         # Yes, this is technically against the spec but happens
         val = http.dump_cookie(u'fö', u'fö')
-        assert_equal(val, wsgi_encoding_dance(u'fö="f\\303\\266"; Path=/', 'utf-8'))
+        assert val == wsgi_encoding_dance(u'fö="f\\303\\266"; Path=/', 'utf-8')
         cookies = http.parse_cookie(val)
         assert cookies[u'fö'] == u'fö'
 
