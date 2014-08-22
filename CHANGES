@@ -1,6 +1,14 @@
 Werkzeug Changelog
 ==================
 
+Version 0.9.7
+-------------
+
+(bugfix release, release date to be decided)
+
+- Fix unicode problems in ``werkzeug.debug.tbtools``.
+- Fix Python 3-compatibility problems in ``werkzeug.posixemulation``.
+
 Version 0.9.6
 -------------
 
