@@ -21,6 +21,15 @@ Release date and codename to be decided
 - Added support for stdlib pbkdf2 hmac if a compatible digest
   is found.
 
+Version 0.9.7
+-------------
+
+(bugfix release, release date to be decided)
+
+- Fix unicode problems in ``werkzeug.debug.tbtools``.
+- Fix Python 3-compatibility problems in ``werkzeug.posixemulation``.
+- Backport fix of fatal typo for ``ImmutableList`` (issue ``#492``).
+
 Version 0.9.6
 -------------
 
