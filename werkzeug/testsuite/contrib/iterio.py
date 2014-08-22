@@ -42,6 +42,13 @@ class IterOTestSuite(WerkzeugTestCase):
         io.seek(0)
         self.assert_equal(io.readlines(), ['Hello\n', 'World!'])
 
+        io = IterIO(['Line one\nLine ', 'two\nLine three'])
+        self.assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        io = IterIO(iter('Line one\nLine two\nLine three'))
+        self.assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+        io = IterIO(['Line one\nL', 'ine', ' two', '\nLine three'])
+        self.assert_equal(list(io), ['Line one\n', 'Line two\n', 'Line three'])
+
         io = IterIO(["foo\n", "bar"])
         io.seek(-4, 2)
         self.assert_equal(io.read(4), '\nbar')

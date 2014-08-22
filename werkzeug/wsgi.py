@@ -42,8 +42,8 @@ def responder(f):
 
 def get_current_url(environ, root_only=False, strip_querystring=False,
                     host_only=False, trusted_hosts=None):
-    """A handy helper function that recreates the full URL for the current
-    request or parts of it.  Here an example:
+    """A handy helper function that recreates the full URL as IRI for the
+    current request or parts of it.  Here an example:
 
     >>> from werkzeug.test import create_environ
     >>> env = create_environ("/?param=foo", "http://localhost/script")
@@ -59,6 +59,15 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     This optionally it verifies that the host is in a list of trusted hosts.
     If the host is not in there it will raise a
     :exc:`~werkzeug.exceptions.SecurityError`.
+
+    Note that the string returned might contain unicode characters as the
+    representation is an IRI not an URI.  If you need an ASCII only
+    representation you can use the :func:`~werkzeug.urls.iri_to_uri`
+    function:
+
+    >>> from werkzeug.urls import iri_to_uri
+    >>> iri_to_uri(get_current_url(env))
+    'http://localhost/script/?param=foo'
 
     :param environ: the WSGI environment to get the current URL from.
     :param root_only: set `True` if you only want the root URL.

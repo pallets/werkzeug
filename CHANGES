@@ -18,11 +18,22 @@ Release date and codename to be decided
 - Added message that explains how to quit the server.
 - Fixed a bug on Python 2, that caused ``len`` for 
   :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
+- Added support for stdlib pbkdf2 hmac if a compatible digest
+  is found.
+
+Version 0.9.6
+-------------
+
+(bugfix release, released on June 7th 2014)
+
+- Added a safe conversion for IRI to URI conversion and use that
+  internally to work around issues with spec violations for
+  protocols such as ``itms-service``.
 
 Version 0.9.5
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on June 7th 2014)
 
 - Forward charset argument from request objects to the environ
   builder.
@@ -32,6 +43,10 @@ Version 0.9.5
 - Fixed a problem with deepcopy not working for multi dicts.
 - Fixed a double quoting issue on redirects.
 - Fixed a problem with unicode keys appearing in headers on 2.x.
+- Fixed a bug with unicode strings in the test builder.
+- Fixed a unicode bug on Python 3 in the WSGI profiler.
+- Fixed an issue with the safe string compare function on
+  Python 2.7.7 and Python 3.4.
 
 Version 0.9.4
 -------------
