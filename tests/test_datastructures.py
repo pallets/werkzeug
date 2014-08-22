@@ -149,19 +149,17 @@ class _MutableMultiDictTests(object):
         assert list(sorted(itervalues(md))) == [1, 2, 3]
         assert list(sorted(itervalues(md))) == [1, 2, 3]
 
-        assert_equal(list(sorted(md.items())),
-                          [('a', 1), ('b', 2), ('c', 3)])
-        assert_equal(list(sorted(md.items(multi=True))),
-                          [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)])
-        assert_equal(list(sorted(iteritems(md))),
-                          [('a', 1), ('b', 2), ('c', 3)])
-        assert_equal(list(sorted(iteritems(md, multi=True))),
-                          [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)])
+        assert list(sorted(md.items())) == [('a', 1), ('b', 2), ('c', 3)]
+        assert list(sorted(md.items(multi=True))) == \
+            [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
+        assert list(sorted(iteritems(md))) == [('a', 1), ('b', 2), ('c', 3)]
+        assert list(sorted(iteritems(md, multi=True))) == \
+            [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
 
-        assert_equal(list(sorted(md.lists())),
-                          [('a', [1, 2, 3]), ('b', [2]), ('c', [3])])
-        assert_equal(list(sorted(iterlists(md))),
-                          [('a', [1, 2, 3]), ('b', [2]), ('c', [3])])
+        assert list(sorted(md.lists())) == \
+            [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
+        assert list(sorted(iterlists(md))) == \
+            [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
 
         # copy method
         c = md.copy()
@@ -372,12 +370,10 @@ class TestMultiDict(_MutableMultiDictTests):
         mapping = [('a', 1), ('b', 2), ('a', 2), ('d', 3),
                    ('a', 1), ('a', 3), ('d', 4), ('c', 3)]
         md = self.storage_class(mapping)
-        assert_equal(list(zip(md.keys(), md.listvalues())),
-                          list(md.lists()))
-        assert_equal(list(zip(md, iterlistvalues(md))),
-                          list(iterlists(md)))
-        assert_equal(list(zip(iterkeys(md), iterlistvalues(md))),
-                          list(iterlists(md)))
+        assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
+        assert list(zip(md, iterlistvalues(md))) == list(iterlists(md))
+        assert list(zip(iterkeys(md), iterlistvalues(md))) == \
+            list(iterlists(md))
 
 
 class TestOrderedMultiDict(_MutableMultiDictTests):
@@ -394,8 +390,8 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert len(d) == 1
         assert list(iteritems(d)) == [('foo', 'bar')]
         assert list(d) == ['foo']
-        assert_equal(list(iteritems(d, multi=True)),
-                          [('foo', 'bar'), ('foo', 'baz')])
+        assert list(iteritems(d, multi=True)) == \
+                [('foo', 'bar'), ('foo', 'baz')]
         del d['foo']
         assert not d
         assert len(d) == 0
@@ -413,8 +409,8 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert list(d) == expected
         assert list(iterkeys(d)) == expected
 
-        assert_equal(list(iteritems(d, multi=True)),
-                          [('foo', 1), ('foo', 2), ('bar', 42), ('foo', 3)])
+        assert list(iteritems(d, multi=True)) == \
+            [('foo', 1), ('foo', 2), ('bar', 42), ('foo', 3)]
         assert len(d) == 2
 
         assert d.pop('foo') == 1
@@ -496,10 +492,9 @@ class TestCombinedMultiDict(object):
         assert d['bar'] == '2'
         assert d.getlist('bar') == ['2', '3']
 
-        assert_equal(sorted(d.items()),
-                          [('bar', '2'), ('foo', '1')])
-        assert_equal(sorted(d.items(multi=True)),
-                          [('bar', '2'), ('bar', '3'), ('foo', '1')])
+        assert sorted(d.items()) == [('bar', '2'), ('foo', '1')]
+        assert sorted(d.items(multi=True)) == \
+            [('bar', '2'), ('bar', '3'), ('foo', '1')]
         assert 'missingkey' not in d
         assert 'foo' in d
 
@@ -552,20 +547,20 @@ class TestHeaders(object):
         assert len(headers.getlist('Content-Type')) == 1
 
         # list conversion
-        assert_equal(headers.to_wsgi_list(), [
+        assert headers.to_wsgi_list() == [
             ('Content-Type', 'foo/bar'),
             ('X-Foo', 'bar')
-        ])
-        assert_equal(str(headers), (
+        ]
+        assert str(headers) == (
             "Content-Type: foo/bar\r\n"
             "X-Foo: bar\r\n"
-            "\r\n"))
+            "\r\n"
+        )
         assert str(self.storage_class()) == "\r\n"
 
         # extended add
         headers.add('Content-Disposition', 'attachment', filename='foo')
-        assert_equal(headers['Content-Disposition'],
-                          'attachment; filename=foo')
+        assert headers['Content-Disposition'] == 'attachment; filename=foo'
 
         headers.add('x', 'y', z='"')
         assert headers['x'] == r'y; z="\""'
@@ -643,10 +638,10 @@ class TestHeaders(object):
         h.set('Content-Type', 'application/whocares')
         h.set('X-Forwarded-For', '192.168.0.123')
         h[:] = [(k, v) for k, v in h if k.startswith(u'X-')]
-        assert_equal(list(h), [
+        assert list(h) == [
             ('X-Foo-Poo', 'bleh'),
             ('X-Forwarded-For', '192.168.0.123')
-        ])
+        ]
 
     def test_bytes_operations(self):
         h = self.storage_class()
@@ -685,11 +680,11 @@ class TestEnvironHeaders(object):
         headers = self.storage_class(broken_env)
         assert headers
         assert len(headers) == 3
-        assert_equal(sorted(headers), [
+        assert sorted(headers) == [
             ('Accept', '*'),
             ('Content-Length', '0'),
             ('Content-Type', 'text/html')
-        ])
+        ]
         assert not self.storage_class({'wsgi.version': (1, 0)})
         assert len(self.storage_class({'wsgi.version': (1, 0)})) == 0
 

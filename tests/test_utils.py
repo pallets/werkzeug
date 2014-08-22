@@ -181,9 +181,10 @@ def test_import_string():
     pytest.raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
 def test_find_modules():
-    assert_equal(list(utils.find_modules('werkzeug.debug')), \
-        ['werkzeug.debug.console', 'werkzeug.debug.repr',
-         'werkzeug.debug.tbtools'])
+    assert list(utils.find_modules('werkzeug.debug')) == [
+        'werkzeug.debug.console', 'werkzeug.debug.repr',
+        'werkzeug.debug.tbtools'
+    ]
 
 def test_html_builder():
     html = utils.html
@@ -194,13 +195,13 @@ def test_html_builder():
     assert xhtml.br() == '<br />'
     assert html.img(src='foo') == '<img src="foo">'
     assert xhtml.img(src='foo') == '<img src="foo" />'
-    assert_equal(html.html(
-        html.head(
+    assert html.html(html.head(
             html.title('foo'),
             html.script(type='text/javascript')
-        )
-    ), '<html><head><title>foo</title><script type="text/javascript">'
-       '</script></head></html>')
+    )) == (
+        '<html><head><title>foo</title><script type="text/javascript">'
+        '</script></head></html>'
+    )
     assert html('<foo>') == '&lt;foo&gt;'
     assert html.input(disabled=True) == '<input disabled>'
     assert xhtml.input(disabled=True) == '<input disabled="disabled" />'
@@ -208,10 +209,10 @@ def test_html_builder():
     assert xhtml.input(disabled='') == '<input />'
     assert html.input(disabled=None) == '<input>'
     assert xhtml.input(disabled=None) == '<input />'
-    assert_equal(html.script('alert("Hello World");'), '<script>' \
-        'alert("Hello World");</script>')
-    assert_equal(xhtml.script('alert("Hello World");'), '<script>' \
-        '/*<![CDATA[*/alert("Hello World");/*]]>*/</script>')
+    assert html.script('alert("Hello World");') == \
+        '<script>alert("Hello World");</script>'
+    assert xhtml.script('alert("Hello World");') == \
+        '<script>/*<![CDATA[*/alert("Hello World");/*]]>*/</script>'
 
 def test_validate_arguments():
     take_none = lambda: None
@@ -240,12 +241,12 @@ def test_header_set_duplication_bug():
     ])
     headers['blub'] = 'hehe'
     headers['blafasel'] = 'humm'
-    assert_equal(headers, Headers([
+    assert headers == Headers([
         ('Content-Type', 'text/html'),
         ('Foo', 'bar'),
         ('blub', 'hehe'),
         ('blafasel', 'humm')
-    ]))
+    ])
 
 def test_append_slash_redirect():
     def app(env, sr):
@@ -265,9 +266,7 @@ def test_cached_property_doc():
     assert foo.__module__ == __name__
 
 def test_secure_filename():
-    assert_equal(utils.secure_filename('My cool movie.mov'),
-                      'My_cool_movie.mov')
-    assert_equal(utils.secure_filename('../../../etc/passwd'),
-                      'etc_passwd')
-    assert_equal(utils.secure_filename(u'i contain cool \xfcml\xe4uts.txt'),
-                      'i_contain_cool_umlauts.txt')
+    assert utils.secure_filename('My cool movie.mov') == 'My_cool_movie.mov'
+    assert utils.secure_filename('../../../etc/passwd') == 'etc_passwd'
+    assert utils.secure_filename(u'i contain cool \xfcml\xe4uts.txt') == \
+        'i_contain_cool_umlauts.txt'

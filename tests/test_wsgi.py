@@ -65,23 +65,20 @@ def test_get_host():
     env = {'HTTP_X_FORWARDED_HOST': 'example.org',
            'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
     assert wsgi.get_host(env) == 'example.org'
-    assert_equal(
-        wsgi.get_host(create_environ('/', 'http://example.org')),
-        'example.org')
+    assert wsgi.get_host(create_environ('/', 'http://example.org')) == \
+        'example.org'
 
 def test_get_host_multiple_forwarded():
     env = {'HTTP_X_FORWARDED_HOST': 'example.com, example.org',
            'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
     assert wsgi.get_host(env) == 'example.com'
-    assert_equal(
-        wsgi.get_host(create_environ('/', 'http://example.com')),
-        'example.com')
+    assert wsgi.get_host(create_environ('/', 'http://example.com')) == \
+        'example.com'
 
 def test_get_host_validation():
     env = {'HTTP_X_FORWARDED_HOST': 'example.org',
            'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
-    assert_equal(wsgi.get_host(env, trusted_hosts=['.example.org']),
-                      'example.org')
+    assert wsgi.get_host(env, trusted_hosts=['.example.org']) == 'example.org'
     pytest.raises(BadRequest, wsgi.get_host, env,
                        trusted_hosts=['example.com'])
 
@@ -247,16 +244,16 @@ def test_path_info_extraction():
     assert x is None
 
 def test_get_host_fallback():
-    assert_equal(wsgi.get_host({
+    assert wsgi.get_host({
         'SERVER_NAME':      'foobar.example.com',
         'wsgi.url_scheme':  'http',
         'SERVER_PORT':      '80'
-    }), 'foobar.example.com')
-    assert_equal(wsgi.get_host({
+    }) == 'foobar.example.com'
+    assert wsgi.get_host({
         'SERVER_NAME':      'foobar.example.com',
         'wsgi.url_scheme':  'http',
         'SERVER_PORT':      '81'
-    }), 'foobar.example.com:81')
+    }) == 'foobar.example.com:81'
 
 def test_get_current_url_unicode():
     env = create_environ()
@@ -270,32 +267,32 @@ def test_multi_part_line_breaks():
     test_stream = NativeStringIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                      buffer_size=16))
-    assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
-                              'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
+    assert lines == ['abcdef\r\n', 'ghijkl\r\n', 'mnopqrstuvwxyz\r\n',
+                     'ABCDEFGHIJK']
 
     data = 'abc\r\nThis line is broken by the buffer length.' \
         '\r\nFoo bar baz'
     test_stream = NativeStringIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                      buffer_size=24))
-    assert_equal(lines, ['abc\r\n', 'This line is broken by the '
-                              'buffer length.\r\n', 'Foo bar baz'])
+    assert lines == ['abc\r\n', 'This line is broken by the buffer '
+                     'length.\r\n', 'Foo bar baz']
 
 def test_multi_part_line_breaks_bytes():
     data = b'abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK'
     test_stream = BytesIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                      buffer_size=16))
-    assert_equal(lines, [b'abcdef\r\n', b'ghijkl\r\n',
-                              b'mnopqrstuvwxyz\r\n', b'ABCDEFGHIJK'])
+    assert lines == [b'abcdef\r\n', b'ghijkl\r\n', b'mnopqrstuvwxyz\r\n',
+                     b'ABCDEFGHIJK']
 
     data = b'abc\r\nThis line is broken by the buffer length.' \
         b'\r\nFoo bar baz'
     test_stream = BytesIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data),
                                      buffer_size=24))
-    assert_equal(lines, [b'abc\r\n', b'This line is broken by the '
-                              b'buffer length.\r\n', b'Foo bar baz'])
+    assert lines == [b'abc\r\n', b'This line is broken by the buffer '
+                     b'length.\r\n', b'Foo bar baz']
 
 def test_multi_part_line_breaks_problematic():
     data = 'abc\rdef\r\nghi'
@@ -308,34 +305,30 @@ def test_multi_part_line_breaks_problematic():
 def test_iter_functions_support_iterators():
     data = ['abcdef\r\nghi', 'jkl\r\nmnopqrstuvwxyz\r', '\nABCDEFGHIJK']
     lines = list(wsgi.make_line_iter(data))
-    assert_equal(lines, ['abcdef\r\n', 'ghijkl\r\n',
-                              'mnopqrstuvwxyz\r\n', 'ABCDEFGHIJK'])
+    assert lines == ['abcdef\r\n', 'ghijkl\r\n', 'mnopqrstuvwxyz\r\n',
+                     'ABCDEFGHIJK']
 
 def test_make_chunk_iter():
     data = [u'abcdefXghi', u'jklXmnopqrstuvwxyzX', u'ABCDEFGHIJK']
     rv = list(wsgi.make_chunk_iter(data, 'X'))
-    assert_equal(rv, [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz',
-                           u'ABCDEFGHIJK'])
+    assert rv == [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz', u'ABCDEFGHIJK']
 
     data = u'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
     test_stream = StringIO(data)
     rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
                                    buffer_size=4))
-    assert_equal(rv, [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz',
-                           u'ABCDEFGHIJK'])
+    assert rv == [u'abcdef', u'ghijkl', u'mnopqrstuvwxyz', u'ABCDEFGHIJK']
 
 def test_make_chunk_iter_bytes():
     data = [b'abcdefXghi', b'jklXmnopqrstuvwxyzX', b'ABCDEFGHIJK']
     rv = list(wsgi.make_chunk_iter(data, 'X'))
-    assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
-                           b'ABCDEFGHIJK'])
+    assert rv == [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz', b'ABCDEFGHIJK']
 
     data = b'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
     test_stream = BytesIO(data)
     rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
                                    buffer_size=4))
-    assert_equal(rv, [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz',
-                           b'ABCDEFGHIJK'])
+    assert rv == [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz', b'ABCDEFGHIJK']
 
 def test_lines_longer_buffer_size():
     data = '1234567890\n1234567890\n'

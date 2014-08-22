@@ -35,8 +35,7 @@ class TestServerFixer(object):
             PATH_INFO='/bar',
             SERVER_SOFTWARE='lighttpd/1.4.27'
         ))
-        assert_equal(response.get_data(),
-                          b'PATH_INFO: /foo/bar\nSCRIPT_NAME: ')
+        assert response.get_data() == b'PATH_INFO: /foo/bar\nSCRIPT_NAME: '
 
     def test_cgi_root_fix_custom_app_root(self):
         app = fixers.CGIRootFix(path_check_app, app_root='/baz/poop/')

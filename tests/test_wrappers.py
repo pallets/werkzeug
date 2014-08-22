@@ -297,11 +297,11 @@ def test_accept_mixin():
         'HTTP_ACCEPT_ENCODING': 'gzip,deflate',
         'HTTP_ACCEPT_LANGUAGE': 'en-us,en;q=0.5'
     })
-    assert_equal(request.accept_mimetypes, MIMEAccept([
+    assert request.accept_mimetypes == MIMEAccept([
         ('text/xml', 1), ('image/png', 1), ('application/xml', 1),
         ('application/xhtml+xml', 1), ('text/html', 0.9),
         ('text/plain', 0.8), ('*/*', 0.5)
-    ]))
+    ])
     strict_eq(request.accept_charsets, CharsetAccept([
         ('ISO-8859-1', 1), ('utf-8', 0.7), ('*', 0.7)
     ]))
@@ -668,8 +668,8 @@ def test_urlfication():
     resp.headers['Location'] = u'http://üser:pässword@☃.net/påth'
     resp.headers['Content-Location'] = u'http://☃.net/'
     headers = resp.get_wsgi_headers(create_environ())
-    assert_equal(headers['location'], \
-        'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
+    assert headers['location'] == \
+        'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
     assert headers['content-location'] == 'http://xn--n3h.net/'
 
 def test_new_response_iterator_behavior():
@@ -735,11 +735,11 @@ def test_form_data_ordering():
 
     req = MyRequest.from_values('/?foo=1&bar=0&foo=3')
     assert list(req.args) == ['foo', 'bar']
-    assert_equal(list(req.args.items(multi=True)), [
+    assert list(req.args.items(multi=True)) == [
         ('foo', '1'),
         ('bar', '0'),
         ('foo', '3')
-    ])
+    ]
     assert isinstance(req.args, ImmutableOrderedMultiDict)
     assert isinstance(req.values, CombinedMultiDict)
     assert req.values['foo'] == '1'

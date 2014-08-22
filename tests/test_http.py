@@ -45,12 +45,11 @@ class TestHTTPUtility(object):
         a = http.parse_accept_header('text/xml,application/xml,application/xhtml+xml,'
                                     'text/html;q=0.9,text/plain;q=0.8,'
                                     'image/png', datastructures.MIMEAccept)
-        assert_equal(a.best_match(['text/html', 'application/xhtml+xml']),
-                          'application/xhtml+xml')
-        assert a.best_match(['text/html']) ==  'text/html'
+        assert a.best_match(['text/html', 'application/xhtml+xml']) == \
+            'application/xhtml+xml'
+        assert a.best_match(['text/html']) == 'text/html'
         assert a.best_match(['foo/bar']) is None
-        assert_equal(a.best_match(['foo/bar', 'bar/foo'],
-                          default='foo/bar'),  'foo/bar')
+        assert a.best_match(['foo/bar', 'bar/foo'], default='foo/bar') == 'foo/bar'
         assert a.best_match(['application/xml', 'text/xml']) == 'application/xml'
 
     def test_charset_accept(self):
