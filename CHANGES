@@ -8,6 +8,7 @@ Version 0.9.7
 
 - Fix unicode problems in ``werkzeug.debug.tbtools``.
 - Fix Python 3-compatibility problems in ``werkzeug.posixemulation``.
+- Backport fix of fatal typo for ``ImmutableList`` (issue ``#492``).
 
 Version 0.9.6
 -------------
