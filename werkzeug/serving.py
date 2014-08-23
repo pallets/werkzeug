@@ -661,10 +661,10 @@ def run_simple(hostname, port, application, use_reloader=False,
                                This means that the server will die on errors but
                                it can be useful to hook debuggers in (pdb etc.)
     :param ssl_context: an SSL context for the connection. Either an
-                        ssl.SSLContext, a tuple in the form ``(cert_file,
-                        pkey_file)``, the string ``'adhoc'`` if the server
-                        should automatically create one, or `None` to disable
-                        SSL (which is the default).
+                        :class:`ssl.SSLContext`, a tuple in the form
+                        ``(cert_file, pkey_file)``, the string ``'adhoc'`` if
+                        the server should automatically create one, or ``None``
+                        to disable SSL (which is the default).
     """
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
