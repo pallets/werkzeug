@@ -11,11 +11,15 @@
 import unittest
 import sys
 import re
+import io
+
+import pytest
 
 from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
+from werkzeug.debug.tbtools import Traceback
 from werkzeug._compat import PY2
 
 
@@ -163,6 +167,21 @@ class DebugHelpersTestCase(WerkzeugTestCase):
 
         self.assert_in('Help on list object', x)
         self.assert_in('__delitem__', x)
+
+
+class TracebackTestCase(WerkzeugTestCase):
+
+    def get_traceback(self):
+        try:
+            1/0
+        except ZeroDivisionError:
+            return Traceback(*sys.exc_info())
+
+    def test_log(self):
+        traceback = self.get_traceback()
+        buffer_ = io.BytesIO() if PY2 else io.StringIO()
+        traceback.log(buffer_)
+        self.assert_equal(buffer_.getvalue().strip(), traceback.plaintext.strip())
 
 
 def suite():
