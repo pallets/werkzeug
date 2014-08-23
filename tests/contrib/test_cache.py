@@ -10,9 +10,6 @@
 """
 import pytest
 import os
-import time
-import tempfile
-import shutil
 
 from werkzeug.contrib import cache
 
@@ -32,11 +29,26 @@ except ImportError:
         except ImportError:
             memcache = None
 
+
 class CacheTests(object):
+    _can_use_fast_sleep = True
+
     @pytest.fixture
     def make_cache(self):
         '''Return a cache class or factory.'''
         raise NotImplementedError()
+
+    @pytest.fixture
+    def fast_sleep(self, monkeypatch):
+        if self._can_use_fast_sleep:
+            def sleep(delta):
+                orig_time = cache.time
+                monkeypatch.setattr(cache, 'time', lambda: orig_time() + delta)
+
+            return sleep
+        else:
+            import time
+            return time.sleep
 
     @pytest.fixture
     def c(self, make_cache):
@@ -51,12 +63,6 @@ class CacheTests(object):
         assert 'a' == d['a']
         assert 'b' in d
         assert 'b' == d['b']
-
-    def test_generic_set_many(self, c):
-        assert c.set_many({0: 0, 1: 1, 2: 4})
-        assert c.get(2) == 4
-        assert c.set_many((i, i*i) for i in range(3))
-        assert c.get(2) == 4
 
     def test_generic_set_get(self, c):
         for i in range(3):
@@ -79,9 +85,9 @@ class CacheTests(object):
         assert c.get('foo') == 'bar'
         assert c.get('spam') == ['eggs']
 
-    def test_generic_expire(self, c):
+    def test_generic_expire(self, c, fast_sleep):
         assert c.set('foo', 'bar', 1)
-        time.sleep(2)
+        fast_sleep(2)
         assert c.get('foo') is None
 
     def test_generic_add(self, c):
@@ -149,6 +155,7 @@ class TestFileSystemCache(CacheTests):
 # https://bitbucket.org/hpk42/pytest/issue/568
 if redis is not None:
     class TestRedisCache(CacheTests):
+        _can_use_fast_sleep = False
 
         @pytest.fixture
         def make_cache(self, xprocess, request):
@@ -171,6 +178,7 @@ if redis is not None:
 # https://bitbucket.org/hpk42/pytest/issue/568
 if memcache is not None:
     class TestMemcachedCache(CacheTests):
+        _can_use_fast_sleep = False
 
         @pytest.fixture
         def make_cache(self, xprocess, request):
