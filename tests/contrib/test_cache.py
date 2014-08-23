@@ -145,31 +145,43 @@ class TestFileSystemCache(CacheTests):
         assert len(cache_files) == 0
 
 
-@pytest.mark.skipif(redis is None, reason='Redis is not installed.')
-class TestRedisCache(CacheTests):
+# Don't use pytest marker
+# https://bitbucket.org/hpk42/pytest/issue/568
+if redis is not None:
+    class TestRedisCache(CacheTests):
 
-    @pytest.fixture
-    def make_cache(self, request):
-        c = cache.RedisCache(key_prefix='werkzeug-test-case:')
-        request.addfinalizer(c.clear)
-        return lambda: c
+        @pytest.fixture
+        def make_cache(self, xprocess, request):
+            def preparefunc(cwd):
+                return 'server is now ready', ['redis-server']
 
-    def test_compat(self, c):
-        assert c._client.set(c.key_prefix + 'foo', 'Awesome')
-        assert c.get('foo') == b'Awesome'
-        assert c._client.set(c.key_prefix + 'foo', '42')
-        assert c.get('foo') == 42
+            xprocess.ensure('redis_server', preparefunc)
+            c = cache.RedisCache(key_prefix='werkzeug-test-case:')
+            request.addfinalizer(c.clear)
+            return lambda: c
+
+        def test_compat(self, c):
+            assert c._client.set(c.key_prefix + 'foo', 'Awesome')
+            assert c.get('foo') == b'Awesome'
+            assert c._client.set(c.key_prefix + 'foo', '42')
+            assert c.get('foo') == 42
 
 
-@pytest.mark.skipif(memcache is None, reason='Memcache is not installed.')
-class TestMemcachedCache(CacheTests):
+# Don't use pytest marker
+# https://bitbucket.org/hpk42/pytest/issue/568
+if memcache is not None:
+    class TestMemcachedCache(CacheTests):
 
-    @pytest.fixture
-    def make_cache(self, request):
-        c = cache.MemcachedCache(key_prefix='werkzeug-test-case:')
-        request.addfinalizer(c.clear)
-        return lambda: c
+        @pytest.fixture
+        def make_cache(self, xprocess, request):
+            def preparefunc(cwd):
+                return '', ['memcached']
 
-    def test_compat(self, c):
-        assert c._client.set(c.key_prefix + b'foo', 'bar')
-        assert c.get('foo') == 'bar'
+            xprocess.ensure('memcached', preparefunc)
+            c = cache.MemcachedCache(key_prefix='werkzeug-test-case:')
+            request.addfinalizer(c.clear)
+            return lambda: c
+
+        def test_compat(self, c):
+            assert c._client.set(c.key_prefix + b'foo', 'bar')
+            assert c.get('foo') == 'bar'
