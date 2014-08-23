@@ -354,8 +354,17 @@ def generate_adhoc_ssl_context():
     return ctx
 
 
-def load_ssl_context(cert_file, pkey_file, protocol=None):
-    """Loads SSL context from cert/private key files and optional protocol."""
+def load_ssl_context(cert_file, pkey_file=None, protocol=None):
+    """Loads SSL context from cert/private key files and optional protocol.
+    Many parameters are directly taken from the API of
+    :py:class:`ssl.SSLContext`.
+
+    :param cert_file: Path of the certificate to use.
+    :param pkey_file: Path of the private key to use. If not given, the key
+                      will be obtained from the certificate file.
+    :param protocol: One of the ``PROTOCOL_*`` constants. Defaults to
+                     ``PROTOCOL_SSLv23``.
+    """
     if protocol is None:
         protocol = ssl.PROTOCOL_SSLv23
     ctx = ssl.SSLContext(protocol)
