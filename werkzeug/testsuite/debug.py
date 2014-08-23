@@ -14,8 +14,6 @@ import os
 import re
 import io
 
-import pytest
-
 from werkzeug.testsuite import WerkzeugTestCase
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
