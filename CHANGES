@@ -23,6 +23,8 @@ Release date and codename to be decided
 - Ported testsuite to use ``py.test``.
 - Minor optimizations to various middlewares (pull requests ``#496`` and
   ``#571``).
+- Use stdlib ``ssl`` module instead of ``OpenSSL`` for the builtin server
+  (issue ``#434``).
 
 Version 0.9.7
 -------------
