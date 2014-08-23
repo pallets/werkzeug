@@ -20,13 +20,14 @@ from tokenize import TokenError
 
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
-from werkzeug._compat import range_type, PY2, text_type, string_types
+from werkzeug._compat import range_type, PY2, text_type, string_types, \
+    to_native
 
 
-_coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
-_line_re = re.compile(r'^(.*?)$(?m)')
-_funcdef_re = re.compile(r'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
-UTF8_COOKIE = '\xef\xbb\xbf'
+_coding_re = re.compile(br'coding[:=]\s*([-\w.]+)')
+_line_re = re.compile(br'^(.*?)$(?m)')
+_funcdef_re = re.compile(br'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
+UTF8_COOKIE = b'\xef\xbb\xbf'
 
 system_exceptions = (SystemExit, KeyboardInterrupt)
 try:
@@ -487,6 +488,7 @@ class Frame(object):
                     break
 
         # on broken cookies we fall back to utf-8 too
+        charset = to_native(charset)
         try:
             codecs.lookup(charset)
         except LookupError:
