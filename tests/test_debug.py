@@ -10,10 +10,14 @@
 """
 import sys
 import re
+import io
+
+import pytest
 
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
+from werkzeug.debug.tbtools import Traceback
 from werkzeug._compat import PY2
 
 
@@ -163,3 +167,18 @@ class TestDebugHelpers(object):
 
         assert 'Help on list object' in x
         assert '__delitem__' in x
+
+
+class TestTraceback(object):
+
+    @pytest.fixture
+    def traceback(self):
+        try:
+            1/0
+        except ZeroDivisionError:
+            return Traceback(*sys.exc_info())
+
+    def test_log(self, traceback):
+        buffer_ = io.BytesIO() if PY2 else io.StringIO()
+        traceback.log(buffer_)
+        assert buffer_.getvalue().strip() == traceback.plaintext.strip()
