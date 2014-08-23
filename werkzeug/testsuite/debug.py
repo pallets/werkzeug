@@ -49,6 +49,7 @@ class DebugReprTestCase(WerkzeugTestCase):
             u'<span class="number">19</span></span>]'
         ))
 
+
     def test_mapping_repr(self):
         self.assert_equal(debug_repr({}), u'{}')
         self.assert_equal(debug_repr({'foo': 42}),
@@ -112,6 +113,7 @@ class Foo(object):
     x = 42
     y = 23
 
+
     def __init__(self):
         self.z = 15
 
@@ -171,21 +173,21 @@ class DebugHelpersTestCase(WerkzeugTestCase):
 
 class TracebackTestCase(WerkzeugTestCase):
 
-    def get_traceback(self):
+    def test_log(self):
         try:
             1/0
         except ZeroDivisionError:
-            return Traceback(*sys.exc_info())
+            traceback = Traceback(*sys.exc_info())
 
-    def test_log(self):
-        traceback = self.get_traceback()
         buffer_ = io.BytesIO() if PY2 else io.StringIO()
         traceback.log(buffer_)
-        self.assert_equal(buffer_.getvalue().strip(), traceback.plaintext.strip())
+        self.assert_equal(buffer_.getvalue().strip(),
+                          traceback.plaintext.strip())
 
 
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(DebugReprTestCase))
     suite.addTest(unittest.makeSuite(DebugHelpersTestCase))
+    suite.addTest(unittest.makeSuite(TracebackTestCase))
     return suite
