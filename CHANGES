@@ -33,6 +33,8 @@ Version 0.9.7
   ``#468``).
 - Use native strings for memcached keys to work with Python 3 client (issue
   ``#539``).
+- Fix charset detection for ``werkzeug.debug.tbtools.Frame`` objects (issue
+  ``#547``).
 
 Version 0.9.6
 -------------

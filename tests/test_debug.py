@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
+import os
 import re
 import io
 
@@ -46,6 +47,7 @@ class TestDebugRepr(object):
             u'<span class="number">17</span>, <span class="number">18</span>, '
             u'<span class="number">19</span></span>]'
         )
+
 
     def test_mapping_repr(self):
         assert debug_repr({}) == u'{}'
@@ -112,6 +114,7 @@ class Foo(object):
     x = 42
     y = 23
 
+
     def __init__(self):
         self.z = 15
 
@@ -171,14 +174,38 @@ class TestDebugHelpers(object):
 
 class TestTraceback(object):
 
-    @pytest.fixture
-    def traceback(self):
+    def test_log(self):
         try:
             1/0
         except ZeroDivisionError:
-            return Traceback(*sys.exc_info())
+            traceback = Traceback(*sys.exc_info())
 
-    def test_log(self, traceback):
         buffer_ = io.BytesIO() if PY2 else io.StringIO()
         traceback.log(buffer_)
         assert buffer_.getvalue().strip() == traceback.plaintext.strip()
+
+    def test_sourcelines_encoding(self):
+        source = (u'# -*- coding: latin1 -*-\n\n'
+                  u'def foo():\n'
+                  u'    """höhö"""\n'
+                  u'    1 / 0\n'
+                  u'foo()').encode('latin1')
+        code = compile(source, filename='lol.py', mode='exec')
+        try:
+            eval(code)
+        except ZeroDivisionError:
+            tb = sys.exc_info()[2]
+            traceback = Traceback(*sys.exc_info())
+
+        frames = traceback.frames
+        assert len(frames) == 3
+        assert frames[1].filename == 'lol.py'
+        assert frames[2].filename == 'lol.py'
+
+        class Loader(object):
+            def get_source(self, module):
+                return source
+
+        frames[1].loader = frames[2].loader = Loader()
+        assert frames[1].sourcelines == frames[2].sourcelines
+        assert u'höhö' in frames[1].sourcelines[3]
