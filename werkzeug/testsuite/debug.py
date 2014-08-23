@@ -10,6 +10,7 @@
 """
 import unittest
 import sys
+import os
 import re
 import io
 
@@ -183,6 +184,32 @@ class TracebackTestCase(WerkzeugTestCase):
         traceback.log(buffer_)
         self.assert_equal(buffer_.getvalue().strip(),
                           traceback.plaintext.strip())
+
+    def test_sourcelines_encoding(self):
+        source = (u'# -*- coding: latin1 -*-\n\n'
+                  u'def foo():\n'
+                  u'    """höhö"""\n'
+                  u'    1 / 0\n'
+                  u'foo()').encode('latin1')
+        code = compile(source, filename='lol.py', mode='exec')
+        try:
+            eval(code)
+        except ZeroDivisionError:
+            tb = sys.exc_info()[2]
+            traceback = Traceback(*sys.exc_info())
+
+        frames = traceback.frames
+        self.assert_equal(len(frames), 3)
+        self.assert_equal(frames[1].filename, 'lol.py')
+        self.assert_equal(frames[2].filename, 'lol.py')
+
+        class Loader(object):
+            def get_source(self, module):
+                return source
+
+        frames[1].loader = frames[2].loader = Loader()
+        self.assert_equal(frames[1].sourcelines, frames[2].sourcelines)
+        self.assert_in(u'höhö', frames[1].sourcelines[3])
 
 
 def suite():
