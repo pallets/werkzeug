@@ -39,11 +39,17 @@ from __future__ import with_statement
 
 import os
 import socket
-import ssl
 import sys
 import time
 import signal
 import subprocess
+
+
+try:
+    import ssl
+    ssl.SSLContext
+except AttributeError:
+    import backports.ssl as ssl
 
 try:
     import thread
