@@ -339,14 +339,18 @@ def generate_adhoc_ssl_context():
     cert, pkey = generate_adhoc_ssl_pair()
     cert_handle, cert_file = tempfile.mkstemp()
     pkey_handle, pkey_file = tempfile.mkstemp()
-    os.write(cert_handle, crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-    os.write(pkey_handle, crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
-    os.close(cert_handle)
-    os.close(pkey_handle)
-    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-    ctx.load_cert_chain(cert_file, pkey_file)
-    os.unlink(cert_file)
-    os.unlink(pkey_file)
+    try:
+        os.write(cert_handle, crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+        os.write(pkey_handle, crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
+        os.close(cert_handle)
+        os.close(pkey_handle)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        ctx.load_cert_chain(cert_file, pkey_file)
+    finally:
+        try:
+            os.unlink(pkey_file)
+        finally:
+            os.unlink(cert_file)
     return ctx
 
 
