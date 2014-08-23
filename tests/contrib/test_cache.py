@@ -183,5 +183,5 @@ if memcache is not None:
             return lambda: c
 
         def test_compat(self, c):
-            assert c._client.set(c.key_prefix + b'foo', 'bar')
+            assert c._client.set(c.key_prefix + 'foo', 'bar')
             assert c.get('foo') == 'bar'
