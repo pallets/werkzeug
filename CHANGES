@@ -31,6 +31,8 @@ Version 0.9.7
 - Backport fix of fatal typo for ``ImmutableList`` (issue ``#492``).
 - Make creation of the cache dir for ``FileSystemCache`` atomic (issue
   ``#468``).
+- Use native strings for memcached keys to work with Python 3 client (issue
+  ``#539``).
 
 Version 0.9.6
 -------------
