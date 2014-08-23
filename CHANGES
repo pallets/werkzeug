@@ -35,6 +35,7 @@ Version 0.9.7
   ``#539``).
 - Fix charset detection for ``werkzeug.debug.tbtools.Frame`` objects (issue
   ``#547``).
+- Ported testsuite to use ``py.test``.
 
 Version 0.9.6
 -------------
