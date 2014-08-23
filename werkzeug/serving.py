@@ -52,6 +52,11 @@ except AttributeError:
     import backports.ssl as ssl
 
 try:
+    from socket import _fileobject as SocketIO
+except ImportError:
+    from socket import SocketIO
+
+try:
     import thread
 except ImportError:
     import _thread as thread
@@ -385,6 +390,25 @@ def is_ssl_error(error=None):
     return isinstance(error, ssl.SSLError)
 
 
+class _SSLConnectionFix(object):
+    """Wrapper around SSL connection to provide a working makefile()."""
+
+    def __init__(self, con):
+        self._con = con
+
+    def makefile(self, mode, bufsize):
+        return SocketIO(self._con, mode)
+
+    def __getattr__(self, attrib):
+        return getattr(self._con, attrib)
+
+    def shutdown(self, arg=None):
+        try:
+            self._con.shutdown()
+        except Exception:
+            pass
+
+
 def select_ip_version(host, port):
     """Returns AF_INET4 or AF_INET6 depending on where to connect to."""
     # disabled due to problems with current ipv6 implementations
@@ -450,6 +474,8 @@ class BaseWSGIServer(HTTPServer, object):
 
     def get_request(self):
         con, info = self.socket.accept()
+        if self.ssl_context is not None:
+            con = _SSLConnectionFix(con)
         return con, info
 
 
