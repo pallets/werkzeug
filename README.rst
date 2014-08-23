@@ -17,3 +17,15 @@ bulletin boards, etc.).
 
 Details and example applications are available on the
 `Werkzeug website <http://werkzeug.pocoo.org/>`_.
+
+
+Branches
+--------
+
++---------------------+--------------------------------------------------------------------------------+
+| ``master``          | .. image:: https://travis-ci.org/mitsuhiko/werkzeug.svg?branch=master          |
+|                     |     :target: https://travis-ci.org/mitsuhiko/werkzeug                          |
++---------------------+--------------------------------------------------------------------------------+
+| ``0.9-maintenance`` | .. image:: https://travis-ci.org/mitsuhiko/werkzeug.svg?branch=0.9-maintenance |
+|                     |     :target: https://travis-ci.org/mitsuhiko/werkzeug                          |
++---------------------+--------------------------------------------------------------------------------+
