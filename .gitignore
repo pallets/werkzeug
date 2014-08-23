@@ -13,3 +13,4 @@ bench/b
 coverage_out
 .cache
 .xprocess
+htmlcov
