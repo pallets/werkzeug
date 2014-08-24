@@ -180,6 +180,17 @@ def test_import_string():
     pytest.raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
     pytest.raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
+
+def test_import_string_attribute_error():
+    with pytest.raises(AttributeError) as foo_exc:
+        utils.import_string('tests.res.foo')
+    assert 'screw your import' in str(foo_exc)
+
+    with pytest.raises(AttributeError) as bar_exc:
+        utils.import_string('tests.res.bar')
+    assert 'screw your import' in str(bar_exc)
+
+
 def test_find_modules():
     assert list(utils.find_modules('werkzeug.debug')) == [
         'werkzeug.debug.console', 'werkzeug.debug.repr',
