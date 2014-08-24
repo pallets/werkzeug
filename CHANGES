@@ -20,6 +20,7 @@ Release date and codename to be decided
   :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
 - Added support for stdlib pbkdf2 hmac if a compatible digest
   is found.
+- Ported testsuite to use ``py.test``.
 
 Version 0.9.7
 -------------
@@ -35,7 +36,6 @@ Version 0.9.7
   ``#539``).
 - Fix charset detection for ``werkzeug.debug.tbtools.Frame`` objects (issue
   ``#547``).
-- Ported testsuite to use ``py.test``.
 - Fix ``AttributeError`` masking in ``werkzeug.utils.import_string`` (issue
   ``#182``).
 
