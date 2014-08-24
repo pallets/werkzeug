@@ -404,9 +404,16 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
 def is_ssl_error(error=None):
     """Checks if the given error (or the current one) is an SSL error."""
     ssl = _get_stdlib_ssl_module()
+    exc_types = (ssl.SSLError,)
+    try:
+        from OpenSSL.SSL import Error
+        exc_types += (Error,)
+    except ImportError:
+        pass
+
     if error is None:
         error = sys.exc_info()[1]
-    return isinstance(error, ssl.SSLError)
+    return isinstance(error, exc_types)
 
 
 class _SSLConnectionFix(object):
