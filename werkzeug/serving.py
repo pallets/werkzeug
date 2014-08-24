@@ -45,11 +45,29 @@ import signal
 import subprocess
 
 
-try:
+def _get_openssl_crypto_module():
+    try:
+        from OpenSSL import crypto
+    except ImportError:
+        raise TypeError('Using ad-hoc certificates requires the pyOpenSSL '
+                        'library.')
+    else:
+        return crypto
+
+
+def _get_stdlib_ssl_module():
     import ssl
-    ssl.SSLContext
-except AttributeError:
-    import backports.ssl as ssl
+    if hasattr(ssl, 'SSLContext'):
+        return ssl
+
+    try:
+        import backports.ssl
+    except ImportError:
+        raise TypeError('Using SSL features in Python 2 requires '
+                        'backports.ssl to be installed.')
+    else:
+        return backports.ssl
+
 
 try:
     from socket import _fileobject as SocketIO
@@ -282,7 +300,7 @@ BaseRequestHandler = WSGIRequestHandler
 
 def generate_adhoc_ssl_pair(cn=None):
     from random import random
-    from OpenSSL import crypto
+    crypto = _get_openssl_crypto_module()
 
     # pretty damn sure that this is not actually accepted by anyone
     if cn is None:
@@ -345,7 +363,7 @@ def make_ssl_devcert(base_path, host=None, cn=None):
 
 def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
-    from OpenSSL import crypto
+    crypto = _get_openssl_crypto_module()
     import tempfile
     cert, pkey = generate_adhoc_ssl_pair()
     cert_handle, cert_file = tempfile.mkstemp()
@@ -375,6 +393,7 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
     :param protocol: One of the ``PROTOCOL_*`` constants. Defaults to
                      ``PROTOCOL_SSLv23``.
     """
+    ssl = _get_stdlib_ssl_module()
     if protocol is None:
         protocol = ssl.PROTOCOL_SSLv23
     ctx = ssl.SSLContext(protocol)
@@ -384,6 +403,7 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
 
 def is_ssl_error(error=None):
     """Checks if the given error (or the current one) is an SSL error."""
+    ssl = _get_stdlib_ssl_module()
     if error is None:
         error = sys.exc_info()[1]
     return isinstance(error, ssl.SSLError)
