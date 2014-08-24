@@ -397,7 +397,7 @@ class _SSLConnectionFix(object):
         self._con = con
 
     def makefile(self, mode, bufsize):
-        return SocketIO(self._con, mode)
+        return SocketIO(self, mode)
 
     def __getattr__(self, attrib):
         return getattr(self._con, attrib)
@@ -407,6 +407,23 @@ class _SSLConnectionFix(object):
             self._con.shutdown()
         except Exception:
             pass
+
+    try:
+        buffer
+    except NameError:
+        pass
+    else:
+        # https://github.com/pyca/pyopenssl/pull/99
+        def sendall(self, buf, *args, **kwargs):
+            if isinstance(buf, buffer):
+                buf = bytes(buf)
+            return self._con.sendall(buf, *args, **kwargs)
+
+        def send(self, buf, *args, **kwargs):
+            if isinstance(buf, buffer):
+                buf = bytes(buf)
+            return self._con.send(buf, *args, **kwargs)
+
 
 
 def select_ip_version(host, port):
