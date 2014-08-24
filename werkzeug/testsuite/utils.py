@@ -185,6 +185,9 @@ class GeneralUtilityTestCase(WerkzeugTestCase):
         self.assert_raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
         self.assert_raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
+        self.assert_raises(AttributeError, utils.import_string, 'werkzeug.testsuite.res.foo')
+        self.assert_raises(AttributeError, utils.import_string, 'werkzeug.testsuite.res.bar')
+
     def test_find_modules(self):
         self.assert_equal(list(utils.find_modules('werkzeug.debug')), \
             ['werkzeug.debug.console', 'werkzeug.debug.repr',
