@@ -395,29 +395,32 @@ def import_string(import_name, silent=False):
                    `None` is returned instead.
     :return: imported object
     """
-    #XXX: py3 review needed
-    assert isinstance(import_name, string_types)
     # force the import name to automatically convert to strings
-    import_name = str(import_name)
+    # __import__ is not able to handle unicode strings in the fromlist
+    # if the module is a package
+    import_name = str(import_name).replace(':', '.')
     try:
-        if ':' in import_name:
-            module, obj = import_name.split(':', 1)
-        elif '.' in import_name:
-            module, obj = import_name.rsplit('.', 1)
-        else:
-            return __import__(import_name)
-        # __import__ is not able to handle unicode strings in the fromlist
-        # if the module is a package
-        if PY2 and isinstance(obj, unicode):
-            obj = obj.encode('utf-8')
         try:
-            return getattr(__import__(module, None, None, [obj]), obj)
-        except (ImportError, AttributeError):
+            __import__(import_name)
+        except ImportError:
+            if '.' not in import_name:
+                raise
+        else:
+            return sys.modules[import_name]
+
+        module_name, obj_name = import_name.rsplit('.', 1)
+        try:
+            module = __import__(module_name, None, None, [obj_name])
+        except ImportError:
             # support importing modules not yet set up by the parent module
             # (or package for that matter)
-            modname = module + '.' + obj
-            __import__(modname)
-            return sys.modules[modname]
+            module = import_string(module_name)
+
+        try:
+            return getattr(module, obj_name)
+        except AttributeError as e:
+            raise ImportError(e)
+
     except ImportError as e:
         if not silent:
             reraise(
