@@ -19,7 +19,8 @@ from werkzeug.wrappers import BaseResponse
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug import wsgi
-from werkzeug._compat import StringIO, BytesIO, NativeStringIO, to_native
+from werkzeug._compat import StringIO, BytesIO, NativeStringIO, to_native, \
+    to_bytes
 
 
 def test_shareddatamiddleware_get_file_loader():
@@ -60,6 +61,34 @@ def test_shared_data_middleware(tmpdir):
     assert status == '404 NOT FOUND'
     assert b''.join(app_iter).strip() == b'NOT FOUND'
 
+def test_dispatchermiddleware():
+    def null_application(environ, start_response):
+        start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
+        yield b'NOT FOUND'
+
+    def dummy_application(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        yield to_bytes(environ['SCRIPT_NAME'])
+
+    app = wsgi.DispatcherMiddleware(null_application, {
+        '/test1': dummy_application,
+        '/test2/very': dummy_application,
+        })
+    tests = {
+        '/test1': ('/test1', '/test1/asfd', '/test1/very'),
+        '/test2/very': ('/test2/very', '/test2/very/long/path/after/script/name')
+        }
+    for name, urls in tests.items():
+        for p in urls:
+            environ = create_environ(p)
+            app_iter, status, headers = run_wsgi_app(app, environ)
+            assert status == '200 OK'
+            assert b''.join(app_iter).strip() == to_bytes(name)
+
+    app_iter, status, headers = run_wsgi_app(
+        app, create_environ('/missing'))
+    assert status == '404 NOT FOUND'
+    assert b''.join(app_iter).strip() == b'NOT FOUND'
 
 def test_get_host():
     env = {'HTTP_X_FORWARDED_HOST': 'example.org',
