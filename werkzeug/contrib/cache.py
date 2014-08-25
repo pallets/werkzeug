@@ -58,6 +58,7 @@
 """
 import os
 import re
+import errno
 import tempfile
 from hashlib import md5
 from time import time
@@ -67,7 +68,7 @@ except ImportError:  # pragma: no cover
     import pickle
 
 from werkzeug._compat import iteritems, string_types, text_type, \
-     integer_types, to_bytes
+    integer_types, to_native
 from werkzeug.posixemulation import rename
 
 
@@ -293,7 +294,7 @@ class SimpleCache(BaseCache):
         return self._cache.pop(key, None) is not None
 
 
-_test_memcached_key = re.compile(br'[^\x00-\x21\xff]{1,250}$').match
+_test_memcached_key = re.compile(r'[^\x00-\x21\xff]{1,250}$').match
 
 class MemcachedCache(BaseCache):
     """A cache that uses memcached as backend.
@@ -334,13 +335,16 @@ class MemcachedCache(BaseCache):
             # client.
             self._client = servers
 
-        self.key_prefix = to_bytes(key_prefix)
+        self.key_prefix = to_native(key_prefix)
 
-    def get(self, key):
-        if isinstance(key, text_type):
-            key = key.encode('utf-8')
+    def _normalize_key(self, key):
+        key = to_native(key, 'utf-8')
         if self.key_prefix:
             key = self.key_prefix + key
+        return key
+
+    def get(self, key):
+        key = self._normalize_key(key)
         # memcached doesn't support keys longer than that.  Because often
         # checks for so long keys can occour because it's tested from user
         # submitted data etc we fail silently for getting.
@@ -351,13 +355,9 @@ class MemcachedCache(BaseCache):
         key_mapping = {}
         have_encoded_keys = False
         for key in keys:
-            if isinstance(key, unicode):
-                encoded_key = key.encode('utf-8')
+            encoded_key = self._normalize_key(key)
+            if not isinstance(key, str):
                 have_encoded_keys = True
-            else:
-                encoded_key = key
-            if self.key_prefix:
-                encoded_key = self.key_prefix + encoded_key
             if _test_memcached_key(key):
                 key_mapping[encoded_key] = key
         d = rv = self._client.get_multi(key_mapping.keys())
@@ -374,19 +374,13 @@ class MemcachedCache(BaseCache):
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        if isinstance(key, text_type):
-            key = key.encode('utf-8')
-        if self.key_prefix:
-            key = self.key_prefix + key
+        key = self._normalize_key(key)
         return self._client.add(key, value, timeout)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        if isinstance(key, text_type):
-            key = key.encode('utf-8')
-        if self.key_prefix:
-            key = self.key_prefix + key
+        key = self._normalize_key(key)
         return self._client.set(key, value, timeout)
 
     def get_many(self, *keys):
@@ -398,29 +392,20 @@ class MemcachedCache(BaseCache):
             timeout = self.default_timeout
         new_mapping = {}
         for key, value in _items(mapping):
-            if isinstance(key, text_type):
-                key = key.encode('utf-8')
-            if self.key_prefix:
-                key = self.key_prefix + key
+            key = self._normalize_key(key)
             new_mapping[key] = value
         failed_keys = self._client.set_multi(new_mapping, timeout)
         return not failed_keys
 
     def delete(self, key):
-        if isinstance(key, unicode):
-            key = key.encode('utf-8')
-        if self.key_prefix:
-            key = self.key_prefix + key
+        key = self._normalize_key(key)
         if _test_memcached_key(key):
             return self._client.delete(key)
 
     def delete_many(self, *keys):
         new_keys = []
         for key in keys:
-            if isinstance(key, unicode):
-                key = key.encode('utf-8')
-            if self.key_prefix:
-                key = self.key_prefix + key
+            key = self._normalize_key(key)
             if _test_memcached_key(key):
                 new_keys.append(key)
         return self._client.delete_multi(new_keys)
@@ -429,17 +414,11 @@ class MemcachedCache(BaseCache):
         return self._client.flush_all()
 
     def inc(self, key, delta=1):
-        if isinstance(key, unicode):
-            key = key.encode('utf-8')
-        if self.key_prefix:
-            key = self.key_prefix + key
+        key = self._normalize_key(key)
         return self._client.incr(key, delta)
 
     def dec(self, key, delta=1):
-        if isinstance(key, unicode):
-            key = key.encode('utf-8')
-        if self.key_prefix:
-            key = self.key_prefix + key
+        key = self._normalize_key(key)
         return self._client.decr(key, delta)
 
     def import_preferred_memcache_lib(self, servers):
@@ -618,8 +597,12 @@ class FileSystemCache(BaseCache):
         self._path = cache_dir
         self._threshold = threshold
         self._mode = mode
-        if not os.path.exists(self._path):
+
+        try:
             os.makedirs(self._path)
+        except OSError as ex:
+            if ex.errno != errno.EEXIST:
+                raise
 
     def _list_dir(self):
         """return a list of (fully qualified) cache filenames

@@ -436,6 +436,8 @@ class BaseWSGIServer(HTTPServer, object):
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
+        finally:
+            self.server_close()
 
     def handle_error(self, request, client_address):
         if self.passthrough_errors:
@@ -624,9 +626,8 @@ def run_simple(hostname, port, application, use_reloader=False,
                extra_files=None, reloader_interval=1, threaded=False,
                processes=1, request_handler=None, static_files=None,
                passthrough_errors=False, ssl_context=None):
-    """Start an application using wsgiref and with an optional reloader.  This
-    wraps `wsgiref` to fix the wrong default reporting of the multithreaded
-    WSGI variable and adds optional multithreading and fork support.
+    """Start a WSGI application. Optional features include a reloader,
+    multithreading and fork support.
 
     This function has a command-line interface too::
 

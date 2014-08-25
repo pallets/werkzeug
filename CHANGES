@@ -20,6 +20,27 @@ Release date and codename to be decided
   :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
 - Added support for stdlib pbkdf2 hmac if a compatible digest
   is found.
+- Ported testsuite to use ``py.test``.
+- Minor optimizations to various middlewares (pull requests ``#496`` and
+  ``#571``).
+
+Version 0.9.7
+-------------
+
+(bugfix release, release date to be decided)
+
+- Fix unicode problems in ``werkzeug.debug.tbtools``.
+- Fix Python 3-compatibility problems in ``werkzeug.posixemulation``.
+- Backport fix of fatal typo for ``ImmutableList`` (issue ``#492``).
+- Make creation of the cache dir for ``FileSystemCache`` atomic (issue
+  ``#468``).
+- Use native strings for memcached keys to work with Python 3 client (issue
+  ``#539``).
+- Fix charset detection for ``werkzeug.debug.tbtools.Frame`` objects (issue
+  ``#547``).
+- Fix ``AttributeError`` masking in ``werkzeug.utils.import_string`` (issue
+  ``#182``).
+- Explicitly shut down server (issue ``#519``).
 
 Version 0.9.6
 -------------

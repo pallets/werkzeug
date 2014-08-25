@@ -135,11 +135,11 @@ name of your server on generation or a `CN`.
     ('/path/to/the/key.crt', '/path/to/the/key.key')
 
 2.  Now this tuple can be passed as ``ssl_context`` to the
-    :func:`run_simple` method:
+    :func:`run_simple` method::
 
-    run_simple('localhost', 4000, application,
-               ssl_context=('/path/to/the/key.crt',
-                            '/path/to/the/key.key'))
+        run_simple('localhost', 4000, application,
+                   ssl_context=('/path/to/the/key.crt',
+                                '/path/to/the/key.key'))
 
 You will have to acknowledge the certificate in your browser once then.
 
