@@ -461,7 +461,7 @@ class Frame(object):
 
         if source is None:
             try:
-                f = open(self.filename)
+                f = open(self.filename, mode='rb')
             except IOError:
                 return []
             try:

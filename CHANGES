@@ -36,8 +36,8 @@ Version 0.9.7
   ``#468``).
 - Use native strings for memcached keys to work with Python 3 client (issue
   ``#539``).
-- Fix charset detection for ``werkzeug.debug.tbtools.Frame`` objects (issue
-  ``#547``).
+- Fix charset detection for ``werkzeug.debug.tbtools.Frame`` objects (issues
+  ``#547`` and ``#532``).
 - Fix ``AttributeError`` masking in ``werkzeug.utils.import_string`` (issue
   ``#182``).
 - Explicitly shut down server (issue ``#519``).
