@@ -101,7 +101,7 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     chunk = reader(16384)
                     if not chunk:
                         break
-                    write_binary(chunk)
+                    write(chunk)
             else:
                 if isinstance(value, string_types):
                     value = to_native(value, charset)
