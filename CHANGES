@@ -20,6 +20,8 @@ Version 0.9.7
 - Explicitly shut down server (issue ``#519``).
 - Fix timeouts greater than 2592000 being misinterpreted as UNIX timestamps in
   ``werkzeug.contrib.cache.MemcachedCache`` (issue ``#533``).
+- Fix ``werkzeug.test.stream_encode_multipart`` issue with Python 3 (issue
+  ``#572``).
 
 Version 0.9.6
 -------------

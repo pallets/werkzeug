@@ -14,7 +14,7 @@ from __future__ import with_statement
 import sys
 import unittest
 from io import BytesIO
-from werkzeug._compat import iteritems, to_bytes
+from werkzeug._compat import iteritems, to_bytes, to_native
 
 from werkzeug.testsuite import WerkzeugTestCase
 
@@ -228,10 +228,14 @@ class TestTestCase(WerkzeugTestCase):
             stream.close()
 
     def test_environ_builder_unicode_file_mix(self):
+        class RandomObject(object):
+            def __str__(self):
+                return to_native(u'\N{SNOWMAN}', 'utf-8')
+
         for use_tempfile in False, True:
             f = FileStorage(BytesIO(u'\N{SNOWMAN}'.encode('utf-8')),
                             'snowman.txt')
-            d = MultiDict(dict(f=f, s=u'\N{SNOWMAN}'))
+            d = MultiDict(dict(f=f, s=u'\N{SNOWMAN}', r=RandomObject()))
             stream, length, boundary = stream_encode_multipart(
                 d, use_tempfile, threshold=150)
             self.assert_true(isinstance(stream, BytesIO) != use_tempfile)
@@ -247,6 +251,7 @@ class TestTestCase(WerkzeugTestCase):
             self.assert_strict_equal(files['f'].filename, u'snowman.txt')
             self.assert_strict_equal(files['f'].read(),
                                      u'\N{SNOWMAN}'.encode('utf-8'))
+            self.assert_in(u'\N{SNOWMAN}', form['r'])
             stream.close()
 
     def test_create_environ(self):
