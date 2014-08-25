@@ -73,7 +73,7 @@ from werkzeug._internal import _log
 from werkzeug._compat import iteritems, PY2, reraise, text_type, \
      wsgi_encoding_dance
 from werkzeug.urls import url_parse, url_unquote
-from werkzeug.exceptions import InternalServerError, BadRequest
+from werkzeug.exceptions import InternalServerError
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
