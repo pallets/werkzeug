@@ -38,6 +38,7 @@ Version 0.9.7
   ``#547``).
 - Fix ``AttributeError`` masking in ``werkzeug.utils.import_string`` (issue
   ``#182``).
+- Explicitly shut down server (issue ``#519``).
 
 Version 0.9.6
 -------------
