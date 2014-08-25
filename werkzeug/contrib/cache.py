@@ -323,7 +323,7 @@ class MemcachedCache(BaseCache):
     def get(self, key):
         key = self._normalize_key(key)
         # memcached doesn't support keys longer than that.  Because often
-        # checks for so long keys can occour because it's tested from user
+        # checks for so long keys can occur because it's tested from user
         # submitted data etc we fail silently for getting.
         if _test_memcached_key(key):
             return self._client.get(key)
