@@ -18,6 +18,8 @@ Version 0.9.7
 - Fix ``AttributeError`` masking in ``werkzeug.utils.import_string`` (issue
   ``#182``).
 - Explicitly shut down server (issue ``#519``).
+- Fix timeouts greater than 2592000 being misinterpreted as UNIX timestamps in
+  ``werkzeug.contrib.cache.MemcachedCache`` (issue ``#533``).
 
 Version 0.9.6
 -------------

@@ -245,6 +245,16 @@ class MemcachedCacheTestCase(WerkzeugTestCase):
         c.set('bar', False)
         self.assert_equal(c.get('bar'), False)
 
+    def test_huge_timeouts(self):
+        # Timeouts greater than epoch are interpreted as POSIX timestamps
+        # (i.e. not relative to now, but relative to epoch)
+        import random
+        epoch = 2592000
+        timeout = epoch + random.random() * 100
+        c = self.make_cache()
+        c.set('foo', 'bar', timeout)
+        self.assert_equal(c.get('foo'), 'bar')
+
 
 def suite():
     suite = unittest.TestSuite()
