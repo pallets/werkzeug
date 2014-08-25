@@ -115,10 +115,9 @@ SSL
 
 .. versionadded:: 0.6
 
-The builtin server supports SSL for testing purposes.  If an SSL context
-is provided it will be used.  That means a server can either run in HTTP
-or HTTPS mode, but not both.  This feature requires the Python OpenSSL
-library.
+The builtin server supports SSL for testing purposes.  If an SSL context is
+provided it will be used.  That means a server can either run in HTTP or HTTPS
+mode, but not both.
 
 Quickstart
 ``````````
@@ -181,3 +180,5 @@ The downside of this of course is that you will have to acknowledge the
 certificate each time the server is reloaded.  Adhoc certificates are
 discouraged because modern browsers do a bad job at supporting them for
 security reasons.
+
+This feature requires the pyOpenSSL library to be installed.
