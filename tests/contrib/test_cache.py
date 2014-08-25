@@ -193,3 +193,12 @@ if memcache is not None:
         def test_compat(self, c):
             assert c._client.set(c.key_prefix + 'foo', 'bar')
             assert c.get('foo') == 'bar'
+
+        def test_huge_timeouts(self, c):
+            # Timeouts greater than epoch are interpreted as POSIX timestamps
+            # (i.e. not relative to now, but relative to epoch)
+            import random
+            epoch = 2592000
+            timeout = epoch + random.random() * 100
+            c.set('foo', 'bar', timeout)
+            assert c.get('foo') == 'bar'

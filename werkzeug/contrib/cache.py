@@ -343,10 +343,13 @@ class MemcachedCache(BaseCache):
             key = self.key_prefix + key
         return key
 
+    def _normalize_timeout(self, timeout):
+        return int(time()) + timeout
+
     def get(self, key):
         key = self._normalize_key(key)
         # memcached doesn't support keys longer than that.  Because often
-        # checks for so long keys can occour because it's tested from user
+        # checks for so long keys can occur because it's tested from user
         # submitted data etc we fail silently for getting.
         if _test_memcached_key(key):
             return self._client.get(key)
@@ -375,12 +378,14 @@ class MemcachedCache(BaseCache):
         if timeout is None:
             timeout = self.default_timeout
         key = self._normalize_key(key)
+        timeout = self._normalize_timeout(timeout)
         return self._client.add(key, value, timeout)
 
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
         key = self._normalize_key(key)
+        timeout = self._normalize_timeout(timeout)
         return self._client.set(key, value, timeout)
 
     def get_many(self, *keys):
@@ -394,6 +399,8 @@ class MemcachedCache(BaseCache):
         for key, value in _items(mapping):
             key = self._normalize_key(key)
             new_mapping[key] = value
+
+        timeout = self._normalize_timeout(timeout)
         failed_keys = self._client.set_multi(new_mapping, timeout)
         return not failed_keys
 
