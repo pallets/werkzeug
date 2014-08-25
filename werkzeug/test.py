@@ -52,17 +52,11 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
         def write_binary(string):
             stream, total_length, on_disk = _closure
             if on_disk:
-                try:
-                    stream.write(string)
-                except TypeError:
-                    stream.write(string.encode(charset))
+                stream.write(string)
             else:
                 length = len(string)
                 if length + _closure[1] <= threshold:
-                    try:
-                        stream.write(string)
-                    except TypeError:
-                        stream.write(string.encode(charset))
+                    stream.write(string)
                 else:
                     new_stream = TemporaryFile('wb+')
                     new_stream.write(stream.getvalue())
