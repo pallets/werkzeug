@@ -149,11 +149,13 @@ Loading Contexts by Hand
 Instead of using a tuple as ``ssl_context`` you can also create the
 context programmatically.  This way you have better control over it::
 
-    from OpenSSL import SSL
-    ctx = SSL.Context(SSL.SSLv23_METHOD)
-    ctx.use_privatekey_file('ssl.key')
-    ctx.use_certificate_file('ssl.cert')
+    import ssl
+    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    ctx.load_cert_chain('ssl.cert', 'ssl.key')
     run_simple('localhost', 4000, application, ssl_context=ctx)
+
+
+.. versionchanged 0.10:: ``OpenSSL`` contexts are not supported anymore.
 
 Generating Certificates
 ```````````````````````

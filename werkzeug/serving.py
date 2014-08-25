@@ -57,11 +57,6 @@ def _get_openssl_crypto_module():
 
 
 try:
-    from socket import _fileobject as SocketIO
-except ImportError:
-    from socket import SocketIO
-
-try:
     import thread
 except ImportError:
     import _thread as thread
@@ -421,63 +416,6 @@ def is_ssl_error(error=None):
     return isinstance(error, exc_types)
 
 
-class _SSLConnectionFix(object):
-    """Wrapper around SSL connection to provide compatibility to the stdlib's
-    socket module."""
-
-    def __init__(self, con):
-        self._con = con
-        self._pypy_refcounter = 0
-
-    def makefile(self, mode, bufsize):
-        # OpenSSL simply doesn't implement it.
-        return SocketIO(self, mode)
-
-    def __getattr__(self, attrib):
-        return getattr(self._con, attrib)
-
-    def shutdown(self, arg=None):
-        try:
-            self._con.shutdown()
-        except Exception:
-            pass
-
-    # From the comments of PyPy's Python 2 ``socket._fileobject.__init__``:
-    #
-    # >Note that a few libraries (like eventlet) poke at the
-    # >private implementation of socket.py, passing custom
-    # >objects to _fileobject().  These libraries need the
-    # >following fix for use on PyPy: the custom objects need
-    # >methods _reuse() and _drop() that maintains an explicit
-    # >reference counter, starting at 0.  When it drops back to
-    # >zero, close() must be called.
-
-    def _drop(self):
-        self._pypy_refcounter -= 1
-        if self._pypy_refcounter == 0:
-            self.close()
-
-    def _reuse(self):
-        self._pypy_refcounter += 1
-
-    try:
-        buffer
-    except NameError:
-        pass
-    else:
-        # https://github.com/pyca/pyopenssl/pull/99
-        def sendall(self, buf, *args, **kwargs):
-            if isinstance(buf, buffer):
-                buf = bytes(buf)
-            return self._con.sendall(buf, *args, **kwargs)
-
-        def send(self, buf, *args, **kwargs):
-            if isinstance(buf, buffer):
-                buf = bytes(buf)
-            return self._con.send(buf, *args, **kwargs)
-
-
-
 def select_ip_version(host, port):
     """Returns AF_INET4 or AF_INET6 depending on where to connect to."""
     # disabled due to problems with current ipv6 implementations
@@ -543,8 +481,6 @@ class BaseWSGIServer(HTTPServer, object):
 
     def get_request(self):
         con, info = self.socket.accept()
-        if self.ssl_context is not None:
-            con = _SSLConnectionFix(con)
         return con, info
 
 
