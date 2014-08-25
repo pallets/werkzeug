@@ -40,6 +40,7 @@ from __future__ import with_statement
 import os
 import socket
 import sys
+import ssl
 import time
 import signal
 import subprocess
@@ -53,20 +54,6 @@ def _get_openssl_crypto_module():
                         'library.')
     else:
         return crypto
-
-
-def _get_stdlib_ssl_module():
-    import ssl
-    if hasattr(ssl, 'SSLContext'):
-        return ssl
-
-    try:
-        import backports.ssl
-    except ImportError:
-        raise TypeError('Using SSL features in Python 2 requires '
-                        'backports.ssl to be installed.')
-    else:
-        return backports.ssl
 
 
 try:
@@ -365,20 +352,19 @@ def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
     crypto = _get_openssl_crypto_module()
     import tempfile
+    import atexit
+
     cert, pkey = generate_adhoc_ssl_pair()
     cert_handle, cert_file = tempfile.mkstemp()
     pkey_handle, pkey_file = tempfile.mkstemp()
-    try:
-        os.write(cert_handle, crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-        os.write(pkey_handle, crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
-        os.close(cert_handle)
-        os.close(pkey_handle)
-        ctx = load_ssl_context(cert_file, pkey_file)
-    finally:
-        try:
-            os.unlink(pkey_file)
-        finally:
-            os.unlink(cert_file)
+    atexit.register(os.remove, pkey_file)
+    atexit.register(os.remove, cert_file)
+
+    os.write(cert_handle, crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+    os.write(pkey_handle, crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
+    os.close(cert_handle)
+    os.close(pkey_handle)
+    ctx = load_ssl_context(cert_file, pkey_file)
     return ctx
 
 
@@ -390,20 +376,39 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
     :param cert_file: Path of the certificate to use.
     :param pkey_file: Path of the private key to use. If not given, the key
                       will be obtained from the certificate file.
-    :param protocol: One of the ``PROTOCOL_*`` constants. Defaults to
-                     ``PROTOCOL_SSLv23``.
+    :param protocol: One of the ``PROTOCOL_*`` constants in the stdlib ``ssl``
+                     module. Defaults to ``PROTOCOL_SSLv23``.
     """
-    ssl = _get_stdlib_ssl_module()
     if protocol is None:
         protocol = ssl.PROTOCOL_SSLv23
-    ctx = ssl.SSLContext(protocol)
+    ctx = _SSLContext(protocol)
     ctx.load_cert_chain(cert_file, pkey_file)
     return ctx
 
 
+class _SSLContext(object):
+    '''A dummy class with a small subset of Python3's ``ssl.SSLContext``, only
+    intended to be used with and by Werkzeug.'''
+
+    def __init__(self, protocol):
+        self._protocol = protocol
+        self._certfile = None
+        self._keyfile = None
+        self._password = None
+
+    def load_cert_chain(self, certfile, keyfile=None, password=None):
+        self._certfile = certfile
+        self._keyfile = keyfile or certfile
+        self._password = password
+
+    def wrap_socket(self, sock, **kwargs):
+        return ssl.wrap_socket(sock, keyfile=self._keyfile,
+                               certfile=self._certfile, server_side=True,
+                               ssl_version=self._protocol, **kwargs)
+
+
 def is_ssl_error(error=None):
     """Checks if the given error (or the current one) is an SSL error."""
-    ssl = _get_stdlib_ssl_module()
     exc_types = (ssl.SSLError,)
     try:
         from OpenSSL.SSL import Error
@@ -513,7 +518,7 @@ class BaseWSGIServer(HTTPServer, object):
                 ssl_context = load_ssl_context(*ssl_context)
             if ssl_context == 'adhoc':
                 ssl_context = generate_adhoc_ssl_context()
-            self.socket = ssl_context.wrap_socket(self.socket, server_side=True)
+            self.socket = ssl_context.wrap_socket(self.socket)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None
