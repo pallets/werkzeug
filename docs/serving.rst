@@ -146,8 +146,9 @@ You will have to acknowledge the certificate in your browser once then.
 Loading Contexts by Hand
 ````````````````````````
 
-Instead of using a tuple as ``ssl_context`` you can also create the
-context programmatically.  This way you have better control over it::
+In Python 2.7.9 and 3+ you also have the option to use a ``ssl.SSLContext``
+object instead of a simple tuple. This way you have better control over the SSL
+behavior of Werkzeug's builtin server::
 
     import ssl
     ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
