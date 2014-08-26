@@ -9,8 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
-import sys
-import time
+import ssl
+
 try:
     import httplib
 except ImportError:
@@ -21,75 +21,68 @@ except ImportError:  # pragma: no cover
     from urllib.request import urlopen
     from urllib.error import HTTPError
 
-from functools import update_wrapper
-
 try:
     import OpenSSL
 except ImportError:
     OpenSSL = None
 
+
 import pytest
 
 from werkzeug import __version__ as version, serving
 from werkzeug.testapp import test_app as _test_app
-from werkzeug._compat import StringIO
-from threading import Thread
+import threading
 
 
 real_make_server = serving.make_server
 
 
-def silencestderr(f):
-    def new_func(*args, **kwargs):
-        old_stderr = sys.stderr
-        sys.stderr = StringIO()
-        try:
-            return f(*args, **kwargs)
-        finally:
-            sys.stderr = old_stderr
-    return update_wrapper(new_func, f)
+@pytest.fixture
+def dev_server(monkeypatch):
+    def run_dev_server(application, *args, **kwargs):
+        servers = []
+        server_started = threading.Event()
 
+        def tracking_make_server(*args, **kwargs):
+            srv = real_make_server(*args, **kwargs)
+            servers.append(srv)
+            server_started.set()
+            return srv
+        monkeypatch.setattr(serving, 'make_server', tracking_make_server)
 
-def run_dev_server(application, *args, **kwargs):
-    servers = []
-
-    def tracking_make_server(*args, **kwargs):
-        srv = real_make_server(*args, **kwargs)
-        servers.append(srv)
-        return srv
-    serving.make_server = tracking_make_server
-    try:
-        t = Thread(target=serving.run_simple,
-                   args=('localhost', 0, application) + args,
-                   kwargs=kwargs)
+        def thread_func():
+            serving.run_simple(
+                *(('localhost', 0, application) + args),
+                **kwargs
+            )
+        t = threading.Thread(target=thread_func)
         t.setDaemon(True)
         t.start()
-        time.sleep(0.25)
-    finally:
-        serving.make_server = real_make_server
-    if not servers:
-        return None, None
-    server, = servers
-    ip, port = server.socket.getsockname()[:2]
-    if ':' in ip:
-        ip = '[%s]' % ip
-    return server, '%s:%d' % (ip, port)
+        server_started.wait(5)
+        if not servers:
+            raise RuntimeError('Server startup timed out!')
+
+        server = servers.pop()
+        ip, port = server.socket.getsockname()[:2]
+        if ':' in ip:
+            ip = '[%s]' % ip
+        return server, '%s:%d' % (ip, port)
+
+    return run_dev_server
 
 
-@silencestderr
-def test_serving():
-    server, addr = run_dev_server(_test_app)
+def test_serving(dev_server):
+    server, addr = dev_server(_test_app)
     rv = urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
     assert b'WSGI Information' in rv
     assert b'foo=bar&amp;baz=blah' in rv
     assert b'Werkzeug/' + version.encode('ascii') in rv
 
 
-@silencestderr
-def test_broken_app():
+def test_broken_app(dev_server):
     def broken_app(environ, start_response):
         1 // 0
-    server, addr = run_dev_server(broken_app)
+    server, addr = dev_server(broken_app)
     try:
         urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
     except HTTPError as e:
@@ -100,8 +93,7 @@ def test_broken_app():
         assert False, 'expected internal server error'
 
 
-@silencestderr
-def test_absolute_requests():
+def test_absolute_requests(dev_server):
     def asserting_app(environ, start_response):
         assert environ['HTTP_HOST'] == 'surelynotexisting.example.com:1337'
         assert environ['PATH_INFO'] == '/index.htm'
@@ -109,19 +101,39 @@ def test_absolute_requests():
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'YES']
 
-    server, addr = run_dev_server(asserting_app)
+    server, addr = dev_server(asserting_app)
     conn = httplib.HTTPConnection(addr)
     conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm')
     res = conn.getresponse()
     assert res.read() == b'YES'
 
 
-@pytest.mark.skipif(OpenSSL is None, reason='OpenSSL is not installed.')
-def test_ssl_context_adhoc():
+@pytest.mark.skipif(not hasattr(ssl, 'SSLContext'),
+                    reason='Missing PEP 466 (Python 2.7.9+) or Python 3.')
+@pytest.mark.skipif(OpenSSL is None,
+                    reason='OpenSSL is required for cert generation.')
+def test_stdlib_ssl_contexts(dev_server, tmpdir):
+    certificate, private_key = serving.make_ssl_devcert(str(tmpdir))
+    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    ctx.load_cert_chain(certificate, private_key)
+
     def hello(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'hello']
-    server, addr = run_dev_server(hello, ssl_context='adhoc')
+    server, addr = dev_server(hello, ssl_context=ctx)
+    assert addr is not None
+    connection = httplib.HTTPSConnection(addr)
+    connection.request('GET', '/')
+    response = connection.getresponse()
+    assert response.read() == b'hello'
+
+
+@pytest.mark.skipif(OpenSSL is None, reason='OpenSSL is not installed.')
+def test_ssl_context_adhoc(dev_server):
+    def hello(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    server, addr = dev_server(hello, ssl_context='adhoc')
     assert addr is not None
     connection = httplib.HTTPSConnection(addr)
     connection.request('GET', '/')

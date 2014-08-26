@@ -115,10 +115,9 @@ SSL
 
 .. versionadded:: 0.6
 
-The builtin server supports SSL for testing purposes.  If an SSL context
-is provided it will be used.  That means a server can either run in HTTP
-or HTTPS mode, but not both.  This feature requires the Python OpenSSL
-library.
+The builtin server supports SSL for testing purposes.  If an SSL context is
+provided it will be used.  That means a server can either run in HTTP or HTTPS
+mode, but not both.
 
 Quickstart
 ``````````
@@ -146,14 +145,17 @@ You will have to acknowledge the certificate in your browser once then.
 Loading Contexts by Hand
 ````````````````````````
 
-Instead of using a tuple as ``ssl_context`` you can also create the
-context programmatically.  This way you have better control over it::
+In Python 2.7.9 and 3+ you also have the option to use a ``ssl.SSLContext``
+object instead of a simple tuple. This way you have better control over the SSL
+behavior of Werkzeug's builtin server::
 
-    from OpenSSL import SSL
-    ctx = SSL.Context(SSL.SSLv23_METHOD)
-    ctx.use_privatekey_file('ssl.key')
-    ctx.use_certificate_file('ssl.cert')
+    import ssl
+    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    ctx.load_cert_chain('ssl.cert', 'ssl.key')
     run_simple('localhost', 4000, application, ssl_context=ctx)
+
+
+.. versionchanged 0.10:: ``OpenSSL`` contexts are not supported anymore.
 
 Generating Certificates
 ```````````````````````
@@ -178,3 +180,5 @@ The downside of this of course is that you will have to acknowledge the
 certificate each time the server is reloaded.  Adhoc certificates are
 discouraged because modern browsers do a bad job at supporting them for
 security reasons.
+
+This feature requires the pyOpenSSL library to be installed.
