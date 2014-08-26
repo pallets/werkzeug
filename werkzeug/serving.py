@@ -398,7 +398,7 @@ class _SSLContext(object):
 
     def wrap_socket(self, sock, **kwargs):
         return ssl.wrap_socket(sock, keyfile=self._keyfile,
-                               certfile=self._certfile
+                               certfile=self._certfile,
                                ssl_version=self._protocol, **kwargs)
 
 
