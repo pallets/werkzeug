@@ -36,24 +36,34 @@ class ExceptionsTestCase(WerkzeugTestCase):
 
     def test_aborter(self):
         abort = exceptions.abort
-        self.assert_raises(exceptions.BadRequest, abort, 400)
-        self.assert_raises(exceptions.Unauthorized, abort, 401)
-        self.assert_raises(exceptions.Forbidden, abort, 403)
-        self.assert_raises(exceptions.NotFound, abort, 404)
-        self.assert_raises(exceptions.MethodNotAllowed, abort, 405, ['GET', 'HEAD'])
-        self.assert_raises(exceptions.NotAcceptable, abort, 406)
-        self.assert_raises(exceptions.RequestTimeout, abort, 408)
-        self.assert_raises(exceptions.Gone, abort, 410)
-        self.assert_raises(exceptions.LengthRequired, abort, 411)
-        self.assert_raises(exceptions.PreconditionFailed, abort, 412)
-        self.assert_raises(exceptions.RequestEntityTooLarge, abort, 413)
-        self.assert_raises(exceptions.RequestURITooLarge, abort, 414)
-        self.assert_raises(exceptions.UnsupportedMediaType, abort, 415)
-        self.assert_raises(exceptions.UnprocessableEntity, abort, 422)
-        self.assert_raises(exceptions.InternalServerError, abort, 500)
-        self.assert_raises(exceptions.NotImplemented, abort, 501)
-        self.assert_raises(exceptions.BadGateway, abort, 502)
-        self.assert_raises(exceptions.ServiceUnavailable, abort, 503)
+
+        for test in [
+            (exceptions.BadRequest, abort, 400),
+            (exceptions.Unauthorized, abort, 401),
+            (exceptions.Forbidden, abort, 403),
+            (exceptions.NotFound, abort, 404),
+            (exceptions.MethodNotAllowed, abort, 405, ['GET', 'HEAD']),
+            (exceptions.NotAcceptable, abort, 406),
+            (exceptions.RequestTimeout, abort, 408),
+            (exceptions.Gone, abort, 410),
+            (exceptions.LengthRequired, abort, 411),
+            (exceptions.PreconditionFailed, abort, 412),
+            (exceptions.RequestEntityTooLarge, abort, 413),
+            (exceptions.RequestURITooLarge, abort, 414),
+            (exceptions.UnsupportedMediaType, abort, 415),
+            (exceptions.UnprocessableEntity, abort, 422),
+            (exceptions.InternalServerError, abort, 500),
+            (exceptions.NotImplemented, abort, 501),
+            (exceptions.BadGateway, abort, 502),
+            (exceptions.ServiceUnavailable, abort, 503)
+        ]:
+            exc_type = test[0]
+            func = test[1]
+            args = test[2:]
+            with self.assert_raises(exc_type) as exc_info:
+                func(*args)
+
+            self.assert_is(type(exc_info.exc_value), exc_type)
 
         myabort = exceptions.Aborter({1: exceptions.NotFound})
         self.assert_raises(LookupError, myabort, 404)
