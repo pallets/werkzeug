@@ -20,6 +20,8 @@ Version 0.9.7
 - Explicitly shut down server (issue ``#519``).
 - Fix timeouts greater than 2592000 being misinterpreted as UNIX timestamps in
   ``werkzeug.contrib.cache.MemcachedCache`` (issue ``#533``).
+- Fix bug where ``werkzeug.exceptions.abort`` would raise an arbitrary subclass
+  of the expected class (issue ``#422``).
 
 Version 0.9.6
 -------------
