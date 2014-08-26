@@ -398,7 +398,7 @@ class _SSLContext(object):
 
     def wrap_socket(self, sock, **kwargs):
         return ssl.wrap_socket(sock, keyfile=self._keyfile,
-                               certfile=self._certfile, server_side=True,
+                               certfile=self._certfile
                                ssl_version=self._protocol, **kwargs)
 
 
@@ -456,7 +456,8 @@ class BaseWSGIServer(HTTPServer, object):
                 ssl_context = load_ssl_context(*ssl_context)
             if ssl_context == 'adhoc':
                 ssl_context = generate_adhoc_ssl_context()
-            self.socket = ssl_context.wrap_socket(self.socket)
+            self.socket = ssl_context.wrap_socket(self.socket,
+                                                  server_side=True)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None

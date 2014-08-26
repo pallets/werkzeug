@@ -24,7 +24,8 @@ Release date and codename to be decided
 - Minor optimizations to various middlewares (pull requests ``#496`` and
   ``#571``).
 - Use stdlib ``ssl`` module instead of ``OpenSSL`` for the builtin server
-  (issue ``#434``).
+  (issue ``#434``). This means that OpenSSL contexts are not supported anymore,
+  but instead ``ssl.SSLContext`` from the stdlib.
 
 Version 0.9.7
 -------------
