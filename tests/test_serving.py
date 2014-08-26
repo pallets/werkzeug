@@ -9,6 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import ssl
+
 try:
     import httplib
 except ImportError:
@@ -23,6 +25,7 @@ try:
     import OpenSSL
 except ImportError:
     OpenSSL = None
+
 
 import pytest
 
@@ -103,6 +106,26 @@ def test_absolute_requests(dev_server):
     conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm')
     res = conn.getresponse()
     assert res.read() == b'YES'
+
+
+@pytest.mark.skipif(not hasattr(ssl, 'SSLContext'),
+                    reason='Missing PEP 466 (Python 2.7.9+) or Python 3.')
+@pytest.mark.skipif(OpenSSL is None,
+                    reason='OpenSSL is required for cert generation.')
+def test_stdlib_ssl_contexts(dev_server, tmpdir):
+    certificate, private_key = serving.make_ssl_devcert(str(tmpdir))
+    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    ctx.load_cert_chain(certificate, private_key)
+
+    def hello(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    server, addr = dev_server(hello, ssl_context=ctx)
+    assert addr is not None
+    connection = httplib.HTTPSConnection(addr)
+    connection.request('GET', '/')
+    response = connection.getresponse()
+    assert response.read() == b'hello'
 
 
 @pytest.mark.skipif(OpenSSL is None, reason='OpenSSL is not installed.')
