@@ -16,7 +16,7 @@ Release date and codename to be decided
 - Added support for ChromeOS detection.
 - Added UUID converter to the routing system.
 - Added message that explains how to quit the server.
-- Fixed a bug on Python 2, that caused ``len`` for 
+- Fixed a bug on Python 2, that caused ``len`` for
   :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
 - Added support for stdlib pbkdf2 hmac if a compatible digest
   is found.
@@ -26,6 +26,7 @@ Release date and codename to be decided
 - Use stdlib ``ssl`` module instead of ``OpenSSL`` for the builtin server
   (issue ``#434``). This means that OpenSSL contexts are not supported anymore,
   but instead ``ssl.SSLContext`` from the stdlib.
+- Allow protocol-relative URLs when building external URLs.
 
 Version 0.9.7
 -------------
