@@ -110,6 +110,13 @@ def test_basic_building():
     assert adapter.build('barp', {'bazp': 'la/di'}) == 'http://example.org/test/bar/la/di'
     assert adapter.build('blah', {}) == '/test/hehe'
 
+    adapter = map.bind('example.org')
+    assert adapter.build('foo', {}) == '/foo'
+    assert adapter.build('foo', {}, force_external=True) == 'http://example.org/foo'
+    adapter = map.bind('example.org', url_scheme='')
+    assert adapter.build('foo', {}) == '/foo'
+    assert adapter.build('foo', {}, force_external=True) == '//example.org/foo'
+
 def test_defaults():
     map = r.Map([
         r.Rule('/foo/', defaults={'page': 1}, endpoint='foo'),
