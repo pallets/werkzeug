@@ -201,6 +201,16 @@ def test_environ_builder_paths():
     strict_eq(env['wsgi.url_scheme'], 'https')
     strict_eq(b.base_url, 'https://foo.invalid/test/')
 
+    b.url_scheme = ''
+    env = b.get_environ()
+    strict_eq(env['SERVER_NAME'], 'foo.invalid')
+    strict_eq(env['SERVER_PORT'], '80')
+    strict_eq(env['SCRIPT_NAME'], '/test')
+    strict_eq(env['PATH_INFO'], '/foo')
+    strict_eq(env['HTTP_HOST'], 'foo.invalid')
+    strict_eq(env['wsgi.url_scheme'], '')
+    strict_eq(b.base_url, '//foo.invalid/test/')
+
 def test_environ_builder_content_type():
     builder = EnvironBuilder()
     assert builder.content_type is None
