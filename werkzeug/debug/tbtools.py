@@ -26,7 +26,7 @@ from werkzeug._compat import range_type, PY2, text_type, string_types, \
 
 _coding_re = re.compile(br'coding[:=]\s*([-\w.]+)')
 _line_re = re.compile(br'^(.*?)$(?m)')
-_funcdef_re = re.compile(br'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
+_funcdef_re = re.compile(r'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
 UTF8_COOKIE = b'\xef\xbb\xbf'
 
 system_exceptions = (SystemExit, KeyboardInterrupt)

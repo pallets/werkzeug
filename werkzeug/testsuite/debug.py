@@ -207,6 +207,10 @@ class TracebackTestCase(WerkzeugTestCase):
 
         frames[1].loader = frames[2].loader = Loader()
         self.assert_equal(frames[1].sourcelines, frames[2].sourcelines)
+        self.assert_equal(
+            [line.code for line in frames[1].get_annotated_lines()],
+            [line.code for line in frames[2].get_annotated_lines()]
+        )
         self.assert_in(u'höhö', frames[1].sourcelines[3])
 
 
