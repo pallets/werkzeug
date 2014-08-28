@@ -26,13 +26,13 @@ from werkzeug._compat import iteritems
 def render_template(name_parts, rules, converters):
     result = u''
     if name_parts:
-        for idx in xrange(0, len(name_parts) - 1):
+        for idx in range(0, len(name_parts) - 1):
             name = u'.'.join(name_parts[:idx + 1])
             result += u"if (typeof %s === 'undefined') %s = {}\n" % (name, name)
         result += '%s = ' % '.'.join(name_parts)
     result += """(function (server_name, script_name, subdomain, url_scheme) {
-    var converters = %(converters)s;
-    var rules = $rules;
+    var converters = [%(converters)s];
+    var rules = %(rules)s;
     function in_array(array, value) {
         if (array.indexOf != undefined) {
             return array.indexOf(value) != -1;
@@ -163,7 +163,9 @@ def render_template(name_parts, rules, converters):
                    + '/' + lstrip(rv.path, '/');
         }
     };
-})""" % {'converters': u', '.join(converters)}
+})""" % {'converters': u', '.join(converters),
+         'rules': rules}
+
     return result
 
 
