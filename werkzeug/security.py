@@ -65,7 +65,7 @@ def pbkdf2_hex(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
     return to_native(codecs.encode(rv, 'hex_codec'))
 
 
-_has_native_pbdkf2 = hasattr(hashlib, 'pbkdf2_hmac')
+_has_native_pbkdf2 = hasattr(hashlib, 'pbkdf2_hmac')
 
 
 def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
@@ -95,7 +95,7 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
 
     # If we're on Python with pbkdf2_hmac we can try to use it for
     # compatible digests.
-    if _has_native_pbdkf2:
+    if _has_native_pbkdf2:
         _test_hash = hashfunc()
         if hasattr(_test_hash, 'name') and \
            _test_hash.name in _hash_funcs:
