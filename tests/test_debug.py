@@ -208,4 +208,6 @@ class TestTraceback(object):
 
         frames[1].loader = frames[2].loader = Loader()
         assert frames[1].sourcelines == frames[2].sourcelines
+        assert [line.code for line in frames[1].get_annotated_lines()] == \
+            [line.code for line in frames[2].get_annotated_lines()]
         assert u'höhö' in frames[1].sourcelines[3]
