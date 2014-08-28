@@ -16,7 +16,7 @@ from tests import strict_eq
 
 from werkzeug import routing as r
 from werkzeug.wrappers import Response
-from werkzeug.datastructures import ImmutableDict
+from werkzeug.datastructures import ImmutableDict, MultiDict
 from werkzeug.test import create_environ
 
 
@@ -96,6 +96,8 @@ def test_basic_building():
     assert adapter.build('foo', {}) == 'http://example.org/foo'
     assert adapter.build('bar', {'baz': 'blub'}) == 'http://example.org/bar/blub'
     assert adapter.build('bari', {'bazi': 50}) == 'http://example.org/bar/50'
+    multivalues = MultiDict([('bazi', 50), ('bazi', None)])
+    assert adapter.build('bari', multivalues) == 'http://example.org/bar/50'
     assert adapter.build('barf', {'bazf': 0.815}) == 'http://example.org/bar/0.815'
     assert adapter.build('barp', {'bazp': 'la/di'}) == 'http://example.org/bar/la/di'
     assert adapter.build('blah', {}) == '/hehe'
@@ -585,6 +587,22 @@ def test_host_matching():
     with pytest.raises(r.RequestRedirect) as excinfo:
         a.match('/1')
     assert excinfo.value.new_url == 'http://www.example.com/foo/'
+
+def test_host_matching_building():
+    m = r.Map([
+        r.Rule('/', endpoint='index', host='www.domain.com'),
+        r.Rule('/', endpoint='foo', host='my.domain.com')
+    ], host_matching=True)
+
+    www = m.bind('www.domain.com')
+    assert www.match('/') == ('index', {})
+    assert www.build('index') == '/'
+    assert www.build('foo') == 'http://my.domain.com/'
+
+    my = m.bind('my.domain.com')
+    assert my.match('/') == ('foo', {})
+    assert my.build('foo') == '/'
+    assert my.build('index') == 'http://www.domain.com/'
 
 def test_server_name_casing():
     m = r.Map([
