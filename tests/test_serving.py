@@ -120,3 +120,31 @@ def test_make_ssl_devcert(tmpdir):
         serving.make_ssl_devcert(str(tmpdir))
     assert os.path.isfile(certificate)
     assert os.path.isfile(private_key)
+
+
+def test_reloader_broken_imports(tmpdir, dev_server):
+    server, addr = dev_server('''
+    def app(environ, start_response):
+        import real_app
+        return real_app.real_app(environ, start_response)
+
+    kwargs['use_reloader'] = True
+    ''')
+
+    assert any('app.py' in str(x) for x in tmpdir.listdir())
+    tmpdir.join('real_app.py').write("lol syntax error")
+    connection = httplib.HTTPConnection(addr)
+    connection.request('GET', '/')
+    response = connection.getresponse()
+    assert response.status == 500
+
+    tmpdir.join('real_app.py').write(textwrap.dedent('''
+    def real_app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    '''))
+    connection = httplib.HTTPConnection(addr)
+    connection.request('GET', '/')
+    response = connection.getresponse()
+    assert response.status == 200
+    assert response.read() == b'hello'
