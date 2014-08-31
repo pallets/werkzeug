@@ -611,7 +611,14 @@ def restart_with_reloader():
     """
     while 1:
         _log('info', ' * Restarting with reloader')
-        args = [sys.executable] + sys.argv
+
+        requires_shell = False
+
+        if sys.executable:
+            args = [sys.executable] + sys.argv
+        else:
+            args, requires_shell = detect_executable()
+
         new_environ = os.environ.copy()
         new_environ['WERKZEUG_RUN_MAIN'] = 'true'
 
@@ -623,10 +630,56 @@ def restart_with_reloader():
                 if isinstance(value, text_type):
                     new_environ[key] = value.encode('iso-8859-1')
 
-        exit_code = subprocess.call(args, env=new_environ)
+        exit_code = subprocess.call(args, env=new_environ, shell=requires_shell)
         if exit_code != 3:
             return exit_code
 
+def detect_executable():
+    '''When sys.executable is None, try to detect how Python was started.
+    Currently only supports Jython.
+    '''
+    #Standalone Jython won't refresh properly
+    #https://gist.github.com/paolodina/b98c3f3a159024584e13
+    import platform
+
+    is_jython = False
+    is_windows = False
+
+    #Check if platform is jython
+    if platform.python_implementation().lower() == 'jython':
+        import java
+        
+        #When running Jython with -jar, rt.jar doesn't get imported
+        try:
+            import java.lang.management as mgmt
+        except ImportError:
+            _log('error', "ERROR: java.lang.management namespace is broken. Please make sure your CLASSPATH includes rt.jar.")
+            raise ImportError
+
+        is_jython = True
+        
+        #Get the args passed to the java exe and the classpath
+        bean = mgmt.ManagementFactory.getRuntimeMXBean()
+        
+        input_args = bean.getInputArguments()
+        cp_string = bean.getClassPath()
+        classpath = []
+        if cp_string:
+            classpath += ['-cp', cp_string]
+            
+        #Check if we're on Windows
+        os_bean = mgmt.ManagementFactory.getOperatingSystemMXBean()
+        os_name = os_bean.getName().lower()
+        
+        is_windows = os_name.startswith('windows')
+        
+        #Get the Java exe name
+        java_exe = os.path.join(java.lang.System.getProperty('java.home'), 'bin', 'java')
+
+        args = [java_exe] + classpath + input_args + ['org.python.util.jython'] + sys.argv 
+        
+        #Return args and whether shell is required
+        return args, (is_windows and is_jython)
 
 def is_running_from_reloader():
     """Checks if the application is running from within the Werkzeug
