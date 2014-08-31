@@ -33,6 +33,8 @@ Release date and codename to be decided
   object (pull request ``#583``).
 - Improved reloader to track added files and to recover from broken
   sys.modules setups with syntax errors in packages.
+- ``cache.RedisCache`` now supports arbitrary ``**kwargs`` for the redis
+  object.
 
 Version 0.9.7
 -------------
