@@ -27,9 +27,6 @@ from werkzeug import serving
 from werkzeug._compat import to_bytes
 
 
-DEV_SERVER_PORT = 5001
-
-
 def _get_pid_middleware(f):
     def inner(environ, start_response):
         if environ['PATH_INFO'] == '/_getpid':
@@ -45,7 +42,7 @@ def _dev_server():
     sys.path.insert(0, os.path.dirname(appfile))
     import testsuite_app
     app = _get_pid_middleware(testsuite_app.app)
-    serving.run_simple('localhost', DEV_SERVER_PORT, app,
+    serving.run_simple(hostname='localhost', application=app,
                        **testsuite_app.kwargs)
 
 if __name__ == '__main__':
@@ -55,6 +52,7 @@ if __name__ == '__main__':
 class _ServerInfo(object):
     addr = None
     url = None
+    port = None
 
 
 @pytest.fixture
@@ -67,16 +65,20 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
     '''
     def run_dev_server(application):
         appfile = tmpdir.join('testsuite_app.py')
-        appfile.write('kwargs = {}\n\n' + textwrap.dedent(application))
+        appfile.write('\n\n'.join((
+            'kwargs = dict(port=5001)',
+            textwrap.dedent(application)
+        )))
 
         monkeypatch.delitem(sys.modules, 'testsuite_app', raising=False)
         monkeypatch.syspath_prepend(str(tmpdir))
         import testsuite_app
+        port = testsuite_app.kwargs['port']
 
         if testsuite_app.kwargs.get('ssl_context', None):
-            url_base = 'https://localhost:{0}'.format(DEV_SERVER_PORT)
+            url_base = 'https://localhost:{0}'.format(port)
         else:
-            url_base = 'http://localhost:{0}'.format(DEV_SERVER_PORT)
+            url_base = 'http://localhost:{0}'.format(port)
 
         def request_pid():
             for i in range(60):
@@ -103,8 +105,9 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
         request.addfinalizer(teardown)
 
         rv = _ServerInfo()
-        rv.addr = 'localhost:{0}'.format(DEV_SERVER_PORT)
+        rv.addr = 'localhost:{0}'.format(port)
         rv.url = url_base
+        rv.port = port
         return rv
 
     return run_dev_server
