@@ -100,8 +100,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'wsgi.multithread':     self.server.multithread,
             'wsgi.multiprocess':    self.server.multiprocess,
             'wsgi.run_once':        False,
-            'werkzeug.server.shutdown':
-                                    shutdown_server,
+            'werkzeug.server.shutdown': shutdown_server,
             'SERVER_SOFTWARE':      self.server_version,
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
@@ -422,14 +421,14 @@ def select_ip_version(host, port):
     # and various operating systems.  Probably this code also is
     # not supposed to work, but I can't come up with any other
     # ways to implement this.
-    ##try:
-    ##    info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
-    ##                              socket.SOCK_STREAM, 0,
-    ##                              socket.AI_PASSIVE)
-    ##    if info:
-    ##        return info[0][0]
-    ##except socket.gaierror:
-    ##    pass
+    # try:
+    #     info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+    #                               socket.SOCK_STREAM, 0,
+    #                               socket.AI_PASSIVE)
+    #     if info:
+    #         return info[0][0]
+    # except socket.gaierror:
+    #     pass
     if ':' in host and hasattr(socket, 'AF_INET6'):
         return socket.AF_INET6
     return socket.AF_INET
@@ -567,48 +566,6 @@ def _reloader_stat_loop(extra_files=None, interval=1):
         time.sleep(interval)
 
 
-def _reloader_inotify(extra_files=None, interval=None):
-    # Mutated by inotify loop when changes occur.
-    changed = [False]
-
-    # Setup inotify watches
-    from pyinotify import WatchManager, Notifier
-
-    # this API changed at one point, support both
-    try:
-        from pyinotify import EventsCodes as ec
-        ec.IN_ATTRIB
-    except (ImportError, AttributeError):
-        import pyinotify as ec
-
-    wm = WatchManager()
-    mask = ec.IN_DELETE_SELF | ec.IN_MOVE_SELF | ec.IN_MODIFY | ec.IN_ATTRIB
-
-    def signal_changed(event):
-        if changed[0]:
-            return
-        _log('info', ' * Detected change in %r, reloading' % event.path)
-        changed[:] = [True]
-
-    for fname in extra_files or ():
-        wm.add_watch(fname, mask, signal_changed)
-
-    # ... And now we wait...
-    notif = Notifier(wm)
-    try:
-        while not changed[0]:
-            # always reiterate through sys.modules, adding them
-            for fname in _iter_module_files():
-                wm.add_watch(fname, mask, signal_changed)
-            notif.process_events()
-            if notif.check_events(timeout=interval):
-                notif.read_events()
-            # TODO Set timeout to something small and check parent liveliness
-    finally:
-        notif.stop()
-    sys.exit(3)
-
-
 # currently we always use the stat loop reloader for the simple reason
 # that the inotify one does not respond to added files properly.  Also
 # it's quite buggy and the API is a mess.
@@ -744,6 +701,7 @@ def run_simple(hostname, port, application, use_reloader=False,
     else:
         inner()
 
+
 def main():
     '''A simple command-line interface for :py:func:`run_simple`.'''
 
@@ -751,7 +709,8 @@ def main():
     import optparse
     from werkzeug.utils import import_string
 
-    parser = optparse.OptionParser(usage='Usage: %prog [options] app_module:app_object')
+    parser = optparse.OptionParser(
+        usage='Usage: %prog [options] app_module:app_object')
     parser.add_option('-b', '--bind', dest='address',
                       help='The hostname:port the app should listen on.')
     parser.add_option('-d', '--debug', dest='use_debugger',
