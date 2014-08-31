@@ -157,13 +157,19 @@ if redis is not None:
     class TestRedisCache(CacheTests):
         _can_use_fast_sleep = False
 
-        @pytest.fixture
+        @pytest.fixture(params=[
+            ([], dict()),
+            ([redis.Redis()], dict()),
+            ([redis.StrictRedis()], dict())
+        ])
         def make_cache(self, xprocess, request):
             def preparefunc(cwd):
                 return 'server is now ready', ['redis-server']
 
             xprocess.ensure('redis_server', preparefunc)
-            c = cache.RedisCache(key_prefix='werkzeug-test-case:')
+            args, kwargs = request.param
+            c = cache.RedisCache(*args, key_prefix='werkzeug-test-case:',
+                                 **kwargs)
             request.addfinalizer(c.clear)
             return lambda: c
 
