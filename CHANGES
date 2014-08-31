@@ -31,6 +31,8 @@ Release date and codename to be decided
   objects (pull request ``#254``).
 - Fix bug in ``cache.RedisCache`` when combined with ``redis.StrictRedis``
   object (pull request ``#583``).
+- Improved reloader to track added files and to recover from broken
+  sys.modules setups with syntax errors in packages.
 
 Version 0.9.7
 -------------

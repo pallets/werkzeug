@@ -521,20 +521,56 @@ def make_server(host, port, app=None, threaded=False, processes=1,
 
 
 def _iter_module_files():
+    """This iterates over all relevant Python files.  It goes through all
+    loaded files from modules, all files in folders of already loaded modules
+    as well as all files reachable through a package.
+    """
+    found = set()
+    entered = set()
+
+    def _verify_file(filename):
+        if not filename:
+            return
+        filename = os.path.abspath(filename)
+        old = None
+        while not os.path.isfile(filename):
+            old = filename
+            filename = os.path.dirname(filename)
+            if filename == old:
+                break
+        else:
+            if filename[-4:] in ('.pyc', '.pyo'):
+                filename = filename[:-1]
+            if filename not in found:
+                found.add(filename)
+                return filename
+
+    def _recursive_walk(path_entry):
+        if path_entry in entered:
+            return
+        entered.add(path_entry)
+        try:
+            for filename in os.listdir(path_entry):
+                if not filename.endswith(('.py', '.pyc', '.pyo')):
+                    continue
+                filename = _verify_file(os.path.join(path_entry, filename))
+                if filename:
+                    yield filename
+        except OSError:
+            pass
+
     # The list call is necessary on Python 3 in case the module
     # dictionary modifies during iteration.
     for module in list(sys.modules.values()):
-        filename = getattr(module, '__file__', None)
+        if module is None:
+            continue
+        filename = _verify_file(getattr(module, '__file__', None))
         if filename:
-            old = None
-            while not os.path.isfile(filename):
-                old = filename
-                filename = os.path.dirname(filename)
-                if filename == old:
-                    break
-            else:
-                if filename[-4:] in ('.pyc', '.pyo'):
-                    filename = filename[:-1]
+            yield filename
+            for filename in _recursive_walk(os.path.dirname(filename)):
+                yield filename
+        for package_path in getattr(module, '__path__', ()):
+            for filename in _recursive_walk(os.path.abspath(package_path)):
                 yield filename
 
 
@@ -566,9 +602,6 @@ def _reloader_stat_loop(extra_files=None, interval=1):
         time.sleep(interval)
 
 
-# currently we always use the stat loop reloader for the simple reason
-# that the inotify one does not respond to added files properly.  Also
-# it's quite buggy and the API is a mess.
 reloader_loop = _reloader_stat_loop
 
 
@@ -593,6 +626,15 @@ def restart_with_reloader():
         exit_code = subprocess.call(args, env=new_environ)
         if exit_code != 3:
             return exit_code
+
+
+def run_from_reloader():
+    """Checks if the application is running from within the Werkzeug
+    reloader subprocess.
+
+    .. versionadded:: 0.10
+    """
+    return os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
 
 
 def run_with_reloader(main_func, extra_files=None, interval=1):
