@@ -215,6 +215,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1,
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
             t = threading.Thread(target=main_func, args=())
             t.setDaemon(True)
+            t.start()
             reloader.run()
         else:
             sys.exit(reloader.restart_with_reloader())

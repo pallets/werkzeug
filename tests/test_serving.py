@@ -121,7 +121,6 @@ def test_make_ssl_devcert(tmpdir):
     assert os.path.isfile(private_key)
 
 
-@pytest.mark.skipif(True, reason='Locks up :-/')
 def test_reloader_broken_imports(tmpdir, dev_server):
     server = dev_server('''
     def app(environ, start_response):
