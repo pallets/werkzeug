@@ -52,6 +52,11 @@ if __name__ == '__main__':
     _dev_server()
 
 
+class _ServerInfo(object):
+    addr = None
+    url = None
+
+
 @pytest.fixture
 def dev_server(tmpdir, xprocess, request, monkeypatch):
     '''Run werkzeug.serving.run_simple in its own process.
@@ -97,6 +102,9 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
             os.killpg(os.getpgid(pid), signal.SIGTERM)
         request.addfinalizer(teardown)
 
-        return url_base, 'localhost:{0}'.format(DEV_SERVER_PORT)
+        rv = _ServerInfo()
+        rv.addr = 'localhost:{0}'.format(DEV_SERVER_PORT)
+        rv.url = url_base
+        return rv
 
     return run_dev_server
