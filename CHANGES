@@ -29,6 +29,8 @@ Release date and codename to be decided
 - Allow protocol-relative URLs when building external URLs.
 - Fixed Atom syndication to print time zone offset for tz-aware datetime
   objects (pull request ``#254``).
+- Fix bug in ``cache.RedisCache`` when combined with ``redis.StrictRedis``
+  object (pull request ``#583``).
 
 Version 0.9.7
 -------------
