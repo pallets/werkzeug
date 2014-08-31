@@ -82,15 +82,14 @@ def test_serving(dev_server):
 def test_broken_app(dev_server):
     def broken_app(environ, start_response):
         1 // 0
+
     server, addr = dev_server(broken_app)
-    try:
+
+    with pytest.raises(HTTPError) as excinfo:
         urlopen('http://%s/?foo=bar&baz=blah' % addr).read()
-    except HTTPError as e:
-        # In Python3 a 500 response causes an exception
-        rv = e.read()
-        assert b'Internal Server Error' in rv
-    else:
-        assert False, 'expected internal server error'
+
+    rv = excinfo.value.read()
+    assert b'Internal Server Error' in rv
 
 
 def test_absolute_requests(dev_server):
