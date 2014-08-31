@@ -100,30 +100,29 @@ class BaseCache(object):
         self.default_timeout = default_timeout
 
     def get(self, key):
-        """Looks up key in the cache and returns the value for it.  If the key
-        does not exist or is unreadable `None` is returned instead.
+        """Look up key in the cache and return the value for it.
 
         :param key: the key to be looked up.
+        :returns: The value if it exists and is readable, else ``None``.
         """
         return None
 
     def delete(self, key):
-        """Deletes `key` from the cache.  If it does not exist in the cache
-        nothing happens.
+        """Delete `key` from the cache.
 
         :param key: the key to delete.
-        :returns: If the key has been deleted.
+        :returns: Whether the key existed and has been deleted.
+        :rtype: boolean
         """
         return True
 
     def get_many(self, *keys):
         """Returns a list of values for the given keys.
-        For each key a item in the list is created.  Example::
+        For each key a item in the list is created::
 
             foo, bar = cache.get_many("foo", "bar")
 
-        If a key does not exist or is unreadable `None` is returned for that
-        key instead.
+        Has the same error handling as :meth:`get`.
 
         :param keys: The function accepts multiple keys as positional
                      arguments.
@@ -131,7 +130,7 @@ class BaseCache(object):
         return map(self.get, keys)
 
     def get_dict(self, *keys):
-        """Works like :meth:`get_many` but returns a dict::
+        """Like :meth:`get_many` but return a dict::
 
             d = cache.get_dict("foo", "bar")
             foo = d["foo"]
@@ -143,7 +142,7 @@ class BaseCache(object):
         return dict(zip(keys, self.get_many(*keys)))
 
     def set(self, key, value, timeout=None):
-        """Adds a new key/value to the cache (overwrites value, if key already
+        """Add a new key/value to the cache (overwrites value, if key already
         exists in the cache).
 
         :param key: the key to set
@@ -153,6 +152,7 @@ class BaseCache(object):
         :returns: ``True`` if key has been updated, ``False`` for backend
                   errors. Pickling errors, however, will raise a subclass of
                   ``pickle.PickleError``.
+        :rtype: boolean
         """
         return True
 
@@ -164,7 +164,7 @@ class BaseCache(object):
         :param value: the value for the key
         :param timeout: the cache timeout for the key or the default
                         timeout if not specified.
-        :returns: Same as :meth:`set`, but also returns `False` for already
+        :returns: Same as :meth:`set`, but also ``False`` for already
                   existing keys.
         :rtype: boolean
         """
@@ -176,7 +176,7 @@ class BaseCache(object):
         :param mapping: a mapping with the keys/values to set.
         :param timeout: the cache timeout for the key (if not specified,
                         it uses the default timeout).
-        :returns: If all given keys have been set.
+        :returns: Whether all given keys have been set.
         :rtype: boolean
         """
         rv = True
@@ -190,7 +190,7 @@ class BaseCache(object):
 
         :param keys: The function accepts multiple keys as positional
                      arguments.
-        :returns: If all given keys have been deleted.
+        :returns: Whether all given keys have been deleted.
         :rtype: boolean
         """
         return all(self.delete(key) for key in keys)
@@ -198,7 +198,7 @@ class BaseCache(object):
     def clear(self):
         """Clears the cache.  Keep in mind that not all caches support
         completely clearing the cache.
-        :returns: If the cache has been cleared.
+        :returns: Whether the cache has been cleared.
         :rtype: boolean
         """
         return True
@@ -211,7 +211,7 @@ class BaseCache(object):
 
         :param key: the key to increment.
         :param delta: the delta to add.
-        :returns: The new value or `None` for backend errors.
+        :returns: The new value or ``None`` for backend errors.
         """
         value = (self.get(key) or 0) + delta
         return value if self.set(key, value) else None
