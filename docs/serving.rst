@@ -26,6 +26,8 @@ additional files (like configuration files) you want to observe.
 
 .. autofunction:: run_simple
 
+.. autofunction:: is_running_from_reloader
+
 .. autofunction:: make_ssl_devcert
 
 .. admonition:: Information

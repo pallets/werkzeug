@@ -628,7 +628,7 @@ def restart_with_reloader():
             return exit_code
 
 
-def run_from_reloader():
+def is_running_from_reloader():
     """Checks if the application is running from within the Werkzeug
     reloader subprocess.
 
