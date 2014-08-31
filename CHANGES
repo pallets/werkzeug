@@ -27,6 +27,8 @@ Release date and codename to be decided
   (issue ``#434``). This means that OpenSSL contexts are not supported anymore,
   but instead ``ssl.SSLContext`` from the stdlib.
 - Allow protocol-relative URLs when building external URLs.
+- Fixed Atom syndication to print time zone offset for tz-aware datetime
+  objects (pull request ``#254``).
 
 Version 0.9.7
 -------------
