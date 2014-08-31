@@ -476,6 +476,9 @@ class RedisCache(BaseCache):
     .. versionchanged:: 0.8.3
        This cache backend now supports password authentication.
 
+    .. versionchanged:: 0.10
+        ``**kwargs`` is now passed to the redis object.
+
     :param host: address of the Redis server or an object which API is
                  compatible with the official Python Redis client (redis-py).
     :param port: port number on which Redis server listens for connections.
@@ -484,18 +487,23 @@ class RedisCache(BaseCache):
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`.
     :param key_prefix: A prefix that should be added to all keys.
+
+    Any additional keyword arguments will be passed to ``redis.Redis``.
     """
 
     def __init__(self, host='localhost', port=6379, password=None,
-                 db=0, default_timeout=300, key_prefix=None):
+                 db=0, default_timeout=300, key_prefix=None, **kwargs):
         BaseCache.__init__(self, default_timeout)
         if isinstance(host, string_types):
             try:
                 import redis
             except ImportError:
                 raise RuntimeError('no redis module found')
+            if kwargs.get('decode_responses', None):
+                raise ValueError('decode_responses is not supported by '
+                                 'RedisCache.')
             self._client = redis.Redis(host=host, port=port, password=password,
-                                       db=db)
+                                       db=db, **kwargs)
         else:
             self._client = host
         self.key_prefix = key_prefix or ''
