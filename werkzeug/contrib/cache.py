@@ -469,7 +469,8 @@ class RedisCache(BaseCache):
                 import redis
             except ImportError:
                 raise RuntimeError('no redis module found')
-            self._client = redis.Redis(host=host, port=port, password=password, db=db)
+            self._client = redis.Redis(host=host, port=port, password=password,
+                                       db=db)
         else:
             self._client = host
         self.key_prefix = key_prefix or ''
@@ -509,15 +510,17 @@ class RedisCache(BaseCache):
         if timeout is None:
             timeout = self.default_timeout
         dump = self.dump_object(value)
-        self._client.setex(self.key_prefix + key, dump, timeout)
+        self._client.setex(name=self.key_prefix + key,
+                           value=dump, time=timeout)
 
     def add(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
         dump = self.dump_object(value)
-        added = self._client.setnx(self.key_prefix + key, dump)
+        added = self._client.setnx(name=self.key_prefix + key, value=dump)
         if added:
-            self._client.expire(self.key_prefix + key, timeout)
+            self._client.expire(name=self.key_prefix + key,
+                                time=timeout)
 
     def set_many(self, mapping, timeout=None):
         if timeout is None:
@@ -525,7 +528,7 @@ class RedisCache(BaseCache):
         pipe = self._client.pipeline()
         for key, value in _items(mapping):
             dump = self.dump_object(value)
-            pipe.setex(self.key_prefix + key, dump, timeout)
+            pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
         pipe.execute()
 
     def delete(self, key):
@@ -547,10 +550,10 @@ class RedisCache(BaseCache):
             self._client.flushdb()
 
     def inc(self, key, delta=1):
-        return self._client.incr(self.key_prefix + key, delta)
+        return self._client.incr(name=self.key_prefix + key, amount=delta)
 
     def dec(self, key, delta=1):
-        return self._client.decr(self.key_prefix + key, delta)
+        return self._client.decr(name=self.key_prefix + key, amount=delta)
 
 
 class FileSystemCache(BaseCache):
