@@ -41,9 +41,7 @@ import os
 import socket
 import sys
 import ssl
-import time
 import signal
-import subprocess
 
 
 def _get_openssl_crypto_module():
@@ -57,11 +55,6 @@ def _get_openssl_crypto_module():
 
 
 try:
-    import thread
-except ImportError:
-    import _thread as thread
-
-try:
     from SocketServer import ThreadingMixIn, ForkingMixIn
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 except ImportError:
@@ -70,8 +63,7 @@ except ImportError:
 
 import werkzeug
 from werkzeug._internal import _log
-from werkzeug._compat import iteritems, PY2, reraise, text_type, \
-     wsgi_encoding_dance
+from werkzeug._compat import reraise, wsgi_encoding_dance
 from werkzeug.urls import url_parse, url_unquote
 from werkzeug.exceptions import InternalServerError
 
@@ -520,114 +512,6 @@ def make_server(host, port, app=None, threaded=False, processes=1,
                               passthrough_errors, ssl_context)
 
 
-def _iter_module_files():
-    """This iterates over all relevant Python files.  It goes through all
-    loaded files from modules, all files in folders of already loaded modules
-    as well as all files reachable through a package.
-    """
-    found = set()
-    entered = set()
-
-    def _verify_file(filename):
-        if not filename:
-            return
-        filename = os.path.abspath(filename)
-        old = None
-        while not os.path.isfile(filename):
-            old = filename
-            filename = os.path.dirname(filename)
-            if filename == old:
-                break
-        else:
-            if filename[-4:] in ('.pyc', '.pyo'):
-                filename = filename[:-1]
-            if filename not in found:
-                found.add(filename)
-                return filename
-
-    def _recursive_walk(path_entry):
-        if path_entry in entered:
-            return
-        entered.add(path_entry)
-        try:
-            for filename in os.listdir(path_entry):
-                if not filename.endswith(('.py', '.pyc', '.pyo')):
-                    continue
-                filename = _verify_file(os.path.join(path_entry, filename))
-                if filename:
-                    yield filename
-        except OSError:
-            pass
-
-    # The list call is necessary on Python 3 in case the module
-    # dictionary modifies during iteration.
-    for module in list(sys.modules.values()):
-        if module is None:
-            continue
-        filename = _verify_file(getattr(module, '__file__', None))
-        if filename:
-            yield filename
-            for filename in _recursive_walk(os.path.dirname(filename)):
-                yield filename
-        for package_path in getattr(module, '__path__', ()):
-            for filename in _recursive_walk(os.path.abspath(package_path)):
-                yield filename
-
-
-def _reloader_stat_loop(extra_files=None, interval=1):
-    """When this function is run from the main thread, it will force other
-    threads to exit when any modules currently loaded change.
-
-    Copyright notice.  This function is based on the autoreload.py from
-    the CherryPy trac which originated from WSGIKit which is now dead.
-
-    :param extra_files: a list of additional files it should watch.
-    """
-    from itertools import chain
-    mtimes = {}
-    while 1:
-        for filename in chain(_iter_module_files(), extra_files or ()):
-            try:
-                mtime = os.stat(filename).st_mtime
-            except OSError:
-                continue
-
-            old_time = mtimes.get(filename)
-            if old_time is None:
-                mtimes[filename] = mtime
-                continue
-            elif mtime > old_time:
-                _log('info', ' * Detected change in %r, reloading' % filename)
-                sys.exit(3)
-        time.sleep(interval)
-
-
-reloader_loop = _reloader_stat_loop
-
-
-def restart_with_reloader():
-    """Spawn a new Python interpreter with the same arguments as this one,
-    but running the reloader thread.
-    """
-    while 1:
-        _log('info', ' * Restarting with reloader')
-        args = [sys.executable] + sys.argv
-        new_environ = os.environ.copy()
-        new_environ['WERKZEUG_RUN_MAIN'] = 'true'
-
-        # a weird bug on windows. sometimes unicode strings end up in the
-        # environment and subprocess.call does not like this, encode them
-        # to latin1 and continue.
-        if os.name == 'nt' and PY2:
-            for key, value in iteritems(new_environ):
-                if isinstance(value, text_type):
-                    new_environ[key] = value.encode('iso-8859-1')
-
-        exit_code = subprocess.call(args, env=new_environ)
-        if exit_code != 3:
-            return exit_code
-
-
 def is_running_from_reloader():
     """Checks if the application is running from within the Werkzeug
     reloader subprocess.
@@ -637,26 +521,11 @@ def is_running_from_reloader():
     return os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
 
 
-def run_with_reloader(main_func, extra_files=None, interval=1):
-    """Run the given function in an independent python interpreter."""
-    import signal
-    signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        thread.start_new_thread(main_func, ())
-        try:
-            reloader_loop(extra_files, interval)
-        except KeyboardInterrupt:
-            return
-    try:
-        sys.exit(restart_with_reloader())
-    except KeyboardInterrupt:
-        pass
-
-
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
-               extra_files=None, reloader_interval=1, threaded=False,
-               processes=1, request_handler=None, static_files=None,
+               extra_files=None, reloader_interval=1,
+               reloader_type='auto', threaded=False, processes=1,
+               request_handler=None, static_files=None,
                passthrough_errors=False, ssl_context=None):
     """Start a WSGI application. Optional features include a reloader,
     multithreading and fork support.
@@ -690,6 +559,9 @@ def run_simple(hostname, port, application, use_reloader=False,
                         additionally to the modules.  For example configuration
                         files.
     :param reloader_interval: the interval for the reloader in seconds.
+    :param reloader_type: the type of reloader to use.  The default is
+                          auto detection.  Valid values are ``'stat'`` and
+                          ``'watchdog'``.
     :param threaded: should the process handle each request in a separate
                      thread?
     :param processes: if greater than 1 then handle each request in a new process
@@ -739,9 +611,19 @@ def run_simple(hostname, port, application, use_reloader=False,
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))
         test_socket.close()
-        run_with_reloader(inner, extra_files, reloader_interval)
+
+        from ._reloader import run_with_reloader
+        run_with_reloader(inner, extra_files, reloader_interval,
+                          reloader_type)
     else:
         inner()
+
+
+def run_with_reloader(*args, **kwargs):
+    # People keep using undocumented APIs.  Do not use this function
+    # please, we do not guarantee that it continues working.
+    from ._reloader import run_with_reloader
+    return run_with_reloader(*args, **kwargs)
 
 
 def main():
