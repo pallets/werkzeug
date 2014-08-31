@@ -548,6 +548,11 @@ def run_simple(hostname, port, application, use_reloader=False,
     .. versionadded:: 0.9
        Added command-line interface.
 
+    .. versionadded:: 1.0
+       Improved the reloader and added support for changing the backend
+       through the `reloader_type` parameter.  See :ref:`reloader`
+       for more information.
+
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
     :param application: the WSGI application to execute

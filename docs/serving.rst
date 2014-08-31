@@ -37,6 +37,25 @@ additional files (like configuration files) you want to observe.
    under high load.  For deployment setups have a look at the
    :ref:`deployment` pages.
 
+.. _reloader:
+
+Reloader
+--------
+
+.. versionchanged:: 1.0
+
+The Werkzeug reloader is a very brute force system which constantly
+monitors modules and paths of your web application.  There are two
+backends the reloader supports: stat polling and file system events.  The
+latter requires the `watchdog <https://pypi.python.org/pypi/watchdog>`_
+module to be installed.
+
+If watchdog is available it will automatically be used instead of the
+builtin stat based reloader.  To switch between the backends you can use
+the `reloader_type` parameter of the :func:`run_simple` function.
+``'stat'`` sets it to the default stat based polling and ``'watchdog'``
+forces it to the watchdog backend.
+
 Virtual Hosts
 -------------
 
