@@ -81,7 +81,7 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
             url_base = 'http://localhost:{0}'.format(port)
 
         def request_pid():
-            for i in range(60):
+            for i in range(10):
                 try:
                     return int(urlopen(url_base + '/_getpid').read())
                 except Exception as e:  # urllib also raises socketerrors
