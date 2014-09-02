@@ -661,7 +661,8 @@ class Client(object):
             self.cookie_jar.extract_wsgi(environ, rv[2])
         return rv
 
-    def resolve_redirect(self, response, new_location, method, environ, buffered=False):
+    def resolve_redirect(self, response, new_location, environ, buffered=False,
+                         method='GET'):
         """Resolves a single redirect and triggers the request again
         directly on this redirect client.
         """
@@ -752,9 +753,10 @@ class Client(object):
             if new_redirect_entry in redirect_chain:
                 raise ClientRedirectError('loop detected')
             redirect_chain.append(new_redirect_entry)
-            environ, response = self.resolve_redirect(response, new_location,
-                                                      method, environ,
-                                                      buffered=buffered)
+            environ, response = self.resolve_redirect(
+                response, new_location, environ, buffered=buffered,
+                method=method
+            )
 
         if self.response_wrapper is not None:
             response = self.response_wrapper(*response)
