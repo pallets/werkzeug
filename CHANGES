@@ -35,6 +35,8 @@ Release date and codename to be decided
   sys.modules setups with syntax errors in packages.
 - ``cache.RedisCache`` now supports arbitrary ``**kwargs`` for the redis
   object.
+- ``werkzeug.test.Client`` now uses the original request method when resolving
+  307 redirects (pull request ``#556``).
 
 Version 0.9.7
 -------------
