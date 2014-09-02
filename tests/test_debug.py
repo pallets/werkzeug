@@ -83,6 +83,7 @@ class TestDebugRepr(object):
         assert debug_repr(re.compile(r'foo\d')) == \
             u're.compile(<span class="string regex">r\'foo\\d\'</span>)'
         #XXX: no raw string here cause of a syntax bug in py3.3
+        # http://bugs.python.org/issue22328
         assert debug_repr(re.compile(u'foo\\d')) == (
             u're.compile(<span class="string regex">%sr\'foo\\d\'</span>)' %
             ('u' if PY2 else '')
