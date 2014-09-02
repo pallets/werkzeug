@@ -40,14 +40,19 @@ from __future__ import with_statement
 import os
 import socket
 import sys
-import time
+import ssl
 import signal
-import subprocess
 
-try:
-    import thread
-except ImportError:
-    import _thread as thread
+
+def _get_openssl_crypto_module():
+    try:
+        from OpenSSL import crypto
+    except ImportError:
+        raise TypeError('Using ad-hoc certificates requires the pyOpenSSL '
+                        'library.')
+    else:
+        return crypto
+
 
 try:
     from SocketServer import ThreadingMixIn, ForkingMixIn
@@ -58,10 +63,9 @@ except ImportError:
 
 import werkzeug
 from werkzeug._internal import _log
-from werkzeug._compat import iteritems, PY2, reraise, text_type, \
-     wsgi_encoding_dance
+from werkzeug._compat import reraise, wsgi_encoding_dance
 from werkzeug.urls import url_parse, url_unquote
-from werkzeug.exceptions import InternalServerError, BadRequest
+from werkzeug.exceptions import InternalServerError
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
@@ -88,8 +92,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'wsgi.multithread':     self.server.multithread,
             'wsgi.multiprocess':    self.server.multiprocess,
             'wsgi.run_once':        False,
-            'werkzeug.server.shutdown':
-                                    shutdown_server,
+            'werkzeug.server.shutdown': shutdown_server,
             'SERVER_SOFTWARE':      self.server_version,
             'REQUEST_METHOD':       self.command,
             'SCRIPT_NAME':          '',
@@ -270,7 +273,7 @@ BaseRequestHandler = WSGIRequestHandler
 
 def generate_adhoc_ssl_pair(cn=None):
     from random import random
-    from OpenSSL import crypto
+    crypto = _get_openssl_crypto_module()
 
     # pretty damn sure that this is not actually accepted by anyone
     if cn is None:
@@ -333,48 +336,75 @@ def make_ssl_devcert(base_path, host=None, cn=None):
 
 def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
-    from OpenSSL import SSL
+    crypto = _get_openssl_crypto_module()
+    import tempfile
+    import atexit
+
     cert, pkey = generate_adhoc_ssl_pair()
-    ctx = SSL.Context(SSL.SSLv23_METHOD)
-    ctx.use_privatekey(pkey)
-    ctx.use_certificate(cert)
+    cert_handle, cert_file = tempfile.mkstemp()
+    pkey_handle, pkey_file = tempfile.mkstemp()
+    atexit.register(os.remove, pkey_file)
+    atexit.register(os.remove, cert_file)
+
+    os.write(cert_handle, crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+    os.write(pkey_handle, crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
+    os.close(cert_handle)
+    os.close(pkey_handle)
+    ctx = load_ssl_context(cert_file, pkey_file)
     return ctx
 
 
-def load_ssl_context(cert_file, pkey_file):
-    """Loads an SSL context from a certificate and private key file."""
-    from OpenSSL import SSL
-    ctx = SSL.Context(SSL.SSLv23_METHOD)
-    ctx.use_certificate_file(cert_file)
-    ctx.use_privatekey_file(pkey_file)
+def load_ssl_context(cert_file, pkey_file=None, protocol=None):
+    """Loads SSL context from cert/private key files and optional protocol.
+    Many parameters are directly taken from the API of
+    :py:class:`ssl.SSLContext`.
+
+    :param cert_file: Path of the certificate to use.
+    :param pkey_file: Path of the private key to use. If not given, the key
+                      will be obtained from the certificate file.
+    :param protocol: One of the ``PROTOCOL_*`` constants in the stdlib ``ssl``
+                     module. Defaults to ``PROTOCOL_SSLv23``.
+    """
+    if protocol is None:
+        protocol = ssl.PROTOCOL_SSLv23
+    ctx = _SSLContext(protocol)
+    ctx.load_cert_chain(cert_file, pkey_file)
     return ctx
+
+
+class _SSLContext(object):
+    '''A dummy class with a small subset of Python3's ``ssl.SSLContext``, only
+    intended to be used with and by Werkzeug.'''
+
+    def __init__(self, protocol):
+        self._protocol = protocol
+        self._certfile = None
+        self._keyfile = None
+        self._password = None
+
+    def load_cert_chain(self, certfile, keyfile=None, password=None):
+        self._certfile = certfile
+        self._keyfile = keyfile or certfile
+        self._password = password
+
+    def wrap_socket(self, sock, **kwargs):
+        return ssl.wrap_socket(sock, keyfile=self._keyfile,
+                               certfile=self._certfile,
+                               ssl_version=self._protocol, **kwargs)
 
 
 def is_ssl_error(error=None):
     """Checks if the given error (or the current one) is an SSL error."""
+    exc_types = (ssl.SSLError,)
+    try:
+        from OpenSSL.SSL import Error
+        exc_types += (Error,)
+    except ImportError:
+        pass
+
     if error is None:
         error = sys.exc_info()[1]
-    from OpenSSL import SSL
-    return isinstance(error, SSL.Error)
-
-
-class _SSLConnectionFix(object):
-    """Wrapper around SSL connection to provide a working makefile()."""
-
-    def __init__(self, con):
-        self._con = con
-
-    def makefile(self, mode, bufsize):
-        return socket._fileobject(self._con, mode, bufsize)
-
-    def __getattr__(self, attrib):
-        return getattr(self._con, attrib)
-
-    def shutdown(self, arg=None):
-        try:
-            self._con.shutdown()
-        except Exception:
-            pass
+    return isinstance(error, exc_types)
 
 
 def select_ip_version(host, port):
@@ -383,14 +413,14 @@ def select_ip_version(host, port):
     # and various operating systems.  Probably this code also is
     # not supposed to work, but I can't come up with any other
     # ways to implement this.
-    ##try:
-    ##    info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
-    ##                              socket.SOCK_STREAM, 0,
-    ##                              socket.AI_PASSIVE)
-    ##    if info:
-    ##        return info[0][0]
-    ##except socket.gaierror:
-    ##    pass
+    # try:
+    #     info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+    #                               socket.SOCK_STREAM, 0,
+    #                               socket.AI_PASSIVE)
+    #     if info:
+    #         return info[0][0]
+    # except socket.gaierror:
+    #     pass
     if ':' in host and hasattr(socket, 'AF_INET6'):
         return socket.AF_INET6
     return socket.AF_INET
@@ -413,16 +443,12 @@ class BaseWSGIServer(HTTPServer, object):
         self.shutdown_signal = False
 
         if ssl_context is not None:
-            try:
-                from OpenSSL import tsafe
-            except ImportError:
-                raise TypeError('SSL is not available if the OpenSSL '
-                                'library is not installed.')
             if isinstance(ssl_context, tuple):
                 ssl_context = load_ssl_context(*ssl_context)
             if ssl_context == 'adhoc':
                 ssl_context = generate_adhoc_ssl_context()
-            self.socket = tsafe.Connection(ssl_context, self.socket)
+            self.socket = ssl_context.wrap_socket(self.socket,
+                                                  server_side=True)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None
@@ -436,6 +462,8 @@ class BaseWSGIServer(HTTPServer, object):
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
+        finally:
+            self.server_close()
 
     def handle_error(self, request, client_address):
         if self.passthrough_errors:
@@ -445,8 +473,6 @@ class BaseWSGIServer(HTTPServer, object):
 
     def get_request(self):
         con, info = self.socket.accept()
-        if self.ssl_context is not None:
-            con = _SSLConnectionFix(con)
         return con, info
 
 
@@ -486,147 +512,23 @@ def make_server(host, port, app=None, threaded=False, processes=1,
                               passthrough_errors, ssl_context)
 
 
-def _iter_module_files():
-    # The list call is necessary on Python 3 in case the module
-    # dictionary modifies during iteration.
-    for module in list(sys.modules.values()):
-        filename = getattr(module, '__file__', None)
-        if filename:
-            old = None
-            while not os.path.isfile(filename):
-                old = filename
-                filename = os.path.dirname(filename)
-                if filename == old:
-                    break
-            else:
-                if filename[-4:] in ('.pyc', '.pyo'):
-                    filename = filename[:-1]
-                yield filename
+def is_running_from_reloader():
+    """Checks if the application is running from within the Werkzeug
+    reloader subprocess.
 
-
-def _reloader_stat_loop(extra_files=None, interval=1):
-    """When this function is run from the main thread, it will force other
-    threads to exit when any modules currently loaded change.
-
-    Copyright notice.  This function is based on the autoreload.py from
-    the CherryPy trac which originated from WSGIKit which is now dead.
-
-    :param extra_files: a list of additional files it should watch.
+    .. versionadded:: 0.10
     """
-    from itertools import chain
-    mtimes = {}
-    while 1:
-        for filename in chain(_iter_module_files(), extra_files or ()):
-            try:
-                mtime = os.stat(filename).st_mtime
-            except OSError:
-                continue
-
-            old_time = mtimes.get(filename)
-            if old_time is None:
-                mtimes[filename] = mtime
-                continue
-            elif mtime > old_time:
-                _log('info', ' * Detected change in %r, reloading' % filename)
-                sys.exit(3)
-        time.sleep(interval)
-
-
-def _reloader_inotify(extra_files=None, interval=None):
-    # Mutated by inotify loop when changes occur.
-    changed = [False]
-
-    # Setup inotify watches
-    from pyinotify import WatchManager, Notifier
-
-    # this API changed at one point, support both
-    try:
-        from pyinotify import EventsCodes as ec
-        ec.IN_ATTRIB
-    except (ImportError, AttributeError):
-        import pyinotify as ec
-
-    wm = WatchManager()
-    mask = ec.IN_DELETE_SELF | ec.IN_MOVE_SELF | ec.IN_MODIFY | ec.IN_ATTRIB
-
-    def signal_changed(event):
-        if changed[0]:
-            return
-        _log('info', ' * Detected change in %r, reloading' % event.path)
-        changed[:] = [True]
-
-    for fname in extra_files or ():
-        wm.add_watch(fname, mask, signal_changed)
-
-    # ... And now we wait...
-    notif = Notifier(wm)
-    try:
-        while not changed[0]:
-            # always reiterate through sys.modules, adding them
-            for fname in _iter_module_files():
-                wm.add_watch(fname, mask, signal_changed)
-            notif.process_events()
-            if notif.check_events(timeout=interval):
-                notif.read_events()
-            # TODO Set timeout to something small and check parent liveliness
-    finally:
-        notif.stop()
-    sys.exit(3)
-
-
-# currently we always use the stat loop reloader for the simple reason
-# that the inotify one does not respond to added files properly.  Also
-# it's quite buggy and the API is a mess.
-reloader_loop = _reloader_stat_loop
-
-
-def restart_with_reloader():
-    """Spawn a new Python interpreter with the same arguments as this one,
-    but running the reloader thread.
-    """
-    while 1:
-        _log('info', ' * Restarting with reloader')
-        args = [sys.executable] + sys.argv
-        new_environ = os.environ.copy()
-        new_environ['WERKZEUG_RUN_MAIN'] = 'true'
-
-        # a weird bug on windows. sometimes unicode strings end up in the
-        # environment and subprocess.call does not like this, encode them
-        # to latin1 and continue.
-        if os.name == 'nt' and PY2:
-            for key, value in iteritems(new_environ):
-                if isinstance(value, text_type):
-                    new_environ[key] = value.encode('iso-8859-1')
-
-        exit_code = subprocess.call(args, env=new_environ)
-        if exit_code != 3:
-            return exit_code
-
-
-def run_with_reloader(main_func, extra_files=None, interval=1):
-    """Run the given function in an independent python interpreter."""
-    import signal
-    signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        thread.start_new_thread(main_func, ())
-        try:
-            reloader_loop(extra_files, interval)
-        except KeyboardInterrupt:
-            return
-    try:
-        sys.exit(restart_with_reloader())
-    except KeyboardInterrupt:
-        pass
+    return os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
 
 
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
-               extra_files=None, reloader_interval=1, threaded=False,
-               processes=1, request_handler=None, static_files=None,
+               extra_files=None, reloader_interval=1,
+               reloader_type='auto', threaded=False, processes=1,
+               request_handler=None, static_files=None,
                passthrough_errors=False, ssl_context=None):
-    """Start an application using wsgiref and with an optional reloader.  This
-    wraps `wsgiref` to fix the wrong default reporting of the multithreaded
-    WSGI variable and adds optional multithreading and fork support.
+    """Start a WSGI application. Optional features include a reloader,
+    multithreading and fork support.
 
     This function has a command-line interface too::
 
@@ -646,6 +548,11 @@ def run_simple(hostname, port, application, use_reloader=False,
     .. versionadded:: 0.9
        Added command-line interface.
 
+    .. versionadded:: 1.0
+       Improved the reloader and added support for changing the backend
+       through the `reloader_type` parameter.  See :ref:`reloader`
+       for more information.
+
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
     :param application: the WSGI application to execute
@@ -657,6 +564,9 @@ def run_simple(hostname, port, application, use_reloader=False,
                         additionally to the modules.  For example configuration
                         files.
     :param reloader_interval: the interval for the reloader in seconds.
+    :param reloader_type: the type of reloader to use.  The default is
+                          auto detection.  Valid values are ``'stat'`` and
+                          ``'watchdog'``.
     :param threaded: should the process handle each request in a separate
                      thread?
     :param processes: if greater than 1 then handle each request in a new process
@@ -673,11 +583,11 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param passthrough_errors: set this to `True` to disable the error catching.
                                This means that the server will die on errors but
                                it can be useful to hook debuggers in (pdb etc.)
-    :param ssl_context: an SSL context for the connection. Either an OpenSSL
-                        context, a tuple in the form ``(cert_file, pkey_file)``,
-                        the string ``'adhoc'`` if the server should
-                        automatically create one, or `None` to disable SSL
-                        (which is the default).
+    :param ssl_context: an SSL context for the connection. Either an
+                        :class:`ssl.SSLContext`, a tuple in the form
+                        ``(cert_file, pkey_file)``, the string ``'adhoc'`` if
+                        the server should automatically create one, or ``None``
+                        to disable SSL (which is the default).
     """
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
@@ -706,9 +616,20 @@ def run_simple(hostname, port, application, use_reloader=False,
         test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         test_socket.bind((hostname, port))
         test_socket.close()
-        run_with_reloader(inner, extra_files, reloader_interval)
+
+        from ._reloader import run_with_reloader
+        run_with_reloader(inner, extra_files, reloader_interval,
+                          reloader_type)
     else:
         inner()
+
+
+def run_with_reloader(*args, **kwargs):
+    # People keep using undocumented APIs.  Do not use this function
+    # please, we do not guarantee that it continues working.
+    from ._reloader import run_with_reloader
+    return run_with_reloader(*args, **kwargs)
+
 
 def main():
     '''A simple command-line interface for :py:func:`run_simple`.'''
@@ -717,7 +638,8 @@ def main():
     import optparse
     from werkzeug.utils import import_string
 
-    parser = optparse.OptionParser(usage='Usage: %prog [options] app_module:app_object')
+    parser = optparse.OptionParser(
+        usage='Usage: %prog [options] app_module:app_object')
     parser.add_option('-b', '--bind', dest='address',
                       help='The hostname:port the app should listen on.')
     parser.add_option('-d', '--debug', dest='use_debugger',

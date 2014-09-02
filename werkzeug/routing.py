@@ -1436,7 +1436,7 @@ class MapAdapter(object):
                 else:
                     redirect_url = rule.redirect_to(self, **rv)
                 raise RequestRedirect(str(url_join('%s://%s%s%s' % (
-                    self.url_scheme,
+                    self.url_scheme or 'http',
                     self.subdomain and self.subdomain + '.' or '',
                     self.server_name,
                     self.script_name
@@ -1531,7 +1531,7 @@ class MapAdapter(object):
         if query_args:
             suffix = '?' + self.encode_query_args(query_args)
         return str('%s://%s/%s%s' % (
-            self.url_scheme,
+            self.url_scheme or 'http',
             self.get_host(domain_part),
             posixpath.join(self.script_name[:-1].lstrip('/'),
                            path_info.lstrip('/')),
@@ -1618,7 +1618,9 @@ class MapAdapter(object):
                        appended to the URL as query parameters.
         :param method: the HTTP method for the rule if there are different
                        URLs for different methods on the same endpoint.
-        :param force_external: enforce full canonical external URLs.
+        :param force_external: enforce full canonical external URLs. If the URL
+                               scheme is not provided, this will generate
+                               a protocol-relative URL.
         :param append_unknown: unknown parameters are appended to the generated
                                URL as query string argument.  Disable this
                                if you want the builder to ignore those.
@@ -1626,7 +1628,7 @@ class MapAdapter(object):
         self.map.update()
         if values:
             if isinstance(values, MultiDict):
-                valueiter = values.iteritems(multi=True)
+                valueiter = iteritems(values, multi=True)
             else:
                 valueiter = iteritems(values)
             values = dict((k, v) for k, v in valueiter if v is not None)
@@ -1645,8 +1647,8 @@ class MapAdapter(object):
             (self.map.host_matching and host == self.server_name) or
              (not self.map.host_matching and domain_part == self.subdomain)):
             return str(url_join(self.script_name, './' + path.lstrip('/')))
-        return str('%s://%s%s/%s' % (
-            self.url_scheme,
+        return str('%s//%s%s/%s' % (
+            self.url_scheme + ':' if self.url_scheme else '',
             host,
             self.script_name[:-1],
             path.lstrip('/')

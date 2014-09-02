@@ -26,6 +26,8 @@ additional files (like configuration files) you want to observe.
 
 .. autofunction:: run_simple
 
+.. autofunction:: is_running_from_reloader
+
 .. autofunction:: make_ssl_devcert
 
 .. admonition:: Information
@@ -34,6 +36,25 @@ additional files (like configuration files) you want to observe.
    It was designed especially for development purposes and performs poorly
    under high load.  For deployment setups have a look at the
    :ref:`deployment` pages.
+
+.. _reloader:
+
+Reloader
+--------
+
+.. versionchanged:: 1.0
+
+The Werkzeug reloader is a very brute force system which constantly
+monitors modules and paths of your web application.  There are two
+backends the reloader supports: stat polling and file system events.  The
+latter requires the `watchdog <https://pypi.python.org/pypi/watchdog>`_
+module to be installed.
+
+If watchdog is available it will automatically be used instead of the
+builtin stat based reloader.  To switch between the backends you can use
+the `reloader_type` parameter of the :func:`run_simple` function.
+``'stat'`` sets it to the default stat based polling and ``'watchdog'``
+forces it to the watchdog backend.
 
 Virtual Hosts
 -------------
@@ -115,10 +136,9 @@ SSL
 
 .. versionadded:: 0.6
 
-The builtin server supports SSL for testing purposes.  If an SSL context
-is provided it will be used.  That means a server can either run in HTTP
-or HTTPS mode, but not both.  This feature requires the Python OpenSSL
-library.
+The builtin server supports SSL for testing purposes.  If an SSL context is
+provided it will be used.  That means a server can either run in HTTP or HTTPS
+mode, but not both.
 
 Quickstart
 ``````````
@@ -135,25 +155,28 @@ name of your server on generation or a `CN`.
     ('/path/to/the/key.crt', '/path/to/the/key.key')
 
 2.  Now this tuple can be passed as ``ssl_context`` to the
-    :func:`run_simple` method:
+    :func:`run_simple` method::
 
-    run_simple('localhost', 4000, application,
-               ssl_context=('/path/to/the/key.crt',
-                            '/path/to/the/key.key'))
+        run_simple('localhost', 4000, application,
+                   ssl_context=('/path/to/the/key.crt',
+                                '/path/to/the/key.key'))
 
 You will have to acknowledge the certificate in your browser once then.
 
 Loading Contexts by Hand
 ````````````````````````
 
-Instead of using a tuple as ``ssl_context`` you can also create the
-context programmatically.  This way you have better control over it::
+In Python 2.7.9 and 3+ you also have the option to use a ``ssl.SSLContext``
+object instead of a simple tuple. This way you have better control over the SSL
+behavior of Werkzeug's builtin server::
 
-    from OpenSSL import SSL
-    ctx = SSL.Context(SSL.SSLv23_METHOD)
-    ctx.use_privatekey_file('ssl.key')
-    ctx.use_certificate_file('ssl.cert')
+    import ssl
+    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    ctx.load_cert_chain('ssl.cert', 'ssl.key')
     run_simple('localhost', 4000, application, ssl_context=ctx)
+
+
+.. versionchanged 0.10:: ``OpenSSL`` contexts are not supported anymore.
 
 Generating Certificates
 ```````````````````````
@@ -178,3 +201,5 @@ The downside of this of course is that you will have to acknowledge the
 certificate each time the server is reloaded.  Adhoc certificates are
 discouraged because modern browsers do a bad job at supporting them for
 security reasons.
+
+This feature requires the pyOpenSSL library to be installed.

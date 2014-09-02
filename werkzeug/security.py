@@ -65,8 +65,7 @@ def pbkdf2_hex(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
     return to_native(codecs.encode(rv, 'hex_codec'))
 
 
-_has_native_pbdkf2 = hasattr(hashlib, 'pbkdf2_hmac') and \
-        hasattr(hashlib, 'algorithms_available')
+_has_native_pbkdf2 = hasattr(hashlib, 'pbkdf2_hmac')
 
 
 def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
@@ -96,10 +95,10 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
 
     # If we're on Python with pbkdf2_hmac we can try to use it for
     # compatible digests.
-    if _has_native_pbdkf2:
+    if _has_native_pbkdf2:
         _test_hash = hashfunc()
         if hasattr(_test_hash, 'name') and \
-           _test_hash.name in hashlib.algorithms_available:
+           _test_hash.name in _hash_funcs:
             return hashlib.pbkdf2_hmac(_test_hash.name,
                                        data, salt, iterations,
                                        keylen)
@@ -129,17 +128,25 @@ def safe_str_cmp(a, b):
 
     .. versionadded:: 0.7
     """
+    if isinstance(a, text_type):
+        a = a.encode('utf-8')
+    if isinstance(b, text_type):
+        b = b.encode('utf-8')
+
     if _builtin_safe_str_cmp is not None:
         return _builtin_safe_str_cmp(a, b)
+
     if len(a) != len(b):
         return False
+
     rv = 0
-    if isinstance(a, bytes) and isinstance(b, bytes) and not PY2:
-        for x, y in izip(a, b):
-            rv |= x ^ y
-    else:
+    if PY2:
         for x, y in izip(a, b):
             rv |= ord(x) ^ ord(y)
+    else:
+        for x, y in izip(a, b):
+            rv |= x ^ y
+
     return rv == 0
 
 

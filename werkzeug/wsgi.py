@@ -42,8 +42,8 @@ def responder(f):
 
 def get_current_url(environ, root_only=False, strip_querystring=False,
                     host_only=False, trusted_hosts=None):
-    """A handy helper function that recreates the full URL for the current
-    request or parts of it.  Here an example:
+    """A handy helper function that recreates the full URL as IRI for the
+    current request or parts of it.  Here an example:
 
     >>> from werkzeug.test import create_environ
     >>> env = create_environ("/?param=foo", "http://localhost/script")
@@ -59,6 +59,15 @@ def get_current_url(environ, root_only=False, strip_querystring=False,
     This optionally it verifies that the host is in a list of trusted hosts.
     If the host is not in there it will raise a
     :exc:`~werkzeug.exceptions.SecurityError`.
+
+    Note that the string returned might contain unicode characters as the
+    representation is an IRI not an URI.  If you need an ASCII only
+    representation you can use the :func:`~werkzeug.urls.iri_to_uri`
+    function:
+
+    >>> from werkzeug.urls import iri_to_uri
+    >>> iri_to_uri(get_current_url(env))
+    'http://localhost/script/?param=foo'
 
     :param environ: the WSGI environment to get the current URL from.
     :param root_only: set `True` if you only want the root URL.
@@ -130,7 +139,7 @@ def get_host(environ, trusted_hosts=None):
                           for more information.
     """
     if 'HTTP_X_FORWARDED_HOST' in environ:
-        rv = environ['HTTP_X_FORWARDED_HOST'].split(',')[0].strip()
+        rv = environ['HTTP_X_FORWARDED_HOST'].split(',', 1)[0].strip()
     elif 'HTTP_HOST' in environ:
         rv = environ['HTTP_HOST']
     else:
@@ -561,8 +570,8 @@ class SharedDataMiddleware(object):
         for sep in os.sep, os.altsep:
             if sep and sep != '/':
                 cleaned_path = cleaned_path.replace(sep, '/')
-        path = '/'.join([''] + [x for x in cleaned_path.split('/')
-                                if x and x != '..'])
+        path = '/' + '/'.join(x for x in cleaned_path.split('/')
+                              if x and x != '..')
         file_loader = None
         for search_path, loader in iteritems(self.exports):
             if search_path == path:
@@ -628,9 +637,8 @@ class DispatcherMiddleware(object):
             if script in self.mounts:
                 app = self.mounts[script]
                 break
-            items = script.split('/')
-            script = '/'.join(items[:-1])
-            path_info = '/%s%s' % (items[-1], path_info)
+            script, last_item = script.rsplit('/', 1)
+            path_info = '/%s%s' % (last_item, path_info)
         else:
             app = self.mounts.get(script, self.app)
         original_script_name = environ.get('SCRIPT_NAME', '')

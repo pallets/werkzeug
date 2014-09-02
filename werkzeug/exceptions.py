@@ -313,9 +313,9 @@ class Gone(HTTPException):
     """
     code = 410
     description = (
-        'The requested URL is no longer available on this server and '
-        'there is no forwarding address.</p><p>If you followed a link '
-        'from a foreign page, please contact the author of this page.'
+        'The requested URL is no longer available on this server and there '
+        'is no forwarding address. If you followed a link from a foreign '
+        'page, please contact the author of this page.'
     )
 
 
@@ -566,11 +566,16 @@ __all__ = ['HTTPException']
 def _find_exceptions():
     for name, obj in iteritems(globals()):
         try:
-            if getattr(obj, 'code', None) is not None:
-                default_exceptions[obj.code] = obj
-                __all__.append(obj.__name__)
-        except TypeError: # pragma: no cover
+            is_http_exception = issubclass(obj, HTTPException)
+        except TypeError:
+            is_http_exception = False
+        if not is_http_exception or obj.code is None:
             continue
+        __all__.append(obj.__name__)
+        old_obj = default_exceptions.get(obj.code, None)
+        if old_obj is not None and issubclass(obj, old_obj):
+            continue
+        default_exceptions[obj.code] = obj
 _find_exceptions()
 del _find_exceptions
 

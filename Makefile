@@ -15,13 +15,13 @@ release:
 	python scripts/make-release.py
 
 test:
-	python run-tests.py
+	py.test
 
 tox-test:
 	tox
 
 coverage:
-	@(nosetests $(TEST_OPTIONS) --with-coverage --cover-package=werkzeug --cover-html --cover-html-dir=coverage_out $(TESTS))
+	@(coverage run --source=werkzeug --module py.test $(TEST_OPTIONS) $(TESTS))
 
 doctest:
 	@(cd docs; sphinx-build -b doctest . _build/doctest)
