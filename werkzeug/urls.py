@@ -237,7 +237,7 @@ class URL(_URLTuple, _URLMixin):
         ]))
         if auth:
             rv = '%s@%s' % (auth, rv)
-        return rv.encode('ascii')
+        return to_native(rv)
 
     def encode(self, charset='utf-8', errors='replace'):
         """Encodes the URL to a tuple made out of bytes.  The charset is
@@ -597,7 +597,7 @@ def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):
 
     iri = url_parse(to_unicode(iri, charset, errors))
 
-    netloc = iri.encode_netloc().decode('ascii')
+    netloc = iri.encode_netloc()
     path = url_quote(iri.path, charset, errors, '/:~+%')
     query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
     fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')
