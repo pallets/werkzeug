@@ -54,9 +54,22 @@ repository from `github`_::
 .. _github: http://github.com/mitsuhiko/werkzeug
 """
 try:
-    from setuptools import setup
+    from setuptools import setup, Command
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, Command
+
+
+class TestCommand(Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import pytest
+        pytest.cmdline.main(args=[])
 
 
 setup(
@@ -80,6 +93,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib'],
+    cmdclass=dict(test=TestCommand),
     include_package_data=True,
     zip_safe=False,
     platforms='any'
