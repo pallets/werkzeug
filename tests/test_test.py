@@ -317,7 +317,7 @@ def test_follow_redirect_with_post_307():
             response = Response('current url: %s' % req.url)
         else:
             response = redirect('http://localhost/some/redirect/', code=307)
-            return response(environ, start_response)
+        return response(environ, start_response)
 
     c = Client(redirect_with_post_307_app, response_wrapper=BaseResponse)
     resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
