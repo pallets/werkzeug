@@ -1843,7 +1843,7 @@ class _CacheControl(UpdateDictMixin, dict):
         return '<%s %s>' % (
             self.__class__.__name__,
             " ".join(
-                "{0}={1!r}".format(k, v) for k, v in sorted(self.iteritems())
+                "%s=%r" % (k, v) for k, v in sorted(self.items())
             ),
         )
 
