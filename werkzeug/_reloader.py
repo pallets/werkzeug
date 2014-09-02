@@ -77,6 +77,26 @@ def _find_observable_paths(extra_files=None):
     return rv
 
 
+def _find_common_roots(paths):
+    """Out of some paths it finds the common roots that need monitoring."""
+    paths = [x.split(os.path.sep) for x in paths]
+    root = {}
+    for chunks in sorted(paths, key=len, reverse=True):
+        node = root
+        for chunk in chunks:
+            node = node.setdefault(chunk, {})
+        node.clear()
+
+    rv = set()
+    def _walk(node, path):
+        for prefix, child in iteritems(node):
+            _walk(child, path + (prefix,))
+        if not node:
+            rv.add('/'.join(path))
+    _walk(root, ())
+    return rv
+
+
 class ReloaderLoop(object):
     name = None
 
@@ -143,14 +163,16 @@ class WatchdogReloaderLoop(ReloaderLoop):
         ReloaderLoop.__init__(self, *args, **kwargs)
         from watchdog.observers import Observer
         from watchdog.events import FileSystemEventHandler
+        self.observable_paths = set()
 
         def _check_modification(filename):
             if filename in self.extra_files:
                 self.trigger_reload(filename)
-            if filename.endswith(('.pyc', '.pyo')):
-                self.trigger_reload(filename[:-1])
-            elif filename.endswith('.py'):
-                self.trigger_reload(filename)
+            if os.path.dirname(filename) in self.observable_paths:
+                if filename.endswith(('.pyc', '.pyo')):
+                    self.trigger_reload(filename[:-1])
+                elif filename.endswith('.py'):
+                    self.trigger_reload(filename)
 
         class _CustomHandler(FileSystemEventHandler):
             def on_created(self, event):
@@ -175,7 +197,9 @@ class WatchdogReloaderLoop(ReloaderLoop):
         def monitor_update_thread():
             while 1:
                 to_delete = set(watches)
-                for path in _find_observable_paths(self.extra_files):
+                paths = _find_observable_paths(self.extra_files)
+                common_roots = _find_common_roots(paths)
+                for path in common_roots:
                     if path not in watches:
                         watches[path] = observer.schedule(
                             self.event_handler, path, recursive=True)
@@ -184,6 +208,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
                     watch = watches.pop(path, None)
                     if watch is not None:
                         observer.unschedule(watch)
+                self.observable_paths = paths
                 time.sleep(self.interval)
 
         t = threading.Thread(target=monitor_update_thread, args=())
