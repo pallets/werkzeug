@@ -1840,9 +1840,11 @@ class _CacheControl(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return '<%s %r>' % (
+        return '<%s %s>' % (
             self.__class__.__name__,
-            self.to_header()
+            " ".join(
+                "%s=%r" % (k, v) for k, v in sorted(self.items())
+            ),
         )
 
 
