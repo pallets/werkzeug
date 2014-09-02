@@ -27,6 +27,18 @@ from werkzeug import serving
 from werkzeug._compat import to_bytes
 
 
+try:
+    __import__('pytest_xprocess')
+except ImportError:
+    @pytest.fixture
+    def subprocess():
+        pytest.skip('pytest-xprocess not installed.')
+else:
+    @pytest.fixture
+    def subprocess(xprocess):
+        return xprocess
+
+
 def _get_pid_middleware(f):
     def inner(environ, start_response):
         if environ['PATH_INFO'] == '/_getpid':
@@ -56,7 +68,7 @@ class _ServerInfo(object):
 
 
 @pytest.fixture
-def dev_server(tmpdir, xprocess, request, monkeypatch):
+def dev_server(tmpdir, subprocess, request, monkeypatch):
     '''Run werkzeug.serving.run_simple in its own process.
 
     :param application: String for the module that will be created. The module
@@ -94,7 +106,7 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
             args = [sys.executable, __file__, str(appfile)]
             return request_pid, args
 
-        xprocess.ensure('dev_server', preparefunc, restart=True)
+        subprocess.ensure('dev_server', preparefunc, restart=True)
 
         def teardown():
             # Killing the process group that runs the server, not just the
