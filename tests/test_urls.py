@@ -124,6 +124,17 @@ def test_url_fixing():
     x = urls.url_fix("http://just.a.test/$-_.+!*'(),")
     assert x == "http://just.a.test/$-_.+!*'(),"
 
+    x = urls.url_fix('http://höhöhö.at/höhöhö/hähähä')
+    assert x == r'http://xn--hhh-snabb.at/h%C3%B6h%C3%B6h%C3%B6/h%C3%A4h%C3%A4h%C3%A4'
+
+
+def test_url_fixing_filepaths():
+    x = urls.url_fix(r'file://C:\Users\Administrator\My Documents\ÑÈáÇíí')
+    assert x == r'file:///C%3A/Users/Administrator/My%20Documents/%C3%91%C3%88%C3%A1%C3%87%C3%AD%C3%AD'
+
+    x = urls.url_fix(r'file:///')
+    assert x == r'file:///'
+
 
 def test_url_fixing_qs():
     x = urls.url_fix(b'http://example.com/?foo=%2f%2f')

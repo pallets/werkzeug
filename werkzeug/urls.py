@@ -174,6 +174,52 @@ class _URLMixin(object):
         """
         return url_parse(uri_to_iri(self))
 
+    def get_file_location(self, pathformat=None):
+        """Returns a tuple with the location of the file in the form
+        ``(server, location)``.  If the netloc is empty in the URL or
+        points to localhost, it's represented as ``None``.
+
+        The `pathformat` by default is autodetection but needs to be set
+        when working with URLs of a specific system.  The supported values
+        are ``'windows'`` when working with Windows or DOS paths and
+        ``'posix'`` when working with posix paths.
+
+        If the URL does not point to to a local file, the server and location
+        are both represented as ``None``.
+
+        :param pathformat: the expected format of the path component.
+                           Currently ``'windows'`` and ``'posix'`` are
+                           supported.  Defaults to ``None`` which is
+                           autodetect.
+        """
+        if self.scheme != 'file':
+            return None, None
+
+        path = url_unquote(self.path)
+
+        if pathformat is None:
+            if os.name == 'nt':
+                pathformat = 'windows'
+            else:
+                pathformat = 'posix'
+
+        if pathformat == 'windows':
+            if path[:1] == '/' and path[1:2].isalpha() and path[2:3] in '|:':
+                path = path[1:2] + ':' + path[3:]
+            import ntpath
+            path = ntpath.normpath(path)
+        elif pathformat == 'posix':
+            import posixpath
+            path = posixpath.normpath(path)
+        else:
+            raise TypeError('Invalid path format %s' % repr(pathformat))
+
+        host = self.netloc or None
+        if host in ('127.0.0.1', '::1', 'localhost'):
+            host = None
+
+        return host, path
+
     def _split_netloc(self):
         if self._at in self.netloc:
             return self.netloc.split(self._at, 1)
@@ -237,7 +283,7 @@ class URL(_URLTuple, _URLMixin):
         ]))
         if auth:
             rv = '%s@%s' % (auth, rv)
-        return rv.encode('ascii')
+        return to_native(rv)
 
     def encode(self, charset='utf-8', errors='replace'):
         """Encodes the URL to a tuple made out of bytes.  The charset is
@@ -491,10 +537,22 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    scheme, netloc, path, qs, anchor = url_parse(to_unicode(s, charset, 'replace'))
-    path = url_quote(path, charset, safe='/%+$!*\'(),')
-    qs = url_quote_plus(qs, charset, safe=':&%=+$!*\'(),')
-    return to_native(url_unparse((scheme, netloc, path, qs, anchor)))
+    # First step is to switch to unicode processing and to convert
+    # backslashes (which are invalid in URLs anyways) to slashes.  This is
+    # consistent with what Chrome does.
+    s = to_unicode(s, charset, 'replace').replace('\\', '/')
+
+    # For the specific case that we look like a malformed windows URL
+    # we want to fix this up manually:
+    if s.startswith('file://') and s[7:8].isalpha() and s[8:10] == ':/':
+        s = 'file:///' + s[7:]
+
+    url = url_parse(s)
+    path = url_quote(url.path, charset, safe='/%+$!*\'(),')
+    qs = url_quote_plus(url.query, charset, safe=':&%=+$!*\'(),')
+    anchor = url_quote_plus(url.fragment, charset, safe=':&%=+$!*\'(),')
+    return to_native(url_unparse((url.scheme, url.encode_netloc(),
+                                  path, qs, anchor)))
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
@@ -585,7 +643,7 @@ def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):
 
     iri = url_parse(to_unicode(iri, charset, errors))
 
-    netloc = iri.encode_netloc().decode('ascii')
+    netloc = iri.encode_netloc()
     path = url_quote(iri.path, charset, errors, '/:~+%')
     query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
     fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')
