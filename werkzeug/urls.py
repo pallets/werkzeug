@@ -188,7 +188,7 @@ class _URLMixin(object):
         If the URL does not point to to a local file, the server and location
         are both represented as ``None``.
 
-        :param pathformat: the expected format of the path component.
+        :param pathformat: The expected format of the path component.
                            Currently ``'windows'`` and ``'posix'`` are
                            supported.  Defaults to ``None`` which is
                            autodetect.
@@ -208,12 +208,15 @@ class _URLMixin(object):
         if pathformat == 'windows':
             if path[:1] == '/' and path[1:2].isalpha() and path[2:3] in '|:':
                 path = path[1:2] + ':' + path[3:]
+            windows_share = path[:3] in ('\\' * 3, '/' * 3)
             import ntpath
             path = ntpath.normpath(path)
-            # This is apparently the syntax that newer firefoxes use on
-            # windows for shares now.  So we need to special case them.
-            if path.startswith('\\' * 3) and host is None:
-                parts = path[3:].split('\\', 1)
+            # Windows shared drives are represented as ``\\host\\directory``.
+            # That results in a URL like ``file://///host/directory``, and a
+            # path like ``///host/directory``. We need to special-case this
+            # because the path contains the hostname.
+            if windows_share and host is None:
+                parts = path.lstrip('\\').split('\\', 1)
                 if len(parts) == 2:
                     host, path = parts
                 else:
