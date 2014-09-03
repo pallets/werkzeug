@@ -491,10 +491,22 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    scheme, netloc, path, qs, anchor = url_parse(to_unicode(s, charset, 'replace'))
-    path = url_quote(path, charset, safe='/%+$!*\'(),')
-    qs = url_quote_plus(qs, charset, safe=':&%=+$!*\'(),')
-    return to_native(url_unparse((scheme, netloc, path, qs, anchor)))
+    # First step is to switch to unicode processing and to convert
+    # backslashes (which are invalid in URLs anyways) to slashes.  This is
+    # consistent with what Chrome does.
+    s = to_unicode(s, charset, 'replace').replace('\\', '/')
+
+    # For the specific case that we look like a malformed windows URL
+    # we want to fix this up manually:
+    if s.startswith('file://') and s[7:8].isalpha() and s[8:10] in (':/', '|/'):
+        s = 'file:///' + s[7:]
+
+    url = url_parse(s)
+    path = url_quote(url.path, charset, safe='/%+$!*\'(),')
+    qs = url_quote_plus(url.query, charset, safe=':&%=+$!*\'(),')
+    anchor = url_quote_plus(url.fragment, charset, safe=':&%=+$!*\'(),')
+    return to_native(url_unparse((url.scheme, url.encode_netloc(),
+                                  path, qs, anchor)))
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
