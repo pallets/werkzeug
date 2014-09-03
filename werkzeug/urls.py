@@ -174,6 +174,52 @@ class _URLMixin(object):
         """
         return url_parse(uri_to_iri(self))
 
+    def get_file_location(self, pathformat=None):
+        """Returns a tuple with the location of the file in the form
+        ``(server, location)``.  If the netloc is empty in the URL or
+        points to localhost, it's represented as ``None``.
+
+        The `pathformat` by default is autodetection but needs to be set
+        when working with URLs of a specific system.  The supported values
+        are ``'windows'`` when working with Windows or DOS paths and
+        ``'posix'`` when working with posix paths.
+
+        If the URL does not point to to a local file, the server and location
+        are both represented as ``None``.
+
+        :param pathformat: the expected format of the path component.
+                           Currently ``'windows'`` and ``'posix'`` are
+                           supported.  Defaults to ``None`` which is
+                           autodetect.
+        """
+        if self.scheme != 'file':
+            return None, None
+
+        path = url_unquote(self.path)
+
+        if pathformat is None:
+            if os.name == 'nt':
+                pathformat = 'windows'
+            else:
+                pathformat = 'posix'
+
+        if pathformat == 'windows':
+            if path[:1] == '/' and path[1:2].isalpha() and path[2:3] in '|:':
+                path = path[1:2] + ':' + path[3:]
+            import ntpath
+            path = ntpath.normpath(path)
+        elif pathformat == 'posix':
+            import posixpath
+            path = posixpath.normpath(path)
+        else:
+            raise TypeError('Invalid path format %s' % repr(pathformat))
+
+        host = self.netloc or None
+        if host in ('127.0.0.1', '::1', 'localhost'):
+            host = None
+
+        return host, path
+
     def _split_netloc(self):
         if self._at in self.netloc:
             return self.netloc.split(self._at, 1)
