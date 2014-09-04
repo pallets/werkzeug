@@ -39,6 +39,8 @@ Release date and codename to be decided
   307 redirects (pull request ``#556``).
 - ``werkzeug.datastructures.MIMEAccept`` now properly deals with mimetype
   parameters (pull request ``#205``).
+- ``werkzeug.datastructures.Accept`` now handles a quality of ``0`` as
+  intolerable, as per RFC 2616 (pull request ``#536``).
 
 Version 0.9.7
 -------------
