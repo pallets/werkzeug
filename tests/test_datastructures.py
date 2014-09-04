@@ -776,7 +776,7 @@ def make_call_asserter(func=None):
 
 class TestCallbackDict(object):
     storage_class = datastructures.CallbackDict
-
+ 
     def test_callback_dict_reads(self):
         assert_calls, func = make_call_asserter()
         initial = {'a': 'foo', 'b': 'bar'}
@@ -820,3 +820,72 @@ class TestCacheControl(object):
             [("max-age", "0"), ("private", "True")],
         )
         assert repr(cc) == "<RequestCacheControl max-age='0' private='True'>"
+
+
+class TestAccept(object):
+    storage_class = datastructures.Accept
+
+    def test_accept_basic(self):
+        accept = self.storage_class([('tinker', 0), ('tailor', 0.333),
+                                     ('soldier', 0.667), ('sailor', 1)])
+        # check __getitem__ on indices
+        assert accept[3] == ('tinker', 0)
+        assert accept[2] == ('tailor', 0.333)
+        assert accept[1] == ('soldier', 0.667)
+        assert accept[0], ('sailor', 1)
+        # check __getitem__ on string
+        assert accept['tinker'] == 0
+        assert accept['tailor'] == 0.333
+        assert accept['soldier'] == 0.667
+        assert accept['sailor'] == 1
+        assert accept['spy'] == 0
+        # check quality method
+        assert accept.quality('tinker') == 0
+        assert accept.quality('tailor') == 0.333
+        assert accept.quality('soldier') == 0.667
+        assert accept.quality('sailor') == 1
+        assert accept.quality('spy') == 0
+        # check __contains__
+        assert 'sailor' in accept
+        assert 'spy' not in accept
+        # check index method
+        assert accept.index('tinker') == 3
+        assert accept.index('tailor') == 2
+        assert accept.index('soldier') == 1
+        assert accept.index('sailor') == 0
+        with pytest.raises(ValueError):
+            accept.index('spy')
+        # check find method
+        assert accept.find('tinker') == 3
+        assert accept.find('tailor') == 2
+        assert accept.find('soldier') == 1
+        assert accept.find('sailor') == 0
+        assert accept.find('spy') == -1
+        # check to_header method
+        assert accept.to_header() == \
+            'sailor,soldier;q=0.667,tailor;q=0.333,tinker;q=0'
+        # check best_match method
+        assert accept.best_match(['tinker', 'tailor', 'soldier', 'sailor'],
+                                 default=None) == 'sailor'
+        assert accept.best_match(['tinker', 'tailor', 'soldier'],
+                                 default=None) == 'soldier'
+        assert accept.best_match(['tinker', 'tailor'], default=None) == \
+            'tailor'
+        assert accept.best_match(['tinker'], default=None) is None
+        assert accept.best_match(['tinker'], default='x') == 'x'
+
+    def test_accept_wildcard(self):
+        accept = self.storage_class([('*', 0), ('asterisk', 1)])
+        assert '*' in accept
+        assert accept.best_match(['asterisk', 'star'], default=None) == \
+            'asterisk'
+        assert accept.best_match(['star'], default=None) is None
+
+    @pytest.mark.skipif(True, reason='Werkzeug doesn\'t respect specificity.')
+    def test_accept_wildcard_specificity(self):
+        accept = self.storage_class([('asterisk', 0), ('star', 0.5), ('*', 1)])
+        assert accept.best_match(['star', 'asterisk'], default=None) == 'star'
+        assert accept.best_match(['asterisk', 'star'], default=None) == 'star'
+        assert accept.best_match(['asterisk', 'times'], default=None) == \
+            'times'
+        assert accept.best_match(['asterisk'], default=None) is None
