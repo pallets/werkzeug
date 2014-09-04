@@ -37,6 +37,8 @@ Release date and codename to be decided
   object.
 - ``werkzeug.test.Client`` now uses the original request method when resolving
   307 redirects (pull request ``#556``).
+- ``werkzeug.datastructures.MIMEAccept`` now properly deals with mimetype
+  parameters (pull request ``#205``).
 
 Version 0.9.7
 -------------
