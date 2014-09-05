@@ -17,6 +17,46 @@ from werkzeug import urls
 from werkzeug._compat import text_type, NativeStringIO, BytesIO
 
 
+def test_parsing():
+    url = urls.url_parse('http://anon:hunter2@[2001:db8:0:1]:80/a/b/c')
+    assert url.netloc == 'anon:hunter2@[2001:db8:0:1]:80'
+    assert url.username == 'anon'
+    assert url.password == 'hunter2'
+    assert url.port == 80
+    assert url.ascii_host == '2001:db8:0:1'
+
+    assert url.get_file_location() == (None, None)  # no file scheme
+
+
+@pytest.mark.parametrize('implicit_format', (True, False))
+@pytest.mark.parametrize('localhost', ('127.0.0.1', '::1', 'localhost'))
+def test_fileurl_parsing_windows(implicit_format, localhost, monkeypatch):
+    if implicit_format:
+        pathformat = None
+        monkeypatch.setattr('os.name', 'nt')
+    else:
+        pathformat = 'windows'
+        monkeypatch.delattr('os.name')  # just to make sure it won't get used
+
+    url = urls.url_parse('file:///C:/Documents and Settings/Foobar/stuff.txt')
+    assert url.netloc == ''
+    assert url.scheme == 'file'
+    assert url.get_file_location(pathformat) == \
+        (None, r'C:\Documents and Settings\Foobar\stuff.txt')
+
+    url = urls.url_parse('file://///server.tld/file.txt')
+    assert url.get_file_location(pathformat) == ('server.tld', r'file.txt')
+
+    url = urls.url_parse('file://///server.tld')
+    assert url.get_file_location(pathformat) == ('server.tld', '')
+
+    url = urls.url_parse('file://///%s' % localhost)
+    assert url.get_file_location(pathformat) == (None, '')
+
+    url = urls.url_parse('file://///%s/file.txt' % localhost)
+    assert url.get_file_location(pathformat) == (None, r'file.txt')
+
+
 def test_replace():
     url = urls.url_parse('http://de.wikipedia.org/wiki/Troll')
     strict_eq(url.replace(query='foo=bar'),
@@ -123,6 +163,25 @@ def test_url_fixing():
 
     x = urls.url_fix("http://just.a.test/$-_.+!*'(),")
     assert x == "http://just.a.test/$-_.+!*'(),"
+
+    x = urls.url_fix('http://höhöhö.at/höhöhö/hähähä')
+    assert x == r'http://xn--hhh-snabb.at/h%C3%B6h%C3%B6h%C3%B6/h%C3%A4h%C3%A4h%C3%A4'
+
+
+def test_url_fixing_filepaths():
+    x = urls.url_fix(r'file://C:\Users\Administrator\My Documents\ÑÈáÇíí')
+    assert x == r'file:///C%3A/Users/Administrator/My%20Documents/%C3%91%C3%88%C3%A1%C3%87%C3%AD%C3%AD'
+
+    a = urls.url_fix(r'file:/C:/')
+    b = urls.url_fix(r'file://C:/')
+    c = urls.url_fix(r'file:///C:/')
+    assert a == b == c == r'file:///C%3A/'
+
+    x = urls.url_fix(r'file://host/sub/path')
+    assert x == r'file://host/sub/path'
+
+    x = urls.url_fix(r'file:///')
+    assert x == r'file:///'
 
 
 def test_url_fixing_qs():
