@@ -41,6 +41,9 @@ Release date and codename to be decided
   parameters (pull request ``#205``).
 - ``werkzeug.datastructures.Accept`` now handles a quality of ``0`` as
   intolerable, as per RFC 2616 (pull request ``#536``).
+- ``werkzeug.urls.url_fix`` now properly encodes hostnames with ``idna``
+  encoding (issue ``#559``). It also doesn't crash on malformed URLs anymore
+  (issue ``#582``).
 
 Version 0.9.7
 -------------
