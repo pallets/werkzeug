@@ -3,7 +3,14 @@
     werkzeug.urls
     ~~~~~~~~~~~~~
 
-    This module implements various URL related functions.
+    ``werkzeug.urls`` used to provide several wrapper functions for Python 2
+    urlparse, whose main purpose were to work around the behavior of the Py2
+    stdlib and its lack of unicode support. While this was already a somewhat
+    inconvenient situation, it got even more complicated because Python 3's
+    ``urllib.parse`` actually does handle unicode properly. In other words,
+    this module would wrap two libraries with completely different behavior. So
+    now this module contains a 2-and-3-compatible backport of Python 3's
+    ``urllib.parse``, which is mostly API-compatible.
 
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
@@ -37,7 +44,8 @@ _URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
     ['scheme', 'netloc', 'path', 'query', 'fragment']))
 
 
-class _URLMixin(object):
+class BaseURL(_URLTuple):
+    '''Superclass of :py:class:`URL` and :py:class:`BytesURL`.'''
     __slots__ = ()
 
     def replace(self, **kwargs):
@@ -268,7 +276,7 @@ class _URLMixin(object):
 
 
 @implements_to_string
-class URL(_URLTuple, _URLMixin):
+class URL(BaseURL):
     """Represents a parsed URL.  This behaves like a regular tuple but
     also has some extra attributes that give further insight into the
     URL.
@@ -311,7 +319,7 @@ class URL(_URLTuple, _URLMixin):
         )
 
 
-class BytesURL(_URLTuple, _URLMixin):
+class BytesURL(BaseURL):
     """Represents a parsed URL in bytes."""
     __slots__ = ()
     _at = b'@'
