@@ -23,6 +23,9 @@ Version 0.9.7
 - Fix bug where ``werkzeug.exceptions.abort`` would raise an arbitrary subclass
   of the expected class (issue ``#422``).
 - Fix broken ``jsrouting`` (due to removal of ``werkzeug.templates``)
+- ``werkzeug.urls.url_fix`` now doesn't crash on malformed URLs anymore, but
+  returns them unmodified. This is a cheap workaround for ``#582``, the proper
+  fix is included in version 0.10.
 
 Version 0.9.6
 -------------
