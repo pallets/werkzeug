@@ -19,6 +19,11 @@ Release date and codename to be decided
 - Fixed a bug on Python 2, that caused ``len`` for 
   :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
 
+Version 0.9.7
+-------------
+
+- Fixed uri_to_iri() not re-encoding hashes in query string parameters.
+
 Version 0.9.5
 -------------
 
