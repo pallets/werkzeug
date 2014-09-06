@@ -44,6 +44,8 @@ Release date and codename to be decided
 - ``werkzeug.urls.url_fix`` now properly encodes hostnames with ``idna``
   encoding (issue ``#559``). It also doesn't crash on malformed URLs anymore
   (issue ``#582``).
+- ``werkzeug.routing.MapAdapter.match`` now recognizes the difference between
+  the path ``/`` and an empty one (issue ``#360``).
 
 Version 0.9.7
 -------------
