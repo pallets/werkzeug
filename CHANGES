@@ -26,6 +26,8 @@ Version 0.9.7
 - ``werkzeug.urls.url_fix`` now doesn't crash on malformed URLs anymore, but
   returns them unmodified. This is a cheap workaround for ``#582``, the proper
   fix is included in version 0.10.
+- The repr of ``werkzeug.wrappers.Request`` doesn't crash on non-ASCII-values
+  anymore (pull request ``#466``).
 
 Version 0.9.6
 -------------
