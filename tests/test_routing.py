@@ -670,6 +670,21 @@ def test_unicode_rules():
     url = a.build('foobar', {}, force_external=True)
     strict_eq(url, 'http://xn--n3h.example.com/foo+bar/')
 
+def test_empty_path_info():
+    m = r.Map([
+        r.Rule("/", endpoint="index"),
+    ])
+
+    b = m.bind("example.com", script_name="/approot")
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        b.match("")
+    assert excinfo.value.new_url == "http://example.com/approot/"
+
+    a = m.bind("example.com")
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        a.match("")
+    assert excinfo.value.new_url == "http://example.com/"
+
 def test_map_repr():
     m = r.Map([
         r.Rule(u'/wat', endpoint='enter'),
