@@ -214,7 +214,7 @@ class BaseRequest(object):
         # in a debug session we don't want the repr to blow up.
         args = []
         try:
-            args.append("'%s'" % self.url)
+            args.append("'%s'" % to_native(self.url, self.url_charset))
             args.append('[%s]' % self.method)
         except Exception:
             args.append('(invalid WSGI environ)')

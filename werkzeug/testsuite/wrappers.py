@@ -120,6 +120,16 @@ class WrappersTestCase(WerkzeugTestCase):
         req = wrappers.Request.from_values(u'/?foo=%2f')
         self.assert_strict_equal(req.query_string, b'foo=%2f')
 
+    def test_request_repr(self):
+        req = wrappers.Request.from_values('/foobar')
+        self.assert_equal("<Request 'http://localhost/foobar' [GET]>", repr(req))
+        # test with non-ascii characters
+        req = wrappers.Request.from_values('/привет')
+        self.assert_equal("<Request 'http://localhost/привет' [GET]>", repr(req))
+        # test with unicode type for python 2
+        req = wrappers.Request.from_values(u'/привет')
+        self.assert_equal("<Request 'http://localhost/привет' [GET]>", repr(req))
+
     def test_access_route(self):
         req = wrappers.Request.from_values(headers={
             'X-Forwarded-For': '192.168.1.2, 192.168.1.1'
