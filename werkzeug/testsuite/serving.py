@@ -110,6 +110,27 @@ class ServingTestCase(WerkzeugTestCase):
         res = conn.getresponse()
         assert res.read() == b'YES'
 
+    @silencestderr
+    def test_header_merging(self):
+        def asserting_app(environ, start_response):
+            assert environ['HTTP_X_FOO'] == 'foo, bar'
+            assert environ['HTTP_COOKIE'] == 'foo; bar'
+            assert environ['HTTP_CONT'] == '1 2\n 3'
+            start_response('200 OK', [('Content-Type', 'text/plain')])
+            return [b'OK']
+
+        server, addr = run_dev_server(asserting_app)
+        conn = httplib.HTTPConnection(addr)
+        conn.putrequest('GET', '/')
+        conn.putheader('X-Foo', 'foo')
+        conn.putheader('X_Foo', 'bar')
+        conn.putheader('Cookie', 'foo')
+        conn.putheader('Cookie', 'bar')
+        conn.putheader('Cont', '1 2\n 3')
+        conn.endheaders()
+        res = conn.getresponse()
+        assert res.read() == b'OK'
+
 
 def suite():
     suite = unittest.TestSuite()

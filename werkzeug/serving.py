@@ -61,7 +61,23 @@ from werkzeug._internal import _log
 from werkzeug._compat import iteritems, PY2, reraise, text_type, \
      wsgi_encoding_dance
 from werkzeug.urls import url_parse, url_unquote
-from werkzeug.exceptions import InternalServerError, BadRequest
+from werkzeug.exceptions import InternalServerError
+
+
+def _iter_headers(lineiter):
+    """Super crappy way to iterate over lines that might look like HTTP
+    headers.  This must only be used with preparsed HTTP messages.  This
+    would be nice if it was not necessary but unfortunately the rfc822
+    Message in the stdlib is not very good.
+    """
+    rv = []
+    for line in lineiter:
+        if not line[:1].isspace():
+            key, value = line.split(':', 1)
+            rv.append((key.strip(), value.strip()))
+        elif rv:
+            rv[-1] = (rv[-1][0], rv[-1][1] + '\n ' + line[1:].strip())
+    return rv
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
@@ -104,9 +120,15 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_PROTOCOL':      self.request_version
         }
 
-        for key, value in self.headers.items():
+        for key, value in _iter_headers(self.headers.headers):
             key = 'HTTP_' + key.upper().replace('-', '_')
             if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
+                if key in environ:
+                    value = '%s%s%s' % (
+                        environ[key],
+                        key == 'HTTP_COOKIE' and '; ' or ', ',
+                        value,
+                    )
                 environ[key] = value
 
         if request_url.netloc:

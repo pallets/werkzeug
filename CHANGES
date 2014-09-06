@@ -26,6 +26,7 @@ Version 0.9.7
 - ``werkzeug.urls.url_fix`` now doesn't crash on malformed URLs anymore, but
   returns them unmodified. This is a cheap workaround for ``#582``, the proper
   fix is included in version 0.10.
+- Fixed header concatenation on the Werkzeug server.
 
 Version 0.9.6
 -------------
