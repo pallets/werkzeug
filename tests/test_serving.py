@@ -66,7 +66,7 @@ def test_absolute_requests(dev_server):
     ''')
 
     conn = httplib.HTTPConnection(server.addr)
-    conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm',
+    conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm#ignorethis',
                  headers={'X-Werkzeug-Addr': server.addr})
     res = conn.getresponse()
     assert res.read() == b'YES'
