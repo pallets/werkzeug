@@ -11,6 +11,7 @@
 import os
 import ssl
 import textwrap
+import time
 
 try:
     import httplib
@@ -123,25 +124,34 @@ def test_make_ssl_devcert(tmpdir):
 
 def test_reloader_broken_imports(tmpdir, dev_server):
     server = dev_server('''
+    trials = []
     def app(environ, start_response):
+        assert not trials, 'should have reloaded'
+        trials.append(1)
         import real_app
         return real_app.real_app(environ, start_response)
 
     kwargs['use_reloader'] = True
+    kwargs['reloader_interval'] = 0.1
     ''')
 
     assert any('app.py' in str(x) for x in tmpdir.listdir())
-    tmpdir.join('real_app.py').write("lol syntax error")
+    real_app = tmpdir.join('real_app.py')
+    real_app.write("lol syntax error")
+    time.sleep(2)  # wait for stat reloader to pick up new file
+
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')
     response = connection.getresponse()
     assert response.status == 500
 
-    tmpdir.join('real_app.py').write(textwrap.dedent('''
+    real_app.write(textwrap.dedent('''
     def real_app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'hello']
     '''))
+    time.sleep(2)  # wait for stat reloader to pick up changes
+
     connection.request('GET', '/')
     response = connection.getresponse()
     assert response.status == 200
