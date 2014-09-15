@@ -49,9 +49,7 @@ def _get_pid_middleware(f):
 
 
 def _dev_server():
-    appfile = sys.argv[1]
-
-    sys.path.insert(0, os.path.dirname(appfile))
+    sys.path.insert(0, sys.argv[1])
     import testsuite_app
     app = _get_pid_middleware(testsuite_app.app)
     serving.run_simple(hostname='localhost', application=app,
@@ -76,7 +74,8 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
         whose values will be passed to ``run_simple``.
     '''
     def run_dev_server(application):
-        appfile = tmpdir.join('testsuite_app.py')
+        app_pkg = tmpdir.mkdir('testsuite_app')
+        appfile = app_pkg.join('__init__.py')
         appfile.write('\n\n'.join((
             'kwargs = dict(port=5001)',
             textwrap.dedent(application)
@@ -103,7 +102,7 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
             return False
 
         def preparefunc(cwd):
-            args = [sys.executable, __file__, str(appfile)]
+            args = [sys.executable, __file__, str(tmpdir)]
             return request_pid, args
 
         subprocess.ensure('dev_server', preparefunc, restart=True)

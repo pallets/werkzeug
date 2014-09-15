@@ -122,7 +122,8 @@ def test_make_ssl_devcert(tmpdir):
     assert os.path.isfile(private_key)
 
 
-def test_reloader_broken_imports(tmpdir, dev_server):
+@pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
+def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     server = dev_server('''
     trials = []
     def app(environ, start_response):
@@ -133,9 +134,9 @@ def test_reloader_broken_imports(tmpdir, dev_server):
 
     kwargs['use_reloader'] = True
     kwargs['reloader_interval'] = 0.1
-    ''')
+    kwargs['reloader_type'] = %s
+    ''' % repr(reloader_type))
 
-    assert any('app.py' in str(x) for x in tmpdir.listdir())
     real_app = tmpdir.join('real_app.py')
     real_app.write("lol syntax error")
     time.sleep(2)  # wait for stat reloader to pick up new file
