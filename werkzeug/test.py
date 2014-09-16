@@ -661,8 +661,7 @@ class Client(object):
             self.cookie_jar.extract_wsgi(environ, rv[2])
         return rv
 
-    def resolve_redirect(self, response, new_location, environ, buffered=False,
-                         method='GET'):
+    def resolve_redirect(self, response, new_location, environ, buffered=False):
         """Resolves a single redirect and triggers the request again
         directly on this redirect client.
         """
@@ -680,6 +679,12 @@ class Client(object):
         if not allowed:
             raise RuntimeError('%r does not support redirect to '
                                'external targets' % self.__class__)
+
+        status_code = int(response[1].split(None, 1)[0])
+        if status_code == 307:
+            method = environ['REQUEST_METHOD']
+        else:
+            method = 'GET'
 
         # For redirect handling we temporarily disable the response
         # wrapper.  This is not threadsafe but not a real concern
@@ -753,10 +758,9 @@ class Client(object):
             if new_redirect_entry in redirect_chain:
                 raise ClientRedirectError('loop detected')
             redirect_chain.append(new_redirect_entry)
-            environ, response = self.resolve_redirect(
-                response, new_location, environ, buffered=buffered,
-                method=method
-            )
+            environ, response = self.resolve_redirect(response, new_location,
+                                                      environ,
+                                                      buffered=buffered)
 
         if self.response_wrapper is not None:
             response = self.response_wrapper(*response)
