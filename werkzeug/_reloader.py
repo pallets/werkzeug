@@ -50,6 +50,10 @@ def _iter_module_files():
 
     # The list call is necessary on Python 3 in case the module
     # dictionary modifies during iteration.
+    for path_entry in list(sys.path):
+        for filename in _recursive_walk(os.path.abspath(path_entry)):
+            yield filename
+
     for module in list(sys.modules.values()):
         if module is None:
             continue
@@ -65,7 +69,7 @@ def _iter_module_files():
 
 def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
-    rv = set()
+    rv = set(os.path.abspath(x) for x in sys.path if os.path.isdir(x))
     for filename in extra_files or ():
         rv.append(os.path.dirname(os.path.abspath(filename)))
     for module in list(sys.modules.values()):
@@ -168,7 +172,8 @@ class WatchdogReloaderLoop(ReloaderLoop):
         def _check_modification(filename):
             if filename in self.extra_files:
                 self.trigger_reload(filename)
-            if os.path.dirname(filename) in self.observable_paths:
+            dirname = os.path.dirname(filename)
+            if dirname.startswith(tuple(self.observable_paths)):
                 if filename.endswith(('.pyc', '.pyo')):
                     self.trigger_reload(filename[:-1])
                 elif filename.endswith('.py'):
