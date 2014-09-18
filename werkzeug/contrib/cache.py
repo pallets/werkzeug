@@ -92,8 +92,8 @@ class BaseCache(object):
     """Baseclass for the cache systems.  All the cache systems implement this
     API or a superset of it.
 
-    :param default_timeout: the default timeout that is used if no timeout is
-                            specified on :meth:`set`.
+    :param default_timeout: the default timeout (in seconds) that is used if no
+                            timeout is specified on :meth:`set`.
     """
 
     def __init__(self, default_timeout=300):
