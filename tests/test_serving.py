@@ -165,7 +165,10 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
 @pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
 def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
     server = dev_server('''
+    trials = []
     def app(environ, start_response):
+        assert not trials, 'should have reloaded'
+        trials.append(1)
         import real_app
         return real_app.real_app(environ, start_response)
 
