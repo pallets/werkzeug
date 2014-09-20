@@ -83,7 +83,7 @@ class _ServerInfo(object):
 
     def wait_for_reloader(self):
         old_pid = self.last_pid
-        for i in range(10):
+        for i in range(20):
             if self.request_pid() != old_pid:
                 break
             time.sleep(0.1 * i)

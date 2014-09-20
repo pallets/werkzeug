@@ -127,6 +127,10 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     # We explicitly assert that the server reloads on change, even though in
     # this case the import could've just been retried. This is to assert
     # correct behavior for apps that catch and cache import errors.
+
+    real_app = tmpdir.join('real_app.py')
+    real_app.write("lol syntax error")
+
     server = dev_server('''
     trials = []
     def app(environ, start_response):
@@ -139,10 +143,6 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     kwargs['reloader_interval'] = 0.1
     kwargs['reloader_type'] = %s
     ''' % repr(reloader_type))
-
-    real_app = tmpdir.join('real_app.py')
-    real_app.write("lol syntax error")
-    server.wait_for_reloader()
 
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')
@@ -164,6 +164,11 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
 
 @pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
 def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
+    real_app = tmpdir.mkdir('real_app')
+    real_app.join('__init__.py').write('from real_app.sub import real_app')
+    sub = real_app.mkdir('sub').join('__init__.py')
+    sub.write("lol syntax error")
+
     server = dev_server('''
     trials = []
     def app(environ, start_response):
@@ -176,12 +181,6 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
     kwargs['reloader_interval'] = 0.1
     kwargs['reloader_type'] = %s
     ''' % repr(reloader_type))
-
-    real_app = tmpdir.mkdir('real_app')
-    real_app.join('__init__.py').write('from real_app.sub import real_app')
-    sub = real_app.mkdir('sub').join('__init__.py')
-    sub.write("lol syntax error")
-    server.wait_for_reloader()
 
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')
