@@ -40,11 +40,16 @@ def _iter_module_files():
         entered.add(path_entry)
         try:
             for filename in os.listdir(path_entry):
-                if not filename.endswith(('.py', '.pyc', '.pyo')):
-                    continue
-                filename = _verify_file(os.path.join(path_entry, filename))
-                if filename:
-                    yield filename
+                path = os.path.join(path_entry, filename)
+                if os.path.isdir(path):
+                    for filename in _recursive_walk(path):
+                        yield filename
+                else:
+                    if not filename.endswith(('.py', '.pyc', '.pyo')):
+                        continue
+                    filename = _verify_file(path)
+                    if filename:
+                        yield filename
         except OSError:
             pass
 
