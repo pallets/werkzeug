@@ -72,21 +72,25 @@ class _ServerInfo(object):
 
     def request_pid(self):
         for i in range(10):
+            time.sleep(0.1 * i)
             try:
                 self.last_pid = int(urlopen(self.url + '/_getpid').read())
                 return self.last_pid
             except Exception as e:  # urllib also raises socketerrors
                 print(self.url)
                 print(e)
-                time.sleep(0.1 * i)
         return False
 
     def wait_for_reloader(self):
         old_pid = self.last_pid
-        for i in range(20):
-            if self.request_pid() != old_pid:
-                break
+        for i in range(10):
             time.sleep(0.1 * i)
+            new_pid = self.request_pid()
+            if not new_pid:
+                raise RuntimeError('Server is down.')
+            if self.request_pid() != old_pid:
+                return
+        raise RuntimeError('Server did not reload.')
 
 
 @pytest.fixture
