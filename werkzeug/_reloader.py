@@ -74,7 +74,7 @@ def _iter_module_files():
 
 def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
-    rv = set(os.path.abspath(x) for x in sys.path if os.path.isdir(x))
+    rv = set(os.path.abspath(x) for x in sys.path)
     for filename in extra_files or ():
         rv.append(os.path.dirname(os.path.abspath(filename)))
     for module in list(sys.modules.values()):
@@ -211,8 +211,14 @@ class WatchdogReloaderLoop(ReloaderLoop):
                 common_roots = _find_common_roots(paths)
                 for path in common_roots:
                     if path not in watches:
-                        watches[path] = observer.schedule(
-                            self.event_handler, path, recursive=True)
+                        try:
+                            watches[path] = observer.schedule(
+                                self.event_handler, path, recursive=True)
+                        except OSError:
+                            # "Path is not a directory". We could filter out
+                            # those paths beforehand, but that would cause
+                            # additional stat calls.
+                            watches[path] = None
                     to_delete.discard(path)
                 for path in to_delete:
                     watch = watches.pop(path, None)
