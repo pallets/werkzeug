@@ -142,7 +142,7 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
 
     real_app = tmpdir.join('real_app.py')
     real_app.write("lol syntax error")
-    time.sleep(2)  # wait for stat reloader to pick up new file
+    server.wait_for_reloader()
 
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')
@@ -154,7 +154,7 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'hello']
     '''))
-    time.sleep(2)  # wait for stat reloader to pick up changes
+    server.wait_for_reloader()
 
     connection.request('GET', '/')
     response = connection.getresponse()
@@ -181,7 +181,7 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
     real_app.join('__init__.py').write('from real_app.sub import real_app')
     sub = real_app.mkdir('sub').join('__init__.py')
     sub.write("lol syntax error")
-    time.sleep(2)  # wait for stat reloader to pick up new file
+    server.wait_for_reloader()
 
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')
@@ -193,7 +193,7 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'hello']
     '''))
-    time.sleep(2)  # wait for stat reloader to pick up changes
+    server.wait_for_reloader()
 
     connection.request('GET', '/')
     response = connection.getresponse()

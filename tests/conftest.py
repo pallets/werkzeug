@@ -63,6 +63,30 @@ class _ServerInfo(object):
     addr = None
     url = None
     port = None
+    last_pid = None
+
+    def __init__(self, addr, url, port):
+        self.addr = addr
+        self.url = url
+        self.port = port
+
+    def request_pid(self):
+        for i in range(10):
+            try:
+                self.last_pid = int(urlopen(self.url + '/_getpid').read())
+                return self.last_pid
+            except Exception as e:  # urllib also raises socketerrors
+                print(self.url)
+                print(e)
+                time.sleep(0.1 * i)
+        return False
+
+    def wait_for_reloader(self):
+        old_pid = self.last_pid
+        for i in range(10):
+            if self.request_pid() != old_pid:
+                break
+            time.sleep(0.1 * i)
 
 
 @pytest.fixture
@@ -91,19 +115,15 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
         else:
             url_base = 'http://localhost:{0}'.format(port)
 
-        def request_pid():
-            for i in range(10):
-                try:
-                    return int(urlopen(url_base + '/_getpid').read())
-                except Exception as e:  # urllib also raises socketerrors
-                    print(url_base)
-                    print(e)
-                    time.sleep(0.1 * i)
-            return False
+        info = _ServerInfo(
+            'localhost:{0}'.format(port),
+            url_base,
+            port
+        )
 
         def preparefunc(cwd):
             args = [sys.executable, __file__, str(tmpdir)]
-            return request_pid, args
+            return info.request_pid, args
 
         subprocess.ensure('dev_server', preparefunc, restart=True)
 
@@ -111,14 +131,10 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
             # Killing the process group that runs the server, not just the
             # parent process attached. xprocess is confused about Werkzeug's
             # reloader and won't help here.
-            pid = request_pid()
+            pid = info.last_pid
             os.killpg(os.getpgid(pid), signal.SIGTERM)
         request.addfinalizer(teardown)
 
-        rv = _ServerInfo()
-        rv.addr = 'localhost:{0}'.format(port)
-        rv.url = url_base
-        rv.port = port
-        return rv
+        return info
 
     return run_dev_server
