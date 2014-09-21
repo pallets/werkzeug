@@ -207,9 +207,9 @@ class WatchdogReloaderLoop(ReloaderLoop):
         def monitor_update_thread():
             while 1:
                 to_delete = set(watches)
-                paths = _find_observable_paths(self.extra_files)
-                common_roots = _find_common_roots(paths)
-                for path in common_roots:
+                paths = _find_common_roots(
+                    _find_observable_paths(self.extra_files))
+                for path in paths:
                     if path not in watches:
                         try:
                             watches[path] = observer.schedule(
