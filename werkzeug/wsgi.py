@@ -475,7 +475,7 @@ class SharedDataMiddleware(object):
     :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
     :param fallback_mimetype: the fallback mimetype for unknown files.
     :param cache: enable or disable caching headers.
-    :Param cache_timeout: the cache timeout in seconds for the headers.
+    :param cache_timeout: the cache timeout in seconds for the headers.
     """
 
     def __init__(self, app, exports, disallow=None, cache=True,
