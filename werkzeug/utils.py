@@ -207,7 +207,7 @@ xhtml = HTMLBuilder('xhtml')
 
 
 def get_content_type(mimetype, charset):
-    """Return the full content type string with charset for a mimetype.
+    """Returns the full content type string with charset for a mimetype.
 
     If the mimetype represents text the charset will be appended as charset
     parameter, otherwise the mimetype is returned unchanged.
@@ -250,7 +250,7 @@ def secure_filename(filename):
     to :func:`os.path.join`.  The filename returned is an ASCII only string
     for maximum portability.
 
-    On windows system the function also makes sure that the file is not
+    On windows systems the function also makes sure that the file is not
     named after one of the special device files.
 
     >>> secure_filename("My cool movie.mov")
@@ -336,7 +336,7 @@ def unescape(s):
 
 
 def redirect(location, code=302):
-    """Return a response object (a WSGI application) that, if called,
+    """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location.  Supported codes are 301,
     302, 303, 305, and 307.  300 is not supported because it's not a real
     redirect and 304 because it's the answer for a request with a request
@@ -368,7 +368,7 @@ def redirect(location, code=302):
 
 
 def append_slash_redirect(environ, code=301):
-    """Redirect to the same URL but with a slash appended.  The behavior
+    """Redirects to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
 
     :param environ: the WSGI environment for the request that triggers
@@ -430,7 +430,7 @@ def import_string(import_name, silent=False):
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
-    """Find all the modules below a package.  This can be useful to
+    """Finds all the modules below a package.  This can be useful to
     automatically import all views / controllers so that their metaclasses /
     function decorators have a chance to register themselves on the
     application.
@@ -462,7 +462,7 @@ def find_modules(import_path, include_packages=False, recursive=False):
 
 
 def validate_arguments(func, args, kwargs, drop_extra=True):
-    """Check if the function accepts the arguments and keyword arguments.
+    """Checks if the function accepts the arguments and keyword arguments.
     Returns a new ``(args, kwargs)`` tuple that can safely be passed to
     the function without causing a `TypeError` because the function signature
     is incompatible.  If `drop_extra` is set to `True` (which is the default)
