@@ -87,7 +87,7 @@ class _ServerInfo(object):
         return self.xprocess.getinfo('dev_server').logpath.open()
 
     def request_pid(self):
-        for i in range(10):
+        for i in range(20):
             time.sleep(0.1 * i)
             try:
                 self.last_pid = int(urlopen(self.url + '/_getpid').read())
@@ -99,7 +99,7 @@ class _ServerInfo(object):
 
     def wait_for_reloader(self):
         old_pid = self.last_pid
-        for i in range(10):
+        for i in range(20):
             time.sleep(0.1 * i)
             new_pid = self.request_pid()
             if not new_pid:
@@ -109,7 +109,7 @@ class _ServerInfo(object):
         raise RuntimeError('Server did not reload.')
 
     def wait_for_reloader_loop(self):
-        for i in range(60*3):
+        for i in range(20):
             time.sleep(0.1 * i)
             line = self.logfile.readline()
             if 'reloader loop finished' in line:
