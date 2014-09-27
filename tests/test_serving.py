@@ -143,7 +143,7 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     kwargs['reloader_interval'] = 0.1
     kwargs['reloader_type'] = %s
     ''' % repr(reloader_type))
-    time.sleep(5)
+    server.wait_for_reloader_loop()
 
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')
@@ -182,7 +182,7 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
     kwargs['reloader_interval'] = 0.1
     kwargs['reloader_type'] = %s
     ''' % repr(reloader_type))
-    time.sleep(5)
+    server.wait_for_reloader_loop()
 
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')

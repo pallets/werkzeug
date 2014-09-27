@@ -20,10 +20,10 @@ try:
 except ImportError:  # pragma: no cover
     from urllib.request import urlopen
 
-
 import pytest
-from werkzeug import serving
 
+from werkzeug import serving
+from werkzeug.utils import cached_property
 from werkzeug._compat import to_bytes
 
 
@@ -39,6 +39,15 @@ else:
         return xprocess
 
 
+def _patch_reloader_loop():
+    def f(x):
+        print('reloader loop finished')
+        return time.sleep(x)
+
+    import werkzeug._reloader
+    werkzeug._reloader.ReloaderLoop._sleep = staticmethod(f)
+
+
 def _get_pid_middleware(f):
     def inner(environ, start_response):
         if environ['PATH_INFO'] == '/_getpid':
@@ -49,6 +58,7 @@ def _get_pid_middleware(f):
 
 
 def _dev_server():
+    _patch_reloader_loop()
     sys.path.insert(0, sys.argv[1])
     import testsuite_app
     app = _get_pid_middleware(testsuite_app.app)
@@ -60,15 +70,21 @@ if __name__ == '__main__':
 
 
 class _ServerInfo(object):
+    xprocess = None
     addr = None
     url = None
     port = None
     last_pid = None
 
-    def __init__(self, addr, url, port):
+    def __init__(self, xprocess, addr, url, port):
+        self.xprocess = xprocess
         self.addr = addr
         self.url = url
         self.port = port
+
+    @cached_property
+    def logfile(self):
+        return self.xprocess.getinfo('dev_server').logpath.open()
 
     def request_pid(self):
         for i in range(10):
@@ -91,6 +107,13 @@ class _ServerInfo(object):
             if self.request_pid() != old_pid:
                 return
         raise RuntimeError('Server did not reload.')
+
+    def wait_for_reloader_loop(self):
+        for i in range(60*3):
+            time.sleep(0.1 * i)
+            line = self.logfile.readline()
+            if 'reloader loop finished' in line:
+                return
 
 
 @pytest.fixture
@@ -120,6 +143,7 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
             url_base = 'http://localhost:{0}'.format(port)
 
         info = _ServerInfo(
+            subprocess,
             'localhost:{0}'.format(port),
             url_base,
             port

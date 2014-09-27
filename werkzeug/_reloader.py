@@ -107,6 +107,7 @@ def _find_common_roots(paths):
 
 
 class ReloaderLoop(object):
+    _sleep = time.sleep  # monkeypatched by testsuite
     name = None
 
     def __init__(self, extra_files=None, interval=1):
@@ -163,7 +164,7 @@ class StatReloaderLoop(ReloaderLoop):
                     continue
                 elif mtime > old_time:
                     self.trigger_reload(filename)
-            time.sleep(self.interval)
+            self._sleep(self.interval)
 
 
 class WatchdogReloaderLoop(ReloaderLoop):
@@ -225,7 +226,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
                     if watch is not None:
                         observer.unschedule(watch)
                 self.observable_paths = paths
-                time.sleep(self.interval)
+                self._sleep(self.interval)
 
         t = threading.Thread(target=monitor_update_thread, args=())
         t.setDaemon(True)
