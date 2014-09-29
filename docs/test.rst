@@ -146,17 +146,26 @@ Testing API
 
 .. autoclass:: Client
 
-   .. automethod:: open(options)
+   .. automethod:: open
 
-   .. automethod:: get(options)
+   Shortcut methods are available for many HTTP methods:
 
-   .. automethod:: post(options)
+   .. automethod:: get
 
-   .. automethod:: put(options)
+   .. automethod:: patch
 
-   .. automethod:: delete(options)
+   .. automethod:: post
 
-   .. automethod:: head(options)
+   .. automethod:: head
+
+   .. automethod:: put
+
+   .. automethod:: delete
+
+   .. automethod:: options
+
+   .. automethod:: trace
+
 
 .. autofunction:: create_environ([options])
 
