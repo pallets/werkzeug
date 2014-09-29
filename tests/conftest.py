@@ -20,10 +20,10 @@ try:
 except ImportError:  # pragma: no cover
     from urllib.request import urlopen
 
-
 import pytest
-from werkzeug import serving
 
+from werkzeug import serving
+from werkzeug.utils import cached_property
 from werkzeug._compat import to_bytes
 
 
@@ -39,6 +39,15 @@ else:
         return xprocess
 
 
+def _patch_reloader_loop():
+    def f(x):
+        print('reloader loop finished')
+        return time.sleep(x)
+
+    import werkzeug._reloader
+    werkzeug._reloader.ReloaderLoop._sleep = staticmethod(f)
+
+
 def _get_pid_middleware(f):
     def inner(environ, start_response):
         if environ['PATH_INFO'] == '/_getpid':
@@ -49,9 +58,8 @@ def _get_pid_middleware(f):
 
 
 def _dev_server():
-    appfile = sys.argv[1]
-
-    sys.path.insert(0, os.path.dirname(appfile))
+    _patch_reloader_loop()
+    sys.path.insert(0, sys.argv[1])
     import testsuite_app
     app = _get_pid_middleware(testsuite_app.app)
     serving.run_simple(hostname='localhost', application=app,
@@ -62,9 +70,50 @@ if __name__ == '__main__':
 
 
 class _ServerInfo(object):
+    xprocess = None
     addr = None
     url = None
     port = None
+    last_pid = None
+
+    def __init__(self, xprocess, addr, url, port):
+        self.xprocess = xprocess
+        self.addr = addr
+        self.url = url
+        self.port = port
+
+    @cached_property
+    def logfile(self):
+        return self.xprocess.getinfo('dev_server').logpath.open()
+
+    def request_pid(self):
+        for i in range(20):
+            time.sleep(0.1 * i)
+            try:
+                self.last_pid = int(urlopen(self.url + '/_getpid').read())
+                return self.last_pid
+            except Exception as e:  # urllib also raises socketerrors
+                print(self.url)
+                print(e)
+        return False
+
+    def wait_for_reloader(self):
+        old_pid = self.last_pid
+        for i in range(20):
+            time.sleep(0.1 * i)
+            new_pid = self.request_pid()
+            if not new_pid:
+                raise RuntimeError('Server is down.')
+            if self.request_pid() != old_pid:
+                return
+        raise RuntimeError('Server did not reload.')
+
+    def wait_for_reloader_loop(self):
+        for i in range(20):
+            time.sleep(0.1 * i)
+            line = self.logfile.readline()
+            if 'reloader loop finished' in line:
+                return
 
 
 @pytest.fixture
@@ -76,7 +125,8 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
         whose values will be passed to ``run_simple``.
     '''
     def run_dev_server(application):
-        appfile = tmpdir.join('testsuite_app.py')
+        app_pkg = tmpdir.mkdir('testsuite_app')
+        appfile = app_pkg.join('__init__.py')
         appfile.write('\n\n'.join((
             'kwargs = dict(port=5001)',
             textwrap.dedent(application)
@@ -92,19 +142,16 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
         else:
             url_base = 'http://localhost:{0}'.format(port)
 
-        def request_pid():
-            for i in range(10):
-                try:
-                    return int(urlopen(url_base + '/_getpid').read())
-                except Exception as e:  # urllib also raises socketerrors
-                    print(url_base)
-                    print(e)
-                    time.sleep(0.1 * i)
-            return False
+        info = _ServerInfo(
+            subprocess,
+            'localhost:{0}'.format(port),
+            url_base,
+            port
+        )
 
         def preparefunc(cwd):
-            args = [sys.executable, __file__, str(appfile)]
-            return request_pid, args
+            args = [sys.executable, __file__, str(tmpdir)]
+            return info.request_pid, args
 
         subprocess.ensure('dev_server', preparefunc, restart=True)
 
@@ -112,14 +159,10 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
             # Killing the process group that runs the server, not just the
             # parent process attached. xprocess is confused about Werkzeug's
             # reloader and won't help here.
-            pid = request_pid()
+            pid = info.last_pid
             os.killpg(os.getpgid(pid), signal.SIGTERM)
         request.addfinalizer(teardown)
 
-        rv = _ServerInfo()
-        rv.addr = 'localhost:{0}'.format(port)
-        rv.url = url_base
-        rv.port = port
-        return rv
+        return info
 
     return run_dev_server

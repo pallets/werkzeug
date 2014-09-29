@@ -40,16 +40,25 @@ def _iter_module_files():
         entered.add(path_entry)
         try:
             for filename in os.listdir(path_entry):
-                if not filename.endswith(('.py', '.pyc', '.pyo')):
-                    continue
-                filename = _verify_file(os.path.join(path_entry, filename))
-                if filename:
-                    yield filename
+                path = os.path.join(path_entry, filename)
+                if os.path.isdir(path):
+                    for filename in _recursive_walk(path):
+                        yield filename
+                else:
+                    if not filename.endswith(('.py', '.pyc', '.pyo')):
+                        continue
+                    filename = _verify_file(path)
+                    if filename:
+                        yield filename
         except OSError:
             pass
 
     # The list call is necessary on Python 3 in case the module
     # dictionary modifies during iteration.
+    for path_entry in list(sys.path):
+        for filename in _recursive_walk(os.path.abspath(path_entry)):
+            yield filename
+
     for module in list(sys.modules.values()):
         if module is None:
             continue
@@ -65,7 +74,7 @@ def _iter_module_files():
 
 def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
-    rv = set()
+    rv = set(os.path.abspath(x) for x in sys.path)
     for filename in extra_files or ():
         rv.append(os.path.dirname(os.path.abspath(filename)))
     for module in list(sys.modules.values()):
@@ -98,6 +107,7 @@ def _find_common_roots(paths):
 
 
 class ReloaderLoop(object):
+    _sleep = time.sleep  # monkeypatched by testsuite
     name = None
 
     def __init__(self, extra_files=None, interval=1):
@@ -154,7 +164,7 @@ class StatReloaderLoop(ReloaderLoop):
                     continue
                 elif mtime > old_time:
                     self.trigger_reload(filename)
-            time.sleep(self.interval)
+            self._sleep(self.interval)
 
 
 class WatchdogReloaderLoop(ReloaderLoop):
@@ -168,7 +178,8 @@ class WatchdogReloaderLoop(ReloaderLoop):
         def _check_modification(filename):
             if filename in self.extra_files:
                 self.trigger_reload(filename)
-            if os.path.dirname(filename) in self.observable_paths:
+            dirname = os.path.dirname(filename)
+            if dirname.startswith(tuple(self.observable_paths)):
                 if filename.endswith(('.pyc', '.pyo')):
                     self.trigger_reload(filename[:-1])
                 elif filename.endswith('.py'):
@@ -197,19 +208,25 @@ class WatchdogReloaderLoop(ReloaderLoop):
         def monitor_update_thread():
             while 1:
                 to_delete = set(watches)
-                paths = _find_observable_paths(self.extra_files)
-                common_roots = _find_common_roots(paths)
-                for path in common_roots:
+                paths = _find_common_roots(
+                    _find_observable_paths(self.extra_files))
+                for path in paths:
                     if path not in watches:
-                        watches[path] = observer.schedule(
-                            self.event_handler, path, recursive=True)
+                        try:
+                            watches[path] = observer.schedule(
+                                self.event_handler, path, recursive=True)
+                        except OSError:
+                            # "Path is not a directory". We could filter out
+                            # those paths beforehand, but that would cause
+                            # additional stat calls.
+                            watches[path] = None
                     to_delete.discard(path)
                 for path in to_delete:
                     watch = watches.pop(path, None)
                     if watch is not None:
                         observer.unschedule(watch)
                 self.observable_paths = paths
-                time.sleep(self.interval)
+                self._sleep(self.interval)
 
         t = threading.Thread(target=monitor_update_thread, args=())
         t.setDaemon(True)

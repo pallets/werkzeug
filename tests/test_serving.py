@@ -122,7 +122,15 @@ def test_make_ssl_devcert(tmpdir):
     assert os.path.isfile(private_key)
 
 
-def test_reloader_broken_imports(tmpdir, dev_server):
+@pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
+def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
+    # We explicitly assert that the server reloads on change, even though in
+    # this case the import could've just been retried. This is to assert
+    # correct behavior for apps that catch and cache import errors.
+
+    real_app = tmpdir.join('real_app.py')
+    real_app.write("lol syntax error")
+
     server = dev_server('''
     trials = []
     def app(environ, start_response):
@@ -133,12 +141,9 @@ def test_reloader_broken_imports(tmpdir, dev_server):
 
     kwargs['use_reloader'] = True
     kwargs['reloader_interval'] = 0.1
-    ''')
-
-    assert any('app.py' in str(x) for x in tmpdir.listdir())
-    real_app = tmpdir.join('real_app.py')
-    real_app.write("lol syntax error")
-    time.sleep(2)  # wait for stat reloader to pick up new file
+    kwargs['reloader_type'] = %s
+    ''' % repr(reloader_type))
+    server.wait_for_reloader_loop()
 
     connection = httplib.HTTPConnection(server.addr)
     connection.request('GET', '/')
@@ -150,7 +155,46 @@ def test_reloader_broken_imports(tmpdir, dev_server):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'hello']
     '''))
-    time.sleep(2)  # wait for stat reloader to pick up changes
+    server.wait_for_reloader()
+
+    connection.request('GET', '/')
+    response = connection.getresponse()
+    assert response.status == 200
+    assert response.read() == b'hello'
+
+
+@pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
+def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
+    real_app = tmpdir.mkdir('real_app')
+    real_app.join('__init__.py').write('from real_app.sub import real_app')
+    sub = real_app.mkdir('sub').join('__init__.py')
+    sub.write("lol syntax error")
+
+    server = dev_server('''
+    trials = []
+    def app(environ, start_response):
+        assert not trials, 'should have reloaded'
+        trials.append(1)
+        import real_app
+        return real_app.real_app(environ, start_response)
+
+    kwargs['use_reloader'] = True
+    kwargs['reloader_interval'] = 0.1
+    kwargs['reloader_type'] = %s
+    ''' % repr(reloader_type))
+    server.wait_for_reloader_loop()
+
+    connection = httplib.HTTPConnection(server.addr)
+    connection.request('GET', '/')
+    response = connection.getresponse()
+    assert response.status == 500
+
+    sub.write(textwrap.dedent('''
+    def real_app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    '''))
+    server.wait_for_reloader()
 
     connection.request('GET', '/')
     response = connection.getresponse()
