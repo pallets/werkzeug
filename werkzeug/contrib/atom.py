@@ -18,7 +18,7 @@
                          updated=post.last_update, published=post.pub_date)
             return feed.get_response()
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from datetime import datetime
@@ -44,7 +44,10 @@ def _make_text_block(name, content, content_type=None):
 
 def format_iso8601(obj):
     """Format a datetime object for iso8601"""
-    return obj.strftime('%Y-%m-%dT%H:%M:%SZ')
+    iso8601 = obj.isoformat()
+    if obj.tzinfo:
+        return iso8601
+    return iso8601 + 'Z'
 
 
 @implements_to_string
@@ -61,6 +64,7 @@ class AtomFeed(object):
     :param updated: the time the feed was modified the last time.  Must
                     be a :class:`datetime.datetime` object.  If not
                     present the latest entry's `updated` is used.
+                    Treated as UTC if naive datetime.
     :param feed_url: the URL to the feed.  Should be the URL that was
                      requested.
     :param author: the author of the feed.  Must be either a string (the
@@ -239,7 +243,8 @@ class FeedEntry(object):
     :param id: a globally unique id for the entry.  Must be an URI.  If
                not present the URL is used, but one of both is required.
     :param updated: the time the entry was modified the last time.  Must
-                    be a :class:`datetime.datetime` object. Required.
+                    be a :class:`datetime.datetime` object.  Treated as
+                    UTC if naive datetime. Required.
     :param author: the author of the entry.  Must be either a string (the
                    name) or a dict with name (required) and uri or
                    email (both optional).  Can be a list of (may be
@@ -247,7 +252,8 @@ class FeedEntry(object):
                    multiple authors. Required if the feed does not have an
                    author element.
     :param published: the time the entry was initially published.  Must
-                      be a :class:`datetime.datetime` object.
+                      be a :class:`datetime.datetime` object.  Treated as
+                      UTC if naive datetime.
     :param rights: copyright information for the entry.
     :param rights_type: the type attribute for the rights element.  One of
                         ``'html'``, ``'text'`` or ``'xhtml'``.  Default is

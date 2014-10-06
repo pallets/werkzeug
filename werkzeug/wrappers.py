@@ -17,7 +17,7 @@
     decoded into an unicode object if possible and if it makes sense.
 
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from functools import update_wrapper
@@ -214,7 +214,7 @@ class BaseRequest(object):
         # in a debug session we don't want the repr to blow up.
         args = []
         try:
-            args.append("'%s'" % self.url)
+            args.append("'%s'" % to_native(self.url, self.url_charset))
             args.append('[%s]' % self.method)
         except Exception:
             args.append('(invalid WSGI environ)')
@@ -550,7 +550,7 @@ class BaseRequest(object):
 
     @cached_property
     def url(self):
-        """The reconstructed current URL"""
+        """The reconstructed current URL as IRI."""
         return get_current_url(self.environ,
                                trusted_hosts=self.trusted_hosts)
 
@@ -562,13 +562,15 @@ class BaseRequest(object):
 
     @cached_property
     def url_root(self):
-        """The full URL root (with hostname), this is the application root."""
+        """The full URL root (with hostname), this is the application
+        root as IRI.
+        """
         return get_current_url(self.environ, True,
                                trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def host_url(self):
-        """Just the host with scheme."""
+        """Just the host with scheme as IRI."""
         return get_current_url(self.environ, host_only=True,
                                trusted_hosts=self.trusted_hosts)
 
@@ -1105,7 +1107,10 @@ class BaseResponse(object):
         if location is not None:
             old_location = location
             if isinstance(location, text_type):
-                location = iri_to_uri(location)
+                # Safe conversion is necessary here as we might redirect
+                # to a broken URI scheme (for instance itms-services).
+                location = iri_to_uri(location, safe_conversion=True)
+
             if self.autocorrect_location_header:
                 current_url = get_current_url(environ, root_only=True)
                 if isinstance(current_url, text_type):

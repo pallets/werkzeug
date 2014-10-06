@@ -7,7 +7,7 @@
     them are used by the request and response wrappers but especially for
     middleware development it makes sense to use them without the wrappers.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import re
@@ -207,7 +207,7 @@ xhtml = HTMLBuilder('xhtml')
 
 
 def get_content_type(mimetype, charset):
-    """Return the full content type string with charset for a mimetype.
+    """Returns the full content type string with charset for a mimetype.
 
     If the mimetype represents text the charset will be appended as charset
     parameter, otherwise the mimetype is returned unchanged.
@@ -250,7 +250,7 @@ def secure_filename(filename):
     to :func:`os.path.join`.  The filename returned is an ASCII only string
     for maximum portability.
 
-    On windows system the function also makes sure that the file is not
+    On windows systems the function also makes sure that the file is not
     named after one of the special device files.
 
     >>> secure_filename("My cool movie.mov")
@@ -336,7 +336,7 @@ def unescape(s):
 
 
 def redirect(location, code=302):
-    """Return a response object (a WSGI application) that, if called,
+    """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location.  Supported codes are 301,
     302, 303, 305, and 307.  300 is not supported because it's not a real
     redirect and 304 because it's the answer for a request with a request
@@ -352,8 +352,10 @@ def redirect(location, code=302):
     from werkzeug.wrappers import Response
     display_location = escape(location)
     if isinstance(location, text_type):
+        # Safe conversion is necessary here as we might redirect
+        # to a broken URI scheme (for instance itms-services).
         from werkzeug.urls import iri_to_uri
-        location = iri_to_uri(location)
+        location = iri_to_uri(location, safe_conversion=True)
     response = Response(
         '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
         '<title>Redirecting...</title>\n'
@@ -366,7 +368,7 @@ def redirect(location, code=302):
 
 
 def append_slash_redirect(environ, code=301):
-    """Redirect to the same URL but with a slash appended.  The behavior
+    """Redirects to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
 
     :param environ: the WSGI environment for the request that triggers
@@ -393,29 +395,32 @@ def import_string(import_name, silent=False):
                    `None` is returned instead.
     :return: imported object
     """
-    #XXX: py3 review needed
-    assert isinstance(import_name, string_types)
     # force the import name to automatically convert to strings
-    import_name = str(import_name)
+    # __import__ is not able to handle unicode strings in the fromlist
+    # if the module is a package
+    import_name = str(import_name).replace(':', '.')
     try:
-        if ':' in import_name:
-            module, obj = import_name.split(':', 1)
-        elif '.' in import_name:
-            module, obj = import_name.rsplit('.', 1)
-        else:
-            return __import__(import_name)
-        # __import__ is not able to handle unicode strings in the fromlist
-        # if the module is a package
-        if PY2 and isinstance(obj, unicode):
-            obj = obj.encode('utf-8')
         try:
-            return getattr(__import__(module, None, None, [obj]), obj)
-        except (ImportError, AttributeError):
+            __import__(import_name)
+        except ImportError:
+            if '.' not in import_name:
+                raise
+        else:
+            return sys.modules[import_name]
+
+        module_name, obj_name = import_name.rsplit('.', 1)
+        try:
+            module = __import__(module_name, None, None, [obj_name])
+        except ImportError:
             # support importing modules not yet set up by the parent module
             # (or package for that matter)
-            modname = module + '.' + obj
-            __import__(modname)
-            return sys.modules[modname]
+            module = import_string(module_name)
+
+        try:
+            return getattr(module, obj_name)
+        except AttributeError as e:
+            raise ImportError(e)
+
     except ImportError as e:
         if not silent:
             reraise(
@@ -425,7 +430,7 @@ def import_string(import_name, silent=False):
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
-    """Find all the modules below a package.  This can be useful to
+    """Finds all the modules below a package.  This can be useful to
     automatically import all views / controllers so that their metaclasses /
     function decorators have a chance to register themselves on the
     application.
@@ -457,7 +462,7 @@ def find_modules(import_path, include_packages=False, recursive=False):
 
 
 def validate_arguments(func, args, kwargs, drop_extra=True):
-    """Check if the function accepts the arguments and keyword arguments.
+    """Checks if the function accepts the arguments and keyword arguments.
     Returns a new ``(args, kwargs)`` tuple that can safely be passed to
     the function without causing a `TypeError` because the function signature
     is incompatible.  If `drop_extra` is set to `True` (which is the default)

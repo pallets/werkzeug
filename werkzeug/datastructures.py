@@ -5,7 +5,7 @@
 
     This module provides mixins and classes with an immutable interface.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import re
@@ -131,7 +131,7 @@ class ImmutableList(ImmutableListMixin, list):
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
-            dict.__repr__(self),
+            list.__repr__(self),
         )
 
 
@@ -827,7 +827,7 @@ class OrderedMultiDict(MultiDict):
 
 def _options_header_vkw(value, kw):
     return dump_options_header(value, dict((k.replace('_', '-'), v)
-                                            for k, v in kw.items()))
+                                           for k, v in kw.items()))
 
 
 def _unicodify_header_value(value):
@@ -1659,7 +1659,8 @@ class Accept(ImmutableList):
             for client_item, quality in self:
                 if quality <= best_quality:
                     break
-                if self._value_matches(server_item, client_item):
+                if (self._value_matches(server_item, client_item)
+                    and quality > 0):
                     best_quality = quality
                     result = server_item
         return result
@@ -1840,9 +1841,11 @@ class _CacheControl(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return '<%s %r>' % (
+        return '<%s %s>' % (
             self.__class__.__name__,
-            self.to_header()
+            " ".join(
+                "%s=%r" % (k, v) for k, v in sorted(self.items())
+            ),
         )
 
 
@@ -2608,6 +2611,7 @@ class FileStorage(object):
 
     def __nonzero__(self):
         return bool(self.filename)
+    __bool__ = __nonzero__
 
     def __getattr__(self, name):
         return getattr(self.stream, name)

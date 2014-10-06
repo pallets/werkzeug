@@ -3,11 +3,19 @@
     werkzeug.urls
     ~~~~~~~~~~~~~
 
-    This module implements various URL related functions.
+    ``werkzeug.urls`` used to provide several wrapper functions for Python 2
+    urlparse, whose main purpose were to work around the behavior of the Py2
+    stdlib and its lack of unicode support. While this was already a somewhat
+    inconvenient situation, it got even more complicated because Python 3's
+    ``urllib.parse`` actually does handle unicode properly. In other words,
+    this module would wrap two libraries with completely different behavior. So
+    now this module contains a 2-and-3-compatible backport of Python 3's
+    ``urllib.parse``, which is mostly API-compatible.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import os
 import re
 from werkzeug._compat import text_type, PY2, to_unicode, \
      to_native, implements_to_string, try_coerce_native, \
@@ -36,7 +44,8 @@ _URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
     ['scheme', 'netloc', 'path', 'query', 'fragment']))
 
 
-class _URLMixin(object):
+class BaseURL(_URLTuple):
+    '''Superclass of :py:class:`URL` and :py:class:`BytesURL`.'''
     __slots__ = ()
 
     def replace(self, **kwargs):
@@ -174,6 +183,64 @@ class _URLMixin(object):
         """
         return url_parse(uri_to_iri(self))
 
+    def get_file_location(self, pathformat=None):
+        """Returns a tuple with the location of the file in the form
+        ``(server, location)``.  If the netloc is empty in the URL or
+        points to localhost, it's represented as ``None``.
+
+        The `pathformat` by default is autodetection but needs to be set
+        when working with URLs of a specific system.  The supported values
+        are ``'windows'`` when working with Windows or DOS paths and
+        ``'posix'`` when working with posix paths.
+
+        If the URL does not point to to a local file, the server and location
+        are both represented as ``None``.
+
+        :param pathformat: The expected format of the path component.
+                           Currently ``'windows'`` and ``'posix'`` are
+                           supported.  Defaults to ``None`` which is
+                           autodetect.
+        """
+        if self.scheme != 'file':
+            return None, None
+
+        path = url_unquote(self.path)
+        host = self.netloc or None
+
+        if pathformat is None:
+            if os.name == 'nt':
+                pathformat = 'windows'
+            else:
+                pathformat = 'posix'
+
+        if pathformat == 'windows':
+            if path[:1] == '/' and path[1:2].isalpha() and path[2:3] in '|:':
+                path = path[1:2] + ':' + path[3:]
+            windows_share = path[:3] in ('\\' * 3, '/' * 3)
+            import ntpath
+            path = ntpath.normpath(path)
+            # Windows shared drives are represented as ``\\host\\directory``.
+            # That results in a URL like ``file://///host/directory``, and a
+            # path like ``///host/directory``. We need to special-case this
+            # because the path contains the hostname.
+            if windows_share and host is None:
+                parts = path.lstrip('\\').split('\\', 1)
+                if len(parts) == 2:
+                    host, path = parts
+                else:
+                    host = parts[0]
+                    path = ''
+        elif pathformat == 'posix':
+            import posixpath
+            path = posixpath.normpath(path)
+        else:
+            raise TypeError('Invalid path format %s' % repr(pathformat))
+
+        if host in ('127.0.0.1', '::1', 'localhost'):
+            host = None
+
+        return host, path
+
     def _split_netloc(self):
         if self._at in self.netloc:
             return self.netloc.split(self._at, 1)
@@ -209,7 +276,7 @@ class _URLMixin(object):
 
 
 @implements_to_string
-class URL(_URLTuple, _URLMixin):
+class URL(BaseURL):
     """Represents a parsed URL.  This behaves like a regular tuple but
     also has some extra attributes that give further insight into the
     URL.
@@ -237,7 +304,7 @@ class URL(_URLTuple, _URLMixin):
         ]))
         if auth:
             rv = '%s@%s' % (auth, rv)
-        return rv.encode('ascii')
+        return to_native(rv)
 
     def encode(self, charset='utf-8', errors='replace'):
         """Encodes the URL to a tuple made out of bytes.  The charset is
@@ -252,7 +319,7 @@ class URL(_URLTuple, _URLMixin):
         )
 
 
-class BytesURL(_URLTuple, _URLMixin):
+class BytesURL(BaseURL):
     """Represents a parsed URL in bytes."""
     __slots__ = ()
     _at = b'@'
@@ -358,8 +425,8 @@ def url_parse(url, scheme=None, allow_fragments=True):
             if wdelim >= 0:
                 delim = min(delim, wdelim)
         netloc, url = url[2:delim], url[delim:]
-        if ((s('[') in netloc and s(']') not in netloc) or
-            (s(']') in netloc and s('[') not in netloc)):
+        if (s('[') in netloc and s(']') not in netloc) or \
+           (s(']') in netloc and s('[') not in netloc):
             raise ValueError('Invalid IPv6 URL')
 
     if allow_fragments and s('#') in url:
@@ -491,10 +558,22 @@ def url_fix(s, charset='utf-8'):
     :param charset: The target charset for the URL if the url was given as
                     unicode string.
     """
-    scheme, netloc, path, qs, anchor = url_parse(to_unicode(s, charset, 'replace'))
-    path = url_quote(path, charset, safe='/%+$!*\'(),')
-    qs = url_quote_plus(qs, charset, safe=':&%=+$!*\'(),')
-    return to_native(url_unparse((scheme, netloc, path, qs, anchor)))
+    # First step is to switch to unicode processing and to convert
+    # backslashes (which are invalid in URLs anyways) to slashes.  This is
+    # consistent with what Chrome does.
+    s = to_unicode(s, charset, 'replace').replace('\\', '/')
+
+    # For the specific case that we look like a malformed windows URL
+    # we want to fix this up manually:
+    if s.startswith('file://') and s[7:8].isalpha() and s[8:10] in (':/', '|/'):
+        s = 'file:///' + s[7:]
+
+    url = url_parse(s)
+    path = url_quote(url.path, charset, safe='/%+$!*\'(),')
+    qs = url_quote_plus(url.query, charset, safe=':&%=+$!*\'(),')
+    anchor = url_quote_plus(url.fragment, charset, safe=':&%=+$!*\'(),')
+    return to_native(url_unparse((url.scheme, url.encode_netloc(),
+                                  path, qs, anchor)))
 
 
 def uri_to_iri(uri, charset='utf-8', errors='replace'):
@@ -529,7 +608,7 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
                         path, query, fragment))
 
 
-def iri_to_uri(iri, charset='utf-8', errors='strict'):
+def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):
     r"""
     Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
     uses utf-8 URLs internally because this is what browsers and HTTP do as
@@ -543,16 +622,49 @@ def iri_to_uri(iri, charset='utf-8', errors='strict'):
     >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
     'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
 
+    There is a general problem with IRI and URI conversion with some
+    protocols that appear in the wild that are in violation of the URI
+    specification.  In places where Werkzeug goes through a forced IRI to
+    URI conversion it will set the `safe_conversion` flag which will
+    not perform a conversion if the end result is already ASCII.  This
+    can mean that the return value is not an entirely correct URI but
+    it will not destroy such invalid URLs in the process.
+
+    As an example consider the following two IRIs::
+
+      magnet:?xt=uri:whatever
+      itms-services://?action=download-manifest
+
+    The internal representation after parsing of those URLs is the same
+    and there is no way to reconstruct the original one.  If safe
+    conversion is enabled however this function becomes a noop for both of
+    those strings as they both can be considered URIs.
+
     .. versionadded:: 0.6
+
+    .. versionchanged:: 0.9.6
+       The `safe_conversion` parameter was added.
 
     :param iri: The IRI to convert.
     :param charset: The charset for the URI.
+    :param safe_conversion: indicates if a safe conversion should take place.
+                            For more information see the explanation above.
     """
     if isinstance(iri, tuple):
         iri = url_unparse(iri)
+
+    if safe_conversion:
+        try:
+            native_iri = to_native(iri)
+            ascii_iri = to_native(iri).encode('ascii')
+            if ascii_iri.split() == [ascii_iri]:
+                return native_iri
+        except UnicodeError:
+            pass
+
     iri = url_parse(to_unicode(iri, charset, errors))
 
-    netloc = iri.encode_netloc().decode('ascii')
+    netloc = iri.encode_netloc()
     path = url_quote(iri.path, charset, errors, '/:~+%')
     query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
     fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')

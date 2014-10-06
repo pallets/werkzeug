@@ -5,7 +5,7 @@
 
     This module implements context-local objects.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 from functools import update_wrapper
@@ -203,7 +203,7 @@ class LocalManager(object):
         scoped sessions) to the Werkzeug locals.
 
         .. versionchanged:: 0.7
-           Yu can pass a different ident function to the local manager that
+           You can pass a different ident function to the local manager that
            will then be propagated to all the locals passed to the
            constructor.
         """

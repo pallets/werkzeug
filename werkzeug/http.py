@@ -13,7 +13,7 @@
     module.
 
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import re
@@ -37,9 +37,24 @@ from werkzeug._compat import to_unicode, iteritems, text_type, \
      integer_types
 
 
-# incorrect
 _cookie_charset = 'latin1'
-_accept_re = re.compile(r'([^\s;,]+)(?:[^,]*?;\s*q=(\d*(?:\.\d+)?))?')
+# for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
+_accept_re = re.compile(
+        r'''(                       # media-range capturing-parenthesis
+              [^\s;,]+              # type/subtype
+              (?:[ \t]*;[ \t]*      # ";"
+                (?:                 # parameter non-capturing-parenthesis
+                  [^\s;,q][^\s;,]*  # token that doesn't start with "q"
+                |                   # or
+                  q[^\s;,=][^\s;,]* # token that is more than just "q"
+                )
+              )*                    # zero or more parameters
+            )                       # end of media-range
+            (?:[ \t]*;[ \t]*q=      # weight is a "q" parameter
+              (\d*(?:\.\d+)?)       # qvalue capturing-parentheses
+              [^,]*                 # "extension" accept params: who cares?
+            )?                      # accept params are optional
+        ''', re.VERBOSE)
 _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')

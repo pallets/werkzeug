@@ -5,7 +5,7 @@
 
     Security related helpers such as secure password hashing tools.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import os
@@ -65,6 +65,9 @@ def pbkdf2_hex(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
     return to_native(codecs.encode(rv, 'hex_codec'))
 
 
+_has_native_pbkdf2 = hasattr(hashlib, 'pbkdf2_hmac')
+
+
 def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
                keylen=None, hashfunc=None):
     """Returns a binary digest for the PBKDF2 hash algorithm of `data`
@@ -87,8 +90,20 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
         hashfunc = _hash_funcs[hashfunc]
     elif not hashfunc:
         hashfunc = hashlib.sha1
+    data = to_bytes(data)
     salt = to_bytes(salt)
-    mac = hmac.HMAC(to_bytes(data), None, hashfunc)
+
+    # If we're on Python with pbkdf2_hmac we can try to use it for
+    # compatible digests.
+    if _has_native_pbkdf2:
+        _test_hash = hashfunc()
+        if hasattr(_test_hash, 'name') and \
+           _test_hash.name in _hash_funcs:
+            return hashlib.pbkdf2_hmac(_test_hash.name,
+                                       data, salt, iterations,
+                                       keylen)
+
+    mac = hmac.HMAC(data, None, hashfunc)
     if not keylen:
         keylen = mac.digest_size
     def _pseudorandom(x, mac=mac):
@@ -113,17 +128,25 @@ def safe_str_cmp(a, b):
 
     .. versionadded:: 0.7
     """
+    if isinstance(a, text_type):
+        a = a.encode('utf-8')
+    if isinstance(b, text_type):
+        b = b.encode('utf-8')
+
     if _builtin_safe_str_cmp is not None:
         return _builtin_safe_str_cmp(a, b)
+
     if len(a) != len(b):
         return False
+
     rv = 0
-    if isinstance(a, bytes) and isinstance(b, bytes) and not PY2:
-        for x, y in izip(a, b):
-            rv |= x ^ y
-    else:
+    if PY2:
         for x, y in izip(a, b):
             rv |= ord(x) ^ ord(y)
+    else:
+        for x, y in izip(a, b):
+            rv |= x ^ y
+
     return rv == 0
 
 

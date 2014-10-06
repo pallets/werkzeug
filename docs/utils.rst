@@ -49,32 +49,7 @@ General Helpers
 URL Helpers
 ===========
 
-.. module:: werkzeug.urls
-
-.. autoclass:: Href
-
-.. autofunction:: url_decode
-
-.. autofunction:: url_decode_stream
-
-.. autofunction:: url_encode
-
-.. autofunction:: url_encode_stream
-
-.. autofunction:: url_quote
-
-.. autofunction:: url_quote_plus
-
-.. autofunction:: url_unquote
-
-.. autofunction:: url_unquote_plus
-
-.. autofunction:: url_fix
-
-.. autofunction:: uri_to_iri
-
-.. autofunction:: iri_to_uri
-
+Please refer to :doc:`urls`.
 
 UserAgent Parsing
 =================

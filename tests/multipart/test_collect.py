@@ -27,7 +27,8 @@ def stats(request):
     text = request.form['text']
     f1.save(request.stat_folder + '/file1.bin')
     f2.save(request.stat_folder + '/file2.bin')
-    open(request.stat_folder + '/text.txt', 'w').write(text.encode('utf-8'))
+    with open(request.stat_folder + '/text.txt', 'w') as f:
+        f.write(text.encode('utf-8'))
     return Response('Done.')
 
 

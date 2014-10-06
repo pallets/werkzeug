@@ -255,7 +255,7 @@ code or provide a message as well:
 '400 BAD REQUEST'
 
 As you can see attributes work in both directions.  So you can set both
-:attr:`~BaseResponse.status` and `~BaseResponse.status_code` and the
+:attr:`~BaseResponse.status` and :attr:`~BaseResponse.status_code` and the
 change will be reflected to the other.
 
 Also common headers are exposed as attributes or with methods to set /

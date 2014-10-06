@@ -16,13 +16,78 @@ Release date and codename to be decided
 - Added support for ChromeOS detection.
 - Added UUID converter to the routing system.
 - Added message that explains how to quit the server.
-- Fixed a bug on Python 2, that caused ``len`` for 
+- Fixed a bug on Python 2, that caused ``len`` for
   :class:`werkzeug.datastructures.CombinedMultiDict` to crash.
+- Added support for stdlib pbkdf2 hmac if a compatible digest
+  is found.
+- Ported testsuite to use ``py.test``.
+- Minor optimizations to various middlewares (pull requests ``#496`` and
+  ``#571``).
+- Use stdlib ``ssl`` module instead of ``OpenSSL`` for the builtin server
+  (issue ``#434``). This means that OpenSSL contexts are not supported anymore,
+  but instead ``ssl.SSLContext`` from the stdlib.
+- Allow protocol-relative URLs when building external URLs.
+- Fixed Atom syndication to print time zone offset for tz-aware datetime
+  objects (pull request ``#254``).
+- Fix bug in ``cache.RedisCache`` when combined with ``redis.StrictRedis``
+  object (pull request ``#583``).
+- Improved reloader to track added files and to recover from broken
+  sys.modules setups with syntax errors in packages.
+- ``cache.RedisCache`` now supports arbitrary ``**kwargs`` for the redis
+  object.
+- ``werkzeug.test.Client`` now uses the original request method when resolving
+  307 redirects (pull request ``#556``).
+- ``werkzeug.datastructures.MIMEAccept`` now properly deals with mimetype
+  parameters (pull request ``#205``).
+- ``werkzeug.datastructures.Accept`` now handles a quality of ``0`` as
+  intolerable, as per RFC 2616 (pull request ``#536``).
+- ``werkzeug.urls.url_fix`` now properly encodes hostnames with ``idna``
+  encoding (issue ``#559``). It also doesn't crash on malformed URLs anymore
+  (issue ``#582``).
+- ``werkzeug.routing.MapAdapter.match`` now recognizes the difference between
+  the path ``/`` and an empty one (issue ``#360``).
+
+Version 0.9.7
+-------------
+
+(bugfix release, release date to be decided)
+
+- Fix unicode problems in ``werkzeug.debug.tbtools``.
+- Fix Python 3-compatibility problems in ``werkzeug.posixemulation``.
+- Backport fix of fatal typo for ``ImmutableList`` (issue ``#492``).
+- Make creation of the cache dir for ``FileSystemCache`` atomic (issue
+  ``#468``).
+- Use native strings for memcached keys to work with Python 3 client (issue
+  ``#539``).
+- Fix charset detection for ``werkzeug.debug.tbtools.Frame`` objects (issues
+  ``#547`` and ``#532``).
+- Fix ``AttributeError`` masking in ``werkzeug.utils.import_string`` (issue
+  ``#182``).
+- Explicitly shut down server (issue ``#519``).
+- Fix timeouts greater than 2592000 being misinterpreted as UNIX timestamps in
+  ``werkzeug.contrib.cache.MemcachedCache`` (issue ``#533``).
+- Fix bug where ``werkzeug.exceptions.abort`` would raise an arbitrary subclass
+  of the expected class (issue ``#422``).
+- Fix broken ``jsrouting`` (due to removal of ``werkzeug.templates``)
+- ``werkzeug.urls.url_fix`` now doesn't crash on malformed URLs anymore, but
+  returns them unmodified. This is a cheap workaround for ``#582``, the proper
+  fix is included in version 0.10.
+- The repr of ``werkzeug.wrappers.Request`` doesn't crash on non-ASCII-values
+  anymore (pull request ``#466``).
+
+Version 0.9.6
+-------------
+
+(bugfix release, released on June 7th 2014)
+
+- Added a safe conversion for IRI to URI conversion and use that
+  internally to work around issues with spec violations for
+  protocols such as ``itms-service``.
 
 Version 0.9.5
 -------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on June 7th 2014)
 
 - Forward charset argument from request objects to the environ
   builder.
@@ -32,6 +97,10 @@ Version 0.9.5
 - Fixed a problem with deepcopy not working for multi dicts.
 - Fixed a double quoting issue on redirects.
 - Fixed a problem with unicode keys appearing in headers on 2.x.
+- Fixed a bug with unicode strings in the test builder.
+- Fixed a unicode bug on Python 3 in the WSGI profiler.
+- Fixed an issue with the safe string compare function on
+  Python 2.7.7 and Python 3.4.
 
 Version 0.9.4
 -------------

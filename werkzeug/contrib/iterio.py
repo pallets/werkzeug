@@ -36,7 +36,7 @@ r"""
 
     .. _greenlet: http://codespeak.net/py/dist/greenlet.html
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 try:
@@ -305,7 +305,10 @@ class IterO(IterIO):
             nl_pos = self._buf.find(_newline(self._buf), self.pos)
         buf = []
         try:
-            pos = self.pos
+            if self._buf is None:
+                pos = self.pos
+            else:
+                pos = len(self._buf)
             while nl_pos < 0:
                 item = next(self._gen)
                 local_pos = item.find(_newline(item))

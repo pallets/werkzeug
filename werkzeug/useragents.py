@@ -8,7 +8,7 @@
     browsers.
 
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import re
@@ -51,7 +51,7 @@ class UserAgentParser(object):
         ('konqueror', 'konqueror'),
         ('k-meleon', 'kmeleon'),
         ('netscape', 'netscape'),
-        (r'msie|microsoft\s+internet\s+explorer', 'msie'),
+        (r'msie|microsoft\s+internet\s+explorer|trident/.+? rv:', 'msie'),
         ('lynx', 'lynx'),
         ('links', 'links'),
         ('seamonkey|mozilla', 'seamonkey')

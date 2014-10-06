@@ -5,7 +5,7 @@
 
     This module provides various traceback related utility functions.
 
-    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD.
 """
 import re
@@ -20,13 +20,14 @@ from tokenize import TokenError
 
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
-from werkzeug._compat import range_type, PY2, text_type, string_types
+from werkzeug._compat import range_type, PY2, text_type, string_types, \
+    to_native
 
 
-_coding_re = re.compile(r'coding[:=]\s*([-\w.]+)')
-_line_re = re.compile(r'^(.*?)$(?m)')
+_coding_re = re.compile(br'coding[:=]\s*([-\w.]+)')
+_line_re = re.compile(br'^(.*?)$(?m)')
 _funcdef_re = re.compile(r'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
-UTF8_COOKIE = '\xef\xbb\xbf'
+UTF8_COOKIE = b'\xef\xbb\xbf'
 
 system_exceptions = (SystemExit, KeyboardInterrupt)
 try:
@@ -269,7 +270,7 @@ class Traceback(object):
             logfile = sys.stderr
         tb = self.plaintext.rstrip() + u'\n'
         if PY2:
-            tb.encode('utf-8', 'replace')
+            tb = tb.encode('utf-8', 'replace')
         logfile.write(tb)
 
     def paste(self):
@@ -460,7 +461,7 @@ class Frame(object):
 
         if source is None:
             try:
-                f = open(self.filename)
+                f = open(self.filename, mode='rb')
             except IOError:
                 return []
             try:
@@ -479,7 +480,7 @@ class Frame(object):
             source = source[3:]
         else:
             for idx, match in enumerate(_line_re.finditer(source)):
-                match = _line_re.search(match.group())
+                match = _coding_re.search(match.group())
                 if match is not None:
                     charset = match.group(1)
                     break
@@ -487,6 +488,7 @@ class Frame(object):
                     break
 
         # on broken cookies we fall back to utf-8 too
+        charset = to_native(charset)
         try:
             codecs.lookup(charset)
         except LookupError:

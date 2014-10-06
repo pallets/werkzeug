@@ -82,7 +82,7 @@ if PY2:
         leave it as unicode.
         """
         try:
-            return str(s)
+            return to_native(s)
         except UnicodeError:
             return s
 
