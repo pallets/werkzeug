@@ -560,9 +560,10 @@ class RedisCache(BaseCache):
         if timeout is None:
             timeout = self.default_timeout
         dump = self.dump_object(value)
-        added = self._client.setnx(name=self.key_prefix + key, value=dump)
-        expire = self._client.expire(name=self.key_prefix + key, time=timeout)
-        return added and expire
+        return (
+            self._client.setnx(name=self.key_prefix + key, value=dump) and
+            self._client.expire(name=self.key_prefix + key, time=timeout)
+        )
 
     def set_many(self, mapping, timeout=None):
         if timeout is None:
