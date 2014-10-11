@@ -74,6 +74,8 @@ Version 0.9.7
   fix is included in version 0.10.
 - The repr of ``werkzeug.wrappers.Request`` doesn't crash on non-ASCII-values
   anymore (pull request ``#466``).
+- Fix bug in ``cache.RedisCache`` when combined with ``redis.StrictRedis``
+  object (pull request ``#583``).
 
 Version 0.9.6
 -------------
