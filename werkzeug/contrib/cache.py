@@ -554,7 +554,7 @@ class RedisCache(BaseCache):
             timeout = self.default_timeout
         dump = self.dump_object(value)
         return self._client.setex(name=self.key_prefix + key,
-                                  value=dump, time=timeout)
+                                  time=timeout, value=dump)
 
     def add(self, key, value, timeout=None):
         if timeout is None:
@@ -571,7 +571,7 @@ class RedisCache(BaseCache):
         pipe = self._client.pipeline()
         for key, value in _items(mapping):
             dump = self.dump_object(value)
-            pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
+            pipe.setex(name=self.key_prefix + key, time=timeout, value=dump)
         return pipe.execute()
 
     def delete(self, key):
