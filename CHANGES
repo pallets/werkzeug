@@ -44,6 +44,8 @@ Release date and codename to be decided
   (issue ``#582``).
 - ``werkzeug.routing.MapAdapter.match`` now recognizes the difference between
   the path ``/`` and an empty one (issue ``#360``).
+- The interactive debugger now tries to decode non-ascii filenames (issue
+  ``#469``).
 
 Version 0.9.7
 -------------

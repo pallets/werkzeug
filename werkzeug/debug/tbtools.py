@@ -21,7 +21,7 @@ from tokenize import TokenError
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
 from werkzeug._compat import range_type, PY2, text_type, string_types, \
-    to_native
+    to_native, to_unicode
 
 
 _coding_re = re.compile(br'coding[:=]\s*([-\w.]+)')
@@ -378,7 +378,7 @@ class Frame(object):
         # if it's a file on the file system resolve the real filename.
         if os.path.isfile(fn):
             fn = os.path.realpath(fn)
-        self.filename = fn
+        self.filename = to_unicode(fn, sys.getfilesystemencoding())
         self.module = self.globals.get('__name__')
         self.loader = self.globals.get('__loader__')
         self.code = tb.tb_frame.f_code

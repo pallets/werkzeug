@@ -212,3 +212,17 @@ class TestTraceback(object):
         assert [line.code for line in frames[1].get_annotated_lines()] == \
             [line.code for line in frames[2].get_annotated_lines()]
         assert u'höhö' in frames[1].sourcelines[3]
+
+    def test_filename_encoding(self, tmpdir, monkeypatch):
+        moduledir = tmpdir.mkdir('föö')
+        moduledir.join('bar.py').write('def foo():\n    1/0\n')
+        monkeypatch.syspath_prepend(str(moduledir))
+
+        import bar
+
+        try:
+            bar.foo()
+        except ZeroDivisionError:
+            traceback = Traceback(*sys.exc_info())
+
+        assert u'föö' in u'\n'.join(frame.render() for frame in traceback.frames)
