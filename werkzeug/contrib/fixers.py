@@ -94,7 +94,11 @@ class PathInfoFromRequestUriFix(object):
 class ProxyFix(object):
     """This middleware can be applied to add HTTP proxy support to an
     application that was not designed with HTTP proxies in mind.  It
-    sets `REMOTE_ADDR`, `HTTP_HOST` from `X-Forwarded` headers.
+    sets `REMOTE_ADDR`, `HTTP_HOST` from `X-Forwarded` headers.  While
+    Werkzeug-based applications already can use
+    :py:func:`werkzeug.wsgi.get_host` to retrieve the current host even if
+    behind proxy setups, this middleware can be used for applications which
+    access the WSGI environment directly.
 
     If you have more than one proxy server in front of your app, set
     `num_proxies` accordingly.
