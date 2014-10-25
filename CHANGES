@@ -46,6 +46,8 @@ Release date and codename to be decided
   the path ``/`` and an empty one (issue ``#360``).
 - The interactive debugger now tries to decode non-ascii filenames (issue
   ``#469``).
+- The ``idempotent_methods`` parameter was added to
+  :func:``~werkzeug.http.is_resource_modified`` (issue ``#409``).
 
 Version 0.9.7
 -------------

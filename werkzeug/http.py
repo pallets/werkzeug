@@ -744,22 +744,33 @@ def http_date(timestamp=None):
     return _dump_date(timestamp, ' ')
 
 
-def is_resource_modified(environ, etag=None, data=None, last_modified=None):
+def is_resource_modified(environ, etag=None, data=None, last_modified=None,
+                         idempotent_methods=('GET', 'HEAD')):
     """Convenience method for conditional requests.
+
+    This function will return ``False`` if the request method is not considered
+    to be idempotent. Which methods are, can be configured through the
+    ``idempotent_methods`` parameter.
 
     :param environ: the WSGI environment of the request to be checked.
     :param etag: the etag for the response for comparison.
     :param data: or alternatively the data of the response to automatically
                  generate an etag using :func:`generate_etag`.
     :param last_modified: an optional date of the last modification.
+    :param idempotent_methods: Methods that should be considered idempotent. An
+           empty or falsy value means "all".
     :return: `True` if the resource was modified, otherwise `False`.
+
+    .. versionadded:: 0.10
+        The ``idempotent_methods`` parameter was added.
     """
     if etag is None and data is not None:
         etag = generate_etag(data)
     elif data is not None:
         raise TypeError('both data and etag given')
-    if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
-        return False
+    if idempotent_methods:
+        if environ['REQUEST_METHOD'].upper() not in idempotent_methods:
+            return False
 
     unmodified = False
     if isinstance(last_modified, string_types):

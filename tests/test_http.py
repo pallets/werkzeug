@@ -262,19 +262,28 @@ class TestHTTPUtility(object):
         # ignore POST
         env['REQUEST_METHOD'] = 'POST'
         assert not http.is_resource_modified(env, etag='testing')
-        env['REQUEST_METHOD'] = 'GET'
 
-        # etagify from data
-        pytest.raises(TypeError, http.is_resource_modified, env,
-                           data='42', etag='23')
-        env['HTTP_IF_NONE_MATCH'] = http.generate_etag(b'awesome')
-        assert not http.is_resource_modified(env, data=b'awesome')
+        def x(**kwargs):
+            kwargs.update(args)
+            return http.is_resource_modified(env, **kwargs)
 
-        env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(datetime(2008, 1, 1, 12, 30))
-        assert not http.is_resource_modified(env,
-            last_modified=datetime(2008, 1, 1, 12, 00))
-        assert http.is_resource_modified(env,
-            last_modified=datetime(2008, 1, 1, 13, 00))
+        for request_method, args in [
+            ('GET', dict()),
+            ('POST', dict(idempotent_methods=('GET', 'POST'))),
+            ('POST', dict(idempotent_methods=()))
+        ]:
+            env['REQUEST_METHOD'] = request_method
+
+            # etagify from data
+            with pytest.raises(TypeError):
+                x(data='42', etag='23')
+            env['HTTP_IF_NONE_MATCH'] = http.generate_etag(b'awesome')
+            assert not x(data=b'awesome')
+
+            env['HTTP_IF_MODIFIED_SINCE'] = \
+                http.http_date(datetime(2008, 1, 1, 12, 30))
+            assert not x(last_modified=datetime(2008, 1, 1, 12, 00))
+            assert x(last_modified=datetime(2008, 1, 1, 13, 00))
 
     def test_date_formatting(self):
         assert http.cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
