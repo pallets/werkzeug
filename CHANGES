@@ -46,6 +46,8 @@ Release date and codename to be decided
   the path ``/`` and an empty one (issue ``#360``).
 - The interactive debugger now tries to decode non-ascii filenames (issue
   ``#469``).
+- Increased default key size of generated SSL certificates to 1024 bits (issue
+  ``#611``).
 
 Version 0.9.7
 -------------
