@@ -386,7 +386,7 @@ def test_stream_wrapping():
     data = b'foo=Hello+World'
     req = wrappers.Request.from_values('/', method='POST', data=data,
         content_type='application/x-www-form-urlencoded')
-    req.__dict__['stream'] = LowercasingStream(req.stream)
+    req.stream = LowercasingStream(req.stream)
     assert req.form['foo'] == 'hello world'
 
 def test_data_descriptor_triggers_parsing():

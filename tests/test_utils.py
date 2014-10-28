@@ -87,15 +87,15 @@ def test_cached_property():
     assert foo == [42]
 
 
-def test_cannot_set_cached_property():
+def test_can_set_cached_property():
     class A(object):
         @utils.cached_property
         def _prop(self):
             return 'cached_property return value'
 
     a = A()
-    with pytest.raises(AttributeError):
-        a._prop = 'value'
+    a._prop = 'value'
+    assert a._prop == 'value'
 
 def test_inspect_treats_cached_property_as_property():
     class A(object):
