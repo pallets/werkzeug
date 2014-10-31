@@ -131,11 +131,12 @@ def test_environ_builder_basics():
     b = EnvironBuilder()
     assert b.content_type is None
     b.method = 'POST'
+    assert b.content_type is None
+    b.form['test'] = 'normal value'
     assert b.content_type == 'application/x-www-form-urlencoded'
     b.files.add_file('test', BytesIO(b'test contents'), 'test.txt')
     assert b.files['test'].content_type == 'text/plain'
     assert b.content_type == 'multipart/form-data'
-    b.form['test'] = 'normal value'
 
     req = b.get_request()
     b.close()
@@ -205,7 +206,15 @@ def test_environ_builder_content_type():
     builder = EnvironBuilder()
     assert builder.content_type is None
     builder.method = 'POST'
-    assert builder.content_type == 'application/x-www-form-urlencoded'
+    assert builder.content_type is None
+    builder.method = 'PUT'
+    assert builder.content_type is None
+    builder.method = 'PATCH'
+    assert builder.content_type is None
+    builder.method = 'DELETE'
+    assert builder.content_type is None
+    builder.method = 'GET'
+    assert builder.content_type == None
     builder.form['foo'] = 'bar'
     assert builder.content_type == 'application/x-www-form-urlencoded'
     builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt')
@@ -277,7 +286,7 @@ def test_create_environ():
 def test_file_closing():
     closed = []
     class SpecialInput(object):
-        def read(self):
+        def read(self, size):
             return ''
         def close(self):
             closed.append(self)
@@ -452,3 +461,12 @@ def test_full_url_requests_with_args():
     strict_eq(resp.data, b'42')
     resp = client.get('http://www.example.com/?x=23', base)
     strict_eq(resp.data, b'23')
+
+def test_delete_requests_with_form():
+    @Request.application
+    def test_app(request):
+        return Response(request.form.get('x', None))
+
+    client = Client(test_app, Response)
+    resp = client.delete('/', data={'x': 42})
+    strict_eq(resp.data, b'42')
