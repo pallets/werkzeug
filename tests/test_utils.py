@@ -57,6 +57,18 @@ def test_redirect_xss():
     resp = utils.redirect(location)
     assert b'href="http://example.com/?xss="onmouseover="alert(1)"' not in resp.get_data()
 
+
+def test_redirect_with_custom_response_class():
+    class MyResponse(BaseResponse):
+        pass
+
+    location = "http://example.com/redirect"
+    resp = utils.redirect(location, Response=MyResponse)
+
+    assert isinstance(resp, MyResponse)
+    assert resp.headers['Location'] == location
+
+
 def test_cached_property():
     foo = []
     class A(object):

@@ -335,7 +335,7 @@ def unescape(s):
     return _entity_re.sub(handle_match, s)
 
 
-def redirect(location, code=302):
+def redirect(location, code=302, Response=None):
     """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location.  Supported codes are 301,
     302, 303, 305, and 307.  300 is not supported because it's not a real
@@ -346,10 +346,18 @@ def redirect(location, code=302):
        The location can now be a unicode string that is encoded using
        the :func:`iri_to_uri` function.
 
+    .. versionadded:: 0.10
+        The class used for the Response object can now be passed in.
+
     :param location: the location the response should redirect to.
     :param code: the redirect status code. defaults to 302.
+    :param class Response: a Response class to use when instantiating a
+        response. The default is :class:`werkzeug.wrappers.Response` if
+        unspecified.
     """
-    from werkzeug.wrappers import Response
+    if Response is None:
+        from werkzeug.wrappers import Response
+
     display_location = escape(location)
     if isinstance(location, text_type):
         # Safe conversion is necessary here as we might redirect

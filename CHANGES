@@ -48,6 +48,8 @@ Release date and codename to be decided
   ``#469``).
 - Increased default key size of generated SSL certificates to 1024 bits (issue
   ``#611``).
+- Added support for specifying a ``Response`` subclass to use when calling
+  :func:`~werkzeug.utils.redirect`\ .
 
 Version 0.9.7
 -------------
