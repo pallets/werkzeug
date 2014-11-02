@@ -3,7 +3,7 @@ Transition to Werkzeug 1.0
 
 Werkzeug originally had a magical import system hook that enabled
 everything to be imported from one module and still loading the actual
-implementations lazily as necessary.  Unfortunately this turned out be
+implementations lazily as necessary.  Unfortunately this turned out to be
 slow and also unreliable on alternative Python implementations and
 Google's App Engine.
 
