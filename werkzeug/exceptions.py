@@ -181,7 +181,7 @@ class ClientDisconnected(BadRequest):
     it is silenced by default as far as Werkzeug is concerned.
 
     Since disconnections cannot be reliably detected and are unspecified
-    by WSGI to a large extend this might or might not be raised if a client
+    by WSGI to a large extent this might or might not be raised if a client
     is gone.
 
     .. versionadded:: 0.8
