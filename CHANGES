@@ -50,8 +50,9 @@ Release date and codename to be decided
   ``#611``).
 - Added support for specifying a ``Response`` subclass to use when calling
   :func:`~werkzeug.utils.redirect`\ .
-- Make testing Content-Type independent of HTTP method used.  Instead, depend
-  only on provided data and/or input stream (issue ``#620``).
+- ``werkzeug.test.EnvironBuilder`` now doesn't use the request method anymore
+  to guess the content type, and purely relies on the ``form``, ``files`` and
+  ``input_stream`` properties (issue ``#620``).
 
 Version 0.9.7
 -------------
