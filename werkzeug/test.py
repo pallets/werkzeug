@@ -379,9 +379,9 @@ class EnvironBuilder(object):
     def _get_content_type(self):
         ct = self.headers.get('Content-Type')
         if ct is None and not self._input_stream:
-            if self.method in ('POST', 'PUT', 'PATCH'):
-                if self._files:
-                    return 'multipart/form-data'
+            if self._files:
+                return 'multipart/form-data'
+            elif self._form:
                 return 'application/x-www-form-urlencoded'
             return None
         return ct
