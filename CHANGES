@@ -50,6 +50,7 @@ Release date and codename to be decided
   ``#611``).
 - Added support for specifying a ``Response`` subclass to use when calling
   :func:`~werkzeug.utils.redirect`\ .
+- Added Symbian to the user agent platform list.
 
 Version 0.9.7
 -------------
