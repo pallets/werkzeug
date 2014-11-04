@@ -53,6 +53,7 @@ Release date and codename to be decided
 - ``werkzeug.test.EnvironBuilder`` now doesn't use the request method anymore
   to guess the content type, and purely relies on the ``form``, ``files`` and
   ``input_stream`` properties (issue ``#620``).
+- Added Symbian to the user agent platform list.
 
 Version 0.9.7
 -------------
