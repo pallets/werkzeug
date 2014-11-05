@@ -20,7 +20,7 @@ you are on OS X, you can use `brew` to install it::
 
 If you are on Ubuntu or Debian, you can use apt-get::
 
-    sudo apt-get install redis
+    sudo apt-get install redis-server
 
 Redis was developed for UNIX systems and was never really designed to
 work on Windows.  For development purposes, the unofficial ports however
