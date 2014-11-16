@@ -220,12 +220,12 @@ class RequestRedirect(HTTPException, RoutingException):
     `strict_slashes` are activated and an url that requires a trailing slash.
 
     The attribute `new_url` contains the absolute destination url.
+    The attribute `code` is returned status code.
     """
-    code = 301
-
-    def __init__(self, new_url):
+    def __init__(self, new_url, code=301):
         RoutingException.__init__(self, new_url)
         self.new_url = new_url
+        self.code = code
 
     def get_response(self, environ):
         return redirect(self.new_url, self.code)
