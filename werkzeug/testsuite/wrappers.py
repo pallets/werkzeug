@@ -489,6 +489,21 @@ class WrappersTestCase(WerkzeugTestCase):
         resp.www_authenticate.type = None
         assert 'WWW-Authenticate' not in resp.headers
 
+    def test_authenticate_mixin_quoted_qop(self):
+        # Example taken from https://github.com/mitsuhiko/werkzeug/issues/633
+        resp = wrappers.Response()
+        resp.www_authenticate.set_digest('REALM','NONCE',qop=("auth","auth-int"))
+
+        actual = set((resp.headers['WWW-Authenticate'] + ',').split())
+        expected = set('Digest nonce="NONCE", realm="REALM", qop="auth, auth-int",'.split())
+        self.assert_equal(actual, expected)
+
+        resp.www_authenticate.set_digest('REALM','NONCE',qop=("auth",))
+
+        actual = set((resp.headers['WWW-Authenticate'] + ',').split())
+        expected = set('Digest nonce="NONCE", realm="REALM", qop="auth",'.split())
+        self.assert_equal(actual, expected)
+
     def test_response_stream_mixin(self):
         response = wrappers.Response()
         response.stream.write('Hello ')
