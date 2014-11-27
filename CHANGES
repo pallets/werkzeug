@@ -30,6 +30,8 @@ Version 0.9.7
   anymore (pull request ``#466``).
 - Fix bug in ``cache.RedisCache`` when combined with ``redis.StrictRedis``
   object (pull request ``#583``).
+- The ``qop`` parameter for ``WWW-Authenticate`` headers is now always quoted,
+  as required by RFC 2617 (issue ``#633``).
 
 Version 0.9.6
 -------------
