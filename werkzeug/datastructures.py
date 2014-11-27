@@ -2369,7 +2369,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
     """Provides simple access to `WWW-Authenticate` headers."""
 
     #: list of keys that require quoting in the generated header
-    _require_quoting = frozenset(['domain', 'nonce', 'opaque', 'realm'])
+    _require_quoting = frozenset(['domain', 'nonce', 'opaque', 'realm', 'qop'])
 
     def __init__(self, auth_type=None, values=None, on_update=None):
         dict.__init__(self, values or ())
