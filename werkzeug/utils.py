@@ -216,6 +216,11 @@ def get_content_type(mimetype, charset):
     :param charset: the charset to be appended in case it was a text mimetype.
     :return: the content type.
     """
+    if not isinstance(mimetype, text_type):
+        mimetype = mimetype.decode('utf-8')
+    if not isinstance(charset, text_type):
+        charset = charset.decode('utf-8')
+
     if mimetype.startswith('text/') or \
        mimetype == 'application/xml' or \
        (mimetype.startswith('application/') and
