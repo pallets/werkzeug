@@ -232,6 +232,10 @@ class TestHTTPUtility(object):
         assert headers2 == datastructures.Headers([('Foo', 'bar')])
 
     def test_parse_options_header(self):
+        assert http.parse_options_header(None) == \
+            ('', {})
+        assert http.parse_options_header("") == \
+            ('', {})
         assert http.parse_options_header(r'something; foo="other\"thing"') == \
             ('something', {'foo': 'other"thing'})
         assert http.parse_options_header(r'something; foo="other\"thing"; meh=42') == \
@@ -242,6 +246,22 @@ class TestHTTPUtility(object):
             ('something', {'foo': 'other;thing', 'meh': '42', 'bleh': None})
         assert http.parse_options_header('something; foo="otherthing"; meh=; bleh') == \
             ('something', {'foo': 'otherthing', 'meh': None, 'bleh': None})
+        # Issue #404
+        assert http.parse_options_header('multipart/form-data; name="foo bar"; filename="bar foo"') == \
+            ('multipart/form-data', {'name': 'foo bar', 'filename': 'bar foo'})
+        # Examples from RFC
+        assert http.parse_options_header('audio/*; q=0.2, audio/basic') == \
+            ('audio/*', {'q': '0.2'})
+        assert http.parse_options_header('audio/*; q=0.2, audio/basic', multiple=True) == \
+            ('audio/*', {'q': '0.2'}, "audio/basic", {})
+        assert http.parse_options_header(
+            'text/plain; q=0.5, text/html\n        '
+            'text/x-dvi; q=0.8, text/x-c',
+            multiple=True) == \
+            ('text/plain', {'q': '0.5'}, "text/html", {},
+             "text/x-dvi", {'q': '0.8'}, "text/x-c", {})
+        assert http.parse_options_header('text/plain; q=0.5, text/html\n        text/x-dvi; q=0.8, text/x-c') == \
+            ('text/plain', {'q': '0.5'})
 
     def test_dump_options_header(self):
         assert http.dump_options_header('foo', {'bar': 42}) == \
