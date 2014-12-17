@@ -54,6 +54,7 @@ Release date and codename to be decided
   to guess the content type, and purely relies on the ``form``, ``files`` and
   ``input_stream`` properties (issue ``#620``).
 - Added Symbian to the user agent platform list.
+- Fixed make_conditional to respect automatically_set_content_length
 
 Version 0.9.7
 -------------
