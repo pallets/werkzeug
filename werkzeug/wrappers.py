@@ -1494,6 +1494,7 @@ class ResponseStream(object):
             raise ValueError('I/O operation on closed file')
         self.response._ensure_sequence(mutable=True)
         self.response.response.append(value)
+        self.response.headers.pop('Content-Length', None)
 
     def writelines(self, seq):
         for item in seq:

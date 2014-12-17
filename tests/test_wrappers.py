@@ -844,6 +844,20 @@ def test_auto_content_length():
     assert resp.content_length is None
     assert resp.get_wsgi_headers({})['Content-Length'] == '12'
 
+def test_stream_content_length():
+    resp = wrappers.Response()
+    resp.stream.writelines(['foo', 'bar', 'baz'])
+    assert resp.get_wsgi_headers({})['Content-Length'] == '9'
+
+    resp = wrappers.Response()
+    resp.make_conditional({'REQUEST_METHOD': 'GET'})
+    resp.stream.writelines(['foo', 'bar', 'baz'])
+    assert resp.get_wsgi_headers({})['Content-Length'] == '9'
+
+    resp = wrappers.Response('foo')
+    resp.stream.writelines(['bar', 'baz'])
+    assert resp.get_wsgi_headers({})['Content-Length'] == '9'
+
 def test_disabled_auto_content_length():
     class MyResponse(wrappers.Response):
         automatically_set_content_length = False

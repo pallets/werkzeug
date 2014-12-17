@@ -55,6 +55,7 @@ Release date and codename to be decided
   ``input_stream`` properties (issue ``#620``).
 - Added Symbian to the user agent platform list.
 - Fixed make_conditional to respect automatically_set_content_length
+- Unset ``Content-Length`` when writing to response.stream (issue ``#451``)
 
 Version 0.9.7
 -------------
