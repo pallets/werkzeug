@@ -1141,7 +1141,12 @@ class Map(object):
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
-        server_name = _encode_idna(server_name)
+
+        try:
+            server_name = _encode_idna(server_name)
+        except:
+            server_name = None
+
         return MapAdapter(self, server_name, script_name, subdomain,
                           url_scheme, path_info, default_method, query_args)
 
