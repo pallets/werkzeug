@@ -56,6 +56,8 @@ Release date and codename to be decided
 - Added Symbian to the user agent platform list.
 - Fixed make_conditional to respect automatically_set_content_length
 - Unset ``Content-Length`` when writing to response.stream (issue ``#451``)
+- ``wrappers.Request.method`` is now always uppercase, eliminating
+  inconsistencies of the WSGI environment (issue ``647``).
 
 Version 0.9.7
 -------------

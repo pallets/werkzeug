@@ -582,7 +582,8 @@ class BaseRequest(object):
     query_string = environ_property('QUERY_STRING', '', read_only=True,
         load_func=wsgi_get_bytes, doc=
         '''The URL parameters as raw bytestring.''')
-    method = environ_property('REQUEST_METHOD', 'GET', read_only=True, doc=
+    method = environ_property('REQUEST_METHOD', 'GET', read_only=True,
+        load_func=lambda x: x.upper(), doc=
         '''The transmission method. (For example ``'GET'`` or ``'POST'``).''')
 
     @cached_property

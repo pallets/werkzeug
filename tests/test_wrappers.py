@@ -893,3 +893,8 @@ def test_modified_url_encoding():
 
     req = ModifiedRequest.from_values(u'/?foo=정상처리'.encode('euc-kr'))
     strict_eq(req.args['foo'], u'정상처리')
+
+
+def test_request_method_case_sensitivity():
+    req = wrappers.Request({'REQUEST_METHOD': 'get'})
+    assert req.method == 'GET'
