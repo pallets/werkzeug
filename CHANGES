@@ -58,6 +58,8 @@ Release date and codename to be decided
 - Unset ``Content-Length`` when writing to response.stream (issue ``#451``)
 - ``wrappers.Request.method`` is now always uppercase, eliminating
   inconsistencies of the WSGI environment (issue ``647``).
+- ``routing.Rule.empty`` now works correctly with subclasses of ``Rule`` (pull
+  request ``#645``).
 
 Version 0.9.7
 -------------
