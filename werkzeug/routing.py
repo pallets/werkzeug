@@ -568,7 +568,7 @@ class Rule(RuleFactory):
         defaults = None
         if self.defaults:
             defaults = dict(self.defaults)
-        return Rule(self.rule, defaults, self.subdomain, self.methods,
+        return type(self)(self.rule, defaults, self.subdomain, self.methods,
                     self.build_only, self.endpoint, self.strict_slashes,
                     self.redirect_to, self.alias, self.host)
 

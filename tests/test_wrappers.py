@@ -844,6 +844,20 @@ def test_auto_content_length():
     assert resp.content_length is None
     assert resp.get_wsgi_headers({})['Content-Length'] == '12'
 
+def test_stream_content_length():
+    resp = wrappers.Response()
+    resp.stream.writelines(['foo', 'bar', 'baz'])
+    assert resp.get_wsgi_headers({})['Content-Length'] == '9'
+
+    resp = wrappers.Response()
+    resp.make_conditional({'REQUEST_METHOD': 'GET'})
+    resp.stream.writelines(['foo', 'bar', 'baz'])
+    assert resp.get_wsgi_headers({})['Content-Length'] == '9'
+
+    resp = wrappers.Response('foo')
+    resp.stream.writelines(['bar', 'baz'])
+    assert resp.get_wsgi_headers({})['Content-Length'] == '9'
+
 def test_disabled_auto_content_length():
     class MyResponse(wrappers.Response):
         automatically_set_content_length = False
@@ -851,6 +865,13 @@ def test_disabled_auto_content_length():
     assert resp.content_length is None
 
     resp = MyResponse(['Hello World!'])
+    assert resp.content_length is None
+    assert 'Content-Length' not in resp.get_wsgi_headers({})
+
+    resp = MyResponse()
+    resp.make_conditional({
+        'REQUEST_METHOD': 'GET'
+    })
     assert resp.content_length is None
     assert 'Content-Length' not in resp.get_wsgi_headers({})
 
@@ -872,3 +893,8 @@ def test_modified_url_encoding():
 
     req = ModifiedRequest.from_values(u'/?foo=정상처리'.encode('euc-kr'))
     strict_eq(req.args['foo'], u'정상처리')
+
+
+def test_request_method_case_sensitivity():
+    req = wrappers.Request({'REQUEST_METHOD': 'get'})
+    assert req.method == 'GET'
