@@ -56,7 +56,7 @@ class SimpleCacheTestCase(WerkzeugTestCase):
         assert c.get(2) == 4
         c.set_many((i, i*i) for i in range(3))
         assert c.get(2) == 4
-        
+
     def test_purge(self):
         c = cache.SimpleCache(threshold=2)
         c.set('a', 'a')
