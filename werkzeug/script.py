@@ -194,7 +194,7 @@ def find_actions(namespace, action_prefix):
 
 def print_usage(actions):
     """Print the usage information.  (Help screen)"""
-    actions = actions.items()
+    actions = sorted(iteritems(actions))
     actions.sort()
     print('usage: %s <action> [<options>]' % basename(sys.argv[0]))
     print('       %s --help' % basename(sys.argv[0]))
