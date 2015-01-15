@@ -259,9 +259,12 @@ class SimpleCache(BaseCache):
     def _prune(self):
         if len(self._cache) > self._threshold:
             now = time()
+            toremove = []
             for idx, (key, (expires, _)) in enumerate(self._cache.items()):
                 if expires <= now or idx % 3 == 0:
-                    self._cache.pop(key, None)
+                    toremove.append(key)
+            for key in toremove:
+                self._cache.pop(key, None)
 
     def get(self, key):
         try:

@@ -122,6 +122,16 @@ class CacheTests(object):
         assert c.set('bar', False)
         assert c.get('bar') == False
 
+    def test_purge(self):
+        c = cache.SimpleCache(threshold=2)
+        c.set('a', 'a')
+        c.set('b', 'b')
+        c.set('c', 'c')
+        c.set('d', 'd')
+        assert not c.get('a')
+        assert not c.get('b')
+
+
 
 class TestSimpleCache(CacheTests):
     @pytest.fixture
