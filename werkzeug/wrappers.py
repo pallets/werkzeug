@@ -196,7 +196,7 @@ class BaseRequest(object):
     #: .. versionadded:: 0.9
     trusted_hosts = None
 
-    #: Indicates weather the data descriptor should be allowed to read and
+    #: Indicates whether the data descriptor should be allowed to read and
     #: buffer up the input stream.  By default it's enabled.
     #:
     #: .. versionadded:: 0.9
