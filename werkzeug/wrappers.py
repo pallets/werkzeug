@@ -554,13 +554,17 @@ class BaseRequest(object):
 
     @cached_property
     def url(self):
-        """The reconstructed current URL as IRI."""
+        """The reconstructed current URL as IRI.
+        See also: :attr:`trusted_hosts`.
+        """
         return get_current_url(self.environ,
                                trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def base_url(self):
-        """Like :attr:`url` but without the querystring"""
+        """Like :attr:`url` but without the querystring
+        See also: :attr:`trusted_hosts`.
+        """
         return get_current_url(self.environ, strip_querystring=True,
                                trusted_hosts=self.trusted_hosts)
 
@@ -568,19 +572,24 @@ class BaseRequest(object):
     def url_root(self):
         """The full URL root (with hostname), this is the application
         root as IRI.
+        See also: :attr:`trusted_hosts`.
         """
         return get_current_url(self.environ, True,
                                trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def host_url(self):
-        """Just the host with scheme as IRI."""
+        """Just the host with scheme as IRI.
+        See also: :attr:`trusted_hosts`.
+        """
         return get_current_url(self.environ, host_only=True,
                                trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def host(self):
-        """Just the host including the port if available."""
+        """Just the host including the port if available.
+        See also: :attr:`trusted_hosts`.
+        """
         return get_host(self.environ, trusted_hosts=self.trusted_hosts)
 
     query_string = environ_property('QUERY_STRING', '', read_only=True,
