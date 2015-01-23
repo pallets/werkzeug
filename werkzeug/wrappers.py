@@ -190,8 +190,12 @@ class BaseRequest(object):
 
     #: Optionally a list of hosts that is trusted by this request.  By default
     #: all hosts are trusted which means that whatever the client sends the
-    #: host is will be accepted.  This is the recommended setup as a webserver
-    #: should manually be set up to not route invalid hosts to the application.
+    #: host is will be accepted.
+    #:
+    #: This is the recommended setup as a webserver should manually be set up
+    #: to only route correct hosts to the application, and remove the
+    #: `X-Forwarded-Host` header if it is not being used (see
+    #: :func:`werkzeug.wsgi.get_host`).
     #:
     #: .. versionadded:: 0.9
     trusted_hosts = None
