@@ -129,10 +129,13 @@ def host_is_trusted(hostname, trusted_list):
 
 
 def get_host(environ, trusted_hosts=None):
-    """Return the real host for the given WSGI environment.  This takes care
-    of the `X-Forwarded-Host` header.  Optionally it verifies that the host
-    is in a list of trusted hosts.  If the host is not in there it will raise
-    a :exc:`~werkzeug.exceptions.SecurityError`.
+    """Return the real host for the given WSGI environment.  This first checks
+    the `X-Forwarded-Host` header, then the normal `Host` header, and finally
+    the `SERVER_NAME` environment variable (using the first one it finds).
+
+    Optionally it verifies that the host is in a list of trusted hosts.
+    If the host is not in there it will raise a
+    :exc:`~werkzeug.exceptions.SecurityError`.
 
     :param environ: the WSGI environment to get the host of.
     :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
