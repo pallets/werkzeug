@@ -100,6 +100,7 @@ import uuid
 import posixpath
 
 from pprint import pformat
+from threading import Lock
 
 from werkzeug.urls import url_encode, url_quote, url_join
 from werkzeug.utils import redirect, format_string
@@ -1045,6 +1046,7 @@ class Map(object):
         self._rules = []
         self._rules_by_endpoint = {}
         self._remap = True
+        self._remap_lock = Lock()
 
         self.default_subdomain = default_subdomain
         self.charset = charset
@@ -1231,14 +1233,14 @@ class Map(object):
         if not self._remap:
             return
 
-        # This uses a local copy so that we do not need to lock here.  The
-        # update method is invoked from the adapter just in case something
-        # modified the map.  This way we can get away without locks.
-        rules = sorted(self._rules, key=lambda x: x.match_compare_key())
-        for rules in itervalues(self._rules_by_endpoint):
-            rules.sort(key=lambda x: x.build_compare_key())
-        self._rules = rules
-        self._remap = False
+        with self._remap_lock:
+            if not self._remap:
+                return
+
+            self._rules.sort(key=lambda x: x.match_compare_key())
+            for rules in itervalues(self._rules_by_endpoint):
+                rules.sort(key=lambda x: x.build_compare_key())
+            self._remap = False
 
     def __repr__(self):
         rules = self.iter_rules()
