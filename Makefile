@@ -15,7 +15,7 @@ release:
 	python scripts/make-release.py
 
 test:
-	py.test
+	py.test --tb=native
 
 tox-test:
 	tox
