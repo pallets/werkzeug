@@ -18,6 +18,11 @@ try:
 except ImportError:
     OpenSSL = None
 
+try:
+    import watchdog
+except ImportError:
+    watchdog = None
+
 import requests
 import requests.exceptions
 import pytest
@@ -94,6 +99,8 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     # We explicitly assert that the server reloads on change, even though in
     # this case the import could've just been retried. This is to assert
     # correct behavior for apps that catch and cache import errors.
+    if reloader_type == 'watchdog' and watchdog is None:
+        pytest.skip('Watchdog not installed.')
 
     real_app = tmpdir.join('real_app.py')
     real_app.write("lol syntax error")
