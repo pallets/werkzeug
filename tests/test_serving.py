@@ -136,6 +136,9 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
 
 @pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
 def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
+    if reloader_type == 'watchdog' and watchdog is None:
+        pytest.skip('Watchdog not installed.')
+
     real_app = tmpdir.mkdir('real_app')
     real_app.join('__init__.py').write('from real_app.sub import real_app')
     sub = real_app.mkdir('sub').join('__init__.py')
