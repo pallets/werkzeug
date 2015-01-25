@@ -604,7 +604,7 @@ class Rule(RuleFactory):
 
         .. versionadded:: 0.9
         """
-        if not converter_name in self.map.converters:
+        if converter_name not in self.map.converters:
             raise LookupError('the converter %r does not exist' % converter_name)
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
@@ -1228,11 +1228,17 @@ class Map(object):
         """Called before matching and building to keep the compiled rules
         in the correct order after things changed.
         """
-        if self._remap:
-            self._rules.sort(key=lambda x: x.match_compare_key())
-            for rules in itervalues(self._rules_by_endpoint):
-                rules.sort(key=lambda x: x.build_compare_key())
-            self._remap = False
+        if not self._remap:
+            return
+
+        # This uses a local copy so that we do not need to lock here.  The
+        # update method is invoked from the adapter just in case something
+        # modified the map.  This way we can get away without locks.
+        rules = sorted(self._rules, key=lambda x: x.match_compare_key())
+        for rules in itervalues(self._rules_by_endpoint):
+            rules.sort(key=lambda x: x.build_compare_key())
+        self._rules = rules
+        self._remap = False
 
     def __repr__(self):
         rules = self.iter_rules()
