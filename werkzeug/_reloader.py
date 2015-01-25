@@ -200,38 +200,42 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         self.observer_class = Observer
         self.event_handler = _CustomHandler()
+        self.should_reload = False
+
+    def trigger_reload(self, filename):
+        # This is called inside an event handler, which means we can't throw
+        # SystemExit here. https://github.com/gorakhargosh/watchdog/issues/294
+        self.should_reload = True
+        ReloaderLoop.trigger_reload(self, filename)
 
     def run(self):
         watches = {}
         observer = self.observer_class()
+        observer.start()
 
-        def monitor_update_thread():
-            while 1:
-                to_delete = set(watches)
-                paths = _find_common_roots(
-                    _find_observable_paths(self.extra_files))
-                for path in paths:
-                    if path not in watches:
-                        try:
-                            watches[path] = observer.schedule(
-                                self.event_handler, path, recursive=True)
-                        except OSError:
-                            # "Path is not a directory". We could filter out
-                            # those paths beforehand, but that would cause
-                            # additional stat calls.
-                            watches[path] = None
-                    to_delete.discard(path)
-                for path in to_delete:
-                    watch = watches.pop(path, None)
-                    if watch is not None:
-                        observer.unschedule(watch)
-                self.observable_paths = paths
-                self._sleep(self.interval)
+        while not self.should_reload:
+            to_delete = set(watches)
+            paths = _find_common_roots(
+                _find_observable_paths(self.extra_files))
+            for path in paths:
+                if path not in watches:
+                    try:
+                        watches[path] = observer.schedule(
+                            self.event_handler, path, recursive=True)
+                    except OSError:
+                        # "Path is not a directory". We could filter out
+                        # those paths beforehand, but that would cause
+                        # additional stat calls.
+                        watches[path] = None
+                to_delete.discard(path)
+            for path in to_delete:
+                watch = watches.pop(path, None)
+                if watch is not None:
+                    observer.unschedule(watch)
+            self.observable_paths = paths
+            self._sleep(self.interval)
 
-        t = threading.Thread(target=monitor_update_thread, args=())
-        t.setDaemon(True)
-        t.start()
-        observer.run()
+        sys.exit(3)
 
 
 reloader_loops = {
