@@ -128,9 +128,8 @@ class CacheTests(object):
         c.set('b', 'b')
         c.set('c', 'c')
         c.set('d', 'd')
-        assert not c.get('a')
-        assert not c.get('b')
-
+        # Cache purges old items *before* it sets new ones.
+        assert len(c._cache) == 3
 
 
 class TestSimpleCache(CacheTests):
