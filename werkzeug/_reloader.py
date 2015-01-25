@@ -228,10 +228,10 @@ class WatchdogReloaderLoop(ReloaderLoop):
                 self.observable_paths = paths
                 self._sleep(self.interval)
 
-        observer.run()
         t = threading.Thread(target=monitor_update_thread, args=())
         t.setDaemon(True)
         t.start()
+        observer.run()
 
 
 reloader_loops = {
