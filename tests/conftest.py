@@ -15,11 +15,7 @@ import sys
 import textwrap
 import time
 
-try:
-    from urllib2 import urlopen
-except ImportError:  # pragma: no cover
-    from urllib.request import urlopen
-
+import requests
 import pytest
 
 from werkzeug import serving
@@ -90,7 +86,8 @@ class _ServerInfo(object):
         for i in range(20):
             time.sleep(0.1 * i)
             try:
-                self.last_pid = int(urlopen(self.url + '/_getpid').read())
+                self.last_pid = int(requests.get(self.url + '/_getpid',
+                                                 verify=False).text)
                 return self.last_pid
             except Exception as e:  # urllib also raises socketerrors
                 print(self.url)

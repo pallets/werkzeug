@@ -11,24 +11,15 @@
 import os
 import ssl
 import textwrap
-import time
 
-try:
-    import httplib
-except ImportError:
-    from http import client as httplib
-try:
-    from urllib2 import urlopen, HTTPError
-except ImportError:  # pragma: no cover
-    from urllib.request import urlopen
-    from urllib.error import HTTPError
 
 try:
     import OpenSSL
 except ImportError:
     OpenSSL = None
 
-
+import requests
+import requests.exceptions
 import pytest
 
 from werkzeug import __version__ as version, serving
@@ -36,7 +27,7 @@ from werkzeug import __version__ as version, serving
 
 def test_serving(dev_server):
     server = dev_server('from werkzeug.testapp import test_app as app')
-    rv = urlopen('http://%s/?foo=bar&baz=blah' % server.addr).read()
+    rv = requests.get('http://%s/?foo=bar&baz=blah' % server.addr).content
     assert b'WSGI Information' in rv
     assert b'foo=bar&amp;baz=blah' in rv
     assert b'Werkzeug/' + version.encode('ascii') in rv
@@ -48,29 +39,9 @@ def test_broken_app(dev_server):
         1 // 0
     ''')
 
-    with pytest.raises(HTTPError) as excinfo:
-        urlopen(server.url + '/?foo=bar&baz=blah').read()
-
-    rv = excinfo.value.read()
-    assert b'Internal Server Error' in rv
-
-
-def test_absolute_requests(dev_server):
-    server = dev_server('''
-    def app(environ, start_response):
-        assert environ['HTTP_HOST'] == 'surelynotexisting.example.com:1337'
-        assert environ['PATH_INFO'] == '/index.htm'
-        addr = environ['HTTP_X_WERKZEUG_ADDR']
-        assert environ['SERVER_PORT'] == addr.split(':')[1]
-        start_response('200 OK', [('Content-Type', 'text/html')])
-        return [b'YES']
-    ''')
-
-    conn = httplib.HTTPConnection(server.addr)
-    conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm#ignorethis',
-                 headers={'X-Werkzeug-Addr': server.addr})
-    res = conn.getresponse()
-    assert res.read() == b'YES'
+    r = requests.get(server.url + '/?foo=bar&baz=blah')
+    assert r.status_code == 500
+    assert 'Internal Server Error' in r.text
 
 
 @pytest.mark.skipif(not hasattr(ssl, 'SSLContext'),
@@ -93,10 +64,8 @@ def test_stdlib_ssl_contexts(dev_server, tmpdir):
     ''' % (certificate, private_key))
 
     assert server.addr is not None
-    connection = httplib.HTTPSConnection(server.addr)
-    connection.request('GET', '/')
-    response = connection.getresponse()
-    assert response.read() == b'hello'
+    r = requests.get(server.url, verify=False)
+    assert r.content == b'hello'
 
 
 @pytest.mark.skipif(OpenSSL is None, reason='OpenSSL is not installed.')
@@ -108,10 +77,8 @@ def test_ssl_context_adhoc(dev_server):
 
     kwargs['ssl_context'] = 'adhoc'
     ''')
-    connection = httplib.HTTPSConnection(server.addr)
-    connection.request('GET', '/')
-    response = connection.getresponse()
-    assert response.read() == b'hello'
+    r = requests.get(server.url, verify=False)
+    assert r.content == b'hello'
 
 
 @pytest.mark.skipif(OpenSSL is None, reason='OpenSSL is not installed.')
@@ -145,10 +112,8 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     ''' % repr(reloader_type))
     server.wait_for_reloader_loop()
 
-    connection = httplib.HTTPConnection(server.addr)
-    connection.request('GET', '/')
-    response = connection.getresponse()
-    assert response.status == 500
+    r = requests.get(server.url)
+    assert r.status_code == 500
 
     real_app.write(textwrap.dedent('''
     def real_app(environ, start_response):
@@ -157,10 +122,9 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     '''))
     server.wait_for_reloader()
 
-    connection.request('GET', '/')
-    response = connection.getresponse()
-    assert response.status == 200
-    assert response.read() == b'hello'
+    r = requests.get(server.url)
+    assert r.status_code == 200
+    assert r.content == b'hello'
 
 
 @pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
@@ -184,10 +148,8 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
     ''' % repr(reloader_type))
     server.wait_for_reloader_loop()
 
-    connection = httplib.HTTPConnection(server.addr)
-    connection.request('GET', '/')
-    response = connection.getresponse()
-    assert response.status == 500
+    r = requests.get(server.url)
+    assert r.status_code == 500
 
     sub.write(textwrap.dedent('''
     def real_app(environ, start_response):
@@ -196,7 +158,6 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
     '''))
     server.wait_for_reloader()
 
-    connection.request('GET', '/')
-    response = connection.getresponse()
-    assert response.status == 200
-    assert response.read() == b'hello'
+    r = requests.get(server.url)
+    assert r.status_code == 200
+    assert r.content == b'hello'
