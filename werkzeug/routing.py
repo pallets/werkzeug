@@ -330,6 +330,31 @@ class Submount(RuleFactory):
                 yield rule
 
 
+class UrlSuffix(RuleFactory):
+    """Like `Subdomain` but suffixes the URL rule with a given string::
+
+        url_map = Map([
+            Rule('/', endpoint='index'),
+            UrlSuffix('.json', [
+                Rule('/blog', endpoint='json/blog/index')
+            ])
+        ])
+
+    Now the rule ``'json/blog/index'`` matches ``/blog.json``.
+    """
+
+    def __init__(self, suffix, rules):
+        self.suffix = suffix
+        self.rules = rules
+
+    def get_rules(self, map):
+        for rulefactory in self.rules:
+            for rule in rulefactory.get_rules(map):
+                rule = rule.empty()
+                rule.rule = rule.rule + self.suffix
+                yield rule
+
+
 class EndpointPrefix(RuleFactory):
     """Prefixes all endpoints (which must be strings for this factory) with
     another string. This can be useful for sub applications::
