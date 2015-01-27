@@ -303,6 +303,10 @@ def test_rule_templates():
           r.Subdomain('$app',
           [ r.Rule('/blah', endpoint='x_bar')
           , r.Rule('/meh', endpoint='x_baz')
+          ]),
+          r.UrlSuffix('.$app',
+          [ r.Rule('/spam', endpoint='pyspam'),
+            r.Rule('/spameggs', endpoint='pyspameggs')
           ])
         ])
 
@@ -325,6 +329,14 @@ def test_rule_templates():
         ('/meh', 'test2', 'x_baz'),
         ('/meh', 'test3', 'x_baz'),
         ('/meh', 'test4', 'x_baz'),
+        ('/spam.test1', '', 'pyspam'),
+        ('/spam.test2', '', 'pyspam'),
+        ('/spam.test3', '', 'pyspam'),
+        ('/spam.test4', '', 'pyspam'),
+        ('/spameggs.test1', '', 'pyspameggs'),
+        ('/spameggs.test2', '', 'pyspameggs'),
+        ('/spameggs.test3', '', 'pyspameggs'),
+        ('/spameggs.test4', '', 'pyspameggs'),
         ('/test/test1/bar/', '', 'handle_bar'),
         ('/test/test1/baz/', '', 'handle_baz'),
         ('/test/test1/foo/', '', 'handle_foo'),
