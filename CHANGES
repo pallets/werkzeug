@@ -61,6 +61,7 @@ Release date and codename to be decided
 - ``routing.Rule.empty`` now works correctly with subclasses of ``Rule`` (pull
   request ``#645``).
 - Made map updating safe in light of concurrent updates.
+- Allow multiple values for the same field for url building (issue ``#658``).
 
 Version 0.9.7
 -------------
@@ -96,7 +97,6 @@ Version 0.9.7
 - Fix bug in ``werkzeug.contrib.cache.SimpleCache`` with Python 3 where add/set 
   may throw an exception when pruning old entries from the cache (pull request
   ``#651``).
-- Allow multiple values for the same field for url building (issue ``#658``).
 
 Version 0.9.6
 -------------
