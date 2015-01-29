@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.10
 ------------
 
-Released on January 29th 2015, codename Bagger.
+Released on January 30th 2015, codename Bagger.
 
 - Changed the error handling of and improved testsuite for the caches in
   ``contrib.cache``.
