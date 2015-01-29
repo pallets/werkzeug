@@ -428,6 +428,16 @@ def test_build_append_unknown():
     assert adapter.build('barf', {'bazf': 0.815, 'bif' : 1.0},
         append_unknown=False) == 'http://example.org/bar/0.815'
 
+def test_build_append_multiple():
+    map = r.Map([
+        r.Rule('/bar/<float:bazf>', endpoint='barf')
+    ])
+    adapter = map.bind('example.org', '/', subdomain='blah')
+    params = MultiDict((('bazf', 0.815), ('bif', 1.0), ('pof', 2.0),
+                        ('bif', 3.0)))
+    assert adapter.build('barf', params) == \
+        'http://example.org/bar/0.815?pof=2.0&bif=1.0&bif=3.0'
+
 def test_method_fallback():
     map = r.Map([
         r.Rule('/', endpoint='index', methods=['GET']),

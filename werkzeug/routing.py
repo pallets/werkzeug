@@ -1641,7 +1641,7 @@ class MapAdapter(object):
                 valueiter = iteritems(values, multi=True)
             else:
                 valueiter = iteritems(values)
-            values = dict((k, v) for k, v in valueiter if v is not None)
+            values = MultiDict((k, v) for k, v in valueiter if v is not None)
         else:
             values = {}
 
