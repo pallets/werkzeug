@@ -435,8 +435,9 @@ def test_build_append_multiple():
     adapter = map.bind('example.org', '/', subdomain='blah')
     params = MultiDict((('bazf', 0.815), ('bif', 1.0), ('pof', 2.0),
                         ('bif', 3.0)))
-    assert adapter.build('barf', params) == \
-        'http://example.org/bar/0.815?pof=2.0&bif=1.0&bif=3.0'
+    a, b = adapter.build('barf', params).split('?')
+    assert a == 'http://example.org/bar/0.815'
+    assert set(b.split('&')) == set('pof=2.0&bif=1.0&bif=3.0'.split('&'))
 
 def test_method_fallback():
     map = r.Map([
