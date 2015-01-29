@@ -96,6 +96,7 @@ Version 0.9.7
 - Fix bug in ``werkzeug.contrib.cache.SimpleCache`` with Python 3 where add/set 
   may throw an exception when pruning old entries from the cache (pull request
   ``#651``).
+- Allow multiple values for the same field for url building (issue ``#658``).
 
 Version 0.9.6
 -------------
