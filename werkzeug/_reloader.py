@@ -107,8 +107,12 @@ def _find_common_roots(paths):
 
 
 class ReloaderLoop(object):
-    _sleep = staticmethod(time.sleep)  # monkeypatched by testsuite
     name = None
+
+    # monkeypatched by testsuite
+    @staticmethod
+    def _sleep(secs):
+        time.sleep(secs)
 
     def __init__(self, extra_files=None, interval=1):
         self.extra_files = set(os.path.abspath(x)
