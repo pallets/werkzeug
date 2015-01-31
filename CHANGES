@@ -1,6 +1,14 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11
+------------
+
+Release date and codename yet to be decided.
+
+- Fix issues with eventlet's monkeypatching and the builtin server (pull
+  request ``#663``).
+
 Version 0.10
 ------------
 
