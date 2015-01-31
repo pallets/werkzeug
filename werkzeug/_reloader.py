@@ -113,7 +113,7 @@ class ReloaderLoop(object):
     # but because c functions behave differently to python functions when
     # attached to classes, this breaks if sleep has been already replaced with
     # a python function (e.g. by eventlet.monkey_patch). python functions are
-    # descriptors and become methods when attahed to classes, whereas c
+    # descriptors and become methods when attached to classes, whereas c
     # functions remain as functions (thus behaving like staticmethods)
     @staticmethod
     def _sleep(secs):
