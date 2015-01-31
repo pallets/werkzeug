@@ -107,8 +107,18 @@ def _find_common_roots(paths):
 
 
 class ReloaderLoop(object):
-    _sleep = time.sleep  # monkeypatched by testsuite
+
     name = None
+
+    # monkeypatched by testsuite. this used to just say `_sleep = time.sleep`,
+    # but because c functions behave differently to python functions when
+    # attached to classes, this breaks if sleep has been already replaced with
+    # a python function (e.g. by eventlet.monkey_patch). python functions are
+    # descriptors and become methods when attahed to classes, whereas c
+    # functions remain as functions (thus behaving like staticmethods)
+    @staticmethod
+    def _sleep(secs):
+        time.sleep(secs)
 
     def __init__(self, extra_files=None, interval=1):
         self.extra_files = set(os.path.abspath(x)
