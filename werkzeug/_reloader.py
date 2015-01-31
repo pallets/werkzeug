@@ -110,15 +110,10 @@ class ReloaderLoop(object):
 
     name = None
 
-    # monkeypatched by testsuite. this used to just say `_sleep = time.sleep`,
-    # but because c functions behave differently to python functions when
-    # attached to classes, this breaks if sleep has been already replaced with
-    # a python function (e.g. by eventlet.monkey_patch). python functions are
-    # descriptors and become methods when attached to classes, whereas c
-    # functions remain as functions (thus behaving like staticmethods)
-    @staticmethod
-    def _sleep(secs):
-        time.sleep(secs)
+    # monkeypatched by testsuite. wrapping with `staticmethod` is required in
+    # case time.sleep has been replaced by a non-c function (e.g. by
+    # `eventlet.monkey_patch`) before we get here
+    _sleep = staticmethod(time.sleep)
 
     def __init__(self, extra_files=None, interval=1):
         self.extra_files = set(os.path.abspath(x)
