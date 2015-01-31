@@ -10,6 +10,7 @@
 """
 import os
 import ssl
+import subprocess
 import textwrap
 
 
@@ -171,3 +172,21 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
     r = requests.get(server.url)
     assert r.status_code == 200
     assert r.content == b'hello'
+
+
+def test_monkeypached_sleep(tmpdir):
+    script = tmpdir.mkdir('app').join('test.py')
+    script.write(textwrap.dedent('''
+    import time
+
+    def sleep(secs):
+        pass
+
+    # simulate eventlet.monkey_patch by replacing the builtin sleep
+    # with a regular function
+    time.sleep = sleep
+
+    from werkzeug._reloader import ReloaderLoop
+    ReloaderLoop()._sleep(0)
+    '''))
+    subprocess.check_call(['python', str(script)])
