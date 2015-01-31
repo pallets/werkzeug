@@ -175,6 +175,13 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
 
 
 def test_monkeypached_sleep(tmpdir):
+    # removing the staticmethod wrapper in the definition of
+    # ReloaderLoop._sleep works most of the time, since `sleep` is a c
+    # function, and unlike python functions which are descriptors, doesn't
+    # become a method when attached to a class. however, if the user has called
+    # `eventlet.monkey_patch` before importing `_reloader`, `time.sleep` is a
+    # python function, and subsequently calling `ReloaderLoop._sleep` fails
+    # with a TypeError. This test checks that _sleep is attached correctly.
     script = tmpdir.mkdir('app').join('test.py')
     script.write(textwrap.dedent('''
     import time
@@ -183,7 +190,7 @@ def test_monkeypached_sleep(tmpdir):
         pass
 
     # simulate eventlet.monkey_patch by replacing the builtin sleep
-    # with a regular function
+    # with a regular function before _reloader is imported
     time.sleep = sleep
 
     from werkzeug._reloader import ReloaderLoop
