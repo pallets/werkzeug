@@ -1,6 +1,13 @@
 Werkzeug Changelog
 ==================
 
+Version 0.10.1
+--------------
+
+(bugfix release, release date to be decided)
+
+- Fixed regression with multiple query values for URLs (pull request ``#667``).
+
 Version 0.10
 ------------
 

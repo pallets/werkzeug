@@ -1637,10 +1637,9 @@ class MapAdapter(object):
         """
         self.map.update()
         if values:
-            if isinstance(values, MultiDict):
-                valueiter = iteritems(values, multi=True)
-            else:
-                valueiter = iteritems(values)
+            if not isinstance(values, MultiDict):
+                values = MultiDict(values)
+            valueiter = iteritems(values, multi=True)
             values = MultiDict((k, v) for k, v in valueiter if v is not None)
         else:
             values = {}
