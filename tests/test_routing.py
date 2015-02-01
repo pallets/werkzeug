@@ -428,22 +428,15 @@ def test_build_append_unknown():
     assert adapter.build('barf', {'bazf': 0.815, 'bif' : 1.0},
         append_unknown=False) == 'http://example.org/bar/0.815'
 
-def test_build_append_multiple():
+@pytest.mark.parametrize('params', [
+    MultiDict((('bazf', 0.815), ('bif', 1.0), ('pof', 2.0), ('bif', 3.0))),
+    {'bazf': 0.815, 'bif': [1.0, 3.0], 'pof': 2.0}
+])
+def test_build_append_multiple(params):
     map = r.Map([
         r.Rule('/bar/<float:bazf>', endpoint='barf')
     ])
     adapter = map.bind('example.org', '/', subdomain='blah')
-    params = MultiDict((('bazf', 0.815), ('bif', 1.0), ('pof', 2.0),
-                        ('bif', 3.0)))
-    a, b = adapter.build('barf', params).split('?')
-    assert a == 'http://example.org/bar/0.815'
-    assert set(b.split('&')) == set('pof=2.0&bif=1.0&bif=3.0'.split('&'))
-
-    params = {
-        'bazf': 0.815,
-        'bif': [1.0, 3.0],
-        'pof': 2.0,
-    }
     a, b = adapter.build('barf', params).split('?')
     assert a == 'http://example.org/bar/0.815'
     assert set(b.split('&')) == set('pof=2.0&bif=1.0&bif=3.0'.split('&'))
