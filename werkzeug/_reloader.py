@@ -9,7 +9,7 @@ from werkzeug._internal import _log
 from werkzeug._compat import PY2, iteritems, text_type
 
 
-def _iter_module_files(reloader_modules):
+def _iter_module_files(reloader_modules=None):
     """This iterates over all relevant Python files.  It goes through all
     loaded files from modules, all files in folders of already loaded modules
     as well as all files reachable through a package.
@@ -53,7 +53,7 @@ def _iter_module_files(reloader_modules):
         except OSError:
             pass
 
-    if reloader_modules=='auto':
+    if not reloader_modules:
         # The list call is necessary on Python 3 in case the module
         # dictionary modifies during iteration.
         for path_entry in list(sys.path):
@@ -77,9 +77,9 @@ def _iter_module_files(reloader_modules):
                 yield filename
 
 
-def _find_observable_paths(reloader_modules, extra_files=None):
+def _find_observable_paths(reloader_modules=None, extra_files=None):
     """Finds all paths that should be observed."""
-    if reloader_modules=='auto':
+    if not reloader_modules:
         rv = set(os.path.abspath(x) for x in sys.path)
         for module in list(sys.modules.values()):
             fn = getattr(module, '__file__', None)
@@ -123,7 +123,7 @@ class ReloaderLoop(object):
     # `eventlet.monkey_patch`) before we get here
     _sleep = staticmethod(time.sleep)
 
-    def __init__(self, reloader_modules, extra_files=None, interval=1):
+    def __init__(self, reloader_modules=None, extra_files=None, interval=1):
         self.reloader_modules = reloader_modules
         self.extra_files = set(os.path.abspath(x)
                                for x in extra_files or ())
@@ -166,7 +166,8 @@ class StatReloaderLoop(ReloaderLoop):
     def run(self):
         mtimes = {}
         while 1:
-            for filename in chain(_iter_module_files(self.reloader_modules), self.extra_files):
+            for filename in chain(_iter_module_files(self.reloader_modules),
+                                  self.extra_files):
                 try:
                     mtime = os.stat(filename).st_mtime
                 except OSError:
@@ -266,7 +267,7 @@ else:
 
 
 def run_with_reloader(main_func, extra_files=None, interval=1,
-                      reloader_type='auto', reloader_modules='auto'):
+                      reloader_type='auto', reloader_modules=None):
     """Run the given function in an independent python interpreter."""
     import signal
     reloader = reloader_loops[reloader_type](reloader_modules, extra_files, interval)
