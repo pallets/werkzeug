@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.10.1
 --------------
 
-(bugfix release, release date to be decided)
+(bugfix release, released on February 3rd 2015)
 
 - Fixed regression with multiple query values for URLs (pull request ``#667``).
 - Fix issues with eventlet's monkeypatching and the builtin server (pull
