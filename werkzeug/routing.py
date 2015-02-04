@@ -715,7 +715,8 @@ class Rule(RuleFactory):
         for is_dynamic, data in self._trace:
             if is_dynamic:
                 try:
-                    add(self._converters[data].to_url(values[data]))
+                    default_value = self.defaults.get(data, '') if self.defaults else ''
+                    add(self._converters[data].to_url(values.get(data, default_value)))
                 except ValidationError:
                     return
                 processed.add(data)
