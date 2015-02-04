@@ -9,7 +9,7 @@ from werkzeug._internal import _log
 from werkzeug._compat import PY2, iteritems, text_type
 
 
-def _iter_module_files(reloader_modules=None):
+def _iter_module_files(reloader_paths=None):
     """This iterates over all relevant Python files.  It goes through all
     loaded files from modules, all files in folders of already loaded modules
     as well as all files reachable through a package.
@@ -53,7 +53,7 @@ def _iter_module_files(reloader_modules=None):
         except OSError:
             pass
 
-    if not reloader_modules:
+    if not reloader_paths:
         # The list call is necessary on Python 3 in case the module
         # dictionary modifies during iteration.
         for path_entry in list(sys.path):
@@ -72,14 +72,14 @@ def _iter_module_files(reloader_modules=None):
                 for filename in _recursive_walk(os.path.abspath(package_path)):
                     yield filename
     else:
-        for path_entry in reloader_modules:
+        for path_entry in reloader_paths:
             for filename in _recursive_walk(os.path.abspath(path_entry)):
                 yield filename
 
 
-def _find_observable_paths(reloader_modules=None, extra_files=None):
+def _find_observable_paths(reloader_paths=None, extra_files=None):
     """Finds all paths that should be observed."""
-    if not reloader_modules:
+    if not reloader_paths:
         rv = set(os.path.abspath(x) for x in sys.path)
         for module in list(sys.modules.values()):
             fn = getattr(module, '__file__', None)
@@ -88,7 +88,7 @@ def _find_observable_paths(reloader_modules=None, extra_files=None):
             fn = os.path.abspath(fn)
             rv.add(os.path.dirname(fn))
     else:
-        rv = set(os.path.abspath(x) for x in reloader_modules)
+        rv = set(os.path.abspath(x) for x in reloader_paths)
     for filename in extra_files or ():
         rv.append(os.path.dirname(os.path.abspath(filename)))
 
@@ -123,8 +123,8 @@ class ReloaderLoop(object):
     # `eventlet.monkey_patch`) before we get here
     _sleep = staticmethod(time.sleep)
 
-    def __init__(self, reloader_modules=None, extra_files=None, interval=1):
-        self.reloader_modules = reloader_modules
+    def __init__(self, reloader_paths=None, extra_files=None, interval=1):
+        self.reloader_paths = reloader_paths
         self.extra_files = set(os.path.abspath(x)
                                for x in extra_files or ())
         self.interval = interval
@@ -166,7 +166,7 @@ class StatReloaderLoop(ReloaderLoop):
     def run(self):
         mtimes = {}
         while 1:
-            for filename in chain(_iter_module_files(self.reloader_modules),
+            for filename in chain(_iter_module_files(self.reloader_paths),
                                   self.extra_files):
                 try:
                     mtime = os.stat(filename).st_mtime
@@ -231,7 +231,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         while not self.should_reload:
             to_delete = set(watches)
             paths = _find_common_roots(
-                _find_observable_paths(self.reloader_modules, self.extra_files))
+                _find_observable_paths(self.reloader_paths, self.extra_files))
             for path in paths:
                 if path not in watches:
                     try:
@@ -267,10 +267,10 @@ else:
 
 
 def run_with_reloader(main_func, extra_files=None, interval=1,
-                      reloader_type='auto', reloader_modules=None):
+                      reloader_type='auto', reloader_paths=None):
     """Run the given function in an independent python interpreter."""
     import signal
-    reloader = reloader_loops[reloader_type](reloader_modules, extra_files, interval)
+    reloader = reloader_loops[reloader_type](reloader_paths, extra_files, interval)
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     try:
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
