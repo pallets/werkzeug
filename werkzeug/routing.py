@@ -689,14 +689,14 @@ class Rule(RuleFactory):
                     del groups['__suffix__']
 
                 result = {}
+                if self.defaults:
+                    result.update(self.defaults)
                 for name, value in iteritems(groups):
                     try:
                         value = self._converters[name].to_python(value)
                     except ValidationError:
                         return
                     result[str(name)] = value
-                if self.defaults:
-                    result.update(self.defaults)
 
                 if self.alias and self.map.redirect_defaults:
                     raise RequestAliasRedirect(result)
