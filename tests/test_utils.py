@@ -14,6 +14,7 @@ import pytest
 
 from datetime import datetime
 from functools import partial
+import inspect
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
@@ -96,6 +97,29 @@ def test_cached_property():
     q = a.prop
     assert p == q == 42
     assert foo == [42]
+
+
+def test_can_set_cached_property():
+    class A(object):
+        @utils.cached_property
+        def _prop(self):
+            return 'cached_property return value'
+
+    a = A()
+    a._prop = 'value'
+    assert a._prop == 'value'
+
+def test_inspect_treats_cached_property_as_property():
+    class A(object):
+        @utils.cached_property
+        def _prop(self):
+            return 'cached_property return value'
+
+    attrs = inspect.classify_class_attrs(A)
+    for attr in attrs:
+        if attr.name == '_prop':
+            break
+    assert attr.kind == 'property'
 
 def test_environ_property():
     class A(object):
