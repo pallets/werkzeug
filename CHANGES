@@ -9,6 +9,8 @@ Version 0.11
 - Added ``reloader_paths`` option to ``run_simple`` and other functions in
   ``werkzeug.serving``. This allows the user to completely override the Python
   module watching of Werkzeug with custom paths.
+- Many custom cached properties of Werkzeug's classes are now subclasses of
+  Python's ``property`` type (issue ``#616``).
 
 Version 0.10.1
 --------------
