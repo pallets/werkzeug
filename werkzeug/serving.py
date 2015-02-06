@@ -121,7 +121,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if self.headers.get('Expect', '').lower().strip() == '100-continue':
             self.wfile.write(b'HTTP/1.1 100 Continue\r\n\r\n')
 
-        environ = self.make_environ()
+        self.environ = environ = self.make_environ()
         headers_set = []
         headers_sent = []
 
@@ -250,7 +250,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
     def address_string(self):
-        return self.client_address[0]
+        return self.environ['REMOTE_ADDR']
 
     def log_request(self, code='-', size='-'):
         self.log('info', '"%s" %s %s', self.requestline, code, size)
