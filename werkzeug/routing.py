@@ -566,15 +566,18 @@ class Rule(RuleFactory):
     def empty(self):
         """Return an unbound copy of this rule.  This can be useful if you
         want to reuse an already bound URL for another map."""
+        return type(self)(self.rule, **self.get_empty_kwargs())
+
+    def get_empty_kwargs(self):
+        """Provides kwargs for instantiating empty copy with empty()"""
         defaults = None
         if self.defaults:
             defaults = dict(self.defaults)
-        return type(self)(self.rule, defaults=defaults,
-                          subdomain=self.subdomain, methods=self.methods,
-                          build_only=self.build_only, endpoint=self.endpoint,
-                          strict_slashes=self.strict_slashes,
-                          redirect_to=self.redirect_to, alias=self.alias,
-                          host=self.host)
+        return dict(defaults=defaults, subdomain=self.subdomain,
+                    methods=self.methods, build_only=self.build_only,
+                    endpoint=self.endpoint, strict_slashes=self.strict_slashes,
+                    redirect_to=self.redirect_to, alias=self.alias,
+                    host=self.host)
 
     def get_rules(self, map):
         yield self
