@@ -1182,24 +1182,28 @@ class Map(object):
         :param subdomain: optionally the current subdomain (see above).
         """
         environ = _get_environ(environ)
+        if 'HTTP_HOST' in environ:
+            wsgi_server_name = environ['HTTP_HOST']
+            if environ['wsgi.url_scheme'] == 'http' \
+               and server_name.endswith(':80'):
+                server_name = server_name[:-3]
+            elif environ['wsgi.url_scheme'] == 'https' \
+               and server_name.endswith(':443'):
+                server_name = server_name[:-4]
+        else:
+            wsgi_server_name = environ['SERVER_NAME']
+        wsgi_server_name = wsgi_server_name.lower()
+
+        if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
+           in (('https', '443'), ('http', '80')):
+            wsgi_server_name += ':' + environ['SERVER_PORT']
+
         if server_name is None:
-            if 'HTTP_HOST' in environ:
-                server_name = environ['HTTP_HOST']
-            else:
-                server_name = environ['SERVER_NAME']
-                if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
-                   in (('https', '443'), ('http', '80')):
-                    server_name += ':' + environ['SERVER_PORT']
-        elif subdomain is None and not self.host_matching:
+            server_name = wsgi_server_name
+        else:
             server_name = server_name.lower()
-            if 'HTTP_HOST' in environ:
-                wsgi_server_name = environ.get('HTTP_HOST')
-            else:
-                wsgi_server_name = environ.get('SERVER_NAME')
-                if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
-                   in (('https', '443'), ('http', '80')):
-                    wsgi_server_name += ':' + environ['SERVER_PORT']
-            wsgi_server_name = wsgi_server_name.lower()
+
+        if subdomain is None and not self.host_matching:
             cur_server_name = wsgi_server_name.split('.')
             real_server_name = server_name.split('.')
             offset = -len(real_server_name)

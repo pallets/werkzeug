@@ -11,6 +11,8 @@ Version 0.11
   module watching of Werkzeug with custom paths.
 - Many custom cached properties of Werkzeug's classes are now subclasses of
   Python's ``property`` type (issue ``#616``).
+- ``bind_to_environ`` now doesn't differentiate between implicit and explicit
+  default port numbers in ``HTTP_HOST`` (pull request ``#204``).
 
 Version 0.10.1
 --------------
