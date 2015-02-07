@@ -1185,11 +1185,11 @@ class Map(object):
         if 'HTTP_HOST' in environ:
             wsgi_server_name = environ['HTTP_HOST']
             if environ['wsgi.url_scheme'] == 'http' \
-               and server_name.endswith(':80'):
-                server_name = server_name[:-3]
+               and wsgi_server_name.endswith(':80'):
+                wsgi_server_name = wsgi_server_name[:-3]
             elif environ['wsgi.url_scheme'] == 'https' \
-               and server_name.endswith(':443'):
-                server_name = server_name[:-4]
+               and wsgi_server_name.endswith(':443'):
+                wsgi_server_name = wsgi_server_name[:-4]
         else:
             wsgi_server_name = environ['SERVER_NAME']
         wsgi_server_name = wsgi_server_name.lower()
