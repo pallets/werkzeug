@@ -707,3 +707,12 @@ def test_map_repr():
     rv = repr(m)
     strict_eq(rv,
         "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])")
+
+def test_empty_subclass_rules_with_custom_kwargs():
+    class CustomRule(r.Rule):
+        def __init__(self, string=None, custom=None, *args, **kwargs):
+            self.custom = custom
+            super(CustomRule, self).__init__(string, *args, **kwargs)
+
+    rule1 = CustomRule(u'/foo', endpoint='bar')
+    rule2 = rule1.empty()
