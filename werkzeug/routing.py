@@ -569,9 +569,12 @@ class Rule(RuleFactory):
         defaults = None
         if self.defaults:
             defaults = dict(self.defaults)
-        return type(self)(self.rule, defaults, self.subdomain, self.methods,
-                    self.build_only, self.endpoint, self.strict_slashes,
-                    self.redirect_to, self.alias, self.host)
+        return type(self)(self.rule, defaults=defaults,
+                          subdomain=self.subdomain, methods=self.methods,
+                          build_only=self.build_only, endpoint=self.endpoint,
+                          strict_slashes=self.strict_slashes,
+                          redirect_to=self.redirect_to, alias=self.alias,
+                          host=self.host)
 
     def get_rules(self, map):
         yield self
