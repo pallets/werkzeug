@@ -10,7 +10,6 @@
 """
 import re
 import os
-import sys
 import posixpath
 import mimetypes
 from itertools import chain
@@ -25,6 +24,7 @@ from werkzeug._compat import iteritems, text_type, string_types, \
 from werkzeug._internal import _empty_stream, _encode_idna
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
+from werkzeug.filesystem import get_filesystem_encoding
 
 
 def responder(f):
@@ -559,7 +559,7 @@ class SharedDataMiddleware(object):
 
     def generate_etag(self, mtime, file_size, real_filename):
         if not isinstance(real_filename, bytes):
-            real_filename = real_filename.encode(sys.getfilesystemencoding())
+            real_filename = real_filename.encode(get_filesystem_encoding())
         return 'wzsdm-%d-%s-%s' % (
             mktime(mtime.timetuple()),
             file_size,
@@ -569,7 +569,7 @@ class SharedDataMiddleware(object):
     def __call__(self, environ, start_response):
         cleaned_path = get_path_info(environ)
         if PY2:
-            cleaned_path = cleaned_path.encode(sys.getfilesystemencoding())
+            cleaned_path = cleaned_path.encode(get_filesystem_encoding())
         # sanitize the path for non unix systems
         cleaned_path = cleaned_path.strip('/')
         for sep in os.sep, os.altsep:
