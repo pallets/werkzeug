@@ -715,4 +715,8 @@ def test_empty_subclass_rules_with_custom_kwargs():
             super(CustomRule, self).__init__(string, *args, **kwargs)
 
     rule1 = CustomRule(u'/foo', endpoint='bar')
-    rule2 = rule1.empty()
+    try:
+        rule2 = rule1.empty()
+        assert rule1.rule == rule2.rule
+    except TypeError:  # raised without fix in PR #675
+        assert False
