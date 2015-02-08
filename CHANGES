@@ -13,6 +13,11 @@ Version 0.11
   Python's ``property`` type (issue ``#616``).
 - ``bind_to_environ`` now doesn't differentiate between implicit and explicit
   default port numbers in ``HTTP_HOST`` (pull request ``#204``).
+- Fixed issue where ``empty`` could break third-party libraries that relied on
+  keyword arguments (pull request ``#675``)
+- Improved ``Rule.empty`` by providing a ```get_empty_kwargs`` to allow setting
+  custom kwargs without having to override entire ``empty`` method. (pull
+  request ``#675``)
 
 Version 0.10.1
 --------------
