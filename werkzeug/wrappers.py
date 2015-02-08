@@ -798,7 +798,7 @@ class BaseResponse(object):
         if self.is_sequence:
             body_info = '%d bytes' % sum(map(len, self.iter_encoded()))
         else:
-            body_info = self.is_streamed and 'streamed' or 'likely-streamed'
+            body_info = 'streamed' if self.is_streamed else 'likely-streamed'
         return '<%s %s [%s]>' % (
             self.__class__.__name__,
             body_info,
