@@ -564,14 +564,35 @@ class Rule(RuleFactory):
         self._trace = self._converters = self._regex = self._weights = None
 
     def empty(self):
-        """Return an unbound copy of this rule.  This can be useful if you
-        want to reuse an already bound URL for another map."""
+        """
+        Return an unbound copy of this rule.
+
+        This can be useful if want to reuse an already bound URL for another
+        map.  See ``get_empty_kwargs`` to override what keyword arguments are
+        provided to the new copy.
+        """
+        return type(self)(self.rule, **self.get_empty_kwargs())
+
+    def get_empty_kwargs(self):
+        """
+        Provides kwargs for instantiating empty copy with empty()
+
+        Use this method to provide custom keyword arguments to the subclass of
+        ``Rule`` when calling ``some_rule.empty()``.  Helpful when the subclass
+        has custom keyword arguments that are needed at instantiation.
+
+        Must return a ``dict`` that will be provided as kwargs to the new
+        instance of ``Rule``, following the initial ``self.rule`` value which
+        is always provided as the first, required positional argument.
+        """
         defaults = None
         if self.defaults:
             defaults = dict(self.defaults)
-        return type(self)(self.rule, defaults, self.subdomain, self.methods,
-                    self.build_only, self.endpoint, self.strict_slashes,
-                    self.redirect_to, self.alias, self.host)
+        return dict(defaults=defaults, subdomain=self.subdomain,
+                    methods=self.methods, build_only=self.build_only,
+                    endpoint=self.endpoint, strict_slashes=self.strict_slashes,
+                    redirect_to=self.redirect_to, alias=self.alias,
+                    host=self.host)
 
     def get_rules(self, map):
         yield self
