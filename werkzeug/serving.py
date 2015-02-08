@@ -121,7 +121,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if self.headers.get('Expect', '').lower().strip() == '100-continue':
             self.wfile.write(b'HTTP/1.1 100 Continue\r\n\r\n')
 
-        environ = self.make_environ()
+        self.environ = environ = self.make_environ()
         headers_set = []
         headers_sent = []
 
@@ -250,7 +250,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
     def address_string(self):
-        return self.client_address[0]
+        return self.environ['REMOTE_ADDR']
 
     def log_request(self, code='-', size='-'):
         self.log('info', '"%s" %s %s', self.requestline, code, size)
@@ -524,8 +524,8 @@ def is_running_from_reloader():
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
                extra_files=None, reloader_interval=1,
-               reloader_type='auto', threaded=False, processes=1,
-               request_handler=None, static_files=None,
+               reloader_type='auto', reloader_paths=None, threaded=False,
+               processes=1, request_handler=None, static_files=None,
                passthrough_errors=False, ssl_context=None):
     """Start a WSGI application. Optional features include a reloader,
     multithreading and fork support.
@@ -567,6 +567,9 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param reloader_type: the type of reloader to use.  The default is
                           auto detection.  Valid values are ``'stat'`` and
                           ``'watchdog'``.
+    :param reloader_paths: directories the reloader should watch.  Defaults to
+                           ``None`` which means automatically detect modules.
+                           Valid values are a list of paths or ``None``.
     :param threaded: should the process handle each request in a separate
                      thread?
     :param processes: if greater than 1 then handle each request in a new process
@@ -619,7 +622,7 @@ def run_simple(hostname, port, application, use_reloader=False,
 
         from ._reloader import run_with_reloader
         run_with_reloader(inner, extra_files, reloader_interval,
-                          reloader_type)
+                          reloader_type, reloader_paths)
     else:
         inner()
 

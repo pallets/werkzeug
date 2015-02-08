@@ -22,10 +22,13 @@ Details and example applications are available on the
 Branches
 --------
 
-+---------------------+--------------------------------------------------------------------------------+
-| ``master``          | .. image:: https://travis-ci.org/mitsuhiko/werkzeug.svg?branch=master          |
-|                     |     :target: https://travis-ci.org/mitsuhiko/werkzeug                          |
-+---------------------+--------------------------------------------------------------------------------+
-| ``0.9-maintenance`` | .. image:: https://travis-ci.org/mitsuhiko/werkzeug.svg?branch=0.9-maintenance |
-|                     |     :target: https://travis-ci.org/mitsuhiko/werkzeug                          |
-+---------------------+--------------------------------------------------------------------------------+
++----------------------+---------------------------------------------------------------------------------+
+| ``master``           | .. image:: https://travis-ci.org/mitsuhiko/werkzeug.svg?branch=master           |
+|                      |     :target: https://travis-ci.org/mitsuhiko/werkzeug                           |
++----------------------+---------------------------------------------------------------------------------+
+| ``0.9-maintenance``  | .. image:: https://travis-ci.org/mitsuhiko/werkzeug.svg?branch=0.9-maintenance  |
+|                      |     :target: https://travis-ci.org/mitsuhiko/werkzeug                           |
++----------------------+---------------------------------------------------------------------------------+
+| ``0.10-maintenance`` | .. image:: https://travis-ci.org/mitsuhiko/werkzeug.svg?branch=0.10-maintenance |
+|                      |     :target: https://travis-ci.org/mitsuhiko/werkzeug                           |
++----------------------+---------------------------------------------------------------------------------+
