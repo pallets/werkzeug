@@ -309,7 +309,9 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
         """Start a new development server."""
         from werkzeug.serving import run_simple
         app = app_factory()
-        run_simple(hostname, port, app, reloader, debugger, evalex,
-                   extra_files, 1, threaded, processes,
+        run_simple(hostname, port, app,
+                   use_reloader=reloader, use_debugger=debugger,
+                   use_evalex=evalex, extra_files=extra_files,
+                   reloader_interval=1, threaded=threaded, processes=processes,
                    static_files=static_files, ssl_context=ssl_context)
     return action
