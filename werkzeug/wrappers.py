@@ -1603,13 +1603,13 @@ class CommonRequestDescriptorsMixin(object):
 
     @property
     def mimetype(self):
-        """Like :attr:`content_type` but without parameters (eg, without
-        charset, type etc.).  For example if the content
-        type is ``text/html; charset=utf-8`` the mimetype would be
+        """Like :attr:`content_type`, but without parameters (eg, without
+        charset, type etc.) and always lowercase.  For example if the content
+        type is ``text/HTML; charset=utf-8`` the mimetype would be
         ``'text/html'``.
         """
         self._parse_content_type()
-        return self._parsed_content_type[0]
+        return self._parsed_content_type[0].lower()
 
     @property
     def mimetype_params(self):

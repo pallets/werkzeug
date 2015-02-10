@@ -586,6 +586,10 @@ def test_common_request_descriptors_mixin():
     assert request.content_encoding == 'gzip'
     assert request.content_md5 == '9a3bc6dbc47a70db25b84c6e5867a072'
 
+def test_request_mimetype_always_lowercase():
+    request = wrappers.Request.from_values(content_type='APPLICATION/JSON')
+    assert request.mimetype == 'application/json'
+
 def test_shallow_mode():
     request = wrappers.Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
     assert request.args['foo'] == 'bar'
