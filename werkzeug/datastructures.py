@@ -2556,10 +2556,10 @@ class FileStorage(object):
 
     @property
     def mimetype(self):
-        """Like :attr:`content_type` but without parameters (eg, without
-        charset, type etc.).  For example if the content
-        type is ``text/html; charset=utf-8`` the mimetype would be
-        ``'text/html'``. Also, mimetype will be always lowercase.
+        """Like :attr:`content_type`, but without parameters (eg, without
+        charset, type etc.) and always lowercase.  For example if the content
+        type is ``text/HTML; charset=utf-8`` the mimetype would be
+        ``'text/html'``.
 
         .. versionadded:: 0.7
         """
