@@ -148,7 +148,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     self.send_header('Date', self.date_time_string())
                 self.end_headers()
 
-            assert type(data) is bytes, 'applications must write bytes'
+            assert isinstance(data, bytes), 'applications must write bytes'
             self.wfile.write(data)
             self.wfile.flush()
 
