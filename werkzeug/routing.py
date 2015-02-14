@@ -95,6 +95,7 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import difflib
 import re
 import uuid
 import posixpath
@@ -248,11 +249,55 @@ class BuildError(RoutingException, LookupError):
     values provided.
     """
 
-    def __init__(self, endpoint, values, method):
+    def __init__(self, endpoint, values, method, adapter=None):
         LookupError.__init__(self, endpoint, values, method)
         self.endpoint = endpoint
         self.values = values
         self.method = method
+        self.suggested = self.closest_rule(adapter)
+
+    def closest_rule(self, adapter):
+        def score_rule(rule):
+            return sum([
+                0.98 * difflib.SequenceMatcher(
+                    None, rule.endpoint, self.endpoint
+                ).ratio(),
+                0.01 * bool(set(self.values or ()).issubset(rule.arguments)),
+                0.01 * bool(rule.methods and self.method in rule.methods)
+            ])
+
+        if adapter and adapter.map._rules:
+            return max(adapter.map._rules, key=score_rule)
+        else:
+            return None
+
+    def __str__(self):
+        message = []
+        message.append("Could not build url for endpoint %r" % self.endpoint)
+        if self.method:
+            message.append(" (%r)" % self.method)
+        if self.values:
+            message.append(" with values %r" % sorted(self.values.keys()))
+        message.append(".")
+        if self.suggested:
+            if self.endpoint == self.suggested.endpoint:
+                if self.method not in self.suggested.methods:
+                    message.append(" Did you mean to use methods %r?" % sorted(
+                        self.suggested.methods
+                    ))
+                missing_values = self.suggested.arguments.union(
+                    set(self.suggested.defaults or ())
+                ) - set(self.values.keys())
+                if missing_values:
+                    message.append(
+                        " Did you forget to specify values %r?" %
+                        sorted(missing_values)
+                    )
+            else:
+                message.append(
+                    " Did you mean %r instead?" % self.suggested.endpoint
+                )
+        return "".join(message)
 
 
 class ValidationError(ValueError):
@@ -1674,7 +1719,7 @@ class MapAdapter(object):
 
         rv = self._partial_build(endpoint, values, method, append_unknown)
         if rv is None:
-            raise BuildError(endpoint, values, method)
+            raise BuildError(endpoint, values, method, self)
         domain_part, path = rv
 
         host = self.get_host(domain_part)

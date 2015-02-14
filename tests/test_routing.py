@@ -720,3 +720,78 @@ def test_empty_subclass_rules_with_custom_kwargs():
         assert rule1.rule == rule2.rule
     except TypeError as e:  # raised without fix in PR #675
         raise e
+
+def test_finding_closest_match_by_endpoint():
+    m = r.Map([
+        r.Rule(u'/foo/', endpoint='users.here'),
+        r.Rule(u'/wat/', endpoint='admin.users'),
+        r.Rule(u'/woop', endpoint='foo.users'),
+    ])
+    adapter = m.bind('example.com')
+    assert r.BuildError('admin.user', None, None, adapter).suggested.endpoint \
+           == 'admin.users'
+
+def test_finding_closest_match_by_values():
+    rule_id = r.Rule(u'/user/id/<id>/', endpoint='users')
+    rule_slug = r.Rule(u'/user/<slug>/', endpoint='users')
+    rule_random = r.Rule(u'/user/emails/<email>/', endpoint='users')
+    m = r.Map([rule_id, rule_slug, rule_random])
+    adapter = m.bind('example.com')
+    assert r.BuildError('x', {'slug': ''}, None, adapter).suggested == \
+           rule_slug
+
+def test_finding_closest_match_by_method():
+    post = r.Rule(u'/post/', endpoint='foobar', methods=['POST'])
+    get = r.Rule(u'/get/', endpoint='foobar', methods=['GET'])
+    put = r.Rule(u'/put/', endpoint='foobar', methods=['PUT'])
+    m = r.Map([post, get, put])
+    adapter = m.bind('example.com')
+    assert r.BuildError('invalid', {}, 'POST', adapter).suggested == post
+    assert r.BuildError('invalid', {}, 'GET', adapter).suggested == get
+    assert r.BuildError('invalid', {}, 'PUT', adapter).suggested == put
+
+def test_finding_closest_match_when_none_exist():
+    m = r.Map([])
+    assert not r.BuildError('invalid', {}, None, m.bind('test.com')).suggested
+
+def test_error_message_without_suggested_rule():
+    m = r.Map([
+        r.Rule(u'/foo/', endpoint='world', methods=['GET']),
+    ])
+    adapter = m.bind('example.com')
+
+    with pytest.raises(r.BuildError) as excinfo:
+        adapter.build('urks')
+    assert str(excinfo.value).startswith(
+        "Could not build url for endpoint 'urks'."
+    )
+
+    with pytest.raises(r.BuildError) as excinfo:
+        adapter.build('world', method='POST')
+    assert str(excinfo.value).startswith(
+        "Could not build url for endpoint 'world' ('POST')."
+    )
+
+    with pytest.raises(r.BuildError) as excinfo:
+        adapter.build('urks', values={'user_id': 5})
+    assert str(excinfo.value).startswith(
+        "Could not build url for endpoint 'urks' with values ['user_id']."
+    )
+
+def test_error_message_suggestion():
+    m = r.Map([
+        r.Rule(u'/foo/<id>/', endpoint='world', methods=['GET']),
+    ])
+    adapter = m.bind('example.com')
+
+    with pytest.raises(r.BuildError) as excinfo:
+        adapter.build('helloworld')
+    assert "Did you mean 'world' instead?" in str(excinfo.value)
+
+    with pytest.raises(r.BuildError) as excinfo:
+        adapter.build('world')
+    assert "Did you forget to specify values ['id']?" in str(excinfo.value)
+
+    with pytest.raises(r.BuildError) as excinfo:
+        adapter.build('world', {'id': 2}, method='POST')
+    assert "Did you mean to use methods ['GET', 'HEAD']?" in str(excinfo.value)
