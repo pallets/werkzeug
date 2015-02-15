@@ -889,3 +889,11 @@ class TestAccept(object):
         assert accept.best_match(['asterisk', 'times'], default=None) == \
             'times'
         assert accept.best_match(['asterisk'], default=None) is None
+
+
+class TestFileStorage(object):
+    storage_class = datastructures.FileStorage
+
+    def test_mimetype_always_lowercase(self):
+        file_storage = self.storage_class(content_type='APPLICATION/JSON')
+        assert file_storage.mimetype == 'application/json'
