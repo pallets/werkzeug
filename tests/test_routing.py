@@ -791,6 +791,7 @@ def test_error_message_suggestion():
     with pytest.raises(r.BuildError) as excinfo:
         adapter.build('world')
     assert "Did you forget to specify values ['id']?" in str(excinfo.value)
+    assert "Did you mean to use methods" not in str(excinfo.value)
 
     with pytest.raises(r.BuildError) as excinfo:
         adapter.build('world', {'id': 2}, method='POST')

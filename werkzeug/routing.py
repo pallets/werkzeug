@@ -281,7 +281,7 @@ class BuildError(RoutingException, LookupError):
         message.append(".")
         if self.suggested:
             if self.endpoint == self.suggested.endpoint:
-                if self.method not in self.suggested.methods:
+                if self.method and self.method not in self.suggested.methods:
                     message.append(" Did you mean to use methods %r?" % sorted(
                         self.suggested.methods
                     ))
