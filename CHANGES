@@ -11,6 +11,8 @@ Version 0.10.x
 - Improved ``Rule.empty`` by providing a ```get_empty_kwargs`` to allow setting
   custom kwargs without having to override entire ``empty`` method. (pull
   request ``#675``)
+- Fixed ```extra_files``` parameter for reloader to not cause startup
+  to crash when included in server params
 
 Version 0.10.1
 --------------
