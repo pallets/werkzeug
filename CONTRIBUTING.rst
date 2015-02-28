@@ -45,7 +45,7 @@ install it with::
 
 Then you can run the testsuite with::
 
-    py.test
+    py.test tests
 
 With only py.test installed, a large part of the testsuite will get skipped
 though.  Whether this is relevant depends on which part of Werkzeug you're
