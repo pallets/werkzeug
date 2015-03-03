@@ -17,6 +17,8 @@ Version 0.11
   as error message, and also provide suggestions (pull request ``#691``).
 - Fix a bug in the user agent parser where Safari's build number instead of
   version would be extracted (pull request ``#703``).
+- Fixed issue where RedisCache set_many was broken for twemproxy, which doesn't
+  support the default MULTI command (pull request ``#702``).
 
 Version 0.10.x
 --------------
