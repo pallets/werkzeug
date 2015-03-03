@@ -571,7 +571,7 @@ class RedisCache(BaseCache):
     def set_many(self, mapping, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        pipe = self._client.pipeline()
+        pipe = self._client.pipeline(transaction=False)
         for key, value in _items(mapping):
             dump = self.dump_object(value)
             pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
