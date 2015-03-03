@@ -76,7 +76,7 @@ def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
     rv = set(os.path.abspath(x) for x in sys.path)
     for filename in extra_files or ():
-        rv.append(os.path.dirname(os.path.abspath(filename)))
+        rv.add(os.path.dirname(os.path.abspath(filename)))
     for module in list(sys.modules.values()):
         fn = getattr(module, '__file__', None)
         if fn is None:
