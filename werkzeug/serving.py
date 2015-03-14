@@ -141,7 +141,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     header_keys.add(key)
                 if 'content-length' not in header_keys:
                     self.close_connection = True
-                    self.send_header('Connection', 'close')
+                    if "connection" not in header_keys:
+                        # Connection should never be in header_keys it's banned by
+                        # the WSGI spec. However setting connection is very usefull
+                        # for creating websockets.
+                        self.send_header('Connection', 'close')
                 if 'server' not in header_keys:
                     self.send_header('Server', self.version_string())
                 if 'date' not in header_keys:
