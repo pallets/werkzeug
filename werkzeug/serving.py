@@ -43,6 +43,8 @@ import sys
 import ssl
 import signal
 
+_show_full_request = False
+
 
 def _get_openssl_crypto_module():
     try:
@@ -69,6 +71,7 @@ from werkzeug.exceptions import InternalServerError
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
+
     """A request handler that implements WSGI dispatching."""
 
     @property
@@ -253,7 +256,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return self.environ['REMOTE_ADDR']
 
     def log_request(self, code='-', size='-'):
-        self.log('info', '"%s" %s %s', self.requestline, code, size)
+        if _show_full_request:
+            h = str(self.headers).replace('\n', '\n< ')
+
+            self.log('info', '\n< %s\n< %s\n\n> %s %s',
+                     self.requestline, h, code, size)
+        else:
+            self.log('info', '"%s" %s %s', self.requestline, code, size)
 
     def log_error(self, *args):
         self.log('error', *args)
@@ -373,6 +382,7 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
 
 
 class _SSLContext(object):
+
     '''A dummy class with a small subset of Python3's ``ssl.SSLContext``, only
     intended to be used with and by Werkzeug.'''
 
@@ -427,6 +437,7 @@ def select_ip_version(host, port):
 
 
 class BaseWSGIServer(HTTPServer, object):
+
     """Simple single-threaded, single-process WSGI server."""
     multithread = False
     multiprocess = False
@@ -477,11 +488,13 @@ class BaseWSGIServer(HTTPServer, object):
 
 
 class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
+
     """A WSGI server that does threading."""
     multithread = True
 
 
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
+
     """A WSGI server that does forking."""
     multiprocess = True
 
@@ -526,7 +539,8 @@ def run_simple(hostname, port, application, use_reloader=False,
                extra_files=None, reloader_interval=1,
                reloader_type='auto', reloader_paths=None, threaded=False,
                processes=1, request_handler=None, static_files=None,
-               passthrough_errors=False, ssl_context=None):
+               passthrough_errors=False, ssl_context=None,
+               show_full_request=False):
     """Start a WSGI application. Optional features include a reloader,
     multithreading and fork support.
 
@@ -592,6 +606,9 @@ def run_simple(hostname, port, application, use_reloader=False,
                         the server should automatically create one, or ``None``
                         to disable SSL (which is the default).
     """
+    global _show_full_request
+    _show_full_request = show_full_request
+
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
         application = DebuggedApplication(application, use_evalex)
