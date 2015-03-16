@@ -1488,6 +1488,10 @@ class MapAdapter(object):
 
         have_match_for = set()
         for rule in self.map._rules:
+            if rule.methods is not None and method not in rule.methods:
+                # Not our rule methods - try next rule
+                continue
+
             try:
                 rv = rule.match(path)
             except RequestSlash:
