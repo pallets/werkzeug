@@ -886,7 +886,7 @@ def run_wsgi_app(app, environ, buffered=False):
             buffer.append(next(app_iter))
         if buffer:
             app_iter = chain(buffer, app_iter)
-            if close_func is not None:
-                app_iter = ClosingIterator(app_iter, close_func)
+        if close_func is not None:
+            app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], Headers(response[1])

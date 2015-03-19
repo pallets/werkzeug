@@ -398,6 +398,8 @@ def test_iri_support():
 @pytest.mark.parametrize('buffered', (True, False))
 @pytest.mark.parametrize('iterable', (True, False))
 def test_run_wsgi_apps(buffered, iterable):
+    leaked_data = []
+
     def simple_app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return ['Hello World!']
@@ -413,13 +415,33 @@ def test_run_wsgi_apps(buffered, iterable):
         start_response('200 OK', [('Content-Type', 'text/html')])
         yield '!'
 
-    for app in (simple_app, yielding_app, late_start_response):
+    def depends_on_close(environ, start_response):
+        leaked_data.append('harhar')
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        class Rv(object):
+            def __iter__(self):
+                yield 'Hello '
+                yield 'World'
+                yield '!'
+
+            def close(self):
+                assert leaked_data.pop() == 'harhar'
+
+        return Rv()
+
+
+    for app in (simple_app, yielding_app, late_start_response,
+                depends_on_close):
         if iterable:
             app = iterable_middleware(app)
         app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
         strict_eq(status, '200 OK')
         strict_eq(list(headers), [('Content-Type', 'text/html')])
         strict_eq(''.join(app_iter), 'Hello World!')
+
+        if hasattr(app_iter, 'close'):
+            app_iter.close()
+        assert not leaked_data
 
 def iterable_middleware(app):
     '''Guarantee that the app returns an iterable'''
@@ -429,6 +451,11 @@ def iterable_middleware(app):
         class Iterable(object):
             def __iter__(self):
                 return iter(rv)
+
+            if hasattr(rv, 'close'):
+                def close(self):
+                    rv.close()
+
         return Iterable()
     return inner
 
