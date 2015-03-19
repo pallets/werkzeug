@@ -864,12 +864,13 @@ def run_wsgi_app(app, environ, buffered=False):
         response[:] = [status, headers]
         return buffer.append
 
-    app_iter = app(environ, start_response)
+    app_rv = app(environ, start_response)
+    close_func = getattr(app_rv, 'close', None)
+    app_iter = iter(app_rv)
 
     # when buffering we emit the close call early and convert the
     # application iterator into a regular list
     if buffered:
-        close_func = getattr(app_iter, 'close', None)
         try:
             app_iter = list(app_iter)
         finally:
@@ -884,7 +885,6 @@ def run_wsgi_app(app, environ, buffered=False):
         while not response:
             buffer.append(next(app_iter))
         if buffer:
-            close_func = getattr(app_iter, 'close', None)
             app_iter = chain(buffer, app_iter)
             if close_func is not None:
                 app_iter = ClosingIterator(app_iter, close_func)

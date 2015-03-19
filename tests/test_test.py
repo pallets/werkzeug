@@ -395,23 +395,42 @@ def test_iri_support():
     strict_eq(b.path, '/f%C3%B6%C3%B6-bar')
     strict_eq(b.base_url, 'http://xn--n3h.net/')
 
-def test_run_wsgi_apps():
+@pytest.mark.parametrize('buffered', (True, False))
+@pytest.mark.parametrize('iterable', (True, False))
+def test_run_wsgi_apps(buffered, iterable):
     def simple_app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return ['Hello World!']
-    app_iter, status, headers = run_wsgi_app(simple_app, {})
-    strict_eq(status, '200 OK')
-    strict_eq(list(headers), [('Content-Type', 'text/html')])
-    strict_eq(app_iter, ['Hello World!'])
 
     def yielding_app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         yield 'Hello '
         yield 'World!'
-    app_iter, status, headers = run_wsgi_app(yielding_app, {})
-    strict_eq(status, '200 OK')
-    strict_eq(list(headers), [('Content-Type', 'text/html')])
-    strict_eq(list(app_iter), ['Hello ', 'World!'])
+
+    def late_start_response(environ, start_response):
+        yield 'Hello '
+        yield 'World'
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        yield '!'
+
+    for app in (simple_app, yielding_app, late_start_response):
+        if iterable:
+            app = iterable_middleware(app)
+        app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
+        strict_eq(status, '200 OK')
+        strict_eq(list(headers), [('Content-Type', 'text/html')])
+        strict_eq(''.join(app_iter), 'Hello World!')
+
+def iterable_middleware(app):
+    '''Guarantee that the app returns an iterable'''
+    def inner(environ, start_response):
+        rv = app(environ, start_response)
+
+        class Iterable(object):
+            def __iter__(self):
+                return iter(rv)
+        return Iterable()
+    return inner
 
 def test_multiple_cookies():
     @Request.application
