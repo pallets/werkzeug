@@ -443,6 +443,37 @@ def test_run_wsgi_apps(buffered, iterable):
             app_iter.close()
         assert not leaked_data
 
+def test_run_wsgi_app_closing_iterator():
+    got_close = []
+    @implements_iterator
+    class CloseIter(object):
+        def __init__(self):
+            self.iterated = False
+        def __iter__(self):
+            return self
+        def close(self):
+            got_close.append(None)
+        def __next__(self):
+            if self.iterated:
+                raise StopIteration()
+            self.iterated = True
+            return 'bar'
+
+    def bar(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return CloseIter()
+
+    app_iter, status, headers = run_wsgi_app(bar, {})
+    assert status == '200 OK'
+    assert list(headers) == [('Content-Type', 'text/plain')]
+    assert next(app_iter) == 'bar'
+    pytest.raises(StopIteration, partial(next, app_iter))
+    app_iter.close()
+
+    assert run_wsgi_app(bar, {}, True)[0] == ['bar']
+
+    assert len(got_close) == 2
+
 def iterable_middleware(app):
     '''Guarantee that the app returns an iterable'''
     def inner(environ, start_response):
