@@ -5,7 +5,7 @@ Python 3 Notes
 ==============
 
 This part of the documentation outlines special information required to
-use Werkzeug and WSGI on Python 3.
+use Werkzeug and WSGI on Python 3. Please note that Python 3.3+ is required.
 
 .. warning::
 
