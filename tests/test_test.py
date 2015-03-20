@@ -15,7 +15,8 @@ import pytest
 
 import sys
 from io import BytesIO
-from werkzeug._compat import iteritems, to_bytes
+from werkzeug._compat import iteritems, to_bytes, implements_iterator
+from functools import partial
 
 from tests import strict_eq
 
