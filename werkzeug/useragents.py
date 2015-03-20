@@ -46,7 +46,7 @@ class UserAgentParser(object):
         ('chrome', 'chrome'),
         ('firefox|firebird|phoenix|iceweasel', 'firefox'),
         ('galeon', 'galeon'),
-        ('safari', 'safari'),
+        ('safari|version', 'safari'),
         ('webkit', 'webkit'),
         ('camino', 'camino'),
         ('konqueror', 'konqueror'),
