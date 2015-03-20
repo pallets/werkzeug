@@ -90,8 +90,7 @@ def _find_observable_paths(reloader_paths=None, extra_files=None):
     else:
         rv = set(os.path.abspath(x) for x in reloader_paths)
     for filename in extra_files or ():
-        rv.append(os.path.dirname(os.path.abspath(filename)))
-
+        rv.add(os.path.dirname(os.path.abspath(filename)))
     return rv
 
 
