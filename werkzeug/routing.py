@@ -1634,6 +1634,13 @@ class MapAdapter(object):
         >>> urls.build("index", {'q': 'My Searchstring'})
         '/?q=My+Searchstring'
 
+        When processing those additional values, lists are furthermore
+        interpreted as multiple values (as per
+        :py:class:`werkzeug.datastructures.MultiDict`):
+
+        >>> urls.build("index", {'q': ['a', 'b', 'c']})
+        '/?q=a&q=b&q=c'
+
         If a rule does not exist when building a `BuildError` exception is
         raised.
 
@@ -1658,10 +1665,11 @@ class MapAdapter(object):
         """
         self.map.update()
         if values:
-            if not isinstance(values, MultiDict):
-                values = MultiDict(values)
-            valueiter = iteritems(values, multi=True)
-            values = MultiDict((k, v) for k, v in valueiter if v is not None)
+            if isinstance(values, MultiDict):
+                valueiter = iteritems(values, multi=True)
+            else:
+                valueiter = iteritems(values)
+            values = dict((k, v) for k, v in valueiter if v is not None)
         else:
             values = {}
 

@@ -418,6 +418,29 @@ def test_uuid_converter():
     rooute, kwargs =  a.match('/a/a8098c1a-f86e-11da-bd1a-00112444be1e')
     assert type(kwargs['a_uuid']) == uuid.UUID
 
+def test_converter_with_tuples():
+    '''
+    Regression test for https://github.com/mitsuhiko/werkzeug/issues/709
+    '''
+    class TwoValueConverter(r.BaseConverter):
+        def __init__(self, *args, **kwargs):
+            super(TwoValueConverter, self).__init__(*args, **kwargs)
+            self.regex = r'(\w\w+)/(\w\w+)'
+
+        def to_python(self, two_values):
+            one, two = two_values.split('/')
+            return one, two
+
+        def to_url(self, values):
+            return "%s/%s" % (values[0], values[1])
+
+    map = r.Map([
+        r.Rule('/<two:foo>/', endpoint='handler')
+    ], converters={'two': TwoValueConverter})
+    a = map.bind('example.org', '/')
+    route, kwargs = a.match('/qwert/yuiop/')
+    assert kwargs['foo'] == ('qwert', 'yuiop')
+
 def test_build_append_unknown():
     map = r.Map([
         r.Rule('/bar/<float:bazf>', endpoint='barf')
@@ -428,15 +451,12 @@ def test_build_append_unknown():
     assert adapter.build('barf', {'bazf': 0.815, 'bif' : 1.0},
         append_unknown=False) == 'http://example.org/bar/0.815'
 
-@pytest.mark.parametrize('params', [
-    MultiDict((('bazf', 0.815), ('bif', 1.0), ('pof', 2.0), ('bif', 3.0))),
-    {'bazf': 0.815, 'bif': [1.0, 3.0], 'pof': 2.0}
-])
-def test_build_append_multiple(params):
+def test_build_append_multiple():
     map = r.Map([
         r.Rule('/bar/<float:bazf>', endpoint='barf')
     ])
     adapter = map.bind('example.org', '/', subdomain='blah')
+    params = {'bazf': 0.815, 'bif': [1.0, 3.0], 'pof': 2.0}
     a, b = adapter.build('barf', params).split('?')
     assert a == 'http://example.org/bar/0.815'
     assert set(b.split('&')) == set('pof=2.0&bif=1.0&bif=3.0'.split('&'))

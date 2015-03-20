@@ -13,6 +13,8 @@ Version 0.10.x
   request ``#675``)
 - Fixed ```extra_files``` parameter for reloader to not cause startup
   to crash when included in server params
+- Using `MultiDict` when building URLs is now not supported again. The behavior
+  introduced several regressions.
 
 Version 0.10.1
 --------------
