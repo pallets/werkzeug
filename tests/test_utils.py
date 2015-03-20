@@ -135,51 +135,6 @@ def test_escape():
 def test_unescape():
     assert utils.unescape('&lt;&auml;&gt;') == u'<ä>'
 
-def test_run_wsgi_app():
-    def foo(environ, start_response):
-        start_response('200 OK', [('Content-Type', 'text/plain')])
-        yield '1'
-        yield '2'
-        yield '3'
-
-    app_iter, status, headers = run_wsgi_app(foo, {})
-    assert status == '200 OK'
-    assert list(headers) == [('Content-Type', 'text/plain')]
-    assert next(app_iter) == '1'
-    assert next(app_iter) == '2'
-    assert next(app_iter) == '3'
-    pytest.raises(StopIteration, partial(next, app_iter))
-
-    got_close = []
-    @implements_iterator
-    class CloseIter(object):
-        def __init__(self):
-            self.iterated = False
-        def __iter__(self):
-            return self
-        def close(self):
-            got_close.append(None)
-        def __next__(self):
-            if self.iterated:
-                raise StopIteration()
-            self.iterated = True
-            return 'bar'
-
-    def bar(environ, start_response):
-        start_response('200 OK', [('Content-Type', 'text/plain')])
-        return CloseIter()
-
-    app_iter, status, headers = run_wsgi_app(bar, {})
-    assert status == '200 OK'
-    assert list(headers) == [('Content-Type', 'text/plain')]
-    assert next(app_iter) == 'bar'
-    pytest.raises(StopIteration, partial(next, app_iter))
-    app_iter.close()
-
-    assert run_wsgi_app(bar, {}, True)[0] == ['bar']
-
-    assert len(got_close) == 2
-
 def test_import_string():
     import cgi
     from werkzeug.debug import DebuggedApplication

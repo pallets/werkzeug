@@ -15,7 +15,8 @@ import pytest
 
 import sys
 from io import BytesIO
-from werkzeug._compat import iteritems, to_bytes
+from werkzeug._compat import iteritems, to_bytes, implements_iterator
+from functools import partial
 
 from tests import strict_eq
 
@@ -395,23 +396,100 @@ def test_iri_support():
     strict_eq(b.path, '/f%C3%B6%C3%B6-bar')
     strict_eq(b.base_url, 'http://xn--n3h.net/')
 
-def test_run_wsgi_apps():
+@pytest.mark.parametrize('buffered', (True, False))
+@pytest.mark.parametrize('iterable', (True, False))
+def test_run_wsgi_apps(buffered, iterable):
+    leaked_data = []
+
     def simple_app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return ['Hello World!']
-    app_iter, status, headers = run_wsgi_app(simple_app, {})
-    strict_eq(status, '200 OK')
-    strict_eq(list(headers), [('Content-Type', 'text/html')])
-    strict_eq(app_iter, ['Hello World!'])
 
     def yielding_app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         yield 'Hello '
         yield 'World!'
-    app_iter, status, headers = run_wsgi_app(yielding_app, {})
-    strict_eq(status, '200 OK')
-    strict_eq(list(headers), [('Content-Type', 'text/html')])
-    strict_eq(list(app_iter), ['Hello ', 'World!'])
+
+    def late_start_response(environ, start_response):
+        yield 'Hello '
+        yield 'World'
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        yield '!'
+
+    def depends_on_close(environ, start_response):
+        leaked_data.append('harhar')
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        class Rv(object):
+            def __iter__(self):
+                yield 'Hello '
+                yield 'World'
+                yield '!'
+
+            def close(self):
+                assert leaked_data.pop() == 'harhar'
+
+        return Rv()
+
+
+    for app in (simple_app, yielding_app, late_start_response,
+                depends_on_close):
+        if iterable:
+            app = iterable_middleware(app)
+        app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
+        strict_eq(status, '200 OK')
+        strict_eq(list(headers), [('Content-Type', 'text/html')])
+        strict_eq(''.join(app_iter), 'Hello World!')
+
+        if hasattr(app_iter, 'close'):
+            app_iter.close()
+        assert not leaked_data
+
+def test_run_wsgi_app_closing_iterator():
+    got_close = []
+    @implements_iterator
+    class CloseIter(object):
+        def __init__(self):
+            self.iterated = False
+        def __iter__(self):
+            return self
+        def close(self):
+            got_close.append(None)
+        def __next__(self):
+            if self.iterated:
+                raise StopIteration()
+            self.iterated = True
+            return 'bar'
+
+    def bar(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return CloseIter()
+
+    app_iter, status, headers = run_wsgi_app(bar, {})
+    assert status == '200 OK'
+    assert list(headers) == [('Content-Type', 'text/plain')]
+    assert next(app_iter) == 'bar'
+    pytest.raises(StopIteration, partial(next, app_iter))
+    app_iter.close()
+
+    assert run_wsgi_app(bar, {}, True)[0] == ['bar']
+
+    assert len(got_close) == 2
+
+def iterable_middleware(app):
+    '''Guarantee that the app returns an iterable'''
+    def inner(environ, start_response):
+        rv = app(environ, start_response)
+
+        class Iterable(object):
+            def __iter__(self):
+                return iter(rv)
+
+            if hasattr(rv, 'close'):
+                def close(self):
+                    rv.close()
+
+        return Iterable()
+    return inner
 
 def test_multiple_cookies():
     @Request.application

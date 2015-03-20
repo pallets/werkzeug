@@ -864,29 +864,29 @@ def run_wsgi_app(app, environ, buffered=False):
         response[:] = [status, headers]
         return buffer.append
 
-    app_iter = app(environ, start_response)
+    app_rv = app(environ, start_response)
+    close_func = getattr(app_rv, 'close', None)
+    app_iter = iter(app_rv)
 
     # when buffering we emit the close call early and convert the
     # application iterator into a regular list
     if buffered:
-        close_func = getattr(app_iter, 'close', None)
         try:
             app_iter = list(app_iter)
         finally:
             if close_func is not None:
                 close_func()
 
-    # otherwise we iterate the application iter until we have
-    # a response, chain the already received data with the already
-    # collected data and wrap it in a new `ClosingIterator` if
-    # we have a close callable.
+    # otherwise we iterate the application iter until we have a response, chain
+    # the already received data with the already collected data and wrap it in
+    # a new `ClosingIterator` if we need to restore a `close` callable from the
+    # original return value.
     else:
         while not response:
             buffer.append(next(app_iter))
         if buffer:
-            close_func = getattr(app_iter, 'close', None)
             app_iter = chain(buffer, app_iter)
-            if close_func is not None:
-                app_iter = ClosingIterator(app_iter, close_func)
+        if close_func is not None and app_iter is not app_rv:
+            app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], Headers(response[1])
