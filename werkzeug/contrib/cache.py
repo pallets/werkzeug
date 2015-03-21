@@ -571,7 +571,9 @@ class RedisCache(BaseCache):
     def set_many(self, mapping, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
-        pipe = self._client.pipeline()
+        pipe = self._client.pipeline(transaction=False)
+        # Use transaction=False to batch without calling redis MULTI
+        # which is not supported by twemproxy
         for key, value in _items(mapping):
             dump = self.dump_object(value)
             pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
