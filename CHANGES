@@ -15,6 +15,8 @@ Version 0.11
   default port numbers in ``HTTP_HOST`` (pull request ``#204``).
 - ``BuildErrors`` are now more informative. They come with a complete sentence
   as error message, and also provide suggestions (pull request ``#691``).
+- Fixed issue where RedisCache set_many was broken for twemproxy, which doesn't
+  support the MULTI command (pull request ``#702``).
 
 Version 0.10.x
 --------------
