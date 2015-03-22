@@ -14,61 +14,22 @@ def _iter_module_files():
     loaded files from modules, all files in folders of already loaded modules
     as well as all files reachable through a package.
     """
-    found = set()
-    entered = set()
-
-    def _verify_file(filename):
-        if not filename:
-            return
-        filename = os.path.abspath(filename)
-        old = None
-        while not os.path.isfile(filename):
-            old = filename
-            filename = os.path.dirname(filename)
-            if filename == old:
-                break
-        else:
-            if filename[-4:] in ('.pyc', '.pyo'):
-                filename = filename[:-1]
-            if filename not in found:
-                found.add(filename)
-                return filename
-
-    def _recursive_walk(path_entry):
-        if path_entry in entered:
-            return
-        entered.add(path_entry)
-        try:
-            for filename in os.listdir(path_entry):
-                path = os.path.join(path_entry, filename)
-                if os.path.isdir(path):
-                    for filename in _recursive_walk(path):
-                        yield filename
-                else:
-                    if not filename.endswith(('.py', '.pyc', '.pyo')):
-                        continue
-                    filename = _verify_file(path)
-                    if filename:
-                        yield filename
-        except OSError:
-            pass
-
     # The list call is necessary on Python 3 in case the module
     # dictionary modifies during iteration.
-    for path_entry in list(sys.path):
-        for filename in _recursive_walk(os.path.abspath(path_entry)):
-            yield filename
-
     for module in list(sys.modules.values()):
         if module is None:
             continue
-        filename = _verify_file(getattr(module, '__file__', None))
+        filename = getattr(module, '__file__', None)
         if filename:
-            yield filename
-            for filename in _recursive_walk(os.path.dirname(filename)):
-                yield filename
-        for package_path in getattr(module, '__path__', ()):
-            for filename in _recursive_walk(os.path.abspath(package_path)):
+            old = None
+            while not os.path.isfile(filename):
+                old = filename
+                filename = os.path.dirname(filename)
+                if filename == old:
+                    break
+            else:
+                if filename[-4:] in ('.pyc', '.pyo'):
+                    filename = filename[:-1]
                 yield filename
 
 
@@ -83,7 +44,7 @@ def _find_observable_paths(extra_files=None):
             continue
         fn = os.path.abspath(fn)
         rv.add(os.path.dirname(fn))
-    return rv
+    return set(_find_common_roots(rv))
 
 
 def _find_common_roots(paths):
@@ -219,8 +180,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         while not self.should_reload:
             to_delete = set(watches)
-            paths = _find_common_roots(
-                _find_observable_paths(self.extra_files))
+            paths = _find_observable_paths(self.extra_files)
             for path in paths:
                 if path not in watches:
                     try:
