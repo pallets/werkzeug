@@ -44,7 +44,7 @@ def _find_observable_paths(extra_files=None):
             continue
         fn = os.path.abspath(fn)
         rv.add(os.path.dirname(fn))
-    return set(_find_common_roots(rv))
+    return _find_common_roots(rv)
 
 
 def _find_common_roots(paths):
