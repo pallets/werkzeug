@@ -217,9 +217,12 @@ class WatchdogReloaderLoop(ReloaderLoop):
         self.should_reload = False
 
     def trigger_reload(self, filename):
-        # This is called inside an event handler, which means we can't throw
-        # SystemExit here. https://github.com/gorakhargosh/watchdog/issues/294
+        # This is called inside an event handler, which means throwing
+        # SystemExit has no effect.
+        # https://github.com/gorakhargosh/watchdog/issues/294
         self.should_reload = True
+
+        # We call the default method anyway because of the logging message.
         ReloaderLoop.trigger_reload(self, filename)
 
     def run(self):
