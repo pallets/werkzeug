@@ -548,7 +548,7 @@ def run_simple(hostname, port, application, use_reloader=False,
     .. versionadded:: 0.9
        Added command-line interface.
 
-    .. versionadded:: 1.0
+    .. versionadded:: 0.10
        Improved the reloader and added support for changing the backend
        through the `reloader_type` parameter.  See :ref:`reloader`
        for more information.
@@ -566,7 +566,8 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param reloader_interval: the interval for the reloader in seconds.
     :param reloader_type: the type of reloader to use.  The default is
                           auto detection.  Valid values are ``'stat'`` and
-                          ``'watchdog'``.
+                          ``'watchdog'``. See :ref:`reloader` for more
+                          information.
     :param threaded: should the process handle each request in a separate
                      thread?
     :param processes: if greater than 1 then handle each request in a new process

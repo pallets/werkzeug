@@ -15,6 +15,7 @@ Version 0.10.x
   to crash when included in server params
 - Using `MultiDict` when building URLs is now not supported again. The behavior
   introduced several regressions.
+- Fix performance problems with stat-reloader (pull request ``#715``).
 
 Version 0.10.1
 --------------
