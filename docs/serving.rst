@@ -42,19 +42,34 @@ additional files (like configuration files) you want to observe.
 Reloader
 --------
 
-.. versionchanged:: 1.0
+.. versionchanged:: 0.10
 
-The Werkzeug reloader is a very brute force system which constantly
-monitors modules and paths of your web application.  There are two
-backends the reloader supports: stat polling and file system events.  The
-latter requires the `watchdog <https://pypi.python.org/pypi/watchdog>`_
-module to be installed.
+The Werkzeug reloader constantly monitors modules and paths of your web
+application, and restarts the server if any of the observed files change.
 
-If watchdog is available it will automatically be used instead of the
-builtin stat based reloader.  To switch between the backends you can use
-the `reloader_type` parameter of the :func:`run_simple` function.
-``'stat'`` sets it to the default stat based polling and ``'watchdog'``
-forces it to the watchdog backend.
+Since version 0.10, there are two backends the reloader supports: ``stat`` and
+``watchdog``.
+
+- The default ``stat`` backend simply checks the ``mtime`` of all files in a
+  regular interval. This is sufficient for most cases, however, it is known to
+  drain a laptop's battery.
+
+- The ``watchdog`` backend uses filesystem events, and is much faster than
+  ``stat``. It requires the `watchdog <https://pypi.python.org/pypi/watchdog>`_
+  module to be installed.
+
+If ``watchdog`` is installed and available it will automatically be used
+instead of the builtin ``stat`` reloader.
+
+To switch between the backends you can use the `reloader_type` parameter of the
+:func:`run_simple` function. ``'stat'`` sets it to the default stat based
+polling and ``'watchdog'`` forces it to the watchdog backend.
+
+.. note::
+
+    Some edge cases, like modules that failed to import correctly, are not
+    handled by the stat reloader for performance reasons. The watchdog reloader
+    monitors such files too.
 
 Virtual Hosts
 -------------

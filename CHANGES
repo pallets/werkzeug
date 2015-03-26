@@ -20,10 +20,10 @@ Version 0.11
 - Fixed issue where RedisCache set_many was broken for twemproxy, which doesn't
   support the default MULTI command (pull request ``#702``).
 
-Version 0.10.x
+Version 0.10.2
 --------------
 
-(bugfix release, yet to be determined)
+(bugfix release, released on March 26th 2015)
 
 - Fixed issue where ``empty`` could break third-party libraries that relied on
   keyword arguments (pull request ``#675``)
@@ -34,6 +34,7 @@ Version 0.10.x
   to crash when included in server params
 - Using `MultiDict` when building URLs is now not supported again. The behavior
   introduced several regressions.
+- Fix performance problems with stat-reloader (pull request ``#715``).
 
 Version 0.10.1
 --------------

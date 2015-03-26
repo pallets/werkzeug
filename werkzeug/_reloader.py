@@ -9,89 +9,45 @@ from werkzeug._internal import _log
 from werkzeug._compat import PY2, iteritems, text_type
 
 
-def _iter_module_files(reloader_paths=None):
+def _iter_module_files():
     """This iterates over all relevant Python files.  It goes through all
     loaded files from modules, all files in folders of already loaded modules
     as well as all files reachable through a package.
     """
-    found = set()
-    entered = set()
-
-    def _verify_file(filename):
-        if not filename:
-            return
-        filename = os.path.abspath(filename)
-        old = None
-        while not os.path.isfile(filename):
-            old = filename
-            filename = os.path.dirname(filename)
-            if filename == old:
-                break
-        else:
-            if filename[-4:] in ('.pyc', '.pyo'):
-                filename = filename[:-1]
-            if filename not in found:
-                found.add(filename)
-                return filename
-
-    def _recursive_walk(path_entry):
-        if path_entry in entered:
-            return
-        entered.add(path_entry)
-        try:
-            for filename in os.listdir(path_entry):
-                path = os.path.join(path_entry, filename)
-                if os.path.isdir(path):
-                    for filename in _recursive_walk(path):
-                        yield filename
-                else:
-                    if not filename.endswith(('.py', '.pyc', '.pyo')):
-                        continue
-                    filename = _verify_file(path)
-                    if filename:
-                        yield filename
-        except OSError:
-            pass
-
-    if not reloader_paths:
-        # The list call is necessary on Python 3 in case the module
-        # dictionary modifies during iteration.
-        for path_entry in list(sys.path):
-            for filename in _recursive_walk(os.path.abspath(path_entry)):
-                yield filename
-
-        for module in list(sys.modules.values()):
-            if module is None:
-                continue
-            filename = _verify_file(getattr(module, '__file__', None))
-            if filename:
-                yield filename
-                for filename in _recursive_walk(os.path.dirname(filename)):
-                    yield filename
-            for package_path in getattr(module, '__path__', ()):
-                for filename in _recursive_walk(os.path.abspath(package_path)):
-                    yield filename
-    else:
-        for path_entry in reloader_paths:
-            for filename in _recursive_walk(os.path.abspath(path_entry)):
+    # The list call is necessary on Python 3 in case the module
+    # dictionary modifies during iteration.
+    for module in list(sys.modules.values()):
+        if module is None:
+            continue
+        filename = getattr(module, '__file__', None)
+        if filename:
+            old = None
+            while not os.path.isfile(filename):
+                old = filename
+                filename = os.path.dirname(filename)
+                if filename == old:
+                    break
+            else:
+                if filename[-4:] in ('.pyc', '.pyo'):
+                    filename = filename[:-1]
                 yield filename
 
 
-def _find_observable_paths(reloader_paths=None, extra_files=None):
+def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
-    if not reloader_paths:
-        rv = set(os.path.abspath(x) for x in sys.path)
-        for module in list(sys.modules.values()):
-            fn = getattr(module, '__file__', None)
-            if fn is None:
-                continue
-            fn = os.path.abspath(fn)
-            rv.add(os.path.dirname(fn))
-    else:
-        rv = set(os.path.abspath(x) for x in reloader_paths)
+    rv = set(os.path.abspath(x) for x in sys.path)
+
     for filename in extra_files or ():
         rv.add(os.path.dirname(os.path.abspath(filename)))
-    return rv
+
+    for module in list(sys.modules.values()):
+        fn = getattr(module, '__file__', None)
+        if fn is None:
+            continue
+        fn = os.path.abspath(fn)
+        rv.add(os.path.dirname(fn))
+
+    return _find_common_roots(rv)
 
 
 def _find_common_roots(paths):
@@ -122,8 +78,7 @@ class ReloaderLoop(object):
     # `eventlet.monkey_patch`) before we get here
     _sleep = staticmethod(time.sleep)
 
-    def __init__(self, reloader_paths=None, extra_files=None, interval=1):
-        self.reloader_paths = reloader_paths
+    def __init__(self, extra_files=None, interval=1):
         self.extra_files = set(os.path.abspath(x)
                                for x in extra_files or ())
         self.interval = interval
@@ -165,7 +120,7 @@ class StatReloaderLoop(ReloaderLoop):
     def run(self):
         mtimes = {}
         while 1:
-            for filename in chain(_iter_module_files(self.reloader_paths),
+            for filename in chain(_iter_module_files(),
                                   self.extra_files):
                 try:
                     mtime = os.stat(filename).st_mtime
@@ -232,8 +187,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         while not self.should_reload:
             to_delete = set(watches)
-            paths = _find_common_roots(
-                _find_observable_paths(self.reloader_paths, self.extra_files))
+            paths = _find_observable_paths(self.extra_files)
             for path in paths:
                 if path not in watches:
                     try:
@@ -269,10 +223,10 @@ else:
 
 
 def run_with_reloader(main_func, extra_files=None, interval=1,
-                      reloader_type='auto', reloader_paths=None):
+                      reloader_type='auto'):
     """Run the given function in an independent python interpreter."""
     import signal
-    reloader = reloader_loops[reloader_type](reloader_paths, extra_files, interval)
+    reloader = reloader_loops[reloader_type](extra_files, interval)
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     try:
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':

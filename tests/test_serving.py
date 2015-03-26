@@ -95,13 +95,15 @@ def test_make_ssl_devcert(tmpdir):
     assert os.path.isfile(private_key)
 
 
-@pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
-def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
+@pytest.mark.skipif(watchdog is None, reason='Watchdog not installed.')
+def test_reloader_broken_imports(tmpdir, dev_server):
     # We explicitly assert that the server reloads on change, even though in
     # this case the import could've just been retried. This is to assert
     # correct behavior for apps that catch and cache import errors.
-    if reloader_type == 'watchdog' and watchdog is None:
-        pytest.skip('Watchdog not installed.')
+    #
+    # Because this feature is achieved by recursively watching a large amount
+    # of directories, this only works for the watchdog reloader. The stat
+    # reloader is too inefficient to watch such a large amount of files.
 
     real_app = tmpdir.join('real_app.py')
     real_app.write("lol syntax error")
@@ -116,8 +118,8 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
 
     kwargs['use_reloader'] = True
     kwargs['reloader_interval'] = 0.1
-    kwargs['reloader_type'] = %s
-    ''' % repr(reloader_type))
+    kwargs['reloader_type'] = 'watchdog'
+    ''')
     server.wait_for_reloader_loop()
 
     r = requests.get(server.url)
@@ -135,11 +137,8 @@ def test_reloader_broken_imports(tmpdir, dev_server, reloader_type):
     assert r.content == b'hello'
 
 
-@pytest.mark.parametrize('reloader_type', ['watchdog', 'stat'])
-def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
-    if reloader_type == 'watchdog' and watchdog is None:
-        pytest.skip('Watchdog not installed.')
-
+@pytest.mark.skipif(watchdog is None, reason='Watchdog not installed.')
+def test_reloader_nested_broken_imports(tmpdir, dev_server):
     real_app = tmpdir.mkdir('real_app')
     real_app.join('__init__.py').write('from real_app.sub import real_app')
     sub = real_app.mkdir('sub').join('__init__.py')
@@ -155,8 +154,8 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server, reloader_type):
 
     kwargs['use_reloader'] = True
     kwargs['reloader_interval'] = 0.1
-    kwargs['reloader_type'] = %s
-    ''' % repr(reloader_type))
+    kwargs['reloader_type'] = 'watchdog'
+    ''')
     server.wait_for_reloader_loop()
 
     r = requests.get(server.url)
