@@ -1,10 +1,10 @@
 Werkzeug Changelog
 ==================
 
-Version 0.10.x
+Version 0.10.2
 --------------
 
-(bugfix release, yet to be determined)
+(bugfix release, released on March 26th 2015)
 
 - Fixed issue where ``empty`` could break third-party libraries that relied on
   keyword arguments (pull request ``#675``)
