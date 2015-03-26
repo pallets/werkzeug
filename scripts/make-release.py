@@ -11,6 +11,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
+import shutil
 import os
 import re
 from datetime import datetime, date
@@ -86,6 +87,7 @@ def set_setup_version(version):
 
 
 def build_and_upload():
+    shutil.rmtree('werkzeug/testsuite')
     Popen([sys.executable, 'setup.py', 'release', 'sdist', 'bdist_wheel',
            'upload']).wait()
 
