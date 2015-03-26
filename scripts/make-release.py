@@ -88,7 +88,8 @@ def set_setup_version(version):
 
 def build_and_upload():
     # Work around setuptools packaging stray .pyc files
-    shutil.rmtree('werkzeug/testsuite')
+    if os.path.exists('werkzeug/testsuite'):
+        shutil.rmtree('werkzeug/testsuite')
 
     Popen([sys.executable, 'setup.py', 'release', 'sdist', 'bdist_wheel',
            'upload']).wait()
