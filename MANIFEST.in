@@ -12,3 +12,4 @@ recursive-exclude examples *.pyo
 recursive-include artwork *
 prune docs/_build
 prune docs/_themes
+prune werkzeug/testsuite
