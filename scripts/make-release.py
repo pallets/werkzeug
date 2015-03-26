@@ -80,11 +80,6 @@ def set_init_version(version):
     set_filename_version('werkzeug/__init__.py', version, '__version__')
 
 
-def set_setup_version(version):
-    info('Setting setup.py version to %s', version)
-    set_filename_version('setup.py', version, 'version')
-
-
 def build_and_upload():
     Popen([sys.executable, 'setup.py', 'release', 'sdist', 'bdist_wheel',
            'upload']).wait()
@@ -141,7 +136,6 @@ def main():
         fail('You have uncommitted changes in git')
 
     set_init_version(version)
-    set_setup_version(version)
     make_git_commit('Bump version number to %s', version)
     make_git_tag(version)
     build_and_upload()
