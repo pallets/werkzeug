@@ -1,6 +1,13 @@
 Werkzeug Changelog
 ==================
 
+Version 0.10.4
+--------------
+
+(bugfix release, released on March 26th 2015)
+
+- Re-release of 0.10.3 with packaging artifacts manually removed.
+
 Version 0.10.3
 --------------
 
