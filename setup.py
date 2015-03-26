@@ -74,7 +74,7 @@ class TestCommand(Command):
 
 setup(
     name='Werkzeug',
-    version='0.10.2',
+    version='0.10.3-dev',
     url='http://werkzeug.pocoo.org/',
     license='BSD',
     author='Armin Ronacher',
