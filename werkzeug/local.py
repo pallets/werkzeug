@@ -86,6 +86,7 @@ class Local(object):
 
 
 class LocalStack(object):
+
     """This class works similar to a :class:`Local` but keeps a stack
     of objects instead.  This is best explained with an example::
 
@@ -120,6 +121,7 @@ class LocalStack(object):
 
     def _get__ident_func__(self):
         return self._local.__ident_func__
+
     def _set__ident_func__(self, value):
         object.__setattr__(self._local, '__ident_func__', value)
     __ident_func__ = property(_get__ident_func__, _set__ident_func__)
@@ -166,6 +168,7 @@ class LocalStack(object):
 
 
 class LocalManager(object):
+
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them later
     by appending them to `manager.locals`.  Everytime the manager cleans up
@@ -248,6 +251,7 @@ class LocalManager(object):
 
 @implements_bool
 class LocalProxy(object):
+
     """Acts as a proxy for a werkzeug local.  Forwards all operations to
     a proxied object.  The only operations not supported for forwarding
     are right handed operands and any kind of assignment.

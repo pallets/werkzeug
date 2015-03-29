@@ -88,27 +88,30 @@ def multi_value_post_app(environ, start_response):
     return response(environ, start_response)
 
 
-
 def test_cookie_forging():
     c = Client(cookie_app)
     c.set_cookie('localhost', 'foo', 'bar')
     appiter, code, headers = c.open()
     strict_eq(list(appiter), [b'foo=bar'])
 
+
 def test_set_cookie_app():
     c = Client(cookie_app)
     appiter, code, headers = c.open()
     assert 'Set-Cookie' in dict(headers)
+
 
 def test_cookiejar_stores_cookie():
     c = Client(cookie_app)
     appiter, code, headers = c.open()
     assert 'test' in c.cookie_jar._cookies['localhost.local']['/']
 
+
 def test_no_initial_cookie():
     c = Client(cookie_app)
     appiter, code, headers = c.open()
     strict_eq(b''.join(appiter), b'No Cookie')
+
 
 def test_resent_cookie():
     c = Client(cookie_app)
@@ -116,17 +119,20 @@ def test_resent_cookie():
     appiter, code, headers = c.open()
     strict_eq(b''.join(appiter), b'test=test')
 
+
 def test_disable_cookies():
     c = Client(cookie_app, use_cookies=False)
     c.open()
     appiter, code, headers = c.open()
     strict_eq(b''.join(appiter), b'No Cookie')
 
+
 def test_cookie_for_different_path():
     c = Client(cookie_app)
     c.open('/path1')
     appiter, code, headers = c.open('/path2')
     strict_eq(b''.join(appiter), b'test=test')
+
 
 def test_environ_builder_basics():
     b = EnvironBuilder()
@@ -149,6 +155,7 @@ def test_environ_builder_basics():
     strict_eq(req.files['test'].filename, u'test.txt')
     strict_eq(req.files['test'].read(), b'test contents')
 
+
 def test_environ_builder_headers():
     b = EnvironBuilder(environ_base={'HTTP_USER_AGENT': 'Foo/0.1'},
                        environ_overrides={'wsgi.version': (1, 1)})
@@ -162,6 +169,7 @@ def test_environ_builder_headers():
     env = b.get_environ()
     strict_eq(env['HTTP_USER_AGENT'], 'Bar/1.0')
 
+
 def test_environ_builder_headers_content_type():
     b = EnvironBuilder(headers={'Content-Type': 'text/plain'})
     env = b.get_environ()
@@ -170,6 +178,7 @@ def test_environ_builder_headers_content_type():
                        headers={'Content-Type': 'text/plain'})
     env = b.get_environ()
     assert env['CONTENT_TYPE'] == 'text/html'
+
 
 def test_environ_builder_paths():
     b = EnvironBuilder(path='/foo', base_url='http://example.com/')
@@ -203,6 +212,7 @@ def test_environ_builder_paths():
     strict_eq(env['wsgi.url_scheme'], 'https')
     strict_eq(b.base_url, 'https://foo.invalid/test/')
 
+
 def test_environ_builder_content_type():
     builder = EnvironBuilder()
     assert builder.content_type is None
@@ -215,7 +225,7 @@ def test_environ_builder_content_type():
     builder.method = 'DELETE'
     assert builder.content_type is None
     builder.method = 'GET'
-    assert builder.content_type == None
+    assert builder.content_type is None
     builder.form['foo'] = 'bar'
     assert builder.content_type == 'application/x-www-form-urlencoded'
     builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt')
@@ -223,6 +233,7 @@ def test_environ_builder_content_type():
     req = builder.get_request()
     strict_eq(req.form['foo'], u'bar')
     strict_eq(req.files['blafasel'].read(), b'foo')
+
 
 def test_environ_builder_stream_switch():
     d = MultiDict(dict(foo=u'bar', blub=u'blah', hu=u'hum'))
@@ -237,6 +248,7 @@ def test_environ_builder_stream_switch():
         strict_eq(form, d)
         stream.close()
 
+
 def test_environ_builder_unicode_file_mix():
     for use_tempfile in False, True:
         f = FileStorage(BytesIO(u'\N{SNOWMAN}'.encode('utf-8')),
@@ -250,14 +262,15 @@ def test_environ_builder_unicode_file_mix():
             'wsgi.input': stream,
             'CONTENT_LENGTH': str(length),
             'CONTENT_TYPE': 'multipart/form-data; boundary="%s"' %
-                                boundary
+            boundary
         })
         strict_eq(form['s'], u'\N{SNOWMAN}')
         strict_eq(files['f'].name, 'f')
         strict_eq(files['f'].filename, u'snowman.txt')
         strict_eq(files['f'].read(),
-                                 u'\N{SNOWMAN}'.encode('utf-8'))
+                  u'\N{SNOWMAN}'.encode('utf-8'))
         stream.close()
+
 
 def test_create_environ():
     env = create_environ('/foo?bar=baz', 'http://example.org/')
@@ -284,20 +297,25 @@ def test_create_environ():
     strict_eq(env['wsgi.input'].read(0), b'')
     strict_eq(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
 
+
 def test_file_closing():
     closed = []
+
     class SpecialInput(object):
+
         def read(self, size):
             return ''
+
         def close(self):
             closed.append(self)
 
-    env = create_environ(data={'foo': SpecialInput()})
+    create_environ(data={'foo': SpecialInput()})
     strict_eq(len(closed), 1)
     builder = EnvironBuilder()
     builder.files.add_file('blah', SpecialInput())
     builder.close()
     strict_eq(len(closed), 2)
+
 
 def test_follow_redirect():
     env = create_environ('/', base_url='http://localhost')
@@ -318,6 +336,7 @@ def test_follow_redirect():
     strict_eq(resp.status_code, 200)
     strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
 
+
 def test_follow_redirect_with_post_307():
     def redirect_with_post_307_app(environ, start_response):
         req = Request(environ)
@@ -334,11 +353,13 @@ def test_follow_redirect_with_post_307():
     assert resp.status_code == 200
     assert resp.data == b'current url: http://localhost/some/redirect/'
 
+
 def test_follow_external_redirect():
     env = create_environ('/', base_url='http://localhost')
     c = Client(external_redirect_demo_app)
     pytest.raises(RuntimeError, lambda:
-        c.get(environ_overrides=env, follow_redirects=True))
+                  c.get(environ_overrides=env, follow_redirects=True))
+
 
 def test_follow_external_redirect_on_same_subdomain():
     env = create_environ('/', base_url='http://example.com')
@@ -348,23 +369,26 @@ def test_follow_external_redirect_on_same_subdomain():
     # check that this does not work for real external domains
     env = create_environ('/', base_url='http://localhost')
     pytest.raises(RuntimeError, lambda:
-        c.get(environ_overrides=env, follow_redirects=True))
+                  c.get(environ_overrides=env, follow_redirects=True))
 
     # check that subdomain redirects fail if no `allow_subdomain_redirects` is applied
     c = Client(external_subdomain_redirect_demo_app)
     pytest.raises(RuntimeError, lambda:
-        c.get(environ_overrides=env, follow_redirects=True))
+                  c.get(environ_overrides=env, follow_redirects=True))
+
 
 def test_follow_redirect_loop():
     c = Client(redirect_loop_app, response_wrapper=BaseResponse)
     with pytest.raises(ClientRedirectError):
-        resp = c.get('/', follow_redirects=True)
+        c.get('/', follow_redirects=True)
+
 
 def test_follow_redirect_with_post():
     c = Client(redirect_with_post_app, response_wrapper=BaseResponse)
     resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
     strict_eq(resp.status_code, 200)
     strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
+
 
 def test_path_info_script_name_unquoting():
     def test_app(environ, start_response):
@@ -377,10 +401,11 @@ def test_path_info_script_name_unquoting():
     resp = c.get('/foo%40bar', 'http://localhost/bar%40baz')
     strict_eq(resp.data, b'/foo@bar\n/bar@baz')
 
+
 def test_multi_value_submit():
     c = Client(multi_value_post_app, response_wrapper=BaseResponse)
     data = {
-        'field': ['val1','val2']
+        'field': ['val1', 'val2']
     }
     resp = c.post('/', data=data)
     strict_eq(resp.status_code, 200)
@@ -391,10 +416,12 @@ def test_multi_value_submit():
     resp = c.post('/', data=data)
     strict_eq(resp.status_code, 200)
 
+
 def test_iri_support():
     b = EnvironBuilder(u'/föö-bar', base_url=u'http://☃.net/')
     strict_eq(b.path, '/f%C3%B6%C3%B6-bar')
     strict_eq(b.base_url, 'http://xn--n3h.net/')
+
 
 @pytest.mark.parametrize('buffered', (True, False))
 @pytest.mark.parametrize('iterable', (True, False))
@@ -419,7 +446,9 @@ def test_run_wsgi_apps(buffered, iterable):
     def depends_on_close(environ, start_response):
         leaked_data.append('harhar')
         start_response('200 OK', [('Content-Type', 'text/html')])
+
         class Rv(object):
+
             def __iter__(self):
                 yield 'Hello '
                 yield 'World'
@@ -429,7 +458,6 @@ def test_run_wsgi_apps(buffered, iterable):
                 assert leaked_data.pop() == 'harhar'
 
         return Rv()
-
 
     for app in (simple_app, yielding_app, late_start_response,
                 depends_on_close):
@@ -444,16 +472,22 @@ def test_run_wsgi_apps(buffered, iterable):
             app_iter.close()
         assert not leaked_data
 
+
 def test_run_wsgi_app_closing_iterator():
     got_close = []
+
     @implements_iterator
     class CloseIter(object):
+
         def __init__(self):
             self.iterated = False
+
         def __iter__(self):
             return self
+
         def close(self):
             got_close.append(None)
+
         def __next__(self):
             if self.iterated:
                 raise StopIteration()
@@ -475,12 +509,14 @@ def test_run_wsgi_app_closing_iterator():
 
     assert len(got_close) == 2
 
+
 def iterable_middleware(app):
     '''Guarantee that the app returns an iterable'''
     def inner(environ, start_response):
         rv = app(environ, start_response)
 
         class Iterable(object):
+
             def __iter__(self):
                 return iter(rv)
 
@@ -490,6 +526,7 @@ def iterable_middleware(app):
 
         return Iterable()
     return inner
+
 
 def test_multiple_cookies():
     @Request.application
@@ -503,11 +540,13 @@ def test_multiple_cookies():
     strict_eq(resp.data, b'[]')
     resp = client.get('/')
     strict_eq(resp.data,
-                      to_bytes(repr([('test1', u'foo'), ('test2', u'bar')]), 'ascii'))
+              to_bytes(repr([('test1', u'foo'), ('test2', u'bar')]), 'ascii'))
+
 
 def test_correct_open_invocation_on_redirect():
     class MyClient(Client):
         counter = 0
+
         def open(self, *args, **kwargs):
             self.counter += 1
             env = kwargs.setdefault('environ_overrides', {})
@@ -523,10 +562,12 @@ def test_correct_open_invocation_on_redirect():
     strict_eq(c.get('/').data, b'2')
     strict_eq(c.get('/').data, b'3')
 
+
 def test_correct_encoding():
     req = Request.from_values(u'/\N{SNOWMAN}', u'http://example.com/foo')
     strict_eq(req.script_root, u'/foo')
     strict_eq(req.path, u'/\N{SNOWMAN}')
+
 
 def test_full_url_requests_with_args():
     base = 'http://example.com/'
@@ -539,6 +580,7 @@ def test_full_url_requests_with_args():
     strict_eq(resp.data, b'42')
     resp = client.get('http://www.example.com/?x=23', base)
     strict_eq(resp.data, b'23')
+
 
 def test_delete_requests_with_form():
     @Request.application

@@ -26,11 +26,13 @@ def test_date_to_unix():
     x = datetime(2010, 2, 15, 16, 15, 39)
     assert internal._date_to_unix(x) == 1266250539
 
+
 def test_easteregg():
     req = Request.from_values('/?macgybarchakku')
     resp = Response.force_type(internal._easteregg(None), req)
     assert b'About Werkzeug' in resp.get_data()
     assert b'the Swiss Army knife of Python web development' in resp.get_data()
+
 
 def test_wrapper_internals():
     req = Request.from_values(data={'foo': 'bar'}, method='POST')

@@ -8,9 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import pytest
 import os
-import shutil
 from tempfile import gettempdir
 
 from werkzeug.contrib.sessions import FilesystemSessionStore
@@ -19,6 +17,7 @@ from werkzeug.contrib.sessions import FilesystemSessionStore
 def test_default_tempdir():
     store = FilesystemSessionStore()
     assert store.path == gettempdir()
+
 
 def test_basic_fs_sessions(tmpdir):
     store = FilesystemSessionStore(str(tmpdir))
@@ -45,6 +44,7 @@ def test_basic_fs_sessions(tmpdir):
     # the session is not new when it was used previously.
     assert not x2.new
 
+
 def test_non_urandom(tmpdir):
     urandom = os.urandom
     del os.urandom
@@ -62,6 +62,7 @@ def test_renewing_fs_session(tmpdir):
     store.delete(x)
     x2 = store.get(x.sid)
     assert x2.new
+
 
 def test_fs_session_lising(tmpdir):
     store = FilesystemSessionStore(str(tmpdir), renew_missing=True)

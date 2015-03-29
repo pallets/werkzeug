@@ -31,14 +31,16 @@ from copy import copy, deepcopy
 
 from werkzeug import datastructures
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-     iterlistvalues, text_type, PY2
+    iterlistvalues, text_type, PY2
 from werkzeug.exceptions import BadRequestKeyError
 
 
 class TestNativeItermethods(object):
+
     def test_basic(self):
         @datastructures.native_itermethods(['keys', 'values', 'items'])
         class StupidDict(object):
+
             def keys(self, multi=1):
                 return iter(['a', 'b', 'c'] * multi)
 
@@ -391,7 +393,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert list(iteritems(d)) == [('foo', 'bar')]
         assert list(d) == ['foo']
         assert list(iteritems(d, multi=True)) == \
-                [('foo', 'bar'), ('foo', 'baz')]
+            [('foo', 'bar'), ('foo', 'baz')]
         del d['foo']
         assert not d
         assert len(d) == 0
@@ -468,7 +470,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
     def test_iterables(self):
         a = datastructures.MultiDict((("key_a", "value_a"),))
         b = datastructures.MultiDict((("key_b", "value_b"),))
-        ab = datastructures.CombinedMultiDict((a,b))
+        ab = datastructures.CombinedMultiDict((a, b))
 
         assert sorted(ab.lists()) == [('key_a', ['value_a']), ('key_b', ['value_b'])]
         assert sorted(ab.listvalues()) == [['value_a'], ['value_b']]
@@ -776,7 +778,7 @@ def make_call_asserter(func=None):
 
 class TestCallbackDict(object):
     storage_class = datastructures.CallbackDict
- 
+
     def test_callback_dict_reads(self):
         assert_calls, func = make_call_asserter()
         initial = {'a': 'foo', 'b': 'bar'}
@@ -815,6 +817,7 @@ class TestCallbackDict(object):
 
 
 class TestCacheControl(object):
+
     def test_repr(self):
         cc = datastructures.RequestCacheControl(
             [("max-age", "0"), ("private", "True")],

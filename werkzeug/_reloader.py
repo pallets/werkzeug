@@ -61,6 +61,7 @@ def _find_common_roots(paths):
         node.clear()
 
     rv = set()
+
     def _walk(node, path):
         for prefix, child in iteritems(node):
             _walk(child, path + (prefix,))
@@ -155,8 +156,10 @@ class WatchdogReloaderLoop(ReloaderLoop):
                     self.trigger_reload(filename)
 
         class _CustomHandler(FileSystemEventHandler):
+
             def on_created(self, event):
                 _check_modification(event.src_path)
+
             def on_modified(self, event):
                 _check_modification(event.src_path)
 

@@ -186,8 +186,6 @@ def compare(node1, node2):
     print 'WERKZEUG INTERNAL BENCHMARK -- COMPARE MODE'.center(80)
     print '-' * 80
 
-    delim = '-' * 20
-
     def _error(msg):
         print >> sys.stderr, 'error:', msg
         sys.exit(1)
@@ -228,9 +226,9 @@ def compare(node1, node2):
             delta = '=='
         else:
             delta = '%+.4f (%+d%%)' % \
-                        (delta, round(d2[key] / d1[key] * 100 - 100))
+                (delta, round(d2[key] / d1[key] * 100 - 100))
         print '%36s   %.4f    %.4f    %s' % \
-                        (format_func(key), d1[key], d2[key], delta)
+            (format_func(key), d1[key], d2[key], delta)
     print '-' * 80
 
 
@@ -311,8 +309,10 @@ def before_multidict_lookup_hit():
     global MULTIDICT
     MULTIDICT = wz.MultiDict({'foo': 'bar'})
 
+
 def time_multidict_lookup_hit():
     MULTIDICT['foo']
+
 
 def after_multidict_lookup_hit():
     global MULTIDICT
@@ -323,11 +323,13 @@ def before_multidict_lookup_miss():
     global MULTIDICT
     MULTIDICT = wz.MultiDict()
 
+
 def time_multidict_lookup_miss():
     try:
         MULTIDICT['foo']
     except KeyError:
         pass
+
 
 def after_multidict_lookup_miss():
     global MULTIDICT
@@ -359,12 +361,14 @@ def before_request_form_access():
         'SCRIPT_NAME':           ''
     })
 
+
 def time_request_form_access():
     for x in xrange(30):
         REQUEST.path
         REQUEST.script_root
         REQUEST.args['foo']
         REQUEST.form['foo']
+
 
 def after_request_form_access():
     global REQUEST
@@ -433,10 +437,10 @@ def before_html_builder():
 
 def time_html_builder():
     html_rows = []
-    for row in TABLE:
+    for row in TABLE:  # noqa
         html_cols = [wz.html.td(col, class_='col') for col in row]
         html_rows.append(wz.html.tr(class_='row', *html_cols))
-    table = wz.html.table(*html_rows)
+    wz.html.table(*html_rows)
 
 
 def after_html_builder():

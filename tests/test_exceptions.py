@@ -76,6 +76,7 @@ def test_exception_repr():
     assert text_type(exc) == '404: Not Found'
     assert repr(exc) == "<NotFound '404: Not Found'>"
 
+
 def test_special_exceptions():
     exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
     h = dict(exc.get_headers({}))

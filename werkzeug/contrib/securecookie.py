@@ -103,10 +103,12 @@ from werkzeug._compat import to_native
 
 
 class UnquoteError(Exception):
+
     """Internal exception used to signal failures on quoting."""
 
 
 class SecureCookie(ModificationTrackingDict):
+
     """Represents a secure cookie.  You can subclass this class and provide
     an alternative mac method.  The import thing is that the mac method
     is a function with a similar interface to the hashlib.  Required
@@ -248,7 +250,7 @@ class SecureCookie(ModificationTrackingDict):
             mac = hmac(secret_key, None, cls.hash_method)
             for item in data.split(b'&'):
                 mac.update(b'|' + item)
-                if not b'=' in item:
+                if b'=' not in item:
                     items = None
                     break
                 key, value = item.split(b'=', 1)

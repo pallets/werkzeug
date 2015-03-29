@@ -60,9 +60,9 @@ def test_fileurl_parsing_windows(implicit_format, localhost, monkeypatch):
 def test_replace():
     url = urls.url_parse('http://de.wikipedia.org/wiki/Troll')
     strict_eq(url.replace(query='foo=bar'),
-                        urls.url_parse('http://de.wikipedia.org/wiki/Troll?foo=bar'))
+              urls.url_parse('http://de.wikipedia.org/wiki/Troll?foo=bar'))
     strict_eq(url.replace(scheme='https'),
-                        urls.url_parse('https://de.wikipedia.org/wiki/Troll'))
+              urls.url_parse('https://de.wikipedia.org/wiki/Troll'))
 
 
 def test_quoting():
@@ -75,7 +75,7 @@ def test_quoting():
     strict_eq(urls.url_encode({b'a': None, b'b': b'foo bar'}), 'b=foo+bar')
     strict_eq(urls.url_encode({u'a': None, u'b': u'foo bar'}), 'b=foo+bar')
     strict_eq(urls.url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)'),
-           'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)')
+              'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)')
     strict_eq(urls.url_quote_plus(42), '42')
     strict_eq(urls.url_quote(b'\xff'), '%FF')
 
@@ -132,9 +132,9 @@ def test_url_encoding():
 
 def test_sorted_url_encode():
     strict_eq(urls.url_encode({u"a": 42, u"b": 23, 1: 1, 2: 2},
-        sort=True, key=lambda i: text_type(i[0])), '1=1&2=2&a=42&b=23')
+                              sort=True, key=lambda i: text_type(i[0])), '1=1&2=2&a=42&b=23')
     strict_eq(urls.url_encode({u'A': 1, u'a': 2, u'B': 3, 'b': 4}, sort=True,
-                      key=lambda x: x[0].lower() + x[0]), 'A=1&a=2&B=3&b=4')
+                              key=lambda x: x[0].lower() + x[0]), 'A=1&a=2&B=3&b=4')
 
 
 def test_streamed_url_encoding():
@@ -170,7 +170,8 @@ def test_url_fixing():
 
 def test_url_fixing_filepaths():
     x = urls.url_fix(r'file://C:\Users\Administrator\My Documents\ÑÈáÇíí')
-    assert x == r'file:///C%3A/Users/Administrator/My%20Documents/%C3%91%C3%88%C3%A1%C3%87%C3%AD%C3%AD'
+    assert x == (r'file:///C%3A/Users/Administrator/My%20Documents/'
+                 r'%C3%91%C3%88%C3%A1%C3%87%C3%AD%C3%AD')
 
     a = urls.url_fix(r'file:/C:/')
     b = urls.url_fix(r'file://C:/')
@@ -188,23 +189,25 @@ def test_url_fixing_qs():
     x = urls.url_fix(b'http://example.com/?foo=%2f%2f')
     assert x == 'http://example.com/?foo=%2f%2f'
 
-    x = urls.url_fix('http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
-    assert x == 'http://acronyms.thefreedictionary.com/Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation'
+    x = urls.url_fix('http://acronyms.thefreedictionary.com/'
+                     'Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
+    assert x == ('http://acronyms.thefreedictionary.com/'
+                 'Algebraic+Methods+of+Solving+the+Schr%C3%B6dinger+Equation')
 
 
 def test_iri_support():
     strict_eq(urls.uri_to_iri('http://xn--n3h.net/'),
-                      u'http://\u2603.net/')
+              u'http://\u2603.net/')
     strict_eq(
         urls.uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'),
-                        u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th')
+        u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th')
     strict_eq(urls.iri_to_uri(u'http://☃.net/'), 'http://xn--n3h.net/')
     strict_eq(
         urls.iri_to_uri(u'http://üser:pässword@☃.net/påth'),
-                        'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
+        'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
 
     strict_eq(urls.uri_to_iri('http://test.com/%3Fmeh?foo=%26%2F'),
-                                      u'http://test.com/%3Fmeh?foo=%26%2F')
+              u'http://test.com/%3Fmeh?foo=%26%2F')
 
     # this should work as well, might break on 2.4 because of a broken
     # idna codec
@@ -212,17 +215,17 @@ def test_iri_support():
     strict_eq(urls.iri_to_uri(u'/foo'), '/foo')
 
     strict_eq(urls.iri_to_uri(u'http://föö.com:8080/bam/baz'),
-                      'http://xn--f-1gaa.com:8080/bam/baz')
+              'http://xn--f-1gaa.com:8080/bam/baz')
 
 
 def test_iri_safe_conversion():
     strict_eq(urls.iri_to_uri(u'magnet:?foo=bar'),
-                             'magnet:?foo=bar')
+              'magnet:?foo=bar')
     strict_eq(urls.iri_to_uri(u'itms-service://?foo=bar'),
-                             'itms-service:?foo=bar')
+              'itms-service:?foo=bar')
     strict_eq(urls.iri_to_uri(u'itms-service://?foo=bar',
-                                             safe_conversion=True),
-                             'itms-service://?foo=bar')
+                              safe_conversion=True),
+              'itms-service://?foo=bar')
 
 
 def test_iri_safe_quoting():
@@ -245,7 +248,8 @@ def test_ordered_multidict_encoding():
 def test_multidict_encoding():
     d = OrderedMultiDict()
     d.add('2013-10-10T23:26:05.657975+0000', '2013-10-10T23:26:05.657975+0000')
-    assert urls.url_encode(d) == '2013-10-10T23%3A26%3A05.657975%2B0000=2013-10-10T23%3A26%3A05.657975%2B0000'
+    assert urls.url_encode(
+        d) == '2013-10-10T23%3A26%3A05.657975%2B0000=2013-10-10T23%3A26%3A05.657975%2B0000'
 
 
 def test_href():
@@ -332,13 +336,13 @@ def test_url_attributes_bytes():
 def test_url_joining():
     strict_eq(urls.url_join('/foo', '/bar'), '/bar')
     strict_eq(urls.url_join('http://example.com/foo', '/bar'),
-                             'http://example.com/bar')
+              'http://example.com/bar')
     strict_eq(urls.url_join('file:///tmp/', 'test.html'),
-                             'file:///tmp/test.html')
+              'file:///tmp/test.html')
     strict_eq(urls.url_join('file:///tmp/x', 'test.html'),
-                             'file:///tmp/test.html')
+              'file:///tmp/test.html')
     strict_eq(urls.url_join('file:///tmp/x', '../../../x.html'),
-                             'file:///x.html')
+              'file:///x.html')
 
 
 def test_partial_unencoded_decode():

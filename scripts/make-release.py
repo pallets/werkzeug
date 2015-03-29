@@ -27,7 +27,6 @@ def parse_changelog():
             match = re.search('^Version\s+(.*)', line.strip())
             if match is None:
                 continue
-            length = len(match.group(1))
             version = match.group(1).strip()
             if lineiter.next().count('-') != len(match.group(0)):
                 continue
@@ -61,6 +60,7 @@ def parse_date(string):
 
 def set_filename_version(filename, version_number, pattern):
     changed = []
+
     def inject_version(match):
         before, old, after = match.groups()
         changed.append(True)
@@ -100,7 +100,9 @@ def info(message, *args):
 
 
 def get_git_tags():
-    return set(Popen(['git', 'tag'], stdout=PIPE).communicate()[0].splitlines())
+    return set(Popen(['git', 'tag'], stdout=PIPE)
+               .communicate()[0]
+               .splitlines())
 
 
 def git_is_clean():

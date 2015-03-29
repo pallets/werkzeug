@@ -2,9 +2,9 @@ import sys
 import operator
 import functools
 try:
-    import builtins
+    import builtins  # noqa
 except ImportError:
-    import __builtin__ as builtins
+    import __builtin__ as builtins  # noqa
 
 
 PY2 = sys.version_info[0] == 2
@@ -143,7 +143,7 @@ else:
     ifilter = filter
     range_type = range
 
-    from io import StringIO, BytesIO
+    from io import StringIO, BytesIO  # noqa
     NativeStringIO = StringIO
 
     def make_literal_wrapper(reference):
@@ -160,7 +160,7 @@ else:
         for arg in tupiter:
             if isinstance(arg, text_type) != is_text:
                 raise TypeError('Cannot mix str and bytes arguments (got %s)'
-                    % repr(tup))
+                                % repr(tup))
         return tup
 
     try_coerce_native = _identity

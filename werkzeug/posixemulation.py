@@ -26,7 +26,7 @@ from ._compat import to_unicode
 
 
 can_rename_open_file = False
-if os.name == 'nt': # pragma: no cover
+if os.name == 'nt':  # pragma: no cover
     _rename = lambda src, dst: False
     _rename_atomic = lambda src, dst: False
 
@@ -46,7 +46,7 @@ if os.name == 'nt': # pragma: no cover
             rv = False
             while not rv and retry < 100:
                 rv = _MoveFileEx(src, dst, _MOVEFILE_REPLACE_EXISTING |
-                                           _MOVEFILE_WRITE_THROUGH)
+                                 _MOVEFILE_WRITE_THROUGH)
                 if not rv:
                     time.sleep(0.001)
                     retry += 1

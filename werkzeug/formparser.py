@@ -19,7 +19,7 @@ from functools import update_wrapper
 from werkzeug._compat import to_native, text_type
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import make_line_iter, \
-     get_input_stream, get_content_length
+    get_input_stream, get_content_length
 from werkzeug.datastructures import Headers, FileStorage, MultiDict
 from werkzeug.http import parse_options_header
 
@@ -94,6 +94,7 @@ def parse_form_data(environ, stream_factory=None, charset='utf-8',
 
 def exhaust_stream(f):
     """Helper decorator for methods that exhausts the stream on return."""
+
     def wrapper(self, stream, *args, **kwargs):
         try:
             return f(self, stream, *args, **kwargs)
@@ -110,6 +111,7 @@ def exhaust_stream(f):
 
 
 class FormDataParser(object):
+
     """This class implements parsing of form data for Werkzeug.  By itself
     it can parse multipart and url encoded form data.  It can be subclassed
     and extended but for most mimetypes it is a better idea to use the
@@ -363,7 +365,7 @@ class MultiPartParser(object):
             self.fail('Missing boundary')
         if not is_valid_multipart_boundary(boundary):
             self.fail('Invalid boundary: %s' % boundary)
-        if len(boundary) > self.buffer_size: # pragma: no cover
+        if len(boundary) > self.buffer_size:  # pragma: no cover
             # this should never happen because we check for a minimum size
             # of 1024 and boundaries may not be longer than 200.  The only
             # situation when this happens is for non debug builds where
@@ -457,7 +459,7 @@ class MultiPartParser(object):
                     cutoff = -1
                 yield _cont, line[:cutoff]
 
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 raise ValueError('unexpected end of part')
 
             # if we have a leftover in the buffer that is not a newline
@@ -510,7 +512,7 @@ class MultiPartParser(object):
                     part_charset = self.get_part_charset(headers)
                     yield ('form',
                            (name, b''.join(container).decode(
-                                part_charset, self.errors)))
+                               part_charset, self.errors)))
 
     def parse(self, file, boundary, content_length):
         formstream, filestream = tee(

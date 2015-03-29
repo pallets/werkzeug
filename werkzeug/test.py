@@ -22,20 +22,20 @@ except ImportError:
     from urllib.request import Request as U2Request
 try:
     from http.cookiejar import CookieJar
-except ImportError: # Py2
+except ImportError:  # Py2
     from cookielib import CookieJar
 
 from werkzeug._compat import iterlists, iteritems, itervalues, to_bytes, \
-     string_types, text_type, reraise, wsgi_encoding_dance, \
-     make_literal_wrapper
+    string_types, text_type, reraise, wsgi_encoding_dance, \
+    make_literal_wrapper
 from werkzeug._internal import _empty_stream, _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
-     url_unparse, url_parse
+    url_unparse, url_parse
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
-     CombinedMultiDict, Headers, FileStorage
+    CombinedMultiDict, Headers, FileStorage
 
 
 def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
@@ -129,6 +129,7 @@ def File(fd, filename=None, mimetype=None):
 
 
 class _TestCookieHeaders(object):
+
     """A headers adapter for cookielib
     """
 
@@ -152,6 +153,7 @@ class _TestCookieHeaders(object):
 
 
 class _TestCookieResponse(object):
+
     """Something that looks like a httplib.HTTPResponse, but is actually just an
     adapter for our test responses to make them available for cookielib.
     """
@@ -164,6 +166,7 @@ class _TestCookieResponse(object):
 
 
 class _TestCookieJar(CookieJar):
+
     """A cookielib.CookieJar modified to inject and read cookie headers from
     and to wsgi environments, and wsgi application responses.
     """
@@ -207,6 +210,7 @@ def _iter_data(data):
 
 
 class EnvironBuilder(object):
+
     """This class can be used to conveniently create a WSGI environment
     for testing purposes.  It can be used to quickly create WSGI environments
     or request objects from arbitrary data.
@@ -415,6 +419,7 @@ class EnvironBuilder(object):
 
     def form_property(name, storage, doc):
         key = '_' + name
+
         def getter(self):
             if self._input_stream is not None:
                 raise AttributeError('an input stream is defined')
@@ -422,7 +427,9 @@ class EnvironBuilder(object):
             if rv is None:
                 rv = storage()
                 setattr(self, key, rv)
+
             return rv
+
         def setter(self, value):
             self._input_stream = None
             setattr(self, key, value)
@@ -536,7 +543,7 @@ class EnvironBuilder(object):
                 stream_encode_multipart(values, charset=self.charset)
             content_type += '; boundary="%s"' % boundary
         elif content_type == 'application/x-www-form-urlencoded':
-            #py2v3 review
+            # XXX: py2v3 review
             values = url_encode(self.form, charset=self.charset)
             values = values.encode('ascii')
             content_length = len(values)
@@ -590,6 +597,7 @@ class EnvironBuilder(object):
 
 
 class ClientRedirectError(Exception):
+
     """
     If a redirect loop is detected when using follow_redirects=True with
     the :cls:`Client`, then this exception is raised.
@@ -597,6 +605,7 @@ class ClientRedirectError(Exception):
 
 
 class Client(object):
+
     """This class allows to send requests to a wrapped application.
 
     The response wrapper can be a class or factory function that takes
@@ -749,11 +758,6 @@ class Client(object):
                or not follow_redirects:
                 break
             new_location = response[2]['location']
-
-            method = 'GET'
-            if status_code == 307:
-                method = environ['REQUEST_METHOD']
-
             new_redirect_entry = (new_location, status_code)
             if new_redirect_entry in redirect_chain:
                 raise ClientRedirectError('loop detected')

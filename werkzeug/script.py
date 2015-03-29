@@ -88,7 +88,7 @@ argument_types = {
 
 
 converters = {
-    'boolean':  lambda x: x.lower() in ('1', 'true', 'yes', 'on'),
+    'boolean': lambda x: x.lower() in ('1', 'true', 'yes', 'on'),
     'string':   str,
     'integer':  int,
     'float':    float
@@ -259,6 +259,7 @@ def make_shell(init_func=None, banner=None, use_ipython=True):
         banner = 'Interactive Werkzeug Shell'
     if init_func is None:
         init_func = dict
+
     def action(ipython=use_ipython):
         """Start a new interactive python session."""
         namespace = init_func()

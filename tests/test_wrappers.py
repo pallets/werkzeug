@@ -21,13 +21,14 @@ from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError
 from werkzeug.wsgi import LimitedStream
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
-     ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
-     MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
+    ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
+    MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug._compat import implements_iterator, text_type
 
 
 class RequestTestResponse(wrappers.BaseResponse):
+
     """Subclass of the normal response class we use to test response
     and base classes.  Has some methods to test if things in the
     response match.
@@ -66,7 +67,6 @@ def prepare_environ_pickle(environ):
     return result
 
 
-
 def assert_environ(environ, method):
     strict_eq(environ['REQUEST_METHOD'], method)
     strict_eq(environ['PATH_INFO'], '/')
@@ -74,6 +74,7 @@ def assert_environ(environ, method):
     strict_eq(environ['SERVER_NAME'], 'localhost')
     strict_eq(environ['wsgi.version'], (1, 0))
     strict_eq(environ['wsgi.url_scheme'], 'http')
+
 
 def test_base_request():
     client = Client(request_demo_app, RequestTestResponse)
@@ -96,7 +97,7 @@ def test_base_request():
     strict_eq(response['data'], b'')
     # currently we do not guarantee that the values are ordered correctly
     # for post data.
-    ## strict_eq(response['form_as_list'], [('foo', ['blub hehe']), ('blah', ['42'])])
+    # strict_eq(response['form_as_list'], [('foo', ['blub hehe']), ('blah', ['42'])])
     assert_environ(response['environ'], 'POST')
 
     # patch requests with form data
@@ -105,7 +106,7 @@ def test_base_request():
     strict_eq(response['args'], MultiDict([('blub', u'blah')]))
     strict_eq(response['args_as_list'], [('blub', [u'blah'])])
     strict_eq(response['form'],
-                             MultiDict([('foo', u'blub hehe'), ('blah', u'42')]))
+              MultiDict([('foo', u'blub hehe'), ('blah', u'42')]))
     strict_eq(response['data'], b'')
     assert_environ(response['environ'], 'PATCH')
 
@@ -116,9 +117,11 @@ def test_base_request():
     strict_eq(response['args'], MultiDict([('a', u'b')]))
     strict_eq(response['form'], MultiDict())
 
+
 def test_query_string_is_bytes():
     req = wrappers.Request.from_values(u'/?foo=%2f')
     strict_eq(req.query_string, b'foo=%2f')
+
 
 def test_request_repr():
     req = wrappers.Request.from_values('/foobar')
@@ -129,6 +132,7 @@ def test_request_repr():
     # test with unicode type for python 2
     req = wrappers.Request.from_values(u'/привет')
     assert "<Request 'http://localhost/привет' [GET]>" == repr(req)
+
 
 def test_access_route():
     req = wrappers.Request.from_values(headers={
@@ -141,6 +145,7 @@ def test_access_route():
     req = wrappers.Request.from_values()
     req.environ['REMOTE_ADDR'] = '192.168.1.3'
     strict_eq(list(req.access_route), ['192.168.1.3'])
+
 
 def test_url_request_descriptors():
     req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
@@ -157,12 +162,14 @@ def test_url_request_descriptors():
     req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
     strict_eq(req.scheme, 'https')
 
+
 def test_url_request_descriptors_query_quoting():
     next = 'http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2F'
     req = wrappers.Request.from_values('/bar?next=' + next, 'http://example.com/')
     assert req.path == u'/bar'
     strict_eq(req.full_path, u'/bar?next=' + next)
     strict_eq(req.url, u'http://example.com/bar?next=' + next)
+
 
 def test_url_request_descriptors_hosts():
     req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
@@ -188,6 +195,7 @@ def test_url_request_descriptors_hosts():
     pytest.raises(SecurityError, lambda: req.host_url)
     pytest.raises(SecurityError, lambda: req.host)
 
+
 def test_authorization_mixin():
     request = wrappers.Request.from_values(headers={
         'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
@@ -196,6 +204,7 @@ def test_authorization_mixin():
     strict_eq(a.type, 'basic')
     strict_eq(a.username, 'Aladdin')
     strict_eq(a.password, 'open sesame')
+
 
 def test_stream_only_mixing():
     request = wrappers.PlainRequest.from_values(
@@ -206,6 +215,7 @@ def test_stream_only_mixing():
     assert list(request.form.items()) == []
     pytest.raises(AttributeError, lambda: request.data)
     strict_eq(request.stream.read(), b'foo=blub+hehe')
+
 
 def test_base_response():
     # unicode
@@ -236,12 +246,16 @@ def test_base_response():
 
     # close call forwarding
     closed = []
+
     @implements_iterator
     class Iterable(object):
+
         def __next__(self):
             raise StopIteration()
+
         def __iter__(self):
             return self
+
         def close(self):
             closed.append(True)
     response = wrappers.BaseResponse(Iterable())
@@ -260,6 +274,7 @@ def test_base_response():
         pass
     assert len(closed) == 1
 
+
 def test_response_status_codes():
     response = wrappers.BaseResponse()
     response.status_code = 404
@@ -275,6 +290,7 @@ def test_response_status_codes():
     strict_eq(response.status_code, 0)
     strict_eq(response.status, '0 wtf')
 
+
 def test_type_forcing():
     def wsgi_application(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
@@ -282,6 +298,7 @@ def test_type_forcing():
     base_response = wrappers.BaseResponse('Hello World!', content_type='text/html')
 
     class SpecialResponse(wrappers.Response):
+
         def foo(self):
             return 42
 
@@ -298,6 +315,7 @@ def test_type_forcing():
 
     # without env, no arbitrary conversion
     pytest.raises(TypeError, SpecialResponse.force_type, wsgi_application)
+
 
 def test_accept_mixin():
     request = wrappers.Request({
@@ -323,6 +341,7 @@ def test_accept_mixin():
     request = wrappers.Request({'HTTP_ACCEPT': ''})
     strict_eq(request.accept_mimetypes, MIMEAccept())
 
+
 def test_etag_request_mixin():
     request = wrappers.Request({
         'HTTP_CACHE_CONTROL':       'no-store, no-cache',
@@ -342,6 +361,7 @@ def test_etag_request_mixin():
 
     assert request.if_modified_since == datetime(2008, 1, 22, 11, 18, 44)
     assert request.if_unmodified_since == datetime(2008, 1, 22, 11, 18, 44)
+
 
 def test_user_agent_mixin():
     user_agents = [
@@ -379,32 +399,41 @@ def test_user_agent_mixin():
     request = wrappers.Request({'HTTP_USER_AGENT': 'foo'})
     assert not request.user_agent
 
+
 def test_stream_wrapping():
     class LowercasingStream(object):
+
         def __init__(self, stream):
             self._stream = stream
+
         def read(self, size=-1):
             return self._stream.read(size).lower()
+
         def readline(self, size=-1):
             return self._stream.readline(size).lower()
 
     data = b'foo=Hello+World'
-    req = wrappers.Request.from_values('/', method='POST', data=data,
+    req = wrappers.Request.from_values(
+        '/', method='POST', data=data,
         content_type='application/x-www-form-urlencoded')
     req.stream = LowercasingStream(req.stream)
     assert req.form['foo'] == 'hello world'
 
+
 def test_data_descriptor_triggers_parsing():
     data = b'foo=Hello+World'
-    req = wrappers.Request.from_values('/', method='POST', data=data,
+    req = wrappers.Request.from_values(
+        '/', method='POST', data=data,
         content_type='application/x-www-form-urlencoded')
 
     assert req.data == b''
     assert req.form['foo'] == u'Hello World'
 
+
 def test_get_data_method_parsing_caching_behavior():
     data = b'foo=Hello+World'
-    req = wrappers.Request.from_values('/', method='POST', data=data,
+    req = wrappers.Request.from_values(
+        '/', method='POST', data=data,
         content_type='application/x-www-form-urlencoded')
 
     # get_data() caches, so form stays available
@@ -413,13 +442,15 @@ def test_get_data_method_parsing_caching_behavior():
     assert req.get_data() == data
 
     # here we access the form data first, caching is bypassed
-    req = wrappers.Request.from_values('/', method='POST', data=data,
+    req = wrappers.Request.from_values(
+        '/', method='POST', data=data,
         content_type='application/x-www-form-urlencoded')
     assert req.form['foo'] == u'Hello World'
     assert req.get_data() == b''
 
     # Another case is uncached get data which trashes everything
-    req = wrappers.Request.from_values('/', method='POST', data=data,
+    req = wrappers.Request.from_values(
+        '/', method='POST', data=data,
         content_type='application/x-www-form-urlencoded')
     assert req.get_data(cache=False) == data
     assert req.get_data(cache=False) == b''
@@ -427,10 +458,12 @@ def test_get_data_method_parsing_caching_behavior():
 
     # Or we can implicitly start the form parser which is similar to
     # the old .data behavior
-    req = wrappers.Request.from_values('/', method='POST', data=data,
+    req = wrappers.Request.from_values(
+        '/', method='POST', data=data,
         content_type='application/x-www-form-urlencoded')
     assert req.get_data(parse_form_data=True) == b''
     assert req.form['foo'] == u'Hello World'
+
 
 def test_etag_response_mixin():
     response = wrappers.Response('Hello World')
@@ -458,7 +491,7 @@ def test_etag_response_mixin():
     # headers left and the status code would have to be 304
     resp = wrappers.Response.from_app(response, env)
     assert resp.status_code == 304
-    assert not 'content-length' in resp.headers
+    assert 'content-length' not in resp.headers
 
     # make sure date is not overriden
     response = wrappers.Response('Hello World')
@@ -473,22 +506,25 @@ def test_etag_response_mixin():
     response.make_conditional(env)
     assert response.content_length == 999
 
+
 def test_etag_response_mixin_freezing():
     class WithFreeze(wrappers.ETagResponseMixin, wrappers.BaseResponse):
         pass
+
     class WithoutFreeze(wrappers.BaseResponse, wrappers.ETagResponseMixin):
         pass
 
     response = WithFreeze('Hello World')
     response.freeze()
     strict_eq(response.get_etag(),
-        (text_type(wrappers.generate_etag(b'Hello World')), False))
+              (text_type(wrappers.generate_etag(b'Hello World')), False))
     response = WithoutFreeze('Hello World')
     response.freeze()
     assert response.get_etag() == (None, None)
     response = wrappers.Response('Hello World')
     response.freeze()
     assert response.get_etag() == (None, None)
+
 
 def test_authenticate_mixin():
     resp = wrappers.Response()
@@ -499,20 +535,22 @@ def test_authenticate_mixin():
     resp.www_authenticate.type = None
     assert 'WWW-Authenticate' not in resp.headers
 
+
 def test_authenticate_mixin_quoted_qop():
     # Example taken from https://github.com/mitsuhiko/werkzeug/issues/633
     resp = wrappers.Response()
-    resp.www_authenticate.set_digest('REALM','NONCE',qop=("auth","auth-int"))
+    resp.www_authenticate.set_digest('REALM', 'NONCE', qop=("auth", "auth-int"))
 
     actual = set((resp.headers['WWW-Authenticate'] + ',').split())
     expected = set('Digest nonce="NONCE", realm="REALM", qop="auth, auth-int",'.split())
     assert actual == expected
 
-    resp.www_authenticate.set_digest('REALM','NONCE',qop=("auth",))
+    resp.www_authenticate.set_digest('REALM', 'NONCE', qop=("auth",))
 
     actual = set((resp.headers['WWW-Authenticate'] + ',').split())
     expected = set('Digest nonce="NONCE", realm="REALM", qop="auth",'.split())
     assert actual == expected
+
 
 def test_response_stream_mixin():
     response = wrappers.Response()
@@ -520,6 +558,7 @@ def test_response_stream_mixin():
     response.stream.write('World!')
     assert response.response == ['Hello ', 'World!']
     assert response.get_data() == b'Hello World!'
+
 
 def test_common_response_descriptors_mixin():
     response = wrappers.Response()
@@ -561,6 +600,7 @@ def test_common_response_descriptors_mixin():
     response.content_language.add('fr')
     assert response.headers['Content-Language'] == 'en-US, fr'
 
+
 def test_common_request_descriptors_mixin():
     request = wrappers.Request.from_values(
         content_type='text/html; charset=utf-8',
@@ -586,10 +626,12 @@ def test_common_request_descriptors_mixin():
     assert request.content_encoding == 'gzip'
     assert request.content_md5 == '9a3bc6dbc47a70db25b84c6e5867a072'
 
+
 def test_shallow_mode():
     request = wrappers.Request({'QUERY_STRING': 'foo=bar'}, shallow=True)
     assert request.args['foo'] == 'bar'
     pytest.raises(RuntimeError, lambda: request.form['foo'])
+
 
 def test_form_parsing_failed():
     data = (
@@ -603,6 +645,7 @@ def test_form_parsing_failed():
     )
     assert not data.files
     assert not data.form
+
 
 def test_file_closing():
     data = (b'--foo\r\n'
@@ -620,9 +663,10 @@ def test_file_closing():
     assert foo.mimetype == 'text/plain'
     assert foo.filename == 'foo.txt'
 
-    assert foo.closed == False
+    assert foo.closed is False
     req.close()
-    assert foo.closed == True
+    assert foo.closed is True
+
 
 def test_file_closing_with():
     data = (b'--foo\r\n'
@@ -641,12 +685,14 @@ def test_file_closing_with():
         assert foo.mimetype == 'text/plain'
         assert foo.filename == 'foo.txt'
 
-    assert foo.closed == True
+    assert foo.closed is True
+
 
 def test_url_charset_reflection():
     req = wrappers.Request.from_values()
     req.charset = 'utf-7'
     assert req.url_charset == 'utf-7'
+
 
 def test_response_streamed():
     r = wrappers.Response()
@@ -655,16 +701,19 @@ def test_response_streamed():
     assert not r.is_streamed
     r = wrappers.Response(["foo", "bar"])
     assert not r.is_streamed
+
     def gen():
         if 0:
             yield None
     r = wrappers.Response(gen())
     assert r.is_streamed
 
+
 def test_response_iter_wrapping():
     def uppercasing(iterator):
         for item in iterator:
             yield item.upper()
+
     def generator():
         yield 'foo'
         yield 'bar'
@@ -675,6 +724,7 @@ def test_response_iter_wrapping():
     actual_resp = wrappers.Response.from_app(resp, req.environ, buffered=True)
     assert actual_resp.get_data() == b'FOOBAR'
 
+
 def test_response_freeze():
     def generate():
         yield "foo"
@@ -683,6 +733,7 @@ def test_response_freeze():
     resp.freeze()
     assert resp.response == [b'foo', b'bar']
     assert resp.headers['content-length'] == '6'
+
 
 def test_other_method_payload():
     data = b'Hello World'
@@ -693,6 +744,7 @@ def test_other_method_payload():
     assert req.get_data() == data
     assert isinstance(req.stream, LimitedStream)
 
+
 def test_urlfication():
     resp = wrappers.Response()
     resp.headers['Location'] = u'http://üser:pässword@☃.net/påth'
@@ -701,6 +753,7 @@ def test_urlfication():
     assert headers['location'] == \
         'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
     assert headers['content-location'] == 'http://xn--n3h.net/'
+
 
 def test_new_response_iterator_behavior():
     req = wrappers.Request.from_values()
@@ -759,6 +812,7 @@ def test_new_response_iterator_behavior():
         resp.stream.write('baz')
         assert resp.response == ['foo', 'bar', 'baz']
 
+
 def test_form_data_ordering():
     class MyRequest(wrappers.Request):
         parameter_storage_class = ImmutableOrderedMultiDict
@@ -774,6 +828,7 @@ def test_form_data_ordering():
     assert isinstance(req.values, CombinedMultiDict)
     assert req.values['foo'] == '1'
     assert req.values.getlist('foo') == ['1', '3']
+
 
 def test_storage_classes():
     class MyRequest(wrappers.Request):
@@ -802,15 +857,18 @@ def test_storage_classes():
     req = MyRequest.from_values()
     assert type(req.access_route) is tuple
 
+
 def test_response_headers_passthrough():
     headers = wrappers.Headers()
     resp = wrappers.Response(headers=headers)
     assert resp.headers is headers
 
+
 def test_response_304_no_content_length():
     resp = wrappers.Response('Test', status=304)
     env = create_environ()
     assert 'content-length' not in resp.get_wsgi_headers(env)
+
 
 def test_ranges():
     # basic range stuff
@@ -836,6 +894,7 @@ def test_ranges():
     assert resp.content_range.stop == 500
     assert resp.content_range.length == 1000
 
+
 def test_auto_content_length():
     resp = wrappers.Response('Hello World!')
     assert resp.content_length == 12
@@ -843,6 +902,7 @@ def test_auto_content_length():
     resp = wrappers.Response(['Hello World!'])
     assert resp.content_length is None
     assert resp.get_wsgi_headers({})['Content-Length'] == '12'
+
 
 def test_stream_content_length():
     resp = wrappers.Response()
@@ -857,6 +917,7 @@ def test_stream_content_length():
     resp = wrappers.Response('foo')
     resp.stream.writelines(['bar', 'baz'])
     assert resp.get_wsgi_headers({})['Content-Length'] == '9'
+
 
 def test_disabled_auto_content_length():
     class MyResponse(wrappers.Response):
@@ -875,8 +936,10 @@ def test_disabled_auto_content_length():
     assert resp.content_length is None
     assert 'Content-Length' not in resp.get_wsgi_headers({})
 
+
 def test_location_header_autocorrect():
     env = create_environ()
+
     class MyResponse(wrappers.Response):
         autocorrect_location_header = False
     resp = MyResponse('Hello World!')
@@ -886,6 +949,7 @@ def test_location_header_autocorrect():
     resp = wrappers.Response('Hello World!')
     resp.headers['Location'] = '/test'
     assert resp.get_wsgi_headers(env)['Location'] == 'http://localhost/test'
+
 
 def test_modified_url_encoding():
     class ModifiedRequest(wrappers.Request):

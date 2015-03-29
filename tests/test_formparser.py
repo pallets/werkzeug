@@ -150,13 +150,17 @@ class TestFormParser(object):
 
     def test_streaming_parse(self):
         data = b'x' * (1024 * 600)
+
         class StreamMPP(formparser.MultiPartParser):
+
             def parse(self, file, boundary, content_length):
                 i = iter(self.parse_lines(file, boundary, content_length))
                 one = next(i)
                 two = next(i)
                 return self.cls(()), {'one': one, 'two': two}
+
         class StreamFDP(formparser.FormDataParser):
+
             def _sf_parse_multipart(self, stream, mimetype,
                                     content_length, options):
                 form, files = StreamMPP(
@@ -168,6 +172,7 @@ class TestFormParser(object):
             parse_functions = {}
             parse_functions.update(formparser.FormDataParser.parse_functions)
             parse_functions['multipart/form-data'] = _sf_parse_multipart
+
         class StreamReq(Request):
             form_data_parser_class = StreamFDP
         req = StreamReq.from_values(data={'foo': (BytesIO(data), 'test.txt')},
@@ -211,17 +216,21 @@ class TestMultiPart(object):
             folder = join(resources, name)
             data = get_contents(join(folder, 'request.txt'))
             for filename, field, content_type, fsname in files:
-                response = client.post('/?object=' + field, data=data, content_type=
-                                       'multipart/form-data; boundary="%s"' % boundary,
-                                       content_length=len(data))
+                response = client.post(
+                    '/?object=' + field,
+                    data=data,
+                    content_type='multipart/form-data; boundary="%s"' % boundary,
+                    content_length=len(data))
                 lines = response.get_data().split(b'\n', 3)
                 strict_eq(lines[0], repr(filename).encode('ascii'))
                 strict_eq(lines[1], repr(field).encode('ascii'))
                 strict_eq(lines[2], repr(content_type).encode('ascii'))
                 strict_eq(lines[3], get_contents(join(folder, fsname)))
-            response = client.post('/?object=text', data=data, content_type=
-                                   'multipart/form-data; boundary="%s"' % boundary,
-                                   content_length=len(data))
+            response = client.post(
+                '/?object=text',
+                data=data,
+                content_type='multipart/form-data; boundary="%s"' % boundary,
+                content_length=len(data))
             strict_eq(response.get_data(), repr(text).encode('utf-8'))
 
     def test_ie7_unc_path(self):
@@ -229,11 +238,14 @@ class TestMultiPart(object):
         data_file = join(dirname(__file__), 'multipart', 'ie7_full_path_request.txt')
         data = get_contents(data_file)
         boundary = '---------------------------7da36d1b4a0164'
-        response = client.post('/?object=cb_file_upload_multiple', data=data, content_type=
-                                   'multipart/form-data; boundary="%s"' % boundary, content_length=len(data))
+        response = client.post(
+            '/?object=cb_file_upload_multiple',
+            data=data,
+            content_type='multipart/form-data; boundary="%s"' % boundary,
+            content_length=len(data))
         lines = response.get_data().split(b'\n', 3)
         strict_eq(lines[0],
-                          repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc').encode('ascii'))
+                  repr(u'Sellersburg Town Council Meeting 02-22-2010doc.doc').encode('ascii'))
 
     def test_end_of_file(self):
         # This test looks innocent but it was actually timeing out in
@@ -260,14 +272,15 @@ class TestMultiPart(object):
             'broken base 64'
             '--foo--'
         )
-        _, form, files = formparser.parse_form_data(create_environ(data=data,
-            method='POST', content_type='multipart/form-data; boundary=foo'))
+        _, form, files = formparser.parse_form_data(create_environ(
+            data=data, method='POST', content_type='multipart/form-data; boundary=foo'
+        ))
         assert not files
         assert not form
 
         pytest.raises(ValueError, formparser.parse_form_data,
-            create_environ(data=data, method='POST',
-                      content_type='multipart/form-data; boundary=foo'),
+                      create_environ(data=data, method='POST',
+                                     content_type='multipart/form-data; boundary=foo'),
                       silent=False)
 
     def test_file_no_content_type(self):
@@ -356,7 +369,7 @@ class TestMultiPart(object):
         x = formparser.parse_multipart_headers(['foo: bar\r\n', ' x test\r\n'])
         strict_eq(x['foo'], 'bar\n x test')
         pytest.raises(ValueError, formparser.parse_multipart_headers,
-                           ['foo: bar\r\n', ' x test'])
+                      ['foo: bar\r\n', ' x test'])
 
     def test_bad_newline_bad_newline_assumption(self):
         class ISORequest(Request):

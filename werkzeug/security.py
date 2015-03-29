@@ -19,7 +19,7 @@ from operator import xor
 from itertools import starmap
 
 from werkzeug._compat import range_type, PY2, text_type, izip, to_bytes, \
-     string_types, to_native
+    string_types, to_native
 
 
 SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -106,6 +106,7 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
     mac = hmac.HMAC(data, None, hashfunc)
     if not keylen:
         keylen = mac.digest_size
+
     def _pseudorandom(x, mac=mac):
         h = mac.copy()
         h.update(x)

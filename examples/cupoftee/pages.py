@@ -8,7 +8,7 @@
     :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import operator
+
 from werkzeug.utils import redirect
 from werkzeug.exceptions import NotFound
 from cupoftee.application import Page

@@ -24,6 +24,7 @@ def test_format_iso8601():
 
 
 class KST(datetime.tzinfo):
+
     """KST implementation for test_format_iso8601()."""
 
     def utcoffset(self, dt):

@@ -32,6 +32,7 @@ def test_reverse_slash_behavior():
     adapter = map.bind(req.host, req.script_root)
     assert adapter.match(req.path) == ('foo', {})
 
+
 def test_dynamic_charset_request_mixin():
     class MyRequest(wrappers.DynamicCharsetRequestMixin, Request):
         pass
@@ -62,6 +63,7 @@ def test_dynamic_charset_request_mixin():
     assert req.charset == 'ascii'
     assert req.url_charset == 'utf-8'
 
+
 def test_dynamic_charset_response_mixin():
     class MyResponse(wrappers.DynamicCharsetResponseMixin, Response):
         default_charset = 'utf-7'
@@ -79,7 +81,7 @@ def test_dynamic_charset_response_mixin():
     del resp.headers['content-type']
     try:
         resp.charset = 'utf-8'
-    except TypeError as e:
+    except TypeError:
         pass
     else:
         assert False, 'expected type error on charset setting without ct'

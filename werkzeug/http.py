@@ -20,27 +20,27 @@ import re
 from time import time, gmtime
 try:
     from email.utils import parsedate_tz
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     from email.Utils import parsedate_tz
 try:
     from urllib2 import parse_http_list as _parse_list_header
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     from urllib.request import parse_http_list as _parse_list_header
 from datetime import datetime, timedelta
 from hashlib import md5
 import base64
 
 from werkzeug._internal import _cookie_quote, _make_cookie_domain, \
-     _cookie_parse_impl
+    _cookie_parse_impl
 from werkzeug._compat import to_unicode, iteritems, text_type, \
-     string_types, try_coerce_native, to_bytes, PY2, \
-     integer_types
+    string_types, try_coerce_native, to_bytes, PY2, \
+    integer_types
 
 
 _cookie_charset = 'latin1'
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
 _accept_re = re.compile(
-        r'''(                       # media-range capturing-parenthesis
+    r'''(                       # media-range capturing-parenthesis
               [^\s;,]+              # type/subtype
               (?:[ \t]*;[ \t]*      # ";"
                 (?:                 # parameter non-capturing-parenthesis
@@ -60,8 +60,10 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
 _quoted_string_re = r'"[^"\\]*(?:\\.[^"\\]*)*"'
-_option_header_piece_re = re.compile(r';\s*(%s|[^\s;=]+)\s*(?:=\s*(%s|[^;]+))?\s*' %
-    (_quoted_string_re, _quoted_string_re))
+_option_header_piece_re = re.compile(
+    r';\s*(%s|[^\s;=]+)\s*(?:=\s*(%s|[^;]+))?\s*' %
+    (_quoted_string_re, _quoted_string_re)
+)
 
 _entity_headers = frozenset([
     'allow', 'content-encoding', 'content-language', 'content-length',
@@ -113,15 +115,15 @@ HTTP_STATUS_CODES = {
     415:    'Unsupported Media Type',
     416:    'Requested Range Not Satisfiable',
     417:    'Expectation Failed',
-    418:    'I\'m a teapot',        # see RFC 2324
+    418:    'I\'m a teapot',  # see RFC 2324
     422:    'Unprocessable Entity',
     423:    'Locked',
     424:    'Failed Dependency',
     426:    'Upgrade Required',
-    428:    'Precondition Required', # see RFC 6585
+    428:    'Precondition Required',  # see RFC 6585
     429:    'Too Many Requests',
     431:    'Request Header Fields Too Large',
-    449:    'Retry With',           # proprietary MS extension
+    449:    'Retry With',  # proprietary MS extension
     500:    'Internal Server Error',
     501:    'Not Implemented',
     502:    'Bad Gateway',
@@ -139,7 +141,7 @@ def wsgi_to_bytes(data):
     """
     if isinstance(data, bytes):
         return data
-    return data.encode('latin1') #XXX: utf8 fallback?
+    return data.encode('latin1')  # XXX: utf8 fallback?
 
 
 def bytes_to_wsgi(data):
@@ -302,7 +304,7 @@ def parse_dict_header(value, cls=dict):
     """
     result = cls()
     if not isinstance(value, text_type):
-        #XXX: validate
+        # XXX: validate
         value = bytes_to_wsgi(value)
     for item in _parse_list_header(value):
         if '=' not in item:
@@ -455,14 +457,14 @@ def parse_authorization_header(value):
     if auth_type == b'basic':
         try:
             username, password = base64.b64decode(auth_info).split(b':', 1)
-        except Exception as e:
+        except Exception:
             return
         return Authorization('basic', {'username':  bytes_to_wsgi(username),
                                        'password': bytes_to_wsgi(password)})
     elif auth_type == b'digest':
         auth_map = parse_dict_header(auth_info)
         for key in 'username', 'realm', 'nonce', 'uri', 'response':
-            if not key in auth_map:
+            if key not in auth_map:
                 return
         if 'qop' in auth_map:
             if not auth_map.get('nc') or not auth_map.get('cnonce'):
@@ -693,7 +695,7 @@ def parse_date(value):
                 elif year >= 69 and year <= 99:
                     year += 1900
                 return datetime(*((year,) + t[1:7])) - \
-                       timedelta(seconds=t[-1] or 0)
+                    timedelta(seconds=t[-1] or 0)
             except (ValueError, OverflowError):
                 return None
 
@@ -984,12 +986,13 @@ def is_byte_range_valid(start, stop, length):
 
 # circular dependency fun
 from werkzeug.datastructures import Accept, HeaderSet, ETags, Authorization, \
-     WWWAuthenticate, TypeConversionDict, IfRange, Range, ContentRange, \
-     RequestCacheControl
+    WWWAuthenticate, TypeConversionDict, IfRange, Range, ContentRange, \
+    RequestCacheControl
 
 
 # DEPRECATED
 # backwards compatible imports
-from werkzeug.datastructures import MIMEAccept, CharsetAccept, \
-     LanguageAccept, Headers
+from werkzeug.datastructures import (  # noqa
+    MIMEAccept, CharsetAccept, LanguageAccept, Headers
+)
 from werkzeug.urls import iri_to_uri
