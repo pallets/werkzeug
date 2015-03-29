@@ -106,9 +106,12 @@ class ReloaderLoop(object):
                 return exit_code
 
     def trigger_reload(self, filename):
+        self.log_reload(filename)
+        sys.exit(3)
+
+    def log_reload(self, filename):
         filename = os.path.abspath(filename)
         _log('info', ' * Detected change in %r, reloading' % filename)
-        sys.exit(3)
 
 
 class StatReloaderLoop(ReloaderLoop):
@@ -171,7 +174,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         # This is called inside an event handler, which means we can't throw
         # SystemExit here. https://github.com/gorakhargosh/watchdog/issues/294
         self.should_reload = True
-        ReloaderLoop.trigger_reload(self, filename)
+        self.log_reload(filename)
 
     def run(self):
         watches = {}
