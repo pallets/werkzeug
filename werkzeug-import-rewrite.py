@@ -207,7 +207,7 @@ def rewrite_file(filename):
         posixpath.normpath(posixpath.join('b', filename)),
         lineterm=''
     ):
-        print line
+        print(line)
 
 
 def rewrite_in_folders(folders):
@@ -221,7 +221,7 @@ def rewrite_in_folders(folders):
 
 def main():
     if len(sys.argv) == 1:
-        print 'usage: werkzeug-import-rewrite.py [folders]'
+        print('usage: werkzeug-import-rewrite.py [folders]')
         sys.exit(1)
     rewrite_in_folders(sys.argv[1:])
 

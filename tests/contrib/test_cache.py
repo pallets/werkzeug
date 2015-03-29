@@ -118,9 +118,9 @@ class CacheTests(object):
 
     def test_generic_true_false(self, c):
         assert c.set('foo', True)
-        assert c.get('foo') is True
+        assert c.get('foo') in (True, 1)
         assert c.set('bar', False)
-        assert c.get('bar') is False
+        assert c.get('bar') in (False, 0)
 
     def test_purge(self):
         c = cache.SimpleCache(threshold=2)

@@ -1,10 +1,12 @@
+# flake8: noqa
+# This whole file is full of lint errors
 import sys
 import operator
 import functools
 try:
-    import builtins  # noqa
+    import builtins
 except ImportError:
-    import __builtin__ as builtins  # noqa
+    import __builtin__ as builtins
 
 
 PY2 = sys.version_info[0] == 2
@@ -143,7 +145,7 @@ else:
     ifilter = filter
     range_type = range
 
-    from io import StringIO, BytesIO  # noqa
+    from io import StringIO, BytesIO
     NativeStringIO = StringIO
 
     def make_literal_wrapper(reference):
@@ -179,7 +181,7 @@ else:
     def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
         if x is None:
             return None
-        if isinstance(x, (bytes, bytearray, memoryview)):
+        if isinstance(x, (bytes, bytearray, memoryview)):  # noqa
             return bytes(x)
         if isinstance(x, str):
             return x.encode(charset, errors)
