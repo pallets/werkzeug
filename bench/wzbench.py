@@ -20,6 +20,11 @@ from cStringIO import StringIO
 from timeit import default_timer as timer
 from types import FunctionType
 
+PY2 = sys.version_info[0] == 2
+
+if not PY2:
+    xrange = range
+
 
 # create a new module where we later store all the werkzeug attributes.
 wz = type(sys)('werkzeug_nonlazy')
@@ -171,7 +176,7 @@ def main():
 
 def init_compare():
     """Initializes the comparison feature."""
-    print 'Initializing comparison feature'
+    print('Initializing comparison feature')
     subprocess.Popen(['hg', 'clone', '..', 'a']).wait()
     subprocess.Popen(['hg', 'clone', '..', 'b']).wait()
 
@@ -182,9 +187,9 @@ def compare(node1, node2):
         print >> sys.stderr, 'error: comparison feature not initialized'
         sys.exit(4)
 
-    print '=' * 80
-    print 'WERKZEUG INTERNAL BENCHMARK -- COMPARE MODE'.center(80)
-    print '-' * 80
+    print('=' * 80)
+    print('WERKZEUG INTERNAL BENCHMARK -- COMPARE MODE'.center(80))
+    print('-' * 80)
 
     def _error(msg):
         print >> sys.stderr, 'error:', msg
@@ -217,8 +222,8 @@ def compare(node1, node2):
     d1 = run('a', no_header=True)
     d2 = run('b', no_header=True)
 
-    print 'DIRECT COMPARISON'.center(80)
-    print '-' * 80
+    print('DIRECT COMPARISON'.center(80))
+    print('-' * 80)
     for key in sorted(d1):
         delta = d1[key] - d2[key]
         if abs(1 - d1[key] / d2[key]) < TOLERANCE or \
@@ -227,9 +232,9 @@ def compare(node1, node2):
         else:
             delta = '%+.4f (%+d%%)' % \
                 (delta, round(d2[key] / d1[key] * 100 - 100))
-        print '%36s   %.4f    %.4f    %s' % \
-            (format_func(key), d1[key], d2[key], delta)
-    print '-' * 80
+        print('%36s   %.4f    %.4f    %s' %
+              (format_func(key), d1[key], d2[key], delta))
+    print('-' * 80)
 
 
 def run(path, no_header=False):
@@ -237,14 +242,14 @@ def run(path, no_header=False):
     wz_version, hg_tag = load_werkzeug(path)
     result = {}
     if not no_header:
-        print '=' * 80
-        print 'WERKZEUG INTERNAL BENCHMARK'.center(80)
-        print '-' * 80
-    print 'Path:    %s' % path
-    print 'Version: %s' % wz_version
+        print('=' * 80)
+        print('WERKZEUG INTERNAL BENCHMARK'.center(80))
+        print('-' * 80)
+    print('Path:    %s' % path)
+    print('Version: %s' % wz_version)
     if hg_tag is not None:
-        print 'HG Tag:  %s' % hg_tag
-    print '-' * 80
+        print('HG Tag:  %s' % hg_tag)
+    print('-' * 80)
     for key, value in sorted(globals().items()):
         if key.startswith('time_'):
             before = globals().get('before_' + key[5:])
@@ -254,7 +259,7 @@ def run(path, no_header=False):
             after = globals().get('after_' + key[5:])
             if after:
                 after()
-    print '-' * 80
+    print('-' * 80)
     return result
 
 

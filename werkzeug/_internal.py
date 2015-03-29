@@ -16,7 +16,7 @@ from datetime import datetime, date
 from itertools import chain
 
 from werkzeug._compat import iter_bytes, text_type, BytesIO, int_to_byte, \
-    range_type
+    range_type, integer_types
 
 
 _logger = None
@@ -157,7 +157,7 @@ def _date_to_unix(arg):
     """
     if isinstance(arg, datetime):
         arg = arg.utctimetuple()
-    elif isinstance(arg, (int, long, float)):
+    elif isinstance(arg, integer_types + (float,)):
         return int(arg)
     year, month, day, hour, minute, second = arg[:6]
     days = date(year, month, 1).toordinal() - _epoch_ord + day - 1

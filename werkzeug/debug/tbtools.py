@@ -443,7 +443,7 @@ class Frame(object):
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
         if isinstance(code, string_types):
-            if PY2 and isinstance(code, unicode):
+            if PY2 and isinstance(code, unicode):  # noqa
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
         return eval(code, self.globals, self.locals)

@@ -326,7 +326,7 @@ class LocalProxy(object):
 
     def __unicode__(self):
         try:
-            return unicode(self._get_current_object())
+            return unicode(self._get_current_object())  # noqa
         except RuntimeError:
             return repr(self)
 
@@ -365,7 +365,7 @@ class LocalProxy(object):
     __ne__ = lambda x, o: x._get_current_object() != o
     __gt__ = lambda x, o: x._get_current_object() > o
     __ge__ = lambda x, o: x._get_current_object() >= o
-    __cmp__ = lambda x, o: cmp(x._get_current_object(), o)
+    __cmp__ = lambda x, o: cmp(x._get_current_object(), o)  # noqa
     __hash__ = lambda x: hash(x._get_current_object())
     __call__ = lambda x, *a, **kw: x._get_current_object()(*a, **kw)
     __len__ = lambda x: len(x._get_current_object())
@@ -392,7 +392,7 @@ class LocalProxy(object):
     __invert__ = lambda x: ~(x._get_current_object())
     __complex__ = lambda x: complex(x._get_current_object())
     __int__ = lambda x: int(x._get_current_object())
-    __long__ = lambda x: long(x._get_current_object())
+    __long__ = lambda x: long(x._get_current_object())  # noqa
     __float__ = lambda x: float(x._get_current_object())
     __oct__ = lambda x: oct(x._get_current_object())
     __hex__ = lambda x: hex(x._get_current_object())
