@@ -18,9 +18,9 @@
 import os
 import re
 from werkzeug._compat import text_type, PY2, to_unicode, \
-     to_native, implements_to_string, try_coerce_native, \
-     normalize_string_tuple, make_literal_wrapper, \
-     fix_tuple_repr
+    to_native, implements_to_string, try_coerce_native, \
+    normalize_string_tuple, make_literal_wrapper, \
+    fix_tuple_repr
 from werkzeug._internal import _encode_idna, _decode_idna
 from werkzeug.datastructures import MultiDict, iter_multi_items
 from collections import namedtuple
@@ -41,10 +41,11 @@ _hextobyte = dict(
 
 
 _URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
-    ['scheme', 'netloc', 'path', 'query', 'fragment']))
+                                      ['scheme', 'netloc', 'path', 'query', 'fragment']))
 
 
 class BaseURL(_URLTuple):
+
     '''Superclass of :py:class:`URL` and :py:class:`BytesURL`.'''
     __slots__ = ()
 
@@ -277,6 +278,7 @@ class BaseURL(_URLTuple):
 
 @implements_to_string
 class URL(BaseURL):
+
     """Represents a parsed URL.  This behaves like a regular tuple but
     also has some extra attributes that give further insight into the
     URL.
@@ -320,6 +322,7 @@ class URL(BaseURL):
 
 
 class BytesURL(BaseURL):
+
     """Represents a parsed URL in bytes."""
     __slots__ = ()
     _at = b'@'
@@ -907,6 +910,7 @@ def url_join(base, url, allow_fragments=True):
 
 
 class Href(object):
+
     """Implements a callable that constructs URLs with the given base. The
     function can be called with any number of positional and keyword
     arguments which than are used to assemble the URL.  Works with URLs
@@ -983,7 +987,7 @@ class Href(object):
             query = dict([(k.endswith('_') and k[:-1] or k, v)
                           for k, v in query.items()])
         path = '/'.join([to_unicode(url_quote(x, self.charset), 'ascii')
-                        for x in path if x is not None]).lstrip('/')
+                         for x in path if x is not None]).lstrip('/')
         rv = self.base
         if path:
             if not rv.endswith('/'):

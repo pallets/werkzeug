@@ -22,7 +22,7 @@ except ImportError:
 from werkzeug._compat import unichr, text_type, string_types, iteritems, \
     reraise, PY2
 from werkzeug._internal import _DictAccessorProperty, \
-     _parse_signature, _missing
+    _parse_signature, _missing
 
 
 _format_re = re.compile(r'\$(?:(%s)|\{(%s)\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
@@ -33,6 +33,7 @@ _windows_device_files = ('CON', 'AUX', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1',
 
 
 class cached_property(property):
+
     """A decorator that converts a function into a lazy property.  The
     function wrapped is called the first time to retrieve the result
     and then that calculated result is used the next time you access
@@ -75,6 +76,7 @@ class cached_property(property):
 
 
 class environ_property(_DictAccessorProperty):
+
     """Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an
     environ attribute:
@@ -102,6 +104,7 @@ class environ_property(_DictAccessorProperty):
 
 
 class header_property(_DictAccessorProperty):
+
     """Like `environ_property` but for headers."""
 
     def lookup(self, obj):
@@ -109,6 +112,7 @@ class header_property(_DictAccessorProperty):
 
 
 class HTMLBuilder(object):
+
     """Helper object for HTML generation.
 
     Per default there are two instances of that class.  The `html` one, and
@@ -158,6 +162,7 @@ class HTMLBuilder(object):
     def __getattr__(self, tag):
         if tag[:2] == '__':
             raise AttributeError(tag)
+
         def proxy(*children, **arguments):
             buffer = '<' + tag
             for key, value in iteritems(arguments):
@@ -184,7 +189,7 @@ class HTMLBuilder(object):
             buffer += '>'
 
             children_as_string = ''.join([text_type(x) for x in children
-                                         if x is not None])
+                                          if x is not None])
 
             if children_as_string:
                 if tag in self._plaintext_elements:
@@ -220,7 +225,7 @@ def get_content_type(mimetype, charset):
     if mimetype.startswith('text/') or \
        mimetype == 'application/xml' or \
        (mimetype.startswith('application/') and
-        mimetype.endswith('+xml')):
+            mimetype.endswith('+xml')):
         mimetype += '; charset=' + charset
     return mimetype
 
@@ -557,6 +562,7 @@ def bind_arguments(func, args, kwargs):
 
 
 class ArgumentValidationError(ValueError):
+
     """Raised if :func:`validate_arguments` fails to validate"""
 
     def __init__(self, missing=None, extra=None, extra_positional=None):
@@ -565,12 +571,13 @@ class ArgumentValidationError(ValueError):
         self.extra_positional = extra_positional or []
         ValueError.__init__(self, 'function arguments invalid.  ('
                             '%d missing, %d additional)' % (
-            len(self.missing),
-            len(self.extra) + len(self.extra_positional)
-        ))
+                                len(self.missing),
+                                len(self.extra) + len(self.extra_positional)
+                            ))
 
 
 class ImportStringError(ImportError):
+
     """Provides information about a failed :func:`import_string` attempt."""
 
     #: String in dotted notation that failed to be imported.
@@ -613,13 +620,9 @@ class ImportStringError(ImportError):
                                  self.exception)
 
 
-# circular dependencies
-from werkzeug.http import quote_header_value, unquote_header_value, \
-     cookie_date
-
 # DEPRECATED
 # these objects were previously in this module as well.  we import
 # them here for backwards compatibility with old pickles.
-from werkzeug.datastructures import MultiDict, CombinedMultiDict, \
-     Headers, EnvironHeaders
-from werkzeug.http import parse_cookie, dump_cookie
+from werkzeug.datastructures import (  # noqa
+    MultiDict, CombinedMultiDict, Headers, EnvironHeaders)
+from werkzeug.http import parse_cookie, dump_cookie  # noqa

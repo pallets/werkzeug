@@ -1,3 +1,5 @@
+# flake8: noqa
+# This whole file is full of lint errors
 import sys
 import operator
 import functools
@@ -160,7 +162,7 @@ else:
         for arg in tupiter:
             if isinstance(arg, text_type) != is_text:
                 raise TypeError('Cannot mix str and bytes arguments (got %s)'
-                    % repr(tup))
+                                % repr(tup))
         return tup
 
     try_coerce_native = _identity
@@ -179,7 +181,7 @@ else:
     def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
         if x is None:
             return None
-        if isinstance(x, (bytes, bytearray, memoryview)):
+        if isinstance(x, (bytes, bytearray, memoryview)):  # noqa
             return bytes(x)
         if isinstance(x, str):
             return x.encode(charset, errors)

@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import pytest
-from functools import partial
 
 from tests import strict_eq
 from werkzeug.contrib.iterio import IterIO, greenlet
@@ -155,6 +154,7 @@ class TestIterO(object):
 
 @pytest.mark.skipif(greenlet is None, reason='Greenlet is not installed.')
 class TestIterI(object):
+
     def test_basic(self):
         def producer(out):
             out.write('1\n')

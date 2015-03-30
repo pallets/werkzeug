@@ -11,7 +11,7 @@
 import os
 
 from werkzeug.security import check_password_hash, generate_password_hash, \
-     safe_join, pbkdf2_hex, safe_str_cmp
+    safe_join, pbkdf2_hex, safe_str_cmp
 
 
 def test_safe_str_cmp():
@@ -21,6 +21,7 @@ def test_safe_str_cmp():
     assert safe_str_cmp(b'aaa', 'aa') is False
     assert safe_str_cmp(b'aaa', 'bbb') is False
     assert safe_str_cmp(b'aaa', u'aaa') is True
+
 
 def test_password_hashing():
     hash0 = generate_password_hash('default')
@@ -49,11 +50,13 @@ def test_password_hashing():
     legacy = u'md5$$c21f969b5f03d33d43e04f8f136e7682'
     assert check_password_hash(legacy, 'default')
 
+
 def test_safe_join():
     assert safe_join('foo', 'bar/baz') == os.path.join('foo', 'bar/baz')
     assert safe_join('foo', '../bar/baz') is None
     if os.name == 'nt':
         assert safe_join('foo', 'foo\\bar') is None
+
 
 def test_pbkdf2():
     def check(data, salt, iterations, keylen, expected):
@@ -73,9 +76,10 @@ def test_pbkdf2():
           4096, 25, '3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038')
     check('pass\x00word', 'sa\x00lt', 4096, 16,
           '56fa6aa75548099dcc37d7f03425e0c3')
+
     # This one is from the RFC but it just takes for ages
-    ##check('password', 'salt', 16777216, 20,
-    ## 'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984')
+    # check('password', 'salt', 16777216, 20,
+    #       'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984')
 
     # From Crypt-PBKDF2
     check('password', 'ATHENA.MIT.EDUraeburn', 1, 16,

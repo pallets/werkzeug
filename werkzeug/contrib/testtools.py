@@ -21,6 +21,7 @@ warn(DeprecationWarning('werkzeug.contrib.testtools is deprecated and '
 
 
 class ContentAccessors(object):
+
     """
     A mixin class for response objects that provides a couple of useful
     accessors for unittesting.
@@ -50,7 +51,7 @@ class ContentAccessors(object):
             from lxml.html import fromstring
         except ImportError:
             fromstring = etree.HTML
-        if self.mimetype=='text/html':
+        if self.mimetype == 'text/html':
             return fromstring(self.data)
         return etree.XML(self.data)
     lxml = cached_property(lxml)
@@ -68,4 +69,5 @@ class ContentAccessors(object):
 
 
 class TestResponse(Response, ContentAccessors):
+
     """Pass this to `werkzeug.test.Client` for easier unittesting."""

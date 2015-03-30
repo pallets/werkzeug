@@ -89,6 +89,7 @@ def _items(mappingorseq):
 
 
 class BaseCache(object):
+
     """Baseclass for the cache systems.  All the cache systems implement this
     API or a superset of it.
 
@@ -231,6 +232,7 @@ class BaseCache(object):
 
 
 class NullCache(BaseCache):
+
     """A cache that doesn't cache.  This can be useful for unit testing.
 
     :param default_timeout: a dummy parameter that is ignored but exists
@@ -239,6 +241,7 @@ class NullCache(BaseCache):
 
 
 class SimpleCache(BaseCache):
+
     """Simple memory cache for single process environments.  This class exists
     mainly for the development server and is not 100% thread safe.  It tries
     to use as many atomic operations as possible and no locks for simplicity
@@ -279,7 +282,7 @@ class SimpleCache(BaseCache):
             timeout = self.default_timeout
         self._prune()
         self._cache[key] = (time() + timeout, pickle.dumps(value,
-            pickle.HIGHEST_PROTOCOL))
+                                                           pickle.HIGHEST_PROTOCOL))
         return True
 
     def add(self, key, value, timeout=None):
@@ -287,7 +290,7 @@ class SimpleCache(BaseCache):
             timeout = self.default_timeout
         self._prune()
         item = (time() + timeout, pickle.dumps(value,
-            pickle.HIGHEST_PROTOCOL))
+                                               pickle.HIGHEST_PROTOCOL))
         if key in self._cache:
             return False
         self._cache.setdefault(key, item)
@@ -299,7 +302,9 @@ class SimpleCache(BaseCache):
 
 _test_memcached_key = re.compile(r'[^\x00-\x21\xff]{1,250}$').match
 
+
 class MemcachedCache(BaseCache):
+
     """A cache that uses memcached as backend.
 
     The first argument can either be an object that resembles the API of a
@@ -467,6 +472,7 @@ GAEMemcachedCache = MemcachedCache
 
 
 class RedisCache(BaseCache):
+
     """Uses the Redis key-value store as a cache backend.
 
     The first argument can be either a string denoting address of the Redis
@@ -608,6 +614,7 @@ class RedisCache(BaseCache):
 
 
 class FileSystemCache(BaseCache):
+
     """A cache that stores the items on the file system.  This cache depends
     on being the only user of the `cache_dir`.  Make absolutely sure that
     nobody but this cache stores files there or otherwise the cache will
@@ -668,7 +675,7 @@ class FileSystemCache(BaseCache):
 
     def _get_filename(self, key):
         if isinstance(key, text_type):
-            key = key.encode('utf-8') #XXX unicode review
+            key = key.encode('utf-8')  # XXX unicode review
         hash = md5(key).hexdigest()
         return os.path.join(self._path, hash)
 

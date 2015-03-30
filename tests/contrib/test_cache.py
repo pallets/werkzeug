@@ -118,9 +118,9 @@ class CacheTests(object):
 
     def test_generic_true_false(self, c):
         assert c.set('foo', True)
-        assert c.get('foo') == True
+        assert c.get('foo') in (True, 1)
         assert c.set('bar', False)
-        assert c.get('bar') == False
+        assert c.get('bar') in (False, 0)
 
     def test_purge(self):
         c = cache.SimpleCache(threshold=2)
@@ -133,12 +133,14 @@ class CacheTests(object):
 
 
 class TestSimpleCache(CacheTests):
+
     @pytest.fixture
     def make_cache(self):
         return cache.SimpleCache
 
 
 class TestFileSystemCache(CacheTests):
+
     @pytest.fixture
     def make_cache(self, tmpdir):
         return lambda **kw: cache.FileSystemCache(cache_dir=str(tmpdir), **kw)

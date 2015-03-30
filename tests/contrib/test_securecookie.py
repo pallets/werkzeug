@@ -36,6 +36,7 @@ def test_basic_support():
     assert not c3.new
     assert c3 == {}
 
+
 def test_wrapper_support():
     req = Request.from_values()
     resp = Response()

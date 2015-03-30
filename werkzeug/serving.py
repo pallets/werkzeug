@@ -69,6 +69,7 @@ from werkzeug.exceptions import InternalServerError
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
+
     """A request handler that implements WSGI dispatching."""
 
     @property
@@ -373,6 +374,7 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
 
 
 class _SSLContext(object):
+
     '''A dummy class with a small subset of Python3's ``ssl.SSLContext``, only
     intended to be used with and by Werkzeug.'''
 
@@ -427,6 +429,7 @@ def select_ip_version(host, port):
 
 
 class BaseWSGIServer(HTTPServer, object):
+
     """Simple single-threaded, single-process WSGI server."""
     multithread = False
     multiprocess = False
@@ -477,11 +480,13 @@ class BaseWSGIServer(HTTPServer, object):
 
 
 class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
+
     """A WSGI server that does threading."""
     multithread = True
 
 
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
+
     """A WSGI server that does forking."""
     multiprocess = True
 

@@ -10,8 +10,6 @@
 """
 from __future__ import with_statement
 
-from werkzeug._compat import text_type
-
 
 def strict_eq(x, y):
     '''Equality test bypassing the implicit string conversion in Python 2'''

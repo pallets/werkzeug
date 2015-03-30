@@ -13,15 +13,14 @@ from __future__ import with_statement
 import pytest
 
 from datetime import datetime
-from functools import partial
 import inspect
 
 from werkzeug import utils
 from werkzeug.datastructures import Headers
 from werkzeug.http import parse_date, http_date
 from werkzeug.wrappers import BaseResponse
-from werkzeug.test import Client, run_wsgi_app
-from werkzeug._compat import text_type, implements_iterator
+from werkzeug.test import Client
+from werkzeug._compat import text_type
 
 
 def test_redirect():
@@ -39,6 +38,7 @@ def test_redirect():
     assert resp.headers['Location'] == 'http://example.com/'
     assert resp.status_code == 305
 
+
 def test_redirect_no_unicode_header_keys():
     # Make sure all headers are native keys.  This was a bug at one point
     # due to an incorrect conversion.
@@ -48,6 +48,7 @@ def test_redirect_no_unicode_header_keys():
         assert type(value) == text_type
     assert resp.headers['Location'] == 'http://example.com/'
     assert resp.status_code == 305
+
 
 def test_redirect_xss():
     location = 'http://example.com/?xss="><script>alert(1)</script>'
@@ -72,7 +73,9 @@ def test_redirect_with_custom_response_class():
 
 def test_cached_property():
     foo = []
+
     class A(object):
+
         def prop(self):
             foo.append(42)
             return 42
@@ -85,7 +88,9 @@ def test_cached_property():
     assert foo == [42]
 
     foo = []
+
     class A(object):
+
         def _prop(self):
             foo.append(42)
             return 42
@@ -101,6 +106,7 @@ def test_cached_property():
 
 def test_can_set_cached_property():
     class A(object):
+
         @utils.cached_property
         def _prop(self):
             return 'cached_property return value'
@@ -109,8 +115,10 @@ def test_can_set_cached_property():
     a._prop = 'value'
     assert a._prop == 'value'
 
+
 def test_inspect_treats_cached_property_as_property():
     class A(object):
+
         @utils.cached_property
         def _prop(self):
             return 'cached_property return value'
@@ -120,6 +128,7 @@ def test_inspect_treats_cached_property_as_property():
         if attr.name == '_prop':
             break
     assert attr.kind == 'property'
+
 
 def test_environ_property():
     class A(object):
@@ -131,23 +140,26 @@ def test_environ_property():
         number = utils.environ_property('number', load_func=int)
         broken_number = utils.environ_property('broken_number', load_func=int)
         date = utils.environ_property('date', None, parse_date, http_date,
-                                read_only=False)
+                                      read_only=False)
         foo = utils.environ_property('foo')
 
     a = A()
     assert a.string == 'abc'
     assert a.missing == 'spam'
+
     def test_assign():
         a.read_only = 'something'
     pytest.raises(AttributeError, test_assign)
     assert a.number == 42
-    assert a.broken_number == None
+    assert a.broken_number is None
     assert a.date is None
     a.date = datetime(2008, 1, 22, 10, 0, 0, 0)
     assert a.environ['date'] == 'Tue, 22 Jan 2008 10:00:00 GMT'
 
+
 def test_escape():
     class Foo(str):
+
         def __html__(self):
             return text_type(self)
     assert utils.escape(None) == ''
@@ -156,8 +168,10 @@ def test_escape():
     assert utils.escape('"foo"') == '&quot;foo&quot;'
     assert utils.escape(Foo('<foo>')) == '<foo>'
 
+
 def test_unescape():
     assert utils.unescape('&lt;&auml;&gt;') == u'<ä>'
+
 
 def test_import_string():
     import cgi
@@ -191,6 +205,7 @@ def test_find_modules():
         'werkzeug.debug.tbtools'
     ]
 
+
 def test_html_builder():
     html = utils.html
     xhtml = utils.xhtml
@@ -201,8 +216,8 @@ def test_html_builder():
     assert html.img(src='foo') == '<img src="foo">'
     assert xhtml.img(src='foo') == '<img src="foo" />'
     assert html.html(html.head(
-            html.title('foo'),
-            html.script(type='text/javascript')
+        html.title('foo'),
+        html.script(type='text/javascript')
     )) == (
         '<html><head><title>foo</title><script type="text/javascript">'
         '</script></head></html>'
@@ -219,6 +234,7 @@ def test_html_builder():
     assert xhtml.script('alert("Hello World");') == \
         '<script>/*<![CDATA[*/alert("Hello World");/*]]>*/</script>'
 
+
 def test_validate_arguments():
     take_none = lambda: None
     take_two = lambda a, b: None
@@ -230,13 +246,14 @@ def test_validate_arguments():
     assert utils.validate_arguments(take_two_one_default, (1, 2), {}) == ((1, 2), {})
 
     pytest.raises(utils.ArgumentValidationError,
-        utils.validate_arguments, take_two, (), {})
+                  utils.validate_arguments, take_two, (), {})
 
     assert utils.validate_arguments(take_none, (1, 2,), {'c': 3}) == ((), {})
     pytest.raises(utils.ArgumentValidationError,
-           utils.validate_arguments, take_none, (1,), {}, drop_extra=False)
+                  utils.validate_arguments, take_none, (1,), {}, drop_extra=False)
     pytest.raises(utils.ArgumentValidationError,
-           utils.validate_arguments, take_none, (), {'a': 1}, drop_extra=False)
+                  utils.validate_arguments, take_none, (), {'a': 1}, drop_extra=False)
+
 
 def test_header_set_duplication_bug():
     headers = Headers([
@@ -253,6 +270,7 @@ def test_header_set_duplication_bug():
         ('blafasel', 'humm')
     ])
 
+
 def test_append_slash_redirect():
     def app(env, sr):
         return utils.append_slash_redirect(env)(env, sr)
@@ -260,6 +278,7 @@ def test_append_slash_redirect():
     response = client.get('foo', base_url='http://example.org/app')
     assert response.status_code == 301
     assert response.headers['Location'] == 'http://example.org/app/foo/'
+
 
 def test_cached_property_doc():
     @utils.cached_property
@@ -269,6 +288,7 @@ def test_cached_property_doc():
     assert foo.__doc__ == 'testing'
     assert foo.__name__ == 'foo'
     assert foo.__module__ == __name__
+
 
 def test_secure_filename():
     assert utils.secure_filename('My cool movie.mov') == 'My_cool_movie.mov'

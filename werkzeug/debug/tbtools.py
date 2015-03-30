@@ -42,13 +42,15 @@ HEADER = u'''\
 <html>
   <head>
     <title>%(title)s // Werkzeug Debugger</title>
-    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css" type="text/css">
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css"
+        type="text/css">
     <!-- We need to make sure this has a favicon so that the debugger does not by
          accident trigger a request to /favicon.ico which might change the application
          state. -->
-    <link rel="shortcut icon" href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
-    <script type="text/javascript" src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
-    <script type="text/javascript" src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
+    <link rel="shortcut icon"
+        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
+    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
+    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
       var TRACEBACK = %(traceback_id)d,
           CONSOLE_MODE = %(console)s,
@@ -145,7 +147,7 @@ def render_console_html(secret):
         'console':          'true',
         'title':            'Console',
         'secret':           secret,
-        'traceback_id':     -1
+        'traceback_id': -1
     }
 
 
@@ -170,6 +172,7 @@ def get_current_traceback(ignore_system_exceptions=False,
 
 
 class Line(object):
+
     """Helper for the source renderer."""
     __slots__ = ('lineno', 'code', 'in_frame', 'current')
 
@@ -197,6 +200,7 @@ class Line(object):
 
 
 class Traceback(object):
+
     """Wraps a traceback."""
 
     def __init__(self, exc_type, exc_value, tb):
@@ -364,6 +368,7 @@ class Traceback(object):
 
 
 class Frame(object):
+
     """A single frame in a traceback."""
 
     def __init__(self, exc_type, exc_value, tb):
@@ -438,7 +443,7 @@ class Frame(object):
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
         if isinstance(code, string_types):
-            if PY2 and isinstance(code, unicode):
+            if PY2 and isinstance(code, unicode):  # noqa
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
         return eval(code, self.globals, self.locals)

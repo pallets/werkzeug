@@ -17,8 +17,8 @@ from itertools import repeat
 
 from werkzeug._internal import _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-     PY2, text_type, integer_types, string_types, make_literal_wrapper, \
-     to_native
+    PY2, text_type, integer_types, string_types, make_literal_wrapper, \
+    to_native
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -50,12 +50,13 @@ def iter_multi_items(mapping):
 def native_itermethods(names):
     if not PY2:
         return lambda x: x
+
     def setmethod(cls, name):
         itermethod = getattr(cls, name)
         setattr(cls, 'iter%s' % name, itermethod)
         listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
         listmethod.__doc__ = \
-                'Like :py:meth:`iter%s`, but returns a list.' % name
+            'Like :py:meth:`iter%s`, but returns a list.' % name
         setattr(cls, name, listmethod)
 
     def wrap(cls):
@@ -66,6 +67,7 @@ def native_itermethods(names):
 
 
 class ImmutableListMixin(object):
+
     """Makes a :class:`list` immutable.
 
     .. versionadded:: 0.5
@@ -121,6 +123,7 @@ class ImmutableListMixin(object):
 
 
 class ImmutableList(ImmutableListMixin, list):
+
     """An immutable :class:`list`.
 
     .. versionadded:: 0.5
@@ -136,6 +139,7 @@ class ImmutableList(ImmutableListMixin, list):
 
 
 class ImmutableDictMixin(object):
+
     """Makes a :class:`dict` immutable.
 
     .. versionadded:: 0.5
@@ -185,6 +189,7 @@ class ImmutableDictMixin(object):
 
 
 class ImmutableMultiDictMixin(ImmutableDictMixin):
+
     """Makes a :class:`MultiDict` immutable.
 
     .. versionadded:: 0.5
@@ -215,6 +220,7 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
 
 
 class UpdateDictMixin(object):
+
     """Makes dicts call `self.on_update` on modifications.
 
     .. versionadded:: 0.5
@@ -259,6 +265,7 @@ class UpdateDictMixin(object):
 
 
 class TypeConversionDict(dict):
+
     """Works like a regular dict but the :meth:`get` method can perform
     type conversions.  :class:`MultiDict` and :class:`CombinedMultiDict`
     are subclasses of this class and provide the same feature.
@@ -297,6 +304,7 @@ class TypeConversionDict(dict):
 
 
 class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
+
     """Works like a :class:`TypeConversionDict` but does not support
     modifications.
 
@@ -316,6 +324,7 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
 
 @native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class MultiDict(TypeConversionDict):
+
     """A :class:`MultiDict` is a dictionary subclass customized to deal with
     multiple values for the same key which is for example used by the parsing
     functions in the wrappers.  This is necessary because some HTML form
@@ -619,6 +628,7 @@ class MultiDict(TypeConversionDict):
 
 
 class _omd_bucket(object):
+
     """Wraps values in the :class:`OrderedMultiDict`.  This makes it
     possible to keep an order over multiple different keys.  It requires
     a lot of extra memory and slows down access a lot, but makes it
@@ -651,6 +661,7 @@ class _omd_bucket(object):
 
 @native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class OrderedMultiDict(MultiDict):
+
     """Works like a regular :class:`MultiDict` but preserves the
     order of the fields.  To convert the ordered multi dict into a
     list you can use the :meth:`items` method and pass it ``multi=True``.
@@ -840,6 +851,7 @@ def _unicodify_header_value(value):
 
 @native_itermethods(['keys', 'values', 'items'])
 class Headers(object):
+
     """An object that stores some headers.  It has a dict-like interface
     but is ordered and can store the same keys multiple times.
 
@@ -901,7 +913,7 @@ class Headers(object):
 
     def __eq__(self, other):
         return other.__class__ is self.__class__ and \
-               set(other._list) == set(self._list)
+            set(other._list) == set(self._list)
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -1100,7 +1112,7 @@ class Headers(object):
             raise TypeError('Value should be unicode.')
         if u'\n' in value or u'\r' in value:
             raise ValueError('Detected newline in header value.  This is '
-                'a potential security problem')
+                             'a potential security problem')
 
     def add_header(self, _key, _value, **_kw):
         """Add a new header tuple to the list.
@@ -1216,6 +1228,7 @@ class Headers(object):
 
 
 class ImmutableHeadersMixin(object):
+
     """Makes a :class:`Headers` immutable.  We do not mark them as
     hashable though since the only usecase for this datastructure
     in Werkzeug is a view on a mutable structure.
@@ -1253,6 +1266,7 @@ class ImmutableHeadersMixin(object):
 
 
 class EnvironHeaders(ImmutableHeadersMixin, Headers):
+
     """Read only version of the headers from a WSGI environment.  This
     provides the same interface as `Headers` and is constructed from
     a WSGI environment.
@@ -1298,6 +1312,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
 
 @native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])
 class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
+
     """A read only :class:`MultiDict` that you can pass multiple :class:`MultiDict`
     instances as sequence and it will combine the return values of all wrapped
     dicts:
@@ -1357,7 +1372,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     def _keys_impl(self):
         """This function exists so __len__ can be implemented more efficiently,
         saving one list creation from an iterator.
-        
+
         Using this for Python 2's ``dict.keys`` behavior would be useless since
         `dict.keys` in Python 2 returns a list, while we have a set here.
         """
@@ -1430,6 +1445,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
 
 
 class FileMultiDict(MultiDict):
+
     """A special :class:`MultiDict` that has convenience methods to add
     files to it.  This is used for :class:`EnvironBuilder` and generally
     useful for unittesting.
@@ -1455,13 +1471,14 @@ class FileMultiDict(MultiDict):
                 file = open(file, 'rb')
             if filename and content_type is None:
                 content_type = mimetypes.guess_type(filename)[0] or \
-                               'application/octet-stream'
+                    'application/octet-stream'
             value = FileStorage(file, filename, name, content_type)
 
         self.add(name, value)
 
 
 class ImmutableDict(ImmutableDictMixin, dict):
+
     """An immutable :class:`dict`.
 
     .. versionadded:: 0.5
@@ -1485,6 +1502,7 @@ class ImmutableDict(ImmutableDictMixin, dict):
 
 
 class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
+
     """An immutable :class:`MultiDict`.
 
     .. versionadded:: 0.5
@@ -1502,6 +1520,7 @@ class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
 
 
 class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
+
     """An immutable :class:`OrderedMultiDict`.
 
     .. versionadded:: 0.6
@@ -1523,6 +1542,7 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
 
 @native_itermethods(['values'])
 class Accept(ImmutableList):
+
     """An :class:`Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by quality.
 
@@ -1659,8 +1679,8 @@ class Accept(ImmutableList):
             for client_item, quality in self:
                 if quality <= best_quality:
                     break
-                if (self._value_matches(server_item, client_item)
-                    and quality > 0):
+                if self._value_matches(server_item, client_item) \
+                   and quality > 0:
                     best_quality = quality
                     result = server_item
         return result
@@ -1673,6 +1693,7 @@ class Accept(ImmutableList):
 
 
 class MIMEAccept(Accept):
+
     """Like :class:`Accept` but with special methods and behavior for
     mimetypes.
     """
@@ -1727,6 +1748,7 @@ class MIMEAccept(Accept):
 
 
 class LanguageAccept(Accept):
+
     """Like :class:`Accept` but with normalization for languages."""
 
     def _value_matches(self, value, item):
@@ -1736,6 +1758,7 @@ class LanguageAccept(Accept):
 
 
 class CharsetAccept(Accept):
+
     """Like :class:`Accept` but with normalization for charsets."""
 
     def _value_matches(self, value, item):
@@ -1757,6 +1780,7 @@ def cache_property(key, empty, type):
 
 
 class _CacheControl(UpdateDictMixin, dict):
+
     """Subclass of a dict that stores values for a Cache-Control header.  It
     has accessors for all the cache-control directives specified in RFC 2616.
     The class does not differentiate between request and response directives.
@@ -1850,6 +1874,7 @@ class _CacheControl(UpdateDictMixin, dict):
 
 
 class RequestCacheControl(ImmutableDictMixin, _CacheControl):
+
     """A cache control for requests.  This is immutable and gives access
     to all the request-relevant cache control headers.
 
@@ -1870,6 +1895,7 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
 
 
 class ResponseCacheControl(_CacheControl):
+
     """A cache control for responses.  Unlike :class:`RequestCacheControl`
     this is mutable and gives access to response-relevant cache control
     headers.
@@ -1897,6 +1923,7 @@ _CacheControl.cache_property = staticmethod(cache_property)
 
 
 class CallbackDict(UpdateDictMixin, dict):
+
     """A dict that calls a function passed every time something is changed.
     The function is passed the dict instance.
     """
@@ -1913,6 +1940,7 @@ class CallbackDict(UpdateDictMixin, dict):
 
 
 class HeaderSet(object):
+
     """Similar to the :class:`ETags` class this implements a set-like structure.
     Unlike :class:`ETags` this is case insensitive and used for vary, allow, and
     content-language headers.
@@ -2066,6 +2094,7 @@ class HeaderSet(object):
 
 
 class ETags(object):
+
     """A set that can be used to check if one etag is present in a collection
     of etags.
     """
@@ -2145,6 +2174,7 @@ class ETags(object):
 
 
 class IfRange(object):
+
     """Very simple object that represents the `If-Range` header in parsed
     form.  It will either have neither a etag or date or one of either but
     never both.
@@ -2175,6 +2205,7 @@ class IfRange(object):
 
 
 class Range(object):
+
     """Represents a range header.  All the methods are only supporting bytes
     as unit.  It does store multiple ranges but :meth:`range_for_length` will
     only work if only one range is provided.
@@ -2230,6 +2261,7 @@ class Range(object):
 
 
 class ContentRange(object):
+
     """Represents the content range header.
 
     .. versionadded:: 0.7
@@ -2244,6 +2276,7 @@ class ContentRange(object):
     def _callback_property(name):
         def fget(self):
             return getattr(self, name)
+
         def fset(self, value):
             setattr(self, name, value)
             if self.on_update is not None:
@@ -2306,6 +2339,7 @@ class ContentRange(object):
 
 
 class Authorization(ImmutableDictMixin, dict):
+
     """Represents an `Authorization` header sent by the client.  You should
     not create this kind of object yourself but use it when it's returned by
     the `parse_authorization_header` function.
@@ -2366,6 +2400,7 @@ class Authorization(ImmutableDictMixin, dict):
 
 
 class WWWAuthenticate(UpdateDictMixin, dict):
+
     """Provides simple access to `WWW-Authenticate` headers."""
 
     #: list of keys that require quoting in the generated header
@@ -2410,7 +2445,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         auth_type = d.pop('__auth_type__', None) or 'basic'
         return '%s %s' % (auth_type.title(), ', '.join([
             '%s=%s' % (key, quote_header_value(value,
-                       allow_token=key not in self._require_quoting))
+                                               allow_token=key not in self._require_quoting))
             for key, value in iteritems(d)
         ]))
 
@@ -2433,6 +2468,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         For more information have a look at the sourcecode to see how the
         regular properties (:attr:`realm` etc.) are implemented.
         """
+
         def _set_value(self, value):
             if value is None:
                 self.pop(name, None)
@@ -2483,6 +2519,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         val = self.get('stale')
         if val is not None:
             return val.lower() == 'true'
+
     def _set_stale(self, value):
         if value is None:
             self.pop('stale', None)
@@ -2500,6 +2537,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
 
 
 class FileStorage(object):
+
     """The :class:`FileStorage` class is a thin wrapper over incoming files.
     It is used by the request object to represent uploaded files.  All the
     attributes of the wrapper stream are proxied by the file storage so
@@ -2629,6 +2667,6 @@ class FileStorage(object):
 
 # circular dependencies
 from werkzeug.http import dump_options_header, dump_header, generate_etag, \
-     quote_header_value, parse_set_header, unquote_etag, quote_etag, \
-     parse_options_header, http_date, is_byte_range_valid
+    quote_header_value, parse_set_header, unquote_etag, quote_etag, \
+    parse_options_header, http_date, is_byte_range_valid
 from werkzeug import exceptions

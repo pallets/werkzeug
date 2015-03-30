@@ -64,6 +64,7 @@ def _newline(reference_string):
 
 @implements_iterator
 class IterIO(object):
+
     """Instances of this object implement an interface compatible with the
     standard Python :class:`file` object.  Streams are either read-only or
     write-only depending on how the object is created.
@@ -160,6 +161,7 @@ class IterIO(object):
 
 
 class IterI(IterIO):
+
     """Convert an stream into an iterator."""
 
     def __new__(cls, func, sentinel=''):
@@ -214,6 +216,7 @@ class IterI(IterIO):
 
 
 class IterO(IterIO):
+
     """Iter output.  Wrap an iterator and give it a stream like interface."""
 
     def __new__(cls, gen, sentinel=''):

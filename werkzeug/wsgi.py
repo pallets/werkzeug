@@ -20,8 +20,8 @@ from datetime import datetime
 from functools import partial, update_wrapper
 
 from werkzeug._compat import iteritems, text_type, string_types, \
-     implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
-     wsgi_get_bytes, try_coerce_native, PY2
+    implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
+    wsgi_get_bytes, try_coerce_native, PY2
 from werkzeug._internal import _empty_stream, _encode_idna
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
@@ -426,6 +426,7 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
 
 
 class SharedDataMiddleware(object):
+
     """A WSGI middleware that provides static content for development
     environments or simple server setups. Usage is quite simple::
 
@@ -522,11 +523,12 @@ class SharedDataMiddleware(object):
 
     def get_package_loader(self, package, package_path):
         from pkg_resources import DefaultProvider, ResourceManager, \
-             get_provider
+            get_provider
         loadtime = datetime.utcnow()
         provider = get_provider(package)
         manager = ResourceManager()
         filesystem_bound = isinstance(provider, DefaultProvider)
+
         def loader(path):
             if path is None:
                 return None, None
@@ -620,6 +622,7 @@ class SharedDataMiddleware(object):
 
 
 class DispatcherMiddleware(object):
+
     """Allows one to mount middlewares or applications in a WSGI application.
     This is useful if you want to combine multiple WSGI applications::
 
@@ -652,6 +655,7 @@ class DispatcherMiddleware(object):
 
 @implements_iterator
 class ClosingIterator(object):
+
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of an iterator.  Because it is useful to add
     another close action to a returned iterator and adding a custom iterator
@@ -718,6 +722,7 @@ def wrap_file(environ, file, buffer_size=8192):
 
 @implements_iterator
 class FileWrapper(object):
+
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
     read.
@@ -897,6 +902,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
 
 @implements_iterator
 class LimitedStream(object):
+
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it
     :func:`on_exhausted` is called which by default returns an empty

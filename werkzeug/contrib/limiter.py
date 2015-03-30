@@ -18,6 +18,7 @@ from werkzeug.wsgi import LimitedStream
 
 
 class StreamLimitMiddleware(object):
+
     """Limits the input stream to a given number of bytes.  This is useful if
     you have a WSGI application that reads form data into memory (django for
     example) and you don't want users to harm the server by uploading tons of

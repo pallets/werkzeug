@@ -9,11 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 import sys
-import os
 import re
 import io
-
-import pytest
 
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
@@ -48,7 +45,6 @@ class TestDebugRepr(object):
             u'<span class="number">19</span></span>]'
         )
 
-
     def test_mapping_repr(self):
         assert debug_repr({}) == u'{}'
         assert debug_repr({'foo': 42}) == (
@@ -57,7 +53,7 @@ class TestDebugRepr(object):
             u'</span></span></span>}'
         )
         assert debug_repr(dict(zip(range(10), [None] * 10))) == (
-            u'{<span class="pair"><span class="key"><span class="number">0</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">1</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">2</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">3</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="extended"><span class="pair"><span class="key"><span class="number">4</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">5</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">6</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">7</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">8</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">9</span></span>: <span class="value"><span class="object">None</span></span></span></span>}'
+            u'{<span class="pair"><span class="key"><span class="number">0</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">1</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">2</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">3</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="extended"><span class="pair"><span class="key"><span class="number">4</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">5</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">6</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">7</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">8</span></span>: <span class="value"><span class="object">None</span></span></span>, <span class="pair"><span class="key"><span class="number">9</span></span>: <span class="value"><span class="object">None</span></span></span></span>}'  # noqa
         )
         assert debug_repr((1, 'zwei', u'drei')) == (
             u'(<span class="number">1</span>, <span class="string">\''
@@ -66,6 +62,7 @@ class TestDebugRepr(object):
 
     def test_custom_repr(self):
         class Foo(object):
+
             def __repr__(self):
                 return '<Foo 42>'
         assert debug_repr(Foo()) == \
@@ -102,6 +99,7 @@ class TestDebugRepr(object):
 
     def test_broken_repr(self):
         class Foo(object):
+
             def __repr__(self):
                 raise Exception('broken!')
 
@@ -114,7 +112,6 @@ class TestDebugRepr(object):
 class Foo(object):
     x = 42
     y = 23
-
 
     def __init__(self):
         self.z = 15
@@ -177,7 +174,7 @@ class TestTraceback(object):
 
     def test_log(self):
         try:
-            1/0
+            1 / 0
         except ZeroDivisionError:
             traceback = Traceback(*sys.exc_info())
 
@@ -195,7 +192,6 @@ class TestTraceback(object):
         try:
             eval(code)
         except ZeroDivisionError:
-            tb = sys.exc_info()[2]
             traceback = Traceback(*sys.exc_info())
 
         frames = traceback.frames
@@ -204,6 +200,7 @@ class TestTraceback(object):
         assert frames[2].filename == 'lol.py'
 
         class Loader(object):
+
             def get_source(self, module):
                 return source
 

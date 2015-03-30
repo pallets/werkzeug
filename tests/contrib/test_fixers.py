@@ -30,19 +30,21 @@ class TestServerFixer(object):
 
     def test_cgi_root_fix(self):
         app = fixers.CGIRootFix(path_check_app)
-        response = Response.from_app(app, dict(create_environ(),
-            SCRIPT_NAME='/foo',
-            PATH_INFO='/bar',
-            SERVER_SOFTWARE='lighttpd/1.4.27'
-        ))
+        response = Response.from_app(
+            app,
+            dict(create_environ(),
+                 SCRIPT_NAME='/foo',
+                 PATH_INFO='/bar',
+                 SERVER_SOFTWARE='lighttpd/1.4.27'))
         assert response.get_data() == b'PATH_INFO: /foo/bar\nSCRIPT_NAME: '
 
     def test_cgi_root_fix_custom_app_root(self):
         app = fixers.CGIRootFix(path_check_app, app_root='/baz/poop/')
-        response = Response.from_app(app, dict(create_environ(),
-            SCRIPT_NAME='/foo',
-            PATH_INFO='/bar'
-        ))
+        response = Response.from_app(
+            app,
+            dict(create_environ(),
+                 SCRIPT_NAME='/foo',
+                 PATH_INFO='/bar'))
         assert response.get_data() == b'PATH_INFO: /foo/bar\nSCRIPT_NAME: baz/poop'
 
     def test_path_info_from_request_uri_fix(self):
@@ -62,7 +64,8 @@ class TestServerFixer(object):
                 request.environ['HTTP_HOST']
             ))
         app = fixers.ProxyFix(app, num_proxies=2)
-        environ = dict(create_environ(),
+        environ = dict(
+            create_environ(),
             HTTP_X_FORWARDED_PROTO="https",
             HTTP_X_FORWARDED_HOST='example.com',
             HTTP_X_FORWARDED_FOR='1.2.3.4, 5.6.7.8',
@@ -88,7 +91,8 @@ class TestServerFixer(object):
         @Request.application
         def app(request):
             return Response(request.remote_addr)
-        environ = dict(create_environ(),
+        environ = dict(
+            create_environ(),
             HTTP_X_FORWARDED_FOR=',',
             REMOTE_ADDR='127.0.0.1',
         )
@@ -148,7 +152,6 @@ class TestBrowserFixer(object):
             response.headers['Cache-Control'] = cc.to_header()
             response.headers['Content-Disposition'] = 'attachment; filename=foo.xls'
             return response
-
 
         # IE has no pragma or cache control
         pragma = ('no-cache',)
