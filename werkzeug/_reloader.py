@@ -166,6 +166,13 @@ class WatchdogReloaderLoop(ReloaderLoop):
             def on_modified(self, event):
                 _check_modification(event.src_path)
 
+            def on_moved(self, event):
+                _check_modification(event.src_path)
+                _check_modification(event.dest_path)
+
+            def on_deleted(self, event):
+                _check_modification(event.src_path)
+
         reloader_name = Observer.__name__.lower()
         if reloader_name.endswith('observer'):
             reloader_name = reloader_name[:-8]
