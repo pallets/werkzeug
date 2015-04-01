@@ -159,6 +159,13 @@ class WatchdogReloaderLoop(ReloaderLoop):
             def on_modified(self, event):
                 _check_modification(event.src_path)
 
+            def on_moved(self, event):
+                _check_modification(event.src_path)
+                _check_modification(event.dest_path)
+
+            def on_deleted(self, event):
+                _check_modification(event.src_path)
+
         reloader_name = Observer.__name__.lower()
         if reloader_name.endswith('observer'):
             reloader_name = reloader_name[:-8]
@@ -189,10 +196,17 @@ class WatchdogReloaderLoop(ReloaderLoop):
                     try:
                         watches[path] = observer.schedule(
                             self.event_handler, path, recursive=True)
-                    except OSError:
-                        # "Path is not a directory". We could filter out
-                        # those paths beforehand, but that would cause
-                        # additional stat calls.
+                    except OSError as e:
+                        # Extract message from exception
+                        message = str(e)
+
+                        # TODO: This check is hardcoded, should find
+                        # better way to differentiate errors from watchdog
+                        if message != "Path is not a directory":
+                            # Log the exception
+                            _log('error', message)
+
+                        # Clear this path from list of watches
                         watches[path] = None
                 to_delete.discard(path)
             for path in to_delete:
