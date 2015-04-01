@@ -208,19 +208,18 @@ class WatchdogReloaderLoop(ReloaderLoop):
                         # Extract message from exception
                         message = str(e)
 
-                        # TODO: These are hardcoded, should find better way to differentiate errors from watchdog
-                        if message == "inotify watch limit reached":
-                            # Warn user to increase limit for inotify watches
-                            _log('error', 'inotify limit reached, please increase your limit')
-                        elif message == "Path is not a directory":
+                        # TODO: This check is hardcoded, should find 
+                        # better way to differentiate errors from watchdog
+                        if message == "Path is not a directory":
                             # "Path is not a directory". We could filter out
                             # those paths beforehand, but that would cause
                             # additional stat calls.
-                            _log('error', '%s is not a directory' % path)
-                        else:
-                            # Otherwise, log the exception
-                            _log('error', str(e))
+                            message = '%s is not a directory' % path
+                        
+                        # Log the exception
+                        _log('error', message)
 
+                        # Clear this path from list of watches
                         watches[path] = None
                 to_delete.discard(path)
             for path in to_delete:
