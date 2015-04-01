@@ -197,16 +197,15 @@ class WatchdogReloaderLoop(ReloaderLoop):
                         watches[path] = observer.schedule(
                             self.event_handler, path, recursive=True)
                     except OSError as e:
-                        # Extract message from exception
                         message = str(e)
 
-                        # TODO: This check is hardcoded, should find
-                        # better way to differentiate errors from watchdog
                         if message != "Path is not a directory":
                             # Log the exception
                             _log('error', message)
 
-                        # Clear this path from list of watches
+                        # Clear this path from list of watches We don't want
+                        # the same error message showing again in the next
+                        # iteration.
                         watches[path] = None
                 to_delete.discard(path)
             for path in to_delete:
