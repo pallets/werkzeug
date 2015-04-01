@@ -20,6 +20,14 @@ Version 0.11
 - Fixed issue where RedisCache set_many was broken for twemproxy, which doesn't
   support the default MULTI command (pull request ``#702``).
 
+Version 0.10.5
+--------------
+
+(bugfix release, release date yet to be decided)
+
+- Reloader: Correctly detect file changes made by moving temporary files over
+  the original, which is e.g. the case with PyCharm (pull request ``#722``).
+
 Version 0.10.4
 --------------
 
