@@ -210,14 +210,9 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
                         # TODO: This check is hardcoded, should find
                         # better way to differentiate errors from watchdog
-                        if message == "Path is not a directory":
-                            # "Path is not a directory". We could filter out
-                            # those paths beforehand, but that would cause
-                            # additional stat calls.
-                            message = '%s is not a directory' % path
-
-                        # Log the exception
-                        _log('error', message)
+                        if message != "Path is not a directory":
+                            # Log the exception
+                            _log('error', message)
 
                         # Clear this path from list of watches
                         watches[path] = None
