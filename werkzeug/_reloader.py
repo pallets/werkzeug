@@ -205,11 +205,22 @@ class WatchdogReloaderLoop(ReloaderLoop):
                         watches[path] = observer.schedule(
                             self.event_handler, path, recursive=True)
                     except OSError as e:
-                        if e.message == "inotify watch limit reached":
+                        # Extract message from exception
+                        message = str(e)
+
+                        # TODO: These are hardcoded, should find better way to differentiate errors from watchdog
+                        if message == "inotify watch limit reached":
+                            # Warn user to increase limit for inotify watches
                             _log('error', 'inotify limit reached, please increase your limit')
-                        # "Path is not a directory". We could filter out
-                        # those paths beforehand, but that would cause
-                        # additional stat calls.
+                        elif message == "Path is not a directory":
+                            # "Path is not a directory". We could filter out
+                            # those paths beforehand, but that would cause
+                            # additional stat calls.
+                            _log('error', '%s is not a directory' % path)
+                        else:
+                            # Otherwise, log the exception
+                            _log('error', str(e))
+
                         watches[path] = None
                 to_delete.discard(path)
             for path in to_delete:
