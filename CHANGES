@@ -1,6 +1,14 @@
 Werkzeug Changelog
 ==================
 
+Version 0.10.5
+--------------
+
+(bugfix release, release date yet to be decided)
+
+- Reloader: Correctly detect file changes made by moving temporary files over
+  the original, which is e.g. the case with PyCharm (pull request ``#722``).
+
 Version 0.10.4
 --------------
 
