@@ -534,7 +534,7 @@ class RedisCache(BaseCache):
         return b'!' + pickle.dumps(value)
 
     def load_object(self, value):
-        """The reversal of :meth:`dump_object`.  This might be callde with
+        """The reversal of :meth:`dump_object`.  This might be called with
         None.
         """
         if value is None:
