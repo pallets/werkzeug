@@ -79,7 +79,7 @@ class TestCommand(Command):
 
     def run(self):
         import pytest
-        pytest.cmdline.main(args=[])
+        pytest.cmdline.main(args=['tests'])
 
 
 setup(
