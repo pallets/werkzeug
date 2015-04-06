@@ -19,6 +19,8 @@ Version 0.11
   version would be extracted (pull request ``#703``).
 - Fixed issue where RedisCache set_many was broken for twemproxy, which doesn't
   support the default MULTI command (pull request ``#702``).
+- ``mimetype`` parameters on request and response classes are now always
+  converted to lowercase.
 
 Version 0.10.5
 --------------
