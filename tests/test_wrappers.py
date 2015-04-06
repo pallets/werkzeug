@@ -876,7 +876,7 @@ def test_disabled_auto_content_length():
     assert 'Content-Length' not in resp.get_wsgi_headers({})
 
 def test_location_header_autocorrect():
-    env = create_environ()
+    env = create_environ('/a/b/c')
     class MyResponse(wrappers.Response):
         autocorrect_location_header = False
     resp = MyResponse('Hello World!')
@@ -886,6 +886,11 @@ def test_location_header_autocorrect():
     resp = wrappers.Response('Hello World!')
     resp.headers['Location'] = '/test'
     assert resp.get_wsgi_headers(env)['Location'] == 'http://localhost/test'
+
+    resp = wrappers.Response('Hello World!')
+    resp.headers['Location'] = '../test'
+    assert resp.get_wsgi_headers(env)['Location'] == 'http://localhost/a/test'
+
 
 def test_modified_url_encoding():
     class ModifiedRequest(wrappers.Request):
