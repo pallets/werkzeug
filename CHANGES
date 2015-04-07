@@ -29,6 +29,8 @@ Version 0.10.5
 
 - Reloader: Correctly detect file changes made by moving temporary files over
   the original, which is e.g. the case with PyCharm (pull request ``#722``).
+- Reintroduce `MultiDict` values for building URLs. We actually can eat our
+  cake and have it too.
 
 Version 0.10.4
 --------------

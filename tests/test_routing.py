@@ -100,8 +100,6 @@ def test_basic_building():
     assert adapter.build('bar', {'baz': 'blub'}) == \
         'http://example.org/bar/blub'
     assert adapter.build('bari', {'bazi': 50}) == 'http://example.org/bar/50'
-    multivalues = MultiDict([('bazi', 50), ('bazi', None)])
-    assert adapter.build('bari', multivalues) == 'http://example.org/bar/50'
     assert adapter.build('barf', {'bazf': 0.815}) == \
         'http://example.org/bar/0.815'
     assert adapter.build('barp', {'bazp': 'la/di'}) == \
@@ -482,13 +480,25 @@ def test_build_append_unknown():
 
 def test_build_append_multiple():
     map = r.Map([
-        r.Rule('/bar/<float:bazf>', endpoint='barf')
+        r.Rule('/bar/<float:foo>', endpoint='endp')
     ])
-    adapter = map.bind('example.org', '/', subdomain='blah')
-    params = {'bazf': 0.815, 'bif': [1.0, 3.0], 'pof': 2.0}
-    a, b = adapter.build('barf', params).split('?')
+    adapter = map.bind('example.org', '/', subdomain='subd')
+    params = {'foo': 0.815, 'x': [1.0, 3.0], 'y': 2.0}
+    a, b = adapter.build('endp', params).split('?')
     assert a == 'http://example.org/bar/0.815'
-    assert set(b.split('&')) == set('pof=2.0&bif=1.0&bif=3.0'.split('&'))
+    assert set(b.split('&')) == set('y=2.0&x=1.0&x=3.0'.split('&'))
+
+
+def test_build_append_multidict():
+    map = r.Map([
+        r.Rule('/bar/<float:foo>', endpoint='endp')
+    ])
+    adapter = map.bind('example.org', '/', subdomain='subd')
+    params = MultiDict(
+        (('foo', 0.815), ('x', 1.0), ('x', 3.0), ('y', 2.0)))
+    a, b = adapter.build('endp', params).split('?')
+    assert a == 'http://example.org/bar/0.815'
+    assert set(b.split('&')) == set('y=2.0&x=1.0&x=3.0'.split('&'))
 
 
 def test_method_fallback():

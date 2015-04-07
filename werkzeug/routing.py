@@ -1717,6 +1717,12 @@ class MapAdapter(object):
         >>> urls.build("index", {'q': ['a', 'b', 'c']})
         '/?q=a&q=b&q=c'
 
+        If an actual :py:class:`werkzeug.datastructures.MultiDict` is passed
+        in it is automatically expanded to do the correct thing:
+
+        >>> urls.build("index", MultiDict((('p', 'z'), ('q', 'a'), ('q', 'b'))))
+        '/?p=z&q=a&q=b'
+
         If a rule does not exist when building a `BuildError` exception is
         raised.
 
@@ -1742,10 +1748,14 @@ class MapAdapter(object):
         self.map.update()
         if values:
             if isinstance(values, MultiDict):
-                valueiter = iteritems(values, multi=True)
+                temp = {
+                    k: (values.getlist(k)
+                        if len(values.getlist(k)) > 1
+                        else values[k])
+                    for k in values}
             else:
-                valueiter = iteritems(values)
-            values = dict((k, v) for k, v in valueiter if v is not None)
+                temp = values
+            values = dict((k, v) for k, v in iteritems(temp) if v is not None)
         else:
             values = {}
 
