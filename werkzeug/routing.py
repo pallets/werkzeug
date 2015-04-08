@@ -1748,11 +1748,11 @@ class MapAdapter(object):
         self.map.update()
         if values:
             if isinstance(values, MultiDict):
-                temp = {
-                    k: (values.getlist(k)
-                        if len(values.getlist(k)) > 1
-                        else values[k])
-                    for k in values}
+                temp = dict(
+                    (k, (values.getlist(k)
+                         if len(values.getlist(k)) > 1
+                         else values[k]))
+                    for k in values)
             else:
                 temp = values
             values = dict((k, v) for k, v in iteritems(temp) if v is not None)
