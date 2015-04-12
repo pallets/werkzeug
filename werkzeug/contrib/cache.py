@@ -371,7 +371,7 @@ class MemcachedCache(BaseCache):
         return key
 
     def _normalize_timeout(self, timeout):
-        if timeout == None:
+        if timeout is None:
             timeout = self.default_timeout
         if timeout > 0:
             timeout = int(time()) + timeout
