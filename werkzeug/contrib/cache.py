@@ -99,6 +99,7 @@ class BaseCache(object):
     """
 
     def __init__(self, default_timeout=300):
+        # Need additional handling for when default_timeout is None or Negative
         self.default_timeout = default_timeout
 
     def get(self, key):
