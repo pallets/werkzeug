@@ -109,7 +109,7 @@ from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed
 from werkzeug._internal import _get_environ, _encode_idna
 from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
     text_type, string_types, native_string_result, \
-    implements_to_string, wsgi_decoding_dance
+    implements_to_string, wsgi_decoding_dance, iterlists
 from werkzeug.datastructures import ImmutableDict, MultiDict
 
 
@@ -1748,11 +1748,12 @@ class MapAdapter(object):
         self.map.update()
         if values:
             if isinstance(values, MultiDict):
-                temp = dict(
-                    (k, (values.getlist(k)
-                         if len(values.getlist(k)) > 1
-                         else values[k]))
-                    for k in values)
+                temp = {}
+                for key, list_value in iterlists(values):
+                    if len(list_value) == 1:
+                        temp[key] = list_value[0]
+                    else:
+                        temp[key] = list_value
             else:
                 temp = values
             values = dict((k, v) for k, v in iteritems(temp) if v is not None)
