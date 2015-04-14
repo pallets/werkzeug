@@ -674,7 +674,7 @@ class FileSystemCache(BaseCache):
                     remove = False
                     with open(fname, 'rb') as f:
                         expires = pickle.load(f)
-                    remove = (expires != 0 and expires <= now) or idx % 3 == 0
+                    remove = expires <= now or idx % 3 == 0
 
                     if remove:
                         os.remove(fname)
