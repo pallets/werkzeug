@@ -726,14 +726,16 @@ class FileSystemCache(BaseCache):
 
     def set(self, key, value, timeout=None):
         if timeout is None:
-            timeout = self.default_timeout
+            timeout = int(time()) + self.default_timeout
+        elif timeout != 0:
+            timeout = int(time() + timeout)
         filename = self._get_filename(key)
         self._prune()
         try:
             fd, tmp = tempfile.mkstemp(suffix=self._fs_transaction_suffix,
                                        dir=self._path)
             with os.fdopen(fd, 'wb') as f:
-                pickle.dump(int(time() + timeout), f, 1)
+                pickle.dump(timeout, f, 1)
                 pickle.dump(value, f, pickle.HIGHEST_PROTOCOL)
             rename(tmp, filename)
             os.chmod(filename, self._mode)
