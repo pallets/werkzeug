@@ -21,6 +21,8 @@ Version 0.11
   support the default MULTI command (pull request ``#702``).
 - ``mimetype`` parameters on request and response classes are now always
   converted to lowercase.
+- Changed cache so that cache never expires if timeout is 0. This also fixes
+  an issue with redis setex (issue ``#550``)
 
 Version 0.10.5
 --------------
