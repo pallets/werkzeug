@@ -232,4 +232,4 @@ if memcache is not None:
             c.set('foo', 'bar', timeout)
             assert c.get('foo') == 'bar'
             time.sleep(timeout)
-            assert c.get('foo') is None
+            assert not c.get('foo')
