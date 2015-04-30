@@ -660,7 +660,7 @@ class FileSystemCache(BaseCache):
     _fs_transaction_suffix = '.__wz_cache'
 
     def __init__(self, cache_dir, threshold=500, default_timeout=300,
-                 mode=600):
+                 mode=0o600):
         BaseCache.__init__(self, default_timeout)
         self._path = cache_dir
         self._threshold = threshold
