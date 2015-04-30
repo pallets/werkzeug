@@ -220,8 +220,8 @@ if memcache is not None:
             c.set('foo', 'bar', timeout)
             assert c.get('foo') == 'bar'
 
-         def test_no_timeout(self, c):
-            # Timeouts of zero should cause the cache to never expire 
+        def test_no_timeout(self, c):
+            # Timeouts of zero should cause the cache to never expire
             c.set('foo', 'bar', 0)
             assert c.get('foo') == 'bar'
 
@@ -232,4 +232,4 @@ if memcache is not None:
             c.set('foo', 'bar', timeout)
             assert c.get('foo') == 'bar'
             time.sleep(timeout)
-            assert c.get('foo') == None
+            assert c.get('foo') is None
