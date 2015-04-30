@@ -383,10 +383,7 @@ class MemcachedCache(BaseCache):
         # checks for so long keys can occur because it's tested from user
         # submitted data etc we fail silently for getting.
         if _test_memcached_key(key):
-            result = self._client.get(key)
-            if not result:
-                return None
-            return result
+            return self._client.get(key)
 
     def get_dict(self, *keys):
         key_mapping = {}
@@ -687,7 +684,7 @@ class FileSystemCache(BaseCache):
                     remove = False
                     with open(fname, 'rb') as f:
                         expires = pickle.load(f)
-                    remove = expires <= now or idx % 3 == 0
+                    remove = (expires != 0 and expires <= now) or idx % 3 == 0
 
                     if remove:
                         os.remove(fname)
