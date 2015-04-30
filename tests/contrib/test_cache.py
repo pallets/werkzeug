@@ -122,7 +122,7 @@ class CacheTests(object):
         assert c.set('bar', False)
         assert c.get('bar') in (False, 0)
 
-    def test_purge(self):
+    def test_generic_purge(self):
         c = cache.SimpleCache(threshold=2)
         c.set('a', 'a')
         c.set('b', 'b')
@@ -131,12 +131,12 @@ class CacheTests(object):
         # Cache purges old items *before* it sets new ones.
         assert len(c._cache) == 3
 
-    def test_no_timeout(self, c):
+    def test_generic_no_timeout(self, c):
         # Timeouts of zero should cause the cache to never expire
         c.set('foo', 'bar', 0)
         assert c.get('foo') == 'bar'
 
-    def test_timeout(self, c):
+    def test_generic_timeout(self, c):
         # Check that cache expires when the timeout is reached
         import random
         import time
