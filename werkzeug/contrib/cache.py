@@ -712,7 +712,8 @@ class FileSystemCache(BaseCache):
         filename = self._get_filename(key)
         try:
             with open(filename, 'rb') as f:
-                if pickle.load(f) >= time():
+                pickle_time = pickle.load(f)
+                if pickle_time == 0 or pickle_time >= time():
                     return pickle.load(f)
                 else:
                     os.remove(filename)
