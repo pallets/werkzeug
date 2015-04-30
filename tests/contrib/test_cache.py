@@ -219,17 +219,3 @@ if memcache is not None:
             timeout = epoch + random.random() * 100
             c.set('foo', 'bar', timeout)
             assert c.get('foo') == 'bar'
-
-         def test_no_timeout(self, c):
-            # Timeouts of zero should cause the cache to never expire 
-            c.set('foo', 'bar', 0)
-            assert c.get('foo') == 'bar'
-
-        def test_random_timeout(self, c):
-            # Check that cache expires when the timeout is reached
-            import time
-            timeout = 1
-            c.set('foo', 'bar', timeout)
-            assert c.get('foo') == 'bar'
-            time.sleep(timeout)
-            assert c.get('foo') == None
