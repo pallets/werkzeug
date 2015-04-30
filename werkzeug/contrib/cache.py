@@ -586,8 +586,8 @@ class RedisCache(BaseCache):
             result = self._client.set(name=self.key_prefix + key,
                                       value=dump)
         else:
-            result =self._client.setex(name=self.key_prefix + key,
-                                       value=dump, time=timeout)
+            result = self._client.setex(name=self.key_prefix + key,
+                                        value=dump, time=timeout)
         return result
 
     def add(self, key, value, timeout=None):
@@ -608,8 +608,9 @@ class RedisCache(BaseCache):
             dump = self.dump_object(value)
             if timeout == -1:
                 pipe.set(name=self.key_prefix + key, value=dump)
-            else
-                pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
+            else:
+                pipe.setex(name=self.key_prefix + key, value=dump,
+                           time=timeout)
         return pipe.execute()
 
     def delete(self, key):
@@ -658,7 +659,8 @@ class FileSystemCache(BaseCache):
     #: used for temporary files by the FileSystemCache
     _fs_transaction_suffix = '.__wz_cache'
 
-    def __init__(self, cache_dir, threshold=500, default_timeout=300, mode=0o600):
+    def __init__(self, cache_dir, threshold=500, default_timeout=300,
+                 mode=600):
         BaseCache.__init__(self, default_timeout)
         self._path = cache_dir
         self._threshold = threshold
