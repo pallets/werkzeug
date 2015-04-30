@@ -143,7 +143,7 @@ class CacheTests(object):
         c.set('foo', 'bar', timeout)
         assert c.get('foo') == 'bar'
         time.sleep(timeout)
-        assert not c.get('foo')
+        assert c.get('foo') is None
 
 
 class TestSimpleCache(CacheTests):

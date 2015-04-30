@@ -383,7 +383,10 @@ class MemcachedCache(BaseCache):
         # checks for so long keys can occur because it's tested from user
         # submitted data etc we fail silently for getting.
         if _test_memcached_key(key):
-            return self._client.get(key)
+            result = self._client.get(key)
+            if not result:
+                return None
+            return result
 
     def get_dict(self, *keys):
         key_mapping = {}
@@ -579,8 +582,13 @@ class RedisCache(BaseCache):
     def set(self, key, value, timeout=None):
         timeout = self._get_expiration(timeout)
         dump = self.dump_object(value)
-        return self._client.setex(name=self.key_prefix + key,
-                                  value=dump, time=timeout)
+        if timeout == -1:
+            result = self._client.set(name=self.key_prefix + key,
+                                      value=dump)
+        else:
+            result =self._client.setex(name=self.key_prefix + key,
+                                       value=dump, time=timeout)
+        return result
 
     def add(self, key, value, timeout=None):
         timeout = self._get_expiration(timeout)
@@ -598,7 +606,10 @@ class RedisCache(BaseCache):
 
         for key, value in _items(mapping):
             dump = self.dump_object(value)
-            pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
+            if timeout == -1:
+                pipe.set(name=self.key_prefix + key, value=dump)
+            else
+                pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
         return pipe.execute()
 
     def delete(self, key):
