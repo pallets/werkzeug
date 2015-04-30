@@ -579,8 +579,13 @@ class RedisCache(BaseCache):
     def set(self, key, value, timeout=None):
         timeout = self._get_expiration(timeout)
         dump = self.dump_object(value)
-        return self._client.setex(name=self.key_prefix + key,
-                                  value=dump, time=timeout)
+        if timeout == -1:
+            result = self._client.set(name=self.key_prefix + key,
+                                      value=dump)
+        else:
+            result = self._client.setex(name=self.key_prefix + key,
+                                        value=dump, time=timeout)
+        return result
 
     def add(self, key, value, timeout=None):
         timeout = self._get_expiration(timeout)
@@ -598,7 +603,11 @@ class RedisCache(BaseCache):
 
         for key, value in _items(mapping):
             dump = self.dump_object(value)
-            pipe.setex(name=self.key_prefix + key, value=dump, time=timeout)
+            if timeout == -1:
+                pipe.set(name=self.key_prefix + key, value=dump)
+            else:
+                pipe.setex(name=self.key_prefix + key, value=dump,
+                           time=timeout)
         return pipe.execute()
 
     def delete(self, key):
@@ -647,7 +656,8 @@ class FileSystemCache(BaseCache):
     #: used for temporary files by the FileSystemCache
     _fs_transaction_suffix = '.__wz_cache'
 
-    def __init__(self, cache_dir, threshold=500, default_timeout=300, mode=0o600):
+    def __init__(self, cache_dir, threshold=500, default_timeout=300,
+                 mode=0o600):
         BaseCache.__init__(self, default_timeout)
         self._path = cache_dir
         self._threshold = threshold
@@ -674,7 +684,7 @@ class FileSystemCache(BaseCache):
                     remove = False
                     with open(fname, 'rb') as f:
                         expires = pickle.load(f)
-                    remove = expires <= now or idx % 3 == 0
+                    remove = (expires != 0 and expires <= now) or idx % 3 == 0
 
                     if remove:
                         os.remove(fname)
@@ -699,7 +709,8 @@ class FileSystemCache(BaseCache):
         filename = self._get_filename(key)
         try:
             with open(filename, 'rb') as f:
-                if pickle.load(f) >= time():
+                pickle_time = pickle.load(f)
+                if pickle_time == 0 or pickle_time >= time():
                     return pickle.load(f)
                 else:
                     os.remove(filename)
@@ -715,14 +726,16 @@ class FileSystemCache(BaseCache):
 
     def set(self, key, value, timeout=None):
         if timeout is None:
-            timeout = self.default_timeout
+            timeout = int(time()) + self.default_timeout
+        elif timeout != 0:
+            timeout = int(time() + timeout)
         filename = self._get_filename(key)
         self._prune()
         try:
             fd, tmp = tempfile.mkstemp(suffix=self._fs_transaction_suffix,
                                        dir=self._path)
             with os.fdopen(fd, 'wb') as f:
-                pickle.dump(int(time() + timeout), f, 1)
+                pickle.dump(timeout, f, 1)
                 pickle.dump(value, f, pickle.HIGHEST_PROTOCOL)
             rename(tmp, filename)
             os.chmod(filename, self._mode)

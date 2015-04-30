@@ -131,6 +131,23 @@ class CacheTests(object):
         # Cache purges old items *before* it sets new ones.
         assert len(c._cache) == 3
 
+    def test_no_timeout(self, c):
+        # Timeouts of zero should cause the cache to never expire
+        c.set('foo', 'bar', 0)
+        assert c.get('foo') == 'bar'
+
+    def test_timeout(self, c):
+        # Check that cache expires when the timeout is reached
+        import random
+        import time
+        timeout = random.randint(1, 5)
+        c.set('foo', 'bar', timeout)
+        assert c.get('foo') == 'bar'
+        # sleep a bit longer than timeout to ensure there are no
+        # race conditions
+        time.sleep(timeout + 1)
+        assert c.get('foo') is None
+
 
 class TestSimpleCache(CacheTests):
 
