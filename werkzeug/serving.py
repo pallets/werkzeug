@@ -444,6 +444,8 @@ class BaseWSGIServer(HTTPServer, object):
         self.app = app
         self.passthrough_errors = passthrough_errors
         self.shutdown_signal = False
+        self.host = host
+        self.port = port
 
         if ssl_context is not None:
             if isinstance(ssl_context, tuple):
@@ -462,6 +464,13 @@ class BaseWSGIServer(HTTPServer, object):
     def serve_forever(self):
         self.shutdown_signal = False
         try:
+            if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+                display_hostname = self.host != '*' and self.host or 'localhost'
+                if ':' in display_hostname:
+                    display_hostname = '[%s]' % display_hostname
+                quit_msg = '(Press CTRL+C to quit)'
+                _log('info', ' * Running on %s://%s:%d/ %s', self.ssl_context is None
+                     and 'http' or 'https', display_hostname, self.port, quit_msg)
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
@@ -607,13 +616,6 @@ def run_simple(hostname, port, application, use_reloader=False,
                     processes, request_handler,
                     passthrough_errors, ssl_context).serve_forever()
 
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        display_hostname = hostname != '*' and hostname or 'localhost'
-        if ':' in display_hostname:
-            display_hostname = '[%s]' % display_hostname
-        quit_msg = '(Press CTRL+C to quit)'
-        _log('info', ' * Running on %s://%s:%d/ %s', ssl_context is None
-             and 'http' or 'https', display_hostname, port, quit_msg)
     if use_reloader:
         # Create and destroy a socket so that any exceptions are raised before
         # we spawn a separate Python interpreter and lose this ability.
