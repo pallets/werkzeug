@@ -1627,6 +1627,8 @@ class MapAdapter(object):
     def encode_query_args(self, query_args):
         if not isinstance(query_args, string_types):
             query_args = url_encode(query_args, self.map.charset)
+        else:
+            query_args = url_quote(query_args, self.map.charset, safe="&=%")
         return query_args
 
     def make_redirect_url(self, path_info, query_args=None, domain_part=None):
