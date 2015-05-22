@@ -186,6 +186,26 @@ def test_import_string():
     pytest.raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
 
 
+def test_import_string_provides_traceback(tmpdir, monkeypatch):
+    monkeypatch.syspath_prepend(str(tmpdir))
+    # Couple of packages
+    dir_a = tmpdir.mkdir('a')
+    dir_b = tmpdir.mkdir('b')
+    # Totally packages, I promise
+    dir_a.join('__init__.py').write('')
+    dir_b.join('__init__.py').write('')
+    # 'aa.a' that depends on 'bb.b', which in turn has a broken import
+    dir_a.join('aa.py').write('from b import bb')
+    dir_b.join('bb.py').write('from os import a_typo')
+
+    # Do we get all the useful information in the traceback?
+    with pytest.raises(ImportError) as baz_exc:
+        utils.import_string('a.aa')
+    traceback = ''.join((str(line) for line in baz_exc.traceback))
+    assert 'bb.py\':1' in traceback  # a bit different than typical python tb
+    assert 'from os import a_typo' in traceback
+
+
 def test_import_string_attribute_error(tmpdir, monkeypatch):
     monkeypatch.syspath_prepend(str(tmpdir))
     tmpdir.join('foo_test.py').write('from bar_test import value')

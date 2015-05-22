@@ -423,13 +423,7 @@ def import_string(import_name, silent=False):
             return sys.modules[import_name]
 
         module_name, obj_name = import_name.rsplit('.', 1)
-        try:
-            module = __import__(module_name, None, None, [obj_name])
-        except ImportError:
-            # support importing modules not yet set up by the parent module
-            # (or package for that matter)
-            module = import_string(module_name)
-
+        module = __import__(module_name, globals(), locals(), [obj_name])
         try:
             return getattr(module, obj_name)
         except AttributeError as e:
