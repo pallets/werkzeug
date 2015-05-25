@@ -32,3 +32,5 @@ Cache Systems
 .. autoclass:: RedisCache
 
 .. autoclass:: FileSystemCache
+
+.. autoclass:: UWSGICache
