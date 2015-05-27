@@ -182,7 +182,7 @@ def get_input_stream(environ, safe_fallback=True):
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the stream from.
-    :param safe: indicates weather the function should use an empty
+    :param safe: indicates whether the function should use an empty
                  stream as safe fallback or just return the original
                  WSGI input stream if it can't wrap it safely.  The
                  default is to return an empty string in those cases.
@@ -191,7 +191,7 @@ def get_input_stream(environ, safe_fallback=True):
     content_length = get_content_length(environ)
 
     # A wsgi extension that tells us if the input is terminated.  In
-    # that case we return the stream unchanged as we know we can savely
+    # that case we return the stream unchanged as we know we can safely
     # read it until the end.
     if environ.get('wsgi.input_terminated'):
         return stream
