@@ -383,7 +383,7 @@ class BaseRequest(object):
     def close(self):
         """Closes associated resources of this request object.  This
         closes all file handles explicitly.  You can also use the request
-        object in a with statement with will automatically close it.
+        object in a with statement which will automatically close it.
 
         .. versionadded:: 0.9
         """
@@ -688,7 +688,7 @@ class BaseResponse(object):
     To enforce a new type of already existing responses you can use the
     :meth:`force_type` method.  This is useful if you're working with different
     subclasses of response objects and you want to post process them with a
-    know interface.
+    known interface.
 
     Per default the request object will assume all the text data is `utf-8`
     encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
@@ -717,7 +717,7 @@ class BaseResponse(object):
     :param content_type: the content type for the request.  See notice above.
     :param direct_passthrough: if set to `True` :meth:`iter_encoded` is not
                                called before iteration which makes it
-                               possible to pass special iterators though
+                               possible to pass special iterators through
                                unchanged (see :func:`wrap_file` for more
                                details.)
     """
