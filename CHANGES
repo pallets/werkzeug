@@ -23,6 +23,8 @@ Version 0.11
   converted to lowercase.
 - Changed cache so that cache never expires if timeout is 0. This also fixes
   an issue with redis setex (issue ``#550``)
+- Werkzeug now assumes ``UTF-8`` as filesystem encoding on Unix if Python
+  detected it as ASCII.
 
 Version 0.10.5
 --------------

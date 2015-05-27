@@ -1,8 +1,11 @@
 # flake8: noqa
 # This whole file is full of lint errors
+import codecs
 import sys
 import operator
 import functools
+import warnings
+
 try:
     import builtins
 except ImportError:

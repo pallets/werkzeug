@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
-import sys
 import codecs
 import mimetypes
 from copy import deepcopy
@@ -19,6 +18,7 @@ from werkzeug._internal import _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
     PY2, text_type, integer_types, string_types, make_literal_wrapper, \
     to_native
+from werkzeug.filesystem import get_filesystem_encoding
 
 
 _locale_delim_re = re.compile(r'[_-]')
@@ -2565,7 +2565,7 @@ class FileStorage(object):
             # This might not be if the name attribute is bytes due to the
             # file being opened from the bytes API.
             if not PY2 and isinstance(filename, bytes):
-                filename = filename.decode(sys.getfilesystemencoding(),
+                filename = filename.decode(get_filesystem_encoding(),
                                            'replace')
 
         self.filename = filename
