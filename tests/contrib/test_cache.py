@@ -139,15 +139,15 @@ class CacheTests(object):
         fast_sleep(timeout + 1)
         assert c.get('foo') is None
 
-    def test_generic_exists(self, c):
-        assert c.exists('foo') in (False, 0)
-        assert c.exists('spam') in (False, 0)
+    def test_generic_has(self, c):
+        assert c.has('foo') in (False, 0)
+        assert c.has('spam') in (False, 0)
         assert c.set('foo', 'bar')
-        assert c.exists('foo') in (True, 1)
-        assert c.exists('spam') in (False, 0)
+        assert c.has('foo') in (True, 1)
+        assert c.has('spam') in (False, 0)
         c.delete('foo')
-        assert c.exists('foo') in (False, 0)
-        assert c.exists('spam') in (False, 0)
+        assert c.has('foo') in (False, 0)
+        assert c.has('spam') in (False, 0)
 
 
 class TestSimpleCache(CacheTests):

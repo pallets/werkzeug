@@ -200,14 +200,14 @@ class BaseCache(object):
         """
         return all(self.delete(key) for key in keys)
 
-    def exists(self, key):
+    def has(self, key):
         """Checks if a key exists in the cache without returning it. This is a
         cheap operation that bypasses loading the actual data on the backend.
 
         :param key: the key to check
         """
         raise NotImplementedError(
-            '%s doesn\'t have an efficient implementation of `exists`. That '
+            '%s doesn\'t have an efficient implementation of `has`. That '
             'means it is impossible to check whether a key exists without '
             'fully loading the key\'s data.'
         )
@@ -321,7 +321,7 @@ class SimpleCache(BaseCache):
     def delete(self, key):
         return self._cache.pop(key, None) is not None
 
-    def exists(self, key):
+    def has(self, key):
         try:
             expires, value = self._cache[key]
             if expires == 0 or expires > time():
@@ -460,7 +460,7 @@ class MemcachedCache(BaseCache):
                 new_keys.append(key)
         return self._client.delete_multi(new_keys)
 
-    def exists(self, key):
+    def has(self, key):
         key = self._normalize_key(key)
         if _test_memcached_key(key):
             return self._client.append(key, '')
@@ -644,7 +644,7 @@ class RedisCache(BaseCache):
             keys = [self.key_prefix + key for key in keys]
         return self._client.delete(*keys)
 
-    def exists(self, key):
+    def has(self, key):
         return self._client.exists(self.key_prefix + key)
 
     def clear(self):
@@ -779,7 +779,7 @@ class FileSystemCache(BaseCache):
         else:
             return True
 
-    def exists(self, key):
+    def has(self, key):
         filename = self._get_filename(key)
         try:
             with open(filename, 'rb') as f:
