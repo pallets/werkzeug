@@ -206,10 +206,11 @@ class BaseCache(object):
 
         :param key: the key to check
         """
-        raise self.get(key) is not None
-
-    def __contains__(self, key):
-        return self.exists(key)
+        raise NotImplementedError(
+            '%s doesn\'t have an efficient implementation of `exists`. That '
+            'means it is impossible to check whether a key exists without '
+            'fully loading the key\'s data.'
+        )
 
     def clear(self):
         """Clears the cache.  Keep in mind that not all caches support
