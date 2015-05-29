@@ -200,6 +200,17 @@ class BaseCache(object):
         """
         return all(self.delete(key) for key in keys)
 
+    def exists(self, key):
+        """Checks if a key exists in the cache without returning it. This is a
+        cheap operation that bypasses loading the actual data on the backend.
+
+        :param key: the key to check
+        """
+        raise self.get(key) is not None
+
+    def __contains__(self, key):
+        return self.exists(key)
+
     def clear(self):
         """Clears the cache.  Keep in mind that not all caches support
         completely clearing the cache.
@@ -309,6 +320,13 @@ class SimpleCache(BaseCache):
     def delete(self, key):
         return self._cache.pop(key, None) is not None
 
+    def exists(self, key):
+        try:
+            expires, value = self._cache[key]
+            if expires == 0 or expires > time():
+                return True
+        except KeyError:
+            return False
 
 _test_memcached_key = re.compile(r'[^\x00-\x21\xff]{1,250}$').match
 
@@ -440,6 +458,12 @@ class MemcachedCache(BaseCache):
             if _test_memcached_key(key):
                 new_keys.append(key)
         return self._client.delete_multi(new_keys)
+
+    def exists(self, key):
+        key = self._normalize_key(key)
+        if _test_memcached_key(key):
+            return self._client.append(key, '')
+        return False
 
     def clear(self):
         return self._client.flush_all()
@@ -619,6 +643,9 @@ class RedisCache(BaseCache):
             keys = [self.key_prefix + key for key in keys]
         return self._client.delete(*keys)
 
+    def exists(self, key):
+        return self._client.exists(self.key_prefix + key)
+
     def clear(self):
         status = False
         if self.key_prefix:
@@ -750,3 +777,16 @@ class FileSystemCache(BaseCache):
             return False
         else:
             return True
+
+    def exists(self, key):
+        filename = self._get_filename(key)
+        try:
+            with open(filename, 'rb') as f:
+                pickle_time = pickle.load(f)
+                if pickle_time == 0 or pickle_time >= time():
+                    return True
+                else:
+                    os.remove(filename)
+                    return False
+        except (IOError, OSError, pickle.PickleError):
+            return False
