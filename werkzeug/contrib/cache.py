@@ -327,8 +327,7 @@ class SimpleCache(BaseCache):
     def has(self, key):
         try:
             expires, value = self._cache[key]
-            if expires == 0 or expires > time():
-                return True
+            return expires == 0 or expires > time()
         except KeyError:
             return False
 
