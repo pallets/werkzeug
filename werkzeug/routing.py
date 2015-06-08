@@ -1498,7 +1498,7 @@ class MapAdapter(object):
         """
         self.map.update()
         if path_info is None:
-            path_info = self.path_info
+            path_info = self.path_info or u'/'
         else:
             path_info = to_unicode(path_info, self.map.charset)
         if query_args is None:
