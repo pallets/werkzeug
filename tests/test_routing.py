@@ -764,7 +764,7 @@ def test_empty_path_info():
         a.match("")
     assert excinfo.value.new_url == "http://example.com/"
 
-def test_both_bind_and_match_path_info_are_none(self):
+def test_both_bind_and_match_path_info_are_none():
     m = r.Map([r.Rule(u'/', endpoint='index')])
     ma = m.bind('example.org')
     ma.match()
