@@ -25,6 +25,7 @@ Version 0.11
   an issue with redis setex (issue ``#550``)
 - Werkzeug now assumes ``UTF-8`` as filesystem encoding on Unix if Python
   detected it as ASCII.
+- New optional `has` method on caches.
 
 Version 0.10.5
 --------------
