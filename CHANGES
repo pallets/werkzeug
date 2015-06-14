@@ -180,6 +180,11 @@ Version 0.9.6
   internally to work around issues with spec violations for
   protocols such as ``itms-service``.
 
+Version 0.9.7
+-------------
+
+- Fixed uri_to_iri() not re-encoding hashes in query string parameters.
+
 Version 0.9.5
 -------------
 
