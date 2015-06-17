@@ -11,10 +11,10 @@ install:
     - "[[ ${TRAVIS_PYTHON_VERSION} == pypy ]] && sudo add-apt-repository -y ppa:pypy/ppa || true"
     - "[[ ${TRAVIS_PYTHON_VERSION} == pypy ]] && sudo apt-get -y update && sudo apt-get -y install pypy || true"
     - "[[ ${TRAVIS_PYTHON_VERSION} == pypy ]] && sudo rm -rf /usr/local/pypy/bin || true"
-    - pip install tox>=1.8 flake8
+    - pip install tox flake8
 
 script:
-    - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d . | sed -e 's/pypypy/pypy/')
+    - tox -e py
     - make stylecheck
 
 branches:
