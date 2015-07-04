@@ -128,7 +128,7 @@ Custom Errors
 =============
 
 As you can see from the list above not all status codes are available as
-errors.  Especially redirects and ather non 200 status codes that
+errors.  Especially redirects and other non 200 status codes that
 represent do not represent errors are missing.  For redirects you can use
 the :func:`redirect` function from the utilities.
 
