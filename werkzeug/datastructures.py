@@ -2157,8 +2157,10 @@ class ETags(object):
                 return True
         return etag in self._strong
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.star_tag or self._strong or self._weak)
+
+    __nonzero__ = __bool__
 
     def __str__(self):
         return self.to_header()
