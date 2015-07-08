@@ -8,6 +8,8 @@ Version 0.10.5
 
 - Reloader: Correctly detect file changes made by moving temporary files over
   the original, which is e.g. the case with PyCharm (pull request ``#722``).
+- Fix bool behavior of ``werkzeug.datastructures.ETags`` under Python 3 (issue
+  ``#744``).
 
 Version 0.10.4
 --------------
