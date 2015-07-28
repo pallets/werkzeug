@@ -10,17 +10,22 @@ variables.  However, that isn't possible in WSGI applications without a
 major drawback:  As soon as you operate on the global namespace your
 application isn't thread-safe any longer.
 
-The Python standard library comes with a utility called "thread locals".
-A thread local is a global object in which you can put stuff in and get back
-later in a thread-safe way.  That means whenever you set or get an object
-on a thread local object, the thread local object checks in which
-thread you are and retrieves the correct value.
+The Python standard library has a concept called "thread locals" (or thread-local
+data). A thread local is a global object in which you can put stuff in and get back
+later in a thread-safe and thread-specific way.  That means that whenever you set
+or get a value on a thread local object, the thread local object checks in which
+thread you are and retrieves the value corresponding to your thread (if one exists).
+So, you won't accidentally get another thread's data.
 
-This, however, has a few disadvantages.  For example, besides threads there
-are other ways to handle concurrency in Python.  A very popular approach
+This approach, however, has a few disadvantages.  For example, besides threads,
+there are other types of concurrency in Python.  A very popular one
 is greenlets.  Also, whether every request gets its own thread is not
 guaranteed in WSGI.  It could be that a request is reusing a thread from
-before, and hence data is left in the thread local object.
+a previous request, and hence data is left over in the thread local object.
+
+Werkzeug provides its own implementation of local data storage called `werkzeug.local`.
+This approach provides a similar functionality to thread locals but also works with
+greenlets.
 
 Here's a simple example of how one could use werkzeug.local::
 
