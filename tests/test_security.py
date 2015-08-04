@@ -66,7 +66,7 @@ def test_pbkdf2():
     # From RFC 6070
 
     # Assumes default keylen is 20
-    #check('password', 'salt', 1, None,
+    # check('password', 'salt', 1, None,
     #      '0c60c80f961f0e71f3a9b524af6012062fe037a6')
     check('password', 'salt', 1, 20, 'sha1',
           '0c60c80f961f0e71f3a9b524af6012062fe037a6')
@@ -80,9 +80,12 @@ def test_pbkdf2():
           '56fa6aa75548099dcc37d7f03425e0c3')
 
     # PBKDF2-HMAC-SHA256 test vectors
-    check('password', 'salt', 1, 32, 'sha256', '120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b')
-    check('password', 'salt', 2, 32, 'sha256', 'ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43')
-    check('password', 'salt', 4096, 20, 'sha256', 'c5e478d59288c841aa530db6845c4c8d962893a0')
+    check('password', 'salt', 1, 32, 'sha256',
+          '120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b')
+    check('password', 'salt', 2, 32, 'sha256',
+          'ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43')
+    check('password', 'salt', 4096, 20, 'sha256',
+          'c5e478d59288c841aa530db6845c4c8d962893a0')
 
     # This one is from the RFC but it just takes for ages
     # check('password', 'salt', 16777216, 20,
