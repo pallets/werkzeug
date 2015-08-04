@@ -23,6 +23,8 @@ Unreleased.
 - Recognize Baiduspider, and bingbot user agents
 - If `LocalProxy`'s wrapped object is a function, refer to it with __wrapped__
   attribute.
+- The defaults of ``generate_password_hash`` have been changed to more secure
+  ones, see pull request ``#753``.
 
 Version 0.11.10
 ---------------
