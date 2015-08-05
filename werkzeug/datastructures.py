@@ -567,7 +567,23 @@ class MultiDict(TypeConversionDict):
         return dict(self.lists())
 
     def update(self, other_dict):
-        """update() extends rather than replaces existing key lists."""
+        """update() extends rather than replaces existing key lists:
+
+        >>> a = MultiDict({'x': 1})
+        >>> b = MultiDict({'x': 2, 'y': 3})
+        >>> a.update(b)
+        >>> a
+        MultiDict([('y', 3), ('x', 1), ('x', 2)])
+
+        If the value list for a key in ``other_dict`` is empty, no new values
+        will be added to the dict and the key will not be created:
+
+        >>> x = {'empty_list': []}
+        >>> y = MultiDict()
+        >>> y.update(x)
+        >>> y
+        MultiDict([])
+        """
         for key, value in iter_multi_items(other_dict):
             MultiDict.add(self, key, value)
 
