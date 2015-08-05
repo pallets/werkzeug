@@ -64,7 +64,7 @@ except ImportError:
 import werkzeug
 from werkzeug._internal import _log
 from werkzeug._compat import reraise, wsgi_encoding_dance
-from werkzeug.urls import url_parse, url_unquote, url_unquote_plus
+from werkzeug.urls import url_parse, url_unquote_plus
 from werkzeug.exceptions import InternalServerError
 
 
