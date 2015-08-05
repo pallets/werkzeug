@@ -29,7 +29,7 @@ from werkzeug.datastructures import MultiDict, FileStorage
 
 
 def cookie_app(environ, start_response):
-    """A WSGI application which sets a cookie, and returns as a ersponse any
+    """A WSGI application which sets a cookie, and returns as a response any
     cookie which exists.
     """
     response = Response(environ.get('HTTP_COOKIE', 'No Cookie'),
