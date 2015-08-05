@@ -21,7 +21,6 @@ if PY2:
     text_type = unicode
     string_types = (str, unicode)
     integer_types = (int, long)
-    int_to_byte = chr
 
     iterkeys = lambda d, *args, **kwargs: d.iterkeys(*args, **kwargs)
     itervalues = lambda d, *args, **kwargs: d.itervalues(*args, **kwargs)
@@ -30,7 +29,8 @@ if PY2:
     iterlists = lambda d, *args, **kwargs: d.iterlists(*args, **kwargs)
     iterlistvalues = lambda d, *args, **kwargs: d.iterlistvalues(*args, **kwargs)
 
-    iter_bytes = lambda x: iter(x)
+    int_to_byte = chr
+    iter_bytes = iter
 
     exec('def reraise(tp, value, tb=None):\n raise tp, value, tb')
 
@@ -72,7 +72,7 @@ if PY2:
     NativeStringIO = BytesIO
 
     def make_literal_wrapper(reference):
-        return lambda x: x
+        return _identity
 
     def normalize_string_tuple(tup):
         """Normalizes a string tuple to a common type. Following Python 2
@@ -129,9 +129,7 @@ else:
     iterlistvalues = lambda d, *args, **kwargs: iter(d.listvalues(*args, **kwargs))
 
     int_to_byte = operator.methodcaller('to_bytes', 1, 'big')
-
-    def iter_bytes(b):
-        return map(int_to_byte, b)
+    iter_bytes = functools.partial(map, int_to_byte)
 
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:
@@ -151,10 +149,12 @@ else:
     from io import StringIO, BytesIO
     NativeStringIO = StringIO
 
+    _latin1_encode = operator.methodcaller('encode', 'latin1')
+
     def make_literal_wrapper(reference):
         if isinstance(reference, text_type):
-            return lambda x: x
-        return lambda x: x.encode('latin1')
+            return _identity
+        return _latin1_encode
 
     def normalize_string_tuple(tup):
         """Ensures that all types in the tuple are either strings
@@ -169,17 +169,15 @@ else:
         return tup
 
     try_coerce_native = _identity
-
-    def wsgi_get_bytes(s):
-        return s.encode('latin1')
+    wsgi_get_bytes = _latin1_encode
 
     def wsgi_decoding_dance(s, charset='utf-8', errors='replace'):
         return s.encode('latin1').decode(charset, errors)
 
     def wsgi_encoding_dance(s, charset='utf-8', errors='replace'):
-        if isinstance(s, bytes):
-            return s.decode('latin1', errors)
-        return s.encode(charset).decode('latin1', errors)
+        if isinstance(s, text_type):
+            s = s.encode(charset)
+        return s.decode('latin1', errors)
 
     def to_bytes(x, charset=sys.getdefaultencoding(), errors='strict'):
         if x is None:
