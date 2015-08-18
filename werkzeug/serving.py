@@ -445,7 +445,7 @@ class BaseWSGIServer(HTTPServer, object):
         self.passthrough_errors = passthrough_errors
         self.shutdown_signal = False
         self.host = host
-        self.port = port
+        self.port = self.socket.getsockname()[1]
 
         if ssl_context is not None:
             if isinstance(ssl_context, tuple):
@@ -469,9 +469,8 @@ class BaseWSGIServer(HTTPServer, object):
                 if ':' in display_hostname:
                     display_hostname = '[%s]' % display_hostname
                 quit_msg = '(Press CTRL+C to quit)'
-                real_port = self.socket.getsockname()[1]
                 _log('info', ' * Running on %s://%s:%d/ %s', self.ssl_context is None
-                     and 'http' or 'https', display_hostname, real_port, quit_msg)
+                     and 'http' or 'https', display_hostname, self.port, quit_msg)
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
