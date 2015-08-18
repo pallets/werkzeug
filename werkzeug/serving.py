@@ -469,8 +469,9 @@ class BaseWSGIServer(HTTPServer, object):
                 if ':' in display_hostname:
                     display_hostname = '[%s]' % display_hostname
                 quit_msg = '(Press CTRL+C to quit)'
+                real_port = self.socket.getsockname()[1]
                 _log('info', ' * Running on %s://%s:%d/ %s', self.ssl_context is None
-                     and 'http' or 'https', display_hostname, self.port, quit_msg)
+                     and 'http' or 'https', display_hostname, real_port, quit_msg)
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
