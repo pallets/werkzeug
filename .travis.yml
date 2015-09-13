@@ -1,5 +1,4 @@
 language: python
-sudo: false
 python:
     - "2.6"
     - "2.7"
@@ -8,6 +7,19 @@ python:
     - "3.4"
 
 install:
+    # Travis uses an outdated PyPy, this installs the most recent one.
+    # We need it because apparently cryptography isn't compatible with PyPy versions < 2.6
+    # This makes the tests run on Travis' legacy infrastructure, but so be it.
+    # temporary pyenv installation to get pypy-2.6 before container infra upgrade
+    - if [ "$TRAVIS_PYTHON_VERSION" == "pypy" ]; then
+        git clone https://github.com/yyuu/pyenv.git ~/.pyenv;
+        PYENV_ROOT="$HOME/.pyenv";
+        PATH="$PYENV_ROOT/bin:$PATH";
+        eval "$(pyenv init -)";
+        pyenv install pypy-2.6.1;
+        pyenv global pypy-2.6.1;
+      fi
+    - python --version
     - pip install tox flake8
 
 script:
