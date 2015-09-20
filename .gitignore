@@ -5,6 +5,7 @@ dist
 *.pyc
 *.pyo
 env
+.DS_Store
 .tox
 docs/_build
 bench/a
