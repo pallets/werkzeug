@@ -105,7 +105,8 @@ class ReloaderLoop(object):
                     if isinstance(value, text_type):
                         new_environ[key] = value.encode('iso-8859-1')
 
-            exit_code = subprocess.call(args, env=new_environ)
+            exit_code = subprocess.call(args, env=new_environ,
+                                        close_fds=False)
             if exit_code != 3:
                 return exit_code
 

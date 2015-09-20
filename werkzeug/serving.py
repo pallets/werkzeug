@@ -68,6 +68,10 @@ from werkzeug.urls import url_parse, url_unquote
 from werkzeug.exceptions import InternalServerError
 
 
+LISTEN_QUEUE = 128
+can_open_by_fd = hasattr(socket, 'fromfd')
+
+
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
     """A request handler that implements WSGI dispatching."""
@@ -433,19 +437,31 @@ class BaseWSGIServer(HTTPServer, object):
     """Simple single-threaded, single-process WSGI server."""
     multithread = False
     multiprocess = False
-    request_queue_size = 128
+    request_queue_size = LISTEN_QUEUE
 
     def __init__(self, host, port, app, handler=None,
-                 passthrough_errors=False, ssl_context=None):
+                 passthrough_errors=False, ssl_context=None, fd=None):
         if handler is None:
             handler = WSGIRequestHandler
+
         self.address_family = select_ip_version(host, port)
+
+        if fd is not None:
+            real_sock = socket.fromfd(fd, self.address_family,
+                                      socket.SOCK_STREAM)
+            port = 0
         HTTPServer.__init__(self, (host, int(port)), handler)
         self.app = app
         self.passthrough_errors = passthrough_errors
         self.shutdown_signal = False
         self.host = host
         self.port = port
+
+        # Patch in the original socket.
+        if fd is not None:
+            self.socket.close()
+            self.socket = real_sock
+            self.server_address = self.socket.getsockname()
 
         if ssl_context is not None:
             if isinstance(ssl_context, tuple):
@@ -506,9 +522,9 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
         self.max_children = processes
 
 
-def make_server(host, port, app=None, threaded=False, processes=1,
+def make_server(host=None, port=None, app=None, threaded=False, processes=1,
                 request_handler=None, passthrough_errors=False,
-                ssl_context=None):
+                ssl_context=None, fd=None):
     """Create a new server instance that is either threaded, or forks
     or just processes one request after another.
     """
@@ -517,13 +533,13 @@ def make_server(host, port, app=None, threaded=False, processes=1,
                          "multi process server.")
     elif threaded:
         return ThreadedWSGIServer(host, port, app, request_handler,
-                                  passthrough_errors, ssl_context)
+                                  passthrough_errors, ssl_context, fd=fd)
     elif processes > 1:
         return ForkingWSGIServer(host, port, app, processes, request_handler,
-                                 passthrough_errors, ssl_context)
+                                 passthrough_errors, ssl_context, fd=fd)
     else:
         return BaseWSGIServer(host, port, app, request_handler,
-                              passthrough_errors, ssl_context)
+                              passthrough_errors, ssl_context, fd=fd)
 
 
 def is_running_from_reloader():
@@ -612,18 +628,50 @@ def run_simple(hostname, port, application, use_reloader=False,
         application = SharedDataMiddleware(application, static_files)
 
     def inner():
+        try:
+            fd = int(os.environ['WERKZEUG_SERVER_FD'])
+        except (LookupError, ValueError):
+            fd = None
         make_server(hostname, port, application, threaded,
                     processes, request_handler,
-                    passthrough_errors, ssl_context).serve_forever()
+                    passthrough_errors, ssl_context,
+                    fd=fd).serve_forever()
+
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        display_hostname = hostname != '*' and hostname or 'localhost'
+        if ':' in display_hostname:
+            display_hostname = '[%s]' % display_hostname
+        quit_msg = '(Press CTRL+C to quit)'
+        _log('info', ' * Running on %s://%s:%d/ %s', ssl_context is None
+             and 'http' or 'https', display_hostname, port, quit_msg)
 
     if use_reloader:
-        # Create and destroy a socket so that any exceptions are raised before
-        # we spawn a separate Python interpreter and lose this ability.
-        address_family = select_ip_version(hostname, port)
-        test_socket = socket.socket(address_family, socket.SOCK_STREAM)
-        test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        test_socket.bind((hostname, port))
-        test_socket.close()
+        # If we're not running already in the subprocess that is the
+        # reloader we want to open up a socket early to make sure the
+        # port is actually available.
+        if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+            if port == 0 and not can_open_by_fd:
+                raise ValueError('Cannot bind to a random port with enabled '
+                                 'reloader if the Python interpreter does '
+                                 'not support socket opening by fd.')
+
+            # Create and destroy a socket so that any exceptions are
+            # raised before we spawn a separate Python interpreter and
+            # lose this ability.
+            address_family = select_ip_version(hostname, port)
+            s = socket.socket(address_family, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((hostname, port))
+            if hasattr(os, 'set_inheritable'):
+                os.set_inheritable(s.fileno(), True)
+
+            # If we can open the socket by file descriptor, then we can just
+            # reuse this one and our socket will survive the restarts.
+            if can_open_by_fd:
+                os.environ['WERKZEUG_SERVER_FD'] = str(s.fileno())
+                s.listen(LISTEN_QUEUE)
+            else:
+                s.close()
 
         from ._reloader import run_with_reloader
         run_with_reloader(inner, extra_files, reloader_interval,

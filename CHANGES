@@ -27,6 +27,10 @@ Version 0.11
   detected it as ASCII.
 - New optional `has` method on caches.
 - Fixed various bugs in `parse_options_header` (pull request ``#643``).
+- If the reloader is enabled the server will now open the socket in the parent
+  process if this is possible.  This means that when the reloader kicks in
+  the connection from client will wait instead of tearing down.  This does
+  not work on all Python versions.
 
 Version 0.10.5
 --------------
