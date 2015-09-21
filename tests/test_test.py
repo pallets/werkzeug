@@ -72,6 +72,19 @@ def external_redirect_demo_app(environ, start_response):
     return response(environ, start_response)
 
 
+class LocalResponse(BaseResponse):
+    autocorrect_location_header = False
+
+
+def local_redirect_app(environ, start_response):
+    req = Request(environ)
+    if '/from/location' in req.url:
+        response = redirect('/to/location', Response=LocalResponse)
+    else:
+        response = Response('current path: %s' % req.path)
+    return response(environ, start_response)
+
+
 def external_subdomain_redirect_demo_app(environ, start_response):
     if 'test.example.com' in environ['HTTP_HOST']:
         response = Response('redirected successfully to subdomain')
@@ -317,6 +330,12 @@ def test_follow_redirect():
     resp = c.get('/first/request', follow_redirects=True)
     strict_eq(resp.status_code, 200)
     strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
+
+def test_follow_local_redirect():
+    c = Client(local_redirect_app, response_wrapper=BaseResponse)
+    resp = c.get('/from/location', follow_redirects=True)
+    strict_eq(resp.status_code, 200)
+    strict_eq(resp.data, b'current path: /to/location')
 
 def test_follow_redirect_with_post_307():
     def redirect_with_post_307_app(environ, start_response):
