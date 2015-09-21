@@ -671,7 +671,7 @@ class Client(object):
         cur_server_name = netloc.split(':', 1)[0].split('.')
         real_server_name = get_host(environ).rsplit(':', 1)[0].split('.')
         if cur_server_name == ['']:
-            # this is a local redirect with autocorrect_location_header=False
+            # this is a local redirect having autocorrect_location_header=False
             cur_server_name = real_server_name
             base_url = EnvironBuilder(environ).base_url
 
