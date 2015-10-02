@@ -35,7 +35,6 @@ class _ConsoleFrame(object):
 
 
 class DebuggedApplication(object):
-
     """Enables debugging support for a given application::
 
         from werkzeug.debug import DebuggedApplication
@@ -62,9 +61,6 @@ class DebuggedApplication(object):
                                You can show them by setting this parameter
                                to `True`.
     """
-
-    # this class is public
-    __module__ = 'werkzeug'
 
     def __init__(self, app, evalex=False, request_key='werkzeug.request',
                  console_path='/console', console_init_func=None,
