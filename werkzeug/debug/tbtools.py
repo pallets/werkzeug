@@ -45,9 +45,9 @@ HEADER = u'''\
     <title>%(title)s // Werkzeug Debugger</title>
     <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css"
         type="text/css">
-    <!-- We need to make sure this has a favicon so that the debugger does not by
-         accident trigger a request to /favicon.ico which might change the application
-         state. -->
+    <!-- We need to make sure this has a favicon so that the debugger does
+         not by accident trigger a request to /favicon.ico which might
+         change the application state. -->
     <link rel="shortcut icon"
         href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
     <script src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
@@ -56,6 +56,7 @@ HEADER = u'''\
       var TRACEBACK = %(traceback_id)d,
           CONSOLE_MODE = %(console)s,
           EVALEX = %(evalex)s,
+          EVALEX_TRUSTED = %(evalex_trusted)s,
           SECRET = "%(secret)s";
     </script>
   </head>
@@ -66,6 +67,21 @@ FOOTER = u'''\
       <div class="footer">
         Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
         friendly Werkzeug powered traceback interpreter.
+      </div>
+    </div>
+
+    <div class="pin-prompt">
+      <div class="inner">
+        <h3>Console Locked</h3>
+        <p>
+          The console is locked and needs to be unlocked by entering the PIN.
+          You can find the PIN printed out on the standard output of your
+          shell that runs the server.
+        <form>
+          <p>PIN:
+            <input type=text name=pin size=8>
+            <input type=submit name=btn value="Confirm Pin">
+        </form>
       </div>
     </div>
   </body>
@@ -128,11 +144,9 @@ FRAME_HTML = u'''\
   <h4>File <cite class="filename">"%(filename)s"</cite>,
       line <em class="line">%(lineno)s</em>,
       in <code class="function">%(function_name)s</code></h4>
-  <pre>%(current_line)s</pre>
+  <div class="source">%(lines)s</div>
 </div>
 '''
-
-SOURCE_TABLE_HTML = u'<table class=source>%s</table>'
 
 SOURCE_LINE_HTML = u'''\
 <tr class="%(classes)s">
@@ -142,9 +156,10 @@ SOURCE_LINE_HTML = u'''\
 '''
 
 
-def render_console_html(secret):
+def render_console_html(secret, evalex_trusted=True):
     return CONSOLE_HTML % {
         'evalex':           'true',
+        'evalex_trusted':   evalex_trusted and 'true' or 'false',
         'console':          'true',
         'title':            'Console',
         'secret':           secret,
@@ -173,7 +188,6 @@ def get_current_traceback(ignore_system_exceptions=False,
 
 
 class Line(object):
-
     """Helper for the source renderer."""
     __slots__ = ('lineno', 'code', 'in_frame', 'current')
 
@@ -201,7 +215,6 @@ class Line(object):
 
 
 class Traceback(object):
-
     """Wraps a traceback."""
 
     def __init__(self, exc_type, exc_value, tb):
@@ -333,11 +346,13 @@ class Traceback(object):
             'description':  description_wrapper % escape(self.exception)
         }
 
-    def render_full(self, evalex=False, secret=None):
+    def render_full(self, evalex=False, secret=None,
+                    evalex_trusted=True):
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
         return PAGE_HTML % {
             'evalex':           evalex and 'true' or 'false',
+            'evalex_trusted':   evalex_trusted and 'true' or 'false',
             'console':          'false',
             'title':            exc,
             'exception':        exc,
@@ -406,8 +421,28 @@ class Frame(object):
             'filename':         escape(self.filename),
             'lineno':           self.lineno,
             'function_name':    escape(self.function_name),
-            'current_line':     escape(self.current_line.strip())
+            'lines':            self.render_line_context(),
         }
+
+    def render_line_context(self):
+        before, current, after = self.get_context_lines()
+        rv = []
+
+        def render_line(line, cls):
+            line = line.expandtabs().rstrip()
+            stripped_line = line.strip()
+            prefix = len(line) - len(stripped_line)
+            rv.append(
+                '<pre class="line %s"><span class="ws">%s</span>%s</pre>' % (
+                    cls, ' ' * prefix, escape(stripped_line) or ' '))
+
+        for line in before:
+            render_line(line, 'before')
+        render_line(current, 'current')
+        for line in after:
+            render_line(line, 'after')
+
+        return '\n'.join(rv)
 
     def get_annotated_lines(self):
         """Helper function that returns lines with extra information."""
@@ -435,11 +470,6 @@ class Frame(object):
             pass
 
         return lines
-
-    def render_source(self):
-        """Render the sourcecode."""
-        return SOURCE_TABLE_HTML % u'\n'.join(line.render() for line in
-                                              self.get_annotated_lines())
 
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
@@ -502,6 +532,15 @@ class Frame(object):
             charset = 'utf-8'
 
         return source.decode(charset, 'replace').splitlines()
+
+    def get_context_lines(self, context=5):
+        before = self.sourcelines[self.lineno - context - 1:self.lineno - 1]
+        past = self.sourcelines[self.lineno:self.lineno + context]
+        return (
+            before,
+            self.current_line,
+            past,
+        )
 
     @property
     def current_line(self):
