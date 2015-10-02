@@ -291,7 +291,8 @@ class DebuggedApplication(object):
             exhausted = True
         else:
             entered_pin = request.args.get('pin')
-            if entered_pin == self.pin:
+            if entered_pin.strip().replace('-', '') == \
+               self.pin.replace('-', ''):
                 self._failed_pin_auth = 0
                 auth = True
             else:

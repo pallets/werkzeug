@@ -16,7 +16,8 @@ The interactive debugger however does not work in forking environments
 which makes it nearly impossible to use on production servers.  Also the
 debugger allows the execution of arbitrary code which makes it a major
 security risk and **must never be used on production machines** because of
-that.
+that.  **We cannot stress this enough.  Do not enable this in
+production.**
 
 Enabling the Debugger
 =====================
@@ -52,6 +53,29 @@ To display all variables that are defined in the current frame you can
 use the `dump()` function.  You can call it without arguments to get a
 detailed list of all variables and their values, or with an object as
 argument to get a detailed list of all the attributes it has.
+
+Debugger PIN
+============
+
+Starting with Werkzeug 0.11 the debugger is additionally protected by a
+PIN.  This is a security helper to make it less likely for the debugger to
+be exploited in production as it has happend to people to keep the
+debugger active.  The PIN based authentication is enabled by default.
+
+When the debugger comes up, on first usage it will prompt for a PIN that
+is printed to the command line.  The PIN is generated in a stable way that
+is specific to the project.  In some situations it might be not possible
+to generate a stable PIN between restarts in which case an explicit PIN
+can be provided through the environment variable ``WERKZEUG_DEBUG_PIN``.
+This can be set to a number and will become the pin.  This variable can
+also be set to the value ``off`` to disable the PIN check entirely.
+
+If the PIN is entered too many times incorrectly the server needs to be
+restarted.
+
+**This feature is not supposed to entirely secure the debugger.  It's
+intended to make it harder for an attacker to exploit the debugger.  Never
+enable the debugger in production.**
 
 Pasting Errors
 ==============
