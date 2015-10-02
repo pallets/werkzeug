@@ -338,8 +338,9 @@ class DebuggedApplication(object):
                 response = self.pin_auth(request)
             elif cmd == 'printpin' and secret == self.secret:
                 response = self.log_pin_request()
-            elif self.evalex and cmd is not None and frame is not None and \
-                    self.secret == secret:
+            elif self.evalex and cmd is not None and frame is not None \
+                    and self.secret == secret and \
+                    self.is_trusted(environ):
                 response = self.execute_command(request, cmd, frame)
         elif self.evalex and self.console_path is not None and \
                 request.path == self.console_path:

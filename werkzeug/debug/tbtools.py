@@ -79,7 +79,7 @@ FOOTER = u'''\
           shell that runs the server.
         <form>
           <p>PIN:
-            <input type=text name=pin size=8>
+            <input type=text name=pin size=14>
             <input type=submit name=btn value="Confirm Pin">
         </form>
       </div>
