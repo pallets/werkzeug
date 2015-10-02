@@ -31,6 +31,9 @@ Version 0.11
   process if this is possible.  This means that when the reloader kicks in
   the connection from client will wait instead of tearing down.  This does
   not work on all Python versions.
+- Implemented PIN based authentication for the debugger.  This can optionally
+  be disabled but is discouraged.  This change was necessary as it has been
+  discovered that to many people run the debugger in production.
 
 Version 0.10.5
 --------------
