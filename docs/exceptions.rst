@@ -88,7 +88,7 @@ with the submitted form data in a way that the application can't recover
 properly and should abort with ``400 BAD REQUEST``.
 
 Assuming the application catches all HTTP exceptions and reacts to them
-properly a view function could do the following savely and doesn't have to
+properly a view function could do the following safely and doesn't have to
 check if the keys exist::
 
     def new_post(request):
@@ -96,7 +96,7 @@ check if the keys exist::
         post.save()
         return redirect(post.url)
 
-If `title` or `body` are missing in the form a special key error will be
+If `title` or `body` are missing in the form, a special key error will be
 raised which behaves like a :exc:`KeyError` but also a :exc:`BadRequest`
 exception.
 
@@ -128,9 +128,9 @@ Custom Errors
 =============
 
 As you can see from the list above not all status codes are available as
-errors.  Especially redirects and other non 200 status codes that
-represent do not represent errors are missing.  For redirects you can use
-the :func:`redirect` function from the utilities.
+errors.  Especially redirects and other non 200 status codes that do not
+represent errors are missing.  For redirects you can use the :func:`redirect`
+function from the utilities.
 
 If you want to add an error yourself you can subclass :exc:`HTTPException`::
 
