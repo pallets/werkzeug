@@ -5,6 +5,7 @@ python:
     - "pypy"
     - "3.3"
     - "3.4"
+    - "3.5"
 
 install:
     # Travis uses an outdated PyPy, this installs the most recent one.
