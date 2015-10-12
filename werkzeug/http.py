@@ -986,6 +986,19 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     rv = b'; '.join(buf)
     if not PY2:
         rv = rv.decode('latin1')
+
+    # Check that the final value of the cookie is less than the
+    # standard limit set by browsers. If no check is performed, and if
+    # the cookie is too large, then it will simply get lost, which can
+    # be quite hard to debug.
+    cookie_size = len(rv)
+    cookie_maxsize = 4096
+    if cookie_size > cookie_maxsize:
+        raise ValueError((
+            'Cookie too large: size of {} is {} bytes, '
+            'standard limit in most browsers is {} bytes').format(
+                key, cookie_size, cookie_maxsize))
+
     return rv
 
 
