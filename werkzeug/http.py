@@ -992,7 +992,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     # the cookie is too large, then it will simply get lost, which can
     # be quite hard to debug.
     cookie_size = len(rv)
-    cookie_maxsize = 4096
+    cookie_maxsize = 4093
     if cookie_size > cookie_maxsize:
         raise ValueError((
             'Cookie too large: size of {} is {} bytes, '
