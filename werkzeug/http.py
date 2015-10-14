@@ -135,6 +135,11 @@ HTTP_STATUS_CODES = {
     510:    'Not Extended'
 }
 
+# For discussion of a safe (i.e. lowest common denominator) cookie
+# max size, see:
+# http://browsercookielimits.squawky.net/
+COOKIE_MAXSIZE = 4093
+
 
 def wsgi_to_bytes(data):
     """coerce wsgi unicode represented bytes to real ones
@@ -992,12 +997,11 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     # the cookie is too large, then it will simply get lost, which can
     # be quite hard to debug.
     cookie_size = len(rv)
-    cookie_maxsize = 4093
-    if cookie_size > cookie_maxsize:
+    if cookie_size > COOKIE_MAXSIZE:
         raise ValueError((
             'Cookie too large: size of {} is {} bytes, '
             'standard limit in most browsers is {} bytes').format(
-                key, cookie_size, cookie_maxsize))
+                key, cookie_size, COOKIE_MAXSIZE))
 
     return rv
 
