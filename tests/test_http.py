@@ -373,7 +373,7 @@ class TestHTTPUtility(object):
 
         with pytest.raises(ValueError) as excinfo:
             http.dump_cookie('foo', ('bar' * 1360) + 'ba')
-        assert ('Cookie too large' in excinfo.value.message)
+        assert ('Cookie too large' in str(excinfo))
 
 
 class TestRange(object):

@@ -999,8 +999,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     cookie_size = len(rv)
     if cookie_size > COOKIE_MAXSIZE:
         raise ValueError((
-            'Cookie too large: size of {} is {} bytes, '
-            'standard limit in most browsers is {} bytes').format(
+            'Cookie too large: size of {0} is {1} bytes, '
+            'standard limit in most browsers is {2} bytes').format(
                 key, cookie_size, COOKIE_MAXSIZE))
 
     return rv
