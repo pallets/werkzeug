@@ -862,7 +862,7 @@ class Rule(RuleFactory):
         1.  rules without any arguments come first for performance
             reasons only as we expect them to match faster and some
             common ones usually don't have any arguments (index pages etc.)
-        2.  rules with more static parts come first so the second argument 
+        2.  rules with more static parts come first so the second argument
             is the negative length of the static parts.
         3.  The more complex rules come first so the third argument is the
             negative length of the number of weights.

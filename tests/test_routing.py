@@ -190,7 +190,7 @@ def test_path():
     assert adapter.match('/User:thomas/projects/werkzeug') == \
         ('userpage', {'username': 'thomas', 'name': 'projects/werkzeug'})
     assert adapter.match('/User:thomas/comment/123-456') == \
-        ('usercomment', {'username':'thomas', 'a':123, 'b':456})
+        ('usercomment', {'username': 'thomas', 'a': 123, 'b': 456})
     assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == \
         ('files', {'file': 'downloads/werkzeug/0.2.zip'})
 
