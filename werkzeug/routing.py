@@ -699,6 +699,7 @@ class Rule(RuleFactory):
 
         self._trace = []
         self._converters = {}
+        self._static_parts = []
         self._weights = []
         regex_parts = []
 
@@ -709,6 +710,7 @@ class Rule(RuleFactory):
                     self._trace.append((False, variable))
                     for part in variable.split('/'):
                         if part:
+                            self._static_parts.append(part)
                             self._weights.append((0, -len(part)))
                 else:
                     if arguments:
@@ -860,13 +862,15 @@ class Rule(RuleFactory):
         1.  rules without any arguments come first for performance
             reasons only as we expect them to match faster and some
             common ones usually don't have any arguments (index pages etc.)
-        2.  The more complex rules come first so the second argument is the
+        2.  rules with more static parts come first so the second argument 
+            is the negative length of the static parts.
+        3.  The more complex rules come first so the third argument is the
             negative length of the number of weights.
-        3.  lastly we order by the actual weights.
+        4.  lastly we order by the actual weights.
 
         :internal:
         """
-        return bool(self.arguments), -len(self._weights), self._weights
+        return bool(self.arguments), -len(self._static_parts), -len(self._weights), self._weights
 
     def build_compare_key(self):
         """The build compare key for sorting.

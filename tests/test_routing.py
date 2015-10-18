@@ -171,6 +171,7 @@ def test_path():
         r.Rule('/Talk:<path:name>', endpoint='talk'),
         r.Rule('/User:<username>', endpoint='user'),
         r.Rule('/User:<username>/<path:name>', endpoint='userpage'),
+        r.Rule('/User:<username>/comment/<int:a>-<int:b>', endpoint='usercomment'),
         r.Rule('/Files/<path:file>', endpoint='files'),
     ])
     adapter = map.bind('example.org', '/')
@@ -188,6 +189,8 @@ def test_path():
     assert adapter.match('/User:thomas') == ('user', {'username': 'thomas'})
     assert adapter.match('/User:thomas/projects/werkzeug') == \
         ('userpage', {'username': 'thomas', 'name': 'projects/werkzeug'})
+    assert adapter.match('/User:thomas/comment/123-456') == \
+        ('usercomment', {'username':'thomas', 'a':123, 'b':456})
     assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == \
         ('files', {'file': 'downloads/werkzeug/0.2.zip'})
 
