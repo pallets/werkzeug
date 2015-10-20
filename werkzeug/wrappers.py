@@ -648,7 +648,7 @@ class BaseRequest(object):
     is_run_once = environ_property('wsgi.run_once', doc='''
         boolean that is `True` if the application will be executed only
         once in a process lifetime.  This is the case for CGI for example,
-        but it's not guaranteed that the exeuction only happens one time.''')
+        but it's not guaranteed that the execution only happens one time.''')
 
 
 class BaseResponse(object):
