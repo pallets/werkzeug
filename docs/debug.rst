@@ -59,7 +59,7 @@ Debugger PIN
 
 Starting with Werkzeug 0.11 the debugger is additionally protected by a
 PIN.  This is a security helper to make it less likely for the debugger to
-be exploited in production as it has happend to people to keep the
+be exploited in production as it has happened to people to keep the
 debugger active.  The PIN based authentication is enabled by default.
 
 When the debugger comes up, on first usage it will prompt for a PIN that
@@ -67,7 +67,7 @@ is printed to the command line.  The PIN is generated in a stable way that
 is specific to the project.  In some situations it might be not possible
 to generate a stable PIN between restarts in which case an explicit PIN
 can be provided through the environment variable ``WERKZEUG_DEBUG_PIN``.
-This can be set to a number and will become the pin.  This variable can
+This can be set to a number and will become the PIN.  This variable can
 also be set to the value ``off`` to disable the PIN check entirely.
 
 If the PIN is entered too many times incorrectly the server needs to be
@@ -80,7 +80,7 @@ enable the debugger in production.**
 Pasting Errors
 ==============
 
-If you click on the `Traceback` title the traceback switches over to a text
+If you click on the `Traceback` title, the traceback switches over to a text
 based one.  The text based one can be pasted to `paste.pocoo.org`_ with one
 click.
 

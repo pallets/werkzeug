@@ -28,7 +28,7 @@ encoded strings.
 
 There are two different kinds of strings in the WSGI environ on Python 3:
 
--   unicode strings restricted to latin1 values.  These are the used for
+-   unicode strings restricted to latin1 values.  These are used for
     HTTP headers and a few other things.
 -   unicode strings carrying binary payload, roundtripped through latin1
     values.  This is usually referred as “WSGI encoding dance” throughout

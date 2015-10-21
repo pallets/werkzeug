@@ -88,7 +88,7 @@ Because certain data can't be moved to the hard disk (regular post data)
 whereas temporary files can, there is a second limit you can set.  The
 :attr:`~BaseRequest.max_form_memory_size` limits the size of `POST`
 transmitted form data.  By setting it to ``1024 * 1024 * 2`` you can make
-sure that all in memory-stored fields is not more than 2MB in size.
+sure that all in memory-stored fields are not more than 2MB in size.
 
 This however does *not* affect in-memory stored files if the
 `stream_factory` used returns a in-memory file.
