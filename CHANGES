@@ -33,7 +33,7 @@ Version 0.11
   not work on all Python versions.
 - Implemented PIN based authentication for the debugger.  This can optionally
   be disabled but is discouraged.  This change was necessary as it has been
-  discovered that to many people run the debugger in production.
+  discovered that too many people run the debugger in production.
 
 Version 0.10.5
 --------------
