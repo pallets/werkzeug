@@ -637,14 +637,6 @@ def run_simple(hostname, port, application, use_reloader=False,
                     passthrough_errors, ssl_context,
                     fd=fd).serve_forever()
 
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        display_hostname = hostname != '*' and hostname or 'localhost'
-        if ':' in display_hostname:
-            display_hostname = '[%s]' % display_hostname
-        quit_msg = '(Press CTRL+C to quit)'
-        _log('info', ' * Running on %s://%s:%d/ %s', ssl_context is None
-             and 'http' or 'https', display_hostname, port, quit_msg)
-
     if use_reloader:
         # If we're not running already in the subprocess that is the
         # reloader we want to open up a socket early to make sure the
