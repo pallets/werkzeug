@@ -201,7 +201,7 @@ def _hash_internal(method, salt, password):
     return rv, actual_method
 
 
-def generate_password_hash(password, method='pbkdf2:sha1', salt_length=8):
+def generate_password_hash(password, method='pbkdf2:sha384', salt_length=8):
     """Hash a password with the given method and salt with with a string of
     the given length.  The format of the string returned includes the method
     that was used so that :func:`check_password_hash` can check the hash.
