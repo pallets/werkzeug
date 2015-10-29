@@ -26,15 +26,15 @@ def test_safe_str_cmp():
 def test_password_hashing():
     hash0 = generate_password_hash('default')
     assert check_password_hash(hash0, 'default')
-    assert hash0.startswith('pbkdf2:sha1:1000$')
+    assert hash0.startswith('pbkdf2:sha3:1000$')
 
-    hash1 = generate_password_hash('default', 'sha1')
-    hash2 = generate_password_hash(u'default', method='sha1')
+    hash1 = generate_password_hash('default', 'sha3')
+    hash2 = generate_password_hash(u'default', method='sha3')
     assert hash1 != hash2
     assert check_password_hash(hash1, 'default')
     assert check_password_hash(hash2, 'default')
-    assert hash1.startswith('sha1$')
-    assert hash2.startswith('sha1$')
+    assert hash1.startswith('sha3$')
+    assert hash2.startswith('sha3$')
 
     fakehash = generate_password_hash('default', method='plain')
     assert fakehash == 'plain$$default'
