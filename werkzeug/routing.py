@@ -99,7 +99,7 @@ import difflib
 import re
 import uuid
 import posixpath
-l
+
 from pprint import pformat
 from threading import Lock
 
