@@ -217,6 +217,10 @@ class Unauthorized(HTTPException):
 
     Raise if the user is not authorized.  Also used if you want to use HTTP
     basic auth.
+
+    The first argument for this exception should be a list of WWW-Authenticate
+    challenges.  Strictly speaking the response would be invalid if you don't 
+    provide at least one challenge.
     """
     code = 401
     description = (
@@ -225,6 +229,17 @@ class Unauthorized(HTTPException):
         'a bad password), or your browser doesn\'t understand how to supply '
         'the credentials required.'
     )
+    
+    def __init__(self, challenges=None, description=None):
+        """Takes an optional list of WWW-Authenticate challenges."""
+        HTTPException.__init__(self, description)
+        self.challenges = challenges
+
+    def get_headers(self, environ):
+        headers = HTTPException.get_headers(self, environ)
+        if self.challenges:
+            headers.append(('WWW-Authenticate', ', '.join(self.challenges)))
+        return headers
 
 
 class Forbidden(HTTPException):
