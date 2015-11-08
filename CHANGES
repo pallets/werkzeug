@@ -34,6 +34,7 @@ Version 0.11
 - Implemented PIN based authentication for the debugger.  This can optionally
   be disabled but is discouraged.  This change was necessary as it has been
   discovered that too many people run the debugger in production.
+- Devserver no longer requires SSL module to be installed.
 
 Version 0.10.5
 --------------

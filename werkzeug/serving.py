@@ -40,8 +40,15 @@ from __future__ import with_statement
 import os
 import socket
 import sys
-import ssl
 import signal
+
+try:
+    import ssl
+except ImportError:
+    class _SslDummy(object):
+        def __getattr__(self, name):
+            raise RuntimeError('SSL support unavailable')
+    ssl = _SslDummy()
 
 
 def _get_openssl_crypto_module():
@@ -485,8 +492,9 @@ class BaseWSGIServer(HTTPServer, object):
                 if ':' in display_hostname:
                     display_hostname = '[%s]' % display_hostname
                 quit_msg = '(Press CTRL+C to quit)'
-                _log('info', ' * Running on %s://%s:%d/ %s', self.ssl_context is None
-                     and 'http' or 'https', display_hostname, self.port, quit_msg)
+                _log('info', ' * Running on %s://%s:%d/ %s',
+                     self.ssl_context is None and 'http' or 'https',
+                     display_hostname, self.port, quit_msg)
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
