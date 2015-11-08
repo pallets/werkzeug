@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.11
 ------------
 
-(release date and codename to be decided)
+Released on November 8th 2015, codename Gleisbaumaschine.
 
 - Added ``reloader_paths`` option to ``run_simple`` and other functions in
   ``werkzeug.serving``. This allows the user to completely override the Python
