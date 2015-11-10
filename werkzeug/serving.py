@@ -42,6 +42,8 @@ import socket
 import sys
 import signal
 
+from ._compat import PY2
+
 try:
     import ssl
 except ImportError:
@@ -401,6 +403,11 @@ class _SSLContext(object):
         self._password = password
 
     def wrap_socket(self, sock, **kwargs):
+        # If we are on Python 2 the return value from socket.fromfd
+        # is an internal socket object but what we need for ssl wrap
+        # is the wrapper around it :(
+        if PY2 and not isinstance(sock, socket.socket):
+            sock = socket.socket(sock.family, sock.type, sock.proto, sock)
         return ssl.wrap_socket(sock, keyfile=self._keyfile,
                                certfile=self._certfile,
                                ssl_version=self._protocol, **kwargs)

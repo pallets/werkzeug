@@ -6,6 +6,8 @@ Version 0.11.2
 
 - Fix inheritable sockets on Windows on Python 3.
 - Fixed an issue with the forking server not starting any longer.
+- Fixed SSL wrapping on platforms that supported opening sockets
+  by file descriptor.
 
 Version 0.11.1
 --------------
