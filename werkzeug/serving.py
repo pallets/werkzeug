@@ -524,9 +524,9 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
     multiprocess = True
 
     def __init__(self, host, port, app, processes=40, handler=None,
-                 passthrough_errors=False, ssl_context=None):
+                 passthrough_errors=False, ssl_context=None, fd=None):
         BaseWSGIServer.__init__(self, host, port, app, handler,
-                                passthrough_errors, ssl_context)
+                                passthrough_errors, ssl_context, fd)
         self.max_children = processes
 
 
