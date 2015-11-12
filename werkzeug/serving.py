@@ -42,6 +42,8 @@ import socket
 import sys
 import signal
 
+from ._compat import PY2
+
 try:
     import ssl
 except ImportError:
@@ -401,6 +403,11 @@ class _SSLContext(object):
         self._password = password
 
     def wrap_socket(self, sock, **kwargs):
+        # If we are on Python 2 the return value from socket.fromfd
+        # is an internal socket object but what we need for ssl wrap
+        # is the wrapper around it :(
+        if PY2 and not isinstance(sock, socket.socket):
+            sock = socket.socket(sock.family, sock.type, sock.proto, sock)
         return ssl.wrap_socket(sock, keyfile=self._keyfile,
                                certfile=self._certfile,
                                ssl_version=self._protocol, **kwargs)
@@ -524,9 +531,9 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
     multiprocess = True
 
     def __init__(self, host, port, app, processes=40, handler=None,
-                 passthrough_errors=False, ssl_context=None):
+                 passthrough_errors=False, ssl_context=None, fd=None):
         BaseWSGIServer.__init__(self, host, port, app, handler,
-                                passthrough_errors, ssl_context)
+                                passthrough_errors, ssl_context, fd)
         self.max_children = processes
 
 
@@ -662,8 +669,8 @@ def run_simple(hostname, port, application, use_reloader=False,
             s = socket.socket(address_family, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((hostname, port))
-            if hasattr(os, 'set_inheritable'):
-                os.set_inheritable(s.fileno(), True)
+            if hasattr(s, 'set_inheritable'):
+                s.set_inheritable(True)
 
             # If we can open the socket by file descriptor, then we can just
             # reuse this one and our socket will survive the restarts.

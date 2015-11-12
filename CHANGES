@@ -1,6 +1,19 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11.2
+--------------
+
+Released on November 12th 2015.
+
+- Fix inheritable sockets on Windows on Python 3.
+- Fixed an issue with the forking server not starting any longer.
+- Fixed SSL wrapping on platforms that supported opening sockets
+  by file descriptor.
+- No longer log from the watchdog reloader.
+- Unicode errors in hosts are now better catched or converted into
+  bad request errors.
+
 Version 0.11.1
 --------------
 
