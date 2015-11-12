@@ -41,6 +41,7 @@ import os
 import socket
 import sys
 import signal
+import platform
 
 try:
     import ssl
@@ -663,7 +664,10 @@ def run_simple(hostname, port, application, use_reloader=False,
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((hostname, port))
             if hasattr(os, 'set_inheritable'):
-                os.set_inheritable(s.fileno(), True)
+                if platform.system() == 'Windows':
+                    os.set_handle_inheritable(s.fileno(), True)
+                else:
+                    os.set_inheritable(s.fileno(), True)
 
             # If we can open the socket by file descriptor, then we can just
             # reuse this one and our socket will survive the restarts.
