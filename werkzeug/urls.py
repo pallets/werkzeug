@@ -41,7 +41,7 @@ _hextobyte = dict(
 
 
 _URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
-                                      ['scheme', 'netloc', 'path', 'query', 'fragment']))
+    ['scheme', 'netloc', 'path', 'query', 'fragment']))
 
 
 class BaseURL(_URLTuple):
@@ -71,7 +71,10 @@ class BaseURL(_URLTuple):
         """
         rv = self.host
         if rv is not None and isinstance(rv, text_type):
-            rv = _encode_idna(rv)
+            try:
+                rv = _encode_idna(rv)
+            except UnicodeError:
+                rv = rv.encode('ascii', 'ignore')
         return to_native(rv, 'ascii', 'ignore')
 
     @property

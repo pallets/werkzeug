@@ -113,14 +113,20 @@ def host_is_trusted(hostname, trusted_list):
             hostname = hostname.rsplit(':', 1)[0]
         return _encode_idna(hostname)
 
-    hostname = _normalize(hostname)
+    try:
+        hostname = _normalize(hostname)
+    except UnicodeError:
+        return False
     for ref in trusted_list:
         if ref.startswith('.'):
             ref = ref[1:]
             suffix_match = True
         else:
             suffix_match = False
-        ref = _normalize(ref)
+        try:
+            ref = _normalize(ref)
+        except UnicodeError:
+            return False
         if ref == hostname:
             return True
         if suffix_match and hostname.endswith('.' + ref):

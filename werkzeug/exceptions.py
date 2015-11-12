@@ -201,6 +201,14 @@ class SecurityError(BadRequest):
     """
 
 
+class BadHost(BadRequest):
+
+    """Raised if the submitted host is badly formatted.
+
+    .. versionadded:: 0.11.2
+    """
+
+
 class Unauthorized(HTTPException):
 
     """*401* `Unauthorized`
