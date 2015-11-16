@@ -411,3 +411,5 @@ class LocalProxy(object):
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)
+    __copy__ = lambda x: x._get_current_object().__copy__()
+    __deepcopy__ = lambda x, memo: x._get_current_object().__deepcopy__(memo)

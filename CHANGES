@@ -1,6 +1,12 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11.3
+--------------
+
+- Fixed an issue with copy operations not working against
+  proxies.
+
 Version 0.11.2
 --------------
 
