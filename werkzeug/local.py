@@ -347,6 +347,18 @@ class LocalProxy(object):
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
+    def __copy__(x):
+        try:
+            return x._get_current_object().__copy__()
+        except AttributeError:
+            return x._get_current_object()
+
+    def __deepcopy__(x, memo):
+        try:
+            return x._get_current_object().__deepcopy__(memo)
+        except AttributeError:
+            return x._get_current_object()
+
     if PY2:
         __getslice__ = lambda x, i, j: x._get_current_object()[i:j]
 
@@ -411,5 +423,3 @@ class LocalProxy(object):
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)
-    __copy__ = lambda x: x._get_current_object().__copy__()
-    __deepcopy__ = lambda x, memo: x._get_current_object().__deepcopy__(memo)

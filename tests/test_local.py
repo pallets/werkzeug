@@ -171,3 +171,19 @@ def test_deepcopy_on_proxy():
     assert p.attr == 42
     assert copy.deepcopy(p) is f
     assert copy.copy(p) is f
+
+
+def test_deepcopy_on_proxy_dict():
+    f = {'answer': 42}
+    p = local.LocalProxy(lambda: f)
+    assert p['answer'] == 42
+    assert copy.deepcopy(p) is f
+    assert copy.copy(p) is f
+
+
+def test_deepcopy_on_proxy_list():
+    f = [42]
+    p = local.LocalProxy(lambda: f)
+    assert p[0] == 42
+    assert copy.deepcopy(p) is f
+    assert copy.copy(p) is f
