@@ -98,7 +98,11 @@ def _parse_signature(func):
         return parse
 
     # inspect the function signature and collect all the information
-    positional, vararg_var, kwarg_var, defaults = inspect.getargspec(func)
+    if hasattr(inspect, 'getfullargspec'):
+        tup = inspect.getfullargspec(func)
+    else:
+        tup = inspect.getargspec(func)
+    positional, vararg_var, kwarg_var, defaults = tup[:4]
     defaults = defaults or ()
     arg_count = len(positional)
     arguments = []
