@@ -75,6 +75,7 @@ from __future__ import print_function
 import sys
 import inspect
 import getopt
+from warnings import warn
 from os.path import basename
 from werkzeug._compat import iteritems
 
@@ -95,6 +96,11 @@ converters = {
 }
 
 
+def _deprecated():
+    warn(DeprecationWarning('werkzeug.script is deprecated and '
+                            'will be removed soon'), stacklevel=2)
+
+
 def run(namespace=None, action_prefix='action_', args=None):
     """Run the script.  Participating actions are looked up in the caller's
     namespace if no namespace is given, otherwise in the dict provided.
@@ -109,6 +115,7 @@ def run(namespace=None, action_prefix='action_', args=None):
     :param args: the arguments for the function.  If not specified
                  :data:`sys.argv` without the first argument is used.
     """
+    _deprecated()
     if namespace is None:
         namespace = sys._getframe(1).f_locals
     actions = find_actions(namespace, action_prefix)
@@ -179,12 +186,14 @@ def run(namespace=None, action_prefix='action_', args=None):
 
 def fail(message, code=-1):
     """Fail with an error."""
+    _deprecated()
     print('Error: %s' % message, file=sys.stderr)
     sys.exit(code)
 
 
 def find_actions(namespace, action_prefix):
     """Find all the actions in the namespace."""
+    _deprecated()
     actions = {}
     for key, value in iteritems(namespace):
         if key.startswith(action_prefix):
@@ -194,6 +203,7 @@ def find_actions(namespace, action_prefix):
 
 def print_usage(actions):
     """Print the usage information.  (Help screen)"""
+    _deprecated()
     actions = sorted(iteritems(actions))
     print('usage: %s <action> [<options>]' % basename(sys.argv[0]))
     print('       %s --help' % basename(sys.argv[0]))
@@ -220,6 +230,7 @@ def print_usage(actions):
 
 def analyse_action(func):
     """Analyse a function."""
+    _deprecated()
     description = inspect.getdoc(func) or 'undocumented action'
     arguments = []
     args, varargs, kwargs, defaults = inspect.getargspec(func)
@@ -255,6 +266,7 @@ def make_shell(init_func=None, banner=None, use_ipython=True):
                    not specified a generic banner is used instead.
     :param use_ipython: if set to `True` ipython is used if available.
     """
+    _deprecated()
     if banner is None:
         banner = 'Interactive Werkzeug Shell'
     if init_func is None:
@@ -304,6 +316,7 @@ def make_runserver(app_factory, hostname='localhost', port=5000,
     :param extra_files: optional list of extra files to track for reloading.
     :param ssl_context: optional SSL context for running server in HTTPS mode.
     """
+    _deprecated()
     def action(hostname=('h', hostname), port=('p', port),
                reloader=use_reloader, debugger=use_debugger,
                evalex=use_evalex, threaded=threaded, processes=processes):
