@@ -171,3 +171,11 @@ def test_deepcopy_on_proxy():
     assert p.attr == 42
     assert copy.deepcopy(p) is f
     assert copy.copy(p) is f
+
+    a = []
+    p2 = local.LocalProxy(lambda: [a])
+    assert copy.copy(p2) == [a]
+    assert copy.copy(p2)[0] is a
+
+    assert copy.deepcopy(p2) == [a]
+    assert copy.deepcopy(p2)[0] is not a
