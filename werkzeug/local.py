@@ -8,6 +8,7 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import copy
 from functools import update_wrapper
 from werkzeug.wsgi import ClosingIterator
 from werkzeug._compat import PY2, implements_bool
@@ -411,5 +412,5 @@ class LocalProxy(object):
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)
-    __copy__ = lambda x: x._get_current_object().__copy__()
-    __deepcopy__ = lambda x, memo: x._get_current_object().__deepcopy__(memo)
+    __copy__ = lambda x: copy.copy(x._get_current_object())
+    __deepcopy__ = lambda x, memo: copy.deepcopy(x._get_current_object(), memo)
