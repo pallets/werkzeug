@@ -494,14 +494,6 @@ class BaseWSGIServer(HTTPServer, object):
     def serve_forever(self):
         self.shutdown_signal = False
         try:
-            if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-                display_hostname = self.host != '*' and self.host or 'localhost'
-                if ':' in display_hostname:
-                    display_hostname = '[%s]' % display_hostname
-                quit_msg = '(Press CTRL+C to quit)'
-                _log('info', ' * Running on %s://%s:%d/ %s',
-                     self.ssl_context is None and 'http' or 'https',
-                     display_hostname, self.port, quit_msg)
             HTTPServer.serve_forever(self)
         except KeyboardInterrupt:
             pass
@@ -509,9 +501,7 @@ class BaseWSGIServer(HTTPServer, object):
             self.server_close()
 
     def handle_error(self, request, client_address):
-        if self.passthrough_errors:
-            raise
-        else:
+        if not self.passthrough_errors:
             return HTTPServer.handle_error(self, request, client_address)
 
     def get_request(self):
@@ -642,15 +632,28 @@ def run_simple(hostname, port, application, use_reloader=False,
         from werkzeug.wsgi import SharedDataMiddleware
         application = SharedDataMiddleware(application, static_files)
 
+    def log_startup(sock):
+        display_hostname = hostname not in ('', '*') and hostname or 'localhost'
+        if ':' in display_hostname:
+            display_hostname = '[%s]' % display_hostname
+        quit_msg = '(Press CTRL+C to quit)'
+        port = sock.getsockname()[1]
+        _log('info', ' * Running on %s://%s:%d/ %s',
+             ssl_context is None and 'http' or 'https',
+             display_hostname, port, quit_msg)
+
     def inner():
         try:
             fd = int(os.environ['WERKZEUG_SERVER_FD'])
         except (LookupError, ValueError):
             fd = None
-        make_server(hostname, port, application, threaded,
-                    processes, request_handler,
-                    passthrough_errors, ssl_context,
-                    fd=fd).serve_forever()
+        srv = make_server(hostname, port, application, threaded,
+                          processes, request_handler,
+                          passthrough_errors, ssl_context,
+                          fd=fd)
+        if fd is None:
+            log_startup(srv.socket)
+        srv.serve_forever()
 
     if use_reloader:
         # If we're not running already in the subprocess that is the
@@ -677,6 +680,7 @@ def run_simple(hostname, port, application, use_reloader=False,
             if can_open_by_fd:
                 os.environ['WERKZEUG_SERVER_FD'] = str(s.fileno())
                 s.listen(LISTEN_QUEUE)
+                log_startup(s)
             else:
                 s.close()
 
