@@ -57,7 +57,7 @@ r"""
                 return SecureCookie.unserialize(data, SECRET_KEY)
 
         def application(environ, start_response):
-            request = Request(environ, start_response)
+            request = Request(environ)
 
             # get a response object here
             response = ...
@@ -77,7 +77,7 @@ r"""
                 return SecureCookie.load_cookie(self, secret_key=COOKIE_SECRET)
 
         def application(environ, start_response):
-            request = Request(environ, start_response)
+            request = Request(environ)
 
             # get a response object here
             response = ...
