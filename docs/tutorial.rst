@@ -11,7 +11,7 @@ layer and, of course, Werkzeug for the WSGI layer.
 
 You can use `pip` to install the required libraries::
 
-    pip install Jinja2 redis
+    pip install Jinja2 redis Werkzeug
 
 Also make sure to have a redis server running on your local machine.  If
 you are on OS X, you can use `brew` to install it::
