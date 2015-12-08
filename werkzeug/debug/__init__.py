@@ -72,8 +72,16 @@ def get_pin_and_cookie_name(app):
 
     modname = getattr(app, '__module__',
                       getattr(app.__class__, '__module__'))
+
+    try:
+        # `getpass.getuser()` imports the `pwd` module,
+        # which does not exist in the Google App Engine sandbox.
+        username = getpass.getuser()
+    except ImportError:
+        username = None
+
     bits = [
-        getpass.getuser(),
+        username,
         str(uuid.getnode()),
         modname,
         getattr(app, '__name__', getattr(app.__class__, '__name__')),
