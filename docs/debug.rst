@@ -81,8 +81,8 @@ Pasting Errors
 ==============
 
 If you click on the `Traceback` title, the traceback switches over to a text
-based one.  The text based one can be pasted to `paste.pocoo.org`_ with one
+based one.  The text based one can be pasted to `gist.github.com`_ with one
 click.
 
 
-.. _paste.pocoo.org: http://paste.pocoo.org/
+.. _paste.pocoo.org: https://gist.github.com/
