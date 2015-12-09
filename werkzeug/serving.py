@@ -73,7 +73,7 @@ except ImportError:
 import werkzeug
 from werkzeug._internal import _log
 from werkzeug._compat import reraise, wsgi_encoding_dance
-from werkzeug.urls import url_parse, url_unquote
+from werkzeug.urls import url_parse, url_unquote_plus
 from werkzeug.exceptions import InternalServerError
 
 
@@ -96,7 +96,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             self.server.shutdown_signal = True
 
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
-        path_info = url_unquote(request_url.path)
+        path_info = url_unquote_plus(request_url.path)
 
         environ = {
             'wsgi.version':         (1, 0),
