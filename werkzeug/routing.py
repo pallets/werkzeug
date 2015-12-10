@@ -112,6 +112,7 @@ from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
     text_type, string_types, native_string_result, \
     implements_to_string, wsgi_decoding_dance
 from werkzeug.datastructures import ImmutableDict, MultiDict
+from werkzeug._internal import _log
 
 
 _rule_re = re.compile(r'''
@@ -1310,6 +1311,8 @@ class Map(object):
                 # earlier we go by an invalid subdomain which will result
                 # in a 404 error on matching.
                 subdomain = '<invalid>'
+                _log('warning', 'Current server name doesn\'t match '
+                                'configured server name.')
             else:
                 subdomain = '.'.join(filter(None, cur_server_name[:offset]))
 
