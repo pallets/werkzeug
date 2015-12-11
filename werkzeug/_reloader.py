@@ -34,6 +34,7 @@ def _iter_module_files():
 
 MAX_DEEP_FOLDER = 5
 
+
 def _iter_project_files(file_ext):
     """This iterates over all project files with
     the exception of hidden files example .venv .idea etc.
