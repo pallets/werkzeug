@@ -107,7 +107,7 @@ class ReloaderLoop(object):
 
     def __init__(self, extra_files=None, extra_extensions=None, interval=1):
         self.extra_files = tuple()
-        if self.extra_files:
+        if extra_files:
             self.extra_files = set(os.path.abspath(x) for x in extra_files)
 
         self.extra_extensions = tuple()
