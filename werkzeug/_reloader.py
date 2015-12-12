@@ -41,7 +41,11 @@ def _iter_project_files(file_ext):
     Exist restriction of deep folders
     """
     __main__ = __import__('__main__')
-    dir_name = os.path.dirname(__main__.__file__)
+
+    try:
+        dir_name = os.path.dirname(__main__.__file__)
+    except AttributeError:
+        raise StopIteration
 
     def find_files_list(dir_path, deep=0):
         if deep <= MAX_DEEP_FOLDER and not dir_name.startswith('.'):
