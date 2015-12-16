@@ -1195,6 +1195,8 @@ class Map(object):
         """
         for rule in rulefactory.get_rules(self):
             rule.bind(self)
+            if rule in self._rules:
+                raise ValueError('A rule already exists. Duplicates not allowed')
             self._rules.append(rule)
             self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
         self._remap = True
