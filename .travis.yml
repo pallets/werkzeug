@@ -9,7 +9,6 @@ python:
 
 install:
     # Travis uses an outdated PyPy, this installs the most recent one.
-    # We need it because apparently cryptography isn't compatible with PyPy versions < 2.6
     # This makes the tests run on Travis' legacy infrastructure, but so be it.
     # temporary pyenv installation to get pypy-2.6 before container infra upgrade
     - if [ "$TRAVIS_PYTHON_VERSION" == "pypy" ]; then
