@@ -11,6 +11,7 @@ install:
     # Travis uses an outdated PyPy, this installs the most recent one.
     # This makes the tests run on Travis' legacy infrastructure, but so be it.
     # temporary pyenv installation to get pypy-2.6 before container infra upgrade
+    # Taken from pyca/cryptography
     - if [ "$TRAVIS_PYTHON_VERSION" == "pypy" ]; then
         git clone https://github.com/yyuu/pyenv.git ~/.pyenv;
         PYENV_ROOT="$HOME/.pyenv";
