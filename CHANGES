@@ -9,6 +9,8 @@ Version 0.11.3
 - Changed the logging operations of the development server to
   correctly log where the server is running in all situations
   again.
+- Fixed another regression with SSL wrapping similar to the
+  fix in 0.11.2 but for a different code path.
 
 Version 0.11.2
 --------------
