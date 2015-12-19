@@ -403,11 +403,6 @@ class _SSLContext(object):
         self._password = password
 
     def wrap_socket(self, sock, **kwargs):
-        # If we are on Python 2 the return value from socket.fromfd
-        # is an internal socket object but what we need for ssl wrap
-        # is the wrapper around it :(
-        if PY2 and not isinstance(sock, socket.socket):
-            sock = socket.socket(sock.family, sock.type, sock.proto, sock)
         return ssl.wrap_socket(sock, keyfile=self._keyfile,
                                certfile=self._certfile,
                                ssl_version=self._protocol, **kwargs)
@@ -482,8 +477,13 @@ class BaseWSGIServer(HTTPServer, object):
                 ssl_context = load_ssl_context(*ssl_context)
             if ssl_context == 'adhoc':
                 ssl_context = generate_adhoc_ssl_context()
-            self.socket = ssl_context.wrap_socket(self.socket,
-                                                  server_side=True)
+            # If we are on Python 2 the return value from socket.fromfd
+            # is an internal socket object but what we need for ssl wrap
+            # is the wrapper around it :(
+            sock = self.socket
+            if PY2 and not isinstance(sock, socket.socket):
+                sock = socket.socket(sock.family, sock.type, sock.proto, sock)
+            self.socket = ssl_context.wrap_socket(sock, server_side=True)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None
