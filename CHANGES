@@ -4,6 +4,8 @@ Werkzeug Changelog
 Version 0.11.3
 --------------
 
+Released on December 20th 2015.
+
 - Fixed an issue with copy operations not working against
   proxies.
 - Changed the logging operations of the development server to
