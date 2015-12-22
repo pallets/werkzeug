@@ -515,6 +515,18 @@ class RequestHeaderFieldsTooLarge(HTTPException):
     )
 
 
+class UnavailableForLegalReasons(HTTPException):
+
+    """*451* `Unavailable For Legal Reasons`
+
+    Raise if the user requests an illegal resource.
+    """
+    code = 451
+    description = (
+        'Unavailable for legal reasons.'
+    )
+
+
 class InternalServerError(HTTPException):
 
     """*500* `Internal Server Error`
