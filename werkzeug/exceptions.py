@@ -515,6 +515,19 @@ class RequestHeaderFieldsTooLarge(HTTPException):
     )
 
 
+class UnavailableForLegalReasons(HTTPException):
+
+    """*451* `Unavailable For Legal Reasons`
+
+    This request may not be serviced due to legal reasons which disallow access
+    to resources hosted on the server.
+    """
+    code = 451
+    description = (
+        'Unavailable for legal reasons.'
+    )
+
+
 class InternalServerError(HTTPException):
 
     """*500* `Internal Server Error`
