@@ -519,7 +519,8 @@ class UnavailableForLegalReasons(HTTPException):
 
     """*451* `Unavailable For Legal Reasons`
 
-    Raise if the user requests an illegal resource.
+    This status code indicates that the server is denying access to the
+    resource as a consequence of a legal demand.
     """
     code = 451
     description = (
