@@ -40,8 +40,9 @@ _hextobyte = dict(
 )
 
 
-_URLTuple = fix_tuple_repr(namedtuple('_URLTuple',
-    ['scheme', 'netloc', 'path', 'query', 'fragment']))
+_URLTuple = fix_tuple_repr(
+    namedtuple('_URLTuple', ['scheme', 'netloc', 'path', 'query', 'fragment'])
+)
 
 
 class BaseURL(_URLTuple):

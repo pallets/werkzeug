@@ -162,10 +162,13 @@ def test_custom_idents():
 def test_deepcopy_on_proxy():
     class Foo(object):
         attr = 42
+
         def __copy__(self):
             return self
+
         def __deepcopy__(self, memo):
             return self
+
     f = Foo()
     p = local.LocalProxy(lambda: f)
     assert p.attr == 42
