@@ -12,6 +12,7 @@ Unreleased.
 - Added support for status code 451.
 - Improved the build error suggestions.  In particular only if
   someone stringifies the error will the suggestions be calculated.
+- Fixed werkzeug.serving not working from -m flag.
 
 Version 0.11.3
 --------------

@@ -42,8 +42,6 @@ import socket
 import sys
 import signal
 
-from ._compat import PY2
-
 try:
     import ssl
 except ImportError:
@@ -70,9 +68,10 @@ except ImportError:
     from socketserver import ThreadingMixIn, ForkingMixIn
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
+# important: do not use relative imports here or python -m will break
 import werkzeug
 from werkzeug._internal import _log
-from werkzeug._compat import reraise, wsgi_encoding_dance
+from werkzeug._compat import PY2, reraise, wsgi_encoding_dance
 from werkzeug.urls import url_parse, url_unquote
 from werkzeug.exceptions import InternalServerError
 
