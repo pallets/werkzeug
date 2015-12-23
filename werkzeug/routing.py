@@ -112,6 +112,7 @@ from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
     text_type, string_types, native_string_result, \
     implements_to_string, wsgi_decoding_dance
 from werkzeug.datastructures import ImmutableDict, MultiDict
+from werkzeug.utils import cached_property
 
 
 _rule_re = re.compile(r'''
@@ -260,10 +261,14 @@ class BuildError(RoutingException, LookupError):
         self.endpoint = endpoint
         self.values = values
         self.method = method
-        self.suggested = self.closest_rule(adapter)
+        self.adapter = adapter
+
+    @cached_property
+    def suggested(self):
+        return self.closest_rule(self.adapter)
 
     def closest_rule(self, adapter):
-        def score_rule(rule):
+        def _score_rule(rule):
             return sum([
                 0.98 * difflib.SequenceMatcher(
                     None, rule.endpoint, self.endpoint
@@ -273,22 +278,20 @@ class BuildError(RoutingException, LookupError):
             ])
 
         if adapter and adapter.map._rules:
-            return max(adapter.map._rules, key=score_rule)
-        else:
-            return None
+            return max(adapter.map._rules, key=_score_rule)
 
-    def __str__(self):
+    def __unicode__(self):
         message = []
-        message.append("Could not build url for endpoint %r" % self.endpoint)
+        message.append('Could not build url for endpoint %r' % self.endpoint)
         if self.method:
-            message.append(" (%r)" % self.method)
+            message.append(' (%r)' % self.method)
         if self.values:
-            message.append(" with values %r" % sorted(self.values.keys()))
-        message.append(".")
+            message.append(' with values %r' % sorted(self.values.keys()))
+        message.append('.')
         if self.suggested:
             if self.endpoint == self.suggested.endpoint:
                 if self.method and self.method not in self.suggested.methods:
-                    message.append(" Did you mean to use methods %r?" % sorted(
+                    message.append(' Did you mean to use methods %r?' % sorted(
                         self.suggested.methods
                     ))
                 missing_values = self.suggested.arguments.union(
@@ -296,14 +299,17 @@ class BuildError(RoutingException, LookupError):
                 ) - set(self.values.keys())
                 if missing_values:
                     message.append(
-                        " Did you forget to specify values %r?" %
+                        ' Did you forget to specify values %r?' %
                         sorted(missing_values)
                     )
             else:
                 message.append(
-                    " Did you mean %r instead?" % self.suggested.endpoint
+                    ' Did you mean %r instead?' % self.suggested.endpoint
                 )
-        return "".join(message)
+        return u''.join(message)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
 
 
 class ValidationError(ValueError):
