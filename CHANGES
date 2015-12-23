@@ -9,6 +9,7 @@ Unreleased.
 - Spit out big deprecation warnings for werkzeug.script
 - Use `inspect.getfullargspec` internally when available as
   `inspect.getargspec` is gone in 3.6
+- Added support for status code 451.
 
 Version 0.11.3
 --------------
