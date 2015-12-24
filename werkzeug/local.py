@@ -11,7 +11,7 @@
 import copy
 from functools import update_wrapper
 from werkzeug.wsgi import ClosingIterator
-from werkzeug._compat import PY2, implements_bool
+from werkzeug._compat import PY2, implements_bool, to_unicode
 
 # since each thread has its own greenlet we can just use those as identifiers
 # for the context.  If greenlets are not available we fall back to the
@@ -327,7 +327,7 @@ class LocalProxy(object):
 
     def __unicode__(self):
         try:
-            return unicode(self._get_current_object())  # noqa
+            return to_unicode(self._get_current_object())  # noqa
         except RuntimeError:
             return repr(self)
 

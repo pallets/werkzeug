@@ -309,7 +309,7 @@ class BuildError(RoutingException, LookupError):
         return u''.join(message)
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
+        return to_unicode(self).encode('utf-8')
 
 
 class ValidationError(ValueError):
