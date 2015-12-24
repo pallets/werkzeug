@@ -110,7 +110,7 @@ from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed, \
 from werkzeug._internal import _get_environ, _encode_idna
 from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
     text_type, string_types, native_string_result, \
-    implements_to_string, wsgi_decoding_dance
+    implements_to_string, wsgi_decoding_dance, PY2
 from werkzeug.datastructures import ImmutableDict, MultiDict
 from werkzeug.utils import cached_property
 
@@ -309,7 +309,11 @@ class BuildError(RoutingException, LookupError):
         return u''.join(message)
 
     def __str__(self):
-        return to_unicode(self).encode('utf-8')
+        # Recursion issue with to_unicode.
+        # I used "return unicode(self).encode('utf-8') if PY2 else self.__unicode__()"
+        # at the beginning and passed flake8. But when I checked with "make stylecheck",
+        # it failed with "undefined unicode" error. Any idea?
+        return text_type(self).encode('utf-8') if PY2 else self.__unicode__()
 
 
 class ValidationError(ValueError):
