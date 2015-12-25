@@ -42,6 +42,10 @@ import socket
 import sys
 import signal
 
+import io
+import email.message
+import email.parser
+
 try:
     import ssl
 except ImportError:
@@ -241,6 +245,88 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         """Called if the connection was closed by the client.  By default
         nothing happens.
         """
+
+    def parse_request(self):
+        """Parse a request (internal).
+        The request should be stored in self.raw_requestline; the results
+        are in self.command, self.path, self.request_version and
+        self.headers.
+        Return True for success, False for failure; on failure, an
+        error is sent back.
+        """
+        self.command = None  # set in case of error on the first line
+        self.request_version = version = self.default_request_version
+        self.close_connection = 1
+        requestline = str(self.raw_requestline, 'utf-8')
+        if requestline[-2:] == '\r\n':
+            requestline = requestline[:-2]
+        elif requestline[-1:] == '\n':
+            requestline = requestline[:-1]
+        self.requestline = requestline
+        words = requestline.split()
+        if len(words) == 3:
+            [command, path, version] = words
+            if version[:5] != 'HTTP/':
+                self.send_error(400, "Bad request version (%r)" % version)
+                return False
+            try:
+                base_version_number = version.split('/', 1)[1]
+                version_number = base_version_number.split(".")
+                # RFC 2145 section 3.1 says there can be only one "." and
+                #   - major and minor numbers MUST be treated as
+                #      separate integers;
+                #   - HTTP/2.4 is a lower version than HTTP/2.13, which in
+                #      turn is lower than HTTP/12.3;
+                #   - Leading zeros MUST be ignored by recipients.
+                if len(version_number) != 2:
+                    raise ValueError
+                version_number = int(version_number[0]), int(version_number[1])
+            except (ValueError, IndexError):
+                self.send_error(400, "Bad request version (%r)" % version)
+                return False
+            if version_number >= (1, 1) and self.protocol_version >= "HTTP/1.1":
+                self.close_connection = 0
+            if version_number >= (2, 0):
+                self.send_error(505,
+                          "Invalid HTTP Version (%s)" % base_version_number)
+                return False
+        elif len(words) == 2:
+            [command, path] = words
+            self.close_connection = 1
+            if command != 'GET':
+                self.send_error(400,
+                                "Bad HTTP/0.9 request type (%r)" % command)
+                return False
+        elif not words:
+            return False
+        else:
+            self.send_error(400, "Bad request syntax (%r)" % requestline)
+            return False
+        self.command, self.path, self.request_version = command, path, version
+
+        # Examine the headers and look for a Connection directive.
+
+        # MessageClass wants to see strings rather than bytes.
+        # But a TextIOWrapper around self.rfile would buffer too many bytes
+        # from the stream, bytes which we later need to read as bytes.
+        # So we read the correct bytes here, as bytes, then use StringIO
+        # to make them look like strings for MessageClass to parse.
+        headers = []
+        while True:
+            line = self.rfile.readline()
+            headers.append(line)
+            if line in (b'\r\n', b'\n', b''):
+                break
+        hfile = io.StringIO(b''.join(headers).decode('iso-8859-1'))
+        self.headers = email.parser.Parser(_class=self.MessageClass).parse(hfile)
+
+        conntype = self.headers.get('Connection', "")
+        if conntype.lower() == 'close':
+            self.close_connection = 1
+        elif (conntype.lower() == 'keep-alive' and
+              self.protocol_version >= "HTTP/1.1"):
+            self.close_connection = 0
+        return True
 
     def handle_one_request(self):
         """Handle a single HTTP request."""
