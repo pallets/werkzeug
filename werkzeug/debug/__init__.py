@@ -167,10 +167,10 @@ class DebuggedApplication(object):
                pin_logging:
                 _log('warning', ' * Debugger is active!')
                 if self.pin is None:
-                    _log('warning', ' * Debugger pin disabled.  '
+                    _log('warning', ' * Debugger PIN disabled.  '
                          'DEBUGGER UNSECURED!')
                 else:
-                    _log('info', ' * Debugger pin code: %s' % self.pin)
+                    _log('info', ' * Debugger PIN: %s' % self.pin)
         else:
             self.pin = None
 
