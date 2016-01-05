@@ -558,7 +558,7 @@ def is_running_from_reloader():
 
 def run_simple(hostname, port, application, use_reloader=False,
                use_debugger=False, use_evalex=True,
-               extra_files=None, reloader_interval=1,
+               extra_files=None, extra_extensions=None, reloader_interval=1,
                reloader_type='auto', threaded=False,
                processes=1, request_handler=None, static_files=None,
                passthrough_errors=False, ssl_context=None):
@@ -685,8 +685,8 @@ def run_simple(hostname, port, application, use_reloader=False,
                 s.close()
 
         from ._reloader import run_with_reloader
-        run_with_reloader(inner, extra_files, reloader_interval,
-                          reloader_type)
+        run_with_reloader(inner, extra_files, extra_extensions,
+                          reloader_interval, reloader_type)
     else:
         inner()
 

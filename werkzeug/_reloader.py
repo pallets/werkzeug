@@ -21,7 +21,6 @@ def _iter_module_files():
             continue
         filename = getattr(module, '__file__', None)
         if filename:
-            old = None
             while not os.path.isfile(filename):
                 old = filename
                 filename = os.path.dirname(filename)
@@ -31,6 +30,38 @@ def _iter_module_files():
                 if filename[-4:] in ('.pyc', '.pyo'):
                     filename = filename[:-1]
                 yield filename
+
+
+MAX_DEEP_FOLDER = 5
+
+
+def _iter_project_files(file_ext):
+    """This iterates over all project files with
+    the exception of hidden files example .venv .idea etc.
+    Exist restriction of deep folders
+    """
+    __main__ = __import__('__main__')
+
+    try:
+        dir_name = os.path.dirname(__main__.__file__)
+    except AttributeError:
+        raise StopIteration
+
+    def find_files_list(dir_path, deep=0):
+        if deep <= MAX_DEEP_FOLDER and not dir_name.startswith('.'):
+            contents = os.listdir(dir_path)
+            for content in contents:
+                content_abspath = os.path.join(dir_path, content)
+
+                if os.path.isdir(content_abspath):
+                    for item in find_files_list(content_abspath, deep + 1):
+                        yield item
+                if os.path.isfile(content_abspath) and \
+                        content_abspath.endswith(file_ext):
+                    yield os.path.abspath(content_abspath)
+
+    for filename in find_files_list(dir_name):
+        yield filename
 
 
 def _find_observable_paths(extra_files=None):
@@ -79,13 +110,19 @@ class ReloaderLoop(object):
     # `eventlet.monkey_patch`) before we get here
     _sleep = staticmethod(time.sleep)
 
-    def __init__(self, extra_files=None, interval=1):
-        self.extra_files = set(os.path.abspath(x)
-                               for x in extra_files or ())
+    def __init__(self, extra_files=None, extra_extensions=None, interval=1):
+        self.extra_files = tuple()
+        if extra_files:
+            self.extra_files = set(os.path.abspath(x) for x in extra_files)
+
+        self.extra_extensions = tuple()
+        if extra_extensions:
+            self.extra_extensions = tuple(set(extra_extensions))
+
         self.interval = interval
 
     def run(self):
-        pass
+        raise AssertionError("Method run not implemented")
 
     def restart_with_reloader(self):
         """Spawn a new Python interpreter with the same arguments as this one,
@@ -125,8 +162,10 @@ class StatReloaderLoop(ReloaderLoop):
     def run(self):
         mtimes = {}
         while 1:
-            for filename in chain(_iter_module_files(),
-                                  self.extra_files):
+            for filename in chain(
+                    _iter_module_files(),
+                    _iter_project_files(self.extra_extensions),
+                    self.extra_files):
                 try:
                     mtime = os.stat(filename).st_mtime
                 except OSError:
@@ -157,6 +196,9 @@ class WatchdogReloaderLoop(ReloaderLoop):
                 if filename.endswith(('.pyc', '.pyo')):
                     self.trigger_reload(filename[:-1])
                 elif filename.endswith('.py'):
+                    self.trigger_reload(filename)
+                elif self.extra_extensions and \
+                        filename.endswith(self.extra_extensions):
                     self.trigger_reload(filename)
 
         class _CustomHandler(FileSystemEventHandler):
@@ -234,11 +276,12 @@ else:
     reloader_loops['auto'] = reloader_loops['watchdog']
 
 
-def run_with_reloader(main_func, extra_files=None, interval=1,
-                      reloader_type='auto'):
+def run_with_reloader(main_func, extra_files=None, extra_extensions=None,
+                      interval=1, reloader_type='auto'):
     """Run the given function in an independent python interpreter."""
     import signal
-    reloader = reloader_loops[reloader_type](extra_files, interval)
+    reloader = reloader_loops[reloader_type](
+        extra_files, extra_extensions, interval)
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     try:
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
