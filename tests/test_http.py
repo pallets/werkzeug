@@ -247,7 +247,8 @@ class TestHTTPUtility(object):
         assert http.parse_options_header('something; foo="otherthing"; meh=; bleh') == \
             ('something', {'foo': 'otherthing', 'meh': None, 'bleh': None})
         # Issue #404
-        assert http.parse_options_header('multipart/form-data; name="foo bar"; filename="bar foo"') == \
+        assert http.parse_options_header('multipart/form-data; name="foo bar"; '
+                                         'filename="bar foo"') == \
             ('multipart/form-data', {'name': 'foo bar', 'filename': 'bar foo'})
         # Examples from RFC
         assert http.parse_options_header('audio/*; q=0.2, audio/basic') == \
@@ -260,7 +261,9 @@ class TestHTTPUtility(object):
             multiple=True) == \
             ('text/plain', {'q': '0.5'}, "text/html", {},
              "text/x-dvi", {'q': '0.8'}, "text/x-c", {})
-        assert http.parse_options_header('text/plain; q=0.5, text/html\n        text/x-dvi; q=0.8, text/x-c') == \
+        assert http.parse_options_header('text/plain; q=0.5, text/html\n'
+                                         '        '
+                                         'text/x-dvi; q=0.8, text/x-c') == \
             ('text/plain', {'q': '0.5'})
 
     def test_dump_options_header(self):
