@@ -25,6 +25,10 @@ Reporting issues
 Submitting patches
 ==================
 
+- Please do not use pull requests as a way to suggest behavior changes. Open an
+  issue for discussion first. This helps keeping the discussions of concept and
+  implementation separate.
+
 - Include tests if your patch is supposed to solve a bug, and explain
   clearly under which circumstances the bug happens. Make sure the test fails
   without your patch.
