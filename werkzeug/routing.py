@@ -250,6 +250,7 @@ class RequestAliasRedirect(RoutingException):
         self.matched_values = matched_values
 
 
+@implements_to_string
 class BuildError(RoutingException, LookupError):
 
     """Raised if the build system cannot find a URL for an endpoint with the
@@ -280,7 +281,7 @@ class BuildError(RoutingException, LookupError):
         if adapter and adapter.map._rules:
             return max(adapter.map._rules, key=_score_rule)
 
-    def __unicode__(self):
+    def __str__(self):
         message = []
         message.append('Could not build url for endpoint %r' % self.endpoint)
         if self.method:
@@ -307,9 +308,6 @@ class BuildError(RoutingException, LookupError):
                     ' Did you mean %r instead?' % self.suggested.endpoint
                 )
         return u''.join(message)
-
-    def __str__(self):
-        return unicode(self).encode('utf-8')
 
 
 class ValidationError(ValueError):
