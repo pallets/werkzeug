@@ -212,6 +212,7 @@ def generate_password_hash(password, method='pbkdf2:sha1', salt_length=8):
 
     This method can **not** generate unsalted passwords but it is possible
     to set param method='plain' in order to enforce plaintext passwords.
+
     If a salt is used, hmac is used internally to salt the password.
 
     If PBKDF2 is wanted it can be enabled by setting the method to
