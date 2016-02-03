@@ -628,14 +628,14 @@ def quote_etag(etag, weak=False):
         raise ValueError('invalid etag')
     etag = '"%s"' % etag
     if weak:
-        etag = 'w/' + etag
+        etag = 'W/' + etag
     return etag
 
 
 def unquote_etag(etag):
     """Unquote a single etag:
 
-    >>> unquote_etag('w/"bar"')
+    >>> unquote_etag('W/"bar"')
     ('bar', True)
     >>> unquote_etag('"bar"')
     ('bar', False)
@@ -647,7 +647,7 @@ def unquote_etag(etag):
         return None, None
     etag = etag.strip()
     weak = False
-    if etag[:2] in ('w/', 'W/'):
+    if etag.startswith(('W/', 'w/')):
         weak = True
         etag = etag[2:]
     if etag[:1] == etag[-1:] == '"':

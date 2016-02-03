@@ -276,7 +276,10 @@ class LintMiddleware(object):
     def check_headers(self, headers):
         etag = headers.get('etag')
         if etag is not None:
-            if etag.startswith('w/'):
+            if etag.startswith(('W/', 'w/')):
+                if etag.startswith('w/'):
+                    warn(HTTPWarning('weak etag indicator should be upcase.'),
+                         stacklevel=4)
                 etag = etag[2:]
             if not (etag[:1] == etag[-1:] == '"'):
                 warn(HTTPWarning('unquoted etag emitted.'), stacklevel=4)
