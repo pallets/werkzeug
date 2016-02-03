@@ -179,23 +179,23 @@ class TestHTTPUtility(object):
 
     def test_etags(self):
         assert http.quote_etag('foo') == '"foo"'
-        assert http.quote_etag('foo', True) == 'w/"foo"'
+        assert http.quote_etag('foo', True) == 'W/"foo"'
         assert http.unquote_etag('"foo"') == ('foo', False)
-        assert http.unquote_etag('w/"foo"') == ('foo', True)
-        es = http.parse_etags('"foo", "bar", w/"baz", blar')
+        assert http.unquote_etag('W/"foo"') == ('foo', True)
+        es = http.parse_etags('"foo", "bar", W/"baz", blar')
         assert sorted(es) == ['bar', 'blar', 'foo']
         assert 'foo' in es
         assert 'baz' not in es
         assert es.contains_weak('baz')
         assert 'blar' in es
-        assert es.contains_raw('w/"baz"')
+        assert es.contains_raw('W/"baz"')
         assert es.contains_raw('"foo"')
-        assert sorted(es.to_header().split(', ')) == ['"bar"', '"blar"', '"foo"', 'w/"baz"']
+        assert sorted(es.to_header().split(', ')) == ['"bar"', '"blar"', '"foo"', 'W/"baz"']
 
     def test_etags_nonzero(self):
-        etags = http.parse_etags('w/"foo"')
+        etags = http.parse_etags('W/"foo"')
         assert bool(etags)
-        assert etags.contains_raw('w/"foo"')
+        assert etags.contains_raw('W/"foo"')
 
     def test_parse_date(self):
         assert http.parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(
@@ -377,7 +377,7 @@ class TestRange(object):
         assert rv.to_header() == '"Test"'
 
         # weak information is dropped
-        rv = http.parse_if_range_header('w/"Test"')
+        rv = http.parse_if_range_header('W/"Test"')
         assert rv.etag == 'Test'
         assert rv.date is None
         assert rv.to_header() == '"Test"'
