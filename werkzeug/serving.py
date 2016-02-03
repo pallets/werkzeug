@@ -41,6 +41,7 @@ import os
 import socket
 import sys
 import signal
+import threading
 
 try:
     import ssl
@@ -521,10 +522,28 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
     multiprocess = True
 
     def __init__(self, host, port, app, processes=40, handler=None,
-                 passthrough_errors=False, ssl_context=None, fd=None):
+                 passthrough_errors=False, ssl_context=None, fd=None,
+                 frequency=5):
         BaseWSGIServer.__init__(self, host, port, app, handler,
                                 passthrough_errors, ssl_context, fd)
         self.max_children = processes
+
+        if frequency:
+            self.frequency = frequency
+            self.setup_reap_children()
+
+    def setup_reap_children(self):
+        """Create a thread to collect death children."""
+        t = threading.Timer(self.frequency, self.reap_children)
+        # Set daemon mode to provide a clean termination of the thread
+        # when the system ends
+        t.daemon = True
+        t.start()
+
+    def reap_children(self):
+        """Reap or collect death children."""
+        self.collect_children()
+        self.setup_reap_children()
 
 
 def make_server(host=None, port=None, app=None, threaded=False, processes=1,
