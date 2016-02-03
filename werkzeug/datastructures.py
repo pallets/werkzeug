@@ -2160,7 +2160,7 @@ class ETags(object):
             return '*'
         return ', '.join(
             ['"%s"' % x for x in self._strong] +
-            ['w/"%s"' % x for x in self._weak]
+            ['W/"%s"' % x for x in self._weak]
         )
 
     def __call__(self, etag=None, data=None, include_weak=False):
