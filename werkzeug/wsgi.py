@@ -618,13 +618,34 @@ class SharedDataMiddleware(object):
         else:
             headers.append(('Cache-Control', 'public'))
 
-        headers.extend((
-            ('Content-Type', mime_type),
-            ('Content-Length', str(file_size)),
-            ('Last-Modified', http_date(mtime))
-        ))
-        start_response('200 OK', headers)
-        return wrap_file(environ, f)
+
+        byterange = 0
+        if 'HTTP_RANGE' in environ:
+            byterangeval = environ['HTTP_RANGE']
+            if len(byterangeval) > 7:
+                byterange = int(byterangeval[6:-1])
+
+        if byterange > 0:
+            headers.extend((
+                ('Content-Type', mime_type),
+                ('Content-Length', str(file_size - byterange)),
+                ('Last-Modified', http_date(mtime)),
+                ('Content-Range', 'bytes ' + str(byterange)
+                    + '-' + str(file_size))
+            ))
+        else:
+            headers.extend((
+                ('Content-Type', mime_type),
+                ('Content-Length', str(file_size)),
+                ('Last-Modified', http_date(mtime)),
+                ('Accept-Ranges', 'bytes')
+            ))
+
+        if byterange > 0:
+            start_response('206 Partial Content', headers)
+        else:
+            start_response('200 OK', headers)
+        return wrap_file(environ, f, 8192, byterange)
 
 
 class DispatcherMiddleware(object):
@@ -707,7 +728,7 @@ class ClosingIterator(object):
             callback()
 
 
-def wrap_file(environ, file, buffer_size=8192):
+def wrap_file(environ, file, buffer_size=8192, byterange=0):
     """Wraps a file.  This uses the WSGI server's file wrapper if available
     or otherwise the generic :class:`FileWrapper`.
 
@@ -723,7 +744,7 @@ def wrap_file(environ, file, buffer_size=8192):
     :param file: a :class:`file`-like object with a :meth:`~file.read` method.
     :param buffer_size: number of bytes for one iteration.
     """
-    return environ.get('wsgi.file_wrapper', FileWrapper)(file, buffer_size)
+    return environ.get('wsgi.file_wrapper', FileWrapper)(file, buffer_size, byterange)
 
 
 @implements_iterator
@@ -746,9 +767,11 @@ class FileWrapper(object):
     :param buffer_size: number of bytes for one iteration.
     """
 
-    def __init__(self, file, buffer_size=8192):
+    def __init__(self, file, buffer_size=8192, byterange=0):
         self.file = file
         self.buffer_size = buffer_size
+        if byterange > 0:
+            file.seek(byterange)
 
     def close(self):
         if hasattr(self.file, 'close'):
