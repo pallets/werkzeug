@@ -618,7 +618,6 @@ class SharedDataMiddleware(object):
         else:
             headers.append(('Cache-Control', 'public'))
 
-
         byterange = 0
         if 'HTTP_RANGE' in environ:
             byterangeval = environ['HTTP_RANGE']
@@ -633,6 +632,7 @@ class SharedDataMiddleware(object):
                 ('Content-Range', 'bytes ' + str(byterange)
                     + '-' + str(file_size))
             ))
+            start_response('206 Partial Content', headers)
         else:
             headers.extend((
                 ('Content-Type', mime_type),
@@ -640,11 +640,8 @@ class SharedDataMiddleware(object):
                 ('Last-Modified', http_date(mtime)),
                 ('Accept-Ranges', 'bytes')
             ))
-
-        if byterange > 0:
-            start_response('206 Partial Content', headers)
-        else:
             start_response('200 OK', headers)
+
         return wrap_file(environ, f, 8192, byterange)
 
 
