@@ -16,9 +16,10 @@ Unreleased.
 Version 0.11.4
 --------------
 
-Release date to be decided
+Released on February 14th 2016.
 
 - Fixed werkzeug.serving not working from -m flag.
+- Fixed incorrect weak etag handling.
 
 Version 0.11.3
 --------------

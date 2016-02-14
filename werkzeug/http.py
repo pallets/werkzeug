@@ -628,14 +628,14 @@ def quote_etag(etag, weak=False):
         raise ValueError('invalid etag')
     etag = '"%s"' % etag
     if weak:
-        etag = 'w/' + etag
+        etag = 'W/' + etag
     return etag
 
 
 def unquote_etag(etag):
     """Unquote a single etag:
 
-    >>> unquote_etag('w/"bar"')
+    >>> unquote_etag('W/"bar"')
     ('bar', True)
     >>> unquote_etag('"bar"')
     ('bar', False)
@@ -647,7 +647,7 @@ def unquote_etag(etag):
         return None, None
     etag = etag.strip()
     weak = False
-    if etag[:2] in ('w/', 'W/'):
+    if etag.startswith(('W/', 'w/')):
         weak = True
         etag = etag[2:]
     if etag[:1] == etag[-1:] == '"':
@@ -801,7 +801,11 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
     if etag:
         if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
         if if_none_match:
-            unmodified = if_none_match.contains_raw(etag)
+            # http://tools.ietf.org/html/rfc7232#section-3.2
+            # "A recipient MUST use the weak comparison function when comparing
+            # entity-tags for If-None-Match"
+            etag, _ = unquote_etag(etag)
+            unmodified = if_none_match.contains_weak(etag)
 
     return not unmodified
 

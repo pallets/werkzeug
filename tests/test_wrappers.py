@@ -345,8 +345,8 @@ def test_accept_mixin():
 def test_etag_request_mixin():
     request = wrappers.Request({
         'HTTP_CACHE_CONTROL':       'no-store, no-cache',
-        'HTTP_IF_MATCH':            'w/"foo", bar, "baz"',
-        'HTTP_IF_NONE_MATCH':       'w/"foo", bar, "baz"',
+        'HTTP_IF_MATCH':            'W/"foo", bar, "baz"',
+        'HTTP_IF_NONE_MATCH':       'W/"foo", bar, "baz"',
         'HTTP_IF_MODIFIED_SINCE':   'Tue, 22 Jan 2008 11:18:44 GMT',
         'HTTP_IF_UNMODIFIED_SINCE': 'Tue, 22 Jan 2008 11:18:44 GMT'
     })
@@ -355,7 +355,7 @@ def test_etag_request_mixin():
 
     for etags in request.if_match, request.if_none_match:
         assert etags('bar')
-        assert etags.contains_raw('w/"foo"')
+        assert etags.contains_raw('W/"foo"')
         assert etags.contains_weak('foo')
         assert not etags.contains('foo')
 
