@@ -88,7 +88,7 @@ class CacheTests(object):
 
     def test_generic_expire(self, c, fast_sleep):
         assert c.set('foo', 'bar', 1)
-        fast_sleep(2)
+        fast_sleep(5)
         assert c.get('foo') is None
 
     def test_generic_add(self, c):
@@ -136,7 +136,7 @@ class CacheTests(object):
         assert c.get('foo') == 'bar'
         # sleep a bit longer than timeout to ensure there are no
         # race conditions
-        fast_sleep(timeout + 1)
+        fast_sleep(timeout + 5)
         assert c.get('foo') is None
 
     def test_generic_has(self, c):
@@ -246,3 +246,24 @@ if memcache is not None:
             timeout = epoch + random.random() * 100
             c.set('foo', 'bar', timeout)
             assert c.get('foo') == 'bar'
+
+
+def _running_in_uwsgi():
+    try:
+        import uwsgi  # NOQA
+    except ImportError:
+        return False
+    else:
+        return True
+
+
+@pytest.mark.skipif(not _running_in_uwsgi(),
+                    reason="uWSGI module can't be imported outside of uWSGI")
+class TestUWSGICache(CacheTests):
+    _can_use_fast_sleep = False
+
+    @pytest.fixture
+    def make_cache(self, xprocess, request):
+        c = cache.UWSGICache(cache='werkzeugtest')
+        request.addfinalizer(c.clear)
+        return lambda: c
