@@ -24,6 +24,11 @@ try:
 except ImportError:
     watchdog = None
 
+try:
+    import urllib2  # python 2
+except:
+    import urllib.request as urllib2  # python 3
+
 import requests
 import requests.exceptions
 import pytest
@@ -196,3 +201,11 @@ def test_monkeypached_sleep(tmpdir):
     ReloaderLoop()._sleep(0)
     '''))
     subprocess.check_call(['python', str(script)])
+
+
+def test_bad_request(dev_server):
+    server = dev_server('from werkzeug.testapp import test_app as app')
+
+    req = urllib2.Request('http://localhost:5000/ a')
+    resp = urllib2.urlopen(req)
+    assert '<p>Error code 400.\n' in resp.readlines()
