@@ -557,6 +557,60 @@ def test_external_building_with_port_bind_to_environ():
     assert built_url == 'http://example.org:5000/', built_url
 
 
+def test_external_building_with_proxy_ip_and_port_bind_to_environ():
+    """
+    server is listening on 127.0.0.1:5000
+    but proxied to 127.0.0.1:84
+    """
+    map = r.Map([
+        r.Rule('/', endpoint='index'),
+    ])
+    env = create_environ('/', 'http://127.0.0.1:5000/')
+    env['HTTP_HOST'] = "127.0.0.1"
+    adapter = map.bind_to_environ(
+        env, server_name="127.0.0.1:84"
+    )
+    built_url = adapter.build('index', {}, force_external=True)
+    assert built_url == 'http://127.0.0.1:84/', built_url
+    assert adapter.subdomain == ''
+
+
+def test_external_building_with_proxy_hostname_bind_to_environ():
+    """
+    server is listening on 127.0.0.1:5000
+    but proxied to example.com:80
+    """
+    map = r.Map([
+        r.Rule('/', endpoint='index'),
+    ])
+    env = create_environ('/', "http://127.0.0.1:5000")
+    env['HTTP_HOST'] = "example.com"
+    adapter = map.bind_to_environ(
+        env, server_name="example.com"
+    )
+    built_url = adapter.build('index', {}, force_external=True)
+    assert built_url == 'http://example.com/', built_url
+    assert adapter.subdomain == ''
+
+
+def test_external_building_with_proxy_and_subdomain_bind_to_environ():
+    """
+    server is listening on 127.0.0.1:5000
+    but proxied to example.com:80 and accessed by its subdomain
+    """
+    map = r.Map([
+        r.Rule('/', endpoint='index'),
+    ])
+    env = create_environ('/', "http://127.0.0.1:5000")
+    env['HTTP_HOST'] = 'subd.example.com'
+    adapter = map.bind_to_environ(
+        env, server_name="example.com"
+    )
+    built_url = adapter.build('index', {}, force_external=True)
+    assert built_url == 'http://example.com/', built_url
+    assert adapter.subdomain == 'subd'
+
+
 def test_external_building_with_port_bind_to_environ_wrong_servername():
     map = r.Map([
         r.Rule('/', endpoint='index'),

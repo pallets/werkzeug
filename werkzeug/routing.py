@@ -1305,7 +1305,7 @@ class Map(object):
 
         if subdomain is None and not self.host_matching:
             cur_server_name = wsgi_server_name.split('.')
-            real_server_name = server_name.split('.')
+            real_server_name = server_name.split(':')[0].split('.')
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
                 # This can happen even with valid configs if the server was
