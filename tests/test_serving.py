@@ -196,3 +196,19 @@ def test_monkeypached_sleep(tmpdir):
     ReloaderLoop()._sleep(0)
     '''))
     subprocess.check_call(['python', str(script)])
+
+
+def test_wrong_protocol(dev_server):
+    # Assert that sending HTTPS requests to a HTTP server doesn't show a
+    # traceback
+    # See https://github.com/mitsuhiko/werkzeug/pull/838
+
+    server = dev_server('''
+    def app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    ''')
+    with pytest.raises(requests.exceptions.ConnectionError):
+        requests.get('https://%s/' % server.addr)
+
+    assert 'Traceback' not in server.logfile.read()
