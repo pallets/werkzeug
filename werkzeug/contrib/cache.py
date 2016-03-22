@@ -795,6 +795,7 @@ class FileSystemCache(BaseCache):
         except (IOError, OSError, pickle.PickleError):
             return False
 
+
 class UWSGICache(BaseCache):
     """ Implements the cache using uWSGI's caching framework.
 
@@ -821,7 +822,7 @@ class UWSGICache(BaseCache):
             self._uwsgi = uwsgi
         except ImportError:
             raise RuntimeError("uWSGI could not be imported, are you "
-                                "running under uWSGI?")
+                               "running under uWSGI?")
 
         self.cache = cache
 
