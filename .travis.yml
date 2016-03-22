@@ -1,18 +1,23 @@
 language: python
-python:
-    - "2.6"
-    - "2.7"
-    - "pypy"
-    - "3.3"
-    - "3.4"
-    - "3.5"
+python: 2.7
+env:
+    - TOXENV=py26-normal
+    - TOXENV=py27-normal
+    - TOXENV=pypy-normal
+    - TOXENV=py33-normal
+    - TOXENV=py34-normal
+    - TOXENV=py35-normal
+    - TOXENV=py26-uwsgi
+    - TOXENV=py27-uwsgi
+    - TOXENV=py33-uwsgi
+    - TOXENV=py34-uwsgi
+    - TOXENV=py35-uwsgi
 
 install:
     # Travis uses an outdated PyPy, this installs the most recent one.
     # This makes the tests run on Travis' legacy infrastructure, but so be it.
     # temporary pyenv installation to get pypy-2.6 before container infra upgrade
-    # Taken from pyca/cryptography
-    - if [ "$TRAVIS_PYTHON_VERSION" == "pypy" ]; then
+    - if [ "$TOXENV" == "pypy" ]; then
         git clone https://github.com/yyuu/pyenv.git ~/.pyenv;
         PYENV_ROOT="$HOME/.pyenv";
         PATH="$PYENV_ROOT/bin:$PATH";
@@ -24,7 +29,7 @@ install:
     - pip install tox flake8
 
 script:
-    - tox -e py
+    - tox
     - make stylecheck
 
 branches:
