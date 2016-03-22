@@ -14,6 +14,13 @@ Unreleased.
   someone stringifies the error will the suggestions be calculated.
 - Added support for uWSGI's caching backend.
 
+Version 0.11.5
+--------------
+
+Released on March 22nd 2016.
+
+- werkzeug.serving: Fix crash when attempting SSL connection to HTTP server.
+
 Version 0.11.4
 --------------
 
