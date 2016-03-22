@@ -263,7 +263,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
     def address_string(self):
-        return self.environ['REMOTE_ADDR']
+        if getattr(self, 'environ', None):
+            return self.environ['REMOTE_ADDR']
+        else:
+            return ''
 
     def log_request(self, code='-', size='-'):
         self.log('info', '"%s" %s %s', self.requestline, code, size)
