@@ -42,7 +42,7 @@ In the Box
 -   Easy to use request and response objects
 -   Interactive JavaScript based in-browser debugger
 -   100% WSGI 1.0 compatible
--   Supports Python 2.6, 2.7 and 3.3.
+-   Supports Python 2.6, 2.7 and 3.3+
 -   Unicode support
 -   Basic session and signed cookie support
 -   URI and IRI utilities with unicode awareness
