@@ -35,8 +35,10 @@ script:
     - make stylecheck
 
 branches:
-  except:
-    - website
+    only:
+        - master
+        - auto
+        - /^.*-maintenance$/
 
 notifications:
   email: false
