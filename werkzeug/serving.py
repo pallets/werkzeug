@@ -466,7 +466,7 @@ class BaseWSGIServer(HTTPServer, object):
         self.passthrough_errors = passthrough_errors
         self.shutdown_signal = False
         self.host = host
-        self.port = port
+        self.port = self.socket.getsockname()[1]
 
         # Patch in the original socket.
         if fd is not None:
