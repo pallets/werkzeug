@@ -446,7 +446,7 @@ def test_uuid_converter():
 
 def test_converter_with_tuples():
     '''
-    Regression test for https://github.com/mitsuhiko/werkzeug/issues/709
+    Regression test for https://github.com/pallets/werkzeug/issues/709
     '''
     class TwoValueConverter(r.BaseConverter):
 

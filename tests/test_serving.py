@@ -201,7 +201,7 @@ def test_monkeypached_sleep(tmpdir):
 def test_wrong_protocol(dev_server):
     # Assert that sending HTTPS requests to a HTTP server doesn't show a
     # traceback
-    # See https://github.com/mitsuhiko/werkzeug/pull/838
+    # See https://github.com/pallets/werkzeug/pull/838
 
     server = dev_server('''
     def app(environ, start_response):

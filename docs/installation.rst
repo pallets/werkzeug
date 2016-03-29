@@ -48,7 +48,7 @@ Installing the development version
 ==================================
 
 1.  Install `Git`_
-2.  ``git clone git://github.com/mitsuhiko/werkzeug.git``
+2.  ``git clone git://github.com/pallets/werkzeug.git``
 3.  ``cd werkzeug``
 4.  ``pip install --editable .``
 

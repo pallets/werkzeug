@@ -537,7 +537,7 @@ def test_authenticate_mixin():
 
 
 def test_authenticate_mixin_quoted_qop():
-    # Example taken from https://github.com/mitsuhiko/werkzeug/issues/633
+    # Example taken from https://github.com/pallets/werkzeug/issues/633
     resp = wrappers.Response()
     resp.www_authenticate.set_digest('REALM', 'NONCE', qop=("auth", "auth-int"))
 
