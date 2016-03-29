@@ -516,6 +516,7 @@ class ThreadedWSGIServer(ThreadingMixIn, BaseWSGIServer):
 
     """A WSGI server that does threading."""
     multithread = True
+    daemon_threads = True
 
 
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
