@@ -24,7 +24,8 @@ textarea     { font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans Mono',
 div.debugger { text-align: left; padding: 12px; margin: auto;
                background-color: white; }
 h1           { font-size: 36px; margin: 0 0 0.3em 0; }
-div.detail p { margin: 0 0 8px 13px; font-size: 14px; white-space: pre-wrap; }
+div.detail p { margin: 0 0 8px 13px; font-size: 14px; white-space: pre-wrap;
+               font-family: monospace; }
 div.explanation { margin: 20px 13px; font-size: 15px; color: #555; }
 div.footer   { font-size: 13px; text-align: right; margin: 30px 0;
                color: #86989B; }
