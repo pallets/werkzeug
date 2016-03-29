@@ -23,7 +23,7 @@
     Otherwise you generate the page and put it into the cache. (Or a fragment
     of the page, you don't have to cache the full thing)
 
-    Here is a simple example of how to cache a sidebar for a template::
+    Here is a simple example of how to cache a sidebar for 5 minutes::
 
         def get_sidebar(user):
             identifier = 'sidebar_for/user%d' % user.id
@@ -94,9 +94,9 @@ class BaseCache(object):
     """Baseclass for the cache systems.  All the cache systems implement this
     API or a superset of it.
 
-    :param default_timeout: the default timeout (in seconds) that is used if no
-                            timeout is specified on :meth:`set`. A timeout of 0
-                            indicates that the cache never expires.
+    :param default_timeout: the default timeout (in seconds) that is used if
+                            no timeout is specified on :meth:`set`. A timeout
+                            of 0 indicates that the cache never expires.
     """
 
     def __init__(self, default_timeout=300):
@@ -150,9 +150,9 @@ class BaseCache(object):
 
         :param key: the key to set
         :param value: the value for the key
-        :param timeout: the cache timeout for the key (if not specified,
-                        it uses the default timeout). A timeout of 0 idicates
-                        that the cache never expires.
+        :param timeout: the cache timeout for the key in seconds (if not
+                        specified, it uses the default timeout). A timeout of
+                        0 idicates that the cache never expires.
         :returns: ``True`` if key has been updated, ``False`` for backend
                   errors. Pickling errors, however, will raise a subclass of
                   ``pickle.PickleError``.
@@ -166,9 +166,9 @@ class BaseCache(object):
 
         :param key: the key to set
         :param value: the value for the key
-        :param timeout: the cache timeout for the key or the default
-                        timeout if not specified. A timeout of 0 indicates
-                        that the cache never expires.
+        :param timeout: the cache timeout for the key in seconds (if not
+                        specified, it uses the default timeout). A timeout of
+                        0 idicates that the cache never expires.
         :returns: Same as :meth:`set`, but also ``False`` for already
                   existing keys.
         :rtype: boolean
@@ -179,9 +179,9 @@ class BaseCache(object):
         """Sets multiple keys and values from a mapping.
 
         :param mapping: a mapping with the keys/values to set.
-        :param timeout: the cache timeout for the key (if not specified,
-                        it uses the default timeout). A timeout of 0
-                        indicates tht the cache never expires.
+        :param timeout: the cache timeout for the key in seconds (if not
+                        specified, it uses the default timeout). A timeout of
+                        0 idicates that the cache never expires.
         :returns: Whether all given keys have been set.
         :rtype: boolean
         """
