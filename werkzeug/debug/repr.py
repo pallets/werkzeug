@@ -154,17 +154,16 @@ class DebugReprGenerator(object):
 
     def string_repr(self, obj, limit=70):
         buf = ['<span class="string">']
-        escaped = escape(obj)
-        a = repr(escaped[:limit])
-        b = repr(escaped[limit:])
+        a = repr(obj[:limit])
+        b = repr(obj[limit:])
         if isinstance(obj, text_type) and PY2:
             buf.append('u')
             a = a[1:]
             b = b[1:]
         if b != "''":
-            buf.extend((a[:-1], '<span class="extended">', b[1:], '</span>'))
+            buf.extend((escape(a[:-1]), '<span class="extended">', escape(b[1:]), '</span>'))
         else:
-            buf.append(a)
+            buf.append(escape(a))
         buf.append('</span>')
         return _add_subclass_info(u''.join(buf), obj, (bytes, text_type))
 

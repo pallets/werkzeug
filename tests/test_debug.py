@@ -30,6 +30,16 @@ class TestDebugRepr(object):
         assert debug_repr([None]) == \
             u'[<span class="object">None</span>]'
 
+    def test_string_repr(self):
+        assert debug_repr('') == u'<span class="string">\'\'</span>'
+        assert debug_repr('foo') == u'<span class="string">\'foo\'</span>'
+        assert debug_repr('s' * 80) == u'<span class="string">\''\
+            + 's' * 70 + '<span class="extended">'\
+            + 's' * 10 + '\'</span></span>'
+        assert debug_repr('<' * 80) == u'<span class="string">\''\
+            + '&lt;' * 70 + '<span class="extended">'\
+            + '&lt;' * 10 + '\'</span></span>'
+
     def test_sequence_repr(self):
         assert debug_repr(list(range(20))) == (
             u'[<span class="number">0</span>, <span class="number">1</span>, '
