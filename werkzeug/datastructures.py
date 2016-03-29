@@ -1596,10 +1596,8 @@ class Accept(ImmutableList):
             list.__init__(self, values)
         else:
             self.provided = True
-            values = [(a, b) for b, a in values]
-            values.sort()
-            values.reverse()
-            list.__init__(self, [(a, b) for b, a in values])
+            values = sorted(values, key=lambda x: (x[1], x[0]), reverse=True)
+            list.__init__(self, values)
 
     def _value_matches(self, value, item):
         """Check if a value matches a given accept item."""
