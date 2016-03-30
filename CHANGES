@@ -13,6 +13,8 @@ Unreleased.
 - Improved the build error suggestions.  In particular only if
   someone stringifies the error will the suggestions be calculated.
 - Added support for uWSGI's caching backend.
+- Fix a bug where iterating over a `FileStorage` would result in an infinite
+  loop.
 
 Version 0.11.5
 --------------
