@@ -2671,7 +2671,7 @@ class FileStorage(object):
         return getattr(self.stream, name)
 
     def __iter__(self):
-        return iter(self.readline, '')
+        return iter(self.stream)
 
     def __repr__(self):
         return '<%s: %r (%r)>' % (

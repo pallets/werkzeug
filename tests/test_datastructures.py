@@ -900,3 +900,15 @@ class TestFileStorage(object):
     def test_mimetype_always_lowercase(self):
         file_storage = self.storage_class(content_type='APPLICATION/JSON')
         assert file_storage.mimetype == 'application/json'
+
+    def test_bytes_proper_sentinel(self):
+        # ensure we iterate over new lines and don't enter into an infinite loop
+        import io
+        unicode_storage = self.storage_class(io.StringIO(u"one\ntwo"))
+        for idx, line in enumerate(unicode_storage):
+            assert idx < 2
+        assert idx == 1
+        binary_storage = self.storage_class(io.BytesIO(b"one\ntwo"))
+        for idx, line in enumerate(binary_storage):
+            assert idx < 2
+        assert idx == 1
