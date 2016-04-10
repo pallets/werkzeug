@@ -24,6 +24,11 @@ try:
 except ImportError:
     watchdog = None
 
+try:
+    import httplib
+except ImportError:
+    from http import client as httplib
+
 import requests
 import requests.exceptions
 import pytest
@@ -37,6 +42,36 @@ def test_serving(dev_server):
     assert b'WSGI Information' in rv
     assert b'foo=bar&amp;baz=blah' in rv
     assert b'Werkzeug/' + version.encode('ascii') in rv
+
+
+def test_absolute_requests(dev_server):
+    server = dev_server('''
+    def app(environ, start_response):
+        assert environ['HTTP_HOST'] == 'surelynotexisting.example.com:1337'
+        assert environ['PATH_INFO'] == '/index.htm'
+        addr = environ['HTTP_X_WERKZEUG_ADDR']
+        assert environ['SERVER_PORT'] == addr.split(':')[1]
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'YES']
+    ''')
+
+    conn = httplib.HTTPConnection(server.addr)
+    conn.request('GET', 'http://surelynotexisting.example.com:1337/index.htm#ignorethis',
+                 headers={'X-Werkzeug-Addr': server.addr})
+    res = conn.getresponse()
+    assert res.read() == b'YES'
+
+
+def test_double_slash_path(dev_server):
+    server = dev_server('''
+    def app(environ, start_response):
+        assert 'fail' not in environ['HTTP_HOST']
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [b'YES']
+    ''')
+
+    r = requests.get(server.url + '//fail')
+    assert r.content == b'YES'
 
 
 def test_broken_app(dev_server):
