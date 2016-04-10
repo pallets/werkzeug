@@ -1,6 +1,11 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11.6
+--------------
+
+- werkzeug.serving: Fix broken HTTP_HOST when path starts with double slash.
+
 Version 0.11.5
 --------------
 
