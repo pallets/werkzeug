@@ -229,7 +229,8 @@ def test_base_response():
 
     # set cookie
     response = wrappers.BaseResponse()
-    response.set_cookie('foo', 'bar', 60, 0, '/blub', 'example.org')
+    response.set_cookie('foo', value='bar', max_age=60, expires=0,
+                        path='/blub', domain='example.org')
     strict_eq(response.headers.to_wsgi_list(), [
         ('Content-Type', 'text/plain; charset=utf-8'),
         ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '

@@ -1011,9 +1011,15 @@ class BaseResponse(object):
         :param path: limits the cookie to a given path, per default it will
                      span the whole domain.
         """
-        self.headers.add('Set-Cookie', dump_cookie(key, value, max_age,
-                                                   expires, path, domain, secure, httponly,
-                                                   self.charset))
+        self.headers.add('Set-Cookie', dump_cookie(key,
+                                                   value=value,
+                                                   max_age=max_age,
+                                                   expires=expires,
+                                                   path=path,
+                                                   domain=domain,
+                                                   secure=secure,
+                                                   httponly=httponly,
+                                                   charset=self.charset))
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie.  Fails silently if key doesn't exist.
