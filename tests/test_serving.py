@@ -211,4 +211,6 @@ def test_wrong_protocol(dev_server):
     with pytest.raises(requests.exceptions.ConnectionError):
         requests.get('https://%s/' % server.addr)
 
-    assert 'Traceback' not in server.logfile.read()
+    log = server.logfile.read()
+    assert 'Traceback' not in log
+    assert '\n127.0.0.1' in log
