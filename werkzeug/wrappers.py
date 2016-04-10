@@ -1003,13 +1003,13 @@ class BaseResponse(object):
                         the cookie should last only as long as the client's
                         browser session.
         :param expires: should be a `datetime` object or UNIX timestamp.
+        :param path: limits the cookie to a given path, per default it will
+                     span the whole domain.
         :param domain: if you want to set a cross-domain cookie.  For example,
                        ``domain=".example.com"`` will set a cookie that is
                        readable by the domain ``www.example.com``,
                        ``foo.example.com`` etc.  Otherwise, a cookie will only
                        be readable by the domain that set it.
-        :param path: limits the cookie to a given path, per default it will
-                     span the whole domain.
         :param secure: If `True`, the cookie will only be available via HTTPS
         :param httponly: disallow JavaScript to access the cookie.  This is an
                          extension to the cookie standard and probably not
