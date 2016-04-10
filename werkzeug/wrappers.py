@@ -1010,6 +1010,10 @@ class BaseResponse(object):
                        be readable by the domain that set it.
         :param path: limits the cookie to a given path, per default it will
                      span the whole domain.
+        :param secure: If `True`, the cookie will only be available via HTTPS
+        :param httponly: disallow JavaScript to access the cookie.  This is an
+                         extension to the cookie standard and probably not
+                         supported by all browsers.
         """
         self.headers.add('Set-Cookie', dump_cookie(key,
                                                    value=value,
