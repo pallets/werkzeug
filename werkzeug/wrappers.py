@@ -993,7 +993,7 @@ class BaseResponse(object):
         return _iter_encoded(self.response, self.charset)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
-                   path='/', domain=None, secure=None, httponly=False):
+                   path='/', domain=None, secure=False, httponly=False):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
         object in the Python standard library but it accepts unicode data, too.
 
@@ -1003,17 +1003,27 @@ class BaseResponse(object):
                         the cookie should last only as long as the client's
                         browser session.
         :param expires: should be a `datetime` object or UNIX timestamp.
+        :param path: limits the cookie to a given path, per default it will
+                     span the whole domain.
         :param domain: if you want to set a cross-domain cookie.  For example,
                        ``domain=".example.com"`` will set a cookie that is
                        readable by the domain ``www.example.com``,
                        ``foo.example.com`` etc.  Otherwise, a cookie will only
                        be readable by the domain that set it.
-        :param path: limits the cookie to a given path, per default it will
-                     span the whole domain.
+        :param secure: If `True`, the cookie will only be available via HTTPS
+        :param httponly: disallow JavaScript to access the cookie.  This is an
+                         extension to the cookie standard and probably not
+                         supported by all browsers.
         """
-        self.headers.add('Set-Cookie', dump_cookie(key, value, max_age,
-                                                   expires, path, domain, secure, httponly,
-                                                   self.charset))
+        self.headers.add('Set-Cookie', dump_cookie(key,
+                                                   value=value,
+                                                   max_age=max_age,
+                                                   expires=expires,
+                                                   path=path,
+                                                   domain=domain,
+                                                   secure=secure,
+                                                   httponly=httponly,
+                                                   charset=self.charset))
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie.  Fails silently if key doesn't exist.

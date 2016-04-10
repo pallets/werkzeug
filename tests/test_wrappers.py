@@ -229,7 +229,8 @@ def test_base_response():
 
     # set cookie
     response = wrappers.BaseResponse()
-    response.set_cookie('foo', 'bar', 60, 0, '/blub', 'example.org')
+    response.set_cookie('foo', value='bar', max_age=60, expires=0,
+                        path='/blub', domain='example.org')
     strict_eq(response.headers.to_wsgi_list(), [
         ('Content-Type', 'text/plain; charset=utf-8'),
         ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
@@ -967,3 +968,40 @@ def test_modified_url_encoding():
 def test_request_method_case_sensitivity():
     req = wrappers.Request({'REQUEST_METHOD': 'get'})
     assert req.method == 'GET'
+
+
+class TestSetCookie(object):
+    """Tests for :meth:`werkzeug.wrappers.BaseResponse.set_cookie`."""
+
+    def test_secure(self):
+        response = wrappers.BaseResponse()
+        response.set_cookie('foo', value='bar', max_age=60, expires=0,
+                            path='/blub', domain='example.org', secure=True)
+        strict_eq(response.headers.to_wsgi_list(), [
+            ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
+             '01-Jan-1970 00:00:00 GMT; Max-Age=60; Secure; Path=/blub')
+        ])
+
+    def test_httponly(self):
+        response = wrappers.BaseResponse()
+        response.set_cookie('foo', value='bar', max_age=60, expires=0,
+                            path='/blub', domain='example.org', secure=False,
+                            httponly=True)
+        strict_eq(response.headers.to_wsgi_list(), [
+            ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
+             '01-Jan-1970 00:00:00 GMT; Max-Age=60; HttpOnly; Path=/blub')
+        ])
+
+    def test_secure_and_httponly(self):
+        response = wrappers.BaseResponse()
+        response.set_cookie('foo', value='bar', max_age=60, expires=0,
+                            path='/blub', domain='example.org', secure=True,
+                            httponly=True)
+        strict_eq(response.headers.to_wsgi_list(), [
+            ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
+             '01-Jan-1970 00:00:00 GMT; Max-Age=60; Secure; HttpOnly; '
+             'Path=/blub')
+        ])
