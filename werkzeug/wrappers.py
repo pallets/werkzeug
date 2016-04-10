@@ -993,7 +993,7 @@ class BaseResponse(object):
         return _iter_encoded(self.response, self.charset)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
-                   path='/', domain=None, secure=None, httponly=False):
+                   path='/', domain=None, secure=False, httponly=False):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
         object in the Python standard library but it accepts unicode data, too.
 
