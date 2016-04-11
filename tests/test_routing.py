@@ -767,8 +767,7 @@ def test_empty_path_info():
 def test_both_bind_and_match_path_info_are_none():
     m = r.Map([r.Rule(u'/', endpoint='index')])
     ma = m.bind('example.org')
-    ma.match()
-    strict_eq(ma, ('index', {}))
+    strict_eq(ma.match(), ('index', {}))
 
 def test_map_repr():
     m = r.Map([
