@@ -1,6 +1,13 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11.7
+--------------
+
+Released on April 14th 2016.
+
+- fixed a regression on Python 3 for the debugger.
+
 Version 0.11.6
 --------------
 
