@@ -35,6 +35,10 @@ from werkzeug.debug.repr import debug_repr  # noqa
 PIN_TIME = 60 * 60 * 8
 
 
+def hash_pin(pin):
+    return hashlib.md5(pin + 'shittysalt').hexdigest()[:12]
+
+
 class _ConsoleFrame(object):
 
     """Helper class so that we can reuse the frame console code for the
@@ -236,7 +240,7 @@ class DebuggedApplication(object):
                     'response at a point where response headers were already '
                     'sent.\n')
             else:
-                is_trusted = self.is_trusted(environ)
+                is_trusted = bool(self.check_pin_trust(environ))
                 yield traceback.render_full(evalex=self.evalex,
                                             evalex_trusted=is_trusted,
                                             secret=self.secret) \
@@ -257,7 +261,7 @@ class DebuggedApplication(object):
                 ns = dict(self.console_init_func())
             ns.setdefault('app', self.app)
             self.frames[0] = _ConsoleFrame(ns)
-        is_trusted = self.is_trusted(request.environ)
+        is_trusted = bool(self.check_pin_trust(request.environ))
         return Response(render_console_html(secret=self.secret,
                                             evalex_trusted=is_trusted),
                         mimetype='text/html')
@@ -280,23 +284,53 @@ class DebuggedApplication(object):
                 f.close()
         return Response('Not Found', status=404)
 
-    def is_trusted(self, environ):
-        """Checks if the request passed the pin test."""
+    def check_pin_trust(self, environ):
+        """Checks if the request passed the pin test.  This returns `True` if the
+        request is trusted on a pin/cookie basis and returns `False` if not.
+        Additionally if the cookie's stored pin hash is wrong it will return
+        `None` so that appropriate action can be taken.
+        """
         if self.pin is None:
             return True
-        ts = parse_cookie(environ).get(self.pin_cookie_name, type=int)
-        if ts is None:
+        val = parse_cookie(environ).get(self.pin_cookie_name)
+        if not val or '|' not in val:
             return False
+        ts, pin_hash = val.split('|', 1)
+        if not ts.isdigit():
+            return False
+        if pin_hash != hash_pin(self.pin):
+            return None
         return (time.time() - PIN_TIME) < ts
+
+    def _fail_pin_auth(self):
+        time.sleep(self._failed_pin_auth > 5 and 5.0 or 0.5)
+        self._failed_pin_auth += 1
 
     def pin_auth(self, request):
         """Authenticates with the pin."""
         exhausted = False
         auth = False
-        if self.is_trusted(request.environ):
+        trust = self.check_pin_trust(request.environ)
+
+        # If the trust return value is `None` it means that the cookie is
+        # set but the stored pined hash value is bad.  This means that the
+        # pin was changed.  In this case we count a bad auth and unset the
+        # cookie.  This way it becomes harder to guess the cookie name
+        # instead of the pin as we still count up failures.
+        bad_cookie = False
+        if trust is None:
+            self._fail_pin_auth()
+            bad_cookie = True
+
+        # If we're trusted, we're authenticated.
+        elif trust:
             auth = True
+
+        # If we failed too many times, then we're locked out.
         elif self._failed_pin_auth > 10:
             exhausted = True
+
+        # Otherwise go through pin based authentication
         else:
             entered_pin = request.args.get('pin')
             if entered_pin.strip().replace('-', '') == \
@@ -304,17 +338,19 @@ class DebuggedApplication(object):
                 self._failed_pin_auth = 0
                 auth = True
             else:
-                time.sleep(self._failed_pin_auth > 5 and 5.0 or 0.5)
-                self._failed_pin_auth += 1
-                auth = False
+                self._fail_pin_auth()
 
         rv = Response(json.dumps({
             'auth': auth,
             'exhausted': exhausted,
         }), mimetype='application/json')
         if auth:
-            rv.set_cookie(self.pin_cookie_name, str(int(time.time())),
-                          httponly=True)
+            rv.set_cookie(self.pin_cookie_name, '%s|%s' % (
+                int(time.time()),
+                hash_pin(self.pin)
+            ), httponly=True)
+        elif bad_cookie:
+            rv.delete_cookie(self.pin_cookie_name)
         return rv
 
     def log_pin_request(self):

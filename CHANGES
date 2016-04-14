@@ -5,6 +5,9 @@ Version 0.11.6
 --------------
 
 - werkzeug.serving: Still show the client address on bad requests.
+- improved the PIN based protection for the debugger to make it harder to
+  brute force via trying cookies.  Please keep in mind that the debugger
+  *is not intended for running on production environments*
 
 Version 0.11.5
 --------------
