@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import re
 import sys
 import uuid
 import json
@@ -16,6 +17,7 @@ import time
 import getpass
 import hashlib
 import mimetypes
+from itertools import chain
 from os.path import join, dirname, basename, isfile
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 from werkzeug.http import parse_cookie
@@ -32,7 +34,65 @@ from werkzeug._compat import text_type
 from werkzeug.debug.repr import debug_repr  # noqa
 
 
-PIN_TIME = 60 * 60 * 8
+# A week
+PIN_TIME = 60 * 60 * 24 * 7
+
+
+def hash_pin(pin):
+    return hashlib.md5(pin + 'shittysalt').hexdigest()[:12]
+
+
+_machine_id = None
+
+
+def get_machine_id():
+    global _machine_id
+    rv = _machine_id
+    if rv is not None:
+        return rv
+
+    def _generate():
+        # Potential sources of secret information on linux.  The machine-id
+        # is stable across boots, the boot id is not
+        for filename in '/etc/machine-id', '/proc/sys/kernel/random/boot_id':
+            try:
+                with open(filename, 'rb') as f:
+                    f.readline().strip()
+            except IOError:
+                continue
+
+        # On OS X we can use the computer's serial number assuming that
+        # ioreg exists and can spit out that information.
+        from subprocess import Popen, PIPE
+        try:
+            dump = Popen(['ioreg', '-c', 'IOPlatformExpertDevice', '-d', '2'],
+                         stdout=PIPE).communicate()[0]
+            match = re.match(r'"serial-number" = <([^>]+)', dump)
+            if match is not None:
+                return match.group(1)
+        except OSError:
+            pass
+
+        # On Windows we can use winreg to get the machine guid
+        wr = None
+        try:
+            import winreg as wr
+        except ImportError:
+            try:
+                import _winreg as wr
+            except ImportError:
+                pass
+        if wr is not None:
+            try:
+                with wr.OpenKey(wr.HKEY_LOCAL_MACHINE,
+                                'SOFTWARE\\Microsoft\\Cryptography', 0,
+                                wr.KEY_READ | wr.KEY_WOW64_64KEY) as rk:
+                    return wr.QueryValueEx(rk, 'MachineGuid')[0]
+            except WindowsError:
+                pass
+
+    _machine_id = rv = _generate()
+    return rv
 
 
 class _ConsoleFrame(object):
@@ -80,29 +140,41 @@ def get_pin_and_cookie_name(app):
     except ImportError:
         username = None
 
-    bits = [
+    mod = sys.modules.get(modname)
+
+    # This information only exists to make the cookie unique on the
+    # computer, not as a security feature.
+    probably_public_bits = [
         username,
-        str(uuid.getnode()),
         modname,
         getattr(app, '__name__', getattr(app.__class__, '__name__')),
+        getattr(mod, '__file__', None),
     ]
 
-    mod = sys.modules.get(modname)
-    bits.append(getattr(mod, '__file__', None))
-    bits.append('cookiesalt')
+    # This information is here to make it harder for an attacker to
+    # guess the cookie name.  They are unlikely to be contained anywhere
+    # within the unauthenticated debug page.
+    private_bits = [
+        str(uuid.getnode()),
+        get_machine_id(),
+    ]
 
     h = hashlib.md5()
-    for bit in bits:
+    for bit in chain(probably_public_bits, private_bits):
         if not bit:
             continue
         if isinstance(bit, text_type):
             bit = bit.encode('utf-8')
         h.update(bit)
+    h.update('cookiesalt')
 
+    cookie_name = '__wzd' + h.hexdigest()[:20]
+
+    # If we need to generate a pin we salt it a bit more so that we don't
+    # end up with the same value and generate out 9 digits
     if num is None:
+        h.update('pinsalt')
         num = ('%09d' % int(h.hexdigest(), 16))[:9]
-
-    cookie_name = '__wzd' + h.hexdigest()[:12]
 
     # Format the pincode in groups of digits for easier remembering if
     # we don't have a result yet.
@@ -236,7 +308,7 @@ class DebuggedApplication(object):
                     'response at a point where response headers were already '
                     'sent.\n')
             else:
-                is_trusted = self.is_trusted(environ)
+                is_trusted = bool(self.check_pin_trust(environ))
                 yield traceback.render_full(evalex=self.evalex,
                                             evalex_trusted=is_trusted,
                                             secret=self.secret) \
@@ -257,7 +329,7 @@ class DebuggedApplication(object):
                 ns = dict(self.console_init_func())
             ns.setdefault('app', self.app)
             self.frames[0] = _ConsoleFrame(ns)
-        is_trusted = self.is_trusted(request.environ)
+        is_trusted = bool(self.check_pin_trust(request.environ))
         return Response(render_console_html(secret=self.secret,
                                             evalex_trusted=is_trusted),
                         mimetype='text/html')
@@ -280,23 +352,53 @@ class DebuggedApplication(object):
                 f.close()
         return Response('Not Found', status=404)
 
-    def is_trusted(self, environ):
-        """Checks if the request passed the pin test."""
+    def check_pin_trust(self, environ):
+        """Checks if the request passed the pin test.  This returns `True` if the
+        request is trusted on a pin/cookie basis and returns `False` if not.
+        Additionally if the cookie's stored pin hash is wrong it will return
+        `None` so that appropriate action can be taken.
+        """
         if self.pin is None:
             return True
-        ts = parse_cookie(environ).get(self.pin_cookie_name, type=int)
-        if ts is None:
+        val = parse_cookie(environ).get(self.pin_cookie_name)
+        if not val or '|' not in val:
             return False
+        ts, pin_hash = val.split('|', 1)
+        if not ts.isdigit():
+            return False
+        if pin_hash != hash_pin(self.pin):
+            return None
         return (time.time() - PIN_TIME) < ts
+
+    def _fail_pin_auth(self):
+        time.sleep(self._failed_pin_auth > 5 and 5.0 or 0.5)
+        self._failed_pin_auth += 1
 
     def pin_auth(self, request):
         """Authenticates with the pin."""
         exhausted = False
         auth = False
-        if self.is_trusted(request.environ):
+        trust = self.check_pin_trust(request.environ)
+
+        # If the trust return value is `None` it means that the cookie is
+        # set but the stored pin hash value is bad.  This means that the
+        # pin was changed.  In this case we count a bad auth and unset the
+        # cookie.  This way it becomes harder to guess the cookie name
+        # instead of the pin as we still count up failures.
+        bad_cookie = False
+        if trust is None:
+            self._fail_pin_auth()
+            bad_cookie = True
+
+        # If we're trusted, we're authenticated.
+        elif trust:
             auth = True
+
+        # If we failed too many times, then we're locked out.
         elif self._failed_pin_auth > 10:
             exhausted = True
+
+        # Otherwise go through pin based authentication
         else:
             entered_pin = request.args.get('pin')
             if entered_pin.strip().replace('-', '') == \
@@ -304,17 +406,19 @@ class DebuggedApplication(object):
                 self._failed_pin_auth = 0
                 auth = True
             else:
-                time.sleep(self._failed_pin_auth > 5 and 5.0 or 0.5)
-                self._failed_pin_auth += 1
-                auth = False
+                self._fail_pin_auth()
 
         rv = Response(json.dumps({
             'auth': auth,
             'exhausted': exhausted,
         }), mimetype='application/json')
         if auth:
-            rv.set_cookie(self.pin_cookie_name, str(int(time.time())),
-                          httponly=True)
+            rv.set_cookie(self.pin_cookie_name, '%s|%s' % (
+                int(time.time()),
+                hash_pin(self.pin)
+            ), httponly=True)
+        elif bad_cookie:
+            rv.delete_cookie(self.pin_cookie_name)
         return rv
 
     def log_pin_request(self):
@@ -349,7 +453,7 @@ class DebuggedApplication(object):
                 response = self.log_pin_request()
             elif self.evalex and cmd is not None and frame is not None \
                     and self.secret == secret and \
-                    self.is_trusted(environ):
+                    self.check_pin_trust(environ):
                 response = self.execute_command(request, cmd, frame)
         elif self.evalex and self.console_path is not None and \
                 request.path == self.console_path:

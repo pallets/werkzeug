@@ -113,8 +113,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'QUERY_STRING':         wsgi_encoding_dance(request_url.query),
             'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
             'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
-            'REMOTE_ADDR':          self.client_address[0],
-            'REMOTE_PORT':          self.client_address[1],
+            'REMOTE_ADDR':          self.address_string(),
+            'REMOTE_PORT':          self.port_integer(),
             'SERVER_NAME':          self.server.server_address[0],
             'SERVER_PORT':          str(self.server.server_address[1]),
             'SERVER_PROTOCOL':      self.request_version
@@ -125,7 +125,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 environ[key] = value
 
-        if request_url.netloc:
+        if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
 
         return environ
@@ -263,10 +263,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
     def address_string(self):
-        if getattr(self, 'environ', None):
-            return self.environ['REMOTE_ADDR']
-        else:
-            return ''
+        return self.client_address[0]
+
+    def port_integer(self):
+        return self.client_address[1]
 
     def log_request(self, code='-', size='-'):
         self.log('info', '"%s" %s %s', self.requestline, code, size)

@@ -18,6 +18,20 @@ Unreleased.
 - Datastructures now inherit from the relevant baseclasses from the
   `collections` module in the stdlib. See #794.
 
+Version 0.11.6
+--------------
+
+Released on April 14th 2016.
+
+- werkzeug.serving: Still show the client address on bad requests.
+- improved the PIN based protection for the debugger to make it harder to
+  brute force via trying cookies.  Please keep in mind that the debugger
+  *is not intended for running on production environments*
+- increased the pin timeout to a week to make it less annoying for people
+  which should decrease the change that users disable the pin check
+  entirely.
+- werkzeug.serving: Fix broken HTTP_HOST when path starts with double slash.
+
 Version 0.11.5
 --------------
 
