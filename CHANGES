@@ -17,6 +17,8 @@ Unreleased.
   loop.
 - Datastructures now inherit from the relevant baseclasses from the
   `collections` module in the stdlib. See #794.
+- Add support for recognizing NetBSD and OpenBSD platforms in the user agent
+  string.
 
 Version 0.11.5
 --------------
