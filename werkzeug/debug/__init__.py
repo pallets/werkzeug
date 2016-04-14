@@ -313,7 +313,7 @@ class DebuggedApplication(object):
         trust = self.check_pin_trust(request.environ)
 
         # If the trust return value is `None` it means that the cookie is
-        # set but the stored pined hash value is bad.  This means that the
+        # set but the stored pin hash value is bad.  This means that the
         # pin was changed.  In this case we count a bad auth and unset the
         # cookie.  This way it becomes harder to guess the cookie name
         # instead of the pin as we still count up failures.
