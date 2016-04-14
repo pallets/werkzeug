@@ -166,14 +166,14 @@ def get_pin_and_cookie_name(app):
         if isinstance(bit, text_type):
             bit = bit.encode('utf-8')
         h.update(bit)
-    h.update('cookiesalt')
+    h.update(b'cookiesalt')
 
     cookie_name = '__wzd' + h.hexdigest()[:20]
 
     # If we need to generate a pin we salt it a bit more so that we don't
     # end up with the same value and generate out 9 digits
     if num is None:
-        h.update('pinsalt')
+        h.update(b'pinsalt')
         num = ('%09d' % int(h.hexdigest(), 16))[:9]
 
     # Format the pincode in groups of digits for easier remembering if
