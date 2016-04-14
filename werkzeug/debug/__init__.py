@@ -32,7 +32,8 @@ from werkzeug._compat import text_type
 from werkzeug.debug.repr import debug_repr  # noqa
 
 
-PIN_TIME = 60 * 60 * 8
+# A week
+PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin):
