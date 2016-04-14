@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import re
 import sys
 import uuid
 import json
@@ -16,6 +17,7 @@ import time
 import getpass
 import hashlib
 import mimetypes
+from itertools import chain
 from os.path import join, dirname, basename, isfile
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 from werkzeug.http import parse_cookie
@@ -38,6 +40,59 @@ PIN_TIME = 60 * 60 * 24 * 7
 
 def hash_pin(pin):
     return hashlib.md5(pin + 'shittysalt').hexdigest()[:12]
+
+
+_machine_id = None
+
+
+def get_machine_id():
+    global _machine_id
+    rv = _machine_id
+    if rv is not None:
+        return rv
+
+    def _generate():
+        # Potential sources of secret information on linux.  The machine-id
+        # is stable across boots, the boot id is not
+        for filename in '/etc/machine-id', '/proc/sys/kernel/random/boot_id':
+            try:
+                with open(filename, 'rb') as f:
+                    f.readline().strip()
+            except IOError:
+                continue
+
+        # On OS X we can use the computer's serial number assuming that
+        # ioreg exists and can spit out that information.
+        from subprocess import Popen, PIPE
+        try:
+            dump = Popen(['ioreg', '-c', 'IOPlatformExpertDevice', '-d', '2'],
+                         stdout=PIPE).communicate()[0]
+            match = re.match(r'"serial-number" = <([^>]+)', dump)
+            if match is not None:
+                return match.group(1)
+        except OSError:
+            pass
+
+        # On Windows we can use winreg to get the machine guid
+        wr = None
+        try:
+            import winreg as wr
+        except ImportError:
+            try:
+                import _winreg as wr
+            except ImportError:
+                pass
+        if wr is not None:
+            try:
+                with wr.OpenKey(wr.HKEY_LOCAL_MACHINE,
+                                'SOFTWARE\\Microsoft\\Cryptography', 0,
+                                wr.KEY_READ | wr.KEY_WOW64_64KEY) as rk:
+                    return wr.QueryValueEx(rk, 'MachineGuid')[0]
+            except WindowsError:
+                pass
+
+    _machine_id = rv = _generate()
+    return rv
 
 
 class _ConsoleFrame(object):
@@ -85,29 +140,41 @@ def get_pin_and_cookie_name(app):
     except ImportError:
         username = None
 
-    bits = [
+    mod = sys.modules.get(modname)
+
+    # This information only exists to make the cookie unique on the
+    # computer, not as a security feature.
+    probably_public_bits = [
         username,
-        str(uuid.getnode()),
         modname,
         getattr(app, '__name__', getattr(app.__class__, '__name__')),
+        getattr(mod, '__file__', None),
     ]
 
-    mod = sys.modules.get(modname)
-    bits.append(getattr(mod, '__file__', None))
-    bits.append('cookiesalt')
+    # This information is here to make it harder for an attacker to
+    # guess the cookie name.  They are unlikely to be contained anywhere
+    # within the unauthenticated debug page.
+    private_bits = [
+        str(uuid.getnode()),
+        get_machine_id(),
+    ]
 
     h = hashlib.md5()
-    for bit in bits:
+    for bit in chain(probably_public_bits, private_bits):
         if not bit:
             continue
         if isinstance(bit, text_type):
             bit = bit.encode('utf-8')
         h.update(bit)
+    h.update('cookiesalt')
 
+    cookie_name = '__wzd' + h.hexdigest()[:20]
+
+    # If we need to generate a pin we salt it a bit more so that we don't
+    # end up with the same value and generate out 9 digits
     if num is None:
+        h.update('pinsalt')
         num = ('%09d' % int(h.hexdigest(), 16))[:9]
-
-    cookie_name = '__wzd' + h.hexdigest()[:12]
 
     # Format the pincode in groups of digits for easier remembering if
     # we don't have a result yet.
@@ -386,7 +453,7 @@ class DebuggedApplication(object):
                 response = self.log_pin_request()
             elif self.evalex and cmd is not None and frame is not None \
                     and self.secret == secret and \
-                    self.is_trusted(environ):
+                    self.check_pin_trust(environ):
                 response = self.execute_command(request, cmd, frame)
         elif self.evalex and self.console_path is not None and \
                 request.path == self.console_path:
