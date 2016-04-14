@@ -11,6 +11,7 @@ Version 0.11.6
 - increased the pin timeout to a week to make it less annoying for people
   which should decrease the change that users disable the pin check
   entirely.
+- werkzeug.serving: Fix broken HTTP_HOST when path starts with double slash.
 
 Version 0.11.5
 --------------

@@ -125,7 +125,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 environ[key] = value
 
-        if request_url.netloc:
+        if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
 
         return environ
