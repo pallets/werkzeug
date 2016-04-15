@@ -12,7 +12,6 @@ import sys
 import re
 import io
 
-from werkzeug.debug import get_machine_id
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
@@ -234,8 +233,3 @@ class TestTraceback(object):
             traceback = Traceback(*sys.exc_info())
 
         assert u'föö' in u'\n'.join(frame.render() for frame in traceback.frames)
-
-
-def test_get_machine_id():
-    rv = get_machine_id()
-    assert isinstance(rv, bytes)

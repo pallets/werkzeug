@@ -10,10 +10,6 @@ env:
     - TOXENV=py-normal
     - TOXENV=py-uwsgi
 
-os:
-    - linux
-    - osx
-
 matrix:
     exclude:
         - python: pypy
