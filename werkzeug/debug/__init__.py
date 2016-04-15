@@ -67,7 +67,7 @@ def get_machine_id():
         try:
             dump = Popen(['ioreg', '-c', 'IOPlatformExpertDevice', '-d', '2'],
                          stdout=PIPE).communicate()[0]
-            match = re.match(r'"serial-number" = <([^>]+)', dump)
+            match = re.search(b'"serial-number" = <([^>]+)', dump)
             if match is not None:
                 return match.group(1)
         except OSError:

@@ -18,6 +18,14 @@ Unreleased.
 - Datastructures now inherit from the relevant baseclasses from the
   `collections` module in the stdlib. See #794.
 
+Version 0.11.8
+--------------
+
+Released on April 15th 2016.
+
+- fixed a problem with the machine GUID detection code on OS X
+  on Python 3.
+
 Version 0.11.7
 --------------
 
