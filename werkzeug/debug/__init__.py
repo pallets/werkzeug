@@ -57,7 +57,7 @@ def get_machine_id():
         for filename in '/etc/machine-id', '/proc/sys/kernel/random/boot_id':
             try:
                 with open(filename, 'rb') as f:
-                    f.readline().strip()
+                    return f.readline().strip()
             except IOError:
                 continue
 
