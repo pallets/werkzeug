@@ -39,7 +39,7 @@ PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin):
-    return hashlib.md5(pin + 'shittysalt').hexdigest()[:12]
+    return hashlib.md5((pin + 'shittysalt').encode('utf8')).hexdigest()[:12]
 
 
 _machine_id = None
