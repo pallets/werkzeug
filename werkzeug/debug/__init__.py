@@ -39,7 +39,9 @@ PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin):
-    return hashlib.md5(pin + 'shittysalt').hexdigest()[:12]
+    if isinstance(pin, text_type):
+        pin = pin.encode('utf-8', 'replace')
+    return hashlib.md5(pin + b'shittysalt').hexdigest()[:12]
 
 
 _machine_id = None
