@@ -39,7 +39,9 @@ PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin):
-    return hashlib.md5(pin + 'shittysalt').hexdigest()[:12]
+    if isinstance(pin, text_type):
+        pin = pin.encode('utf-8', 'replace')
+    return hashlib.md5(pin + b'shittysalt').hexdigest()[:12]
 
 
 _machine_id = None
@@ -57,7 +59,7 @@ def get_machine_id():
         for filename in '/etc/machine-id', '/proc/sys/kernel/random/boot_id':
             try:
                 with open(filename, 'rb') as f:
-                    f.readline().strip()
+                    return f.readline().strip()
             except IOError:
                 continue
 
@@ -368,7 +370,7 @@ class DebuggedApplication(object):
             return False
         if pin_hash != hash_pin(self.pin):
             return None
-        return (time.time() - PIN_TIME) < ts
+        return (time.time() - PIN_TIME) < int(ts)
 
     def _fail_pin_auth(self):
         time.sleep(self._failed_pin_auth > 5 and 5.0 or 0.5)

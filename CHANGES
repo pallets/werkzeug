@@ -18,6 +18,16 @@ Unreleased.
 - Datastructures now inherit from the relevant baseclasses from the
   `collections` module in the stdlib. See #794.
 
+Version 0.11.9
+--------------
+
+- Corrected an issue that caused the debugger not to use the
+  machine GUID on POSIX systems.
+- Corrected an Unicode error on Python 3 for the debugger's
+  PIN usage.
+- Corrected the timestamp verification in the pin debug code.
+  Without this fix the pin was remebered until too long.
+
 Version 0.11.8
 --------------
 
