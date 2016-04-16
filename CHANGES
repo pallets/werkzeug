@@ -1,6 +1,12 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11.9
+--------------
+
+- Corrected an issue that caused the debugger not to use the
+  machine GUID on POSIX systems.
+
 Version 0.11.8
 --------------
 
