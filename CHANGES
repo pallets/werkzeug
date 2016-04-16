@@ -8,6 +8,8 @@ Version 0.11.9
   machine GUID on POSIX systems.
 - Corrected an Unicode error on Python 3 for the debugger's
   PIN usage.
+- Corrected the timestamp verification in the pin debug code.
+  Without this fix the pin was remebered until too long.
 
 Version 0.11.8
 --------------
