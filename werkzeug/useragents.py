@@ -25,6 +25,9 @@ class UserAgentParser(object):
         (r'darwin|mac|os\s*x', 'macos'),
         ('win', 'windows'),
         (r'android', 'android'),
+        ('netbsd', 'netbsd'),
+        ('openbsd', 'openbsd'),
+        ('freebsd', 'freebsd'),
         (r'x11|lin(\b|ux)?', 'linux'),
         ('(sun|i86)os', 'solaris'),
         (r'nintendo\s+wii', 'wii'),
@@ -45,6 +48,7 @@ class UserAgentParser(object):
         (r'aol|america\s+online\s+browser', 'aol'),
         ('opera', 'opera'),
         ('chrome', 'chrome'),
+        ('seamonkey', 'seamonkey'),
         ('firefox|firebird|phoenix|iceweasel', 'firefox'),
         ('galeon', 'galeon'),
         ('safari|version', 'safari'),
@@ -55,8 +59,7 @@ class UserAgentParser(object):
         ('netscape', 'netscape'),
         (r'msie|microsoft\s+internet\s+explorer|trident/.+? rv:', 'msie'),
         ('lynx', 'lynx'),
-        ('links', 'links'),
-        ('seamonkey|mozilla', 'seamonkey')
+        ('links', 'links')
     )
 
     _browser_version_re = r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)'
