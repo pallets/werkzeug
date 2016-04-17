@@ -384,8 +384,23 @@ def test_user_agent_mixin():
         ('Mozilla/5.0 (SymbianOS/9.3; Series60/3.2 NokiaE5-00/101.003; '
          'Profile/MIDP-2.1 Configuration/CLDC-1.1 ) AppleWebKit/533.4 (KHTML, like Gecko) '
          'NokiaBrowser/7.3.1.35 Mobile Safari/533.4 3gpp-gba',
-         'safari', 'symbian', '533.4', None)
-
+         'safari', 'symbian', '533.4', None),
+        ('Mozilla/5.0 (X11; OpenBSD amd64; rv:45.0) Gecko/20100101 Firefox/45.0',
+         'firefox', 'openbsd', '45.0', None),
+        ('Mozilla/5.0 (X11; NetBSD amd64; rv:45.0) Gecko/20100101 Firefox/45.0',
+         'firefox', 'netbsd', '45.0', None),
+        ('Mozilla/5.0 (X11; FreeBSD amd64) AppleWebKit/537.36 (KHTML, like Gecko) '
+         'Chrome/48.0.2564.103 Safari/537.36',
+         'chrome', 'freebsd', '48.0.2564.103', None),
+        ('Mozilla/5.0 (X11; FreeBSD amd64; rv:45.0) Gecko/20100101 Firefox/45.0',
+         'firefox', 'freebsd', '45.0', None),
+        ('Mozilla/5.0 (X11; U; NetBSD amd64; en-US; rv:) Gecko/20150921 SeaMonkey/1.1.18',
+         'seamonkey', 'netbsd', '1.1.18', 'en-US'),
+        ('Mozilla/5.0 (Windows; U; Windows NT 6.2; WOW64; rv:1.8.0.7) '
+         'Gecko/20110321 MultiZilla/4.33.2.6a SeaMonkey/8.6.55',
+         'seamonkey', 'windows', '8.6.55', None),
+        ('Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20120427 Firefox/12.0 SeaMonkey/2.9',
+         'seamonkey', 'linux', '2.9', None)
     ]
     for ua, browser, platform, version, lang in user_agents:
         request = wrappers.Request({'HTTP_USER_AGENT': ua})
