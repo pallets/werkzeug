@@ -17,8 +17,8 @@ Unreleased.
   loop.
 - Datastructures now inherit from the relevant baseclasses from the
   `collections` module in the stdlib. See #794.
-- Add support for recognizing NetBSD, OpenBSD, FreeBSD, and SunOS platforms in
-  the user agent string.
+- Add support for recognizing NetBSD, OpenBSD, and FreeBSD platforms in the
+  user agent string.
 - Recognize SeaMonkey browser name and version correctly
 - Recognize Baiduspider user agent
 

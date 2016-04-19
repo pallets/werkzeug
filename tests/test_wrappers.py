@@ -404,7 +404,7 @@ def test_user_agent_mixin():
         ('Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)',
          'baidu', None, '2.0', None),
         ('Mozilla/5.0 (X11; SunOS i86pc; rv:38.0) Gecko/20100101 Firefox/38.0',
-         'firefox', 'sunos', '38.0', None)
+         'firefox', 'solaris', '38.0', None)
     ]
     for ua, browser, platform, version, lang in user_agents:
         request = wrappers.Request({'HTTP_USER_AGENT': ua})
