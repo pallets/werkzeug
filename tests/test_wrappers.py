@@ -406,7 +406,13 @@ def test_user_agent_mixin():
         ('Mozilla/5.0 (X11; SunOS i86pc; rv:38.0) Gecko/20100101 Firefox/38.0',
          'firefox', 'solaris', '38.0', None),
         ('Mozilla/5.0 (X11; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0 Iceweasel/38.7.1',
-        'firefox', 'linux', '38.0', None)
+        'firefox', 'linux', '38.0', None),
+        ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/50.0.2661.75 Safari/537.36',
+        'chrome', 'windows', '50.0.2661.75', None),
+        ('Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+         'bing', None, '2.0', None)
+
     ]
     for ua, browser, platform, version, lang in user_agents:
         request = wrappers.Request({'HTTP_USER_AGENT': ua})

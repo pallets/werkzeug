@@ -60,7 +60,9 @@ class UserAgentParser(object):
         (r'msie|microsoft\s+internet\s+explorer|trident/.+? rv:', 'msie'),
         ('lynx', 'lynx'),
         ('links', 'links'),
-        ('Baiduspider', 'baidu')
+        ('Baiduspider', 'baidu'),
+        ('bingbot', 'bing'),
+        ('mozilla', 'mozilla')
     )
 
     _browser_version_re = r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)'
