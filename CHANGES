@@ -20,7 +20,7 @@ Unreleased.
 - Add support for recognizing NetBSD, OpenBSD, and FreeBSD platforms in the
   user agent string.
 - Recognize SeaMonkey browser name and version correctly
-- Recognize Baiduspider user agent
+- Recognize Baiduspider, and bingbot user agents
 
 Version 0.11.9
 --------------
