@@ -28,6 +28,7 @@ class UserAgentParser(object):
         ('netbsd', 'netbsd'),
         ('openbsd', 'openbsd'),
         ('freebsd', 'freebsd'),
+        ('sunos', 'sunos'),
         (r'x11|lin(\b|ux)?', 'linux'),
         ('(sun|i86)os', 'solaris'),
         (r'nintendo\s+wii', 'wii'),
