@@ -59,7 +59,8 @@ class UserAgentParser(object):
         ('netscape', 'netscape'),
         (r'msie|microsoft\s+internet\s+explorer|trident/.+? rv:', 'msie'),
         ('lynx', 'lynx'),
-        ('links', 'links')
+        ('links', 'links'),
+        ('Baiduspider', 'baidu')
     )
 
     _browser_version_re = r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)'
