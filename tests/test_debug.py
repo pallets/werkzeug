@@ -12,6 +12,10 @@ import sys
 import re
 import io
 
+import pytest
+import requests
+
+from werkzeug.debug import get_machine_id
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
@@ -233,3 +237,30 @@ class TestTraceback(object):
             traceback = Traceback(*sys.exc_info())
 
         assert u'föö' in u'\n'.join(frame.render() for frame in traceback.frames)
+
+
+def test_get_machine_id():
+    rv = get_machine_id()
+    assert isinstance(rv, bytes)
+
+
+@pytest.mark.parametrize('crash', (True, False))
+def test_basic(dev_server, crash):
+    server = dev_server('''
+    from werkzeug.debug import DebuggedApplication
+
+    @DebuggedApplication
+    def app(environ, start_response):
+        if {crash}:
+            1 / 0
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    '''.format(crash=crash))
+
+    r = requests.get(server.url)
+    assert r.status_code == 500 if crash else 200
+    if crash:
+        assert 'The debugger caught an exception in your WSGI application' \
+            in r.text
+    else:
+        assert r.text == 'hello'

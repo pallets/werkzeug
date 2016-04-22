@@ -14,8 +14,20 @@ matrix:
     exclude:
         - python: pypy
           env: TOXENV=py-uwsgi
+    include:
+        - os: osx
+          language: generic
+          env: TOXENV=py-normal
 
-install:
+os: linux
+
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        brew update;
+        brew install python3 redis memcached;
+        virtualenv ~/py-env -p python3;
+        . ~/py-env/bin/activate;
+      fi
     # Travis uses an outdated PyPy, this installs the most recent one.
     # This makes the tests run on Travis' legacy infrastructure, but so be it.
     # temporary pyenv installation to get pypy-2.6 before container infra upgrade
@@ -28,6 +40,8 @@ install:
         pyenv global pypy-4.0.1;
       fi
     - python --version
+
+install:
     - pip install tox flake8
 
 script:
