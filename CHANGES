@@ -4,6 +4,8 @@ Werkzeug Changelog
 Version 0.11.9
 --------------
 
+Released on April 24th 2016.
+
 - Corrected an issue that caused the debugger not to use the
   machine GUID on POSIX systems.
 - Corrected an Unicode error on Python 3 for the debugger's
