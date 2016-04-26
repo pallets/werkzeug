@@ -1,6 +1,12 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11.10
+---------------
+
+- Fixed a bug that occurs when running on Python 2.6 and using a broken locale.
+  See pull request #912.
+
 Version 0.11.9
 --------------
 
