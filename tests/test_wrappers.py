@@ -411,7 +411,11 @@ def test_user_agent_mixin():
          'Chrome/50.0.2661.75 Safari/537.36',
          'chrome', 'windows', '50.0.2661.75', None),
         ('Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
-         'bing', None, '2.0', None)
+         'bing', None, '2.0', None),
+        ('Mozilla/5.0 (X11; DragonFly x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+         'Chrome/47.0.2526.106 Safari/537.36', 'chrome', 'dragonflybsd', '47.0.2526.106', None),
+        ('Mozilla/5.0 (X11; U; DragonFly i386; de; rv:1.9.1) Gecko/20090720 Firefox/3.5.1',
+         'firefox', 'dragonflybsd', '3.5.1', 'de')
 
     ]
     for ua, browser, platform, version, lang in user_agents:
