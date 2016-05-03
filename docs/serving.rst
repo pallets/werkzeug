@@ -120,8 +120,8 @@ Troubleshooting
 On operating systems that support ipv6 and have it configured such as modern
 Linux systems, OS X 10.4 or higher as well as Windows Vista some browsers can
 be painfully slow if accessing your local server.  The reason for this is that
-sometimes "localhost" is configured to be available on both ipv4 and ipv6 socktes
-and some browsers will try to access ipv6 first and then ivp4.
+sometimes "localhost" is configured to be available on both ipv4 and ipv6 sockets
+and some browsers will try to access ipv6 first and then ipv4.
 
 At the current time the integrated webserver does not support ipv6 and ipv4 at
 the same time and for better portability ipv4 is the default.
