@@ -400,7 +400,23 @@ def test_user_agent_mixin():
          'Gecko/20110321 MultiZilla/4.33.2.6a SeaMonkey/8.6.55',
          'seamonkey', 'windows', '8.6.55', None),
         ('Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20120427 Firefox/12.0 SeaMonkey/2.9',
-         'seamonkey', 'linux', '2.9', None)
+         'seamonkey', 'linux', '2.9', None),
+        ('Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)',
+         'baidu', None, '2.0', None),
+        ('Mozilla/5.0 (X11; SunOS i86pc; rv:38.0) Gecko/20100101 Firefox/38.0',
+         'firefox', 'solaris', '38.0', None),
+        ('Mozilla/5.0 (X11; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0 Iceweasel/38.7.1',
+         'firefox', 'linux', '38.0', None),
+        ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+         'Chrome/50.0.2661.75 Safari/537.36',
+         'chrome', 'windows', '50.0.2661.75', None),
+        ('Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+         'bing', None, '2.0', None),
+        ('Mozilla/5.0 (X11; DragonFly x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+         'Chrome/47.0.2526.106 Safari/537.36', 'chrome', 'dragonflybsd', '47.0.2526.106', None),
+        ('Mozilla/5.0 (X11; U; DragonFly i386; de; rv:1.9.1) Gecko/20090720 Firefox/3.5.1',
+         'firefox', 'dragonflybsd', '3.5.1', 'de')
+
     ]
     for ua, browser, platform, version, lang in user_agents:
         request = wrappers.Request({'HTTP_USER_AGENT': ua})

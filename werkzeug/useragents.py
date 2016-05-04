@@ -28,8 +28,9 @@ class UserAgentParser(object):
         ('netbsd', 'netbsd'),
         ('openbsd', 'openbsd'),
         ('freebsd', 'freebsd'),
-        (r'x11|lin(\b|ux)?', 'linux'),
+        ('dragonfly', 'dragonflybsd'),
         ('(sun|i86)os', 'solaris'),
+        (r'x11|lin(\b|ux)?', 'linux'),
         (r'nintendo\s+wii', 'wii'),
         ('irix', 'irix'),
         ('hp-?ux', 'hpux'),
@@ -59,7 +60,10 @@ class UserAgentParser(object):
         ('netscape', 'netscape'),
         (r'msie|microsoft\s+internet\s+explorer|trident/.+? rv:', 'msie'),
         ('lynx', 'lynx'),
-        ('links', 'links')
+        ('links', 'links'),
+        ('Baiduspider', 'baidu'),
+        ('bingbot', 'bing'),
+        ('mozilla', 'mozilla')
     )
 
     _browser_version_re = r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?(?i)'
