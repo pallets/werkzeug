@@ -45,6 +45,10 @@ Running the testsuite
 You probably want to set up a `virtualenv
 <http://virtualenv.readthedocs.org/en/latest/index.html>`_.
 
+Werkzeug must be installed for all tests to pass::
+
+    pip install -e .
+
 The minimal requirement for running the testsuite is ``py.test``.  You can
 install it with::
 
