@@ -12,6 +12,7 @@ import pytest
 
 import time
 import copy
+from functools import partial
 from threading import Thread
 
 from werkzeug import local
@@ -181,3 +182,26 @@ def test_deepcopy_on_proxy():
 
     assert copy.deepcopy(p2) == [a]
     assert copy.deepcopy(p2)[0] is not a
+
+
+def test_local_proxy_wrapped_attribute():
+    class SomeClassWithWrapped(object):
+        __wrapped__ = 'wrapped'
+
+    def lookup_func():
+        return 42
+
+    partial_lookup_func = partial(lookup_func)
+
+    proxy = local.LocalProxy(lookup_func)
+    assert proxy.__wrapped__ is lookup_func
+
+    partial_proxy = local.LocalProxy(partial_lookup_func)
+    assert partial_proxy.__wrapped__ == partial_lookup_func
+
+    l = local.Local()
+    l.foo = SomeClassWithWrapped()
+    l.bar = 42
+
+    assert l('foo').__wrapped__ == 'wrapped'
+    pytest.raises(AttributeError, lambda: l('bar').__wrapped__)

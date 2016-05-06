@@ -287,11 +287,15 @@ class LocalProxy(object):
     .. versionchanged:: 0.6.1
        The class can be instanciated with a callable as well now.
     """
-    __slots__ = ('__local', '__dict__', '__name__')
+    __slots__ = ('__local', '__dict__', '__name__', '__wrapped__')
 
     def __init__(self, local, name=None):
         object.__setattr__(self, '_LocalProxy__local', local)
         object.__setattr__(self, '__name__', name)
+        if callable(local) and not hasattr(local, '__release_local__'):
+            # "local" is a callable that is not an instance of Local or
+            # LocalManager: mark it as a wrapped function.
+            object.__setattr__(self, '__wrapped__', local)
 
     def _get_current_object(self):
         """Return the current object.  This is useful if you want the real
