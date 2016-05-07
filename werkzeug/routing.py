@@ -613,9 +613,9 @@ class Rule(RuleFactory):
         self.alias = alias
         if methods is None:
             self.methods = None
-        if isinstance(methods, str):
-            self.methods = [methods]
         else:
+            if isinstance(methods, str):
+                self.methods = [methods]
             self.methods = set([x.upper() for x in methods])
             if 'HEAD' not in self.methods and 'GET' in self.methods:
                 self.methods.add('HEAD')
