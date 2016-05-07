@@ -615,7 +615,7 @@ class Rule(RuleFactory):
             self.methods = None
         else:
             if isinstance(methods, str):
-                methods = [methods]
+                raise TypeError('param `methods` should be `Iterable[str]`, not `str`')
             self.methods = set([x.upper() for x in methods])
             if 'HEAD' not in self.methods and 'GET' in self.methods:
                 self.methods.add('HEAD')

@@ -522,10 +522,10 @@ def test_implicit_head():
 
 
 def test_pass_str_as_router_methods():
-    test_get = r.Rule('/get', methods='GET')
-    assert test_get.methods == set(['HEAD', 'GET'])
-    test_post = r.Rule('/post', methods='POST')
-    assert test_post.methods == set(['POST'])
+    try:
+        r.Rule('/get', methods='GET')
+    except Exception as e:
+        assert isinstance(e, TypeError)
 
 
 def test_protocol_joining_bug():
