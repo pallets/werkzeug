@@ -16,6 +16,16 @@ from werkzeug import routing
 from werkzeug.wrappers import Request, Response
 
 
+def test_json_request_mixin():
+    class MyRequest(wrappers.JSONRequestMixin, Request):
+        pass
+    req = MyRequest.from_values(
+        data=b'{"foo": "bar"}',
+        content_type='text/json'
+    )
+    assert req.json == {'foo': 'bar'}
+
+
 def test_reverse_slash_behavior():
     class MyRequest(wrappers.ReverseSlashBehaviorRequestMixin, Request):
         pass

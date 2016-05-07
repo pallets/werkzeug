@@ -25,6 +25,7 @@ Unreleased.
   attribute.
 - The defaults of ``generate_password_hash`` have been changed to more secure
   ones, see pull request ``#753``.
+- Fix JSONRequestMixin for Python3. See #731
 
 Version 0.11.10
 ---------------
