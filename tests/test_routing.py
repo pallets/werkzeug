@@ -524,6 +524,7 @@ def test_implicit_head():
 def test_pass_str_as_router_methods():
     try:
         r.Rule('/get', methods='GET')
+        raise AssertionError
     except Exception as e:
         assert isinstance(e, TypeError)
 
