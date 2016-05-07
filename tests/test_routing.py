@@ -521,6 +521,13 @@ def test_implicit_head():
                   '/post', method='HEAD')
 
 
+def test_pass_str_as_router_methods():
+    test_get = r.Rule('/get', methods='GET')
+    assert test_get.methods == set(['HEAD', 'GET'])
+    test_post = r.Rule('/post', methods='POST')
+    assert test_post.methods == set(['POST'])
+
+
 def test_protocol_joining_bug():
     m = r.Map([r.Rule('/<foo>', endpoint='x')])
     a = m.bind('example.org')
