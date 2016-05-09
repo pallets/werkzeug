@@ -56,7 +56,8 @@ Since version 0.10, there are two backends the reloader supports: ``stat`` and
 
 - The ``watchdog`` backend uses filesystem events, and is much faster than
   ``stat``. It requires the `watchdog <https://pypi.python.org/pypi/watchdog>`_
-  module to be installed.
+  module to be installed. The recommended way to achieve this is to add
+  ``Werkzeug[watchdog]`` to your requirements file.
 
 If ``watchdog`` is installed and available it will automatically be used
 instead of the builtin ``stat`` reloader.
