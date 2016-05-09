@@ -21,6 +21,8 @@ Unreleased.
   in the user agent string.
 - Recognize SeaMonkey browser name and version correctly
 - Recognize Baiduspider, and bingbot user agents
+- If `LocalProxy`'s wrapped object is a function, refer to it with __wrapped__
+  attribute.
 
 Version 0.11.10
 ---------------
