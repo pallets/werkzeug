@@ -172,8 +172,8 @@ class LocalManager(object):
 
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them later
-    by appending them to `manager.locals`.  Everytime the manager cleans up
-    it, will clean up all the data left in the locals for this context.
+    by appending them to `manager.locals`.  Every time the manager cleans up,
+    it will clean up all the data left in the locals for this context.
 
     The `ident_func` parameter can be added to override the default ident
     function for the wrapped locals.
@@ -285,7 +285,7 @@ class LocalProxy(object):
         session = LocalProxy(lambda: get_current_request().session)
 
     .. versionchanged:: 0.6.1
-       The class can be instanciated with a callable as well now.
+       The class can be instantiated with a callable as well now.
     """
     __slots__ = ('__local', '__dict__', '__name__')
 
