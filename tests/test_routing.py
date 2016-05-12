@@ -522,11 +522,8 @@ def test_implicit_head():
 
 
 def test_pass_str_as_router_methods():
-    try:
+    with pytest.raises(TypeError):
         r.Rule('/get', methods='GET')
-        raise AssertionError
-    except Exception as e:
-        assert isinstance(e, TypeError)
 
 
 def test_protocol_joining_bug():
