@@ -21,6 +21,8 @@ Unreleased.
   in the user agent string.
 - Recognize SeaMonkey browser name and version correctly
 - Recognize Baiduspider, and bingbot user agents
+- If `LocalProxy`'s wrapped object is a function, refer to it with __wrapped__
+  attribute.
 
 Version 0.11.10
 ---------------
@@ -41,7 +43,7 @@ Released on April 24th 2016.
 - Corrected an Unicode error on Python 3 for the debugger's
   PIN usage.
 - Corrected the timestamp verification in the pin debug code.
-  Without this fix the pin was remebered until too long.
+  Without this fix the pin was remembered for too long.
 
 Version 0.11.8
 --------------

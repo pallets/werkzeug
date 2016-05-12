@@ -109,6 +109,9 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib'],
+    extras_require={
+        'watchdog': ['watchdog'],
+    },
     cmdclass=dict(test=TestCommand),
     include_package_data=True,
     zip_safe=False,
