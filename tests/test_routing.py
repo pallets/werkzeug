@@ -521,6 +521,11 @@ def test_implicit_head():
                   '/post', method='HEAD')
 
 
+def test_pass_str_as_router_methods():
+    with pytest.raises(TypeError):
+        r.Rule('/get', methods='GET')
+
+
 def test_protocol_joining_bug():
     m = r.Map([r.Rule('/<foo>', endpoint='x')])
     a = m.bind('example.org')
