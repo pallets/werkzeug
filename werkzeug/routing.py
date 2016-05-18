@@ -89,7 +89,7 @@
     If matching succeeded but the URL rule was incompatible to the given
     method (for example there were only rules for `GET` and `HEAD` and
     routing system tried to match a `POST` request) a `MethodNotAllowed`
-    method is raised.
+    exception is raised.
 
 
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
