@@ -359,7 +359,7 @@ def parse_options_header(value, multiple=False):
             optmatch = _option_header_piece_re.match(rest)
             if not optmatch:
                 break
-            option, encoding, language, option_value = optmatch.groups()
+            option, encoding, _, option_value = optmatch.groups()
             option = unquote_header_value(option)
             if option_value is not None:
                 option_value = unquote_header_value(
