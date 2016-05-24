@@ -813,6 +813,8 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024,
                           than the buffer size.  Internally this is implemented
                           that the buffer size might be exhausted by a factor
                           of two however.
+    .. versionadded:: 0.11.10
+       added support for the `cap_at_buffer` parameter.
     """
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
@@ -879,6 +881,9 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024,
     .. versionadded:: 0.9
        added support for iterators as input stream.
 
+    .. versionadded:: 0.11.10
+       added support for the `cap_at_buffer` parameter.
+
     :param stream: the stream or iterate to iterate over.
     :param separator: the separator that divides chunks.
     :param limit: the limit in bytes for the stream.  (Usually
@@ -923,7 +928,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024,
                 buf_size += len(item)
                 new_buf.append(item)
 
-                if cap_at_buffer and len(buf_size) >= buffer_size:
+                if cap_at_buffer and buf_size >= buffer_size:
                     rv = _join(new_buf)
                     while len(rv) >= buffer_size:
                         yield rv[:buffer_size]
