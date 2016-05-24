@@ -387,7 +387,8 @@ class MultiPartParser(object):
         last_part = next_part + b'--'
 
         iterator = chain(make_line_iter(file, limit=content_length,
-                                        buffer_size=self.buffer_size),
+                                        buffer_size=self.buffer_size,
+                                        cap_at_buffer=True),
                          _empty_string_iter)
 
         terminator = self._find_terminator(iterator)
