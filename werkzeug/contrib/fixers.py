@@ -134,7 +134,9 @@ class ConditionalProxyFix(object):
         for rule in num_proxy_rules:
             if len(rule) == 3 and rule[0]:
                 header, value, num_proxy = rule
-                self.num_proxy_rules.append(('HTTP_' + header.upper().replace('-', '_'), value, num_proxy))
+                self.num_proxy_rules.append(('HTTP_' + header.upper().replace('-', '_'),
+                                             value,
+                                             num_proxy))
 
         self.default_num_proxies = default_num_proxies
 
