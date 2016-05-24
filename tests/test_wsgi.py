@@ -381,6 +381,13 @@ def test_make_chunk_iter_bytes():
                                    buffer_size=4))
     assert rv == [b'abcdef', b'ghijkl', b'mnopqrstuvwxyz', b'ABCDEFGHIJK']
 
+    data = b'abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK'
+    test_stream = BytesIO(data)
+    rv = list(wsgi.make_chunk_iter(test_stream, 'X', limit=len(data),
+                                   buffer_size=4, cap_at_buffer=True))
+    assert rv == [b'abcd', b'ef', b'ghij', b'kl', b'mnop', b'qrst', b'uvwx',
+                  b'yz', b'ABCD', b'EFGH', b'IJK']
+
 
 def test_lines_longer_buffer_size():
     data = '1234567890\n1234567890\n'
@@ -388,3 +395,11 @@ def test_lines_longer_buffer_size():
         lines = list(wsgi.make_line_iter(NativeStringIO(data), limit=len(data),
                                          buffer_size=4))
         assert lines == ['1234567890\n', '1234567890\n']
+
+
+def test_lines_longer_buffer_size_cap():
+    data = '1234567890\n1234567890\n'
+    for bufsize in range(1, 15):
+        lines = list(wsgi.make_line_iter(NativeStringIO(data), limit=len(data),
+                                         buffer_size=4, cap_at_buffer=True))
+        assert lines == ['1234', '5678', '90\n', '1234', '5678', '90\n']

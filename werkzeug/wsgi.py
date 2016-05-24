@@ -784,7 +784,8 @@ def _make_chunk_iter(stream, limit, buffer_size):
         yield item
 
 
-def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
+def make_line_iter(stream, limit=None, buffer_size=10 * 1024,
+                   cap_at_buffer=False):
     """Safely iterates line-based over an input stream.  If the input stream
     is not a :class:`LimitedStream` the `limit` parameter is mandatory.
 
@@ -808,6 +809,12 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
                   content length.  Not necessary if the `stream`
                   is a :class:`LimitedStream`.
     :param buffer_size: The optional buffer size.
+    :param cap_at_buffer: if this is set chunks are split if they are longer
+                          than the buffer size.  Internally this is implemented
+                          that the buffer size might be exhausted by a factor
+                          of two however.
+    .. versionadded:: 0.11.10
+       added support for the `cap_at_buffer` parameter.
     """
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
@@ -831,11 +838,19 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
             if not new_data:
                 break
             new_buf = []
+            buf_size = 0
             for item in chain(buffer, new_data.splitlines(True)):
                 new_buf.append(item)
+                buf_size += len(item)
                 if item and item[-1:] in crlf:
                     yield _join(new_buf)
                     new_buf = []
+                elif cap_at_buffer and buf_size >= buffer_size:
+                    rv = _join(new_buf)
+                    while len(rv) >= buffer_size:
+                        yield rv[:buffer_size]
+                        rv = rv[buffer_size:]
+                    new_buf = [rv]
             buffer = new_buf
         if buffer:
             yield _join(buffer)
@@ -854,7 +869,8 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024):
         yield previous
 
 
-def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
+def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024,
+                    cap_at_buffer=False):
     """Works like :func:`make_line_iter` but accepts a separator
     which divides chunks.  If you want newline based processing
     you should use :func:`make_line_iter` instead as it
@@ -865,12 +881,19 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
     .. versionadded:: 0.9
        added support for iterators as input stream.
 
+    .. versionadded:: 0.11.10
+       added support for the `cap_at_buffer` parameter.
+
     :param stream: the stream or iterate to iterate over.
     :param separator: the separator that divides chunks.
     :param limit: the limit in bytes for the stream.  (Usually
                   content length.  Not necessary if the `stream`
                   is otherwise already limited).
     :param buffer_size: The optional buffer size.
+    :param cap_at_buffer: if this is set chunks are split if they are longer
+                          than the buffer size.  Internally this is implemented
+                          that the buffer size might be exhausted by a factor
+                          of two however.
     """
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
@@ -895,12 +918,24 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024):
             break
         chunks = _split(new_data)
         new_buf = []
+        buf_size = 0
         for item in chain(buffer, chunks):
             if item == separator:
                 yield _join(new_buf)
                 new_buf = []
+                buf_size = 0
             else:
+                buf_size += len(item)
                 new_buf.append(item)
+
+                if cap_at_buffer and buf_size >= buffer_size:
+                    rv = _join(new_buf)
+                    while len(rv) >= buffer_size:
+                        yield rv[:buffer_size]
+                        rv = rv[buffer_size:]
+                    new_buf = [rv]
+                    buf_size = len(rv)
+
         buffer = new_buf
     if buffer:
         yield _join(buffer)

@@ -154,7 +154,8 @@ class TestFormParser(object):
         class StreamMPP(formparser.MultiPartParser):
 
             def parse(self, file, boundary, content_length):
-                i = iter(self.parse_lines(file, boundary, content_length))
+                i = iter(self.parse_lines(file, boundary, content_length,
+                                          cap_at_buffer=False))
                 one = next(i)
                 two = next(i)
                 return self.cls(()), {'one': one, 'two': two}
