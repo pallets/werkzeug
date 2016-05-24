@@ -372,7 +372,7 @@ class MultiPartParser(object):
             # the assert is skipped.
             self.fail('Boundary longer than buffer size')
 
-    def parse_lines(self, file, boundary, content_length):
+    def parse_lines(self, file, boundary, content_length, cap_at_buffer=True):
         """Generate parts of
         ``('begin_form', (headers, name))``
         ``('begin_file', (headers, name, filename))``
@@ -388,7 +388,7 @@ class MultiPartParser(object):
 
         iterator = chain(make_line_iter(file, limit=content_length,
                                         buffer_size=self.buffer_size,
-                                        cap_at_buffer=True),
+                                        cap_at_buffer=cap_at_buffer),
                          _empty_string_iter)
 
         terminator = self._find_terminator(iterator)
