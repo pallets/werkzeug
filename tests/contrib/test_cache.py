@@ -139,6 +139,17 @@ class CacheTests(object):
         fast_sleep(timeout + 5)
         assert c.get('foo') is None
 
+    def test_generic_timeout_callable(self, c, fast_sleep):
+        def timeout():
+            return random.randint(1, 5)
+
+        c.set('foo', 'bar', timeout)
+        assert c.get('foo') == 'bar'
+        # sleep a bit longer than max timeout to ensure there are no
+        # race conditions
+        fast_sleep(11)
+        assert c.get('foo') is None
+
     def test_generic_has(self, c):
         assert c.has('foo') in (False, 0)
         assert c.has('spam') in (False, 0)

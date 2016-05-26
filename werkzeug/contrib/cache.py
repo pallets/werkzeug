@@ -293,6 +293,8 @@ class SimpleCache(BaseCache):
     def _get_expiration(self, timeout):
         if timeout is None:
             timeout = self.default_timeout
+        if callable(timeout):
+            timeout = timeout()
         if timeout > 0:
             timeout = time() + timeout
         return timeout
@@ -394,6 +396,8 @@ class MemcachedCache(BaseCache):
     def _normalize_timeout(self, timeout):
         if timeout is None:
             timeout = self.default_timeout
+        if callable(timeout):
+            timeout = timeout()
         if timeout > 0:
             timeout = int(time()) + timeout
         return timeout
@@ -565,6 +569,8 @@ class RedisCache(BaseCache):
     def _get_expiration(self, timeout):
         if timeout is None:
             timeout = self.default_timeout
+        if callable(timeout):
+            timeout = timeout()
         if timeout == 0:
             timeout = -1
         return timeout
@@ -757,8 +763,11 @@ class FileSystemCache(BaseCache):
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = int(time() + self.default_timeout)
-        elif timeout != 0:
-            timeout = int(time() + timeout)
+        else:
+            if callable(timeout):
+                timeout = timeout()
+            if timeout != 0:
+                timeout = int(time() + timeout)
         filename = self._get_filename(key)
         self._prune()
         try:
@@ -829,6 +838,8 @@ class UWSGICache(BaseCache):
     def _get_expiration(self, timeout):
         if timeout is None:
             timeout = self.default_timeout
+        if callable(timeout):
+            timeout = timeout()
         return timeout
 
     def get(self, key):
