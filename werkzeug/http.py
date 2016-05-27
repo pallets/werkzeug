@@ -27,7 +27,7 @@ try:
         unquote as _unquote
 except ImportError:  # pragma: no cover
     from urllib.request import parse_http_list as _parse_list_header, \
-        unquote as _unquote
+        unquote_to_bytes as _unquote
 from datetime import datetime, timedelta
 from hashlib import md5
 import base64
