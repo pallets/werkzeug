@@ -146,10 +146,10 @@ class CacheTests(object):
             'cache_timeout': 5
         }
 
-        def timeout():
-            return config.get('cache_timeout')
+        def timeout(cache_timeout):
+            return config.get(cache_timeout)
 
-        c.set('foo', 'bar', timeout)
+        c.set('foo', 'bar', lambda: timeout('cache_timeout'))
         assert c.get('foo') == 'bar'
         # sleep a bit longer than max timeout to ensure there are no
         # race conditions
