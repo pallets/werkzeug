@@ -102,6 +102,13 @@ class BaseCache(object):
     def __init__(self, default_timeout=300):
         self.default_timeout = default_timeout
 
+    def _normalize_timeout(self, timeout):
+        if timeout is None:
+            timeout = self.default_timeout
+        if callable(timeout):
+            timeout = timeout()
+        return timeout
+
     def get(self, key):
         """Look up key in the cache and return the value for it.
 
@@ -293,11 +300,8 @@ class SimpleCache(BaseCache):
             for key in toremove:
                 self._cache.pop(key, None)
 
-    def _get_expiration(self, timeout):
-        if timeout is None:
-            timeout = self.default_timeout
-        if callable(timeout):
-            timeout = timeout()
+    def _normalize_timeout(self, timeout):
+        timeout = BaseCache._normalize_timeout(self, timeout)
         if timeout > 0:
             timeout = time() + timeout
         return timeout
@@ -311,14 +315,14 @@ class SimpleCache(BaseCache):
             return None
 
     def set(self, key, value, timeout=None):
-        expires = self._get_expiration(timeout)
+        expires = self._normalize_timeout(timeout)
         self._prune()
         self._cache[key] = (expires, pickle.dumps(value,
                                                   pickle.HIGHEST_PROTOCOL))
         return True
 
     def add(self, key, value, timeout=None):
-        expires = self._get_expiration(timeout)
+        expires = self._normalize_timeout(timeout)
         self._prune()
         item = (expires, pickle.dumps(value,
                                       pickle.HIGHEST_PROTOCOL))
@@ -397,10 +401,7 @@ class MemcachedCache(BaseCache):
         return key
 
     def _normalize_timeout(self, timeout):
-        if timeout is None:
-            timeout = self.default_timeout
-        if callable(timeout):
-            timeout = timeout()
+        timeout = BaseCache._normalize_timeout(self, timeout)
         if timeout > 0:
             timeout = int(time()) + timeout
         return timeout
@@ -569,11 +570,8 @@ class RedisCache(BaseCache):
             self._client = host
         self.key_prefix = key_prefix or ''
 
-    def _get_expiration(self, timeout):
-        if timeout is None:
-            timeout = self.default_timeout
-        if callable(timeout):
-            timeout = timeout()
+    def _normalize_timeout(self, timeout):
+        timeout = BaseCache._normalize_timeout(self, timeout)
         if timeout == 0:
             timeout = -1
         return timeout
@@ -613,7 +611,7 @@ class RedisCache(BaseCache):
         return [self.load_object(x) for x in self._client.mget(keys)]
 
     def set(self, key, value, timeout=None):
-        timeout = self._get_expiration(timeout)
+        timeout = self._normalize_timeout(timeout)
         dump = self.dump_object(value)
         if timeout == -1:
             result = self._client.set(name=self.key_prefix + key,
@@ -624,7 +622,7 @@ class RedisCache(BaseCache):
         return result
 
     def add(self, key, value, timeout=None):
-        timeout = self._get_expiration(timeout)
+        timeout = self._normalize_timeout(timeout)
         dump = self.dump_object(value)
         return (
             self._client.setnx(name=self.key_prefix + key, value=dump) and
@@ -632,7 +630,7 @@ class RedisCache(BaseCache):
         )
 
     def set_many(self, mapping, timeout=None):
-        timeout = self._get_expiration(timeout)
+        timeout = self._normalize_timeout(timeout)
         # Use transaction=False to batch without calling redis MULTI
         # which is not supported by twemproxy
         pipe = self._client.pipeline(transaction=False)
@@ -708,6 +706,12 @@ class FileSystemCache(BaseCache):
             if ex.errno != errno.EEXIST:
                 raise
 
+    def _normalize_timeout(self, timeout):
+        timeout = BaseCache._normalize_timeout(self, timeout)
+        if timeout != 0:
+            timeout = time() + timeout
+        return int(timeout)
+
     def _list_dir(self):
         """return a list of (fully qualified) cache filenames
         """
@@ -764,13 +768,7 @@ class FileSystemCache(BaseCache):
         return False
 
     def set(self, key, value, timeout=None):
-        if timeout is None:
-            timeout = int(time() + self.default_timeout)
-        else:
-            if callable(timeout):
-                timeout = timeout()
-            if timeout != 0:
-                timeout = int(time() + timeout)
+        timeout = self._normalize_timeout(timeout)
         filename = self._get_filename(key)
         self._prune()
         try:
@@ -838,13 +836,6 @@ class UWSGICache(BaseCache):
 
         self.cache = cache
 
-    def _get_expiration(self, timeout):
-        if timeout is None:
-            timeout = self.default_timeout
-        if callable(timeout):
-            timeout = timeout()
-        return timeout
-
     def get(self, key):
         rv = self._uwsgi.cache_get(key, self.cache)
         if rv is None:
@@ -856,12 +847,13 @@ class UWSGICache(BaseCache):
 
     def set(self, key, value, timeout=None):
         return self._uwsgi.cache_update(key, pickle.dumps(value),
-                                        self._get_expiration(timeout),
+                                        self._normalize_timeout(timeout),
                                         self.cache)
 
     def add(self, key, value, timeout=None):
         return self._uwsgi.cache_set(key, pickle.dumps(value),
-                                     self._get_expiration(timeout), self.cache)
+                                     self._normalize_timeout(timeout),
+                                     self.cache)
 
     def clear(self):
         return self._uwsgi.cache_clear(self.cache)

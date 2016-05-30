@@ -43,7 +43,7 @@ Running the testsuite
 ---------------------
 
 You probably want to set up a `virtualenv
-<http://virtualenv.readthedocs.org/en/latest/index.html>`_.
+<https://virtualenv.readthedocs.io/en/latest/index.html>`_.
 
 Werkzeug must be installed for all tests to pass::
 
