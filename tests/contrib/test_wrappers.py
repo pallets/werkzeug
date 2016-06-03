@@ -23,7 +23,7 @@ def test_json_request_mixin():
         data=u'{"foä": "bar"}'.encode('utf-8'),
         content_type='text/json'
     )
-    assert req.json == {'foä': 'bar'}
+    assert req.json == {u'foä': 'bar'}
 
 
 def test_reverse_slash_behavior():
