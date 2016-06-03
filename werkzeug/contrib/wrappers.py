@@ -56,7 +56,7 @@ class JSONRequestMixin(object):
         if 'json' not in self.environ.get('CONTENT_TYPE', ''):
             raise BadRequest('Not a JSON request')
         try:
-            return loads(self.data)
+            return loads(self.data.decode(self.charset, self.encoding_errors))
         except Exception:
             raise BadRequest('Unable to read JSON request')
 
