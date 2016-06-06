@@ -23,9 +23,11 @@ try:
 except ImportError:  # pragma: no cover
     from email.Utils import parsedate_tz
 try:
-    from urllib2 import parse_http_list as _parse_list_header
+    from urllib2 import parse_http_list as _parse_list_header, \
+        unquote as _unquote
 except ImportError:  # pragma: no cover
-    from urllib.request import parse_http_list as _parse_list_header
+    from urllib.request import parse_http_list as _parse_list_header, \
+        unquote_to_bytes as _unquote
 from datetime import datetime, timedelta
 from hashlib import md5
 import base64
@@ -61,7 +63,8 @@ _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
 _quoted_string_re = r'"[^"\\]*(?:\\.[^"\\]*)*"'
 _option_header_piece_re = re.compile(
-    r';\s*(%s|[^\s;,=]+)\s*(?:=\s*(%s|[^;,]+)?)?\s*' %
+    r';\s*(%s|[^\s;,=\*]+)\s*'
+    r'(?:\*?=\s*(?:([^\s]+?)\'([^\s]*?)\')?(%s|[^;,]+)?)?\s*' %
     (_quoted_string_re, _quoted_string_re)
 )
 _option_header_start_mime_type = re.compile(r',\s*([^;,\s]+)([;,]\s*.+)?')
@@ -356,12 +359,14 @@ def parse_options_header(value, multiple=False):
             optmatch = _option_header_piece_re.match(rest)
             if not optmatch:
                 break
-            option, option_value = optmatch.groups()
+            option, encoding, _, option_value = optmatch.groups()
             option = unquote_header_value(option)
             if option_value is not None:
                 option_value = unquote_header_value(
                     option_value,
                     option == 'filename')
+                if encoding is not None:
+                    option_value = _unquote(option_value).decode(encoding)
             options[option] = option_value
             rest = rest[optmatch.end():]
         result.append(options)

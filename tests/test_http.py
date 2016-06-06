@@ -265,6 +265,20 @@ class TestHTTPUtility(object):
                                          '        '
                                          'text/x-dvi; q=0.8, text/x-c') == \
             ('text/plain', {'q': '0.5'})
+        # Issue #932
+        assert http.parse_options_header(
+            'form-data; '
+            'name="a_file"; '
+            'filename*=UTF-8\'\''
+            '"%c2%a3%20and%20%e2%82%ac%20rates"') == \
+            ('form-data', {'name': 'a_file',
+                           'filename': u'\xa3 and \u20ac rates'})
+        assert http.parse_options_header(
+            'form-data; '
+            'name*=UTF-8\'\'"%C5%AAn%C4%ADc%C5%8Dde%CC%BD"; '
+            'filename="some_file.txt"') == \
+            ('form-data', {'name': u'\u016an\u012dc\u014dde\u033d',
+                           'filename': 'some_file.txt'})
 
     def test_dump_options_header(self):
         assert http.dump_options_header('foo', {'bar': 42}) == \
