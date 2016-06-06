@@ -25,6 +25,8 @@ Unreleased.
   attribute.
 - The defaults of ``generate_password_hash`` have been changed to more secure
   ones, see pull request ``#753``.
+- Add support for encoding in options header parsing, see pull request
+  ``#933``.
 
 Version 0.11.11
 ---------------
