@@ -23,11 +23,11 @@ try:
 except ImportError:  # pragma: no cover
     from email.Utils import parsedate_tz
 try:
-    from urllib2 import parse_http_list as _parse_list_header, \
-        unquote as _unquote
-except ImportError:  # pragma: no cover
     from urllib.request import parse_http_list as _parse_list_header
     from urllib.parse import unquote_to_bytes as _unquote
+except ImportError:  # pragma: no cover
+    from urllib2 import parse_http_list as _parse_list_header, \
+        unquote as _unquote
 from datetime import datetime, timedelta
 from hashlib import md5
 import base64
