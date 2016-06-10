@@ -27,6 +27,8 @@ Unreleased.
   ones, see pull request ``#753``.
 - Add support for encoding in options header parsing, see pull request
   ``#933``.
+- ``test.Client`` now properly handles Location headers with relative URLs, see
+  pull request ``#879``.
 
 Version 0.11.11
 ---------------
