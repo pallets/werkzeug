@@ -11,8 +11,6 @@
 
 from __future__ import with_statement
 
-import pytest
-
 from werkzeug.contrib import wrappers
 from werkzeug import routing
 from werkzeug.wrappers import Request, Response
@@ -97,4 +95,3 @@ def test_dynamic_charset_response_mixin():
         pass
     else:
         assert False, 'expected type error on charset setting without ct'
-

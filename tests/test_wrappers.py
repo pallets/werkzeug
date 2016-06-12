@@ -1024,6 +1024,7 @@ def test_json_mixin_invalid_json():
         elif isinstance(e, json.decoder.JSONDecodeError):
             pass
 
+
 class TestSetCookie(object):
     """Tests for :meth:`werkzeug.wrappers.BaseResponse.set_cookie`."""
 
