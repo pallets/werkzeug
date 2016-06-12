@@ -1830,6 +1830,7 @@ class JSONMixin(object):
     def json(self, **kwargs):
         return json.loads(self.response[0].decode(self.charset), **kwargs)
 
+
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
               UserAgentMixin, AuthorizationMixin,
               CommonRequestDescriptorsMixin):

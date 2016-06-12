@@ -8,6 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import json
 import pytest
 
 import pickle
@@ -1000,6 +1001,28 @@ def test_request_method_case_sensitivity():
     req = wrappers.Request({'REQUEST_METHOD': 'get'})
     assert req.method == 'GET'
 
+
+def test_json_mixin_happy_path():
+    payload = {"hello": "world"}
+
+    resp = wrappers.Response(response=json.dumps(payload))
+
+    assert resp.json() == payload
+
+
+def test_json_mixin_invalid_json():
+    resp = wrappers.Response(response="this is not valid json")
+
+    # this convoluted logic is because json module in python2 doesnt have
+    # json.decoder.JSONDecodeError, which leads to an attribute error. This way
+    # we can test python2 and python3.
+    try:
+        resp.json()
+    except Exception as e:
+        if isinstance(e, ValueError):
+            pass
+        elif isinstance(e, json.decoder.JSONDecodeError):
+            pass
 
 class TestSetCookie(object):
     """Tests for :meth:`werkzeug.wrappers.BaseResponse.set_cookie`."""
