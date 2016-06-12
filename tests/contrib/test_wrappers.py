@@ -10,6 +10,9 @@
 """
 
 from __future__ import with_statement
+import json
+
+import pytest
 
 from werkzeug.contrib import wrappers
 from werkzeug import routing
@@ -95,3 +98,18 @@ def test_dynamic_charset_response_mixin():
         pass
     else:
         assert False, 'expected type error on charset setting without ct'
+
+
+def test_json_mixin_happy_path():
+    payload = {"hello": "world"}
+
+    resp = Response(response=json.dumps(payload))
+
+    assert resp.json() == payload
+
+
+@pytest.mark.xfail(raises=json.JSONDecodeError)
+def test_json_mixin_invalid_json():
+    resp = Response(response="this is not valid json")
+
+    resp.json()

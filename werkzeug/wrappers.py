@@ -22,6 +22,7 @@
 """
 from functools import update_wrapper
 from datetime import datetime, timedelta
+import json
 
 from werkzeug.http import HTTP_STATUS_CODES, \
     parse_accept_header, parse_cache_control_header, parse_etags, \
@@ -1823,6 +1824,12 @@ class WWWAuthenticateMixin(object):
         return parse_www_authenticate_header(header, on_update)
 
 
+class JSONMixin(object):
+    """Adds a :method:`json` to parse response payloads"""
+
+    def json(self, **kwargs):
+        return json.loads(self.response[0].decode(self.charset), **kwargs)
+
 class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
               UserAgentMixin, AuthorizationMixin,
               CommonRequestDescriptorsMixin):
@@ -1846,8 +1853,8 @@ class PlainRequest(StreamOnlyMixin, Request):
 
 
 class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
-               CommonResponseDescriptorsMixin,
-               WWWAuthenticateMixin):
+               CommonResponseDescriptorsMixin, WWWAuthenticateMixin,
+               JSONMixin):
 
     """Full featured response object implementing the following mixins:
 
@@ -1855,4 +1862,5 @@ class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
     - :class:`ResponseStreamMixin` to add support for the `stream` property
     - :class:`CommonResponseDescriptorsMixin` for various HTTP descriptors
     - :class:`WWWAuthenticateMixin` for HTTP authentication support
+    - :class:`JSONMixin` for parsing JSON payloads
     """
