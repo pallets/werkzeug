@@ -8,13 +8,14 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import sys
-import mimetypes
-from time import time
-from random import random
 from itertools import chain
-from tempfile import TemporaryFile
 from io import BytesIO
+import json as _json # using an alias to avoid problems with a `json` param
+import mimetypes
+from random import random
+import sys
+from time import time
+from tempfile import TemporaryFile
 
 try:
     from urllib2 import Request as U2Request
@@ -285,7 +286,8 @@ class EnvironBuilder(object):
                  method='GET', input_stream=None, content_type=None,
                  content_length=None, errors_stream=None, multithread=False,
                  multiprocess=False, run_once=False, headers=None, data=None,
-                 environ_base=None, environ_overrides=None, charset='utf-8'):
+                 environ_base=None, environ_overrides=None, charset='utf-8',
+                 json=None):
         path_s = make_literal_wrapper(path)
         if query_string is None and path_s('?') in path:
             path, query_string = path.split(path_s('?'), 1)
@@ -338,6 +340,27 @@ class EnvironBuilder(object):
                         self._add_file_from_data(key, value)
                     else:
                         self.form.setlistdefault(key).append(value)
+        if json:
+            input_count = 0
+            for input_source in (data, json, input_stream):
+                input_count += 1 if input_source else 0
+
+            if input_count > 1:
+                raise TypeError(
+                    'can\'t provide more than one: (input stream, data, json)'
+                )
+
+            if not isinstance(json, dict):
+                raise TypeError('json parameter must be of type dict')
+
+            json = _json.dumps(json)
+            json = json.encode(self.charset)
+
+            self.input_stream = BytesIO(json)
+            if self.content_type is None:
+                self.content_type = 'application/json'
+            if self.content_length is None:
+                self.content_length = len(json)
 
     def _add_file_from_data(self, key, value):
         """Called in the EnvironBuilder to add files from the data dict."""
