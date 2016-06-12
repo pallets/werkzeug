@@ -459,7 +459,7 @@ def test_json_request_non_dictionary():
     c = Client(json_app, response_wrapper=BaseResponse)
     payload = "not a dict"
 
-    resp = c.post('/', json=payload)
+    c.post('/', json=payload)
 
 
 @pytest.mark.xfail(raises=TypeError)
@@ -467,7 +467,7 @@ def test_json_request_multiple_input_sources():
     c = Client(json_app, response_wrapper=BaseResponse)
     payload = {"hello": "world"}
 
-    resp = c.post('/', json=payload, data="have some data")
+    c.post('/', json=payload, data="have some data")
 
 
 @pytest.mark.xfail(raises=TypeError)
@@ -475,7 +475,7 @@ def test_json_request_invalid_json():
     c = Client(json_app, response_wrapper=BaseResponse)
     payload = {"json cant encode python objects": object}
 
-    resp = c.post('/', json=payload)
+    c.post('/', json=payload)
 
 
 def test_iri_support():

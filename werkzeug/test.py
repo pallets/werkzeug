@@ -10,7 +10,7 @@
 """
 from itertools import chain
 from io import BytesIO
-import json as _json # using an alias to avoid problems with a `json` param
+import json as _json  # using an alias to avoid problems with a `json` param
 import mimetypes
 from random import random
 import sys
