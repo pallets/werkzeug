@@ -324,9 +324,12 @@ class EnvironBuilder(object):
         self.content_length = content_length
         self.closed = False
 
+        if len([True for input in (data, json, input_stream) if input]) > 1:
+            raise TypeError(
+                'can\'t provide more than one: (input stream, data, json)'
+            )
+
         if data:
-            if input_stream is not None:
-                raise TypeError('can\'t provide input stream and data')
             if isinstance(data, text_type):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
@@ -340,16 +343,8 @@ class EnvironBuilder(object):
                         self._add_file_from_data(key, value)
                     else:
                         self.form.setlistdefault(key).append(value)
+
         if json:
-            input_count = 0
-            for input_source in (data, json, input_stream):
-                input_count += 1 if input_source else 0
-
-            if input_count > 1:
-                raise TypeError(
-                    'can\'t provide more than one: (input stream, data, json)'
-                )
-
             if not isinstance(json, dict):
                 raise TypeError('json parameter must be of type dict')
 
