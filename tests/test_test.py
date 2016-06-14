@@ -92,7 +92,7 @@ def multi_value_post_app(environ, start_response):
 def json_app(environ, start_response):
     req = Request(environ)
 
-    json.loads(req.data.decode('utf-8'))
+    assert json.loads(req.data.decode('utf-8')) == {"hello": "world"}
     assert req.content_type == 'application/json'
 
     response = Response('ok')
