@@ -268,6 +268,7 @@ class EnvironBuilder(object):
     :param run_once: controls `wsgi.run_once`.  Defaults to `False`.
     :param headers: an optional list or :class:`Headers` object of headers.
     :param data: a string or dict of form data.  See explanation above.
+    :param json: a dict to be json encoded and sent as the request body.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
     :param charset: the charset used to encode unicode data.
