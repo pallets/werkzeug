@@ -466,6 +466,18 @@ class UnprocessableEntity(HTTPException):
     )
 
 
+class Locked(HTTPException):
+
+    """*423* `Locked`
+
+    Used if the resource that is being accessed is locked.
+    """
+    code = 423
+    description = (
+        'The resource that is being accessed is locked.'
+    )
+
+
 class PreconditionRequired(HTTPException):
 
     """*428* `Precondition Required`
