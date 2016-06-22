@@ -466,6 +466,19 @@ class UnprocessableEntity(HTTPException):
     )
 
 
+class Locked(HTTPException):
+
+    """*423* `Locked`
+
+    The status code means the source or destination resource of a method is
+    locked.
+    """
+    code = 423
+    description = (
+        'The resource that is being accessed is locked.'
+    )
+
+
 class PreconditionRequired(HTTPException):
 
     """*428* `Precondition Required`
