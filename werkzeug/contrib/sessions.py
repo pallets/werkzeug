@@ -27,7 +27,7 @@ r"""
     This module does not implement methods or ways to check if a session is
     expired.  That should be done by a cronjob and storage specific.  For
     example to prune unused filesystem sessions one could check the modified
-    time of the files.  It sessions are stored in the database the new()
+    time of the files.  If sessions are stored in the database the new()
     method should add an expiration timestamp for the session.
 
     For better flexibility it's recommended to not use the middleware but the
