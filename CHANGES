@@ -29,6 +29,8 @@ Unreleased.
   ``#933``.
 - ``test.Client`` now properly handles Location headers with relative URLs, see
   pull request ``#879``.
+- Add Response.json() method, for convenient json parsing of response bodies, see
+  pull request ``#949``.
 
 Version 0.11.11
 ---------------
