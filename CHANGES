@@ -9,7 +9,7 @@ Unreleased.
 - Spit out big deprecation warnings for werkzeug.script
 - Use `inspect.getfullargspec` internally when available as
   `inspect.getargspec` is gone in 3.6
-- Added support for status code 451.
+- Added support for status code 451 and 423
 - Improved the build error suggestions.  In particular only if
   someone stringifies the error will the suggestions be calculated.
 - Added support for uWSGI's caching backend.
