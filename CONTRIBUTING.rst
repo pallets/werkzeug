@@ -52,7 +52,7 @@ Werkzeug must be installed for all tests to pass::
 The minimal requirement for running the testsuite is ``py.test``.  You can
 install it with::
 
-    pip install pytest
+    pip install pytest mock
 
 Then you can run the testsuite with::
 
