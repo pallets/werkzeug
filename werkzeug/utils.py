@@ -267,8 +267,8 @@ def secure_filename(filename):
     'i_contain_cool_umlauts.txt'
 
     The function might return an empty filename.  It's your responsibility
-    to ensure that the filename is unique and that you generate random
-    filename if the function returned an empty one.
+    to ensure that the filename is unique and that you abort or
+    generate a random filename if the function returned an empty one.
 
     .. versionadded:: 0.5
 
