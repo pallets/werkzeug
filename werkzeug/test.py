@@ -350,7 +350,7 @@ class EnvironBuilder(object):
                 raise TypeError('json parameter must be of type dict')
 
             json = _json.dumps(json)
-            json = json.encode(self.charset)
+            json = to_bytes(json, charset)
 
             self.input_stream = BytesIO(json)
             if self.content_type is None:
