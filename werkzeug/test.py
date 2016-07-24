@@ -327,7 +327,7 @@ class EnvironBuilder(object):
 
         if len([True for input in (data, json, input_stream) if input]) > 1:
             raise TypeError(
-                'can\'t provide more than one: (input stream, data, json)'
+                'can\'t provide more than one of: (input stream, data, json)'
             )
 
         if data:
