@@ -272,6 +272,15 @@ def test_environ_builder_unicode_file_mix():
         stream.close()
 
 
+def test_environ_builder_mix_files_and_non_strings():
+    d = MultiDict(dict(
+        f=(BytesIO(u'hello world'.encode('utf-8')), 'hello.txt'),
+        t=42,
+    ))
+    # this should not fail
+    stream_encode_multipart(d)
+
+
 def test_create_environ():
     env = create_environ('/foo?bar=baz', 'http://example.org/')
     expected = {
