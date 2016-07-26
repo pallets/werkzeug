@@ -17,9 +17,6 @@ release:
 test:
 	py.test --tb=native
 
-stylecheck:
-	flake8
-
 tox-test:
 	tox
 
