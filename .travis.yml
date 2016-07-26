@@ -8,17 +8,20 @@ python:
     - 3.4
     - 3.5
 env:
-    - TOXENV=py-normal
-    - TOXENV=py-uwsgi
+    - TOXENV_SUFFIX=normal
+    - TOXENV_SUFFIX=stylecheck
+    - TOXENV_SUFFIX=uwsgi
 
 matrix:
     exclude:
         - python: pypy
-          env: TOXENV=py-uwsgi
+          env: TOXENV_SUFFIX=uwsgi
+        - python: 2.6  # flake8 doesn't run on 2.6
+          env: TOXENV_SUFFIX=stylecheck
     include:
         - os: osx
           language: generic
-          env: TOXENV=py-normal
+          env: TOXENV_SUFFIX=normal
 
 os: linux
 
@@ -46,8 +49,7 @@ install:
     - pip install tox flake8
 
 script:
-    - tox
-    - make stylecheck
+    - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d . | sed -e 's/pypypy/pypy/')-$TOXENV_SUFFIX
 
 branches:
     only:
