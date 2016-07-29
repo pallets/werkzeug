@@ -156,10 +156,10 @@ class HTTPException(Exception):
         return response(environ, start_response)
 
     def __str__(self):
-        return '%d: %s' % (self.code, self.name)
+        return '%r %s: %s' % (self.code, self.name, self.description)
 
     def __repr__(self):
-        return '<%s \'%s\'>' % (self.__class__.__name__, self)
+        return "<%s '%r: %s'>" % (self.__class__.__name__, self.code, self.name)
 
 
 class BadRequest(HTTPException):

@@ -29,6 +29,8 @@ Unreleased.
   ``#933``.
 - ``test.Client`` now properly handles Location headers with relative URLs, see
   pull request ``#879``.
+- When `HTTPException` is raised, it now prints the description, for easier
+  debugging.
 
 Version 0.11.11
 ---------------
