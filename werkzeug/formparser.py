@@ -286,15 +286,11 @@ class MultiPartParser(object):
 
     def __init__(self, stream_factory=None, charset='utf-8', errors='replace',
                  max_form_memory_size=None, cls=None, buffer_size=64 * 1024):
-        self.stream_factory = stream_factory
         self.charset = charset
         self.errors = errors
         self.max_form_memory_size = max_form_memory_size
-        if stream_factory is None:
-            stream_factory = default_stream_factory
-        if cls is None:
-            cls = MultiDict
-        self.cls = cls
+        self.stream_factory = default_stream_factory if stream_factory is None else stream_factory
+        self.cls = MultiDict if cls is None else cls
 
         # make sure the buffer size is divisible by four so that we can base64
         # decode chunk by chunk
