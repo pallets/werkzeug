@@ -454,29 +454,28 @@ def test_json_request():
     assert resp.status_code == 200
 
 
-@pytest.mark.xfail(raises=TypeError)
 def test_json_request_non_dictionary():
     c = Client(json_app, response_wrapper=BaseResponse)
     payload = "not a dict"
 
-    c.post('/', json=payload)
+    with pytest.raises(TypeError):
+        c.post('/', json=payload)
 
 
-@pytest.mark.xfail(raises=TypeError)
 def test_json_request_multiple_input_sources():
     c = Client(json_app, response_wrapper=BaseResponse)
     payload = {"hello": "world"}
 
-    c.post('/', json=payload, data="have some data")
+    with pytest.raises(TypeError):
+        c.post('/', json=payload, data="have some data")
 
 
-@pytest.mark.xfail(raises=TypeError)
 def test_json_request_invalid_json():
     c = Client(json_app, response_wrapper=BaseResponse)
     payload = {"json cant encode python objects": object}
 
-    c.post('/', json=payload)
-
+    with pytest.raises(TypeError):
+        c.post('/', json=payload)
 
 def test_iri_support():
     b = EnvironBuilder(u'/föö-bar', base_url=u'http://☃.net/')
