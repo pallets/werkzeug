@@ -477,9 +477,10 @@ def test_json_request_invalid_json():
     with pytest.raises(TypeError):
         c.post('/', json=payload)
 
+
 def test_request_with_no_payload():
     def base_app(environ, start_response):
-        req = Request(environ)
+        Request(environ)  # instantiate Request, just to validate payload-less requests work
         response = Response('ok')
         return response(environ, start_response)
 
