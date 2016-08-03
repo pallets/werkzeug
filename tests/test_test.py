@@ -477,6 +477,17 @@ def test_json_request_invalid_json():
     with pytest.raises(TypeError):
         c.post('/', json=payload)
 
+def test_request_with_no_payload():
+    def base_app(environ, start_response):
+        req = Request(environ)
+        response = Response('ok')
+        return response(environ, start_response)
+
+    c = Client(base_app, response_wrapper=BaseResponse)
+
+    c.post('/')
+
+
 def test_iri_support():
     b = EnvironBuilder(u'/föö-bar', base_url=u'http://☃.net/')
     strict_eq(b.path, '/f%C3%B6%C3%B6-bar')
