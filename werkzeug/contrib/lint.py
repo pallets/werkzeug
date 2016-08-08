@@ -19,7 +19,7 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from urlparse import urlparse
+from werkzeug.urls import url_parse
 from warnings import warn
 
 from werkzeug.datastructures import Headers
@@ -286,7 +286,7 @@ class LintMiddleware(object):
 
         location = headers.get('location')
         if location is not None:
-            if not urlparse(location).netloc:
+            if not url_parse(location).netloc:
                 warn(HTTPWarning('absolute URLs required for location header'),
                      stacklevel=4)
 
