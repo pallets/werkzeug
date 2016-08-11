@@ -84,7 +84,7 @@ Released on April 14th 2016.
   brute force via trying cookies.  Please keep in mind that the debugger
   *is not intended for running on production environments*
 - increased the pin timeout to a week to make it less annoying for people
-  which should decrease the change that users disable the pin check
+  which should decrease the chance that users disable the pin check
   entirely.
 - werkzeug.serving: Fix broken HTTP_HOST when path starts with double slash.
 
