@@ -29,6 +29,7 @@ Unreleased.
   ``#933``.
 - ``test.Client`` now properly handles Location headers with relative URLs, see
   pull request ``#879``.
+- Fix the import of `urlparse` for Python 3 in the contribution module for LintMiddleware.
 
 Version 0.11.11
 ---------------
