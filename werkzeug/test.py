@@ -8,13 +8,14 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import sys
-import mimetypes
-from time import time
-from random import random
 from itertools import chain
-from tempfile import TemporaryFile
 from io import BytesIO
+import json as _json  # using an alias to avoid problems with a `json` param
+import mimetypes
+from random import random
+import sys
+from time import time
+from tempfile import TemporaryFile
 
 try:
     from urllib2 import Request as U2Request
@@ -267,6 +268,7 @@ class EnvironBuilder(object):
     :param run_once: controls `wsgi.run_once`.  Defaults to `False`.
     :param headers: an optional list or :class:`Headers` object of headers.
     :param data: a string or dict of form data.  See explanation above.
+    :param json: a dict to be json encoded and sent as the request body.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
     :param charset: the charset used to encode unicode data.
@@ -285,7 +287,8 @@ class EnvironBuilder(object):
                  method='GET', input_stream=None, content_type=None,
                  content_length=None, errors_stream=None, multithread=False,
                  multiprocess=False, run_once=False, headers=None, data=None,
-                 environ_base=None, environ_overrides=None, charset='utf-8'):
+                 environ_base=None, environ_overrides=None, charset='utf-8',
+                 json=None):
         path_s = make_literal_wrapper(path)
         if query_string is None and path_s('?') in path:
             path, query_string = path.split(path_s('?'), 1)
@@ -322,9 +325,12 @@ class EnvironBuilder(object):
         self.content_length = content_length
         self.closed = False
 
+        if len([True for input in (data, json, input_stream) if input]) > 1:
+            raise TypeError(
+                'can\'t provide more than one of: (input stream, data, json)'
+            )
+
         if data:
-            if input_stream is not None:
-                raise TypeError('can\'t provide input stream and data')
             if isinstance(data, text_type):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
@@ -338,6 +344,19 @@ class EnvironBuilder(object):
                         self._add_file_from_data(key, value)
                     else:
                         self.form.setlistdefault(key).append(value)
+
+        if json:
+            if not isinstance(json, dict):
+                raise TypeError('json parameter must be of type dict')
+
+            json = _json.dumps(json)
+            json = to_bytes(json, charset)
+
+            self.input_stream = BytesIO(json)
+            if self.content_type is None:
+                self.content_type = 'application/json'
+            if self.content_length is None:
+                self.content_length = len(json)
 
     def _add_file_from_data(self, key, value):
         """Called in the EnvironBuilder to add files from the data dict."""

@@ -29,6 +29,8 @@ Unreleased.
   ``#933``.
 - ``test.Client`` now properly handles Location headers with relative URLs, see
   pull request ``#879``.
+- ``test.Client`` request methods (post, put, etc) now accepts a json keyword
+  argument of type dict. See pull request ``#950``.
 
 Version 0.11.11
 ---------------

@@ -17,6 +17,7 @@ import sys
 from io import BytesIO
 from werkzeug._compat import iteritems, to_bytes, implements_iterator
 from functools import partial
+import json
 
 from tests import strict_eq
 
@@ -84,6 +85,16 @@ def multi_value_post_app(environ, start_response):
     req = Request(environ)
     assert req.form['field'] == 'val1', req.form['field']
     assert req.form.getlist('field') == ['val1', 'val2'], req.form.getlist('field')
+    response = Response('ok')
+    return response(environ, start_response)
+
+
+def json_app(environ, start_response):
+    req = Request(environ)
+
+    assert json.loads(req.data.decode('utf-8')) == {"hello": "world"}
+    assert req.content_type == 'application/json'
+
     response = Response('ok')
     return response(environ, start_response)
 
@@ -433,6 +444,49 @@ def test_multi_value_submit():
     })
     resp = c.post('/', data=data)
     strict_eq(resp.status_code, 200)
+
+
+def test_json_request():
+    c = Client(json_app, response_wrapper=BaseResponse)
+    payload = {"hello": "world"}
+
+    resp = c.post('/', json=payload)
+    assert resp.status_code == 200
+
+
+def test_json_request_non_dictionary():
+    c = Client(json_app, response_wrapper=BaseResponse)
+    payload = "not a dict"
+
+    with pytest.raises(TypeError):
+        c.post('/', json=payload)
+
+
+def test_json_request_multiple_input_sources():
+    c = Client(json_app, response_wrapper=BaseResponse)
+    payload = {"hello": "world"}
+
+    with pytest.raises(TypeError):
+        c.post('/', json=payload, data="have some data")
+
+
+def test_json_request_invalid_json():
+    c = Client(json_app, response_wrapper=BaseResponse)
+    payload = {"json cant encode python objects": object}
+
+    with pytest.raises(TypeError):
+        c.post('/', json=payload)
+
+
+def test_request_with_no_payload():
+    def base_app(environ, start_response):
+        Request(environ)  # instantiate Request, just to validate payload-less requests work
+        response = Response('ok')
+        return response(environ, start_response)
+
+    c = Client(base_app, response_wrapper=BaseResponse)
+
+    c.post('/')
 
 
 def test_iri_support():
