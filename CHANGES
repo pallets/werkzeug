@@ -29,6 +29,8 @@ Unreleased.
   ``#933``.
 - ``test.Client`` now properly handles Location headers with relative URLs, see
   pull request ``#879``.
+- Werkzeug's dict-like datastructures now have ``view``-methods under Python 2,
+  see pull request ``#968``.
 
 Version 0.11.11
 ---------------
