@@ -937,7 +937,7 @@ class BaseResponse(object):
             self._ensure_sequence()
         except RuntimeError:
             return None
-        return sum(len(x) for x in self.response)
+        return len(self.get_data())
 
     def _ensure_sequence(self, mutable=False):
         """This method can be called by methods that need a sequence.  If

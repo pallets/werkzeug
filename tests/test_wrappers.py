@@ -850,6 +850,11 @@ def test_new_response_iterator_behavior():
         assert resp.response == ['foo', 'bar', 'baz']
 
 
+def test_response_content_length_uses_encode():
+    r = wrappers.Response(u'你好')
+    assert r.calculate_content_length() == 6
+
+
 def test_form_data_ordering():
     class MyRequest(wrappers.Request):
         parameter_storage_class = ImmutableOrderedMultiDict
