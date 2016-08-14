@@ -33,6 +33,7 @@ Unreleased.
   see pull request ``#968``.
 - Fix a bug in ``MultiPartParser`` when no ``stream_factory`` was provided
   during initialization, see pull request ``#973``.
+- Changed ``Authorization.qop`` type from ``HeaderSet`` to ``string``.
 
 Version 0.11.11
 ---------------
