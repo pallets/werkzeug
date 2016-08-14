@@ -354,6 +354,7 @@ class MemcachedCache(BaseCache):
         - ``pylibmc``
         - ``google.appengine.api.memcached``
         - ``memcached``
+        - ``libmc``
 
     Implementation notes:  This cache backend works around some limitations in
     memcached to simplify the interface.  For example unicode keys are encoded
@@ -505,6 +506,13 @@ class MemcachedCache(BaseCache):
             pass
         else:
             return memcache.Client(servers)
+
+        try:
+            import libmc
+        except ImportError:
+            pass
+        else:
+            return libmc.Client(servers)
 
 
 # backwards compatibility
