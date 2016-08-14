@@ -377,6 +377,38 @@ class TestMultiDict(_MutableMultiDictTests):
         assert list(zip(iterkeys(md), iterlistvalues(md))) == \
             list(iterlists(md))
 
+    @pytest.mark.skipif(not PY2, reason='viewmethods work only for the 2-nd version.')
+    def test_view_methods(self):
+        mapping = [('a', 'b'), ('a', 'c')]
+        md = self.storage_class(mapping)
+
+        vi = md.viewitems()
+        vk = md.viewkeys()
+        vv = md.viewvalues()
+
+        assert list(vi) == list(md.items())
+        assert list(vk) == list(md.keys())
+        assert list(vv) == list(md.values())
+
+        md['k'] = 'n'
+
+        assert list(vi) == list(md.items())
+        assert list(vk) == list(md.keys())
+        assert list(vv) == list(md.values())
+
+    @pytest.mark.skipif(not PY2, reason='viewmethods work only for the 2-nd version.')
+    def test_viewitems_with_multi(self):
+        mapping = [('a', 'b'), ('a', 'c')]
+        md = self.storage_class(mapping)
+
+        vi = md.viewitems(multi=True)
+
+        assert list(vi) == list(md.items(multi=True))
+
+        md['k'] = 'n'
+
+        assert list(vi) == list(md.items(multi=True))
+
 
 class TestOrderedMultiDict(_MutableMultiDictTests):
     storage_class = datastructures.OrderedMultiDict

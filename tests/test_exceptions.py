@@ -81,8 +81,8 @@ def test_exception_repr():
     assert repr(exc) == "<NotFound '404: Not Found'>"
 
     exc = exceptions.HTTPException('An error message')
-    assert text_type(exc) == 'None Unknown Error: An error message'
-    assert repr(exc) == "<HTTPException 'None: Unknown Error'>"
+    assert text_type(exc) == '??? Unknown Error: An error message'
+    assert repr(exc) == "<HTTPException '???: Unknown Error'>"
 
 
 def test_special_exceptions():
