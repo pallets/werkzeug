@@ -99,8 +99,8 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
             else:
                 if not isinstance(value, string_types):
                     value = str(value)
-                else:
-                    value = to_bytes(value, charset)
+
+                value = to_bytes(value, charset)
                 write('\r\n\r\n')
                 write_binary(value)
             write('\r\n')
