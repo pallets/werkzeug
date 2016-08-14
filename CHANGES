@@ -29,6 +29,11 @@ Unreleased.
   ``#933``.
 - ``test.Client`` now properly handles Location headers with relative URLs, see
   pull request ``#879``.
+- Werkzeug's dict-like datastructures now have ``view``-methods under Python 2,
+  see pull request ``#968``.
+- Fix a bug in ``MultiPartParser`` when no ``stream_factory`` was provided
+  during initialization, see pull request ``#973``.
+- Changed ``Authorization.qop`` type from ``HeaderSet`` to ``string``.
 
 Version 0.11.11
 ---------------
@@ -84,7 +89,7 @@ Released on April 14th 2016.
   brute force via trying cookies.  Please keep in mind that the debugger
   *is not intended for running on production environments*
 - increased the pin timeout to a week to make it less annoying for people
-  which should decrease the change that users disable the pin check
+  which should decrease the chance that users disable the pin check
   entirely.
 - werkzeug.serving: Fix broken HTTP_HOST when path starts with double slash.
 

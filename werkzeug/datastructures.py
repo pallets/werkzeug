@@ -52,7 +52,14 @@ def native_itermethods(names):
     if not PY2:
         return lambda x: x
 
-    def setmethod(cls, name):
+    def setviewmethod(cls, name):
+        viewmethod_name = 'view%s' % name
+        viewmethod = lambda self, *a, **kw: ViewItems(self, name, 'view_%s' % name, *a, **kw)
+        viewmethod.__doc__ = \
+            '"""`%s()` object providing a view on %s"""' % (viewmethod_name, name)
+        setattr(cls, viewmethod_name, viewmethod)
+
+    def setitermethod(cls, name):
         itermethod = getattr(cls, name)
         setattr(cls, 'iter%s' % name, itermethod)
         listmethod = lambda self, *a, **kw: list(itermethod(self, *a, **kw))
@@ -62,7 +69,8 @@ def native_itermethods(names):
 
     def wrap(cls):
         for name in names:
-            setmethod(cls, name)
+            setitermethod(cls, name)
+            setviewmethod(cls, name)
         return cls
     return wrap
 
@@ -321,6 +329,25 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
 
     def __copy__(self):
         return self
+
+
+class ViewItems(object):
+
+    def __init__(self, multi_dict, method, repr_name, *a, **kw):
+        self.__multi_dict = multi_dict
+        self.__method = method
+        self.__repr_name = repr_name
+        self.__a = a
+        self.__kw = kw
+
+    def __get_items(self):
+        return getattr(self.__multi_dict, self.__method)(*self.__a, **self.__kw)
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__repr_name, list(self.__get_items()))
+
+    def __iter__(self):
+        return iter(self.__get_items())
 
 
 @native_itermethods(['keys', 'values', 'items', 'lists', 'listvalues'])

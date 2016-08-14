@@ -399,6 +399,24 @@ class TestMultiPart(object):
         assert files == MultiDict()
 
 
+class TestMultiPartParser(object):
+
+    def test_constructor_not_pass_stream_factory_and_cls(self):
+        parser = formparser.MultiPartParser()
+
+        assert parser.stream_factory is formparser.default_stream_factory
+        assert parser.cls is MultiDict
+
+    def test_constructor_pass_stream_factory_and_cls(self):
+        def stream_factory():
+            pass
+
+        parser = formparser.MultiPartParser(stream_factory=stream_factory, cls=dict)
+
+        assert parser.stream_factory is stream_factory
+        assert parser.cls is dict
+
+
 class TestInternalFunctions(object):
 
     def test_line_parser(self):
