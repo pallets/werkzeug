@@ -1,31 +1,6 @@
 Werkzeug Changelog
 ==================
 
-Version 0.12
-------------
-
-Unreleased.
-
-- Spit out big deprecation warnings for werkzeug.script
-- Use `inspect.getfullargspec` internally when available as
-  `inspect.getargspec` is gone in 3.6
-- Added support for status code 451.
-- Improved the build error suggestions.  In particular only if
-  someone stringifies the error will the suggestions be calculated.
-- Added support for uWSGI's caching backend.
-- Fix a bug where iterating over a `FileStorage` would result in an infinite
-  loop.
-- Datastructures now inherit from the relevant baseclasses from the
-  `collections` module in the stdlib. See #794.
-- Add support for recognizing NetBSD, OpenBSD, FreeBSD, DragonFlyBSD platforms
-  in the user agent string.
-- Recognize SeaMonkey browser name and version correctly
-- Recognize Baiduspider, and bingbot user agents
-- If `LocalProxy`'s wrapped object is a function, refer to it with __wrapped__
-  attribute.
-- The defaults of ``generate_password_hash`` have been changed to more secure
-  ones, see pull request ``#753``.
-
 Version 0.11.11
 ---------------
 
