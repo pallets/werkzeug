@@ -29,6 +29,8 @@ Unreleased.
   ``#933``.
 - ``test.Client`` now properly handles Location headers with relative URLs, see
   pull request ``#879``.
+- When `HTTPException` is raised, it now prints the description, for easier
+  debugging.
 - Werkzeug's dict-like datastructures now have ``view``-methods under Python 2,
   see pull request ``#968``.
 - Fix a bug in ``MultiPartParser`` when no ``stream_factory`` was provided

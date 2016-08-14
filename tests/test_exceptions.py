@@ -70,12 +70,19 @@ def test_aborter_custom():
 
 def test_exception_repr():
     exc = exceptions.NotFound()
-    assert text_type(exc) == '404: Not Found'
+    assert text_type(exc) == (
+        '404 Not Found: The requested URL was not found '
+        'on the server.  If you entered the URL manually please check your '
+        'spelling and try again.')
     assert repr(exc) == "<NotFound '404: Not Found'>"
 
     exc = exceptions.NotFound('Not There')
-    assert text_type(exc) == '404: Not Found'
+    assert text_type(exc) == '404 Not Found: Not There'
     assert repr(exc) == "<NotFound '404: Not Found'>"
+
+    exc = exceptions.HTTPException('An error message')
+    assert text_type(exc) == '??? Unknown Error: An error message'
+    assert repr(exc) == "<HTTPException '???: Unknown Error'>"
 
 
 def test_special_exceptions():

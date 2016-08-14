@@ -156,10 +156,12 @@ class HTTPException(Exception):
         return response(environ, start_response)
 
     def __str__(self):
-        return '%d: %s' % (self.code, self.name)
+        code = self.code if self.code is not None else '???'
+        return '%s %s: %s' % (code, self.name, self.description)
 
     def __repr__(self):
-        return '<%s \'%s\'>' % (self.__class__.__name__, self)
+        code = self.code if self.code is not None else '???'
+        return "<%s '%s: %s'>" % (self.__class__.__name__, code, self.name)
 
 
 class BadRequest(HTTPException):
