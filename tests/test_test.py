@@ -143,6 +143,7 @@ def test_environ_builder_basics():
     assert b.content_type == 'application/x-www-form-urlencoded'
     b.files.add_file('test', BytesIO(b'test contents'), 'test.txt')
     assert b.files['test'].content_type == 'text/plain'
+    b.form['test_int'] = 1
     assert b.content_type == 'multipart/form-data'
 
     req = b.get_request()
