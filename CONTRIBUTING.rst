@@ -49,24 +49,21 @@ Werkzeug must be installed for all tests to pass::
 
     pip install -e .
 
-The minimal requirement for running the testsuite is ``py.test``.  You can
-install it with::
+The minimal requirements for running the testsuite is ``py.test`` and
+``requests``.  You can install it with::
 
-    pip install pytest
+    pip install pytest requests
 
 Then you can run the testsuite with::
 
     py.test
 
-With only py.test installed, a large part of the testsuite will get skipped
-though.  Whether this is relevant depends on which part of Werkzeug you're
-working on.  Travis is set up to run the full testsuite when you submit your
-pull request anyways.
-
-If you really want to test everything, you will have to install ``tox`` instead
-of ``pytest``. You can install it with::
+Some tests will be skipped due to missing optional test dependencies.  Whether
+this is relevant depends on which part of Werkzeug you're working on.  If you
+really want to test everything, you will have to install ``tox`` instead of
+``pytest``. You can install it with::
 
     pip install tox
 
-The ``tox`` command will then run all tests against multiple combinations
-Python versions and dependency versions.
+The ``tox`` command will then run all tests against multiple combinations Python
+versions and dependency versions. Travis will run ``tox`` on all pull requests.
