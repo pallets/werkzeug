@@ -890,14 +890,23 @@ class Client(object):
                 or not follow_redirects
             ):
                 break
+
+            # Exhaust intermediate response bodies to ensure middleware
+            # that returns an iterator runs any cleanup code.
+            if not buffered:
+                for _ in response[0]:
+                    pass
+
             new_location = response[2]['location']
             new_redirect_entry = (new_location, status_code)
             if new_redirect_entry in redirect_chain:
                 raise ClientRedirectError('loop detected')
             redirect_chain.append(new_redirect_entry)
-            environ, response = self.resolve_redirect(response, new_location,
-                                                      environ,
-                                                      buffered=buffered)
+            environ, response = self.resolve_redirect(
+                response,
+                new_location,
+                environ, buffered=buffered
+            )
 
         if self.response_wrapper is not None:
             response = self.response_wrapper(*response)

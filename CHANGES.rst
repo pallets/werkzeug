@@ -130,6 +130,9 @@ Unreleased
     -   :class:`~test.EnvironBuilder` sets the content type and length
         headers in addition to the WSGI keys when detecting them from
         the data.
+    -   Intermediate response bodies are iterated over even when
+        ``buffered=False`` to ensure iterator middleware can run cleanup
+        code safely. Only the last response is not buffered. (`#988`_)
 
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -142,6 +145,7 @@ Unreleased
 .. _`#768`: https://github.com/pallets/werkzeug/pull/768
 .. _`#772`: https://github.com/pallets/werkzeug/pull/772
 .. _`#795`: https://github.com/pallets/werkzeug/pull/795
+.. _`#988`: https://github.com/pallets/werkzeug/pull/988
 .. _`#1019`: https://github.com/pallets/werkzeug/issues/1019
 .. _`#1023`: https://github.com/pallets/werkzeug/issues/1023
 .. _`#1141`: https://github.com/pallets/werkzeug/issues/1141
