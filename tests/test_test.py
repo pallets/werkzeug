@@ -14,6 +14,7 @@ from __future__ import with_statement
 import pytest
 
 import sys
+import threading
 from io import BytesIO
 from werkzeug._compat import iteritems, to_bytes, implements_iterator
 from functools import partial
@@ -609,3 +610,43 @@ def test_delete_requests_with_form():
     client = Client(test_app, Response)
     resp = client.delete('/', data={'x': 42})
     strict_eq(resp.data, b'42')
+
+
+def test_middleware_is_executed_as_expected_on_internal_redirect():
+    class SomeMiddleware(object):
+        def __init__(self, app):
+            self.app = app
+            self.thread_local = threading.local()
+
+        def __call__(self, environ, start_response):
+            self.thread_local.stuff = 'value'
+            try:
+                for chunk in self.app(environ, start_response):
+                    yield chunk
+            finally:
+                del self.thread_local.stuff
+
+    client = Client(SomeMiddleware(redirect_with_get_app))
+    # Buffering needs to be off and we need to follow redirects for this
+    # test to make sense
+    response = client.get('/', follow_redirects=True, buffered=False)
+
+    # This used to trigger an AttributeError in the "del self.thread_local.stuff"
+    # line because of the following order of events:
+    #
+    # * We request /, our middleware is called, sets the attribute and forwards
+    #   the call to the application
+    # * The application redirects to another page, the test code stops consuming
+    #   the response iterator
+    # * Test code internally requests the URL we got redirected too, this calls
+    #   our middleware again and the attribute "stuff" is assigned again
+    # * The last reference to the first response iterator goes out of scope
+    #   and the "stuff" attribute deletion is triggered
+    # * Below we consume the whole response, at the end of that our middleware
+    #   attempts to delete the no longer existing attribute
+    #
+    # The problem got solved by making sure the test code consume the whole
+    # response even in case of redirect so that middleware calls don't overlap
+    # within a single thread.
+    for chunk in response[0]:
+        pass

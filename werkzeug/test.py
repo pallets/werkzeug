@@ -761,6 +761,15 @@ class Client(object):
             if status_code not in (301, 302, 303, 305, 307) \
                or not follow_redirects:
                 break
+
+            # In case of internal redirect we need to exhaust the iterator
+            # in order for a WSGI middleware (if present) to finish its
+            # processing before we call the application again, see the following
+            # test for details:
+            # test_middleware_is_executed_as_expected_on_internal_redirectas
+            for part in response[0]:
+                pass
+
             new_location = response[2]['location']
             new_redirect_entry = (new_location, status_code)
             if new_redirect_entry in redirect_chain:
