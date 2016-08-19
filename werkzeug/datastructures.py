@@ -372,6 +372,8 @@ class MultiDict(TypeConversionDict):
             tmp = {}
             for key, value in iteritems(mapping):
                 if isinstance(value, (tuple, list)):
+                    if len(value) == 0:
+                        continue
                     value = list(value)
                 else:
                     value = [value]
@@ -398,7 +400,9 @@ class MultiDict(TypeConversionDict):
         :raise KeyError: if the key does not exist.
         """
         if key in self:
-            return dict.__getitem__(self, key)[0]
+            lst = dict.__getitem__(self, key)
+            if len(lst) > 0:
+                return lst[0]
         raise exceptions.BadRequestKeyError(key)
 
     def __setitem__(self, key, value):

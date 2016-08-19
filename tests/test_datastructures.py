@@ -377,6 +377,14 @@ class TestMultiDict(_MutableMultiDictTests):
         assert list(zip(iterkeys(md), iterlistvalues(md))) == \
             list(iterlists(md))
 
+    def test_getitem_raise_badrequestkeyerror_for_empty_list_value(self):
+        mapping = [('a', 'b'), ('a', 'c')]
+        md = self.storage_class(mapping)
+
+        md.setlistdefault('empty', [])
+
+        with pytest.raises(KeyError):
+            md['empty']
 
 class TestOrderedMultiDict(_MutableMultiDictTests):
     storage_class = datastructures.OrderedMultiDict
