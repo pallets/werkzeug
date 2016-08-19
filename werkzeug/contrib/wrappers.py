@@ -101,7 +101,7 @@ class RoutingArgsRequestMixin(object):
     """This request mixin adds support for the wsgiorg routing args
     `specification`_.
 
-    .. _specification: http://wsgi.readthedocs.io/en/latest/specifications/routing_args.html
+    .. _specification: https://wsgi.readthedocs.io/en/latest/specifications/routing_args.html
     """
 
     def _get_routing_args(self):
