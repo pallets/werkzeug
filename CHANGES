@@ -41,6 +41,8 @@ Unreleased.
   ``#907``.
 - Fix a bug when using ``SharedDataMiddleware`` with frozen packages, see pull
   request ``#959``.
+- `Range` header parsing function fixed for invalid values ``#974``.
+- Add support for byte Range Requests, see pull request ``#978``.
 
 Version 0.11.11
 ---------------

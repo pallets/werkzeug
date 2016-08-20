@@ -321,6 +321,23 @@ class TestHTTPUtility(object):
         assert http.is_resource_modified(env,
                                          last_modified=datetime(2008, 1, 1, 13, 00))
 
+        # Range Request specific
+        del env['HTTP_IF_NONE_MATCH']
+        env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(datetime(2008, 1, 1, 12, 30))
+        env['HTTP_IF_RANGE'] = http.generate_etag(b'awesome_if_range')
+        assert not http.is_resource_modified(env, data=b'awesome_if_range',
+                                             ignore_if_range=False)
+        assert http.is_resource_modified(env, data=b'not_the_same',
+                                         ignore_if_range=False)
+
+        env['HTTP_IF_RANGE'] = http.http_date(datetime(2008, 1, 1, 13, 30))
+        assert http.is_resource_modified(env, last_modified=datetime(2008, 1, 1, 14, 00),
+                                         ignore_if_range=False)
+        assert not http.is_resource_modified(env, last_modified=datetime(2008, 1, 1, 13, 30),
+                                             ignore_if_range=False)
+        assert http.is_resource_modified(env, last_modified=datetime(2008, 1, 1, 13, 30),
+                                         ignore_if_range=True)
+
     def test_date_formatting(self):
         assert http.cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
         assert http.cookie_date(datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
@@ -453,6 +470,21 @@ class TestRange(object):
         assert rv.units == 'awesomes'
         assert rv.ranges == [(0, 1000)]
         assert rv.to_header() == 'awesomes=0-999'
+
+        rv = http.parse_range_header('bytes=-')
+        assert rv is None
+
+        rv = http.parse_range_header('bytes=bullshit')
+        assert rv is None
+
+        rv = http.parse_range_header('bytes=bullshit-1')
+        assert rv is None
+
+        rv = http.parse_range_header('bytes=-bullshit')
+        assert rv is None
+
+        rv = http.parse_range_header('bytes=52-99, bullshit')
+        assert rv is None
 
     def test_content_range_parsing(self):
         rv = http.parse_content_range_header('bytes 0-98/*')

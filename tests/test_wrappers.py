@@ -8,6 +8,8 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import os
+
 import pytest
 
 import pickle
@@ -18,8 +20,8 @@ from werkzeug._compat import iteritems
 from tests import strict_eq
 
 from werkzeug import wrappers
-from werkzeug.exceptions import SecurityError
-from werkzeug.wsgi import LimitedStream
+from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable
+from werkzeug.wsgi import LimitedStream, wrap_file
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
     ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
     MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
@@ -537,6 +539,85 @@ def test_etag_response_mixin():
     response.content_length = 999
     response.make_conditional(env)
     assert response.content_length == 999
+
+
+def test_range_request_basic():
+    env = create_environ()
+    response = wrappers.Response('Hello World')
+    response.headers['Range'] = 'bytes=0-4'
+    response.make_conditional(env, accept_ranges=True, complete_length=11,
+                              ignore_invalid_range_requests=True)
+    assert response.status_code == 206
+    assert response.headers['Accept-Ranges'] == 'bytes'
+    assert response.headers['Content-Range'] == 'bytes 0-4/11'
+    assert response.headers['Content-Length'] == '5'
+    assert response.data == b'Hello'
+
+
+def test_range_request_with_file():
+    env = create_environ()
+    resources = os.path.join(os.path.dirname(__file__), 'res')
+    fname = os.path.join(resources, 'test.txt')
+    with open(fname, 'rb') as f:
+        fcontent = f.read()
+    with open(fname, 'rb') as f:
+        response = wrappers.Response(wrap_file(env, f))
+        response.headers['Range'] = 'bytes=0-0'
+        response.make_conditional(env, accept_ranges=True, complete_length=11,
+                                  ignore_invalid_range_requests=True)
+        assert response.status_code == 206
+        assert response.headers['Accept-Ranges'] == 'bytes'
+        assert response.headers['Content-Range'] == 'bytes 0-0/11'
+        assert response.headers['Content-Length'] == '1'
+        assert response.data == fcontent[:1]
+
+
+def test_range_request_with_complete_file():
+    env = create_environ()
+    resources = os.path.join(os.path.dirname(__file__), 'res')
+    fname = os.path.join(resources, 'test.txt')
+    with open(fname, 'rb') as f:
+        fcontent = f.read()
+    with open(fname, 'rb') as f:
+        fsize = os.path.getsize(fname)
+        response = wrappers.Response(wrap_file(env, f))
+        response.headers['Range'] = 'bytes=0-%d' % (fsize - 1)
+        response.make_conditional(env, accept_ranges=True,
+                                  complete_length=fsize,
+                                  ignore_invalid_range_requests=True)
+        assert response.status_code == 200
+        assert response.headers['Accept-Ranges'] == 'bytes'
+        assert 'Content-Range' not in response.headers
+        assert response.headers['Content-Length'] == str(fsize)
+        assert response.data == fcontent
+
+
+def test_range_request_without_complete_length():
+    env = create_environ()
+    response = wrappers.Response('Hello World')
+    response.headers['Range'] = 'bytes=-'
+    response.make_conditional(env, accept_ranges=True, complete_length=None,
+                              ignore_invalid_range_requests=True)
+    assert response.status_code == 200
+    assert response.data == b'Hello World'
+
+
+def test_invalid_range_request():
+    env = create_environ()
+    # invalid Range Request
+    response = wrappers.Response('Hello World')
+    response.headers['Range'] = 'bytes=-'
+    response.make_conditional(env, accept_ranges=True, complete_length=11,
+                              ignore_invalid_range_requests=True)
+    assert response.status_code == 200
+    assert response.data == b'Hello World'
+
+    # invalid Range Request with 416 Exception
+    response = wrappers.Response('Hello World')
+    response.headers['Range'] = 'bytes=-'
+    with pytest.raises(RequestedRangeNotSatisfiable):
+        response.make_conditional(env, accept_ranges=True, complete_length=11,
+                                  ignore_invalid_range_requests=False)
 
 
 def test_etag_response_mixin_freezing():

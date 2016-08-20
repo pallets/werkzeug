@@ -414,8 +414,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
 
     """*416* `Requested Range Not Satisfiable`
 
-    The client asked for a part of the file that lies beyond the end
-    of the file.
+    The client asked for an invalid part of the file.
 
     .. versionadded:: 0.7
     """
@@ -423,6 +422,21 @@ class RequestedRangeNotSatisfiable(HTTPException):
     description = (
         'The server cannot provide the requested range.'
     )
+
+    def __init__(self, length=None, units="bytes", description=None):
+        """Takes an optional `Content-Range` header value based on ``length``
+        parameter.
+        """
+        HTTPException.__init__(self, description)
+        self.length = length
+        self.units = units
+
+    def get_headers(self, environ):
+        headers = HTTPException.get_headers(self, environ)
+        if self.length is not None:
+            headers.append(
+                ('Content-Range', '%s */%d' % (self.units, self.length)))
+        return headers
 
 
 class ExpectationFailed(HTTPException):
