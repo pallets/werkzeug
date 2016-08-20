@@ -954,6 +954,21 @@ def test_form_data_ordering():
     assert req.values.getlist('foo') == ['1', '3']
 
 
+def test_response_get_data_cache_behavior():
+    data_1 = b'foo=Hello+World'
+    data_2 = b'foo=Hello+World+new'
+    r = wrappers.Response()
+    r.set_data(data_1)
+
+    assert r.get_data(cache=True) == data_1
+    assert r.get_data(cache=True) == data_1
+
+    r.set_data(data_2)
+
+    assert r.get_data(cache=True) == data_2
+    assert r.get_data(cache=True) == data_2
+
+
 def test_storage_classes():
     class MyRequest(wrappers.Request):
         dict_storage_class = dict

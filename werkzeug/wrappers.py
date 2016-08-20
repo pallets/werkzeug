@@ -827,6 +827,15 @@ class BaseResponse(object):
         else:
             self.response = response
 
+    def _set_response(self, value):
+        self._cached_data = None
+        self.__response = value
+
+    def _get_response(self):
+        return self.__response
+
+    response = property(_get_response, _set_response)
+
     def call_on_close(self, func):
         """Adds a function to the internal list of functions that should
         be called as part of closing down the response.  Since 0.7 this
@@ -928,7 +937,7 @@ class BaseResponse(object):
     status = property(_get_status, _set_status, doc='The HTTP Status code')
     del _get_status, _set_status
 
-    def get_data(self, as_text=False):
+    def get_data(self, as_text=False, cache=False):
         """The string representation of the request body.  Whenever you call
         this property the request iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
@@ -939,12 +948,21 @@ class BaseResponse(object):
         If `as_text` is set to `True` the return value will be a decoded
         unicode string.
 
+        If `cache` is set to `True` the value will be cached.
+
         .. versionadded:: 0.9
         """
-        self._ensure_sequence()
-        rv = b''.join(self.iter_encoded())
+
+        rv = getattr(self, '_cached_data', None)
+        if rv is None:
+            self._ensure_sequence()
+            rv = b''.join(self.iter_encoded())
+            if cache:
+                self._cached_data = rv
+
         if as_text:
             rv = rv.decode(self.charset)
+
         return rv
 
     def set_data(self, value):
