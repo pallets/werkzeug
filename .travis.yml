@@ -25,7 +25,7 @@ install:
 
 script:
     - tox -e py
-    - '["$TRAVIS_PYTHON_VERSION" = "2.6" ] || make stylecheck'
+    - '[ "$TRAVIS_PYTHON_VERSION" = "2.6" ] || make stylecheck'
 
 branches:
   except:
