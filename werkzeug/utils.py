@@ -561,6 +561,14 @@ def bind_arguments(func, args, kwargs):
     return values
 
 
+def ensure_list(value):
+    """Checks if the value is a list and if not transform it in a list"""
+    if not isinstance(value, (list, tuple)):
+        return [value]
+    else:
+        return list(value)
+
+
 class ArgumentValidationError(ValueError):
 
     """Raised if :func:`validate_arguments` fails to validate"""

@@ -394,21 +394,18 @@ class MultiDict(TypeConversionDict):
     """
 
     def __init__(self, mapping=None):
+        from werkzeug.utils import ensure_list
         if isinstance(mapping, MultiDict):
             dict.__init__(self, ((k, l[:]) for k, l in iterlists(mapping)))
         elif isinstance(mapping, dict):
             tmp = {}
             for key, value in iteritems(mapping):
-                if isinstance(value, (tuple, list)):
-                    value = list(value)
-                else:
-                    value = [value]
-                tmp[key] = value
+                tmp[key] = ensure_list(value)
             dict.__init__(self, tmp)
         else:
             tmp = {}
             for key, value in mapping or ():
-                tmp.setdefault(key, []).append(value)
+                tmp.setdefault(key, []).extend(ensure_list(value))
             dict.__init__(self, tmp)
 
     def __getstate__(self):
