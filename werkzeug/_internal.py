@@ -44,8 +44,10 @@ _octal_re = re.compile(b'\\\\[0-3][0-7][0-7]')
 _quote_re = re.compile(b'[\\\\].')
 _legal_cookie_chars_re = b'[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]'
 _cookie_re = re.compile(b"""(?x)
-    (?P<key>[^=]+)
-    \s*=\s*
+    (
+        (?P<key>[^=]+)
+        \s*=\s*
+    )? # Without equals sign, the key is empty - see http://stackoverflow.com/a/1969339/4455114
     (?P<val>
         "(?:[^\\\\"]|\\\\.)*" |
          (?:.*?)
@@ -282,8 +284,8 @@ def _cookie_parse_impl(b):
         if not match:
             break
 
-        key = match.group('key').strip()
-        value = match.group('val')
+        key = (match.group('key') or '').strip()
+        value = match.group('val').strip()
         i = match.end(0)
 
         # Ignore parameters.  We have no interest in them.

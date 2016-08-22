@@ -321,13 +321,14 @@ class TestHTTPUtility(object):
     def test_cookies(self):
         strict_eq(
             dict(http.parse_cookie('dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd'
-                                   'c762809248d4beed; a=42; b="\\\";"')),
+                                   'c762809248d4beed; a=42; b="\\\";"; BLANKKEY')),
             {
                 'CP':           u'null*',
                 'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
                 'a':            u'42',
                 'dismiss-top':  u'6',
-                'b':            u'\";'
+                'b':            u'\";',
+                '':             u'BLANKKEY',
             }
         )
         rv = http.dump_cookie('foo', 'bar baz blub', 360, httponly=True,

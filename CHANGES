@@ -35,6 +35,8 @@ Unreleased.
   see pull request ``#968``.
 - Fix a bug in ``MultiPartParser`` when no ``stream_factory`` was provided
   during initialization, see pull request ``#973``.
+- Cookies without equals signs are now parsed as having an empty key, see pull
+  request ``#989``.
 
 Version 0.11.11
 ---------------
