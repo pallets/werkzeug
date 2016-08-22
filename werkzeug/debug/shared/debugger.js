@@ -182,7 +182,7 @@ function openShell(consoleNode, target, frameID) {
     }).
     appendTo(consoleNode);
 
-  var command = $('<input type="text">')
+  var command = $('<input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">')
     .appendTo(form)
     .keydown(function(e) {
       if (e.charCode == 100 && e.ctrlKey) {
