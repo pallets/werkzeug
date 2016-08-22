@@ -35,6 +35,8 @@ Unreleased.
   see pull request ``#968``.
 - Fix a bug in ``MultiPartParser`` when no ``stream_factory`` was provided
   during initialization, see pull request ``#973``.
+- Disable autocorrect and spellchecker in the debugger middleware's Python
+  prompt, see pull request ``#994``.
 
 Version 0.11.11
 ---------------
