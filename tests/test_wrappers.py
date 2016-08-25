@@ -681,6 +681,15 @@ def test_form_parsing_failed():
     assert not request.files
     assert not request.form
 
+    # Bad Content-Type
+    data = 'test'
+    request = wrappers.Request.from_values(
+        input_stream=BytesIO(data),
+        content_length=len(data),
+        content_type=', ',
+        method='POST'
+    )
+    assert not request.form
 
 def test_file_closing():
     data = (b'--foo\r\n'
