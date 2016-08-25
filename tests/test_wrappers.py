@@ -671,17 +671,15 @@ def test_shallow_mode():
 
 
 def test_form_parsing_failed():
-    data = (
-        b'--blah\r\n'
-    )
-    data = wrappers.Request.from_values(
+    data = b'--blah\r\n'
+    request = wrappers.Request.from_values(
         input_stream=BytesIO(data),
         content_length=len(data),
         content_type='multipart/form-data; boundary=foo',
         method='POST'
     )
-    assert not data.files
-    assert not data.form
+    assert not request.files
+    assert not request.form
 
 
 def test_file_closing():
