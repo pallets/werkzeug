@@ -37,6 +37,9 @@ Unreleased.
   during initialization, see pull request ``#973``.
 - Disable autocorrect and spellchecker in the debugger middleware's Python
   prompt, see pull request ``#994``.
+- Fix a bug in ``parse_options_header`` where an invalid content type
+  starting with comma or semi-colon would result in an invalid return value,
+  see issue ``#995``.
 
 Version 0.11.11
 ---------------

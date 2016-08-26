@@ -279,6 +279,13 @@ class TestHTTPUtility(object):
             'filename="some_file.txt"') == \
             ('form-data', {'name': u'\u016an\u012dc\u014dde\u033d',
                            'filename': 'some_file.txt'})
+        # Issue #995
+        assert http.parse_options_header(' ') == ('', {})
+        assert http.parse_options_header(' , ') == ('', {})
+        assert http.parse_options_header(' ; ') == ('', {})
+        assert http.parse_options_header(' ,; ') == ('', {})
+        assert http.parse_options_header(' , a ') == ('', {})
+        assert http.parse_options_header(' ; a ') == ('', {})
 
     def test_parse_options_header_broken_values(self):
         # Issue #995
