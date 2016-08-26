@@ -266,6 +266,15 @@ class TestHTTPUtility(object):
                                          'text/x-dvi; q=0.8, text/x-c') == \
             ('text/plain', {'q': '0.5'})
 
+    def test_parse_options_header_broken_values(self):
+        # Issue #995
+        assert http.parse_options_header(' ') == ('', {})
+        assert http.parse_options_header(' , ') == ('', {})
+        assert http.parse_options_header(' ; ') == ('', {})
+        assert http.parse_options_header(' ,; ') == ('', {})
+        assert http.parse_options_header(' , a ') == ('', {})
+        assert http.parse_options_header(' ; a ') == ('', {})
+
     def test_dump_options_header(self):
         assert http.dump_options_header('foo', {'bar': 42}) == \
             'foo; bar=42'

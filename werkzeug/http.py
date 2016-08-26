@@ -336,7 +336,6 @@ def parse_options_header(value, multiple=False):
     :return: (mimetype, options) or (mimetype, options, mimetype, options, …)
              if multiple=True
     """
-
     if not value:
         return '', {}
 
@@ -368,7 +367,7 @@ def parse_options_header(value, multiple=False):
             return tuple(result)
         value = rest
 
-    return tuple(result)
+    return tuple(result) if result else ('', {})
 
 
 def parse_accept_header(value, cls=None):
