@@ -49,8 +49,7 @@ install:
     - pip install tox flake8
 
 script:
-    - tox -e py
-    - '[ "$TRAVIS_PYTHON_VERSION" = "2.6" ] || make stylecheck'
+    - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d . | sed -e 's/pypypy/pypy/')-$TOXENV_SUFFIX
 
 branches:
     only:
