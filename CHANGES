@@ -45,6 +45,9 @@ Bugfix release, unreleased.
 
 - Fix JSONRequestMixin for Python3. See #731
 - Fix broken string handling in test client when passing integers. See #852
+- Fix a bug in ``parse_options_header`` where an invalid content type
+  starting with comma or semi-colon would result in an invalid return value,
+  see issue ``#995``.
 
 Version 0.11.10
 ---------------
@@ -322,7 +325,7 @@ Version 0.9.7
   object (pull request ``#583``).
 - The ``qop`` parameter for ``WWW-Authenticate`` headers is now always quoted,
   as required by RFC 2617 (issue ``#633``).
-- Fix bug in ``werkzeug.contrib.cache.SimpleCache`` with Python 3 where add/set 
+- Fix bug in ``werkzeug.contrib.cache.SimpleCache`` with Python 3 where add/set
   may throw an exception when pruning old entries from the cache (pull request
   ``#651``).
 

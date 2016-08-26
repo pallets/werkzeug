@@ -280,6 +280,15 @@ class TestHTTPUtility(object):
             ('form-data', {'name': u'\u016an\u012dc\u014dde\u033d',
                            'filename': 'some_file.txt'})
 
+    def test_parse_options_header_broken_values(self):
+        # Issue #995
+        assert http.parse_options_header(' ') == ('', {})
+        assert http.parse_options_header(' , ') == ('', {})
+        assert http.parse_options_header(' ; ') == ('', {})
+        assert http.parse_options_header(' ,; ') == ('', {})
+        assert http.parse_options_header(' , a ') == ('', {})
+        assert http.parse_options_header(' ; a ') == ('', {})
+
     def test_dump_options_header(self):
         assert http.dump_options_header('foo', {'bar': 42}) == \
             'foo; bar=42'
