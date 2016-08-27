@@ -650,7 +650,7 @@ def test_form_parsing_failed():
     assert not request.form
 
     # Bad Content-Type
-    data = 'test'
+    data = b'test'
     request = wrappers.Request.from_values(
         input_stream=BytesIO(data),
         content_length=len(data),
