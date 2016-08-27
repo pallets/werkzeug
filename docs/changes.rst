@@ -24,7 +24,7 @@ API Changes
         strongly encouraged to update.
     -   The :class:`Headers` and :class:`EnvironHeaders` datastructures
         are now designed to operate on unicode data.  This is a backwards
-        incomaptible change and was necessary for the Python 3 support.
+        incompatible change and was necessary for the Python 3 support.
     -   The :class:`Headers` object no longer supports in-place operations
         through the old ``linked`` method.  This has been removed without
         replacement due to changes on the encoding model.
@@ -72,7 +72,7 @@ API Changes
     -   Some data structures that were only used on request objects are
         now immutable as well.  (:class:`Authorization` / :class:`Accept`
         and subclasses)
-    -   `CacheControl` was splitted up into :class:`RequestCacheControl`
+    -   `CacheControl` was split up into :class:`RequestCacheControl`
         and :class:`ResponseCacheControl`, the former being immutable.
         The old class will go away in 0.6
     -   undocumented `werkzeug.test.File` was replaced by

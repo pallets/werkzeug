@@ -66,7 +66,7 @@ Released on April 24th 2016.
 
 - Corrected an issue that caused the debugger not to use the
   machine GUID on POSIX systems.
-- Corrected an Unicode error on Python 3 for the debugger's
+- Corrected a Unicode error on Python 3 for the debugger's
   PIN usage.
 - Corrected the timestamp verification in the pin debug code.
   Without this fix the pin was remembered for too long.
@@ -138,7 +138,7 @@ Released on November 12th 2015.
 - Fixed SSL wrapping on platforms that supported opening sockets
   by file descriptor.
 - No longer log from the watchdog reloader.
-- Unicode errors in hosts are now better catched or converted into
+- Unicode errors in hosts are now better caught or converted into
   bad request errors.
 
 Version 0.11.1
@@ -399,7 +399,7 @@ Version 0.9.2
 - Fixed a deprecation warning in the contrib atom module.
 - Fixed a regression with setting of content types through the
   headers dictionary instead with the content type parameter.
-- Use correct name for stdlib secure string comparision function.
+- Use correct name for stdlib secure string comparison function.
 - Fixed a wrong reference in the docstring of
   :func:`~werkzeug.local.release_local`.
 - Fixed an `AttributeError` that sometimes occurred when accessing the
@@ -466,8 +466,8 @@ Released on June 13nd 2013, codename Planierraupe.
 - Added support to profiling into directories in the contrib profiler.
 - The escape function now by default escapes quotes.
 - Changed repr of exceptions to be less magical.
-- Simplified exception interface to no longer require environmnts
-  to be passed to recieve the response object.
+- Simplified exception interface to no longer require environments
+  to be passed to receive the response object.
 - Added sentinel argument to IterIO objects.
 - Added pbkdf2 support for the security module.
 - Added a plain request type that disables all form parsing to only
@@ -523,7 +523,7 @@ Version 0.8.4
   problems with Flask and other frameworks that use
   context local objects on a stack with context preservation
   on errors.
-- Fixed an issue with scolling up in the debugger.
+- Fixed an issue with scrolling up in the debugger.
 - Fixed an issue with debuggers running on a different URL
   than the URL root.
 - Fixed a problem with proxies not forwarding some rarely
@@ -871,7 +871,7 @@ Version 0.5.1
   argument to return a pair for each value of each key.
 - the multipart parser works better with hand-crafted multipart
   requests now that have extra newlines added.  This fixes a bug
-  with setuptools uploades not handled properly (#390)
+  with setuptools uploads not handled properly (#390)
 - fixed some minor bugs in the atom feed generator.
 - fixed a bug with client cookie header parsing being case sensitive.
 - fixed a not-working deprecation warning.
