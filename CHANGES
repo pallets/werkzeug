@@ -37,6 +37,8 @@ Unreleased.
   during initialization, see pull request ``#973``.
 - Disable autocorrect and spellchecker in the debugger middleware's Python
   prompt, see pull request ``#994``.
+- ``socket.error`` and ``socket.timeout`` are now always catched, even if
+  ``passthrough_errors=True``.
 
 Version 0.11.11
 ---------------

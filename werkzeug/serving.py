@@ -503,9 +503,17 @@ class BaseWSGIServer(HTTPServer, object):
             self.server_close()
 
     def handle_error(self, request, client_address):
-        if self.passthrough_errors:
+        try:
             raise
-        return HTTPServer.handle_error(self, request, client_address)
+        except (socket.error, socket.timeout):
+            # Python 2.7's SocketServer doesn't properly catch those exceptions
+            # when flushing. This is not necessary in Python 3.
+            # See https://github.com/pallets/werkzeug/issues/954#issuecomment-242881523
+            pass
+        except Exception:
+            if self.passthrough_errors:
+                raise sys.exc_info()[0]
+            return HTTPServer.handle_error(self, request, client_address)
 
     def get_request(self):
         con, info = self.socket.accept()
@@ -592,6 +600,10 @@ def run_simple(hostname, port, application, use_reloader=False,
        through the `reloader_type` parameter.  See :ref:`reloader`
        for more information.
 
+    .. versionchanged:: 0.12
+       Socket errors are never propagated, even if ``passthrough_errors`` is
+       true.
+
     :param hostname: The host for the application.  eg: ``'localhost'``
     :param port: The port for the server.  eg: ``8080``
     :param application: the WSGI application to execute
@@ -622,7 +634,8 @@ def run_simple(hostname, port, application, use_reloader=False,
                          serving.
     :param passthrough_errors: set this to `True` to disable the error catching.
                                This means that the server will die on errors but
-                               it can be useful to hook debuggers in (pdb etc.)
+                               it can be useful to hook debuggers in (pdb
+                               etc.). This has no effect on socket errors.
     :param ssl_context: an SSL context for the connection. Either an
                         :class:`ssl.SSLContext`, a tuple in the form
                         ``(cert_file, pkey_file)``, the string ``'adhoc'`` if
