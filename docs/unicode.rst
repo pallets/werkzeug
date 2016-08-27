@@ -144,7 +144,7 @@ The Filesystem
 
 Up until version 0.11, Werkzeug used Python's stdlib functionality to detect
 the filesystem encoding. However, several bug reports against Werkzeug have
-shown that the value of :py:func:`sys.getfilesystemencoding` can not the
+shown that the value of :py:func:`sys.getfilesystemencoding` cannot be
 trusted under traditional UNIX systems. The usual problems come from
 misconfigured systems, where ``LANG`` and similar environment variables are not
 set. In such cases, Python would default to ASCII as filesystem encoding, a

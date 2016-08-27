@@ -61,7 +61,7 @@ This will try to get the request or return `None` if the request is not
 
 Note that local objects cannot manage themselves, for that you need a local
 manager.  You can pass a local manager multiple locals or add additionals
-later by appending them to `manager.locals` and everytime the manager
+later by appending them to `manager.locals` and every time the manager
 cleans up it will clean up all the data left in the locals for this
 context.
 

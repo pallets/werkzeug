@@ -13,14 +13,14 @@ WSGI
 
 WSGI a specification for Python web applications Werkzeug follows.  It was
 specified in the :pep:`333` and is widely supported.  Unlike previous solutions
-it guarantees that web applications, servers and utilties can work together.
+it guarantees that web applications, servers and utilities can work together.
 
 Response Object
 ---------------
 
 For Werkzeug, a response object is an object that works like a WSGI
 application but does not do any request processing.  Usually you have a view
-function or controller method that processes the request and assambles a
+function or controller method that processes the request and assembles a
 response object.
 
 A response object is *not* necessarily the :class:`BaseResponse` object or a
