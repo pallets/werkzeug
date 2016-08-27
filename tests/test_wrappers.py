@@ -691,6 +691,7 @@ def test_form_parsing_failed():
     )
     assert not request.form
 
+
 def test_file_closing():
     data = (b'--foo\r\n'
             b'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
