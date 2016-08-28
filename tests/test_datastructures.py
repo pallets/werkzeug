@@ -386,6 +386,7 @@ class TestMultiDict(_MutableMultiDictTests):
         with pytest.raises(KeyError):
             md['empty']
 
+
 class TestOrderedMultiDict(_MutableMultiDictTests):
     storage_class = datastructures.OrderedMultiDict
 
