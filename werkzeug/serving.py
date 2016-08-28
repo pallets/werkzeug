@@ -42,6 +42,10 @@ import socket
 import sys
 import signal
 
+
+can_fork = hasattr(os, "fork")
+
+
 try:
     import ssl
 except ImportError:
@@ -62,10 +66,16 @@ def _get_openssl_crypto_module():
 
 
 try:
-    from SocketServer import ThreadingMixIn, ForkingMixIn
+    if can_fork:
+        from SocketServer import ThreadingMixIn, ForkingMixIn
+    else:
+        from SocketServer import ThreadingMixIn
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 except ImportError:
-    from socketserver import ThreadingMixIn, ForkingMixIn
+    if can_fork:
+        from socketserver import ThreadingMixIn, ForkingMixIn
+    else:
+        from socketserver import ThreadingMixIn
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # important: do not use relative imports here or python -m will break
@@ -543,7 +553,7 @@ def make_server(host=None, port=None, app=None, threaded=False, processes=1,
     elif threaded:
         return ThreadedWSGIServer(host, port, app, request_handler,
                                   passthrough_errors, ssl_context, fd=fd)
-    elif processes > 1:
+    elif processes > 1 and can_fork:
         return ForkingWSGIServer(host, port, app, processes, request_handler,
                                  passthrough_errors, ssl_context, fd=fd)
     else:

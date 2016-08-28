@@ -37,6 +37,8 @@ Unreleased.
   during initialization, see pull request ``#973``.
 - Disable autocorrect and spellchecker in the debugger middleware's Python
   prompt, see pull request ``#994``.
+- Check that the OS can fork before importing `ForkingMixIn` or creating a
+  ForkingWSGIServer through `make_server`.
 
 Version 0.11.11
 ---------------
