@@ -11,6 +11,8 @@ Bugfix release, unreleased.
 - Fix a bug in ``parse_options_header`` where an invalid content type
   starting with comma or semi-colon would result in an invalid return value,
   see issue ``#995``.
+- Fix a bug in multidicts when passing empty lists as values, see issue
+  ``#979``.
 
 Version 0.11.10
 ---------------
