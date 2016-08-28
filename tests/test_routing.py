@@ -60,6 +60,51 @@ def test_basic_routing():
     assert excinfo.value.new_url == 'http://example.org/bar/?foo=bar'
 
 
+def test_strict_slashes_redirect():
+    map = r.Map([
+        r.Rule('/bar/', endpoint='get', methods=["GET"]),
+        r.Rule('/bar', endpoint='post', methods=["POST"]),
+    ])
+    adapter = map.bind('example.org', '/')
+
+    # Check if the actual routes works
+    assert adapter.match('/bar/', method='GET') == ('get', {})
+    assert adapter.match('/bar', method='POST') == ('post', {})
+
+    # Check if exceptions are correct
+    pytest.raises(r.RequestRedirect, adapter.match, '/bar', method='GET')
+    pytest.raises(r.MethodNotAllowed, adapter.match, '/bar/', method='POST')
+
+    # Check differently defined order
+    map = r.Map([
+        r.Rule('/bar', endpoint='post', methods=["POST"]),
+        r.Rule('/bar/', endpoint='get', methods=["GET"]),
+    ])
+    adapter = map.bind('example.org', '/')
+
+    # Check if the actual routes works
+    assert adapter.match('/bar/', method='GET') == ('get', {})
+    assert adapter.match('/bar', method='POST') == ('post', {})
+
+    # Check if exceptions are correct
+    pytest.raises(r.RequestRedirect, adapter.match, '/bar', method='GET')
+    pytest.raises(r.MethodNotAllowed, adapter.match, '/bar/', method='POST')
+
+    # Check what happens when only slash route is defined
+    map = r.Map([
+        r.Rule('/bar/', endpoint='get', methods=["GET"]),
+    ])
+    adapter = map.bind('example.org', '/')
+
+    # Check if the actual routes works
+    assert adapter.match('/bar/', method='GET') == ('get', {})
+
+    # Check if exceptions are correct
+    pytest.raises(r.RequestRedirect, adapter.match, '/bar', method='GET')
+    pytest.raises(r.MethodNotAllowed, adapter.match, '/bar/', method='POST')
+    pytest.raises(r.MethodNotAllowed, adapter.match, '/bar', method='POST')
+
+
 def test_environ_defaults():
     environ = create_environ("/foo")
     strict_eq(environ["PATH_INFO"], '/foo')
