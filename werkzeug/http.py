@@ -811,7 +811,10 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
         last_modified = last_modified.replace(microsecond=0)
 
     if_range = None
-    if not ignore_if_range:
+    if not ignore_if_range and 'HTTP_RANGE' in environ:
+        # http://tools.ietf.org/html/rfc7233#section-3.2
+        # A server MUST ignore an If-Range header field received in a request
+        # that does not contain a Range header field.
         if_range = parse_if_range_header(environ.get('HTTP_IF_RANGE'))
 
     if if_range is not None and if_range.date is not None:
