@@ -20,7 +20,7 @@ from functools import partial, update_wrapper
 
 from werkzeug._compat import iteritems, text_type, string_types, \
     implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
-    wsgi_get_bytes, try_coerce_native, PY2
+    wsgi_get_bytes, try_coerce_native, PY2, BytesIO
 from werkzeug._internal import _empty_stream, _encode_idna
 from werkzeug.http import is_resource_modified, http_date
 from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
@@ -545,10 +545,11 @@ class SharedDataMiddleware(object):
             if filesystem_bound:
                 return basename, self._opener(
                     provider.get_resource_filename(manager, path))
+            s = provider.get_resource_string(manager, path)
             return basename, lambda: (
-                provider.get_resource_stream(manager, path),
+                BytesIO(s),
                 loadtime,
-                0
+                len(s)
             )
         return loader
 
