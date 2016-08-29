@@ -39,6 +39,8 @@ Unreleased.
   prompt, see pull request ``#994``.
 - Don't redirect to slash route when method doesn't match, see pull request
   ``#907``.
+- Fix a bug when using ``SharedDataMiddleware`` with frozen packages, see pull
+  request ``#959``.
 
 Version 0.11.11
 ---------------
