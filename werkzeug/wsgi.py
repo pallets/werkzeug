@@ -799,7 +799,7 @@ class RangeWrapper(object):
     """
 
     def __init__(self, iterable, start_byte=0, byte_range=None):
-        self.iterable = iterable
+        self.iterable = iter(iterable)
         self.byte_range = byte_range
         self.start_byte = start_byte
         self.end_byte = None
@@ -813,9 +813,13 @@ class RangeWrapper(object):
         return self
 
     def _next_chunk(self):
-        chunk = next(self.iterable)
-        self.read_length += len(chunk)
-        return chunk
+        try:
+            chunk = next(self.iterable)
+            self.read_length += len(chunk)
+            return chunk
+        except StopIteration:
+            self.end_reached = True
+            raise
 
     def _first_iteration(self):
         chunk = None
@@ -824,16 +828,11 @@ class RangeWrapper(object):
             self.read_length = self.iterable.tell()
             contextual_read_length = self.read_length
         else:
-            for chunk in self.iterable:
-                contextual_read_length = self.read_length
-                self.read_length += len(chunk)
-                if self.read_length > self.start_byte:
-                    chunk = chunk[self.start_byte - contextual_read_length:]
-                    contextual_read_length = self.start_byte
-                    break
-            else:
-                self.end_reached = True
-                raise StopIteration()
+            while self.read_length <= self.start_byte:
+                chunk = self._next_chunk()
+            if chunk is not None:
+                chunk = chunk[self.start_byte - self.read_length:]
+            contextual_read_length = self.start_byte
         return chunk, contextual_read_length
 
     def _next(self):
