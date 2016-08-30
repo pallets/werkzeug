@@ -562,10 +562,10 @@ def test_range_request_with_file():
     with open(fname, 'rb') as f:
         response = wrappers.Response(wrap_file(env, f))
         response.headers['Range'] = 'bytes=0-0'
-        response.make_conditional(env, accept_ranges=True, complete_length=11)
+        response.make_conditional(env, accept_ranges=True, complete_length=len(fcontent))
         assert response.status_code == 206
         assert response.headers['Accept-Ranges'] == 'bytes'
-        assert response.headers['Content-Range'] == 'bytes 0-0/11'
+        assert response.headers['Content-Range'] == 'bytes 0-0/%d' % len(fcontent)
         assert response.headers['Content-Length'] == '1'
         assert response.data == fcontent[:1]
 
