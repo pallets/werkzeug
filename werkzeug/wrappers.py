@@ -85,6 +85,16 @@ def _iter_encoded(iterable, charset):
             yield item
 
 
+def _clean_accept_ranges(accept_ranges):
+    if accept_ranges is True:
+        return "bytes"
+    elif accept_ranges is False:
+        return "none"
+    elif isinstance(accept_ranges, text_type):
+        return to_native(accept_ranges)
+    raise ValueError("Invalid accept_ranges value")
+
+
 class BaseRequest(object):
 
     """Very basic request object.  This does not implement advanced stuff like
@@ -1425,15 +1435,47 @@ class ETagResponseMixin(object):
         """Return ``True`` if `Range` header is present and if underlying
         resource is considered unchanged when compared with `If-Range` header.
         """
-        return ('if-range' not in self.headers or
-                not is_resource_modified(environ, self.headers.get('etag'),
-                                         None,
-                                         self.headers.get('last-modified'),
-                                         ignore_if_range=False)
-                ) and 'range' in self.headers
+        return (
+            'if-range' not in self.headers
+            or not is_resource_modified(
+                environ, self.headers.get('etag'), None,
+                self.headers.get('last-modified'), ignore_if_range=False
+            )
+        ) and 'range' in self.headers
+
+    def _process_range_request(self, environ, complete_length=None, accept_ranges=None):
+        """Handle Range Request related headers (RFC7233).  If `Accept-Ranges`
+        header is valid, and Range Request is processable, we set the headers
+        as described by the RFC, and wrap the underlying response in a
+        RangeWrapper.
+
+        Returns ``False`` if specified `Range` is invalid or unsatisfiable,
+        ``True`` otherwise.
+        """
+        if accept_ranges is None:
+            return True
+        self.headers['Accept-Ranges'] = accept_ranges
+        if not self._is_range_request_processable(environ) or complete_length is None:
+            return True
+        parsed_range = parse_range_header(self.headers.get('range'))
+        if parsed_range is None:
+            return False
+        range_tuple = parsed_range.range_for_length(complete_length)
+        content_range_header = parsed_range.to_content_range_header(complete_length)
+        if range_tuple is None or content_range_header is None:
+            return False
+        content_length = range_tuple[1] - range_tuple[0]
+        # Be sure not to send 206 response
+        # if requested range is the full content.
+        if content_length != complete_length:
+            self.headers['Content-Length'] = content_length
+            self.content_range = content_range_header
+            self.status_code = 206
+            self._wrap_response(range_tuple[0], content_length)
+        return True
 
     def make_conditional(self, request_or_environ, accept_ranges=False,
-                         complete_length=None, ignore_invalid_range_requests=True):
+                         complete_length=None):
         """Make the response conditional to the request.  This method works
         best if an etag was defined for the response already.  The `add_etag`
         method can be used to do that.  If called without etag just the date
@@ -1442,7 +1484,7 @@ class ETagResponseMixin(object):
         This does nothing if the request method in the request or environ is
         anything but GET or HEAD.
 
-        In Range Request context, if the response data as been created with
+        In Range Request context, if the response data has been created with
         :meth:`~werkzeug.wsgi.wrap_file`, this method will automatically replace
         the file wrapper by :class:`~werkzeug.wsgi.RangeFileWrapper`, in order
         to fullfil the request and only send part of the file.  For other type
@@ -1469,10 +1511,6 @@ class ETagResponseMixin(object):
                                 value and compute `Content-Length` real value.
                                 This parameter is mandatory for successful
                                 Range Requests completion.
-        :param ignore_invalid_range_requests: set to ``True`` to silently degrade
-                                              to complete HTTP response for
-                                              invalid range requests, instead of
-                                              raising an HTTP 406 exception.
         :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
                  if `Range` header could not be parsed or satisfied.
         """
@@ -1484,43 +1522,21 @@ class ETagResponseMixin(object):
             # wsgiref.
             if 'date' not in self.headers:
                 self.headers['Date'] = http_date()
-            if accept_ranges is True:
-                accept_ranges = "bytes"
-            elif accept_ranges is None:
-                accept_ranges = "none"
-            elif not isinstance(accept_ranges, string_types):
-                accept_ranges = None
-            if accept_ranges is not None:
-                self.headers['Accept-Ranges'] = accept_ranges
-                if self._is_range_request_processable(environ) and complete_length is not None:
-                    parsed_range = parse_range_header(self.headers.get('range'))
-                    if parsed_range is not None:
-                        range_tuple = parsed_range.range_for_length(complete_length)
-                        content_range_header = parsed_range.to_content_range_header(complete_length)
-                        if range_tuple is not None and content_range_header is not None:
-                            content_length = range_tuple[1] - range_tuple[0]
-                            # Be sure not to send 206 response
-                            # if requested range is the full content.
-                            if content_length != complete_length:
-                                self.headers['Content-Length'] = content_length
-                                self.content_range = content_range_header
-                                self.status_code = 206
-                                self._wrap_response(range_tuple[0], content_length)
-                        elif not ignore_invalid_range_requests:
-                            from werkzeug.exceptions import RequestedRangeNotSatisfiable
-                            raise RequestedRangeNotSatisfiable(complete_length)
-                    elif not ignore_invalid_range_requests:
-                        from werkzeug.exceptions import RequestedRangeNotSatisfiable
-                        raise RequestedRangeNotSatisfiable(complete_length)
-                    # If range request is not able to complete but does not
-                    # raise an exception, we get back to basic workflow.
+            accept_ranges = _clean_accept_ranges(accept_ranges)
+            if not self._process_range_request(environ, complete_length, accept_ranges):
+                from werkzeug.exceptions import RequestedRangeNotSatisfiable
+                raise RequestedRangeNotSatisfiable(complete_length)
             if self.automatically_set_content_length and 'content-length' not in self.headers:
                 length = self.calculate_content_length()
                 if length is not None:
                     self.headers['Content-Length'] = length
-            if self.status_code != 206 and \
-                    not is_resource_modified(environ, self.headers.get('etag'),
-                                             None, self.headers.get('last-modified')):
+            if (
+                self.status_code != 206
+                and not is_resource_modified(
+                    environ, self.headers.get('etag'),
+                    None, self.headers.get('last-modified')
+                )
+            ):
                 self.status_code = 304
         return self
 

@@ -545,8 +545,7 @@ def test_range_request_basic():
     env = create_environ()
     response = wrappers.Response('Hello World')
     response.headers['Range'] = 'bytes=0-4'
-    response.make_conditional(env, accept_ranges=True, complete_length=11,
-                              ignore_invalid_range_requests=True)
+    response.make_conditional(env, accept_ranges=True, complete_length=11)
     assert response.status_code == 206
     assert response.headers['Accept-Ranges'] == 'bytes'
     assert response.headers['Content-Range'] == 'bytes 0-4/11'
@@ -563,8 +562,7 @@ def test_range_request_with_file():
     with open(fname, 'rb') as f:
         response = wrappers.Response(wrap_file(env, f))
         response.headers['Range'] = 'bytes=0-0'
-        response.make_conditional(env, accept_ranges=True, complete_length=11,
-                                  ignore_invalid_range_requests=True)
+        response.make_conditional(env, accept_ranges=True, complete_length=11)
         assert response.status_code == 206
         assert response.headers['Accept-Ranges'] == 'bytes'
         assert response.headers['Content-Range'] == 'bytes 0-0/11'
@@ -583,8 +581,7 @@ def test_range_request_with_complete_file():
         response = wrappers.Response(wrap_file(env, f))
         response.headers['Range'] = 'bytes=0-%d' % (fsize - 1)
         response.make_conditional(env, accept_ranges=True,
-                                  complete_length=fsize,
-                                  ignore_invalid_range_requests=True)
+                                  complete_length=fsize)
         assert response.status_code == 200
         assert response.headers['Accept-Ranges'] == 'bytes'
         assert 'Content-Range' not in response.headers
@@ -596,28 +593,17 @@ def test_range_request_without_complete_length():
     env = create_environ()
     response = wrappers.Response('Hello World')
     response.headers['Range'] = 'bytes=-'
-    response.make_conditional(env, accept_ranges=True, complete_length=None,
-                              ignore_invalid_range_requests=True)
+    response.make_conditional(env, accept_ranges=True, complete_length=None)
     assert response.status_code == 200
     assert response.data == b'Hello World'
 
 
 def test_invalid_range_request():
     env = create_environ()
-    # invalid Range Request
-    response = wrappers.Response('Hello World')
-    response.headers['Range'] = 'bytes=-'
-    response.make_conditional(env, accept_ranges=True, complete_length=11,
-                              ignore_invalid_range_requests=True)
-    assert response.status_code == 200
-    assert response.data == b'Hello World'
-
-    # invalid Range Request with 416 Exception
     response = wrappers.Response('Hello World')
     response.headers['Range'] = 'bytes=-'
     with pytest.raises(RequestedRangeNotSatisfiable):
-        response.make_conditional(env, accept_ranges=True, complete_length=11,
-                                  ignore_invalid_range_requests=False)
+        response.make_conditional(env, accept_ranges=True, complete_length=11)
 
 
 def test_etag_response_mixin_freezing():
