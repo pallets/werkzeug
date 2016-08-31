@@ -350,6 +350,7 @@ class Traceback(object):
                     evalex_trusted=True):
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
+        ptext = escape(self.plaintext)
         return PAGE_HTML % {
             'evalex':           evalex and 'true' or 'false',
             'evalex_trusted':   evalex_trusted and 'true' or 'false',
@@ -358,7 +359,7 @@ class Traceback(object):
             'exception':        exc,
             'exception_type':   escape(self.exception_type),
             'summary':          self.render_summary(include_title=False),
-            'plaintext':        self.plaintext,
+            'plaintext':        ptext,
             'plaintext_cs':     re.sub('-{2,}', '-', self.plaintext),
             'traceback_id':     self.id,
             'secret':           secret
