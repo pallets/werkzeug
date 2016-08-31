@@ -45,7 +45,7 @@ Unreleased.
 Version 0.11.11
 ---------------
 
-Bugfix release, unreleased.
+Released on August 31st 2016.
 
 - Fix JSONRequestMixin for Python3. See #731
 - Fix broken string handling in test client when passing integers. See #852
