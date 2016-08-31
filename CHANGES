@@ -13,6 +13,7 @@ Bugfix release, unreleased.
   see issue ``#995``.
 - Fix a bug in multidicts when passing empty lists as values, see issue
   ``#979``.
+- Fix a security issue that allows XSS on the Werkzeug debugger. See ``#1001``.
 
 Version 0.11.10
 ---------------
