@@ -358,7 +358,7 @@ class Traceback(object):
             'exception':        exc,
             'exception_type':   escape(self.exception_type),
             'summary':          self.render_summary(include_title=False),
-            'plaintext':        self.plaintext,
+            'plaintext':        escape(self.plaintext),
             'plaintext_cs':     re.sub('-{2,}', '-', self.plaintext),
             'traceback_id':     self.id,
             'secret':           secret
