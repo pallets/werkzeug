@@ -544,13 +544,25 @@ def test_etag_response_mixin():
 def test_range_request_basic():
     env = create_environ()
     response = wrappers.Response('Hello World')
-    response.headers['Range'] = 'bytes=0-4'
+    env['HTTP_RANGE'] = 'bytes=0-4'
     response.make_conditional(env, accept_ranges=True, complete_length=11)
     assert response.status_code == 206
     assert response.headers['Accept-Ranges'] == 'bytes'
     assert response.headers['Content-Range'] == 'bytes 0-4/11'
     assert response.headers['Content-Length'] == '5'
     assert response.data == b'Hello'
+
+
+def test_range_request_out_of_bound():
+    env = create_environ()
+    response = wrappers.Response('Hello World')
+    env['HTTP_RANGE'] = 'bytes=6-666'
+    response.make_conditional(env, accept_ranges=True, complete_length=11)
+    assert response.status_code == 206
+    assert response.headers['Accept-Ranges'] == 'bytes'
+    assert response.headers['Content-Range'] == 'bytes 6-10/11'
+    assert response.headers['Content-Length'] == '5'
+    assert response.data == b'World'
 
 
 def test_range_request_with_file():
@@ -561,7 +573,7 @@ def test_range_request_with_file():
         fcontent = f.read()
     with open(fname, 'rb') as f:
         response = wrappers.Response(wrap_file(env, f))
-        response.headers['Range'] = 'bytes=0-0'
+        env['HTTP_RANGE'] = 'bytes=0-0'
         response.make_conditional(env, accept_ranges=True, complete_length=len(fcontent))
         assert response.status_code == 206
         assert response.headers['Accept-Ranges'] == 'bytes'
@@ -579,7 +591,7 @@ def test_range_request_with_complete_file():
     with open(fname, 'rb') as f:
         fsize = os.path.getsize(fname)
         response = wrappers.Response(wrap_file(env, f))
-        response.headers['Range'] = 'bytes=0-%d' % (fsize - 1)
+        env['HTTP_RANGE'] = 'bytes=0-%d' % (fsize - 1)
         response.make_conditional(env, accept_ranges=True,
                                   complete_length=fsize)
         assert response.status_code == 200
@@ -592,7 +604,7 @@ def test_range_request_with_complete_file():
 def test_range_request_without_complete_length():
     env = create_environ()
     response = wrappers.Response('Hello World')
-    response.headers['Range'] = 'bytes=-'
+    env['HTTP_RANGE'] = 'bytes=-'
     response.make_conditional(env, accept_ranges=True, complete_length=None)
     assert response.status_code == 200
     assert response.data == b'Hello World'
@@ -601,7 +613,7 @@ def test_range_request_without_complete_length():
 def test_invalid_range_request():
     env = create_environ()
     response = wrappers.Response('Hello World')
-    response.headers['Range'] = 'bytes=-'
+    env['HTTP_RANGE'] = 'bytes=-'
     with pytest.raises(RequestedRangeNotSatisfiable):
         response.make_conditional(env, accept_ranges=True, complete_length=11)
 
