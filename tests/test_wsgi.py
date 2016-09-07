@@ -23,7 +23,7 @@ from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug import wsgi
 from werkzeug._compat import StringIO, BytesIO, NativeStringIO, to_native, \
     to_bytes
-from werkzeug.wsgi import RangeWrapper, wrap_file
+from werkzeug.wsgi import _RangeWrapper, wrap_file
 
 
 def test_shareddatamiddleware_get_file_loader():
@@ -410,26 +410,26 @@ def test_lines_longer_buffer_size_cap():
 
 def test_range_wrapper():
     response = BaseResponse(b'Hello World')
-    range_wrapper = RangeWrapper(response.response, 6, 4)
+    range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert next(range_wrapper) == b'Worl'
 
     response = BaseResponse(b'Hello World')
-    range_wrapper = RangeWrapper(response.response, 1, 0)
+    range_wrapper = _RangeWrapper(response.response, 1, 0)
     with pytest.raises(StopIteration):
         next(range_wrapper)
 
     response = BaseResponse(b'Hello World')
-    range_wrapper = RangeWrapper(response.response, 6, 100)
+    range_wrapper = _RangeWrapper(response.response, 6, 100)
     assert next(range_wrapper) == b'World'
 
     response = BaseResponse((x for x in (b'He', b'll', b'o ', b'Wo', b'rl', b'd')))
-    range_wrapper = RangeWrapper(response.response, 6, 4)
+    range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert not range_wrapper.seekable
     assert next(range_wrapper) == b'Wo'
     assert next(range_wrapper) == b'rl'
 
     response = BaseResponse((x for x in (b'He', b'll', b'o W', b'o', b'rld')))
-    range_wrapper = RangeWrapper(response.response, 6, 4)
+    range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert next(range_wrapper) == b'W'
     assert next(range_wrapper) == b'o'
     assert next(range_wrapper) == b'rl'
@@ -437,7 +437,7 @@ def test_range_wrapper():
         next(range_wrapper)
 
     response = BaseResponse((x for x in (b'Hello', b' World')))
-    range_wrapper = RangeWrapper(response.response, 1, 1)
+    range_wrapper = _RangeWrapper(response.response, 1, 1)
     assert next(range_wrapper) == b'e'
     with pytest.raises(StopIteration):
         next(range_wrapper)
@@ -446,7 +446,7 @@ def test_range_wrapper():
     env = create_environ()
     with open(os.path.join(resources, 'test.txt'), 'rb') as f:
         response = BaseResponse(wrap_file(env, f))
-        range_wrapper = RangeWrapper(response.response, 1, 2)
+        range_wrapper = _RangeWrapper(response.response, 1, 2)
         assert range_wrapper.seekable
         assert next(range_wrapper) == b'OU'
         with pytest.raises(StopIteration):
@@ -454,7 +454,7 @@ def test_range_wrapper():
 
     with open(os.path.join(resources, 'test.txt'), 'rb') as f:
         response = BaseResponse(wrap_file(env, f))
-        range_wrapper = RangeWrapper(response.response, 2)
+        range_wrapper = _RangeWrapper(response.response, 2)
         assert next(range_wrapper) == b'UND\n'
         with pytest.raises(StopIteration):
             next(range_wrapper)

@@ -782,7 +782,7 @@ class FileWrapper(object):
 
 
 @implements_iterator
-class RangeWrapper(object):
+class _RangeWrapper(object):
 
     """This class can be used to convert an iterable object into
     an iterable that will only yield a piece of the underlying content.

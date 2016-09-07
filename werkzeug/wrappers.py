@@ -36,7 +36,7 @@ from werkzeug.formparser import FormDataParser, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
     header_property, get_content_type
 from werkzeug.wsgi import get_current_url, get_host, \
-    ClosingIterator, get_input_stream, get_content_length, RangeWrapper
+    ClosingIterator, get_input_stream, get_content_length, _RangeWrapper
 from werkzeug.datastructures import MultiDict, CombinedMultiDict, Headers, \
     EnvironHeaders, ImmutableMultiDict, ImmutableTypeConversionDict, \
     ImmutableList, MIMEAccept, CharsetAccept, LanguageAccept, \
@@ -1429,7 +1429,7 @@ class ETagResponseMixin(object):
     def _wrap_response(self, start, length):
         """Wrap existing Response in case of Range Request context."""
         if self.status_code == 206:
-            self.response = RangeWrapper(self.response, start, length)
+            self.response = _RangeWrapper(self.response, start, length)
 
     def _is_range_request_processable(self, environ):
         """Return ``True`` if `Range` header is present and if underlying
@@ -1488,12 +1488,13 @@ class ETagResponseMixin(object):
         This does nothing if the request method in the request or environ is
         anything but GET or HEAD.
 
-        In Range Request context, if the response data has been created with
-        :meth:`~werkzeug.wsgi.wrap_file`, this method will automatically replace
-        the file wrapper by :class:`~werkzeug.wsgi.RangeFileWrapper`, in order
-        to fullfil the request and only send part of the file.  For other type
-        of response data, you will need to handle this with custom
-        implementation and set response attribute to the new value.
+        In Range Request context, this method will automatically wrap the
+        response data object into a range wrapper, in order to fullfil the
+        request and only send part of the file.  For optimal performances, it's
+        recommended that your response data object implements `seekable`, `seek`
+        and `tell` methods as described by :py:class:`io.IOBase`.  Objects
+        returned by :meth:`~werkzeug.wsgi.wrap_file` automatically implement
+        those methods.
 
         It does not remove the body of the response because that's something
         the :meth:`__call__` function does for us automatically.
