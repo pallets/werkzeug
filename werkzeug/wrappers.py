@@ -1488,13 +1488,10 @@ class ETagResponseMixin(object):
         This does nothing if the request method in the request or environ is
         anything but GET or HEAD.
 
-        In Range Request context, this method will automatically wrap the
-        response data object into a range wrapper, in order to fullfil the
-        request and only send part of the file.  For optimal performances, it's
-        recommended that your response data object implements `seekable`, `seek`
-        and `tell` methods as described by :py:class:`io.IOBase`.  Objects
-        returned by :meth:`~werkzeug.wsgi.wrap_file` automatically implement
-        those methods.
+        For optimal performance when handling range requests, it's recommended
+        that your response data object implements `seekable`, `seek` and `tell`
+        methods as described by :py:class:`io.IOBase`.  Objects returned by
+        :meth:`~werkzeug.wsgi.wrap_file` automatically implement those methods.
 
         It does not remove the body of the response because that's something
         the :meth:`__call__` function does for us automatically.
