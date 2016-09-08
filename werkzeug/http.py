@@ -557,15 +557,24 @@ def parse_range_header(value, make_inclusive=True):
         if item.startswith('-'):
             if last_end < 0:
                 return None
-            begin = int(item)
+            try:
+                begin = int(item)
+            except ValueError:
+                return None
             end = None
             last_end = -1
         elif '-' in item:
             begin, end = item.split('-', 1)
+            begin = begin.strip()
+            end = end.strip()
+            if not begin.isdigit():
+                return None
             begin = int(begin)
             if begin < last_end or last_end < 0:
                 return None
             if end:
+                if not end.isdigit():
+                    return None
                 end = int(end) + 1
                 if begin >= end:
                     return None
@@ -772,7 +781,8 @@ def http_date(timestamp=None):
     return _dump_date(timestamp, ' ')
 
 
-def is_resource_modified(environ, etag=None, data=None, last_modified=None):
+def is_resource_modified(environ, etag=None, data=None, last_modified=None,
+                         ignore_if_range=True):
     """Convenience method for conditional requests.
 
     :param environ: the WSGI environment of the request to be checked.
@@ -780,6 +790,8 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
     :param data: or alternatively the data of the response to automatically
                  generate an etag using :func:`generate_etag`.
     :param last_modified: an optional date of the last modification.
+    :param ignore_if_range: If `False`, `If-Range` header will be taken into
+                            account.
     :return: `True` if the resource was modified, otherwise `False`.
     """
     if etag is None and data is not None:
@@ -798,18 +810,32 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None):
     if last_modified is not None:
         last_modified = last_modified.replace(microsecond=0)
 
-    modified_since = parse_date(environ.get('HTTP_IF_MODIFIED_SINCE'))
+    if_range = None
+    if not ignore_if_range and 'HTTP_RANGE' in environ:
+        # http://tools.ietf.org/html/rfc7233#section-3.2
+        # A server MUST ignore an If-Range header field received in a request
+        # that does not contain a Range header field.
+        if_range = parse_if_range_header(environ.get('HTTP_IF_RANGE'))
+
+    if if_range is not None and if_range.date is not None:
+        modified_since = if_range.date
+    else:
+        modified_since = parse_date(environ.get('HTTP_IF_MODIFIED_SINCE'))
 
     if modified_since and last_modified and last_modified <= modified_since:
         unmodified = True
+
     if etag:
-        if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
-        if if_none_match:
-            # http://tools.ietf.org/html/rfc7232#section-3.2
-            # "A recipient MUST use the weak comparison function when comparing
-            # entity-tags for If-None-Match"
-            etag, _ = unquote_etag(etag)
-            unmodified = if_none_match.contains_weak(etag)
+        etag, _ = unquote_etag(etag)
+        if if_range is not None and if_range.etag is not None:
+            unmodified = parse_etags(if_range.etag).contains(etag)
+        else:
+            if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
+            if if_none_match:
+                # http://tools.ietf.org/html/rfc7232#section-3.2
+                # "A recipient MUST use the weak comparison function when comparing
+                # entity-tags for If-None-Match"
+                unmodified = if_none_match.contains_weak(etag)
 
     return not unmodified
 

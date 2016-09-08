@@ -2301,6 +2301,17 @@ class Range(object):
                 ranges.append('%s-%s' % (begin, end - 1))
         return '%s=%s' % (self.units, ','.join(ranges))
 
+    def to_content_range_header(self, length):
+        """Converts the object into `Content-Range` HTTP header,
+        based on given length
+        """
+        range_for_length = self.range_for_length(length)
+        if range_for_length is not None:
+            return '%s %d-%d/%d' % (self.units,
+                                    range_for_length[0],
+                                    range_for_length[1] - 1, length)
+        return None
+
     def __str__(self):
         return self.to_header()
 
