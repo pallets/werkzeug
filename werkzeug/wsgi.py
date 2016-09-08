@@ -783,6 +783,7 @@ class FileWrapper(object):
 
 @implements_iterator
 class _RangeWrapper(object):
+    # private for now, but should we make it public in the future ?
 
     """This class can be used to convert an iterable object into
     an iterable that will only yield a piece of the underlying content.
