@@ -672,7 +672,27 @@ class Aborter(object):
             raise LookupError('no exception for %r' % code)
         raise self.mapping[code](*args, **kwargs)
 
-abort = Aborter()
+
+def abort(status, *args, **kwargs):
+    '''
+    Raises an :py:exc:`HTTPException` for the given status code or WSGI
+    application::
+
+        abort(404)  # 404 Not Found
+        abort(Response('Hello World'))
+
+    Can be passed a WSGI application or a status code.  If a status code is
+    given it's looked up in the list of exceptions and will raise that
+    exception, if passed a WSGI application it will wrap it in a proxy WSGI
+    exception and raise that::
+
+       abort(404)
+       abort(Response('Hello World'))
+
+    '''
+    return _aborter(status, *args, **kwargs)
+
+_aborter = Aborter()
 
 
 #: an exception that is used internally to signal both a key error and a

@@ -108,15 +108,7 @@ Sometimes it's convenient to just raise an exception by the error code,
 without importing the exception and looking up the name etc.  For this
 purpose there is the :func:`abort` function.
 
-.. function:: abort(status)
-
-   It can be passed a WSGI application or a status code.  If a status code
-   is given it's looked up in the list of exceptions from above and will
-   raise that exception, if passed a WSGI application it will wrap it in
-   a proxy WSGI exception and raise that::
-
-       abort(404)
-       abort(Response('Hello World'))
+.. autofunction:: abort
 
 If you want to use this functionality with custom exceptions you can
 create an instance of the aborter class:
