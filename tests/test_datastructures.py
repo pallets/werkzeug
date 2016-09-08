@@ -362,6 +362,24 @@ class TestMultiDict(_MutableMultiDictTests):
         with pytest.raises(KeyError):
             d.pop('foos')
 
+    def test_multidict_pop_raise_badrequestkeyerror_for_empty_list_value(self):
+        mapping = [('a', 'b'), ('a', 'c')]
+        md = self.storage_class(mapping)
+
+        md.setlistdefault('empty', [])
+
+        with pytest.raises(KeyError):
+            md.pop('empty')
+
+    def test_multidict_popitem_raise_badrequestkeyerror_for_empty_list_value(self):
+        mapping = []
+        md = self.storage_class(mapping)
+
+        md.setlistdefault('empty', [])
+
+        with pytest.raises(KeyError):
+            md.popitem()
+
     def test_setlistdefault(self):
         md = self.storage_class()
         assert md.setlistdefault('u', [-1, -2]) == [-1, -2]

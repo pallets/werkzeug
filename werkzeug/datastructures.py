@@ -606,7 +606,12 @@ class MultiDict(TypeConversionDict):
                         not in the dictionary.
         """
         try:
-            return dict.pop(self, key)[0]
+            lst = dict.pop(self, key)
+
+            if len(lst) == 0:
+                raise exceptions.BadRequestKeyError()
+
+            return lst[0]
         except KeyError as e:
             if default is not _missing:
                 return default
@@ -616,6 +621,10 @@ class MultiDict(TypeConversionDict):
         """Pop an item from the dict."""
         try:
             item = dict.popitem(self)
+
+            if len(item[1]) == 0:
+                raise exceptions.BadRequestKeyError()
+
             return (item[0], item[1][0])
         except KeyError as e:
             raise exceptions.BadRequestKeyError(str(e))
