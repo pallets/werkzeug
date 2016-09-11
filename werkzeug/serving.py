@@ -309,9 +309,9 @@ def generate_adhoc_ssl_pair(cn=None):
     issuer.O = 'Self-Signed'
 
     pkey = crypto.PKey()
-    pkey.generate_key(crypto.TYPE_RSA, 1024)
+    pkey.generate_key(crypto.TYPE_RSA, 2048)
     cert.set_pubkey(pkey)
-    cert.sign(pkey, 'md5')
+    cert.sign(pkey, 'sha256')
 
     return cert, pkey
 
