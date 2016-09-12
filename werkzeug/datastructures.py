@@ -1334,6 +1334,8 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
     def __getitem__(self, key, _get_mode=False):
         # _get_mode is a no-op for this class as there is no index but
         # used because get() calls it.
+        if not isinstance(key, string_types):
+            raise KeyError(key)
         key = key.upper().replace('-', '_')
         if key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
             return _unicodify_header_value(self.environ[key])
