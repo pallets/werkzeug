@@ -723,8 +723,8 @@ class BaseResponse(object):
     :param status: a string with a status or an integer with the status code.
     :param headers: a list of headers or a
                     :class:`~werkzeug.datastructures.Headers` object.
-    :param mimetype: the mimetype for the request.  See notice above.
-    :param content_type: the content type for the request.  See notice above.
+    :param mimetype: the mimetype for the response.  See notice above.
+    :param content_type: the content type for the response.  See notice above.
     :param direct_passthrough: if set to `True` :meth:`iter_encoded` is not
                                called before iteration which makes it
                                possible to pass special iterators through
