@@ -700,7 +700,7 @@ class BaseResponse(object):
     subclasses of response objects and you want to post process them with a
     known interface.
 
-    Per default the request object will assume all the text data is `utf-8`
+    Per default the response object will assume all the text data is `utf-8`
     encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
     details about customizing the behavior.
 
