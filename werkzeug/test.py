@@ -433,7 +433,7 @@ class EnvironBuilder(object):
         def setter(self, value):
             self._input_stream = None
             setattr(self, key, value)
-        return property(getter, setter, doc)
+        return property(getter, setter, doc=doc)
 
     form = form_property('form', MultiDict, doc='''
         A :class:`MultiDict` of form values.''')
