@@ -227,11 +227,9 @@ class EnvironBuilder(object):
 
     `data` can be any of these values:
 
-    -   a `bytes` object: The object is converted into an :attr:`input_stream`,
-        the :attr:`content_length` is set and you have to provide a
-        :attr:`content_type`.
-    -   a `str`: Same as above but the string is encoded into a `bytes` object
-        first.
+    -   a `str` or `bytes` object: The object is converted into an
+        :attr:`input_stream`, the :attr:`content_length` is set and you have to
+        provide a :attr:`content_type`.
     -   a `dict` or :class:`MultiDict`: The keys have to be strings. The values
         have to be either any of the following objects, or a list of any of the
         following objects:
