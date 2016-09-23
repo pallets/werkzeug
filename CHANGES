@@ -45,6 +45,13 @@ Unreleased.
 - Add support for byte Range Requests, see pull request ``#978``.
 - Use modern cryptographic defaults in the dev servers ``#1004``.
 
+Version 0.11.12
+---------------
+
+- Fix more bugs in multidicts regarding empty lists. See ``#1000``.
+- Add some docstrings to some `EnvironBuilder` properties that were previously
+  unintentionally missing.
+
 Version 0.11.11
 ---------------
 
