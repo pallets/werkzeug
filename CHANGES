@@ -19,6 +19,8 @@ Released on August 31st 2016.
 - Fix a bug in multidicts when passing empty lists as values, see issue
   ``#979``.
 - Fix a security issue that allows XSS on the Werkzeug debugger. See ``#1001``.
+- Add some docstrings to some `EnvironBuilder` properties that were previously
+  unintentionally missing.
 
 Version 0.11.10
 ---------------
