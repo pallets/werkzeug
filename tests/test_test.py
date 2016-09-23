@@ -157,6 +157,34 @@ def test_environ_builder_basics():
     strict_eq(req.files['test'].read(), b'test contents')
 
 
+def test_environ_builder_data():
+    b = EnvironBuilder(data='foo')
+    assert b.input_stream.getvalue() == b'foo'
+    b = EnvironBuilder(data=b'foo')
+    assert b.input_stream.getvalue() == b'foo'
+
+    b = EnvironBuilder(data={'foo': 'bar'})
+    assert b.form['foo'] == 'bar'
+    b = EnvironBuilder(data={'foo': ['bar1', 'bar2']})
+    assert b.form.getlist('foo') == ['bar1', 'bar2']
+
+    def check_list_content(b, length):
+        l = b.files.getlist('foo')
+        assert len(l) == length
+        for obj in l:
+            assert isinstance(obj, FileStorage)
+
+    b = EnvironBuilder(data={'foo': BytesIO()})
+    check_list_content(b, 1)
+    b = EnvironBuilder(data={'foo': [BytesIO(), BytesIO()]})
+    check_list_content(b, 2)
+
+    b = EnvironBuilder(data={'foo': (BytesIO(),)})
+    check_list_content(b, 1)
+    b = EnvironBuilder(data={'foo': [(BytesIO(),), (BytesIO(),)]})
+    check_list_content(b, 2)
+
+
 def test_environ_builder_headers():
     b = EnvironBuilder(environ_base={'HTTP_USER_AGENT': 'Foo/0.1'},
                        environ_overrides={'wsgi.version': (1, 1)})

@@ -192,7 +192,8 @@ class _TestCookieJar(CookieJar):
 
 
 def _iter_data(data):
-    """Iterates over a dict or multidict yielding all keys and values.
+    """Iterates over a `dict` or :class:`MultiDict` yielding all keys and
+    values.
     This is used to iterate over the data passed to the
     :class:`EnvironBuilder`.
     """
@@ -226,16 +227,21 @@ class EnvironBuilder(object):
 
     `data` can be any of these values:
 
-    -   a `str`: If it's a string it is converted into a :attr:`input_stream`,
+    -   a `bytes` object: The object is converted into an :attr:`input_stream`,
         the :attr:`content_length` is set and you have to provide a
         :attr:`content_type`.
-    -   a `dict`: If it's a dict the keys have to be strings and the values
-        any of the following objects:
+    -   a `str`: Same as above but the string is encoded into a `bytes` object
+        first.
+    -   a `dict` or :class:`MultiDict`: The keys have to be strings. The values
+        have to be either any of the following objects, or a list of any of the
+        following objects:
 
-        -   a :class:`file`-like object.  These are converted into
+        -   a :class:`file`-like object:  These are converted into
             :class:`FileStorage` objects automatically.
-        -   a tuple.  The :meth:`~FileMultiDict.add_file` method is called
-            with the tuple items as positional arguments.
+        -   a `tuple`:  The :meth:`~FileMultiDict.add_file` method is called
+            with the key and the unpacked `tuple` items as positional
+            arguments.
+        -   a `str`:  The string is set as form data for the associated key.
 
     .. versionadded:: 0.6
        `path` and `base_url` can now be unicode strings that are encoded using
