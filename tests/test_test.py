@@ -637,3 +637,15 @@ def test_delete_requests_with_form():
     client = Client(test_app, Response)
     resp = client.delete('/', data={'x': 42})
     strict_eq(resp.data, b'42')
+
+
+def test_post_with_file_descriptor(tmpdir):
+    c = Client(Response(), response_wrapper=Response)
+    f = tmpdir.join('some-file.txt')
+    f.write('foo')
+    with open(f.strpath, mode='rt') as data:
+        resp = c.post('/', data=data)
+    strict_eq(resp.status_code, 200)
+    with open(f.strpath, mode='rb') as data:
+        resp = c.post('/', data=data)
+    strict_eq(resp.status_code, 200)
