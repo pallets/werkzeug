@@ -42,6 +42,10 @@ import socket
 import sys
 import signal
 
+from termcolor import colored
+from colorama import init
+init()
+
 try:
     import ssl
 except ImportError:
@@ -278,9 +282,42 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         self.log('info', format, *args)
 
     def log(self, type, message, *args):
-        _log(type, '%s - - [%s] %s\n' % (self.address_string(),
-                                         self.log_date_time_string(),
-                                         message % args))
+        msg = '%s - - [%s] %s' % (self.address_string(),
+                                  self.log_date_time_string(),
+                                  message % args)
+
+        # HTTP Status Code
+        code = str(args[1])
+
+        # 1xx - Informational
+        elif code[0] == '1':
+            msg = colored(msg, attrs=['bold'])
+
+        # 2xx - Success
+        if code[0] == '2':
+            msg = colored(msg, color='white')
+
+        # 304 - Resource Not Modified
+        elif code == '304':
+            msg = colored(msg, color='cyan')
+
+        # 3xx - Redirection
+        elif code[0] == '3':
+            msg = colored(msg, color='green')
+
+        # 404 - Resource Not Found
+        elif code == '404':
+            msg = colored(msg, color='yellow')
+
+        # 4xx - Client Error
+        elif code[0] == '4':
+            msg = colored(msg, color='red', attrs=['bold'])
+
+        # 5xx, or any other response
+        else:
+            msg = colored(msg, color='magenta', attrs=['bold'])
+
+        _log(type, msg)
 
 
 #: backwards compatible name if someone is subclassing it
