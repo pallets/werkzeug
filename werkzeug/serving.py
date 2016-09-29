@@ -42,9 +42,10 @@ import socket
 import sys
 import signal
 
-from termcolor import colored
-from colorama import init
-init()
+try:
+    import termcolor
+except ImportError:
+    pass
 
 try:
     import ssl
@@ -273,7 +274,28 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return self.client_address[1]
 
     def log_request(self, code='-', size='-'):
-        self.log('info', '"%s" %s %s', self.requestline, code, size)
+        msg = self.requestline
+        code = str(code)
+
+        if termcolor:
+            color = termcolor.colored
+
+            if code[0] == '1':    # 1xx - Informational
+                msg = color(msg, attrs=['bold'])
+            if code[0] == '2':    # 2xx - Success
+                msg = color(msg, color='white')
+            elif code == '304':   # 304 - Resource Not Modified
+                msg = color(msg, color='cyan')
+            elif code[0] == '3':  # 3xx - Redirection
+                msg = color(msg, color='green')
+            elif code == '404':   # 404 - Resource Not Found
+                msg = color(msg, color='yellow')
+            elif code[0] == '4':  # 4xx - Client Error
+                msg = color(msg, color='red', attrs=['bold'])
+            else:                 # 5xx, or any other response
+                msg = color(msg, color='magenta', attrs=['bold'])
+
+        self.log('info', '"%s" %s %s', msg, code, size)
 
     def log_error(self, *args):
         self.log('error', *args)
@@ -282,42 +304,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         self.log('info', format, *args)
 
     def log(self, type, message, *args):
-        msg = '%s - - [%s] %s' % (self.address_string(),
-                                  self.log_date_time_string(),
-                                  message % args)
-
-        # HTTP Status Code
-        code = str(args[1])
-
-        # 1xx - Informational
-        elif code[0] == '1':
-            msg = colored(msg, attrs=['bold'])
-
-        # 2xx - Success
-        if code[0] == '2':
-            msg = colored(msg, color='white')
-
-        # 304 - Resource Not Modified
-        elif code == '304':
-            msg = colored(msg, color='cyan')
-
-        # 3xx - Redirection
-        elif code[0] == '3':
-            msg = colored(msg, color='green')
-
-        # 404 - Resource Not Found
-        elif code == '404':
-            msg = colored(msg, color='yellow')
-
-        # 4xx - Client Error
-        elif code[0] == '4':
-            msg = colored(msg, color='red', attrs=['bold'])
-
-        # 5xx, or any other response
-        else:
-            msg = colored(msg, color='magenta', attrs=['bold'])
-
-        _log(type, msg)
+        _log(type, '%s - - [%s] %s\n' % (self.address_string(),
+                                         self.log_date_time_string(),
+                                         message % args))
 
 
 #: backwards compatible name if someone is subclassing it
