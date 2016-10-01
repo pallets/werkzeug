@@ -45,7 +45,7 @@ import signal
 try:
     import termcolor
 except ImportError:
-    pass
+    termcolor = None
 
 try:
     import ssl
