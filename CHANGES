@@ -46,6 +46,7 @@ Unreleased.
 - Use modern cryptographic defaults in the dev servers ``#1004``.
 - the post() method of the test client now accept file object through the data
   parameter.
+- Color run_simple's terminal output based on HTTP codes ``#1013``.
 
 Version 0.11.12
 ---------------

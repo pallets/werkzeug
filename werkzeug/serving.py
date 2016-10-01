@@ -43,6 +43,11 @@ import sys
 import signal
 
 try:
+    import termcolor
+except ImportError:
+    termcolor = None
+
+try:
     import ssl
 except ImportError:
     class _SslDummy(object):
@@ -269,7 +274,28 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return self.client_address[1]
 
     def log_request(self, code='-', size='-'):
-        self.log('info', '"%s" %s %s', self.requestline, code, size)
+        msg = self.requestline
+        code = str(code)
+
+        if termcolor:
+            color = termcolor.colored
+
+            if code[0] == '1':    # 1xx - Informational
+                msg = color(msg, attrs=['bold'])
+            if code[0] == '2':    # 2xx - Success
+                msg = color(msg, color='white')
+            elif code == '304':   # 304 - Resource Not Modified
+                msg = color(msg, color='cyan')
+            elif code[0] == '3':  # 3xx - Redirection
+                msg = color(msg, color='green')
+            elif code == '404':   # 404 - Resource Not Found
+                msg = color(msg, color='yellow')
+            elif code[0] == '4':  # 4xx - Client Error
+                msg = color(msg, color='red', attrs=['bold'])
+            else:                 # 5xx, or any other response
+                msg = color(msg, color='magenta', attrs=['bold'])
+
+        self.log('info', '"%s" %s %s', msg, code, size)
 
     def log_error(self, *args):
         self.log('error', *args)
