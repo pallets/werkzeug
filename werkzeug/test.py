@@ -240,6 +240,8 @@ class EnvironBuilder(object):
             with the key and the unpacked `tuple` items as positional
             arguments.
         -   a `str`:  The string is set as form data for the associated key.
+    -   a file-like object: The object content is loaded in memory and then
+        handled like a regular `str` or a `bytes`.
 
     .. versionadded:: 0.6
        `path` and `base_url` can now be unicode strings that are encoded using
@@ -270,7 +272,8 @@ class EnvironBuilder(object):
     :param multiprocess: controls `wsgi.multiprocess`.  Defaults to `False`.
     :param run_once: controls `wsgi.run_once`.  Defaults to `False`.
     :param headers: an optional list or :class:`Headers` object of headers.
-    :param data: a string or dict of form data.  See explanation above.
+    :param data: a string or dict of form data or a file-object.
+                 See explanation above.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
     :param charset: the charset used to encode unicode data.
@@ -329,6 +332,8 @@ class EnvironBuilder(object):
         if data:
             if input_stream is not None:
                 raise TypeError('can\'t provide input stream and data')
+            if hasattr(data, 'read'):
+                data = data.read()
             if isinstance(data, text_type):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
