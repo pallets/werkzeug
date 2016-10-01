@@ -111,7 +111,7 @@ setup(
     packages=['werkzeug', 'werkzeug.debug', 'werkzeug.contrib'],
     extras_require={
         'watchdog': ['watchdog'],
-        'termcolor',
+        'termcolor': ['termcolor'],
     },
     cmdclass=dict(test=TestCommand),
     include_package_data=True,
