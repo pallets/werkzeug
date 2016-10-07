@@ -529,8 +529,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         # Unhashable
         d = self.storage_class()
         d.add('foo', 23)
-        with pytest.raises(TypeError):
-            some_set = set(d)
+        pytest.raises(TypeError, hash, d)
 
     def test_iterables(self):
         a = datastructures.MultiDict((("key_a", "value_a"),))

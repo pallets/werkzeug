@@ -361,8 +361,8 @@ def test_rule_emptying():
 def test_rule_unhashable():
     rule = r.Rule('/foo', {'meh': 'muh'}, 'x', ['POST'],
                   False, 'x', True, None)
-    with pytest.raises(TypeError):
-        some_set = set(rule)
+    pytest.raises(TypeError, hash, rule)
+
 
 def test_rule_templates():
     testcase = r.RuleTemplate([
