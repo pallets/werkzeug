@@ -98,17 +98,11 @@ class ImmutableListMixin(object):
     def __delitem__(self, key):
         is_immutable(self)
 
-    def __delslice__(self, i, j):
-        is_immutable(self)
-
     def __iadd__(self, other):
         is_immutable(self)
     __imul__ = __iadd__
 
     def __setitem__(self, key, value):
-        is_immutable(self)
-
-    def __setslice__(self, i, j, value):
         is_immutable(self)
 
     def append(self, item):
@@ -765,6 +759,8 @@ class OrderedMultiDict(MultiDict):
                 return False
         return True
 
+    __hash__ = None
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -971,6 +967,8 @@ class Headers(Mapping):
     def __eq__(self, other):
         return other.__class__ is self.__class__ and \
             set(other._list) == set(self._list)
+
+    __hash__ = None
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -1339,6 +1337,8 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
 
     def __eq__(self, other):
         return self.environ is other.environ
+
+    __hash__ = None
 
     def __getitem__(self, key, _get_mode=False):
         # _get_mode is a no-op for this class as there is no index but

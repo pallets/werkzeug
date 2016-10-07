@@ -260,7 +260,7 @@ class IterO(IterIO):
         try:
             tmp_end_pos = len(self._buf)
             while pos > tmp_end_pos:
-                item = self._gen.next()
+                item = next(self._gen)
                 tmp_end_pos += len(item)
                 buf.append(item)
         except StopIteration:
