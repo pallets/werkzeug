@@ -225,3 +225,15 @@ discouraged because modern browsers do a bad job at supporting them for
 security reasons.
 
 This feature requires the pyOpenSSL library to be installed.
+
+Unix Sockets
+------------
+The builtin server supports Unix socket binding. This means that it is
+possible to start the server in a way that it will listen to a unix
+socket instead of a TCP socket.
+
+In order to use a unix socket the `hostname` parameter of :func:`run_simple`
+method must start with `'unix://'`::
+
+  from werkzeug.serving import run_simple
+  run_simple('unix://example.sock', 0, app)

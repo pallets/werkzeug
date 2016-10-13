@@ -9,12 +9,12 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import socket
 import ssl
+import subprocess
 import sys
 import textwrap
 import time
-import subprocess
-
 
 try:
     import OpenSSL
@@ -450,7 +450,6 @@ def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
         from httplib import HTTPConnection
     else:
         from http.client import HTTPConnection
-
     conn = HTTPConnection('127.0.0.1', server.port)
     conn.connect()
     conn.putrequest('GET', '/')
@@ -470,3 +469,31 @@ def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
     assert res.read() == b'a ,b,c ,d'
 
     conn.close()
+
+
+@pytest.mark.skipif(
+    not hasattr(socket, 'AF_UNIX'), reason='Only works on UNIX')
+def test_unix_socket(tmpdir, dev_server):
+    socket_f = str(tmpdir.join('socket'))
+    dev_server('''
+    def app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    kwargs['hostname'] = {socket!r}
+    '''.format(socket='unix://' + socket_f))
+
+    for i in reversed(range(10)):
+        try:
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            s.connect(socket_f)
+            s.send(b'GET / HTTP/1.0\n\n\n')
+            data = s.recv(1024)
+            assert b'hello' in data
+            s.shutdown(1)
+            s.close()
+        except socket.error:
+            if i == 0:
+                raise
+            time.sleep(0.1)
+        else:
+            break

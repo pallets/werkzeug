@@ -125,7 +125,8 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
         appfile = app_pkg.join('__init__.py')
         port = next(port_generator)
         appfile.write('\n\n'.join((
-            'kwargs = dict(port=%d)' % port,
+            "kwargs = {{'hostname': 'localhost', 'port': {port:d}}}".format(
+                port=port),
             textwrap.dedent(application)
         )))
 
