@@ -52,7 +52,7 @@ class TestHTTPUtility(object):
         assert a.best_match(['text/html']) == 'text/html'
         assert a.best_match(['foo/bar']) is None
         assert a.best_match(['foo/bar', 'bar/foo'], default='foo/bar') == 'foo/bar'
-        assert a.best_match(['application/xml', 'text/xml']) == 'application/xml'
+        assert a.best_match(['application/xml', 'text/xml']) == 'text/xml'
 
     def test_charset_accept(self):
         a = http.parse_accept_header('ISO-8859-1,utf-8;q=0.7,*;q=0.7',

@@ -1728,17 +1728,12 @@ class Accept(ImmutableList):
         :param matches: a list of matches to check for
         :param default: the value that is returned if none match
         """
-        best_quality = -1
-        result = default
-        for server_item in matches:
-            for client_item, quality in self:
-                if quality <= best_quality:
-                    break
-                if self._value_matches(server_item, client_item) \
-                   and quality > 0:
-                    best_quality = quality
-                    result = server_item
-        return result
+        for client_item, quality in self:
+            if quality > 0:
+                for server_item in matches:
+                    if self._value_matches(server_item, client_item):
+                        return server_item
+        return default
 
     @property
     def best(self):
