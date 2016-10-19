@@ -159,7 +159,7 @@ class AtomFeed(object):
         """Return a generator that yields pieces of XML."""
         # atom demands either an author element in every entry or a global one
         if not self.author:
-            if False in map(lambda e: bool(e.author), self.entries):
+            if any(not e.author for e in self.entries):
                 self.author = ({'name': 'Unknown author'},)
 
         if not self.updated:

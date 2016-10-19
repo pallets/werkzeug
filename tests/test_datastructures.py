@@ -526,6 +526,11 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         with pytest.raises(BadRequestKeyError):
             d.popitemlist()
 
+        # Unhashable
+        d = self.storage_class()
+        d.add('foo', 23)
+        pytest.raises(TypeError, hash, d)
+
     def test_iterables(self):
         a = datastructures.MultiDict((("key_a", "value_a"),))
         b = datastructures.MultiDict((("key_b", "value_b"),))

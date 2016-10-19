@@ -889,6 +889,8 @@ class Rule(RuleFactory):
         return self.__class__ is other.__class__ and \
             self._trace == other._trace
 
+    __hash__ = None
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
