@@ -358,6 +358,12 @@ def test_rule_emptying():
     assert rule.__dict__ != rule2.__dict__
 
 
+def test_rule_unhashable():
+    rule = r.Rule('/foo', {'meh': 'muh'}, 'x', ['POST'],
+                  False, 'x', True, None)
+    pytest.raises(TypeError, hash, rule)
+
+
 def test_rule_templates():
     testcase = r.RuleTemplate([
         r.Submount(
