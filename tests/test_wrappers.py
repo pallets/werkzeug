@@ -1123,3 +1123,17 @@ class TestSetCookie(object):
              '01-Jan-1970 00:00:00 GMT; Max-Age=60; Secure; HttpOnly; '
              'Path=/blub')
         ])
+
+
+def test_204_and_1XX_response_has_no_content_length():
+    response = wrappers.Response(status=204)
+    assert response.content_length is None
+
+    headers = response.get_wsgi_headers(create_environ())
+    assert 'Content-Length' not in headers
+
+    response = wrappers.Response(status=100)
+    assert response.content_length is None
+
+    headers = response.get_wsgi_headers(create_environ())
+    assert 'Content-Length' not in headers
