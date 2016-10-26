@@ -1202,10 +1202,10 @@ class BaseResponse(object):
         # should try to do that.  But only if this does not involve
         # flattening the iterator or encoding of unicode strings in
         # the response.  We however should not do that if we have a 304
-        # response.
+        # response. Don't do this for 1XX, 204 or 304 responses.
         if self.automatically_set_content_length and \
            self.is_sequence and content_length is None and \
-           status not in (204, 304) and 200 >= status > 100:
+           status not in (204, 304) and not (100 <= status < 200):
             try:
                 content_length = sum(len(to_bytes(x, 'ascii'))
                                      for x in self.response)
