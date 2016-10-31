@@ -406,8 +406,10 @@ class DebuggedApplication(object):
         # Otherwise go through pin based authentication
         else:
             entered_pin = request.args.get('pin')
-            if entered_pin.strip().replace('-', '') == \
-               self.pin.replace('-', ''):
+            if len(entered_pin) > 15:
+                self._fail_pin_auth()
+            elif entered_pin.strip().replace('-', '') == \
+                self.pin.replace('-', ''):
                 self._failed_pin_auth = 0
                 auth = True
             else:
