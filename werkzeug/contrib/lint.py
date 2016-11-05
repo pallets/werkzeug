@@ -19,7 +19,6 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -131,7 +130,7 @@ class GuardedIterator(object):
 
     def __init__(self, iterator, headers_set, chunks):
         self._iterator = iterator
-        self._next = iter(iterator).__next__
+        self._next = iter(iterator).next
         self.closed = False
         self.headers_set = headers_set
         self.chunks = chunks
@@ -139,7 +138,7 @@ class GuardedIterator(object):
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def next(self):
         if self.closed:
             warn(WSGIWarning('iterated over closed app_iter'),
                  stacklevel=2)
