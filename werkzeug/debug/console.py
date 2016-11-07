@@ -173,7 +173,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
                 del self.buffer[:]
         finally:
             output = ThreadedStream.fetch()
-        return prompt + source + output
+        return prompt + escape(source) + output
 
     def runcode(self, code):
         try:
