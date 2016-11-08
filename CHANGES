@@ -48,6 +48,7 @@ Unreleased.
   parameter.
 - Color run_simple's terminal output based on HTTP codes ``#1013``.
 - Fix self-XSS in debugger console, see ``#1031``.
+- Fix IPython 5.x shell support, see ``#1033``.
 
 Version 0.11.12
 ---------------
