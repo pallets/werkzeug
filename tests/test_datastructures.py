@@ -720,13 +720,14 @@ class TestHeaders(object):
     def test_to_wsgi_list(self):
         h = self.storage_class()
         h.set(u'Key', u'Value')
+        h.add(u'Key', u'Value2')
         for key, value in h.to_wsgi_list():
             if PY2:
                 strict_eq(key, b'Key')
-                strict_eq(value, b'Value')
+                strict_eq(value, b'Value,Value2')
             else:
                 strict_eq(key, u'Key')
-                strict_eq(value, u'Value')
+                strict_eq(value, u'Value,Value2')
 
 
 class TestEnvironHeaders(object):
