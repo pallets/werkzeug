@@ -720,13 +720,28 @@ class TestHeaders(object):
     def test_to_wsgi_list(self):
         h = self.storage_class()
         h.set(u'Key', u'Value')
+        h.add(u'Key', u'Value2')
+        assert len(h.to_wsgi_list()) == 1
         for key, value in h.to_wsgi_list():
             if PY2:
                 strict_eq(key, b'Key')
-                strict_eq(value, b'Value')
+                strict_eq(value, b'Value,Value2')
             else:
                 strict_eq(key, u'Key')
-                strict_eq(value, u'Value')
+                strict_eq(value, u'Value,Value2')
+
+    def test_to_wsgi_list_cookie(self):
+        h = self.storage_class()
+        h.set(u'Set-Cookie', u'key1=value1')
+        h.add(u'Set-Cookie', u'key2=value2')
+        l = h.to_wsgi_list()
+
+        assert len(l) == 2
+        assert l[0][0] == 'Set-Cookie'
+        assert l[1][0] == 'Set-Cookie'
+
+        assert l[0][1] == 'key1=value1'
+        assert l[1][1] == 'key2=value2'
 
 
 class TestEnvironHeaders(object):

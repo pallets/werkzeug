@@ -1258,8 +1258,22 @@ class Headers(Mapping):
         :return: list
         """
         if PY2:
-            return [(to_native(k), v.encode('latin1')) for k, v in self]
-        return list(self)
+            h_iter = ((to_native(k), v.encode('latin1')) for k, v in self)
+        else:
+            h_iter = self
+
+        # The Set-Cookie header appears multiple times; other repeated
+        # headers are joined by ','.
+        headers = []
+        d = {}
+        for k, v in h_iter:
+            if k.lower() == 'set-cookie' or k not in d:
+                d[k] = len(headers)
+                headers.append((k, v))
+            else:
+                headers[d[k]] = (k, '%s,%s' % (headers[d[k]][1], v))
+
+        return headers
 
     def copy(self):
         return self.__class__(self._list)
