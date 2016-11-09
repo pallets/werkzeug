@@ -613,17 +613,13 @@ class TestHeaders(object):
         assert len(headers.getlist('Content-Type')) == 1
 
         # list conversion
-        assert sorted(headers.to_wsgi_list()) == [
+        assert headers.to_wsgi_list() == [
             ('Content-Type', 'foo/bar'),
             ('X-Foo', 'bar')
         ]
         assert str(headers) == (
             "Content-Type: foo/bar\r\n"
             "X-Foo: bar\r\n"
-            "\r\n"
-        ) or str(headers) == (
-            "X-Foo: bar\r\n"
-            "Content-Type: foo/bar\r\n"
             "\r\n"
         )
         assert str(self.storage_class()) == "\r\n"
@@ -725,6 +721,7 @@ class TestHeaders(object):
         h = self.storage_class()
         h.set(u'Key', u'Value')
         h.add(u'Key', u'Value2')
+        assert len(h.to_wsgi_list()) == 1
         for key, value in h.to_wsgi_list():
             if PY2:
                 strict_eq(key, b'Key')
@@ -732,6 +729,19 @@ class TestHeaders(object):
             else:
                 strict_eq(key, u'Key')
                 strict_eq(value, u'Value,Value2')
+
+    def test_to_wsgi_list_cookie(self):
+        h = self.storage_class()
+        h.set(u'Set-Cookie', u'key1=value1')
+        h.add(u'Set-Cookie', u'key2=value2')
+        l = h.to_wsgi_list()
+
+        assert len(l) == 2
+        assert l[0][0] == 'Set-Cookie'
+        assert l[1][0] == 'Set-Cookie'
+
+        assert l[0][1] == 'key1=value1'
+        assert l[1][1] == 'key2=value2'
 
 
 class TestEnvironHeaders(object):
