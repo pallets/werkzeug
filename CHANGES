@@ -47,6 +47,8 @@ Unreleased.
 - the post() method of the test client now accept file object through the data
   parameter.
 - Color run_simple's terminal output based on HTTP codes ``#1013``.
+- Headers with the same name (other than set-cookie) are combined into a single
+  header by joining with a comma ``#1034``.
 
 Version 0.11.12
 ---------------
