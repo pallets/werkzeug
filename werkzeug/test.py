@@ -393,7 +393,7 @@ class EnvironBuilder(object):
     def _get_content_type(self):
         content_type_header = self.headers.get('Content-Type')
         ct = parse_options_header(content_type_header)[0]
-        if ct is None and not self._input_stream:
+        if ct == '' and not self._input_stream:
             if self._files:
                 return 'multipart/form-data'
             elif self._form:
