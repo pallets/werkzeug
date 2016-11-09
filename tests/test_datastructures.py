@@ -613,13 +613,17 @@ class TestHeaders(object):
         assert len(headers.getlist('Content-Type')) == 1
 
         # list conversion
-        assert headers.to_wsgi_list() == [
+        assert sorted(headers.to_wsgi_list()) == [
             ('Content-Type', 'foo/bar'),
             ('X-Foo', 'bar')
         ]
         assert str(headers) == (
             "Content-Type: foo/bar\r\n"
             "X-Foo: bar\r\n"
+            "\r\n"
+        ) or str(headers) == (
+            "X-Foo: bar\r\n"
+            "Content-Type: foo/bar\r\n"
             "\r\n"
         )
         assert str(self.storage_class()) == "\r\n"
