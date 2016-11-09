@@ -1117,7 +1117,6 @@ class TestSetCookie(object):
         response.set_cookie('foo', value='bar', max_age=60, expires=0,
                             path='/blub', domain='example.org', secure=True,
                             httponly=True)
-        print 'test headers: {}'.format(response.headers.to_wsgi_list())
         strict_eq(sorted(response.headers.to_wsgi_list()), sorted([
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
