@@ -47,6 +47,7 @@ Unreleased.
 - the post() method of the test client now accept file object through the data
   parameter.
 - Color run_simple's terminal output based on HTTP codes ``#1013``.
+- Fix self-XSS in debugger console, see ``#1031``.
 
 Version 0.11.12
 ---------------
