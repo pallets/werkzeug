@@ -175,12 +175,6 @@ class _InteractiveConsole(code.InteractiveInterpreter):
             output = ThreadedStream.fetch()
         return prompt + escape(source) + output
 
-    def runcode(self, code):
-        try:
-            eval(code, self.globals, self.locals)
-        except Exception:
-            self.showtraceback()
-
     def showtraceback(self):
         from werkzeug.debug.tbtools import get_current_traceback
         tb = get_current_traceback(skip=1)
