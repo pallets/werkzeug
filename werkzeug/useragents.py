@@ -73,7 +73,7 @@ class UserAgentParser(object):
     )
 
     def __init__(self):
-        self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platforms]
+        self.platforms = [(b, re.compile(r'\b%s\b' % a, re.I)) for a, b in self.platforms]
         self.browsers = [(b, re.compile(self._browser_version_re % a))
                          for a, b in self.browsers]
 
