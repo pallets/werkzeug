@@ -96,5 +96,6 @@ setup(
     cmdclass=dict(test=TestCommand),
     include_package_data=True,
     zip_safe=False,
-    platforms='any'
+    platforms='any',
+    test_requires=['pytest', 'requests'],
 )
