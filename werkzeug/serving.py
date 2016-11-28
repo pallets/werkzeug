@@ -125,10 +125,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_PROTOCOL':      self.request_version
         }
 
-        for key, value in self.headers.items():
-            key = 'HTTP_' + key.upper().replace('-', '_')
+        for header in self.headers.keys():
+            key = 'HTTP_' + header.upper().replace('-', '_')
             if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
-                environ[key] = value
+                if hasattr(self.headers, 'getheaders'):
+                    environ[key] = ', '.join(self.headers.getheaders(header))
+                else:
+                    environ[key] = ', '.join(self.headers.get_all(header))
 
         if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
