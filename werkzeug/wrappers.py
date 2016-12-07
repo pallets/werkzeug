@@ -1003,7 +1003,8 @@ class BaseResponse(object):
         return _iter_encoded(self.response, self.charset)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
-                   path='/', domain=None, secure=False, httponly=False):
+                   path='/', domain=None, secure=False, httponly=False,
+                   samesite=None):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
         object in the Python standard library but it accepts unicode data, too.
 
@@ -1033,7 +1034,8 @@ class BaseResponse(object):
                                                    domain=domain,
                                                    secure=secure,
                                                    httponly=httponly,
-                                                   charset=self.charset))
+                                                   charset=self.charset,
+                                                   samesite=samesite))
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie.  Fails silently if key doesn't exist.

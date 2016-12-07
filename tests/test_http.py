@@ -384,6 +384,10 @@ class TestHTTPUtility(object):
         val = http.dump_cookie('foo', 'bar', domain=u'\N{SNOWMAN}.com')
         strict_eq(val, 'foo=bar; Domain=xn--n3h.com; Path=/')
 
+    def test_cookie_samesite(self):
+        val = http.dump_cookie('foo', 'bar', samesite=True)
+        strict_eq(val, 'foo=bar; SameSite=Strict; Path=/')
+
     def test_cookie_unicode_dumping(self):
         val = http.dump_cookie('foo', u'\N{SNOWMAN}')
         h = datastructures.Headers()
