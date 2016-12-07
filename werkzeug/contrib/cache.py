@@ -224,6 +224,7 @@ class BaseCache(object):
     def clear(self):
         """Clears the cache.  Keep in mind that not all caches support
         completely clearing the cache.
+        
         :returns: Whether the cache has been cleared.
         :rtype: boolean
         """
