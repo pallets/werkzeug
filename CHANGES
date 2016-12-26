@@ -4,6 +4,8 @@ Werkzeug Changelog
 Version 0.11.12
 ---------------
 
+Released on December 26th 2016.
+
 - Fix more bugs in multidicts regarding empty lists. See ``#1000``.
 - Add some docstrings to some `EnvironBuilder` properties that were previously
   unintentionally missing.
