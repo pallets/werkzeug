@@ -56,7 +56,7 @@ def _get_executable():
     extension which can cause bugs on reloading.
     """
     rv = sys.executable
-    if os.name == 'NT' and not os.path.exists(rv) and \
+    if os.name == 'nt' and not os.path.exists(rv) and \
        os.path.exists(rv + '.exe'):
         return rv + '.exe'
     return rv
