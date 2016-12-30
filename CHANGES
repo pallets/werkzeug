@@ -50,6 +50,13 @@ Unreleased.
 - Fix self-XSS in debugger console, see ``#1031``.
 - Fix IPython 5.x shell support, see ``#1033``.
 
+Version 0.11.14
+---------------
+
+Unreleased.
+
+- Check if platform can fork before importing ``ForkingMixIn``, raise exception
+  when creating ``ForkingWSGIServer`` on such a platform, see PR ``#999``.
 
 Version 0.11.13
 ---------------
