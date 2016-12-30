@@ -1,6 +1,13 @@
 Werkzeug Changelog
 ==================
 
+Version 0.11.15
+---------------
+
+Released on December 30th 2016.
+
+- Bugfix for the bugfix in the previous release.
+
 Version 0.11.14
 ---------------
 
