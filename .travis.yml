@@ -6,6 +6,8 @@ python:
     - "3.3"
     - "3.4"
     - "3.5"
+    - "3.6-dev"
+    - "nightly"
 
 install:
     # Travis uses an outdated PyPy, this installs the most recent one.
