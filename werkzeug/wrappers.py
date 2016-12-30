@@ -409,11 +409,16 @@ class BaseRequest(object):
 
     @cached_property
     def stream(self):
-        """The stream to read incoming data from.  Unlike :attr:`input_stream`
-        this stream is properly guarded that you can't accidentally read past
-        the length of the input.  Werkzeug will internally always refer to
-        this stream to read data which makes it possible to wrap this
-        object with a stream that does filtering.
+        """
+        If the incoming form data was not encoded with a known mimetype
+        the data is stored unmodified in this stream for consumption.  Most
+        of the time it is a better idea to use :attr:`data` which will give
+        you that data as a string.  The stream only returns the data once.
+
+        Unlike :attr:`input_stream` this stream is properly guarded that you
+        can't accidentally read past the length of the input.  Werkzeug will
+        internally always refer to this stream to read data which makes it
+        possible to wrap this object with a stream that does filtering.
 
         .. versionchanged:: 0.9
            This stream is now always available but might be consumed by the
@@ -432,7 +437,10 @@ class BaseRequest(object):
 
     @cached_property
     def args(self):
-        """The parsed URL parameters.  By default an
+        """The parsed URL parameters (the part in the URL after the question
+        mark).
+
+        By default an
         :class:`~werkzeug.datastructures.ImmutableMultiDict`
         is returned from this function.  This can be changed by setting
         :attr:`parameter_storage_class` to a different type.  This might
@@ -444,6 +452,11 @@ class BaseRequest(object):
 
     @cached_property
     def data(self):
+        """
+        Contains the incoming request data as string in case it came with
+        a mimetype Werkzeug does not handle.
+        """
+
         if self.disable_data_descriptor:
             raise AttributeError('data descriptor is disabled')
         # XXX: this should eventually be deprecated.
@@ -498,13 +511,22 @@ class BaseRequest(object):
         is returned from this function.  This can be changed by setting
         :attr:`parameter_storage_class` to a different type.  This might
         be necessary if the order of the form data is important.
+
+        Please keep in mind that file uploads will not end up here, but instead
+        in the :attr:`files` attribute.
+
+        .. versionchanged:: 0.9
+
+            Previous to Werkzeug 0.9 this would only contain form data for POST
+            and PUT requests.
         """
         self._load_form_data()
         return self.form
 
     @cached_property
     def values(self):
-        """Combined multi dict for :attr:`args` and :attr:`form`."""
+        """A :class:`werkzeug.datastructures.CombinedMultiDict` that combines
+        :attr:`args` and :attr:`form`."""
         args = []
         for d in self.args, self.form:
             if not isinstance(d, MultiDict):
@@ -519,6 +541,11 @@ class BaseRequest(object):
         ``<input type="file" name="">``.  Each value in :attr:`files` is a
         Werkzeug :class:`~werkzeug.datastructures.FileStorage` object.
 
+        It basically behaves like a standard file object you know from Python,
+        with the difference that it also has a
+        :meth:`~werkzeug.datastructures.FileStorage.save` function that can
+        store the file on the filesystem.
+
         Note that :attr:`files` will only contain data if the request method was
         POST, PUT or PATCH and the ``<form>`` that posted to the request had
         ``enctype="multipart/form-data"``.  It will be empty otherwise.
@@ -532,7 +559,8 @@ class BaseRequest(object):
 
     @cached_property
     def cookies(self):
-        """Read only access to the retrieved cookie values as dictionary."""
+        """A :class:`dict` with the contents of all cookies transmitted with
+        the request."""
         return parse_cookie(self.environ, self.charset,
                             self.encoding_errors,
                             cls=self.dict_storage_class)
@@ -612,7 +640,7 @@ class BaseRequest(object):
     method = environ_property(
         'REQUEST_METHOD', 'GET', read_only=True,
         load_func=lambda x: x.upper(),
-        doc="The transmission method. (For example ``'GET'`` or ``'POST'``).")
+        doc="The request method. (For example ``'GET'`` or ``'POST'``).")
 
     @cached_property
     def access_route(self):
