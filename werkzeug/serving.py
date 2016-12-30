@@ -75,12 +75,14 @@ try:
         from SocketServer import ThreadingMixIn, ForkingMixIn
     else:
         from SocketServer import ThreadingMixIn
+        ForkingMixIn = object
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 except ImportError:
     if can_fork:
         from socketserver import ThreadingMixIn, ForkingMixIn
     else:
         from socketserver import ThreadingMixIn
+        ForkingMixIn = object
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # important: do not use relative imports here or python -m will break
@@ -562,6 +564,8 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
 
     def __init__(self, host, port, app, processes=40, handler=None,
                  passthrough_errors=False, ssl_context=None, fd=None):
+        if not can_fork:
+            raise ValueError('Your platform does not support forking.')
         BaseWSGIServer.__init__(self, host, port, app, handler,
                                 passthrough_errors, ssl_context, fd)
         self.max_children = processes
@@ -579,7 +583,7 @@ def make_server(host=None, port=None, app=None, threaded=False, processes=1,
     elif threaded:
         return ThreadedWSGIServer(host, port, app, request_handler,
                                   passthrough_errors, ssl_context, fd=fd)
-    elif processes > 1 and can_fork:
+    elif processes > 1:
         return ForkingWSGIServer(host, port, app, processes, request_handler,
                                  passthrough_errors, ssl_context, fd=fd)
     else:
