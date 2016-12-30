@@ -19,7 +19,6 @@ import sys
 
 from werkzeug._compat import iteritems
 
-# the version.  Usually set automatically by a script.
 __version__ = '0.12-dev'
 
 
