@@ -49,7 +49,8 @@ Unreleased.
 - Color run_simple's terminal output based on HTTP codes ``#1013``.
 - Fix self-XSS in debugger console, see ``#1031``.
 - Fix IPython 5.x shell support, see ``#1033``.
-
+- Check that the OS can fork before importing `ForkingMixIn` or creating a
+  ForkingWSGIServer through `make_server`.
 
 Version 0.11.13
 ---------------
