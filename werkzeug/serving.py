@@ -66,19 +66,19 @@ def _get_openssl_crypto_module():
 
 
 try:
-    if can_fork:
-        from SocketServer import ThreadingMixIn, ForkingMixIn
-    else:
-        from SocketServer import ThreadingMixIn
-        ForkingMixIn = object
+    import SocketServer as socketserver
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 except ImportError:
-    if can_fork:
-        from socketserver import ThreadingMixIn, ForkingMixIn
-    else:
-        from socketserver import ThreadingMixIn
-        ForkingMixIn = object
+    import socketserver
     from http.server import HTTPServer, BaseHTTPRequestHandler
+
+ThreadingMixIn = socketserver.ThreadingMixIn
+
+if can_fork:
+    ForkingMixIn = socketserver.ForkingMixIn
+else:
+    class ForkingMixIn(object):
+        pass
 
 # important: do not use relative imports here or python -m will break
 import werkzeug
