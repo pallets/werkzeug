@@ -51,7 +51,7 @@ install:
     - pip install tox flake8
 
 script:
-    - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d . | sed -e 's/pypypy/pypy/')-$TOXENV_SUFFIX
+    - tox -e py-$TOXENV_SUFFIX
 
 branches:
     only:
