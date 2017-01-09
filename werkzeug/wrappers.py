@@ -1064,6 +1064,7 @@ class BaseResponse(object):
                                                    domain=domain,
                                                    secure=secure,
                                                    httponly=httponly,
+                                                   samesite=samesite,
                                                    charset=self.charset))
 
     def delete_cookie(self, key, path='/', domain=None):
