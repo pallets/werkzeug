@@ -1031,7 +1031,7 @@ class BaseResponse(object):
         return _iter_encoded(self.response, self.charset)
 
     def set_cookie(self, key, value='', max_age=None, expires=None,
-                   path='/', domain=None, secure=False, httponly=False):
+                   path='/', domain=None, secure=False, httponly=False, samesite=None):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
         object in the Python standard library but it accepts unicode data, too.
 
@@ -1052,6 +1052,9 @@ class BaseResponse(object):
         :param httponly: disallow JavaScript to access the cookie.  This is an
                          extension to the cookie standard and probably not
                          supported by all browsers.
+        :param samesite: Restrict access to cookies by other sites. Valid values
+                         are `Lax` and `Strict`. This is an extension to the cookie 
+                         standard and probably not supported by all browsers.
         """
         self.headers.add('Set-Cookie', dump_cookie(key,
                                                    value=value,
