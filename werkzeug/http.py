@@ -937,7 +937,7 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=False, httponly=False,
-                charset='utf-8', sync_expires=True):
+                samesite=None, charset='utf-8', sync_expires=True):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -970,6 +970,9 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param httponly: disallow JavaScript to access the cookie.  This is an
                      extension to the cookie standard and probably not
                      supported by all browsers.
+    :param samesite: Restrict access to cookies by other sites. Valid values
+                     are `Lax` and `Strict`. This is an extension to the cookie 
+                     standard and probably not supported by all browsers.
     :param charset: the encoding for unicode values.
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
@@ -997,6 +1000,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                     (b'Expires', expires, False,),
                     (b'Max-Age', max_age, False),
                     (b'Secure', secure, None),
+                    (b'SameSite', samesite, False),
                     (b'HttpOnly', httponly, None),
                     (b'Path', path, False)):
         if q is None:
