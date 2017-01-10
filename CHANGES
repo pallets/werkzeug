@@ -50,6 +50,18 @@ Unreleased.
 - Fix self-XSS in debugger console, see ``#1031``.
 - Fix IPython 5.x shell support, see ``#1033``.
 
+Version 0.11.16
+---------------
+
+- werkzeug.serving: set CONTENT_TYPE / CONTENT_LENGTH if only they're provided by the client
+
+Version 0.11.15
+---------------
+
+Released on December 30th 2016.
+
+- Bugfix for the bugfix in the previous release.
+
 Version 0.11.14
 ---------------
 
