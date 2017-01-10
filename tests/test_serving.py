@@ -249,3 +249,32 @@ def test_wrong_protocol(dev_server):
     log = server.logfile.read()
     assert 'Traceback' not in log
     assert '\n127.0.0.1' in log
+
+
+def test_absent_content_length_and_content_type(dev_server):
+    server = dev_server('''
+    def app(environ, start_response):
+        assert 'CONTENT_LENGTH' not in environ
+        assert 'CONTENT_TYPE' not in environ
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'YES']
+    ''')
+
+    r = requests.get(server.url)
+    assert r.content == b'YES'
+
+
+def test_set_content_length_and_content_type_if_provided_by_client(dev_server):
+    server = dev_server('''
+    def app(environ, start_response):
+        assert environ['CONTENT_LENGTH'] == '233'
+        assert environ['CONTENT_TYPE'] == 'application/json'
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'YES']
+    ''')
+
+    r = requests.get(server.url, headers={
+        'content_length': '233',
+        'content_type': 'application/json'
+    })
+    assert r.content == b'YES'
