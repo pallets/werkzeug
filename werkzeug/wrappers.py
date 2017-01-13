@@ -1053,7 +1053,7 @@ class BaseResponse(object):
                          extension to the cookie standard and probably not
                          supported by all browsers.
         :param samesite: Restrict access to cookies by other sites. Valid values
-                         are `Lax` and `Strict`. This is an extension to the cookie 
+                         are `Lax` and `Strict`. This is an extension to the cookie
                          standard and probably not supported by all browsers.
         """
         self.headers.add('Set-Cookie', dump_cookie(key,
