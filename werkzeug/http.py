@@ -971,7 +971,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                      extension to the cookie standard and probably not
                      supported by all browsers.
     :param samesite: Restrict access to cookies by other sites. Valid values
-                     are `Lax` and `Strict`. This is an extension to the cookie 
+                     are `Lax` and `Strict`. This is an extension to the cookie
                      standard and probably not supported by all browsers.
     :param charset: the encoding for unicode values.
     :param sync_expires: automatically set expires if max_age is defined
