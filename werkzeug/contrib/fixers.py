@@ -94,7 +94,92 @@ class PathInfoFromRequestUriFix(object):
         return self.app(environ, start_response)
 
 
-class ProxyFix(object):
+class ConditionalProxyFix(object):
+    """This middleware can be applied to add HTTP proxy support to an
+    application that was not designed with HTTP proxies in mind.  It
+    sets `REMOTE_ADDR`, `HTTP_HOST` from `X-Forwarded` headers.  While
+    Werkzeug-based applications already can use
+    :py:func:`werkzeug.wsgi.get_host` to retrieve the current host even if
+    behind proxy setups, this middleware can be used for applications which
+    access the WSGI environment directly.
+
+    Furthermore, some applications might be both behind a proxy and accessed
+    directly. For that purpose, conditions according to the received headers
+    can be applied.
+
+    For each header, a tuple with 3 positions can be passed as a parameter.
+    The first one will state the header to look for; the second one will
+    state which value to expect for that header; and the third one will
+    contain how many proxies to expect if that header is found.
+
+    If no rules are met, then the `default_num_proxies` will be taken.
+
+    The original values of `REMOTE_ADDR` and `HTTP_HOST` are stored in
+    the WSGI environment as `werkzeug.proxy_fix.orig_remote_addr` and
+    `werkzeug.proxy_fix.orig_http_host`.
+
+    :param app: the WSGI application
+    :param num_proxy_rules: a list of 3-position tuples that contain header
+        conditions to look for, along with the value for the header and the
+        number of proxies: [(header_name, header_value, num_proxies), ...]
+    :param default_num_proxies: the number of proxy servers in front of the
+        app in case no rules are triggered.
+    """
+
+    def __init__(self, app, num_proxy_rules=None, default_num_proxies=1):
+        num_proxy_rules = num_proxy_rules or list()
+
+        self.app = app
+        self.num_proxy_rules = list()
+        for rule in num_proxy_rules:
+            if len(rule) == 3 and rule[0]:
+                header, value, num_proxy = rule
+                self.num_proxy_rules.append(('HTTP_' + header.upper().replace('-', '_'),
+                                             value,
+                                             num_proxy))
+
+        self.default_num_proxies = default_num_proxies
+
+    def get_remote_addr(self, environ, forwarded_for):
+        """Selects the new remote addr from the given list of ips in
+        X-Forwarded-For.  By default it picks the one that the third position in the
+        condition provides, as long as the specified header exists and it value
+        matches with the given one in the second position.
+        `[(header_name, header_value, num_proxies), ...]`
+
+        .. versionadded:: 0.8
+        """
+        for rule in self.num_proxy_rules:
+            if rule[0] in environ:
+                if environ[rule[0]] == rule[1]:
+                    if len(forwarded_for) >= rule[2]:
+                        return forwarded_for[-1 * rule[2]]
+                return None
+        if self.default_num_proxies and len(forwarded_for) >= self.default_num_proxies:
+            return forwarded_for[-1 * self.default_num_proxies]
+
+    def __call__(self, environ, start_response):
+        getter = environ.get
+        forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '')
+        forwarded_for = getter('HTTP_X_FORWARDED_FOR', '').split(',')
+        forwarded_host = getter('HTTP_X_FORWARDED_HOST', '')
+        environ.update({
+            'werkzeug.proxy_fix.orig_wsgi_url_scheme':  getter('wsgi.url_scheme'),
+            'werkzeug.proxy_fix.orig_remote_addr':      getter('REMOTE_ADDR'),
+            'werkzeug.proxy_fix.orig_http_host':        getter('HTTP_HOST')
+        })
+        forwarded_for = [x for x in [x.strip() for x in forwarded_for] if x]
+        remote_addr = self.get_remote_addr(environ, forwarded_for)
+        if remote_addr is not None:
+            environ['REMOTE_ADDR'] = remote_addr
+        if forwarded_host:
+            environ['HTTP_HOST'] = forwarded_host
+        if forwarded_proto:
+            environ['wsgi.url_scheme'] = forwarded_proto
+        return self.app(environ, start_response)
+
+
+class ProxyFix(ConditionalProxyFix):
 
     """This middleware can be applied to add HTTP proxy support to an
     application that was not designed with HTTP proxies in mind.  It
@@ -118,38 +203,7 @@ class ProxyFix(object):
     """
 
     def __init__(self, app, num_proxies=1):
-        self.app = app
-        self.num_proxies = num_proxies
-
-    def get_remote_addr(self, forwarded_for):
-        """Selects the new remote addr from the given list of ips in
-        X-Forwarded-For.  By default it picks the one that the `num_proxies`
-        proxy server provides.  Before 0.9 it would always pick the first.
-
-        .. versionadded:: 0.8
-        """
-        if len(forwarded_for) >= self.num_proxies:
-            return forwarded_for[-1 * self.num_proxies]
-
-    def __call__(self, environ, start_response):
-        getter = environ.get
-        forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '')
-        forwarded_for = getter('HTTP_X_FORWARDED_FOR', '').split(',')
-        forwarded_host = getter('HTTP_X_FORWARDED_HOST', '')
-        environ.update({
-            'werkzeug.proxy_fix.orig_wsgi_url_scheme':  getter('wsgi.url_scheme'),
-            'werkzeug.proxy_fix.orig_remote_addr':      getter('REMOTE_ADDR'),
-            'werkzeug.proxy_fix.orig_http_host':        getter('HTTP_HOST')
-        })
-        forwarded_for = [x for x in [x.strip() for x in forwarded_for] if x]
-        remote_addr = self.get_remote_addr(forwarded_for)
-        if remote_addr is not None:
-            environ['REMOTE_ADDR'] = remote_addr
-        if forwarded_host:
-            environ['HTTP_HOST'] = forwarded_host
-        if forwarded_proto:
-            environ['wsgi.url_scheme'] = forwarded_proto
-        return self.app(environ, start_response)
+        super(ProxyFix, self).__init__(app, None, num_proxies)
 
 
 class HeaderRewriterFix(object):

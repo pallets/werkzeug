@@ -55,6 +55,92 @@ class TestServerFixer(object):
             response = Response.from_app(app, env)
             assert response.get_data() == b'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
+    def test_conditional_proxy_fix(self):
+        @Request.application
+        def app(request):
+            return Response('%s|%s' % (
+                request.remote_addr,
+                # do not use request.host as this fixes too :)
+                request.environ['HTTP_HOST']
+            ))
+        app = fixers.ConditionalProxyFix(app, [('X-My-Header', 'SomeValue', 2)])
+        environ = dict(
+            create_environ(),
+            HTTP_X_FORWARDED_PROTO="https",
+            HTTP_X_FORWARDED_HOST='example.com',
+            HTTP_X_FORWARDED_FOR='1.2.3.4, 5.6.7.8',
+            REMOTE_ADDR='127.0.0.1',
+            HTTP_HOST='fake',
+            HTTP_X_MY_HEADER='SomeValue'
+        )
+
+        response = Response.from_app(app, environ)
+
+        assert response.get_data() == b'1.2.3.4|example.com'
+
+        # And we must check that if it is a redirection it is
+        # correctly done:
+
+        redirect_app = redirect('/foo/bar.hml')
+        response = Response.from_app(redirect_app, environ)
+
+        wsgi_headers = response.get_wsgi_headers(environ)
+        assert wsgi_headers['Location'] == 'https://example.com/foo/bar.hml'
+
+    def test_conditional_proxy_fix_no_header(self):
+        @Request.application
+        def app(request):
+            return Response('%s|%s' % (
+                request.remote_addr,
+                # do not use request.host as this fixes too :)
+                request.environ['HTTP_HOST']
+            ))
+        app = fixers.ConditionalProxyFix(app, [('X-My-Header', 'SomeValue', 2)], 2)
+        environ = dict(
+            create_environ(),
+            HTTP_X_FORWARDED_PROTO="https",
+            HTTP_X_FORWARDED_HOST='example.com',
+            HTTP_X_FORWARDED_FOR='1.2.3.4, 5.6.7.8',
+            REMOTE_ADDR='127.0.0.1',
+            HTTP_HOST='fake'
+        )
+
+        response = Response.from_app(app, environ)
+
+        assert response.get_data() == b'1.2.3.4|example.com'
+
+        # And we must check that if it is a redirection it is
+        # correctly done:
+
+        redirect_app = redirect('/foo/bar.hml')
+        response = Response.from_app(redirect_app, environ)
+
+        wsgi_headers = response.get_wsgi_headers(environ)
+        assert wsgi_headers['Location'] == 'https://example.com/foo/bar.hml'
+
+    def test_conditional_proxy_fix_wrong_header_value(self):
+        @Request.application
+        def app(request):
+            return Response('%s|%s' % (
+                request.remote_addr,
+                # do not use request.host as this fixes too :)
+                request.environ['HTTP_HOST']
+            ))
+        app = fixers.ConditionalProxyFix(app, [('X-My-Header', 'SomeValue', 2)])
+        environ = dict(
+            create_environ(),
+            HTTP_X_FORWARDED_PROTO="https",
+            HTTP_X_FORWARDED_HOST='example.com',
+            HTTP_X_FORWARDED_FOR='1.2.3.4, 5.6.7.8',
+            REMOTE_ADDR='127.0.0.1',
+            HTTP_HOST='fake',
+            HTTP_X_MY_HEADER='OtherValue'
+        )
+
+        response = Response.from_app(app, environ)
+
+        assert response.get_data() == b'127.0.0.1|example.com'
+
     def test_proxy_fix(self):
         @Request.application
         def app(request):
