@@ -212,7 +212,6 @@ class TestFormParser(object):
         strict_eq(data, req.files['two'][1])
 
 
-
 class TestMultiPart(object):
 
     def test_basic(self):
