@@ -15,13 +15,15 @@ import pytest
 from os.path import join, dirname
 
 from tests import strict_eq
+from sys import maxint
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict
-from werkzeug.formparser import parse_form_data
+from werkzeug.formparser import parse_form_data,\
+    default_stream_factory, FormDataParser
 from werkzeug._compat import BytesIO
 
 
@@ -42,6 +44,22 @@ def form_data_consumer(request):
 def get_contents(filename):
     with open(filename, 'rb') as f:
         return f.read()
+
+
+class TestFormDataParser(object):
+    """
+    Testcases for `FormDataParser`
+    """
+
+    def test_parse_bad_content_type(self):
+        parser = FormDataParser()
+        assert parser.parse('', 'bad-mime-type', 0) == \
+            ('', MultiDict([]), MultiDict([]))
+
+    def test_parse_from_environ(self):
+        parser = FormDataParser()
+        stream, _, _ = parser.parse_from_environ({'wsgi.input': ''})
+        assert stream is not None
 
 
 class TestFormParser(object):
@@ -138,6 +156,16 @@ class TestFormParser(object):
         strict_eq(len(form), 0)
         strict_eq(len(files), 0)
 
+    @pytest.mark.parametrize('size,expected', [
+        (-1, BytesIO),
+        (0, BytesIO),
+        (1024 * 500, BytesIO),
+        (1024 * 501, file),
+        (maxint, file),
+    ])
+    def test_default_stream_factory(self, size, expected):
+        assert isinstance(default_stream_factory(size, '', ''), expected)
+
     def test_large_file(self):
         data = b'x' * (1024 * 600)
         req = Request.from_values(data={'foo': (BytesIO(data), 'test.txt')},
@@ -182,6 +210,7 @@ class TestFormParser(object):
         strict_eq(('foo', 'test.txt'), req.files['one'][1][1:])
         strict_eq('cont', req.files['two'][0])
         strict_eq(data, req.files['two'][1])
+
 
 
 class TestMultiPart(object):
