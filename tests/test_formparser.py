@@ -46,22 +46,6 @@ def get_contents(filename):
         return f.read()
 
 
-class TestFormDataParser(object):
-    """
-    Testcases for `FormDataParser`
-    """
-
-    def test_parse_bad_content_type(self):
-        parser = FormDataParser()
-        assert parser.parse('', 'bad-mime-type', 0) == \
-            ('', MultiDict([]), MultiDict([]))
-
-    def test_parse_from_environ(self):
-        parser = FormDataParser()
-        stream, _, _ = parser.parse_from_environ({'wsgi.input': ''})
-        assert stream is not None
-
-
 class TestFormParser(object):
 
     def test_limiting(self):
@@ -210,6 +194,16 @@ class TestFormParser(object):
         strict_eq(('foo', 'test.txt'), req.files['one'][1][1:])
         strict_eq('cont', req.files['two'][0])
         strict_eq(data, req.files['two'][1])
+
+    def test_parse_bad_content_type(self):
+        parser = FormDataParser()
+        assert parser.parse('', 'bad-mime-type', 0) == \
+            ('', MultiDict([]), MultiDict([]))
+
+    def test_parse_from_environ(self):
+        parser = FormDataParser()
+        stream, _, _ = parser.parse_from_environ({'wsgi.input': ''})
+        assert stream is not None
 
 
 class TestMultiPart(object):
