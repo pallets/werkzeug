@@ -75,7 +75,7 @@ class TestFeedEntry(object):
         with pytest.raises(ValueError):
             FeedEntry(title='test_title', id=1)
 
-    def test_feed_entry_to_repr(self):
+    def test_feed_entry_to_str(self):
         updated_time = datetime.datetime.now()
         expected_feed_entry_str = '''
         <entry>
