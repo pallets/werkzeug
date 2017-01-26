@@ -8,11 +8,9 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import hypothesis
 import pytest
 
 from tests import strict_eq
-from hypothesis.strategies import text, dictionaries, lists, integers
 
 from werkzeug.datastructures import OrderedMultiDict
 from werkzeug import urls
@@ -65,11 +63,6 @@ def test_replace():
               urls.url_parse('http://de.wikipedia.org/wiki/Troll?foo=bar'))
     strict_eq(url.replace(scheme='https'),
               urls.url_parse('https://de.wikipedia.org/wiki/Troll'))
-
-
-@hypothesis.given(text())
-def test_quote_unquote_text(t):
-    assert t == urls.url_unquote(urls.url_quote(t))
 
 
 def test_quoting():
@@ -135,22 +128,6 @@ def test_url_encoding():
     d = {'foo': 1, 'bar': 23, 'blah': u'Hänsel'}
     strict_eq(urls.url_encode(d, sort=True), 'bar=23&blah=H%C3%A4nsel&foo=1')
     strict_eq(urls.url_encode(d, sort=True, separator=u';'), 'bar=23;blah=H%C3%A4nsel;foo=1')
-
-
-@hypothesis.given(dictionaries(text(), text()))
-def test_url_encoding_dict_str_str(d):
-    assert OrderedMultiDict(d) == urls.url_decode(urls.url_encode(d))
-
-
-@hypothesis.given(dictionaries(text(), lists(elements=text())))
-def test_url_encoding_dict_str_list(d):
-    assert OrderedMultiDict(d) == urls.url_decode(urls.url_encode(d))
-
-
-@hypothesis.given(dictionaries(text(), integers()))
-def test_url_encoding_dict_str_int(d):
-    assert OrderedMultiDict({k: str(v) for k, v in d.items()}) == \
-        urls.url_decode(urls.url_encode(d))
 
 
 def test_sorted_url_encode():
@@ -273,13 +250,6 @@ def test_multidict_encoding():
     d.add('2013-10-10T23:26:05.657975+0000', '2013-10-10T23:26:05.657975+0000')
     assert urls.url_encode(
         d) == '2013-10-10T23%3A26%3A05.657975%2B0000=2013-10-10T23%3A26%3A05.657975%2B0000'
-
-
-@hypothesis.given(text(), text())
-def test_multidict_encode_decode_text(t1, t2):
-    d = OrderedMultiDict()
-    d.add(t1, t2)
-    assert d == urls.url_decode(urls.url_encode(d))
 
 
 def test_href():
