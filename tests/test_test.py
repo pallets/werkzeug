@@ -649,3 +649,14 @@ def test_post_with_file_descriptor(tmpdir):
     with open(f.strpath, mode='rb') as data:
         resp = c.post('/', data=data)
     strict_eq(resp.status_code, 200)
+
+def test_post_with_content_type_with_charset():
+    @Request.application
+    def test_app(request):
+        return Response(request.form.get('x', None))
+
+    client = Client(test_app, Response)
+    headers = {'Content-Type':"application/x-www-form-urlencoded;charset=UTF-8"}
+    data = {'x':'test'}
+    resp = client.get('/', data=data, headers=headers)
+    strict_eq(resp.data, b'test')
