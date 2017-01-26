@@ -12,10 +12,10 @@ from __future__ import with_statement
 
 import pytest
 
+from io import BytesIO
 from os.path import join, dirname
 
 from tests import strict_eq
-from sys import maxint
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client
@@ -24,7 +24,6 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data,\
     default_stream_factory, FormDataParser
-from werkzeug._compat import BytesIO
 
 
 @Request.application
@@ -145,9 +144,12 @@ class TestFormParser(object):
         (0, BytesIO),
         (1024 * 500, BytesIO),
         (1024 * 501, file),
-        (maxint, file),
+        (10000000000000, file),
     ])
     def test_default_stream_factory(self, size, expected):
+        print expected
+
+        print type(default_stream_factory(size, '', ''))
         assert isinstance(default_stream_factory(size, '', ''), expected)
 
     def test_large_file(self):
