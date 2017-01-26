@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import pytest
 
 from werkzeug.security import check_password_hash, generate_password_hash, \
     safe_join, pbkdf2_hex, safe_str_cmp
@@ -21,6 +22,18 @@ def test_safe_str_cmp():
     assert safe_str_cmp(b'aaa', 'aa') is False
     assert safe_str_cmp(b'aaa', 'bbb') is False
     assert safe_str_cmp(b'aaa', u'aaa') is True
+    assert safe_str_cmp(u'aaa', u'aaa') is True
+
+
+def test_safe_str_cmp_no_builtin():
+    import werkzeug.security as sec
+    prev_value = sec._builtin_safe_str_cmp
+    sec._builtin_safe_str_cmp = None
+    assert safe_str_cmp('a', 'ab') is False
+
+    assert safe_str_cmp('str', 'str') is True
+    assert safe_str_cmp('str1', 'str2') is False
+    sec._builtin_safe_str_cmp = prev_value
 
 
 def test_password_hashing():
@@ -35,6 +48,12 @@ def test_password_hashing():
     assert check_password_hash(hash2, 'default')
     assert hash1.startswith('sha1$')
     assert hash2.startswith('sha1$')
+
+    with pytest.raises(TypeError):
+        check_password_hash('$made$up$', 'default')
+
+    with pytest.raises(ValueError):
+        generate_password_hash('default', 'sha1', salt_length=0)
 
     fakehash = generate_password_hash('default', method='plain')
     assert fakehash == 'plain$$default'
@@ -56,6 +75,14 @@ def test_safe_join():
     assert safe_join('foo', '../bar/baz') is None
     if os.name == 'nt':
         assert safe_join('foo', 'foo\\bar') is None
+
+
+def test_safe_join_os_sep():
+    import werkzeug.security as sec
+    prev_value = sec._os_alt_seps
+    sec._os_alt_seps = '*'
+    assert safe_join('foo', 'bar/baz*') is None
+    sec._os_alt_steps = prev_value
 
 
 def test_pbkdf2():
@@ -106,3 +133,13 @@ def test_pbkdf2():
           '139c30c0966bc32ba55fdbf212530ac9c5ec59f1a452f5cc9ad940fea0598ed1')
     check('X' * 65, 'pass phrase exceeds block size', 1200, 32, 'sha1',
           '9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a')
+
+
+def test_pbkdf2_non_native():
+    import werkzeug.security as sec
+    prev_value = sec._has_native_pbkdf2
+    sec._has_native_pbkdf2 = None
+
+    assert pbkdf2_hex('password', 'salt', 1, 20, 'sha1') \
+        == '0c60c80f961f0e71f3a9b524af6012062fe037a6'
+    sec._has_native_pbkdf2 = prev_value
