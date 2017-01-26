@@ -15,3 +15,4 @@ coverage_out
 .cache
 .xprocess
 htmlcov
+.hypothesis
