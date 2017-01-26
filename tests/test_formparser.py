@@ -12,10 +12,10 @@ from __future__ import with_statement
 
 import pytest
 
+from io import BytesIO
 from os.path import join, dirname
 
 from tests import strict_eq
-from sys import maxint
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client
@@ -24,7 +24,6 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data,\
     default_stream_factory, FormDataParser
-from werkzeug._compat import BytesIO
 
 
 @Request.application
