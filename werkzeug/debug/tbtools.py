@@ -60,7 +60,7 @@ HEADER = u'''\
           SECRET = "%(secret)s";
     </script>
   </head>
-  <body>
+  <body style="background-color: #fff">
     <div class="debugger">
 '''
 FOOTER = u'''\
