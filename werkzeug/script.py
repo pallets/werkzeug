@@ -279,14 +279,14 @@ def make_shell(init_func=None, banner=None, use_ipython=True):
             try:
                 try:
                     from IPython.frontend.terminal.embed import InteractiveShellEmbed
-                    sh = InteractiveShellEmbed(banner1=banner)
+                    sh = InteractiveShellEmbed.instance(banner1=banner)
                 except ImportError:
                     from IPython.Shell import IPShellEmbed
                     sh = IPShellEmbed(banner=banner)
             except ImportError:
                 pass
             else:
-                sh(global_ns={}, local_ns=namespace)
+                sh(local_ns=namespace)
                 return
         from code import interact
         interact(banner, local=namespace)

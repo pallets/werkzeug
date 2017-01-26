@@ -139,19 +139,6 @@ class TestFormParser(object):
         strict_eq(len(form), 0)
         strict_eq(len(files), 0)
 
-    @pytest.mark.parametrize('size,expected', [
-        (-1, BytesIO),
-        (0, BytesIO),
-        (1024 * 500, BytesIO),
-        (1024 * 501, file),
-        (10000000000000, file),
-    ])
-    def test_default_stream_factory(self, size, expected):
-        print expected
-
-        print type(default_stream_factory(size, '', ''))
-        assert isinstance(default_stream_factory(size, '', ''), expected)
-
     def test_large_file(self):
         data = b'x' * (1024 * 600)
         req = Request.from_values(data={'foo': (BytesIO(data), 'test.txt')},

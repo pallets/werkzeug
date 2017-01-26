@@ -7,6 +7,8 @@ python:
     - 3.3
     - 3.4
     - 3.5
+    - 3.6-dev
+    - nightly
 env:
     - TOXENV_SUFFIX=normal
     - TOXENV_SUFFIX=stylecheck
@@ -49,7 +51,7 @@ install:
     - pip install tox flake8
 
 script:
-    - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d . | sed -e 's/pypypy/pypy/')-$TOXENV_SUFFIX
+    - tox -e py-$TOXENV_SUFFIX
 
 branches:
     only:

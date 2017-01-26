@@ -210,5 +210,5 @@ latex_use_modindex = False
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'http://docs.python.org/dev': None,
-    'http://www.sqlalchemy.org/docs/05': None
+    'http://docs.sqlalchemy.org/en/latest/': None
 }

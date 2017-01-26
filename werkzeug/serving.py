@@ -42,6 +42,10 @@ import socket
 import sys
 import signal
 
+
+can_fork = hasattr(os, "fork")
+
+
 try:
     import termcolor
 except ImportError:
@@ -67,11 +71,19 @@ def _get_openssl_crypto_module():
 
 
 try:
-    from SocketServer import ThreadingMixIn, ForkingMixIn
+    import SocketServer as socketserver
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 except ImportError:
-    from socketserver import ThreadingMixIn, ForkingMixIn
+    import socketserver
     from http.server import HTTPServer, BaseHTTPRequestHandler
+
+ThreadingMixIn = socketserver.ThreadingMixIn
+
+if can_fork:
+    ForkingMixIn = socketserver.ForkingMixIn
+else:
+    class ForkingMixIn(object):
+        pass
 
 # important: do not use relative imports here or python -m will break
 import werkzeug
@@ -116,8 +128,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SCRIPT_NAME':          '',
             'PATH_INFO':            wsgi_encoding_dance(path_info),
             'QUERY_STRING':         wsgi_encoding_dance(request_url.query),
-            'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
-            'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
             'REMOTE_ADDR':          self.address_string(),
             'REMOTE_PORT':          self.port_integer(),
             'SERVER_NAME':          self.server.server_address[0],
@@ -126,9 +136,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         }
 
         for key, value in self.headers.items():
-            key = 'HTTP_' + key.upper().replace('-', '_')
-            if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
-                environ[key] = value
+            key = key.upper().replace('-', '_')
+            if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+                key = 'HTTP_' + key
+            environ[key] = value
 
         if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
@@ -552,6 +563,8 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
 
     def __init__(self, host, port, app, processes=40, handler=None,
                  passthrough_errors=False, ssl_context=None, fd=None):
+        if not can_fork:
+            raise ValueError('Your platform does not support forking.')
         BaseWSGIServer.__init__(self, host, port, app, handler,
                                 passthrough_errors, ssl_context, fd)
         self.max_children = processes

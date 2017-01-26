@@ -902,6 +902,9 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024,
     .. versionadded:: 0.9
        added support for iterators as input stream.
 
+    .. versionadded:: 0.11.10
+       added support for the `cap_at_buffer` parameter.
+
     :param stream: the stream or iterate to iterate over.
     :param limit: the limit in bytes for the stream.  (Usually
                   content length.  Not necessary if the `stream`
@@ -911,8 +914,6 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024,
                           than the buffer size.  Internally this is implemented
                           that the buffer size might be exhausted by a factor
                           of two however.
-    .. versionadded:: 0.11.10
-       added support for the `cap_at_buffer` parameter.
     """
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
