@@ -15,7 +15,6 @@ import pytest
 from os.path import join, dirname
 
 from tests import strict_eq
-from sys import maxint
 
 from werkzeug import formparser
 from werkzeug.test import create_environ, Client
