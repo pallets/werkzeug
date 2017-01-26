@@ -21,8 +21,7 @@ from werkzeug.test import create_environ, Client
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict
-from werkzeug.formparser import parse_form_data,\
-    default_stream_factory, FormDataParser
+from werkzeug.formparser import parse_form_data, FormDataParser
 from werkzeug._compat import BytesIO
 
 
