@@ -128,8 +128,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SCRIPT_NAME':          '',
             'PATH_INFO':            wsgi_encoding_dance(path_info),
             'QUERY_STRING':         wsgi_encoding_dance(request_url.query),
-            'CONTENT_TYPE':         self.headers.get('Content-Type', ''),
-            'CONTENT_LENGTH':       self.headers.get('Content-Length', ''),
             'REMOTE_ADDR':          self.address_string(),
             'REMOTE_PORT':          self.port_integer(),
             'SERVER_NAME':          self.server.server_address[0],
@@ -138,9 +136,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         }
 
         for key, value in self.headers.items():
-            key = 'HTTP_' + key.upper().replace('-', '_')
-            if key not in ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
-                environ[key] = value
+            key = key.upper().replace('-', '_')
+            if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+                key = 'HTTP_' + key
+            environ[key] = value
 
         if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
