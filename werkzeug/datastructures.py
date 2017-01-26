@@ -1601,7 +1601,8 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
 class Accept(ImmutableList):
 
     """An :class:`Accept` object is just a list subclass for lists of
-    ``(value, quality)`` tuples.  It is automatically sorted by quality.
+    ``(value, quality)`` tuples.  It is automatically sorted by specificity
+    and quality.
 
     All :class:`Accept` objects work similar to a list but provide extra
     functionality for working with the data.  Containment checks are
@@ -1637,8 +1638,13 @@ class Accept(ImmutableList):
             list.__init__(self, values)
         else:
             self.provided = True
-            values = sorted(values, key=lambda x: (x[1], x[0]), reverse=True)
+            values = sorted(values, key=lambda x: (self._specificity(x[0]), x[1], x[0]),
+                            reverse=True)
             list.__init__(self, values)
+
+    def _specificity(self, value):
+        """Returns a tuple describing the value's specificity."""
+        return value != '*',
 
     def _value_matches(self, value, item):
         """Check if a value matches a given accept item."""
@@ -1720,24 +1726,36 @@ class Accept(ImmutableList):
     def __str__(self):
         return self.to_header()
 
+    def _best_single_match(self, match):
+        for client_item, quality in self:
+            if self._value_matches(match, client_item):
+                # self is sorted by specificity descending, we can exit
+                return client_item, quality
+
     def best_match(self, matches, default=None):
         """Returns the best match from a list of possible matches based
-        on the quality of the client.  If two items have the same quality,
-        the one is returned that comes first.
+        on the specificity and quality of the client. If two items have the
+        same quality and specificity, the one is returned that comes first.
 
         :param matches: a list of matches to check for
         :param default: the value that is returned if none match
         """
-        best_quality = -1
         result = default
+        best_quality = -1
+        best_specificity = (-1,)
         for server_item in matches:
-            for client_item, quality in self:
-                if quality <= best_quality:
-                    break
-                if self._value_matches(server_item, client_item) \
-                   and quality > 0:
-                    best_quality = quality
-                    result = server_item
+            match = self._best_single_match(server_item)
+            if not match:
+                continue
+            client_item, quality = match
+            specificity = self._specificity(client_item)
+            if quality <= 0 or quality < best_quality:
+                continue
+            # better quality or same quality but more specific => better match
+            if quality > best_quality or specificity > best_specificity:
+                result = server_item
+                best_quality = quality
+                best_specificity = specificity
         return result
 
     @property
@@ -1752,6 +1770,9 @@ class MIMEAccept(Accept):
     """Like :class:`Accept` but with special methods and behavior for
     mimetypes.
     """
+
+    def _specificity(self, value):
+        return tuple(x != '*' for x in value.split('/', 1))
 
     def _value_matches(self, value, item):
         def _normalize(x):
