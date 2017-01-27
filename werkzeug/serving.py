@@ -702,7 +702,7 @@ def run_simple(hostname, port, application, use_reloader=False,
 
         # Do not use relative imports, otherwise "python -m werkzeug.serving"
         # breaks.
-        from ._reloader import run_with_reloader
+        from werkzeug._reloader import run_with_reloader
         run_with_reloader(inner, extra_files, reloader_interval,
                           reloader_type)
     else:
@@ -712,7 +712,7 @@ def run_simple(hostname, port, application, use_reloader=False,
 def run_with_reloader(*args, **kwargs):
     # People keep using undocumented APIs.  Do not use this function
     # please, we do not guarantee that it continues working.
-    from ._reloader import run_with_reloader
+    from werkzeug._reloader import run_with_reloader
     return run_with_reloader(*args, **kwargs)
 
 
