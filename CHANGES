@@ -54,6 +54,7 @@ Version 0.11.16
 ---------------
 
 - werkzeug.serving: set CONTENT_TYPE / CONTENT_LENGTH if only they're provided by the client
+- werkzeug.serving: Fix crash of reloader when using `python -m werkzeug.serving`.
 
 Version 0.11.15
 ---------------

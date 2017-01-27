@@ -727,6 +727,8 @@ def run_simple(hostname, port, application, use_reloader=False,
             else:
                 s.close()
 
+        # Do not use relative imports, otherwise "python -m werkzeug.serving"
+        # breaks.
         from ._reloader import run_with_reloader
         run_with_reloader(inner, extra_files, reloader_interval,
                           reloader_type)
