@@ -129,7 +129,7 @@ class ProxyFix(object):
         .. versionadded:: 0.8
         """
         if len(forwarded_for) >= self.num_proxies:
-            return forwarded_for[-1 * self.num_proxies]
+            return forwarded_for[-self.num_proxies]
 
     def __call__(self, environ, start_response):
         getter = environ.get
