@@ -278,10 +278,10 @@ class TypeConversionDict(dict):
 
     def get(self, key, default=None, type=None):
         """Return the default value if the requested data doesn't exist.
-        If `type` is provided and is a callable it should convert the value,
-        return it or raise a :exc:`ValueError` if that is not possible.  In
-        this case the function will return the default as if the value was not
-        found:
+        If `type` is provided and is a callable, it should convert the value
+        and return it, or raise a :exc:`KeyError` or :exc:`ValueError` if that
+        is not possible.  In the latter case the function will return the
+        default as if the value was not found:
 
         >>> d = TypeConversionDict(foo='42', bar='blub')
         >>> d.get('foo', type=int)
@@ -294,8 +294,9 @@ class TypeConversionDict(dict):
                         be looked up.  If not further specified `None` is
                         returned.
         :param type: A callable that is used to cast the value in the
-                     :class:`MultiDict`.  If a :exc:`ValueError` is raised
-                     by this callable the default value is returned.
+                     :class:`MultiDict`.  If a :exc:`KeyError` or
+                     :exc:`ValueError` is raised by this callable the
+                     default value is returned.
         """
         try:
             rv = self[key]
