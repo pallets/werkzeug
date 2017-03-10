@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.12
 ------------
 
-Unreleased.
+Released on March 10th 2017
 
 - Spit out big deprecation warnings for werkzeug.script
 - Use `inspect.getfullargspec` internally when available as
