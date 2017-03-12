@@ -26,6 +26,9 @@ Branches
 | ``master``           | .. image:: https://travis-ci.org/pallets/werkzeug.svg?branch=master           |
 |                      |     :target: https://travis-ci.org/pallets/werkzeug                           |
 +----------------------+-------------------------------------------------------------------------------+
+| ``0.12-maintenance`` | .. image:: https://travis-ci.org/pallets/werkzeug.svg?branch=0.12-maintenance |
+|                      |     :target: https://travis-ci.org/pallets/werkzeug                           |
++----------------------+-------------------------------------------------------------------------------+
 | ``0.11-maintenance`` | .. image:: https://travis-ci.org/pallets/werkzeug.svg?branch=0.11-maintenance |
 |                      |     :target: https://travis-ci.org/pallets/werkzeug                           |
 +----------------------+-------------------------------------------------------------------------------+
