@@ -11,6 +11,9 @@ Version 0.12.1
 
 yet to be released
 
+- Fix crash of reloader (used on debug mode) on Windows.
+(`OSError: [WinError 10038]`). See pull request ``#1081``
+
 Version 0.12
 ------------
 
