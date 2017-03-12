@@ -88,13 +88,13 @@ else:
 # important: do not use relative imports here or python -m will break
 import werkzeug
 from werkzeug._internal import _log
-from werkzeug._compat import PY2, reraise, wsgi_encoding_dance
+from werkzeug._compat import PY2, WIN, reraise, wsgi_encoding_dance
 from werkzeug.urls import url_parse, url_unquote
 from werkzeug.exceptions import InternalServerError
 
 
 LISTEN_QUEUE = 128
-can_open_by_fd = hasattr(socket, 'fromfd')
+can_open_by_fd = not WIN and hasattr(socket, 'fromfd')
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
