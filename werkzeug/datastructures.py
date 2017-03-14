@@ -941,7 +941,13 @@ class Headers(Mapping):
         self._list = []
         if defaults is not None:
             if isinstance(defaults, (list, Headers)):
-                self._list.extend(defaults)
+                validated_list = []
+                for i in defaults:
+                    v = i[1]
+                    self._validate_value(v)
+                    validated_list.append((i[0], v))
+
+                self._list.extend(validated_list)
             else:
                 self.extend(defaults)
 
