@@ -903,7 +903,7 @@ def _unicodify_header_value(value):
 
 
 @native_itermethods(['keys', 'values', 'items'])
-class Headers(Mapping):
+class Headers(object):
 
     """An object that stores some headers.  It has a dict-like interface
     but is ordered and can store the same keys multiple times.
