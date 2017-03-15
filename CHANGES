@@ -9,10 +9,11 @@ yet to be released
 Version 0.12.1
 --------------
 
-yet to be released
+Released on March 15th 2017
 
 - Fix crash of reloader (used on debug mode) on Windows.
-(`OSError: [WinError 10038]`). See pull request ``#1081``
+  (`OSError: [WinError 10038]`). See pull request ``#1081``
+- Partially revert change to class hierarchy of `Headers`. See ``#1084``.
 
 Version 0.12
 ------------
