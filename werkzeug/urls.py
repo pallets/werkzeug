@@ -38,6 +38,9 @@ _hextobyte = dict(
     ((a + b).encode(), int(a + b, 16))
     for a in _hexdigits for b in _hexdigits
 )
+_bytetohex = [
+    ('%%%02X' % char).encode('ascii') for char in range(256)
+]
 
 
 _URLTuple = fix_tuple_repr(namedtuple(
@@ -471,7 +474,7 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):
         if char in safe:
             rv.append(char)
         else:
-            rv.extend(('%%%02X' % char).encode('ascii'))
+            rv.extend(_bytetohex[char])
     return to_native(bytes(rv))
 
 
