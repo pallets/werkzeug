@@ -13,7 +13,7 @@ import codecs
 import mimetypes
 from copy import deepcopy
 from itertools import repeat
-from collections import Container, Iterable, Mapping, MutableSet
+from collections import Container, Iterable, MutableSet
 
 from werkzeug._internal import _missing, _empty_stream
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
