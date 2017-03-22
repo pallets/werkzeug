@@ -471,7 +471,7 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):
         if char in safe:
             rv.append(char)
         else:
-            rv.extend(('%%%02X' % char).encode('ascii'))
+            rv.extend(b'%%%02X' % char)
     return to_native(bytes(rv))
 
 
