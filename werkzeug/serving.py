@@ -668,6 +668,8 @@ def run_simple(hostname, port, application, use_reloader=False,
                         the server should automatically create one, or ``None``
                         to disable SSL (which is the default).
     """
+    if not isinstance(port, int):
+        raise TypeError('port must be an integer')
     if use_debugger:
         from werkzeug.debug import DebuggedApplication
         application = DebuggedApplication(application, use_evalex)
