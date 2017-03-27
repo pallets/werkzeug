@@ -278,3 +278,19 @@ def test_set_content_length_and_content_type_if_provided_by_client(dev_server):
         'content_type': 'application/json'
     })
     assert r.content == b'YES'
+
+
+def test_port_must_be_integer(dev_server):
+    def app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+
+    with pytest.raises(TypeError) as excinfo:
+        serving.run_simple(hostname='localhost', port='5001',
+                           application=app, use_reloader=True)
+    assert 'port must be an integer' in str(excinfo.value)
+
+    with pytest.raises(TypeError) as excinfo:
+        serving.run_simple(hostname='localhost', port='5001',
+                           application=app, use_reloader=False)
+    assert 'port must be an integer' in str(excinfo.value)
