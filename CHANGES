@@ -6,6 +6,8 @@ Version 0.13
 
 yet to be released
 
+- Raise `TypeError` when port is not an integer.
+
 Version 0.12.1
 --------------
 
