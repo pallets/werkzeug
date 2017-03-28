@@ -28,7 +28,7 @@
     You can also pass it a `extra_files` keyword argument with a list of
     additional files (like configuration files) you want to observe.
 
-    For bigger applications you should consider using `werkzeug.script`
+    For bigger applications you should consider using `pallets/click`
     instead of a simple start file.
 
 
