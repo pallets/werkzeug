@@ -67,7 +67,7 @@ def make_app(config=None):
     app = CoolMagicApplication(config)
 
     # static stuff
-    from werkzeug.utils import SharedDataMiddleware
+    from werkzeug.wsgi import SharedDataMiddleware
     app = SharedDataMiddleware(app, {
         '/public': path.join(path.dirname(__file__), 'public')
     })

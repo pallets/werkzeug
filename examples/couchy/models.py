@@ -1,5 +1,5 @@
 from datetime import datetime
-from couchdb.schema import Document, TextField, BooleanField, DateTimeField
+from couchdb.mapping import Document, TextField, BooleanField, DateTimeField
 from couchy.utils import url_for, get_random_uid
 
 

@@ -63,7 +63,7 @@ suggesting alternatives even if they will stick around for a longer time.
 Do not use:
 
 -   `werkzeug.script`, replace it with custom scripts written with
-    `argparse` or something similar.
+    `argparse`, `click` or something similar.
 -   `werkzeug.template`, replace with a proper template engine.
 -   `werkzeug.contrib.jsrouting`, stop using URL generation for
     JavaScript, it does not scale well with many public routing.
