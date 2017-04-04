@@ -179,7 +179,7 @@ def get_content_length(environ):
             pass
 
 
-def get_input_stream(environ, safe_fallback=True):
+def get_input_stream(environ):
     """Returns the input stream from the WSGI environment and wraps it
     in the most sensible way possible.  The stream returned is not the
     raw WSGI stream in most cases but one that is safe to read from
@@ -188,10 +188,6 @@ def get_input_stream(environ, safe_fallback=True):
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the stream from.
-    :param safe: indicates whether the function should use an empty
-                 stream as safe fallback or just return the original
-                 WSGI input stream if it can't wrap it safely.  The
-                 default is to return an empty string in those cases.
     """
     stream = environ['wsgi.input']
     content_length = get_content_length(environ)
@@ -202,12 +198,10 @@ def get_input_stream(environ, safe_fallback=True):
     if environ.get('wsgi.input_terminated'):
         return stream
 
-    # If we don't have a content length we fall back to an empty stream
-    # in case of a safe fallback, otherwise we return the stream unchanged.
-    # The non-safe fallback is not recommended but might be useful in
-    # some situations.
+    # If we don't have a content length we return the stream unchanged.
+    # PEP3333 only requires a limited stream if CONTENT_LENGTH is present.
     if content_length is None:
-        return safe_fallback and _empty_stream or stream
+        return stream
 
     # Otherwise limit the stream to the content length
     return LimitedStream(stream, content_length)
