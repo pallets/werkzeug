@@ -22,6 +22,7 @@
 """
 from functools import update_wrapper
 from datetime import datetime, timedelta
+from warnings import warn
 
 from werkzeug.http import HTTP_STATUS_CODES, \
     parse_accept_header, parse_cache_control_header, parse_etags, \
@@ -62,7 +63,6 @@ def _warn_if_string(iterable):
     to the WSGI server is not a string.
     """
     if isinstance(iterable, string_types):
-        from warnings import warn
         warn(Warning('response iterable was set to a string.  This appears '
                      'to work but means that the server will send the '
                      'data to the client char, by char.  This is almost '
@@ -669,12 +669,22 @@ class BaseRequest(object):
 
         .. versionadded:: 0.7''')
 
-    is_xhr = property(lambda x: x.environ.get('HTTP_X_REQUESTED_WITH', '')
-                      .lower() == 'xmlhttprequest', doc='''
-        True if the request was triggered via a JavaScript XMLHttpRequest.
+    @property
+    def is_xhr(self):
+        """True if the request was triggered via a JavaScript XMLHttpRequest.
         This only works with libraries that support the `X-Requested-With`
         header and set it to "XMLHttpRequest".  Libraries that do that are
-        prototype, jQuery and Mochikit and probably some more.''')
+        prototype, jQuery and Mochikit and probably some more.
+
+        .. deprecated:: 0.13
+            ``X-Requested-With`` is not standard and is unreliable."""
+        warn(DeprecationWarning('Request.is_xhr is deprecated. '
+                                'Given that the X-Requested-With header is '
+                                'not a part of any spec, it is not reliable'),
+             stacklevel=2)
+        return self.environ.get('HTTP_X_REQUESTED_WITH', '').lower() \
+            == 'xmlhttprequest'
+
     is_secure = property(lambda x: x.environ['wsgi.url_scheme'] == 'https',
                          doc='`True` if the request is secure.')
     is_multithread = environ_property('wsgi.multithread', doc='''
