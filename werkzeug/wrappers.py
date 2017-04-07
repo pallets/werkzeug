@@ -672,18 +672,20 @@ class BaseRequest(object):
     @property
     def is_xhr(self):
         """True if the request was triggered via a JavaScript XMLHttpRequest.
-        This only works with libraries that support the `X-Requested-With`
+        This only works with libraries that support the ``X-Requested-With``
         header and set it to "XMLHttpRequest".  Libraries that do that are
         prototype, jQuery and Mochikit and probably some more.
 
         .. deprecated:: 0.13
-            ``X-Requested-With`` is not standard and is unreliable."""
-        warn(DeprecationWarning('Request.is_xhr is deprecated. '
-                                'Given that the X-Requested-With header is '
-                                'not a part of any spec, it is not reliable'),
-             stacklevel=2)
-        return self.environ.get('HTTP_X_REQUESTED_WITH', '').lower() \
-            == 'xmlhttprequest'
+            ``X-Requested-With`` is not standard and is unreliable.
+        """
+        warn(DeprecationWarning(
+            'Request.is_xhr is deprecated. Given that the X-Requested-With '
+            'header is not a part of any spec, it is not reliable'
+        ), stacklevel=2)
+        return self.environ.get(
+            'HTTP_X_REQUESTED_WITH', ''
+        ).lower() == 'xmlhttprequest'
 
     is_secure = property(lambda x: x.environ['wsgi.url_scheme'] == 'https',
                          doc='`True` if the request is secure.')

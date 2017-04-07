@@ -1089,14 +1089,13 @@ def test_request_method_case_sensitivity():
 
 
 def test_is_xhr_warning():
-    warning_message = ('Request.is_xhr is deprecated. Given that the '
-                       'X-Requested-With header is not a part of any spec, '
-                       'it is not reliable')
     req = wrappers.Request.from_values()
+
     with pytest.warns(DeprecationWarning) as record:
         req.is_xhr
+
     assert len(record) == 1
-    assert str(record[0].message) == warning_message
+    assert 'Request.is_xhr is deprecated' in str(record[0].message)
 
 
 class TestSetCookie(object):
