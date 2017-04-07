@@ -1088,6 +1088,16 @@ def test_request_method_case_sensitivity():
     assert req.method == 'GET'
 
 
+def test_is_xhr_warning():
+    req = wrappers.Request.from_values()
+
+    with pytest.warns(DeprecationWarning) as record:
+        req.is_xhr
+
+    assert len(record) == 1
+    assert 'Request.is_xhr is deprecated' in str(record[0].message)
+
+
 class TestSetCookie(object):
     """Tests for :meth:`werkzeug.wrappers.BaseResponse.set_cookie`."""
 
