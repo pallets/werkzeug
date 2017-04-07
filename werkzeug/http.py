@@ -212,7 +212,11 @@ def dump_options_header(header, options):
     segments = []
     if header is not None:
         segments.append(header)
-    for key, value in iteritems(options):
+    if isinstance(options, tuple):
+        iter_func = iter
+    else:
+        iter_func = iteritems
+    for key, value in iter_func(options):
         if value is None:
             segments.append(key)
         else:

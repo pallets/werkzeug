@@ -1140,7 +1140,7 @@ class Headers(object):
     def __len__(self):
         return len(self._list)
 
-    def add(self, _key, _value, **kw):
+    def add(self, _key, _value, *args, **kw):
         """Add a new header tuple to the list.
 
         Keyword arguments can specify additional parameters for the header
@@ -1153,9 +1153,15 @@ class Headers(object):
         The keyword argument dumping uses :func:`dump_options_header`
         behind the scenes.
 
+        In some cases, it would be needed to ensure the order of parameters.
+        For those cases, a list of ``(key, value)`` tuples can be passed in
+        *args.
+
         .. versionadded:: 0.4.1
             keyword arguments were added for :mod:`wsgiref` compatibility.
         """
+        if args:
+            _value = dump_options_header(_value, args)
         if kw:
             _value = _options_header_vkw(_value, kw)
         _value = _unicodify_header_value(_value)
