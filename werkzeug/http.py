@@ -17,6 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+from collections import Mapping
 from time import time, gmtime
 try:
     from email.utils import parsedate_tz
@@ -207,15 +208,13 @@ def dump_options_header(header, options):
     """The reverse function to :func:`parse_options_header`.
 
     :param header: the header to dump
-    :param options: a dict of options to append.
+    :param options: a dict of options to append. Or pass a sequence of
+        key, value pairs to ensure the order of the keys
     """
     segments = []
     if header is not None:
         segments.append(header)
-    if isinstance(options, tuple):
-        iter_func = iter
-    else:
-        iter_func = iteritems
+    iter_func = iteritems if isinstance(options, Mapping) else iter
     for key, value in iter_func(options):
         if value is None:
             segments.append(key)

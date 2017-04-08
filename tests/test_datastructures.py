@@ -631,6 +631,9 @@ class TestHeaders(object):
         headers.add('x', 'y', z='"')
         assert headers['x'] == r'y; z="\""'
 
+        headers.add('multi', 'yes', ('a', '1',), ('b', '2'), c='3')
+        assert headers['multi'] == 'yes; a=1; b=2; c=3'
+
     def test_defaults_and_conversion(self):
         # defaults
         headers = self.storage_class([
