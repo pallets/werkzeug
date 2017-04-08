@@ -264,3 +264,19 @@ def test_basic(dev_server, crash):
             in r.text
     else:
         assert r.text == 'hello'
+
+
+def test_stackoverflow_link(dev_server):
+    server = dev_server('''
+    from werkzeug.debug import DebuggedApplication
+
+    @DebuggedApplication
+    def app(environ, start_response):
+        1 / 0 # Make it crash
+        start_response('500 Internal Server Error', [('Content-Type', 'text/html')])
+        return [b'hello']
+    ''')
+    r = requests.get(server.url)
+    assert r.status_code == 500
+    assert 'stackoverflow' in r.text
+    assert 'google' in r.text

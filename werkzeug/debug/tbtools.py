@@ -36,7 +36,6 @@ try:
 except NameError:
     pass
 
-
 HEADER = u'''\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
@@ -88,6 +87,22 @@ FOOTER = u'''\
 </html>
 '''
 
+STACKOVERFLOW = u'''\
+<div class="stackoverflow">
+<h3 style="margin-bottom:10px;">
+  <a href="%(stackoverflow)s" target="_blank">View on Stackoverflow</a>
+</h3>
+</div>
+'''
+
+GOOGLE = u'''\
+<div class="google">
+<h3 style="margin-bottom:10px;">
+  <a href="%(google)s" target="_blank">View on Stackoverflow</a>
+</h3>
+</div>
+'''
+
 PAGE_HTML = HEADER + u'''\
 <h1>%(exception_type)s</h1>
 <div class="detail">
@@ -114,7 +129,7 @@ PAGE_HTML = HEADER + u'''\
   execution (if the evalex feature is enabled), automatic pasting of the
   exceptions and much more.</span>
 </div>
-''' + FOOTER + '''
+''' + STACKOVERFLOW + GOOGLE + FOOTER + '''
 <!--
 
 %(plaintext_cs)s
@@ -361,7 +376,9 @@ class Traceback(object):
             'plaintext':        escape(self.plaintext),
             'plaintext_cs':     re.sub('-{2,}', '-', self.plaintext),
             'traceback_id':     self.id,
-            'secret':           secret
+            'secret':           secret,
+            'stackoverflow':    self.stackoverflow_link(exc),
+            'google':           self.google_link(exc)
         }
 
     def generate_plaintext_traceback(self):
@@ -375,6 +392,18 @@ class Traceback(object):
             )
             yield u'    ' + frame.current_line.strip()
         yield self.exception
+
+    def stackoverflow_link(self, exception):
+        """Create a link directing to the search page of stackoverflow"""
+        stop = exception.index(':')
+        return "http://stackoverflow.com/search?q=[python] or \
+[flask]+%(msg)s" % {'msg': exception[:stop]}
+
+    def google_link(self, exception):
+        """Create a link directing to a google search page"""
+        stop = exception.index(':')
+        return "https://www.google.com.tr/#q=flask+%(msg)s" % \
+            {'msg': exception[:stop]}
 
     def plaintext(self):
         return u'\n'.join(self.generate_plaintext_traceback())
