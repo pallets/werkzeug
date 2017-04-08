@@ -209,7 +209,7 @@ def dump_options_header(header, options):
 
     :param header: the header to dump
     :param options: a dict of options to append. Or pass a sequence of
-        key, value pairs to ensure the order of the keys
+        ``(key, value)`` pairs to ensure the order of the keys.
     """
     segments = []
     if header is not None:
