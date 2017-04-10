@@ -42,29 +42,30 @@ Submitting patches
 Running the testsuite
 ---------------------
 
-You probably want to set up a `virtualenv
-<https://virtualenv.readthedocs.io/en/latest/index.html>`_.
+Set up a `virtualenv
+<https://virtualenv.readthedocs.io/en/latest/index.html>`_::
 
-Werkzeug must be installed for all tests to pass::
+    python3 -m venv venv
+    . venv/bin/activate
+
+Install Werkzeug in editable mode::
 
     pip install -e .
 
-The minimal requirement for running the testsuite is ``py.test``.  You can
-install it with::
+Install the minimal test requirements::
 
-    pip install pytest
+    pip install pytest requests
 
 Then you can run the testsuite with::
 
-    py.test
+    pytest
 
-With only py.test installed, a large part of the testsuite will get skipped
+With only ``pytest`` installed, a large part of the testsuite will get skipped
 though.  Whether this is relevant depends on which part of Werkzeug you're
 working on.  Travis is set up to run the full testsuite when you submit your
 pull request anyways.
 
-If you really want to test everything, you will have to install ``tox`` instead
-of ``pytest``. You can install it with::
+If you really want to test everything, you will have to install ``tox``::
 
     pip install tox
 
