@@ -931,12 +931,18 @@ class BaseResponse(object):
         return self._status
 
     def _set_status(self, value):
-        self._status = to_native(value)
+        try:
+            self._status = to_native(value)
+        except AttributeError:
+            raise TypeError('Invalid status argument')
+
         try:
             self._status_code = int(self._status.split(None, 1)[0])
         except ValueError:
             self._status_code = 0
             self._status = '0 %s' % self._status
+        except IndexError:
+            raise ValueError('Empty status argument')
     status = property(_get_status, _set_status, doc='The HTTP Status code')
     del _get_status, _set_status
 

@@ -293,6 +293,15 @@ def test_response_status_codes():
     strict_eq(response.status_code, 0)
     strict_eq(response.status, '0 wtf')
 
+    # invalid status codes
+    with pytest.raises(ValueError) as empty_string_error:
+        wrappers.BaseResponse(None, '')
+    assert 'Empty status argument' in str(empty_string_error)
+
+    with pytest.raises(TypeError) as invalid_type_error:
+        wrappers.BaseResponse(None, tuple())
+    assert 'Invalid status argument' in str(invalid_type_error)
+
 
 def test_type_forcing():
     def wsgi_application(environ, start_response):
