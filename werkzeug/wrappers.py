@@ -31,7 +31,8 @@ from werkzeug.http import HTTP_STATUS_CODES, \
     parse_www_authenticate_header, remove_entity_headers, \
     parse_options_header, dump_options_header, http_date, \
     parse_if_range_header, parse_cookie, dump_cookie, \
-    parse_range_header, parse_content_range_header, dump_header
+    parse_range_header, parse_content_range_header, dump_header, \
+    parse_age, dump_age
 from werkzeug.urls import url_decode, iri_to_uri, url_join
 from werkzeug.formparser import FormDataParser, default_stream_factory
 from werkzeug.utils import cached_property, environ_property, \
@@ -1824,7 +1825,7 @@ class CommonResponseDescriptorsMixin(object):
         The Location response-header field is used to redirect the recipient
         to a location other than the Request-URI for completion of the request
         or identification of a new resource.''')
-    age = header_property('Age', None, parse_date, http_date, doc='''
+    age = header_property('Age', None, parse_age, dump_age, doc='''
         The Age response-header field conveys the sender's estimate of the
         amount of time since the response (or its revalidation) was
         generated at the origin server.

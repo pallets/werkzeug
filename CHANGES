@@ -7,8 +7,11 @@ Version 0.13
 yet to be released
 
 - Raise `TypeError` when port is not an integer.
-- Fully deprecate `werkzeug.script`. Use `click` 
+- Fully deprecate `werkzeug.script`. Use `click`
   (http://click.pocoo.org) instead.
+- ``response.age`` is parsed as a ``timedelta``. Previously, it was incorrectly
+  treated as a ``datetime``. The header value is an integer number of seconds,
+  not a date string. (``#414``)
 
 Version 0.12.1
 --------------

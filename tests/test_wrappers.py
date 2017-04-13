@@ -14,7 +14,7 @@ import pytest
 
 import pickle
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug._compat import iteritems
 
 from tests import strict_eq
@@ -696,10 +696,17 @@ def test_common_response_descriptors_mixin():
     response.content_length = '42'
     assert response.content_length == 42
 
-    for attr in 'date', 'age', 'expires':
+    for attr in 'date', 'expires':
         assert getattr(response, attr) is None
         setattr(response, attr, now)
         assert getattr(response, attr) == now
+
+    assert response.age is None
+    age_td = timedelta(days=1, minutes=3, seconds=5)
+    response.age = age_td
+    assert response.age == age_td
+    response.age = 42
+    assert response.age == timedelta(seconds=42)
 
     assert response.retry_after is None
     response.retry_after = now
