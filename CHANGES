@@ -12,6 +12,8 @@ yet to be released
 - ``response.age`` is parsed as a ``timedelta``. Previously, it was incorrectly
   treated as a ``datetime``. The header value is an integer number of seconds,
   not a date string. (``#414``)
+- Fix a bug in ``TypeConversionDict`` where errors are not propagated when
+  using the converter. (``#1102``)
 
 Version 0.12.1
 --------------
