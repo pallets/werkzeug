@@ -297,12 +297,16 @@ class TypeConversionDict(dict):
                      :class:`MultiDict`.  If a :exc:`ValueError` is raised
                      by this callable the default value is returned.
         """
-        try:
-            rv = self[key]
-            if type is not None:
-                rv = type(rv)
-        except (KeyError, ValueError):
-            rv = default
+        if type is not None:
+            try:
+                rv = type(self[key])
+            except ValueError:
+                rv = default
+        else:
+            try:
+                rv = self[key]
+            except KeyError:
+                rv = default
         return rv
 
 
