@@ -545,6 +545,20 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert sorted(iterkeys(ab)) == ["key_a", "key_b"]
 
 
+class TestTypeConversionDict(object):
+    storage_class = datastructures.TypeConversionDict
+
+    def test_return_default_when_conversion_is_not_possible(self):
+        d = self.storage_class(foo='bar')
+        assert d.get('foo', default=-1, type=int) == -1
+
+    def test_raise_key_error_in_conversion(self):
+        d = self.storage_class(foo='bar')
+
+        with pytest.raises(KeyError):
+            d.get('baz', default=-1, type=int)
+
+
 class TestCombinedMultiDict(object):
     storage_class = datastructures.CombinedMultiDict
 
