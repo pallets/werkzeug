@@ -299,10 +299,13 @@ class TypeConversionDict(dict):
         """
         try:
             rv = self[key]
-            if type is not None:
+        except KeyError:
+            return default
+        if type is not None:
+            try:
                 rv = type(rv)
-        except (KeyError, ValueError):
-            rv = default
+            except ValueError:
+                rv = default
         return rv
 
 
