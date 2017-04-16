@@ -144,6 +144,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
 
+        for key, value in os.environ.items():
+            if key not in environ:
+                environ[key] = value
+
         return environ
 
     def run_wsgi(self):
