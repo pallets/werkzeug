@@ -46,7 +46,7 @@ def default_stream_factory(total_content_length, filename, content_type,
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
                     errors='replace', max_form_memory_size=None,
                     max_content_length=None, cls=None,
-                    silent=True):
+                    silent=False):
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
     transport method is `POST`, `PUT`, or `PATCH`.
