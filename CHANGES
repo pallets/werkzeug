@@ -14,6 +14,8 @@ yet to be released
   not a date string. (``#414``)
 - Fix a bug in ``TypeConversionDict`` where errors are not propagated when
   using the converter. (``#1102``)
+- ``Authorization.qop`` is a string instead of a set, to comply with
+  RFC 2617. (``#984``)
 
 Version 0.12.1
 --------------
