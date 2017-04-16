@@ -128,7 +128,7 @@ class TestHTTPUtility(object):
         assert a.realm == 'testrealm@host.invalid'
         assert a.nonce == 'dcd98b7102dd2f0e8b11d0f600bfb0c093'
         assert a.uri == '/dir/index.html'
-        assert 'auth' in a.qop
+        assert a.qop == 'auth'
         assert a.nc == '00000001'
         assert a.cnonce == '0a4f113b'
         assert a.response == '6629fae49393a05397450978507c4ef1'

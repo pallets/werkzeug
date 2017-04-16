@@ -2457,17 +2457,10 @@ class Authorization(ImmutableDictMixin, dict):
         The opaque header from the server returned unchanged by the client.
         It is recommended that this string be base64 or hexadecimal data.
         Digest auth only.''')
-
-    @property
-    def qop(self):
-        """Indicates what "quality of protection" the client has applied to
-        the message for HTTP digest auth."""
-        def on_update(header_set):
-            if not header_set and 'qop' in self:
-                del self['qop']
-            elif header_set:
-                self['qop'] = header_set.to_header()
-        return parse_set_header(self.get('qop'), on_update)
+    qop = property(lambda x: x.get('qop'), doc='''
+        Indicates what "quality of protection" the client has applied to
+        the message for HTTP digest auth. Note that this is a single token,
+        not a quoted list of alternatives as in WWW-Authenticate.''')
 
 
 class WWWAuthenticate(UpdateDictMixin, dict):
