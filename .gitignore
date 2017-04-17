@@ -16,3 +16,4 @@ coverage_out
 .xprocess
 htmlcov
 .hypothesis
+.idea
