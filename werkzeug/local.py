@@ -114,11 +114,17 @@ class LocalStack(object):
     .. versionadded:: 0.6.1
     """
 
-    def __init__(self):
+    def __init__(self, default_callback=None, release_callbacks=()):
         self._local = Local()
+        self.default_callback = default_callback
+        self.release_callbacks = release_callbacks
 
     def __release_local__(self):
-        self._local.__release_local__()
+        try:
+            self._local.__release_local__()
+        finally:
+            for callback in self.release_callbacks:
+                callback()
 
     def _get__ident_func__(self):
         return self._local.__ident_func__
@@ -165,6 +171,10 @@ class LocalStack(object):
         try:
             return self._local.stack[-1]
         except (AttributeError, IndexError):
+            if self.default_callback is not None:
+                rv = self.default_callback()
+                self.push(rv)
+                return rv
             return None
 
 
