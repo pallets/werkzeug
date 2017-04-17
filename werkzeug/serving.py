@@ -232,8 +232,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             rv = BaseHTTPRequestHandler.handle(self)
         except (socket.error, socket.timeout) as e:
             self.connection_dropped(e)
-        except Exception:
-            if self.server.ssl_context is None or not is_ssl_error():
+        except Exception as e:
+            if self.server.ssl_context is not None and is_ssl_error():
+                self.log_error("SSL error occurred: %s", e)
+            else:
                 raise
         if self.server.shutdown_signal:
             self.initiate_shutdown()
