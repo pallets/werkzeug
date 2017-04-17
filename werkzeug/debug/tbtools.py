@@ -452,7 +452,7 @@ class Frame(object):
         if hasattr(self.code, 'co_firstlineno'):
             lineno = self.code.co_firstlineno - 1
             while lineno > 0:
-                if _funcdef_re.match(lines[lineno].code):
+                if _funcdef_re.match(lines[lineno].code.encode('utf-8')):
                     break
                 lineno -= 1
             try:
