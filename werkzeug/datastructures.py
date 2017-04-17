@@ -1560,6 +1560,9 @@ class ImmutableDict(ImmutableDictMixin, dict):
     def __copy__(self):
         return self
 
+    def __hash__(self):
+        return hash(tuple(self.iteritems()))
+
 
 class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
 
