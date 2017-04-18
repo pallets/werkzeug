@@ -16,6 +16,13 @@ yet to be released
   using the converter. (``#1102``)
 - ``Authorization.qop`` is a string instead of a set, to comply with
   RFC 2617. (``#984``)
+- An exception is raised when an encoded cookie is larger than, by default,
+  4093 bytes. Browsers may silently ignore cookies larger than this.
+  ``BaseResponse`` has a new attribute ``max_cookie_size`` and ``dump_cookie``
+  has a new argument ``max_size`` to configure this. (`#780`_, `#1109`_)
+
+.. _`#780`: https://github.com/pallets/werkzeug/pull/780
+.. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
 
 Version 0.12.1
 --------------

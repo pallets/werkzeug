@@ -17,6 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import warnings
 from time import time, gmtime
 try:
     from email.utils import parsedate_tz
@@ -138,11 +139,6 @@ HTTP_STATUS_CODES = {
     507:    'Insufficient Storage',
     510:    'Not Extended'
 }
-
-# For discussion of a safe (i.e. lowest common denominator) cookie
-# max size, see:
-# http://browsercookielimits.squawky.net/
-COOKIE_MAXSIZE = 4093
 
 
 def wsgi_to_bytes(data):
@@ -985,7 +981,7 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=False, httponly=False,
-                charset='utf-8', sync_expires=True):
+                charset='utf-8', sync_expires=True, max_size=4093):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -1021,6 +1017,11 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param charset: the encoding for unicode values.
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
+    :param max_size: Warn if the final header value exceeds this size. The
+        default, 4093, should be safely `supported by most browsers
+        <cookie_>`_. Set to 0 to disable this check.
+
+    .. _`cookie`: http://browsercookielimits.squawky.net/
     """
     key = to_bytes(key, charset)
     value = to_bytes(value, charset)
@@ -1070,16 +1071,26 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     if not PY2:
         rv = rv.decode('latin1')
 
-    # Check that the final value of the cookie is less than the
-    # standard limit set by browsers. If no check is performed, and if
-    # the cookie is too large, then it will simply get lost, which can
-    # be quite hard to debug.
+    # Warn if the final value of the cookie is less than the limit. If the
+    # cookie is too large, then it may be silently ignored, which can be quite
+    # hard to debug.
     cookie_size = len(rv)
-    if cookie_size > COOKIE_MAXSIZE:
-        raise ValueError((
-            'Cookie too large: size of {0} is {1} bytes, '
-            'standard limit in most browsers is {2} bytes').format(
-                key, cookie_size, COOKIE_MAXSIZE))
+
+    if max_size and cookie_size > max_size:
+        value_size = len(value)
+        warnings.warn(
+            'The "{key}" cookie is too large: the value was {value_size} bytes'
+            ' but the header required {extra_size} extra bytes. The final size'
+            ' was {cookie_size} bytes but the limit is {max_size} bytes.'
+            ' Browsers may silently ignore cookies larger than this.'.format(
+                key=key,
+                value_size=value_size,
+                extra_size=cookie_size - value_size,
+                cookie_size=cookie_size,
+                max_size=max_size
+            ),
+            stacklevel=2
+        )
 
     return rv
 
