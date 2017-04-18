@@ -1084,9 +1084,16 @@ class BaseResponse(object):
                          supported by all browsers.
         """
         self.headers.add('Set-Cookie', dump_cookie(
-            key, value=value, max_age=max_age, expires=expires, path=path,
-            domain=domain, secure=secure, httponly=httponly,
-            charset=self.charset, max_size=self.max_cookie_size
+            key,
+            value=value,
+            max_age=max_age,
+            expires=expires,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            charset=self.charset,
+            max_size=self.max_cookie_size
         ))
 
     def delete_cookie(self, key, path='/', domain=None):

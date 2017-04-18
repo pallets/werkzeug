@@ -418,13 +418,20 @@ class TestHTTPUtility(object):
         strict_eq(val, 'foo=bar; Domain=.foo.com; Path=/')
 
     def test_cookie_maxsize(self):
-        val = http.dump_cookie('foo', ('bar' * 1360) + 'b')
+        val = http.dump_cookie('foo', 'bar' * 1360 + 'b')
         assert len(val) == 4093
 
         with pytest.raises(ValueError) as excinfo:
-            http.dump_cookie('foo', ('bar' * 1360) + 'ba')
+            http.dump_cookie('foo', 'bar' * 1360 + 'ba')
 
-        assert ('Cookie too large' in str(excinfo))
+        assert 'Cookie too large' in str(excinfo)
+
+        with pytest.raises(ValueError) as excinfo:
+            # testing custom size, also demonstrating that the value is not the
+            # final size of the cookie
+            http.dump_cookie('foo', b'w' * 512, max_size=512)
+
+        assert 'the limit is 512 bytes' in str(excinfo)
 
 
 class TestRange(object):
