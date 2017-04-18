@@ -892,9 +892,20 @@ class OrderedMultiDict(MultiDict):
         return key, [x.value for x in buckets]
 
 
-def _options_header_vkw(value, kw):
-    return dump_options_header(value, dict((k.replace('_', '-'), v)
-                                           for k, v in kw.items()))
+def _options_header_vkw(value, args, kwargs):
+    if args:
+        value = dump_options_header(
+            value,
+            ((k.replace('_', '-'), v) for k, v in args)
+        )
+
+    if kwargs:
+        value = dump_options_header(
+            value,
+            dict((k.replace('_', '-'), v) for k, v in iteritems(kwargs))
+        )
+
+    return value
 
 
 def _unicodify_header_value(value):
@@ -1143,7 +1154,7 @@ class Headers(object):
     def __len__(self):
         return len(self._list)
 
-    def add(self, _key, _value, **kw):
+    def add(self, _key, _value, *args, **kwargs):
         """Add a new header tuple to the list.
 
         Keyword arguments can specify additional parameters for the header
@@ -1156,11 +1167,23 @@ class Headers(object):
         The keyword argument dumping uses :func:`dump_options_header`
         behind the scenes.
 
+        In some cases the order of the additional parameters is important.
+        For those cases, a list of ``(key, value)`` tuples can be passed in
+        ``*args``::
+
+            d.add(
+                'Content-Disposition', 'attachment',
+                ('filename', 'foo.png'), ('filename*', "UTF-8''fo%C3%B6.png")
+            )
+
+        .. versionadded:: 0.13.0
+            Key/value tuples as positional arguments are supported to ensure
+            the order of parameters.
+
         .. versionadded:: 0.4.1
             keyword arguments were added for :mod:`wsgiref` compatibility.
         """
-        if kw:
-            _value = _options_header_vkw(_value, kw)
+        _value = _options_header_vkw(_value, args, kwargs)
         _value = _unicodify_header_value(_value)
         self._validate_value(_value)
         self._list.append((_key, _value))
@@ -1184,14 +1207,14 @@ class Headers(object):
         """Clears all headers."""
         del self._list[:]
 
-    def set(self, _key, _value, **kw):
+    def set(self, _key, _value, *args, **kwargs):
         """Remove all header tuples for `key` and add a new one.  The newly
         added key either appears at the end of the list if there was no
         entry or replaces the first one.
 
-        Keyword arguments can specify additional parameters for the header
-        value, with underscores converted to dashes.  See :meth:`add` for
-        more information.
+        Positional and keyword arguments can specify additional parameters for
+        the header value, with underscores converted to dashes.  See
+        :meth:`add` for more information.
 
         .. versionchanged:: 0.6.1
            :meth:`set` now accepts the same arguments as :meth:`add`.
@@ -1199,8 +1222,7 @@ class Headers(object):
         :param key: The key to be inserted.
         :param value: The value to be inserted.
         """
-        if kw:
-            _value = _options_header_vkw(_value, kw)
+        _value = _options_header_vkw(_value, args, kwargs)
         _value = _unicodify_header_value(_value)
         self._validate_value(_value)
         if not self._list:
