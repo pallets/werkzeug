@@ -1072,15 +1072,17 @@ class BaseResponse(object):
                          extension to the cookie standard and probably not
                          supported by all browsers.
         """
-        self.headers.add('Set-Cookie', dump_cookie(key,
-                                                   value=value,
-                                                   max_age=max_age,
-                                                   expires=expires,
-                                                   path=path,
-                                                   domain=domain,
-                                                   secure=secure,
-                                                   httponly=httponly,
-                                                   charset=self.charset))
+        self.headers['Set-Cookie'] = dump_cookie(
+            key,
+            value=value,
+            max_age=max_age,
+            expires=expires,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            charset=self.charset
+        )
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie.  Fails silently if key doesn't exist.
