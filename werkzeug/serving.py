@@ -111,6 +111,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         def shutdown_server():
             self.server.shutdown_signal = True
 
+        # this flag specifically looked for by Django
+        shutdown_server.do_not_call_in_templates = True
+
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
         path_info = url_unquote(request_url.path)
 
