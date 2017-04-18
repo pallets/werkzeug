@@ -17,6 +17,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import warnings
 from time import time, gmtime
 try:
     from email.utils import parsedate_tz
@@ -1016,10 +1017,9 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param charset: the encoding for unicode values.
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
-    :param max_size: The max size in bytes of a cookie header. The default,
-        4093, should be safely `supported by most browsers <cookie_>`_. A
-        larger header may still be sent, but it may be ignored or handled
-        incorrectly by some browsers. Set to 0 to disable this check.
+    :param max_size: Warn if the final header value exceeds this size. The
+        default, 4093, should be safely `supported by most browsers
+        <cookie_>`_. Set to 0 to disable this check.
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
     """
@@ -1071,17 +1071,25 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     if not PY2:
         rv = rv.decode('latin1')
 
-    # Check that the final value of the cookie is less than the standard limit
-    # set by browsers. If no check is performed, and if the cookie is too
-    # large, then it will simply get lost, which can be quite hard to debug.
+    # Warn if the final value of the cookie is less than the limit. If the
+    # cookie is too large, then it may be silently ignored, which can be quite
+    # hard to debug.
     cookie_size = len(rv)
 
     if max_size and cookie_size > max_size:
-        raise ValueError(
-            'Cookie too large: size of {key} is {size} bytes, but the limit '
-            'is {max} bytes'.format(
-                key=key, size=cookie_size, max=max_size
-            )
+        value_size = len(value)
+        warnings.warn(
+            'The "{key}" cookie is too large: the value was {value_size} bytes'
+            ' but the header required {extra_size} extra bytes. The final size'
+            ' was {cookie_size} bytes but the limit is {max_size} bytes.'
+            ' Browsers may silently ignore cookies larger than this.'.format(
+                key=key,
+                value_size=value_size,
+                extra_size=cookie_size - value_size,
+                cookie_size=cookie_size,
+                max_size=max_size
+            ),
+            stacklevel=2
         )
 
     return rv
