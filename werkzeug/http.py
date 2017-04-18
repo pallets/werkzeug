@@ -985,7 +985,7 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=False, httponly=False,
-                charset='utf-8', sync_expires=True):
+                charset='utf-8', sync_expires=True, samesite=None):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -1036,6 +1036,9 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     elif max_age is not None and sync_expires:
         expires = to_bytes(cookie_date(time() + max_age))
 
+    if samesite:
+        samesite = 'Strict'
+
     buf = [key + b'=' + _cookie_quote(value)]
 
     # XXX: In theory all of these parameters that are not marked with `None`
@@ -1046,6 +1049,7 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                     (b'Max-Age', max_age, False),
                     (b'Secure', secure, None),
                     (b'HttpOnly', httponly, None),
+                    (b'SameSite', samesite, False),
                     (b'Path', path, False)):
         if q is None:
             if v:
