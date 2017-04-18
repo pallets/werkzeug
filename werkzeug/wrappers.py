@@ -804,6 +804,14 @@ class BaseResponse(object):
     #: .. versionadded:: 0.8
     automatically_set_content_length = True
 
+    #: The max size in bytes of a cookie header. The default, 4093, should be
+    #: safely `supported by most browsers <cookie_>`_. A larger header may
+    #: still be sent, but it may be ignored or handled incorrectly by some
+    #: browsers. Set to 0 to disable this check.
+    #:
+    #: .. _`cookie`: http://browsercookielimits.squawky.net/
+    max_cookie_size = 4093
+
     def __init__(self, response=None, status=None, headers=None,
                  mimetype=None, content_type=None, direct_passthrough=False):
         if isinstance(headers, Headers):
@@ -1054,6 +1062,9 @@ class BaseResponse(object):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
         object in the Python standard library but it accepts unicode data, too.
 
+        The size of the encoded cookie is determined by
+        :attr:`max_cookie_size`.
+
         :param key: the key (name) of the cookie to be set.
         :param value: the value of the cookie.
         :param max_age: should be a number of seconds, or `None` (default) if
@@ -1072,15 +1083,11 @@ class BaseResponse(object):
                          extension to the cookie standard and probably not
                          supported by all browsers.
         """
-        self.headers.add('Set-Cookie', dump_cookie(key,
-                                                   value=value,
-                                                   max_age=max_age,
-                                                   expires=expires,
-                                                   path=path,
-                                                   domain=domain,
-                                                   secure=secure,
-                                                   httponly=httponly,
-                                                   charset=self.charset))
+        self.headers.add('Set-Cookie', dump_cookie(
+            key, value=value, max_age=max_age, expires=expires, path=path,
+            domain=domain, secure=secure, httponly=httponly,
+            charset=self.charset, max_size=self.max_cookie_size
+        ))
 
     def delete_cookie(self, key, path='/', domain=None):
         """Delete a cookie.  Fails silently if key doesn't exist.

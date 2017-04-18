@@ -139,11 +139,6 @@ HTTP_STATUS_CODES = {
     510:    'Not Extended'
 }
 
-# For discussion of a safe (i.e. lowest common denominator) cookie
-# max size, see:
-# http://browsercookielimits.squawky.net/
-COOKIE_MAXSIZE = 4093
-
 
 def wsgi_to_bytes(data):
     """coerce wsgi unicode represented bytes to real ones
@@ -985,7 +980,7 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=False, httponly=False,
-                charset='utf-8', sync_expires=True):
+                charset='utf-8', sync_expires=True, max_size=4093):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -1021,6 +1016,12 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param charset: the encoding for unicode values.
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
+    :param max_size: The max size in bytes of a cookie header. The default,
+        4093, should be safely `supported by most browsers <cookie_>`_. A
+        larger header may still be sent, but it may be ignored or handled
+        incorrectly by some browsers. Set to 0 to disable this check.
+
+    .. _`cookie`: http://browsercookielimits.squawky.net/
     """
     key = to_bytes(key, charset)
     value = to_bytes(value, charset)
@@ -1070,16 +1071,18 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     if not PY2:
         rv = rv.decode('latin1')
 
-    # Check that the final value of the cookie is less than the
-    # standard limit set by browsers. If no check is performed, and if
-    # the cookie is too large, then it will simply get lost, which can
-    # be quite hard to debug.
+    # Check that the final value of the cookie is less than the standard limit
+    # set by browsers. If no check is performed, and if the cookie is too
+    # large, then it will simply get lost, which can be quite hard to debug.
     cookie_size = len(rv)
-    if cookie_size > COOKIE_MAXSIZE:
-        raise ValueError((
-            'Cookie too large: size of {0} is {1} bytes, '
-            'standard limit in most browsers is {2} bytes').format(
-                key, cookie_size, COOKIE_MAXSIZE))
+
+    if max_size and cookie_size > max_size:
+        raise ValueError(
+            'Cookie too large: size of {key} is {size} bytes, but the limit '
+            'is {max} bytes'.format(
+                key=key, size=cookie_size, max=max_size
+            )
+        )
 
     return rv
 
