@@ -213,6 +213,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             import errno
             if e.errno == errno.EPIPE:
                 self.server.log('error', 'IOError, Broken Pipe: possibly a broken connection.')
+            else:
+                from werkzeug.debug.tbtools import get_current_traceback
+                traceback = get_current_traceback(ignore_system_exceptions=True)
+                self.server.log('error', 'IOError:\n%s',
+                        traceback.plaintext)
         except Exception:
             if self.server.passthrough_errors:
                 raise
