@@ -209,8 +209,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             execute(self.server.app)
         except (socket.error, socket.timeout) as e:
             self.connection_dropped(e, environ)
-        except IOError:
-            self.server.log('error', 'IOError: possibly a broken connection.')
+        except IOError, e:
+            import errno
+            if e.errno == errno.EPIPE:
+                self.server.log('error', 'IOError, Broken Pipe: possibly a broken connection.')
         except Exception:
             if self.server.passthrough_errors:
                 raise
