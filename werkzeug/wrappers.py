@@ -990,7 +990,7 @@ class BaseResponse(object):
         else:
             value = bytes(value)
         self.response = [value]
-        if self.automatically_set_content_length:
+        if self.automatically_set_content_length and self.status_code != 204:
             self.headers['Content-Length'] = str(len(value))
 
     data = property(get_data, set_data, doc='''
@@ -1233,9 +1233,9 @@ class BaseResponse(object):
         # Also update content_length accordingly so that the automatic
         # content length detection does not trigger in the following
         # code.
-        if 100 <= status < 200 or status == 204:
+        if 100 <= status < 200:
             headers['Content-Length'] = content_length = u'0'
-        elif status == 304:
+        elif status == 304 or status == 204:
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we
@@ -1244,7 +1244,8 @@ class BaseResponse(object):
         # the response.  We however should not do that if we have a 304
         # response.
         if self.automatically_set_content_length and \
-           self.is_sequence and content_length is None and status != 304:
+           self.is_sequence and content_length is None and \
+           status != 204 and status != 304:
             try:
                 content_length = sum(len(to_bytes(x, 'ascii'))
                                      for x in self.response)
