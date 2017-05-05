@@ -20,6 +20,7 @@ yet to be released
   4093 bytes. Browsers may silently ignore cookies larger than this.
   ``BaseResponse`` has a new attribute ``max_cookie_size`` and ``dump_cookie``
   has a new argument ``max_size`` to configure this. (`#780`_, `#1109`_)
+- Fix a TypeError in ``werkzeug.contrib.lint.GuardedIterator.close``.
 - `BaseResponse.calculate_content_length` now correctly works for unicode
   responses on Python 3. It first encodes using `iter_encoded`.
 
