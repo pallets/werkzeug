@@ -875,6 +875,11 @@ def test_response_freeze():
     assert resp.headers['content-length'] == '6'
 
 
+def test_response_content_length_uses_encode():
+    r = wrappers.Response(u'你好')
+    assert r.calculate_content_length() == 6
+
+
 def test_other_method_payload():
     data = b'Hello World'
     req = wrappers.Request.from_values(input_stream=BytesIO(data),
