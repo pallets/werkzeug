@@ -20,7 +20,7 @@ yet to be released
   4093 bytes. Browsers may silently ignore cookies larger than this.
   ``BaseResponse`` has a new attribute ``max_cookie_size`` and ``dump_cookie``
   has a new argument ``max_size`` to configure this. (`#780`_, `#1109`_)
-- Fix a TypeError in ``werkzueg.contrib.lint.GuardedIterator.close``.
+- Fix a TypeError in ``werkzeug.contrib.lint.GuardedIterator.close``.
 
 .. _`#780`: https://github.com/pallets/werkzeug/pull/780
 .. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
