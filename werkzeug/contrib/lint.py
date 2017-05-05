@@ -172,7 +172,7 @@ class GuardedIterator(object):
             elif 100 <= status_code < 200 or status_code == 204:
                 if content_length != 0:
                     warn(HTTPWarning('%r responses must have an empty '
-                                     'content length') % status_code)
+                                     'content length' % status_code))
                 if bytes_sent:
                     warn(HTTPWarning('%r responses must not have a body' %
                                      status_code))
