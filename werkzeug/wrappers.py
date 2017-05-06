@@ -1229,22 +1229,18 @@ class BaseResponse(object):
            isinstance(content_location, text_type):
             headers['Content-Location'] = iri_to_uri(content_location)
 
-        # remove entity headers and set content length to zero if needed.
-        # Also update content_length accordingly so that the automatic
-        # content length detection does not trigger in the following
-        # code.
-        if 100 <= status < 200 or status == 204:
-            headers['Content-Length'] = content_length = u'0'
-        elif status == 304:
+        # remove entity headers
+        if status == 304:
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve
         # flattening the iterator or encoding of unicode strings in
         # the response.  We however should not do that if we have a 304
-        # response.
+        # response. Don't do this for 1XX, 204 or 304 responses.
         if self.automatically_set_content_length and \
-           self.is_sequence and content_length is None and status != 304:
+           self.is_sequence and content_length is None and \
+           status not in (204, 304) and not (100 <= status < 200):
             try:
                 content_length = sum(len(to_bytes(x, 'ascii'))
                                      for x in self.response)
