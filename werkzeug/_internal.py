@@ -43,16 +43,7 @@ for _i in chain(range_type(32), range_type(127, 256)):
 _octal_re = re.compile(b'\\\\[0-3][0-7][0-7]')
 _quote_re = re.compile(b'[\\\\].')
 _legal_cookie_chars_re = b'[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]'
-_cookie_re = re.compile(b"""
-    (?P<key>[^=]+)
-    \s*=\s*
-    (?P<val>
-        "(?:[^\\\\"]|\\\\.)*" |
-         (?:.*?)
-    )
-    \s*;
-""", flags=re.VERBOSE)
-
+_b_strip_re = re.compile(b'^ *(.*?) *$')
 
 class _Missing(object):
 
@@ -272,23 +263,17 @@ def _cookie_unquote(b):
     return bytes(rv)
 
 
+def _b_strip(to_strip):
+    return _b_strip_re.search(to_strip).groups()[0]
+
 def _cookie_parse_impl(b):
     """Lowlevel cookie parsing facility that operates on bytes."""
-    i = 0
-    n = len(b)
-
-    while i < n:
-        match = _cookie_re.search(b + b';', i)
-        if not match:
-            break
-
-        key = match.group('key').strip()
-        value = match.group('val')
-        i = match.end(0)
-
-        # Ignore parameters.  We have no interest in them.
-        if key.lower() not in _cookie_params:
-            yield _cookie_unquote(key), _cookie_unquote(value)
+    split_on_semicolon = (x.strip() for x in b.split(b';') if len(x) > 0 )
+    split_on_equal = ( x.split(b'=', 2) for x in split_on_semicolon )
+    cookies = ( (_b_strip(x[0]), _b_strip(x[1]),) for x in split_on_equal if len(x) == 2 )
+    for k, v in cookies:
+        #if key.lower() not in _cookie_params:
+        yield _cookie_unquote(k), _cookie_unquote(v)
 
 
 def _encode_idna(domain):
