@@ -271,9 +271,15 @@ def _cookie_parse_impl(b):
     split_on_semicolon = (x.strip() for x in b.split(b';') if len(x) > 0 )
     split_on_equal = ( x.split(b'=', 2) for x in split_on_semicolon )
     cookies = ( (_b_strip(x[0]), _b_strip(x[1]),) for x in split_on_equal if len(x) == 2 )
+
+    # Although not specified in the RFCs, it is a de facto standard in the case
+    # of duplicate keys, the first one is used, due to browser ordering cookies
+    # from most specific scope to most generic.
+    cookeys = set()
     for k, v in cookies:
-        #if key.lower() not in _cookie_params:
-        yield _cookie_unquote(k), _cookie_unquote(v)
+        if k not in cookeys:
+            cookeys.add(k)
+            yield _cookie_unquote(k), _cookie_unquote(v)
 
 
 def _encode_idna(domain):
