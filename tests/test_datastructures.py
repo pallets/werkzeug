@@ -714,6 +714,11 @@ class TestHeaders(object):
             with pytest.raises(ValueError):
                 h.set('foo', 'test', option=variation)
 
+    def test_reject_newlines_in_constructor(self):
+        for variation in 'foo\nbar', 'foo\r\nbar', 'foo\rbar':
+            with pytest.raises(ValueError):
+                self.storage_class([('foo', variation)])
+
     def test_slicing(self):
         # there's nothing wrong with these being native strings
         # Headers doesn't care about the data types
