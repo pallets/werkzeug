@@ -167,7 +167,9 @@ class SessionStore(object):
 
     def new(self):
         """Generate a new session."""
-        return self.session_class({}, self.generate_key(), True)
+        session = self.session_class({}, self.generate_key(), True)
+        session.modified = True
+        return session
 
     def save(self, session):
         """Save a session."""
