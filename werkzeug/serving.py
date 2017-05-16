@@ -41,6 +41,7 @@ import os
 import socket
 import sys
 import signal
+import errno
 
 
 can_fork = hasattr(os, "fork")
@@ -209,6 +210,14 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             execute(self.server.app)
         except (socket.error, socket.timeout) as e:
             self.connection_dropped(e, environ)
+        except IOError, e:
+            if e.errno == errno.EPIPE:
+                self.server.log('error', 'IOError, Broken Pipe: possibly a broken connection.')
+            else:
+                from werkzeug.debug.tbtools import get_current_traceback
+                traceback = get_current_traceback(ignore_system_exceptions=True)
+                self.server.log('error', 'IOError:\n%s',
+                        traceback.plaintext)
         except Exception:
             if self.server.passthrough_errors:
                 raise
