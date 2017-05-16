@@ -2,9 +2,9 @@ Werkzeug Changelog
 ==================
 
 Version 0.12.2
-------------
+--------------
 
-yet to be released
+Released on May 16 2017
 
 - Fix regression: Pull request ``#892`` prevented Werkzeug from correctly
   logging the IP of a remote client behind a reverse proxy, even when using
