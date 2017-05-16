@@ -1082,6 +1082,13 @@ def test_disabled_auto_content_length():
     assert 'Content-Length' not in resp.get_wsgi_headers({})
 
 
+def test_http_204_content_length():
+    resp = wrappers.Response('', 204)
+    assert resp.status_code == 204
+    assert resp.content_length is None
+    assert 'Content-Length' not in resp.get_wsgi_headers({})
+
+
 def test_location_header_autocorrect():
     env = create_environ()
 
