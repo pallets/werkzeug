@@ -688,7 +688,7 @@ class Aborter(object):
 
 
 def abort(status, *args, **kwargs):
-    '''
+    """
     Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application::
 
@@ -703,7 +703,7 @@ def abort(status, *args, **kwargs):
        abort(404)
        abort(Response('Hello World'))
 
-    '''
+    """
     return _aborter(status, *args, **kwargs)
 
 _aborter = Aborter()
