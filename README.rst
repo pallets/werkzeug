@@ -1,3 +1,6 @@
+.. image:: https://badge.waffle.io/pallets/werkzeug.png?label=ready&title=Ready 
+ :target: https://waffle.io/pallets/werkzeug
+ :alt: 'Stories in Ready'
 Werkzeug
 ========
 
