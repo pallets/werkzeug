@@ -69,6 +69,14 @@ class TestFormParser(object):
         req.max_form_memory_size = 400
         strict_eq(req.form['foo'], u'Hello World')
 
+        data = b'foo=Hello+World&bar=\xd6\xd0\xce\xc4'
+        req = Request.from_values(input_stream=BytesIO(data),
+                                  content_length=len(data),
+                                  content_type='application/x-www-form-urlencoded; charset=GBK',
+                                  method='POST')
+        req.max_content_length = 400
+        strict_eq(req.form['bar'], u'中文')
+
         data = (b'--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n'
                 b'Hello World\r\n'
                 b'--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n'

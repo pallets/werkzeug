@@ -218,6 +218,8 @@ class FormDataParser(object):
            content_length is not None and \
            content_length > self.max_form_memory_size:
             raise exceptions.RequestEntityTooLarge()
+        if options:
+            self.charset = options.get('charset', self.charset)
         form = url_decode_stream(stream, self.charset,
                                  errors=self.errors, cls=self.cls)
         return stream, form, self.cls()
