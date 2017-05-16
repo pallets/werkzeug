@@ -19,7 +19,7 @@ import sys
 
 from werkzeug._compat import iteritems
 
-__version__ = '0.12.2-dev'
+__version__ = '0.12.2'
 
 
 # This import magic raises concerns quite often which is why the implementation
