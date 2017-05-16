@@ -183,7 +183,7 @@ class FormDataParser(object):
         """
         if self.max_content_length is not None and \
            content_length is not None and \
-           content_length > self.max_content_length:
+           content_length > eval(self.max_content_length):
             raise exceptions.RequestEntityTooLarge()
         if options is None:
             options = {}
