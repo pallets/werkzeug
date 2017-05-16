@@ -72,10 +72,14 @@ class ProfilerMiddleware(object):
     :param restrictions: a tuple of profiling strictions, not used if dumping
                          to `profile_dir`.
     :param profile_dir: directory name to save pstat files
+    :param filter: a function taking argument environ, returns true if this
+                   request should be profiled
+
     """
 
     def __init__(self, app, stream=None,
-                 sort_by=('time', 'calls'), restrictions=(), profile_dir=None):
+                 sort_by=('time', 'calls'), restrictions=(), profile_dir=None,
+                 filter=None):
         if not available:
             raise RuntimeError('the profiler is not available because '
                                'profile or pstat is not installed.')
@@ -84,8 +88,12 @@ class ProfilerMiddleware(object):
         self._sort_by = sort_by
         self._restrictions = restrictions
         self._profile_dir = profile_dir
+        self._filter = filter
 
     def __call__(self, environ, start_response):
+        if not (self._filter is None or self._filter(environ)):
+            return self._app(environ, start_response)
+
         response_body = []
 
         def catching_start_response(status, headers, exc_info=None):
