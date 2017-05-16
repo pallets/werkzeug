@@ -36,6 +36,7 @@ from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
     CombinedMultiDict, Headers, FileStorage
+from werkzeug.http import parse_options_header
 
 
 def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
@@ -390,7 +391,8 @@ class EnvironBuilder(object):
     del _get_base_url, _set_base_url
 
     def _get_content_type(self):
-        ct = self.headers.get('Content-Type')
+        content_type_header = self.headers.get('Content-Type')
+        ct = parse_options_header(content_type_header)[0]
         if ct is None and not self._input_stream:
             if self._files:
                 return 'multipart/form-data'
