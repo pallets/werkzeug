@@ -691,10 +691,8 @@ def run_simple(hostname, port, application, use_reloader=False,
              display_hostname, port, quit_msg)
 
     def inner():
-        try:
-            fd = int(os.environ['WERKZEUG_SERVER_FD'])
-        except (LookupError, ValueError):
-            fd = None
+        fd = os.getenv('WERKZEUG_SERVER_FD')
+        fd = int(fd) if isinstance(fd, str) and fd.isdigit() else None
         srv = make_server(hostname, port, application, threaded,
                           processes, request_handler,
                           passthrough_errors, ssl_context,
