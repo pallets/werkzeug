@@ -132,7 +132,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'REMOTE_PORT':          self.port_integer(),
             'SERVER_NAME':          self.server.server_address[0],
             'SERVER_PORT':          str(self.server.server_address[1]),
-            'SERVER_PROTOCOL':      self.request_version
+            'SERVER_PROTOCOL':      self.request_version,
+            'RAW_URI':              self.path,
         }
 
         for key, value in self.headers.items():
