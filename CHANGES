@@ -27,6 +27,17 @@ yet to be released
 .. _`#780`: https://github.com/pallets/werkzeug/pull/780
 .. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
 
+
+Version 0.12.2
+--------------
+
+yet to be released
+
+- Fix regression: Pull request ``#892`` prevented Werkzeug from correctly
+  logging the IP of a remote client behind a reverse proxy, even when using
+  `ProxyFix`.
+- Fix a bug in `safe_join` on Windows.
+
 Version 0.12.1
 --------------
 

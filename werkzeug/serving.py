@@ -279,7 +279,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return BaseHTTPRequestHandler.version_string(self).strip()
 
     def address_string(self):
-        return self.client_address[0]
+        if getattr(self, 'environ', None):
+            return self.environ['REMOTE_ADDR']
+        else:
+            return self.client_address[0]
 
     def port_integer(self):
         return self.client_address[1]
