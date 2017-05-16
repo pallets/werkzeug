@@ -1079,7 +1079,7 @@ class UUIDConverter(BaseConverter):
     :param map: the :class:`Map`.
     """
     regex = r'[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-' \
-            r'[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}'
+            r'[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}|[A-Fa-f0-9]{32}'
 
     def to_python(self, value):
         return uuid.UUID(value)
