@@ -2683,7 +2683,9 @@ class FileStorage(object):
         """Save the file to a destination path or file object.  If the
         destination is a file object you have to close it yourself after the
         call.  The buffer size is the number of bytes held in memory during
-        the copy process.  It defaults to 16KB.
+        the copy process.  It defaults to 16KB. The file pointer is reset
+        after the copy is complete to enable the save method to be invoked
+        multiple times.
 
         For secure file saving also have a look at :func:`secure_filename`.
 
@@ -2700,6 +2702,7 @@ class FileStorage(object):
             close_dst = True
         try:
             copyfileobj(self.stream, dst, buffer_size)
+            self.stream.seek(0)
         finally:
             if close_dst:
                 dst.close()
