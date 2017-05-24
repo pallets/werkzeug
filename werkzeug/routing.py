@@ -131,10 +131,7 @@ _converter_args_re = re.compile(r'''
     ((?P<name>\w+)\s*=\s*)?
     (?P<value>
         True|False|
-        \d+.\d+|
-        \d+.|
-        \d+|
-        \w+|
+        [a-zA-Z0-9_.]+|
         [urUR]?(?P<stringval>"[^"]*?"|'[^']*')
     )\s*,
 ''', re.VERBOSE | re.UNICODE)
