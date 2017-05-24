@@ -34,9 +34,9 @@ _os_alt_seps = list(sep for sep in [os.path.sep, os.path.altsep]
 
 
 def _find_hashlib_algorithms():
-    #for python2>=2.7.9 and python3>=3.2
+    # for python2>=2.7.9 and python3>=3.2
     algos = getattr(hashlib, 'algorithms_available', None)
-    #for 2.7.0 < python2 < 2.7.9
+    # for 2.7.0 < python2 < 2.7.9
     if algos is None:
         algos = getattr(hashlib, 'algorithms', None)
     if algos is None:
@@ -105,10 +105,10 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
            _test_hash.name in _hash_funcs:
             try:
                 return hashlib.pbkdf2_hmac(_test_hash.name,
-                                       data, salt, iterations,
-                                       keylen)
-            # python3's hashlib.pbkdf2_hmac OpenSSL version not support the sha3 hash method
-            # need use the pure python implementation
+                                           data, salt, iterations,
+                                           keylen)
+            # python3's hashlib.pbkdf2_hmac OpenSSL version does not support the sha3 hash method
+            # so we need to use the pure python implementation
             except ValueError:
                 pass
 
