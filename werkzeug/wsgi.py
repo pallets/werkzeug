@@ -179,7 +179,7 @@ def get_content_length(environ):
             pass
 
 
-def get_input_stream(environ, safe_fallback=True):
+def get_input_stream(environ, safe_fallback=True, max_content_length=None):
     """Returns the input stream from the WSGI environment and wraps it
     in the most sensible way possible.  The stream returned is not the
     raw WSGI stream in most cases but one that is safe to read from
@@ -192,6 +192,8 @@ def get_input_stream(environ, safe_fallback=True):
                  stream as safe fallback or just return the original
                  WSGI input stream if it can't wrap it safely.  The
                  default is to return an empty string in those cases.
+    :param max_content_length: this limits the stream chunk size if the
+                CONTENT_LENGTH is not in the environ variable.
     """
     stream = environ['wsgi.input']
     content_length = get_content_length(environ)
@@ -202,15 +204,19 @@ def get_input_stream(environ, safe_fallback=True):
     if environ.get('wsgi.input_terminated'):
         return stream
 
-    # If we don't have a content length we fall back to an empty stream
+    # If we don't have a content length nor the max_content_length
+    # we fall back to an empty stream
     # in case of a safe fallback, otherwise we return the stream unchanged.
     # The non-safe fallback is not recommended but might be useful in
     # some situations.
-    if content_length is None:
+    if content_length is None and max_content_length is None:
         return safe_fallback and _empty_stream or stream
 
     # Otherwise limit the stream to the content length
-    return LimitedStream(stream, content_length)
+    if max_content_length:
+        return LimitedStream(stream, min(content_length, max_content_length))
+    else:
+        return LimitedStream(stream, content_length)
 
 
 def get_query_string(environ):

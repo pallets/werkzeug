@@ -427,7 +427,7 @@ class BaseRequest(object):
            parsing happened.
         """
         _assert_not_shallow(self)
-        return get_input_stream(self.environ)
+        return get_input_stream(self.environ, max_content_length=self.max_content_length)
 
     input_stream = environ_property('wsgi.input', """
     The WSGI input stream.
