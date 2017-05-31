@@ -372,6 +372,9 @@ class TestHTTPUtility(object):
         strict_eq(dict(http.parse_cookie('fo234{=bar; blub=Blah')),
                   {'fo234{': u'bar', 'blub': u'Blah'})
 
+        strict_eq(http.dump_cookie('key', 'xxx/'), 'key=xxx/; Path=/')
+        strict_eq(http.dump_cookie('key', 'xxx='), 'key=xxx=; Path=/')
+
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
         strict_eq(val, 'foo="?foo"; Path=/')
