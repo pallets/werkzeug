@@ -126,7 +126,7 @@ class BaseCache(object):
 
     def get_many(self, *keys):
         """Returns a list of values for the given keys.
-        For each key a item in the list is created::
+        For each key an item in the list is created::
 
             foo, bar = cache.get_many("foo", "bar")
 
