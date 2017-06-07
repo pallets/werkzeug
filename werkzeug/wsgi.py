@@ -621,9 +621,10 @@ class SharedDataMiddleware(object):
 
         headers.extend((
             ('Content-Type', mime_type),
-            ('Content-Length', str(file_size)),
             ('Last-Modified', http_date(mtime))
         ))
+        if file_size:
+            headers.append(('Content-Length', str(file_size)))
         start_response('200 OK', headers)
         return wrap_file(environ, f)
 
