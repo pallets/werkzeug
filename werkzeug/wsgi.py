@@ -165,7 +165,7 @@ def get_host(environ, trusted_hosts=None):
 
 def get_content_length(environ):
     """Returns the content length from the WSGI environment as
-    integer.  If it's not available `None` is returned.
+    integer. If it's not available ``None`` is returned.
 
     .. versionadded:: 0.9
 
@@ -185,15 +185,17 @@ def get_input_stream(environ, safe_fallback=True, max_content_length=None):
     raw WSGI stream in most cases but one that is safe to read from
     without taking into account the content length.
 
+    .. versionchanged:: 0.13
+        Added the ``max_content_length`` parameter.
+
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the stream from.
-    :param safe: indicates whether the function should use an empty
-                 stream as safe fallback or just return the original
-                 WSGI input stream if it can't wrap it safely.  The
-                 default is to return an empty string in those cases.
-    :param max_content_length: this limits the stream chunk size if the
-                CONTENT_LENGTH is not in the environ variable.
+    :param safe_fallback: use an empty stream as a safe fallback when neither
+        the environ content length nor the max is set. Disabling this allows
+        infinite streams, which can be a denial-of-service risk.
+    :param max_content_length: if the environ does not set ``Content-Length``
+        or it is greater than this value, the stream is limited to this length.
     """
     stream = environ['wsgi.input']
     content_length = get_content_length(environ)
@@ -204,16 +206,16 @@ def get_input_stream(environ, safe_fallback=True, max_content_length=None):
     if environ.get('wsgi.input_terminated'):
         return stream
 
-    # If we don't have a content length nor the max_content_length
-    # we fall back to an empty stream
-    # in case of a safe fallback, otherwise we return the stream unchanged.
-    # The non-safe fallback is not recommended but might be useful in
-    # some situations.
+    # If the request doesn't specify a content length and there is no max
+    # length set, returning the stream is potentially dangerous because it
+    # could be infinite, maliciously or not. If safe_fallback is true, return
+    # an empty stream for safety instead.
     if content_length is None and max_content_length is None:
         return safe_fallback and _empty_stream or stream
 
-    # Otherwise limit the stream to the content length
-    if max_content_length:
+    # Otherwise limit the stream to the content length or max length,
+    # whichever is lower.
+    if max_content_length is not None:
         return LimitedStream(stream, min(content_length, max_content_length))
     else:
         return LimitedStream(stream, content_length)
