@@ -336,7 +336,7 @@ class BaseRequest(object):
         return bool(self.environ.get('CONTENT_TYPE'))
 
     def make_form_data_parser(self):
-        """Creates the form data parser.  Instanciates the
+        """Creates the form data parser. Instantiates the
         :attr:`form_data_parser_class` with some parameters.
 
         .. versionadded:: 0.8
@@ -421,13 +421,20 @@ class BaseRequest(object):
         internally always refer to this stream to read data which makes it
         possible to wrap this object with a stream that does filtering.
 
+        .. versionchanged:: 0.13
+            The stream will be limited to :attr:`max_content_length` if the
+            request does not specify a content length or it is greater than the
+            configured max.
+
         .. versionchanged:: 0.9
            This stream is now always available but might be consumed by the
            form parser later on.  Previously the stream was only set if no
            parsing happened.
         """
         _assert_not_shallow(self)
-        return get_input_stream(self.environ)
+        return get_input_stream(
+            self.environ, max_content_length=self.max_content_length
+        )
 
     input_stream = environ_property('wsgi.input', """
     The WSGI input stream.
