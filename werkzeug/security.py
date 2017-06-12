@@ -253,7 +253,7 @@ def safe_join(directory, *pathnames):
     cannot be done, this function returns ``None``.
 
     :param directory: the base directory.
-    :param filename: the untrusted filename relative to that directory.
+    :param pathnames: the untrusted pathnames relative to that directory.
     """
     parts = [directory]
     for filename in pathnames:
