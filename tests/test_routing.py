@@ -209,6 +209,8 @@ def test_path():
         r.Rule('/', defaults={'name': 'FrontPage'}, endpoint='page'),
         r.Rule('/Special', endpoint='special'),
         r.Rule('/<int:year>', endpoint='year'),
+        r.Rule('/<path:name>:foo', endpoint='foopage'),
+        r.Rule('/<path:name>:<path:name2>', endpoint='twopage'),
         r.Rule('/<path:name>', endpoint='page'),
         r.Rule('/<path:name>/edit', endpoint='editpage'),
         r.Rule('/<path:name>/silly/<path:name2>', endpoint='sillypage'),
@@ -216,7 +218,9 @@ def test_path():
         r.Rule('/Talk:<path:name>', endpoint='talk'),
         r.Rule('/User:<username>', endpoint='user'),
         r.Rule('/User:<username>/<path:name>', endpoint='userpage'),
+        r.Rule('/User:<username>/comment/<int:id>-<int:replyId>', endpoint='usercomment'),
         r.Rule('/Files/<path:file>', endpoint='files'),
+        r.Rule('/<admin>/<manage>/<things>', endpoint='admin'),
     ])
     adapter = map.bind('example.org', '/')
 
@@ -224,6 +228,8 @@ def test_path():
     pytest.raises(r.RequestRedirect, lambda: adapter.match('/FrontPage'))
     assert adapter.match('/Special') == ('special', {})
     assert adapter.match('/2007') == ('year', {'year': 2007})
+    assert adapter.match('/Some:foo') == ('foopage', {'name': 'Some'})
+    assert adapter.match('/Some:bar') == ('twopage', {'name': 'Some', 'name2': 'bar'})
     assert adapter.match('/Some/Page') == ('page', {'name': 'Some/Page'})
     assert adapter.match('/Some/Page/edit') == ('editpage', {'name': 'Some/Page'})
     assert adapter.match('/Foo/silly/bar') == ('sillypage', {'name': 'Foo', 'name2': 'bar'})
@@ -233,9 +239,12 @@ def test_path():
     assert adapter.match('/User:thomas') == ('user', {'username': 'thomas'})
     assert adapter.match('/User:thomas/projects/werkzeug') == \
         ('userpage', {'username': 'thomas', 'name': 'projects/werkzeug'})
+    assert adapter.match('/User:thomas/comment/123-456') == \
+        ('usercomment', {'username': 'thomas', 'id': 123, 'replyId': 456})
     assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == \
         ('files', {'file': 'downloads/werkzeug/0.2.zip'})
-
+    assert adapter.match('/Jerry/eats/cheese') == \
+        ('admin', {'admin': 'Jerry', 'manage': 'eats', 'things': 'cheese'})
 
 def test_dispatch():
     env = create_environ('/')
