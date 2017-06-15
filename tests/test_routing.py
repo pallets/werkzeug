@@ -246,6 +246,7 @@ def test_path():
     assert adapter.match('/Jerry/eats/cheese') == \
         ('admin', {'admin': 'Jerry', 'manage': 'eats', 'things': 'cheese'})
 
+
 def test_dispatch():
     env = create_environ('/')
     map = r.Map([
