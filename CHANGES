@@ -1,6 +1,11 @@
 Werkzeug Changelog
 ==================
 
+Version 0.12.3
+--------------
+
+- Fix bug in reloader on Windows.  See ``1136``
+
 Version 0.12.2
 --------------
 

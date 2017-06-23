@@ -60,6 +60,8 @@ def _get_args_for_reloading():
     if os.name == 'nt' and not os.path.exists(py_script) and \
        os.path.exists(py_script + '.exe'):
         py_script += '.exe'
+    if os.path.splitext(rv[0])[1] == '.exe' and os.path.splitext(py_script)[1] == '.exe':
+        rv.pop(0)
     rv.append(py_script)
     rv.extend(sys.argv[1:])
     return rv
