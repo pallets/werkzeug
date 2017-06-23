@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import re
+import io
 import os
 import posixpath
 import mimetypes
@@ -1049,7 +1050,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024,
 
 
 @implements_iterator
-class LimitedStream(object):
+class LimitedStream(io.IOBase):
 
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it
@@ -1201,3 +1202,6 @@ class LimitedStream(object):
         if not line:
             raise StopIteration()
         return line
+
+    def readable(self):
+        return True
