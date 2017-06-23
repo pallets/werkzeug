@@ -61,7 +61,7 @@ def _get_args_for_reloading():
        os.path.exists(py_script + '.exe'):
         py_script += '.exe'
     if os.path.splitext(rv[0])[1] == '.exe' and os.path.splitext(py_script)[1] == '.exe':
-        rv.pop()
+        rv.pop(0)
     rv.append(py_script)
     rv.extend(sys.argv[1:])
     return rv

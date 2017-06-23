@@ -210,7 +210,7 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server):
 
 
 def test_windows_get_args_for_reloading(monkeypatch, tmpdir):
-    test_py_exe = 'C:\\Users\\test\\AppData\\Local\\Programs\\Python\\Python36\\python.exe'
+    test_py_exe = r'C:\Users\test\AppData\Local\Programs\Python\Python36\python.exe'
     monkeypatch.setattr(os, 'name', 'nt')
     monkeypatch.setattr(sys, 'executable', test_py_exe)
     test_exe = tmpdir.mkdir('test').join('test.exe')
