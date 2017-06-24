@@ -35,18 +35,17 @@ class TestServerFixer(object):
             app,
             dict(create_environ(),
                  SCRIPT_NAME='/foo',
-                 PATH_INFO='/bar',
-                 SERVER_SOFTWARE='lighttpd/1.4.27'))
-        assert response.get_data() == b'PATH_INFO: /foo/bar\nSCRIPT_NAME: '
+                 PATH_INFO='/bar'))
+        assert response.get_data() == b'PATH_INFO: /bar\nSCRIPT_NAME: '
 
     def test_cgi_root_fix_custom_app_root(self):
-        app = fixers.CGIRootFix(path_check_app, app_root='/baz/poop/')
+        app = fixers.CGIRootFix(path_check_app, app_root='/baz/')
         response = Response.from_app(
             app,
             dict(create_environ(),
                  SCRIPT_NAME='/foo',
                  PATH_INFO='/bar'))
-        assert response.get_data() == b'PATH_INFO: /foo/bar\nSCRIPT_NAME: baz/poop'
+        assert response.get_data() == b'PATH_INFO: /bar\nSCRIPT_NAME: baz'
 
     def test_path_info_from_request_uri_fix(self):
         app = fixers.PathInfoFromRequestUriFix(path_check_app)
