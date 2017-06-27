@@ -1689,6 +1689,7 @@ class ResponseStream(object):
         self.response._ensure_sequence(mutable=True)
         self.response.response.append(value)
         self.response.headers.pop('Content-Length', None)
+        return len(value)
 
     def writelines(self, seq):
         for item in seq:
@@ -1705,6 +1706,10 @@ class ResponseStream(object):
         if self.closed:
             raise ValueError('I/O operation on closed file')
         return False
+
+    def tell(self):
+        self.response._ensure_sequence()
+        return sum(map(len, self.response.response))
 
     @property
     def encoding(self):
