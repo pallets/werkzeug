@@ -8,6 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import contextlib
 import os
 
 import pytest
@@ -1117,6 +1118,25 @@ def test_is_xhr_warning():
 
     assert len(record) == 1
     assert 'Request.is_xhr is deprecated' in str(record[0].message)
+
+
+def test_write_length():
+    response = wrappers.Response()
+    length = response.stream.write(b'bar')
+    assert length == 3
+
+
+def test_stream_zip():
+    import zipfile
+
+    response = wrappers.Response()
+    with contextlib.closing(zipfile.ZipFile(response.stream, mode='w')) as z:
+        z.writestr("foo", b"bar")
+
+    buffer = BytesIO(response.get_data())
+    with contextlib.closing(zipfile.ZipFile(buffer, mode='r')) as z:
+        assert z.namelist() == ['foo']
+        assert z.read('foo') == b'bar'
 
 
 class TestSetCookie(object):
