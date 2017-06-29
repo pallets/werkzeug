@@ -8,23 +8,24 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import re
+import io
+import mimetypes
 import os
 import posixpath
-import mimetypes
-from itertools import chain
-from zlib import adler32
-from time import time, mktime
+import re
 from datetime import datetime
 from functools import partial, update_wrapper
+from itertools import chain
+from time import mktime, time
+from zlib import adler32
 
-from werkzeug._compat import iteritems, text_type, string_types, \
-    implements_iterator, make_literal_wrapper, to_unicode, to_bytes, \
-    wsgi_get_bytes, try_coerce_native, PY2, BytesIO
+from werkzeug._compat import BytesIO, PY2, implements_iterator, iteritems, \
+    make_literal_wrapper, string_types, text_type, to_bytes, to_unicode, \
+    try_coerce_native, wsgi_get_bytes
 from werkzeug._internal import _empty_stream, _encode_idna
-from werkzeug.http import is_resource_modified, http_date
-from werkzeug.urls import uri_to_iri, url_quote, url_parse, url_join
 from werkzeug.filesystem import get_filesystem_encoding
+from werkzeug.http import http_date, is_resource_modified
+from werkzeug.urls import uri_to_iri, url_join, url_parse, url_quote
 
 
 def responder(f):
@@ -1049,7 +1050,7 @@ def make_chunk_iter(stream, separator, limit=None, buffer_size=10 * 1024,
 
 
 @implements_iterator
-class LimitedStream(object):
+class LimitedStream(io.IOBase):
 
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it
@@ -1201,3 +1202,6 @@ class LimitedStream(object):
         if not line:
             raise StopIteration()
         return line
+
+    def readable(self):
+        return True
