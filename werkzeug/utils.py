@@ -453,7 +453,7 @@ def find_modules(import_path, include_packages=False, recursive=False):
     also recursively list modules but in that case it will import all the
     packages to get the correct load path of that module.
 
-    :param import_name: the dotted name for the package to find child modules.
+    :param import_path: the dotted name for the package to find child modules.
     :param include_packages: set to `True` if packages should be returned, too.
     :param recursive: set to `True` if recursion should happen.
     :return: generator
