@@ -8,21 +8,21 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import io
+import json
 import os
+from contextlib import closing
+from os import path
 
 import pytest
 
-from os import path
-from contextlib import closing
-
 from tests import strict_eq
-
-from werkzeug.wrappers import BaseResponse
+from werkzeug import wsgi
+from werkzeug._compat import BytesIO, NativeStringIO, StringIO, to_bytes, \
+    to_native
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
-from werkzeug import wsgi
-from werkzeug._compat import StringIO, BytesIO, NativeStringIO, to_native, \
-    to_bytes
+from werkzeug.wrappers import BaseResponse
 from werkzeug.wsgi import _RangeWrapper, wrap_file
 
 
@@ -242,6 +242,15 @@ def test_limited_stream():
     io = StringIO(u'123\n456\n')
     stream = wsgi.LimitedStream(io, 8)
     strict_eq(list(stream), [u'123\n', u'456\n'])
+
+
+def test_limited_stream_json_load():
+    stream = wsgi.LimitedStream(BytesIO(b'{"hello": "test"}'), 17)
+    # flask.json adapts bytes to text with TextIOWrapper
+    # this expects stream.readable() to exist and return true
+    stream = io.TextIOWrapper(io.BufferedReader(stream), 'UTF-8')
+    data = json.load(stream)
+    assert data == {'hello': 'test'}
 
 
 def test_limited_stream_disconnection():
