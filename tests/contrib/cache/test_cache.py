@@ -257,8 +257,10 @@ def _running_in_uwsgi():
         return True
 
 
-@pytest.mark.skipif(not _running_in_uwsgi(),
-                    reason="uWSGI module can't be imported outside of uWSGI")
+@pytest.mark.skipif(
+    not _running_in_uwsgi(),
+    reason="uWSGI module can't be imported outside of uWSGI"
+)
 class TestUWSGICache(CacheTests):
     _can_use_fast_sleep = False
 
