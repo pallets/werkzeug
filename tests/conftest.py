@@ -6,8 +6,7 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 
 import os
 import signal
@@ -38,6 +37,10 @@ else:
 def _patch_reloader_loop():
     def f(x):
         print('reloader loop finished')
+        # Need to flush for some reason even though xprocess opens the
+        # subprocess' stdout in unbuffered mode.
+        # flush=True makes the test fail on py2, so flush manually
+        sys.stdout.flush()
         return time.sleep(x)
 
     import werkzeug._reloader
