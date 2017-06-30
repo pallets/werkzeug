@@ -1,6 +1,8 @@
 os: linux
 sudo: false
 language: python
+python: 3.6
+env: TOXENV=normal-hypothesis,codecov
 
 matrix:
   include:
@@ -29,6 +31,11 @@ matrix:
     - os: osx
       language: generic
       env: TOXENV=normal
+  allow_failures:
+    - os: osx
+      language: generic
+      env: TOXENV=normal
+  fast_finish: true
 
 before_install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
