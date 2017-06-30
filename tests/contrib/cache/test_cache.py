@@ -8,9 +8,9 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import pytest
 import os
-import random
+
+import pytest
 
 from werkzeug.contrib import cache
 
@@ -35,11 +35,6 @@ class CacheTests(object):
     _can_use_fast_sleep = True
 
     @pytest.fixture
-    def make_cache(self):
-        '''Return a cache class or factory.'''
-        raise NotImplementedError()
-
-    @pytest.fixture
     def fast_sleep(self, monkeypatch):
         if self._can_use_fast_sleep:
             def sleep(delta):
@@ -52,8 +47,13 @@ class CacheTests(object):
             return time.sleep
 
     @pytest.fixture
+    def make_cache(self):
+        """Return a cache class or factory."""
+        raise NotImplementedError()
+
+    @pytest.fixture
     def c(self, make_cache):
-        '''Return a cache instance.'''
+        """Return a cache instance."""
         return make_cache()
 
     def test_generic_get_dict(self, c):
@@ -68,6 +68,7 @@ class CacheTests(object):
     def test_generic_set_get(self, c):
         for i in range(3):
             assert c.set(str(i), i * i)
+
         for i in range(3):
             result = c.get(str(i))
             assert result == i * i, result
@@ -85,11 +86,6 @@ class CacheTests(object):
         assert c.set_many({'foo': 'bar', 'spam': ['eggs']})
         assert c.get('foo') == 'bar'
         assert c.get('spam') == ['eggs']
-
-    def test_generic_expire(self, c, fast_sleep):
-        assert c.set('foo', 'bar', 1)
-        fast_sleep(5)
-        assert c.get('foo') is None
 
     def test_generic_add(self, c):
         # sanity check that add() works like set()
@@ -123,21 +119,15 @@ class CacheTests(object):
         assert c.set('bar', False)
         assert c.get('bar') in (False, 0)
 
-    def test_generic_no_timeout(self, c, fast_sleep):
-        # Timeouts of zero should cause the cache to never expire
-        c.set('foo', 'bar', 0)
-        fast_sleep(random.randint(1, 5))
-        assert c.get('foo') == 'bar'
-
     def test_generic_timeout(self, c, fast_sleep):
-        # Check that cache expires when the timeout is reached
-        timeout = random.randint(1, 5)
-        c.set('foo', 'bar', timeout)
+        c.set('foo', 'bar', 0)
         assert c.get('foo') == 'bar'
-        # sleep a bit longer than timeout to ensure there are no
-        # race conditions
-        fast_sleep(timeout + 5)
-        assert c.get('foo') is None
+        c.set('baz', 'qux', 1)
+        assert c.get('baz') == 'qux'
+        fast_sleep(3)
+        # timeout of zero means no timeout
+        assert c.get('foo') == 'bar'
+        assert c.get('baz') is None
 
     def test_generic_has(self, c):
         assert c.has('foo') in (False, 0)
@@ -151,7 +141,6 @@ class CacheTests(object):
 
 
 class TestSimpleCache(CacheTests):
-
     @pytest.fixture
     def make_cache(self):
         return cache.SimpleCache
@@ -167,7 +156,6 @@ class TestSimpleCache(CacheTests):
 
 
 class TestFileSystemCache(CacheTests):
-
     @pytest.fixture
     def make_cache(self, tmpdir):
         return lambda **kw: cache.FileSystemCache(cache_dir=str(tmpdir), **kw)
@@ -175,8 +163,10 @@ class TestFileSystemCache(CacheTests):
     def test_filesystemcache_prune(self, make_cache):
         THRESHOLD = 13
         c = make_cache(threshold=THRESHOLD)
+
         for i in range(2 * THRESHOLD):
             assert c.set(str(i), i)
+
         cache_files = os.listdir(c._path)
         assert len(cache_files) <= THRESHOLD
 
@@ -195,21 +185,29 @@ if redis is not None:
     class TestRedisCache(CacheTests):
         _can_use_fast_sleep = False
 
+        @pytest.fixture(scope='class', autouse=True)
+        def ensure_process(self, xprocess):
+            def prepare(cwd):
+                return 'server is now ready', ['redis-server']
+
+            xprocess.ensure('redis_server', prepare)
+            yield
+            xprocess.getinfo('redis_server').terminate()
+
         @pytest.fixture(params=[
             ([], dict()),
             ([redis.Redis()], dict()),
             ([redis.StrictRedis()], dict())
         ])
-        def make_cache(self, xprocess, request):
-            def preparefunc(cwd):
-                return 'server is now ready', ['redis-server']
-
-            xprocess.ensure('redis_server', preparefunc)
+        def make_cache(self, request):
             args, kwargs = request.param
-            c = cache.RedisCache(*args, key_prefix='werkzeug-test-case:',
-                                 **kwargs)
-            request.addfinalizer(c.clear)
-            return lambda: c
+            c = cache.RedisCache(
+                *args,
+                key_prefix='werkzeug-test-case:',
+                **kwargs
+            )
+            yield lambda: c
+            c.clear()
 
         def test_compat(self, c):
             assert c._client.set(c.key_prefix + 'foo', 'Awesome')
@@ -218,21 +216,24 @@ if redis is not None:
             assert c.get('foo') == 42
 
 
-# Don't use pytest marker
-# https://bitbucket.org/hpk42/pytest/issue/568
 if memcache is not None:
     class TestMemcachedCache(CacheTests):
         _can_use_fast_sleep = False
 
-        @pytest.fixture
-        def make_cache(self, xprocess, request):
-            def preparefunc(cwd):
+        @pytest.fixture(scope='class', autouse=True)
+        def ensure_process(self, xprocess):
+            def prepare(cwd):
                 return '', ['memcached']
 
-            xprocess.ensure('memcached', preparefunc)
+            xprocess.ensure('memcached', prepare)
+            yield
+            xprocess.getinfo('memcached').terminate()
+
+        @pytest.fixture
+        def make_cache(self):
             c = cache.MemcachedCache(key_prefix='werkzeug-test-case:')
-            request.addfinalizer(c.clear)
-            return lambda: c
+            yield lambda: c
+            c.clear()
 
         def test_compat(self, c):
             assert c._client.set(c.key_prefix + 'foo', 'bar')
@@ -241,31 +242,21 @@ if memcache is not None:
         def test_huge_timeouts(self, c):
             # Timeouts greater than epoch are interpreted as POSIX timestamps
             # (i.e. not relative to now, but relative to epoch)
-            import random
             epoch = 2592000
-            timeout = epoch + random.random() * 100
-            c.set('foo', 'bar', timeout)
+            c.set('foo', 'bar', epoch + 100)
             assert c.get('foo') == 'bar'
 
 
-def _running_in_uwsgi():
-    try:
-        import uwsgi  # NOQA
-    except ImportError:
-        return False
-    else:
-        return True
+try:
+    import uwsgi  # NOQA
+except ImportError:
+    pass
+else:
+    class TestUWSGICache(CacheTests):
+        _can_use_fast_sleep = False
 
-
-@pytest.mark.skipif(
-    not _running_in_uwsgi(),
-    reason="uWSGI module can't be imported outside of uWSGI"
-)
-class TestUWSGICache(CacheTests):
-    _can_use_fast_sleep = False
-
-    @pytest.fixture
-    def make_cache(self, xprocess, request):
-        c = cache.UWSGICache(cache='werkzeugtest')
-        request.addfinalizer(c.clear)
-        return lambda: c
+        @pytest.fixture
+        def make_cache(self):
+            c = cache.UWSGICache(cache='werkzeugtest')
+            yield lambda: c
+            c.clear()
