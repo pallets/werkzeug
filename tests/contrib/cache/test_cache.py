@@ -179,84 +179,98 @@ class TestFileSystemCache(CacheTests):
         assert len(cache_files) == 0
 
 
-# Don't use pytest marker
+# don't use pytest.mark.skipif on subclasses
 # https://bitbucket.org/hpk42/pytest/issue/568
-if redis is not None:
-    class TestRedisCache(CacheTests):
-        _can_use_fast_sleep = False
+# skip happens in requirements fixture instead
+class TestRedisCache(CacheTests):
+    _can_use_fast_sleep = False
 
-        @pytest.fixture(scope='class', autouse=True)
-        def ensure_process(self, xprocess):
-            def prepare(cwd):
-                return 'server is now ready', ['redis-server']
+    @pytest.fixture(scope='class', autouse=True)
+    def requirements(self, xprocess):
+        if redis is None:
+            pytest.skip('Python package "redis" is not installed.')
 
-            xprocess.ensure('redis_server', prepare)
-            yield
-            xprocess.getinfo('redis_server').terminate()
+        def prepare(cwd):
+            return 'server is now ready', ['redis-server']
 
-        @pytest.fixture(params=[
-            ([], dict()),
-            ([redis.Redis()], dict()),
-            ([redis.StrictRedis()], dict())
-        ])
-        def make_cache(self, request):
-            args, kwargs = request.param
-            c = cache.RedisCache(
-                *args,
-                key_prefix='werkzeug-test-case:',
-                **kwargs
+        xprocess.ensure('redis_server', prepare)
+        yield
+        xprocess.getinfo('redis_server').terminate()
+
+    @pytest.fixture(params=(None, False, True))
+    def make_cache(self, request):
+        if request.param is None:
+            host = 'localhost'
+        elif request.param:
+            host = redis.StrictRedis()
+        else:
+            host = redis.Redis()
+
+        c = cache.RedisCache(
+            host=host,
+            key_prefix='werkzeug-test-case:',
+        )
+        yield lambda: c
+        c.clear()
+
+    def test_compat(self, c):
+        assert c._client.set(c.key_prefix + 'foo', 'Awesome')
+        assert c.get('foo') == b'Awesome'
+        assert c._client.set(c.key_prefix + 'foo', '42')
+        assert c.get('foo') == 42
+
+
+class TestMemcachedCache(CacheTests):
+    _can_use_fast_sleep = False
+
+    @pytest.fixture(scope='class', autouse=True)
+    def requirements(self, xprocess):
+        if memcache is None:
+            pytest.skip(
+                'Python packages for memcache is not installed. Need one of '
+                '"pylibmc", "google.appengine", or "memcache".'
             )
-            yield lambda: c
-            c.clear()
 
-        def test_compat(self, c):
-            assert c._client.set(c.key_prefix + 'foo', 'Awesome')
-            assert c.get('foo') == b'Awesome'
-            assert c._client.set(c.key_prefix + 'foo', '42')
-            assert c.get('foo') == 42
+        def prepare(cwd):
+            return '', ['memcached']
 
+        xprocess.ensure('memcached', prepare)
+        yield
+        xprocess.getinfo('memcached').terminate()
 
-if memcache is not None:
-    class TestMemcachedCache(CacheTests):
-        _can_use_fast_sleep = False
+    @pytest.fixture
+    def make_cache(self):
+        c = cache.MemcachedCache(key_prefix='werkzeug-test-case:')
+        yield lambda: c
+        c.clear()
 
-        @pytest.fixture(scope='class', autouse=True)
-        def ensure_process(self, xprocess):
-            def prepare(cwd):
-                return '', ['memcached']
+    def test_compat(self, c):
+        assert c._client.set(c.key_prefix + 'foo', 'bar')
+        assert c.get('foo') == 'bar'
 
-            xprocess.ensure('memcached', prepare)
-            yield
-            xprocess.getinfo('memcached').terminate()
-
-        @pytest.fixture
-        def make_cache(self):
-            c = cache.MemcachedCache(key_prefix='werkzeug-test-case:')
-            yield lambda: c
-            c.clear()
-
-        def test_compat(self, c):
-            assert c._client.set(c.key_prefix + 'foo', 'bar')
-            assert c.get('foo') == 'bar'
-
-        def test_huge_timeouts(self, c):
-            # Timeouts greater than epoch are interpreted as POSIX timestamps
-            # (i.e. not relative to now, but relative to epoch)
-            epoch = 2592000
-            c.set('foo', 'bar', epoch + 100)
-            assert c.get('foo') == 'bar'
+    def test_huge_timeouts(self, c):
+        # Timeouts greater than epoch are interpreted as POSIX timestamps
+        # (i.e. not relative to now, but relative to epoch)
+        epoch = 2592000
+        c.set('foo', 'bar', epoch + 100)
+        assert c.get('foo') == 'bar'
 
 
-try:
-    import uwsgi  # NOQA
-except ImportError:
-    pass
-else:
-    class TestUWSGICache(CacheTests):
-        _can_use_fast_sleep = False
+class TestUWSGICache(CacheTests):
+    _can_use_fast_sleep = False
 
-        @pytest.fixture
-        def make_cache(self):
-            c = cache.UWSGICache(cache='werkzeugtest')
-            yield lambda: c
-            c.clear()
+    @pytest.fixture(scope='class', autouse=True)
+    def requirements(self):
+        try:
+            import uwsgi  # NOQA
+        except ImportError:
+            pytest.skip(
+                'Python "uwsgi" package is only avaialable when running '
+                'inside uWSGI.'
+            )
+
+    @pytest.fixture
+    def make_cache(self):
+        c = cache.UWSGICache(cache='werkzeugtest')
+        yield lambda: c
+        c.clear()
