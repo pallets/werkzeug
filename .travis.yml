@@ -1,63 +1,88 @@
+os: linux
 sudo: false
 language: python
-python:
-    - 2.6
-    - 2.7
-    - pypy
-    - 3.3
-    - 3.4
-    - 3.5
-    - 3.6
-    - nightly
-env:
-    - TOXENV_SUFFIX=normal
-    - TOXENV_SUFFIX=stylecheck
-    - TOXENV_SUFFIX=uwsgi
+python: 3.6
+env: TOXENV=normal-hypothesis,codecov
 
 matrix:
-    exclude:
-        - python: pypy
-          env: TOXENV_SUFFIX=uwsgi
-        - python: 2.6  # flake8 doesn't run on 2.6
-          env: TOXENV_SUFFIX=stylecheck
-    include:
-        - os: osx
-          language: generic
-          env: TOXENV_SUFFIX=normal
-
-os: linux
+  include:
+    - python: 3.6
+      env: TOXENV=normal-hypothesis,codecov
+    - python: 3.5
+      env: TOXENV=normal,codecov
+    - python: 3.4
+      env: TOXENV=normal,codecov
+    - python: 3.3
+      env: TOXENV=normal,codecov
+    - python: 2.7
+      env: TOXENV=normal,codecov
+    - python: 2.6
+      env: TOXENV=normal,codecov
+    - python: pypy
+      env: TOXENV=pypy-normal,codecov
+    - python: nightly
+      env: TOXENV=normal
+    - python: 3.6
+      env: TOXENV=uwsgi,codecov
+    - python: 3.6
+      env: TOXENV=stylecheck
+    - python: 3.6
+      env: TOXENV=docs-html
+    - os: osx
+      language: generic
+      env: TOXENV=normal
+  allow_failures:
+    - os: osx
+      language: generic
+      env: TOXENV=normal
+  fast_finish: true
 
 before_install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         brew update;
         brew install python3 redis memcached;
-        virtualenv ~/py-env -p python3;
+        virtualenv -p python3 ~/py-env;
         . ~/py-env/bin/activate;
       fi
-    # Travis uses an outdated PyPy, this installs the most recent one.
-    # This makes the tests run on Travis' legacy infrastructure, but so be it.
-    # temporary pyenv installation to get pypy-2.6 before container infra upgrade
-    - if [ "$TRAVIS_PYTHON_VERSION" = "pypy" ]; then
-        git clone https://github.com/yyuu/pyenv.git ~/.pyenv;
+    # Travis uses an outdated PyPy, this installs a more recent one.
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "pypy" ]]; then
+        git clone https://github.com/pyenv/pyenv.git ~/.pyenv;
         PYENV_ROOT="$HOME/.pyenv";
         PATH="$PYENV_ROOT/bin:$PATH";
         eval "$(pyenv init -)";
-        pyenv install pypy-4.0.1;
-        pyenv global pypy-4.0.1;
+        pyenv install pypy2.7-5.8.0;
+        pyenv global pypy2.7-5.8.0;
       fi
-    - python --version
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "pypy3" ]]; then
+        git clone https://github.com/pyenv/pyenv.git ~/.pyenv;
+        PYENV_ROOT="$HOME/.pyenv";
+        PATH="$PYENV_ROOT/bin:$PATH";
+        eval "$(pyenv init -)";
+        pyenv install pypy3.5-5.8.0;
+        pyenv global pypy3.5-5.8.0;
+      fi
 
 install:
-    - pip install tox flake8
+  - pip install tox
 
 script:
-    - tox -e py-$TOXENV_SUFFIX
+  - tox
+
+cache:
+  - pip
 
 branches:
-    only:
-        - master
-        - auto
-        - /^.*-maintenance$/
+  only:
+    - master
+    - auto
+    - /^.*-maintenance$/
 
 notifications:
   email: false
+  irc:
+    channels:
+      - "chat.freenode.net#pocoo"
+    on_success: change
+    on_failure: always
+    use_notice: true
+    skip_join: true

@@ -1,0 +1,11 @@
+[run]
+branch = True
+source =
+    werkzeug
+    tests
+
+[paths]
+source =
+    werkzeug
+    .tox/*/lib/python*/site-packages/werkzeug
+    .tox/pypy/site-packages/werkzeug
