@@ -27,6 +27,8 @@ unreleased
   Otherwise, keeps the previous behavior of returning empty streams when
   ``Content-Length`` is not set. This allows chunk-encoded requests while
   guarding against infinite streams. (`#1126`_)
+- If the mimetype is `application/json` the charset will be appended as
+  charset parameter
 
 .. _`#780`: https://github.com/pallets/werkzeug/pull/780
 .. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
