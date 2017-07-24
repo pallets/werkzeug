@@ -35,7 +35,9 @@ def _iter_module_files():
 
 def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
-    rv = set(os.path.abspath(x) for x in sys.path)
+    rv = set(os.path.dirname(os.path.abspath(x))
+             if os.path.isfile(x) else os.path.abspath(x)
+             for x in sys.path)
 
     for filename in extra_files or ():
         rv.add(os.path.dirname(os.path.abspath(filename)))
