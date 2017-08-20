@@ -285,7 +285,7 @@ def parse_list_header(value):
 def parse_dict_header(value, cls=dict):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
     convert them into a python dict (or any other mapping object created from
-    the type with a dict like interface provided by the `cls` arugment):
+    the type with a dict like interface provided by the `cls` argument):
 
     >>> d = parse_dict_header('foo="is a fish", bar="as well"')
     >>> type(d) is dict

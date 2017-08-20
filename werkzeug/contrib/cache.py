@@ -368,7 +368,7 @@ class MemcachedCache(BaseCache):
                     a :class:`memcache.Client` or a compatible client.
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`. A timeout of
-                            0 indicates taht the cache never expires.
+                            0 indicates that the cache never expires.
     :param key_prefix: a prefix that is added before all keys.  This makes it
                        possible to use the same memcached server for different
                        applications.  Keep in mind that

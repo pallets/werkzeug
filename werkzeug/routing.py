@@ -1463,7 +1463,7 @@ class MapAdapter(object):
         explicitly).
 
         All of the exceptions raised are subclasses of `HTTPException` so they
-        can be used as WSGI responses.  The will all render generic error or
+        can be used as WSGI responses. They will all render generic error or
         redirect pages.
 
         Here is a small example for matching:

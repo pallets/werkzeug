@@ -155,7 +155,7 @@ class UserAgent(object):
         -   `webkit`
         -   `yahoo` *
 
-        (Browsers maked with a star (``*``) are crawlers.)
+        (Browsers marked with a star (``*``) are crawlers.)
 
     .. attribute:: version
 
