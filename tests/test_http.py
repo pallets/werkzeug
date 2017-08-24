@@ -439,9 +439,6 @@ class TestHTTPUtility(object):
     ])
     def test_cookie_samesite_attribute(self, input, expected):
         val = http.dump_cookie('foo', 'bar', samesite=input)
-        print (80*'>')
-        print val
-        print (80*'<')
         strict_eq(val, expected)
 
 
