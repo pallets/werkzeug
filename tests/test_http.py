@@ -432,6 +432,18 @@ class TestHTTPUtility(object):
         w = recwarn.pop()
         assert 'the limit is 512 bytes' in str(w.message)
 
+    @pytest.mark.parametrize('input, expected', [
+        ('strict', 'foo=bar; Path=/; SameSite=Strict'),
+        ('lax', 'foo=bar; Path=/; SameSite=Lax'),
+        (None, 'foo=bar; Path=/'),
+    ])
+    def test_cookie_samesite_attribute(self, input, expected):
+        val = http.dump_cookie('foo', 'bar', samesite=input)
+        print (80*'>')
+        print val
+        print (80*'<')
+        strict_eq(val, expected)
+
 
 class TestRange(object):
 
