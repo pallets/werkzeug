@@ -981,7 +981,8 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=False, httponly=False,
-                charset='utf-8', sync_expires=True, max_size=4093):
+                charset='utf-8', sync_expires=True, max_size=4093,
+                samesite=None):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -1020,6 +1021,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param max_size: Warn if the final header value exceeds this size. The
         default, 4093, should be safely `supported by most browsers
         <cookie_>`_. Set to 0 to disable this check.
+    :param samesite: Limits the scope of the cookie such that it will only
+                     be attached to requests if those requests are "same-site".
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
     """
@@ -1037,6 +1040,10 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     elif max_age is not None and sync_expires:
         expires = to_bytes(cookie_date(time() + max_age))
 
+    samesite = samesite.title() if samesite else None
+    if samesite not in ('Strict', 'Lax', None):
+        raise ValueError("invalid SameSite value; must be 'Strict', 'Lax' or None")
+
     buf = [key + b'=' + _cookie_quote(value)]
 
     # XXX: In theory all of these parameters that are not marked with `None`
@@ -1047,7 +1054,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                     (b'Max-Age', max_age, False),
                     (b'Secure', secure, None),
                     (b'HttpOnly', httponly, None),
-                    (b'Path', path, False)):
+                    (b'Path', path, False),
+                    (b'SameSite', samesite, False)):
         if q is None:
             if v:
                 buf.append(k)
