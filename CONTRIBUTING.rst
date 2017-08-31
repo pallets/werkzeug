@@ -54,7 +54,7 @@ Install Werkzeug in editable mode::
 
 Install the minimal test requirements::
 
-    pip install pytest requests
+    pip install pytest pytest-xprocess requests
 
 Then you can run the testsuite with::
 
