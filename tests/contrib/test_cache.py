@@ -267,3 +267,18 @@ class TestUWSGICache(CacheTests):
         c = cache.UWSGICache(cache='werkzeugtest')
         request.addfinalizer(c.clear)
         return lambda: c
+
+
+class TestNullCache(object):
+
+    @pytest.fixture
+    def make_cache(self):
+        return cache.NullCache
+
+    @pytest.fixture
+    def c(self, make_cache):
+        return make_cache()
+
+    def test_nullcache_has(self, c):
+        assert c.has('foo') in (False, 0)
+        assert c.has('spam') in (False, 0)

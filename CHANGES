@@ -1,6 +1,13 @@
 Werkzeug Changelog
 ==================
 
+Version 0.12.3
+--------------
+
+yet to be released
+
+- Don't raise an exception in NullCache.has
+
 Version 0.12.2
 --------------
 
