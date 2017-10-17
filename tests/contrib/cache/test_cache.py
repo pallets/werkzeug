@@ -12,6 +12,7 @@ import os
 
 import pytest
 
+from werkzeug._compat import text_type
 from werkzeug.contrib import cache
 
 try:
@@ -218,6 +219,11 @@ class TestRedisCache(CacheTests):
         assert c.get('foo') == b'Awesome'
         assert c._client.set(c.key_prefix + 'foo', '42')
         assert c.get('foo') == 42
+
+    def test_empty_host(self):
+        with pytest.raises(ValueError) as exc_info:
+            cache.RedisCache(host=None)
+        assert text_type(exc_info.value) == 'RedisCache host parameter may not be None'
 
 
 class TestMemcachedCache(CacheTests):
