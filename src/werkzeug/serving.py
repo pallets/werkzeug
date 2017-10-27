@@ -225,6 +225,17 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if request_url.scheme and request_url.netloc:
             environ["HTTP_HOST"] = request_url.netloc
 
+        try:
+            peer_cert = self.connection.getpeercert()
+            if peer_cert is not None:
+                environ["SSL_CLIENT_CERT"] = peer_cert
+        except ValueError:
+            self.server.log("error", "Cannot fetch SSL peer certificate info")
+        except AttributeError:
+            # This error indicates that no TLS setup was made, and it is
+            # raised because socket will not have such function getpeercert()
+            pass
+
         return environ
 
     def run_wsgi(self):
@@ -716,17 +727,25 @@ class BaseWSGIServer(HTTPServer, object):
             self.server_address = self.socket.getsockname()
 
         if ssl_context is not None:
+            ssl_kwargs = {"server_side": True}
             if isinstance(ssl_context, tuple):
                 ssl_context = load_ssl_context(*ssl_context)
+            if isinstance(ssl_context, dict):
+                cert_file = ssl_context.pop("cert_file")
+                pkey_file = ssl_context.pop("pkey_file")
+                for key in ssl_context:
+                    ssl_kwargs[key] = ssl_context[key]
+                ssl_context = load_ssl_context(cert_file, pkey_file)
             if ssl_context == "adhoc":
                 ssl_context = generate_adhoc_ssl_context()
+
             # If we are on Python 2 the return value from socket.fromfd
             # is an internal socket object but what we need for ssl wrap
             # is the wrapper around it :(
             sock = self.socket
             if PY2 and not isinstance(sock, socket.socket):
                 sock = socket.socket(sock.family, sock.type, sock.proto, sock)
-            self.socket = ssl_context.wrap_socket(sock, server_side=True)
+            self.socket = ssl_context.wrap_socket(sock, **ssl_kwargs)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None
