@@ -117,16 +117,22 @@ class UserAgent(object):
        -   `aix`
        -   `amiga`
        -   `android`
+       -   `blackberry`
        -   `bsd`
        -   `chromeos`
+       -   `dragonflybsd`
+       -   `freebsd`
        -   `hpux`
-       -   `iphone`
        -   `ipad`
+       -   `iphone`
        -   `irix`
        -   `linux`
        -   `macos`
+       -   `netbsd`
+       -   `openbsd`
        -   `sco`
        -   `solaris`
+       -   `symbian`
        -   `wii`
        -   `windows`
 
@@ -137,6 +143,8 @@ class UserAgent(object):
 
         -   `aol` *
         -   `ask` *
+        -   `baidu` *
+        -   `bing` *
         -   `camino`
         -   `chrome`
         -   `firefox`
@@ -146,6 +154,7 @@ class UserAgent(object):
         -   `konqueror`
         -   `links`
         -   `lynx`
+        -   `mozilla`
         -   `msie`
         -   `msn`
         -   `netscape`
