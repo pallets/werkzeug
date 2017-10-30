@@ -140,7 +140,7 @@ class UserAgent(object):
 
         the name of the browser.  The following browsers are currently
         recognized:
-        
+
         -   `aol` *
         -   `ask` *
         -   `baidu` *
