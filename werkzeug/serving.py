@@ -296,7 +296,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
             if code[0] == '1':    # 1xx - Informational
                 msg = color(msg, attrs=['bold'])
-            if code[0] == '2':    # 2xx - Success
+            elif code[0] == '2':    # 2xx - Success
                 msg = color(msg, color='white')
             elif code == '304':   # 304 - Resource Not Modified
                 msg = color(msg, color='cyan')
