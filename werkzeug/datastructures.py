@@ -12,6 +12,7 @@ import re
 import codecs
 import mimetypes
 from copy import deepcopy
+from io import IOBase
 from itertools import repeat
 from collections import Container, Iterable, MutableSet
 
@@ -2600,7 +2601,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
     del _set_property
 
 
-class FileStorage(object):
+class FileStorage(IOBase):
 
     """The :class:`FileStorage` class is a thin wrapper over incoming files.
     It is used by the request object to represent uploaded files.  All the
@@ -2710,6 +2711,10 @@ class FileStorage(object):
             self.stream.close()
         except Exception:
             pass
+
+    @property
+    def closed(self):
+        return self.stream.closed
 
     def __nonzero__(self):
         return bool(self.filename)
