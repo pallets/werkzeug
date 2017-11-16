@@ -2712,6 +2712,10 @@ class FileStorage(IOBase):
         except Exception:
             pass
 
+    @property
+    def closed(self):
+        return self.stream.closed
+
     def __nonzero__(self):
         return bool(self.filename)
     __bool__ = __nonzero__
