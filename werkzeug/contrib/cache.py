@@ -135,7 +135,7 @@ class BaseCache(object):
         :param keys: The function accepts multiple keys as positional
                      arguments.
         """
-        return map(self.get, keys)
+        return [self.get(k) for k in keys]
 
     def get_dict(self, *keys):
         """Like :meth:`get_many` but return a dict::
