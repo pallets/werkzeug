@@ -488,7 +488,7 @@ class SharedDataMiddleware(object):
 
     :param app: the application to wrap.  If you don't want to wrap an
                 application you can pass it :exc:`NotFound`.
-    :param exports: a dict of exported files and folders.
+    :param exports: a list or dict of exported files and folders.
     :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
     :param fallback_mimetype: the fallback mimetype for unknown files.
     :param cache: enable or disable caching headers.
@@ -498,10 +498,12 @@ class SharedDataMiddleware(object):
     def __init__(self, app, exports, disallow=None, cache=True,
                  cache_timeout=60 * 60 * 12, fallback_mimetype='text/plain'):
         self.app = app
-        self.exports = {}
+        self.exports = []
         self.cache = cache
         self.cache_timeout = cache_timeout
-        for key, value in iteritems(exports):
+        if hasattr(exports, 'items'):
+            exports = iteritems(exports)
+        for key, value in exports:
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
             elif isinstance(value, string_types):
@@ -511,7 +513,7 @@ class SharedDataMiddleware(object):
                     loader = self.get_directory_loader(value)
             else:
                 raise TypeError('unknown def %r' % value)
-            self.exports[key] = loader
+            self.exports.append((key, loader))
         if disallow is not None:
             from fnmatch import fnmatch
             self.is_allowed = lambda x: not fnmatch(x, disallow)
@@ -592,7 +594,7 @@ class SharedDataMiddleware(object):
         path = '/' + '/'.join(x for x in cleaned_path.split('/')
                               if x and x != '..')
         file_loader = None
-        for search_path, loader in iteritems(self.exports):
+        for search_path, loader in self.exports:
             if search_path == path:
                 real_filename, file_loader = loader(None)
                 if file_loader is not None:
