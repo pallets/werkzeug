@@ -169,9 +169,9 @@ def test_environ_builder_data():
     assert b.form.getlist('foo') == ['bar1', 'bar2']
 
     def check_list_content(b, length):
-        l = b.files.getlist('foo')
-        assert len(l) == length
-        for obj in l:
+        foo = b.files.getlist('foo')
+        assert len(foo) == length
+        for obj in foo:
             assert isinstance(obj, FileStorage)
 
     b = EnvironBuilder(data={'foo': BytesIO()})
