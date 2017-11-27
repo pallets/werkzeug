@@ -191,7 +191,7 @@ class TestRedisCache(CacheTests):
             pytest.skip('Python package "redis" is not installed.')
 
         def prepare(cwd):
-            return 'server is now ready', ['redis-server']
+            return 'Ready to accept connections', ['redis-server']
 
         xprocess.ensure('redis_server', prepare)
         yield
