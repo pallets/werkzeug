@@ -154,7 +154,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         environ = {
             'wsgi.version':         (1, 0),
             'wsgi.url_scheme':      url_scheme,
-            'wsgi.input':           self.rfile, # TODO: Wrap this
+            'wsgi.input':           self.rfile,
             'wsgi.errors':          sys.stderr,
             'wsgi.multithread':     self.server.multithread,
             'wsgi.multiprocess':    self.server.multiprocess,
