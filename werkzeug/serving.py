@@ -37,6 +37,7 @@
 """
 from __future__ import with_statement
 
+import io
 import os
 import socket
 import sys
@@ -97,6 +98,42 @@ LISTEN_QUEUE = 128
 can_open_by_fd = not WIN and hasattr(socket, 'fromfd')
 
 
+class DechunkedInput(io.RawIOBase):
+    def __init__(self, rfile):
+        self._rfile = rfile
+        self._done = False
+        self._len = 0
+
+    def readable(self):
+        return True
+
+    def readinto(self, buf):
+        if self._done:
+            return 0
+
+        if self._len == 0:
+            try:
+                self._len = int(self._rfile.readline().decode('latin1').strip(), 16)
+            except ValueError:
+                raise IOError('Invalid chunk header')
+
+        if self._len < 0:
+            raise IOError('Negative chunk length not allowed')
+        elif self._len > 0:
+            n = min(len(buf), self._len)
+            buf[:n] = self._rfile.read(n)
+            self._len -= n
+        else:
+            self._done = True
+            n = 0
+
+        if self._len == 0:
+            if self._rfile.readline() not in (b'\n', b'\r\n', b'\r'):
+                raise IOError('Missing chunk spacing')
+
+        return n
+
+
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
     """A request handler that implements WSGI dispatching."""
@@ -117,7 +154,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         environ = {
             'wsgi.version':         (1, 0),
             'wsgi.url_scheme':      url_scheme,
-            'wsgi.input':           self.rfile,
+            'wsgi.input':           self.rfile, # TODO: Wrap this
             'wsgi.errors':          sys.stderr,
             'wsgi.multithread':     self.server.multithread,
             'wsgi.multiprocess':    self.server.multiprocess,
@@ -140,6 +177,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
                 key = 'HTTP_' + key
             environ[key] = value
+
+        if environ.get('HTTP_TRANSFER_ENCODING', '').strip().lower() == 'chunked':
+            environ['wsgi.input_terminated'] = True
+            environ['wsgi.input'] = DechunkedInput(environ['wsgi.input'])
 
         if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
