@@ -10,6 +10,7 @@
 """
 import os
 import ssl
+import sys
 import subprocess
 import textwrap
 
@@ -322,8 +323,12 @@ def test_chunked_encoding(dev_server):
 
     testfile = os.path.join(os.path.dirname(__file__), 'res', 'chunked.txt')
 
-    import httplib
-    conn = httplib.HTTPConnection('127.0.0.1', server.port)
+    if sys.version_info[0] == 2:
+        from httplib import HTTPConnection
+    else:
+        from http.client import HTTPConnection
+
+    conn = HTTPConnection('127.0.0.1', server.port)
     conn.connect()
     conn.putrequest('POST', '/', skip_host=1, skip_accept_encoding=1)
     conn.putheader('Accept', 'text/plain')
