@@ -331,3 +331,42 @@ def test_chunked_encoding(dev_server):
     assert res.read() == b'YES'
 
     conn.close()
+
+
+def test_chunked_encoding_with_content_length(dev_server):
+    server = dev_server(r'''
+    from werkzeug.wrappers import Request
+    def app(environ, start_response):
+        assert environ['HTTP_TRANSFER_ENCODING'] == 'chunked'
+        assert environ.get('wsgi.input_terminated', False)
+        request = Request(environ)
+        assert request.mimetype == 'multipart/form-data'
+        assert request.files['file'].read() == b'This is a test\n'
+        assert request.form['type'] == 'text/plain'
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [b'YES']
+    ''')
+
+    testfile = os.path.join(os.path.dirname(__file__), 'res', 'chunked.txt')
+
+    if sys.version_info[0] == 2:
+        from httplib import HTTPConnection
+    else:
+        from http.client import HTTPConnection
+
+    conn = HTTPConnection('127.0.0.1', server.port)
+    conn.connect()
+    conn.putrequest('POST', '/', skip_host=1, skip_accept_encoding=1)
+    conn.putheader('Accept', 'text/plain')
+    conn.putheader('Transfer-Encoding', 'chunked')
+    # Content-Length is actually invalid, but some libraries might still send it
+    conn.putheader('Content-Length', '372')
+    conn.putheader(
+        'Content-Type', 'multipart/form-data; boundary=--------------------------898239224156930639461866')
+    conn.endheaders(open(testfile, 'rb').read())
+
+    res = conn.getresponse()
+    assert res.status == 200
+    assert res.read() == b'YES'
+
+    conn.close()
