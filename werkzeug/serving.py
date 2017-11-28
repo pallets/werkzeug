@@ -37,6 +37,7 @@
 """
 from __future__ import with_statement
 
+import io
 import os
 import socket
 import sys
@@ -97,6 +98,59 @@ LISTEN_QUEUE = 128
 can_open_by_fd = not WIN and hasattr(socket, 'fromfd')
 
 
+class DechunkedInput(io.RawIOBase):
+    """An input stream that handles Transfer-Encoding 'chunked'"""
+
+    def __init__(self, rfile):
+        self._rfile = rfile
+        self._done = False
+        self._len = 0
+
+    def readable(self):
+        return True
+
+    def read_chunk_len(self):
+        try:
+            line = self._rfile.readline().decode('latin1')
+            _len = int(line.strip(), 16)
+        except ValueError:
+            raise IOError('Invalid chunk header')
+        if _len < 0:
+            raise IOError('Negative chunk length not allowed')
+        return _len
+
+    def readinto(self, buf):
+        read = 0
+        while not self._done and read < len(buf):
+            if self._len == 0:
+                # This is the first chunk or we fully consumed the previous
+                # one. Read the next length of the next chunk
+                self._len = self.read_chunk_len()
+
+            if self._len == 0:
+                # Found the final chunk of size 0. The stream is now exhausted,
+                # but there is still a final newline that should be consumed
+                self._done = True
+
+            if self._len > 0:
+                # There is data (left) in this chunk, so append it to the
+                # buffer. If this operation fully consumes the chunk, this will
+                # reset self._len to 0.
+                n = min(len(buf), self._len)
+                buf[read:read + n] = self._rfile.read(n)
+                self._len -= n
+                read += n
+
+            if self._len == 0:
+                # Skip the terminating newline of a chunk that has been fully
+                # consumed. This also applies to the 0-sized final chunk
+                terminator = self._rfile.readline()
+                if terminator not in (b'\n', b'\r\n', b'\r'):
+                    raise IOError('Missing chunk terminating newline')
+
+        return read
+
+
 class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
     """A request handler that implements WSGI dispatching."""
@@ -140,6 +194,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
                 key = 'HTTP_' + key
             environ[key] = value
+
+        if environ.get('HTTP_TRANSFER_ENCODING', '').strip().lower() == 'chunked':
+            environ['wsgi.input_terminated'] = True
+            environ['wsgi.input'] = DechunkedInput(environ['wsgi.input'])
 
         if request_url.scheme and request_url.netloc:
             environ['HTTP_HOST'] = request_url.netloc
