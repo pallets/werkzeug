@@ -12,7 +12,7 @@
 import re
 import codecs
 from io import BytesIO
-from tempfile import TemporaryFile
+from tempfile import SpooledTemporaryFile
 from itertools import chain, repeat, tee
 from functools import update_wrapper
 
@@ -38,9 +38,7 @@ _supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 def default_stream_factory(total_content_length, filename, content_type,
                            content_length=None):
     """The stream factory that is used per default."""
-    if total_content_length is None or total_content_length > 1024 * 500:
-        return TemporaryFile('wb+')
-    return BytesIO()
+    return SpooledTemporaryFile(max_size=1024 * 500, mode='wb+')
 
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
