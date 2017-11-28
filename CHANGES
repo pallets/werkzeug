@@ -7,6 +7,9 @@ Version 0.13
 
 unreleased
 
+- **Deprecate support for Python 2.6 and 3.3.** CI tests will not run for these
+  versions, and support will be dropped completely in the next version.
+  (`pallets/meta#24`_)
 - Raise ``TypeError`` when port is not an integer.
 - Fully deprecate ``werkzeug.script``. Use `Click <http://click.pocoo.org>`_
   instead.
@@ -25,6 +28,7 @@ unreleased
 - ``BaseResponse.calculate_content_length`` now correctly works for unicode
   responses on Python 3. It first encodes using `iter_encoded`.
 
+.. _`pallets/meta#24`: https://github.com/pallets/meta/issues/24
 .. _`#780`: https://github.com/pallets/werkzeug/pull/780
 .. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
 
