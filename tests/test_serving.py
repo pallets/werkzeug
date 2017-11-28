@@ -300,25 +300,15 @@ def test_port_must_be_integer(dev_server):
 def test_chunked_encoding(dev_server):
     server = dev_server(r'''
     from werkzeug.wrappers import Request
-    from werkzeug.serving import run_simple
-
     def app(environ, start_response):
-        if environ['REQUEST_METHOD'] != 'POST':
-            start_response('204 OK', [])
-            return []
-
-        try:
-            assert environ['HTTP_TRANSFER_ENCODING'] == 'chunked'
-            assert environ.get('wsgi.input_terminated', False)
-            request = Request(environ)
-            assert request.mimetype == 'multipart/form-data'
-            assert request.files['file'].read() == b'This is a test\n'
-            assert request.form['type'] == b'text/plain'
-            start_response('200 OK', [('Content-Type', 'text/plain')])
-            return [b'YES']
-        except Exception as e:
-            start_response('200 OK', [('Content-Type', 'text/plain')])
-            return [str(e)]
+        assert environ['HTTP_TRANSFER_ENCODING'] == 'chunked'
+        assert environ.get('wsgi.input_terminated', False)
+        request = Request(environ)
+        assert request.mimetype == 'multipart/form-data'
+        assert request.files['file'].read() == b'This is a test\n'
+        assert request.form['type'] == b'text/plain'
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [b'YES']
     ''')
 
     testfile = os.path.join(os.path.dirname(__file__), 'res', 'chunked.txt')
