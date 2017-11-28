@@ -19,15 +19,15 @@ from werkzeug import local
 
 
 def test_basic_local():
-    l = local.Local()
-    l.foo = 0
+    ns = local.Local()
+    ns.foo = 0
     values = []
 
     def value_setter(idx):
         time.sleep(0.01 * idx)
-        l.foo = idx
+        ns.foo = idx
         time.sleep(0.02)
-        values.append(l.foo)
+        values.append(ns.foo)
     threads = [Thread(target=value_setter, args=(x,))
                for x in [1, 2, 3]]
     for thread in threads:
@@ -36,19 +36,19 @@ def test_basic_local():
     assert sorted(values) == [1, 2, 3]
 
     def delfoo():
-        del l.foo
+        del ns.foo
     delfoo()
-    pytest.raises(AttributeError, lambda: l.foo)
+    pytest.raises(AttributeError, lambda: ns.foo)
     pytest.raises(AttributeError, delfoo)
 
-    local.release_local(l)
+    local.release_local(ns)
 
 
 def test_local_release():
-    l = local.Local()
-    l.foo = 42
-    local.release_local(l)
-    assert not hasattr(l, 'foo')
+    ns = local.Local()
+    ns.foo = 42
+    local.release_local(ns)
+    assert not hasattr(ns, 'foo')
 
     ls = local.LocalStack()
     ls.push(42)
@@ -139,22 +139,22 @@ def test_local_proxies_with_callables():
 
 def test_custom_idents():
     ident = 0
-    l = local.Local()
+    ns = local.Local()
     stack = local.LocalStack()
-    local.LocalManager([l, stack], ident_func=lambda: ident)
+    local.LocalManager([ns, stack], ident_func=lambda: ident)
 
-    l.foo = 42
+    ns.foo = 42
     stack.push({'foo': 42})
     ident = 1
-    l.foo = 23
+    ns.foo = 23
     stack.push({'foo': 23})
     ident = 0
-    assert l.foo == 42
+    assert ns.foo == 42
     assert stack.top['foo'] == 42
     stack.pop()
     assert stack.top is None
     ident = 1
-    assert l.foo == 23
+    assert ns.foo == 23
     assert stack.top['foo'] == 23
     stack.pop()
     assert stack.top is None
@@ -199,9 +199,9 @@ def test_local_proxy_wrapped_attribute():
     partial_proxy = local.LocalProxy(partial_lookup_func)
     assert partial_proxy.__wrapped__ == partial_lookup_func
 
-    l = local.Local()
-    l.foo = SomeClassWithWrapped()
-    l.bar = 42
+    ns = local.Local()
+    ns.foo = SomeClassWithWrapped()
+    ns.bar = 42
 
-    assert l('foo').__wrapped__ == 'wrapped'
-    pytest.raises(AttributeError, lambda: l('bar').__wrapped__)
+    assert ns('foo').__wrapped__ == 'wrapped'
+    pytest.raises(AttributeError, lambda: ns('bar').__wrapped__)

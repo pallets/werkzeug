@@ -1,6 +1,7 @@
 Werkzeug Changelog
 ==================
 
+
 Version 0.13
 ------------
 
@@ -22,15 +23,10 @@ unreleased
   has a new argument ``max_size`` to configure this. (`#780`_, `#1109`_)
 - Fix a TypeError in ``werkzeug.contrib.lint.GuardedIterator.close``.
 - ``BaseResponse.calculate_content_length`` now correctly works for unicode
-  responses on Python 3. It first encodes using ``iter_encoded``.
-- ``Request.stream`` is limited to ``Request.max_content_length`` if it is set.
-  Otherwise, keeps the previous behavior of returning empty streams when
-  ``Content-Length`` is not set. This allows chunk-encoded requests while
-  guarding against infinite streams. (`#1126`_)
+  responses on Python 3. It first encodes using `iter_encoded`.
 
 .. _`#780`: https://github.com/pallets/werkzeug/pull/780
 .. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
-.. _`#1126`: https://github.com/pallets/werkzeug/pull/1126
 
 
 Version 0.12.2
