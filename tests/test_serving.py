@@ -306,7 +306,7 @@ def test_chunked_encoding(dev_server):
         request = Request(environ)
         assert request.mimetype == 'multipart/form-data'
         assert request.files['file'].read() == b'This is a test\n'
-        assert request.form['type'] == b'text/plain'
+        assert request.form['type'] == 'text/plain'
         start_response('200 OK', [('Content-Type', 'text/plain')])
         return [b'YES']
     ''')
