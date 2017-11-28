@@ -11,7 +11,6 @@
 """
 import re
 import codecs
-from io import BytesIO
 from tempfile import SpooledTemporaryFile
 from itertools import chain, repeat, tee
 from functools import update_wrapper

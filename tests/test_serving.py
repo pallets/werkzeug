@@ -323,8 +323,14 @@ def test_chunked_encoding(dev_server):
     conn.putrequest('POST', '/', skip_host=1, skip_accept_encoding=1)
     conn.putheader('Accept', 'text/plain')
     conn.putheader('Transfer-Encoding', 'chunked')
-    conn.putheader('Content-Type', 'multipart/form-data; boundary=--------------------------898239224156930639461866')
-    conn.endheaders(open(testfile, 'rb').read())
+    conn.putheader(
+        'Content-Type',
+        'multipart/form-data; boundary='
+        '--------------------------898239224156930639461866')
+    conn.endheaders()
+
+    with open(testfile, 'rb') as f:
+        conn.send(f.read())
 
     res = conn.getresponse()
     assert res.status == 200
@@ -359,11 +365,16 @@ def test_chunked_encoding_with_content_length(dev_server):
     conn.putrequest('POST', '/', skip_host=1, skip_accept_encoding=1)
     conn.putheader('Accept', 'text/plain')
     conn.putheader('Transfer-Encoding', 'chunked')
-    # Content-Length is actually invalid, but some libraries might still send it
+    # Content-Length is invalid for chunked, but some libraries might send it
     conn.putheader('Content-Length', '372')
     conn.putheader(
-        'Content-Type', 'multipart/form-data; boundary=--------------------------898239224156930639461866')
-    conn.endheaders(open(testfile, 'rb').read())
+        'Content-Type',
+        'multipart/form-data; boundary='
+        '--------------------------898239224156930639461866')
+    conn.endheaders()
+
+    with open(testfile, 'rb') as f:
+        conn.send(f.read())
 
     res = conn.getresponse()
     assert res.status == 200
