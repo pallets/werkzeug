@@ -166,12 +166,16 @@ def get_host(environ, trusted_hosts=None):
 
 def get_content_length(environ):
     """Returns the content length from the WSGI environment as
-    integer. If it's not available ``None`` is returned.
+    integer. If it's not available or chunked transfer encoding is used,
+    ``None`` is returned.
 
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the content length from.
     """
+    if environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked':
+        return None
+
     content_length = environ.get('CONTENT_LENGTH')
     if content_length is not None:
         try:
