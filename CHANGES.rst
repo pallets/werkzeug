@@ -10,27 +10,38 @@ unreleased
 - **Deprecate support for Python 2.6 and 3.3.** CI tests will not run for these
   versions, and support will be dropped completely in the next version.
   (`pallets/meta#24`_)
-- Raise ``TypeError`` when port is not an integer.
+- Raise ``TypeError`` when port is not an integer. (`#1088`_)
 - Fully deprecate ``werkzeug.script``. Use `Click <http://click.pocoo.org>`_
-  instead.
+  instead. (`#1090`_)
 - ``response.age`` is parsed as a ``timedelta``. Previously, it was incorrectly
   treated as a ``datetime``. The header value is an integer number of seconds,
-  not a date string. (``#414``)
+  not a date string. (`#414`_)
 - Fix a bug in ``TypeConversionDict`` where errors are not propagated when
-  using the converter. (``#1102``)
+  using the converter. (`#1102`_)
 - ``Authorization.qop`` is a string instead of a set, to comply with
-  RFC 2617. (``#984``)
+  RFC 2617. (`#984`_)
 - An exception is raised when an encoded cookie is larger than, by default,
   4093 bytes. Browsers may silently ignore cookies larger than this.
   ``BaseResponse`` has a new attribute ``max_cookie_size`` and ``dump_cookie``
   has a new argument ``max_size`` to configure this. (`#780`_, `#1109`_)
 - Fix a TypeError in ``werkzeug.contrib.lint.GuardedIterator.close``.
+  (`#1116`_)
 - ``BaseResponse.calculate_content_length`` now correctly works for unicode
-  responses on Python 3. It first encodes using `iter_encoded`.
+  responses on Python 3. It first encodes using ``iter_encoded``. (`#705`_)
+- The built-in dev server supports receiving requests with chunked transfer
+  encoding. (`#1198`_)
 
-.. _`pallets/meta#24`: https://github.com/pallets/meta/issues/24
-.. _`#780`: https://github.com/pallets/werkzeug/pull/780
-.. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
+.. _pallets/meta#24: https://github.com/pallets/meta/issues/24
+.. _#414: https://github.com/pallets/werkzeug/pull/414
+.. _#705: https://github.com/pallets/werkzeug/pull/705
+.. _#780: https://github.com/pallets/werkzeug/pull/780
+.. _#984: https://github.com/pallets/werkzeug/pull/984
+.. _#1088: https://github.com/pallets/werkzeug/pull/1088
+.. _#1090: https://github.com/pallets/werkzeug/pull/1090
+.. _#1102: https://github.com/pallets/werkzeug/pull/1102
+.. _#1109: https://github.com/pallets/werkzeug/pull/1109
+.. _#1116: https://github.com/pallets/werkzeug/pull/1116
+.. _#1198: https://github.com/pallets/werkzeug/pull/1198
 
 
 Version 0.12.2

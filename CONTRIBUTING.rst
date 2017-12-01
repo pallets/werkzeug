@@ -36,7 +36,7 @@ Submitting patches
 - Try to follow `PEP8 <http://legacy.python.org/dev/peps/pep-0008/>`_, but you
   may ignore the line-length-limit if following it would make the code uglier.
 
-- Add an entry to ``CHANGES`` and your name to ``AUTHORS``.
+- Add an entry to ``CHANGES.rst`` and your name to ``AUTHORS``.
 
 
 Running the testsuite
