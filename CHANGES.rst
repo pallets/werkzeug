@@ -31,6 +31,7 @@ unreleased
 - Secure cookie contrib works with string secret key on Python 3. (`#1205`_)
 - Shared data middleware accepts a list instead of a dict of static locations
   to preserve lookup order. (`#1197`_)
+- HTTP header values without encoding can contain single quotes. (`#1208`_)
 - The built-in dev server supports receiving requests with chunked transfer
   encoding. (`#1198`_)
 
@@ -47,6 +48,7 @@ unreleased
 .. _#1197: https://github.com/pallets/werkzeug/pull/1197
 .. _#1198: https://github.com/pallets/werkzeug/pull/1198
 .. _#1205: https://github.com/pallets/werkzeug/pull/1205
+.. _#1208: https://github.com/pallets/werkzeug/pull/1208
 
 
 Version 0.12.2

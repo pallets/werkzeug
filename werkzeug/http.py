@@ -62,12 +62,30 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
-_quoted_string_re = r'"[^"\\]*(?:\\.[^"\\]*)*"'
-_option_header_piece_re = re.compile(
-    r';\s*(%s|[^\s;,=\*]+)\s*'
-    r'(?:\*?=\s*(?:([^\s]+?)\'([^\s]*?)\')?(%s|[^;,]+)?)?\s*' %
-    (_quoted_string_re, _quoted_string_re)
-)
+_option_header_piece_re = re.compile(r'''
+    ;\s*
+    (?P<key>
+        "[^"\\]*(?:\\.[^"\\]*)*"  # quoted string
+    |
+        [^\s;,=*]+  # token
+    )
+    \s*
+    (?:  # optionally followed by =value
+        (?:  # equals sign, possibly with encoding
+            \*\s*=\s*  # * indicates extended notation
+            (?P<encoding>[^\s]+?)
+            '(?P<language>[^\s]*?)'
+        |
+            =\s*  # basic notation
+        )
+        (?P<value>
+            "[^"\\]*(?:\\.[^"\\]*)*"  # quoted string
+        |
+            [^;,]+  # token
+        )?
+    )?
+    \s*
+''', flags=re.VERBOSE)
 _option_header_start_mime_type = re.compile(r',\s*([^;,\s]+)([;,]\s*.+)?')
 
 _entity_headers = frozenset([
