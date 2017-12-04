@@ -716,8 +716,8 @@ def run_simple(hostname, port, application, use_reloader=False,
                             with a different
                             :class:`~BaseHTTPServer.BaseHTTPRequestHandler`
                             subclass.
-    :param static_files: a dict of paths for static files.  This works exactly
-                         like :class:`SharedDataMiddleware`, it's actually
+    :param static_files: a list or dict of paths for static files.  This works
+                         exactly like :class:`SharedDataMiddleware`, it's actually
                          just wrapping the application in that middleware before
                          serving.
     :param passthrough_errors: set this to `True` to disable the error catching.
