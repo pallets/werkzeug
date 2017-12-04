@@ -36,6 +36,10 @@ def test_basic_support():
     assert not c3.new
     assert c3 == {}
 
+    c4 = SecureCookie({'x': 42}, 'foo')
+    c4_serialized = c4.serialize()
+    assert SecureCookie.unserialize(c4_serialized, 'foo') == c4
+
 
 def test_wrapper_support():
     req = Request.from_values()

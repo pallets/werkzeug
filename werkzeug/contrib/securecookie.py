@@ -152,7 +152,10 @@ class SecureCookie(ModificationTrackingDict):
         # explicitly convert it into a bytestring because python 2.6
         # no longer performs an implicit string conversion on hmac
         if secret_key is not None:
-            secret_key = bytes(secret_key)
+            try:
+                secret_key = bytes(secret_key)
+            except TypeError:
+                secret_key = secret_key.encode('utf-8')
         self.secret_key = secret_key
         self.new = new
 
