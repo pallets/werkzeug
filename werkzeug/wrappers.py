@@ -323,8 +323,11 @@ class BaseRequest(object):
                                not provided because webbrowsers do not provide
                                this value.
         """
-        return default_stream_factory(total_content_length, content_type,
-                                      filename, content_length)
+        return default_stream_factory(
+            total_content_length=total_content_length,
+            content_type=content_type,
+            filename=filename,
+            content_length=content_length)
 
     @property
     def want_form_data_parsed(self):
