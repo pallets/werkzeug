@@ -165,7 +165,7 @@ def main():
         fail('You have uncommitted changes in git')
 
     try:
-        import wheel
+        import wheel  # noqa: F401
     except ImportError:
         fail('You need to install the wheel package.')
 
