@@ -28,6 +28,9 @@ unreleased
   (`#1116`_)
 - ``BaseResponse.calculate_content_length`` now correctly works for unicode
   responses on Python 3. It first encodes using ``iter_encoded``. (`#705`_)
+- Secure cookie contrib works with string secret key on Python 3. (`#1205`_)
+- Shared data middleware accepts a list instead of a dict of static locations
+  to preserve lookup order. (`#1197`_)
 - The built-in dev server supports receiving requests with chunked transfer
   encoding. (`#1198`_)
 
@@ -41,7 +44,9 @@ unreleased
 .. _#1102: https://github.com/pallets/werkzeug/pull/1102
 .. _#1109: https://github.com/pallets/werkzeug/pull/1109
 .. _#1116: https://github.com/pallets/werkzeug/pull/1116
+.. _#1197: https://github.com/pallets/werkzeug/pull/1197
 .. _#1198: https://github.com/pallets/werkzeug/pull/1198
+.. _#1205: https://github.com/pallets/werkzeug/pull/1205
 
 
 Version 0.12.2
