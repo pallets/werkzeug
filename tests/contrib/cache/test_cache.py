@@ -10,6 +10,7 @@
 """
 import os
 
+import errno
 import pytest
 
 from werkzeug.contrib import cache
@@ -186,16 +187,24 @@ class TestRedisCache(CacheTests):
     _can_use_fast_sleep = False
 
     @pytest.fixture(scope='class', autouse=True)
-    def requirements(self, xprocess):
+    def requirements(self, subprocess):
         if redis is None:
             pytest.skip('Python package "redis" is not installed.')
 
         def prepare(cwd):
             return '[Rr]eady to accept connections', ['redis-server']
 
-        xprocess.ensure('redis_server', prepare)
+        try:
+            subprocess.ensure('redis_server', prepare)
+        except IOError as e:
+            # xprocess raises FileNotFoundError
+            if e.errno == errno.ENOENT:
+                pytest.skip('Redis is not installed.')
+            else:
+                raise
+
         yield
-        xprocess.getinfo('redis_server').terminate()
+        subprocess.getinfo('redis_server').terminate()
 
     @pytest.fixture(params=(None, False, True))
     def make_cache(self, request):
@@ -224,19 +233,27 @@ class TestMemcachedCache(CacheTests):
     _can_use_fast_sleep = False
 
     @pytest.fixture(scope='class', autouse=True)
-    def requirements(self, xprocess):
+    def requirements(self, subprocess):
         if memcache is None:
             pytest.skip(
-                'Python packages for memcache is not installed. Need one of '
+                'Python package for memcache is not installed. Need one of '
                 '"pylibmc", "google.appengine", or "memcache".'
             )
 
         def prepare(cwd):
             return '', ['memcached']
 
-        xprocess.ensure('memcached', prepare)
+        try:
+            subprocess.ensure('memcached', prepare)
+        except IOError as e:
+            # xprocess raises FileNotFoundError
+            if e.errno == errno.ENOENT:
+                pytest.skip('Memcached is not installed.')
+            else:
+                raise
+
         yield
-        xprocess.getinfo('memcached').terminate()
+        subprocess.getinfo('memcached').terminate()
 
     @pytest.fixture
     def make_cache(self):
