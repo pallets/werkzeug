@@ -15,7 +15,7 @@ resources for questions about your own code:
 - The mailing list flask@python.org for long term discussion or larger
   issues.
 - Ask on `Stack Overflow`_. Search with Google first using:
-  ``site:stackoverflow.com flask {search term, exception message, etc.}``.
+  ``site:stackoverflow.com werkzeug {search term, exception message, etc.}``.
   Be sure to include a `minimal, complete, and verifiable example`_.
 
 
@@ -94,7 +94,7 @@ Run the basic test suite with::
     pytest
 
 This only runs the tests for the current environment. Whether this is
-relevant depends on which part of Flask you're working on. Travis-CI
+relevant depends on which part of Werkzeug you're working on. Travis-CI
 will run the full suite when you submit your pull request.
 
 The full test suite takes a long time to run because it tests multiple
@@ -129,7 +129,7 @@ reports from all runs.
 .. _latest version of git: https://git-scm.com/downloads
 .. _username: https://help.github.com/articles/setting-your-username-in-git/
 .. _email: https://help.github.com/articles/setting-your-email-in-git/
-.. _Fork: https://github.com/pallets/flask/pull/2305#fork-destination-box
+.. _Fork: https://github.com/pallets/werkzeug/pull/2305#fork-destination-box
 .. _Clone: https://help.github.com/articles/fork-a-repo/#step-2-create-a-local-clone-of-your-fork
 .. _committing as you go: http://dont-be-afraid-to-commit.readthedocs.io/en/latest/git/commandlinegit.html#commit-your-changes
 .. _PEP8: https://pep8.org/
