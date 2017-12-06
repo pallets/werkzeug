@@ -1,15 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-    make-release
-    ~~~~~~~~~~~~
-
-    Helper script that performs a release.  Does pretty much everything
-    automatically for us.
-
-    :copyright: (c) 2011 by Armin Ronacher.
-    :license: BSD, see LICENSE for more details.
-"""
 from __future__ import print_function
 
 import os
@@ -96,13 +86,8 @@ def set_init_version(version):
     set_filename_version('werkzeug/__init__.py', version, '__version__')
 
 
-def set_setup_version(version):
-    info('Setting setup.py version to %s', version)
-    set_filename_version('setup.py', version, 'version')
-
-
-def build_and_upload():
-    cmd = [sys.executable, 'setup.py', 'release', 'sdist', 'bdist_wheel']
+def build():
+    cmd = [sys.executable, 'setup.py', 'sdist', 'bdist_wheel']
     Popen(cmd).wait()
 
 
@@ -170,12 +155,10 @@ def main():
         fail('You need to install the wheel package.')
 
     set_init_version(version)
-    set_setup_version(version)
     make_git_commit('Bump version number to %s', version)
     make_git_tag(version)
-    build_and_upload()
+    build()
     set_init_version(dev_version)
-    set_setup_version(dev_version)
 
 
 if __name__ == '__main__':

@@ -1,13 +1,3 @@
-#
-# Werkzeug Makefile
-# ~~~~~~~~~~~~~~~~~
-#
-# Shortcuts for various tasks.
-#
-# :copyright: (c) 2008 by the Werkzeug Team, see AUTHORS for more details.
-# :license: BSD, see LICENSE for more details.
-#
-
 documentation:
 	@(cd docs; make html)
 
@@ -15,13 +5,13 @@ release:
 	python scripts/make-release.py
 
 test:
-	py.test --tb=native
+	pytest
 
 tox-test:
 	tox
 
 coverage:
-	@(coverage run --source=werkzeug --module py.test $(TEST_OPTIONS) $(TESTS))
+	@(coverage run --module pytest $(TEST_OPTIONS) $(TESTS))
 
 doctest:
 	@(cd docs; sphinx-build -b doctest . _build/doctest)

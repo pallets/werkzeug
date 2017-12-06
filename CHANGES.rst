@@ -7,34 +7,38 @@ Version 0.13
 
 unreleased
 
-- **Deprecate support for Python 2.6 and 3.3.** CI tests will not run for these
-  versions, and support will be dropped completely in the next version.
-  (`pallets/meta#24`_)
+- **Deprecate support for Python 2.6 and 3.3.** CI tests will not run
+  for these versions, and support will be dropped completely in the next
+  version. (`pallets/meta#24`_)
 - Raise ``TypeError`` when port is not an integer. (`#1088`_)
-- Fully deprecate ``werkzeug.script``. Use `Click <http://click.pocoo.org>`_
-  instead. (`#1090`_)
-- ``response.age`` is parsed as a ``timedelta``. Previously, it was incorrectly
-  treated as a ``datetime``. The header value is an integer number of seconds,
-  not a date string. (`#414`_)
-- Fix a bug in ``TypeConversionDict`` where errors are not propagated when
-  using the converter. (`#1102`_)
+- Fully deprecate ``werkzeug.script``. Use `Click`_ instead. (`#1090`_)
+- ``response.age`` is parsed as a ``timedelta``. Previously, it was
+  incorrectly treated as a ``datetime``. The header value is an integer
+  number of seconds, not a date string. (`#414`_)
+- Fix a bug in ``TypeConversionDict`` where errors are not propagated
+  when using the converter. (`#1102`_)
 - ``Authorization.qop`` is a string instead of a set, to comply with
   RFC 2617. (`#984`_)
-- An exception is raised when an encoded cookie is larger than, by default,
-  4093 bytes. Browsers may silently ignore cookies larger than this.
-  ``BaseResponse`` has a new attribute ``max_cookie_size`` and ``dump_cookie``
-  has a new argument ``max_size`` to configure this. (`#780`_, `#1109`_)
+- An exception is raised when an encoded cookie is larger than, by
+  default, 4093 bytes. Browsers may silently ignore cookies larger than
+  this. ``BaseResponse`` has a new attribute ``max_cookie_size`` and
+  ``dump_cookie`` has a new argument ``max_size`` to configure this.
+  (`#780`_, `#1109`_)
 - Fix a TypeError in ``werkzeug.contrib.lint.GuardedIterator.close``.
   (`#1116`_)
-- ``BaseResponse.calculate_content_length`` now correctly works for unicode
-  responses on Python 3. It first encodes using ``iter_encoded``. (`#705`_)
-- Secure cookie contrib works with string secret key on Python 3. (`#1205`_)
-- Shared data middleware accepts a list instead of a dict of static locations
-  to preserve lookup order. (`#1197`_)
-- HTTP header values without encoding can contain single quotes. (`#1208`_)
-- The built-in dev server supports receiving requests with chunked transfer
-  encoding. (`#1198`_)
+- ``BaseResponse.calculate_content_length`` now correctly works for
+  Unicode responses on Python 3. It first encodes using
+  ``iter_encoded``. (`#705`_)
+- Secure cookie contrib works with string secret key on Python 3.
+  (`#1205`_)
+- Shared data middleware accepts a list instead of a dict of static
+  locations to preserve lookup order. (`#1197`_)
+- HTTP header values without encoding can contain single quotes.
+  (`#1208`_)
+- The built-in dev server supports receiving requests with chunked
+  transfer encoding. (`#1198`_)
 
+.. _Click: https://www.palletsprojects.com/p/click/
 .. _pallets/meta#24: https://github.com/pallets/meta/issues/24
 .. _#414: https://github.com/pallets/werkzeug/pull/414
 .. _#705: https://github.com/pallets/werkzeug/pull/705
