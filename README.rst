@@ -38,7 +38,7 @@ Installing
 
 Install and update using `pip`_:
 
-.. code-block:: none
+.. code-block:: text
 
     pip install -U Werkzeug
 
@@ -63,9 +63,14 @@ Links
 -----
 
 * Website: https://www.palletsprojects.com/p/werkzeug/
+* Releases: https://pypi.org/project/Werkzeug/
 * Code: https://github.com/pallets/werkzeug
 * Issue tracker: https://github.com/pallets/werkzeug/issues
-* Test status: https://travis-ci.org/pallets/werkzeug
+* Test status:
+
+  * Linux, Mac: https://travis-ci.org/pallets/werkzeug
+  * Windows: https://ci.appveyor.com/project/davidism/werkzeug
+
 * Test coverage: https://codecov.io/gh/pallets/werkzeug
 
 .. _WSGI: https://wsgi.readthedocs.io/en/latest/
