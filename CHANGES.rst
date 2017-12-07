@@ -1,6 +1,11 @@
 Werkzeug Changelog
 ==================
 
+Version 0.14
+------------
+
+Unreleased
+
 
 Version 0.13
 ------------
