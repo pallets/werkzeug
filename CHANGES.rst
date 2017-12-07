@@ -5,7 +5,7 @@ Werkzeug Changelog
 Version 0.13
 ------------
 
-unreleased
+Released on December 7th 2017
 
 - **Deprecate support for Python 2.6 and 3.3.** CI tests will not run
   for these versions, and support will be dropped completely in the next
