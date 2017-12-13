@@ -1530,7 +1530,8 @@ class ETagResponseMixin(object):
         if parsed_range is None:
             raise RequestedRangeNotSatisfiable(complete_length)
         range_tuple = parsed_range.range_for_length(complete_length)
-        content_range_header = parsed_range.to_content_range_header(complete_length)
+        content_range_header = parsed_range.to_content_range_header(
+            complete_length)
         if range_tuple is None or content_range_header is None:
             raise RequestedRangeNotSatisfiable(complete_length)
         content_length = range_tuple[1] - range_tuple[0]
@@ -1591,12 +1592,20 @@ class ETagResponseMixin(object):
             if 'date' not in self.headers:
                 self.headers['Date'] = http_date()
             accept_ranges = _clean_accept_ranges(accept_ranges)
-            is206 = self._process_range_request(environ, complete_length, accept_ranges)
+            is206 = self._process_range_request(
+                environ, complete_length, accept_ranges)
             if not is206 and not is_resource_modified(
-                environ, self.headers.get('etag'), None, self.headers.get('last-modified')
+                environ, self.headers.get('etag'), None,
+                    self.headers.get('last-modified')
             ):
-                self.status_code = 304
-            if self.automatically_set_content_length and 'content-length' not in self.headers:
+                if parse_etags(environ.get('HTTP_IF_MATCH')):
+                    self.status_code = 412
+                    self.response = []  # TODO
+                    self.data = []  # TODO
+                else:
+                    self.status_code = 304
+            if self.automatically_set_content_length and \
+               'content-length' not in self.headers:
                 length = self.calculate_content_length()
                 if length is not None:
                     self.headers['Content-Length'] = length
