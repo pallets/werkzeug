@@ -621,6 +621,7 @@ class SharedDataMiddleware(object):
                 ('Cache-Control', 'max-age=%d, public' % timeout)
             ]
             if not is_resource_modified(environ, etag, last_modified=mtime):
+                # TODO check this!
                 f.close()
                 start_response('304 Not Modified', headers)
                 return []

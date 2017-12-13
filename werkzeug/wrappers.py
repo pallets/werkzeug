@@ -1238,7 +1238,7 @@ class BaseResponse(object):
         # code.
         if 100 <= status < 200 or status == 204:
             headers['Content-Length'] = content_length = u'0'
-        elif status == 304:
+        elif status in [304, 412]:
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we
@@ -1276,7 +1276,7 @@ class BaseResponse(object):
         """
         status = self.status_code
         if environ['REQUEST_METHOD'] == 'HEAD' or \
-           100 <= status < 200 or status in (204, 304):
+           100 <= status < 200 or status in (204, 304, 412):
             iterable = ()
         elif self.direct_passthrough:
             if __debug__:
@@ -1600,8 +1600,6 @@ class ETagResponseMixin(object):
             ):
                 if parse_etags(environ.get('HTTP_IF_MATCH')):
                     self.status_code = 412
-                    self.response = []  # TODO
-                    self.data = []  # TODO
                 else:
                     self.status_code = 304
             if self.automatically_set_content_length and \
