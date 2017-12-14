@@ -195,7 +195,7 @@ Intermezzo: Running the Application
 Now you should be able to execute the file with `python` and see a server
 on your local machine::
 
-    $ python shortly.py 
+    $ python shortly.py
      * Running on http://127.0.0.1:5000/
      * Restarting with reloader: stat() polling
 
@@ -444,6 +444,8 @@ Step 9: The Style
 
 For this to look better than ugly black and white, here a simple
 stylesheet that goes along:
+
+*static/style.css*:
 
 .. sourcecode:: css
 
