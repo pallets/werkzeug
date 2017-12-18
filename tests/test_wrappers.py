@@ -96,7 +96,8 @@ def test_base_request():
                            content_type='application/x-www-form-urlencoded')
     strict_eq(response['args'], MultiDict([('blub', u'blah')]))
     strict_eq(response['args_as_list'], [('blub', [u'blah'])])
-    strict_eq(response['form'], MultiDict([('foo', u'blub hehe'), ('blah', u'42')]))
+    strict_eq(response['form'], MultiDict(
+        [('foo', u'blub hehe'), ('blah', u'42')]))
     strict_eq(response['data'], b'')
     # currently we do not guarantee that the values are ordered correctly
     # for post data.
@@ -151,7 +152,8 @@ def test_access_route():
 
 
 def test_url_request_descriptors():
-    req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
+    req = wrappers.Request.from_values(
+        '/bar?foo=baz', 'http://example.com/test')
     strict_eq(req.path, u'/bar')
     strict_eq(req.full_path, u'/bar?foo=baz')
     strict_eq(req.script_root, u'/test')
@@ -162,20 +164,23 @@ def test_url_request_descriptors():
     strict_eq(req.host, 'example.com')
     strict_eq(req.scheme, 'http')
 
-    req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
+    req = wrappers.Request.from_values(
+        '/bar?foo=baz', 'https://example.com/test')
     strict_eq(req.scheme, 'https')
 
 
 def test_url_request_descriptors_query_quoting():
     next = 'http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash'
-    req = wrappers.Request.from_values('/bar?next=' + next, 'http://example.com/')
+    req = wrappers.Request.from_values(
+        '/bar?next=' + next, 'http://example.com/')
     assert req.path == u'/bar'
     strict_eq(req.full_path, u'/bar?next=' + next)
     strict_eq(req.url, u'http://example.com/bar?next=' + next)
 
 
 def test_url_request_descriptors_hosts():
-    req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
+    req = wrappers.Request.from_values(
+        '/bar?foo=baz', 'http://example.com/test')
     req.trusted_hosts = ['example.com']
     strict_eq(req.path, u'/bar')
     strict_eq(req.full_path, u'/bar?foo=baz')
@@ -187,10 +192,12 @@ def test_url_request_descriptors_hosts():
     strict_eq(req.host, 'example.com')
     strict_eq(req.scheme, 'http')
 
-    req = wrappers.Request.from_values('/bar?foo=baz', 'https://example.com/test')
+    req = wrappers.Request.from_values(
+        '/bar?foo=baz', 'https://example.com/test')
     strict_eq(req.scheme, 'https')
 
-    req = wrappers.Request.from_values('/bar?foo=baz', 'http://example.com/test')
+    req = wrappers.Request.from_values(
+        '/bar?foo=baz', 'http://example.com/test')
     req.trusted_hosts = ['example.org']
     pytest.raises(SecurityError, lambda: req.url)
     pytest.raises(SecurityError, lambda: req.base_url)
@@ -308,7 +315,8 @@ def test_type_forcing():
     def wsgi_application(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return ['Hello World!']
-    base_response = wrappers.BaseResponse('Hello World!', content_type='text/html')
+    base_response = wrappers.BaseResponse(
+        'Hello World!', content_type='text/html')
 
     class SpecialResponse(wrappers.Response):
 
@@ -551,6 +559,48 @@ def test_etag_response_mixin():
     assert response.content_length == 999
 
 
+def test_etag_response_412():
+    response = wrappers.Response('Hello World')
+    assert response.get_etag() == (None, None)
+    response.add_etag()
+    assert response.get_etag() == ('b10a8db164e0754105b7a99be72e3fe5', False)
+    assert not response.cache_control
+    response.cache_control.must_revalidate = True
+    response.cache_control.max_age = 60
+    response.headers['Content-Length'] = len(response.get_data())
+    assert response.headers['Cache-Control'] in ('must-revalidate, max-age=60',
+                                                 'max-age=60, must-revalidate')
+
+    assert 'date' not in response.headers
+    env = create_environ()
+    env.update({
+        'REQUEST_METHOD':       'GET',
+        'HTTP_IF_MATCH':   response.get_etag()[0] + "xyz"
+    })
+    response.make_conditional(env)
+    assert 'date' in response.headers
+
+    # after the thing is invoked by the server as wsgi application
+    # (we're emulating this here), there must not be any entity
+    # headers left and the status code would have to be 412
+    resp = wrappers.Response.from_app(response, env)
+    assert resp.status_code == 412
+    assert 'content-length' not in resp.headers
+
+    # make sure date is not overriden
+    response = wrappers.Response('Hello World')
+    response.date = 1337
+    d = response.date
+    response.make_conditional(env)
+    assert response.date == d
+
+    # make sure content length is only set if missing
+    response = wrappers.Response('Hello World')
+    response.content_length = 999
+    response.make_conditional(env)
+    assert response.content_length == 999
+
+
 def test_range_request_basic():
     env = create_environ()
     response = wrappers.Response('Hello World')
@@ -584,10 +634,12 @@ def test_range_request_with_file():
     with open(fname, 'rb') as f:
         response = wrappers.Response(wrap_file(env, f))
         env['HTTP_RANGE'] = 'bytes=0-0'
-        response.make_conditional(env, accept_ranges=True, complete_length=len(fcontent))
+        response.make_conditional(
+            env, accept_ranges=True, complete_length=len(fcontent))
         assert response.status_code == 206
         assert response.headers['Accept-Ranges'] == 'bytes'
-        assert response.headers['Content-Range'] == 'bytes 0-0/%d' % len(fcontent)
+        assert response.headers[
+            'Content-Range'] == 'bytes 0-0/%d' % len(fcontent)
         assert response.headers['Content-Length'] == '1'
         assert response.data == fcontent[:1]
 
@@ -660,10 +712,12 @@ def test_authenticate_mixin():
 def test_authenticate_mixin_quoted_qop():
     # Example taken from https://github.com/pallets/werkzeug/issues/633
     resp = wrappers.Response()
-    resp.www_authenticate.set_digest('REALM', 'NONCE', qop=("auth", "auth-int"))
+    resp.www_authenticate.set_digest(
+        'REALM', 'NONCE', qop=("auth", "auth-int"))
 
     actual = set((resp.headers['WWW-Authenticate'] + ',').split())
-    expected = set('Digest nonce="NONCE", realm="REALM", qop="auth, auth-int",'.split())
+    expected = set(
+        'Digest nonce="NONCE", realm="REALM", qop="auth, auth-int",'.split())
     assert actual == expected
 
     resp.www_authenticate.set_digest('REALM', 'NONCE', qop=("auth",))
@@ -1011,7 +1065,13 @@ def test_response_headers_passthrough():
 
 
 def test_response_304_no_content_length():
-    resp = wrappers.Response('Test', status=304)
+    resp = wrappers.Response('Test 304', status=304)
+    env = create_environ()
+    assert 'content-length' not in resp.get_wsgi_headers(env)
+
+
+def test_response_412_no_content_length():
+    resp = wrappers.Response('Test 412', status=412)
     env = create_environ()
     assert 'content-length' not in resp.get_wsgi_headers(env)
 

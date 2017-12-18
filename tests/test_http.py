@@ -51,8 +51,10 @@ class TestHTTPUtility(object):
             'application/xhtml+xml'
         assert a.best_match(['text/html']) == 'text/html'
         assert a.best_match(['foo/bar']) is None
-        assert a.best_match(['foo/bar', 'bar/foo'], default='foo/bar') == 'foo/bar'
-        assert a.best_match(['application/xml', 'text/xml']) == 'application/xml'
+        assert a.best_match(['foo/bar', 'bar/foo'],
+                            default='foo/bar') == 'foo/bar'
+        assert a.best_match(['application/xml', 'text/xml']
+                            ) == 'application/xml'
 
     def test_charset_accept(self):
         a = http.parse_accept_header('ISO-8859-1,utf-8;q=0.7,*;q=0.7',
@@ -109,7 +111,8 @@ class TestHTTPUtility(object):
         assert c.to_header() == 'no-cache'
 
     def test_authorization_header(self):
-        a = http.parse_authorization_header('Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==')
+        a = http.parse_authorization_header(
+            'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==')
         assert a.type == 'basic'
         assert a.username == 'Aladdin'
         assert a.password == 'open sesame'
@@ -190,7 +193,8 @@ class TestHTTPUtility(object):
         assert 'blar' in es
         assert es.contains_raw('W/"baz"')
         assert es.contains_raw('"foo"')
-        assert sorted(es.to_header().split(', ')) == ['"bar"', '"blar"', '"foo"', 'W/"baz"']
+        assert sorted(es.to_header().split(', ')) == [
+            '"bar"', '"blar"', '"foo"', 'W/"baz"']
 
     def test_etags_nonzero(self):
         etags = http.parse_etags('W/"foo"')
@@ -200,18 +204,23 @@ class TestHTTPUtility(object):
     def test_parse_date(self):
         assert http.parse_date('Sun, 06 Nov 1994 08:49:37 GMT    ') == datetime(
             1994, 11, 6, 8, 49, 37)
-        assert http.parse_date('Sunday, 06-Nov-94 08:49:37 GMT') == datetime(1994, 11, 6, 8, 49, 37)
-        assert http.parse_date(' Sun Nov  6 08:49:37 1994') == datetime(1994, 11, 6, 8, 49, 37)
+        assert http.parse_date(
+            'Sunday, 06-Nov-94 08:49:37 GMT') == datetime(1994, 11, 6, 8, 49, 37)
+        assert http.parse_date(' Sun Nov  6 08:49:37 1994') == datetime(
+            1994, 11, 6, 8, 49, 37)
         assert http.parse_date('foo') is None
 
     def test_parse_date_overflows(self):
-        assert http.parse_date(' Sun 02 Feb 1343 08:49:37 GMT') == datetime(1343, 2, 2, 8, 49, 37)
-        assert http.parse_date('Thu, 01 Jan 1970 00:00:00 GMT') == datetime(1970, 1, 1, 0, 0)
+        assert http.parse_date(' Sun 02 Feb 1343 08:49:37 GMT') == datetime(
+            1343, 2, 2, 8, 49, 37)
+        assert http.parse_date(
+            'Thu, 01 Jan 1970 00:00:00 GMT') == datetime(1970, 1, 1, 0, 0)
         assert http.parse_date('Thu, 33 Jan 1970 00:00:00 GMT') is None
 
     def test_remove_entity_headers(self):
         now = http.http_date()
-        headers1 = [('Date', now), ('Content-Type', 'text/html'), ('Content-Length', '0')]
+        headers1 = [('Date', now), ('Content-Type', 'text/html'),
+                    ('Content-Length', '0')]
         headers2 = datastructures.Headers(headers1)
 
         http.remove_entity_headers(headers1)
@@ -305,8 +314,10 @@ class TestHTTPUtility(object):
 
     def test_dump_header(self):
         assert http.dump_header([1, 2, 3]) == '1, 2, 3'
-        assert http.dump_header([1, 2, 3], allow_token=False) == '"1", "2", "3"'
-        assert http.dump_header({'foo': 'bar'}, allow_token=False) == 'foo="bar"'
+        assert http.dump_header(
+            [1, 2, 3], allow_token=False) == '"1", "2", "3"'
+        assert http.dump_header(
+            {'foo': 'bar'}, allow_token=False) == 'foo="bar"'
         assert http.dump_header({'foo': 'bar'}) == 'foo=bar'
 
     def test_is_resource_modified(self):
@@ -323,7 +334,11 @@ class TestHTTPUtility(object):
         env['HTTP_IF_NONE_MATCH'] = http.generate_etag(b'awesome')
         assert not http.is_resource_modified(env, data=b'awesome')
 
-        env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(datetime(2008, 1, 1, 12, 30))
+        env['HTTP_IF_MATCH'] = http.generate_etag(b'awesome')
+        assert not http.is_resource_modified(env, data=b'awesome-xyz')
+
+        env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(
+            datetime(2008, 1, 1, 12, 30))
         assert not http.is_resource_modified(env,
                                              last_modified=datetime(2008, 1, 1, 12, 00))
         assert http.is_resource_modified(env,
@@ -332,7 +347,8 @@ class TestHTTPUtility(object):
     def test_is_resource_modified_for_range_requests(self):
         env = create_environ()
 
-        env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(datetime(2008, 1, 1, 12, 30))
+        env['HTTP_IF_MODIFIED_SINCE'] = http.http_date(
+            datetime(2008, 1, 1, 12, 30))
         env['HTTP_IF_RANGE'] = http.generate_etag(b'awesome_if_range')
         # Range header not present, so If-Range should be ignored
         assert not http.is_resource_modified(env, data=b'not_the_same',
@@ -355,9 +371,11 @@ class TestHTTPUtility(object):
 
     def test_date_formatting(self):
         assert http.cookie_date(0) == 'Thu, 01-Jan-1970 00:00:00 GMT'
-        assert http.cookie_date(datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
+        assert http.cookie_date(
+            datetime(1970, 1, 1)) == 'Thu, 01-Jan-1970 00:00:00 GMT'
         assert http.http_date(0) == 'Thu, 01 Jan 1970 00:00:00 GMT'
-        assert http.http_date(datetime(1970, 1, 1)) == 'Thu, 01 Jan 1970 00:00:00 GMT'
+        assert http.http_date(datetime(1970, 1, 1)
+                              ) == 'Thu, 01 Jan 1970 00:00:00 GMT'
 
     def test_cookies(self):
         strict_eq(
