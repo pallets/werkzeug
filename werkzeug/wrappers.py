@@ -1596,7 +1596,7 @@ class ETagResponseMixin(object):
                 environ, complete_length, accept_ranges)
             if not is206 and not is_resource_modified(
                 environ, self.headers.get('etag'), None,
-                    self.headers.get('last-modified')
+                self.headers.get('last-modified')
             ):
                 if parse_etags(environ.get('HTTP_IF_MATCH')):
                     self.status_code = 412
