@@ -692,23 +692,52 @@ class FileSystemCache(BaseCache):
                             specified on :meth:`~BaseCache.set`. A timeout of
                             0 indicates that the cache never expires.
     :param mode: the file mode wanted for the cache files, default 0600
+    :param file_size_limit: Limit in megabytes of the size of each individual
+                            cache element. If size_limit is set, defaults to
+                            that.
+    :param size_limit: Limit in megabytes that the cache can use in total.
+    :param count_existing: Option to on initialization count the files already
+                           existing in the cache_dir when calculating cache
+                           size. WARNING: Expensive operation.
     """
 
     #: used for temporary files by the FileSystemCache
     _fs_transaction_suffix = '.__wz_cache'
+    _fs_size_key = '__wz_cache_size'
 
     def __init__(self, cache_dir, threshold=500, default_timeout=300,
-                 mode=0o600):
-        BaseCache.__init__(self, default_timeout)
+                 mode=0o600, file_size_limit=0, size_limit=0,
+                 count_existing=False):
+        self.default_timeout = default_timeout
         self._path = cache_dir
         self._threshold = threshold
         self._mode = mode
+        self._size_limit = size_limit * 1024 * 1024
+        self._file_size_limit = file_size_limit * 1024 * 1024 \
+            or self._size_limit
 
         try:
             os.makedirs(self._path)
         except OSError as ex:
             if ex.errno != errno.EEXIST:
                 raise
+
+        if count_existing:
+            size = 0
+            for f in self._list_dir():
+                size += os.stat(f).st_size
+            self._update_size(size, reset=True)
+        else:
+            self._size = self.get(self._fs_size_key)
+            if not self._size:
+                self._update_size(0, reset=True)
+
+
+    def _update_size(self, delta, reset=False):
+        new_size = 0 if reset else self._size or 0
+        new_size += delta
+        self.set(self._fs_size_key, 0, timeout=0)
+        self._size = new_size
 
     def _normalize_timeout(self, timeout):
         timeout = BaseCache._normalize_timeout(self, timeout)
@@ -724,7 +753,8 @@ class FileSystemCache(BaseCache):
 
     def _prune(self):
         entries = self._list_dir()
-        if len(entries) > self._threshold:
+        cache_too_large = self._size > self._size_limit and self._size_limit
+        if len(entries) > self._threshold or cache_too_large:
             now = time()
             for idx, fname in enumerate(entries):
                 try:
@@ -734,6 +764,7 @@ class FileSystemCache(BaseCache):
                     remove = (expires != 0 and expires <= now) or idx % 3 == 0
 
                     if remove:
+                        self._update_size(-os.stat(fname).st_size)
                         os.remove(fname)
                 except (IOError, OSError):
                     pass
@@ -744,6 +775,7 @@ class FileSystemCache(BaseCache):
                 os.remove(fname)
             except (IOError, OSError):
                 return False
+        self._update_size(0, reset=True)
         return True
 
     def _get_filename(self, key):
@@ -781,16 +813,26 @@ class FileSystemCache(BaseCache):
             with os.fdopen(fd, 'wb') as f:
                 pickle.dump(timeout, f, 1)
                 pickle.dump(value, f, pickle.HIGHEST_PROTOCOL)
+
+            # Check that filesize doesn't exceed limit
+            if self._file_size_limit and \
+                    os.stat(filename).st_size > self._file_size_limit:
+                os.remove(tmp)
+                return False
+
             rename(tmp, filename)
             os.chmod(filename, self._mode)
+            self._update_size(os.stat(filename).st_size)
         except (IOError, OSError):
             return False
         else:
             return True
 
     def delete(self, key):
+        filename = self._get_filename(key)
         try:
-            os.remove(self._get_filename(key))
+            self._update_size(-os.stat(filename).st_size)
+            os.remove(filename)
         except (IOError, OSError):
             return False
         else:
@@ -804,6 +846,7 @@ class FileSystemCache(BaseCache):
                 if pickle_time == 0 or pickle_time >= time():
                     return True
                 else:
+                    self._update_size(-os.stat(filename).st_size)
                     os.remove(filename)
                     return False
         except (IOError, OSError, pickle.PickleError):
