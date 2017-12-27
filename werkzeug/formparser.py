@@ -45,8 +45,9 @@ _supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 def default_stream_factory(total_content_length, filename, content_type,
                            content_length=None):
     """The stream factory that is used per default."""
+    max_size = 1024 * 500
     if SpooledTemporaryFile is not None:
-        return SpooledTemporaryFile(max_size=1024 * 500, mode='wb+')
+        return SpooledTemporaryFile(max_size=max_size, mode='wb+')
     if total_content_length is None or total_content_length > max_size:
         return TemporaryFile('wb+')
     return BytesIO()
