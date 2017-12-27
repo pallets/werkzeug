@@ -34,6 +34,7 @@ except ImportError:
 
 class CacheTests(object):
     _can_use_fast_sleep = True
+    _guaranteed_deletes = False
 
     @pytest.fixture
     def fast_sleep(self, monkeypatch):
@@ -128,7 +129,8 @@ class CacheTests(object):
         fast_sleep(3)
         # timeout of zero means no timeout
         assert c.get('foo') == 'bar'
-        assert c.get('baz') is None
+        if self._guaranteed_deletes:
+            assert c.get('baz') is None
 
     def test_generic_has(self, c):
         assert c.has('foo') in (False, 0)
@@ -142,6 +144,8 @@ class CacheTests(object):
 
 
 class TestSimpleCache(CacheTests):
+    _guaranteed_deletes = True
+
     @pytest.fixture
     def make_cache(self):
         return cache.SimpleCache
@@ -157,6 +161,8 @@ class TestSimpleCache(CacheTests):
 
 
 class TestFileSystemCache(CacheTests):
+    _guaranteed_deletes = True
+
     @pytest.fixture
     def make_cache(self, tmpdir):
         return lambda **kw: cache.FileSystemCache(cache_dir=str(tmpdir), **kw)
@@ -185,6 +191,7 @@ class TestFileSystemCache(CacheTests):
 # skip happens in requirements fixture instead
 class TestRedisCache(CacheTests):
     _can_use_fast_sleep = False
+    _guaranteed_deletes = True
 
     @pytest.fixture(scope='class', autouse=True)
     def requirements(self, subprocess):
