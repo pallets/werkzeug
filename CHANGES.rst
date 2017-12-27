@@ -6,6 +6,8 @@ Version 0.14
 
 Unreleased
 
+- Added support for platforms that lack ``SpooledTemporaryFile``.
+
 
 Version 0.13
 ------------
