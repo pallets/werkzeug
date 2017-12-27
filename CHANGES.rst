@@ -4,7 +4,7 @@ Werkzeug Changelog
 Version 0.14
 ------------
 
-- HTTP execptions are now automatically caught by
+- HTTP exceptions are now automatically caught by
   ``Request.application``.
 
 
