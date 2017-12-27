@@ -7,7 +7,6 @@ Version 0.14
 - HTTP exceptions are now automatically caught by
   ``Request.application``.
 - Added support for edge as browser.
-
 - Added support for platforms that lack ``SpooledTemporaryFile``.
 
 
