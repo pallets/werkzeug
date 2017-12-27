@@ -288,6 +288,9 @@ class BaseRequest(object):
             def my_wsgi_app(request):
                 return Response('Hello World!')
 
+        As of Werkzeug 0.14 HTTP exceptions are automatically caught and
+        converted to responses instead of failing.
+
         :param f: the WSGI callable to decorate
         :return: a new WSGI callable
         """
@@ -296,10 +299,15 @@ class BaseRequest(object):
         #: the request.  The return value is then called with the latest
         #: two arguments.  This makes it possible to use this decorator for
         #: both methods and standalone WSGI functions.
+        from werkzeug.exceptions import HTTPException
         def application(*args):
             request = cls(args[-2])
             with request:
-                return f(*args[:-2] + (request,))(*args[-2:])
+                try:
+                    resp = f(*args[:-2] + (request,))
+                except HTTPException as e:
+                    resp = e.get_response(args[-2])
+                return resp(*args[-2:])
         return update_wrapper(application, f)
 
     def _get_file_stream(self, total_content_length, content_type, filename=None,
