@@ -21,7 +21,8 @@ from werkzeug._compat import iteritems
 from tests import strict_eq
 
 from werkzeug import wrappers
-from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable
+from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable, \
+    BadRequest
 from werkzeug.wsgi import LimitedStream, wrap_file
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
     ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
@@ -218,6 +219,24 @@ def test_stream_only_mixing():
     assert list(request.form.items()) == []
     pytest.raises(AttributeError, lambda: request.data)
     strict_eq(request.stream.read(), b'foo=blub+hehe')
+
+
+def test_request_application():
+    @wrappers.Request.application
+    def application(request):
+        return wrappers.Response('Hello World!')
+
+    @wrappers.Request.application
+    def failing_application(request):
+        raise BadRequest()
+
+    resp = wrappers.Response.from_app(application, create_environ())
+    assert resp.data == b'Hello World!'
+    assert resp.status_code == 200
+
+    resp = wrappers.Response.from_app(failing_application, create_environ())
+    assert b'Bad Request' in resp.data
+    assert resp.status_code == 400
 
 
 def test_base_response():
