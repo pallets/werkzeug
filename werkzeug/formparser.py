@@ -11,7 +11,14 @@
 """
 import re
 import codecs
-from tempfile import SpooledTemporaryFile
+try:
+    from tempfile import SpooledTemporaryFile
+except ImportError:
+    # some platforms might not SpooledTemporaryFile support
+    # in that case we revert to the old TemporaryFile code
+    from tempfile import TemporaryFile
+    SpooledTemporaryFile = None
+
 from itertools import chain, repeat, tee
 from functools import update_wrapper
 
@@ -37,7 +44,14 @@ _supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 def default_stream_factory(total_content_length, filename, content_type,
                            content_length=None):
     """The stream factory that is used per default."""
-    return SpooledTemporaryFile(max_size=1024 * 500, mode='wb+')
+    max_size = 1024 * 500
+    if SpooledTemporaryFile is None:
+        if total_content_length > max_size:
+            return TemporaryFile('wb+')
+
+        return BytesIO()        
+    else:
+        return SpooledTemporaryFile(max_size=max_size, mode='wb+')
 
 
 def parse_form_data(environ, stream_factory=None, charset='utf-8',
