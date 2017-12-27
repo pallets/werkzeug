@@ -6,6 +6,7 @@ Version 0.14
 
 - HTTP exceptions are now automatically caught by
   ``Request.application``.
+- Added support for edge as browser.
 
 
 Version 0.13
