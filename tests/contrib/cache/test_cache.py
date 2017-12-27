@@ -8,8 +8,6 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import os
-
 import errno
 import pytest
 
@@ -174,16 +172,44 @@ class TestFileSystemCache(CacheTests):
         for i in range(2 * THRESHOLD):
             assert c.set(str(i), i)
 
-        cache_files = os.listdir(c._path)
-        assert len(cache_files) <= THRESHOLD
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files <= THRESHOLD
 
     def test_filesystemcache_clear(self, c):
         assert c.set('foo', 'bar')
-        cache_files = os.listdir(c._path)
-        assert len(cache_files) == 1
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files == 1
         assert c.clear()
-        cache_files = os.listdir(c._path)
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files == 0
+        cache_files = c._list_dir()
         assert len(cache_files) == 0
+
+    def test_no_threshold(self, make_cache):
+        THRESHOLD = 0
+        c = make_cache(threshold=THRESHOLD)
+
+        for i in range(10):
+            assert c.set(str(i), i)
+
+        cache_files = c._list_dir()
+        assert len(cache_files) == 10
+
+        # File count is not maintained with threshold = 0
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files == None
+
+    def test_count_file_accuracy(self, c):
+        assert c.set('foo', 'bar')
+        assert c.set('moo', 'car')
+        c.add('moo', 'tar')
+        assert c.get(c._fs_count_file) == 2
+        assert c.add('too', 'far')
+        assert c.get(c._fs_count_file) == 3
+        assert c.delete('moo')
+        assert c.get(c._fs_count_file) == 2
+        assert c.clear()
+        assert c.get(c._fs_count_file) == 0
 
 
 # don't use pytest.mark.skipif on subclasses
