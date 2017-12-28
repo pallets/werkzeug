@@ -2174,6 +2174,10 @@ class ETags(Container, Iterable):
         """Check if an etag is weak."""
         return etag in self._weak
 
+    def is_strong(self, etag):
+        """Check if an etag is strong."""
+        return etag in self._strong
+
     def contains_weak(self, etag):
         """Check if an etag is part of the set including weak and strong tags."""
         return self.is_weak(etag) or self.contains(etag)
@@ -2181,11 +2185,10 @@ class ETags(Container, Iterable):
     def contains(self, etag):
         """Check if an etag is part of the set ignoring weak tags.
         It is also possible to use the ``in`` operator.
-
         """
         if self.star_tag:
             return True
-        return etag in self._strong
+        return self.is_strong(etag)
 
     def contains_raw(self, etag):
         """When passed a quoted tag it will check if this tag is part of the

@@ -899,6 +899,13 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
                 # entity-tags for If-None-Match"
                 unmodified = if_none_match.contains_weak(etag)
 
+            # https://tools.ietf.org/html/rfc7232#section-3.1
+            # "Origin server MUST use the strong comparison function when
+            # comparing entity-tags for If-Match"
+            if_match = parse_etags(environ.get('HTTP_IF_MATCH'))
+            if if_match:
+                unmodified = not if_match.is_strong(etag)
+
     return not unmodified
 
 
