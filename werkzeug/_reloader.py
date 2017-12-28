@@ -210,26 +210,30 @@ class WatchdogReloaderLoop(ReloaderLoop):
         observer = self.observer_class()
         observer.start()
 
-        while not self.should_reload:
-            to_delete = set(watches)
-            paths = _find_observable_paths(self.extra_files)
-            for path in paths:
-                if path not in watches:
-                    try:
-                        watches[path] = observer.schedule(
-                            self.event_handler, path, recursive=True)
-                    except OSError:
-                        # Clear this path from list of watches We don't want
-                        # the same error message showing again in the next
-                        # iteration.
-                        watches[path] = None
-                to_delete.discard(path)
-            for path in to_delete:
-                watch = watches.pop(path, None)
-                if watch is not None:
-                    observer.unschedule(watch)
-            self.observable_paths = paths
-            self._sleep(self.interval)
+        try:
+            while not self.should_reload:
+                to_delete = set(watches)
+                paths = _find_observable_paths(self.extra_files)
+                for path in paths:
+                    if path not in watches:
+                        try:
+                            watches[path] = observer.schedule(
+                                self.event_handler, path, recursive=True)
+                        except OSError:
+                            # Clear this path from list of watches We don't want
+                            # the same error message showing again in the next
+                            # iteration.
+                            watches[path] = None
+                    to_delete.discard(path)
+                for path in to_delete:
+                    watch = watches.pop(path, None)
+                    if watch is not None:
+                        observer.unschedule(watch)
+                self.observable_paths = paths
+                self._sleep(self.interval)
+        finally:
+            observer.stop()
+            observer.join()
 
         sys.exit(3)
 
