@@ -563,6 +563,8 @@ class RedisCache(BaseCache):
     def __init__(self, host='localhost', port=6379, password=None,
                  db=0, default_timeout=300, key_prefix=None, **kwargs):
         BaseCache.__init__(self, default_timeout)
+        if host is None:
+            raise ValueError('RedisCache host parameter may not be None')
         if isinstance(host, string_types):
             try:
                 import redis
