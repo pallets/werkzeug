@@ -12,6 +12,8 @@ Version 0.14
 - Added support for the SameSite cookie attribute.
 - Implemented ``has`` for ``NullCache``
 - ``get_multi`` on cache clients now returns lists all the time.
+- Improved the watchdog observer shutdown for the reloader to not crash
+  on exit on older Python versions.
 
 
 Version 0.13
