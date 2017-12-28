@@ -423,7 +423,8 @@ class MemcachedCache(BaseCache):
                 have_encoded_keys = True
             if _test_memcached_key(key):
                 key_mapping[encoded_key] = key
-        d = rv = self._client.get_multi(key_mapping.keys())
+        _keys = list(key_mapping)
+        d = rv = self._client.get_multi(_keys)
         if have_encoded_keys or self.key_prefix:
             rv = {}
             for key, value in iteritems(d):
