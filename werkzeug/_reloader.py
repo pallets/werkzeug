@@ -169,9 +169,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
                 self.trigger_reload(filename)
             dirname = os.path.dirname(filename)
             if dirname.startswith(tuple(self.observable_paths)):
-                if filename.endswith(('.pyc', '.pyo')):
-                    self.trigger_reload(filename[:-1])
-                elif filename.endswith('.py'):
+                if filename.endswith(('.pyc', '.pyo', '.py')):
                     self.trigger_reload(filename)
 
         class _CustomHandler(FileSystemEventHandler):

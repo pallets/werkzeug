@@ -209,6 +209,48 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server):
     assert r.content == b'hello'
 
 
+@pytest.mark.skipif(watchdog is None, reason='Watchdog not installed.')
+def test_reloader_reports_correct_file(tmpdir, dev_server):
+    real_app = tmpdir.join('real_app.py')
+    real_app.write(textwrap.dedent('''
+    def real_app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'hello']
+    '''))
+
+    server = dev_server('''
+    trials = []
+    def app(environ, start_response):
+        assert not trials, 'should have reloaded'
+        trials.append(1)
+        import real_app
+        return real_app.real_app(environ, start_response)
+
+    kwargs['use_reloader'] = True
+    kwargs['reloader_interval'] = 0.1
+    kwargs['reloader_type'] = 'watchdog'
+    ''')
+    server.wait_for_reloader_loop()
+
+    r = requests.get(server.url)
+    assert r.status_code == 200
+    assert r.content == b'hello'
+
+    real_app_binary = tmpdir.join('real_app.pyc')
+    real_app_binary.write('anything is fine here')
+    server.wait_for_reloader()
+
+    log = server.logfile.read()
+    change_event = "\n * Detected change in '%(path)s', reloading\n" % {
+        'path': real_app_binary
+    }
+    assert change_event in log
+
+    r = requests.get(server.url)
+    assert r.status_code == 200
+    assert r.content == b'hello'
+
+
 def test_monkeypached_sleep(tmpdir):
     # removing the staticmethod wrapper in the definition of
     # ReloaderLoop._sleep works most of the time, since `sleep` is a c
