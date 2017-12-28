@@ -11,6 +11,7 @@ Version 0.14
 - Add support for etag handling through if-match
 - Added support for the SameSite cookie attribute.
 - Implemented ``has`` for ``NullCache``
+- ``get_multi`` on cache clients now returns lists all the time.
 
 
 Version 0.13
