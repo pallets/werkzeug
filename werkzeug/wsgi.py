@@ -9,7 +9,10 @@
     :license: BSD, see LICENSE for more details.
 """
 import io
-import httplib
+try:
+    import httplib
+except ImportError:
+    from http import client as httplib
 import mimetypes
 import os
 import posixpath
