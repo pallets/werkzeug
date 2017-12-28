@@ -14,6 +14,8 @@ Version 0.14
 - ``get_multi`` on cache clients now returns lists all the time.
 - Improved the watchdog observer shutdown for the reloader to not crash
   on exit on older Python versions.
+- Added support for ``filename*`` filename attributes according to
+  RFC 2231
 
 
 Version 0.13
