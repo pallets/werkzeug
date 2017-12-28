@@ -252,11 +252,12 @@ def test_base_response():
     # set cookie
     response = wrappers.BaseResponse()
     response.set_cookie('foo', value='bar', max_age=60, expires=0,
-                        path='/blub', domain='example.org')
+                        path='/blub', domain='example.org', samesite='Strict')
     strict_eq(response.headers.to_wsgi_list(), [
         ('Content-Type', 'text/plain; charset=utf-8'),
         ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
-         '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub')
+         '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; '
+         'SameSite=Strict')
     ])
 
     # delete cookie
@@ -1164,7 +1165,8 @@ class TestSetCookie(object):
     def test_secure(self):
         response = wrappers.BaseResponse()
         response.set_cookie('foo', value='bar', max_age=60, expires=0,
-                            path='/blub', domain='example.org', secure=True)
+                            path='/blub', domain='example.org', secure=True,
+                            samesite=None)
         strict_eq(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
@@ -1175,7 +1177,7 @@ class TestSetCookie(object):
         response = wrappers.BaseResponse()
         response.set_cookie('foo', value='bar', max_age=60, expires=0,
                             path='/blub', domain='example.org', secure=False,
-                            httponly=True)
+                            httponly=True, samesite=None)
         strict_eq(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
@@ -1186,10 +1188,22 @@ class TestSetCookie(object):
         response = wrappers.BaseResponse()
         response.set_cookie('foo', value='bar', max_age=60, expires=0,
                             path='/blub', domain='example.org', secure=True,
-                            httponly=True)
+                            httponly=True, samesite=None)
         strict_eq(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
              '01-Jan-1970 00:00:00 GMT; Max-Age=60; Secure; HttpOnly; '
              'Path=/blub')
+        ])
+
+    def test_samesite(self):
+        response = wrappers.BaseResponse()
+        response.set_cookie('foo', value='bar', max_age=60, expires=0,
+                            path='/blub', domain='example.org', secure=False,
+                            samesite='strict')
+        strict_eq(response.headers.to_wsgi_list(), [
+            ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
+             '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; '
+             'SameSite=Strict')
         ])
