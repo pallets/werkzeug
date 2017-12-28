@@ -21,6 +21,10 @@ def _iter_module_files():
             continue
         filename = getattr(module, '__file__', None)
         if filename:
+            if (os.path.isdir(filename) and
+                os.path.exists(os.path.join(filename, "__init__.py"))):
+                filename = os.path.join(filename, "__init__.py")
+
             old = None
             while not os.path.isfile(filename):
                 old = filename
