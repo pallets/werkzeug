@@ -181,6 +181,8 @@ class TestFileSystemCache(CacheTests):
         assert len(cache_files) <= THRESHOLD
 
     def test_filesystemcache_clear(self, c):
+        # Makre sure we start out empty
+        c.clear()
         assert c.set('foo', 'bar')
         cache_files = os.listdir(c._path)
         assert len(cache_files) == 1
@@ -202,7 +204,7 @@ if redis is not None:
         ])
         def make_cache(self, xprocess, request):
             def preparefunc(cwd):
-                return 'server is now ready', ['redis-server']
+                return 'Ready to accept connections', ['redis-server']
 
             xprocess.ensure('redis_server', preparefunc)
             args, kwargs = request.param
