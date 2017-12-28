@@ -210,7 +210,6 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server):
     assert r.content == b'hello'
 
 
-<<<<<<< HEAD
 @pytest.mark.skipif(watchdog is None, reason='Watchdog not installed.')
 def test_reloader_reports_correct_file(tmpdir, dev_server):
     real_app = tmpdir.join('real_app.py')
