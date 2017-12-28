@@ -16,6 +16,8 @@ Version 0.14
   on exit on older Python versions.
 - Added support for ``filename*`` filename attributes according to
   RFC 2231
+- Resolved an issue where machine ID for the reloader PIN was not
+  read accurately on windows.
 
 
 Version 0.13
