@@ -8,7 +8,7 @@ Version 0.14
   ``Request.application``.
 - Added support for edge as browser.
 - Added support for platforms that lack ``SpooledTemporaryFile``.
-
+- Add support for etag handling through if-match
 
 Version 0.13
 ------------

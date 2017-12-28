@@ -570,6 +570,48 @@ def test_etag_response_mixin():
     assert response.content_length == 999
 
 
+def test_etag_response_412():
+    response = wrappers.Response('Hello World')
+    assert response.get_etag() == (None, None)
+    response.add_etag()
+    assert response.get_etag() == ('b10a8db164e0754105b7a99be72e3fe5', False)
+    assert not response.cache_control
+    response.cache_control.must_revalidate = True
+    response.cache_control.max_age = 60
+    response.headers['Content-Length'] = len(response.get_data())
+    assert response.headers['Cache-Control'] in ('must-revalidate, max-age=60',
+                                                 'max-age=60, must-revalidate')
+
+    assert 'date' not in response.headers
+    env = create_environ()
+    env.update({
+        'REQUEST_METHOD': 'GET',
+        'HTTP_IF_MATCH': response.get_etag()[0] + "xyz"
+    })
+    response.make_conditional(env)
+    assert 'date' in response.headers
+
+    # after the thing is invoked by the server as wsgi application
+    # (we're emulating this here), there must not be any entity
+    # headers left and the status code would have to be 412
+    resp = wrappers.Response.from_app(response, env)
+    assert resp.status_code == 412
+    assert 'content-length' not in resp.headers
+
+    # make sure date is not overriden
+    response = wrappers.Response('Hello World')
+    response.date = 1337
+    d = response.date
+    response.make_conditional(env)
+    assert response.date == d
+
+    # make sure content length is only set if missing
+    response = wrappers.Response('Hello World')
+    response.content_length = 999
+    response.make_conditional(env)
+    assert response.content_length == 999
+
+
 def test_range_request_basic():
     env = create_environ()
     response = wrappers.Response('Hello World')
