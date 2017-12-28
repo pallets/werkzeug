@@ -25,11 +25,11 @@ from werkzeug._compat import to_bytes
 try:
     __import__('pytest_xprocess')
 except ImportError:
-    @pytest.fixture
+    @pytest.fixture(scope='session')
     def subprocess():
         pytest.skip('pytest-xprocess not installed.')
 else:
-    @pytest.fixture
+    @pytest.fixture(scope='session')
     def subprocess(xprocess):
         return xprocess
 

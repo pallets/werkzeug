@@ -94,7 +94,7 @@ from hmac import new as hmac
 from time import time
 from hashlib import sha1 as _default_hash
 
-from werkzeug._compat import iteritems, text_type
+from werkzeug._compat import iteritems, text_type, to_bytes
 from werkzeug.urls import url_quote_plus, url_unquote_plus
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.sessions import ModificationTrackingDict
@@ -152,7 +152,7 @@ class SecureCookie(ModificationTrackingDict):
         # explicitly convert it into a bytestring because python 2.6
         # no longer performs an implicit string conversion on hmac
         if secret_key is not None:
-            secret_key = bytes(secret_key)
+            secret_key = to_bytes(secret_key, 'utf-8')
         self.secret_key = secret_key
         self.new = new
 

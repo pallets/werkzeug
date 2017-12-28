@@ -1,18 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-    tests
-    ~~~~~
-
-    Contains all test Werkzeug tests.
-
-    :copyright: (c) 2014 by Armin Ronacher.
-    :license: BSD, see LICENSE for more details.
-"""
-from __future__ import with_statement
-
-
 def strict_eq(x, y):
-    '''Equality test bypassing the implicit string conversion in Python 2'''
+    """Equality test bypassing the implicit string conversion in
+    Python 2."""
     __tracebackhide__ = True
     assert x == y
     assert issubclass(type(x), type(y)) or issubclass(type(y), type(x))

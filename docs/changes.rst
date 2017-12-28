@@ -8,7 +8,7 @@ This file lists all major changes in Werkzeug over the versions.
 For API breaking changes have a look at :ref:`api-changes`, they
 are listed there in detail.
 
-.. include:: ../CHANGES
+.. include:: ../CHANGES.rst
 
 .. _api-changes:
 

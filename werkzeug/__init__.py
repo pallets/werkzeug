@@ -19,7 +19,7 @@ import sys
 
 from werkzeug._compat import iteritems
 
-__version__ = '0.13-dev'
+__version__ = '0.14.dev'
 
 
 # This import magic raises concerns quite often which is why the implementation
@@ -124,7 +124,7 @@ class module(ModuleType):
     def __dir__(self):
         """Just show what we want to show."""
         result = list(new_module.__all__)
-        result.extend(('__file__', '__path__', '__doc__', '__all__',
+        result.extend(('__file__', '__doc__', '__all__',
                        '__docformat__', '__name__', '__path__',
                        '__package__', '__version__'))
         return result

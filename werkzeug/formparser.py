@@ -11,8 +11,15 @@
 """
 import re
 import codecs
-from io import BytesIO
-from tempfile import TemporaryFile
+
+# there are some platforms where SpooledTemporaryFile is not available.
+# In that case we need to provide a fallback.
+try:
+    from tempfile import SpooledTemporaryFile
+except ImportError:
+    from tempfile import TemporaryFile
+    SpooledTemporaryFile = None
+
 from itertools import chain, repeat, tee
 from functools import update_wrapper
 
@@ -38,7 +45,10 @@ _supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 def default_stream_factory(total_content_length, filename, content_type,
                            content_length=None):
     """The stream factory that is used per default."""
-    if total_content_length > 1024 * 500:
+    max_size = 1024 * 500
+    if SpooledTemporaryFile is not None:
+        return SpooledTemporaryFile(max_size=max_size, mode='wb+')
+    if total_content_length is None or total_content_length > max_size:
         return TemporaryFile('wb+')
     return BytesIO()
 
@@ -403,7 +413,9 @@ class MultiPartParser(object):
             disposition, extra = parse_options_header(disposition)
             transfer_encoding = self.get_part_encoding(headers)
             name = extra.get('name')
-            filename = extra.get('filename')
+
+            # Accept filename* to support non-ascii filenames as per rfc2231
+            filename = extra.get('filename') or extra.get('filename*')
 
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.

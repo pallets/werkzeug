@@ -135,7 +135,7 @@ class BaseCache(object):
         :param keys: The function accepts multiple keys as positional
                      arguments.
         """
-        return map(self.get, keys)
+        return [self.get(k) for k in keys]
 
     def get_dict(self, *keys):
         """Like :meth:`get_many` but return a dict::
@@ -265,6 +265,9 @@ class NullCache(BaseCache):
                             for API compatibility with other caches.
     """
 
+    def has(self, key):
+        return False
+
 
 class SimpleCache(BaseCache):
 
@@ -368,7 +371,7 @@ class MemcachedCache(BaseCache):
                     a :class:`memcache.Client` or a compatible client.
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`. A timeout of
-                            0 indicates taht the cache never expires.
+                            0 indicates that the cache never expires.
     :param key_prefix: a prefix that is added before all keys.  This makes it
                        possible to use the same memcached server for different
                        applications.  Keep in mind that
@@ -420,7 +423,8 @@ class MemcachedCache(BaseCache):
                 have_encoded_keys = True
             if _test_memcached_key(key):
                 key_mapping[encoded_key] = key
-        d = rv = self._client.get_multi(key_mapping.keys())
+        _keys = list(key_mapping)
+        d = rv = self._client.get_multi(_keys)
         if have_encoded_keys or self.key_prefix:
             rv = {}
             for key, value in iteritems(d):
@@ -560,6 +564,8 @@ class RedisCache(BaseCache):
     def __init__(self, host='localhost', port=6379, password=None,
                  db=0, default_timeout=300, key_prefix=None, **kwargs):
         BaseCache.__init__(self, default_timeout)
+        if host is None:
+            raise ValueError('RedisCache host parameter may not be None')
         if isinstance(host, string_types):
             try:
                 import redis
@@ -687,7 +693,8 @@ class FileSystemCache(BaseCache):
 
     :param cache_dir: the directory where cache files are stored.
     :param threshold: the maximum number of items the cache stores before
-                      it starts deleting some.
+                      it starts deleting some. A threshold value of 0
+                      indicates no threshold.
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`. A timeout of
                             0 indicates that the cache never expires.
@@ -696,6 +703,8 @@ class FileSystemCache(BaseCache):
 
     #: used for temporary files by the FileSystemCache
     _fs_transaction_suffix = '.__wz_cache'
+    #: keep amount of files in a cache element
+    _fs_count_file = '__wz_cache_count'
 
     def __init__(self, cache_dir, threshold=500, default_timeout=300,
                  mode=0o600):
@@ -710,6 +719,23 @@ class FileSystemCache(BaseCache):
             if ex.errno != errno.EEXIST:
                 raise
 
+        self._update_count(value=len(self._list_dir()))
+
+    @property
+    def _file_count(self):
+        return self.get(self._fs_count_file) or 0
+
+    def _update_count(self, delta=None, value=None):
+        # If we have no threshold, don't count files
+        if self._threshold == 0:
+            return
+
+        if delta:
+            new_count = self._file_count + delta
+        else:
+            new_count = value or 0
+        self.set(self._fs_count_file, new_count, mgmt_element=True)
+
     def _normalize_timeout(self, timeout):
         timeout = BaseCache._normalize_timeout(self, timeout)
         if timeout != 0:
@@ -719,31 +745,39 @@ class FileSystemCache(BaseCache):
     def _list_dir(self):
         """return a list of (fully qualified) cache filenames
         """
+        mgmt_files = [self._get_filename(name).split('/')[-1]
+                      for name in (self._fs_count_file,)]
         return [os.path.join(self._path, fn) for fn in os.listdir(self._path)
-                if not fn.endswith(self._fs_transaction_suffix)]
+                if not fn.endswith(self._fs_transaction_suffix)
+                and fn not in mgmt_files]
 
     def _prune(self):
-        entries = self._list_dir()
-        if len(entries) > self._threshold:
-            now = time()
-            for idx, fname in enumerate(entries):
-                try:
-                    remove = False
-                    with open(fname, 'rb') as f:
-                        expires = pickle.load(f)
-                    remove = (expires != 0 and expires <= now) or idx % 3 == 0
+        if self._threshold == 0 or not self._file_count > self._threshold:
+            return
 
-                    if remove:
-                        os.remove(fname)
-                except (IOError, OSError):
-                    pass
+        entries = self._list_dir()
+        now = time()
+        for idx, fname in enumerate(entries):
+            try:
+                remove = False
+                with open(fname, 'rb') as f:
+                    expires = pickle.load(f)
+                remove = (expires != 0 and expires <= now) or idx % 3 == 0
+
+                if remove:
+                    os.remove(fname)
+            except (IOError, OSError):
+                pass
+        self._update_count(value=len(self._list_dir()))
 
     def clear(self):
         for fname in self._list_dir():
             try:
                 os.remove(fname)
             except (IOError, OSError):
+                self._update_count(value=len(self._list_dir()))
                 return False
+        self._update_count(value=0)
         return True
 
     def _get_filename(self, key):
@@ -771,10 +805,17 @@ class FileSystemCache(BaseCache):
             return self.set(key, value, timeout)
         return False
 
-    def set(self, key, value, timeout=None):
+    def set(self, key, value, timeout=None, mgmt_element=False):
+        # Management elements have no timeout
+        if mgmt_element:
+            timeout = 0
+
+        # Don't prune on management element update, to avoid loop
+        else:
+            self._prune()
+
         timeout = self._normalize_timeout(timeout)
         filename = self._get_filename(key)
-        self._prune()
         try:
             fd, tmp = tempfile.mkstemp(suffix=self._fs_transaction_suffix,
                                        dir=self._path)
@@ -786,14 +827,20 @@ class FileSystemCache(BaseCache):
         except (IOError, OSError):
             return False
         else:
+            # Management elements should not count towards threshold
+            if not mgmt_element:
+                self._update_count(delta=1)
             return True
 
-    def delete(self, key):
+    def delete(self, key, mgmt_element=False):
         try:
             os.remove(self._get_filename(key))
         except (IOError, OSError):
             return False
         else:
+            # Management elements should not count towards threshold
+            if not mgmt_element:
+                self._update_count(delta=-1)
             return True
 
     def has(self, key):

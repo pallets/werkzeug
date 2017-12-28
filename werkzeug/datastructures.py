@@ -518,9 +518,9 @@ class MultiDict(TypeConversionDict):
         [1, 2, 3]
 
         :param key: The key to be looked up.
-        :param default: An iterable of default values.  It is either copied
-                        (in case it was a list) or converted into a list
-                        before returned.
+        :param default_list: An iterable of default values.  It is either copied
+                             (in case it was a list) or converted into a list
+                             before returned.
         :return: a :class:`list`
         """
         if key not in self:
@@ -1218,7 +1218,7 @@ class Headers(object):
             return
         self._list[idx + 1:] = [t for t in listiter if t[0].lower() != ikey]
 
-    def setdefault(self, key, value):
+    def setdefault(self, key, default):
         """Returns the value for the key if it is in the dict, otherwise it
         returns `default` and sets that value for `key`.
 
@@ -1228,8 +1228,8 @@ class Headers(object):
         """
         if key in self:
             return self[key]
-        self.set(key, value)
-        return value
+        self.set(key, default)
+        return default
 
     def __setitem__(self, key, value):
         """Like :meth:`set` but also supports index/slice based setting."""
@@ -2174,6 +2174,10 @@ class ETags(Container, Iterable):
         """Check if an etag is weak."""
         return etag in self._weak
 
+    def is_strong(self, etag):
+        """Check if an etag is strong."""
+        return etag in self._strong
+
     def contains_weak(self, etag):
         """Check if an etag is part of the set including weak and strong tags."""
         return self.is_weak(etag) or self.contains(etag)
@@ -2181,11 +2185,10 @@ class ETags(Container, Iterable):
     def contains(self, etag):
         """Check if an etag is part of the set ignoring weak tags.
         It is also possible to use the ``in`` operator.
-
         """
         if self.star_tag:
             return True
-        return etag in self._strong
+        return self.is_strong(etag)
 
     def contains_raw(self, etag):
         """When passed a quoted tag it will check if this tag is part of the

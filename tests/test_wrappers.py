@@ -21,7 +21,8 @@ from werkzeug._compat import iteritems
 from tests import strict_eq
 
 from werkzeug import wrappers
-from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable
+from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable, \
+    BadRequest
 from werkzeug.wsgi import LimitedStream, wrap_file
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
     ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
@@ -220,6 +221,24 @@ def test_stream_only_mixing():
     strict_eq(request.stream.read(), b'foo=blub+hehe')
 
 
+def test_request_application():
+    @wrappers.Request.application
+    def application(request):
+        return wrappers.Response('Hello World!')
+
+    @wrappers.Request.application
+    def failing_application(request):
+        raise BadRequest()
+
+    resp = wrappers.Response.from_app(application, create_environ())
+    assert resp.data == b'Hello World!'
+    assert resp.status_code == 200
+
+    resp = wrappers.Response.from_app(failing_application, create_environ())
+    assert b'Bad Request' in resp.data
+    assert resp.status_code == 400
+
+
 def test_base_response():
     # unicode
     response = wrappers.BaseResponse(u'öäü')
@@ -233,11 +252,12 @@ def test_base_response():
     # set cookie
     response = wrappers.BaseResponse()
     response.set_cookie('foo', value='bar', max_age=60, expires=0,
-                        path='/blub', domain='example.org')
+                        path='/blub', domain='example.org', samesite='Strict')
     strict_eq(response.headers.to_wsgi_list(), [
         ('Content-Type', 'text/plain; charset=utf-8'),
         ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
-         '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub')
+         '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; '
+         'SameSite=Strict')
     ])
 
     # delete cookie
@@ -535,6 +555,48 @@ def test_etag_response_mixin():
     # headers left and the status code would have to be 304
     resp = wrappers.Response.from_app(response, env)
     assert resp.status_code == 304
+    assert 'content-length' not in resp.headers
+
+    # make sure date is not overriden
+    response = wrappers.Response('Hello World')
+    response.date = 1337
+    d = response.date
+    response.make_conditional(env)
+    assert response.date == d
+
+    # make sure content length is only set if missing
+    response = wrappers.Response('Hello World')
+    response.content_length = 999
+    response.make_conditional(env)
+    assert response.content_length == 999
+
+
+def test_etag_response_412():
+    response = wrappers.Response('Hello World')
+    assert response.get_etag() == (None, None)
+    response.add_etag()
+    assert response.get_etag() == ('b10a8db164e0754105b7a99be72e3fe5', False)
+    assert not response.cache_control
+    response.cache_control.must_revalidate = True
+    response.cache_control.max_age = 60
+    response.headers['Content-Length'] = len(response.get_data())
+    assert response.headers['Cache-Control'] in ('must-revalidate, max-age=60',
+                                                 'max-age=60, must-revalidate')
+
+    assert 'date' not in response.headers
+    env = create_environ()
+    env.update({
+        'REQUEST_METHOD': 'GET',
+        'HTTP_IF_MATCH': response.get_etag()[0] + "xyz"
+    })
+    response.make_conditional(env)
+    assert 'date' in response.headers
+
+    # after the thing is invoked by the server as wsgi application
+    # (we're emulating this here), there must not be any entity
+    # headers left and the status code would have to be 412
+    resp = wrappers.Response.from_app(response, env)
+    assert resp.status_code == 412
     assert 'content-length' not in resp.headers
 
     # make sure date is not overriden
@@ -1145,7 +1207,8 @@ class TestSetCookie(object):
     def test_secure(self):
         response = wrappers.BaseResponse()
         response.set_cookie('foo', value='bar', max_age=60, expires=0,
-                            path='/blub', domain='example.org', secure=True)
+                            path='/blub', domain='example.org', secure=True,
+                            samesite=None)
         strict_eq(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
@@ -1156,7 +1219,7 @@ class TestSetCookie(object):
         response = wrappers.BaseResponse()
         response.set_cookie('foo', value='bar', max_age=60, expires=0,
                             path='/blub', domain='example.org', secure=False,
-                            httponly=True)
+                            httponly=True, samesite=None)
         strict_eq(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
@@ -1167,10 +1230,22 @@ class TestSetCookie(object):
         response = wrappers.BaseResponse()
         response.set_cookie('foo', value='bar', max_age=60, expires=0,
                             path='/blub', domain='example.org', secure=True,
-                            httponly=True)
+                            httponly=True, samesite=None)
         strict_eq(response.headers.to_wsgi_list(), [
             ('Content-Type', 'text/plain; charset=utf-8'),
             ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
              '01-Jan-1970 00:00:00 GMT; Max-Age=60; Secure; HttpOnly; '
              'Path=/blub')
+        ])
+
+    def test_samesite(self):
+        response = wrappers.BaseResponse()
+        response.set_cookie('foo', value='bar', max_age=60, expires=0,
+                            path='/blub', domain='example.org', secure=False,
+                            samesite='strict')
+        strict_eq(response.headers.to_wsgi_list(), [
+            ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Set-Cookie', 'foo=bar; Domain=example.org; Expires=Thu, '
+             '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; '
+             'SameSite=Strict')
         ])

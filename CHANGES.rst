@@ -1,36 +1,74 @@
 Werkzeug Changelog
 ==================
 
+Version 0.14
+------------
+
+- HTTP exceptions are now automatically caught by
+  ``Request.application``.
+- Added support for edge as browser.
+- Added support for platforms that lack ``SpooledTemporaryFile``.
+- Add support for etag handling through if-match
+- Added support for the SameSite cookie attribute.
+- Implemented ``has`` for ``NullCache``
+- ``get_multi`` on cache clients now returns lists all the time.
+- Improved the watchdog observer shutdown for the reloader to not crash
+  on exit on older Python versions.
+- Added support for ``filename*`` filename attributes according to
+  RFC 2231
+
+
 Version 0.13
 ------------
 
-unreleased
+Released on December 7th 2017
 
-- Raise ``TypeError`` when port is not an integer.
-- Fully deprecate ``werkzeug.script``. Use `Click <http://click.pocoo.org>`_
-  instead.
-- ``response.age`` is parsed as a ``timedelta``. Previously, it was incorrectly
-  treated as a ``datetime``. The header value is an integer number of seconds,
-  not a date string. (``#414``)
-- Fix a bug in ``TypeConversionDict`` where errors are not propagated when
-  using the converter. (``#1102``)
+- **Deprecate support for Python 2.6 and 3.3.** CI tests will not run
+  for these versions, and support will be dropped completely in the next
+  version. (`pallets/meta#24`_)
+- Raise ``TypeError`` when port is not an integer. (`#1088`_)
+- Fully deprecate ``werkzeug.script``. Use `Click`_ instead. (`#1090`_)
+- ``response.age`` is parsed as a ``timedelta``. Previously, it was
+  incorrectly treated as a ``datetime``. The header value is an integer
+  number of seconds, not a date string. (`#414`_)
+- Fix a bug in ``TypeConversionDict`` where errors are not propagated
+  when using the converter. (`#1102`_)
 - ``Authorization.qop`` is a string instead of a set, to comply with
-  RFC 2617. (``#984``)
-- An exception is raised when an encoded cookie is larger than, by default,
-  4093 bytes. Browsers may silently ignore cookies larger than this.
-  ``BaseResponse`` has a new attribute ``max_cookie_size`` and ``dump_cookie``
-  has a new argument ``max_size`` to configure this. (`#780`_, `#1109`_)
+  RFC 2617. (`#984`_)
+- An exception is raised when an encoded cookie is larger than, by
+  default, 4093 bytes. Browsers may silently ignore cookies larger than
+  this. ``BaseResponse`` has a new attribute ``max_cookie_size`` and
+  ``dump_cookie`` has a new argument ``max_size`` to configure this.
+  (`#780`_, `#1109`_)
 - Fix a TypeError in ``werkzeug.contrib.lint.GuardedIterator.close``.
-- ``BaseResponse.calculate_content_length`` now correctly works for unicode
-  responses on Python 3. It first encodes using ``iter_encoded``.
-- ``Request.stream`` is limited to ``Request.max_content_length`` if it is set.
-  Otherwise, keeps the previous behavior of returning empty streams when
-  ``Content-Length`` is not set. This allows chunk-encoded requests while
-  guarding against infinite streams. (`#1126`_)
+  (`#1116`_)
+- ``BaseResponse.calculate_content_length`` now correctly works for
+  Unicode responses on Python 3. It first encodes using
+  ``iter_encoded``. (`#705`_)
+- Secure cookie contrib works with string secret key on Python 3.
+  (`#1205`_)
+- Shared data middleware accepts a list instead of a dict of static
+  locations to preserve lookup order. (`#1197`_)
+- HTTP header values without encoding can contain single quotes.
+  (`#1208`_)
+- The built-in dev server supports receiving requests with chunked
+  transfer encoding. (`#1198`_)
 
-.. _`#780`: https://github.com/pallets/werkzeug/pull/780
-.. _`#1109`: https://github.com/pallets/werkzeug/pull/1109
-.. _`#1126`: https://github.com/pallets/werkzeug/pull/1126
+.. _Click: https://www.palletsprojects.com/p/click/
+.. _pallets/meta#24: https://github.com/pallets/meta/issues/24
+.. _#414: https://github.com/pallets/werkzeug/pull/414
+.. _#705: https://github.com/pallets/werkzeug/pull/705
+.. _#780: https://github.com/pallets/werkzeug/pull/780
+.. _#984: https://github.com/pallets/werkzeug/pull/984
+.. _#1088: https://github.com/pallets/werkzeug/pull/1088
+.. _#1090: https://github.com/pallets/werkzeug/pull/1090
+.. _#1102: https://github.com/pallets/werkzeug/pull/1102
+.. _#1109: https://github.com/pallets/werkzeug/pull/1109
+.. _#1116: https://github.com/pallets/werkzeug/pull/1116
+.. _#1197: https://github.com/pallets/werkzeug/pull/1197
+.. _#1198: https://github.com/pallets/werkzeug/pull/1198
+.. _#1205: https://github.com/pallets/werkzeug/pull/1205
+.. _#1208: https://github.com/pallets/werkzeug/pull/1208
 
 
 Version 0.12.2

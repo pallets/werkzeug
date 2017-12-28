@@ -62,12 +62,30 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          '^_`abcdefghijklmnopqrstuvwxyz|~')
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
-_quoted_string_re = r'"[^"\\]*(?:\\.[^"\\]*)*"'
-_option_header_piece_re = re.compile(
-    r';\s*(%s|[^\s;,=\*]+)\s*'
-    r'(?:\*?=\s*(?:([^\s]+?)\'([^\s]*?)\')?(%s|[^;,]+)?)?\s*' %
-    (_quoted_string_re, _quoted_string_re)
-)
+_option_header_piece_re = re.compile(r'''
+    ;\s*
+    (?P<key>
+        "[^"\\]*(?:\\.[^"\\]*)*"  # quoted string
+    |
+        [^\s;,=*]+  # token
+    )
+    \s*
+    (?:  # optionally followed by =value
+        (?:  # equals sign, possibly with encoding
+            \*\s*=\s*  # * indicates extended notation
+            (?P<encoding>[^\s]+?)
+            '(?P<language>[^\s]*?)'
+        |
+            =\s*  # basic notation
+        )
+        (?P<value>
+            "[^"\\]*(?:\\.[^"\\]*)*"  # quoted string
+        |
+            [^;,]+  # token
+        )?
+    )?
+    \s*
+''', flags=re.VERBOSE)
 _option_header_start_mime_type = re.compile(r',\s*([^;,\s]+)([;,]\s*.+)?')
 
 _entity_headers = frozenset([
@@ -285,7 +303,7 @@ def parse_list_header(value):
 def parse_dict_header(value, cls=dict):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
     convert them into a python dict (or any other mapping object created from
-    the type with a dict like interface provided by the `cls` arugment):
+    the type with a dict like interface provided by the `cls` argument):
 
     >>> d = parse_dict_header('foo="is a fish", bar="as well"')
     >>> type(d) is dict
@@ -881,6 +899,13 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
                 # entity-tags for If-None-Match"
                 unmodified = if_none_match.contains_weak(etag)
 
+            # https://tools.ietf.org/html/rfc7232#section-3.1
+            # "Origin server MUST use the strong comparison function when
+            # comparing entity-tags for If-Match"
+            if_match = parse_etags(environ.get('HTTP_IF_MATCH'))
+            if if_match:
+                unmodified = not if_match.is_strong(etag)
+
     return not unmodified
 
 
@@ -981,7 +1006,8 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
 
 def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                 domain=None, secure=False, httponly=False,
-                charset='utf-8', sync_expires=True, max_size=4093):
+                charset='utf-8', sync_expires=True, max_size=4093,
+                samesite=None):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -1020,6 +1046,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     :param max_size: Warn if the final header value exceeds this size. The
         default, 4093, should be safely `supported by most browsers
         <cookie_>`_. Set to 0 to disable this check.
+    :param samesite: Limits the scope of the cookie such that it will only
+                     be attached to requests if those requests are "same-site".
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
     """
@@ -1037,6 +1065,10 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
     elif max_age is not None and sync_expires:
         expires = to_bytes(cookie_date(time() + max_age))
 
+    samesite = samesite.title() if samesite else None
+    if samesite not in ('Strict', 'Lax', None):
+        raise ValueError("invalid SameSite value; must be 'Strict', 'Lax' or None")
+
     buf = [key + b'=' + _cookie_quote(value)]
 
     # XXX: In theory all of these parameters that are not marked with `None`
@@ -1047,7 +1079,8 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
                     (b'Max-Age', max_age, False),
                     (b'Secure', secure, None),
                     (b'HttpOnly', httponly, None),
-                    (b'Path', path, False)):
+                    (b'Path', path, False),
+                    (b'SameSite', samesite, False)):
         if q is None:
             if v:
                 buf.append(k)

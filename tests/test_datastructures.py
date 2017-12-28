@@ -825,10 +825,10 @@ class TestImmutableList(object):
     storage_class = datastructures.ImmutableList
 
     def test_list_hashable(self):
-        t = (1, 2, 3, 4)
-        l = self.storage_class(t)
-        assert hash(t) == hash(l)
-        assert t != l
+        data = (1, 2, 3, 4)
+        store = self.storage_class(data)
+        assert hash(data) == hash(store)
+        assert data != store
 
 
 def make_call_asserter(func=None):

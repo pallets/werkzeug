@@ -280,6 +280,14 @@ class TestHTTPUtility(object):
             ('form-data', {'name': u'\u016an\u012dc\u014dde\u033d',
                            'filename': 'some_file.txt'})
 
+    def test_parse_options_header_value_with_quotes(self):
+        assert http.parse_options_header(
+            'form-data; name="file"; filename="t\'es\'t.txt"'
+        ) == ('form-data', {'name': 'file', 'filename': "t'es't.txt"})
+        assert http.parse_options_header(
+            'form-data; name="file"; filename*=UTF-8\'\'"\'🐍\'.txt"'
+        ) == ('form-data', {'name': 'file', 'filename': u"'🐍'.txt"})
+
     def test_parse_options_header_broken_values(self):
         # Issue #995
         assert http.parse_options_header(' ') == ('', {})
@@ -431,6 +439,15 @@ class TestHTTPUtility(object):
         assert len(recwarn) == 1
         w = recwarn.pop()
         assert 'the limit is 512 bytes' in str(w.message)
+
+    @pytest.mark.parametrize('input, expected', [
+        ('strict', 'foo=bar; Path=/; SameSite=Strict'),
+        ('lax', 'foo=bar; Path=/; SameSite=Lax'),
+        (None, 'foo=bar; Path=/'),
+    ])
+    def test_cookie_samesite_attribute(self, input, expected):
+        val = http.dump_cookie('foo', 'bar', samesite=input)
+        strict_eq(val, expected)
 
 
 class TestRange(object):

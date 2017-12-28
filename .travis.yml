@@ -1,40 +1,28 @@
 os: linux
 sudo: false
 language: python
-python: 3.6
-env: TOXENV=normal-hypothesis,codecov
 
 matrix:
   include:
     - python: 3.6
-      env: TOXENV=normal-hypothesis,codecov
+      env: TOXENV=hypothesis-uwsgi,codecov,stylecheck,docs-html
     - python: 3.5
-      env: TOXENV=normal,codecov
+      env: TOXENV=py,codecov
     - python: 3.4
-      env: TOXENV=normal,codecov
-    - python: 3.3
-      env: TOXENV=normal,codecov
+      env: TOXENV=py,codecov
     - python: 2.7
-      env: TOXENV=normal,codecov
-    - python: 2.6
-      env: TOXENV=normal,codecov
+      env: TOXENV=py,codecov
     - python: pypy
-      env: TOXENV=pypy-normal,codecov
+      env: TOXENV=py,codecov
     - python: nightly
-      env: TOXENV=normal
-    - python: 3.6
-      env: TOXENV=uwsgi,codecov
-    - python: 3.6
-      env: TOXENV=stylecheck
-    - python: 3.6
-      env: TOXENV=docs-html
+      env: TOXENV=py
     - os: osx
       language: generic
-      env: TOXENV=normal
+      env: TOXENV=py
   allow_failures:
     - os: osx
       language: generic
-      env: TOXENV=normal
+      env: TOXENV=py
   fast_finish: true
 
 before_install:
@@ -74,15 +62,7 @@ cache:
 branches:
   only:
     - master
-    - auto
     - /^.*-maintenance$/
 
 notifications:
   email: false
-  irc:
-    channels:
-      - "chat.freenode.net#pocoo"
-    on_success: change
-    on_failure: always
-    use_notice: true
-    skip_join: true

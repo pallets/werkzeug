@@ -1,9 +1,13 @@
-Werkzeug is written and maintained by the Werkzeug Team and various
-contributors:
+Werkzeug is developed and maintained by the Pallets team and community
+contributors. It was created by Armin Ronacher. The core maintainers
+are:
 
-Project Leader / Developer:
+- Armin Ronacher (mitsuhiko)
+- Marcus Unterwaditzer (untitaker)
+- Adrian Mönnich (ThiefMaster)
+- David Lord (davidism)
 
-- Armin Ronacher <armin.ronacher@active-4.com>
+A full list of contributors is available from git with:
 
 - Georg Brandl
 - Leif K-Brooks <eurleif@gmail.com>
@@ -39,22 +43,18 @@ Project Leader / Developer:
 - Nils Steinger
 - Mark Szymanski
 
-Contributors of code for werkzeug/examples are:
-
-- Itay Neeman <itay@neeman.net>
-
-The SSL related parts of the Werkzeug development server are partially
-taken from Paste.  Same thing is true for the range support which comes
-from WebOb which is a Paste project.  The original code is MIT licensed which
-is largely compatible with the modfied BSD license.  The following copyrights
+The SSL parts of the Werkzeug development server are partially taken
+from Paste. The same is true for the range support which comes from
+WebOb, a Paste project. The original code is MIT licensed and largely
+compatible with the BSD 3-clause license. The following copyrights
 apply:
 
 - (c) 2005 Ian Bicking and contributors
 - (c) 2005 Clark C. Evans
 
-The rename() function from the posixemulation was taken almost unmodified
-from the Trac project's utility module.  The original code is BSD licensed
-with the following copyrights from that module:
+The rename() function from the posixemulation was taken almost
+unmodified from the Trac project's utility module. The original code is
+BSD licensed with the following copyrights from that module:
 
 - (c) 2003-2009 Edgewall Software
 - (c) 2003-2006 Jonas Borgström <jonas@edgewall.com>

@@ -40,30 +40,31 @@ def test_shared_data_middleware(tmpdir):
     with open(path.join(test_dir, to_native(u'äöü', 'utf-8')), 'w') as test_file:
         test_file.write(u'FOUND')
 
-    app = wsgi.SharedDataMiddleware(null_application, {
-        '/':        path.join(path.dirname(__file__), 'res'),
-        '/sources': path.join(path.dirname(__file__), 'res'),
-        '/pkg':     ('werkzeug.debug', 'shared'),
-        '/foo':     test_dir
-    })
+    for t in [list, dict]:
+        app = wsgi.SharedDataMiddleware(null_application, t([
+            ('/',        path.join(path.dirname(__file__), 'res')),
+            ('/sources', path.join(path.dirname(__file__), 'res')),
+            ('/pkg',     ('werkzeug.debug', 'shared')),
+            ('/foo',     test_dir)
+        ]))
 
-    for p in '/test.txt', '/sources/test.txt', '/foo/äöü':
-        app_iter, status, headers = run_wsgi_app(app, create_environ(p))
-        assert status == '200 OK'
+        for p in '/test.txt', '/sources/test.txt', '/foo/äöü':
+            app_iter, status, headers = run_wsgi_app(app, create_environ(p))
+            assert status == '200 OK'
+            with closing(app_iter) as app_iter:
+                data = b''.join(app_iter).strip()
+            assert data == b'FOUND'
+
+        app_iter, status, headers = run_wsgi_app(
+            app, create_environ('/pkg/debugger.js'))
         with closing(app_iter) as app_iter:
-            data = b''.join(app_iter).strip()
-        assert data == b'FOUND'
+            contents = b''.join(app_iter)
+        assert b'$(function() {' in contents
 
-    app_iter, status, headers = run_wsgi_app(
-        app, create_environ('/pkg/debugger.js'))
-    with closing(app_iter) as app_iter:
-        contents = b''.join(app_iter)
-    assert b'$(function() {' in contents
-
-    app_iter, status, headers = run_wsgi_app(
-        app, create_environ('/missing'))
-    assert status == '404 NOT FOUND'
-    assert b''.join(app_iter).strip() == b'NOT FOUND'
+        app_iter, status, headers = run_wsgi_app(
+            app, create_environ('/missing'))
+        assert status == '404 NOT FOUND'
+        assert b''.join(app_iter).strip() == b'NOT FOUND'
 
 
 def test_dispatchermiddleware():

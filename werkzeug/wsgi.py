@@ -166,12 +166,16 @@ def get_host(environ, trusted_hosts=None):
 
 def get_content_length(environ):
     """Returns the content length from the WSGI environment as
-    integer. If it's not available ``None`` is returned.
+    integer. If it's not available or chunked transfer encoding is used,
+    ``None`` is returned.
 
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the content length from.
     """
+    if environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked':
+        return None
+
     content_length = environ.get('CONTENT_LENGTH')
     if content_length is not None:
         try:
@@ -180,23 +184,22 @@ def get_content_length(environ):
             pass
 
 
-def get_input_stream(environ, safe_fallback=True, max_content_length=None):
+def get_input_stream(environ, safe_fallback=True):
     """Returns the input stream from the WSGI environment and wraps it
-    in the most sensible way possible.  The stream returned is not the
+    in the most sensible way possible. The stream returned is not the
     raw WSGI stream in most cases but one that is safe to read from
     without taking into account the content length.
 
-    .. versionchanged:: 0.13
-        Added the ``max_content_length`` parameter.
+    If content length is not set, the stream will be empty for safety reasons.
+    If the WSGI server supports chunked or infinite streams, it should set
+    the ``wsgi.input_terminated`` value in the WSGI environ to indicate that.
 
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the stream from.
-    :param safe_fallback: use an empty stream as a safe fallback when neither
-        the environ content length nor the max is set. Disabling this allows
-        infinite streams, which can be a denial-of-service risk.
-    :param max_content_length: if the environ does not set ``Content-Length``
-        or it is greater than this value, the stream is limited to this length.
+    :param safe_fallback: use an empty stream as a safe fallback when the
+        content length is not set. Disabling this allows infinite streams,
+        which can be a denial-of-service risk.
     """
     stream = environ['wsgi.input']
     content_length = get_content_length(environ)
@@ -207,19 +210,14 @@ def get_input_stream(environ, safe_fallback=True, max_content_length=None):
     if environ.get('wsgi.input_terminated'):
         return stream
 
-    # If the request doesn't specify a content length and there is no max
-    # length set, returning the stream is potentially dangerous because it
-    # could be infinite, maliciously or not. If safe_fallback is true, return
-    # an empty stream for safety instead.
-    if content_length is None and max_content_length is None:
+    # If the request doesn't specify a content length, returning the stream is
+    # potentially dangerous because it could be infinite, malicious or not. If
+    # safe_fallback is true, return an empty stream instead for safety.
+    if content_length is None:
         return safe_fallback and _empty_stream or stream
 
-    # Otherwise limit the stream to the content length or max length,
-    # whichever is lower.
-    if max_content_length is not None:
-        return LimitedStream(stream, min(content_length, max_content_length))
-    else:
-        return LimitedStream(stream, content_length)
+    # Otherwise limit the stream to the content length
+    return LimitedStream(stream, content_length)
 
 
 def get_query_string(environ):
@@ -490,7 +488,7 @@ class SharedDataMiddleware(object):
 
     :param app: the application to wrap.  If you don't want to wrap an
                 application you can pass it :exc:`NotFound`.
-    :param exports: a dict of exported files and folders.
+    :param exports: a list or dict of exported files and folders.
     :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
     :param fallback_mimetype: the fallback mimetype for unknown files.
     :param cache: enable or disable caching headers.
@@ -500,10 +498,12 @@ class SharedDataMiddleware(object):
     def __init__(self, app, exports, disallow=None, cache=True,
                  cache_timeout=60 * 60 * 12, fallback_mimetype='text/plain'):
         self.app = app
-        self.exports = {}
+        self.exports = []
         self.cache = cache
         self.cache_timeout = cache_timeout
-        for key, value in iteritems(exports):
+        if hasattr(exports, 'items'):
+            exports = iteritems(exports)
+        for key, value in exports:
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
             elif isinstance(value, string_types):
@@ -513,7 +513,7 @@ class SharedDataMiddleware(object):
                     loader = self.get_directory_loader(value)
             else:
                 raise TypeError('unknown def %r' % value)
-            self.exports[key] = loader
+            self.exports.append((key, loader))
         if disallow is not None:
             from fnmatch import fnmatch
             self.is_allowed = lambda x: not fnmatch(x, disallow)
@@ -594,7 +594,7 @@ class SharedDataMiddleware(object):
         path = '/' + '/'.join(x for x in cleaned_path.split('/')
                               if x and x != '..')
         file_loader = None
-        for search_path, loader in iteritems(self.exports):
+        for search_path, loader in self.exports:
             if search_path == path:
                 real_filename, file_loader = loader(None)
                 if file_loader is not None:

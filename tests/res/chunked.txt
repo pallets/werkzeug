@@ -1,0 +1,25 @@
+94
+----------------------------898239224156930639461866
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+
+f
+This is a test
+
+2
+
+
+65
+----------------------------898239224156930639461866
+Content-Disposition: form-data; name="type"
+
+
+a
+text/plain
+3a
+
+----------------------------898239224156930639461866--
+
+0
+

@@ -8,10 +8,10 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import os
-
+import errno
 import pytest
 
+from werkzeug._compat import text_type
 from werkzeug.contrib import cache
 
 try:
@@ -33,6 +33,7 @@ except ImportError:
 
 class CacheTests(object):
     _can_use_fast_sleep = True
+    _guaranteed_deletes = False
 
     @pytest.fixture
     def fast_sleep(self, monkeypatch):
@@ -80,7 +81,7 @@ class CacheTests(object):
     def test_generic_get_many(self, c):
         assert c.set('foo', ['bar'])
         assert c.set('spam', 'eggs')
-        assert list(c.get_many('foo', 'spam')) == [['bar'], 'eggs']
+        assert c.get_many('foo', 'spam') == [['bar'], 'eggs']
 
     def test_generic_set_many(self, c):
         assert c.set_many({'foo': 'bar', 'spam': ['eggs']})
@@ -127,7 +128,8 @@ class CacheTests(object):
         fast_sleep(3)
         # timeout of zero means no timeout
         assert c.get('foo') == 'bar'
-        assert c.get('baz') is None
+        if self._guaranteed_deletes:
+            assert c.get('baz') is None
 
     def test_generic_has(self, c):
         assert c.has('foo') in (False, 0)
@@ -141,6 +143,8 @@ class CacheTests(object):
 
 
 class TestSimpleCache(CacheTests):
+    _guaranteed_deletes = True
+
     @pytest.fixture
     def make_cache(self):
         return cache.SimpleCache
@@ -156,6 +160,8 @@ class TestSimpleCache(CacheTests):
 
 
 class TestFileSystemCache(CacheTests):
+    _guaranteed_deletes = True
+
     @pytest.fixture
     def make_cache(self, tmpdir):
         return lambda **kw: cache.FileSystemCache(cache_dir=str(tmpdir), **kw)
@@ -167,16 +173,44 @@ class TestFileSystemCache(CacheTests):
         for i in range(2 * THRESHOLD):
             assert c.set(str(i), i)
 
-        cache_files = os.listdir(c._path)
-        assert len(cache_files) <= THRESHOLD
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files <= THRESHOLD
 
     def test_filesystemcache_clear(self, c):
         assert c.set('foo', 'bar')
-        cache_files = os.listdir(c._path)
-        assert len(cache_files) == 1
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files == 1
         assert c.clear()
-        cache_files = os.listdir(c._path)
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files == 0
+        cache_files = c._list_dir()
         assert len(cache_files) == 0
+
+    def test_no_threshold(self, make_cache):
+        THRESHOLD = 0
+        c = make_cache(threshold=THRESHOLD)
+
+        for i in range(10):
+            assert c.set(str(i), i)
+
+        cache_files = c._list_dir()
+        assert len(cache_files) == 10
+
+        # File count is not maintained with threshold = 0
+        nof_cache_files = c.get(c._fs_count_file)
+        assert nof_cache_files == None
+
+    def test_count_file_accuracy(self, c):
+        assert c.set('foo', 'bar')
+        assert c.set('moo', 'car')
+        c.add('moo', 'tar')
+        assert c.get(c._fs_count_file) == 2
+        assert c.add('too', 'far')
+        assert c.get(c._fs_count_file) == 3
+        assert c.delete('moo')
+        assert c.get(c._fs_count_file) == 2
+        assert c.clear()
+        assert c.get(c._fs_count_file) == 0
 
 
 # don't use pytest.mark.skipif on subclasses
@@ -184,18 +218,27 @@ class TestFileSystemCache(CacheTests):
 # skip happens in requirements fixture instead
 class TestRedisCache(CacheTests):
     _can_use_fast_sleep = False
+    _guaranteed_deletes = True
 
     @pytest.fixture(scope='class', autouse=True)
-    def requirements(self, xprocess):
+    def requirements(self, subprocess):
         if redis is None:
             pytest.skip('Python package "redis" is not installed.')
 
         def prepare(cwd):
-            return 'server is now ready', ['redis-server']
+            return '[Rr]eady to accept connections', ['redis-server']
 
-        xprocess.ensure('redis_server', prepare)
+        try:
+            subprocess.ensure('redis_server', prepare)
+        except IOError as e:
+            # xprocess raises FileNotFoundError
+            if e.errno == errno.ENOENT:
+                pytest.skip('Redis is not installed.')
+            else:
+                raise
+
         yield
-        xprocess.getinfo('redis_server').terminate()
+        subprocess.getinfo('redis_server').terminate()
 
     @pytest.fixture(params=(None, False, True))
     def make_cache(self, request):
@@ -219,24 +262,37 @@ class TestRedisCache(CacheTests):
         assert c._client.set(c.key_prefix + 'foo', '42')
         assert c.get('foo') == 42
 
+    def test_empty_host(self):
+        with pytest.raises(ValueError) as exc_info:
+            cache.RedisCache(host=None)
+        assert text_type(exc_info.value) == 'RedisCache host parameter may not be None'
+
 
 class TestMemcachedCache(CacheTests):
     _can_use_fast_sleep = False
 
     @pytest.fixture(scope='class', autouse=True)
-    def requirements(self, xprocess):
+    def requirements(self, subprocess):
         if memcache is None:
             pytest.skip(
-                'Python packages for memcache is not installed. Need one of '
+                'Python package for memcache is not installed. Need one of '
                 '"pylibmc", "google.appengine", or "memcache".'
             )
 
         def prepare(cwd):
             return '', ['memcached']
 
-        xprocess.ensure('memcached', prepare)
+        try:
+            subprocess.ensure('memcached', prepare)
+        except IOError as e:
+            # xprocess raises FileNotFoundError
+            if e.errno == errno.ENOENT:
+                pytest.skip('Memcached is not installed.')
+            else:
+                raise
+
         yield
-        xprocess.getinfo('memcached').terminate()
+        subprocess.getinfo('memcached').terminate()
 
     @pytest.fixture
     def make_cache(self):

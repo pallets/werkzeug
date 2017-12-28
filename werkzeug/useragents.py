@@ -48,6 +48,7 @@ class UserAgentParser(object):
         ('ask jeeves', 'ask'),
         (r'aol|america\s+online\s+browser', 'aol'),
         ('opera', 'opera'),
+        ('edge', 'edge'),
         ('chrome', 'chrome'),
         ('seamonkey', 'seamonkey'),
         ('firefox|firebird|phoenix|iceweasel', 'firefox'),
@@ -117,16 +118,22 @@ class UserAgent(object):
        -   `aix`
        -   `amiga`
        -   `android`
+       -   `blackberry`
        -   `bsd`
        -   `chromeos`
+       -   `dragonflybsd`
+       -   `freebsd`
        -   `hpux`
-       -   `iphone`
        -   `ipad`
+       -   `iphone`
        -   `irix`
        -   `linux`
        -   `macos`
+       -   `netbsd`
+       -   `openbsd`
        -   `sco`
        -   `solaris`
+       -   `symbian`
        -   `wii`
        -   `windows`
 
@@ -137,6 +144,8 @@ class UserAgent(object):
 
         -   `aol` *
         -   `ask` *
+        -   `baidu` *
+        -   `bing` *
         -   `camino`
         -   `chrome`
         -   `firefox`
@@ -146,6 +155,7 @@ class UserAgent(object):
         -   `konqueror`
         -   `links`
         -   `lynx`
+        -   `mozilla`
         -   `msie`
         -   `msn`
         -   `netscape`
@@ -155,7 +165,7 @@ class UserAgent(object):
         -   `webkit`
         -   `yahoo` *
 
-        (Browsers maked with a star (``*``) are crawlers.)
+        (Browsers marked with a star (``*``) are crawlers.)
 
     .. attribute:: version
 
