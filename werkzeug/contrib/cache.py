@@ -265,6 +265,9 @@ class NullCache(BaseCache):
                             for API compatibility with other caches.
     """
 
+    def has(self, key):
+        return False
+
 
 class SimpleCache(BaseCache):
 

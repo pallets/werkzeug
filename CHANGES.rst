@@ -10,6 +10,7 @@ Version 0.14
 - Added support for platforms that lack ``SpooledTemporaryFile``.
 - Add support for etag handling through if-match
 - Added support for the SameSite cookie attribute.
+- Implemented ``has`` for ``NullCache``
 
 
 Version 0.13
