@@ -181,14 +181,16 @@ class TestFileSystemCache(CacheTests):
         assert len(cache_files) <= THRESHOLD
 
     def test_filesystemcache_clear(self, c):
-        # Makre sure we start out empty
-        c.clear()
         assert c.set('foo', 'bar')
         cache_files = os.listdir(c._path)
-        assert len(cache_files) == 1
+        # count = 2 because of the count file
+        assert len(cache_files) == 2
         assert c.clear()
+
+        # The only file remaining is the count file
         cache_files = os.listdir(c._path)
-        assert len(cache_files) == 0
+        assert os.listdir(c._path) == [
+            os.path.basename(c._get_filename(c._fs_count_file))]
 
 
 # Don't use pytest marker
