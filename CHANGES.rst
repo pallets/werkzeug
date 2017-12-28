@@ -18,6 +18,7 @@ Version 0.14
   RFC 2231
 - Resolved an issue where machine ID for the reloader PIN was not
   read accurately on windows.
+- Added a workaround for syntax errors in init files in the reloader.
 
 
 Version 0.13
