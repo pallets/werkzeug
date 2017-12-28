@@ -9,6 +9,7 @@ Version 0.14
 - Added support for edge as browser.
 - Added support for platforms that lack ``SpooledTemporaryFile``.
 - Added support for the SameSite cookie attribute.
+- Added ``werkzeug.wsgi.ProxyMiddleware``
 
 
 Version 0.13

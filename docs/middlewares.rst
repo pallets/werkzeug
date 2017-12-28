@@ -12,6 +12,8 @@ implemented as a WSGI middleware.
 .. autoclass:: SharedDataMiddleware
    :members: is_allowed
 
+.. autoclass:: ProxyMiddleware
+
 .. autoclass:: DispatcherMiddleware
 
 Also there's the …
