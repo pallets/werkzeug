@@ -12,6 +12,7 @@ import os
 import ssl
 import sys
 import subprocess
+import sys
 import textwrap
 
 
@@ -34,7 +35,7 @@ import requests
 import requests.exceptions
 import pytest
 
-from werkzeug import __version__ as version, serving
+from werkzeug import __version__ as version, serving, _reloader
 
 
 def test_serving(dev_server):
@@ -209,6 +210,7 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server):
     assert r.content == b'hello'
 
 
+<<<<<<< HEAD
 @pytest.mark.skipif(watchdog is None, reason='Watchdog not installed.')
 def test_reloader_reports_correct_file(tmpdir, dev_server):
     real_app = tmpdir.join('real_app.py')
@@ -249,6 +251,16 @@ def test_reloader_reports_correct_file(tmpdir, dev_server):
     r = requests.get(server.url)
     assert r.status_code == 200
     assert r.content == b'hello'
+
+
+def test_windows_get_args_for_reloading(monkeypatch, tmpdir):
+    test_py_exe = r'C:\Users\test\AppData\Local\Programs\Python\Python36\python.exe'
+    monkeypatch.setattr(os, 'name', 'nt')
+    monkeypatch.setattr(sys, 'executable', test_py_exe)
+    test_exe = tmpdir.mkdir('test').join('test.exe')
+    monkeypatch.setattr(sys, 'argv', [test_exe.strpath, 'run'])
+    rv = _reloader._get_args_for_reloading()
+    assert rv == [test_exe.strpath, 'run']
 
 
 def test_monkeypached_sleep(tmpdir):

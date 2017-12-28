@@ -19,6 +19,7 @@ Version 0.14
 - Resolved an issue where machine ID for the reloader PIN was not
   read accurately on windows.
 - Added a workaround for syntax errors in init files in the reloader.
+- Added support for using the reloader with console scripts on windows.
 
 
 Version 0.13
@@ -72,7 +73,6 @@ Released on December 7th 2017
 .. _#1198: https://github.com/pallets/werkzeug/pull/1198
 .. _#1205: https://github.com/pallets/werkzeug/pull/1205
 .. _#1208: https://github.com/pallets/werkzeug/pull/1208
-
 
 Version 0.12.2
 --------------
