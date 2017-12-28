@@ -413,7 +413,9 @@ class MultiPartParser(object):
             disposition, extra = parse_options_header(disposition)
             transfer_encoding = self.get_part_encoding(headers)
             name = extra.get('name')
-            filename = extra.get('filename')
+
+            # Accept filename* to support non-ascii filenames as per rfc2231
+            filename = extra.get('filename') or extra.get('filename*')
 
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.
