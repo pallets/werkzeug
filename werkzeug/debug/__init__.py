@@ -92,7 +92,11 @@ def get_machine_id():
                 with wr.OpenKey(wr.HKEY_LOCAL_MACHINE,
                                 'SOFTWARE\\Microsoft\\Cryptography', 0,
                                 wr.KEY_READ | wr.KEY_WOW64_64KEY) as rk:
-                    return wr.QueryValueEx(rk, 'MachineGuid')[0]
+                    machineGuid, wrType = wr.QueryValueEx(rk, 'MachineGuid')
+                    if (wrType == wr.REG_SZ):
+                        return machineGuid.encode('utf-8')
+                    else:
+                        return machineGuid
             except WindowsError:
                 pass
 
