@@ -12,6 +12,7 @@ import os
 import ssl
 import sys
 import textwrap
+import time
 import subprocess
 
 
@@ -240,15 +241,17 @@ def test_reloader_reports_correct_file(tmpdir, dev_server):
     real_app_binary.write('anything is fine here')
     server.wait_for_reloader()
 
-    log = server.logfile.read()
-    change_event = "\n * Detected change in '%(path)s', reloading\n" % {
+    change_event = " * Detected change in '%(path)s', reloading" % {
         'path': real_app_binary
     }
-    assert change_event in log
-
-    r = requests.get(server.url)
-    assert r.status_code == 200
-    assert r.content == b'hello'
+    server.logfile.seek(0)
+    for i in range(20):
+        time.sleep(0.1 * i)
+        log = server.logfile.read()
+        if change_event in log:
+            break
+    else:
+        raise RuntimeError('Change event not detected.')
 
 
 def test_windows_get_args_for_reloading(monkeypatch, tmpdir):
