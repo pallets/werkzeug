@@ -11,9 +11,8 @@
 import os
 import ssl
 import sys
-import subprocess
-import sys
 import textwrap
+import subprocess
 
 
 try:

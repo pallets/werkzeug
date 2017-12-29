@@ -35,6 +35,9 @@ else:
         return xprocess
 
 
+port_generator = count(13220)
+
+
 def _patch_reloader_loop():
     def f(x):
         print('reloader loop finished')
@@ -112,8 +115,6 @@ class _ServerInfo(object):
             if 'reloader loop finished' in line:
                 return
 
-
-port_generator = count(13220)
 
 @pytest.fixture
 def dev_server(tmpdir, subprocess, request, monkeypatch):

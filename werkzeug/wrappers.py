@@ -300,6 +300,7 @@ class BaseRequest(object):
         #: two arguments.  This makes it possible to use this decorator for
         #: both methods and standalone WSGI functions.
         from werkzeug.exceptions import HTTPException
+
         def application(*args):
             request = cls(args[-2])
             with request:
@@ -308,6 +309,7 @@ class BaseRequest(object):
                 except HTTPException as e:
                     resp = e.get_response(args[-2])
                 return resp(*args[-2:])
+
         return update_wrapper(application, f)
 
     def _get_file_stream(self, total_content_length, content_type, filename=None,

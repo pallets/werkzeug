@@ -198,7 +198,7 @@ class TestFileSystemCache(CacheTests):
 
         # File count is not maintained with threshold = 0
         nof_cache_files = c.get(c._fs_count_file)
-        assert nof_cache_files == None
+        assert nof_cache_files is None
 
     def test_count_file_accuracy(self, c):
         assert c.set('foo', 'bar')

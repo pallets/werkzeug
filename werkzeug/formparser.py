@@ -23,7 +23,7 @@ except ImportError:
 from itertools import chain, repeat, tee
 from functools import update_wrapper
 
-from werkzeug._compat import to_native, text_type
+from werkzeug._compat import to_native, text_type, BytesIO
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import make_line_iter, \
     get_input_stream, get_content_length
