@@ -26,11 +26,11 @@ from itertools import count
 try:
     __import__('pytest_xprocess')
 except ImportError:
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def subprocess():
         pytest.skip('pytest-xprocess not installed.')
 else:
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def subprocess(xprocess):
         return xprocess
 
@@ -115,7 +115,7 @@ class _ServerInfo(object):
 
 port_generator = count(13220)
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def dev_server(tmpdir, subprocess, request, monkeypatch):
     '''Run werkzeug.serving.run_simple in its own process.
 
