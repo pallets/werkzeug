@@ -510,11 +510,11 @@ def test_http_proxy(dev_server):
     assert rv.data == b'ROOT'
 
     rv = client.get('/foo/bar')
-    assert rv.data == b'foo|faked.invalid|/foo/bar'
+    assert rv.data.decode('ascii') == 'foo|faked.invalid|/foo/bar'
 
     rv = client.get('/bar/baz')
-    assert rv.data == b'bar|localhost|/baz'
+    assert rv.data.decode('ascii') == 'bar|localhost|/baz'
 
     rv = client.get('/autohost/aha')
-    assert rv.data == b'None|%s|/autohost/aha' % url_parse(
-        server.url).ascii_host.encode('ascii')
+    assert rv.data.decode('ascii') == 'None|%s|/autohost/aha' % url_parse(
+        server.url).ascii_host
