@@ -265,6 +265,9 @@ class NullCache(BaseCache):
                             for API compatibility with other caches.
     """
 
+    def has(self, key):
+        return False
+
 
 class SimpleCache(BaseCache):
 
@@ -368,7 +371,7 @@ class MemcachedCache(BaseCache):
                     a :class:`memcache.Client` or a compatible client.
     :param default_timeout: the default timeout that is used if no timeout is
                             specified on :meth:`~BaseCache.set`. A timeout of
-                            0 indicates taht the cache never expires.
+                            0 indicates that the cache never expires.
     :param key_prefix: a prefix that is added before all keys.  This makes it
                        possible to use the same memcached server for different
                        applications.  Keep in mind that
@@ -420,7 +423,8 @@ class MemcachedCache(BaseCache):
                 have_encoded_keys = True
             if _test_memcached_key(key):
                 key_mapping[encoded_key] = key
-        d = rv = self._client.get_multi(key_mapping.keys())
+        _keys = list(key_mapping)
+        d = rv = self._client.get_multi(_keys)
         if have_encoded_keys or self.key_prefix:
             rv = {}
             for key, value in iteritems(d):
@@ -560,6 +564,8 @@ class RedisCache(BaseCache):
     def __init__(self, host='localhost', port=6379, password=None,
                  db=0, default_timeout=300, key_prefix=None, **kwargs):
         BaseCache.__init__(self, default_timeout)
+        if host is None:
+            raise ValueError('RedisCache host parameter may not be None')
         if isinstance(host, string_types):
             try:
                 import redis

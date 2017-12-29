@@ -11,6 +11,7 @@
 import errno
 import pytest
 
+from werkzeug._compat import text_type
 from werkzeug.contrib import cache
 
 try:
@@ -197,7 +198,7 @@ class TestFileSystemCache(CacheTests):
 
         # File count is not maintained with threshold = 0
         nof_cache_files = c.get(c._fs_count_file)
-        assert nof_cache_files == None
+        assert nof_cache_files is None
 
     def test_count_file_accuracy(self, c):
         assert c.set('foo', 'bar')
@@ -260,6 +261,11 @@ class TestRedisCache(CacheTests):
         assert c.get('foo') == b'Awesome'
         assert c._client.set(c.key_prefix + 'foo', '42')
         assert c.get('foo') == 42
+
+    def test_empty_host(self):
+        with pytest.raises(ValueError) as exc_info:
+            cache.RedisCache(host=None)
+        assert text_type(exc_info.value) == 'RedisCache host parameter may not be None'
 
 
 class TestMemcachedCache(CacheTests):

@@ -303,7 +303,7 @@ def parse_list_header(value):
 def parse_dict_header(value, cls=dict):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
     convert them into a python dict (or any other mapping object created from
-    the type with a dict like interface provided by the `cls` arugment):
+    the type with a dict like interface provided by the `cls` argument):
 
     >>> d = parse_dict_header('foo="is a fish", bar="as well"')
     >>> type(d) is dict
@@ -898,6 +898,13 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
                 # "A recipient MUST use the weak comparison function when comparing
                 # entity-tags for If-None-Match"
                 unmodified = if_none_match.contains_weak(etag)
+
+            # https://tools.ietf.org/html/rfc7232#section-3.1
+            # "Origin server MUST use the strong comparison function when
+            # comparing entity-tags for If-Match"
+            if_match = parse_etags(environ.get('HTTP_IF_MATCH'))
+            if if_match:
+                unmodified = not if_match.is_strong(etag)
 
     return not unmodified
 

@@ -300,6 +300,7 @@ class BaseRequest(object):
         #: two arguments.  This makes it possible to use this decorator for
         #: both methods and standalone WSGI functions.
         from werkzeug.exceptions import HTTPException
+
         def application(*args):
             request = cls(args[-2])
             with request:
@@ -308,6 +309,7 @@ class BaseRequest(object):
                 except HTTPException as e:
                     resp = e.get_response(args[-2])
                 return resp(*args[-2:])
+
         return update_wrapper(application, f)
 
     def _get_file_stream(self, total_content_length, content_type, filename=None,
@@ -1251,7 +1253,7 @@ class BaseResponse(object):
         # code.
         if 100 <= status < 200 or status == 204:
             headers['Content-Length'] = content_length = u'0'
-        elif status == 304:
+        elif status in (304, 412):
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we
@@ -1289,7 +1291,7 @@ class BaseResponse(object):
         """
         status = self.status_code
         if environ['REQUEST_METHOD'] == 'HEAD' or \
-           100 <= status < 200 or status in (204, 304):
+           100 <= status < 200 or status in (204, 304, 412):
             iterable = ()
         elif self.direct_passthrough:
             if __debug__:
@@ -1606,9 +1608,13 @@ class ETagResponseMixin(object):
             accept_ranges = _clean_accept_ranges(accept_ranges)
             is206 = self._process_range_request(environ, complete_length, accept_ranges)
             if not is206 and not is_resource_modified(
-                environ, self.headers.get('etag'), None, self.headers.get('last-modified')
+                environ, self.headers.get('etag'), None,
+                self.headers.get('last-modified')
             ):
-                self.status_code = 304
+                if parse_etags(environ.get('HTTP_IF_MATCH')):
+                    self.status_code = 412
+                else:
+                    self.status_code = 304
             if self.automatically_set_content_length and 'content-length' not in self.headers:
                 length = self.calculate_content_length()
                 if length is not None:

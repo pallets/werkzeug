@@ -23,7 +23,7 @@ except ImportError:
 from itertools import chain, repeat, tee
 from functools import update_wrapper
 
-from werkzeug._compat import to_native, text_type
+from werkzeug._compat import to_native, text_type, BytesIO
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import make_line_iter, \
     get_input_stream, get_content_length
@@ -413,7 +413,9 @@ class MultiPartParser(object):
             disposition, extra = parse_options_header(disposition)
             transfer_encoding = self.get_part_encoding(headers)
             name = extra.get('name')
-            filename = extra.get('filename')
+
+            # Accept filename* to support non-ascii filenames as per rfc2231
+            filename = extra.get('filename') or extra.get('filename*')
 
             # if no content type is given we stream into memory.  A list is
             # used as a temporary container.

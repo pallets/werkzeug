@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import posixpath
 import pytest
 
 from werkzeug.security import check_password_hash, generate_password_hash, \
@@ -71,7 +72,7 @@ def test_password_hashing():
 
 
 def test_safe_join():
-    assert safe_join('foo', 'bar/baz') == os.path.join('foo', 'bar/baz')
+    assert safe_join('foo', 'bar/baz') == posixpath.join('foo', 'bar/baz')
     assert safe_join('foo', '../bar/baz') is None
     if os.name == 'nt':
         assert safe_join('foo', 'foo\\bar') is None

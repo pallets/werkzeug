@@ -541,6 +541,17 @@ def select_ip_version(host, port):
     return socket.AF_INET
 
 
+def get_sockaddr(host, port, family):
+    """Returns a fully qualified socket address, that can properly used by
+    socket.bind"""
+    try:
+        res = socket.getaddrinfo(host, port, family,
+                                 socket.SOCK_STREAM, socket.SOL_TCP)
+    except socket.gaierror:
+        return (host, port)
+    return res[0][4]
+
+
 class BaseWSGIServer(HTTPServer, object):
 
     """Simple single-threaded, single-process WSGI server."""
@@ -559,7 +570,8 @@ class BaseWSGIServer(HTTPServer, object):
             real_sock = socket.fromfd(fd, self.address_family,
                                       socket.SOCK_STREAM)
             port = 0
-        HTTPServer.__init__(self, (host, int(port)), handler)
+        HTTPServer.__init__(self, get_sockaddr(host, int(port),
+                                               self.address_family), handler)
         self.app = app
         self.passthrough_errors = passthrough_errors
         self.shutdown_signal = False
@@ -777,7 +789,7 @@ def run_simple(hostname, port, application, use_reloader=False,
             address_family = select_ip_version(hostname, port)
             s = socket.socket(address_family, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind((hostname, port))
+            s.bind(get_sockaddr(hostname, port, address_family))
             if hasattr(s, 'set_inheritable'):
                 s.set_inheritable(True)
 
