@@ -1159,6 +1159,20 @@ def test_location_header_autocorrect():
     assert resp.get_wsgi_headers(env)['Location'] == 'http://localhost/test'
 
 
+def test_204_and_1XX_response_has_no_content_length():
+    response = wrappers.Response(status=204)
+    assert response.content_length is None
+
+    headers = response.get_wsgi_headers(create_environ())
+    assert 'Content-Length' not in headers
+
+    response = wrappers.Response(status=100)
+    assert response.content_length is None
+
+    headers = response.get_wsgi_headers(create_environ())
+    assert 'Content-Length' not in headers
+
+
 def test_modified_url_encoding():
     class ModifiedRequest(wrappers.Request):
         url_charset = 'euc-kr'

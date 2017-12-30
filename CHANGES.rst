@@ -25,6 +25,8 @@ Version 0.14
   where no HTTP body is expected (204, 204, HEAD requests etc.)
 - The ``EnvironHeaders`` object now skips over empty content type and
   lengths if they are set to falsy values.
+- Werkzeug will no longer send the content-length header on 1xx or
+  204/304 responses.
 
 
 Version 0.13
