@@ -33,6 +33,8 @@ Version 0.14
 - If cookies are sent without values they are now assumed to have an
   empty value and the parser accepts this.  Previously this could have
   corrupted cookies that followed the value.
+- The test ``Client`` and ``EnvironBuilder`` now support mimetypes like
+  the request object does.
 
 
 Version 0.13

@@ -33,9 +33,10 @@ from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
     url_unparse, url_parse
 from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
-from werkzeug.utils import dump_cookie
+from werkzeug.utils import dump_cookie, get_content_type
 from werkzeug.datastructures import FileMultiDict, MultiDict, \
-    CombinedMultiDict, Headers, FileStorage
+    CombinedMultiDict, Headers, FileStorage, CallbackDict
+from werkzeug.http import dump_options_header, parse_options_header
 
 
 def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
@@ -292,7 +293,8 @@ class EnvironBuilder(object):
                  method='GET', input_stream=None, content_type=None,
                  content_length=None, errors_stream=None, multithread=False,
                  multiprocess=False, run_once=False, headers=None, data=None,
-                 environ_base=None, environ_overrides=None, charset='utf-8'):
+                 environ_base=None, environ_overrides=None, charset='utf-8',
+                 mimetype=None):
         path_s = make_literal_wrapper(path)
         if query_string is None and path_s('?') in path:
             path, query_string = path.split(path_s('?'), 1)
@@ -347,6 +349,9 @@ class EnvironBuilder(object):
                         self._add_file_from_data(key, value)
                     else:
                         self.form.setlistdefault(key).append(value)
+
+        if mimetype is not None:
+            self.mimetype = mimetype
 
     def _add_file_from_data(self, key, value):
         """Called in the EnvironBuilder to add files from the data dict."""
@@ -413,6 +418,35 @@ class EnvironBuilder(object):
 
     def _get_content_length(self):
         return self.headers.get('Content-Length', type=int)
+
+    def _get_mimetype(self):
+        ct = self.content_type
+        if ct:
+            return ct.split(';')[0].strip()
+
+    def _set_mimetype(self, value):
+        self.content_type = get_content_type(value, self.charset)
+
+    def _get_mimetype_params(self):
+        def on_update(d):
+            self.headers['Content-Type'] = \
+                dump_options_header(self.mimetype, d)
+        d = parse_options_header(self.headers.get('content-type', ''))[1]
+        return CallbackDict(d, on_update)
+
+    mimetype = property(_get_mimetype, _set_mimetype, doc='''
+        The mimetype (content type without charset etc.)
+
+        .. versionadded:: 0.14
+    ''')
+    mimetype_params = property(_get_mimetype_params, doc='''
+        The mimetype parameters as dict.  For example if the content
+        type is ``text/html; charset=utf-8`` the params would be
+        ``{'charset': 'utf-8'}``.
+
+        .. versionadded:: 0.14
+        ''')
+    del _get_mimetype, _set_mimetype, _get_mimetype_params
 
     def _set_content_length(self, value):
         if value is None:
@@ -538,6 +572,8 @@ class EnvironBuilder(object):
         """Return the built environ."""
         input_stream = self.input_stream
         content_length = self.content_length
+
+        mimetype = self.mimetype
         content_type = self.content_type
 
         if input_stream is not None:
@@ -546,12 +582,12 @@ class EnvironBuilder(object):
             end_pos = input_stream.tell()
             input_stream.seek(start_pos)
             content_length = end_pos - start_pos
-        elif content_type == 'multipart/form-data':
+        elif mimetype == 'multipart/form-data':
             values = CombinedMultiDict([self.form, self.files])
             input_stream, content_length, boundary = \
                 stream_encode_multipart(values, charset=self.charset)
-            content_type += '; boundary="%s"' % boundary
-        elif content_type == 'application/x-www-form-urlencoded':
+            content_type = mimetype + '; boundary="%s"' % boundary
+        elif mimetype == 'application/x-www-form-urlencoded':
             # XXX: py2v3 review
             values = url_encode(self.form, charset=self.charset)
             values = values.encode('ascii')
@@ -639,6 +675,9 @@ class Client(object):
     .. versionadded:: 0.5
        `use_cookies` is new in this version.  Older versions did not provide
        builtin cookie support.
+
+    .. versionadded:: 0.14
+       The `mimetype` parameter was added.
     """
 
     def __init__(self, application, response_wrapper=None, use_cookies=True,
