@@ -21,6 +21,10 @@ Version 0.14
   read accurately on windows.
 - Added a workaround for syntax errors in init files in the reloader.
 - Added support for using the reloader with console scripts on windows.
+- The built-in HTTP server will no longer close a connection in cases
+  where no HTTP body is expected (204, 204, HEAD requests etc.)
+- The ``EnvironHeaders`` object now skips over empty content type and
+  lengths if they are set to falsy values.
 
 
 Version 0.13
