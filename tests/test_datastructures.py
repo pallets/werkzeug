@@ -771,6 +771,7 @@ class TestEnvironHeaders(object):
         ]
         assert not self.storage_class({'wsgi.version': (1, 0)})
         assert len(self.storage_class({'wsgi.version': (1, 0)})) == 0
+        assert 42 not in headers
 
     def test_skip_empty_special_vars(self):
         env = {

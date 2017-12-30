@@ -38,6 +38,8 @@ Version 0.14
 - Added support for static weights in URL rules.
 - Better handle some more complex reloader scenarios where sys.path
   contained non directory paths.
+- ``EnvironHeaders`` no longer raises weird errors if non string keys
+  are passed to it.
 
 
 Version 0.13
