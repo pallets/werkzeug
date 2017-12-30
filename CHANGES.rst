@@ -157,6 +157,9 @@ Released on March 10th 2017
 - Color run_simple's terminal output based on HTTP codes ``#1013``.
 - Fix self-XSS in debugger console, see ``#1031``.
 - Fix IPython 5.x shell support, see ``#1033``.
+- Change Accept datastructure to sort by specificity first, allowing for more
+  accurate results when using ``best_match`` for mime types (for example in
+  ``requests.accept_mimetypes.best_match``)
 
 Version 0.11.16
 ---------------

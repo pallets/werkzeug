@@ -44,6 +44,7 @@ A full list of contributors is available from git with:
 - Mark Szymanski
 - Andrew Bednar
 - Craig Blaszczyk
+- Felix König
 
 The SSL parts of the Werkzeug development server are partially taken
 from Paste. The same is true for the range support which comes from
