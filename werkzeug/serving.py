@@ -226,7 +226,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     self.send_header(key, value)
                     key = key.lower()
                     header_keys.add(key)
-                if 'content-length' not in header_keys:
+                if not ('content-length' in header_keys or
+                        environ['REQUEST_METHOD'] == 'HEAD' or
+                        status < 200 or status in (204, 304)):
                     self.close_connection = True
                     self.send_header('Connection', 'close')
                 if 'server' not in header_keys:
