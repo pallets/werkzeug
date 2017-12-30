@@ -383,6 +383,19 @@ class TestHTTPUtility(object):
         strict_eq(http.dump_cookie('key', 'xxx/'), 'key=xxx/; Path=/')
         strict_eq(http.dump_cookie('key', 'xxx='), 'key=xxx=; Path=/')
 
+    def test_bad_cookies(self):
+        strict_eq(
+            dict(http.parse_cookie('first=IamTheFirst ; a=1; oops ; a=2 ;'
+                                   'second = andMeTwo;')),
+            {
+                'first': u'IamTheFirst',
+                'a': u'1',
+                'a': u'2',
+                'oops': u'',
+                'second': u'andMeTwo',
+            }
+        )
+
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
         strict_eq(val, 'foo="?foo"; Path=/')

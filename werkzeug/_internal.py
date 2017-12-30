@@ -44,12 +44,13 @@ _octal_re = re.compile(br'\\[0-3][0-7][0-7]')
 _quote_re = re.compile(br'[\\].')
 _legal_cookie_chars_re = br'[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]'
 _cookie_re = re.compile(br"""
-    (?P<key>[^=]+)
-    \s*=\s*
-    (?P<val>
-        "(?:[^\\"]|\\.)*" |
-         (?:.*?)
-    )
+    (?P<key>[^=;]+)
+    (?:\s*=\s*
+        (?P<val>
+            "(?:[^\\"]|\\.)*" |
+             (?:.*?)
+        )
+    )?
     \s*;
 """, flags=re.VERBOSE)
 
@@ -283,7 +284,7 @@ def _cookie_parse_impl(b):
             break
 
         key = match.group('key').strip()
-        value = match.group('val')
+        value = match.group('val') or b''
         i = match.end(0)
 
         # Ignore parameters.  We have no interest in them.

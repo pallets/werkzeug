@@ -30,6 +30,9 @@ Version 0.14
 - Cookie values are now also permitted to include slashes and equal
   signs without quoting.
 - Relaxed the regex for the routing converter arguments.
+- If cookies are sent without values they are now assumed to have an
+  empty value and the parser accepts this.  Previously this could have
+  corrupted cookies that followed the value.
 
 
 Version 0.13
