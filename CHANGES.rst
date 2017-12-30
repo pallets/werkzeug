@@ -35,6 +35,7 @@ Version 0.14
   corrupted cookies that followed the value.
 - The test ``Client`` and ``EnvironBuilder`` now support mimetypes like
   the request object does.
+- Added support for static weights in URL rules.
 
 
 Version 0.13
