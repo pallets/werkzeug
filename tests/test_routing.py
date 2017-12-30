@@ -520,6 +520,18 @@ def test_converter_with_tuples():
     assert kwargs['foo'] == ('qwert', 'yuiop')
 
 
+def test_anyconverter():
+    m = r.Map([
+        r.Rule('/<any(a1, a2):a>', endpoint='no_dot'),
+        r.Rule('/<any(a.1, a.2):a>', endpoint='yes_dot')
+    ])
+    a = m.bind('example.org', '/')
+    assert a.match('/a1') == ('no_dot', {'a': 'a1'})
+    assert a.match('/a2') == ('no_dot', {'a': 'a2'})
+    assert a.match('/a.1') == ('yes_dot', {'a': 'a.1'})
+    assert a.match('/a.2') == ('yes_dot', {'a': 'a.2'})
+
+
 def test_build_append_unknown():
     map = r.Map([
         r.Rule('/bar/<float:bazf>', endpoint='barf')

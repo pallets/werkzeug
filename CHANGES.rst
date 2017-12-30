@@ -29,6 +29,7 @@ Version 0.14
   204/304 responses.
 - Cookie values are now also permitted to include slashes and equal
   signs without quoting.
+- Relaxed the regex for the routing converter arguments.
 
 
 Version 0.13
