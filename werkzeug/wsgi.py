@@ -508,7 +508,7 @@ class ProxyMiddleware(object):
         def application(environ, start_response):
             headers = list(EnvironHeaders(environ).items())
             headers[:] = [(k, v) for k, v in headers
-                          if not is_hop_by_hop_header(k) and \
+                          if not is_hop_by_hop_header(k) and
                           k.lower() not in ('content-length', 'host')]
             headers.append(('Connection', 'close'))
             if opts['host'] == '<auto>':

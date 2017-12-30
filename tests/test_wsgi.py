@@ -23,7 +23,6 @@ from werkzeug._compat import BytesIO, NativeStringIO, StringIO, to_bytes, \
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug.wrappers import BaseResponse
-from werkzeug.test import Client
 from werkzeug.urls import url_parse
 from werkzeug.wsgi import _RangeWrapper, wrap_file
 
