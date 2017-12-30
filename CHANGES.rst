@@ -36,6 +36,8 @@ Version 0.14
 - The test ``Client`` and ``EnvironBuilder`` now support mimetypes like
   the request object does.
 - Added support for static weights in URL rules.
+- Better handle some more complex reloader scenarios where sys.path
+  contained non directory paths.
 
 
 Version 0.13
