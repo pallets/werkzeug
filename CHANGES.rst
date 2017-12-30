@@ -10,6 +10,7 @@ Version 0.14
 - Added support for platforms that lack ``SpooledTemporaryFile``.
 - Add support for etag handling through if-match
 - Added support for the SameSite cookie attribute.
+- Added ``werkzeug.wsgi.ProxyMiddleware``
 - Implemented ``has`` for ``NullCache``
 - ``get_multi`` on cache clients now returns lists all the time.
 - Improved the watchdog observer shutdown for the reloader to not crash

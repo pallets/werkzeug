@@ -9,10 +9,15 @@
     :license: BSD, see LICENSE for more details.
 """
 import io
+try:
+    import httplib
+except ImportError:
+    from http import client as httplib
 import mimetypes
 import os
 import posixpath
 import re
+import socket
 from datetime import datetime
 from functools import partial, update_wrapper
 from itertools import chain
@@ -24,8 +29,10 @@ from werkzeug._compat import BytesIO, PY2, implements_iterator, iteritems, \
     try_coerce_native, wsgi_get_bytes
 from werkzeug._internal import _empty_stream, _encode_idna
 from werkzeug.filesystem import get_filesystem_encoding
-from werkzeug.http import http_date, is_resource_modified
+from werkzeug.http import http_date, is_resource_modified, \
+    is_hop_by_hop_header
 from werkzeug.urls import uri_to_iri, url_join, url_parse, url_quote
+from werkzeug.datastructures import EnvironHeaders
 
 
 def responder(f):
@@ -436,6 +443,156 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
         return None
 
     return u'/' + cur_path[len(base_path):].lstrip(u'/')
+
+
+class ProxyMiddleware(object):
+    """This middleware routes some requests to the provided WSGI app and
+    proxies some requests to an external server.  This is not something that
+    can generally be done on the WSGI layer and some HTTP requests will not
+    tunnel through correctly (for instance websocket requests cannot be
+    proxied through WSGI).  As a result this is only really useful for some
+    basic requests that can be forwarded.
+
+    Example configuration::
+
+        app = ProxyMiddleware(app, {
+            '/static/': {
+                'target': 'http://127.0.0.1:5001/',
+            }
+        })
+
+    For each host options can be specified.  The following options are
+    supported:
+
+    ``target``:
+        the target URL to dispatch to
+    ``remove_prefix``:
+        if set to `True` the prefix is chopped off the URL before
+        dispatching it to the server.
+    ``host``:
+        When set to ``'<auto>'`` which is the default the host header is
+        automatically rewritten to the URL of the target.  If set to `None`
+        then the host header is unmodified from the client request.  Any
+        other value overwrites the host header with that value.
+    ``headers``:
+        An optional dictionary of headers that should be sent with the
+        request to the target host.
+    ``ssl_context``:
+        In case this is an HTTPS target host then an SSL context can be
+        provided here (:class:`ssl.SSLContext`).  This can be used for instance
+        to disable SSL verification.
+
+    In this case everything below ``'/static/'`` is proxied to the server on
+    port 5001.  The host header is automatically rewritten and so are request
+    URLs (eg: the leading `/static/` prefix here gets chopped off).
+
+    .. versionadded:: 0.14
+    """
+
+    def __init__(self, app, targets, chunk_size=2 << 13, timeout=10):
+        def _set_defaults(opts):
+            opts.setdefault('remove_prefix', False)
+            opts.setdefault('host', '<auto>')
+            opts.setdefault('headers', {})
+            opts.setdefault('ssl_context', None)
+            return opts
+        self.app = app
+        self.targets = dict(('/%s/' % k.strip('/'), _set_defaults(v))
+                            for k, v in iteritems(targets))
+        self.chunk_size = chunk_size
+        self.timeout = timeout
+
+    def proxy_to(self, opts, path, prefix):
+        target = url_parse(opts['target'])
+
+        def application(environ, start_response):
+            headers = list(EnvironHeaders(environ).items())
+            headers[:] = [(k, v) for k, v in headers
+                          if not is_hop_by_hop_header(k) and
+                          k.lower() not in ('content-length', 'host')]
+            headers.append(('Connection', 'close'))
+            if opts['host'] == '<auto>':
+                headers.append(('Host', target.ascii_host))
+            elif opts['host'] is None:
+                headers.append(('Host', environ['HTTP_HOST']))
+            else:
+                headers.append(('Host', opts['host']))
+            headers.extend(opts['headers'].items())
+
+            remote_path = path
+            if opts['remove_prefix']:
+                remote_path = '%s/%s' % (
+                    target.path.rstrip('/'),
+                    remote_path[len(prefix):].lstrip('/')
+                )
+
+            content_length = environ.get('CONTENT_LENGTH')
+            chunked = False
+            if content_length not in ('', None):
+                headers.append(('Content-Length', content_length))
+            elif content_length is not None:
+                headers.append(('Transfer-Encoding', 'chunked'))
+                chunked = True
+
+            try:
+                if target.scheme == 'http':
+                    con = httplib.HTTPConnection(
+                        target.ascii_host, target.port or 80,
+                        timeout=self.timeout)
+                elif target.scheme == 'https':
+                    con = httplib.HTTPSConnection(
+                        target.ascii_host, target.port or 443,
+                        timeout=self.timeout,
+                        context=opts['ssl_context'])
+                con.connect()
+                con.putrequest(environ['REQUEST_METHOD'], url_quote(remote_path),
+                               skip_host=True)
+
+                for k, v in headers:
+                    if k.lower() == 'connection':
+                        v = 'close'
+                    con.putheader(k, v)
+                con.endheaders()
+
+                stream = get_input_stream(environ)
+                while 1:
+                    data = stream.read(self.chunk_size)
+                    if not data:
+                        break
+                    if chunked:
+                        con.send(b'%x\r\n%s\r\n' % (len(data), data))
+                    else:
+                        con.send(data)
+
+                resp = con.getresponse()
+            except socket.error:
+                from werkzeug.exceptions import BadGateway
+                return BadGateway()(environ, start_response)
+
+            start_response('%d %s' % (resp.status, resp.reason),
+                           [(k.title(), v) for k, v in resp.getheaders()
+                            if not is_hop_by_hop_header(k)])
+
+            def read():
+                while 1:
+                    try:
+                        data = resp.read(self.chunk_size)
+                    except socket.error:
+                        break
+                    if not data:
+                        break
+                    yield data
+            return read()
+        return application
+
+    def __call__(self, environ, start_response):
+        path = environ['PATH_INFO']
+        app = self.app
+        for prefix, opts in iteritems(self.targets):
+            if path.startswith(prefix):
+                app = self.proxy_to(opts, path, prefix)
+                break
+        return app(environ, start_response)
 
 
 class SharedDataMiddleware(object):
