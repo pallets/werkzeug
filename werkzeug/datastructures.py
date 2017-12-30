@@ -1362,7 +1362,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
                ('HTTP_CONTENT_TYPE', 'HTTP_CONTENT_LENGTH'):
                 yield (key[5:].replace('_', '-').title(),
                        _unicodify_header_value(value))
-            elif key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+            elif key in ('CONTENT_TYPE', 'CONTENT_LENGTH') and value:
                 yield (key.replace('_', '-').title(),
                        _unicodify_header_value(value))
 

@@ -772,6 +772,23 @@ class TestEnvironHeaders(object):
         assert not self.storage_class({'wsgi.version': (1, 0)})
         assert len(self.storage_class({'wsgi.version': (1, 0)})) == 0
 
+    def test_skip_empty_special_vars(self):
+        env = {
+            'HTTP_X_FOO':               '42',
+            'CONTENT_TYPE':             '',
+            'CONTENT_LENGTH':           '',
+        }
+        headers = self.storage_class(env)
+        assert dict(headers) == {'X-Foo': '42'}
+
+        env = {
+            'HTTP_X_FOO':               '42',
+            'CONTENT_TYPE':             '',
+            'CONTENT_LENGTH':           '0',
+        }
+        headers = self.storage_class(env)
+        assert dict(headers) == {'X-Foo': '42', 'Content-Length': '0'}
+
     def test_return_type_is_unicode(self):
         # environ contains native strings; we return unicode
         headers = self.storage_class({
