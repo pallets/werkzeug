@@ -137,7 +137,7 @@ def host_is_trusted(hostname, trusted_list):
             return False
         if ref == hostname:
             return True
-        if suffix_match and hostname.endswith('.' + ref):
+        if suffix_match and hostname.endswith(b'.' + ref):
             return True
     return False
 
