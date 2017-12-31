@@ -220,7 +220,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     code, msg = status.split(None, 1)
                 except ValueError:
                     code, msg = status, ""
-                self.send_response(int(code), msg)
+                code = int(code)
+                self.send_response(code, msg)
                 header_keys = set()
                 for key, value in response_headers:
                     self.send_header(key, value)
@@ -228,7 +229,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     header_keys.add(key)
                 if not ('content-length' in header_keys or
                         environ['REQUEST_METHOD'] == 'HEAD' or
-                        status < 200 or status in (204, 304)):
+                        code < 200 or code in (204, 304)):
                     self.close_connection = True
                     self.send_header('Connection', 'close')
                 if 'server' not in header_keys:
