@@ -1,6 +1,14 @@
 Werkzeug Changelog
 ==================
 
+Version 0.14.1
+--------------
+
+Released on December 31st 2017
+
+- Resolved a regression with status code handling in the integrated
+  development server.
+
 Version 0.14
 ------------
 
