@@ -4,6 +4,8 @@ Werkzeug Changelog
 Version 0.14
 ------------
 
+Released on December 31st 2017
+
 - HTTP exceptions are now automatically caught by
   ``Request.application``.
 - Added support for edge as browser.
