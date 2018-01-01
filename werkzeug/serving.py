@@ -355,20 +355,27 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if termcolor:
             color = termcolor.colored
 
-            if code[0] == '1':    # 1xx - Informational
-                msg = color(msg, attrs=['bold'])
-            elif code[0] == '2':    # 2xx - Success
-                msg = color(msg, color='white')
-            elif code == '304':   # 304 - Resource Not Modified
-                msg = color(msg, color='cyan')
-            elif code[0] == '3':  # 3xx - Redirection
-                msg = color(msg, color='green')
-            elif code == '404':   # 404 - Resource Not Found
-                msg = color(msg, color='yellow')
-            elif code[0] == '4':  # 4xx - Client Error
-                msg = color(msg, color='red', attrs=['bold'])
-            else:                 # 5xx, or any other response
-                msg = color(msg, color='magenta', attrs=['bold'])
+            special = {
+                '304': 'cyan',    # 304 - Resource Not Modified
+                '404': 'yellow',  # 404 - Resource Not Found
+            }
+
+            colors = {
+                '1': 'bold',      # 1xx - Informational
+                '2': 'white',     # 2xx - Success
+                '3': 'green',     # 3xx - Redirection
+                '4': 'red',       # 4xx - Client Error
+            }
+
+            attribs = {
+                '1': ['bold'],
+                '4': ['bold'],
+            }
+
+            attrs_ = attribs.get(code[0], None if code[0] in colors else ['bold'])
+            color_ = special.get(code, colors.get(code[0], 'magenta'))
+
+            msg = color(msg, color=color_, attrs=attrs_)
 
         self.log('info', '"%s" %s %s', msg, code, size)
 
