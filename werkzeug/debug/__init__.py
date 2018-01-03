@@ -93,7 +93,7 @@ def get_machine_id():
                                 'SOFTWARE\\Microsoft\\Cryptography', 0,
                                 wr.KEY_READ | wr.KEY_WOW64_64KEY) as rk:
                     machineGuid, wrType = wr.QueryValueEx(rk, 'MachineGuid')
-                    if (wrType == wr.REG_SZ):
+                    if wrType == wr.REG_SZ:
                         return machineGuid.encode('utf-8')
                     else:
                         return machineGuid
