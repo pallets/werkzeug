@@ -385,11 +385,11 @@ class TestHTTPUtility(object):
 
     def test_bad_cookies(self):
         strict_eq(
-            dict(http.parse_cookie('first=IamTheFirst ; a=1; oops ; a=2 ;'
-                                   'second = andMeTwo;')),
+            dict(http.parse_cookie(
+                'first=IamTheFirst ; a=1; oops ; a=2 ;second = andMeTwo;'
+            )),
             {
                 'first': u'IamTheFirst',
-                'a': u'1',
                 'a': u'2',
                 'oops': u'',
                 'second': u'andMeTwo',

@@ -1,133 +1,173 @@
-============
+.. _installation:
+
 Installation
 ============
 
-Werkzeug requires at least Python 2.6 to work correctly.  If you do need
-to support an older version you can download an older version of Werkzeug
-though we strongly recommend against that.  Werkzeug currently has
-experimental support for Python 3.  For more information about the
-Python 3 support see :ref:`python3`.
+
+Python Version
+--------------
+
+We recommend using the latest version of Python 3. Werkzeug supports
+Python 3.4 and newer and Python 2.7.
 
 
-Installing a released version
-=============================
+Dependencies
+------------
 
-As a Python egg (via easy_install or pip)
------------------------------------------
+Werkzeug does not have any direct dependencies.
 
-You can install the most recent Werkzeug version using `easy_install`_::
 
-    easy_install Werkzeug
+Optional dependencies
+~~~~~~~~~~~~~~~~~~~~~
 
-Alternatively you can also use pip::
+These distributions will not be installed automatically. Werkzeug will
+detect and use them if you install them.
+
+* `SimpleJSON`_ is a fast JSON implementation that is compatible with
+  Python's ``json`` module. It is preferred for JSON operations if it is
+  installed.
+* `termcolor`_ provides request log highlighting when using the
+  development server.
+* `Watchdog`_ provides a faster, more efficient reloader for the
+  development server.
+
+.. _SimpleJSON: https://simplejson.readthedocs.io/
+.. _termcolor: https://pypi.org/project/termcolor/
+.. _Watchdog: https://pythonhosted.org/watchdog/
+
+
+Virtual environments
+--------------------
+
+Use a virtual environment to manage the dependencies for your project,
+both in development and in production.
+
+What problem does a virtual environment solve? The more Python
+projects you have, the more likely it is that you need to work with
+different versions of Python libraries, or even Python itself. Newer
+versions of libraries for one project can break compatibility in
+another project.
+
+Virtual environments are independent groups of Python libraries, one for
+each project. Packages installed for one project will not affect other
+projects or the operating system's packages.
+
+Python 3 comes bundled with the :mod:`venv` module to create virtual
+environments. If you're using a modern version of Python, you can
+continue on to the next section.
+
+If you're using Python 2, see :ref:`install-install-virtualenv` first.
+
+.. _install-create-env:
+
+Create an environment
+~~~~~~~~~~~~~~~~~~~~~
+
+Create a project folder and a :file:`venv` folder within:
+
+.. code-block:: sh
+
+    mkdir myproject
+    cd myproject
+    python3 -m venv venv
+
+On Windows:
+
+.. code-block:: bat
+
+    py -3 -m venv venv
+
+If you needed to install virtualenv because you are on an older version
+of Python, use the following command instead:
+
+.. code-block:: sh
+
+    virtualenv venv
+
+On Windows:
+
+.. code-block:: bat
+
+    \Python27\Scripts\virtualenv.exe venv
+
+
+Activate the environment
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before you work on your project, activate the corresponding environment:
+
+.. code-block:: sh
+
+    . venv/bin/activate
+
+On Windows:
+
+.. code-block:: bat
+
+    venv\Scripts\activate
+
+Your shell prompt will change to show the name of the activated
+environment.
+
+
+Install Werkzeug
+----------------
+
+Within the activated environment, use the following command to install
+Werkzeug:
+
+.. code-block:: sh
 
     pip install Werkzeug
 
-Either way we strongly recommend using these tools in combination with
-:ref:`virtualenv`.
 
-This will install a Werkzeug egg in your Python installation's `site-packages`
-directory.
+Living on the edge
+~~~~~~~~~~~~~~~~~~
 
-From the tarball release
--------------------------
+If you want to work with the latest Werkzeug code before it's released,
+install or update the code from the master branch:
 
-1.  Download the most recent tarball from the `download page`_.
-2.  Unpack the tarball.
-3.  ``python setup.py install``
+.. code-block:: sh
 
-Note that the last command will automatically download and install
-`setuptools`_ if you don't already have it installed.  This requires a working
-Internet connection.
-
-This will install Werkzeug into your Python installation's `site-packages`
-directory.
+    pip install -U https://github.com/pallets/werkzeug/archive/master.tar.gz
 
 
-Installing the development version
-==================================
+.. _install-install-virtualenv:
 
-1.  Install `Git`_
-2.  ``git clone git://github.com/pallets/werkzeug.git``
-3.  ``cd werkzeug``
-4.  ``pip install --editable .``
+Install virtualenv
+------------------
 
-.. _virtualenv:
+If you are using Python 2, the venv module is not available. Instead,
+install `virtualenv`_.
 
-virtualenv
-==========
+On Linux, virtualenv is provided by your package manager:
 
-Virtualenv is probably what you want to use during development, and in
-production too if you have shell access there.
+.. code-block:: sh
 
-What problem does virtualenv solve?  If you like Python as I do,
-chances are you want to use it for other projects besides Werkzeug-based
-web applications.  But the more projects you have, the more likely it is
-that you will be working with different versions of Python itself, or at
-least different versions of Python libraries.  Let's face it; quite often
-libraries break backwards compatibility, and it's unlikely that any serious
-application will have zero dependencies.  So what do you do if two or more
-of your projects have conflicting dependencies?
+    # Debian, Ubuntu
+    sudo apt-get install python-virtualenv
 
-Virtualenv to the rescue!  It basically enables multiple side-by-side
-installations of Python, one for each project.  It doesn't actually
-install separate copies of Python, but it does provide a clever way
-to keep different project environments isolated.
+    # CentOS, Fedora
+    sudo yum install python-virtualenv
 
-So let's see how virtualenv works!
+    # Arch
+    sudo pacman -S python-virtualenv
 
-If you are on Mac OS X or Linux, chances are that one of the following two
-commands will work for you::
+If you are on Mac OS X or Windows, download `get-pip.py`_, then:
 
-    $ sudo easy_install virtualenv
+.. code-block:: sh
 
-or even better::
+    sudo python2 Downloads/get-pip.py
+    sudo python2 -m pip install virtualenv
 
-    $ sudo pip install virtualenv
+On Windows, as an administrator:
 
-One of these will probably install virtualenv on your system.  Maybe it's
-even in your package manager.  If you use Ubuntu, try::
+.. code-block:: bat
 
-    $ sudo apt-get install python-virtualenv
+    \Python27\python.exe Downloads\get-pip.py
+    \Python27\python.exe -m pip install virtualenv
 
-If you are on Windows and don't have the `easy_install` command, you must
-install it first.  Once you have it installed, run the same commands as
-above, but without the `sudo` prefix.
+Now you can continue to :ref:`install-create-env`.
 
-Once you have virtualenv installed, just fire up a shell and create
-your own environment.  I usually create a project folder and an `env`
-folder within::
-
-    $ mkdir myproject
-    $ cd myproject
-    $ virtualenv env
-    New python executable in env/bin/python
-    Installing setuptools............done.
-
-Now, whenever you want to work on a project, you only have to activate
-the corresponding environment.  On OS X and Linux, do the following::
-
-    $ . env/bin/activate
-
-(Note the space between the dot and the script name.  The dot means that
-this script should run in the context of the current shell.  If this command
-does not work in your shell, try replacing the dot with ``source``)
-
-If you are a Windows user, the following command is for you::
-
-    $ env\scripts\activate
-
-Either way, you should now be using your virtualenv (see how the prompt of
-your shell has changed to show the virtualenv).
-
-Now you can just enter the following command to get Werkzeug activated in
-your virtualenv::
-
-    $ pip install Werkzeug
-
-A few seconds later you are good to go.
-
-.. _download page: https://pypi.python.org/pypi/Werkzeug
-.. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
-.. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
-.. _Git: http://git-scm.org/
+.. _virtualenv: https://virtualenv.pypa.io/
+.. _get-pip.py: https://bootstrap.pypa.io/get-pip.py
