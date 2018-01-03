@@ -9,42 +9,7 @@ are:
 
 A full list of contributors is available from git with:
 
-- Georg Brandl
-- Leif K-Brooks <eurleif@gmail.com>
-- Thomas Johansson
-- Marian Sigler
-- Ronny Pfannschmidt
-- Noah Slater <nslater@tumbolia.org>
-- Alec Thomas
-- Shannon Behrens
-- Christoph Rauch
-- Clemens Hermann
-- Jason Kirtland
-- Ali Afshar
-- Christopher Grebs <cg@webshox.org>
-- Sean Cazzell <seancazzell@gmail.com>
-- Florent Xicluna
-- Kyle Dawkins
-- Pedro Algarvio
-- Zahari Petkov
-- Ludvig Ericson
-- Kenneth Reitz
-- Daniel Neuhäuser
-- Markus Unterwaditzer
-- Joe Esposito <joe@joeyespo.com>
-- Abhinav Upadhyay <er.abhinav.upadhyay@gmail.com>
-- immerrr <immerrr@gmail.com>
-- Cédric Krier
-- Phil Jones
-- Michael Hunsinger
-- Lars Holm Nielsen
-- Joël Charles
-- Benjamin Dopplinger
-- Nils Steinger
-- Mark Szymanski
-- Andrew Bednar
-- Craig Blaszczyk
-- Felix König
+    git shortlog -sne
 
 The SSL parts of the Werkzeug development server are partially taken
 from Paste. The same is true for the range support which comes from
