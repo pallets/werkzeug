@@ -12,7 +12,6 @@ should start here.
    tutorial
    levels
    quickstart
-   python3
 
 Serving and Testing
 -------------------
