@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import errno
+
 import pytest
 
 from werkzeug._compat import text_type
@@ -31,9 +32,9 @@ except ImportError:
             memcache = None
 
 
-class CacheTests(object):
+class CacheTestsBase(object):
     _can_use_fast_sleep = True
-    _guaranteed_deletes = False
+    _guaranteed_deletes = True
 
     @pytest.fixture
     def fast_sleep(self, monkeypatch):
@@ -57,6 +58,8 @@ class CacheTests(object):
         """Return a cache instance."""
         return make_cache()
 
+
+class GenericCacheTests(CacheTestsBase):
     def test_generic_get_dict(self, c):
         assert c.set('a', 'a')
         assert c.set('b', 'b')
@@ -142,9 +145,7 @@ class CacheTests(object):
         assert c.has('spam') in (False, 0)
 
 
-class TestSimpleCache(CacheTests):
-    _guaranteed_deletes = True
-
+class TestSimpleCache(GenericCacheTests):
     @pytest.fixture
     def make_cache(self):
         return cache.SimpleCache
@@ -159,9 +160,7 @@ class TestSimpleCache(CacheTests):
         assert len(c._cache) == 3
 
 
-class TestFileSystemCache(CacheTests):
-    _guaranteed_deletes = True
-
+class TestFileSystemCache(GenericCacheTests):
     @pytest.fixture
     def make_cache(self, tmpdir):
         return lambda **kw: cache.FileSystemCache(cache_dir=str(tmpdir), **kw)
@@ -216,9 +215,8 @@ class TestFileSystemCache(CacheTests):
 # don't use pytest.mark.skipif on subclasses
 # https://bitbucket.org/hpk42/pytest/issue/568
 # skip happens in requirements fixture instead
-class TestRedisCache(CacheTests):
+class TestRedisCache(GenericCacheTests):
     _can_use_fast_sleep = False
-    _guaranteed_deletes = True
 
     @pytest.fixture(scope='class', autouse=True)
     def requirements(self, subprocess):
@@ -268,8 +266,9 @@ class TestRedisCache(CacheTests):
         assert text_type(exc_info.value) == 'RedisCache host parameter may not be None'
 
 
-class TestMemcachedCache(CacheTests):
+class TestMemcachedCache(GenericCacheTests):
     _can_use_fast_sleep = False
+    _guaranteed_deletes = False
 
     @pytest.fixture(scope='class', autouse=True)
     def requirements(self, subprocess):
@@ -312,8 +311,9 @@ class TestMemcachedCache(CacheTests):
         assert c.get('foo') == 'bar'
 
 
-class TestUWSGICache(CacheTests):
+class TestUWSGICache(GenericCacheTests):
     _can_use_fast_sleep = False
+    _guaranteed_deletes = False
 
     @pytest.fixture(scope='class', autouse=True)
     def requirements(self):
@@ -330,3 +330,12 @@ class TestUWSGICache(CacheTests):
         c = cache.UWSGICache(cache='werkzeugtest')
         yield lambda: c
         c.clear()
+
+
+class TestNullCache(CacheTestsBase):
+    @pytest.fixture(scope='class', autouse=True)
+    def make_cache(self):
+        return cache.NullCache
+
+    def test_has(self, c):
+        assert not c.has('foo')
