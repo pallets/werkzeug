@@ -152,6 +152,21 @@ class TestServerFixer(object):
         assert wsgi_headers['Location'] == '{}/foo/bar.hml'.format(
             assumed_host)
 
+    def test_proxy_fix_forwarded_prefix(self):
+        @fixers.ProxyFix
+        @Request.application
+        def app(request):
+            return Response('%s' % (
+                request.script_root
+            ))
+        environ = dict(
+            create_environ(),
+            HTTP_X_FORWARDED_PREFIX="/foo/bar",
+        )
+
+        response = Response.from_app(app, environ)
+        assert response.get_data() == b'/foo/bar'
+
     def test_proxy_fix_weird_enum(self):
         @fixers.ProxyFix
         @Request.application
