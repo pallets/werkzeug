@@ -251,10 +251,7 @@ class UpdateDictMixin(object):
 
     def pop(self, key, default=_missing):
         modified = key in self
-        if default is _missing:
-            rv = super(UpdateDictMixin, self).pop(key)
-        else:
-            rv = super(UpdateDictMixin, self).pop(key, default)
+        rv = super(UpdateDictMixin, self).pop(key, default)
         if modified and self.on_update is not None:
             self.on_update(self)
         return rv
