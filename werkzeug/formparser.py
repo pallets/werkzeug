@@ -17,7 +17,7 @@ import codecs
 try:
     from tempfile import SpooledTemporaryFile
 except ImportError:
-    from tempfile import TemporaryFile
+    from tempfile import NamedTemporaryFile
     SpooledTemporaryFile = None
 
 from itertools import chain, repeat, tee
@@ -49,7 +49,7 @@ def default_stream_factory(total_content_length, filename, content_type,
     if SpooledTemporaryFile is not None:
         return SpooledTemporaryFile(max_size=max_size, mode='wb+')
     if total_content_length is None or total_content_length > max_size:
-        return TemporaryFile('wb+')
+        return NamedTemporaryFile('wb+')
     return BytesIO()
 
 
