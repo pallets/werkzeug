@@ -69,7 +69,7 @@ Links
 * Test status:
 
   * Linux, Mac: https://travis-ci.org/pallets/werkzeug
-  * Windows: https://ci.appveyor.com/project/davidism/werkzeug
+  * Windows: https://ci.appveyor.com/project/pallets/werkzeug
 
 * Test coverage: https://codecov.io/gh/pallets/werkzeug
 
