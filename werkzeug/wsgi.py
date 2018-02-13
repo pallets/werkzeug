@@ -545,7 +545,13 @@ class ProxyMiddleware(object):
                         timeout=self.timeout,
                         context=opts['ssl_context'])
                 con.connect()
-                con.putrequest(environ['REQUEST_METHOD'], url_quote(remote_path),
+
+                remote_url = url_quote(remote_path)
+                querystring = environ['QUERY_STRING']
+                if querystring:
+                    remote_url = remote_url + '?' + querystring
+
+                con.putrequest(environ['REQUEST_METHOD'], remote_url,
                                skip_host=True)
 
                 for k, v in headers:
