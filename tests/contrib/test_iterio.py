@@ -18,6 +18,7 @@ class TestIterO(object):
 
     def test_basic_native(self):
         io = IterIO(["Hello", "World", "1", "2", "3"])
+        io.seek(0)
         assert io.tell() == 0
         assert io.read(2) == "He"
         assert io.tell() == 2
