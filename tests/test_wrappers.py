@@ -597,7 +597,8 @@ def test_etag_response_412():
     # headers left and the status code would have to be 412
     resp = wrappers.Response.from_app(response, env)
     assert resp.status_code == 412
-    assert 'content-length' not in resp.headers
+    # Make sure there is a body still
+    assert resp.data != b''
 
     # make sure date is not overriden
     response = wrappers.Response('Hello World')
