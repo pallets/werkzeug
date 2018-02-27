@@ -139,6 +139,7 @@ HTTP_STATUS_CODES = {
     416:    'Requested Range Not Satisfiable',
     417:    'Expectation Failed',
     418:    'I\'m a teapot',  # see RFC 2324
+    421:    'Misdirected Request',  # see RFC 7540
     422:    'Unprocessable Entity',
     423:    'Locked',
     424:    'Failed Dependency',
