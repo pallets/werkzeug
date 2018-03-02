@@ -19,12 +19,12 @@ import pytest
 from tests import strict_eq
 from werkzeug import wsgi
 from werkzeug._compat import BytesIO, NativeStringIO, StringIO, to_bytes, \
-    to_native
+        to_native
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug.wrappers import BaseResponse
 from werkzeug.urls import url_parse
-from werkzeug.wsgi import _RangeWrapper, wrap_file
+from werkzeug.wsgi import _RangeWrapper, ClosingIterator, wrap_file
 
 
 def test_shareddatamiddleware_get_file_loader():
@@ -555,3 +555,49 @@ def test_http_proxy(dev_server):
     # test query string
     rv = client.get('/bar/baz?a=a&b=b')
     assert rv.data.decode('ascii') == 'bar|localhost|/baz?a=a&b=b'
+
+
+def test_closing_iterator():
+    # calls close on the iterable that is wrapped
+    got_close = []
+
+    class App(object):
+
+        def __init__(self, environ, start_response):
+            self.start = start_response
+
+        def __iter__(self):
+            self.start('200 OK', [('Content-Type', 'text/plain')])
+            yield 'some content'
+
+        def close(self):
+            got_close.append(None)
+
+    def wrap(callback=None):
+        def wrapped(environ, start_response):
+            if callback:
+                callbacks = [callback]
+            else:
+                callbacks = []
+            return ClosingIterator(App(environ, start_response), *callbacks)
+
+        return wrapped
+
+    app_iter, status, headers = run_wsgi_app(wrap(),
+                                             create_environ(),
+                                             buffered=True)
+
+    strict_eq(''.join(app_iter), 'some content')
+    assert len(got_close) == 1
+
+    # calls close on the iterable that is wrapped and callbacks
+    got_additional = []
+
+    def additional():
+        got_additional.append(None)
+    got_close = []
+    app_iter, status, headers = run_wsgi_app(wrap(additional),
+                                             create_environ(),
+                                             buffered=True)
+    assert len(got_close) == 1
+    assert len(got_additional) == 1

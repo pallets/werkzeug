@@ -841,9 +841,10 @@ class DispatcherMiddleware(object):
 class ClosingIterator(object):
 
     """The WSGI specification requires that all middlewares and gateways
-    respect the `close` callback of an iterator.  Because it is useful to add
-    another close action to a returned iterator and adding a custom iterator
-    is a boring task this class can be used for that::
+    respect the `close` callback of the iterable returned by the application.
+    Because it is useful to add another close action to a returned iterable
+    and adding a custom iterable is a boring task this class can be used for
+    that::
 
         return ClosingIterator(app(environ, start_response), [cleanup_session,
                                                               cleanup_locals])
@@ -869,7 +870,7 @@ class ClosingIterator(object):
             callbacks = [callbacks]
         else:
             callbacks = list(callbacks)
-        iterable_close = getattr(iterator, 'close', None)
+        iterable_close = getattr(iterable, 'close', None)
         if iterable_close:
             callbacks.insert(0, iterable_close)
         self._callbacks = callbacks
