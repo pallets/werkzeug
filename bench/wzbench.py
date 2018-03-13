@@ -11,12 +11,15 @@
     :copyright: 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from __future__ import division
+from __future__ import division, print_function
 import os
 import gc
 import sys
 import subprocess
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 from timeit import default_timer as timer
 from types import FunctionType
 
@@ -458,4 +461,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print >> sys.stderr, 'interrupted!'
+        print('\nInterrupted!', file = sys.stderr)
