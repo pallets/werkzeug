@@ -546,7 +546,7 @@ class MultiDict(TypeConversionDict):
                 yield key, values[0]
 
     def lists(self):
-        """Return a list of ``(key, values)`` pairs, where values is the list
+        """Return a iterator of ``(key, values)`` pairs, where values is the list
         of all values associated with the key."""
 
         for key, values in iteritems(dict, self):
