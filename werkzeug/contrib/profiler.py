@@ -127,6 +127,35 @@ class ProfilerMiddleware(object):
         return [body]
 
 
+    def __getattribute__(self, name):
+
+        # Provide proxy access to attributes of self._app (think 'app.db' for example)
+        # where apt, but prefer own attributes.
+
+        try:
+
+            return super(ProfilerMiddleware, self).__getattribute__(name)
+
+        except AttributeError:
+
+            app = super(ProfilerMiddleware, self).__getattribute__('_app')
+
+            if hasattr(app, name):
+                return getattr(app, name)
+
+            raise
+
+
+    def __setattr__(self, name, value):
+
+        # Provide proxy access to attributes of self.app where apt, setter edition.
+
+        if not hasattr(self, name):
+            return setattr(self._app, name, value)
+
+        return super(ProfilerMiddleware, self).__setattr__(name, value)
+
+
 def make_action(app_factory, hostname='localhost', port=5000,
                 threaded=False, processes=1, stream=None,
                 sort_by=('time', 'calls'), restrictions=()):
