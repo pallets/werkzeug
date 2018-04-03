@@ -199,6 +199,17 @@ def test_import_string_attribute_error(tmpdir, monkeypatch):
     assert 'screw you!' in str(bar_exc)
 
 
+def test_import_string_nested_import_error(tmpdir, monkeypatch):
+    monkeypatch.syspath_prepend(str(tmpdir))
+    tmpdir.mkdir('level_one')
+    tmpdir.join('level_one', 'level_two.py').write('import does_not_exist')
+
+    with pytest.raises(ImportError) as import_exc:
+        utils.import_string('level_one.level_two')
+
+    assert 'does_not_exist' in str(import_exc.value)
+
+
 def test_find_modules():
     assert list(utils.find_modules('werkzeug.debug')) == [
         'werkzeug.debug.console', 'werkzeug.debug.repr',
