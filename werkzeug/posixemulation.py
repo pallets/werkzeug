@@ -94,7 +94,7 @@ if os.name == 'nt':  # pragma: no cover
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-            old = "%s-%08x" % (dst, random.randint(0, sys.maxint))
+            old = "%s-%08x" % (dst, random.randint(0, sys.maxsize))
             os.rename(dst, old)
             os.rename(src, dst)
             try:
