@@ -318,7 +318,8 @@ class SessionMiddleware(object):
     def __init__(self, app, store, cookie_name='session_id',
                  cookie_age=None, cookie_expires=None, cookie_path='/',
                  cookie_domain=None, cookie_secure=None,
-                 cookie_httponly=False, environ_key='werkzeug.session'):
+                 cookie_httponly=False, cookie_samesite=None,
+                 environ_key='werkzeug.session'):
         self.app = app
         self.store = store
         self.cookie_name = cookie_name
@@ -328,6 +329,7 @@ class SessionMiddleware(object):
         self.cookie_domain = cookie_domain
         self.cookie_secure = cookie_secure
         self.cookie_httponly = cookie_httponly
+        self.cookie_samesite = cookie_samesite
         self.environ_key = environ_key
 
     def __call__(self, environ, start_response):
@@ -346,7 +348,8 @@ class SessionMiddleware(object):
                                                           session.sid, self.cookie_age,
                                                           self.cookie_expires, self.cookie_path,
                                                           self.cookie_domain, self.cookie_secure,
-                                                          self.cookie_httponly)))
+                                                          self.cookie_httponly,
+                                                          samesite=self.cookie_samesite)))
             return start_response(status, headers, exc_info)
         return ClosingIterator(self.app(environ, injecting_start_response),
                                lambda: self.store.save_if_modified(session))
