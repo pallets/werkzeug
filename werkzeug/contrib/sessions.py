@@ -318,7 +318,7 @@ class SessionMiddleware(object):
     def __init__(self, app, store, cookie_name='session_id',
                  cookie_age=None, cookie_expires=None, cookie_path='/',
                  cookie_domain=None, cookie_secure=None,
-                 cookie_httponly=False, cookie_samesite=None,
+                 cookie_httponly=False, cookie_samesite='Lax',
                  environ_key='werkzeug.session'):
         self.app = app
         self.store = store
