@@ -34,7 +34,7 @@ _os_alt_seps = list(sep for sep in [os.path.sep, os.path.altsep]
 
 
 def _find_hashlib_algorithms():
-    algos = getattr(hashlib, 'algorithms', None)
+    algos = getattr(hashlib, 'algorithms_available', None)
     if algos is None:
         algos = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
     rv = {}
