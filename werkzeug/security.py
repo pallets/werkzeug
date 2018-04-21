@@ -19,7 +19,7 @@ from operator import xor
 from itertools import starmap
 
 from werkzeug._compat import range_type, PY2, text_type, izip, to_bytes, \
-    string_types, to_native
+    to_native
 
 
 SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -31,19 +31,6 @@ _builtin_safe_str_cmp = getattr(hmac, 'compare_digest', None)
 _sys_rng = SystemRandom()
 _os_alt_seps = list(sep for sep in [os.path.sep, os.path.altsep]
                     if sep not in (None, '/'))
-
-
-def _find_hashlib_algorithms():
-    algos = getattr(hashlib, 'algorithms', None)
-    if algos is None:
-        algos = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
-    rv = {}
-    for algo in algos:
-        func = getattr(hashlib, algo, None)
-        if func is not None:
-            rv[algo] = func
-    return rv
-_hash_funcs = _find_hashlib_algorithms()
 
 
 def pbkdf2_hex(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
@@ -86,22 +73,23 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
                      string name of a known hash function or a function
                      from the hashlib module.  Defaults to sha256.
     """
-    if isinstance(hashfunc, string_types):
-        hashfunc = _hash_funcs[hashfunc]
-    elif not hashfunc:
-        hashfunc = hashlib.sha256
+    if not hashfunc:
+        hashfunc = 'sha256'
+
     data = to_bytes(data)
     salt = to_bytes(salt)
 
     # If we're on Python with pbkdf2_hmac we can try to use it for
     # compatible digests.
     if _has_native_pbkdf2:
-        _test_hash = hashfunc()
-        if hasattr(_test_hash, 'name') and \
-           _test_hash.name in _hash_funcs:
-            return hashlib.pbkdf2_hmac(_test_hash.name,
-                                       data, salt, iterations,
-                                       keylen)
+        if callable(hashfunc):
+            _test_hash = hashfunc()
+            hash_name = getattr(_test_hash, 'name', None)
+        else:
+            hash_name = hashfunc
+        if hash_name:
+            return hashlib.pbkdf2_hmac(
+                hash_name, data, salt, iterations, keylen)
 
     mac = hmac.HMAC(data, None, hashfunc)
     if not keylen:
@@ -181,23 +169,16 @@ def _hash_internal(method, salt, password):
         is_pbkdf2 = False
         actual_method = method
 
-    hash_func = _hash_funcs.get(method)
-    if hash_func is None:
-        raise TypeError('invalid method %r' % method)
-
     if is_pbkdf2:
         if not salt:
             raise ValueError('Salt is required for PBKDF2')
-        rv = pbkdf2_hex(password, salt, iterations,
-                        hashfunc=hash_func)
+        rv = pbkdf2_hex(password, salt, iterations, hashfunc=method)
     elif salt:
         if isinstance(salt, text_type):
             salt = salt.encode('utf-8')
-        rv = hmac.HMAC(salt, password, hash_func).hexdigest()
+        rv = hmac.HMAC(salt, password, method).hexdigest()
     else:
-        h = hash_func()
-        h.update(password)
-        rv = h.hexdigest()
+        rv = hashlib.new(method, password).hexdigest()
     return rv, actual_method
 
 

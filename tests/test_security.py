@@ -50,7 +50,7 @@ def test_password_hashing():
     assert hash1.startswith('sha1$')
     assert hash2.startswith('sha1$')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         check_password_hash('$made$up$', 'default')
 
     with pytest.raises(ValueError):
