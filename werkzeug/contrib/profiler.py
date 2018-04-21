@@ -9,7 +9,6 @@
     stream provided (defaults to stderr).
 
     Example usage::
-
         from werkzeug.contrib.profiler import ProfilerMiddleware
         app = ProfilerMiddleware(app)
 
@@ -60,11 +59,23 @@ class ProfilerMiddleware(object):
     directory, one file per request. Without it, a summary is printed to
     `stream` instead.
 
+    By giving the `profile_file_name_format` argument, the file name format
+    of the resulting files can be customized. The following are options that
+    can be part of the file name format:
+    -   `%(method)s`    - the request method; GET, POST, etc
+    -   `%(path)s`      - the request path or 'root' should one not exist
+    -   `%(elapsed)06d` - the elapsed time of the request
+    -   `%(time)d`      - the time of the request
+    The default format is: '%(method)s.%(path)s.%(elapsed)06dms.%(time)d'
+
     For the exact meaning of `sort_by` and `restrictions` consult the
     :mod:`profile` documentation.
 
     .. versionadded:: 0.9
        Added support for `restrictions` and `profile_dir`.
+
+    .. versionadded:: 0.15
+       Added support for `profile_file_name_format`.
 
     :param app: the WSGI application to profile.
     :param stream: the stream for the profiled stats.  defaults to stderr.
@@ -72,10 +83,12 @@ class ProfilerMiddleware(object):
     :param restrictions: a tuple of profiling strictions, not used if dumping
                          to `profile_dir`.
     :param profile_dir: directory name to save pstat files
+    :param profile_file_name_format: format of the filename excluding the extension.
     """
 
     def __init__(self, app, stream=None,
-                 sort_by=('time', 'calls'), restrictions=(), profile_dir=None):
+                 sort_by=('time', 'calls'), restrictions=(), profile_dir=None,
+                 profile_file_name_format='%(method)s.%(path)s.%(elapsed)06dms.%(time)d'):
         if not available:
             raise RuntimeError('the profiler is not available because '
                                'profile or pstat is not installed.')
@@ -84,6 +97,7 @@ class ProfilerMiddleware(object):
         self._sort_by = sort_by
         self._restrictions = restrictions
         self._profile_dir = profile_dir
+        self._profile_file_name_format = profile_file_name_format
 
     def __call__(self, environ, start_response):
         response_body = []
@@ -105,14 +119,14 @@ class ProfilerMiddleware(object):
         elapsed = time.time() - start
 
         if self._profile_dir is not None:
+            data = {
+                'method': environ['REQUEST_METHOD'],
+                'path': environ.get('PATH_INFO').strip('/').replace('/', '.') or 'root',
+                'elapsed': elapsed * 1000.0,
+                'time': time.time()
+            }
             prof_filename = os.path.join(self._profile_dir,
-                                         '%s.%s.%06dms.%d.prof' % (
-                                             environ['REQUEST_METHOD'],
-                                             environ.get('PATH_INFO').strip(
-                                                 '/').replace('/', '.') or 'root',
-                                             elapsed * 1000.0,
-                                             time.time()
-                                         ))
+                                         (self._profile_file_name_format + '.prof') % data)
             p.dump_stats(prof_filename)
 
         else:
