@@ -15,8 +15,6 @@ import posixpath
 import codecs
 from struct import Struct
 from random import SystemRandom
-from operator import xor
-from itertools import starmap
 
 from werkzeug._compat import range_type, PY2, text_type, izip, to_bytes, \
     to_native
@@ -52,9 +50,6 @@ def pbkdf2_hex(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
     return to_native(codecs.encode(rv, 'hex_codec'))
 
 
-_has_native_pbkdf2 = hasattr(hashlib, 'pbkdf2_hmac')
-
-
 def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
                keylen=None, hashfunc=None):
     """Returns a binary digest for the PBKDF2 hash algorithm of `data`
@@ -79,34 +74,12 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
     data = to_bytes(data)
     salt = to_bytes(salt)
 
-    # If we're on Python with pbkdf2_hmac we can try to use it for
-    # compatible digests.
-    if _has_native_pbkdf2:
-        if callable(hashfunc):
-            _test_hash = hashfunc()
-            hash_name = getattr(_test_hash, 'name', None)
-        else:
-            hash_name = hashfunc
-        if hash_name:
-            return hashlib.pbkdf2_hmac(
-                hash_name, data, salt, iterations, keylen)
-
-    mac = _create_mac(data, None, hashfunc)
-    if not keylen:
-        keylen = mac.digest_size
-
-    def _pseudorandom(x, mac=mac):
-        h = mac.copy()
-        h.update(x)
-        return bytearray(h.digest())
-    buf = bytearray()
-    for block in range_type(1, -(-keylen // mac.digest_size) + 1):
-        rv = u = _pseudorandom(salt + _pack_int(block))
-        for i in range_type(iterations - 1):
-            u = _pseudorandom(bytes(u))
-            rv = bytearray(starmap(xor, izip(rv, u)))
-        buf.extend(rv)
-    return bytes(buf[:keylen])
+    if callable(hashfunc):
+        _test_hash = hashfunc()
+        hash_name = getattr(_test_hash, 'name', None)
+    else:
+        hash_name = hashfunc
+    return hashlib.pbkdf2_hmac(hash_name, data, salt, iterations, keylen)
 
 
 def safe_str_cmp(a, b):

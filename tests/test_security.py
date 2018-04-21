@@ -134,13 +134,3 @@ def test_pbkdf2():
           '139c30c0966bc32ba55fdbf212530ac9c5ec59f1a452f5cc9ad940fea0598ed1')
     check('X' * 65, 'pass phrase exceeds block size', 1200, 32, 'sha1',
           '9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a')
-
-
-def test_pbkdf2_non_native():
-    import werkzeug.security as sec
-    prev_value = sec._has_native_pbkdf2
-    sec._has_native_pbkdf2 = None
-
-    assert pbkdf2_hex('password', 'salt', 1, 20, 'sha1') \
-        == '0c60c80f961f0e71f3a9b524af6012062fe037a6'
-    sec._has_native_pbkdf2 = prev_value
