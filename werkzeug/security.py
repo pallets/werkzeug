@@ -91,7 +91,7 @@ def pbkdf2_bin(data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS,
             return hashlib.pbkdf2_hmac(
                 hash_name, data, salt, iterations, keylen)
 
-    mac = hmac.HMAC(data, None, hashfunc)
+    mac = _create_mac(data, None, hashfunc)
     if not keylen:
         keylen = mac.digest_size
 
@@ -176,10 +176,21 @@ def _hash_internal(method, salt, password):
     elif salt:
         if isinstance(salt, text_type):
             salt = salt.encode('utf-8')
-        rv = hmac.HMAC(salt, password, method).hexdigest()
+        mac = _create_mac(salt, password, method)
+        rv = mac.hexdigest()
     else:
         rv = hashlib.new(method, password).hexdigest()
     return rv, actual_method
+
+
+def _create_mac(key, msg, method):
+    if callable(method):
+        return hmac.HMAC(key, msg, method)
+    hashfunc = lambda d=b'': hashlib.new(method, d)
+    # Python 2.7 used ``hasattr(digestmod, '__call__')``
+    # to detect if hashfunc is callable
+    hashfunc.__call__ = hashfunc
+    return hmac.HMAC(key, msg, hashfunc)
 
 
 def generate_password_hash(password, method='pbkdf2:sha256', salt_length=8):
