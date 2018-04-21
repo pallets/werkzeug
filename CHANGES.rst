@@ -1,6 +1,20 @@
 Werkzeug Changelog
 ==================
 
+Version 0.15
+------------
+
+Release Date not Decided
+
+- Fix a bug in ``werkzeug.wsgi.ProxyMiddleware`` with query string.
+  (`#1252`_)
+- Add 412 status code.
+- Cleanup ``werkzeug.security`` module, remove predated hashlib support.
+  (`#1282`_)
+
+.. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
+.. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
+
 Version 0.14.1
 --------------
 
