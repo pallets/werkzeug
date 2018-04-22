@@ -161,6 +161,10 @@ _converter_args_re = re.compile(
 )
 
 
+class InvalidURLWarning(Warning):
+    pass
+
+
 _PYTHON_CONSTANTS = {"None": None, "True": True, "False": False}
 
 
@@ -253,8 +257,13 @@ class RequestRedirect(HTTPException, RoutingException):
         return redirect(self.new_url, self.code)
 
 
-class RequestSlash(RoutingException):
+class RequestPath(RoutingException):
     """Internal exception."""
+
+    __slots__ = ("path_info",)
+
+    def __init__(self, path_info):
+        self.path_info = path_info
 
 
 class RequestAliasRedirect(RoutingException):  # noqa: B903
@@ -582,6 +591,11 @@ class Rule(RuleFactory):
         Override the `Map` setting for `strict_slashes` only for this rule. If
         not specified the `Map` setting is used.
 
+    `merge_slashes`
+        Override the `Map` setting for `merge_slashes` for this rule.
+
+        .. versionadded:: 0.15
+
     `build_only`
         Set this to True and the rule will never match but will create a URL
         that can be build. This is useful if you have resources on a subdomain
@@ -634,17 +648,25 @@ class Rule(RuleFactory):
         build_only=False,
         endpoint=None,
         strict_slashes=None,
+        merge_slashes=None,
         redirect_to=None,
         alias=False,
         host=None,
     ):
         if not string.startswith("/"):
             raise ValueError("urls must start with a leading slash")
-        self.rule = string
+        self.rule = re.sub(r"//+", "/", string)
+        if self.rule != string:
+            warnings.warn(
+                "Consecutive '/' separators will be stripped from URL: %r" % string,
+                InvalidURLWarning,
+                stacklevel=2,
+            )
         self.is_leaf = not string.endswith("/")
 
         self.map = None
         self.strict_slashes = strict_slashes
+        self.merge_slashes = merge_slashes
         self.subdomain = subdomain
         self.host = host
         self.defaults = defaults
@@ -726,6 +748,8 @@ class Rule(RuleFactory):
         self.map = map
         if self.strict_slashes is None:
             self.strict_slashes = map.strict_slashes
+        if self.merge_slashes is None:
+            self.merge_slashes = map.merge_slashes
         if self.subdomain is None:
             self.subdomain = map.default_subdomain
         self.compile()
@@ -817,6 +841,12 @@ class Rule(RuleFactory):
         :internal:
         """
         if not self.build_only:
+            require_redirect = False
+
+            if self.merge_slashes and "//" in path:
+                path = re.sub(r"//+", "/", path)
+                require_redirect = True
+
             m = self._regex.search(path)
             if m is not None:
                 groups = m.groupdict()
@@ -832,7 +862,8 @@ class Rule(RuleFactory):
                         method is None or self.methods is None or method in self.methods
                     )
                 ):
-                    raise RequestSlash()
+                    path += "/"
+                    require_redirect = True
                 # if we are not in strict slashes mode we have to remove
                 # a __suffix__
                 elif not self.strict_slashes:
@@ -847,6 +878,10 @@ class Rule(RuleFactory):
                     result[str(name)] = value
                 if self.defaults:
                     result.update(self.defaults)
+
+                if require_redirect:
+                    path = path.split("|", 1)[1]
+                    raise RequestPath(path)
 
                 if self.alias and self.map.redirect_defaults:
                     raise RequestAliasRedirect(result)
@@ -1300,6 +1335,7 @@ class Map(object):
                               subdomain defined.
     :param charset: charset of the url. defaults to ``"utf-8"``
     :param strict_slashes: Take care of trailing slashes.
+    :param merge_slashes: Take care of repeated slashes.
     :param redirect_defaults: This will redirect to the default rule if it
                               wasn't visited that way. This helps creating
                               unique URLs.
@@ -1320,6 +1356,9 @@ class Map(object):
 
     .. versionadded:: 0.7
         `encoding_errors` and `host_matching` was added.
+
+    .. versionadded:: 1.0.0
+        Added ``merge_slashes``.
     """
 
     #: A dict of default converters to be used.
@@ -1331,6 +1370,7 @@ class Map(object):
         default_subdomain="",
         charset="utf-8",
         strict_slashes=True,
+        merge_slashes=True,
         redirect_defaults=True,
         converters=None,
         sort_parameters=False,
@@ -1347,6 +1387,7 @@ class Map(object):
         self.charset = charset
         self.encoding_errors = encoding_errors
         self.strict_slashes = strict_slashes
+        self.merge_slashes = merge_slashes
         self.redirect_defaults = redirect_defaults
         self.host_matching = host_matching
 
@@ -1752,6 +1793,8 @@ class MapAdapter(object):
             query_args = self.query_args
         method = (method or self.default_method).upper()
 
+        require_redirect = False
+
         path = u"%s|%s" % (
             self.map.host_matching and self.server_name or self.subdomain,
             path_info and "/%s" % path_info.lstrip("/"),
@@ -1761,10 +1804,10 @@ class MapAdapter(object):
         for rule in self.map._rules:
             try:
                 rv = rule.match(path, method)
-            except RequestSlash:
+            except RequestPath as e:
                 raise RequestRedirect(
                     self.make_redirect_url(
-                        url_quote(path_info, self.map.charset, safe="/:|+") + "/",
+                        url_quote(e.path_info, self.map.charset, safe="/:|+"),
                         query_args,
                     )
                 )
@@ -1807,6 +1850,13 @@ class MapAdapter(object):
                             ),
                             redirect_url,
                         )
+                    )
+                )
+
+            if require_redirect:
+                raise RequestRedirect(
+                    self.make_redirect_url(
+                        url_quote(path_info, self.map.charset, safe="/:|+"), query_args
                     )
                 )
 

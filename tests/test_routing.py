@@ -62,6 +62,36 @@ def test_basic_routing():
     assert excinfo.value.new_url == "http://example.org/bar/?foo=bar"
 
 
+def test_multi_slash():
+    map = r.Map(
+        [
+            r.Rule("/frob/zarf", endpoint="blorwoop"),
+            r.Rule("/bleeg/bloog/", endpoint="bluff"),
+            r.Rule("/quux/<path:slub>", endpoint="zoop"),
+        ]
+    )
+    adapter = map.bind("localhost", "/")
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match("/frob//zarf")
+    assert excinfo.value.new_url.endswith("/frob/zarf")
+
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match("/bleeg//bloog")
+    assert excinfo.value.new_url.endswith("/bleeg/bloog/")
+
+    # test some negatives too
+    adapter.match("/frob/zarf")
+    adapter.match("/bleeg/bloog/")
+
+    ep, rv = adapter.match("/quux/http://splud/")
+    assert rv["slub"] == "http://splud/"
+
+    with pytest.warns(r.InvalidURLWarning):
+        map = r.Map([r.Rule("/frob//zarf", endpoint="blorwoop")])
+    adapter = map.bind("localhost", "/")
+    assert adapter.build("blorwoop") == "/frob/zarf"
+
+
 def test_strict_slashes_redirect():
     map = r.Map(
         [
