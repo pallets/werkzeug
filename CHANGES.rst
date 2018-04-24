@@ -78,6 +78,9 @@ Unreleased
 -   The ``429 TooManyRequests`` and ``503 ServiceUnavailable`` HTTP
     exceptions takes a ``retry_after`` parameter to set the
     ``Retry-After`` header. :issue:`1657`
+-   ``Map`` and ``Rule`` have a ``merge_slashes`` option to collapse
+    multiple slashes into one, similar to how many HTTP servers behave.
+    :pr:`1286`
 
 
 Version 0.16.0

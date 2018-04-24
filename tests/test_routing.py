@@ -85,9 +85,10 @@ def test_multi_slash():
 
     ep, rv = adapter.match("/quux/http://splud/")
     assert rv["slub"] == "http://splud/"
+    ep, rv = adapter.match("/quux/x//splud/")
+    assert rv["slub"] == "x//splud/"
 
-    with pytest.warns(r.InvalidURLWarning):
-        map = r.Map([r.Rule("/frob//zarf", endpoint="blorwoop")])
+    map = r.Map([r.Rule("/frob//zarf", endpoint="blorwoop")])
     adapter = map.bind("localhost", "/")
     assert adapter.build("blorwoop") == "/frob/zarf"
 

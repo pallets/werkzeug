@@ -161,10 +161,6 @@ _converter_args_re = re.compile(
 )
 
 
-class InvalidURLWarning(Warning):
-    pass
-
-
 _PYTHON_CONSTANTS = {"None": None, "True": True, "False": False}
 
 
@@ -655,13 +651,7 @@ class Rule(RuleFactory):
     ):
         if not string.startswith("/"):
             raise ValueError("urls must start with a leading slash")
-        self.rule = re.sub(r"//+", "/", string)
-        if self.rule != string:
-            warnings.warn(
-                "Consecutive '/' separators will be stripped from URL: %r" % string,
-                InvalidURLWarning,
-                stacklevel=2,
-            )
+        self.rule = string
         self.is_leaf = not string.endswith("/")
 
         self.map = None
@@ -790,9 +780,18 @@ class Rule(RuleFactory):
             index = 0
             for converter, arguments, variable in parse_rule(rule):
                 if converter is None:
-                    regex_parts.append(re.escape(variable))
-                    self._trace.append((False, variable))
-                    for part in variable.split("/"):
+                    for match in re.finditer(r"/+|[^/]+", variable):
+                        part = match.group(0)
+                        if part.startswith("/"):
+                            if self.merge_slashes:
+                                regex_parts.append(r"/+?")
+                                self._trace.append((False, "/"))
+                            else:
+                                regex.parts.append(part)
+                                self._trace.append((False, part))
+                            continue
+                        self._trace.append((False, part))
+                        regex_parts.append(re.escape(part))
                         if part:
                             self._static_weights.append((index, -len(part)))
                 else:
@@ -843,10 +842,6 @@ class Rule(RuleFactory):
         if not self.build_only:
             require_redirect = False
 
-            if self.merge_slashes and "//" in path:
-                path = re.sub(r"//+", "/", path)
-                require_redirect = True
-
             m = self._regex.search(path)
             if m is not None:
                 groups = m.groupdict()
@@ -878,6 +873,14 @@ class Rule(RuleFactory):
                     result[str(name)] = value
                 if self.defaults:
                     result.update(self.defaults)
+
+                if self.merge_slashes:
+                    new_path = "|".join(self.build(result, False))
+                    if path.endswith("/") and not new_path.endswith("/"):
+                        new_path += "/"
+                    if new_path.count("/") < path.count("/"):
+                        path = new_path
+                        require_redirect = True
 
                 if require_redirect:
                     path = path.split("|", 1)[1]
