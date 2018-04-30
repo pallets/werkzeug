@@ -938,8 +938,10 @@ def run_wsgi_app(app, environ, buffered=False):
     # a new `ClosingIterator` if we need to restore a `close` callable from the
     # original return value.
     else:
-        while not response:
-            buffer.append(next(app_iter))
+        for item in app_iter:
+            buffer.append(item)
+            if response:
+                break
         if buffer:
             app_iter = chain(buffer, app_iter)
         if close_func is not None and app_iter is not app_rv:

@@ -520,6 +520,29 @@ def test_run_wsgi_apps(buffered, iterable):
         assert not leaked_data
 
 
+@pytest.mark.parametrize('buffered', (True, False))
+@pytest.mark.parametrize('iterable', (True, False))
+def test_lazy_start_response_empty_response_app(buffered, iterable):
+    @implements_iterator
+    class app:
+        def __init__(self, environ, start_response):
+            self.start_response = start_response
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            self.start_response('200 OK', [('Content-Type', 'text/html')])
+            raise StopIteration
+
+    if iterable:
+        app = iterable_middleware(app)
+    app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
+    strict_eq(status, '200 OK')
+    strict_eq(list(headers), [('Content-Type', 'text/html')])
+    strict_eq(''.join(app_iter), '')
+
+
 def test_run_wsgi_app_closing_iterator():
     got_close = []
 
