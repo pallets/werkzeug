@@ -267,7 +267,7 @@ def test_dispatch():
     )
 
     assert dispatch('/').data == b"('root', {})"
-    assert dispatch('/foo').status_code == 301
+    assert dispatch('/foo').status_code == 302
     raise_this = r.NotFound()
     pytest.raises(r.NotFound, lambda: dispatch('/bar'))
     assert dispatch('/bar', True).status_code == 404
