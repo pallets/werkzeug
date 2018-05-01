@@ -27,7 +27,8 @@ from werkzeug._compat import to_native, text_type, BytesIO
 from werkzeug.urls import url_decode_stream
 from werkzeug.wsgi import make_line_iter, \
     get_input_stream, get_content_length
-from werkzeug.datastructures import Headers, FileStorage, MultiDict
+from werkzeug.datastructures import Headers, \
+    FileStorage, FormStorage, MultiDict
 from werkzeug.http import parse_options_header
 
 
@@ -518,8 +519,8 @@ class MultiPartParser(object):
                 else:
                     part_charset = self.get_part_charset(headers)
                     yield ('form',
-                           (name, b''.join(container).decode(
-                               part_charset, self.errors)))
+                           (name, FormStorage(b''.join(container).decode(
+                               part_charset, self.errors), name, headers=headers)))
 
     def parse(self, file, boundary, content_length):
         formstream, filestream = tee(

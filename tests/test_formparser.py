@@ -341,6 +341,24 @@ class TestMultiPart(object):
         strict_eq(foo.content_type, 'text/plain; charset=utf-8')
         strict_eq(foo.headers['x-custom-header'], 'blah')
 
+        data = (b'--foo\r\n'
+                b'Content-Disposition: form-data; name="foo"\r\n'
+                b'X-Custom-Header: blah\r\n'
+                b'Content-Type: application/json; charset=utf-8\r\n\r\n'
+                b'314\r\n'
+                b'--foo--')
+        req = Request.from_values(input_stream=BytesIO(data),
+                                  content_length=len(data),
+                                  content_type='multipart/form-data; boundary=foo',
+                                  method='POST')
+        foo = req.form['foo']
+        strict_eq(foo, u'314')
+        strict_eq(foo.mimetype, 'application/json')
+        strict_eq(foo.mimetype_params, {'charset': 'utf-8'})
+        strict_eq(foo.headers['content-type'], foo.content_type)
+        strict_eq(foo.content_type, 'application/json; charset=utf-8')
+        strict_eq(foo.headers['x-custom-header'], 'blah')
+
     def test_nonstandard_line_endings(self):
         for nl in b'\n', b'\r', b'\r\n':
             data = nl.join((

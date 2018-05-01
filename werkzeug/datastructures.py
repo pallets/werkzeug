@@ -2755,6 +2755,57 @@ class FileStorage(object):
         )
 
 
+class FormStorage(text_type):
+
+    """The :class:`FormStorage` class is a wrapper over multipart form fields.
+
+    .. versionadded:: 0.15
+    """
+
+    def __new__(cls, value=None, name=None, content_type=None, headers=None):
+        klass = text_type.__new__(cls, value)
+        klass.name = name
+
+        if headers is None:
+            headers = Headers()
+
+        if content_type is not None:
+            headers['Content-Type'] = content_type
+
+        klass.headers = headers
+
+        return klass
+
+    def _parse_content_type(self):
+        if not hasattr(self, '_parsed_content_type'):
+            self._parsed_content_type = \
+                parse_options_header(self.content_type)
+
+    @property
+    def content_type(self):
+        """The content-type sent in the header.  Usually not available"""
+        return self.headers.get('content-type')
+
+    @property
+    def mimetype(self):
+        """Like :attr:`content_type`, but without parameters (eg, without
+        charset, type etc.) and always lowercase.  For example if the content
+        type is ``text/HTML; charset=utf-8`` the mimetype would be
+        ``'text/html'``.
+        """
+        self._parse_content_type()
+        return self._parsed_content_type[0].lower()
+
+    @property
+    def mimetype_params(self):
+        """The mimetype parameters as dict.  For example if the content
+        type is ``text/html; charset=utf-8`` the params would be
+        ``{'charset': 'utf-8'}``.
+        """
+        self._parse_content_type()
+        return self._parsed_content_type[1]
+
+
 # circular dependencies
 from werkzeug.http import dump_options_header, dump_header, generate_etag, \
     quote_header_value, parse_set_header, unquote_etag, quote_etag, \

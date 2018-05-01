@@ -91,20 +91,48 @@ def stream_encode_multipart(values, use_tempfile=True, threshold=1024 * 500,
                     write('; filename="%s"\r\n' % filename)
                 else:
                     write('\r\n')
-                write('Content-Type: %s\r\n\r\n' % content_type)
+
+                headers = getattr(value, 'headers', None)
+                headers = {} if headers is None else headers.copy()
+
+                headers['Content-Type'] = content_type
+
+                for k, v in iteritems(headers):
+                    write('%s: %s\r\n' % (k, v))
+
+                write('\r\n')
+
                 while 1:
                     chunk = reader(16384)
                     if not chunk:
                         break
                     write_binary(chunk)
+
             else:
+                headers = getattr(value, 'headers', None)
+                headers = {} if headers is None else headers.copy()
+
+                content_type = getattr(value, 'content_type', None)
+                if content_type is not None:
+                    headers['Content-Type'] = content_type
+
+                if headers:
+                    for k, v in iteritems(headers):
+                        write('%s: %s\r\n' % (k, v))
+
+                    write('\r\n')
+
+                else:
+                    write('\r\n\r\n')
+
                 if not isinstance(value, string_types):
                     value = str(value)
 
                 value = to_bytes(value, charset)
-                write('\r\n\r\n')
                 write_binary(value)
+
             write('\r\n')
+
     write('--%s--\r\n' % boundary)
 
     length = int(_closure[0].tell())

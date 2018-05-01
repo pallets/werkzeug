@@ -11,9 +11,12 @@ Release Date not Decided
 - Add 412 status code.
 - Cleanup ``werkzeug.security`` module, remove predated hashlib support.
   (`#1282`_)
+- Was added back compatible ``werkzeug.datastructures.FormStorage`` for storing multipart/form-data fields with headers. Also was improved ``werkzeug.test.encode_multipart`` for encode data with headers.
+  (`#1290`_)
 
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
+.. _`#1290`: https://github.com/pallets/werkzeug/pull/1290
 
 Version 0.14.1
 --------------

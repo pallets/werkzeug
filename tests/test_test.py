@@ -257,11 +257,12 @@ def test_environ_builder_content_type():
     assert builder.content_type is None
     builder.form['foo'] = 'bar'
     assert builder.content_type == 'application/x-www-form-urlencoded'
-    builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt')
+    builder.files.add_file('blafasel', BytesIO(b'foo'), 'test.txt', 'plain/text')
     assert builder.content_type == 'multipart/form-data'
     req = builder.get_request()
     strict_eq(req.form['foo'], u'bar')
     strict_eq(req.files['blafasel'].read(), b'foo')
+    strict_eq(req.files['blafasel'].content_type, 'plain/text')
 
 
 def test_environ_builder_stream_switch():

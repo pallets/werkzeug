@@ -1038,3 +1038,22 @@ class TestFileStorage(object):
         for idx, line in enumerate(binary_storage):
             assert idx < 2
         assert idx == 1
+
+
+class TestFormStorage(object):
+    storage_class = datastructures.FormStorage
+
+    def test_mimetype_always_lowercase(self):
+        file_storage = self.storage_class(content_type='APPLICATION/JSON')
+        assert file_storage.mimetype == 'application/json'
+
+    def test_instantiation(self):
+        storage = self.storage_class(b'one'.decode('utf-8'))
+        assert storage == u'one'
+
+        storage = self.storage_class('two')
+        assert storage == u'two'
+
+        storage = self.storage_class('three', content_type='plain/text')
+        assert storage.content_type == 'plain/text'
+        assert storage.headers['content-type'] == 'plain/text'
