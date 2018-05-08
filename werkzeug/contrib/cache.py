@@ -578,7 +578,17 @@ class RedisCache(BaseCache):
                                        db=db, **kwargs)
         else:
             self._client = host
-        self.key_prefix = key_prefix or ''
+
+        class NullPrefix:
+            """Can be left added to anything without altering it."""
+
+            def __add__(self, other):
+                return other
+
+            def __bool__(self):
+                return False
+
+        self.key_prefix = key_prefix or NullPrefix()
 
     def _normalize_timeout(self, timeout):
         timeout = BaseCache._normalize_timeout(self, timeout)
