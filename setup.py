@@ -47,6 +47,10 @@ setup(
             'sphinx',
             'pallets-sphinx-themes',
         ],
+        'docs': [
+            'sphinx',
+            'pallets-sphinx-themes',
+        ]
     },
     include_package_data=True,
     zip_safe=False,
