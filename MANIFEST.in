@@ -5,5 +5,4 @@ graft docs
 graft artwork
 graft examples
 prune docs/_build
-prune docs/_themes
 global-exclude *.py[cdo] __pycache__ *.so

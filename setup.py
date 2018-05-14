@@ -45,6 +45,7 @@ setup(
             'coverage',
             'tox',
             'sphinx',
+            'pallets-sphinx-themes',
         ],
     },
     include_package_data=True,
