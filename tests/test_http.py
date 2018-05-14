@@ -396,6 +396,18 @@ class TestHTTPUtility(object):
             }
         )
 
+    def test_empty_keys_are_ignored(self):
+        strict_eq(
+            dict(http.parse_cookie(
+                'first=IamTheFirst ; a=1; a=2 ;second=andMeTwo; ; '
+            )),
+            {
+                'first': u'IamTheFirst',
+                'a': u'2',
+                'second': u'andMeTwo'
+            }
+        )
+
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
         strict_eq(val, 'foo="?foo"; Path=/')
