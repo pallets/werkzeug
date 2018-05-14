@@ -436,3 +436,37 @@ def test_chunked_encoding_with_content_length(dev_server):
     assert res.read() == b'YES'
 
     conn.close()
+
+
+def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
+    server = dev_server(r'''
+    from werkzeug.wrappers import Response
+    def app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [environ['HTTP_XYZ'].encode()]
+    ''')
+
+    if sys.version_info[0] == 2:
+        from httplib import HTTPConnection
+    else:
+        from http.client import HTTPConnection
+
+    conn = HTTPConnection('127.0.0.1', server.port)
+    conn.connect()
+    conn.putrequest('GET', '/')
+    conn.putheader('Accept', 'text/plain')
+    conn.putheader('XYZ', ' a ')
+    conn.putheader('X-INGNORE-1', 'Some nonsense')
+    conn.putheader('XYZ', ' b')
+    conn.putheader('X-INGNORE-2', 'Some nonsense')
+    conn.putheader('XYZ', 'c ')
+    conn.putheader('X-INGNORE-3', 'Some nonsense')
+    conn.putheader('XYZ', 'd')
+    conn.endheaders()
+    conn.send(b'')
+    res = conn.getresponse()
+
+    assert res.status == 200
+    assert res.read() == b'a ,b,c ,d'
+
+    conn.close()

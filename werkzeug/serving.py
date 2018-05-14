@@ -189,10 +189,12 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SERVER_PROTOCOL':      self.request_version
         }
 
-        for key, value in self.headers.items():
+        for key, value in self.get_header_items():
             key = key.upper().replace('-', '_')
             if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
                 key = 'HTTP_' + key
+                if key in environ:
+                    value = "{},{}".format(environ[key], value)
             environ[key] = value
 
         if environ.get('HTTP_TRANSFER_ENCODING', '').strip().lower() == 'chunked':
@@ -382,6 +384,35 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         _log(type, '%s - - [%s] %s\n' % (self.address_string(),
                                          self.log_date_time_string(),
                                          message % args))
+
+    def get_header_items(self):
+        """
+        Get an iterable list of key/value pairs representing headers.
+
+        This function provides Python 2/3 compatibility as related to the
+        parsing of request headers. Python 2.7 is not compliant with
+        RFC 3875 Section 4.1.18 which requires multiple values for headers
+        to be provided. This function will return a matching list regardless
+        of Python version. It can be removed once Python 2.7 support
+        is dropped.
+
+        :return: List of tuples containing header hey/value pairs
+        """
+        if PY2:
+            # For Python 2, process the headers manually according to W3C RFC 2616 Section 4.2
+            items = []
+            for header in self.headers.headers:
+                # Remove the \n\r from the header and split on the : to get the field name and value
+                key, value = header[0:-2].split(":", 1)
+                # Add the key and the value once stripped of leading white space. The specification
+                # allows for stripping trailing white space but the Python 3 code does not strip
+                # trailing white space. Therefore, trailing space will be left as is to match the
+                # Python 3 behavior
+                items.append((key, value.lstrip()))
+        else:
+            items = self.headers.items()
+
+        return items
 
 
 #: backwards compatible name if someone is subclassing it
