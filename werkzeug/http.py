@@ -999,6 +999,8 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
     def _parse_pairs():
         for key, val in _cookie_parse_impl(header):
             key = to_unicode(key, charset, errors, allow_none_charset=True)
+            if not key:
+                continue
             val = to_unicode(val, charset, errors, allow_none_charset=True)
             yield try_coerce_native(key), val
 
