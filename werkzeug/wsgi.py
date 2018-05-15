@@ -144,8 +144,8 @@ def host_is_trusted(hostname, trusted_list):
 
 def get_host(environ, trusted_hosts=None):
     """Return the real host for the given WSGI environment.  This first checks
-    the `X-Forwarded-Host` header, then the normal `Host` header, and finally
-    the `SERVER_NAME` environment variable (using the first one it finds).
+    the normal `Host` header, and if it's not present, then `SERVER_NAME`
+    and `SERVER_PORT` environment variables.
 
     Optionally it verifies that the host is in a list of trusted hosts.
     If the host is not in there it will raise a
@@ -155,9 +155,7 @@ def get_host(environ, trusted_hosts=None):
     :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
                           for more information.
     """
-    if 'HTTP_X_FORWARDED_HOST' in environ:
-        rv = environ['HTTP_X_FORWARDED_HOST'].split(',', 1)[0].strip()
-    elif 'HTTP_HOST' in environ:
+    if 'HTTP_HOST' in environ:
         rv = environ['HTTP_HOST']
     else:
         rv = environ['SERVER_NAME']
