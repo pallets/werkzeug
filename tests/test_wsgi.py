@@ -99,7 +99,7 @@ def test_dispatchermiddleware():
 
 
 def test_get_host_by_http_host():
-    env = {'HTTP_HOST': 'example.org'}
+    env = {'HTTP_HOST': 'example.org', 'wsgi.url_scheme': 'http'}
     assert wsgi.get_host(env) == 'example.org'
     env['HTTP_HOST'] = 'example.org:8080'
     assert wsgi.get_host(env) == 'example.org:8080'
@@ -121,7 +121,8 @@ def test_get_host_by_server_name_and_port():
 
 def test_get_host_ignore_x_forwarded_for():
     env = {'HTTP_X_FORWARDED_HOST': 'forwarded',
-           'HTTP_HOST': 'example.org'}
+           'HTTP_HOST': 'example.org',
+           'wsgi.url_scheme': 'http'}
     assert wsgi.get_host(env) == 'example.org'
 
 
@@ -135,7 +136,7 @@ def test_get_host_validate_trusted_hosts():
     assert wsgi.get_host(env, trusted_hosts=['.example.org:8080']) == 'example.org:8080'
     pytest.raises(BadRequest, wsgi.get_host, env,
                   trusted_hosts=['.example.com'])
-    env = {'HTTP_HOST': 'example.org'}
+    env = {'HTTP_HOST': 'example.org', 'wsgi.url_scheme': 'http'}
     assert wsgi.get_host(env, trusted_hosts=['.example.org']) == 'example.org'
     pytest.raises(BadRequest, wsgi.get_host, env,
                   trusted_hosts=['example.com'])
