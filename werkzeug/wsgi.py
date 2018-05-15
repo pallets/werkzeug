@@ -157,6 +157,10 @@ def get_host(environ, trusted_hosts=None):
     """
     if 'HTTP_HOST' in environ:
         rv = environ['HTTP_HOST']
+        if environ['wsgi.url_scheme'] == 'http' and rv.endswith(':80'):
+            rv = rv[:-3]
+        elif environ['wsgi.url_scheme'] == 'https' and rv.endswith(':443'):
+            rv = rv[:-4]
     else:
         rv = environ['SERVER_NAME']
         if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
