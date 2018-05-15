@@ -8,7 +8,10 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import pytest
+
 from tests import strict_eq
+from werkzeug._compat import to_bytes
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
 
@@ -16,6 +19,7 @@ from werkzeug.test import create_environ, Client
 from werkzeug.wrappers import Request, Response
 from werkzeug.contrib import fixers
 from werkzeug.utils import redirect
+from werkzeug.wsgi import get_host
 
 
 @Request.application
@@ -55,27 +59,88 @@ class TestServerFixer(object):
             response = Response.from_app(app, env)
             assert response.get_data() == b'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
-    def test_proxy_fix(self):
+    @pytest.mark.parametrize('environ,assumed_addr,assumed_host', [
+        pytest.param({
+            'HTTP_HOST': 'internal',
+            'REMOTE_ADDR': '127.0.0.1'
+        }, '127.0.0.1', 'http://internal', id='No proxy, with Host'),
+        pytest.param({
+            'SERVER_NAME': 'internal',
+            'SERVER_PORT': '80',
+            'REMOTE_ADDR': '127.0.0.1'
+        }, '127.0.0.1', 'http://internal', id='No proxy, no Host'),
+        pytest.param({
+            'HTTP_HOST': 'internal:80',
+            'REMOTE_ADDR': '127.0.0.1'
+        }, '127.0.0.1', 'http://internal', id='Sanitize HTTP port'),
+        pytest.param({
+            'wsgi.url_scheme': 'https',
+            'HTTP_HOST': 'internal:443',
+            'REMOTE_ADDR': '127.0.0.1'
+        }, '127.0.0.1', 'https://internal', id='Sanitize HTTPS port'),
+        pytest.param({
+            'HTTP_HOST': 'internal:8080',
+            'REMOTE_ADDR': '127.0.0.1'
+        }, '127.0.0.1', 'http://internal:8080', id='Custom port'),
+        pytest.param({
+            'HTTP_HOST': 'internal',
+            'REMOTE_ADDR': '127.0.0.1',
+            'HTTP_X_FORWARDED_FOR': '1.2.3.4, 5.6.7.8'
+        }, '1.2.3.4', 'http://internal', id='X-Forwarded-For'),
+        pytest.param({
+            'HTTP_HOST': 'internal',
+            'REMOTE_ADDR': '127.0.0.1',
+            'HTTP_X_FORWARDED_PROTO': 'https',
+            'HTTP_X_FORWARDED_HOST': 'example.com',
+            'HTTP_X_FORWARDED_PORT': '8443',
+        }, '127.0.0.1', 'https://example.com:8443', id='X-Forwarded-*'),
+        pytest.param({
+            'HTTP_HOST': 'internal',
+            'REMOTE_ADDR': '127.0.0.1',
+            'HTTP_X_FORWARDED_PORT': '8080',
+        }, '127.0.0.1', 'http://internal:8080', id='HTTP X-Port, no X-Host'),
+        pytest.param({
+            'SERVER_NAME': 'internal',
+            'REMOTE_ADDR': '127.0.0.1',
+            'HTTP_X_FORWARDED_PORT': '8080',
+        }, '127.0.0.1', 'http://internal:8080', id='HTTP X-Port, no Host'),
+        pytest.param({
+            'HTTP_HOST': 'internal',
+            'REMOTE_ADDR': '127.0.0.1',
+            'HTTP_X_FORWARDED_PROTO': 'https',
+            'HTTP_X_FORWARDED_PORT': '8443',
+        }, '127.0.0.1', 'https://internal:8443', id='HTTPS X-Port, no X-Host'),
+        pytest.param({
+            'HTTP_HOST': 'internal',
+            'REMOTE_ADDR': '127.0.0.1',
+            'HTTP_X_FORWARDED_PROTO': 'https',
+            'HTTP_X_FORWARDED_HOST': 'example.com',
+            'HTTP_X_FORWARDED_PORT': '443',
+            'HTTP_X_FORWARDED_FOR': '1.2.3.4, 5.6.7.8'
+        }, '1.2.3.4', 'https://example.com', id='All together'),
+    ])
+    def test_proxy_fix(self, environ, assumed_addr, assumed_host):
         @Request.application
         def app(request):
             return Response('%s|%s' % (
                 request.remote_addr,
                 # do not use request.host as this fixes too :)
-                request.environ['HTTP_HOST']
+                request.environ['wsgi.url_scheme'] + '://' +
+                get_host(request.environ)
             ))
         app = fixers.ProxyFix(app, num_proxies=2)
+        has_host = 'HTTP_HOST' in environ
         environ = dict(
             create_environ(),
-            HTTP_X_FORWARDED_PROTO="https",
-            HTTP_X_FORWARDED_HOST='example.com',
-            HTTP_X_FORWARDED_FOR='1.2.3.4, 5.6.7.8',
-            REMOTE_ADDR='127.0.0.1',
-            HTTP_HOST='fake'
+            **environ
         )
+        if not has_host:
+            del environ['HTTP_HOST']  # create_environ() defaults to 'localhost'
 
         response = Response.from_app(app, environ)
 
-        assert response.get_data() == b'1.2.3.4|example.com'
+        assert response.get_data() == to_bytes('{}|{}'.format(
+            assumed_addr, assumed_host))
 
         # And we must check that if it is a redirection it is
         # correctly done:
@@ -84,7 +149,8 @@ class TestServerFixer(object):
         response = Response.from_app(redirect_app, environ)
 
         wsgi_headers = response.get_wsgi_headers(environ)
-        assert wsgi_headers['Location'] == 'https://example.com/foo/bar.hml'
+        assert wsgi_headers['Location'] == '{}/foo/bar.hml'.format(
+            assumed_host)
 
     def test_proxy_fix_weird_enum(self):
         @fixers.ProxyFix
