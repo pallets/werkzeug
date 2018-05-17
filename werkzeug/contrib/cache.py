@@ -623,7 +623,7 @@ class RedisCache(BaseCache):
     def set(self, key, value, timeout=None):
         timeout = self._normalize_timeout(timeout)
         dump = self.dump_object(value)
-        if timeout == -1:
+        if timeout < 0:
             result = self._client.set(name=self.key_prefix + key,
                                       value=dump)
         else:
