@@ -614,8 +614,6 @@ class EnvironBuilder(object):
             'SERVER_PORT':          str(self.server_port),
             'HTTP_HOST':            self.host,
             'SERVER_PROTOCOL':      self.server_protocol,
-            'CONTENT_TYPE':         content_type or '',
-            'CONTENT_LENGTH':       str(content_length or '0'),
             'wsgi.version':         self.wsgi_version,
             'wsgi.url_scheme':      self.url_scheme,
             'wsgi.input':           input_stream,
@@ -624,6 +622,15 @@ class EnvironBuilder(object):
             'wsgi.multiprocess':    self.multiprocess,
             'wsgi.run_once':        self.run_once
         })
+        if content_type:
+            result.update({
+                'CONTENT_TYPE': content_type,
+            })
+        if content_length:
+            result.update({
+                'CONTENT_LENGTH': str(content_length),
+            })
+
         for key, value in self.headers.to_wsgi_list():
             result['HTTP_%s' % key.upper().replace('-', '_')] = value
         if self.environ_overrides:
