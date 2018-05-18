@@ -264,7 +264,7 @@ def test_windows_get_args_for_reloading(monkeypatch, tmpdir):
     assert rv == [test_exe.strpath, 'run']
 
 
-def test_monkeypached_sleep(tmpdir):
+def test_monkeypatched_sleep(tmpdir):
     # removing the staticmethod wrapper in the definition of
     # ReloaderLoop._sleep works most of the time, since `sleep` is a c
     # function, and unlike python functions which are descriptors, doesn't
