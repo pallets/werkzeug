@@ -234,7 +234,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         try:
             peer_cert = self.connection.getpeercert()
             if peer_cert is not None:
-                environ['SOCKET_PEER_CERT'] = peer_cert
+                environ['SSL_CLIENT_CERT'] = peer_cert
         except ValueError:
             self.server.log('error', 'Cannot fetch SSL peer certificate info')
 
