@@ -219,7 +219,7 @@ class TestRedisCache(GenericCacheTests):
     _can_use_fast_sleep = False
 
     @pytest.fixture(scope='class', autouse=True)
-    def requirements(self, subprocess):
+    def requirements(self, xprocess):
         if redis is None:
             pytest.skip('Python package "redis" is not installed.')
 
@@ -227,7 +227,7 @@ class TestRedisCache(GenericCacheTests):
             return '[Rr]eady to accept connections', ['redis-server']
 
         try:
-            subprocess.ensure('redis_server', prepare)
+            xprocess.ensure('redis_server', prepare)
         except IOError as e:
             # xprocess raises FileNotFoundError
             if e.errno == errno.ENOENT:
@@ -236,7 +236,7 @@ class TestRedisCache(GenericCacheTests):
                 raise
 
         yield
-        subprocess.getinfo('redis_server').terminate()
+        xprocess.getinfo('redis_server').terminate()
 
     @pytest.fixture(params=(None, False, True))
     def make_cache(self, request):
@@ -271,7 +271,7 @@ class TestMemcachedCache(GenericCacheTests):
     _guaranteed_deletes = False
 
     @pytest.fixture(scope='class', autouse=True)
-    def requirements(self, subprocess):
+    def requirements(self, xprocess):
         if memcache is None:
             pytest.skip(
                 'Python package for memcache is not installed. Need one of '
@@ -282,7 +282,7 @@ class TestMemcachedCache(GenericCacheTests):
             return '', ['memcached']
 
         try:
-            subprocess.ensure('memcached', prepare)
+            xprocess.ensure('memcached', prepare)
         except IOError as e:
             # xprocess raises FileNotFoundError
             if e.errno == errno.ENOENT:
@@ -291,7 +291,7 @@ class TestMemcachedCache(GenericCacheTests):
                 raise
 
         yield
-        subprocess.getinfo('memcached').terminate()
+        xprocess.getinfo('memcached').terminate()
 
     @pytest.fixture
     def make_cache(self):

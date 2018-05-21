@@ -27,12 +27,8 @@ try:
     __import__('pytest_xprocess')
 except ImportError:
     @pytest.fixture(scope='session')
-    def subprocess():
+    def xprocess():
         pytest.skip('pytest-xprocess not installed.')
-else:
-    @pytest.fixture(scope='session')
-    def subprocess(xprocess):
-        return xprocess
 
 
 port_generator = count(13220)
@@ -117,7 +113,7 @@ class _ServerInfo(object):
 
 
 @pytest.fixture
-def dev_server(tmpdir, subprocess, request, monkeypatch):
+def dev_server(tmpdir, xprocess, request, monkeypatch):
     '''Run werkzeug.serving.run_simple in its own process.
 
     :param application: String for the module that will be created. The module
@@ -144,7 +140,7 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
             url_base = 'http://localhost:{0}'.format(port)
 
         info = _ServerInfo(
-            subprocess,
+            xprocess,
             'localhost:{0}'.format(port),
             url_base,
             port
@@ -154,7 +150,7 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
             args = [sys.executable, __file__, str(tmpdir)]
             return lambda: 'pid=%s' % info.request_pid(), args
 
-        subprocess.ensure('dev_server', preparefunc, restart=True)
+        xprocess.ensure('dev_server', preparefunc, restart=True)
 
         def teardown():
             # Killing the process group that runs the server, not just the
