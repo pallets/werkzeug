@@ -1,5 +1,8 @@
+.. currentmodule:: werkzeug
+
 Werkzeug Changelog
 ==================
+
 
 Version 0.15
 ------------
@@ -11,9 +14,15 @@ Release Date not Decided
 - Add 412 status code.
 - Cleanup ``werkzeug.security`` module, remove predated hashlib support.
   (`#1282`_)
+-   :class:`~test.EnvironBuilder` doesn't set ``CONTENT_TYPE`` or
+    ``CONTENT_LENGTH`` in the environ if they aren't set. Previously
+    these used default values if they weren't set. Now it's possible to
+    distinguish between empty and unset values. (`#1308`_)
 
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
+.. _`#1308`: https://github.com/pallets/werkzeug/pull/1308
+
 
 Version 0.14.1
 --------------

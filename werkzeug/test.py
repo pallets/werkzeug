@@ -622,14 +622,10 @@ class EnvironBuilder(object):
             'wsgi.multiprocess':    self.multiprocess,
             'wsgi.run_once':        self.run_once
         })
-        if content_type:
-            result.update({
-                'CONTENT_TYPE': content_type,
-            })
-        if content_length:
-            result.update({
-                'CONTENT_LENGTH': str(content_length),
-            })
+        if content_type is not None:
+            result['CONTENT_TYPE'] = content_type
+        if content_length is not None:
+            result['CONTENT_LENGTH'] = str(content_length)
 
         for key, value in self.headers.to_wsgi_list():
             result['HTTP_%s' % key.upper().replace('-', '_')] = value
