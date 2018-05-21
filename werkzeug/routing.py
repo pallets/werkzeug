@@ -227,7 +227,7 @@ class RequestRedirect(HTTPException, RoutingException):
 
     The attribute `new_url` contains the absolute destination url.
     """
-    code = 301
+    code = 302
 
     def __init__(self, new_url):
         RoutingException.__init__(self, new_url)
