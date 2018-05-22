@@ -18,8 +18,15 @@ Release Date not Decided
     ``CONTENT_LENGTH`` in the environ if they aren't set. Previously
     these used default values if they weren't set. Now it's possible to
     distinguish between empty and unset values. (`#1308`_)
+-   412 responses once again include entity headers and an error message
+    in the body. They were originally omitted when implementing
+    ``If-Match`` (`#1233`_), but the spec doesn't seem to disallow it.
+    (`#1231`_, `#1255`_)
 
+.. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
+.. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
+.. _`#1255`: https://github.com/pallets/werkzeug/pull/1255
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
 .. _`#1308`: https://github.com/pallets/werkzeug/pull/1308
 
