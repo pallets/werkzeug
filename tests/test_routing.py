@@ -797,6 +797,27 @@ def test_redirect_path_quoting():
               u'http://example.com/foo%20bar')
 
 
+def test_redirect_query_string_quoting():
+    map = r.Map([
+        r.Rule('/test/', endpoint='test'),
+    ])
+    adapter = map.bind_to_environ(create_environ(u'/test?v1=тест&v2=x%20',
+                                                 'http://example.com/'))
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match()
+    response = excinfo.value.get_response({})
+    strict_eq(response.headers['location'],
+              u'http://example.com/test/?v1=%D1%82%D0%B5%D1%81%D1%82&v2=x%20')
+
+    adapter = map.bind_to_environ(create_environ('/test?тест',
+                                                 'http://example.com/'))
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match()
+    response = excinfo.value.get_response({})
+    strict_eq(response.headers['location'],
+              u'http://example.com/test/?%D1%82%D0%B5%D1%81%D1%82')
+
+
 def test_unicode_rules():
     m = r.Map([
         r.Rule(u'/войти/', endpoint='enter'),
