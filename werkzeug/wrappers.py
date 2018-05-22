@@ -1247,7 +1247,11 @@ class BaseResponse(object):
            isinstance(content_location, text_type):
             headers['Content-Location'] = iri_to_uri(content_location)
 
-        if status in (304, 412):
+        if 100 <= status < 200 or status == 204:
+            # Per section 3.3.2 of RFC 7230, "a server MUST NOT send a Content-Length header field
+            # in any response with a status code of 1xx (Informational) or 204 (No Content)."
+            headers.remove('Content-Length')
+        elif status in (304, 412):
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we

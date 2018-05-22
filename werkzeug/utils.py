@@ -52,7 +52,7 @@ class cached_property(property):
 
     # implementation detail: A subclass of python's builtin property
     # decorator, we override __get__ to check for a cached value. If one
-    # choses to invoke __get__ by hand the property will still work as
+    # chooses to invoke __get__ by hand the property will still work as
     # expected because the lookup logic is replicated in __get__ for
     # manual invocation.
 

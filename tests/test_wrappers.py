@@ -1173,6 +1173,19 @@ def test_204_and_1XX_response_has_no_content_length():
     assert 'Content-Length' not in headers
 
 
+def test_malformed_204_response_has_no_content_length():
+    # flask-restful can generate a malformed response when doing `return '', 204`
+    response = wrappers.Response(status=204)
+    response.set_data(b'test')
+    assert response.content_length == 4
+
+    env = create_environ()
+    app_iter, status, headers = response.get_wsgi_response(env)
+    assert status == '204 NO CONTENT'
+    assert 'Content-Length' not in headers
+    assert b''.join(app_iter) == b''  # ensure data will not be sent
+
+
 def test_modified_url_encoding():
     class ModifiedRequest(wrappers.Request):
         url_charset = 'euc-kr'

@@ -207,6 +207,9 @@ def test_environ_builder_headers_content_type():
                        headers={'Content-Type': 'text/plain'})
     env = b.get_environ()
     assert env['CONTENT_TYPE'] == 'text/html'
+    b = EnvironBuilder()
+    env = b.get_environ()
+    assert 'CONTENT_TYPE' not in env
 
 
 def test_environ_builder_paths():
@@ -312,8 +315,6 @@ def test_create_environ():
         'wsgi.multithread':     False,
         'wsgi.url_scheme':      'http',
         'SCRIPT_NAME':          '',
-        'CONTENT_TYPE':         '',
-        'CONTENT_LENGTH':       '0',
         'SERVER_NAME':          'example.org',
         'REQUEST_METHOD':       'GET',
         'HTTP_HOST':            'example.org',

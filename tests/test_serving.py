@@ -264,7 +264,7 @@ def test_windows_get_args_for_reloading(monkeypatch, tmpdir):
     assert rv == [test_exe.strpath, 'run']
 
 
-def test_monkeypached_sleep(tmpdir):
+def test_monkeypatched_sleep(tmpdir):
     # removing the staticmethod wrapper in the definition of
     # ReloaderLoop._sleep works most of the time, since `sleep` is a c
     # function, and unlike python functions which are descriptors, doesn't
@@ -434,5 +434,39 @@ def test_chunked_encoding_with_content_length(dev_server):
     res = conn.getresponse()
     assert res.status == 200
     assert res.read() == b'YES'
+
+    conn.close()
+
+
+def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
+    server = dev_server(r'''
+    from werkzeug.wrappers import Response
+    def app(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [environ['HTTP_XYZ'].encode()]
+    ''')
+
+    if sys.version_info[0] == 2:
+        from httplib import HTTPConnection
+    else:
+        from http.client import HTTPConnection
+
+    conn = HTTPConnection('127.0.0.1', server.port)
+    conn.connect()
+    conn.putrequest('GET', '/')
+    conn.putheader('Accept', 'text/plain')
+    conn.putheader('XYZ', ' a ')
+    conn.putheader('X-INGNORE-1', 'Some nonsense')
+    conn.putheader('XYZ', ' b')
+    conn.putheader('X-INGNORE-2', 'Some nonsense')
+    conn.putheader('XYZ', 'c ')
+    conn.putheader('X-INGNORE-3', 'Some nonsense')
+    conn.putheader('XYZ', 'd')
+    conn.endheaders()
+    conn.send(b'')
+    res = conn.getresponse()
+
+    assert res.status == 200
+    assert res.read() == b'a ,b,c ,d'
 
     conn.close()

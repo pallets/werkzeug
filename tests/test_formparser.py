@@ -120,8 +120,6 @@ class TestFormParser(object):
         # defining the media type of that body."  In the case where either
         # headers are omitted, parse_form_data should still work.
         env = create_environ('/foo', 'http://example.org/', method='PUT')
-        del env['CONTENT_TYPE']
-        del env['CONTENT_LENGTH']
 
         stream, form, files = formparser.parse_form_data(env)
         strict_eq(stream.read(), b'')
@@ -130,8 +128,6 @@ class TestFormParser(object):
 
     def test_parse_form_data_get_without_content(self):
         env = create_environ('/foo', 'http://example.org/', method='GET')
-        del env['CONTENT_TYPE']
-        del env['CONTENT_LENGTH']
 
         stream, form, files = formparser.parse_form_data(env)
         strict_eq(stream.read(), b'')
