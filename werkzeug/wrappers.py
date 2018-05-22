@@ -1251,7 +1251,7 @@ class BaseResponse(object):
             # Per section 3.3.2 of RFC 7230, "a server MUST NOT send a Content-Length header field
             # in any response with a status code of 1xx (Informational) or 204 (No Content)."
             headers.remove('Content-Length')
-        elif status in (304, 412):
+        elif status == 304:
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we
@@ -1291,7 +1291,7 @@ class BaseResponse(object):
         """
         status = self.status_code
         if environ['REQUEST_METHOD'] == 'HEAD' or \
-           100 <= status < 200 or status in (204, 304, 412):
+           100 <= status < 200 or status in (204, 304):
             iterable = ()
         elif self.direct_passthrough:
             if __debug__:
