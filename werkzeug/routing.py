@@ -110,7 +110,7 @@ from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed, \
 from werkzeug._internal import _get_environ, _encode_idna
 from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
     text_type, string_types, native_string_result, \
-    implements_to_string, wsgi_decoding_dance, iterlists
+    implements_to_string, wsgi_decoding_dance
 from werkzeug.datastructures import ImmutableDict, MultiDict
 from werkzeug.utils import cached_property
 
@@ -855,7 +855,7 @@ class Rule(RuleFactory):
             if key not in defaults and key not in values:
                 return False
 
-        # in case defaults are given we ensure taht either the value was
+        # in case defaults are given we ensure that either the value was
         # skipped or the value is the same as the default value.
         if defaults:
             for key, value in iteritems(defaults):
@@ -1739,8 +1739,7 @@ class MapAdapter(object):
         >>> urls.build("index", {'q': ['a', 'b', 'c']})
         '/?q=a&q=b&q=c'
 
-        If an actual :py:class:`werkzeug.datastructures.MultiDict` is passed
-        in it is automatically expanded to do the correct thing:
+        Passing a ``MultiDict`` will also add multiple values:
 
         >>> urls.build("index", MultiDict((('p', 'z'), ('q', 'a'), ('q', 'b'))))
         '/?p=z&q=a&q=b'
@@ -1768,17 +1767,24 @@ class MapAdapter(object):
                                if you want the builder to ignore those.
         """
         self.map.update()
+
         if values:
             if isinstance(values, MultiDict):
-                temp = {}
-                for key, list_value in iterlists(values):
-                    if len(list_value) == 1:
-                        temp[key] = list_value[0]
-                    else:
-                        temp[key] = list_value
+                temp_values = {}
+                # iteritems(dict, values) is like `values.lists()`
+                # without the call or `list()` coercion overhead.
+                for key, value in iteritems(dict, values):
+                    if not value:
+                        continue
+                    if len(value) == 1:  # flatten single item lists
+                        value = value[0]
+                        if value is None:  # drop None
+                            continue
+                    temp_values[key] = value
+                values = temp_values
             else:
-                temp = values
-            values = dict((k, v) for k, v in iteritems(temp) if v is not None)
+                # drop None
+                values = dict(i for i in iteritems(values) if i[0] is not None)
         else:
             values = {}
 
