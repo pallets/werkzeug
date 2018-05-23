@@ -26,19 +26,23 @@ Release Date not Decided
     a :class:`~datastructures.MultiDict` to represent multiple values
     for a key. It already did this when passing a dict with a list
     value. (`#724`_)
--   :meth:`wsgi.get_host` no longer looks at ``X-Forwarded-For``. Use
+-   :func:`wsgi.get_host` no longer looks at ``X-Forwarded-For``. Use
     :class:`~fixers.ProxyFix` to handle that. (`#609`_, `#1303`_)
 -   :class:`~fixers.ProxyFix` handles the ``X-Forwarded-Port`` header
     set by some proxies. (`#1023`_, `#1304`_)
+-   :func:`http.parse_cookie` ignores empty segments rather than
+    producing a cookie with no key or value. (`#1245`_, `#1301`_)
 
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
 .. _`#724`: https://github.com/pallets/werkzeug/pull/724
 .. _`#1023`: https://github.com/pallets/werkzeug/issues/1023
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
+.. _`#1245`: https://github.com/pallets/werkzeug/pull/1245
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
 .. _`#1255`: https://github.com/pallets/werkzeug/pull/1255
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
+.. _`#1301`: https://github.com/pallets/werkzeug/pull/1301
 .. _`#1303`: https://github.com/pallets/werkzeug/pull/1303
 .. _`#1304`: https://github.com/pallets/werkzeug/pull/1304
 .. _`#1308`: https://github.com/pallets/werkzeug/pull/1308
