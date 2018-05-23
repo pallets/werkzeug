@@ -170,6 +170,18 @@ def test_basic_building():
     assert adapter.build('foo', {}, force_external=True) == '//example.org/foo'
 
 
+def test_long_build():
+    long_args = dict(('v%d' % x, x) for x in range(10000))
+    map = r.Map([
+        r.Rule(''.join('/<%s>' % k for k in long_args.keys()), endpoint='bleep', build_only=True)
+    ])
+    adapter = map.bind('localhost', '/')
+    url = adapter.build('bleep', long_args)
+    url += '/'
+    for v in long_args.values():
+        assert '/%d' % v in url
+
+
 def test_defaults():
     map = r.Map([
         r.Rule('/foo/', defaults={'page': 1}, endpoint='foo'),

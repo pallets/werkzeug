@@ -390,7 +390,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             key = text_type(key).encode(charset)
         if not isinstance(value, bytes):
             value = text_type(value).encode(charset)
-        yield url_quote_plus(key) + '=' + url_quote_plus(value)
+        yield fast_url_quote_plus(key) + '=' + fast_url_quote_plus(value)
 
 
 def _url_unquote_legacy(value, unsafe=''):
@@ -447,6 +447,29 @@ def url_parse(url, scheme=None, allow_fragments=True):
 
     result_type = is_text_based and URL or BytesURL
     return result_type(scheme, netloc, url, query, fragment)
+
+
+def _make_url_encoder(charset='utf-8', errors='strict', safe='/:', unsafe=''):
+    if isinstance(safe, text_type):
+        safe = safe.encode(charset, errors)
+    if isinstance(unsafe, text_type):
+        unsafe = unsafe.encode(charset, errors)
+    safe = (frozenset(safe) | frozenset(_always_safe)) - frozenset(unsafe)
+    if not isinstance(next(iter(safe)), int):
+        safe = frozenset(map(ord, safe))
+    table = [chr(c) if c in safe else '%%%02X' % c for c in range(256)]
+    quote = lambda s: ''.join(map(table.__getitem__, s))
+    if isinstance(''.encode(), str):
+        return lambda s: quote(bytearray(s))
+    return quote
+
+
+fast_url_quote = _make_url_encoder()
+_quote_plus = _make_url_encoder(safe=' ', unsafe='+')
+
+
+def fast_url_quote_plus(string):
+    return _quote_plus(string).replace(' ', '+')
 
 
 def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):
