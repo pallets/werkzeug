@@ -22,12 +22,17 @@ Release Date not Decided
     in the body. They were originally omitted when implementing
     ``If-Match`` (`#1233`_), but the spec doesn't seem to disallow it.
     (`#1231`_, `#1255`_)
+-   :meth:`MapAdapter.build() <routing.MapAdapter.build>` can be passed
+    a :class:`~datastructures.MultiDict` to represent multiple values
+    for a key. It already did this when passing a dict with a list
+    value. (`#724`_)
 - Was added back compatible ``werkzeug.datastructures.FormStorage`` for 
   storing multipart/form-data fields with headers. Also was improved 
   ``werkzeug.test.encode_multipart`` for encode data with headers.
   (`#1290`_)
 
 
+.. _`#724`: https://github.com/pallets/werkzeug/pull/724
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252

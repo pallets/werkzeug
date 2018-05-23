@@ -855,7 +855,7 @@ class Rule(RuleFactory):
             if key not in defaults and key not in values:
                 return False
 
-        # in case defaults are given we ensure taht either the value was
+        # in case defaults are given we ensure that either the value was
         # skipped or the value is the same as the default value.
         if defaults:
             for key, value in iteritems(defaults):
@@ -1739,6 +1739,11 @@ class MapAdapter(object):
         >>> urls.build("index", {'q': ['a', 'b', 'c']})
         '/?q=a&q=b&q=c'
 
+        Passing a ``MultiDict`` will also add multiple values:
+
+        >>> urls.build("index", MultiDict((('p', 'z'), ('q', 'a'), ('q', 'b'))))
+        '/?p=z&q=a&q=b'
+
         If a rule does not exist when building a `BuildError` exception is
         raised.
 
@@ -1762,12 +1767,24 @@ class MapAdapter(object):
                                if you want the builder to ignore those.
         """
         self.map.update()
+
         if values:
             if isinstance(values, MultiDict):
-                valueiter = iteritems(values, multi=True)
+                temp_values = {}
+                # iteritems(dict, values) is like `values.lists()`
+                # without the call or `list()` coercion overhead.
+                for key, value in iteritems(dict, values):
+                    if not value:
+                        continue
+                    if len(value) == 1:  # flatten single item lists
+                        value = value[0]
+                        if value is None:  # drop None
+                            continue
+                    temp_values[key] = value
+                values = temp_values
             else:
-                valueiter = iteritems(values)
-            values = dict((k, v) for k, v in valueiter if v is not None)
+                # drop None
+                values = dict(i for i in iteritems(values) if i[1] is not None)
         else:
             values = {}
 
