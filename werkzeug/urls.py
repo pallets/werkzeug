@@ -15,18 +15,16 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import functools
-from functools import update_wrapper
+from collections import namedtuple
 import os
 import re
-from werkzeug._compat import text_type, PY2, to_unicode, \
-    to_native, implements_to_string, try_coerce_native, \
-    normalize_string_tuple, make_literal_wrapper, \
-    fix_tuple_repr
-from werkzeug._internal import _encode_idna, _decode_idna
-from werkzeug.datastructures import MultiDict, iter_multi_items
-from collections import namedtuple
 
+from werkzeug._compat import (
+    PY2, fix_tuple_repr, implements_to_string, make_literal_wrapper,
+    normalize_string_tuple, text_type, to_native, to_unicode, try_coerce_native
+)
+from werkzeug._internal import _decode_idna, _encode_idna
+from werkzeug.datastructures import MultiDict, iter_multi_items
 
 # A regular expression for what a valid schema looks like
 _scheme_re = re.compile(r'^[a-zA-Z0-9+-.]+$')
