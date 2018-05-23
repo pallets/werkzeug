@@ -574,6 +574,20 @@ def test_build_append_multidict():
     assert set(b.split('&')) == set('y=2.0&x=1.0&x=3.0'.split('&'))
 
 
+def test_build_drop_none():
+    map = r.Map([
+        r.Rule('/flob/<flub>', endpoint='endp')
+    ])
+    adapter = map.bind('', '/')
+    params = {'flub': None, 'flop': None}
+    with pytest.raises(r.BuildError):
+        x = adapter.build('endp', params)
+        assert not x
+    params = {'flub': 'x', 'flop': None}
+    url = adapter.build('endp', params)
+    assert 'flop' not in url
+
+
 def test_method_fallback():
     map = r.Map([
         r.Rule('/', endpoint='index', methods=['GET']),
