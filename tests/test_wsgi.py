@@ -98,25 +98,45 @@ def test_dispatchermiddleware():
     assert b''.join(app_iter).strip() == b'NOT FOUND'
 
 
-def test_get_host():
-    env = {'HTTP_X_FORWARDED_HOST': 'example.org',
-           'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
+def test_get_host_by_http_host():
+    env = {'HTTP_HOST': 'example.org', 'wsgi.url_scheme': 'http'}
     assert wsgi.get_host(env) == 'example.org'
-    assert wsgi.get_host(create_environ('/', 'http://example.org')) == \
-        'example.org'
+    env['HTTP_HOST'] = 'example.org:8080'
+    assert wsgi.get_host(env) == 'example.org:8080'
+    env['HOST_NAME'] = 'ignore me'
+    assert wsgi.get_host(env) == 'example.org:8080'
 
 
-def test_get_host_multiple_forwarded():
-    env = {'HTTP_X_FORWARDED_HOST': 'example.com, example.org',
-           'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
-    assert wsgi.get_host(env) == 'example.com'
-    assert wsgi.get_host(create_environ('/', 'http://example.com')) == \
-        'example.com'
+def test_get_host_by_server_name_and_port():
+    env = {'SERVER_NAME': 'example.org', 'SERVER_PORT': '80',
+           'wsgi.url_scheme': 'http'}
+    assert wsgi.get_host(env) == 'example.org'
+    env['wsgi.url_scheme'] = 'https'
+    assert wsgi.get_host(env) == 'example.org:80'
+    env['SERVER_PORT'] = '8080'
+    assert wsgi.get_host(env) == 'example.org:8080'
+    env['SERVER_PORT'] = '443'
+    assert wsgi.get_host(env) == 'example.org'
 
 
-def test_get_host_validation():
-    env = {'HTTP_X_FORWARDED_HOST': 'example.org',
-           'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
+def test_get_host_ignore_x_forwarded_for():
+    env = {'HTTP_X_FORWARDED_HOST': 'forwarded',
+           'HTTP_HOST': 'example.org',
+           'wsgi.url_scheme': 'http'}
+    assert wsgi.get_host(env) == 'example.org'
+
+
+def test_get_host_validate_trusted_hosts():
+    env = {'SERVER_NAME': 'example.org', 'SERVER_PORT': '80',
+           'wsgi.url_scheme': 'http'}
+    assert wsgi.get_host(env, trusted_hosts=['.example.org']) == 'example.org'
+    pytest.raises(BadRequest, wsgi.get_host, env,
+                  trusted_hosts=['example.com'])
+    env['SERVER_PORT'] = '8080'
+    assert wsgi.get_host(env, trusted_hosts=['.example.org:8080']) == 'example.org:8080'
+    pytest.raises(BadRequest, wsgi.get_host, env,
+                  trusted_hosts=['.example.com'])
+    env = {'HTTP_HOST': 'example.org', 'wsgi.url_scheme': 'http'}
     assert wsgi.get_host(env, trusted_hosts=['.example.org']) == 'example.org'
     pytest.raises(BadRequest, wsgi.get_host, env,
                   trusted_hosts=['example.com'])

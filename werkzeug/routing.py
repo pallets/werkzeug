@@ -113,7 +113,7 @@ from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
     implements_to_string, wsgi_decoding_dance
 from werkzeug.datastructures import ImmutableDict, MultiDict
 from werkzeug.utils import cached_property
-
+from werkzeug.wsgi import get_host
 
 _rule_re = re.compile(r'''
     (?P<static>[^<]*)                           # static rule data
@@ -1294,23 +1294,7 @@ class Map(object):
         """
         environ = _get_environ(environ)
 
-        if 'HTTP_HOST' in environ:
-            wsgi_server_name = environ['HTTP_HOST']
-
-            if environ['wsgi.url_scheme'] == 'http' \
-                    and wsgi_server_name.endswith(':80'):
-                wsgi_server_name = wsgi_server_name[:-3]
-            elif environ['wsgi.url_scheme'] == 'https' \
-                    and wsgi_server_name.endswith(':443'):
-                wsgi_server_name = wsgi_server_name[:-4]
-        else:
-            wsgi_server_name = environ['SERVER_NAME']
-
-            if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
-               in (('https', '443'), ('http', '80')):
-                wsgi_server_name += ':' + environ['SERVER_PORT']
-
-        wsgi_server_name = wsgi_server_name.lower()
+        wsgi_server_name = get_host(environ).lower()
 
         if server_name is None:
             server_name = wsgi_server_name
