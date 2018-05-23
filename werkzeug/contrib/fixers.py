@@ -138,9 +138,10 @@ class ProxyFix(object):
         forwarded_host = getter('HTTP_X_FORWARDED_HOST', '')
         forwarded_port = getter('HTTP_X_FORWARDED_PORT', '')
         environ.update({
-            'werkzeug.proxy_fix.orig_wsgi_url_scheme':  getter('wsgi.url_scheme'),
-            'werkzeug.proxy_fix.orig_remote_addr':      getter('REMOTE_ADDR'),
-            'werkzeug.proxy_fix.orig_http_host':        getter('HTTP_HOST')
+            'werkzeug.proxy_fix.orig_wsgi_url_scheme': getter('wsgi.url_scheme'),
+            'werkzeug.proxy_fix.orig_remote_addr': getter('REMOTE_ADDR'),
+            'werkzeug.proxy_fix.orig_http_host': getter('HTTP_HOST'),
+            'werkzeug.proxy_fix.orig_server_port': getter('SERVER_PORT'),
         })
         forwarded_for = [x for x in [x.strip() for x in forwarded_for] if x]
         remote_addr = self.get_remote_addr(forwarded_for)
