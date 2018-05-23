@@ -32,6 +32,8 @@ Release Date not Decided
     set by some proxies. (`#1023`_, `#1304`_)
 -   :func:`http.parse_cookie` ignores empty segments rather than
     producing a cookie with no key or value. (`#1245`_, `#1301`_)
+-   Building URLs is ~7x faster. Each :class:`~routing.Rule` compiles
+    an optimized function for building itself. (`#1281`_)
 
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
 .. _`#724`: https://github.com/pallets/werkzeug/pull/724
@@ -41,6 +43,7 @@ Release Date not Decided
 .. _`#1245`: https://github.com/pallets/werkzeug/pull/1245
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
 .. _`#1255`: https://github.com/pallets/werkzeug/pull/1255
+.. _`#1281`: https://github.com/pallets/werkzeug/pull/1281
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
 .. _`#1301`: https://github.com/pallets/werkzeug/pull/1301
 .. _`#1303`: https://github.com/pallets/werkzeug/pull/1303

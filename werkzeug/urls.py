@@ -15,6 +15,8 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import functools
+from functools import update_wrapper
 import os
 import re
 from werkzeug._compat import text_type, PY2, to_unicode, \
@@ -449,7 +451,17 @@ def url_parse(url, scheme=None, allow_fragments=True):
     return result_type(scheme, netloc, url, query, fragment)
 
 
-def _make_url_encoder(charset='utf-8', errors='strict', safe='/:', unsafe=''):
+def _make_fast_url_quote(charset='utf-8', errors='strict', safe='/:', unsafe=''):
+    """Precompile the translation table for a URL encoding function.
+
+    Unlike :func:`url_quote`, the generated function only takes the
+    string to quote.
+
+    :param charset: The charset to encode the result with.
+    :param errors: How to handle encoding errors.
+    :param safe: An optional sequence of safe characters to never encode.
+    :param unsafe: An optional sequence of unsafe characters to always encode.
+    """
     if isinstance(safe, text_type):
         safe = safe.encode(charset, errors)
     if isinstance(unsafe, text_type):
@@ -464,12 +476,12 @@ def _make_url_encoder(charset='utf-8', errors='strict', safe='/:', unsafe=''):
     return quote
 
 
-fast_url_quote = _make_url_encoder()
-_quote_plus = _make_url_encoder(safe=' ', unsafe='+')
+fast_url_quote = _make_fast_url_quote()
+_fast_quote_plus = _make_fast_url_quote(safe=' ', unsafe='+')
 
 
 def fast_url_quote_plus(string):
-    return _quote_plus(string).replace(' ', '+')
+    return _fast_quote_plus(string).replace(' ', '+')
 
 
 def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):

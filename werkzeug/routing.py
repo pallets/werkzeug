@@ -817,12 +817,11 @@ class Rule(RuleFactory):
             self.var = []
             self.var_table = {}
             self.argdefs = ()
-            self.defaults = dict(iteritems(self.rule.defaults or {}))
+            self.defaults = dict(self.rule.defaults or {})
 
         def get_const(self, x):
-            """
-            Return a constant ID for an object, adding it to the pool if not
-            already present.
+            """Return a constant ID for an object, adding it to the pool
+            if not already present.
             """
             if x not in self.const_table:
                 self.const_table[x] = len(self.consts)
@@ -830,12 +829,12 @@ class Rule(RuleFactory):
             return self.const_table[x]
 
         def get_var(self, x):
-            """
-            Return a local variable ID for a name, adding it to the pool if
-            not already present.
-            Our only use for local variables is as function arguments: any
-            variable name that exists before the call to add_defaults() will
-            become one.
+            """Return a local variable ID for a name, adding it to the
+            pool if not already present.
+
+            Our only use for local variables is as function arguments:
+            any variable name that exists before the call to
+            ``add_defaults()`` will become one.
             """
             x = str(x)
             if x not in self.var_table:
@@ -844,18 +843,17 @@ class Rule(RuleFactory):
             return self.var_table[x]
 
         def add_defaults(self):
-            """
-            It's allowed for a rule builder to receive any of its defaults as
-            arguments. We don't bother to check that they match anywhere,
-            since suitable_for() should have already done that, but we do
-            need them to be optional arguments.
-            Since their values are known at compile-time, the builder will
+            """A rule builder is allowed to receive any of its defaults
+            as arguments. We don't bother to check that they match
+            anywhere, since ``suitable_for()`` should have already done
+            that, but we do need them to be optional arguments. Since
+            their values are known at compile-time, the builder will
             never refer to these arguments.
             """
             # ensure every default exists
             for k in self.defaults.keys():
                 self.get_var(k)
-            # nb. reorder to put anything with a default at the end
+            # reorder to put anything with a default at the end
             req = []
             opt = []
             defs = []
@@ -871,10 +869,8 @@ class Rule(RuleFactory):
                 self.var_table[k] = i
 
         def collapse_constants(self, opl):
-            """
-            Given a list of build operations, spit out a new list with runs
-            of constant elements joined.
-            """
+            """Given a list of build operations, spit out a new list
+            with runs of constant elements joined."""
             new = []
             for op, elem in opl:
                 if op is not None:
@@ -891,22 +887,24 @@ class Rule(RuleFactory):
             return new
 
         def build_op(self, op, arg=None):
-            """
-            Return a byte representation of a Python instruction.
-            """
+            """Return a byte representation of a Python instruction."""
             if isinstance(op, str):
                 op = dis.opmap[op]
             if arg is None and op >= dis.HAVE_ARGUMENT:
-                raise ValueError("Operation requires an argument: %s" % dis.opname[op])
+                raise ValueError(
+                    "Operation requires an argument: %s" % dis.opname[op])
             if arg is not None and op < dis.HAVE_ARGUMENT:
-                raise ValueError("Operation takes no argument: %s" % dis.opname[op])
+                raise ValueError(
+                    "Operation takes no argument: %s" % dis.opname[op])
             if arg is None:
                 arg = 0
             # Python 3.6 changed the argument to an 8-bit integer, so this
             # could be a practical consideration
             if arg >= self.OPARG_SIZE:
-                return (self.build_op('EXTENDED_ARG', arg // self.OPARG_SIZE) +
-                        self.build_op(op, arg % self.OPARG_SIZE))
+                return (
+                    self.build_op('EXTENDED_ARG', arg // self.OPARG_SIZE)
+                    + self.build_op(op, arg % self.OPARG_SIZE)
+                )
             if not self.OPARG_VARI:
                 return bytearray((op, arg))
             elif op >= dis.HAVE_ARGUMENT:
@@ -915,18 +913,23 @@ class Rule(RuleFactory):
                 return bytearray((op,))
 
         def build_string(self, n):
-            """
-            Return the correct opcode(s) for building a string from n elements.
-            If the ''.join crutch is needed, it must already be immediately
-            below the string elements on the stack.
+            """Return the correct opcode(s) for building a string from
+            ``n`` elements. If the ``''.join`` crutch is needed, it must
+            already be immediately below the string elements on the
+            stack.
             """
             if 'BUILD_STRING' in dis.opmap:
                 return self.build_op('BUILD_STRING', n)
             else:
-                return (self.build_op('BUILD_TUPLE', n) +
-                        self.build_op('CALL_FUNCTION', 1))
+                return (
+                    self.build_op('BUILD_TUPLE', n)
+                    + self.build_op('CALL_FUNCTION', 1)
+                )
 
-        def emit_build(self, ind, opl, append_unknown=False, encode_query_vars=None, kwargs=None):
+        def emit_build(
+            self, ind, opl, append_unknown=False, encode_query_vars=None,
+            kwargs=None
+        ):
             ops = b''
             n = len(opl)
             stack = 0
@@ -954,12 +957,15 @@ class Rule(RuleFactory):
             if append_unknown:
                 if 'BUILD_STRING' not in dis.opmap:
                     needs_build_string = True
-                    ops = self.build_op('LOAD_CONST', self.get_const(self.JOIN_EMPTY)) + ops
+                    ops = self.build_op(
+                        'LOAD_CONST', self.get_const(self.JOIN_EMPTY)) + ops
                 ops += self.build_op('LOAD_FAST', kwargs)
 
-                # assemble this in its own buffers because we need to jump over it
+                # assemble this in its own buffers because we need to
+                # jump over it
                 uops = bytearray()  # run if kwargs. TOS=kwargs
-                uops += self.build_op('LOAD_CONST', self.get_const(encode_query_vars))
+                uops += self.build_op(
+                    'LOAD_CONST', self.get_const(encode_query_vars))
                 uops += self.build_op('ROT_TWO')
                 uops += self.build_op('CALL_FUNCTION', 1)
                 uops += self.build_op('LOAD_CONST', self.get_const('?'))
@@ -999,7 +1005,8 @@ class Rule(RuleFactory):
                 n += 2
                 peak_stack = max(peak_stack, stack + 2)
             elif needs_build_string:
-                ops = self.build_op('LOAD_CONST', self.get_const(self.JOIN_EMPTY)) + ops
+                ops = self.build_op(
+                    'LOAD_CONST', self.get_const(self.JOIN_EMPTY)) + ops
                 peak_stack += 1
             if not dont_build_string:
                 ops += self.build_string(n)
@@ -1011,10 +1018,11 @@ class Rule(RuleFactory):
             url_ops = []
             opl = dom_ops
             if append_unknown:
-                encode_query_vars = partial(url_encode,
-                                            charset=self.rule.map.charset,
-                                            sort=self.rule.map.sort_parameters,
-                                            key=self.rule.map.sort_key)
+                encode_query_vars = partial(
+                    url_encode,
+                    charset=self.rule.map.charset,
+                    sort=self.rule.map.sort_parameters,
+                    key=self.rule.map.sort_key)
             for is_dynamic, data in self.rule._trace:
                 if data == '|' and opl is dom_ops:
                     opl = url_ops
@@ -1023,11 +1031,12 @@ class Rule(RuleFactory):
                 # if a default is given for a value that appears in the rule,
                 # resolve it to a constant ahead of time
                 if is_dynamic and data in self.defaults:
-                    data = self.rule._converters[data].to_url(self.defaults[data])
+                    data = self.rule._converters[data].to_url(
+                        self.defaults[data])
                     is_dynamic = False
                 if not is_dynamic:
-                    opl.append((None, url_quote(to_bytes(data, self.rule.map.charset),
-                                                safe='/:|+')))
+                    opl.append((None, url_quote(
+                        to_bytes(data, self.rule.map.charset), safe='/:|+')))
                     continue
                 opl.append((self.rule._converters[data].to_url, data))
             dom_ops = self.collapse_constants(dom_ops)
@@ -1042,42 +1051,45 @@ class Rule(RuleFactory):
             stack = 0
             peak_stack = 0
             ops = b''
-            if (not append_unknown and
-                    len(dom_ops) == len(url_ops) == 1 and
-                    dom_ops[0][0] is url_ops[0][0] is None):
+            if (
+                not append_unknown
+                and len(dom_ops) == len(url_ops) == 1
+                and dom_ops[0][0] is url_ops[0][0] is None
+            ):
                 # shortcut: just return the constant
                 stack = peak_stack = 1
                 constant_value = (dom_ops[0][1], url_ops[0][1])
-                ops += self.build_op('LOAD_CONST', self.get_const(constant_value))
+                ops += self.build_op(
+                    'LOAD_CONST', self.get_const(constant_value))
             else:
                 ps, rv = self.emit_build(len(ops), dom_ops)
                 ops += rv
                 peak_stack = max(stack + ps, peak_stack)
                 stack += 1
                 if append_unknown:
-                    ps, rv = self.emit_build(len(ops),
-                                             url_ops,
-                                             append_unknown,
-                                             encode_query_vars,
-                                             argcount)
+                    ps, rv = self.emit_build(
+                        len(ops), url_ops, append_unknown, encode_query_vars,
+                        argcount)
                 else:
                     ps, rv = self.emit_build(len(ops), url_ops)
                 ops += rv
                 peak_stack = max(stack + ps, peak_stack)
                 ops += self.build_op('BUILD_TUPLE', 2)
             ops += self.build_op('RETURN_VALUE')
-            code_args = [argcount,
-                         len(self.var),
-                         peak_stack + len(self.var),
-                         flags,
-                         ops,
-                         tuple(self.consts),
-                         (),
-                         tuple(self.var),
-                         'generated',
-                         '<builder:%r>' % self.rule.rule,
-                         1,
-                         b'']
+            code_args = [
+                argcount,
+                len(self.var),
+                peak_stack + len(self.var),
+                flags,
+                ops,
+                tuple(self.consts),
+                (),
+                tuple(self.var),
+                'generated',
+                '<builder:%r>' % self.rule.rule,
+                1,
+                b''
+            ]
             if sys.version_info >= (3,):
                 code_args[1:1] = [0]
             else:
