@@ -133,7 +133,7 @@ class ProxyFix(object):
 
     def __call__(self, environ, start_response):
         getter = environ.get
-        forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '')
+        forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '').split(',')
         forwarded_for = getter('HTTP_X_FORWARDED_FOR', '').split(',')
         forwarded_host = getter('HTTP_X_FORWARDED_HOST', '')
         forwarded_port = getter('HTTP_X_FORWARDED_PORT', '')
@@ -146,6 +146,7 @@ class ProxyFix(object):
             'werkzeug.proxy_fix.orig_script_name': getter('SCRIPT_NAME'),
         })
         forwarded_for = [x for x in [x.strip() for x in forwarded_for] if x]
+        forwarded_proto = [x for x in [x.strip() for x in forwarded_proto] if x]
         remote_addr = self.get_remote_addr(forwarded_for)
         if remote_addr is not None:
             environ['REMOTE_ADDR'] = remote_addr
@@ -161,7 +162,7 @@ class ProxyFix(object):
             else:
                 environ['SERVER_PORT'] = forwarded_port
         if forwarded_proto:
-            environ['wsgi.url_scheme'] = forwarded_proto
+            environ['wsgi.url_scheme'] = forwarded_proto[0]
         if forwarded_prefix:
             environ['SCRIPT_NAME'] = forwarded_prefix
         return self.app(environ, start_response)
