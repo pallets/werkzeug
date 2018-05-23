@@ -1784,7 +1784,7 @@ class MapAdapter(object):
                 values = temp_values
             else:
                 # drop None
-                values = dict(i for i in iteritems(values) if i[0] is not None)
+                values = dict(i for i in iteritems(values) if i[1] is not None)
         else:
             values = {}
 
