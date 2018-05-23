@@ -136,10 +136,12 @@ class ProxyFix(object):
         forwarded_proto = getter('HTTP_X_FORWARDED_PROTO', '')
         forwarded_for = getter('HTTP_X_FORWARDED_FOR', '').split(',')
         forwarded_host = getter('HTTP_X_FORWARDED_HOST', '')
+        forwarded_port = getter('HTTP_X_FORWARDED_PORT', '')
         environ.update({
-            'werkzeug.proxy_fix.orig_wsgi_url_scheme':  getter('wsgi.url_scheme'),
-            'werkzeug.proxy_fix.orig_remote_addr':      getter('REMOTE_ADDR'),
-            'werkzeug.proxy_fix.orig_http_host':        getter('HTTP_HOST')
+            'werkzeug.proxy_fix.orig_wsgi_url_scheme': getter('wsgi.url_scheme'),
+            'werkzeug.proxy_fix.orig_remote_addr': getter('REMOTE_ADDR'),
+            'werkzeug.proxy_fix.orig_http_host': getter('HTTP_HOST'),
+            'werkzeug.proxy_fix.orig_server_port': getter('SERVER_PORT'),
         })
         forwarded_for = [x for x in [x.strip() for x in forwarded_for] if x]
         remote_addr = self.get_remote_addr(forwarded_for)
@@ -147,6 +149,15 @@ class ProxyFix(object):
             environ['REMOTE_ADDR'] = remote_addr
         if forwarded_host:
             environ['HTTP_HOST'] = forwarded_host
+        if forwarded_port:
+            if environ.get('HTTP_HOST'):
+                parts = environ['HTTP_HOST'].split(':', 1)
+                if len(parts) == 2:
+                    environ['HTTP_HOST'] = parts[0] + ':' + forwarded_port
+                else:
+                    environ['HTTP_HOST'] += ':' + forwarded_port
+            else:
+                environ['SERVER_PORT'] = forwarded_port
         if forwarded_proto:
             environ['wsgi.url_scheme'] = forwarded_proto
         return self.app(environ, start_response)
