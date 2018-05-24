@@ -143,6 +143,7 @@ class ProxyFix(object):
             'werkzeug.proxy_fix.orig_remote_addr': getter('REMOTE_ADDR'),
             'werkzeug.proxy_fix.orig_http_host': getter('HTTP_HOST'),
             'werkzeug.proxy_fix.orig_server_port': getter('SERVER_PORT'),
+            'werkzeug.proxy_fix.orig_script_name': getter('SCRIPT_NAME'),
         })
         forwarded_for = [x for x in [x.strip() for x in forwarded_for] if x]
         remote_addr = self.get_remote_addr(forwarded_for)
