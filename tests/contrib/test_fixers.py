@@ -20,6 +20,7 @@ from werkzeug.wrappers import Request, Response
 from werkzeug.contrib import fixers
 from werkzeug.utils import redirect
 from werkzeug.wsgi import get_host
+from werkzeug.routing import Map, Rule
 
 
 @Request.application
@@ -151,6 +152,28 @@ class TestServerFixer(object):
         wsgi_headers = response.get_wsgi_headers(environ)
         assert wsgi_headers['Location'] == '{}/foo/bar.hml'.format(
             assumed_host)
+
+    def test_proxy_fix_forwarded_prefix(self):
+        @fixers.ProxyFix
+        @Request.application
+        def app(request):
+            m = Map([Rule('/downloads', endpoint='downloads/index')])
+            urls = m.bind_to_environ(request.environ)
+            # make sure:
+            # 1. urls are built correctly with the given prefix header
+            # 2. urls are matched correctly - not affected by header
+            return Response('%s|%s|%s' % (
+                request.script_root,
+                urls.build("downloads/index"),
+                urls.match('/downloads')[0]
+            ))
+        environ = dict(
+            create_environ(),
+            HTTP_X_FORWARDED_PREFIX="/foo/bar",
+        )
+
+        response = Response.from_app(app, environ)
+        assert response.get_data() == b'/foo/bar|/foo/bar/downloads|downloads/index'
 
     def test_proxy_fix_weird_enum(self):
         @fixers.ProxyFix
