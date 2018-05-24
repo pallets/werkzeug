@@ -33,6 +33,8 @@ Release Date not Decided
 -   :class:`~fixers.ProxyFix` handles the ``X-Forwarded-Prefix`` header
     set by some proxies by changing the WSGI environ ``SCRIPT_NAME``.
     (`#1237`_)
+-   :class:`~fixers.ProxyFix` handles chained ``X-Forwarded-Proto``
+    headers. (`#1312`_)
 -   :func:`http.parse_cookie` ignores empty segments rather than
     producing a cookie with no key or value. (`#1245`_, `#1301`_)
 -   Building URLs is ~7x faster. Each :class:`~routing.Rule` compiles
@@ -57,6 +59,7 @@ Release Date not Decided
 .. _`#1303`: https://github.com/pallets/werkzeug/pull/1303
 .. _`#1304`: https://github.com/pallets/werkzeug/pull/1304
 .. _`#1308`: https://github.com/pallets/werkzeug/pull/1308
+.. _`#1312`: https://github.com/pallets/werkzeug/pull/1312
 
 
 Version 0.14.1

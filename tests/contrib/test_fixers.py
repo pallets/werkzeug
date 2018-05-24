@@ -119,6 +119,11 @@ class TestServerFixer(object):
             'HTTP_X_FORWARDED_PORT': '443',
             'HTTP_X_FORWARDED_FOR': '1.2.3.4, 5.6.7.8'
         }, '1.2.3.4', 'https://example.com', id='All together'),
+        pytest.param({
+            'HTTP_HOST': 'internal',
+            'REMOTE_ADDR': '192.168.0.1',
+            'HTTP_X_FORWARDED_PROTO': 'https, http',
+        }, '192.168.0.1', 'https://internal', id='Multiple Proto'),
     ])
     def test_proxy_fix(self, environ, assumed_addr, assumed_host):
         @Request.application
