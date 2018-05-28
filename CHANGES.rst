@@ -7,13 +7,12 @@ Werkzeug Changelog
 Version 0.15
 ------------
 
-Release Date not Decided
+Unreleased
 
-- Fix a bug in ``werkzeug.wsgi.ProxyMiddleware`` with query string.
-  (`#1252`_)
-- Add 412 status code.
-- Cleanup ``werkzeug.security`` module, remove predated hashlib support.
-  (`#1282`_)
+-   :class:`~werkzeug.wsgi.ProxyMiddleware` proxies the query string.
+    (`#1252`_)
+-   Cleanup ``werkzeug.security`` module, remove predated hashlib
+    support. (`#1282`_)
 -   :class:`~test.EnvironBuilder` doesn't set ``CONTENT_TYPE`` or
     ``CONTENT_LENGTH`` in the environ if they aren't set. Previously
     these used default values if they weren't set. Now it's possible to
@@ -27,14 +26,25 @@ Release Date not Decided
     for a key. It already did this when passing a dict with a list
     value. (`#724`_)
 -   :func:`wsgi.get_host` no longer looks at ``X-Forwarded-For``. Use
-    :class:`~fixers.ProxyFix` to handle that. (`#609`_, `#1303`_)
--   :class:`~fixers.ProxyFix` handles the ``X-Forwarded-Port`` header
-    set by some proxies. (`#1023`_, `#1304`_)
--   :class:`~fixers.ProxyFix` handles the ``X-Forwarded-Prefix`` header
-    set by some proxies by changing the WSGI environ ``SCRIPT_NAME``.
-    (`#1237`_)
--   :class:`~fixers.ProxyFix` handles chained ``X-Forwarded-Proto``
-    headers. (`#1312`_)
+    :class:`~contrib.fixers.ProxyFix` to handle that. (`#609`_,
+    `#1303`_)
+-   :class:`~contrib.fixers.ProxyFix` is refactored to support more
+    headers, multiple values, and more secure configuration.
+
+    -   Each header supports multiple values. The trusted number of
+        proxies is configured separately for each header. The
+        ``num_proxies`` argument is deprecated. (`#1314`_)
+    -   Sets ``SERVER_NAME`` and ``SERVER_PORT`` based on
+        ``X-Forwarded-Host``. (`#1314`_)
+    -   Sets ``SERVER_PORT`` and modifies ``HTTP_HOST`` based on
+        ``X-Forwarded-Port``. (`#1023`_, `#1304`_)
+    -   Sets ``SCRIPT_NAME`` based on ``X-Forwarded-Prefix``. (`#1237`_)
+    -   The original WSGI environment values are stored in the
+        ``werkzeug.proxy_fix.orig`` key, a dict. The individual keys
+        ``werkzeug.proxy_fix.orig_remote_addr``,
+        ``werkzeug.proxy_fix.orig_wsgi_url_scheme``, and
+        ``werkzeug.proxy_fix.orig_http_host`` are deprecated.
+
 -   :func:`http.parse_cookie` ignores empty segments rather than
     producing a cookie with no key or value. (`#1245`_, `#1301`_)
 -   Building URLs is ~7x faster. Each :class:`~routing.Rule` compiles
@@ -60,6 +70,7 @@ Release Date not Decided
 .. _`#1304`: https://github.com/pallets/werkzeug/pull/1304
 .. _`#1308`: https://github.com/pallets/werkzeug/pull/1308
 .. _`#1312`: https://github.com/pallets/werkzeug/pull/1312
+.. _`#1314`: https://github.com/pallets/werkzeug/pull/1314
 
 
 Version 0.14.1

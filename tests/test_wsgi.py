@@ -98,32 +98,46 @@ def test_dispatchermiddleware():
     assert b''.join(app_iter).strip() == b'NOT FOUND'
 
 
-def test_get_host_by_http_host():
-    env = {'HTTP_HOST': 'example.org', 'wsgi.url_scheme': 'http'}
-    assert wsgi.get_host(env) == 'example.org'
-    env['HTTP_HOST'] = 'example.org:8080'
-    assert wsgi.get_host(env) == 'example.org:8080'
-    env['HOST_NAME'] = 'ignore me'
-    assert wsgi.get_host(env) == 'example.org:8080'
-
-
-def test_get_host_by_server_name_and_port():
-    env = {'SERVER_NAME': 'example.org', 'SERVER_PORT': '80',
-           'wsgi.url_scheme': 'http'}
-    assert wsgi.get_host(env) == 'example.org'
-    env['wsgi.url_scheme'] = 'https'
-    assert wsgi.get_host(env) == 'example.org:80'
-    env['SERVER_PORT'] = '8080'
-    assert wsgi.get_host(env) == 'example.org:8080'
-    env['SERVER_PORT'] = '443'
-    assert wsgi.get_host(env) == 'example.org'
-
-
-def test_get_host_ignore_x_forwarded_for():
-    env = {'HTTP_X_FORWARDED_HOST': 'forwarded',
-           'HTTP_HOST': 'example.org',
-           'wsgi.url_scheme': 'http'}
-    assert wsgi.get_host(env) == 'example.org'
+@pytest.mark.parametrize(('environ', 'expect'), (
+    pytest.param({
+        'HTTP_HOST': 'spam',
+    }, 'spam', id='host'),
+    pytest.param({
+        'HTTP_HOST': 'spam:80',
+    }, 'spam', id='host, strip http port'),
+    pytest.param({
+        'wsgi.url_scheme': 'https',
+        'HTTP_HOST': 'spam:443',
+    }, 'spam', id='host, strip https port'),
+    pytest.param({
+        'HTTP_HOST': 'spam:8080',
+    }, 'spam:8080', id='host, custom port'),
+    pytest.param({
+        'HTTP_HOST': 'spam',
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '80',
+    }, 'spam', id='prefer host'),
+    pytest.param({
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '80'
+    }, 'eggs', id='name, ignore http port'),
+    pytest.param({
+        'wsgi.url_scheme': 'https',
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '443'
+    }, 'eggs', id='name, ignore https port'),
+    pytest.param({
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '8080'
+    }, 'eggs:8080', id='name, custom port'),
+    pytest.param({
+        'HTTP_HOST': 'ham',
+        'HTTP_X_FORWARDED_HOST': 'eggs'
+    }, 'ham', id='ignore x-forwarded-host'),
+))
+def test_get_host(environ, expect):
+    environ.setdefault('wsgi.url_scheme', 'http')
+    assert wsgi.get_host(environ) == expect
 
 
 def test_get_host_validate_trusted_hosts():
