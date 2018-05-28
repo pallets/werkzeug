@@ -1146,18 +1146,19 @@ def test_disabled_auto_content_length():
     assert 'Content-Length' not in resp.get_wsgi_headers({})
 
 
-def test_location_header_autocorrect():
-    env = create_environ()
-
-    class MyResponse(wrappers.Response):
-        autocorrect_location_header = False
-    resp = MyResponse('Hello World!')
-    resp.headers['Location'] = '/test'
-    assert resp.get_wsgi_headers(env)['Location'] == '/test'
-
+@pytest.mark.parametrize(('auto', 'location', 'expect'), (
+    (False, '/test', '/test'),
+    (True, '/test', 'http://localhost/test'),
+    (True, 'test', 'http://localhost/a/b/test'),
+    (True, './test', 'http://localhost/a/b/test'),
+    (True, '../test', 'http://localhost/a/test'),
+))
+def test_location_header_autocorrect(monkeypatch, auto, location, expect):
+    monkeypatch.setattr(wrappers.Response, 'autocorrect_location_header', auto)
+    env = create_environ('/a/b/c')
     resp = wrappers.Response('Hello World!')
-    resp.headers['Location'] = '/test'
-    assert resp.get_wsgi_headers(env)['Location'] == 'http://localhost/test'
+    resp.headers['Location'] = location
+    assert resp.get_wsgi_headers(env)['Location'] == expect
 
 
 def test_204_and_1XX_response_has_no_content_length():
