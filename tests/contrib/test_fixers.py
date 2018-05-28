@@ -10,17 +10,13 @@
 """
 import pytest
 
-from tests import strict_eq
-from werkzeug._compat import to_bytes
+from werkzeug.contrib import fixers
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.http import parse_cache_control_header
-
-from werkzeug.test import create_environ, Client
-from werkzeug.wrappers import Request, Response
-from werkzeug.contrib import fixers
-from werkzeug.utils import redirect
-from werkzeug.wsgi import get_host
 from werkzeug.routing import Map, Rule
+from werkzeug.test import Client, create_environ
+from werkzeug.utils import redirect
+from werkzeug.wrappers import Request, Response
 
 
 @Request.application
@@ -60,139 +56,120 @@ class TestServerFixer(object):
             response = Response.from_app(app, env)
             assert response.get_data() == b'PATH_INFO: /foo%bar\nSCRIPT_NAME: /test'
 
-    @pytest.mark.parametrize('environ,assumed_addr,assumed_host', [
-        pytest.param({
-            'HTTP_HOST': 'internal',
-            'REMOTE_ADDR': '127.0.0.1'
-        }, '127.0.0.1', 'http://internal', id='No proxy, with Host'),
-        pytest.param({
-            'SERVER_NAME': 'internal',
-            'SERVER_PORT': '80',
-            'REMOTE_ADDR': '127.0.0.1'
-        }, '127.0.0.1', 'http://internal', id='No proxy, no Host'),
-        pytest.param({
-            'HTTP_HOST': 'internal:80',
-            'REMOTE_ADDR': '127.0.0.1'
-        }, '127.0.0.1', 'http://internal', id='Sanitize HTTP port'),
-        pytest.param({
-            'wsgi.url_scheme': 'https',
-            'HTTP_HOST': 'internal:443',
-            'REMOTE_ADDR': '127.0.0.1'
-        }, '127.0.0.1', 'https://internal', id='Sanitize HTTPS port'),
-        pytest.param({
-            'HTTP_HOST': 'internal:8080',
-            'REMOTE_ADDR': '127.0.0.1'
-        }, '127.0.0.1', 'http://internal:8080', id='Custom port'),
-        pytest.param({
-            'HTTP_HOST': 'internal',
-            'REMOTE_ADDR': '127.0.0.1',
-            'HTTP_X_FORWARDED_FOR': '1.2.3.4, 5.6.7.8'
-        }, '1.2.3.4', 'http://internal', id='X-Forwarded-For'),
-        pytest.param({
-            'HTTP_HOST': 'internal',
-            'REMOTE_ADDR': '127.0.0.1',
+    @pytest.mark.parametrize(('kwargs', 'base', 'url_root'), (
+        pytest.param({}, {
+            'REMOTE_ADDR': '192.168.0.2',
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_FOR': '192.168.0.1',
+        }, 'http://spam/', id='for'),
+        pytest.param({'x_proto': 1}, {
+            'HTTP_HOST': 'spam',
             'HTTP_X_FORWARDED_PROTO': 'https',
-            'HTTP_X_FORWARDED_HOST': 'example.com',
-            'HTTP_X_FORWARDED_PORT': '8443',
-        }, '127.0.0.1', 'https://example.com:8443', id='X-Forwarded-*'),
-        pytest.param({
-            'HTTP_HOST': 'internal',
-            'REMOTE_ADDR': '127.0.0.1',
+        },  'https://spam/', id='proto'),
+        pytest.param({'x_host': 1}, {
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_HOST': 'eggs',
+        }, 'http://eggs/', id='host'),
+        pytest.param({'x_port': 1}, {
+            'HTTP_HOST': 'spam',
             'HTTP_X_FORWARDED_PORT': '8080',
-        }, '127.0.0.1', 'http://internal:8080', id='HTTP X-Port, no X-Host'),
-        pytest.param({
-            'SERVER_NAME': 'internal',
-            'REMOTE_ADDR': '127.0.0.1',
+        }, 'http://spam:8080/', id='port, host without port'),
+        pytest.param({'x_port': 1}, {
+            'HTTP_HOST': 'spam:9000',
             'HTTP_X_FORWARDED_PORT': '8080',
-        }, '127.0.0.1', 'http://internal:8080', id='HTTP X-Port, no Host'),
+        }, 'http://spam:8080/', id='port, host with port'),
+        pytest.param({'x_port': 1}, {
+            'SERVER_NAME': 'spam',
+            'SERVER_PORT': '9000',
+            'HTTP_X_FORWARDED_PORT': '8080',
+        }, 'http://spam:8080/', id='port, name'),
+        pytest.param({'x_prefix': 1}, {
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_PREFIX': '/eggs',
+        }, 'http://spam/eggs/', id='prefix'),
         pytest.param({
-            'HTTP_HOST': 'internal',
-            'REMOTE_ADDR': '127.0.0.1',
+            'x_for': 1, 'x_proto': 1, 'x_host': 1, 'x_port': 1, 'x_prefix': 1
+        }, {
+            'REMOTE_ADDR': '192.168.0.2',
+            'HTTP_HOST': 'spam:9000',
+            'HTTP_X_FORWARDED_FOR': '192.168.0.1',
             'HTTP_X_FORWARDED_PROTO': 'https',
-            'HTTP_X_FORWARDED_PORT': '8443',
-        }, '127.0.0.1', 'https://internal:8443', id='HTTPS X-Port, no X-Host'),
-        pytest.param({
-            'HTTP_HOST': 'internal',
-            'REMOTE_ADDR': '127.0.0.1',
-            'HTTP_X_FORWARDED_PROTO': 'https',
-            'HTTP_X_FORWARDED_HOST': 'example.com',
+            'HTTP_X_FORWARDED_HOST': 'eggs',
             'HTTP_X_FORWARDED_PORT': '443',
-            'HTTP_X_FORWARDED_FOR': '1.2.3.4, 5.6.7.8'
-        }, '1.2.3.4', 'https://example.com', id='All together'),
-        pytest.param({
-            'HTTP_HOST': 'internal',
+            'HTTP_X_FORWARDED_PREFIX': '/ham',
+        }, 'https://eggs/ham/', id='all'),
+        pytest.param({'x_for': 2}, {
+            'REMOTE_ADDR': '192.168.0.3',
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_FOR': '192.168.0.1, 192.168.0.2',
+        }, 'http://spam/', id='multiple for'),
+        pytest.param({'x_for': 0}, {
             'REMOTE_ADDR': '192.168.0.1',
-            'HTTP_X_FORWARDED_PROTO': 'https, http',
-        }, '192.168.0.1', 'https://internal', id='Multiple Proto'),
-    ])
-    def test_proxy_fix(self, environ, assumed_addr, assumed_host):
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_FOR': '192.168.0.2',
+        }, 'http://spam/', id='ignore 0'),
+        pytest.param({'x_for': 3}, {
+            'REMOTE_ADDR': '192.168.0.1',
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_FOR': '192.168.0.3, 192.168.0.2',
+        }, 'http://spam/', id='ignore len < trusted'),
+        pytest.param({}, {
+            'REMOTE_ADDR': '192.168.0.2',
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_FOR': '192.168.0.3, 192.168.0.1',
+        }, 'http://spam/', id='ignore untrusted'),
+        pytest.param({'x_for': 2}, {
+            'REMOTE_ADDR': '192.168.0.1',
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_FOR': ', 192.168.0.3'
+        }, 'http://spam/', id='ignore empty')
+    ))
+    def test_proxy_fix_new(self, kwargs, base, url_root):
         @Request.application
         def app(request):
-            return Response('%s|%s' % (
-                request.remote_addr,
-                # do not use request.host as this fixes too :)
-                request.environ['wsgi.url_scheme'] + '://' +
-                get_host(request.environ)
-            ))
-        app = fixers.ProxyFix(app, num_proxies=2)
-        has_host = 'HTTP_HOST' in environ
-        environ = dict(
-            create_environ(),
-            **environ
-        )
-        if not has_host:
-            del environ['HTTP_HOST']  # create_environ() defaults to 'localhost'
+            # for header
+            assert request.remote_addr == '192.168.0.1'
+            # proto, host, port, prefix headers
+            assert request.url_root == url_root
 
+            urls = url_map.bind_to_environ(request.environ)
+            # build includes prefix
+            assert urls.build('parrot') == '/'.join((
+                request.script_root, 'parrot'))
+            # match doesn't include prefix
+            assert urls.match('/parrot')[0] == 'parrot'
+
+            return Response('success')
+
+        url_map = Map([Rule('/parrot', endpoint='parrot')])
+        app = fixers.ProxyFix(app, **kwargs)
+
+        base.setdefault('REMOTE_ADDR', '192.168.0.1')
+        environ = create_environ(environ_overrides=base)
+        # host is always added, remove it if the test doesn't set it
+        if 'HTTP_HOST' not in base:
+            del environ['HTTP_HOST']
+
+        # ensure app request has correct headers
         response = Response.from_app(app, environ)
+        assert response.get_data() == b'success'
 
-        assert response.get_data() == to_bytes('{}|{}'.format(
-            assumed_addr, assumed_host))
-
-        # And we must check that if it is a redirection it is
-        # correctly done:
-
-        redirect_app = redirect('/foo/bar.hml')
+        # ensure redirect location is correct
+        redirect_app = redirect(
+            url_map.bind_to_environ(environ).build('parrot'))
         response = Response.from_app(redirect_app, environ)
+        location = response.headers['Location']
+        assert location == url_root + 'parrot'
 
-        wsgi_headers = response.get_wsgi_headers(environ)
-        assert wsgi_headers['Location'] == '{}/foo/bar.hml'.format(
-            assumed_host)
+    def test_proxy_fix_deprecations(self):
+        app = pytest.deprecated_call(fixers.ProxyFix, None, 2)
+        assert app.x_for == 2
 
-    def test_proxy_fix_forwarded_prefix(self):
-        @fixers.ProxyFix
-        @Request.application
-        def app(request):
-            m = Map([Rule('/downloads', endpoint='downloads/index')])
-            urls = m.bind_to_environ(request.environ)
-            # make sure:
-            # 1. urls are built correctly with the given prefix header
-            # 2. urls are matched correctly - not affected by header
-            return Response('%s|%s|%s' % (
-                request.script_root,
-                urls.build("downloads/index"),
-                urls.match('/downloads')[0]
-            ))
-        environ = dict(
-            create_environ(),
-            HTTP_X_FORWARDED_PREFIX="/foo/bar",
-        )
+        with pytest.deprecated_call():
+            assert app.num_proxies == 2
 
-        response = Response.from_app(app, environ)
-        assert response.get_data() == b'/foo/bar|/foo/bar/downloads|downloads/index'
-
-    def test_proxy_fix_weird_enum(self):
-        @fixers.ProxyFix
-        @Request.application
-        def app(request):
-            return Response(request.remote_addr)
-        environ = dict(
-            create_environ(),
-            HTTP_X_FORWARDED_FOR=',',
-            REMOTE_ADDR='127.0.0.1',
-        )
-
-        response = Response.from_app(app, environ)
-        strict_eq(response.get_data(), b'127.0.0.1')
+        with pytest.deprecated_call():
+            assert app.get_remote_addr(['spam', 'eggs']) == 'spam'
 
     def test_header_rewriter_fix(self):
         @Request.application

@@ -1435,8 +1435,9 @@ class Map(object):
         `encoding_errors` and `host_matching` was added.
     """
 
+    #: A dict of default converters to use.
+    #:
     #: .. versionadded:: 0.6
-    #:    a dict of default converters to be used.
     default_converters = ImmutableDict(DEFAULT_CONVERTERS)
 
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',

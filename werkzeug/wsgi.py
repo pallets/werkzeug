@@ -143,17 +143,20 @@ def host_is_trusted(hostname, trusted_list):
 
 
 def get_host(environ, trusted_hosts=None):
-    """Return the real host for the given WSGI environment.  This first checks
-    the normal `Host` header, and if it's not present, then `SERVER_NAME`
-    and `SERVER_PORT` environment variables.
+    """Return the host for the given WSGI environment. This first checks
+    the ``Host`` header. If it's not present, then ``SERVER_NAME`` and
+    ``SERVER_PORT`` are used. The host will only contain the port if it
+    is different than the standard port for the protocol.
 
-    Optionally it verifies that the host is in a list of trusted hosts.
-    If the host is not in there it will raise a
-    :exc:`~werkzeug.exceptions.SecurityError`.
+    Optionally, verify that the host is trusted using
+    :func:`host_is_trusted` and raise a
+    :exc:`~werkzeug.exceptions.SecurityError` if it is not.
 
-    :param environ: the WSGI environment to get the host of.
-    :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
-                          for more information.
+    :param environ: The WSGI environment to get the host from.
+    :param trusted_hosts: A list of trusted hosts.
+    :return: Host, with port if necessary.
+    :raise ~werkzeug.exceptions.SecurityError: If the host is not
+        trusted.
     """
     if 'HTTP_HOST' in environ:
         rv = environ['HTTP_HOST']
