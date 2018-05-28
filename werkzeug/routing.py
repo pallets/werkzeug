@@ -1534,6 +1534,9 @@ class Map(object):
 
         .. versionadded:: 0.8
            `query_args` can now also be a string.
+
+        .. versionchanged:: 0.15
+            ``path_info`` defaults to ``'/'`` if ``None``.
         """
         server_name = server_name.lower()
         if self.host_matching:
@@ -1544,6 +1547,8 @@ class Map(object):
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
+        if path_info is None:
+            path_info = '/'
         try:
             server_name = _encode_idna(server_name)
         except UnicodeError:
