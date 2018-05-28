@@ -1235,7 +1235,7 @@ class BaseResponse(object):
                 location = iri_to_uri(location, safe_conversion=True)
 
             if self.autocorrect_location_header:
-                current_url = get_current_url(environ)
+                current_url = get_current_url(environ, strip_querystring=True)
                 if isinstance(current_url, text_type):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
