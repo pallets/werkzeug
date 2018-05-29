@@ -259,6 +259,27 @@ else:
     reloader_loops['auto'] = reloader_loops['watchdog']
 
 
+try:
+    import termios
+except ImportError:
+    termios = None
+
+
+def ensure_echo_on():
+    if termios is None:
+        return
+
+    # tcgetattr will fail if stdin isn't a tty (e.g. test_serving.py test cases)
+    if not sys.stdin.isatty():
+        return
+
+    file_descriptor = sys.stdin.fileno()
+    attributes = termios.tcgetattr(file_descriptor)
+    if not attributes[3] & termios.ECHO:
+        attributes[3] |= termios.ECHO
+        termios.tcsetattr(file_descriptor, termios.TCSANOW, attributes)
+
+
 def run_with_reloader(main_func, extra_files=None, interval=1,
                       reloader_type='auto'):
     """Run the given function in an independent python interpreter."""
@@ -267,6 +288,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1,
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     try:
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+            ensure_echo_on()
             t = threading.Thread(target=main_func, args=())
             t.setDaemon(True)
             t.start()
