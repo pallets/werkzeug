@@ -61,6 +61,10 @@ Unreleased
     input. (`#1318`_)
 -   The dev server can bind to a Unix socket by passing a hostname like
     ``unix://app.socket``. (`#209`_, `#1019`_)
+-   :class:`~wsgi.ClosingIterator` calls ``close`` on the wrapped
+    *iterable*, not the internal iterator. This doesn't affect objects
+    where ``__iter__`` returned ``self``. For other objects, the method
+    was not called before. (`#1259`_, `#1260`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -77,6 +81,8 @@ Unreleased
 .. _`#1245`: https://github.com/pallets/werkzeug/pull/1245
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
 .. _`#1255`: https://github.com/pallets/werkzeug/pull/1255
+.. _`#1259`: https://github.com/pallets/werkzeug/pull/1259
+.. _`#1260`: https://github.com/pallets/werkzeug/pull/1260
 .. _`#1281`: https://github.com/pallets/werkzeug/pull/1281
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
 .. _`#1283`: https://github.com/pallets/werkzeug/issues/1283

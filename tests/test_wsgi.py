@@ -558,46 +558,33 @@ def test_http_proxy(dev_server):
 
 
 def test_closing_iterator():
-    # calls close on the iterable that is wrapped
-    got_close = []
+    class Namespace(object):
+        got_close = False
+        got_additional = False
 
-    class App(object):
-
+    class Response(object):
         def __init__(self, environ, start_response):
             self.start = start_response
 
+        # Return a generator instead of making the object its own
+        # iterator. This ensures that ClosingIterator calls close on
+        # the iterable (the object), not the iterator.
         def __iter__(self):
             self.start('200 OK', [('Content-Type', 'text/plain')])
             yield 'some content'
 
         def close(self):
-            got_close.append(None)
-
-    def wrap(callback=None):
-        def wrapped(environ, start_response):
-            if callback:
-                callbacks = [callback]
-            else:
-                callbacks = []
-            return ClosingIterator(App(environ, start_response), *callbacks)
-
-        return wrapped
-
-    app_iter, status, headers = run_wsgi_app(wrap(),
-                                             create_environ(),
-                                             buffered=True)
-
-    strict_eq(''.join(app_iter), 'some content')
-    assert len(got_close) == 1
-
-    # calls close on the iterable that is wrapped and callbacks
-    got_additional = []
+            Namespace.got_close = True
 
     def additional():
-        got_additional.append(None)
-    got_close = []
-    app_iter, status, headers = run_wsgi_app(wrap(additional),
-                                             create_environ(),
-                                             buffered=True)
-    assert len(got_close) == 1
-    assert len(got_additional) == 1
+        Namespace.got_additional = True
+
+    def app(environ, start_response):
+        return ClosingIterator(Response(environ, start_response), additional)
+
+    app_iter, status, headers = run_wsgi_app(
+        app, create_environ(), buffered=True)
+
+    assert ''.join(app_iter) == 'some content'
+    assert Namespace.got_close
+    assert Namespace.got_additional
