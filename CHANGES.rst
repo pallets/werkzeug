@@ -59,13 +59,17 @@ Unreleased
     :meth:`Map.bind() <routing.Map.bind>`. (`#740`_, `#768`_, `#1316`_)
 -   Triggering a reload while using a tool such as PDB no longer hides
     input. (`#1318`_)
+-   The dev server can bind to a Unix socket by passing a hostname like
+    ``unix://app.socket``. (`#209`_, `#1019`_)
 
+.. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
 .. _`#693`: https://github.com/pallets/werkzeug/pull/693
 .. _`#718`: https://github.com/pallets/werkzeug/pull/718
 .. _`#724`: https://github.com/pallets/werkzeug/pull/724
 .. _`#740`: https://github.com/pallets/werkzeug/issues/740
 .. _`#768`: https://github.com/pallets/werkzeug/pull/768
+.. _`#1019`: https://github.com/pallets/werkzeug/issues/1019
 .. _`#1023`: https://github.com/pallets/werkzeug/issues/1023
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233

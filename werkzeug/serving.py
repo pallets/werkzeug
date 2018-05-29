@@ -166,6 +166,12 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             self.server.shutdown_signal = True
 
         url_scheme = self.server.ssl_context is None and 'http' or 'https'
+        if not self.client_address:
+            self.client_address = '<local>'
+        if isinstance(self.client_address, str):
+            self.client_address = (self.client_address, 0)
+        else:
+            pass
         path_info = url_unquote(request_url.path)
 
         environ = {
@@ -344,6 +350,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
     def address_string(self):
         if getattr(self, 'environ', None):
             return self.environ['REMOTE_ADDR']
+        elif not self.client_address:
+            return '<local>'
+        elif isinstance(self.client_address, str):
+            return self.client_address
         else:
             return self.client_address[0]
 
@@ -556,8 +566,9 @@ def is_ssl_error(error=None):
     return isinstance(error, exc_types)
 
 
-def select_ip_version(host, port):
-    """Returns AF_INET4 or AF_INET6 depending on where to connect to."""
+def select_address_family(host, port):
+    """Return ``AF_INET4``, ``AF_INET6``, or ``AF_UNIX`` depending on
+    the host and port."""
     # disabled due to problems with current ipv6 implementations
     # and various operating systems.  Probably this code also is
     # not supposed to work, but I can't come up with any other
@@ -570,19 +581,23 @@ def select_ip_version(host, port):
     #         return info[0][0]
     # except socket.gaierror:
     #     pass
-    if ':' in host and hasattr(socket, 'AF_INET6'):
+    if host.startswith('unix://'):
+        return socket.AF_UNIX
+    elif ':' in host and hasattr(socket, 'AF_INET6'):
         return socket.AF_INET6
     return socket.AF_INET
 
 
 def get_sockaddr(host, port, family):
-    """Returns a fully qualified socket address, that can properly used by
-    socket.bind"""
+    """Return a fully qualified socket address that can be passed to
+    :func:`socket.bind`."""
+    if family == socket.AF_UNIX:
+        return host.split('://', 1)[1]
     try:
-        res = socket.getaddrinfo(host, port, family,
-                                 socket.SOCK_STREAM, socket.SOL_TCP)
+        res = socket.getaddrinfo(
+            host, port, family, socket.SOCK_STREAM, socket.SOL_TCP)
     except socket.gaierror:
-        return (host, port)
+        return host, port
     return res[0][4]
 
 
@@ -593,19 +608,31 @@ class BaseWSGIServer(HTTPServer, object):
     multiprocess = False
     request_queue_size = LISTEN_QUEUE
 
-    def __init__(self, host, port, app, handler=None,
-                 passthrough_errors=False, ssl_context=None, fd=None):
+    def __init__(
+        self, host, port, app, handler=None, passthrough_errors=False,
+        ssl_context=None, fd=None
+    ):
         if handler is None:
             handler = WSGIRequestHandler
 
-        self.address_family = select_ip_version(host, port)
+        self.address_family = select_address_family(host, port)
 
         if fd is not None:
-            real_sock = socket.fromfd(fd, self.address_family,
-                                      socket.SOCK_STREAM)
+            real_sock = socket.fromfd(
+                fd, self.address_family, socket.SOCK_STREAM)
             port = 0
-        HTTPServer.__init__(self, get_sockaddr(host, int(port),
-                                               self.address_family), handler)
+
+        server_address = get_sockaddr(host, int(port), self.address_family)
+
+        # remove socket file if it already exists
+        if (
+            self.address_family == socket.AF_UNIX
+            and os.path.exists(server_address)
+        ):
+            os.unlink(server_address)
+
+        HTTPServer.__init__(self, server_address, handler)
+
         self.app = app
         self.passthrough_errors = passthrough_errors
         self.shutdown_signal = False
@@ -738,7 +765,13 @@ def run_simple(hostname, port, application, use_reloader=False,
        through the `reloader_type` parameter.  See :ref:`reloader`
        for more information.
 
-    :param hostname: The host for the application.  eg: ``'localhost'``
+    .. versionchanged:: 0.15
+        Bind to a Unix socket by passing a path that starts with
+        ``unix://`` as the ``hostname``.
+
+    :param hostname: The host to bind to, for example ``'localhost'``.
+        If the value is a path that starts with ``unix://`` it will bind
+        to a Unix socket instead of a TCP socket..
     :param port: The port for the server.  eg: ``8080``
     :param application: the WSGI application to execute
     :param use_reloader: should the server automatically restart the python
@@ -786,13 +819,16 @@ def run_simple(hostname, port, application, use_reloader=False,
 
     def log_startup(sock):
         display_hostname = hostname not in ('', '*') and hostname or 'localhost'
-        if ':' in display_hostname:
-            display_hostname = '[%s]' % display_hostname
         quit_msg = '(Press CTRL+C to quit)'
-        port = sock.getsockname()[1]
-        _log('info', ' * Running on %s://%s:%d/ %s',
-             ssl_context is None and 'http' or 'https',
-             display_hostname, port, quit_msg)
+        if sock.family is socket.AF_UNIX:
+            _log('info', ' * Running on %s %s', display_hostname, quit_msg)
+        else:
+            if ':' in display_hostname:
+                display_hostname = '[%s]' % display_hostname
+            port = sock.getsockname()[1]
+            _log('info', ' * Running on %s://%s:%d/ %s',
+                 ssl_context is None and 'http' or 'https',
+                 display_hostname, port, quit_msg)
 
     def inner():
         try:
@@ -820,10 +856,11 @@ def run_simple(hostname, port, application, use_reloader=False,
             # Create and destroy a socket so that any exceptions are
             # raised before we spawn a separate Python interpreter and
             # lose this ability.
-            address_family = select_ip_version(hostname, port)
+            address_family = select_address_family(hostname, port)
+            server_address = get_sockaddr(hostname, port, address_family)
             s = socket.socket(address_family, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind(get_sockaddr(hostname, port, address_family))
+            s.bind(server_address)
             if hasattr(s, 'set_inheritable'):
                 s.set_inheritable(True)
 
@@ -835,6 +872,9 @@ def run_simple(hostname, port, application, use_reloader=False,
                 log_startup(s)
             else:
                 s.close()
+                if address_family is socket.AF_UNIX:
+                    _log('info', "Unlinking %s" % server_address)
+                    os.unlink(server_address)
 
         # Do not use relative imports, otherwise "python -m werkzeug.serving"
         # breaks.
