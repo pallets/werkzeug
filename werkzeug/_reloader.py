@@ -259,6 +259,22 @@ else:
     reloader_loops['auto'] = reloader_loops['watchdog']
 
 
+def ensure_echo_on():
+    """Ensure that echo mode is enabled. Some tools such as PDB disable
+    it which causes usability issues after reload."""
+    # tcgetattr will fail if stdin isn't a tty
+    if not sys.stdin.isatty():
+        return
+    try:
+        import termios
+    except ImportError:
+        return
+    attributes = termios.tcgetattr(sys.stdin)
+    if not attributes[3] & termios.ECHO:
+        attributes[3] |= termios.ECHO
+        termios.tcsetattr(sys.stdin, termios.TCSANOW, attributes)
+
+
 def run_with_reloader(main_func, extra_files=None, interval=1,
                       reloader_type='auto'):
     """Run the given function in an independent python interpreter."""
@@ -267,6 +283,7 @@ def run_with_reloader(main_func, extra_files=None, interval=1,
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     try:
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+            ensure_echo_on()
             t = threading.Thread(target=main_func, args=())
             t.setDaemon(True)
             t.start()
