@@ -567,7 +567,8 @@ def is_ssl_error(error=None):
 
 
 def select_address_family(host, port):
-    """Returns AF_INET4 or AF_INET6 depending on where to connect to."""
+    """Return ``AF_INET4``, ``AF_INET6``, or ``AF_UNIX`` depending on
+    the host and port."""
     # disabled due to problems with current ipv6 implementations
     # and various operating systems.  Probably this code also is
     # not supposed to work, but I can't come up with any other
@@ -588,8 +589,8 @@ def select_address_family(host, port):
 
 
 def get_sockaddr(host, port, family):
-    """Returns a fully qualified socket address, that can properly used by
-    socket.bind"""
+    """Return a fully qualified socket address that can be passed to
+    :func:`socket.bind`."""
     if family == socket.AF_UNIX:
         return host.split('://', 1)[1]
     try:
@@ -764,9 +765,13 @@ def run_simple(hostname, port, application, use_reloader=False,
        through the `reloader_type` parameter.  See :ref:`reloader`
        for more information.
 
-    :param hostname: The host for the application.  eg: ``'localhost'``.
-                     In order to use an unix socket instead of a TCP socket
-                     ``hostname`` must start with ``'unix://'``.
+    .. versionchanged:: 0.15
+        Bind to a Unix socket by passing a path that starts with
+        ``unix://`` as the ``hostname``.
+
+    :param hostname: The host to bind to, for example ``'localhost'``.
+        If the value is a path that starts with ``unix://`` it will bind
+        to a Unix socket instead of a TCP socket..
     :param port: The port for the server.  eg: ``8080``
     :param application: the WSGI application to execute
     :param use_reloader: should the server automatically restart the python
