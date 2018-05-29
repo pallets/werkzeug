@@ -259,25 +259,20 @@ else:
     reloader_loops['auto'] = reloader_loops['watchdog']
 
 
-try:
-    import termios
-except ImportError:
-    termios = None
-
-
 def ensure_echo_on():
-    if termios is None:
-        return
-
-    # tcgetattr will fail if stdin isn't a tty (e.g. test_serving.py test cases)
+    """Ensure that echo mode is enabled. Some tools such as PDB disable
+    it which causes usability issues after reload."""
+    # tcgetattr will fail if stdin isn't a tty
     if not sys.stdin.isatty():
         return
-
-    file_descriptor = sys.stdin.fileno()
-    attributes = termios.tcgetattr(file_descriptor)
+    try:
+        import termios
+    except ImportError:
+        return
+    attributes = termios.tcgetattr(sys.stdin)
     if not attributes[3] & termios.ECHO:
         attributes[3] |= termios.ECHO
-        termios.tcsetattr(file_descriptor, termios.TCSANOW, attributes)
+        termios.tcsetattr(sys.stdin, termios.TCSANOW, attributes)
 
 
 def run_with_reloader(main_func, extra_files=None, interval=1,

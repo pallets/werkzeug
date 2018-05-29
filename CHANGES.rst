@@ -57,6 +57,8 @@ Unreleased
     path rather than the root path. (`#693`_, `#718`_, `#1315`_)
 -   ``path_info`` defaults to ``'/'`` for
     :meth:`Map.bind() <routing.Map.bind>`. (`#740`_, `#768`_, `#1316`_)
+-   Triggering a reload while using a tool such as PDB no longer hides
+    input. (`#1318`_)
 
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
 .. _`#693`: https://github.com/pallets/werkzeug/pull/693
@@ -82,6 +84,7 @@ Unreleased
 .. _`#1314`: https://github.com/pallets/werkzeug/pull/1314
 .. _`#1315`: https://github.com/pallets/werkzeug/pull/1315
 .. _`#1316`: https://github.com/pallets/werkzeug/pull/1316
+.. _`#1318`: https://github.com/pallets/werkzeug/pull/1318
 
 
 Version 0.14.1
