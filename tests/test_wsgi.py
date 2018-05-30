@@ -19,12 +19,12 @@ import pytest
 from tests import strict_eq
 from werkzeug import wsgi
 from werkzeug._compat import BytesIO, NativeStringIO, StringIO, to_bytes, \
-    to_native
+        to_native
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug.wrappers import BaseResponse
 from werkzeug.urls import url_parse
-from werkzeug.wsgi import _RangeWrapper, wrap_file
+from werkzeug.wsgi import _RangeWrapper, ClosingIterator, wrap_file
 
 
 def test_shareddatamiddleware_get_file_loader():
@@ -555,3 +555,36 @@ def test_http_proxy(dev_server):
     # test query string
     rv = client.get('/bar/baz?a=a&b=b')
     assert rv.data.decode('ascii') == 'bar|localhost|/baz?a=a&b=b'
+
+
+def test_closing_iterator():
+    class Namespace(object):
+        got_close = False
+        got_additional = False
+
+    class Response(object):
+        def __init__(self, environ, start_response):
+            self.start = start_response
+
+        # Return a generator instead of making the object its own
+        # iterator. This ensures that ClosingIterator calls close on
+        # the iterable (the object), not the iterator.
+        def __iter__(self):
+            self.start('200 OK', [('Content-Type', 'text/plain')])
+            yield 'some content'
+
+        def close(self):
+            Namespace.got_close = True
+
+    def additional():
+        Namespace.got_additional = True
+
+    def app(environ, start_response):
+        return ClosingIterator(Response(environ, start_response), additional)
+
+    app_iter, status, headers = run_wsgi_app(
+        app, create_environ(), buffered=True)
+
+    assert ''.join(app_iter) == 'some content'
+    assert Namespace.got_close
+    assert Namespace.got_additional
