@@ -30,7 +30,7 @@ def test_proxy_exception():
 
 @pytest.mark.parametrize('test', [
     (exceptions.BadRequest, 400),
-    (exceptions.Unauthorized, 401),
+    (exceptions.Unauthorized, 401, ['Basic "test realm"']),
     (exceptions.Forbidden, 403),
     (exceptions.NotFound, 404),
     (exceptions.MethodNotAllowed, 405, ['GET', 'HEAD']),
@@ -90,3 +90,8 @@ def test_special_exceptions():
     h = dict(exc.get_headers({}))
     assert h['Allow'] == 'GET, HEAD, POST'
     assert 'The method is not allowed' in exc.get_description()
+
+    exc = exceptions.Unauthorized(['Basic realm1', 'Digest realm=...'])
+    h = dict(exc.get_headers({}))
+    assert h['WWW-Authenticate'] == 'Basic realm1, Digest realm=...'
+    assert 'authorized' in exc.get_description()
