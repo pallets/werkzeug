@@ -140,8 +140,6 @@ methods.  In any case you should have a look at the sourcecode of the
 exceptions module.
 
 You can override the default description in the constructor with the
-`description` parameter (it's the first argument for all exceptions
-except of the :exc:`MethodNotAllowed` which accepts a list of allowed methods
-as first argument)::
+``description`` parameter::
 
-    raise BadRequest('Request failed because X was not present')
+    raise BadRequest(description='Request failed because X was not present')

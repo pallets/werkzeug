@@ -65,6 +65,10 @@ Unreleased
     *iterable*, not the internal iterator. This doesn't affect objects
     where ``__iter__`` returned ``self``. For other objects, the method
     was not called before. (`#1259`_, `#1260`_)
+-   :class:`~exceptions.Unauthorized` takes a ``www_authenticate``
+    parameter to set the ``WWW-Authenticate`` header for the response,
+    which is technically required for a valid 401 response. (`#772`_,
+    `#795`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -73,6 +77,8 @@ Unreleased
 .. _`#724`: https://github.com/pallets/werkzeug/pull/724
 .. _`#740`: https://github.com/pallets/werkzeug/issues/740
 .. _`#768`: https://github.com/pallets/werkzeug/pull/768
+.. _`#772`: https://github.com/pallets/werkzeug/pull/772
+.. _`#795`: https://github.com/pallets/werkzeug/pull/795
 .. _`#1019`: https://github.com/pallets/werkzeug/issues/1019
 .. _`#1023`: https://github.com/pallets/werkzeug/issues/1023
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
