@@ -213,18 +213,44 @@ class BadHost(BadRequest):
 
 class Unauthorized(HTTPException):
 
-    """*401* `Unauthorized`
+    """*401* ``Unauthorized``
 
-    Raise if the user is not authorized.  Also used if you want to use HTTP
-    basic auth.
+    Raise if the user is not authorized to access a resource.
+
+    The ``www_authenticate`` argument should be used to set the
+    ``WWW-Authenticate`` header. This is used for HTTP basic auth and
+    other schemes. Use :class:`~werkzeug.datastructures.WWWAuthenticate`
+    to create correctly formatted values. Strictly speaking a 401
+    response is invalid if it doesn't provide at least one value for
+    this header, although real clients typically don't care.
+
+    :param www-authenticate: A single value, or list of values, for the
+        WWW-Authenticate header.
+    :param description: Override the default message used for the body
+        of the response.
     """
     code = 401
     description = (
-        'The server could not verify that you are authorized to access '
-        'the URL requested.  You either supplied the wrong credentials (e.g. '
-        'a bad password), or your browser doesn\'t understand how to supply '
-        'the credentials required.'
+        'The server could not verify that you are authorized to access'
+        ' the URL requested. You either supplied the wrong credentials'
+        " (e.g. a bad password), or your browser doesn't understand"
+        ' how to supply the credentials required.'
     )
+
+    def __init__(self, www_authenticate=None, description=None):
+        HTTPException.__init__(self, description)
+        if not isinstance(www_authenticate, (tuple, list)):
+            www_authenticate = (www_authenticate,)
+        self.www_authenticate = www_authenticate
+
+    def get_headers(self, environ=None):
+        headers = HTTPException.get_headers(self, environ)
+        if self.www_authenticate:
+            headers.append((
+                'WWW-Authenticate',
+                ', '.join([str(x) for x in self.www_authenticate])
+            ))
+        return headers
 
 
 class Forbidden(HTTPException):

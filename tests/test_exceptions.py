@@ -15,6 +15,7 @@
 import pytest
 
 from werkzeug import exceptions
+from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.wrappers import Response
 from werkzeug._compat import text_type
 
@@ -30,7 +31,7 @@ def test_proxy_exception():
 
 @pytest.mark.parametrize('test', [
     (exceptions.BadRequest, 400),
-    (exceptions.Unauthorized, 401),
+    (exceptions.Unauthorized, 401, 'Basic "test realm"'),
     (exceptions.Forbidden, 403),
     (exceptions.NotFound, 404),
     (exceptions.MethodNotAllowed, 405, ['GET', 'HEAD']),
@@ -85,8 +86,23 @@ def test_exception_repr():
     assert repr(exc) == "<HTTPException '???: Unknown Error'>"
 
 
-def test_special_exceptions():
+def test_method_not_allowed_methods():
     exc = exceptions.MethodNotAllowed(['GET', 'HEAD', 'POST'])
     h = dict(exc.get_headers({}))
     assert h['Allow'] == 'GET, HEAD, POST'
     assert 'The method is not allowed' in exc.get_description()
+
+
+def test_unauthorized_www_authenticate():
+    basic = WWWAuthenticate()
+    basic.set_basic("test")
+    digest = WWWAuthenticate()
+    digest.set_digest("test", "test")
+
+    exc = exceptions.Unauthorized(www_authenticate=basic)
+    h = dict(exc.get_headers({}))
+    assert h['WWW-Authenticate'] == str(basic)
+
+    exc = exceptions.Unauthorized(www_authenticate=[digest, basic])
+    h = dict(exc.get_headers({}))
+    assert h['WWW-Authenticate'] == ', '.join((str(digest), str(basic)))
