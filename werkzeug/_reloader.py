@@ -125,8 +125,10 @@ class ReloaderLoop(object):
             # to latin1 and continue.
             if os.name == 'nt' and PY2:
                 for key, value in iteritems(new_environ):
-                    if isinstance(value, text_type):
-                        new_environ[key] = value.encode('iso-8859-1')
+                    if isinstance(key, text_type) or isinstance(value, text_type):
+                        new_key = key.encode('iso-8859-1')
+                        new_value = new_environ.pop(key).encode('iso-8859-1')
+                        new_environ[new_key] = new_value
 
             exit_code = subprocess.call(args, env=new_environ,
                                         close_fds=False)
