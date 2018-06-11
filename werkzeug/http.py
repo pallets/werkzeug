@@ -41,6 +41,7 @@ from werkzeug._compat import to_unicode, iteritems, text_type, \
 
 
 _cookie_charset = 'latin1'
+_basic_auth_charset = 'utf-8'
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
 _accept_re = re.compile(
     r'''(                       # media-range capturing-parenthesis
@@ -505,8 +506,8 @@ def parse_authorization_header(value):
             username, password = base64.b64decode(auth_info).split(b':', 1)
         except Exception:
             return
-        return Authorization('basic', {'username':  bytes_to_wsgi(username),
-                                       'password': bytes_to_wsgi(password)})
+        return Authorization('basic', {'username':  username.decode(_basic_auth_charset),
+                                       'password': password.decode(_basic_auth_charset)})
     elif auth_type == b'digest':
         auth_map = parse_dict_header(auth_info)
         for key in 'username', 'realm', 'nonce', 'uri', 'response':
