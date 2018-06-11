@@ -114,6 +114,11 @@ class TestHTTPUtility(object):
         assert a.username == 'Aladdin'
         assert a.password == 'open sesame'
 
+        a = http.parse_authorization_header('Basic 0YDRg9GB0YHQutC40IE60JHRg9C60LLRiw==')
+        assert a.type == 'basic'
+        assert a.username == u'русскиЁ'
+        assert a.password == u'Буквы'
+
         a = http.parse_authorization_header('''Digest username="Mufasa",
                      realm="testrealm@host.invalid",
                      nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",

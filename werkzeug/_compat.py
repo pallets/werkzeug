@@ -208,3 +208,7 @@ def to_unicode(x, charset=sys.getdefaultencoding(), errors='strict',
     if charset is None and allow_none_charset:
         return x
     return x.decode(charset, errors)
+
+def to_native_unicode(x, charset=sys.getdefaultencoding(), errors='strict',
+                      allow_none_charset=False):
+    return try_coerce_native(to_unicode(x, charset, errors, allow_none_charset))
