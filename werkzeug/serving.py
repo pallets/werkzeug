@@ -219,6 +219,18 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         self.environ = environ = self.make_environ()
         headers_set = []
         headers_sent = []
+        filters_applied = set()
+
+        # Replaces nonlocal for python 2.7
+        class nonlocal_:
+            filter_chain = lambda data: data
+
+        def add_response_filter(new):
+            current = nonlocal_.filter_chain
+
+            def new_response(data):
+                return new(current(data))
+            nonlocal_.filter_chain = new_response
 
         def write(data):
             assert headers_set, 'write() before start_response'
@@ -246,8 +258,16 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     self.send_header('Date', self.date_time_string())
                 self.end_headers()
 
+                if 'transfer-encoding' in header_keys:
+                    for key, value in response_headers:
+                        if 'transfer-encoding' == key.lower():
+                            # Headers can be repeated; filters_applied prevents reapplying a filter
+                            if 'chunked' in value.lower() and 'chunked' not in filters_applied:
+                                add_response_filter(chunk_encoder)
+                                filters_applied.add('chunked')
+
             assert isinstance(data, bytes), 'applications must write bytes'
-            self.wfile.write(data)
+            self.wfile.write(nonlocal_.filter_chain(data))
             self.wfile.flush()
 
         def start_response(status, response_headers, exc_info=None):
