@@ -260,7 +260,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
                 if 'transfer-encoding' in header_keys:
                     for key, value in response_headers:
-                        if 'transfer-encoding' == key.lower():
+                        if key.lower() == 'transfer-encoding':
                             # Headers can be repeated; filters_applied prevents reapplying a filter
                             if 'chunked' in value.lower() and 'chunked' not in filters_applied:
                                 add_response_filter(chunk_encoder)
