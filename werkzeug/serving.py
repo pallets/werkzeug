@@ -428,6 +428,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 #: backwards compatible name if someone is subclassing it
 BaseRequestHandler = WSGIRequestHandler
 
+def chunk_encoder(data):
+    return hex(len(data))[2:].encode('ASCII') + b"\r\n" + data + b"\r\n"
 
 def generate_adhoc_ssl_pair(cn=None):
     from random import random
