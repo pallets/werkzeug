@@ -222,15 +222,16 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         filters_applied = set()
 
         # Replaces nonlocal for python 2.7
-        class nonlocal_:
-            filter_chain = lambda data: data
+        class nonlocal_(object):
+            pass
+        nonlocal_.filter_chain = staticmethod(lambda data: data)
 
         def add_response_filter(new):
             current = nonlocal_.filter_chain
 
             def new_response(data):
                 return new(current(data))
-            nonlocal_.filter_chain = new_response
+            nonlocal_.filter_chain = staticmethod(new_response)
 
         def write(data):
             assert headers_set, 'write() before start_response'
