@@ -221,17 +221,15 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         headers_sent = []
         filters_applied = set()
 
-        # Replaces nonlocal for python 2.7
-        class nonlocal_(object):
-            pass
-        nonlocal_.filter_chain = staticmethod(lambda data: data)
+        # Replaces the nonlocal python 2.7 doesn't have
+        nonlocal_ = [lambda data: data]
 
         def add_response_filter(new):
-            current = nonlocal_.filter_chain
+            current = nonlocal_[0]
 
             def new_response(data):
                 return new(current(data))
-            nonlocal_.filter_chain = staticmethod(new_response)
+            nonlocal_[0] = new_response
 
         def write(data):
             assert headers_set, 'write() before start_response'
@@ -268,8 +266,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                                 filters_applied.add('chunked')
 
             assert isinstance(data, bytes), 'applications must write bytes'
-            self.wfile.write(nonlocal_.filter_chain(data))
-            self.wfile.flush()
+            if len(data) > 0:
+                self.wfile.write(nonlocal_[0](data))
+                self.wfile.flush()
 
         def start_response(status, response_headers, exc_info=None):
             if exc_info:
@@ -288,9 +287,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             try:
                 for data in application_iter:
                     write(data)
-                if not headers_sent:
-                    write(b'')
             finally:
+                self.wfile.write(nonlocal_[0](b''))
+                self.wfile.flush()
                 if hasattr(application_iter, 'close'):
                     application_iter.close()
                 application_iter = None
