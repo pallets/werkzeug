@@ -574,60 +574,81 @@ class MultiPartParser(object):
             return self._output
 
     class PartParser(object):
-        def __init__(self, parent, content_length):
+        def __init__(self, parent):
             self.parent = parent
-            self.content_length = content_length
             self._write = None
             self._in_memory = 0
-            self._guard_memory = False
+            self._guard_memory = parent.max_form_memory_size is not None
 
         def _feed_one(self, event):
             ev, data = event
             p = self.parent
             if ev == "begin_file":
-                self._headers, self._name, filename = data
-                self._filename, self._container = p.start_file_streaming(
-                    filename, self._headers, self.content_length
-                )
-                self._write = self._container.write
                 self._is_file = True
-                self._guard_memory = False
             elif ev == "begin_form":
                 self._headers, self._name = data
                 self._container = []
                 self._write = self._container.append
                 self._is_file = False
-                self._guard_memory = p.max_form_memory_size is not None
-            elif ev == "cont":
+
+            if self._is_file:
+                return event
+
+            if ev == "cont":
                 self._write(data)
                 if self._guard_memory:
                     self._in_memory += len(data)
                     if self._in_memory > p.max_form_memory_size:
                         p.in_memory_threshold_reached(self._in_memory)
             elif ev == "end":
-                if self._is_file:
-                    self._container.seek(0)
-                    return (
-                        "file",
-                        (
+                part_charset = p.get_part_charset(self._headers)
+                return (
+                    "form",
+                    (
+                        self._name,
+                        b"".join(self._container).decode(part_charset, p.errors),
+                    ),
+                )
+
+        def feed(self, events):
+            rv = []
+            for event in events:
+                v = self._feed_one(event)
+                if v is not None:
+                    rv.append(v)
+            return rv
+
+    class FileWriter(object):
+        def __init__(self, parent, content_length):
+            self.parent = parent
+            self.content_length = content_length
+            self._file = None
+
+        def _feed_one(self, event):
+            ev, data = event
+            if ev == "begin_file":
+                self._headers, self._name, filename = data
+                self._filename, self._file = self.parent.start_file_streaming(
+                    filename, self._headers, self.content_length
+                )
+            elif ev == "cont":
+                self._file.write(data)
+            elif ev == "end":
+                self._file.seek(0)
+                return (
+                    "file",
+                    (
+                        self._name,
+                        FileStorage(
+                            self._file,
+                            self._filename,
                             self._name,
-                            FileStorage(
-                                self._container,
-                                self._filename,
-                                self._name,
-                                headers=self._headers,
-                            ),
+                            headers=self._headers,
                         ),
-                    )
-                else:
-                    part_charset = p.get_part_charset(self._headers)
-                    return (
-                        "form",
-                        (
-                            self._name,
-                            b"".join(self._container).decode(part_charset, p.errors),
-                        ),
-                    )
+                    ),
+                )
+            else:
+                return event
 
         def feed(self, events):
             rv = []
@@ -666,13 +687,15 @@ class MultiPartParser(object):
         """
         line_splitter = self.LineSplitter()
         line_parser = self.LineParser(self, boundary)
-        part_parser = self.PartParser(self, content_length)
+        part_parser = self.PartParser(self)
+        file_writer = self.FileWriter(self, content_length)
         while True:
             buf = file.read(self.buffer_size)
             lines = line_splitter.feed(buf)
             parts = line_parser.feed(lines)
             events = part_parser.feed(parts)
-            for event in events:
+            fevents = file_writer.feed(events)
+            for event in fevents:
                 yield event
             if buf == b"":
                 break
