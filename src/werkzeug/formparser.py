@@ -12,7 +12,6 @@
 import codecs
 import re
 from functools import update_wrapper
-from itertools import chain
 from itertools import repeat
 from itertools import tee
 
@@ -26,7 +25,6 @@ from .http import parse_options_header
 from .urls import url_decode_stream
 from .wsgi import get_content_length
 from .wsgi import get_input_stream
-from .wsgi import make_line_iter
 
 # there are some platforms where SpooledTemporaryFile is not available.
 # In that case we need to provide a fallback.
@@ -423,6 +421,222 @@ class MultiPartParser(object):
             # the assert is skipped.
             self.fail("Boundary longer than buffer size")
 
+    class LineSplitter(object):
+        def __init__(self, cap=None):
+            self.buffer = b""
+            self.cap = cap
+
+        def _splitlines(self, pre, post):
+            buf = pre + post
+            rv = []
+            if not buf:
+                return rv, b""
+            lines = buf.splitlines(True)
+            iv = b""
+            for line in lines:
+                iv += line
+                while self.cap and len(iv) >= self.cap:
+                    rv.append(iv[: self.cap])
+                    iv = iv[self.cap :]
+                if line[-1:] in b"\r\n":
+                    rv.append(iv)
+                    iv = b""
+            # If this isn't the very end of the stream and what we got ends
+            # with \r, we need to hold on to it in case an \n comes next
+            if post and rv and not iv and rv[-1][-1:] == b"\r":
+                iv = rv[-1]
+                del rv[-1]
+            return rv, iv
+
+        def feed(self, data):
+            lines, self.buffer = self._splitlines(self.buffer, data)
+            if not data:
+                lines += [self.buffer]
+                if self.buffer:
+                    lines += [b""]
+            return lines
+
+    class LineParser(object):
+        def __init__(self, parent, boundary):
+            self.parent = parent
+            self.boundary = boundary
+            self._next_part = b"--" + boundary
+            self._last_part = self._next_part + b"--"
+            self._state = self._state_pre_term
+            self._output = []
+            self._headers = []
+            self._tail = b""
+            self._codec = None
+
+        def _start_content(self):
+            disposition = self._headers.get("content-disposition")
+            if disposition is None:
+                raise ValueError("Missing Content-Disposition header")
+            self.disposition, extra = parse_options_header(disposition)
+            transfer_encoding = self.parent.get_part_encoding(self._headers)
+            if transfer_encoding is not None:
+                if transfer_encoding == "base64":
+                    transfer_encoding = "base64_codec"
+                try:
+                    self._codec = codecs.lookup(transfer_encoding)
+                except Exception:
+                    raise ValueError(
+                        "Cannot decode transfer-encoding: %r" % transfer_encoding
+                    )
+            self.name = extra.get("name")
+            self.filename = extra.get("filename")
+            if self.filename is not None:
+                self._output.append(
+                    ("begin_file", (self._headers, self.name, self.filename))
+                )
+            else:
+                self._output.append(("begin_form", (self._headers, self.name)))
+            return self._state_output
+
+        def _state_done(self, line):
+            return self._state_done
+
+        def _state_output(self, line):
+            if not line:
+                raise ValueError("Unexpected end of file")
+            sline = line.rstrip()
+            if sline == self._last_part:
+                self._tail = b""
+                self._output.append(("end", None))
+                return self._state_done
+            elif sline == self._next_part:
+                self._tail = b""
+                self._output.append(("end", None))
+                self._headers = []
+                return self._state_headers
+
+            if self._codec:
+                try:
+                    line, _ = self._codec.decode(line)
+                except Exception:
+                    raise ValueError("Could not decode transfer-encoded chunk")
+
+            # We don't know yet whether we can output the final newline, so
+            # we'll save it in self._tail and output it next time.
+            tail = self._tail
+            if line[-2:] == b"\r\n":
+                self._output.append(("cont", tail + line[:-2]))
+                self._tail = line[-2:]
+            elif line[-1:] in b"\r\n":
+                self._output.append(("cont", tail + line[:-1]))
+                self._tail = line[-1:]
+            else:
+                self._output.append(("cont", tail + line))
+                self._tail = b""
+            return self._state_output
+
+        def _state_pre_term(self, line):
+            if not line:
+                raise ValueError("Unexpected end of file")
+                return self._state_pre_term
+            line = line.rstrip(b"\r\n")
+            if not line:
+                return self._state_pre_term
+            if line == self._last_part:
+                return self._state_done
+            elif line == self._next_part:
+                self._headers = []
+                return self._state_headers
+            raise ValueError("Expected boundary at start of multipart data")
+
+        def _state_headers(self, line):
+            if line is None:
+                raise ValueError("Unexpected end of file during headers")
+            line = to_native(line)
+            line, line_terminated = _line_parse(line)
+            if not line_terminated:
+                raise ValueError("Unexpected end of line in multipart header")
+            if not line:
+                self._headers = Headers(self._headers)
+                return self._start_content()
+            if line[0] in " \t" and self._headers:
+                key, value = self._headers[-1]
+                self._headers[-1] = (key, value + "\n " + line[1:])
+            else:
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    self._headers.append((parts[0].strip(), parts[1].strip()))
+                else:
+                    raise ValueError("Malformed header")
+            return self._state_headers
+
+        def feed(self, lines):
+            self._output = []
+            s = self._state
+            for line in lines:
+                s = s(line)
+            self._state = s
+            return self._output
+
+    class PartParser(object):
+        def __init__(self, parent, content_length):
+            self.parent = parent
+            self.content_length = content_length
+            self._write = None
+            self._in_memory = 0
+            self._guard_memory = False
+
+        def _feed_one(self, event):
+            ev, data = event
+            p = self.parent
+            if ev == "begin_file":
+                self._headers, self._name, filename = data
+                self._filename, self._container = p.start_file_streaming(
+                    filename, self._headers, self.content_length
+                )
+                self._write = self._container.write
+                self._is_file = True
+                self._guard_memory = False
+            elif ev == "begin_form":
+                self._headers, self._name = data
+                self._container = []
+                self._write = self._container.append
+                self._is_file = False
+                self._guard_memory = p.max_form_memory_size is not None
+            elif ev == "cont":
+                self._write(data)
+                if self._guard_memory:
+                    self._in_memory += len(data)
+                    if self._in_memory > p.max_form_memory_size:
+                        p.in_memory_threshold_reached(self._in_memory)
+            elif ev == "end":
+                if self._is_file:
+                    self._container.seek(0)
+                    return (
+                        "file",
+                        (
+                            self._name,
+                            FileStorage(
+                                self._container,
+                                self._filename,
+                                self._name,
+                                headers=self._headers,
+                            ),
+                        ),
+                    )
+                else:
+                    part_charset = p.get_part_charset(self._headers)
+                    return (
+                        "form",
+                        (
+                            self._name,
+                            b"".join(self._container).decode(part_charset, p.errors),
+                        ),
+                    )
+
+        def feed(self, events):
+            rv = []
+            for event in events:
+                v = self._feed_one(event)
+                if v is not None:
+                    rv.append(v)
+            return rv
+
     def parse_lines(self, file, boundary, content_length, cap_at_buffer=True):
         """Generate parts of
         ``('begin_form', (headers, name))``
@@ -434,145 +648,34 @@ class MultiPartParser(object):
         parts = ( begin_form cont* end |
                   begin_file cont* end )*
         """
-        next_part = b"--" + boundary
-        last_part = next_part + b"--"
 
-        iterator = chain(
-            make_line_iter(
-                file,
-                limit=content_length,
-                buffer_size=self.buffer_size,
-                cap_at_buffer=cap_at_buffer,
-            ),
-            _empty_string_iter,
-        )
-
-        terminator = self._find_terminator(iterator)
-
-        if terminator == last_part:
-            return
-        elif terminator != next_part:
-            self.fail("Expected boundary at start of multipart data")
-
-        while terminator != last_part:
-            headers = parse_multipart_headers(iterator)
-
-            disposition = headers.get("content-disposition")
-            if disposition is None:
-                self.fail("Missing Content-Disposition header")
-            disposition, extra = parse_options_header(disposition)
-            transfer_encoding = self.get_part_encoding(headers)
-            name = extra.get("name")
-            filename = extra.get("filename")
-
-            # if no content type is given we stream into memory.  A list is
-            # used as a temporary container.
-            if filename is None:
-                yield _begin_form, (headers, name)
-
-            # otherwise we parse the rest of the headers and ask the stream
-            # factory for something we can write in.
-            else:
-                yield _begin_file, (headers, name, filename)
-
-            buf = b""
-            for line in iterator:
-                if not line:
-                    self.fail("unexpected end of stream")
-
-                if line[:2] == b"--":
-                    terminator = line.rstrip()
-                    if terminator in (next_part, last_part):
-                        break
-
-                if transfer_encoding is not None:
-                    if transfer_encoding == "base64":
-                        transfer_encoding = "base64_codec"
-                    try:
-                        line = codecs.decode(line, transfer_encoding)
-                    except Exception:
-                        self.fail("could not decode transfer encoded chunk")
-
-                # we have something in the buffer from the last iteration.
-                # this is usually a newline delimiter.
-                if buf:
-                    yield _cont, buf
-                    buf = b""
-
-                # If the line ends with windows CRLF we write everything except
-                # the last two bytes.  In all other cases however we write
-                # everything except the last byte.  If it was a newline, that's
-                # fine, otherwise it does not matter because we will write it
-                # the next iteration.  this ensures we do not write the
-                # final newline into the stream.  That way we do not have to
-                # truncate the stream.  However we do have to make sure that
-                # if something else than a newline is in there we write it
-                # out.
-                if line[-2:] == b"\r\n":
-                    buf = b"\r\n"
-                    cutoff = -2
-                else:
-                    buf = line[-1:]
-                    cutoff = -1
-                yield _cont, line[:cutoff]
-
-            else:  # pragma: no cover
-                raise ValueError("unexpected end of part")
-
-            # if we have a leftover in the buffer that is not a newline
-            # character we have to flush it, otherwise we will chop of
-            # certain values.
-            if buf not in (b"", b"\r", b"\n", b"\r\n"):
-                yield _cont, buf
-
-            yield _end, None
+        line_splitter = self.LineSplitter(self.buffer_size if cap_at_buffer else None)
+        line_parser = self.LineParser(self, boundary)
+        while True:
+            buf = file.read(self.buffer_size)
+            lines = line_splitter.feed(buf)
+            parts = line_parser.feed(lines)
+            for part in parts:
+                yield part
+            if buf == b"":
+                break
 
     def parse_parts(self, file, boundary, content_length):
         """Generate ``('file', (name, val))`` and
         ``('form', (name, val))`` parts.
         """
-        in_memory = 0
-
-        for ellt, ell in self.parse_lines(file, boundary, content_length):
-            if ellt == _begin_file:
-                headers, name, filename = ell
-                is_file = True
-                guard_memory = False
-                filename, container = self.start_file_streaming(
-                    filename, headers, content_length
-                )
-                _write = container.write
-
-            elif ellt == _begin_form:
-                headers, name = ell
-                is_file = False
-                container = []
-                _write = container.append
-                guard_memory = self.max_form_memory_size is not None
-
-            elif ellt == _cont:
-                _write(ell)
-                # if we write into memory and there is a memory size limit we
-                # count the number of bytes in memory and raise an exception if
-                # there is too much data in memory.
-                if guard_memory:
-                    in_memory += len(ell)
-                    if in_memory > self.max_form_memory_size:
-                        self.in_memory_threshold_reached(in_memory)
-
-            elif ellt == _end:
-                if is_file:
-                    container.seek(0)
-                    yield (
-                        "file",
-                        (name, FileStorage(container, filename, name, headers=headers)),
-                    )
-                else:
-                    part_charset = self.get_part_charset(headers)
-                    yield (
-                        "form",
-                        (name, b"".join(container).decode(part_charset, self.errors)),
-                    )
+        line_splitter = self.LineSplitter()
+        line_parser = self.LineParser(self, boundary)
+        part_parser = self.PartParser(self, content_length)
+        while True:
+            buf = file.read(self.buffer_size)
+            lines = line_splitter.feed(buf)
+            parts = line_parser.feed(lines)
+            events = part_parser.feed(parts)
+            for event in events:
+                yield event
+            if buf == b"":
+                break
 
     def parse(self, file, boundary, content_length):
         formstream, filestream = tee(
