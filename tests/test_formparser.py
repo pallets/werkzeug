@@ -124,6 +124,17 @@ class TestFormParser(object):
         req.max_form_memory_size = 400
         strict_eq(req.form["foo"], u"Hello World")
 
+    def test_cut_in_crlf(self):
+        data = b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"
+        data += b"x" * (1024 * 64 - len(data) - 1) + b"\r\n--foo--"
+        req = Request.from_values(
+            input_stream=BytesIO(data),
+            content_length=len(data),
+            content_type="multipart/form-data; boundary=foo",
+            method="POST",
+        )
+        assert req.form["foo"][-1] != u"\r"
+
     def test_missing_multipart_boundary(self):
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"
