@@ -328,6 +328,11 @@ def test_create_environ():
     strict_eq(create_environ('/foo', 'http://example.com/')['SCRIPT_NAME'], '')
 
 
+def test_create_environ_query_string_error():
+    with pytest.raises(ValueError):
+        create_environ('/foo?bar=baz', query_string={'a': 'b'})
+
+
 def test_file_closing():
     closed = []
 
