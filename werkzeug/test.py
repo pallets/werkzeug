@@ -296,6 +296,8 @@ class EnvironBuilder(object):
                  environ_base=None, environ_overrides=None, charset='utf-8',
                  mimetype=None):
         path_s = make_literal_wrapper(path)
+        if query_string is not None and path_s('?') in path:
+            raise ValueError('Query string is defined in the path and as an argument')
         if query_string is None and path_s('?') in path:
             path, query_string = path.split(path_s('?'), 1)
         self.charset = charset
