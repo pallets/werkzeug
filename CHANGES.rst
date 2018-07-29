@@ -69,6 +69,8 @@ Unreleased
     parameter to set the ``WWW-Authenticate`` header for the response,
     which is technically required for a valid 401 response. (`#772`_,
     `#795`_)
+-   The test client raises a ``ValueError`` if a query string argument
+    would overwrite a query string in the path. (`#1338`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -101,6 +103,7 @@ Unreleased
 .. _`#1315`: https://github.com/pallets/werkzeug/pull/1315
 .. _`#1316`: https://github.com/pallets/werkzeug/pull/1316
 .. _`#1318`: https://github.com/pallets/werkzeug/pull/1318
+.. _`#1338`: https://github.com/pallets/werkzeug/pull/1338
 
 
 Version 0.14.1
