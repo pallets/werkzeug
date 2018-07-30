@@ -117,17 +117,22 @@ class ReloaderLoop(object):
         while 1:
             _log('info', ' * Restarting with %s' % self.name)
             args = _get_args_for_reloading()
-            new_environ = os.environ.copy()
-            new_environ['WERKZEUG_RUN_MAIN'] = 'true'
 
             # a weird bug on windows. sometimes unicode strings end up in the
             # environment and subprocess.call does not like this, encode them
             # to latin1 and continue.
             if os.name == 'nt' and PY2:
-                for key, value in iteritems(new_environ):
+                new_environ = {}
+                for key, value in iteritems(os.environ):
+                    if isinstance(key, text_type):
+                        key = key.encode('iso-8859-1')
                     if isinstance(value, text_type):
-                        new_environ[key] = value.encode('iso-8859-1')
+                        value = value.encode('iso-8859-1')
+                    new_environ[key] = value
+            else:
+                new_environ = os.environ.copy()
 
+            new_environ['WERKZEUG_RUN_MAIN'] = 'true'
             exit_code = subprocess.call(args, env=new_environ,
                                         close_fds=False)
             if exit_code != 3:
