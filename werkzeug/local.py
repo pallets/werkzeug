@@ -298,6 +298,12 @@ class LocalProxy(object):
             object.__setattr__(self, '__wrapped__', local)
 
     def _get_current_object(self):
+        """
+        Backward compatibility.
+        """
+        return self.get_current_object
+    
+    def get_current_object(self):
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
