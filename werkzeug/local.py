@@ -301,7 +301,7 @@ class LocalProxy(object):
         """
         Backward compatibility.
         """
-        return self.get_current_object
+        return self.get_current_object()
     
     def get_current_object(self):
         """Return the current object.  This is useful if you want the real
