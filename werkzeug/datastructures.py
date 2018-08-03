@@ -15,10 +15,10 @@ from copy import deepcopy
 from itertools import repeat
 from collections import Container, Iterable, MutableSet
 
-from werkzeug._internal import _missing, _empty_stream
-from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-    PY2, text_type, integer_types, string_types, make_literal_wrapper, \
-    to_native
+from werkzeug._internal import _missing
+from werkzeug._compat import BytesIO, iterkeys, itervalues, iteritems, \
+    iterlists, PY2, text_type, integer_types, string_types, \
+    make_literal_wrapper, to_native
 from werkzeug.filesystem import get_filesystem_encoding
 
 
@@ -2639,7 +2639,7 @@ class FileStorage(object):
                  content_type=None, content_length=None,
                  headers=None):
         self.name = name
-        self.stream = stream or _empty_stream
+        self.stream = stream or BytesIO()
 
         # if no filename is provided we can attempt to get the filename
         # from the stream object passed.  There we have to be careful to

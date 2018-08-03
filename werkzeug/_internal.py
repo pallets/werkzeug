@@ -15,12 +15,11 @@ from weakref import WeakKeyDictionary
 from datetime import datetime, date
 from itertools import chain
 
-from werkzeug._compat import iter_bytes, text_type, BytesIO, int_to_byte, \
-    range_type, integer_types
+from werkzeug._compat import iter_bytes, text_type, int_to_byte, range_type, \
+    integer_types
 
 
 _logger = None
-_empty_stream = BytesIO()
 _signature_cache = WeakKeyDictionary()
 _epoch_ord = date(1970, 1, 1).toordinal()
 _cookie_params = set((b'expires', b'path', b'comment',

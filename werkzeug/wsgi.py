@@ -27,7 +27,7 @@ from zlib import adler32
 from werkzeug._compat import BytesIO, PY2, implements_iterator, iteritems, \
     make_literal_wrapper, string_types, text_type, to_bytes, to_unicode, \
     try_coerce_native, wsgi_get_bytes
-from werkzeug._internal import _empty_stream, _encode_idna
+from werkzeug._internal import _encode_idna
 from werkzeug.filesystem import get_filesystem_encoding
 from werkzeug.http import http_date, is_resource_modified, \
     is_hop_by_hop_header
@@ -226,7 +226,7 @@ def get_input_stream(environ, safe_fallback=True):
     # potentially dangerous because it could be infinite, malicious or not. If
     # safe_fallback is true, return an empty stream instead for safety.
     if content_length is None:
-        return safe_fallback and _empty_stream or stream
+        return safe_fallback and BytesIO() or stream
 
     # Otherwise limit the stream to the content length
     return LimitedStream(stream, content_length)

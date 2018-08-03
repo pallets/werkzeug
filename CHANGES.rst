@@ -71,6 +71,11 @@ Unreleased
     `#795`_)
 -   The test client raises a ``ValueError`` if a query string argument
     would overwrite a query string in the path. (`#1338`_)
+-   :class:`~test.EnvironBuilder`, :class:`~datastructures.FileStorage`,
+    and :func:`wsgi.get_input_stream` no longer share a global
+    ``_empty_stream`` instance. This improves test isolation by preventing
+    cases where closing the stream in one request would affect other usages.
+    (`#1340`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -104,6 +109,7 @@ Unreleased
 .. _`#1316`: https://github.com/pallets/werkzeug/pull/1316
 .. _`#1318`: https://github.com/pallets/werkzeug/pull/1318
 .. _`#1338`: https://github.com/pallets/werkzeug/pull/1338
+.. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
 
 
 Version 0.14.1
