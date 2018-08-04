@@ -28,7 +28,7 @@ except ImportError:  # Py2
 from werkzeug._compat import iterlists, iteritems, itervalues, to_bytes, \
     string_types, text_type, reraise, wsgi_encoding_dance, \
     make_literal_wrapper
-from werkzeug._internal import _empty_stream, _get_environ
+from werkzeug._internal import _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
     url_unparse, url_parse
@@ -596,7 +596,7 @@ class EnvironBuilder(object):
             content_length = len(values)
             input_stream = BytesIO(values)
         else:
-            input_stream = _empty_stream
+            input_stream = BytesIO()
 
         result = {}
         if self.environ_base:
