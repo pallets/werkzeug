@@ -1435,7 +1435,7 @@ class Map(object):
         `encoding_errors` and `host_matching` was added.
     """
 
-    #: A dict of default converters to use.
+    #: A dict of default converters to be used.
     #:
     #: .. versionadded:: 0.6
     default_converters = ImmutableDict(DEFAULT_CONVERTERS)
