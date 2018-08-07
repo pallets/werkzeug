@@ -99,11 +99,15 @@ import difflib
 import re
 import uuid
 import posixpath
+import dis
+import sys
+import types
 
+from functools import partial
 from pprint import pformat
 from threading import Lock
 
-from werkzeug.urls import url_encode, url_quote, url_join
+from werkzeug.urls import url_encode, url_quote, url_join, fast_url_quote
 from werkzeug.utils import redirect, format_string
 from werkzeug.exceptions import HTTPException, NotFound, MethodNotAllowed, \
      BadHost
@@ -113,7 +117,7 @@ from werkzeug._compat import itervalues, iteritems, to_unicode, to_bytes, \
     implements_to_string, wsgi_decoding_dance
 from werkzeug.datastructures import ImmutableDict, MultiDict
 from werkzeug.utils import cached_property
-
+from werkzeug.wsgi import get_host
 
 _rule_re = re.compile(r'''
     (?P<static>[^<]*)                           # static rule data
@@ -741,6 +745,9 @@ class Rule(RuleFactory):
         if not self.is_leaf:
             self._trace.append((False, '/'))
 
+        self._build = self._compile_builder(False)
+        self._build_unknown = self._compile_builder(True)
+
         if self.build_only:
             return
         regex = r'^%s%s$' % (
@@ -794,38 +801,323 @@ class Rule(RuleFactory):
 
                 return result
 
+    class BuilderCompiler:
+        JOIN_EMPTY = ''.join
+        if sys.version_info >= (3, 6):
+            OPARG_SIZE = 256
+            OPARG_VARI = False
+        else:
+            OPARG_SIZE = 65536
+            OPARG_VARI = True
+
+        def __init__(self, rule):
+            self.rule = rule
+            self.consts = []
+            self.const_table = {}
+            self.var = []
+            self.var_table = {}
+            self.argdefs = ()
+            self.defaults = dict(self.rule.defaults or {})
+
+        def get_const(self, x):
+            """Return a constant ID for an object, adding it to the pool
+            if not already present.
+            """
+            if x not in self.const_table:
+                self.const_table[x] = len(self.consts)
+                self.consts.append(x)
+            return self.const_table[x]
+
+        def get_var(self, x):
+            """Return a local variable ID for a name, adding it to the
+            pool if not already present.
+
+            Our only use for local variables is as function arguments:
+            any variable name that exists before the call to
+            ``add_defaults()`` will become one.
+            """
+            x = str(x)
+            if x not in self.var_table:
+                self.var_table[x] = len(self.var)
+                self.var.append(x)
+            return self.var_table[x]
+
+        def add_defaults(self):
+            """A rule builder is allowed to receive any of its defaults
+            as arguments. We don't bother to check that they match
+            anywhere, since ``suitable_for()`` should have already done
+            that, but we do need them to be optional arguments. Since
+            their values are known at compile-time, the builder will
+            never refer to these arguments.
+            """
+            # ensure every default exists
+            for k in self.defaults.keys():
+                self.get_var(k)
+            # reorder to put anything with a default at the end
+            req = []
+            opt = []
+            defs = []
+            for k in self.var:
+                if k in self.defaults:
+                    opt.append(k)
+                    defs.append(self.defaults[k])
+                else:
+                    req.append(k)
+            self.var = req + opt
+            self.argdefs = tuple(defs)
+            for i, k in enumerate(self.var):
+                self.var_table[k] = i
+
+        def collapse_constants(self, opl):
+            """Given a list of build operations, spit out a new list
+            with runs of constant elements joined."""
+            new = []
+            for op, elem in opl:
+                if op is not None:
+                    new.append((op, elem))
+                    continue
+                if elem == '':
+                    continue
+                if not new or new[-1][0] is not None:
+                    new.append((op, elem))
+                    continue
+                new[-1] = (None, new[-1][1] + elem)
+            if not new:
+                new.append((None, ''))
+            return new
+
+        def build_op(self, op, arg=None):
+            """Return a byte representation of a Python instruction."""
+            if isinstance(op, str):
+                op = dis.opmap[op]
+            if arg is None and op >= dis.HAVE_ARGUMENT:
+                raise ValueError(
+                    "Operation requires an argument: %s" % dis.opname[op])
+            if arg is not None and op < dis.HAVE_ARGUMENT:
+                raise ValueError(
+                    "Operation takes no argument: %s" % dis.opname[op])
+            if arg is None:
+                arg = 0
+            # Python 3.6 changed the argument to an 8-bit integer, so this
+            # could be a practical consideration
+            if arg >= self.OPARG_SIZE:
+                return (
+                    self.build_op('EXTENDED_ARG', arg // self.OPARG_SIZE)
+                    + self.build_op(op, arg % self.OPARG_SIZE)
+                )
+            if not self.OPARG_VARI:
+                return bytearray((op, arg))
+            elif op >= dis.HAVE_ARGUMENT:
+                return bytearray((op, arg % 256, arg // 256))
+            else:
+                return bytearray((op,))
+
+        def build_string(self, n):
+            """Return the correct opcode(s) for building a string from
+            ``n`` elements. If the ``''.join`` crutch is needed, it must
+            already be immediately below the string elements on the
+            stack.
+            """
+            if 'BUILD_STRING' in dis.opmap:
+                return self.build_op('BUILD_STRING', n)
+            else:
+                return (
+                    self.build_op('BUILD_TUPLE', n)
+                    + self.build_op('CALL_FUNCTION', 1)
+                )
+
+        def emit_build(
+            self, ind, opl, append_unknown=False, encode_query_vars=None,
+            kwargs=None
+        ):
+            ops = b''
+            n = len(opl)
+            stack = 0
+            stack_overhead = 0
+
+            for op, elem in opl:
+                if op is None:
+                    ops += self.build_op('LOAD_CONST', self.get_const(elem))
+                    stack_overhead = 0
+                    continue
+                ops += self.build_op('LOAD_CONST', self.get_const(op))
+                ops += self.build_op('LOAD_FAST', self.get_var(elem))
+                ops += self.build_op('CALL_FUNCTION', 1)
+                stack_overhead = 2
+
+            stack += len(opl)
+            peak_stack = stack + stack_overhead
+            dont_build_string = False
+            needs_build_string = 'BUILD_STRING' not in dis.opmap
+
+            if n <= 1:
+                dont_build_string = True
+                needs_build_string = False
+
+            if append_unknown:
+                if 'BUILD_STRING' not in dis.opmap:
+                    needs_build_string = True
+                    ops = self.build_op(
+                        'LOAD_CONST', self.get_const(self.JOIN_EMPTY)) + ops
+                ops += self.build_op('LOAD_FAST', kwargs)
+
+                # assemble this in its own buffers because we need to
+                # jump over it
+                uops = bytearray()  # run if kwargs. TOS=kwargs
+                uops += self.build_op(
+                    'LOAD_CONST', self.get_const(encode_query_vars))
+                uops += self.build_op('ROT_TWO')
+                uops += self.build_op('CALL_FUNCTION', 1)
+                uops += self.build_op('LOAD_CONST', self.get_const('?'))
+                uops += self.build_op('ROT_TWO')
+                if dont_build_string:
+                    uops += self.build_string(n + 2)
+
+                nops = bytearray()  # otherwise
+                if not dont_build_string:
+                    # if we're going to build a string, we need to pad out to
+                    # a constant length
+                    nops += self.build_op('LOAD_CONST', self.get_const(''))
+                    nops += self.build_op('DUP_TOP')
+                elif needs_build_string:
+                    # we inserted the ''.join reference at the bottom of the
+                    # stack, but we don't want to call it: throw it away
+                    nops += self.build_op('ROT_TWO')
+                    nops += self.build_op('POP_TOP')
+                nops += self.build_op('JUMP_FORWARD', len(uops))
+
+                # this jump needs to take its own length into account. the
+                # simple way to do that is to compute a minimal guess for the
+                # length of the jump instruction, and keep revising it upward
+                jump_op = self.build_op('JUMP_IF_TRUE_OR_POP', 0)
+                while True:
+                    jump_len = len(jump_op)
+                    jump_target = ind + len(ops) + jump_len + len(nops)
+                    jump_op = self.build_op('JUMP_IF_TRUE_OR_POP', jump_target)
+                    assert len(jump_op) >= jump_len
+                    if len(jump_op) == jump_len:
+                        break
+
+                ops += jump_op
+                ops += nops
+                ops += uops
+                stack += 1
+                n += 2
+                peak_stack = max(peak_stack, stack + 2)
+            elif needs_build_string:
+                ops = self.build_op(
+                    'LOAD_CONST', self.get_const(self.JOIN_EMPTY)) + ops
+                peak_stack += 1
+            if not dont_build_string:
+                ops += self.build_string(n)
+            return peak_stack, ops
+
+        def compile(self, append_unknown=True):
+            flags = 0x08
+            dom_ops = []
+            url_ops = []
+            opl = dom_ops
+            if append_unknown:
+                encode_query_vars = partial(
+                    url_encode,
+                    charset=self.rule.map.charset,
+                    sort=self.rule.map.sort_parameters,
+                    key=self.rule.map.sort_key)
+            for is_dynamic, data in self.rule._trace:
+                if data == '|' and opl is dom_ops:
+                    opl = url_ops
+                    continue
+                # this seems like a silly case to ever come up but:
+                # if a default is given for a value that appears in the rule,
+                # resolve it to a constant ahead of time
+                if is_dynamic and data in self.defaults:
+                    data = self.rule._converters[data].to_url(
+                        self.defaults[data])
+                    is_dynamic = False
+                if not is_dynamic:
+                    opl.append((None, url_quote(
+                        to_bytes(data, self.rule.map.charset), safe='/:|+')))
+                    continue
+                opl.append((self.rule._converters[data].to_url, data))
+            dom_ops = self.collapse_constants(dom_ops)
+            url_ops = self.collapse_constants(url_ops)
+            for op, elem in (dom_ops + url_ops):
+                if op is not None:
+                    self.get_var(elem)
+            self.add_defaults()
+            argcount = len(self.var)
+            # invalid name for paranoia reasons
+            self.get_var('.keyword_arguments')
+            stack = 0
+            peak_stack = 0
+            ops = b''
+            if (
+                not append_unknown
+                and len(dom_ops) == len(url_ops) == 1
+                and dom_ops[0][0] is url_ops[0][0] is None
+            ):
+                # shortcut: just return the constant
+                stack = peak_stack = 1
+                constant_value = (dom_ops[0][1], url_ops[0][1])
+                ops += self.build_op(
+                    'LOAD_CONST', self.get_const(constant_value))
+            else:
+                ps, rv = self.emit_build(len(ops), dom_ops)
+                ops += rv
+                peak_stack = max(stack + ps, peak_stack)
+                stack += 1
+                if append_unknown:
+                    ps, rv = self.emit_build(
+                        len(ops), url_ops, append_unknown, encode_query_vars,
+                        argcount)
+                else:
+                    ps, rv = self.emit_build(len(ops), url_ops)
+                ops += rv
+                peak_stack = max(stack + ps, peak_stack)
+                ops += self.build_op('BUILD_TUPLE', 2)
+            ops += self.build_op('RETURN_VALUE')
+            code_args = [
+                argcount,
+                len(self.var),
+                peak_stack + len(self.var),
+                flags,
+                ops,
+                tuple(self.consts),
+                (),
+                tuple(self.var),
+                'generated',
+                '<builder:%r>' % self.rule.rule,
+                1,
+                b''
+            ]
+            if sys.version_info >= (3,):
+                code_args[1:1] = [0]
+            else:
+                code_args[4] = str(code_args[4])
+            co = types.CodeType(*code_args)
+            fn = types.FunctionType(co, {}, None, self.argdefs)
+            return fn
+
+    def _compile_builder(self, append_unknown=True):
+        """Generate a function that builds this rule.
+
+        :internal:
+        """
+        return self.BuilderCompiler(self).compile(append_unknown)
+
     def build(self, values, append_unknown=True):
         """Assembles the relative url for that rule and the subdomain.
         If building doesn't work for some reasons `None` is returned.
 
         :internal:
         """
-        tmp = []
-        add = tmp.append
-        processed = set(self.arguments)
-        for is_dynamic, data in self._trace:
-            if is_dynamic:
-                try:
-                    add(self._converters[data].to_url(values[data]))
-                except ValidationError:
-                    return
-                processed.add(data)
+        try:
+            if append_unknown:
+                return self._build_unknown(**values)
             else:
-                add(url_quote(to_bytes(data, self.map.charset), safe='/:|+'))
-        domain_part, url = (u''.join(tmp)).split(u'|', 1)
-
-        if append_unknown:
-            query_vars = MultiDict(values)
-            for key in processed:
-                if key in query_vars:
-                    del query_vars[key]
-
-            if query_vars:
-                url += u'?' + url_encode(query_vars, charset=self.map.charset,
-                                         sort=self.map.sort_parameters,
-                                         key=self.map.sort_key)
-
-        return domain_part, url
+                return self._build(**values)
+        except ValidationError:
+            return None
 
     def provides_defaults_for(self, rule):
         """Check if this rule has defaults for a given rule.
@@ -855,7 +1147,7 @@ class Rule(RuleFactory):
             if key not in defaults and key not in values:
                 return False
 
-        # in case defaults are given we ensure taht either the value was
+        # in case defaults are given we ensure that either the value was
         # skipped or the value is the same as the default value.
         if defaults:
             for key, value in iteritems(defaults):
@@ -938,7 +1230,7 @@ class BaseConverter(object):
         return value
 
     def to_url(self, value):
-        return url_quote(value, charset=self.map.charset)
+        return fast_url_quote(text_type(value).encode(self.map.charset))
 
 
 class UnicodeConverter(BaseConverter):
@@ -1242,6 +1534,9 @@ class Map(object):
 
         .. versionadded:: 0.8
            `query_args` can now also be a string.
+
+        .. versionchanged:: 0.15
+            ``path_info`` defaults to ``'/'`` if ``None``.
         """
         server_name = server_name.lower()
         if self.host_matching:
@@ -1252,6 +1547,8 @@ class Map(object):
             subdomain = self.default_subdomain
         if script_name is None:
             script_name = '/'
+        if path_info is None:
+            path_info = '/'
         try:
             server_name = _encode_idna(server_name)
         except UnicodeError:
@@ -1295,23 +1592,7 @@ class Map(object):
         """
         environ = _get_environ(environ)
 
-        if 'HTTP_HOST' in environ:
-            wsgi_server_name = environ['HTTP_HOST']
-
-            if environ['wsgi.url_scheme'] == 'http' \
-                    and wsgi_server_name.endswith(':80'):
-                wsgi_server_name = wsgi_server_name[:-3]
-            elif environ['wsgi.url_scheme'] == 'https' \
-                    and wsgi_server_name.endswith(':443'):
-                wsgi_server_name = wsgi_server_name[:-4]
-        else:
-            wsgi_server_name = environ['SERVER_NAME']
-
-            if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
-               in (('https', '443'), ('http', '80')):
-                wsgi_server_name += ':' + environ['SERVER_PORT']
-
-        wsgi_server_name = wsgi_server_name.lower()
+        wsgi_server_name = get_host(environ).lower()
 
         if server_name is None:
             server_name = wsgi_server_name
@@ -1740,6 +2021,11 @@ class MapAdapter(object):
         >>> urls.build("index", {'q': ['a', 'b', 'c']})
         '/?q=a&q=b&q=c'
 
+        Passing a ``MultiDict`` will also add multiple values:
+
+        >>> urls.build("index", MultiDict((('p', 'z'), ('q', 'a'), ('q', 'b'))))
+        '/?p=z&q=a&q=b'
+
         If a rule does not exist when building a `BuildError` exception is
         raised.
 
@@ -1763,12 +2049,24 @@ class MapAdapter(object):
                                if you want the builder to ignore those.
         """
         self.map.update()
+
         if values:
             if isinstance(values, MultiDict):
-                valueiter = iteritems(values, multi=True)
+                temp_values = {}
+                # iteritems(dict, values) is like `values.lists()`
+                # without the call or `list()` coercion overhead.
+                for key, value in iteritems(dict, values):
+                    if not value:
+                        continue
+                    if len(value) == 1:  # flatten single item lists
+                        value = value[0]
+                        if value is None:  # drop None
+                            continue
+                    temp_values[key] = value
+                values = temp_values
             else:
-                valueiter = iteritems(values)
-            values = dict((k, v) for k, v in valueiter if v is not None)
+                # drop None
+                values = dict(i for i in iteritems(values) if i[1] is not None)
         else:
             values = {}
 
@@ -1784,7 +2082,7 @@ class MapAdapter(object):
             (self.map.host_matching and host == self.server_name) or
             (not self.map.host_matching and domain_part == self.subdomain)
         ):
-            return str(url_join(self.script_name, './' + path.lstrip('/')))
+            return '%s/%s' % (self.script_name.rstrip('/'), path.lstrip('/'))
         return str('%s//%s%s/%s' % (
             self.url_scheme + ':' if self.url_scheme else '',
             host,

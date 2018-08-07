@@ -6,33 +6,28 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from __future__ import with_statement, print_function
+from __future__ import print_function, with_statement
 
+from itertools import count
 import os
 import signal
 import sys
 import textwrap
 import time
 
-import requests
 import pytest
 
 from werkzeug import serving
-from werkzeug.utils import cached_property
 from werkzeug._compat import to_bytes
-from itertools import count
-
+from werkzeug.urls import url_quote
+from werkzeug.utils import cached_property
 
 try:
     __import__('pytest_xprocess')
 except ImportError:
     @pytest.fixture(scope='session')
-    def subprocess():
+    def xprocess():
         pytest.skip('pytest-xprocess not installed.')
-else:
-    @pytest.fixture(scope='session')
-    def subprocess(xprocess):
-        return xprocess
 
 
 port_generator = count(13220)
@@ -65,8 +60,7 @@ def _dev_server():
     sys.path.insert(0, sys.argv[1])
     import testsuite_app
     app = _get_pid_middleware(testsuite_app.app)
-    serving.run_simple(hostname='localhost', application=app,
-                       **testsuite_app.kwargs)
+    serving.run_simple(application=app, **testsuite_app.kwargs)
 
 
 class _ServerInfo(object):
@@ -87,11 +81,16 @@ class _ServerInfo(object):
         return self.xprocess.getinfo('dev_server').logpath.open()
 
     def request_pid(self):
-        for i in range(20):
+        if self.url.startswith('http+unix://'):
+            from requests_unixsocket import get as rget
+        else:
+            from requests import get as rget
+
+        for i in range(10):
             time.sleep(0.1 * i)
             try:
-                self.last_pid = int(requests.get(self.url + '/_getpid',
-                                                 verify=False).text)
+                response = rget(self.url + '/_getpid', verify=False)
+                self.last_pid = int(response.text)
                 return self.last_pid
             except Exception as e:  # urllib also raises socketerrors
                 print(self.url)
@@ -117,7 +116,7 @@ class _ServerInfo(object):
 
 
 @pytest.fixture
-def dev_server(tmpdir, subprocess, request, monkeypatch):
+def dev_server(tmpdir, xprocess, request, monkeypatch):
     '''Run werkzeug.serving.run_simple in its own process.
 
     :param application: String for the module that will be created. The module
@@ -129,33 +128,35 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
         appfile = app_pkg.join('__init__.py')
         port = next(port_generator)
         appfile.write('\n\n'.join((
-            'kwargs = dict(port=%d)' % port,
+            "kwargs = {{'hostname': 'localhost', 'port': {port:d}}}".format(
+                port=port),
             textwrap.dedent(application)
         )))
 
         monkeypatch.delitem(sys.modules, 'testsuite_app', raising=False)
         monkeypatch.syspath_prepend(str(tmpdir))
         import testsuite_app
+        hostname = testsuite_app.kwargs['hostname']
         port = testsuite_app.kwargs['port']
+        addr = '{}:{}'.format(hostname, port)
 
-        if testsuite_app.kwargs.get('ssl_context', None):
-            url_base = 'https://localhost:{0}'.format(port)
+        if hostname.startswith('unix://'):
+            addr = hostname.split('unix://', 1)[1]
+            requests_url = 'http+unix://' + url_quote(addr, safe='')
+        elif testsuite_app.kwargs.get('ssl_context', None):
+            requests_url = 'https://localhost:{0}'.format(port)
         else:
-            url_base = 'http://localhost:{0}'.format(port)
+            requests_url = 'http://localhost:{0}'.format(port)
 
-        info = _ServerInfo(
-            subprocess,
-            'localhost:{0}'.format(port),
-            url_base,
-            port
-        )
+        info = _ServerInfo(xprocess, addr, requests_url, port)
 
         def preparefunc(cwd):
             args = [sys.executable, __file__, str(tmpdir)]
             return lambda: 'pid=%s' % info.request_pid(), args
 
-        subprocess.ensure('dev_server', preparefunc, restart=True)
+        xprocess.ensure('dev_server', preparefunc, restart=True)
 
+        @request.addfinalizer
         def teardown():
             # Killing the process group that runs the server, not just the
             # parent process attached. xprocess is confused about Werkzeug's
@@ -163,7 +164,6 @@ def dev_server(tmpdir, subprocess, request, monkeypatch):
             pid = info.request_pid()
             if pid:
                 os.killpg(os.getpgid(pid), signal.SIGTERM)
-        request.addfinalizer(teardown)
 
         return info
 

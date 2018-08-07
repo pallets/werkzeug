@@ -15,16 +15,16 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+from collections import namedtuple
 import os
 import re
-from werkzeug._compat import text_type, PY2, to_unicode, \
-    to_native, implements_to_string, try_coerce_native, \
-    normalize_string_tuple, make_literal_wrapper, \
-    fix_tuple_repr
-from werkzeug._internal import _encode_idna, _decode_idna
-from werkzeug.datastructures import MultiDict, iter_multi_items
-from collections import namedtuple
 
+from werkzeug._compat import (
+    PY2, fix_tuple_repr, implements_to_string, make_literal_wrapper,
+    normalize_string_tuple, text_type, to_native, to_unicode, try_coerce_native
+)
+from werkzeug._internal import _decode_idna, _encode_idna
+from werkzeug.datastructures import MultiDict, iter_multi_items
 
 # A regular expression for what a valid schema looks like
 _scheme_re = re.compile(r'^[a-zA-Z0-9+-.]+$')
@@ -390,7 +390,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             key = text_type(key).encode(charset)
         if not isinstance(value, bytes):
             value = text_type(value).encode(charset)
-        yield url_quote_plus(key) + '=' + url_quote_plus(value)
+        yield fast_url_quote_plus(key) + '=' + fast_url_quote_plus(value)
 
 
 def _url_unquote_legacy(value, unsafe=''):
@@ -447,6 +447,39 @@ def url_parse(url, scheme=None, allow_fragments=True):
 
     result_type = is_text_based and URL or BytesURL
     return result_type(scheme, netloc, url, query, fragment)
+
+
+def _make_fast_url_quote(charset='utf-8', errors='strict', safe='/:', unsafe=''):
+    """Precompile the translation table for a URL encoding function.
+
+    Unlike :func:`url_quote`, the generated function only takes the
+    string to quote.
+
+    :param charset: The charset to encode the result with.
+    :param errors: How to handle encoding errors.
+    :param safe: An optional sequence of safe characters to never encode.
+    :param unsafe: An optional sequence of unsafe characters to always encode.
+    """
+    if isinstance(safe, text_type):
+        safe = safe.encode(charset, errors)
+    if isinstance(unsafe, text_type):
+        unsafe = unsafe.encode(charset, errors)
+    safe = (frozenset(safe) | frozenset(_always_safe)) - frozenset(unsafe)
+    if not isinstance(next(iter(safe)), int):
+        safe = frozenset(map(ord, safe))
+    table = [chr(c) if c in safe else '%%%02X' % c for c in range(256)]
+    quote = lambda s: ''.join(map(table.__getitem__, s))
+    if isinstance(''.encode(), str):
+        return lambda s: quote(bytearray(s))
+    return quote
+
+
+fast_url_quote = _make_fast_url_quote()
+_fast_quote_plus = _make_fast_url_quote(safe=' ', unsafe='+')
+
+
+def fast_url_quote_plus(string):
+    return _fast_quote_plus(string).replace(' ', '+')
 
 
 def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):

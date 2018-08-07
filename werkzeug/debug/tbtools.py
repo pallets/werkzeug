@@ -159,7 +159,7 @@ SOURCE_LINE_HTML = u'''\
 def render_console_html(secret, evalex_trusted=True):
     return CONSOLE_HTML % {
         'evalex':           'true',
-        'evalex_trusted':   evalex_trusted and 'true' or 'false',
+        'evalex_trusted':   'true' if evalex_trusted else 'false',
         'console':          'true',
         'title':            'Console',
         'secret':           secret,

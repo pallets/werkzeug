@@ -28,7 +28,7 @@ except ImportError:  # Py2
 from werkzeug._compat import iterlists, iteritems, itervalues, to_bytes, \
     string_types, text_type, reraise, wsgi_encoding_dance, \
     make_literal_wrapper
-from werkzeug._internal import _empty_stream, _get_environ
+from werkzeug._internal import _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
     url_unparse, url_parse
@@ -296,6 +296,8 @@ class EnvironBuilder(object):
                  environ_base=None, environ_overrides=None, charset='utf-8',
                  mimetype=None):
         path_s = make_literal_wrapper(path)
+        if query_string is not None and path_s('?') in path:
+            raise ValueError('Query string is defined in the path and as an argument')
         if query_string is None and path_s('?') in path:
             path, query_string = path.split(path_s('?'), 1)
         self.charset = charset
@@ -594,7 +596,7 @@ class EnvironBuilder(object):
             content_length = len(values)
             input_stream = BytesIO(values)
         else:
-            input_stream = _empty_stream
+            input_stream = BytesIO()
 
         result = {}
         if self.environ_base:
@@ -614,8 +616,6 @@ class EnvironBuilder(object):
             'SERVER_PORT':          str(self.server_port),
             'HTTP_HOST':            self.host,
             'SERVER_PROTOCOL':      self.server_protocol,
-            'CONTENT_TYPE':         content_type or '',
-            'CONTENT_LENGTH':       str(content_length or '0'),
             'wsgi.version':         self.wsgi_version,
             'wsgi.url_scheme':      self.url_scheme,
             'wsgi.input':           input_stream,
@@ -624,6 +624,11 @@ class EnvironBuilder(object):
             'wsgi.multiprocess':    self.multiprocess,
             'wsgi.run_once':        self.run_once
         })
+        if content_type is not None:
+            result['CONTENT_TYPE'] = content_type
+        if content_length is not None:
+            result['CONTENT_LENGTH'] = str(content_length)
+
         for key, value in self.headers.to_wsgi_list():
             result['HTTP_%s' % key.upper().replace('-', '_')] = value
         if self.environ_overrides:

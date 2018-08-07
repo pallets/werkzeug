@@ -27,7 +27,7 @@ from zlib import adler32
 from werkzeug._compat import BytesIO, PY2, implements_iterator, iteritems, \
     make_literal_wrapper, string_types, text_type, to_bytes, to_unicode, \
     try_coerce_native, wsgi_get_bytes
-from werkzeug._internal import _empty_stream, _encode_idna
+from werkzeug._internal import _encode_idna
 from werkzeug.filesystem import get_filesystem_encoding
 from werkzeug.http import http_date, is_resource_modified, \
     is_hop_by_hop_header
@@ -143,22 +143,27 @@ def host_is_trusted(hostname, trusted_list):
 
 
 def get_host(environ, trusted_hosts=None):
-    """Return the real host for the given WSGI environment.  This first checks
-    the `X-Forwarded-Host` header, then the normal `Host` header, and finally
-    the `SERVER_NAME` environment variable (using the first one it finds).
+    """Return the host for the given WSGI environment. This first checks
+    the ``Host`` header. If it's not present, then ``SERVER_NAME`` and
+    ``SERVER_PORT`` are used. The host will only contain the port if it
+    is different than the standard port for the protocol.
 
-    Optionally it verifies that the host is in a list of trusted hosts.
-    If the host is not in there it will raise a
-    :exc:`~werkzeug.exceptions.SecurityError`.
+    Optionally, verify that the host is trusted using
+    :func:`host_is_trusted` and raise a
+    :exc:`~werkzeug.exceptions.SecurityError` if it is not.
 
-    :param environ: the WSGI environment to get the host of.
-    :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
-                          for more information.
+    :param environ: The WSGI environment to get the host from.
+    :param trusted_hosts: A list of trusted hosts.
+    :return: Host, with port if necessary.
+    :raise ~werkzeug.exceptions.SecurityError: If the host is not
+        trusted.
     """
-    if 'HTTP_X_FORWARDED_HOST' in environ:
-        rv = environ['HTTP_X_FORWARDED_HOST'].split(',', 1)[0].strip()
-    elif 'HTTP_HOST' in environ:
+    if 'HTTP_HOST' in environ:
         rv = environ['HTTP_HOST']
+        if environ['wsgi.url_scheme'] == 'http' and rv.endswith(':80'):
+            rv = rv[:-3]
+        elif environ['wsgi.url_scheme'] == 'https' and rv.endswith(':443'):
+            rv = rv[:-4]
     else:
         rv = environ['SERVER_NAME']
         if (environ['wsgi.url_scheme'], environ['SERVER_PORT']) not \
@@ -221,7 +226,7 @@ def get_input_stream(environ, safe_fallback=True):
     # potentially dangerous because it could be infinite, malicious or not. If
     # safe_fallback is true, return an empty stream instead for safety.
     if content_length is None:
-        return safe_fallback and _empty_stream or stream
+        return safe_fallback and BytesIO() or stream
 
     # Otherwise limit the stream to the content length
     return LimitedStream(stream, content_length)
@@ -836,9 +841,10 @@ class DispatcherMiddleware(object):
 class ClosingIterator(object):
 
     """The WSGI specification requires that all middlewares and gateways
-    respect the `close` callback of an iterator.  Because it is useful to add
-    another close action to a returned iterator and adding a custom iterator
-    is a boring task this class can be used for that::
+    respect the `close` callback of the iterable returned by the application.
+    Because it is useful to add another close action to a returned iterable
+    and adding a custom iterable is a boring task this class can be used for
+    that::
 
         return ClosingIterator(app(environ, start_response), [cleanup_session,
                                                               cleanup_locals])
@@ -864,7 +870,7 @@ class ClosingIterator(object):
             callbacks = [callbacks]
         else:
             callbacks = list(callbacks)
-        iterable_close = getattr(iterator, 'close', None)
+        iterable_close = getattr(iterable, 'close', None)
         if iterable_close:
             callbacks.insert(0, iterable_close)
         self._callbacks = callbacks

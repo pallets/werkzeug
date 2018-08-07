@@ -19,12 +19,12 @@ import pytest
 from tests import strict_eq
 from werkzeug import wsgi
 from werkzeug._compat import BytesIO, NativeStringIO, StringIO, to_bytes, \
-    to_native
+        to_native
 from werkzeug.exceptions import BadRequest, ClientDisconnected
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug.wrappers import BaseResponse
 from werkzeug.urls import url_parse
-from werkzeug.wsgi import _RangeWrapper, wrap_file
+from werkzeug.wsgi import _RangeWrapper, ClosingIterator, wrap_file
 
 
 def test_shareddatamiddleware_get_file_loader():
@@ -98,25 +98,59 @@ def test_dispatchermiddleware():
     assert b''.join(app_iter).strip() == b'NOT FOUND'
 
 
-def test_get_host():
-    env = {'HTTP_X_FORWARDED_HOST': 'example.org',
-           'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
-    assert wsgi.get_host(env) == 'example.org'
-    assert wsgi.get_host(create_environ('/', 'http://example.org')) == \
-        'example.org'
+@pytest.mark.parametrize(('environ', 'expect'), (
+    pytest.param({
+        'HTTP_HOST': 'spam',
+    }, 'spam', id='host'),
+    pytest.param({
+        'HTTP_HOST': 'spam:80',
+    }, 'spam', id='host, strip http port'),
+    pytest.param({
+        'wsgi.url_scheme': 'https',
+        'HTTP_HOST': 'spam:443',
+    }, 'spam', id='host, strip https port'),
+    pytest.param({
+        'HTTP_HOST': 'spam:8080',
+    }, 'spam:8080', id='host, custom port'),
+    pytest.param({
+        'HTTP_HOST': 'spam',
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '80',
+    }, 'spam', id='prefer host'),
+    pytest.param({
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '80'
+    }, 'eggs', id='name, ignore http port'),
+    pytest.param({
+        'wsgi.url_scheme': 'https',
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '443'
+    }, 'eggs', id='name, ignore https port'),
+    pytest.param({
+        'SERVER_NAME': 'eggs',
+        'SERVER_PORT': '8080'
+    }, 'eggs:8080', id='name, custom port'),
+    pytest.param({
+        'HTTP_HOST': 'ham',
+        'HTTP_X_FORWARDED_HOST': 'eggs'
+    }, 'ham', id='ignore x-forwarded-host'),
+))
+def test_get_host(environ, expect):
+    environ.setdefault('wsgi.url_scheme', 'http')
+    assert wsgi.get_host(environ) == expect
 
 
-def test_get_host_multiple_forwarded():
-    env = {'HTTP_X_FORWARDED_HOST': 'example.com, example.org',
-           'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
-    assert wsgi.get_host(env) == 'example.com'
-    assert wsgi.get_host(create_environ('/', 'http://example.com')) == \
-        'example.com'
-
-
-def test_get_host_validation():
-    env = {'HTTP_X_FORWARDED_HOST': 'example.org',
-           'SERVER_NAME': 'bullshit', 'HOST_NAME': 'ignore me dammit'}
+def test_get_host_validate_trusted_hosts():
+    env = {'SERVER_NAME': 'example.org', 'SERVER_PORT': '80',
+           'wsgi.url_scheme': 'http'}
+    assert wsgi.get_host(env, trusted_hosts=['.example.org']) == 'example.org'
+    pytest.raises(BadRequest, wsgi.get_host, env,
+                  trusted_hosts=['example.com'])
+    env['SERVER_PORT'] = '8080'
+    assert wsgi.get_host(env, trusted_hosts=['.example.org:8080']) == 'example.org:8080'
+    pytest.raises(BadRequest, wsgi.get_host, env,
+                  trusted_hosts=['.example.com'])
+    env = {'HTTP_HOST': 'example.org', 'wsgi.url_scheme': 'http'}
     assert wsgi.get_host(env, trusted_hosts=['.example.org']) == 'example.org'
     pytest.raises(BadRequest, wsgi.get_host, env,
                   trusted_hosts=['example.com'])
@@ -521,3 +555,36 @@ def test_http_proxy(dev_server):
     # test query string
     rv = client.get('/bar/baz?a=a&b=b')
     assert rv.data.decode('ascii') == 'bar|localhost|/baz?a=a&b=b'
+
+
+def test_closing_iterator():
+    class Namespace(object):
+        got_close = False
+        got_additional = False
+
+    class Response(object):
+        def __init__(self, environ, start_response):
+            self.start = start_response
+
+        # Return a generator instead of making the object its own
+        # iterator. This ensures that ClosingIterator calls close on
+        # the iterable (the object), not the iterator.
+        def __iter__(self):
+            self.start('200 OK', [('Content-Type', 'text/plain')])
+            yield 'some content'
+
+        def close(self):
+            Namespace.got_close = True
+
+    def additional():
+        Namespace.got_additional = True
+
+    def app(environ, start_response):
+        return ClosingIterator(Response(environ, start_response), additional)
+
+    app_iter, status, headers = run_wsgi_app(
+        app, create_environ(), buffered=True)
+
+    assert ''.join(app_iter) == 'some content'
+    assert Namespace.got_close
+    assert Namespace.got_additional

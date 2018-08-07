@@ -204,10 +204,10 @@ class BaseRequest(object):
     #: all hosts are trusted which means that whatever the client sends the
     #: host is will be accepted.
     #:
-    #: This is the recommended setup as a webserver should manually be set up
-    #: to only route correct hosts to the application, and remove the
-    #: `X-Forwarded-Host` header if it is not being used (see
-    #: :func:`werkzeug.wsgi.get_host`).
+    #: Because `Host` and `X-Forwarded-Host` headers can be set to any value by
+    #: a malicious client, it is recommended to either set this property or
+    #: implement similar validation in the proxy (if application is being run
+    #: behind one).
     #:
     #: .. versionadded:: 0.9
     trusted_hosts = None
@@ -1235,7 +1235,7 @@ class BaseResponse(object):
                 location = iri_to_uri(location, safe_conversion=True)
 
             if self.autocorrect_location_header:
-                current_url = get_current_url(environ, root_only=True)
+                current_url = get_current_url(environ, strip_querystring=True)
                 if isinstance(current_url, text_type):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
@@ -1251,7 +1251,7 @@ class BaseResponse(object):
             # Per section 3.3.2 of RFC 7230, "a server MUST NOT send a Content-Length header field
             # in any response with a status code of 1xx (Informational) or 204 (No Content)."
             headers.remove('Content-Length')
-        elif status in (304, 412):
+        elif status == 304:
             remove_entity_headers(headers)
 
         # if we can determine the content length automatically, we
@@ -1291,7 +1291,7 @@ class BaseResponse(object):
         """
         status = self.status_code
         if environ['REQUEST_METHOD'] == 'HEAD' or \
-           100 <= status < 200 or status in (204, 304, 412):
+           100 <= status < 200 or status in (204, 304):
             iterable = ()
         elif self.direct_passthrough:
             if __debug__:

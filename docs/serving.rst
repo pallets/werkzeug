@@ -76,7 +76,7 @@ Colored Logging
 ---------------
 Werkzeug is able to color the output of request logs when ran from a terminal, just install the `termcolor
 <https://pypi.python.org/pypi/termcolor>`_ package. Windows users need to install `colorama
-<https://pypi.python.org/pypi/colorama>`_ in addition to termcolor for this to work. 
+<https://pypi.python.org/pypi/colorama>`_ in addition to termcolor for this to work.
 
 Virtual Hosts
 -------------
@@ -225,3 +225,14 @@ discouraged because modern browsers do a bad job at supporting them for
 security reasons.
 
 This feature requires the pyOpenSSL library to be installed.
+
+
+Unix Sockets
+------------
+
+The dev server can bind to a Unix socket instead of a TCP socket.
+:func:`run_simple` will bind to a Unix socket if the ``hostname``
+parameter starts with ``'unix://'``. ::
+
+    from werkzeug.serving import run_simple
+    run_simple('unix://example.sock', 0, app)

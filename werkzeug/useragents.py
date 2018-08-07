@@ -49,7 +49,7 @@ class UserAgentParser(object):
         (r'aol|america\s+online\s+browser', 'aol'),
         ('opera', 'opera'),
         ('edge', 'edge'),
-        ('chrome', 'chrome'),
+        ('chrome|crios', 'chrome'),
         ('seamonkey', 'seamonkey'),
         ('firefox|firebird|phoenix|iceweasel', 'firefox'),
         ('galeon', 'galeon'),
