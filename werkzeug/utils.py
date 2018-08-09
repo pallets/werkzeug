@@ -343,10 +343,10 @@ def unescape(s):
 
 def redirect(location, code=302, Response=None):
     """Returns a response object (a WSGI application) that, if called,
-    redirects the client to the target location.  Supported codes are 301,
-    302, 303, 305, and 307.  300 is not supported because it's not a real
-    redirect and 304 because it's the answer for a request with a request
-    with defined If-Modified-Since headers.
+    redirects the client to the target location. Supported codes are
+    301, 302, 303, 305, 307, and 308. 300 is not supported because
+    it's not a real redirect and 304 because it's the answer for a
+    request with a request with defined If-Modified-Since headers.
 
     .. versionadded:: 0.6
        The location can now be a unicode string that is encoded using

@@ -76,6 +76,8 @@ Unreleased
     ``_empty_stream`` instance. This improves test isolation by preventing
     cases where closing the stream in one request would affect other usages.
     (`#1340`_)
+-   Change ``RequestRedirect`` code from 301 to 308, preserving the verb
+    and request body (form data) during redirect. (`#1342`_)
 -   The version of jQuery used by the debugger is updated to 3.3.1.
     (`#1390`_)
 -   The debugger correctly renders long ``markupsafe.Markup`` instances.
@@ -153,6 +155,7 @@ Unreleased
 .. _`#1325`: https://github.com/pallets/werkzeug/pull/1325
 .. _`#1338`: https://github.com/pallets/werkzeug/pull/1338
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
+.. _`#1342`: https://github.com/pallets/werkzeug/pull/1342
 .. _`#1346`: https://github.com/pallets/werkzeug/pull/1346
 .. _`#1358`: https://github.com/pallets/werkzeug/pull/1358
 .. _`#1375`: https://github.com/pallets/werkzeug/pull/1375
