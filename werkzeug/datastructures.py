@@ -13,13 +13,17 @@ import codecs
 import mimetypes
 from copy import deepcopy
 from itertools import repeat
-from collections import Container, Iterable, MutableSet
 
 from werkzeug._internal import _missing
 from werkzeug._compat import BytesIO, iterkeys, itervalues, iteritems, \
     iterlists, PY2, text_type, integer_types, string_types, \
     make_literal_wrapper, to_native
 from werkzeug.filesystem import get_filesystem_encoding
+
+if not PY2:
+    from collections.abc import Container, Iterable, MutableSet
+else:
+    from collections import Container, Iterable, MutableSet
 
 
 _locale_delim_re = re.compile(r'[_-]')
