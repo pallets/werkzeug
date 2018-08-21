@@ -211,6 +211,14 @@ class TestFileSystemCache(GenericCacheTests):
         assert c.clear()
         assert c.get(c._fs_count_file) == 0
 
+def _redis_running():
+    client = redis.Redis()
+    try:
+        client.ping()
+    except redis.exceptions.ConnectionError:
+        return False
+    return True
+
 
 # don't use pytest.mark.skipif on subclasses
 # https://bitbucket.org/hpk42/pytest/issue/568
@@ -223,11 +231,15 @@ class TestRedisCache(GenericCacheTests):
         if redis is None:
             pytest.skip('Python package "redis" is not installed.')
 
+        if _redis_running():
+            yield
+            return
+
         def prepare(cwd):
             return '[Rr]eady to accept connections', ['redis-server']
 
         try:
-            xprocess.ensure('redis_server', prepare)
+            xprocess.ensure('redis-server', prepare)
         except IOError as e:
             # xprocess raises FileNotFoundError
             if e.errno == errno.ENOENT:
@@ -236,7 +248,7 @@ class TestRedisCache(GenericCacheTests):
                 raise
 
         yield
-        xprocess.getinfo('redis_server').terminate()
+        xprocess.getinfo('redis-server').terminate()
 
     @pytest.fixture(params=(None, False, True))
     def make_cache(self, request):
