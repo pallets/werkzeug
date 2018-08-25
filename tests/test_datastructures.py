@@ -746,13 +746,26 @@ class TestHeaders(object):
         h = self.storage_class()
         h.set('X-Foo-Poo', 'bleh')
         h.set('X-Whoops', b'\xff')
+        h.set(b'X-Bytes', b'something')
 
         assert h.get('x-foo-poo', as_bytes=True) == b'bleh'
         assert h.get('x-whoops', as_bytes=True) == b'\xff'
+        assert h.get('x-bytes') == 'something'
 
     def test_to_wsgi_list(self):
         h = self.storage_class()
         h.set(u'Key', u'Value')
+        for key, value in h.to_wsgi_list():
+            if PY2:
+                strict_eq(key, b'Key')
+                strict_eq(value, b'Value')
+            else:
+                strict_eq(key, u'Key')
+                strict_eq(value, u'Value')
+
+    def test_to_wsgi_list_bytes(self):
+        h = self.storage_class()
+        h.set(b'Key', b'Value')
         for key, value in h.to_wsgi_list():
             if PY2:
                 strict_eq(key, b'Key')

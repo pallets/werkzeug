@@ -39,17 +39,6 @@ def test_redirect():
     assert resp.status_code == 305
 
 
-def test_redirect_no_unicode_header_keys():
-    # Make sure all headers are native keys.  This was a bug at one point
-    # due to an incorrect conversion.
-    resp = utils.redirect('http://example.com/', 305)
-    for key, value in resp.headers.items():
-        assert type(key) == str
-        assert type(value) == text_type
-    assert resp.headers['Location'] == 'http://example.com/'
-    assert resp.status_code == 305
-
-
 def test_redirect_xss():
     location = 'http://example.com/?xss="><script>alert(1)</script>'
     resp = utils.redirect(location)
