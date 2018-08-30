@@ -199,6 +199,10 @@ def test_url_request_descriptors_hosts():
     pytest.raises(SecurityError, lambda: req.host_url)
     pytest.raises(SecurityError, lambda: req.host)
 
+def test_url_full_path_bytestring():
+    req = wrappers.Request.from_values(b'/bar?foo=\xe9')
+    strict_eq(req.full_path, u'/bar?foo=é')
+
 
 def test_authorization_mixin():
     request = wrappers.Request.from_values(headers={
