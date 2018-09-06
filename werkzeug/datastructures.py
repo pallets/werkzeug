@@ -13,11 +13,16 @@ import codecs
 import mimetypes
 from copy import deepcopy
 from itertools import repeat
-from collections import Container, Iterable, MutableSet
+
+from werkzeug._compat import PY2
+if PY2:
+    from collections import Container, Iterable, MutableSet
+else:
+    from collections.abc import Container, Iterable, MutableSet
 
 from werkzeug._internal import _missing
 from werkzeug._compat import BytesIO, iterkeys, itervalues, iteritems, \
-    iterlists, PY2, text_type, integer_types, string_types, \
+    iterlists, text_type, integer_types, string_types, \
     make_literal_wrapper, to_native
 from werkzeug.filesystem import get_filesystem_encoding
 
