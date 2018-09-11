@@ -520,7 +520,7 @@ class Locked(HTTPException):
     )
 
 
-class Depended(HTTPException):
+class FailedDependency(HTTPException):
 
     """*424* `Failed Dependency`
 
