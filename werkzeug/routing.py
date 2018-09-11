@@ -1335,8 +1335,6 @@ class IntegerConverter(NumberConverter):
 
         Rule('/page/<int:page>')
 
-    This converter does not support negative values.
-
     :param map: the :class:`Map`.
     :param fixed_digits: the number of fixed digits in the URL.  If you set
                          this to ``4`` for example, the application will
@@ -1344,9 +1342,14 @@ class IntegerConverter(NumberConverter):
                          default is variable length.
     :param min: the minimal value.
     :param max: the maximal value.
+    :param signed: Determines whether to use signed or unsigned integers
     """
     regex = r'\d+'
     num_convert = int
+
+    def __init__(self, map, min=None, max=None, signed=False):
+        self.regex = r'-?\d+' if signed else self.regex
+        NumberConverter.__init__(self, map, 0, min, max)
 
 
 class FloatConverter(NumberConverter):
@@ -1355,16 +1358,16 @@ class FloatConverter(NumberConverter):
 
         Rule('/probability/<float:probability>')
 
-    This converter does not support negative values.
-
     :param map: the :class:`Map`.
     :param min: the minimal value.
     :param max: the maximal value.
+    :param signed: Determines whether to use signed or unsigned floats
     """
     regex = r'\d+\.\d+'
     num_convert = float
 
-    def __init__(self, map, min=None, max=None):
+    def __init__(self, map, min=None, max=None, signed=False):
+        self.regex = r'-?\d+\.\d+' if signed else self.regex
         NumberConverter.__init__(self, map, 0, min, max)
 
 

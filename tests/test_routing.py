@@ -201,6 +201,27 @@ def test_defaults():
     assert adapter.build('foo', {'page': 2}) == '/foo/2'
 
 
+def test_negative():
+    map = r.Map([
+        r.Rule('/foos/<int(signed=True):page>', endpoint='foos'),
+        r.Rule('/bars/<float(signed=True):page>', endpoint='bars'),
+        r.Rule('/foo/<int:page>', endpoint='foo'),
+        r.Rule('/bar/<float:page>', endpoint='bar')
+    ])
+    adapter = map.bind('example.org', '/')
+
+    assert adapter.match('/foos/-2') == ('foos', {'page': -2})
+    assert adapter.match('/foos/-50') == ('foos', {'page': -50})
+    assert adapter.match('/bars/-2.0') == ('bars', {'page': -2.0})
+    assert adapter.match('/bars/-0.185') == ('bars', {'page': -0.185})
+
+    # Make sure signed values are rejected in unsigned mode
+    pytest.raises(r.NotFound, lambda: adapter.match('/foo/-2'))
+    pytest.raises(r.NotFound, lambda: adapter.match('/foo/-50'))
+    pytest.raises(r.NotFound, lambda: adapter.match('/bar/-0.185'))
+    pytest.raises(r.NotFound, lambda: adapter.match('/bar/-2.0'))
+
+
 def test_greedy():
     map = r.Map([
         r.Rule('/foo', endpoint='foo'),
