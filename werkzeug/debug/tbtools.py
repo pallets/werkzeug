@@ -330,7 +330,7 @@ class Traceback(object):
 
         for frame in self.frames:
             frames.append(u'<li%s>%s' % (
-                u' title="%s"' % escape(frame.info) if frame.info else u''
+                u' title="%s"' % escape(frame.info) if frame.info else u'',
                 frame.render()
             ))
 
