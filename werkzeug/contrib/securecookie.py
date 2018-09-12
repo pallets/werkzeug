@@ -160,7 +160,7 @@ class SecureCookie(ModificationTrackingDict):
         return '<%s %s%s>' % (
             self.__class__.__name__,
             dict.__repr__(self),
-            self.should_save and '*' or ''
+            '*' if self.should_save else ''
         )
 
     @property

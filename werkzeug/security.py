@@ -191,7 +191,7 @@ def generate_password_hash(password, method='pbkdf2:sha256', salt_length=8):
                    to enable PBKDF2.
     :param salt_length: the length of the salt in letters.
     """
-    salt = method != 'plain' and gen_salt(salt_length) or ''
+    salt = gen_salt(salt_length) if method != 'plain' else ''
     h, actual_method = _hash_internal(method, salt, password)
     return '%s$%s$%s' % (actual_method, salt, h)
 

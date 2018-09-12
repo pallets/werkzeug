@@ -445,7 +445,7 @@ def url_parse(url, scheme=None, allow_fragments=True):
     if s('?') in url:
         url, query = url.split(s('?'), 1)
 
-    result_type = is_text_based and URL or BytesURL
+    result_type = URL if is_text_based else BytesURL
     return result_type(scheme, netloc, url, query, fragment)
 
 
