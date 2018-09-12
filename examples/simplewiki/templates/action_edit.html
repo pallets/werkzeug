@@ -5,12 +5,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:py="http://genshi.edgewall.org/"><xi:include href="layout.html" />
   <head>
-    <title>${new and 'Create' or 'Edit'} Page</title>
+    <title>${'Create' if new else 'Edit'} Page</title>
   </head>
   <body>
-    <h1>${new and 'Create' or 'Edit'} “${page.title or page_name}”</h1>
+    <h1>${'Create' if new else 'Edit'} “${page.title or page_name}”</h1>
     <p>
-      You can now ${new and 'create' or 'modify'} the page contents.  To
+      You can now ${'create' if new else 'modify'} the page contents.  To
       format your text you can use <a href="http://www.wikicreole.org/">creole markup</a>.
     </p>
     <p class="error" py:if="error">${error}</p>

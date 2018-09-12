@@ -15,7 +15,7 @@
         <th class="change_note">Change Note</th>
       </tr>
       <tr py:for="idx, entry in enumerate(pagination.entries)"
-          class="${idx % 2 == 1 and 'even' or 'odd'}">
+          class="${'even' if idx % 2 == 1 else 'odd'}">
         <td class="timestamp">${format_datetime(entry.timestamp)}</td>
         <td class="page"><a href="${href(entry.name)}">${entry.title}</a></td>
         <td class="change_note">${entry.change_note}</td>

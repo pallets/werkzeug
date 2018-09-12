@@ -65,9 +65,9 @@ def href(*args, **kw):
     Simple function for URL generation.  Position arguments are used for the
     URL path and keyword arguments are used for the url parameters.
     """
-    result = [(request and request.script_root or '') + '/']
+    result = [(request.script_root if request else '') + '/']
     for idx, arg in enumerate(args):
-        result.append((idx and '/' or '') + url_quote(arg))
+        result.append(('/' if idx else '') + url_quote(arg))
     if kw:
         result.append('?' + url_encode(kw))
     return ''.join(result)
