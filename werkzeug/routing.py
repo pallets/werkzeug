@@ -741,7 +741,7 @@ class Rule(RuleFactory):
         _build_regex(domain_rule)
         regex_parts.append('\\|')
         self._trace.append((False, '|'))
-        _build_regex(self.is_leaf and self.rule or self.rule.rstrip('/'))
+        _build_regex(self.rule if self.is_leaf else self.rule.rstrip('/'))
         if not self.is_leaf:
             self._trace.append((False, '/'))
 
@@ -1182,7 +1182,7 @@ class Rule(RuleFactory):
 
         :internal:
         """
-        return self.alias and 1 or 0, -len(self.arguments), \
+        return 1 if self.alias else 0, -len(self.arguments), \
             -len(self.defaults or ())
 
     def __eq__(self, other):
@@ -1810,7 +1810,7 @@ class MapAdapter(object):
         method = (method or self.default_method).upper()
 
         path = u'%s|%s' % (
-            self.map.host_matching and self.server_name or self.subdomain,
+            self.server_name if self.map.host_matching else self.subdomain,
             path_info and '/%s' % path_info.lstrip('/')
         )
 
@@ -1848,7 +1848,7 @@ class MapAdapter(object):
                     redirect_url = rule.redirect_to(self, **rv)
                 raise RequestRedirect(str(url_join('%s://%s%s%s' % (
                     self.url_scheme or 'http',
-                    self.subdomain and self.subdomain + '.' or '',
+                    self.subdomain + '.' if self.subdomain else '',
                     self.server_name,
                     self.script_name
                 ), redirect_url)))
@@ -1906,7 +1906,7 @@ class MapAdapter(object):
             subdomain = self.subdomain
         else:
             subdomain = to_unicode(subdomain, 'ascii')
-        return (subdomain and subdomain + u'.' or u'') + self.server_name
+        return (subdomain + u'.' if subdomain else u'') + self.server_name
 
     def get_default_redirect(self, rule, method, values, query_args):
         """A helper that returns the URL to redirect to if it finds one.

@@ -165,7 +165,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         def shutdown_server():
             self.server.shutdown_signal = True
 
-        url_scheme = self.server.ssl_context is None and 'http' or 'https'
+        url_scheme = 'http' if self.server.ssl_context is None else 'https'
         if not self.client_address:
             self.client_address = '<local>'
         if isinstance(self.client_address, str):
@@ -339,7 +339,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         """Send the response header and log the response code."""
         self.log_request(code)
         if message is None:
-            message = code in self.responses and self.responses[code][0] or ''
+            message = self.responses[code][0] if code in self.responses else ''
         if self.request_version != 'HTTP/0.9':
             hdr = "%s %d %s\r\n" % (self.protocol_version, code, message)
             self.wfile.write(hdr.encode('ascii'))
@@ -818,7 +818,7 @@ def run_simple(hostname, port, application, use_reloader=False,
         application = SharedDataMiddleware(application, static_files)
 
     def log_startup(sock):
-        display_hostname = hostname not in ('', '*') and hostname or 'localhost'
+        display_hostname = hostname if hostname not in ('', '*') else 'localhost'
         quit_msg = '(Press CTRL+C to quit)'
         if sock.family is socket.AF_UNIX:
             _log('info', ' * Running on %s %s', display_hostname, quit_msg)
@@ -827,7 +827,7 @@ def run_simple(hostname, port, application, use_reloader=False,
                 display_hostname = '[%s]' % display_hostname
             port = sock.getsockname()[1]
             _log('info', ' * Running on %s://%s:%d/ %s',
-                 ssl_context is None and 'http' or 'https',
+                 'http' if ssl_context is None else 'https',
                  display_hostname, port, quit_msg)
 
     def inner():

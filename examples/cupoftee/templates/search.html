@@ -16,7 +16,7 @@
 <% if results %>
   <p>
     The nickname "$escape(user)" is currently playing on the
-    following ${len(results) == 1 and 'server' or 'servers'}:
+    following ${'server' if len(results) == 1 else 'servers'}:
   </p>
   <ul>
   <% for server in results %>

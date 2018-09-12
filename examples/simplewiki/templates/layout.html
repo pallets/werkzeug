@@ -27,7 +27,7 @@
                 ('edit', href(page.name, action='edit'), 'edit'),
                 ('log', href(page.name, action='log'), 'log')
               )">
-                <a href="${href}" class="${id == page_action and 'active' or
+                <a href="${href}" class="${'active' if id == page_action else
                   None}">${title}</a> |
               </py:for>
             </py:if>

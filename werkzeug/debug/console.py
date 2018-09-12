@@ -161,7 +161,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
     def runsource(self, source):
         source = source.rstrip() + '\n'
         ThreadedStream.push()
-        prompt = self.more and '... ' or '>>> '
+        prompt = '... ' if self.more else '>>> '
         try:
             source_to_eval = ''.join(self.buffer + [source])
             if code.InteractiveInterpreter.runsource(self,

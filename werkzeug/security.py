@@ -135,7 +135,7 @@ def _hash_internal(method, salt, password):
         if len(args) not in (1, 2):
             raise ValueError('Invalid number of arguments for PBKDF2')
         method = args.pop(0)
-        iterations = args and int(args[0] or 0) or DEFAULT_PBKDF2_ITERATIONS
+        iterations = int(args[0] or 0) if args else DEFAULT_PBKDF2_ITERATIONS
         is_pbkdf2 = True
         actual_method = 'pbkdf2:%s:%d' % (method, iterations)
     else:
@@ -191,7 +191,7 @@ def generate_password_hash(password, method='pbkdf2:sha256', salt_length=8):
                    to enable PBKDF2.
     :param salt_length: the length of the salt in letters.
     """
-    salt = method != 'plain' and gen_salt(salt_length) or ''
+    salt = gen_salt(salt_length) if method != 'plain' else ''
     h, actual_method = _hash_internal(method, salt, password)
     return '%s$%s$%s' % (actual_method, salt, h)
 
