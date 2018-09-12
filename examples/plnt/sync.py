@@ -54,7 +54,7 @@ def sync():
             else:
                 title = entry.get('title')
             url = entry.get('link') or blog.blog_url
-            text = entry.content[0] if 'content' in entry else \
+            text = 'content' in entry and entry.content[0] or \
                    entry.get('summary_detail')
 
             if not title or not text:
