@@ -126,9 +126,9 @@ class GenericCacheTests(CacheTestsBase):
     def test_generic_timeout(self, c, fast_sleep):
         c.set('foo', 'bar', 0)
         assert c.get('foo') == 'bar'
-        c.set('baz', 'qux', 1)
+        c.set('baz', 'qux', 10)
         assert c.get('baz') == 'qux'
-        fast_sleep(3)
+        fast_sleep(13)
         # timeout of zero means no timeout
         assert c.get('foo') == 'bar'
         if self._guaranteed_deletes:
