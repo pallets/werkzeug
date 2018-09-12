@@ -120,7 +120,7 @@ class AtomFeed(object):
         if self.generator is None:
             self.generator = self.default_generator
         self.links = kwargs.get('links', [])
-        self.entries = list(entries) if entries or []
+        self.entries = list(entries) if entries else []
 
         if not hasattr(self.author, '__iter__') \
            or isinstance(self.author, string_types + (dict,)):
