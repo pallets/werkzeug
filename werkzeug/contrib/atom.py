@@ -120,7 +120,7 @@ class AtomFeed(object):
         if self.generator is None:
             self.generator = self.default_generator
         self.links = kwargs.get('links', [])
-        self.entries = entries and list(entries) or []
+        self.entries = list(entries) if entries or []
 
         if not hasattr(self.author, '__iter__') \
            or isinstance(self.author, string_types + (dict,)):
@@ -164,7 +164,7 @@ class AtomFeed(object):
 
         if not self.updated:
             dates = sorted([entry.updated for entry in self.entries])
-            self.updated = dates and dates[-1] or datetime.utcnow()
+            self.updated = dates[-1] if dates else datetime.utcnow()
 
         yield u'<?xml version="1.0" encoding="utf-8"?>\n'
         yield u'<feed xmlns="http://www.w3.org/2005/Atom">\n'

@@ -445,7 +445,7 @@ def url_parse(url, scheme=None, allow_fragments=True):
     if s('?') in url:
         url, query = url.split(s('?'), 1)
 
-    result_type = is_text_based and URL or BytesURL
+    result_type = URL if is_text_based else BytesURL
     return result_type(scheme, netloc, url, query, fragment)
 
 
@@ -1025,7 +1025,7 @@ class Href(object):
                                 'can\'t be combined')
             query, path = path[-1], path[:-1]
         elif query:
-            query = dict([(k.endswith('_') and k[:-1] or k, v)
+            query = dict([(k[:-1] if k.endswith('_') else k, v)
                           for k, v in query.items()])
         path = '/'.join([to_unicode(url_quote(x, self.charset), 'ascii')
                          for x in path if x is not None]).lstrip('/')

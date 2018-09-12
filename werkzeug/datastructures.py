@@ -1782,7 +1782,7 @@ class MIMEAccept(Accept):
     def _value_matches(self, value, item):
         def _normalize(x):
             x = x.lower()
-            return x == '*' and ('*', '*') or x.split('/', 1)
+            return ('*', '*') if x == '*' else x.split('/', 1)
 
         # this is from the application which is trusted.  to avoid developer
         # frustration we actually check these for valid values
@@ -2181,7 +2181,7 @@ class ETags(Container, Iterable):
     """
 
     def __init__(self, strong_etags=None, weak_etags=None, star_tag=False):
-        self._strong = frozenset(not star_tag and strong_etags or ())
+        self._strong = frozenset(strong_etags if not star_tag else ())
         self._weak = frozenset(weak_etags or ())
         self.star_tag = star_tag
 
@@ -2334,7 +2334,7 @@ class Range(object):
         ranges = []
         for begin, end in self.ranges:
             if end is None:
-                ranges.append(begin >= 0 and '%s-' % begin or str(begin))
+                ranges.append('%s-' % begin if begin >= 0 else str(begin))
             else:
                 ranges.append('%s-%s' % (begin, end - 1))
         return '%s=%s' % (self.units, ','.join(ranges))
@@ -2614,7 +2614,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         if value is None:
             self.pop('stale', None)
         else:
-            self['stale'] = value and 'TRUE' or 'FALSE'
+            self['stale'] = 'TRUE' if value else 'FALSE'
     stale = property(_get_stale, _set_stale, doc='''
         A flag, indicating that the previous request from the client was
         rejected because the nonce value was stale.''')

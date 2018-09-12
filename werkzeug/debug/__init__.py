@@ -380,7 +380,7 @@ class DebuggedApplication(object):
         return (time.time() - PIN_TIME) < int(ts)
 
     def _fail_pin_auth(self):
-        time.sleep(self._failed_pin_auth > 5 and 5.0 or 0.5)
+        time.sleep(5.0 if self._failed_pin_auth > 5 else 0.5)
         self._failed_pin_auth += 1
 
     def pin_auth(self, request):

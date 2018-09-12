@@ -330,7 +330,7 @@ class Traceback(object):
 
         for frame in self.frames:
             frames.append(u'<li%s>%s' % (
-                frame.info and u' title="%s"' % escape(frame.info) or u'',
+                u' title="%s"' % escape(frame.info) if frame.info else u''
                 frame.render()
             ))
 
@@ -341,7 +341,7 @@ class Traceback(object):
 
         return SUMMARY_HTML % {
             'classes':      u' '.join(classes),
-            'title':        title and u'<h3>%s</h3>' % title or u'',
+            'title':        u'<h3>%s</h3>' % title if title else u'',
             'frames':       u'\n'.join(frames),
             'description':  description_wrapper % escape(self.exception)
         }
@@ -351,8 +351,8 @@ class Traceback(object):
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
         return PAGE_HTML % {
-            'evalex':           evalex and 'true' or 'false',
-            'evalex_trusted':   evalex_trusted and 'true' or 'false',
+            'evalex':           'true' if evalex else 'false',
+            'evalex_trusted':   'true' if evalex_trusted else 'false',
             'console':          'false',
             'title':            exc,
             'exception':        exc,

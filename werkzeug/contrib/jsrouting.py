@@ -211,7 +211,7 @@ def generate_map(map, name='url_map'):
             u'defaults':    rule.defaults
         })
 
-    return render_template(name_parts=name and name.split('.') or [],
+    return render_template(name_parts=name.split('.') if name else []
                            rules=dumps(rules),
                            converters=converters)
 
