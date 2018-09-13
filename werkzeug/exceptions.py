@@ -520,11 +520,11 @@ class Locked(HTTPException):
     )
 
 
-class Depended(HTTPException):
+class FailedDependency(HTTPException):
 
     """*424* `Failed Dependency`
 
-    Used if the method could not be performed on the resource 
+    Used if the method could not be performed on the resource
     because the requested action depended on another action and that action failed.
     """
     code = 424
