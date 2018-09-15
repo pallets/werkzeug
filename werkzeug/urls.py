@@ -645,9 +645,9 @@ def uri_to_iri(uri, charset='utf-8', errors='replace'):
     if isinstance(uri, tuple):
         uri = url_unparse(uri)
     uri = url_parse(to_unicode(uri, charset))
-    path = url_unquote(uri.path, charset, errors, '%/;?')
-    query = url_unquote(uri.query, charset, errors, '%;/?:@&=+,$#')
-    fragment = url_unquote(uri.fragment, charset, errors, '%;/?:@&=+,$#')
+    path = url_unquote(uri.path, charset, errors, '%/;? ')
+    query = url_unquote(uri.query, charset, errors, '%;/?:@&=+,$# ')
+    fragment = url_unquote(uri.fragment, charset, errors, '%;/?:@&=+,$# ')
     return url_unparse((uri.scheme, uri.decode_netloc(),
                         path, query, fragment))
 

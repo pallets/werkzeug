@@ -217,6 +217,10 @@ def test_iri_support():
     strict_eq(urls.iri_to_uri(u'http://föö.com:8080/bam/baz'),
               'http://xn--f-1gaa.com:8080/bam/baz')
 
+    # unsafe whitespace
+    strict_eq(urls.iri_to_uri('/f b?q=a b'), '/f%20b?q=a%20b')
+    strict_eq(urls.iri_to_uri('/f%20b?q=a%20b'), '/f%20b?q=a%20b')
+
 
 def test_iri_safe_conversion():
     strict_eq(urls.iri_to_uri(u'magnet:?foo=bar'),
