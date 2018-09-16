@@ -86,6 +86,12 @@ else:
     class ForkingMixIn(object):
         pass
 
+try:
+    af_unix = socket.AF_UNIX
+except AttributeError:
+    af_unix = None
+
+
 # important: do not use relative imports here or python -m will break
 import werkzeug
 from werkzeug._internal import _log
@@ -591,7 +597,7 @@ def select_address_family(host, port):
 def get_sockaddr(host, port, family):
     """Return a fully qualified socket address that can be passed to
     :func:`socket.bind`."""
-    if family == socket.AF_UNIX:
+    if family == af_unix:
         return host.split('://', 1)[1]
     try:
         res = socket.getaddrinfo(
@@ -626,11 +632,10 @@ class BaseWSGIServer(HTTPServer, object):
 
         # remove socket file if it already exists
         if (
-            self.address_family == socket.AF_UNIX
+            self.address_family == af_unix
             and os.path.exists(server_address)
         ):
             os.unlink(server_address)
-
         HTTPServer.__init__(self, server_address, handler)
 
         self.app = app
@@ -820,7 +825,7 @@ def run_simple(hostname, port, application, use_reloader=False,
     def log_startup(sock):
         display_hostname = hostname not in ('', '*') and hostname or 'localhost'
         quit_msg = '(Press CTRL+C to quit)'
-        if sock.family is socket.AF_UNIX:
+        if sock.family is af_unix:
             _log('info', ' * Running on %s %s', display_hostname, quit_msg)
         else:
             if ':' in display_hostname:
@@ -872,7 +877,7 @@ def run_simple(hostname, port, application, use_reloader=False,
                 log_startup(s)
             else:
                 s.close()
-                if address_family is socket.AF_UNIX:
+                if address_family is af_unix:
                     _log('info', "Unlinking %s" % server_address)
                     os.unlink(server_address)
 
