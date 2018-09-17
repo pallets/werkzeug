@@ -33,6 +33,8 @@ if PY2:
     int_to_byte = chr
     iter_bytes = iter
 
+    import collections as collections_abc
+
     exec('def reraise(tp, value, tb=None):\n raise tp, value, tb')
 
     def fix_tuple_repr(obj):
@@ -131,6 +133,8 @@ else:
 
     int_to_byte = operator.methodcaller('to_bytes', 1, 'big')
     iter_bytes = functools.partial(map, int_to_byte)
+
+    import collections.abc as collections_abc
 
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:

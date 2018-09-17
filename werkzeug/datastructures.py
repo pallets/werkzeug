@@ -13,11 +13,10 @@ import codecs
 import mimetypes
 from copy import deepcopy
 from itertools import repeat
-from collections import Container, Iterable, MutableSet
 
 from werkzeug._internal import _missing
-from werkzeug._compat import BytesIO, iterkeys, itervalues, iteritems, \
-    iterlists, PY2, text_type, integer_types, string_types, \
+from werkzeug._compat import BytesIO, collections_abc, iterkeys, itervalues, \
+    iteritems, iterlists, PY2, text_type, integer_types, string_types, \
     make_literal_wrapper, to_native
 from werkzeug.filesystem import get_filesystem_encoding
 
@@ -2020,7 +2019,7 @@ class CallbackDict(UpdateDictMixin, dict):
         )
 
 
-class HeaderSet(MutableSet):
+class HeaderSet(collections_abc.MutableSet):
 
     """Similar to the :class:`ETags` class this implements a set-like structure.
     Unlike :class:`ETags` this is case insensitive and used for vary, allow, and
@@ -2174,7 +2173,7 @@ class HeaderSet(MutableSet):
         )
 
 
-class ETags(Container, Iterable):
+class ETags(collections_abc.Container, collections_abc.Iterable):
 
     """A set that can be used to check if one etag is present in a collection
     of etags.
