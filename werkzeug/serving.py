@@ -825,7 +825,7 @@ def run_simple(hostname, port, application, use_reloader=False,
     def log_startup(sock):
         display_hostname = hostname not in ('', '*') and hostname or 'localhost'
         quit_msg = '(Press CTRL+C to quit)'
-        if sock.family is af_unix:
+        if sock.family == af_unix:
             _log('info', ' * Running on %s %s', display_hostname, quit_msg)
         else:
             if ':' in display_hostname:
@@ -877,7 +877,7 @@ def run_simple(hostname, port, application, use_reloader=False,
                 log_startup(s)
             else:
                 s.close()
-                if address_family is af_unix:
+                if address_family == af_unix:
                     _log('info', "Unlinking %s" % server_address)
                     os.unlink(server_address)
 
