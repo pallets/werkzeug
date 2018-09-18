@@ -301,7 +301,7 @@ class MethodNotAllowed(HTTPException):
         HTTPException.__init__(self, description)
         self.valid_methods = valid_methods
 
-    def get_headers(self, environ):
+    def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.valid_methods:
             headers.append(('Allow', ', '.join(self.valid_methods)))
@@ -457,7 +457,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
         self.length = length
         self.units = units
 
-    def get_headers(self, environ):
+    def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.length is not None:
             headers.append(
