@@ -148,6 +148,7 @@ class UserAgent(object):
         -   `bing` *
         -   `camino`
         -   `chrome`
+        -   `edge`
         -   `firefox`
         -   `galeon`
         -   `google` *
