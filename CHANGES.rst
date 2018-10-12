@@ -102,6 +102,8 @@ Unreleased
     reloader to work on NixOS. (`#1242`_)
 -   Bytes may be used as keys in :class:`~datastructures.Headers`, they
     will be decoded as Latin-1 like values are. (`#1346`_)
+-   Server uses ``IPPROTO_TCP`` constant instead of ``SOL_TCP`` for
+    Jython compatibility. (`#1375`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -141,6 +143,7 @@ Unreleased
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
 .. _`#1346`: https://github.com/pallets/werkzeug/pull/1346
 .. _`#1358`: https://github.com/pallets/werkzeug/pull/1358
+.. _`#1375`: https://github.com/pallets/werkzeug/pull/1375
 .. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
 .. _`#1393`: https://github.com/pallets/werkzeug/pull/1393
