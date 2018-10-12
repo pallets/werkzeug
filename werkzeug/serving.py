@@ -593,6 +593,12 @@ def get_sockaddr(host, port, family):
     :func:`socket.bind`."""
     if family == socket.AF_UNIX:
         return host.split('://', 1)[1]
+    # if socket.SOL_TCP does not exist, return 6 to represent TCP.  jython does
+    # not have socket.SOL_TCP.
+    try:
+        socket.SOL_TCP
+    except:
+        socket.SOL_TCP = 6
     try:
         res = socket.getaddrinfo(
             host, port, family, socket.SOCK_STREAM, socket.SOL_TCP)
