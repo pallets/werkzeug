@@ -596,12 +596,12 @@ def get_sockaddr(host, port, family):
     # if socket.SOL_TCP does not exist, return 6 to represent TCP.  jython does
     # not have socket.SOL_TCP.
     try:
-        socket.SOL_TCP
+        SOL_TCP = socket.SOL_TCP
     except AttributeError:
-        socket.SOL_TCP = 6
+        SOL_TCP = 6
     try:
         res = socket.getaddrinfo(
-            host, port, family, socket.SOCK_STREAM, socket.SOL_TCP)
+            host, port, family, socket.SOCK_STREAM, SOL_TCP)
     except socket.gaierror:
         return host, port
     return res[0][4]
