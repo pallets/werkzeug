@@ -597,7 +597,7 @@ def get_sockaddr(host, port, family):
     # not have socket.SOL_TCP.
     try:
         socket.SOL_TCP
-    except:
+    except AttributeError:
         socket.SOL_TCP = 6
     try:
         res = socket.getaddrinfo(
