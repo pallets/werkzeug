@@ -1797,28 +1797,28 @@ class MIMEAccept(Accept):
         if item_type == '*' and item_subtype != '*':
             return False
         return (
-            (item_type == item_subtype == '*' or
-             value_type == value_subtype == '*') or
-            (item_type == value_type and (item_subtype == '*' or
-                                          value_subtype == '*' or
-                                          item_subtype == value_subtype))
+            (item_type == item_subtype == '*'
+             or value_type == value_subtype == '*')
+            or (item_type == value_type and (item_subtype == '*'
+                                             or value_subtype == '*'
+                                             or item_subtype == value_subtype))
         )
 
     @property
     def accept_html(self):
         """True if this object accepts HTML."""
         return (
-            'text/html' in self or
-            'application/xhtml+xml' in self or
-            self.accept_xhtml
+            'text/html' in self
+            or 'application/xhtml+xml' in self
+            or self.accept_xhtml
         )
 
     @property
     def accept_xhtml(self):
         """True if this object accepts XHTML."""
         return (
-            'application/xhtml+xml' in self or
-            'application/xml' in self
+            'application/xhtml+xml' in self
+            or 'application/xml' in self
         )
 
     @property
@@ -2226,8 +2226,8 @@ class ETags(collections_abc.Container, collections_abc.Iterable):
         if self.star_tag:
             return '*'
         return ', '.join(
-            ['"%s"' % x for x in self._strong] +
-            ['W/"%s"' % x for x in self._weak]
+            ['"%s"' % x for x in self._strong]
+            + ['W/"%s"' % x for x in self._weak]
         )
 
     def __call__(self, etag=None, data=None, include_weak=False):

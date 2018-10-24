@@ -752,8 +752,8 @@ class Rule(RuleFactory):
             return
         regex = r'^%s%s$' % (
             u''.join(regex_parts),
-            (not self.is_leaf or not self.strict_slashes) and
-            '(?<!/)(?P<__suffix__>/?)' or ''
+            (not self.is_leaf or not self.strict_slashes)
+            and '(?<!/)(?P<__suffix__>/?)' or ''
         )
         self._regex = re.compile(regex, re.UNICODE)
 
@@ -778,8 +778,8 @@ class Rule(RuleFactory):
                 # trailing slash
                 if self.strict_slashes and not self.is_leaf and \
                         not groups.pop('__suffix__') and \
-                        (method is None or self.methods is None or
-                         method in self.methods):
+                        (method is None or self.methods is None
+                         or method in self.methods):
                     raise RequestSlash()
                 # if we are not in strict slashes mode we have to remove
                 # a __suffix__
@@ -1709,7 +1709,7 @@ class MapAdapter(object):
         :param method: the HTTP method used for matching.  Overrides the
                        method specified on binding.
         :param catch_http_exceptions: set to `True` to catch any of the
-                                      werkzeug :class:`HTTPException`\s.
+                                      werkzeug :class:`HTTPException`\\s.
         """
         try:
             try:
@@ -1888,7 +1888,7 @@ class MapAdapter(object):
             self.match(path_info, method='--')
         except MethodNotAllowed as e:
             return e.valid_methods
-        except HTTPException as e:
+        except HTTPException:
             pass
         return []
 
@@ -2079,8 +2079,8 @@ class MapAdapter(object):
 
         # shortcut this.
         if not force_external and (
-            (self.map.host_matching and host == self.server_name) or
-            (not self.map.host_matching and domain_part == self.subdomain)
+            (self.map.host_matching and host == self.server_name)
+            or (not self.map.host_matching and domain_part == self.subdomain)
         ):
             return '%s/%s' % (self.script_name.rstrip('/'), path.lstrip('/'))
         return str('%s//%s%s/%s' % (

@@ -19,7 +19,7 @@ import difflib
 
 
 _from_import_re = re.compile(r'(\s*(>>>|\.\.\.)?\s*)from werkzeug import\s+')
-_direct_usage = re.compile('(?<!`)(werkzeug\.)([a-zA-Z_][a-zA-Z0-9_]+)')
+_direct_usage = re.compile(r'(?<!`)(werkzeug\.)([a-zA-Z_][a-zA-Z0-9_]+)')
 
 # not necessarily in sync with current werkzeug/__init__.py
 all_by_module = {

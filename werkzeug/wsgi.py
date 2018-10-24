@@ -434,8 +434,8 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
             if scheme not in (u'http', u'https'):
                 return None
     else:
-        if not (base_scheme in (u'http', u'https') and
-                base_scheme == cur_scheme):
+        if not (base_scheme in (u'http', u'https')
+                and base_scheme == cur_scheme):
             return None
 
     # are the netlocs compatible?
@@ -513,8 +513,8 @@ class ProxyMiddleware(object):
         def application(environ, start_response):
             headers = list(EnvironHeaders(environ).items())
             headers[:] = [(k, v) for k, v in headers
-                          if not is_hop_by_hop_header(k) and
-                          k.lower() not in ('content-length', 'host')]
+                          if not is_hop_by_hop_header(k)
+                          and k.lower() not in ('content-length', 'host')]
             headers.append(('Connection', 'close'))
             if opts['host'] == '<auto>':
                 headers.append(('Host', target.ascii_host))
