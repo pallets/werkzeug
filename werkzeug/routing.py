@@ -1888,7 +1888,7 @@ class MapAdapter(object):
             self.match(path_info, method='--')
         except MethodNotAllowed as e:
             return e.valid_methods
-        except HTTPException as e:
+        except HTTPException:
             pass
         return []
 
