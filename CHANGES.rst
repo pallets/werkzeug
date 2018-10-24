@@ -78,6 +78,8 @@ Unreleased
     (`#1340`_)
 -   The version of jQuery used by the debugger is updated to 3.3.1.
     (`#1390`_)
+-   In :func:`~security.generate_password_hash`, PBKDF2 uses 150000
+    iterations by default, increased from 50000. (`#1377`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -112,6 +114,7 @@ Unreleased
 .. _`#1318`: https://github.com/pallets/werkzeug/pull/1318
 .. _`#1338`: https://github.com/pallets/werkzeug/pull/1338
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
+.. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
 
 

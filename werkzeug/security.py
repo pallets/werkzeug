@@ -21,7 +21,7 @@ from werkzeug._compat import range_type, PY2, text_type, izip, to_bytes, \
 
 
 SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-DEFAULT_PBKDF2_ITERATIONS = 50000
+DEFAULT_PBKDF2_ITERATIONS = 150000
 
 
 _pack_int = Struct('>I').pack
