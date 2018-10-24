@@ -224,8 +224,8 @@ def get_content_type(mimetype, charset):
     """
     if mimetype.startswith('text/') or \
        mimetype == 'application/xml' or \
-       (mimetype.startswith('application/') and
-            mimetype.endswith('+xml')):
+       (mimetype.startswith('application/')
+            and mimetype.endswith('+xml')):
         mimetype += '; charset=' + charset
     return mimetype
 
@@ -552,12 +552,12 @@ def bind_arguments(func, args, kwargs):
     if kwarg_var is not None:
         multikw = set(extra) & set([x[0] for x in arg_spec])
         if multikw:
-            raise TypeError('got multiple values for keyword argument ' +
-                            repr(next(iter(multikw))))
+            raise TypeError('got multiple values for keyword argument '
+                            + repr(next(iter(multikw))))
         values[kwarg_var] = extra
     elif extra:
-        raise TypeError('got unexpected keyword argument ' +
-                        repr(next(iter(extra))))
+        raise TypeError('got unexpected keyword argument '
+                        + repr(next(iter(extra))))
     return values
 
 

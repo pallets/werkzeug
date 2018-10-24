@@ -47,8 +47,8 @@ if os.name == 'nt':  # pragma: no cover
             retry = 0
             rv = False
             while not rv and retry < 100:
-                rv = _MoveFileEx(src, dst, _MOVEFILE_REPLACE_EXISTING |
-                                 _MOVEFILE_WRITE_THROUGH)
+                rv = _MoveFileEx(src, dst, _MOVEFILE_REPLACE_EXISTING
+                                 | _MOVEFILE_WRITE_THROUGH)
                 if not rv:
                     time.sleep(0.001)
                     retry += 1
@@ -70,8 +70,8 @@ if os.name == 'nt':  # pragma: no cover
                 rv = False
                 while not rv and retry < 100:
                     rv = _MoveFileTransacted(src, dst, None, None,
-                                             _MOVEFILE_REPLACE_EXISTING |
-                                             _MOVEFILE_WRITE_THROUGH, ta)
+                                             _MOVEFILE_REPLACE_EXISTING
+                                             | _MOVEFILE_WRITE_THROUGH, ta)
                     if rv:
                         rv = _CommitTransaction(ta)
                         break

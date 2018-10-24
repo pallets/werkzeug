@@ -635,8 +635,8 @@ class RedisCache(BaseCache):
         timeout = self._normalize_timeout(timeout)
         dump = self.dump_object(value)
         return (
-            self._client.setnx(name=self.key_prefix + key, value=dump) and
-            self._client.expire(name=self.key_prefix + key, time=timeout)
+            self._client.setnx(name=self.key_prefix + key, value=dump)
+            and self._client.expire(name=self.key_prefix + key, time=timeout)
         )
 
     def set_many(self, mapping, timeout=None):

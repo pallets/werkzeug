@@ -25,9 +25,9 @@ _epoch_ord = date(1970, 1, 1).toordinal()
 _cookie_params = set((b'expires', b'path', b'comment',
                       b'max-age', b'secure', b'httponly',
                       b'version'))
-_legal_cookie_chars = (string.ascii_letters +
-                       string.digits +
-                       u"/=!#$%&'*+-.^_`|~:").encode('ascii')
+_legal_cookie_chars = (string.ascii_letters
+                       + string.digits
+                       + u"/=!#$%&'*+-.^_`|~:").encode('ascii')
 
 _cookie_quoting_map = {
     b',': b'\\054',
