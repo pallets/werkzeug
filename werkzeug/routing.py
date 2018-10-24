@@ -1709,7 +1709,7 @@ class MapAdapter(object):
         :param method: the HTTP method used for matching.  Overrides the
                        method specified on binding.
         :param catch_http_exceptions: set to `True` to catch any of the
-                                      werkzeug :class:`HTTPException`\s.
+                                      werkzeug :class:`HTTPException`\\s.
         """
         try:
             try:
