@@ -30,7 +30,7 @@ matrix:
 before_install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         brew update;
-        brew install python3 redis memcached;
+        brew install redis memcached;
         pip install virtualenv;
         virtualenv -p python3 ~/py-env;
         . ~/py-env/bin/activate;
