@@ -59,7 +59,7 @@ TEMPLATE = u'''\
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
 <style type="text/css">
-  @import url(http://fonts.googleapis.com/css?family=Ubuntu);
+  @import url(https://fonts.googleapis.com/css?family=Ubuntu);
 
   body       { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                'Verdana', sans-serif; background-color: white; color: #000;

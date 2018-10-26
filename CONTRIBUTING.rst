@@ -131,7 +131,7 @@ reports from all runs.
 .. _email: https://help.github.com/articles/setting-your-email-in-git/
 .. _Fork: https://github.com/pallets/werkzeug/pull/2305#fork-destination-box
 .. _Clone: https://help.github.com/articles/fork-a-repo/#step-2-create-a-local-clone-of-your-fork
-.. _committing as you go: http://dont-be-afraid-to-commit.readthedocs.io/en/latest/git/commandlinegit.html#commit-your-changes
+.. _committing as you go: https://dont-be-afraid-to-commit.readthedocs.io/en/latest/git/commandlinegit.html#commit-your-changes
 .. _PEP8: https://pep8.org/
 .. _create a pull request: https://help.github.com/articles/creating-a-pull-request/
 .. _coverage: https://coverage.readthedocs.io

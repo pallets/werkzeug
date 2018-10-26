@@ -45,9 +45,9 @@ The final result will look something like this:
 .. image:: _static/shortly.png
    :alt: a screenshot of shortly
 
-.. _TinyURL: http://tinyurl.com/
+.. _TinyURL: https://tinyurl.com/
 .. _Jinja: http://jinja.pocoo.org/
-.. _redis: http://redis.io/
+.. _redis: https://redis.io/
 
 Step 0: A Basic WSGI Introduction
 ---------------------------------

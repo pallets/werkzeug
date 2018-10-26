@@ -6,8 +6,8 @@
     A middleware that limits incoming data.  This works around problems with
     Trac_ or Django_ because those directly stream into the memory.
 
-    .. _Trac: http://trac.edgewall.org/
-    .. _Django: http://www.djangoproject.com/
+    .. _Trac: https://trac.edgewall.org/
+    .. _Django: https://www.djangoproject.com/
 
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.

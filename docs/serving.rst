@@ -151,7 +151,7 @@ preferring ipv6, you will be unable to connect to your server.  In that
 situation, you can either remove the localhost entry for ``::1`` or
 explicitly bind the hostname to an ipv4 address (`127.0.0.1`)
 
-.. _hosts file: http://en.wikipedia.org/wiki/Hosts_file
+.. _hosts file: https://en.wikipedia.org/wiki/Hosts_file
 
 SSL
 ---

@@ -19,7 +19,7 @@ Werkzeug provides a much more powerful system, similar to `Routes`_.  All the
 objects mentioned on this page must be imported from :mod:`werkzeug.routing`, not
 from :mod:`werkzeug`!
 
-.. _Routes: http://routes.groovie.org/
+.. _Routes: https://routes.readthedocs.io/
 
 
 Quickstart

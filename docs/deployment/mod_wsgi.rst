@@ -4,7 +4,7 @@
 
 If you are using the `Apache`_ webserver you should consider using `mod_wsgi`_.
 
-.. _Apache: http://httpd.apache.org/
+.. _Apache: https://httpd.apache.org/
 
 Installing `mod_wsgi`
 =====================
@@ -74,9 +74,9 @@ application under a different user for security reasons:
         </Directory>
     </VirtualHost>
 
-For more information consult the `mod_wsgi wiki`_.
+For more information consult the `mod_wsgi docs`_.
 
-.. _mod_wsgi: http://code.google.com/p/modwsgi/
-.. _installation instructions: http://code.google.com/p/modwsgi/wiki/QuickInstallationGuide
-.. _virtual python: http://pypi.python.org/pypi/virtualenv
-.. _mod_wsgi wiki: http://code.google.com/p/modwsgi/wiki/
+.. _mod_wsgi: https://github.com/GrahamDumpleton/mod_wsgi
+.. _installation instructions: https://modwsgi.readthedocs.io/en/latest/user-guides/quick-installation-guide.html
+.. _virtual python: https://pypi.org/project/virtualenv/
+.. _mod_wsgi docs: https://modwsgi.readthedocs.io/

@@ -69,7 +69,7 @@ class ProtobufRequestMixin(object):
     :exc:`~werkzeug.exceptions.BadRequest` will be raised if the content-type
     is not protobuf or if the data itself cannot be parsed property.
 
-    .. _protobuf: http://code.google.com/p/protobuf/
+    .. _protobuf: https://github.com/protocolbuffers/protobuf
     """
 
     #: by default the :class:`ProtobufRequestMixin` will raise a
