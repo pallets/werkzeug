@@ -93,10 +93,10 @@ find in real life :-)
     Requirements :
     -   werkzeug : http://werkzeug.pocoo.org
     -   jinja : http://jinja.pocoo.org
-    -   couchdb 0.72 & above : http://www.couchdb.org
+    -   couchdb 0.72 & above : https://couchdb.apache.org/
 
 `cupoftee`
-    A `Teeworlds <http://www.teeworlds.com/>`_ server browser.  This application
+    A `Teeworlds <https://www.teeworlds.com/>`_ server browser.  This application
     works best in a non forking environment and won't work for CGI.
 
     Usage::

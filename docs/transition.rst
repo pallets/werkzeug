@@ -26,7 +26,7 @@ was this::
 With Werkzeug 0.7, the recommended way to import this function is
 directly from the utils module (and with 1.0 this will become mandatory).
 To automatically rewrite all imports one can use the
-`werkzeug-import-rewrite <http://bit.ly/import-rewrite>`_ script.
+`werkzeug-import-rewrite <https://bit.ly/import-rewrite>`_ script.
 
 You can use it by executing it with Python and with a list of folders with
 Werkzeug based code.  It will then spit out a hg/git compatible patch

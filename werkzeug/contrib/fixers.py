@@ -329,7 +329,7 @@ class InternetExplorerFix(object):
     # This code was inspired by Django fixers for the same bugs.  The
     # fix_vary and fix_attach fixers were originally implemented in Django
     # by Michael Axiak and is available as part of the Django project:
-    #     http://code.djangoproject.com/ticket/4148
+    #     https://code.djangoproject.com/ticket/4148
 
     def __init__(self, app, fix_vary=True, fix_attach=True):
         self.app = app

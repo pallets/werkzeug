@@ -94,7 +94,7 @@ class TestDebugRepr(object):
         assert debug_repr(re.compile(r'foo\d')) == \
             u're.compile(<span class="string regex">r\'foo\\d\'</span>)'
         # No ur'' in Py3
-        # http://bugs.python.org/issue15096
+        # https://bugs.python.org/issue15096
         assert debug_repr(re.compile(u'foo\\d')) == (
             u're.compile(<span class="string regex">%sr\'foo\\d\'</span>)' %
             ('u' if PY2 else '')

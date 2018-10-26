@@ -875,7 +875,7 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
 
     if_range = None
     if not ignore_if_range and 'HTTP_RANGE' in environ:
-        # http://tools.ietf.org/html/rfc7233#section-3.2
+        # https://tools.ietf.org/html/rfc7233#section-3.2
         # A server MUST ignore an If-Range header field received in a request
         # that does not contain a Range header field.
         if_range = parse_if_range_header(environ.get('HTTP_IF_RANGE'))
@@ -895,7 +895,7 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
         else:
             if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
             if if_none_match:
-                # http://tools.ietf.org/html/rfc7232#section-3.2
+                # https://tools.ietf.org/html/rfc7232#section-3.2
                 # "A recipient MUST use the weak comparison function when comparing
                 # entity-tags for If-None-Match"
                 unmodified = if_none_match.contains_weak(etag)
