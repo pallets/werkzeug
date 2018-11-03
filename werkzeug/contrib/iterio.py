@@ -75,7 +75,7 @@ class IterIO(object):
 
     If the first argument is a callable then the stream object will be
     created and passed to that function.  The caller itself however will
-    not receive a stream but an iterable.  The function will be be executed
+    not receive a stream but an iterable.  The function will be executed
     step by step as something iterates over the returned iterable.  Each
     call to :meth:`flush` will create an item for the iterable.  If
     :meth:`flush` is called without any writes in-between the sentinel

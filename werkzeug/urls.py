@@ -202,7 +202,7 @@ class BaseURL(_URLTuple):
         are ``'windows'`` when working with Windows or DOS paths and
         ``'posix'`` when working with posix paths.
 
-        If the URL does not point to to a local file, the server and location
+        If the URL does not point to a local file, the server and location
         are both represented as ``None``.
 
         :param pathformat: The expected format of the path component.
