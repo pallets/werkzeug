@@ -229,7 +229,7 @@ class Traceback(object):
         self.exception_type = exception_type
 
         # we only add frames to the list that are not hidden.  This follows
-        # the the magic variables as defined by paste.exceptions.collector
+        # the magic variables as defined by paste.exceptions.collector
         self.frames = []
         while tb:
             self.frames.append(Frame(exc_type, exc_value, tb))
