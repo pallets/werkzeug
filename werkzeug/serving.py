@@ -315,7 +315,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         # Windows does not provide SIGKILL, go with SIGTERM then.
         sig = getattr(signal, 'SIGKILL', signal.SIGTERM)
         # reloader active
-        if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        if is_running_from_reloader():
             os.kill(os.getpid(), sig)
         # python 2.7
         self.server._BaseServer__shutdown_request = True
@@ -847,7 +847,7 @@ def run_simple(hostname, port, application, use_reloader=False,
         # If we're not running already in the subprocess that is the
         # reloader we want to open up a socket early to make sure the
         # port is actually available.
-        if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        if not is_running_from_reloader():
             if port == 0 and not can_open_by_fd:
                 raise ValueError('Cannot bind to a random port with enabled '
                                  'reloader if the Python interpreter does '
