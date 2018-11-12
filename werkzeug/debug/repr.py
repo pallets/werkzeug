@@ -197,7 +197,7 @@ class DebugReprGenerator(object):
             return u'<span class="help">%r</span>' % helper
         if isinstance(obj, (integer_types, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if isinstance(obj, string_types):
+        if type(obj) in string_types:
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)
