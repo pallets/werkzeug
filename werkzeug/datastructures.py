@@ -423,11 +423,12 @@ class MultiDict(TypeConversionDict):
         :param key: The key to be looked up.
         :raise KeyError: if the key does not exist.
         """
+
         if key in self:
             lst = dict.__getitem__(self, key)
             if len(lst) > 0:
                 return lst[0]
-        raise exceptions.BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError("KeyError: {}".format(key))
 
     def __setitem__(self, key, value):
         """Like :meth:`add` but removes an existing key first.
@@ -633,7 +634,9 @@ class MultiDict(TypeConversionDict):
             lst = dict.pop(self, key)
 
             if len(lst) == 0:
-                raise exceptions.BadRequestKeyError()
+                raise exceptions.BadRequestKeyError(
+                    "KeyError: {}".format(key)
+                )
 
             return lst[0]
         except KeyError as e:
@@ -647,7 +650,7 @@ class MultiDict(TypeConversionDict):
             item = dict.popitem(self)
 
             if len(item[1]) == 0:
-                raise exceptions.BadRequestKeyError()
+                raise exceptions.BadRequestKeyError("KeyError: {}".format(item))
 
             return (item[0], item[1][0])
         except KeyError as e:
@@ -780,7 +783,7 @@ class OrderedMultiDict(MultiDict):
     def __getitem__(self, key):
         if key in self:
             return dict.__getitem__(self, key)[0].value
-        raise exceptions.BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError("KeyError: {}".format(key))
 
     def __setitem__(self, key, value):
         self.poplist(key)
@@ -954,7 +957,7 @@ class Headers(object):
             elif isinstance(key, slice):
                 return self.__class__(self._list[key])
         if not isinstance(key, string_types):
-            raise exceptions.BadRequestKeyError(key)
+            raise exceptions.BadRequestKeyError("KeyError: {}".format(key))
         ikey = key.lower()
         for k, v in self._list:
             if k.lower() == ikey:
@@ -964,7 +967,7 @@ class Headers(object):
         # key error instead of our special one.
         if _get_mode:
             raise KeyError()
-        raise exceptions.BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError("KeyError: {}".format(key))
 
     def __eq__(self, other):
         return other.__class__ is self.__class__ and \
@@ -1411,7 +1414,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         for d in self.dicts:
             if key in d:
                 return d[key]
-        raise exceptions.BadRequestKeyError(key)
+        raise exceptions.BadRequestKeyError("KeyError: {}".format(key))
 
     def get(self, key, default=None, type=None):
         for d in self.dicts:

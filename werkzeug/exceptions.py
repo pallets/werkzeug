@@ -737,8 +737,16 @@ _aborter = Aborter()
 
 #: an exception that is used internally to signal both a key error and a
 #: bad request.  Used by a lot of the datastructures.
-BadRequestKeyError = BadRequest.wrap(KeyError)
+class BadRequestKeyError(KeyError, BadRequest):
+    def __init__(self, message=None, *args, **kwargs):
+        self.message = message
+        super(BadRequestKeyError, self).__init__(*args, **kwargs)
 
+    def get_description(self, environ=None):
+        description = super(BadRequestKeyError, self).get_description(environ=environ)
+        if self.message is not None:
+            description += "<p>{}</p>".format(escape(self.message))
+        return description
 
 # imported here because of circular dependencies of werkzeug.utils
 from werkzeug.utils import escape
