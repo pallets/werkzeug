@@ -61,6 +61,7 @@ import re
 import errno
 import tempfile
 import platform
+import warnings
 from hashlib import md5
 from time import time
 try:
@@ -100,6 +101,11 @@ class BaseCache(object):
     """
 
     def __init__(self, default_timeout=300):
+        warnings.warn(
+            'Werkzeug cache is deperated as of version 0.15 and will be '
+            'removed in version 1.0.',
+            stacklevel=3
+        )
         self.default_timeout = default_timeout
 
     def _normalize_timeout(self, timeout):

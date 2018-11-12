@@ -80,6 +80,9 @@ Unreleased
     (`#1390`_)
 -   In :func:`~security.generate_password_hash`, PBKDF2 uses 150000
     iterations by default, increased from 50000. (`#1377`_)
+-   ``~werkzeug.contrib.cache`` issues a deprecation warning. If you are
+    using flask you can use flask-caching. If you are using Werkzeug you are
+    welcome to extract the caching code into a separate project. (`#1249`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -96,6 +99,7 @@ Unreleased
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
 .. _`#1237`: https://github.com/pallets/werkzeug/pull/1237
 .. _`#1245`: https://github.com/pallets/werkzeug/pull/1245
+.. _`#1249`: https://github.com/pallets/werkzeug/issues/1249
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
 .. _`#1255`: https://github.com/pallets/werkzeug/pull/1255
 .. _`#1259`: https://github.com/pallets/werkzeug/pull/1259

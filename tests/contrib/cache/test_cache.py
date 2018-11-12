@@ -61,6 +61,10 @@ class CacheTestsBase(object):
 
 
 class GenericCacheTests(CacheTestsBase):
+    def test_deprecation_warning(self):
+        with pytest.warns(UserWarning, match='cache is deperated'):
+            cache.BaseCache()
+
     def test_generic_get_dict(self, c):
         assert c.set('a', 'a')
         assert c.set('b', 'b')
@@ -152,13 +156,14 @@ class TestSimpleCache(GenericCacheTests):
         return cache.SimpleCache
 
     def test_purge(self):
-        c = cache.SimpleCache(threshold=2)
-        c.set('a', 'a')
-        c.set('b', 'b')
-        c.set('c', 'c')
-        c.set('d', 'd')
-        # Cache purges old items *before* it sets new ones.
-        assert len(c._cache) == 3
+        with pytest.warns(UserWarning, match='cache is deperated'):
+            c = cache.SimpleCache(threshold=2)
+            c.set('a', 'a')
+            c.set('b', 'b')
+            c.set('c', 'c')
+            c.set('d', 'd')
+            # Cache purges old items *before* it sets new ones.
+            assert len(c._cache) == 3
 
 
 class TestFileSystemCache(GenericCacheTests):
@@ -168,7 +173,8 @@ class TestFileSystemCache(GenericCacheTests):
 
     def test_filesystemcache_prune(self, make_cache):
         THRESHOLD = 13
-        c = make_cache(threshold=THRESHOLD)
+        with pytest.warns(UserWarning, match='cache is deperated'):
+            c = make_cache(threshold=THRESHOLD)
 
         for i in range(2 * THRESHOLD):
             assert c.set(str(i), i)
@@ -188,7 +194,8 @@ class TestFileSystemCache(GenericCacheTests):
 
     def test_no_threshold(self, make_cache):
         THRESHOLD = 0
-        c = make_cache(threshold=THRESHOLD)
+        with pytest.warns(UserWarning, match='cache is deperated'):
+            c = make_cache(threshold=THRESHOLD)
 
         for i in range(10):
             assert c.set(str(i), i)
