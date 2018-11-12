@@ -55,6 +55,7 @@ class CacheTestsBase(object):
 
     @pytest.fixture
     def c(self, make_cache):
+        pytest.skip('Caching is currently unmaintained')
         """Return a cache instance."""
         return make_cache()
 
