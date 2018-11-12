@@ -76,6 +76,8 @@ Unreleased
     ``_empty_stream`` instance. This improves test isolation by preventing
     cases where closing the stream in one request would affect other usages.
     (`#1340`_)
+-   The version of jQuery used by the debugger is updated to 3.3.1.
+    (`#1390`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -110,6 +112,7 @@ Unreleased
 .. _`#1318`: https://github.com/pallets/werkzeug/pull/1318
 .. _`#1338`: https://github.com/pallets/werkzeug/pull/1338
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
+.. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
 
 
 Version 0.14.1
