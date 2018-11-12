@@ -185,11 +185,12 @@ function openShell(consoleNode, target, frameID) {
   var command = $('<input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">')
     .appendTo(form)
     .keydown(function(e) {
-      if (e.charCode == 100 && e.ctrlKey) {
+      if (e.key == 'l' && e.ctrlKey) {
         output.text('--- screen cleared ---');
         return false;
       }
       else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
+        //   handle up arrow and down arrow
         if (e.keyCode == 38 && historyPos > 0)
           historyPos--;
         else if (e.keyCode == 40 && historyPos < history.length)
