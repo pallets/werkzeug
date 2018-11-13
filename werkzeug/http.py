@@ -37,7 +37,7 @@ from werkzeug._internal import _cookie_quote, _make_cookie_domain, \
     _cookie_parse_impl
 from werkzeug._compat import to_unicode, iteritems, text_type, \
     string_types, try_coerce_native, to_bytes, PY2, \
-    integer_types, to_native_unicode
+    integer_types
 
 
 _cookie_charset = 'latin1'
@@ -508,10 +508,8 @@ def parse_authorization_header(value):
             return
         return Authorization(
             'basic', {
-                'username':  to_native_unicode(
-                    username, _basic_auth_charset, allow_none_charset=True),
-                'password': to_native_unicode(
-                    password, _basic_auth_charset, allow_none_charset=True)
+                'username': to_unicode(username, _basic_auth_charset),
+                'password': to_unicode(password, _basic_auth_charset)
             }
         )
     elif auth_type == b'digest':

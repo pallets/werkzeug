@@ -111,13 +111,18 @@ class TestHTTPUtility(object):
     def test_authorization_header(self):
         a = http.parse_authorization_header('Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==')
         assert a.type == 'basic'
-        assert a.username == 'Aladdin'
-        assert a.password == 'open sesame'
+        assert a.username == u'Aladdin'
+        assert a.password == u'open sesame'
 
         a = http.parse_authorization_header('Basic 0YDRg9GB0YHQutC40IE60JHRg9C60LLRiw==')
         assert a.type == 'basic'
         assert a.username == u'русскиЁ'
         assert a.password == u'Буквы'
+
+        a = http.parse_authorization_header('Basic 5pmu6YCa6K+dOuS4reaWhw==')
+        assert a.type == 'basic'
+        assert a.username == u'普通话'
+        assert a.password == u'中文'
 
         a = http.parse_authorization_header('''Digest username="Mufasa",
                      realm="testrealm@host.invalid",

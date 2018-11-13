@@ -84,6 +84,11 @@ Unreleased
     using Flask you can use Flask-Caching. If you are using Werkzeug you
     are welcome to extract the code (see LICENSE) into a separate
     project. (`#1249`_)
+-   :func:`~http.parse_authorization_header` (and
+    :class:`~datastructures.Authorization`,
+    :attr:`~wrappers.Request.authorization`) treats the authorization
+    header as UTF-8. On Python 2, basic auth username and password are
+    ``unicode``. (`#1325`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -117,6 +122,7 @@ Unreleased
 .. _`#1315`: https://github.com/pallets/werkzeug/pull/1315
 .. _`#1316`: https://github.com/pallets/werkzeug/pull/1316
 .. _`#1318`: https://github.com/pallets/werkzeug/pull/1318
+.. _`#1325`: https://github.com/pallets/werkzeug/pull/1325
 .. _`#1338`: https://github.com/pallets/werkzeug/pull/1338
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
 .. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
