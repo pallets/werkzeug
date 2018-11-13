@@ -206,8 +206,18 @@ def test_authorization_mixin():
     })
     a = request.authorization
     strict_eq(a.type, 'basic')
-    strict_eq(a.username, 'Aladdin')
-    strict_eq(a.password, 'open sesame')
+    strict_eq(a.username, u'Aladdin')
+    strict_eq(a.password, u'open sesame')
+
+
+def test_authorization_with_unicode():
+    request = wrappers.Request.from_values(headers={
+        'Authorization': 'Basic 0YDRg9GB0YHQutC40IE60JHRg9C60LLRiw=='
+    })
+    a = request.authorization
+    strict_eq(a.type, 'basic')
+    strict_eq(a.username, u'русскиЁ')
+    strict_eq(a.password, u'Буквы')
 
 
 def test_stream_only_mixing():
