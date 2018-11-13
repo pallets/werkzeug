@@ -13,7 +13,7 @@ import errno
 import pytest
 
 from werkzeug._compat import text_type
-from werkzeug.contrib import cache
+from werkzeug.contrib import WerkzeugContribDeprecationWarning, cache
 
 try:
     import redis
@@ -62,7 +62,7 @@ class CacheTestsBase(object):
 
 class GenericCacheTests(CacheTestsBase):
     def test_deprecation_warning(self):
-        with pytest.warns(UserWarning, match='cache is deperated'):
+        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
             cache.BaseCache()
 
     def test_generic_get_dict(self, c):
@@ -156,7 +156,7 @@ class TestSimpleCache(GenericCacheTests):
         return cache.SimpleCache
 
     def test_purge(self):
-        with pytest.warns(UserWarning, match='cache is deperated'):
+        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
             c = cache.SimpleCache(threshold=2)
             c.set('a', 'a')
             c.set('b', 'b')
@@ -173,7 +173,7 @@ class TestFileSystemCache(GenericCacheTests):
 
     def test_filesystemcache_prune(self, make_cache):
         THRESHOLD = 13
-        with pytest.warns(UserWarning, match='cache is deperated'):
+        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
             c = make_cache(threshold=THRESHOLD)
 
         for i in range(2 * THRESHOLD):
@@ -194,7 +194,7 @@ class TestFileSystemCache(GenericCacheTests):
 
     def test_no_threshold(self, make_cache):
         THRESHOLD = 0
-        with pytest.warns(UserWarning, match='cache is deperated'):
+        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
             c = make_cache(threshold=THRESHOLD)
 
         for i in range(10):

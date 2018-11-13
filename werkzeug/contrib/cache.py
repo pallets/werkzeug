@@ -71,6 +71,7 @@ except ImportError:  # pragma: no cover
 
 from werkzeug._compat import iteritems, string_types, text_type, \
     integer_types, to_native
+from werkzeug.contrib import WerkzeugContribDeprecationWarning
 from werkzeug.posixemulation import rename
 
 
@@ -102,8 +103,9 @@ class BaseCache(object):
 
     def __init__(self, default_timeout=300):
         warnings.warn(
-            'Werkzeug cache is deperated as of version 0.15 and will be '
-            'removed in version 1.0.',
+            'Werkzeug cache is deprecated as of version 0.15 and will'
+            ' be removed in version 1.0.',
+            WerkzeugContribDeprecationWarning,
             stacklevel=3
         )
         self.default_timeout = default_timeout
