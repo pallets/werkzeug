@@ -15,11 +15,13 @@ import io
 import pytest
 import requests
 
-from werkzeug.debug import get_machine_id
+from werkzeug.debug import get_machine_id, DebuggedApplication
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
 from werkzeug.debug.tbtools import Traceback
+from werkzeug.test import Client
+from werkzeug.wrappers import Request, Response
 from werkzeug._compat import PY2
 
 
@@ -199,6 +201,22 @@ class TestDebugHelpers(object):
 
         assert 'Help on list object' in x
         assert '__delitem__' in x
+
+    @pytest.mark.skipif(PY2, reason='Exc from Exc syntax only in py3')
+    def test_exc_divider_found_on_chained_exception(self):
+        @Request.application
+        def app(environ):
+            def do_something():
+                raise ValueError("Inner Exception")
+            try:
+                do_something()
+            except Exception as err: # noqa: ignore=F841
+                eval('raise ValueError("Outer Exception") from e')
+
+        debugged = DebuggedApplication(app)
+        client = Client(debugged, Response)
+        response = client.get("/")
+        assert '<div class="exc-divider">' in response.data.decode('utf-8')
 
 
 class TestTraceback(object):

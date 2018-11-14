@@ -148,6 +148,14 @@ FRAME_HTML = u'''\
 </div>
 '''
 
+CHAIN_HTML = u'''\
+<div class="frame">
+  <h4></h4>
+  <div class="exc-divider">%(plaintext)s:</div>
+</div>
+'''
+
+
 SOURCE_LINE_HTML = u'''\
 <tr class="%(classes)s">
   <td class=lineno>%(lineno)s</td>
@@ -220,6 +228,7 @@ class Traceback(object):
     def __init__(self, exc_type, exc_value, tb):
         self.exc_type = exc_type
         self.exc_value = exc_value
+        self.tb = tb
         if not isinstance(exc_type, str):
             exception_type = exc_type.__name__
             if exc_type.__module__ not in ('__builtin__', 'exceptions'):
@@ -230,10 +239,35 @@ class Traceback(object):
 
         # we only add frames to the list that are not hidden.  This follows
         # the magic variables as defined by paste.exceptions.collector
-        self.frames = []
-        while tb:
-            self.frames.append(Frame(exc_type, exc_value, tb))
-            tb = tb.tb_next
+
+        if PY2:
+            self.frames = []
+            while tb:
+                self.frames.append(Frame(exc_type, exc_value, tb))
+                tb = tb.tb_next
+        else:
+            frames_list = []
+            while True:
+                cur_exc_frame_stack = []
+
+                if getattr(exc_value, "__cause__", None):
+                    cur_exc_frame_stack.append(ChainFrame("__cause__"))
+                elif getattr(exc_value, "__context__", None):
+                    cur_exc_frame_stack.append(ChainFrame("__context__"))
+
+                while tb:
+                    cur_exc_frame_stack.append(Frame(exc_type, exc_value, tb))
+                    tb = tb.tb_next
+                frames_list.insert(0, cur_exc_frame_stack)
+
+                exc_value = exc_value.__cause__ or exc_value.__context__
+                tb = getattr(exc_value, "__traceback__", None)
+                exc_type = type(exc_value)
+
+                if not (exc_value and tb):
+                    break
+
+            self.frames = [frame for fl in frames_list for frame in fl]
 
     def filter_hidden_frames(self):
         """Remove the frames according to the paste spec."""
@@ -277,7 +311,11 @@ class Traceback(object):
 
     def exception(self):
         """String representation of the exception."""
-        buf = traceback.format_exception_only(self.exc_type, self.exc_value)
+        if PY2:
+            buf = traceback.format_exception_only(self.exc_type, self.exc_value)
+        else:
+            buf = traceback.format_exception(self.exc_type, self.exc_value, self.tb,
+                                             chain=True)
         rv = ''.join(buf).strip()
         return rv.decode('utf-8', 'replace') if PY2 else rv
     exception = property(exception)
@@ -383,12 +421,39 @@ class Traceback(object):
     id = property(lambda x: id(x))
 
 
+class ChainFrame(object):
+    """ For chaining tracebacks """
+
+    def __init__(self, chain_type):
+        self.chain_type = chain_type
+        self.filename = ''
+        self.lineno = ''
+        self.function_name = ''
+        self.current_line = ''
+        self.id = ''
+        self.info = ''
+        if self.chain_type == "__cause__":
+            self.plaintext = "The above exception was the direct\
+                              cause of the following exception"
+        elif self.chain_type == "__context__":
+            self.plaintext = "During handling of the above exception,\
+                              another exception occurred"
+
+        self.hide = False
+
+    def render(self):
+        """Render a single frame in a traceback."""
+        return CHAIN_HTML % {
+            'plaintext': self.plaintext,
+        }
+
+
 class Frame(object):
 
     """A single frame in a traceback."""
 
     def __init__(self, exc_type, exc_value, tb):
-        self.lineno = tb.tb_lineno
+        self.lineno = tb.tb_frame.f_lineno
         self.function_name = tb.tb_frame.f_code.co_name
         self.locals = tb.tb_frame.f_locals
         self.globals = tb.tb_frame.f_globals
