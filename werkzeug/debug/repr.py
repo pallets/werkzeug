@@ -154,18 +154,26 @@ class DebugReprGenerator(object):
 
     def string_repr(self, obj, limit=70):
         buf = ['<span class="string">']
-        a = repr(obj[:limit])
-        b = repr(obj[limit:])
-        if isinstance(obj, text_type) and PY2:
-            buf.append('u')
-            a = a[1:]
-            b = b[1:]
-        if b != "''":
-            buf.extend((escape(a[:-1]), '<span class="extended">', escape(b[1:]), '</span>'))
+        r = repr(obj)
+
+        # shorten the repr when the hidden part would be at least 3 chars
+        if len(r) - limit > 2:
+            buf.extend((
+                escape(r[:limit]),
+                '<span class="extended">', escape(r[limit:]), '</span>',
+            ))
         else:
-            buf.append(escape(a))
+            buf.append(escape(r))
+
         buf.append('</span>')
-        return _add_subclass_info(u''.join(buf), obj, (bytes, text_type))
+        out = u"".join(buf)
+
+        # if the repr looks like a standard string, add subclass info if needed
+        if r[0] in "'\"" or (r[0] in "ub" and r[1] in "'\""):
+            return _add_subclass_info(out, obj, (bytes, text_type))
+
+        # otherwise, assume the repr distinguishes the subclass already
+        return out
 
     def dict_repr(self, d, recursive, limit=5):
         if recursive:
@@ -197,7 +205,7 @@ class DebugReprGenerator(object):
             return u'<span class="help">%r</span>' % helper
         if isinstance(obj, (integer_types, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if type(obj) in string_types:
+        if isinstance(obj, string_types) or isinstance(obj, bytes):
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)

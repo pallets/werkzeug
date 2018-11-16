@@ -38,11 +38,28 @@ class TestDebugRepr(object):
         assert debug_repr('') == u'<span class="string">\'\'</span>'
         assert debug_repr('foo') == u'<span class="string">\'foo\'</span>'
         assert debug_repr('s' * 80) == u'<span class="string">\''\
-            + 's' * 70 + '<span class="extended">'\
-            + 's' * 10 + '\'</span></span>'
+            + 's' * 69 + '<span class="extended">'\
+            + 's' * 11 + '\'</span></span>'
         assert debug_repr('<' * 80) == u'<span class="string">\''\
-            + '&lt;' * 70 + '<span class="extended">'\
-            + '&lt;' * 10 + '\'</span></span>'
+            + '&lt;' * 69 + '<span class="extended">'\
+            + '&lt;' * 11 + '\'</span></span>'
+
+    def test_string_subclass_repr(self):
+        class Test(str):
+            pass
+
+        assert debug_repr(Test("foo")) == (
+            u'<span class="module">tests.test_debug.</span>'
+            u'Test(<span class="string">\'foo\'</span>)'
+        )
+
+    @pytest.mark.skipif(not PY2, reason="u prefix on py2 only")
+    def test_unicode_repr(self):
+        assert debug_repr(u"foo") == u'<span class="string">u\'foo\'</span>'
+
+    @pytest.mark.skipif(PY2, reason="b prefix on py3 only")
+    def test_bytes_repr(self):
+        assert debug_repr(b"foo") == u'<span class="string">b\'foo\'</span>'
 
     def test_sequence_repr(self):
         assert debug_repr(list(range(20))) == (

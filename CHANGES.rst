@@ -78,6 +78,8 @@ Unreleased
     (`#1340`_)
 -   The version of jQuery used by the debugger is updated to 3.3.1.
     (`#1390`_)
+-   The debugger correctly renders long ``markupsafe.Markup`` instances.
+    (`#1393`_)
 -   In :func:`~security.generate_password_hash`, PBKDF2 uses 150000
     iterations by default, increased from 50000. (`#1377`_)
 -   ``werkzeug.contrib.cache`` issues a deprecation warning. If you are
@@ -127,6 +129,7 @@ Unreleased
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
 .. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
+.. _`#1393`: https://github.com/pallets/werkzeug/pull/1393
 
 
 Version 0.14.1
