@@ -154,26 +154,23 @@ class DebugReprGenerator(object):
 
     def string_repr(self, obj, limit=70):
         buf = ['<span class="string">']
-        a = repr(obj[:limit])
-        b = repr(obj[limit:])
+        r = repr(obj)
 
-        for prefix, suffix_len in (("u", None), ("b", None), ("Markup(", -1)):
-            if a.startswith(prefix):
-                if suffix_len is None:
-                    buf.append(prefix)
-                a = a[len(prefix):suffix_len]
-                b = b[len(prefix):suffix_len]
-                break
-
-        if b != "''":
-            buf.extend(
-                (escape(a[:-1]), '<span class="extended">', escape(b[1:]), '</span>')
-            )
+        if len(r) - limit > 2:
+            buf.extend((
+                escape(r[:limit]),
+                '<span class="extended">', escape(r[limit:]), '</span>',
+            ))
         else:
-            buf.append(escape(a))
+            buf.append(escape(r))
 
         buf.append('</span>')
-        return _add_subclass_info(u''.join(buf), obj, (bytes, text_type))
+        out = u"".join(buf)
+
+        if out.startswith(("'", '"', "u", "b")):
+            return _add_subclass_info(out, obj, (bytes, text_type))
+
+        return out
 
     def dict_repr(self, d, recursive, limit=5):
         if recursive:
