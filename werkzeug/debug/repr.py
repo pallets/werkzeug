@@ -156,14 +156,22 @@ class DebugReprGenerator(object):
         buf = ['<span class="string">']
         a = repr(obj[:limit])
         b = repr(obj[limit:])
-        if isinstance(obj, text_type) and PY2:
-            buf.append('u')
-            a = a[1:]
-            b = b[1:]
+
+        for prefix, suffix_len in (("u", None), ("b", None), ("Markup(", -1)):
+            if a.startswith(prefix):
+                if suffix_len is None:
+                    buf.append(prefix)
+                a = a[len(prefix):suffix_len]
+                b = b[len(prefix):suffix_len]
+                break
+
         if b != "''":
-            buf.extend((escape(a[:-1]), '<span class="extended">', escape(b[1:]), '</span>'))
+            buf.extend(
+                (escape(a[:-1]), '<span class="extended">', escape(b[1:]), '</span>')
+            )
         else:
             buf.append(escape(a))
+
         buf.append('</span>')
         return _add_subclass_info(u''.join(buf), obj, (bytes, text_type))
 
@@ -197,7 +205,7 @@ class DebugReprGenerator(object):
             return u'<span class="help">%r</span>' % helper
         if isinstance(obj, (integer_types, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if type(obj) in string_types:
+        if isinstance(obj, string_types) or isinstance(obj, bytes):
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)
