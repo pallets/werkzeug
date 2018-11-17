@@ -1,70 +1,57 @@
 os: linux
 sudo: false
 language: python
+python:
+  - "3.6"
+  - "3.5"
+  - "3.4"
+  - "2.7"
+  - "nightly"
+  - "pypy3"
+env: TOXENV=py,codecov
 
 matrix:
   include:
-    - python: 3.6
-      env: TOXENV=hypothesis-uwsgi,codecov,stylecheck,docs-html
-    - python: 3.5
-      env: TOXENV=py,codecov
-    - python: 3.4
-      env: TOXENV=py,codecov
-    - python: 2.7
-      env: TOXENV=py,codecov
-    - python: pypy
-      env: TOXENV=py,codecov
-    - python: nightly
-      env: TOXENV=py
+    - dist: xenial
+      sudo: required
+      python: "3.7"
+    - env: TOXENV=stylecheck,docs-html
     - os: osx
       language: generic
-      env: TOXENV=py
+      env: TOXENV=py3,py2,codecov
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - $HOME/Library/Caches/pip
   allow_failures:
     - python: nightly
-      env: TOXENV=py
+    - python: pypy3
     - os: osx
-      language: generic
-      env: TOXENV=py
   fast_finish: true
 
 before_install:
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        brew update;
-        brew install python3 redis memcached;
-        virtualenv -p python3 ~/py-env;
-        . ~/py-env/bin/activate;
-      fi
-    # Travis uses an outdated PyPy, this installs a more recent one.
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "pypy" ]]; then
-        git clone https://github.com/pyenv/pyenv.git ~/.pyenv;
-        PYENV_ROOT="$HOME/.pyenv";
-        PATH="$PYENV_ROOT/bin:$PATH";
-        eval "$(pyenv init -)";
-        pyenv install pypy2.7-5.8.0;
-        pyenv global pypy2.7-5.8.0;
-      fi
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "pypy3" ]]; then
-        git clone https://github.com/pyenv/pyenv.git ~/.pyenv;
-        PYENV_ROOT="$HOME/.pyenv";
-        PATH="$PYENV_ROOT/bin:$PATH";
-        eval "$(pyenv init -)";
-        pyenv install pypy3.5-5.8.0;
-        pyenv global pypy3.5-5.8.0;
-      fi
+  - |
+    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+      brew upgrade python
+      brew install python@2
+      export PATH="/usr/local/opt/python/libexec/bin:${PATH}"
+    fi
 
 install:
-  - pip install tox
+  - pip install -U tox
 
 script:
-  - tox
+  - tox --skip-missing-interpreters false
 
 cache:
-  - pip
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.cache/pre-commit
 
 branches:
   only:
     - master
-    - /^.*-maintenance$/
+    - /^\d+(\.\d+)*(\.x|-maintenance)?$/
 
 notifications:
   email: false

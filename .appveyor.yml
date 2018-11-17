@@ -1,23 +1,26 @@
 environment:
   global:
-    TOXENV: py
+    TOXENV: py,codecov
 
   matrix:
-    - PYTHON: C:\Python36
-    - PYTHON: C:\Python27
+    - PYTHON: C:\Python37-x64
+    - PYTHON: C:\Python27-x64
 
 init:
   - SET PATH=%PYTHON%;%PATH%
 
 install:
-  - python -m pip install -U pip setuptools wheel tox
+  - python -m pip install -U tox
 
 build: false
 
 test_script:
-  - python -m tox
+  - python -m tox --skip-missing-interpreters false
 
 branches:
   only:
     - master
-    - /^.*-maintenance$/
+    - /^\d+(\.\d+)*(\.x|-maintenance)?$/
+
+cache:
+  - '%LOCALAPPDATA%\pip\Cache'
