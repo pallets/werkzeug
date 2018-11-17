@@ -9,6 +9,8 @@
 from __future__ import print_function, with_statement
 
 from itertools import count
+
+import logging
 import os
 import signal
 import sys
@@ -16,6 +18,7 @@ import textwrap
 import time
 
 import pytest
+from xprocess import ProcessStarter
 
 from werkzeug import serving
 from werkzeug._compat import to_bytes
@@ -46,10 +49,17 @@ def _patch_reloader_loop():
     werkzeug._reloader.ReloaderLoop._sleep = staticmethod(f)
 
 
+pid_logger = logging.getLogger("get_pid_middleware")
+pid_logger.setLevel(logging.INFO)
+pid_handler = logging.StreamHandler(sys.stdout)
+pid_logger.addHandler(pid_handler)
+
+
 def _get_pid_middleware(f):
     def inner(environ, start_response):
         if environ['PATH_INFO'] == '/_getpid':
             start_response('200 OK', [('Content-Type', 'text/plain')])
+            pid_logger.info("pid=%s", os.getpid())
             return [to_bytes(str(os.getpid()))]
         return f(environ, start_response)
     return inner
@@ -150,11 +160,14 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
 
         info = _ServerInfo(xprocess, addr, requests_url, port)
 
-        def preparefunc(cwd):
+        class Starter(ProcessStarter):
             args = [sys.executable, __file__, str(tmpdir)]
-            return lambda: 'pid=%s' % info.request_pid(), args
 
-        xprocess.ensure('dev_server', preparefunc, restart=True)
+            @property
+            def pattern(self):
+                return "pid=%s" % info.request_pid()
+
+        xprocess.ensure('dev_server', Starter, restart=True)
 
         @request.addfinalizer
         def teardown():
