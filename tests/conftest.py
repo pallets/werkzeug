@@ -12,8 +12,11 @@ from itertools import count
 
 import logging
 import os
+import platform
 import signal
 import sys
+
+import subprocess
 import textwrap
 import time
 
@@ -175,7 +178,11 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
             # parent process attached. xprocess is confused about Werkzeug's
             # reloader and won't help here.
             pid = info.request_pid()
-            if pid:
+            if not pid:
+                return
+            if platform.system() == "Windows":
+                subprocess.call(["taskkill", "/F", "/T", "/PID", str(pid)])
+            else:
                 os.killpg(os.getpgid(pid), signal.SIGTERM)
 
         return info
