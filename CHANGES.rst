@@ -95,6 +95,8 @@ Unreleased
     message to the description, making it clearer what caused the 400
     error. Frameworks like Flask can omit this information in production
     by setting ``e.args = ()``. (`#1395`_)
+-   Add support for status code 424 :exc:`~exceptions.FailedDependency`.
+    (`#1358`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -131,6 +133,7 @@ Unreleased
 .. _`#1325`: https://github.com/pallets/werkzeug/pull/1325
 .. _`#1338`: https://github.com/pallets/werkzeug/pull/1338
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
+.. _`#1358`: https://github.com/pallets/werkzeug/pull/1358
 .. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
 .. _`#1393`: https://github.com/pallets/werkzeug/pull/1393
