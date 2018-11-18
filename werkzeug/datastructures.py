@@ -423,6 +423,7 @@ class MultiDict(TypeConversionDict):
         :param key: The key to be looked up.
         :raise KeyError: if the key does not exist.
         """
+
         if key in self:
             lst = dict.__getitem__(self, key)
             if len(lst) > 0:
@@ -633,13 +634,13 @@ class MultiDict(TypeConversionDict):
             lst = dict.pop(self, key)
 
             if len(lst) == 0:
-                raise exceptions.BadRequestKeyError()
+                raise exceptions.BadRequestKeyError(key)
 
             return lst[0]
-        except KeyError as e:
+        except KeyError:
             if default is not _missing:
                 return default
-            raise exceptions.BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(key)
 
     def popitem(self):
         """Pop an item from the dict."""
@@ -647,11 +648,11 @@ class MultiDict(TypeConversionDict):
             item = dict.popitem(self)
 
             if len(item[1]) == 0:
-                raise exceptions.BadRequestKeyError()
+                raise exceptions.BadRequestKeyError(item)
 
             return (item[0], item[1][0])
         except KeyError as e:
-            raise exceptions.BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(e.args[0])
 
     def poplist(self, key):
         """Pop the list for a key from the dict.  If the key is not in the dict
@@ -668,7 +669,7 @@ class MultiDict(TypeConversionDict):
         try:
             return dict.popitem(self)
         except KeyError as e:
-            raise exceptions.BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(e.args[0])
 
     def __copy__(self):
         return self.copy()
@@ -864,10 +865,10 @@ class OrderedMultiDict(MultiDict):
     def pop(self, key, default=_missing):
         try:
             buckets = dict.pop(self, key)
-        except KeyError as e:
+        except KeyError:
             if default is not _missing:
                 return default
-            raise exceptions.BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(key)
         for bucket in buckets:
             bucket.unlink(self)
         return buckets[0].value
@@ -876,7 +877,7 @@ class OrderedMultiDict(MultiDict):
         try:
             key, buckets = dict.popitem(self)
         except KeyError as e:
-            raise exceptions.BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(e.args[0])
         for bucket in buckets:
             bucket.unlink(self)
         return key, buckets[0].value
@@ -885,7 +886,7 @@ class OrderedMultiDict(MultiDict):
         try:
             key, buckets = dict.popitem(self)
         except KeyError as e:
-            raise exceptions.BadRequestKeyError(str(e))
+            raise exceptions.BadRequestKeyError(e.args[0])
         for bucket in buckets:
             bucket.unlink(self)
         return key, [x.value for x in buckets]

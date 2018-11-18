@@ -84,21 +84,44 @@ class HTTPException(Exception):
     description = None
 
     def __init__(self, description=None, response=None):
-        Exception.__init__(self)
+        super(Exception, self).__init__()
         if description is not None:
             self.description = description
         self.response = response
 
     @classmethod
     def wrap(cls, exception, name=None):
-        """This method returns a new subclass of the exception provided that
-        also is a subclass of `BadRequest`.
+        """Create an exception that is a subclass of the calling HTTP
+        exception and the ``exception`` argument.
+
+        The first argument to the class will be passed to the
+        wrapped ``exception``, the rest to the HTTP exception. If
+        ``self.args`` is not empty, the wrapped exception message is
+        added to the HTTP exception description.
+
+        .. versionchanged:: 0.15
+            The description includes the wrapped exception message.
         """
         class newcls(cls, exception):
-
             def __init__(self, arg=None, *args, **kwargs):
-                cls.__init__(self, *args, **kwargs)
-                exception.__init__(self, arg)
+                super(cls, self).__init__(*args, **kwargs)
+
+                if arg is None:
+                    exception.__init__(self)
+                else:
+                    exception.__init__(self, arg)
+
+            def get_description(self, environ=None):
+                out = super(cls, self).get_description(environ=environ)
+
+                if self.args:
+                    out += "<p><pre><code>{}: {}</code></pre></p>".format(
+                        exception.__name__,
+                        escape(exception.__str__(self))
+                    )
+
+                return out
+
         newcls.__module__ = sys._getframe(1).f_globals.get('__name__')
         newcls.__name__ = name or cls.__name__ + exception.__name__
         return newcls
@@ -738,7 +761,6 @@ _aborter = Aborter()
 #: an exception that is used internally to signal both a key error and a
 #: bad request.  Used by a lot of the datastructures.
 BadRequestKeyError = BadRequest.wrap(KeyError)
-
 
 # imported here because of circular dependencies of werkzeug.utils
 from werkzeug.utils import escape
