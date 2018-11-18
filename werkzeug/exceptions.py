@@ -543,6 +543,20 @@ class Locked(HTTPException):
     )
 
 
+class FailedDependency(HTTPException):
+
+    """*424* `Failed Dependency`
+
+    Used if the method could not be performed on the resource
+    because the requested action depended on another action and that action failed.
+    """
+    code = 424
+    description = (
+        'The method could not be performed on the resource because the requested action '
+        'depended on another action and that action failed.'
+    )
+
+
 class PreconditionRequired(HTTPException):
 
     """*428* `Precondition Required`
