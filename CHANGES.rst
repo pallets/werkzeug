@@ -91,6 +91,10 @@ Unreleased
     :attr:`~wrappers.Request.authorization`) treats the authorization
     header as UTF-8. On Python 2, basic auth username and password are
     ``unicode``. (`#1325`_)
+-   :class:`~exceptions.BadRequestKeyError` adds the ``KeyError``
+    message to the description, making it clearer what caused the 400
+    error. Frameworks like Flask can omit this information in production
+    by setting ``e.args = ()``. (`#1395`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -130,6 +134,7 @@ Unreleased
 .. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
 .. _`#1393`: https://github.com/pallets/werkzeug/pull/1393
+.. _`#1395`: https://github.com/pallets/werkzeug/pull/1395
 
 
 Version 0.14.1
