@@ -377,7 +377,7 @@ class TestMultiDict(_MutableMultiDictTests):
 
         md.setlistdefault('empty', [])
 
-        with pytest.raises(KeyError):
+        with pytest.raises(BadRequestKeyError):
             md.popitem()
 
     def test_setlistdefault(self):
@@ -545,19 +545,19 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert sorted(iterkeys(ab)) == ["key_a", "key_b"]
 
     def test_get_description(self):
-        test_item = ('foo', 'bar')
-        instance = datastructures.OrderedMultiDict((test_item, ))
-        with pytest.raises(BadRequestKeyError) as bad_request_error:
-            instance['baz']
+        data = datastructures.OrderedMultiDict()
 
-        assert 'baz' in bad_request_error.value.get_description()
+        with pytest.raises(BadRequestKeyError) as exc_info:
+            data['baz']
 
-        with pytest.raises(BadRequestKeyError) as bad_request_error:
-            instance.pop('baz')
-        assert 'baz' in bad_request_error.value.get_description()
+        assert 'baz' in exc_info.value.get_description()
 
-        bad_request_error.value.message = None
-        assert 'baz' not in bad_request_error.value.get_description()
+        with pytest.raises(BadRequestKeyError) as exc_info:
+            data.pop('baz')
+
+        assert 'baz' in exc_info.value.get_description()
+        exc_info.value.args = ()
+        assert 'baz' not in exc_info.value.get_description()
 
 
 class TestTypeConversionDict(object):
