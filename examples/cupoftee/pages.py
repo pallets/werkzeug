@@ -24,7 +24,7 @@ class ServerList(Page):
         desc = False
         if name == self.order_by:
             desc = not self.order_desc
-            cls = ' class="%s"' % (desc and 'down' or 'up')
+            cls = ' class="%s"' % ('down' if desc else 'up')
         if desc:
             link += '&amp;dir=desc'
         return '<a href="%s"%s>%s</a>' % (link, cls, title)

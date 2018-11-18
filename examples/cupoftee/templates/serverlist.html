@@ -27,7 +27,7 @@
       <td>$escape(server.map)</td>
       <td>$server.gametype</td>
       <td>$server.player_count / $server.max_players</td>
-      <td>${server.progression >= 0 and '%d%%' % server.progression or '?'}</td>
+      <td>${'%d%%' % server.progression if server.progression >= 0 else '?'}</td>
     </tr>
     <% endfor %>
   </tbody>

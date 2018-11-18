@@ -186,7 +186,7 @@ def render_testapp(req):
         if expanded:
             class_.append('exp')
         sys_path.append('<li%s>%s' % (
-            class_ and ' class="%s"' % ' '.join(class_) or '',
+            ' class="%s"' % ' '.join(class_) if class_ else '',
             escape(item)
         ))
 

@@ -21,14 +21,14 @@
           <th class="actions">Actions</th>
         </tr>
         <tr py:for="idx, revision in enumerate(page.revisions)"
-            class="${idx % 2 == 1 and 'even' or 'odd'}">
+            class="${'even' if idx % 2 == 1 else 'odd'}">
           <td class="timestamp">${format_datetime(revision.timestamp)}</td>
           <td class="change_note">${revision.change_note}</td>
           <td class="diff">
             <input type="radio" name="old" value="${revision.revision_id}"
-                   checked="${idx == 1 and 'checked' or None}" />
+                   checked="${'checked' if idx == 1 else None}" />
             <input type="radio" name="new" value="${revision.revision_id}"
-                   checked="${idx == 0 and 'checked' or None}" />
+                   checked="${'checked' if idx == 0 else None}" />
           </td>
           <td class="actions">
             <a href="${href(page.name, rev=revision.revision_id)}">show</a>

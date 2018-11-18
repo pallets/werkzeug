@@ -283,6 +283,6 @@ class DebugReprGenerator(object):
             html_items.append('<tr><td><em>Nothing</em>')
         return OBJECT_DUMP_HTML % {
             'title':    escape(title),
-            'repr':     repr and '<pre class=repr>%s</pre>' % repr or '',
+            'repr':     '<pre class=repr>%s</pre>' % repr if repr else '',
             'items':    '\n'.join(html_items)
         }
