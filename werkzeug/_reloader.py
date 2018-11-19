@@ -64,7 +64,7 @@ def _get_args_for_reloading():
     a program other than python)
     """
     rv = [sys.executable]
-    py_script = sys.argv[0]
+    py_script = os.path.abspath(sys.argv[0])
 
     if os.name == 'nt' and not os.path.exists(py_script) and \
        os.path.exists(py_script + '.exe'):
