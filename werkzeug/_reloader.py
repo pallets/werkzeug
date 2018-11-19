@@ -65,16 +65,20 @@ def _get_args_for_reloading():
     """
     rv = [sys.executable]
     py_script = sys.argv[0]
+
     if os.name == 'nt' and not os.path.exists(py_script) and \
        os.path.exists(py_script + '.exe'):
         py_script += '.exe'
 
-    windows_workaround = (os.path.splitext(rv[0])[1] == '.exe' and
-                          os.path.splitext(py_script)[1] == '.exe')
-    nix_workaround = (os.path.isfile(py_script) and
-                      os.access(py_script, os.X_OK))
+    windows_workaround = (
+        os.path.splitext(rv[0])[1] == '.exe'
+        and os.path.splitext(py_script)[1] == '.exe'
+    )
+    nix_workaround = os.path.isfile(py_script) and os.access(py_script, os.X_OK)
+
     if windows_workaround or nix_workaround:
         rv.pop(0)
+
     rv.append(py_script)
     rv.extend(sys.argv[1:])
     return rv

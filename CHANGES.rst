@@ -97,6 +97,9 @@ Unreleased
     by setting ``e.args = ()``. (`#1395`_)
 -   Add support for status code 424 :exc:`~exceptions.FailedDependency`.
     (`#1358`_)
+-   The reloader will not prepend the Python executable to the command
+    line if the Python file is marked executable. This allows the
+    reloader to work on NixOS. (`#1242`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -112,6 +115,7 @@ Unreleased
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
 .. _`#1237`: https://github.com/pallets/werkzeug/pull/1237
+.. _`#1242`: https://github.com/pallets/werkzeug/pull/1242
 .. _`#1245`: https://github.com/pallets/werkzeug/pull/1245
 .. _`#1249`: https://github.com/pallets/werkzeug/issues/1249
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
