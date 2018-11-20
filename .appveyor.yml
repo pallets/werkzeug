@@ -15,7 +15,7 @@ install:
 build: false
 
 test_script:
-  - python -m tox --skip-missing-interpreters false
+  - python -m tox --skip-missing-interpreters false -- -s tests\test_serving.py::test_reloader_broken_imports
 
 branches:
   only:

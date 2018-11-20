@@ -112,6 +112,7 @@ class _ServerInfo(object):
     def wait_for_reloader(self):
         old_pid = self.last_pid
         for i in range(20):
+            print("wait for reloader", i)
             time.sleep(0.1 * i)
             new_pid = self.request_pid()
             if not new_pid:
@@ -122,6 +123,7 @@ class _ServerInfo(object):
 
     def wait_for_reloader_loop(self):
         for i in range(20):
+            print("wait for reloader loop", i)
             time.sleep(0.1 * i)
             line = self.logfile.readline()
             if 'reloader loop finished' in line:
