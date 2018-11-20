@@ -9,13 +9,19 @@
 from __future__ import print_function, with_statement
 
 from itertools import count
+
+import logging
 import os
+import platform
 import signal
 import sys
+
+import subprocess
 import textwrap
 import time
 
 import pytest
+from xprocess import ProcessStarter
 
 from werkzeug import serving
 from werkzeug._compat import to_bytes
@@ -46,10 +52,17 @@ def _patch_reloader_loop():
     werkzeug._reloader.ReloaderLoop._sleep = staticmethod(f)
 
 
+pid_logger = logging.getLogger("get_pid_middleware")
+pid_logger.setLevel(logging.INFO)
+pid_handler = logging.StreamHandler(sys.stdout)
+pid_logger.addHandler(pid_handler)
+
+
 def _get_pid_middleware(f):
     def inner(environ, start_response):
         if environ['PATH_INFO'] == '/_getpid':
             start_response('200 OK', [('Content-Type', 'text/plain')])
+            pid_logger.info("pid=%s", os.getpid())
             return [to_bytes(str(os.getpid()))]
         return f(environ, start_response)
     return inner
@@ -99,16 +112,18 @@ class _ServerInfo(object):
     def wait_for_reloader(self):
         old_pid = self.last_pid
         for i in range(20):
+            print("wait for reloader", i)
             time.sleep(0.1 * i)
             new_pid = self.request_pid()
             if not new_pid:
                 raise RuntimeError('Server is down.')
-            if self.request_pid() != old_pid:
+            if new_pid != old_pid:
                 return
         raise RuntimeError('Server did not reload.')
 
     def wait_for_reloader_loop(self):
         for i in range(20):
+            print("wait for reloader loop", i)
             time.sleep(0.1 * i)
             line = self.logfile.readline()
             if 'reloader loop finished' in line:
@@ -150,11 +165,14 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
 
         info = _ServerInfo(xprocess, addr, requests_url, port)
 
-        def preparefunc(cwd):
+        class Starter(ProcessStarter):
             args = [sys.executable, __file__, str(tmpdir)]
-            return lambda: 'pid=%s' % info.request_pid(), args
 
-        xprocess.ensure('dev_server', preparefunc, restart=True)
+            @property
+            def pattern(self):
+                return "pid=%s" % info.request_pid()
+
+        xprocess.ensure('dev_server', Starter, restart=True)
 
         @request.addfinalizer
         def teardown():
@@ -162,7 +180,11 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
             # parent process attached. xprocess is confused about Werkzeug's
             # reloader and won't help here.
             pid = info.request_pid()
-            if pid:
+            if not pid:
+                return
+            if platform.system() == "Windows":
+                subprocess.call(["taskkill", "/F", "/T", "/PID", str(pid)])
+            else:
                 os.killpg(os.getpgid(pid), signal.SIGTERM)
 
         return info

@@ -102,7 +102,7 @@ def test_stdlib_ssl_contexts(dev_server, tmpdir):
 
     import ssl
     ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-    ctx.load_cert_chain("%s", "%s")
+    ctx.load_cert_chain(r"%s", r"%s")
     kwargs['ssl_context'] = ctx
     ''' % (certificate, private_key))
 
@@ -157,7 +157,9 @@ def test_reloader_broken_imports(tmpdir, dev_server):
     kwargs['reloader_interval'] = 0.1
     kwargs['reloader_type'] = 'watchdog'
     ''')
+    print("dev server set up")
     server.wait_for_reloader_loop()
+    print("reloader loop done")
 
     r = requests.get(server.url)
     assert r.status_code == 500
@@ -167,7 +169,9 @@ def test_reloader_broken_imports(tmpdir, dev_server):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'hello']
     '''))
+    print("real app written")
     server.wait_for_reloader()
+    print("reloader triggered")
 
     r = requests.get(server.url)
     assert r.status_code == 200
@@ -242,7 +246,8 @@ def test_reloader_reports_correct_file(tmpdir, dev_server):
     server.wait_for_reloader()
 
     change_event = " * Detected change in '%(path)s', reloading" % {
-        'path': real_app_binary
+        # need to double escape Windows paths
+        'path': str(real_app_binary).replace("\\", "\\\\")
     }
     server.logfile.seek(0)
     for i in range(20):
