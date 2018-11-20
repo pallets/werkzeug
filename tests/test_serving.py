@@ -157,9 +157,7 @@ def test_reloader_broken_imports(tmpdir, dev_server):
     kwargs['reloader_interval'] = 0.1
     kwargs['reloader_type'] = 'watchdog'
     ''')
-    print("dev server set up")
     server.wait_for_reloader_loop()
-    print("reloader loop done")
 
     r = requests.get(server.url)
     assert r.status_code == 500
@@ -169,9 +167,7 @@ def test_reloader_broken_imports(tmpdir, dev_server):
         start_response('200 OK', [('Content-Type', 'text/html')])
         return [b'hello']
     '''))
-    print("real app written")
     server.wait_for_reloader()
-    print("reloader triggered")
 
     r = requests.get(server.url)
     assert r.status_code == 200
