@@ -116,7 +116,7 @@ class _ServerInfo(object):
             new_pid = self.request_pid()
             if not new_pid:
                 raise RuntimeError('Server is down.')
-            if self.request_pid() != old_pid:
+            if new_pid != old_pid:
                 return
         raise RuntimeError('Server did not reload.')
 
