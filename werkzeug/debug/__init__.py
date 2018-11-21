@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import pkgutil
 import re
 import sys
 import uuid
@@ -18,7 +19,7 @@ import getpass
 import hashlib
 import mimetypes
 from itertools import chain
-from os.path import join, dirname, basename, isfile
+from os.path import join, basename
 from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
 from werkzeug.http import parse_cookie
 from werkzeug.debug.tbtools import get_current_traceback, render_console_html
@@ -350,15 +351,15 @@ class DebuggedApplication(object):
 
     def get_resource(self, request, filename):
         """Return a static resource from the shared folder."""
-        filename = join(dirname(__file__), 'shared', basename(filename))
-        if isfile(filename):
+        filename = join('shared', basename(filename))
+        try:
+            data = pkgutil.get_data(__package__, filename)
+        except OSError:
+            data = None
+        if data is not None:
             mimetype = mimetypes.guess_type(filename)[0] \
                 or 'application/octet-stream'
-            f = open(filename, 'rb')
-            try:
-                return Response(f.read(), mimetype=mimetype)
-            finally:
-                f.close()
+            return Response(data, mimetype=mimetype)
         return Response('Not Found', status=404)
 
     def check_pin_trust(self, environ):
