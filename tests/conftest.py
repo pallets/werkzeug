@@ -21,7 +21,6 @@ import textwrap
 import time
 
 import pytest
-from xprocess import ProcessStarter
 
 from werkzeug import serving
 from werkzeug._compat import to_bytes
@@ -162,6 +161,8 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
             requests_url = 'http://localhost:{0}'.format(port)
 
         info = _ServerInfo(xprocess, addr, requests_url, port)
+
+        from xprocess import ProcessStarter
 
         class Starter(ProcessStarter):
             args = [sys.executable, __file__, str(tmpdir)]
