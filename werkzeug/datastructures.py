@@ -1161,6 +1161,7 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        _key = _unicodify_header_value(_key)
         _value = _unicodify_header_value(_value)
         self._validate_value(_value)
         self._list.append((_key, _value))
@@ -1201,6 +1202,7 @@ class Headers(object):
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
+        _key = _unicodify_header_value(_key)
         _value = _unicodify_header_value(_value)
         self._validate_value(_value)
         if not self._list:
@@ -1236,7 +1238,10 @@ class Headers(object):
         if isinstance(key, (slice, integer_types)):
             if isinstance(key, integer_types):
                 value = [value]
-            value = [(k, _unicodify_header_value(v)) for (k, v) in value]
+            value = [
+                (_unicodify_header_value(k), _unicodify_header_value(v))
+                for (k, v) in value
+            ]
             [self._validate_value(v) for (k, v) in value]
             if isinstance(key, integer_types):
                 self._list[key] = value[0]
