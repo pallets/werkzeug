@@ -107,12 +107,16 @@ Unreleased
 -   The debugger can serve resources when Werkzeug is installed as a
     zip file. ``DebuggedApplication.get_resource`` uses
     ``pkgutil.get_data``. (`#1401`_)
+-   If a nested ``ImportError`` occurs from :func:`~utils.import_string`
+    the traceback mentions the nested import. Removes an untested code
+    path for handling "modules not yet set up by the parent." (`#735`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
 .. _`#693`: https://github.com/pallets/werkzeug/pull/693
 .. _`#718`: https://github.com/pallets/werkzeug/pull/718
 .. _`#724`: https://github.com/pallets/werkzeug/pull/724
+.. _`#735`: https://github.com/pallets/werkzeug/pull/735
 .. _`#740`: https://github.com/pallets/werkzeug/issues/740
 .. _`#768`: https://github.com/pallets/werkzeug/pull/768
 .. _`#772`: https://github.com/pallets/werkzeug/pull/772
