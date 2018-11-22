@@ -601,7 +601,7 @@ def get_sockaddr(host, port, family):
         return host.split('://', 1)[1]
     try:
         res = socket.getaddrinfo(
-            host, port, family, socket.SOCK_STREAM, socket.SOL_TCP)
+            host, port, family, socket.SOCK_STREAM, socket.IPPROTO_TCP)
     except socket.gaierror:
         return host, port
     return res[0][4]
