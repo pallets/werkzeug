@@ -104,6 +104,9 @@ Unreleased
     will be decoded as Latin-1 like values are. (`#1346`_)
 -   Server uses ``IPPROTO_TCP`` constant instead of ``SOL_TCP`` for
     Jython compatibility. (`#1375`_)
+-   The debugger can serve resources when Werkzeug is installed as a
+    zip file. ``DebuggedApplication.get_resource`` uses
+    ``pkgutil.get_data``. (`#1401`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -148,6 +151,7 @@ Unreleased
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
 .. _`#1393`: https://github.com/pallets/werkzeug/pull/1393
 .. _`#1395`: https://github.com/pallets/werkzeug/pull/1395
+.. _`#1401`: https://github.com/pallets/werkzeug/pull/1401
 
 
 Version 0.14.1
