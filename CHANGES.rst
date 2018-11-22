@@ -110,6 +110,10 @@ Unreleased
 -   If a nested ``ImportError`` occurs from :func:`~utils.import_string`
     the traceback mentions the nested import. Removes an untested code
     path for handling "modules not yet set up by the parent." (`#735`_)
+-   ``CGIRootFix`` no longer modifies ``PATH_INFO`` for very old
+    versions of Lighttpd. ``LighttpdCGIRootFix`` was renamed to
+    ``CGIRootFix`` in 0.9. The old name emits a deprecation warning and
+    will be removed in the next version. (`#1141`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -123,6 +127,7 @@ Unreleased
 .. _`#795`: https://github.com/pallets/werkzeug/pull/795
 .. _`#1019`: https://github.com/pallets/werkzeug/issues/1019
 .. _`#1023`: https://github.com/pallets/werkzeug/issues/1023
+.. _`#1141`: https://github.com/pallets/werkzeug/issues/1141
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
 .. _`#1237`: https://github.com/pallets/werkzeug/pull/1237

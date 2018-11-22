@@ -18,6 +18,8 @@
 """
 import warnings
 
+from werkzeug.contrib import WerkzeugContribDeprecationWarning
+
 try:
     from urllib import unquote
 except ImportError:
@@ -30,38 +32,37 @@ from werkzeug.datastructures import Headers, ResponseCacheControl
 
 
 class CGIRootFix(object):
-
-    """Wrap the application in this middleware if you are using FastCGI or CGI
-    and you have problems with your app root being set to the cgi script's path
-    instead of the path users are going to visit
+    """Wrap the application in this middleware if you are using FastCGI
+    or CGI and you have problems with your app root being set to the CGI
+    script's path instead of the path users are going to visit.
 
     .. versionchanged:: 0.9
-       Added `app_root` parameter and renamed from `LighttpdCGIRootFix`.
+        Added `app_root` parameter and renamed from
+        ``LighttpdCGIRootFix``.
 
     :param app: the WSGI application
-    :param app_root: Defaulting to ``'/'``, you can set this to something else
-        if your app is mounted somewhere else.
+    :param app_root: Defaulting to ``'/'``, you can set this to
+        something else if your app is mounted somewhere else.
     """
 
     def __init__(self, app, app_root='/'):
         self.app = app
-        self.app_root = app_root
+        self.app_root = app_root.strip("/")
 
     def __call__(self, environ, start_response):
-        # only set PATH_INFO for older versions of Lighty or if no
-        # server software is provided.  That's because the test was
-        # added in newer Werkzeug versions and we don't want to break
-        # people's code if they are using this fixer in a test that
-        # does not set the SERVER_SOFTWARE key.
-        if 'SERVER_SOFTWARE' not in environ or \
-           environ['SERVER_SOFTWARE'] < 'lighttpd/1.4.28':
-            environ['PATH_INFO'] = environ.get('SCRIPT_NAME', '') + \
-                environ.get('PATH_INFO', '')
-        environ['SCRIPT_NAME'] = self.app_root.strip('/')
+        environ['SCRIPT_NAME'] = self.app_root
         return self.app(environ, start_response)
 
-# backwards compatibility
-LighttpdCGIRootFix = CGIRootFix
+
+class LighttpdCGIRootFix(CGIRootFix):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LighttpdCGIRootFix is renamed CGIRootFix and will be"
+            " removed in 1.0.",
+            WerkzeugContribDeprecationWarning,
+            stacklevel=3,
+        )
+        super(LighttpdCGIRootFix, self).__init__(*args, **kwargs)
 
 
 class PathInfoFromRequestUriFix(object):

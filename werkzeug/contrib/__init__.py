@@ -21,4 +21,4 @@ class WerkzeugContribDeprecationWarning(DeprecationWarning):
     pass
 
 
-warnings.simplefilter("module", WerkzeugContribDeprecationWarning)
+warnings.simplefilter("default", WerkzeugContribDeprecationWarning)
