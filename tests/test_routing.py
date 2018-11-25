@@ -64,6 +64,7 @@ def test_strict_slashes_redirect():
     map = r.Map([
         r.Rule('/bar/', endpoint='get', methods=["GET"]),
         r.Rule('/bar', endpoint='post', methods=["POST"]),
+        r.Rule('/foo/', endpoint='foo', methods=["POST"]),
     ])
     adapter = map.bind('example.org', '/')
 
@@ -74,6 +75,9 @@ def test_strict_slashes_redirect():
     # Check if exceptions are correct
     pytest.raises(r.RequestRedirect, adapter.match, '/bar', method='GET')
     pytest.raises(r.MethodNotAllowed, adapter.match, '/bar/', method='POST')
+    with pytest.raises(r.RequestRedirect) as error_info:
+        adapter.match('/foo', method='POST')
+    assert error_info.value.code == 308
 
     # Check differently defined order
     map = r.Map([
@@ -277,7 +281,7 @@ def test_dispatch():
     )
 
     assert dispatch('/').data == b"('root', {})"
-    assert dispatch('/foo').status_code == 301
+    assert dispatch('/foo').status_code == 308
     raise_this = r.NotFound()
     pytest.raises(r.NotFound, lambda: dispatch('/bar'))
     assert dispatch('/bar', True).status_code == 404
