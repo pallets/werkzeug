@@ -468,6 +468,31 @@ def test_follow_redirect_non_root_base_url():
     assert response.data == b"/done"
 
 
+def test_follow_redirect_exhaust_intermediate():
+    class Middleware(object):
+        def __init__(self, app):
+            self.app = app
+            self.active = 0
+
+        def __call__(self, environ, start_response):
+            # Test client must exhaust response stream, otherwise the
+            # cleanup code that decrements this won't have run by the
+            # time the next request is started.
+            assert not self.active
+            self.active += 1
+            try:
+                for chunk in self.app(environ, start_response):
+                    yield chunk
+            finally:
+                self.active -= 1
+
+    app = Middleware(redirect_with_get_app)
+    client = Client(Middleware(redirect_with_get_app), Response)
+    response = client.get("/", follow_redirects=True, buffered=False)
+    assert response.data == b"current url: http://localhost/some/redirect/"
+    assert not app.active
+
+
 def test_path_info_script_name_unquoting():
     def test_app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/plain')])
