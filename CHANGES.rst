@@ -116,8 +116,7 @@ Unreleased
     versions of Lighttpd. ``LighttpdCGIRootFix`` was renamed to
     ``CGIRootFix`` in 0.9. The old name emits a deprecation warning and
     will be removed in the next version. (`#1141`_)
--   The test :class:`~test.Client` redirect handling is rewritten.
-    (`#1402`_)
+-   :class:`test.Client` redirect handling is rewritten. (`#1402`_)
 
     -   The redirect environ is copied from the initial request environ.
     -   Script root and path are correctly distinguished when
@@ -127,13 +126,16 @@ Unreleased
         ignore the body and related headers.
     -   Headers are passed to the new request for all codes, following
         what browsers do.
-    -   :class:`~test.EnvironBuilder` sets the content type and length
+    -   :class:`test.EnvironBuilder` sets the content type and length
         headers in addition to the WSGI keys when detecting them from
         the data.
     -   Intermediate response bodies are iterated over even when
         ``buffered=False`` to ensure iterator middleware can run cleanup
         code safely. Only the last response is not buffered. (`#988`_)
-
+-   :class:`test.EnvironBuilder` and :class:`test.Client` take a
+    ``json`` argument instead of manually passing ``data`` and
+    ``content_type``. This is serialized using the
+    :func:`test.EnvironBuilder.json_dumps` function. (`#1404`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -184,6 +186,7 @@ Unreleased
 .. _`#1395`: https://github.com/pallets/werkzeug/pull/1395
 .. _`#1401`: https://github.com/pallets/werkzeug/pull/1401
 .. _`#1402`: https://github.com/pallets/werkzeug/pull/1402
+.. _#1404: https://github.com/pallets/werkzeug/pull/1404
 
 
 Version 0.14.1

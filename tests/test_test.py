@@ -11,6 +11,7 @@
 
 from __future__ import with_statement
 
+import json
 import pytest
 
 import sys
@@ -172,6 +173,20 @@ def test_environ_builder_data():
     check_list_content(b, 1)
     b = EnvironBuilder(data={'foo': [(BytesIO(),), (BytesIO(),)]})
     check_list_content(b, 2)
+
+
+def test_environ_builder_json():
+    @Request.application
+    def app(request):
+        assert request.content_type == "application/json"
+        return Response(json.loads(request.get_data(as_text=True))["foo"])
+
+    c = Client(app, Response)
+    response = c.post("/", json={"foo": "bar"})
+    assert response.data == b"bar"
+
+    with pytest.raises(TypeError):
+        c.post("/", json={"foo": "bar"}, data={"baz": "qux"})
 
 
 def test_environ_builder_headers():
