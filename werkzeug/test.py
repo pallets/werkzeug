@@ -219,7 +219,6 @@ def _iter_data(data):
 
 
 class EnvironBuilder(object):
-
     """This class can be used to conveniently create a WSGI environment
     for testing purposes.  It can be used to quickly create WSGI environments
     or request objects from arbitrary data.
@@ -251,10 +250,6 @@ class EnvironBuilder(object):
     -   a file-like object: The object content is loaded in memory and then
         handled like a regular `str` or a `bytes`.
 
-    .. versionadded:: 0.6
-       `path` and `base_url` can now be unicode strings that are encoded using
-       the :func:`iri_to_uri` function.
-
     :param path: the path of the request.  In the WSGI environment this will
                  end up as `PATH_INFO`.  If the `query_string` is not defined
                  and there is a question mark in the `path` everything after
@@ -282,9 +277,19 @@ class EnvironBuilder(object):
     :param headers: an optional list or :class:`Headers` object of headers.
     :param data: a string or dict of form data or a file-object.
                  See explanation above.
+    :param json: An object to be serialized and assigned to ``data``.
+        Defaults the content type to ``"application/json"``.
+        Serialized with the function assigned to :attr:`json_dumps`.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
     :param charset: the charset used to encode unicode data.
+
+    .. versionadded:: 0.15
+        The ``json`` param and :attr:`json_dumps` attr.
+
+    .. versionchanged:: 0.6
+       ``path`` and ``base_url`` can now be unicode strings that are
+       encoded with :func:`iri_to_uri`.
     """
 
     #: the server protocol to use.  defaults to HTTP/1.1
@@ -296,12 +301,17 @@ class EnvironBuilder(object):
     #: the default request class for :meth:`get_request`
     request_class = BaseRequest
 
+    import json
+    #: The serialization function used when ``json`` is passed.
+    json_dumps = staticmethod(json.dumps)
+    del json
+
     def __init__(self, path='/', base_url=None, query_string=None,
                  method='GET', input_stream=None, content_type=None,
                  content_length=None, errors_stream=None, multithread=False,
                  multiprocess=False, run_once=False, headers=None, data=None,
                  environ_base=None, environ_overrides=None, charset='utf-8',
-                 mimetype=None):
+                 mimetype=None, json=None):
         path_s = make_literal_wrapper(path)
         if query_string is not None and path_s('?') in path:
             raise ValueError('Query string is defined in the path and as an argument')
@@ -339,6 +349,15 @@ class EnvironBuilder(object):
         self.input_stream = input_stream
         self.content_length = content_length
         self.closed = False
+
+        if json is not None:
+            if data is not None:
+                raise TypeError("can't provide both json and data")
+
+            data = self.json_dumps(json)
+
+            if content_type is None:
+                self.content_type = "application/json"
 
         if data:
             if input_stream is not None:
@@ -735,6 +754,9 @@ class Client(object):
 
     .. versionadded:: 0.14
        The `mimetype` parameter was added.
+
+    .. versionadded:: 0.15
+        The ``json`` parameter.
     """
 
     def __init__(self, application, response_wrapper=None, use_cookies=True,
