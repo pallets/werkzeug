@@ -32,10 +32,17 @@ from werkzeug._internal import _get_environ
 from werkzeug.wrappers import BaseRequest
 from werkzeug.urls import url_encode, url_fix, iri_to_uri, url_unquote, \
     url_unparse, url_parse
-from werkzeug.wsgi import get_host, get_current_url, ClosingIterator
+from werkzeug.wsgi import get_current_url, ClosingIterator
 from werkzeug.utils import dump_cookie, get_content_type
-from werkzeug.datastructures import FileMultiDict, MultiDict, \
-    CombinedMultiDict, Headers, FileStorage, CallbackDict
+from werkzeug.datastructures import (
+    FileMultiDict,
+    MultiDict,
+    CombinedMultiDict,
+    Headers,
+    FileStorage,
+    CallbackDict,
+    EnvironHeaders,
+)
 from werkzeug.http import dump_options_header, parse_options_header
 
 
@@ -355,6 +362,35 @@ class EnvironBuilder(object):
         if mimetype is not None:
             self.mimetype = mimetype
 
+    @classmethod
+    def from_environ(cls, environ, **kwargs):
+        """Turn an environ dict back into a builder. Any extra kwargs
+        override the args extracted from the environ.
+
+        .. versionadded:: 0.15
+        """
+        headers = Headers(EnvironHeaders(environ))
+        out = {
+            "path": environ["PATH_INFO"],
+            "base_url": cls._make_base_url(
+                environ["wsgi.url_scheme"],
+                headers.pop("Host"),
+                environ["SCRIPT_NAME"],
+            ),
+            "query_string": environ["QUERY_STRING"],
+            "method": environ["REQUEST_METHOD"],
+            "input_stream": environ["wsgi.input"],
+            "content_type": headers.pop("Content-Type", None),
+            "content_length": headers.pop("Content-Length", None),
+            "errors_stream": environ["wsgi.errors"],
+            "multithread": environ["wsgi.multithread"],
+            "multiprocess": environ["wsgi.multiprocess"],
+            "run_once": environ["wsgi.run_once"],
+            "headers": headers,
+        }
+        out.update(kwargs)
+        return cls(**out)
+
     def _add_file_from_data(self, key, value):
         """Called in the EnvironBuilder to add files from the data dict."""
         if isinstance(value, tuple):
@@ -372,11 +408,19 @@ class EnvironBuilder(object):
         else:
             self.files.add_file(key, value)
 
-    def _get_base_url(self):
-        return url_unparse((self.url_scheme, self.host,
-                            self.script_root, '', '')).rstrip('/') + '/'
+    @staticmethod
+    def _make_base_url(scheme, host, script_root):
+        return url_unparse((scheme, host, script_root, "", "")).rstrip("/") + "/"
 
-    def _set_base_url(self, value):
+    @property
+    def base_url(self):
+        """The base URL is used to extract the URL scheme, host name,
+        port, and root path.
+        """
+        return self._make_base_url(self.url_scheme, self.host, self.script_root)
+
+    @base_url.setter
+    def base_url(self, value):
         if value is None:
             scheme = 'http'
             netloc = 'localhost'
@@ -389,12 +433,6 @@ class EnvironBuilder(object):
         self.script_root = script_root.rstrip('/')
         self.host = netloc
         self.url_scheme = scheme
-
-    base_url = property(_get_base_url, _set_base_url, doc='''
-        The base URL is a URL that is used to extract the WSGI
-        URL scheme, host (server name + server port) and the
-        script root (`SCRIPT_NAME`).''')
-    del _get_base_url, _set_base_url
 
     def _get_content_type(self):
         ct = self.headers.get('Content-Type')
@@ -571,7 +609,13 @@ class EnvironBuilder(object):
         self.closed = True
 
     def get_environ(self):
-        """Return the built environ."""
+        """Return the built environ.
+
+        .. versionchanged:: 0.15
+            The content type and length headers are set based on
+            input stream detection. Previously this only set the WSGI
+            keys.
+        """
         input_stream = self.input_stream
         content_length = self.content_length
 
@@ -624,15 +668,23 @@ class EnvironBuilder(object):
             'wsgi.multiprocess':    self.multiprocess,
             'wsgi.run_once':        self.run_once
         })
+
+        headers = self.headers.copy()
+
         if content_type is not None:
             result['CONTENT_TYPE'] = content_type
+            headers.set("Content-Type", content_type)
+
         if content_length is not None:
             result['CONTENT_LENGTH'] = str(content_length)
+            headers.set("Content-Length", content_length)
 
-        for key, value in self.headers.to_wsgi_list():
+        for key, value in headers.to_wsgi_list():
             result['HTTP_%s' % key.upper().replace('-', '_')] = value
+
         if self.environ_overrides:
             result.update(self.environ_overrides)
+
         return result
 
     def get_request(self, cls=None):
@@ -724,43 +776,65 @@ class Client(object):
         return rv
 
     def resolve_redirect(self, response, new_location, environ, buffered=False):
-        """Resolves a single redirect and triggers the request again
-        directly on this redirect client.
+        """Perform a new request to the location given by the redirect
+        response to the previous request.
         """
-        scheme, netloc, script_root, qs, anchor = url_parse(new_location)
-        base_url = url_unparse((scheme, netloc, '', '', '')).rstrip('/') + '/'
+        scheme, netloc, path, qs, anchor = url_parse(new_location)
+        builder = EnvironBuilder.from_environ(environ, query_string=qs)
 
-        cur_server_name = netloc.split(':', 1)[0].split('.')
-        real_server_name = get_host(environ).rsplit(':', 1)[0].split('.')
-        if cur_server_name == ['']:
-            # this is a local redirect having autocorrect_location_header=False
-            cur_server_name = real_server_name
-            base_url = EnvironBuilder(environ).base_url
+        to_name_parts = netloc.split(':', 1)[0].split(".")
+        from_name_parts = builder.server_name.split(".")
 
-        if self.allow_subdomain_redirects:
-            allowed = cur_server_name[-len(real_server_name):] == real_server_name
+        if to_name_parts != [""]:
+            # The new location has a host, use it for the base URL.
+            builder.url_scheme = scheme
+            builder.host = netloc
         else:
-            allowed = cur_server_name == real_server_name
+            # A local redirect with autocorrect_location_header=False
+            # doesn't have a host, so use the request's host.
+            to_name_parts = from_name_parts
 
-        if not allowed:
-            raise RuntimeError('%r does not support redirect to '
-                               'external targets' % self.__class__)
+        # Explain why a redirect to a different server name won't be followed.
+        if to_name_parts != from_name_parts:
+            if to_name_parts[-len(from_name_parts):] == from_name_parts:
+                if not self.allow_subdomain_redirects:
+                    raise RuntimeError("Following subdomain redirects is not enabled.")
+            else:
+                raise RuntimeError("Following external redirects is not supported.")
+
+        path_parts = path.split("/")
+        root_parts = builder.script_root.split("/")
+
+        if path_parts[:len(root_parts)] == root_parts:
+            # Strip the script root from the path.
+            builder.path = path[len(builder.script_root):]
+        else:
+            # The new location is not under the script root, so use the
+            # whole path and clear the previous root.
+            builder.path = path
+            builder.script_root = ""
 
         status_code = int(response[1].split(None, 1)[0])
-        if status_code == 307:
-            method = environ['REQUEST_METHOD']
-        else:
-            method = 'GET'
 
-        # For redirect handling we temporarily disable the response
-        # wrapper.  This is not threadsafe but not a real concern
-        # since the test client must not be shared anyways.
+        # Only 307 and 308 preserve all of the original request.
+        if status_code not in {307, 308}:
+            # HEAD is preserved, everything else becomes GET.
+            if builder.method != "HEAD":
+                builder.method = "GET"
+
+            # Clear the body and the headers that describe it.
+            builder.input_stream = None
+            builder.content_type = None
+            builder.content_length = None
+            builder.headers.pop("Transfer-Encoding", None)
+
+        # Disable the response wrapper while handling redirects. Not
+        # thread safe, but the client should not be shared anyway.
         old_response_wrapper = self.response_wrapper
         self.response_wrapper = None
+
         try:
-            return self.open(path=script_root, base_url=base_url,
-                             query_string=qs, as_tuple=True,
-                             buffered=buffered, method=method)
+            return self.open(builder, as_tuple=True, buffered=buffered)
         finally:
             self.response_wrapper = old_response_wrapper
 
@@ -811,8 +885,10 @@ class Client(object):
         redirect_chain = []
         while 1:
             status_code = int(response[1].split(None, 1)[0])
-            if status_code not in (301, 302, 303, 305, 307) \
-               or not follow_redirects:
+            if (
+                status_code not in {301, 302, 303, 305, 307, 308}
+                or not follow_redirects
+            ):
                 break
             new_location = response[2]['location']
             new_redirect_entry = (new_location, status_code)
