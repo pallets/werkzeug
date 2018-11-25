@@ -56,17 +56,6 @@ def redirect_with_get_app(environ, start_response):
     return response(environ, start_response)
 
 
-def redirect_with_post_app(environ, start_response):
-    req = Request(environ)
-    if req.url == 'http://localhost/some/redirect/':
-        assert req.method == 'GET', 'request should be GET'
-        assert not req.form, 'request should not have data'
-        response = Response('current url: %s' % req.url)
-    else:
-        response = redirect('http://localhost/some/redirect/')
-    return response(environ, start_response)
-
-
 def external_redirect_demo_app(environ, start_response):
     response = redirect('http://example.com/')
     return response(environ, start_response)
@@ -333,6 +322,22 @@ def test_create_environ_query_string_error():
         create_environ('/foo?bar=baz', query_string={'a': 'b'})
 
 
+def test_builder_from_environ():
+    environ = create_environ(
+        "/foo",
+        base_url="https://example.com/base",
+        query_string={"name": "Werkzeug"},
+        data={"foo": "bar"},
+        headers={"X-Foo": "bar"}
+    )
+    builder = EnvironBuilder.from_environ(environ)
+    try:
+        new_environ = builder.get_environ()
+    finally:
+        builder.close()
+    assert new_environ == environ
+
+
 def test_file_closing():
     closed = []
 
@@ -390,21 +395,35 @@ def test_follow_local_redirect():
     strict_eq(resp.data, b'current path: /to/location')
 
 
-def test_follow_redirect_with_post_307():
-    def redirect_with_post_307_app(environ, start_response):
-        req = Request(environ)
-        if req.url == 'http://localhost/some/redirect/':
-            assert req.method == 'POST', 'request should be POST'
-            assert not req.form, 'request should not have data'
-            response = Response('current url: %s' % req.url)
-        else:
-            response = redirect('http://localhost/some/redirect/', code=307)
-        return response(environ, start_response)
+@pytest.mark.parametrize(
+    ("code", "keep"),
+    ((302, False), (301, False), (307, True), (308, True)),
+)
+def test_follow_redirect_body(code, keep):
+    @Request.application
+    def app(request):
+        if request.url == "http://localhost/some/redirect/":
+            assert request.method == "POST" if keep else "GET"
+            assert request.headers["X-Foo"] == "bar"
 
-    c = Client(redirect_with_post_307_app, response_wrapper=BaseResponse)
-    resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
-    assert resp.status_code == 200
-    assert resp.data == b'current url: http://localhost/some/redirect/'
+            if keep:
+                assert request.form["foo"] == "bar"
+            else:
+                assert not request.form
+
+            return Response("current url: %s" % request.url)
+
+        return redirect("http://localhost/some/redirect/", code=code)
+
+    c = Client(app, response_wrapper=BaseResponse)
+    response = c.post(
+        "/",
+        follow_redirects=True,
+        data={"foo": "bar"},
+        headers={"X-Foo": "bar"},
+    )
+    assert response.status_code == 200
+    assert response.data == b"current url: http://localhost/some/redirect/"
 
 
 def test_follow_external_redirect():
@@ -436,11 +455,17 @@ def test_follow_redirect_loop():
         c.get('/', follow_redirects=True)
 
 
-def test_follow_redirect_with_post():
-    c = Client(redirect_with_post_app, response_wrapper=BaseResponse)
-    resp = c.post('/', follow_redirects=True, data='foo=blub+hehe&blah=42')
-    strict_eq(resp.status_code, 200)
-    strict_eq(resp.data, b'current url: http://localhost/some/redirect/')
+def test_follow_redirect_non_root_base_url():
+    @Request.application
+    def app(request):
+        if request.path == "/redirect":
+            return redirect("done")
+
+        return Response(request.path)
+
+    c = Client(app, response_wrapper=Response)
+    response = c.get("/redirect", base_url="http://localhost/other", follow_redirects=True)
+    assert response.data == b"/done"
 
 
 def test_path_info_script_name_unquoting():

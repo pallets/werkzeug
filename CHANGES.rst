@@ -116,6 +116,21 @@ Unreleased
     versions of Lighttpd. ``LighttpdCGIRootFix`` was renamed to
     ``CGIRootFix`` in 0.9. The old name emits a deprecation warning and
     will be removed in the next version. (`#1141`_)
+-   The test :class:`~test.Client` redirect handling is rewritten.
+    (`#1402`_)
+
+    -   The redirect environ is copied from the initial request environ.
+    -   Script root and path are correctly distinguished when
+        redirecting to a path under the root.
+    -   The HEAD method is not changed to GET.
+    -   307 and 308 codes preserve the method and body. All others
+        ignore the body and related headers.
+    -   Headers are passed to the new request for all codes, following
+        what browsers do.
+    -   :class:`~test.EnvironBuilder` sets the content type and length
+        headers in addition to the WSGI keys when detecting them from
+        the data.
+
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -164,6 +179,7 @@ Unreleased
 .. _`#1393`: https://github.com/pallets/werkzeug/pull/1393
 .. _`#1395`: https://github.com/pallets/werkzeug/pull/1395
 .. _`#1401`: https://github.com/pallets/werkzeug/pull/1401
+.. _`#1402`: https://github.com/pallets/werkzeug/pull/1402
 
 
 Version 0.14.1
