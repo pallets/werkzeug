@@ -151,6 +151,21 @@ class TestFormParser(object):
         # close file to prevent fds from leaking
         req.files['foo'].close()
 
+    def test_small_file(self):
+        # when the file object size is below the "max_size", this will implement
+        # an in-memory buffer
+        data = b'x' * 256
+        req = Request.from_values(data={'foo': (BytesIO(data), 'test.txt')},
+                                  method='POST')
+        foo = req.files['foo'].stream
+        # Make sure the file object has the bellow attributes as described in
+        # https://github.com/pallets/werkzeug/issues/1344
+        assert hasattr(foo, u'writable')
+        assert hasattr(foo, u'readable')
+        assert hasattr(foo, u'seekable')
+        # close file to prevent fds from leaking
+        req.files['foo'].close()
+
     def test_streaming_parse(self):
         data = b'x' * (1024 * 600)
 
