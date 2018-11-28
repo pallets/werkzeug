@@ -144,7 +144,6 @@ class TestFormParser(object):
         assert hasattr(foo, u'fileno')
         # make sure the file object has the bellow attributes as described in
         # https://github.com/pallets/werkzeug/issues/1344
-        assert hasattr(foo, u'writable')
         assert hasattr(foo, u'readable')
         assert hasattr(foo, u'seekable')
 
@@ -160,7 +159,6 @@ class TestFormParser(object):
         foo = req.files['foo'].stream
         # Make sure the file object has the bellow attributes as described in
         # https://github.com/pallets/werkzeug/issues/1344
-        assert hasattr(foo, u'writable')
         assert hasattr(foo, u'readable')
         assert hasattr(foo, u'seekable')
         # close file to prevent fds from leaking
