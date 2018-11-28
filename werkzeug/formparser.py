@@ -12,13 +12,7 @@
 import re
 import codecs
 
-# there are some platforms where SpooledTemporaryFile is not available.
-# In that case we need to provide a fallback.
-try:
-    from tempfile import SpooledTemporaryFile
-except ImportError:
-    from tempfile import TemporaryFile
-    SpooledTemporaryFile = None
+from tempfile import TemporaryFile
 
 from itertools import chain, repeat, tee
 from functools import update_wrapper
@@ -45,9 +39,10 @@ _supported_multipart_encodings = frozenset(['base64', 'quoted-printable'])
 def default_stream_factory(total_content_length, filename, content_type,
                            content_length=None):
     """The stream factory that is used per default."""
+
+    # Would be nice to implement `SpooledTemporaryFile`, however as of python 3.7,
+    # it has a bug as described - https://github.com/pallets/werkzeug/issues/1344
     max_size = 1024 * 500
-    if SpooledTemporaryFile is not None:
-        return SpooledTemporaryFile(max_size=max_size, mode='wb+')
     if total_content_length is None or total_content_length > max_size:
         return TemporaryFile('wb+')
     return BytesIO()
