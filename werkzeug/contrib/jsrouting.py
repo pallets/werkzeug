@@ -18,9 +18,18 @@ except ImportError:
         def dumps(*args):
             raise RuntimeError('simplejson required for jsrouting')
 
+import warnings
 from inspect import getmro
 from werkzeug.routing import NumberConverter
 from werkzeug._compat import iteritems
+from werkzeug.contrib import WerkzeugContribDeprecationWarning
+
+warnings.warn(
+    'werkzeug.contrib.jsrouting is deprecated as of version 0.15 and will'
+    ' be removed in version 1.0.',
+    WerkzeugContribDeprecationWarning,
+    stacklevel=3
+)
 
 
 def render_template(name_parts, rules, converters):

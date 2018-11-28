@@ -71,3 +71,6 @@ Do not use:
     Werkzeug API became better in general that this is no longer
     necessary.
 -   `werkzeug.contrib.testtools`, not useful really.
+-   `werkzeug.contrib.cache`, use cachelib instead.
+-   `werkzeug.contrib.atom`, not useful really.
+-   `werkzeug.contrib.limiter`, not useful really.

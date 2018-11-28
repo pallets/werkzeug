@@ -12,9 +12,9 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from warnings import warn
-
+import warnings
 from werkzeug.wsgi import LimitedStream
+from werkzeug.contrib import WerkzeugContribDeprecationWarning
 
 
 class StreamLimitMiddleware(object):
@@ -31,7 +31,12 @@ class StreamLimitMiddleware(object):
     """
 
     def __init__(self, app, maximum_size=1024 * 1024 * 10):
-        warn(DeprecationWarning('This middleware is deprecated'))
+        warnings.warn(
+            'werkzeug.contrib.limiter is deprecated as of version 0.15 and'
+            ' will be removed in version 1.0.',
+            WerkzeugContribDeprecationWarning,
+            stacklevel=3
+        )
         self.app = app
         self.maximum_size = maximum_size
 

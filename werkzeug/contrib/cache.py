@@ -104,7 +104,7 @@ class BaseCache(object):
     def __init__(self, default_timeout=300):
         warnings.warn(
             'Werkzeug cache is deprecated as of version 0.15 and will'
-            ' be removed in version 1.0.',
+            ' be removed in version 1.0. Check "cachelib" instead.',
             WerkzeugContribDeprecationWarning,
             stacklevel=3
         )
