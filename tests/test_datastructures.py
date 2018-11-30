@@ -885,8 +885,8 @@ def make_call_asserter(func=None):
 
     >>> assert_calls, func = make_call_asserter()
     >>> with assert_calls(2):
-            func()
-            func()
+    ...    func()
+    ...    func()
     """
 
     calls = [0]
@@ -1067,6 +1067,19 @@ class TestFileStorage(object):
         for idx, line in enumerate(binary_storage):
             assert idx < 2
         assert idx == 1
+
+    @pytest.mark.skipif(PY2, reason='io "File Objects" are only available in PY3.')
+    @pytest.mark.parametrize(
+        "attributes", (
+            # make sure the file object has the bellow attributes as described
+            # in https://github.com/pallets/werkzeug/issues/1344
+            "writable", "readable", "seekable"
+        )
+    )
+    def test_proxy_can_access_stream_attrs(self, attributes):
+        from tempfile import SpooledTemporaryFile
+        file_storage = self.storage_class(stream=SpooledTemporaryFile())
+        assert hasattr(file_storage, attributes)
 
 
 @pytest.mark.parametrize(
