@@ -1307,11 +1307,14 @@ class NumberConverter(BaseConverter):
     """
     weight = 50
 
-    def __init__(self, map, fixed_digits=0, min=None, max=None):
+    def __init__(self, map, fixed_digits=0, min=None, max=None, signed=False):
+        if signed:
+            self.regex = self.signed_regex
         BaseConverter.__init__(self, map)
         self.fixed_digits = fixed_digits
         self.min = min
         self.max = max
+        self.signed = signed
 
     def to_python(self, value):
         if (self.fixed_digits and len(value) != self.fixed_digits):
@@ -1328,22 +1331,32 @@ class NumberConverter(BaseConverter):
             value = ('%%0%sd' % self.fixed_digits) % value
         return str(value)
 
+    @property
+    def signed_regex(self):
+        return r"-?" + self.regex
+
 
 class IntegerConverter(NumberConverter):
 
     """This converter only accepts integer values::
 
-        Rule('/page/<int:page>')
+        Rule("/page/<int:page>")
 
-    This converter does not support negative values.
+    By default it only accepts unsigned, positive values. The ``signed``
+    parameter will enable signed, negative values. ::
 
-    :param map: the :class:`Map`.
-    :param fixed_digits: the number of fixed digits in the URL.  If you set
-                         this to ``4`` for example, the application will
-                         only match if the url looks like ``/0001/``.  The
-                         default is variable length.
-    :param min: the minimal value.
-    :param max: the maximal value.
+        Rule("/page/<int(signed=True):page>")
+
+    :param map: The :class:`Map`.
+    :param fixed_digits: The number of fixed digits in the URL. If you
+        set this to ``4`` for example, the rule will only match if the
+        URL looks like ``/0001/``. The default is variable length.
+    :param min: The minimal value.
+    :param max: The maximal value.
+    :param signed: Allow signed (negative) values.
+
+    .. versionadded:: 0.15
+        The ``signed`` parameter.
     """
     regex = r'\d+'
     num_convert = int
@@ -1353,19 +1366,26 @@ class FloatConverter(NumberConverter):
 
     """This converter only accepts floating point values::
 
-        Rule('/probability/<float:probability>')
+        Rule("/probability/<float:probability>")
 
-    This converter does not support negative values.
+    By default it only accepts unsigned, positive values. The ``signed``
+    parameter will enable signed, negative values. ::
 
-    :param map: the :class:`Map`.
-    :param min: the minimal value.
-    :param max: the maximal value.
+        Rule("/offset/<float(signed=True):offset>")
+
+    :param map: The :class:`Map`.
+    :param min: The minimal value.
+    :param max: The maximal value.
+    :param signed: Allow signed (negative) values.
+
+    .. versionadded:: 0.15
+        The ``signed`` parameter.
     """
     regex = r'\d+\.\d+'
     num_convert = float
 
-    def __init__(self, map, min=None, max=None):
-        NumberConverter.__init__(self, map, 0, min, max)
+    def __init__(self, map, min=None, max=None, signed=False):
+        NumberConverter.__init__(self, map, min=min, max=max, signed=signed)
 
 
 class UUIDConverter(BaseConverter):

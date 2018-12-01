@@ -136,6 +136,9 @@ Unreleased
     ``json`` argument instead of manually passing ``data`` and
     ``content_type``. This is serialized using the
     :meth:`test.EnvironBuilder.json_dumps` method. (`#1404`_)
+-   ``int`` and ``float`` converters in URL rules will handle negative
+    values if passed the ``signed=True`` parameter. For example,
+    ``/jump/<int(signed=True):count>``. (`#1355`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -178,6 +181,7 @@ Unreleased
 .. _`#1340`: https://github.com/pallets/werkzeug/pull/1340
 .. _`#1342`: https://github.com/pallets/werkzeug/pull/1342
 .. _`#1346`: https://github.com/pallets/werkzeug/pull/1346
+.. _`#1355`: https://github.com/pallets/werkzeug/pull/1355
 .. _`#1358`: https://github.com/pallets/werkzeug/pull/1358
 .. _`#1375`: https://github.com/pallets/werkzeug/pull/1375
 .. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
