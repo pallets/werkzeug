@@ -1301,7 +1301,7 @@ class ImmutableHeadersMixin(object):
     :private:
     """
 
-    def __delitem__(self, key):
+    def __delitem__(self, key, **kwargs):
         is_immutable(self)
 
     def __setitem__(self, key, value):
