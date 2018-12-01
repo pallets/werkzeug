@@ -29,9 +29,10 @@ import pickle
 from contextlib import contextmanager
 from copy import copy, deepcopy
 
-from werkzeug import datastructures
+from werkzeug import datastructures, http
 from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
     iterlistvalues, text_type, PY2
+from werkzeug.datastructures import Range
 from werkzeug.exceptions import BadRequestKeyError
 
 
@@ -1066,3 +1067,20 @@ class TestFileStorage(object):
         for idx, line in enumerate(binary_storage):
             assert idx < 2
         assert idx == 1
+
+
+@pytest.mark.parametrize(
+    "ranges", ([(0, 1), (-5, None)], [(5, None)])
+)
+def test_range_to_header(ranges):
+    header = Range("byes", ranges).to_header()
+    r = http.parse_range_header(header)
+    assert r.ranges == ranges
+
+
+@pytest.mark.parametrize(
+    "ranges", ([(0, 0)], [(None, 1)], [(1, 0)], [(0, 1), (-5, 10)])
+)
+def test_range_validates_ranges(ranges):
+    with pytest.raises(ValueError):
+        datastructures.Range("bytes", ranges)

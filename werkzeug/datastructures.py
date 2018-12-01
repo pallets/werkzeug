@@ -2296,10 +2296,14 @@ class IfRange(object):
 
 
 class Range(object):
-
-    """Represents a range header.  All the methods are only supporting bytes
-    as unit.  It does store multiple ranges but :meth:`range_for_length` will
+    """Represents a ``Range`` header. All methods only support only
+    bytes as the unit. Stores a list of ranges if given, but the methods
     only work if only one range is provided.
+
+    :raise ValueError: If the ranges provided are invalid.
+
+    .. versionchanged:: 0.15
+        The ranges passed in are validated.
 
     .. versionadded:: 0.7
     """
@@ -2310,6 +2314,10 @@ class Range(object):
         #: A list of ``(begin, end)`` tuples for the range header provided.
         #: The ranges are non-inclusive.
         self.ranges = ranges
+
+        for start, end in ranges:
+            if start is None or (end is not None and (start < 0 or start >= end)):
+                raise ValueError("{} is not a valid range.".format((start, end)))
 
     def range_for_length(self, length):
         """If the range is for bytes, the length is not None and there is

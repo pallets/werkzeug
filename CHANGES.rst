@@ -139,6 +139,8 @@ Unreleased
 -   ``int`` and ``float`` converters in URL rules will handle negative
     values if passed the ``signed=True`` parameter. For example,
     ``/jump/<int(signed=True):count>``. (`#1355`_)
+-   :class:`~datastructures.Range` validates that list of range tuples
+    passed to it would produce a valid ``Range`` header. (`#1412`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -191,6 +193,7 @@ Unreleased
 .. _`#1401`: https://github.com/pallets/werkzeug/pull/1401
 .. _`#1402`: https://github.com/pallets/werkzeug/pull/1402
 .. _#1404: https://github.com/pallets/werkzeug/pull/1404
+.. _#1412: https://github.com/pallets/werkzeug/pull/1412
 
 
 Version 0.14.1
