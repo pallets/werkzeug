@@ -51,7 +51,7 @@ objects but by taking advantage of the parsing functions werkzeug provides::
             </form>
         ''')
         start_response('200 OK', [('Content-Type', 'text/html; charset=utf-8')])
-        return [''.join(result)]
+        return [''.join(result).encode('utf-8')]
 
 High or Low?
 ============
