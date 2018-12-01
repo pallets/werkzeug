@@ -551,16 +551,16 @@ class TestRange(object):
         rv = http.parse_range_header('bytes=-')
         assert rv is None
 
-        rv = http.parse_range_header('bytes=bullshit')
+        rv = http.parse_range_header('bytes=bad')
         assert rv is None
 
-        rv = http.parse_range_header('bytes=bullshit-1')
+        rv = http.parse_range_header('bytes=bad-1')
         assert rv is None
 
-        rv = http.parse_range_header('bytes=-bullshit')
+        rv = http.parse_range_header('bytes=-bad')
         assert rv is None
 
-        rv = http.parse_range_header('bytes=52-99, bullshit')
+        rv = http.parse_range_header('bytes=52-99, bad')
         assert rv is None
 
     def test_content_range_parsing(self):
