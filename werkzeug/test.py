@@ -11,6 +11,7 @@
 import sys
 import mimetypes
 from time import time
+
 from random import random
 from itertools import chain
 from tempfile import TemporaryFile
@@ -285,7 +286,7 @@ class EnvironBuilder(object):
     :param charset: the charset used to encode unicode data.
 
     .. versionadded:: 0.15
-        The ``json`` param and :attr:`json_dumps` attr.
+        The ``json`` param and :meth:`json_dumps` method.
 
     .. versionchanged:: 0.6
        ``path`` and ``base_url`` can now be unicode strings that are
@@ -356,7 +357,7 @@ class EnvironBuilder(object):
 
             data = self.json_dumps(json)
 
-            if content_type is None:
+            if self.content_type is None:
                 self.content_type = "application/json"
 
         if data:

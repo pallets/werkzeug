@@ -135,7 +135,7 @@ Unreleased
 -   :class:`test.EnvironBuilder` and :class:`test.Client` take a
     ``json`` argument instead of manually passing ``data`` and
     ``content_type``. This is serialized using the
-    :func:`test.EnvironBuilder.json_dumps` function. (`#1404`_)
+    :meth:`test.EnvironBuilder.json_dumps` method. (`#1404`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
