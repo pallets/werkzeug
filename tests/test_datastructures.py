@@ -21,7 +21,10 @@
 
 from __future__ import with_statement
 
+import io
 import pytest
+import tempfile
+
 from tests import strict_eq
 
 
@@ -1068,18 +1071,20 @@ class TestFileStorage(object):
             assert idx < 2
         assert idx == 1
 
-    @pytest.mark.skipif(PY2, reason='io "File Objects" are only available in PY3.')
-    @pytest.mark.parametrize(
-        "attributes", (
-            # make sure the file object has the bellow attributes as described
-            # in https://github.com/pallets/werkzeug/issues/1344
-            "writable", "readable", "seekable"
-        )
-    )
-    def test_proxy_can_access_stream_attrs(self, attributes):
-        from tempfile import SpooledTemporaryFile
-        file_storage = self.storage_class(stream=SpooledTemporaryFile())
-        assert hasattr(file_storage, attributes)
+    @pytest.mark.skipif(PY2, reason='io.IOBase is only needed in PY3.')
+    @pytest.mark.parametrize("stream", (tempfile.SpooledTemporaryFile, io.BytesIO))
+    def test_proxy_can_access_stream_attrs(self, stream):
+        """``SpooledTemporaryFile`` doesn't implement some of
+        ``IOBase``. Ensure that ``FileStorage`` can still access the
+        attributes from the backing file object.
+
+        https://github.com/pallets/werkzeug/issues/1344
+        https://github.com/python/cpython/pull/3249
+        """
+        file_storage = self.storage_class(stream=stream())
+
+        for name in ("fileno", "writable", "readable", "seekable"):
+            assert hasattr(file_storage, name)
 
 
 @pytest.mark.parametrize(

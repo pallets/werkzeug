@@ -141,6 +141,11 @@ Unreleased
     ``/jump/<int(signed=True):count>``. (`#1355`_)
 -   :class:`~datastructures.Range` validates that list of range tuples
     passed to it would produce a valid ``Range`` header. (`#1412`_)
+-   :class:`~datastructures.FileStorage` looks up attributes on
+    ``stream._file`` if they don't exist on ``stream``, working around
+    an issue where :func:`tempfile.SpooledTemporaryFile` didn't
+    implement all of :class:`io.IOBase`. See
+    https://github.com/python/cpython/pull/3249. (`#1409`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -193,6 +198,7 @@ Unreleased
 .. _`#1401`: https://github.com/pallets/werkzeug/pull/1401
 .. _`#1402`: https://github.com/pallets/werkzeug/pull/1402
 .. _#1404: https://github.com/pallets/werkzeug/pull/1404
+.. _#1409: https://github.com/pallets/werkzeug/pull/1409
 .. _#1412: https://github.com/pallets/werkzeug/pull/1412
 
 
