@@ -2755,7 +2755,15 @@ class FileStorage(object):
     __bool__ = __nonzero__
 
     def __getattr__(self, name):
-        return getattr(self.stream, name)
+        try:
+            return getattr(self.stream, name)
+        except AttributeError:
+            # SpooledTemporaryFile doesn't implement IOBase, get the
+            # attribute from its backing file instead.
+            # https://github.com/python/cpython/pull/3249
+            if hasattr(self.stream, "_file"):
+                return getattr(self.stream._file, name)
+            raise
 
     def __iter__(self):
         return iter(self.stream)

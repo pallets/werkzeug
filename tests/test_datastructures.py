@@ -21,7 +21,10 @@
 
 from __future__ import with_statement
 
+import io
 import pytest
+import tempfile
+
 from tests import strict_eq
 
 
@@ -885,8 +888,8 @@ def make_call_asserter(func=None):
 
     >>> assert_calls, func = make_call_asserter()
     >>> with assert_calls(2):
-            func()
-            func()
+    ...    func()
+    ...    func()
     """
 
     calls = [0]
@@ -1067,6 +1070,21 @@ class TestFileStorage(object):
         for idx, line in enumerate(binary_storage):
             assert idx < 2
         assert idx == 1
+
+    @pytest.mark.skipif(PY2, reason='io.IOBase is only needed in PY3.')
+    @pytest.mark.parametrize("stream", (tempfile.SpooledTemporaryFile, io.BytesIO))
+    def test_proxy_can_access_stream_attrs(self, stream):
+        """``SpooledTemporaryFile`` doesn't implement some of
+        ``IOBase``. Ensure that ``FileStorage`` can still access the
+        attributes from the backing file object.
+
+        https://github.com/pallets/werkzeug/issues/1344
+        https://github.com/python/cpython/pull/3249
+        """
+        file_storage = self.storage_class(stream=stream())
+
+        for name in ("fileno", "writable", "readable", "seekable"):
+            assert hasattr(file_storage, name)
 
 
 @pytest.mark.parametrize(

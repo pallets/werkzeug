@@ -10,6 +10,8 @@
 """
 from __future__ import with_statement
 
+import csv
+import io
 import pytest
 
 from os.path import join, dirname
@@ -22,7 +24,7 @@ from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data, FormDataParser
-from werkzeug._compat import BytesIO
+from werkzeug._compat import BytesIO, PY2
 
 
 @Request.application
@@ -134,15 +136,32 @@ class TestFormParser(object):
         strict_eq(len(form), 0)
         strict_eq(len(files), 0)
 
-    def test_large_file(self):
-        data = b'x' * (1024 * 600)
-        req = Request.from_values(data={'foo': (BytesIO(data), 'test.txt')},
-                                  method='POST')
-        # make sure we have a real file here, because we expect to be
-        # on the disk.  > 1024 * 500
-        assert hasattr(req.files['foo'].stream, u'fileno')
-        # close file to prevent fds from leaking
-        req.files['foo'].close()
+    @pytest.mark.parametrize(
+        ("no_spooled", "size"),
+        ((False, 100), (False, 3000), (True, 100), (True, 3000)),
+    )
+    def test_default_stream_factory(self, no_spooled, size, monkeypatch):
+        if no_spooled:
+            monkeypatch.setattr("werkzeug.formparser.SpooledTemporaryFile", None)
+
+        data = b"a,b,c\n" * size
+        req = Request.from_values(
+            data={"foo": (BytesIO(data), "test.txt")},
+            method="POST"
+        )
+        file_storage = req.files["foo"]
+
+        try:
+            if PY2:
+                reader = csv.reader(file_storage)
+            else:
+                reader = csv.reader(io.TextIOWrapper(file_storage))
+            # This fails if file_storage doesn't implement IOBase.
+            # https://github.com/pallets/werkzeug/issues/1344
+            # https://github.com/python/cpython/pull/3249
+            assert sum(1 for _ in reader) == size
+        finally:
+            file_storage.close()
 
     def test_streaming_parse(self):
         data = b'x' * (1024 * 600)
