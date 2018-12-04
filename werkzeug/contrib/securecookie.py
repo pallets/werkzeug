@@ -90,6 +90,7 @@ r"""
 """
 import pickle
 import base64
+import warnings
 from hmac import new as hmac
 from time import time
 from hashlib import sha1 as _default_hash
@@ -139,8 +140,11 @@ class SecureCookie(ModificationTrackingDict):
     #: as a function.
     hash_method = staticmethod(_default_hash)
 
-    #: the module used for serialization.  Unless overriden by subclasses
-    #: the standard pickle module is used.
+    #: The module used for serialization. Should have a ``dumps`` and a
+    #: ``loads`` method that takes bytes. The default is :mod:`pickle`.
+    #:
+    #: .. versionchanged:: 0.15
+    #:     The default of ``pickle`` will change to :mod:`json` in 1.0.
     serialization_method = pickle
 
     #: if the contents should be base64 quoted.  This can be disabled if the
@@ -155,6 +159,13 @@ class SecureCookie(ModificationTrackingDict):
             secret_key = to_bytes(secret_key, 'utf-8')
         self.secret_key = secret_key
         self.new = new
+
+        if self.serialization_method is pickle:
+            warnings.warn(
+                'The default SecureCookie.serialization_method will change from pickle'
+                ' to json in 1.0. To upgrade existing tokens, override unquote to try'
+                ' pickle if json fails.'
+            )
 
     def __repr__(self):
         return '<%s %s%s>' % (
@@ -180,7 +191,9 @@ class SecureCookie(ModificationTrackingDict):
         if cls.serialization_method is not None:
             value = cls.serialization_method.dumps(value)
         if cls.quote_base64:
-            value = b''.join(base64.b64encode(value).splitlines()).strip()
+            value = b''.join(
+                base64.b64encode(to_bytes(value, "utf8")).splitlines()
+            ).strip()
         return value
 
     @classmethod

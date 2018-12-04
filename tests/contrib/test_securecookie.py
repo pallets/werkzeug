@@ -8,7 +8,10 @@
     :copyright: (c) 2014 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+import json
+import pytest
 
+from werkzeug._compat import to_native
 from werkzeug.utils import parse_cookie
 from werkzeug.wrappers import Request, Response
 from werkzeug.contrib.securecookie import SecureCookie
@@ -56,3 +59,25 @@ def test_wrapper_support():
     c2 = SecureCookie.load_cookie(req, secret_key=b'foo')
     assert not c2.new
     assert c2 == c
+
+
+def test_pickle_deprecated():
+    with pytest.warns(UserWarning):
+        SecureCookie({"foo": "bar"}, "secret").serialize()
+
+
+def test_json():
+    class JSONCompat(object):
+        dumps = staticmethod(json.dumps)
+
+        @staticmethod
+        def loads(s):
+            # json on Python < 3.6 fails on bytes
+            return json.loads(to_native(s, "utf8"))
+
+    class JSONSecureCookie(SecureCookie):
+        serialization_method = JSONCompat
+
+    secure = JSONSecureCookie({"foo": "bar"}, "secret").serialize()
+    data = JSONSecureCookie.unserialize(secure, "secret")
+    assert data == {"foo": "bar"}
