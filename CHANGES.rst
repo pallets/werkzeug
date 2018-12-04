@@ -146,6 +146,11 @@ Unreleased
     an issue where :func:`tempfile.SpooledTemporaryFile` didn't
     implement all of :class:`io.IOBase`. See
     https://github.com/python/cpython/pull/3249. (`#1409`_)
+-   The default :attr:`SecureCookie.serialization_method
+    <contrib.securecookie.SecureCookie.serialization_method>` will
+    change from :mod:`pickle` to :mod:`json` in 1.0. To upgrade existing
+    tokens, override :meth:`~contrib.securecookie.SecureCookie.unquote`
+    to try ``pickle`` if ``json`` fails. (`#1413`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -200,6 +205,7 @@ Unreleased
 .. _#1404: https://github.com/pallets/werkzeug/pull/1404
 .. _#1409: https://github.com/pallets/werkzeug/pull/1409
 .. _#1412: https://github.com/pallets/werkzeug/pull/1412
+.. _#1413: https://github.com/pallets/werkzeug/pull/1413
 
 
 Version 0.14.1
