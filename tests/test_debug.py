@@ -202,21 +202,24 @@ class TestDebugHelpers(object):
         assert 'Help on list object' in x
         assert '__delitem__' in x
 
-    @pytest.mark.skipif(PY2, reason='Exc from Exc syntax only in py3')
+    @pytest.mark.skipif(PY2, reason="Python 2 doesn't have chained exceptions.")
     def test_exc_divider_found_on_chained_exception(self):
         @Request.application
-        def app(environ):
+        def app(request):
             def do_something():
-                raise ValueError("Inner Exception")
+                raise ValueError("inner")
             try:
                 do_something()
-            except Exception as err: # noqa: ignore=F841
-                eval('raise ValueError("Outer Exception") from e')
+            except ValueError:
+                raise KeyError("outer")
 
         debugged = DebuggedApplication(app)
         client = Client(debugged, Response)
         response = client.get("/")
-        assert '<div class="exc-divider">' in response.data.decode('utf-8')
+        data = response.get_data(as_text=True)
+        assert u'raise ValueError("inner")' in data
+        assert u'<div class="exc-divider">' in data
+        assert u'raise KeyError("outer")' in data
 
 
 class TestTraceback(object):

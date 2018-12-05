@@ -143,7 +143,9 @@ div.pin-prompt .inner {
 }
 
 div.exc-divider {
-    font-weight: bold;
-    background: rgba(136, 252, 219, 1); /* #f9f98b */
-    padding: 7px;
+    margin: 0.7em 0 0 -1em;
+    padding: 0.5em;
+    background: #11557C;
+    color: #ddd;
+    border: 1px solid #ddd;
 }
