@@ -437,7 +437,7 @@ class Frame(object):
     """A single frame in a traceback."""
 
     def __init__(self, exc_type, exc_value, tb):
-        self.lineno = tb.tb_frame.f_lineno
+        self.lineno = tb.tb_lineno
         self.function_name = tb.tb_frame.f_code.co_name
         self.locals = tb.tb_frame.f_locals
         self.globals = tb.tb_frame.f_globals
