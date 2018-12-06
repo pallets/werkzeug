@@ -151,6 +151,8 @@ Unreleased
     change from :mod:`pickle` to :mod:`json` in 1.0. To upgrade existing
     tokens, override :meth:`~contrib.securecookie.SecureCookie.unquote`
     to try ``pickle`` if ``json`` fails. (`#1413`_)
+-   The debugger and server log support Python 3's chained exceptions.
+    (`#1396`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -200,6 +202,7 @@ Unreleased
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
 .. _`#1393`: https://github.com/pallets/werkzeug/pull/1393
 .. _`#1395`: https://github.com/pallets/werkzeug/pull/1395
+.. _#1396: https://github.com/pallets/werkzeug/pull/1396
 .. _`#1401`: https://github.com/pallets/werkzeug/pull/1401
 .. _`#1402`: https://github.com/pallets/werkzeug/pull/1402
 .. _#1404: https://github.com/pallets/werkzeug/pull/1404
