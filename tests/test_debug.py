@@ -15,11 +15,13 @@ import io
 import pytest
 import requests
 
-from werkzeug.debug import get_machine_id
+from werkzeug.debug import get_machine_id, DebuggedApplication
 from werkzeug.debug.repr import debug_repr, DebugReprGenerator, \
     dump, helper
 from werkzeug.debug.console import HTMLStringO
 from werkzeug.debug.tbtools import Traceback
+from werkzeug.test import Client
+from werkzeug.wrappers import Request, Response
 from werkzeug._compat import PY2
 
 
@@ -199,6 +201,25 @@ class TestDebugHelpers(object):
 
         assert 'Help on list object' in x
         assert '__delitem__' in x
+
+    @pytest.mark.skipif(PY2, reason="Python 2 doesn't have chained exceptions.")
+    def test_exc_divider_found_on_chained_exception(self):
+        @Request.application
+        def app(request):
+            def do_something():
+                raise ValueError("inner")
+            try:
+                do_something()
+            except ValueError:
+                raise KeyError("outer")
+
+        debugged = DebuggedApplication(app)
+        client = Client(debugged, Response)
+        response = client.get("/")
+        data = response.get_data(as_text=True)
+        assert u'raise ValueError("inner")' in data
+        assert u'<div class="exc-divider">' in data
+        assert u'raise KeyError("outer")' in data
 
 
 class TestTraceback(object):

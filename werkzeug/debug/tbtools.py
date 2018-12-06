@@ -20,8 +20,10 @@ from tokenize import TokenError
 
 from werkzeug.utils import cached_property, escape
 from werkzeug.debug.console import Console
-from werkzeug._compat import range_type, PY2, text_type, string_types, \
-    to_native, to_unicode
+from werkzeug._compat import (
+    range_type, PY2, text_type, string_types,
+    to_native, to_unicode, reraise,
+)
 from werkzeug.filesystem import get_filesystem_encoding
 
 
@@ -176,8 +178,8 @@ def get_current_traceback(ignore_system_exceptions=False,
     """
     exc_type, exc_value, tb = sys.exc_info()
     if ignore_system_exceptions and exc_type in system_exceptions:
-        raise
-    for x in range_type(skip):
+        reraise(exc_type, exc_value, tb)
+    for _ in range_type(skip):
         if tb.tb_next is None:
             break
         tb = tb.tb_next
@@ -197,6 +199,7 @@ class Line(object):
         self.in_frame = False
         self.current = False
 
+    @property
     def classes(self):
         rv = ['line']
         if self.in_frame:
@@ -204,7 +207,6 @@ class Line(object):
         if self.current:
             rv.append('current')
         return rv
-    classes = property(classes)
 
     def render(self):
         return SOURCE_LINE_HTML % {
@@ -220,76 +222,49 @@ class Traceback(object):
     def __init__(self, exc_type, exc_value, tb):
         self.exc_type = exc_type
         self.exc_value = exc_value
-        if not isinstance(exc_type, str):
-            exception_type = exc_type.__name__
-            if exc_type.__module__ not in ('__builtin__', 'exceptions'):
-                exception_type = exc_type.__module__ + '.' + exception_type
-        else:
-            exception_type = exc_type
+        self.tb = tb
+
+        exception_type = exc_type.__name__
+        if exc_type.__module__ not in {"builtins", "__builtin__", "exceptions"}:
+            exception_type = exc_type.__module__ + '.' + exception_type
         self.exception_type = exception_type
 
-        # we only add frames to the list that are not hidden.  This follows
-        # the magic variables as defined by paste.exceptions.collector
-        self.frames = []
-        while tb:
-            self.frames.append(Frame(exc_type, exc_value, tb))
-            tb = tb.tb_next
+        self.groups = []
+        while True:
+            self.groups.append(Group(exc_type, exc_value, tb))
+            if PY2:
+                break
+            exc_value = exc_value.__cause__ or exc_value.__context__
+            if exc_value is None:
+                break
+            exc_type = type(exc_value)
+            tb = exc_value.__traceback__
+        self.groups.reverse()
+        self.frames = [frame for group in self.groups for frame in group.frames]
 
     def filter_hidden_frames(self):
         """Remove the frames according to the paste spec."""
-        if not self.frames:
-            return
+        for group in self.groups:
+            group.filter_hidden_frames()
 
-        new_frames = []
-        hidden = False
-        for frame in self.frames:
-            hide = frame.hide
-            if hide in ('before', 'before_and_this'):
-                new_frames = []
-                hidden = False
-                if hide == 'before_and_this':
-                    continue
-            elif hide in ('reset', 'reset_and_this'):
-                hidden = False
-                if hide == 'reset_and_this':
-                    continue
-            elif hide in ('after', 'after_and_this'):
-                hidden = True
-                if hide == 'after_and_this':
-                    continue
-            elif hide or hidden:
-                continue
-            new_frames.append(frame)
+        self.frames[:] = [frame for group in self.groups for frame in group.frames]
 
-        # if we only have one frame and that frame is from the codeop
-        # module, remove it.
-        if len(new_frames) == 1 and self.frames[0].module == 'codeop':
-            del self.frames[:]
-
-        # if the last frame is missing something went terrible wrong :(
-        elif self.frames[-1] in new_frames:
-            self.frames[:] = new_frames
-
+    @property
     def is_syntax_error(self):
         """Is it a syntax error?"""
         return isinstance(self.exc_value, SyntaxError)
-    is_syntax_error = property(is_syntax_error)
 
+    @property
     def exception(self):
-        """String representation of the exception."""
-        buf = traceback.format_exception_only(self.exc_type, self.exc_value)
-        rv = ''.join(buf).strip()
-        return rv.decode('utf-8', 'replace') if PY2 else rv
-    exception = property(exception)
+        """String representation of the final exception."""
+        return self.groups[-1].exception
 
     def log(self, logfile=None):
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
         tb = self.plaintext.rstrip() + u'\n'
-        if PY2:
-            tb = tb.encode('utf-8', 'replace')
-        logfile.write(tb)
+        logfile.write(to_native(tb, "utf-8", "replace"))
 
     def paste(self):
         """Create a paste and return the paste id."""
@@ -317,22 +292,18 @@ class Traceback(object):
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
         title = ''
-        frames = []
         classes = ['traceback']
         if not self.frames:
             classes.append('noframe-traceback')
+            frames = []
+        else:
+            frames = [group.render() for group in self.groups]
 
         if include_title:
             if self.is_syntax_error:
                 title = u'Syntax Error'
             else:
                 title = u'Traceback <em>(most recent call last)</em>:'
-
-        for frame in self.frames:
-            frames.append(u'<li%s>%s' % (
-                u' title="%s"' % escape(frame.info) if frame.info else u'',
-                frame.render()
-            ))
 
         if self.is_syntax_error:
             description_wrapper = u'<pre class=syntaxerror>%s</pre>'
@@ -364,23 +335,101 @@ class Traceback(object):
             'secret':           secret
         }
 
-    def generate_plaintext_traceback(self):
-        """Like the plaintext attribute but returns a generator"""
-        yield u'Traceback (most recent call last):'
-        for frame in self.frames:
-            yield u'  File "%s", line %s, in %s' % (
-                frame.filename,
-                frame.lineno,
-                frame.function_name
-            )
-            yield u'    ' + frame.current_line.strip()
-        yield self.exception
-
+    @cached_property
     def plaintext(self):
-        return u'\n'.join(self.generate_plaintext_traceback())
-    plaintext = cached_property(plaintext)
+        return u"\n".join([group.render_text() for group in self.groups])
 
-    id = property(lambda x: id(x))
+    @property
+    def id(self):
+        return id(self)
+
+
+class Group(object):
+    """A group of frames for an exception in a traceback. On Python 3,
+    if the exception has a ``__cause__`` or ``__context__``, there are
+    multiple exception groups.
+    """
+
+    def __init__(self, exc_type, exc_value, tb):
+        self.exc_type = exc_type
+        self.exc_value = exc_value
+        self.info = None
+        if not PY2:
+            if exc_value.__cause__ is not None:
+                self.info = (
+                    u"The above exception was the direct cause of the"
+                    u" following exception"
+                )
+            elif exc_value.__context__ is not None:
+                self.info = (
+                    u"During handling of the above exception, another"
+                    u" exception occurred"
+                )
+
+        self.frames = []
+        while tb is not None:
+            self.frames.append(Frame(exc_type, exc_value, tb))
+            tb = tb.tb_next
+
+    def filter_hidden_frames(self):
+        new_frames = []
+        hidden = False
+
+        for frame in self.frames:
+            hide = frame.hide
+            if hide in ("before", "before_and_this"):
+                new_frames = []
+                hidden = False
+                if hide == "before_and_this":
+                    continue
+            elif hide in ("reset", "reset_and_this"):
+                hidden = False
+                if hide == "reset_and_this":
+                    continue
+            elif hide in ("after", "after_and_this"):
+                hidden = True
+                if hide == "after_and_this":
+                    continue
+            elif hide or hidden:
+                continue
+            new_frames.append(frame)
+
+        # if we only have one frame and that frame is from the codeop
+        # module, remove it.
+        if len(new_frames) == 1 and self.frames[0].module == "codeop":
+            del self.frames[:]
+
+        # if the last frame is missing something went terrible wrong :(
+        elif self.frames[-1] in new_frames:
+            self.frames[:] = new_frames
+
+    @property
+    def exception(self):
+        """String representation of the exception."""
+        buf = traceback.format_exception_only(self.exc_type, self.exc_value)
+        rv = "".join(buf).strip()
+        return to_unicode(rv, "utf-8", "replace")
+
+    def render(self):
+        out = []
+        if self.info is not None:
+            out.append(u'<li><div class="exc-divider">%s:</div>' % self.info)
+        for frame in self.frames:
+            out.append(u"<li%s>%s" % (
+                u' title="%s"' % escape(frame.info) if frame.info else u"",
+                frame.render()
+            ))
+        return u"\n".join(out)
+
+    def render_text(self):
+        out = []
+        if self.info is not None:
+            out.append(u"\n%s:\n" % self.info)
+        out.append(u"Traceback (most recent call last):")
+        for frame in self.frames:
+            out.append(frame.render_text())
+        out.append(self.exception)
+        return u"\n".join(out)
 
 
 class Frame(object):
@@ -408,10 +457,7 @@ class Frame(object):
         self.hide = self.locals.get('__traceback_hide__', False)
         info = self.locals.get('__traceback_info__')
         if info is not None:
-            try:
-                info = text_type(info)
-            except UnicodeError:
-                info = str(info).decode('utf-8', 'replace')
+            info = to_unicode(info, "utf-8", "replace")
         self.info = info
 
     def render(self):
@@ -423,6 +469,14 @@ class Frame(object):
             'function_name':    escape(self.function_name),
             'lines':            self.render_line_context(),
         }
+
+    def render_text(self):
+        return u'  File "%s", line %s, in %s\n    %s' % (
+            self.filename,
+            self.lineno,
+            self.function_name,
+            self.current_line.strip()
+        )
 
     def render_line_context(self):
         before, current, after = self.get_context_lines()
@@ -474,7 +528,7 @@ class Frame(object):
     def eval(self, code, mode='single'):
         """Evaluate code in the context of the frame."""
         if isinstance(code, string_types):
-            if PY2 and isinstance(code, unicode):  # noqa
+            if PY2 and isinstance(code, text_type):  # noqa
                 code = UTF8_COOKIE + code.encode('utf-8')
             code = compile(code, '<interactive>', mode)
         return eval(code, self.globals, self.locals)
@@ -553,4 +607,6 @@ class Frame(object):
     def console(self):
         return Console(self.globals, self.locals)
 
-    id = property(lambda x: id(x))
+    @property
+    def id(self):
+        return id(self)

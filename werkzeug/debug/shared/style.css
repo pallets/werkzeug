@@ -141,3 +141,11 @@ div.pin-prompt .inner {
     border: 1px solid #ccc;
     border-radius: 2px;
 }
+
+div.exc-divider {
+    margin: 0.7em 0 0 -1em;
+    padding: 0.5em;
+    background: #11557C;
+    color: #ddd;
+    border: 1px solid #ddd;
+}
