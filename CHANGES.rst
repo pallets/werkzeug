@@ -151,6 +151,7 @@ Unreleased
     change from :mod:`pickle` to :mod:`json` in 1.0. To upgrade existing
     tokens, override :meth:`~contrib.securecookie.SecureCookie.unquote`
     to try ``pickle`` if ``json`` fails. (`#1413`_)
+-   Fix :func:`~urls.uri_to_iri` when handling whitespace. (`#1363`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -195,6 +196,7 @@ Unreleased
 .. _`#1346`: https://github.com/pallets/werkzeug/pull/1346
 .. _`#1355`: https://github.com/pallets/werkzeug/pull/1355
 .. _`#1358`: https://github.com/pallets/werkzeug/pull/1358
+.. _`#1363`: https://github.com/pallets/werkzeug/pull/1363
 .. _`#1375`: https://github.com/pallets/werkzeug/pull/1375
 .. _`#1377`: https://github.com/pallets/werkzeug/pull/1377
 .. _`#1390`: https://github.com/pallets/werkzeug/pull/1390
