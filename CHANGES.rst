@@ -153,6 +153,10 @@ Unreleased
     to try ``pickle`` if ``json`` fails. (`#1413`_)
 -   The debugger and server log support Python 3's chained exceptions.
     (`#1396`_)
+-   Fix an issue where ``sys.path`` would change between reloads when
+    running with ``python -m app``. The reloader can detect that a
+    module was run with "-m" and reconstructs that instead of the file
+    path in ``sys.argv`` when reloading. (`#1416`_)
 
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -209,6 +213,7 @@ Unreleased
 .. _#1409: https://github.com/pallets/werkzeug/pull/1409
 .. _#1412: https://github.com/pallets/werkzeug/pull/1412
 .. _#1413: https://github.com/pallets/werkzeug/pull/1413
+.. _#1416: https://github.com/pallets/werkzeug/pull/1416
 
 
 Version 0.14.1

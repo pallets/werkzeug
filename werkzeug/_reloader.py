@@ -65,22 +65,47 @@ def _get_args_for_reloading():
     """
     rv = [sys.executable]
     py_script = os.path.abspath(sys.argv[0])
+    args = sys.argv[1:]
+    # Need to look at main module to determine how it was executed.
+    __main__ = sys.modules["__main__"]
 
-    if os.name == 'nt' and not os.path.exists(py_script) and \
-       os.path.exists(py_script + '.exe'):
-        py_script += '.exe'
+    if __main__.__package__ is None:
+        # Executed a file, like "python app.py".
+        if os.name == "nt":
+            # Windows entry points have ".exe" extension and should be
+            # called directly.
+            if not os.path.exists(py_script) and os.path.exists(py_script + ".exe"):
+                py_script += ".exe"
 
-    windows_workaround = (
-        os.path.splitext(rv[0])[1] == '.exe'
-        and os.path.splitext(py_script)[1] == '.exe'
-    )
-    nix_workaround = os.path.isfile(py_script) and os.access(py_script, os.X_OK)
+            if (
+                os.path.splitext(rv[0])[1] == ".exe"
+                and os.path.splitext(py_script)[1] == ".exe"
+            ):
+                rv.pop(0)
 
-    if windows_workaround or nix_workaround:
-        rv.pop(0)
+        elif os.path.isfile(py_script) and os.access(py_script, os.X_OK):
+            # The file is marked as executable. Nix adds a wrapper that
+            # shouldn't be called with the Python executable.
+            rv.pop(0)
 
-    rv.append(py_script)
-    rv.extend(sys.argv[1:])
+        rv.append(py_script)
+    else:
+        # Executed a module, like "python -m werkzeug.serving".
+        if sys.argv[0] == "-m":
+            # Flask works around previous behavior by putting
+            # "-m flask" in sys.argv.
+            # TODO remove this once Flask no longer misbehaves
+            args = sys.argv
+        else:
+            py_module = __main__.__package__
+            name = os.path.splitext(os.path.basename(py_script))[0]
+
+            if name != "__main__":
+                py_module += "." + name
+
+            rv.extend(("-m", py_module.lstrip(".")))
+
+    rv.extend(args)
     return rv
 
 
