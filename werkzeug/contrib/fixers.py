@@ -269,7 +269,7 @@ class ProxyFix(object):
             environ['SERVER_PORT'] = x_port
 
         x_prefix = self._get_trusted_comma(
-            self.x_for, environ_get('HTTP_X_FORWARDED_PREFIX'))
+            self.x_prefix, environ_get('HTTP_X_FORWARDED_PREFIX'))
         if x_prefix:
             environ['SCRIPT_NAME'] = x_prefix
 

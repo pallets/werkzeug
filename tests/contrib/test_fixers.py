@@ -121,7 +121,13 @@ class TestServerFixer(object):
             'REMOTE_ADDR': '192.168.0.1',
             'HTTP_HOST': 'spam',
             'HTTP_X_FORWARDED_FOR': ', 192.168.0.3'
-        }, 'http://spam/', id='ignore empty')
+        }, 'http://spam/', id='ignore empty'),
+        pytest.param({'x_for': 2, 'x_prefix': 1}, {
+            'REMOTE_ADDR': '192.168.0.2',
+            'HTTP_HOST': 'spam',
+            'HTTP_X_FORWARDED_FOR': '192.168.0.1, 192.168.0.3',
+            'HTTP_X_FORWARDED_PREFIX': '/ham, /eggs',
+        }, 'http://spam/eggs/', id='prefix < for')
     ))
     def test_proxy_fix_new(self, kwargs, base, url_root):
         @Request.application
