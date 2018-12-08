@@ -71,24 +71,21 @@ def _get_args_for_reloading():
 
     if __main__.__package__ is None:
         # Executed a file, like "python app.py".
-        if (
-            os.name == "nt"
-            and not os.path.exists(py_script)
-            and os.path.exists(py_script + ".exe")
-        ):
-            # Windows entry points have "exe" extension.
-            py_script += ".exe"
+        if os.name == "nt":
+            # Windows entry points have ".exe" extension and should be
+            # called directly.
+            if not os.path.exists(py_script) and os.path.exists(py_script + ".exe"):
+                py_script += ".exe"
 
-        is_windows_exe = (
-            os.path.splitext(rv[0])[1] == ".exe"
-            and os.path.splitext(py_script)[1] == ".exe"
-        )
-        # The file is marked as executable. Nix adds a wrapper that
-        # needs to be called directly.
-        is_nix_exe = os.path.isfile(py_script) and os.access(py_script, os.X_OK)
+            if (
+                os.path.splitext(rv[0])[1] == ".exe"
+                and os.path.splitext(py_script)[1] == ".exe"
+            ):
+                rv.pop(0)
 
-        if is_windows_exe or is_nix_exe:
-            # The file will be executed without "python ...".
+        elif os.path.isfile(py_script) and os.access(py_script, os.X_OK):
+            # The file is marked as executable. Nix adds a wrapper that
+            # shouldn't be called with the Python executable.
             rv.pop(0)
 
         rv.append(py_script)
@@ -106,7 +103,7 @@ def _get_args_for_reloading():
             if name != "__main__":
                 py_module += "." + name
 
-            rv.extend(("-m", py_module))
+            rv.extend(("-m", py_module.lstrip(".")))
 
     rv.extend(args)
     return rv
