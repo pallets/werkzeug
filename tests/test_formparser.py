@@ -441,6 +441,25 @@ class TestMultiPartParser(object):
         assert parser.stream_factory is stream_factory
         assert parser.cls is dict
 
+    def test_file_rfc2231_filename_continuations(self):
+        data = (
+            b"--foo\r\n"
+            b"Content-Type: text/plain; charset=utf-8\r\n"
+            b'Content-Disposition: form-data; name=rfc2231;\r\n'
+            b"	filename*0*=ascii''a%20b%20;\r\n"
+            b"	filename*1*=c%20d%20;\r\n"
+            b'	filename*2="e f.txt"\r\n\r\n'
+            b"file contents\r\n--foo--"
+        )
+        request = Request.from_values(
+            input_stream=BytesIO(data),
+            content_length=len(data),
+            content_type="multipart/form-data; boundary=foo",
+            method="POST"
+        )
+        assert request.files["rfc2231"].filename == "a b c d e f.txt"
+        assert request.files["rfc2231"].read() == b"file contents"
+
 
 class TestInternalFunctions(object):
 

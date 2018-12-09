@@ -176,6 +176,9 @@ Unreleased
     -   ``testtools`` is removed. It did not offer significant benefit
         over the default test client.
 
+-   :func:`~http.parse_options_header` understands :rfc:`2231` parameter
+    continuations. (`#1417`_)
+
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
@@ -233,6 +236,7 @@ Unreleased
 .. _#1412: https://github.com/pallets/werkzeug/pull/1412
 .. _#1413: https://github.com/pallets/werkzeug/pull/1413
 .. _#1416: https://github.com/pallets/werkzeug/pull/1416
+.. _#1417: https://github.com/pallets/werkzeug/pull/1417
 
 
 Version 0.14.1
