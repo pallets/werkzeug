@@ -64,18 +64,21 @@ _token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
 _option_header_piece_re = re.compile(r'''
-    ;\s*
+    ;\s*,?\s*  # newlines were replaced with commas
     (?P<key>
         "[^"\\]*(?:\\.[^"\\]*)*"  # quoted string
     |
         [^\s;,=*]+  # token
     )
+    (?:\*(?P<count>\d+))?  # *1, optional continuation index
     \s*
     (?:  # optionally followed by =value
         (?:  # equals sign, possibly with encoding
             \*\s*=\s*  # * indicates extended notation
-            (?P<encoding>[^\s]+?)
-            '(?P<language>[^\s]*?)'
+            (?:  # optional encoding
+                (?P<encoding>[^\s]+?)
+                '(?P<language>[^\s]*?)'
+            )?
         |
             =\s*  # basic notation
         )
@@ -355,6 +358,9 @@ def parse_options_header(value, multiple=False):
     a slightly different format.  For these headers use the
     :func:`parse_dict_header` function.
 
+    .. versionchanged:: 0.15
+        :rfc:`2231` parameter continuations are handled.
+
     .. versionadded:: 0.5
 
     :param value: the header to parse.
@@ -376,11 +382,22 @@ def parse_options_header(value, multiple=False):
         options = {}
         # Parse options
         rest = match.group(2)
+        continued_encoding = None
         while rest:
             optmatch = _option_header_piece_re.match(rest)
             if not optmatch:
                 break
-            option, encoding, _, option_value = optmatch.groups()
+            option, count, encoding, language, option_value = optmatch.groups()
+            # Continuations don't have to supply the encoding after the
+            # first line. If we're in a continuation, track the current
+            # encoding to use for subsequent lines. Reset it when the
+            # continuation ends.
+            if not count:
+                continued_encoding = None
+            else:
+                if not encoding:
+                    encoding = continued_encoding
+                continued_encoding = encoding
             option = unquote_header_value(option)
             if option_value is not None:
                 option_value = unquote_header_value(
@@ -388,7 +405,13 @@ def parse_options_header(value, multiple=False):
                     option == 'filename')
                 if encoding is not None:
                     option_value = _unquote(option_value).decode(encoding)
-            options[option] = option_value
+            if count:
+                # Continuations append to the existing value. For
+                # simplicity, this ignores the possibility of
+                # out-of-order indices, which shouldn't happen anyway.
+                options[option] = options.get(option, "") + option_value
+            else:
+                options[option] = option_value
             rest = rest[optmatch.end():]
         result.append(options)
         if multiple is False:

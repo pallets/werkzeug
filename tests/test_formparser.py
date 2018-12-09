@@ -443,26 +443,23 @@ class TestMultiPartParser(object):
 
     def test_file_rfc2231_filename_continuations(self):
         data = (
-            b'--foo\r\n'
-            b'Content-Type: text/plain; charset=utf-8\r\n'
-            b'Content-Disposition: form-data; name="rfc2231_filename";\r\n'
-            b"	filename*0*=us-ascii'en'word01%20word02%20word03%20;\r\n"
-            b"	filename*1*=word04%20word05%20word06%20word07%20word08%20;\r\n"
-            b"	filename*2*=word09%20word10%20word11%20word12%20word13%20;\r\n"
-            b"	filename*3*=word14%20word15%20word16%20word17.txt\r\n\r\n"
-            b'file contents\r\n--foo--'
+            b"--foo\r\n"
+            b"Content-Type: text/plain; charset=utf-8\r\n"
+            b'Content-Disposition: form-data; name=rfc2231;\r\n'
+            b"	filename*0*=ascii''a%20b%20;\r\n"
+            b"	filename*1*=c%20d%20;\r\n"
+            b'	filename*2="e f.txt"\r\n\r\n'
+            b"file contents\r\n--foo--"
         )
+        request = Request.from_values(
+            input_stream=BytesIO(data),
+            content_length=len(data),
+            content_type="multipart/form-data; boundary=foo",
+            method="POST"
+        )
+        assert request.files["rfc2231"].filename == "a b c d e f.txt"
+        assert request.files["rfc2231"].read() == b"file contents"
 
-        data = Request.from_values(input_stream=BytesIO(data),
-                                   content_length=len(data),
-                                   content_type='multipart/form-data; boundary=foo',
-                                   method='POST')
-        self.assert_equal(data.files['rfc2231_filename'].filename, '"word01'
-                          + ' word02 word03 word04 word05 word06 word07 word08'
-                          + ' word09 word10 word11 word12 word13 word14 word15'
-                          + ' word16 word17.txt"')
-        self.assert_strict_equal(data.files['rfc2231_filename'].read(),
-                                 b'file contents')
 
 class TestInternalFunctions(object):
 
