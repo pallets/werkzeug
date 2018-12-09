@@ -54,23 +54,33 @@ patch:
 
         patch -p1 < new-imports.udiff
 
-Stop Using Deprecated Things
-----------------------------
 
-A few things in Werkzeug will stop being supported and for others, we're
-suggesting alternatives even if they will stick around for a longer time.
+Deprecated and Removed Code
+---------------------------
 
-Do not use:
+Some things that were relevant to Werkzeug's core (working with WSGI and
+HTTP) have been removed. These were not commonly used, or are better
+served by dedicated libraries.
 
--   `werkzeug.script`, replace it with custom scripts written with
-    `argparse`, `click` or something similar.
--   `werkzeug.template`, replace with a proper template engine.
--   `werkzeug.contrib.jsrouting`, stop using URL generation for
-    JavaScript, it does not scale well with many public routing.
--   `werkzeug.contrib.kickstart`, replace with hand written code, the
-    Werkzeug API became better in general that this is no longer
-    necessary.
--   `werkzeug.contrib.testtools`, not useful really.
--   `werkzeug.contrib.cache`, use cachelib instead.
--   `werkzeug.contrib.atom`, not useful really.
--   `werkzeug.contrib.limiter`, not useful really.
+-   ``werkzeug.script``, replace with `Click`_ or another dedicated
+    command line library.
+-   ``werkzeug.template``, replace with `Jinja`_ or another dedicated
+    template library.
+-   ``werkzeug.contrib.jsrouting``, this type of URL generation in
+    JavaScript did not scale well. Instead, generate URLs when
+    rendering templates, or add a URL field to a JSON response.
+-   ``werkzeug.contrib.kickstart``, replace with custom code if needed,
+    the Werkzeug API has improved in general. `Flask`_ is a higher-level
+    version of this.
+-   ``werkzeug.contrib.testtools``, was not significantly useful over
+    the default behavior.
+-   ``werkzeug.contrib.cache``, has been extracted to `cachelib`_.
+-   ``werkzeug.contrib.atom``, was outside the core focus of Werkzeug,
+    replace with a dedicated feed generation library.
+-   ``werkzeug.contrib.limiter``, stream limiting is better handled by
+    the WSGI server library instead of middleware.
+
+.. _Click: https://click.palletsprojects.com/
+.. _Jinja: https://jinja.pocoo.org/docs/
+.. _Flask: https://flask.pocoo.org/docs/
+.. _cachelib: https://github.com/pallets/cachelib

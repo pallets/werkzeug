@@ -12,8 +12,10 @@ import errno
 
 import pytest
 
+pytestmark = pytest.mark.skip('werkzeug.contrib.cache moved to cachelib')
+
 from werkzeug._compat import text_type
-from werkzeug.contrib import WerkzeugContribDeprecationWarning, cache
+from werkzeug.contrib import cache
 
 try:
     import redis
@@ -55,16 +57,11 @@ class CacheTestsBase(object):
 
     @pytest.fixture
     def c(self, make_cache):
-        pytest.skip('Caching is currently unmaintained')
         """Return a cache instance."""
         return make_cache()
 
 
 class GenericCacheTests(CacheTestsBase):
-    def test_deprecation_warning(self):
-        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
-            cache.BaseCache()
-
     def test_generic_get_dict(self, c):
         assert c.set('a', 'a')
         assert c.set('b', 'b')
@@ -156,14 +153,13 @@ class TestSimpleCache(GenericCacheTests):
         return cache.SimpleCache
 
     def test_purge(self):
-        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
-            c = cache.SimpleCache(threshold=2)
-            c.set('a', 'a')
-            c.set('b', 'b')
-            c.set('c', 'c')
-            c.set('d', 'd')
-            # Cache purges old items *before* it sets new ones.
-            assert len(c._cache) == 3
+        c = cache.SimpleCache(threshold=2)
+        c.set('a', 'a')
+        c.set('b', 'b')
+        c.set('c', 'c')
+        c.set('d', 'd')
+        # Cache purges old items *before* it sets new ones.
+        assert len(c._cache) == 3
 
 
 class TestFileSystemCache(GenericCacheTests):
@@ -173,8 +169,7 @@ class TestFileSystemCache(GenericCacheTests):
 
     def test_filesystemcache_prune(self, make_cache):
         THRESHOLD = 13
-        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
-            c = make_cache(threshold=THRESHOLD)
+        c = make_cache(threshold=THRESHOLD)
 
         for i in range(2 * THRESHOLD):
             assert c.set(str(i), i)
@@ -194,8 +189,7 @@ class TestFileSystemCache(GenericCacheTests):
 
     def test_no_threshold(self, make_cache):
         THRESHOLD = 0
-        with pytest.warns(WerkzeugContribDeprecationWarning, match='cache is deprecated'):
-            c = make_cache(threshold=THRESHOLD)
+        c = make_cache(threshold=THRESHOLD)
 
         for i in range(10):
             assert c.set(str(i), i)

@@ -25,14 +25,12 @@ import warnings
 from datetime import datetime
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
-from werkzeug.contrib import WerkzeugContribDeprecationWarning
 from werkzeug._compat import implements_to_string, string_types
 
 warnings.warn(
     'werkzeug.contrib.atom is deprecated as of version 0.15 and will'
     ' be removed in version 1.0.',
-    WerkzeugContribDeprecationWarning,
-    stacklevel=3
+    DeprecationWarning,
 )
 
 

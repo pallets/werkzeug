@@ -18,8 +18,6 @@
 """
 import warnings
 
-from werkzeug.contrib import WerkzeugContribDeprecationWarning
-
 try:
     from urllib import unquote
 except ImportError:
@@ -59,7 +57,7 @@ class LighttpdCGIRootFix(CGIRootFix):
         warnings.warn(
             "LighttpdCGIRootFix is renamed CGIRootFix and will be"
             " removed in 1.0.",
-            WerkzeugContribDeprecationWarning,
+            DeprecationWarning,
             stacklevel=3,
         )
         super(LighttpdCGIRootFix, self).__init__(*args, **kwargs)

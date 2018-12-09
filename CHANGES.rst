@@ -157,7 +157,26 @@ Unreleased
     running with ``python -m app``. The reloader can detect that a
     module was run with "-m" and reconstructs that instead of the file
     path in ``sys.argv`` when reloading. (`#1416`_)
+-   The :doc:`contrib modules </contrib/index>` are being deprecated and
+    will either be moved into ``werkzeug`` core or removed completely in
+    version 1.0. Some modules that already issued deprecation warnings
+    have been removed. (`#4`_)
 
+    -   ``cache`` has been extracted into a separate project,
+        `cachelib <https://github.com/pallets/cachelib>`_. The version
+        in Werkzeug is deprecated.
+    -   ``atom`` is deprecated. This did not fit in with the rest of
+        Werkzeug, and is better served by a dedicated library in the
+        community.
+    -   ``jsrouting`` is removed. Set URLs when rendering templates
+        or JSON responses instead.
+    -   ``limiter`` is removed. Its specific use is handled by Werkzeug
+        directly, but stream limiting is better handled by the WSGI
+        server in general.
+    -   ``testtools`` is removed. It did not offer significant benefit
+        over the default test client.
+
+.. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
 .. _`#609`: https://github.com/pallets/werkzeug/pull/609
 .. _`#693`: https://github.com/pallets/werkzeug/pull/693
