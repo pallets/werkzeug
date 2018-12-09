@@ -21,11 +21,17 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import warnings
 from datetime import datetime
-
 from werkzeug.utils import escape
 from werkzeug.wrappers import BaseResponse
 from werkzeug._compat import implements_to_string, string_types
+
+warnings.warn(
+    'werkzeug.contrib.atom is deprecated as of version 0.15 and will'
+    ' be removed in version 1.0.',
+    DeprecationWarning,
+)
 
 
 XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
