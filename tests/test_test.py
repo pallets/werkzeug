@@ -756,3 +756,16 @@ def test_content_type():
 
     resp = client.get('/', data=b'testing', mimetype='application/octet-stream')
     strict_eq(resp.data, b'application/octet-stream')
+
+
+def test_raw_request_uri():
+    @Request.application
+    def app(request):
+        path_info = request.path
+        request_uri = request.environ["REQUEST_URI"]
+        return Response("\n".join((path_info, request_uri)))
+
+    client = Client(app, Response)
+    response = client.get("/hello%2fworld")
+    data = response.get_data(as_text=True)
+    assert data == "/hello/world\n/hello%2fworld"

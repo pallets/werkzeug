@@ -96,3 +96,26 @@ step. All high level interfaces in Werkzeug will apply the encoding and
 decoding as necessary.
 
 .. _PEP 3333: https://www.python.org/dev/peps/pep-3333/#unicode-issues
+
+
+Raw Request URI and Path Encoding
+---------------------------------
+
+The ``PATH_INFO`` in the environ is the path value after
+percent-decoding. For example, the raw path ``/hello%2fworld`` would
+show up from the WSGI server to Werkzeug as ``/hello/world``. This loses
+the information that the slash was a raw character as opposed to a path
+separator.
+
+The WSGI specification (`PEP 3333`_) does not provide a way to get the
+original value, so it is impossible to route some types of data in the
+path. The most compatible way to work around this is to send problematic
+data in the query string instead of the path.
+
+However, many WSGI servers add a non-standard environ key with the raw
+path. To match this behavior, Werkzeug's test client and development
+server will add the raw value to both the ``REQUEST_URI`` and
+``RAW_URI`` keys. If you want to route based on this value, you can use
+middleware to replace ``PATH_INFO`` in the environ before it reaches the
+application. However, keep in mind that these keys are non-standard and
+not guaranteed to be present.

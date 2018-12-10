@@ -288,6 +288,11 @@ class EnvironBuilder(object):
     .. versionadded:: 0.15
         The ``json`` param and :meth:`json_dumps` method.
 
+    .. versionadded:: 0.15
+        The environ has keys ``REQUEST_URI`` and ``RAW_URI`` containing
+        the path before perecent-decoding. This is not part of the WSGI
+        PEP, but many WSGI servers include it.
+
     .. versionchanged:: 0.6
        ``path`` and ``base_url`` can now be unicode strings that are
        encoded with :func:`iri_to_uri`.
@@ -676,6 +681,10 @@ class EnvironBuilder(object):
             'SCRIPT_NAME':          _path_encode(self.script_root),
             'PATH_INFO':            _path_encode(self.path),
             'QUERY_STRING':         qs,
+            # Non-standard, added by mod_wsgi, uWSGI
+            "REQUEST_URI": wsgi_encoding_dance(self.path),
+            # Non-standard, added by gunicorn
+            "RAW_URI": wsgi_encoding_dance(self.path),
             'SERVER_NAME':          self.server_name,
             'SERVER_PORT':          str(self.server_port),
             'HTTP_HOST':            self.host,
