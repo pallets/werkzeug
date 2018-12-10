@@ -202,6 +202,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             'SCRIPT_NAME':          '',
             'PATH_INFO':            wsgi_encoding_dance(path_info),
             'QUERY_STRING':         wsgi_encoding_dance(request_url.query),
+            # Non-standard, added by mod_wsgi, uWSGI
+            "REQUEST_URI": wsgi_encoding_dance(self.path),
+            # Non-standard, added by gunicorn
+            "RAW_URI": wsgi_encoding_dance(self.path),
             'REMOTE_ADDR':          self.address_string(),
             'REMOTE_PORT':          self.port_integer(),
             'SERVER_NAME':          self.server.server_address[0],

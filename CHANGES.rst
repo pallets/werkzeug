@@ -181,6 +181,10 @@ Unreleased
 -   The development server recognizes ``ConnectionError`` on Python 3 to
     silence client disconnects, and does not silence other ``OSErrors``
     that may have been raised inside the application. (`#1418`_)
+-   The environ keys ``REQUEST_URI`` and ``RAW_URI`` contain the raw
+    path before it was percent-decoded. This is non-standard, but many
+    WSGI servers add them. Middleware could replace ``PATH_INFO`` with
+    this to route based on the raw value. (`#1419`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -241,6 +245,7 @@ Unreleased
 .. _#1416: https://github.com/pallets/werkzeug/pull/1416
 .. _#1417: https://github.com/pallets/werkzeug/pull/1417
 .. _#1418: https://github.com/pallets/werkzeug/pull/1418
+.. _#1419: https://github.com/pallets/werkzeug/pull/1419
 
 
 Version 0.14.1
