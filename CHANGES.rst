@@ -157,6 +157,10 @@ Unreleased
     running with ``python -m app``. The reloader can detect that a
     module was run with "-m" and reconstructs that instead of the file
     path in ``sys.argv`` when reloading. (`#1416`_)
+-   The Content-Length header is removed for 1xx and 204 responses. This
+    fixes a previous change where no body would be sent, but the header
+    would still be present. The new behavior matches RFC 7230.
+    (`#1294`_)
 -   The :doc:`contrib modules </contrib/index>` are being deprecated and
     will either be moved into ``werkzeug`` core or removed completely in
     version 1.0. Some modules that already issued deprecation warnings
@@ -214,6 +218,7 @@ Unreleased
 .. _`#1281`: https://github.com/pallets/werkzeug/pull/1281
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
 .. _`#1283`: https://github.com/pallets/werkzeug/issues/1283
+.. _#1294: https://github.com/pallets/werkzeug/pull/1294
 .. _`#1301`: https://github.com/pallets/werkzeug/pull/1301
 .. _`#1303`: https://github.com/pallets/werkzeug/pull/1303
 .. _`#1304`: https://github.com/pallets/werkzeug/pull/1304
