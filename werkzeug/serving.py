@@ -92,7 +92,6 @@ except AttributeError:
     af_unix = None
 
 
-# important: do not use relative imports here or python -m will break
 import werkzeug
 from werkzeug._internal import _log
 from werkzeug._compat import PY2, WIN, reraise, wsgi_encoding_dance
