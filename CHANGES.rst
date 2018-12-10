@@ -193,6 +193,10 @@ Unreleased
     .copy>` returns a shallow mutable copy as a :class:`~datastructures.
     MultiDict`. The copy no longer reflects changes to the combined
     dicts, but is more generally useful. (`#1420`_)
+-   The interactive debugger highlights frames that come from user code
+    to make them easy to pick out in a long stack trace. Note that if an
+    env was created with virtualenv instead of venv, the debugger may
+    incorrectly classify some frames. (`#1421`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -256,6 +260,7 @@ Unreleased
 .. _#1418: https://github.com/pallets/werkzeug/pull/1418
 .. _#1419: https://github.com/pallets/werkzeug/pull/1419
 .. _#1420: https://github.com/pallets/werkzeug/pull/1420
+.. _#1421: https://github.com/pallets/werkzeug/pull/1421
 
 
 Version 0.14.1
