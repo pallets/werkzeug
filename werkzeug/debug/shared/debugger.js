@@ -10,6 +10,10 @@ $(function() {
     openShell(null, $('div.console div.inner').empty(), 0);
   }
 
+  $("div.detail").click(function() {
+    $("div.traceback").get(0).scrollIntoView(false);
+  });
+
   $('div.traceback div.frame').each(function() {
     var
       target = $('pre', this),

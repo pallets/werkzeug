@@ -197,6 +197,8 @@ Unreleased
     to make them easy to pick out in a long stack trace. Note that if an
     env was created with virtualenv instead of venv, the debugger may
     incorrectly classify some frames. (`#1421`_)
+-   Clicking the error message at the top of the interactive debugger
+    will jump down to the bottom of the traceback. (`#1422`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -261,6 +263,7 @@ Unreleased
 .. _#1419: https://github.com/pallets/werkzeug/pull/1419
 .. _#1420: https://github.com/pallets/werkzeug/pull/1420
 .. _#1421: https://github.com/pallets/werkzeug/pull/1421
+.. _#1422: https://github.com/pallets/werkzeug/pull/1422
 
 
 Version 0.14.1
