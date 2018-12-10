@@ -189,6 +189,10 @@ Unreleased
     path before it was percent-decoded. This is non-standard, but many
     WSGI servers add them. Middleware could replace ``PATH_INFO`` with
     this to route based on the raw value. (`#1419`_)
+-   :meth:`CombinedMultiDict.copy() <datastructures.CombinedMultiDict
+    .copy>` returns a shallow mutable copy as a :class:`~datastructures.
+    MultiDict`. The copy no longer reflects changes to the combined
+    dicts, but is more generally useful. (`#1420`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -251,6 +255,7 @@ Unreleased
 .. _#1417: https://github.com/pallets/werkzeug/pull/1417
 .. _#1418: https://github.com/pallets/werkzeug/pull/1418
 .. _#1419: https://github.com/pallets/werkzeug/pull/1419
+.. _#1420: https://github.com/pallets/werkzeug/pull/1420
 
 
 Version 0.14.1

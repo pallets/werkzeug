@@ -1478,8 +1478,16 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
         return (x[1] for x in self.lists())
 
     def copy(self):
-        """Return a shallow copy of this object."""
-        return self.__class__(self.dicts[:])
+        """Return a shallow mutable copy of this object.
+
+        This returns a :class:`MultiDict` representing the data at the
+        time of copying. The copy will no longer reflect changes to the
+        wrapped dicts.
+
+        .. versionchanged:: 0.15
+            Return a mutable :class:`MultiDict`.
+        """
+        return MultiDict(self)
 
     def to_dict(self, flat=True):
         """Return the contents as regular dict.  If `flat` is `True` the
