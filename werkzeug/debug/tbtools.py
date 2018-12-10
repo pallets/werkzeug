@@ -14,6 +14,7 @@ import os
 import sys
 import json
 import inspect
+import sysconfig
 import traceback
 import codecs
 from tokenize import TokenError
@@ -146,7 +147,7 @@ FRAME_HTML = u'''\
   <h4>File <cite class="filename">"%(filename)s"</cite>,
       line <em class="line">%(lineno)s</em>,
       in <code class="function">%(function_name)s</code></h4>
-  <div class="source">%(lines)s</div>
+  <div class="source %(library)s">%(lines)s</div>
 </div>
 '''
 
@@ -297,7 +298,9 @@ class Traceback(object):
             classes.append('noframe-traceback')
             frames = []
         else:
-            frames = [group.render() for group in self.groups]
+            library_frames = sum(frame.is_library for frame in self.frames)
+            mark_lib = 0 < library_frames < len(self.frames)
+            frames = [group.render(mark_lib=mark_lib) for group in self.groups]
 
         if include_title:
             if self.is_syntax_error:
@@ -410,14 +413,14 @@ class Group(object):
         rv = "".join(buf).strip()
         return to_unicode(rv, "utf-8", "replace")
 
-    def render(self):
+    def render(self, mark_lib=True):
         out = []
         if self.info is not None:
             out.append(u'<li><div class="exc-divider">%s:</div>' % self.info)
         for frame in self.frames:
             out.append(u"<li%s>%s" % (
                 u' title="%s"' % escape(frame.info) if frame.info else u"",
-                frame.render()
+                frame.render(mark_lib=mark_lib)
             ))
         return u"\n".join(out)
 
@@ -460,7 +463,7 @@ class Frame(object):
             info = to_unicode(info, "utf-8", "replace")
         self.info = info
 
-    def render(self):
+    def render(self, mark_lib=True):
         """Render a single frame in a traceback."""
         return FRAME_HTML % {
             'id':               self.id,
@@ -468,7 +471,14 @@ class Frame(object):
             'lineno':           self.lineno,
             'function_name':    escape(self.function_name),
             'lines':            self.render_line_context(),
+            "library": "library" if mark_lib and self.is_library else "",
         }
+
+    @cached_property
+    def is_library(self):
+        return any(
+            self.filename.startswith(path) for path in sysconfig.get_paths().values()
+        )
 
     def render_text(self):
         return u'  File "%s", line %s, in %s\n    %s' % (
