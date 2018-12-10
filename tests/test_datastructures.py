@@ -613,10 +613,9 @@ class TestCombinedMultiDict(object):
         with pytest.raises(TypeError):
             d['foo'] = 'blub'
 
-        # copies are immutable
+        # copies are mutable
         d = d.copy()
-        with pytest.raises(TypeError):
-            d['foo'] = 'blub'
+        d['foo'] = 'blub'
 
         # make sure lists merges
         md1 = datastructures.MultiDict((("foo", "bar"),))
