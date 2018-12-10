@@ -178,6 +178,9 @@ Unreleased
 
 -   :func:`~http.parse_options_header` understands :rfc:`2231` parameter
     continuations. (`#1417`_)
+-   The development server recognizes ``ConnectionError`` on Python 3 to
+    silence client disconnects, and does not silence other ``OSErrors``
+    that may have been raised inside the application. (`#1418`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -237,6 +240,7 @@ Unreleased
 .. _#1413: https://github.com/pallets/werkzeug/pull/1413
 .. _#1416: https://github.com/pallets/werkzeug/pull/1416
 .. _#1417: https://github.com/pallets/werkzeug/pull/1417
+.. _#1418: https://github.com/pallets/werkzeug/pull/1418
 
 
 Version 0.14.1

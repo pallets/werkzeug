@@ -103,6 +103,14 @@ from werkzeug.exceptions import InternalServerError
 LISTEN_QUEUE = 128
 can_open_by_fd = not WIN and hasattr(socket, 'fromfd')
 
+# On Python 3, ConnectionError represents the same errnos as
+# socket.error from Python 2, while socket.error is an alias for the
+# more generic OSError.
+if PY2:
+    _ConnectionError = socket.error
+else:
+    _ConnectionError = ConnectionError
+
 
 class DechunkedInput(io.RawIOBase):
     """An input stream that handles Transfer-Encoding 'chunked'"""
@@ -282,7 +290,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
         try:
             execute(self.server.app)
-        except (socket.error, socket.timeout) as e:
+        except (_ConnectionError, socket.timeout) as e:
             self.connection_dropped(e, environ)
         except Exception:
             if self.server.passthrough_errors:
@@ -305,10 +313,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         rv = None
         try:
             rv = BaseHTTPRequestHandler.handle(self)
-        except (socket.error, socket.timeout) as e:
+        except (_ConnectionError, socket.timeout) as e:
             self.connection_dropped(e)
-        except Exception:
-            if self.server.ssl_context is None or not is_ssl_error():
+        except Exception as e:
+            if self.server.ssl_context is None or not is_ssl_error(e):
                 raise
         if self.server.shutdown_signal:
             self.initiate_shutdown()
@@ -681,6 +689,10 @@ class BaseWSGIServer(HTTPServer, object):
     def handle_error(self, request, client_address):
         if self.passthrough_errors:
             raise
+        # Python 2 still causes a socket.error after the earlier
+        # handling, so silence it here.
+        if isinstance(sys.exc_info()[1], _ConnectionError):
+            return
         return HTTPServer.handle_error(self, request, client_address)
 
     def get_request(self):
