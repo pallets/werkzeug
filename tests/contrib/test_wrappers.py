@@ -9,8 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from __future__ import with_statement
-
 from werkzeug.contrib import wrappers
 from werkzeug import routing
 from werkzeug.wrappers import Request, Response

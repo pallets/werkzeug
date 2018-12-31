@@ -35,8 +35,6 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-from __future__ import with_statement
-
 import io
 import os
 import socket

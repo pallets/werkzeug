@@ -10,7 +10,6 @@
     :copyright: (c) 2014 by the Werkzeug Team.
     :license: BSD, see LICENSE for more details.
 """
-from __future__ import with_statement
 import sys
 import os
 import re
