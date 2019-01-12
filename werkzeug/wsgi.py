@@ -362,8 +362,13 @@ def peek_path_info(environ, charset='utf-8', errors='replace'):
                           charset, errors, allow_none_charset=True)
 
 
-def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
-                      errors='replace', collapse_http_schemes=True):
+def extract_path_info(
+    environ_or_baseurl,
+    path_or_url,
+    charset='utf-8',
+    errors='werkzeug.url_quote',
+    collapse_http_schemes=True
+):
     """Extracts the path info from the given URL (or WSGI environment) and
     path.  The path info returned is a unicode string, not a bytestring
     suitable for a WSGI environment.  The URLs might also be IRIs.
@@ -384,8 +389,6 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
 
     Instead of providing a base URL you can also pass a WSGI environment.
 
-    .. versionadded:: 0.6
-
     :param environ_or_baseurl: a WSGI environment dict, a base URL or
                                base IRI.  This is the root of the
                                application.
@@ -399,6 +402,12 @@ def extract_path_info(environ_or_baseurl, path_or_url, charset='utf-8',
                                   not assume that http and https on the
                                   same server point to the same
                                   resource.
+
+    .. versionchanged:: 0.15
+        The ``errors`` parameter defaults to leaving invalid bytes
+        quoted instead of replacing them.
+
+    .. versionadded:: 0.6
     """
     def _normalize_netloc(scheme, netloc):
         parts = netloc.split(u'@', 1)[-1].split(u':', 1)

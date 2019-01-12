@@ -16,12 +16,21 @@
     :license: BSD, see LICENSE for more details.
 """
 from collections import namedtuple
+
+import codecs
 import os
 import re
 
 from werkzeug._compat import (
-    PY2, fix_tuple_repr, implements_to_string, make_literal_wrapper,
-    normalize_string_tuple, text_type, to_native, to_unicode, try_coerce_native
+    PY2,
+    fix_tuple_repr,
+    implements_to_string,
+    make_literal_wrapper,
+    normalize_string_tuple,
+    text_type,
+    to_native,
+    to_unicode,
+    try_coerce_native,
 )
 from werkzeug._internal import _decode_idna, _encode_idna
 from werkzeug.datastructures import MultiDict, iter_multi_items
@@ -30,8 +39,12 @@ from werkzeug.datastructures import MultiDict, iter_multi_items
 _scheme_re = re.compile(r'^[a-zA-Z0-9+-.]+$')
 
 # Characters that are safe in any part of an URL.
-_always_safe = (b'abcdefghijklmnopqrstuvwxyz'
-                b'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-+')
+_always_safe = frozenset(bytearray(
+    b"abcdefghijklmnopqrstuvwxyz"
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    b"0123456789"
+    b"-._~"
+))
 
 _hexdigits = '0123456789ABCDEFabcdef'
 _hextobyte = dict(
@@ -358,24 +371,39 @@ class BytesURL(BaseURL):
         )
 
 
-def _unquote_to_bytes(string, unsafe=''):
+_unquote_maps = {
+    frozenset(): _hextobyte,
+}
+
+
+def _unquote_to_bytes(string, unsafe=""):
     if isinstance(string, text_type):
-        string = string.encode('utf-8')
+        string = string.encode("utf-8")
+
     if isinstance(unsafe, text_type):
-        unsafe = unsafe.encode('utf-8')
+        unsafe = unsafe.encode("utf-8")
+
     unsafe = frozenset(bytearray(unsafe))
-    bits = iter(string.split(b'%'))
-    result = bytearray(next(bits, b''))
-    for item in bits:
-        try:
-            char = _hextobyte[item[:2]]
-            if char in unsafe:
-                raise KeyError()
-            result.append(char)
-            result.extend(item[2:])
-        except KeyError:
-            result.extend(b'%')
-            result.extend(item)
+    groups = iter(string.split(b"%"))
+    result = bytearray(next(groups, b""))
+
+    try:
+        hex_to_byte = _unquote_maps[unsafe]
+    except KeyError:
+        hex_to_byte = _unquote_maps[unsafe] = {
+            h: b for h, b in _hextobyte.items() if b not in unsafe
+        }
+
+    for group in groups:
+        code = group[:2]
+
+        if code in hex_to_byte:
+            result.append(hex_to_byte[code])
+            result.extend(group[2:])
+        else:
+            result.append(37)  # %
+            result.extend(group)
+
     return bytes(result)
 
 
@@ -390,7 +418,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             key = text_type(key).encode(charset)
         if not isinstance(value, bytes):
             value = text_type(value).encode(charset)
-        yield fast_url_quote_plus(key) + '=' + fast_url_quote_plus(value)
+        yield _fast_url_quote_plus(key) + '=' + _fast_url_quote_plus(value)
 
 
 def _url_unquote_legacy(value, unsafe=''):
@@ -462,23 +490,28 @@ def _make_fast_url_quote(charset='utf-8', errors='strict', safe='/:', unsafe='')
     """
     if isinstance(safe, text_type):
         safe = safe.encode(charset, errors)
+
     if isinstance(unsafe, text_type):
         unsafe = unsafe.encode(charset, errors)
-    safe = (frozenset(safe) | frozenset(_always_safe)) - frozenset(unsafe)
-    if not isinstance(next(iter(safe)), int):
-        safe = frozenset(map(ord, safe))
+
+    safe = (frozenset(bytearray(safe)) | _always_safe) - frozenset(bytearray(unsafe))
     table = [chr(c) if c in safe else '%%%02X' % c for c in range(256)]
-    quote = lambda s: ''.join(map(table.__getitem__, s))
-    if isinstance(''.encode(), str):
-        return lambda s: quote(bytearray(s))
+
+    if not PY2:
+        def quote(string):
+            return "".join([table[c] for c in string])
+    else:
+        def quote(string):
+            return "".join([table[c] for c in bytearray(string)])
+
     return quote
 
 
-fast_url_quote = _make_fast_url_quote()
+_fast_url_quote = _make_fast_url_quote()
 _fast_quote_plus = _make_fast_url_quote(safe=' ', unsafe='+')
 
 
-def fast_url_quote_plus(string):
+def _fast_url_quote_plus(string):
     return _fast_quote_plus(string).replace(' ', '+')
 
 
@@ -501,7 +534,7 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):
         safe = safe.encode(charset, errors)
     if isinstance(unsafe, text_type):
         unsafe = unsafe.encode(charset, errors)
-    safe = frozenset(bytearray(safe) + _always_safe) - frozenset(bytearray(unsafe))
+    safe = (frozenset(bytearray(safe)) | _always_safe) - frozenset(bytearray(unsafe))
     rv = bytearray()
     for char in bytearray(string):
         if char in safe:
@@ -620,101 +653,120 @@ def url_fix(s, charset='utf-8'):
                                   path, qs, anchor)))
 
 
-def uri_to_iri(uri, charset='utf-8', errors='replace'):
-    r"""
-    Converts a URI in a given charset to a IRI.
+# not-unreserved characters remain quoted when unquoting to IRI
+_to_iri_unsafe = "".join([chr(c) for c in range(128) if c not in _always_safe])
 
-    Examples for URI versus IRI:
 
-    >>> uri_to_iri(b'http://xn--n3h.net/')
-    u'http://\u2603.net/'
-    >>> uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
-    u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
+def _codec_error_url_quote(e):
+    """Used in :func:`uri_to_iri` after unquoting to re-quote any
+    invalid bytes.
+    """
+    out = _fast_url_quote(e.object[e.start:e.end])
 
-    Query strings are left unchanged:
+    if PY2:
+        out = out.decode("utf-8")
 
-    >>> uri_to_iri('/?foo=24&x=%26%2f')
-    u'/?foo=24&x=%26%2f'
+    return out, e.end
 
-    .. versionadded:: 0.6
+
+codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
+
+
+def uri_to_iri(uri, charset="utf-8", errors="werkzeug.url_quote"):
+    """Convert a URI to an IRI. All valid UTF-8 characters are unquoted,
+    leaving all reserved and invalid characters quoted. If the URL has
+    a domain, it is decoded from Punycode.
+
+    >>> uri_to_iri("http://xn--n3h.net/p%C3%A5th?q=%C3%A8ry%DF")
+    'http://\u2603.net/p\xe5th?q=\xe8ry%DF'
 
     :param uri: The URI to convert.
-    :param charset: The charset of the URI.
-    :param errors: The error handling on decode.
+    :param charset: The encoding to encode unquoted bytes with.
+    :param errors: Error handler to use during ``bytes.encode``. By
+        default, invalid bytes are left quoted.
+
+    .. versionchanged:: 0.15
+        All reserved and invalid characters remain quoted. Previously,
+        only some reserved characters were preserved, and invalid bytes
+        were replaced instead of left quoted.
+
+    .. versionadded:: 0.6
     """
     if isinstance(uri, tuple):
         uri = url_unparse(uri)
+
     uri = url_parse(to_unicode(uri, charset))
-    path = url_unquote(uri.path, charset, errors, '%/;?')
-    query = url_unquote(uri.query, charset, errors, '%;/?:@&=+,$#')
-    fragment = url_unquote(uri.fragment, charset, errors, '%;/?:@&=+,$#')
-    return url_unparse((uri.scheme, uri.decode_netloc(),
-                        path, query, fragment))
+    path = url_unquote(uri.path, charset, errors, _to_iri_unsafe)
+    query = url_unquote(uri.query, charset, errors, _to_iri_unsafe)
+    fragment = url_unquote(uri.fragment, charset, errors, _to_iri_unsafe)
+    return url_unparse((uri.scheme, uri.decode_netloc(), path, query, fragment))
 
 
-def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):
-    r"""
-    Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
-    uses utf-8 URLs internally because this is what browsers and HTTP do as
-    well. In some places where it accepts an URL it also accepts a unicode IRI
-    and converts it into a URI.
+# reserved characters remain unquoted when quoting to URI
+_to_uri_safe = ":/?#[]@!$&'()*+,;=%"
 
-    Examples for IRI versus URI:
 
-    >>> iri_to_uri(u'http://☃.net/')
-    'http://xn--n3h.net/'
-    >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
-    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+def iri_to_uri(iri, charset="utf-8", errors="strict", safe_conversion=False):
+    """Convert an IRI to a URI. All non-ASCII and unsafe characters are
+    quoted. If the URL has a domain, it is encoded to Punycode.
 
-    There is a general problem with IRI and URI conversion with some
-    protocols that appear in the wild that are in violation of the URI
-    specification.  In places where Werkzeug goes through a forced IRI to
-    URI conversion it will set the `safe_conversion` flag which will
-    not perform a conversion if the end result is already ASCII.  This
-    can mean that the return value is not an entirely correct URI but
-    it will not destroy such invalid URLs in the process.
-
-    As an example consider the following two IRIs::
-
-      magnet:?xt=uri:whatever
-      itms-services://?action=download-manifest
-
-    The internal representation after parsing of those URLs is the same
-    and there is no way to reconstruct the original one.  If safe
-    conversion is enabled however this function becomes a noop for both of
-    those strings as they both can be considered URIs.
-
-    .. versionadded:: 0.6
-
-    .. versionchanged:: 0.9.6
-       The `safe_conversion` parameter was added.
+    >>> iri_to_uri('http://\u2603.net/p\xe5th?q=\xe8ry%DF')
+    'http://xn--n3h.net/p%C3%A5th?q=%C3%A8ry%DF'
 
     :param iri: The IRI to convert.
-    :param charset: The charset for the URI.
-    :param safe_conversion: indicates if a safe conversion should take place.
-                            For more information see the explanation above.
+    :param charset: The encoding of the IRI.
+    :param errors: Error handler to use during ``bytes.encode``.
+    :param safe_conversion: Return the URL unchanged if it only contains
+        ASCII characters and no whitespace. See the explanation below.
+
+    There is a general problem with IRI conversion with some protocols
+    that are in violation of the URI specification. Consider the
+    following two IRIs::
+
+        magnet:?xt=uri:whatever
+        itms-services://?action=download-manifest
+
+    After parsing, we don't know if the scheme requires the ``//``,
+    which is dropped if empty, but conveys different meanings in the
+    final URL if it's present or not. In this case, you can use
+    ``safe_conversion``, which will return the URL unchanged if it only
+    contains ASCII characters and no whitespace. This can result in a
+    URI with unquoted characters if it was not already quoted correctly,
+    but preserves the URL's semantics. Werkzeug uses this for the
+    ``Location`` header for redirects.
+
+    .. versionchanged:: 0.15
+        All reserved characters remain unquoted. Previously, only some
+        reserved characters were left unquoted.
+
+    .. versionchanged:: 0.9.6
+       The ``safe_conversion`` parameter was added.
+
+    .. versionadded:: 0.6
     """
     if isinstance(iri, tuple):
         iri = url_unparse(iri)
 
     if safe_conversion:
+        # If we're not sure if it's safe to convert the URL, and it only
+        # contains ASCII characters, return it unconverted.
         try:
             native_iri = to_native(iri)
-            ascii_iri = to_native(iri).encode('ascii')
-            if ascii_iri.split() == [ascii_iri]:
+            ascii_iri = native_iri.encode('ascii')
+
+            # Only return if it doesn't have whitespace. (Why?)
+            if len(ascii_iri.split()) == 1:
                 return native_iri
         except UnicodeError:
             pass
 
     iri = url_parse(to_unicode(iri, charset, errors))
-
-    netloc = iri.encode_netloc()
-    path = url_quote(iri.path, charset, errors, '/:~+%')
-    query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
-    fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')
-
-    return to_native(url_unparse((iri.scheme, netloc,
-                                  path, query, fragment)))
+    path = url_quote(iri.path, charset, errors, _to_uri_safe)
+    query = url_quote(iri.query, charset, errors, _to_uri_safe)
+    fragment = url_quote(iri.fragment, charset, errors, _to_uri_safe)
+    return to_native(
+        url_unparse((iri.scheme, iri.encode_netloc(), path, query, fragment))
+    )
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,

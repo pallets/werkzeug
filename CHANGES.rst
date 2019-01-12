@@ -132,6 +132,7 @@ Unreleased
     -   Intermediate response bodies are iterated over even when
         ``buffered=False`` to ensure iterator middleware can run cleanup
         code safely. Only the last response is not buffered. (`#988`_)
+
 -   :class:`test.EnvironBuilder` and :class:`test.Client` take a
     ``json`` argument instead of manually passing ``data`` and
     ``content_type``. This is serialized using the
@@ -199,6 +200,10 @@ Unreleased
     incorrectly classify some frames. (`#1421`_)
 -   Clicking the error message at the top of the interactive debugger
     will jump down to the bottom of the traceback. (`#1422`_)
+-   :meth:`~urls.uri_to_iri` does not unquote ASCII characters in the
+    unreserved class, such as space, and leaves invalid bytes quoted
+    when decoding. :meth:`~iri_to_uri` does not quote reserved
+    characters. See :rfc:`3987` for these character classes. (`#1433`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -264,6 +269,7 @@ Unreleased
 .. _#1420: https://github.com/pallets/werkzeug/pull/1420
 .. _#1421: https://github.com/pallets/werkzeug/pull/1421
 .. _#1422: https://github.com/pallets/werkzeug/pull/1422
+.. _#1433: https://github.com/pallets/werkzeug/pull/1433
 
 
 Version 0.14.1
