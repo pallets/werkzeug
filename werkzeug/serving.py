@@ -462,8 +462,8 @@ def generate_adhoc_ssl_pair(cn=None):
     subject.O = 'Dummy Certificate'  # noqa: E741
 
     issuer = cert.get_issuer()
-    issuer.CN = 'Untrusted Authority'
-    issuer.O = 'Self-Signed'  # noqa: E741
+    issuer.CN = subject.CN
+    issuer.O = subject.O  # noqa: E741
 
     pkey = crypto.PKey()
     pkey.generate_key(crypto.TYPE_RSA, 2048)
