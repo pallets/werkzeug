@@ -20,7 +20,6 @@ from collections import namedtuple
 import codecs
 import os
 import re
-import warnings
 
 from werkzeug._compat import (
     PY2,
@@ -703,69 +702,71 @@ def uri_to_iri(uri, charset="utf-8", errors="werkzeug.url_quote"):
     return url_unparse((uri.scheme, uri.decode_netloc(), path, query, fragment))
 
 
-def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):
-    r"""
-    Converts any unicode based IRI to an acceptable ASCII URI. Werkzeug always
-    uses utf-8 URLs internally because this is what browsers and HTTP do as
-    well. In some places where it accepts an URL it also accepts a unicode IRI
-    and converts it into a URI.
+# reserved characters remain unquoted when quoting to URI
+_to_uri_safe = ":/?#[]@!$&'()*+,;=%"
 
-    Examples for IRI versus URI:
 
-    >>> iri_to_uri(u'http://☃.net/')
-    'http://xn--n3h.net/'
-    >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
-    'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
+def iri_to_uri(iri, charset="utf-8", errors="strict", safe_conversion=False):
+    """Convert an IRI to a URI. All non-ASCII and unsafe characters are
+    quoted. If the URL has a domain, it is encoded to Punycode.
 
-    There is a general problem with IRI and URI conversion with some
-    protocols that appear in the wild that are in violation of the URI
-    specification.  In places where Werkzeug goes through a forced IRI to
-    URI conversion it will set the `safe_conversion` flag which will
-    not perform a conversion if the end result is already ASCII.  This
-    can mean that the return value is not an entirely correct URI but
-    it will not destroy such invalid URLs in the process.
-
-    As an example consider the following two IRIs::
-
-      magnet:?xt=uri:whatever
-      itms-services://?action=download-manifest
-
-    The internal representation after parsing of those URLs is the same
-    and there is no way to reconstruct the original one.  If safe
-    conversion is enabled however this function becomes a noop for both of
-    those strings as they both can be considered URIs.
-
-    .. versionadded:: 0.6
-
-    .. versionchanged:: 0.9.6
-       The `safe_conversion` parameter was added.
+    >>> iri_to_uri('http://\u2603.net/p\xe5th?q=\xe8ry%DF')
+    'http://xn--n3h.net/p%C3%A5th?q=%C3%A8ry%DF'
 
     :param iri: The IRI to convert.
-    :param charset: The charset for the URI.
-    :param safe_conversion: indicates if a safe conversion should take place.
-                            For more information see the explanation above.
+    :param charset: The encoding of the IRI.
+    :param errors: Error handler to use during ``bytes.encode``.
+    :param safe_conversion: Return the URL unchanged if it only contains
+        ASCII characters and no whitespace. See the explanation below.
+
+    There is a general problem with IRI conversion with some protocols
+    that are in violation of the URI specification. Consider the
+    following two IRIs::
+
+        magnet:?xt=uri:whatever
+        itms-services://?action=download-manifest
+
+    After parsing, we don't know if the scheme requires the ``//``,
+    which is dropped if empty, but conveys different meanings in the
+    final URL if it's present or not. In this case, you can use
+    ``safe_conversion``, which will return the URL unchanged if it only
+    contains ASCII characters and no whitespace. This can result in a
+    URI with unquoted characters if it was not already quoted correctly,
+    but preserves the URL's semantics. Werkzeug uses this for the
+    ``Location`` header for redirects.
+
+    .. versionchanged:: 0.15
+        All reserved characters remain unquoted. Previously, only some
+        reserved characters were left unquoted.
+
+    .. versionchanged:: 0.9.6
+       The ``safe_conversion`` parameter was added.
+
+    .. versionadded:: 0.6
     """
     if isinstance(iri, tuple):
         iri = url_unparse(iri)
 
     if safe_conversion:
+        # If we're not sure if it's safe to convert the URL, and it only
+        # contains ASCII characters, return it unconverted.
         try:
             native_iri = to_native(iri)
-            ascii_iri = to_native(iri).encode('ascii')
-            if ascii_iri.split() == [ascii_iri]:
+            ascii_iri = native_iri.encode('ascii')
+
+            # Only return if it doesn't have whitespace. (Why?)
+            if len(ascii_iri.split()) == 1:
                 return native_iri
         except UnicodeError:
             pass
 
     iri = url_parse(to_unicode(iri, charset, errors))
-
-    netloc = iri.encode_netloc()
-    path = url_quote(iri.path, charset, errors, '/:~+%')
-    query = url_quote(iri.query, charset, errors, '%&[]:;$*()+,!?*/=')
-    fragment = url_quote(iri.fragment, charset, errors, '=%&[]:;$()+,!?*/')
-
-    return to_native(url_unparse((iri.scheme, netloc,
-                                  path, query, fragment)))
+    path = url_quote(iri.path, charset, errors, _to_uri_safe)
+    query = url_quote(iri.query, charset, errors, _to_uri_safe)
+    fragment = url_quote(iri.fragment, charset, errors, _to_uri_safe)
+    return to_native(
+        url_unparse((iri.scheme, iri.encode_netloc(), path, query, fragment))
+    )
 
 
 def url_decode(s, charset='utf-8', decode_keys=False, include_empty=True,
