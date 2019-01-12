@@ -407,3 +407,7 @@ def test_uri_iri_normalization():
         assert urls.iri_to_uri(urls.uri_to_iri(test)) == uri
         assert urls.uri_to_iri(urls.uri_to_iri(test)) == iri
         assert urls.iri_to_uri(urls.iri_to_uri(test)) == uri
+
+
+def test_iri_to_uri_dont_unquote_space():
+    assert urls.uri_to_iri("abc%20def") == "abc%20def"

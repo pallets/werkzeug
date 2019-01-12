@@ -16,12 +16,22 @@
     :license: BSD, see LICENSE for more details.
 """
 from collections import namedtuple
+
+import codecs
 import os
 import re
+import warnings
 
 from werkzeug._compat import (
-    PY2, fix_tuple_repr, implements_to_string, make_literal_wrapper,
-    normalize_string_tuple, text_type, to_native, to_unicode, try_coerce_native
+    PY2,
+    fix_tuple_repr,
+    implements_to_string,
+    make_literal_wrapper,
+    normalize_string_tuple,
+    text_type,
+    to_native,
+    to_unicode,
+    try_coerce_native,
 )
 from werkzeug._internal import _decode_idna, _encode_idna
 from werkzeug.datastructures import MultiDict, iter_multi_items
@@ -362,24 +372,39 @@ class BytesURL(BaseURL):
         )
 
 
-def _unquote_to_bytes(string, unsafe=''):
+_unquote_maps = {
+    frozenset(): _hextobyte,
+}
+
+
+def _unquote_to_bytes(string, unsafe=""):
     if isinstance(string, text_type):
-        string = string.encode('utf-8')
+        string = string.encode("utf-8")
+
     if isinstance(unsafe, text_type):
-        unsafe = unsafe.encode('utf-8')
+        unsafe = unsafe.encode("utf-8")
+
     unsafe = frozenset(bytearray(unsafe))
-    bits = iter(string.split(b'%'))
-    result = bytearray(next(bits, b''))
-    for item in bits:
-        try:
-            char = _hextobyte[item[:2]]
-            if char in unsafe:
-                raise KeyError()
-            result.append(char)
-            result.extend(item[2:])
-        except KeyError:
-            result.extend(b'%')
-            result.extend(item)
+    groups = iter(string.split(b"%"))
+    result = bytearray(next(groups, b""))
+
+    try:
+        hex_to_byte = _unquote_maps[unsafe]
+    except KeyError:
+        hex_to_byte = _unquote_maps[unsafe] = {
+            h: b for h, b in _hextobyte.items() if b not in unsafe
+        }
+
+    for group in groups:
+        code = group[:2]
+
+        if code in hex_to_byte:
+            result.append(hex_to_byte[code])
+            result.extend(group[2:])
+        else:
+            result.append(37)  # %
+            result.extend(group)
+
     return bytes(result)
 
 
@@ -629,36 +654,53 @@ def url_fix(s, charset='utf-8'):
                                   path, qs, anchor)))
 
 
-def uri_to_iri(uri, charset='utf-8', errors='replace'):
-    r"""
-    Converts a URI in a given charset to a IRI.
+# not-unreserved characters remain quoted when unquoting to IRI
+_to_iri_unsafe = "".join([chr(c) for c in range(128) if c not in _always_safe])
 
-    Examples for URI versus IRI:
 
-    >>> uri_to_iri(b'http://xn--n3h.net/')
-    u'http://\u2603.net/'
-    >>> uri_to_iri(b'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th')
-    u'http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th'
+def _codec_error_url_quote(e):
+    """Used in :func:`uri_to_iri` after unquoting to re-quote any
+    invalid bytes.
+    """
+    out = _fast_url_quote(e.object[e.start:e.end])
 
-    Query strings are left unchanged:
+    if PY2:
+        out = out.decode("utf-8")
 
-    >>> uri_to_iri('/?foo=24&x=%26%2f')
-    u'/?foo=24&x=%26%2f'
+    return out, e.end
 
-    .. versionadded:: 0.6
+
+codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
+
+
+def uri_to_iri(uri, charset="utf-8", errors="werkzeug.url_quote"):
+    """Convert a URI to an IRI. All valid UTF-8 characters are unquoted,
+    leaving all reserved and invalid characters quoted. If the URL has
+    a domain, it is decoded from Punycode.
+
+    >>> uri_to_iri("http://xn--n3h.net/p%C3%A5th?q=%C3%A8ry%DF")
+    'http://\u2603.net/p\xe5th?q=\xe8ry%DF'
 
     :param uri: The URI to convert.
-    :param charset: The charset of the URI.
-    :param errors: The error handling on decode.
+    :param charset: The encoding to encode unquoted bytes with.
+    :param errors: Error handler to use during ``bytes.encode``. By
+        default, invalid bytes are left quoted.
+
+    .. versionchanged:: 0.15
+        All reserved and invalid characters remain quoted. Previously,
+        only some reserved characters were preserved, and invalid bytes
+        were replaced instead of left quoted.
+
+    .. versionadded:: 0.6
     """
     if isinstance(uri, tuple):
         uri = url_unparse(uri)
+
     uri = url_parse(to_unicode(uri, charset))
-    path = url_unquote(uri.path, charset, errors, '%/;?')
-    query = url_unquote(uri.query, charset, errors, '%;/?:@&=+,$#')
-    fragment = url_unquote(uri.fragment, charset, errors, '%;/?:@&=+,$#')
-    return url_unparse((uri.scheme, uri.decode_netloc(),
-                        path, query, fragment))
+    path = url_unquote(uri.path, charset, errors, _to_iri_unsafe)
+    query = url_unquote(uri.query, charset, errors, _to_iri_unsafe)
+    fragment = url_unquote(uri.fragment, charset, errors, _to_iri_unsafe)
+    return url_unparse((uri.scheme, uri.decode_netloc(), path, query, fragment))
 
 
 def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):

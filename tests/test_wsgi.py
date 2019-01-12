@@ -349,11 +349,18 @@ def test_get_host_fallback():
 
 
 def test_get_current_url_unicode():
-    env = create_environ()
-    env['QUERY_STRING'] = 'foo=bar&baz=blah&meh=\xcf'
+    env = create_environ(query_string=u"foo=bar&baz=blah&meh=\xcf")
     rv = wsgi.get_current_url(env)
-    strict_eq(rv,
-              u'http://localhost/?foo=bar&baz=blah&meh=\ufffd')
+    strict_eq(rv, u"http://localhost/?foo=bar&baz=blah&meh=\xcf")
+
+
+def test_get_current_url_invalid_utf8():
+    env = create_environ()
+    # set the query string *after* wsgi dance, so \xcf is invalid
+    env["QUERY_STRING"] = "foo=bar&baz=blah&meh=\xcf"
+    rv = wsgi.get_current_url(env)
+    # it remains percent-encoded
+    strict_eq(rv, u"http://localhost/?foo=bar&baz=blah&meh=%CF")
 
 
 def test_multi_part_line_breaks():
