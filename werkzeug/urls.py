@@ -30,8 +30,12 @@ from werkzeug.datastructures import MultiDict, iter_multi_items
 _scheme_re = re.compile(r'^[a-zA-Z0-9+-.]+$')
 
 # Characters that are safe in any part of an URL.
-_always_safe = (b'abcdefghijklmnopqrstuvwxyz'
-                b'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-+')
+_always_safe = frozenset(bytearray(
+    b"abcdefghijklmnopqrstuvwxyz"
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    b"0123456789"
+    b"-._~"
+))
 
 _hexdigits = '0123456789ABCDEFabcdef'
 _hextobyte = dict(
@@ -390,7 +394,7 @@ def _url_encode_impl(obj, charset, encode_keys, sort, key):
             key = text_type(key).encode(charset)
         if not isinstance(value, bytes):
             value = text_type(value).encode(charset)
-        yield fast_url_quote_plus(key) + '=' + fast_url_quote_plus(value)
+        yield _fast_url_quote_plus(key) + '=' + _fast_url_quote_plus(value)
 
 
 def _url_unquote_legacy(value, unsafe=''):
@@ -462,23 +466,28 @@ def _make_fast_url_quote(charset='utf-8', errors='strict', safe='/:', unsafe='')
     """
     if isinstance(safe, text_type):
         safe = safe.encode(charset, errors)
+
     if isinstance(unsafe, text_type):
         unsafe = unsafe.encode(charset, errors)
-    safe = (frozenset(safe) | frozenset(_always_safe)) - frozenset(unsafe)
-    if not isinstance(next(iter(safe)), int):
-        safe = frozenset(map(ord, safe))
+
+    safe = (frozenset(bytearray(safe)) | _always_safe) - frozenset(bytearray(unsafe))
     table = [chr(c) if c in safe else '%%%02X' % c for c in range(256)]
-    quote = lambda s: ''.join(map(table.__getitem__, s))
-    if isinstance(''.encode(), str):
-        return lambda s: quote(bytearray(s))
+
+    if not PY2:
+        def quote(string):
+            return "".join([table[c] for c in string])
+    else:
+        def quote(string):
+            return "".join([table[c] for c in bytearray(string)])
+
     return quote
 
 
-fast_url_quote = _make_fast_url_quote()
+_fast_url_quote = _make_fast_url_quote()
 _fast_quote_plus = _make_fast_url_quote(safe=' ', unsafe='+')
 
 
-def fast_url_quote_plus(string):
+def _fast_url_quote_plus(string):
     return _fast_quote_plus(string).replace(' ', '+')
 
 
@@ -501,7 +510,7 @@ def url_quote(string, charset='utf-8', errors='strict', safe='/:', unsafe=''):
         safe = safe.encode(charset, errors)
     if isinstance(unsafe, text_type):
         unsafe = unsafe.encode(charset, errors)
-    safe = frozenset(bytearray(safe) + _always_safe) - frozenset(bytearray(unsafe))
+    safe = (frozenset(bytearray(safe)) | _always_safe) - frozenset(bytearray(unsafe))
     rv = bytearray()
     for char in bytearray(string):
         if char in safe:
