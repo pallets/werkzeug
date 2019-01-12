@@ -200,10 +200,13 @@ Unreleased
     incorrectly classify some frames. (`#1421`_)
 -   Clicking the error message at the top of the interactive debugger
     will jump down to the bottom of the traceback. (`#1422`_)
--   :meth:`~urls.uri_to_iri` does not unquote ASCII characters in the
+-   :func:`~urls.uri_to_iri` does not unquote ASCII characters in the
     unreserved class, such as space, and leaves invalid bytes quoted
-    when decoding. :meth:`~iri_to_uri` does not quote reserved
+    when decoding. :func:`~iri_to_uri` does not quote reserved
     characters. See :rfc:`3987` for these character classes. (`#1433`_)
+-   When using an adhoc SSL cert with :func:`~serving.run_simple`, the
+    cert is shown as self-signed rather than signed by an invalid
+    authority. (`#1430`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -269,6 +272,7 @@ Unreleased
 .. _#1420: https://github.com/pallets/werkzeug/pull/1420
 .. _#1421: https://github.com/pallets/werkzeug/pull/1421
 .. _#1422: https://github.com/pallets/werkzeug/pull/1422
+.. _#1430: https://github.com/pallets/werkzeug/pull/1430
 .. _#1433: https://github.com/pallets/werkzeug/pull/1433
 
 
