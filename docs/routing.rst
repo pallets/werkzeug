@@ -149,38 +149,60 @@ Rule Templates
 Custom Converters
 =================
 
-You can easily add custom converters.  The only thing you have to do is to
-subclass :class:`BaseConverter` and pass that new converter to the url_map.
-A converter has to provide two public methods: `to_python` and `to_url`,
-as well as a member that represents a regular expression.  Here is a small
-example::
+You can add custom converters that add behaviors not provided by the
+built-in converters. To make a custom converter, subclass
+:class:`BaseConverter` then pass the new class to the :class:`Map`
+``converters`` parameter, or add it to
+:attr:`url_map.converters <Map.converters>`.
+
+The converter should have a ``regex`` attribute with a regular
+expression to match with. If the converter can take arguments in a URL
+rule, it should accept them in its ``__init__`` method.
+
+It can implement a ``to_python`` method to convert the matched string to
+some other object. This can also do extra validation that wasn't
+possible with the ``regex`` attribute, and should raise a
+:exc:`werkzeug.routing.ValidationError` in that case. Raising any other
+errors will cause a 500 error.
+
+It can implement a ``to_url`` method to convert a Python object to a
+string when building a URL. Any error raised here will be converted to a
+:exc:`werkzeug.routing.BuildError` and eventually cause a 500 error.
+
+This example implements a ``BooleanConverter`` that will match the
+strings ``"yes"``, ``"no"``, and ``"maybe"``, returning a random value
+for ``"maybe"``. ::
 
     from random import randrange
-    from werkzeug.routing import Rule, Map, BaseConverter, ValidationError
+    from werkzeug.routing import BaseConverter, ValidationError
 
     class BooleanConverter(BaseConverter):
+        regex = r"(?:yes|no|maybe)"
 
-        def __init__(self, url_map, randomify=False):
+        def __init__(self, url_map, maybe=False):
             super(BooleanConverter, self).__init__(url_map)
-            self.randomify = randomify
-            self.regex = '(?:yes|no|maybe)'
+            self.maybe = maybe
 
         def to_python(self, value):
-            if value == 'maybe':
-                if self.randomify:
+            if value == "maybe":
+                if self.maybe:
                     return not randrange(2)
-                raise ValidationError()
+                raise ValidationError
             return value == 'yes'
 
         def to_url(self, value):
-            return value and 'yes' or 'no'
+            return "yes" if value else "no"
+
+    from werkzeug.routing import Map, Rule
 
     url_map = Map([
-        Rule('/vote/<bool:werkzeug_rocks>', endpoint='vote'),
-        Rule('/vote/<bool(randomify=True):foo>', endpoint='foo')
+        Rule("/vote/<bool:werkzeug_rocks>", endpoint="vote"),
+        Rule("/guess/<bool(maybe=True):foo>", endpoint="guess")
     ], converters={'bool': BooleanConverter})
 
-If you want that converter to be the default converter, name it ``'default'``.
+If you want to change the default converter, assign a different
+converter to the ``"default"`` key.
+
 
 Host Matching
 =============
@@ -203,3 +225,4 @@ Variable parts are of course also possible in the host section::
         Rule('/', endpoint='www_index', host='www.example.com'),
         Rule('/', endpoint='user_index', host='<user>.example.com')
     ], host_matching=True)
+
