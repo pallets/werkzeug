@@ -207,6 +207,9 @@ Unreleased
 -   When using an adhoc SSL cert with :func:`~serving.run_simple`, the
     cert is shown as self-signed rather than signed by an invalid
     authority. (`#1430`_)
+-   The development server logs the unquoted IRI rather than the raw
+    request line, to make it easier to work with Unicode in request
+    paths during development. (`#1115`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -222,6 +225,7 @@ Unreleased
 .. _`#988`: https://github.com/pallets/werkzeug/pull/988
 .. _`#1019`: https://github.com/pallets/werkzeug/issues/1019
 .. _`#1023`: https://github.com/pallets/werkzeug/issues/1023
+.. _#1115: https://github.com/pallets/werkzeug/issues/1115
 .. _`#1141`: https://github.com/pallets/werkzeug/issues/1141
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
