@@ -93,7 +93,11 @@ except AttributeError:
 import werkzeug
 from werkzeug._internal import _log
 from werkzeug._compat import PY2, WIN, reraise, wsgi_encoding_dance
-from werkzeug.urls import url_parse, url_unquote
+from werkzeug.urls import (
+    url_parse,
+    url_unquote,
+    uri_to_iri,
+)
 from werkzeug.exceptions import InternalServerError
 
 
@@ -376,7 +380,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return self.client_address[1]
 
     def log_request(self, code='-', size='-'):
-        msg = self.requestline
+        try:
+            path = uri_to_iri(self.path)
+            msg = "%s %s %s" % (self.command, path, self.request_version)
+        except AttributeError:
+            # path isn't set if the requestline was bad
+            msg = self.requestline
+
         code = str(code)
 
         if termcolor:
