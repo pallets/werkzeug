@@ -31,6 +31,15 @@ _filename_ascii_strip_re = re.compile(r'[^A-Za-z0-9_.-]')
 _windows_device_files = ('CON', 'AUX', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1',
                          'LPT2', 'LPT3', 'PRN', 'NUL')
 
+_charset_mimetypes = set([
+    'application/ecmascript',
+    'application/javascript',
+    'application/news-checkgroups',
+    'application/news-groupinfo',
+    'application/sql',
+    'application/xml',
+])
+
 
 class cached_property(property):
 
@@ -223,9 +232,8 @@ def get_content_type(mimetype, charset):
     :return: the content type.
     """
     if mimetype.startswith('text/') or \
-       mimetype == 'application/xml' or \
-       (mimetype.startswith('application/')
-            and mimetype.endswith('+xml')):
+       mimetype in _charset_mimetypes or \
+       mimetype.endswith('+xml'):
         mimetype += '; charset=' + charset
     return mimetype
 
