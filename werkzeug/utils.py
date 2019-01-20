@@ -31,15 +31,6 @@ _filename_ascii_strip_re = re.compile(r'[^A-Za-z0-9_.-]')
 _windows_device_files = ('CON', 'AUX', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1',
                          'LPT2', 'LPT3', 'PRN', 'NUL')
 
-_charset_mimetypes = set([
-    'application/ecmascript',
-    'application/javascript',
-    'application/news-checkgroups',
-    'application/news-groupinfo',
-    'application/sql',
-    'application/xml',
-])
-
 
 class cached_property(property):
 
@@ -220,21 +211,41 @@ class HTMLBuilder(object):
 html = HTMLBuilder('html')
 xhtml = HTMLBuilder('xhtml')
 
+# https://cgit.freedesktop.org/xdg/shared-mime-info/tree/freedesktop.org.xml.in
+# https://www.iana.org/assignments/media-types/media-types.xhtml
+# Types listed in the XDG mime info that have a charset in the IANA registration.
+_charset_mimetypes = {
+    "application/ecmascript",
+    "application/javascript",
+    "application/sql",
+    "application/xml",
+    "application/xml-dtd",
+    "application/xml-external-parsed-entity",
+}
+
 
 def get_content_type(mimetype, charset):
     """Returns the full content type string with charset for a mimetype.
 
-    If the mimetype represents text the charset will be appended as charset
-    parameter, otherwise the mimetype is returned unchanged.
+    If the mimetype represents text, the charset parameter will be
+    appended, otherwise the mimetype is returned unchanged.
 
-    :param mimetype: the mimetype to be used as content type.
-    :param charset: the charset to be appended in case it was a text mimetype.
-    :return: the content type.
+    :param mimetype: The mimetype to be used as content type.
+    :param charset: The charset to be appended for text mimetypes.
+    :return: The content type.
+
+    .. verionchanged:: 0.15
+        Any type that ends with ``+xml`` gets a charset, not just those
+        that start with ``application/``. Known text types such as
+        ``application/javascript`` are also given charsets.
     """
-    if mimetype.startswith('text/') or \
-       mimetype in _charset_mimetypes or \
-       mimetype.endswith('+xml'):
+    if (
+        mimetype.startswith('text/')
+        or mimetype in _charset_mimetypes
+        or mimetype.endswith('+xml')
+    ):
         mimetype += '; charset=' + charset
+
     return mimetype
 
 
