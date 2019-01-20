@@ -210,6 +210,10 @@ Unreleased
 -   The development server logs the unquoted IRI rather than the raw
     request line, to make it easier to work with Unicode in request
     paths during development. (`#1115`_)
+-   ``get_content_type`` appends a charset for any mimetype that ends
+    with ``+xml``, not just those that start with ``application/``.
+    Known text types such as ``application/javascript`` are also given
+    charsets. (`#1439`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -278,6 +282,7 @@ Unreleased
 .. _#1422: https://github.com/pallets/werkzeug/pull/1422
 .. _#1430: https://github.com/pallets/werkzeug/pull/1430
 .. _#1433: https://github.com/pallets/werkzeug/pull/1433
+.. _#1439: https://github.com/pallets/werkzeug/pull/1439
 
 
 Version 0.14.1
