@@ -1,20 +1,29 @@
-# -*- coding: utf-8 -*-
 """
-    werkzeug.contrib.fixers
-    ~~~~~~~~~~~~~~~~~~~~~~~
+Fixers
+======
 
-    .. versionadded:: 0.5
+.. deprecated:: 0.15
+    ``ProxyFix`` has moved to :mod:`werkzeug.middleware.proxy_fix`. All
+    other middleware in this module are deprecated and will be removed
+    in version 1.0.
 
-    This module includes various helpers that fix bugs in web servers.  They may
-    be necessary for some versions of a buggy web server but not others.  We try
-    to stay updated with the status of the bugs as good as possible but you have
-    to make sure whether they fix the problem you encounter.
+.. versionadded:: 0.5
 
-    If you notice bugs in webservers not fixed in this module consider
-    contributing a patch.
+This module includes various helpers that fix web server behavior.
 
-    :copyright: Copyright 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+.. autoclass:: ProxyFix
+   :members:
+
+.. autoclass:: CGIRootFix
+
+.. autoclass:: PathInfoFromRequestUriFix
+
+.. autoclass:: HeaderRewriterFix
+
+.. autoclass:: InternetExplorerFix
+
+:copyright: 2007 by the Pallets team.
+:license: BSD-3-Clause, see LICENSE for details.
 """
 import warnings
 
@@ -27,6 +36,7 @@ from werkzeug.http import parse_options_header, parse_cache_control_header, \
     parse_set_header
 from werkzeug.useragents import UserAgent
 from werkzeug.datastructures import Headers, ResponseCacheControl
+from werkzeug.middleware.proxy_fix import ProxyFix as _ProxyFix
 
 
 class CGIRootFix(object):
@@ -95,183 +105,23 @@ class PathInfoFromRequestUriFix(object):
         return self.app(environ, start_response)
 
 
-class ProxyFix(object):
-    """Adjust the WSGI environ based on ``Forwarded`` headers that
-    proxies in front of the application may set.
-
-    When the application is running behind a server like Nginx (or
-    another server or proxy), WSGI will see the request as coming from
-    that server rather than the real client. Proxies set various headers
-    to track where the request actually came from.
-
-    This middleware should only be applied if the application is
-    actually behind such a proxy, and should be configured with the
-    number of proxies that are chained in front of it. Not all proxies
-    set all the headers. Since incoming headers can be faked, you must
-    set how many proxies are setting each header so the middleware knows
-    what to trust.
-
-    The original values of the headers are stored in the WSGI
-    environ as ``werkzeug.proxy_fix.orig``, a dict.
-
-    :param app: The WSGI application.
-    :param x_for: Number of values to trust for ``X-Forwarded-For``.
-    :param x_proto: Number of values to trust for ``X-Forwarded-Proto``.
-    :param x_host: Number of values to trust for ``X-Forwarded-Host``.
-    :param x_port: Number of values to trust for ``X-Forwarded-Port``.
-    :param x_prefix: Number of values to trust for
-        ``X-Forwarded-Prefix``.
-    :param num_proxies: Deprecated, use ``x_for`` instead.
-
-    .. versionchanged:: 0.15
-        Support ``X-Forwarded-Port`` and ``X-Forwarded-Prefix``.
-
-    .. versionchanged:: 0.15
-        All headers support multiple values. The ``num_proxies``
-        argument is deprecated. Each header is configured with a
-        separate number of trusted proxies.
-
-    .. versionchanged:: 0.15
-        Original WSGI environ values are stored in the
-        ``werkzeug.proxy_fix.orig`` dict. ``orig_remote_addr``,
-        ``orig_wsgi_url_scheme``, and ``orig_http_host`` are deprecated.
-
-    .. versionchanged:: 0.15
-        ``X-Fowarded-Host`` and ``X-Forwarded-Port`` modify
-        ``SERVER_NAME`` and ``SERVER_PORT``.
+class ProxyFix(_ProxyFix):
+    """
+    .. deprecated:: 0.15
+        ``werkzeug.contrib.fixers.ProxyFix`` has moved to
+        :mod:`werkzeug.middleware.proxy_fix`. This import will be
+        removed in 1.0.
     """
 
-    def __init__(
-        self, app, num_proxies=None,
-        x_for=1, x_proto=0, x_host=0, x_port=0, x_prefix=0
-    ):
-        self.app = app
-        self.x_for = x_for
-        self.x_proto = x_proto
-        self.x_host = x_host
-        self.x_port = x_port
-        self.x_prefix = x_prefix
-        self.num_proxies = num_proxies
-
-    @property
-    def num_proxies(self):
-        """The number of proxies setting ``X-Forwarded-For`` in front
-        of the application.
-
-        .. deprecated:: 0.15
-            A separate number of trusted proxies is configured for each
-            header. ``num_proxies`` maps to ``x_for``.
-
-        :internal:
-        """
-        warnings.warn(DeprecationWarning(
-            "num_proxies is deprecated. Use x_for instead."))
-        return self.x_for
-
-    @num_proxies.setter
-    def num_proxies(self, value):
-        if value is not None:
-            warnings.warn(DeprecationWarning(
-                'num_proxies is deprecated. Use x_for instead.'))
-            self.x_for = value
-
-    def get_remote_addr(self, forwarded_for):
-        """Get the real ``remote_addr`` by looking backwards ``x_for``
-        number of values in the ``X-Forwarded-For`` header.
-
-        :param forwarded_for: List of values parsed from the
-            ``X-Forwarded-For`` header.
-        :return: The real ``remote_addr``, or ``None`` if there were not
-            at least ``x_for`` values.
-
-        .. deprecated:: 0.15
-            This is handled internally for each header.
-
-        .. versionchanged:: 0.9
-            Use ``num_proxies`` instead of always picking the first
-            value.
-
-        .. versionadded:: 0.8
-        """
-        warnings.warn(DeprecationWarning("get_remote_addr is deprecated."))
-        return self._get_trusted_comma(self.x_for, ','.join(forwarded_for))
-
-    def _get_trusted_comma(self, trusted, value):
-        """Get the real value from a comma-separated header based on the
-        configured number of trusted proxies.
-
-        :param trusted: Number of values to trust in the header.
-        :param value: Header value to parse.
-        :return: The real value, or ``None`` if there are fewer values
-            than the number of trusted proxies.
-
-        .. versionadded:: 0.15
-        """
-        if not (trusted and value):
-            return
-        values = [x.strip() for x in value.split(',')]
-        if len(values) >= trusted:
-            return values[-trusted]
-
-    def __call__(self, environ, start_response):
-        """Modify the WSGI environ based on the various ``Forwarded``
-        headers before calling the wrapped application. Store the
-        original environ values in ``werkzeug.proxy_fix.orig_{key}``.
-        """
-        environ_get = environ.get
-        orig_remote_addr = environ_get('REMOTE_ADDR')
-        orig_wsgi_url_scheme = environ_get('wsgi.url_scheme')
-        orig_http_host = environ_get('HTTP_HOST')
-        environ.update({
-            'werkzeug.proxy_fix.orig': {
-                'REMOTE_ADDR': orig_remote_addr,
-                'wsgi.url_scheme': orig_wsgi_url_scheme,
-                'HTTP_HOST': orig_http_host,
-                'SERVER_NAME': environ_get('SERVER_NAME'),
-                'SERVER_PORT': environ_get('SERVER_PORT'),
-                'SCRIPT_NAME': environ_get('SCRIPT_NAME'),
-            },
-            # todo: remove deprecated keys
-            'werkzeug.proxy_fix.orig_remote_addr': orig_remote_addr,
-            'werkzeug.proxy_fix.orig_wsgi_url_scheme': orig_wsgi_url_scheme,
-            'werkzeug.proxy_fix.orig_http_host': orig_http_host,
-        })
-
-        x_for = self._get_trusted_comma(
-            self.x_for, environ_get('HTTP_X_FORWARDED_FOR'))
-        if x_for:
-            environ['REMOTE_ADDR'] = x_for
-
-        x_proto = self._get_trusted_comma(
-            self.x_proto, environ_get('HTTP_X_FORWARDED_PROTO'))
-        if x_proto:
-            environ['wsgi.url_scheme'] = x_proto
-
-        x_host = self._get_trusted_comma(
-            self.x_host, environ_get('HTTP_X_FORWARDED_HOST'))
-        if x_host:
-            environ['HTTP_HOST'] = x_host
-            parts = x_host.split(':', 1)
-            environ['SERVER_NAME'] = parts[0]
-            if len(parts) == 2:
-                environ['SERVER_PORT'] = parts[1]
-
-        x_port = self._get_trusted_comma(
-            self.x_port, environ_get('HTTP_X_FORWARDED_PORT'))
-        if x_port:
-            host = environ.get('HTTP_HOST')
-            if host:
-                parts = host.split(':', 1)
-                host = parts[0] if len(parts) == 2 else host
-                environ['HTTP_HOST'] = '%s:%s' % (host, x_port)
-            environ['SERVER_PORT'] = x_port
-
-        x_prefix = self._get_trusted_comma(
-            self.x_prefix, environ_get('HTTP_X_FORWARDED_PREFIX'))
-        if x_prefix:
-            environ['SCRIPT_NAME'] = x_prefix
-
-        return self.app(environ, start_response)
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.contrib.fixers.ProxyFix' has moved to 'werkzeug"
+            ".middleware.proxy_fix.ProxyFix'. This import is deprecated"
+            " as of version 0.15 and will be removed in 1.0.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        super(ProxyFix, self).__init__(*args, **kwargs)
 
 
 class HeaderRewriterFix(object):

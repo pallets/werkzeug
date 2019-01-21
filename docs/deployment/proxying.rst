@@ -29,7 +29,7 @@ It looks something along these lines::
 If you now start the file the server will listen on `localhost:8080`.  Keep
 in mind that WSGI applications behave slightly different for proxied setups.
 If you have not developed your application for proxying in mind, you can
-apply the :class:`~werkzeug.contrib.fixers.ProxyFix` middleware.
+apply the :class:`~werkzeug.middleware.proxy_fix.ProxyFix` middleware.
 
 
 Configuring nginx
@@ -43,7 +43,7 @@ The basic nginx configuration looks like this::
         proxy_set_header        Host $host;
         proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_pass              http://127.0.0.1:8080;
-        proxy_redirect          default; 
+        proxy_redirect          default;
     }
 
 Since Nginx doesn't start your server for you, you have to do it by yourself.  You
