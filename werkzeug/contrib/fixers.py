@@ -44,16 +44,25 @@ class CGIRootFix(object):
     or CGI and you have problems with your app root being set to the CGI
     script's path instead of the path users are going to visit.
 
-    .. versionchanged:: 0.9
-        Added `app_root` parameter and renamed from
-        ``LighttpdCGIRootFix``.
-
     :param app: the WSGI application
     :param app_root: Defaulting to ``'/'``, you can set this to
         something else if your app is mounted somewhere else.
+
+    .. deprecated:: 0.15
+        This middleware will be removed in version 1.0.
+
+    .. versionchanged:: 0.9
+        Added `app_root` parameter and renamed from
+        ``LighttpdCGIRootFix``.
     """
 
     def __init__(self, app, app_root='/'):
+        warnings.warn(
+            "'CGIRootFix' is deprecated as of version 0.15 and will be"
+            " removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
         self.app = app
         self.app_root = app_root.strip("/")
 
@@ -65,8 +74,8 @@ class CGIRootFix(object):
 class LighttpdCGIRootFix(CGIRootFix):
     def __init__(self, *args, **kwargs):
         warnings.warn(
-            "LighttpdCGIRootFix is renamed CGIRootFix and will be"
-            " removed in 1.0.",
+            "'LighttpdCGIRootFix' is renamed 'CGIRootFix'. Both will be"
+            " removed in version 1.0.",
             DeprecationWarning,
             stacklevel=3,
         )
@@ -87,9 +96,18 @@ class PathInfoFromRequestUriFix(object):
     variables.
 
     :param app: the WSGI application
+
+    .. deprecated:: 0.15
+        This middleware will be removed in version 1.0.
     """
 
     def __init__(self, app):
+        warnings.warn(
+            "'PathInfoFromRequestUriFix' is deprecated as of version"
+            " 0.15 and will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
         self.app = app
 
     def __call__(self, environ, start_response):
@@ -139,9 +157,18 @@ class HeaderRewriterFix(object):
                            removed.
     :param add_headers: a sequence of ``(key, value)`` tuples that should
                         be added.
+
+    .. deprecated:: 0.15
+        This middleware will be removed in 1.0.
     """
 
     def __init__(self, app, remove_headers=None, add_headers=None):
+        warnings.warn(
+            "'HeaderRewriterFix' is deprecated as of version 0.15 and"
+            " will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
         self.app = app
         self.remove_headers = set(x.lower() for x in (remove_headers or ()))
         self.add_headers = list(add_headers or ())
@@ -173,6 +200,9 @@ class InternetExplorerFix(object):
 
     If it does not detect affected Internet Explorer versions it won't touch
     the request / response.
+
+    .. deprecated:: 0.15
+        This middleware will be removed in 1.0.
     """
 
     # This code was inspired by Django fixers for the same bugs.  The
@@ -181,6 +211,12 @@ class InternetExplorerFix(object):
     #     https://code.djangoproject.com/ticket/4148
 
     def __init__(self, app, fix_vary=True, fix_attach=True):
+        warnings.warn(
+            "'InternetExplorerFix' is deprecated as of version 0.15 and"
+            " will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
         self.app = app
         self.fix_vary = fix_vary
         self.fix_attach = fix_attach
