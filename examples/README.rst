@@ -19,6 +19,7 @@ find in real life :-)
 
 
 `simplewiki`
+
     A simple Wiki implementation.
 
     Requirements:
@@ -44,6 +45,7 @@ find in real life :-)
     no such variable is provided "sqlite:////tmp/simplewiki.db" is assumed.
 
 `plnt`
+
     A planet called plnt, pronounce plant.
 
     Requirements:
@@ -68,6 +70,7 @@ find in real life :-)
     can add more in a python shell by playing with the `Blog` model.
 
 `shorty`
+
     A tinyurl clone for the Werkzeug tutorial.
 
     Requirements:
@@ -88,6 +91,7 @@ find in real life :-)
     tutorial.
 
 `couchy`
+
     Like shorty, but implemented using CouchDB.
 
     Requirements :
@@ -96,6 +100,7 @@ find in real life :-)
     -   couchdb 0.72 & above : https://couchdb.apache.org/
 
 `cupoftee`
+
     A `Teeworlds <https://www.teeworlds.com/>`_ server browser.  This application
     works best in a non forking environment and won't work for CGI.
 
