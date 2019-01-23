@@ -2,6 +2,11 @@
 Sessions
 ========
 
+.. warning::
+    .. deprecated:: 0.15
+        This will be removed in version 1.0. It has moved to
+        https://github.com/pallets/secure-cookie.
+
 .. automodule:: werkzeug.contrib.sessions
 
 .. testsetup::

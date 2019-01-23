@@ -102,6 +102,13 @@ from werkzeug.contrib.sessions import ModificationTrackingDict
 from werkzeug.security import safe_str_cmp
 from werkzeug._compat import to_native
 
+warnings.warn(
+    "'werkzeug.contrib.securecookie' is deprecated as of version 0.15"
+    " and will be removed in version 1.0. It has moved to"
+    " https://github.com/pallets/secure-cookie.",
+    DeprecationWarning,
+)
+
 
 class UnquoteError(Exception):
 
