@@ -2,10 +2,11 @@
 Fixers
 ======
 
-.. deprecated:: 0.15
-    ``ProxyFix`` has moved to :mod:`werkzeug.middleware.proxy_fix`. All
-    other middleware in this module are deprecated and will be removed
-    in version 1.0.
+.. warning::
+    .. deprecated:: 0.15
+        ``ProxyFix`` has moved to :mod:`werkzeug.middleware.proxy_fix`.
+        All other code in this module is deprecated and will be removed
+        in version 1.0.
 
 .. versionadded:: 0.5
 
