@@ -49,9 +49,10 @@ except ImportError:
 from werkzeug._compat import implements_iterator
 
 warnings.warn(
-    'werkzeug.contrib.iterio is deprecated as of version 0.15 and will'
-    ' be removed in version 1.0.',
+    "'werkzeug.contrib.iterio' is deprecated as of version 0.15 and"
+    " will be removed in version 1.0.",
     DeprecationWarning,
+    stacklevel=2,
 )
 
 

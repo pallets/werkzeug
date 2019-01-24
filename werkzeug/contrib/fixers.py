@@ -62,7 +62,7 @@ class CGIRootFix(object):
             "'CGIRootFix' is deprecated as of version 0.15 and will be"
             " removed in version 1.0.",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=2,
         )
         self.app = app
         self.app_root = app_root.strip("/")
@@ -78,7 +78,7 @@ class LighttpdCGIRootFix(CGIRootFix):
             "'LighttpdCGIRootFix' is renamed 'CGIRootFix'. Both will be"
             " removed in version 1.0.",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=2,
         )
         super(LighttpdCGIRootFix, self).__init__(*args, **kwargs)
 
@@ -107,7 +107,7 @@ class PathInfoFromRequestUriFix(object):
             "'PathInfoFromRequestUriFix' is deprecated as of version"
             " 0.15 and will be removed in version 1.0.",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=2,
         )
         self.app = app
 
@@ -138,7 +138,7 @@ class ProxyFix(_ProxyFix):
             ".middleware.proxy_fix.ProxyFix'. This import is deprecated"
             " as of version 0.15 and will be removed in 1.0.",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=2,
         )
         super(ProxyFix, self).__init__(*args, **kwargs)
 
@@ -168,7 +168,7 @@ class HeaderRewriterFix(object):
             "'HeaderRewriterFix' is deprecated as of version 0.15 and"
             " will be removed in version 1.0.",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=2,
         )
         self.app = app
         self.remove_headers = set(x.lower() for x in (remove_headers or ()))
@@ -216,7 +216,7 @@ class InternetExplorerFix(object):
             "'InternetExplorerFix' is deprecated as of version 0.15 and"
             " will be removed in version 1.0.",
             DeprecationWarning,
-            stacklevel=3,
+            stacklevel=2,
         )
         self.app = app
         self.fix_vary = fix_vary

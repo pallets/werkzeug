@@ -53,6 +53,7 @@ class JSONRequestMixin(_JSONMixin):
             " 'werkzeug.wrappers.JSONMixin'. This old import will"
             " be removed in version 1.0.",
             DeprecationWarning,
+            stacklevel=2,
         )
         return super(JSONRequestMixin, self).json
 

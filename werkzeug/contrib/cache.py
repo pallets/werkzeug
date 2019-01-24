@@ -74,9 +74,11 @@ from werkzeug._compat import iteritems, string_types, text_type, \
 from werkzeug.posixemulation import rename
 
 warnings.warn(
-    'werkzeug.contrib.cache is deprecated as of version 0.15 and will'
-    ' be removed in version 1.0. Check "cachelib" instead.',
+    "'werkzeug.contrib.cache' is deprecated as of version 0.15 and will"
+    " be removed in version 1.0. It has moved to https://github.com"
+    "/pallets/cachelib.",
     DeprecationWarning,
+    stacklevel=2,
 )
 
 

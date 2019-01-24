@@ -7,4 +7,5 @@ warnings.warn(
     " This import is deprecated as of version 0.15 and will be removed"
     " in version 1.0.",
     DeprecationWarning,
+    stacklevel=2,
 )

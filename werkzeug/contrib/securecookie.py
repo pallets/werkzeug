@@ -107,6 +107,7 @@ warnings.warn(
     " and will be removed in version 1.0. It has moved to"
     " https://github.com/pallets/secure-cookie.",
     DeprecationWarning,
+    stacklevel=2,
 )
 
 
@@ -169,9 +170,11 @@ class SecureCookie(ModificationTrackingDict):
 
         if self.serialization_method is pickle:
             warnings.warn(
-                'The default SecureCookie.serialization_method will change from pickle'
-                ' to json in 1.0. To upgrade existing tokens, override unquote to try'
-                ' pickle if json fails.'
+                "The default 'SecureCookie.serialization_method' will"
+                " change from pickle to json in version 1.0. To upgrade"
+                " existing tokens, override 'unquote' to try pickle if"
+                " json fails.",
+                stacklevel=2,
             )
 
     def __repr__(self):

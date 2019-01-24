@@ -16,20 +16,10 @@
 """
 from types import ModuleType
 import sys
-import warnings
 
 from werkzeug._compat import iteritems
 
 __version__ = '0.15.dev'
-
-warnings.filterwarnings(
-    "default",
-    category=DeprecationWarning,
-    module="werkzeug",
-    append=True,
-)
-del warnings
-
 
 # This import magic raises concerns quite often which is why the implementation
 # and motivation is explained here in detail now.

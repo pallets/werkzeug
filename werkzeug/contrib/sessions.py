@@ -73,6 +73,7 @@ warnings.warn(
     " will be removed in version 1.0. It has moved to"
     " https://github.com/pallets/secure-cookie.",
     DeprecationWarning,
+    stacklevel=2,
 )
 
 _sha1_re = re.compile(r'^[a-f0-9]{40}$')
