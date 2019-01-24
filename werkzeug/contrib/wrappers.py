@@ -21,15 +21,13 @@
     :license: BSD, see LICENSE for more details.
 """
 import codecs
-try:
-    from simplejson import loads
-except ImportError:
-    from json import loads
+import warnings
 
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import cached_property
 from werkzeug.http import dump_options_header, parse_options_header
 from werkzeug._compat import wsgi_decoding_dance
+from werkzeug.wrappers.json import JSONMixin as _JSONMixin
 
 
 def is_known_charset(charset):
@@ -41,24 +39,22 @@ def is_known_charset(charset):
     return True
 
 
-class JSONRequestMixin(object):
-
-    """Add json method to a request object.  This will parse the input data
-    through simplejson if possible.
-
-    :exc:`~werkzeug.exceptions.BadRequest` will be raised if the content-type
-    is not json or if the data itself cannot be parsed as json.
+class JSONRequestMixin(_JSONMixin):
+    """
+    .. deprecated:: 0.15
+        Moved to :class:`werkzeug.wrappers.JSONMixin`. This old
+        import will be removed in version 1.0.
     """
 
-    @cached_property
+    @property
     def json(self):
-        """Get the result of simplejson.loads if possible."""
-        if 'json' not in self.environ.get('CONTENT_TYPE', ''):
-            raise BadRequest('Not a JSON request')
-        try:
-            return loads(self.data.decode(self.charset, self.encoding_errors))
-        except Exception:
-            raise BadRequest('Unable to read JSON request')
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.JSONRequestMixin' has moved to"
+            " 'werkzeug.wrappers.JSONMixin'. This old import will"
+            " be removed in version 1.0.",
+            DeprecationWarning,
+        )
+        return super(JSONRequestMixin, self).json
 
 
 class ProtobufRequestMixin(object):

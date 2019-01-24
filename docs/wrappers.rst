@@ -176,3 +176,8 @@ and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides
 
 .. autoclass:: UserAgentMixin
    :members:
+
+.. py:currentmodule:: werkzeug.wrappers.json
+
+.. autoclass:: JSONMixin
+    :members:

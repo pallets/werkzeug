@@ -23,6 +23,7 @@ from tests import strict_eq
 from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable, \
     BadRequest
+from werkzeug.wrappers.json import JSONMixin
 from werkzeug.wsgi import LimitedStream, wrap_file
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
     ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
@@ -1288,3 +1289,13 @@ class TestSetCookie(object):
              '01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; '
              'SameSite=Strict')
         ])
+
+
+def test_json_request_mixin():
+    class MyRequest(JSONMixin, wrappers.Request):
+        pass
+    req = MyRequest.from_values(
+        data=u'{"foä": "bar"}'.encode('utf-8'),
+        content_type='text/json'
+    )
+    assert req.json == {u'foä': 'bar'}
