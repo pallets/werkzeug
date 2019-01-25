@@ -1,6 +1,6 @@
 import warnings
 
-from ..middleware.profile import *
+from ..middleware.profile import *  # noqa: F401, F403
 
 warnings.warn(
     "'werkzeug.contrib.profiler' has moved to"

@@ -188,18 +188,18 @@ opted into by creating your own subclasses::
     class Response(JSONMixin, BaseResponse):
         pass
 
+.. module:: werkzeug.wrappers.json
+
 JSON
 ----
-
-.. module:: werkzeug.wrappers.json
 
 .. autoclass:: JSONMixin
     :members:
 
+.. module:: werkzeug.wrappers.charset
+
 Dynamic Charset
 ---------------
-
-.. module:: werkzeug.wrappers.charset
 
 .. autoclass:: DynamicCharsetRequestMixin
     :members:

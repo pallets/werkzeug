@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import cached_property
 

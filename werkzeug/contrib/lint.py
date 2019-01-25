@@ -1,6 +1,6 @@
 import warnings
 
-from ..middleware.lint import *
+from ..middleware.lint import *  # noqa: F401, F403
 
 warnings.warn(
     "'werkzeug.contrib.lint' has moved to 'werkzeug.middleware.lint'."
