@@ -177,7 +177,32 @@ and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides
 .. autoclass:: UserAgentMixin
    :members:
 
-.. py:currentmodule:: werkzeug.wrappers.json
+
+Extra Mixin Classes
+===================
+
+These mixins are not included in the default :class:`Request` and
+:class:`Response` classes. They provide extra behavior that needs to be
+opted into by creating your own subclasses::
+
+    class Response(JSONMixin, BaseResponse):
+        pass
+
+JSON
+----
+
+.. module:: werkzeug.wrappers.json
 
 .. autoclass:: JSONMixin
+    :members:
+
+Dynamic Charset
+---------------
+
+.. module:: werkzeug.wrappers.charset
+
+.. autoclass:: DynamicCharsetRequestMixin
+    :members:
+
+.. autoclass:: DynamicCharsetResponseMixin
     :members:
