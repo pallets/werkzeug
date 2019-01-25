@@ -79,6 +79,13 @@ class ProtobufRequestMixin(object):
 
     def parse_protobuf(self, proto_type):
         """Parse the data into an instance of proto_type."""
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.ProtobufRequestMixin' is"
+            " deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if 'protobuf' not in self.environ.get('CONTENT_TYPE', ''):
             raise BadRequest('Not a Protobuf request')
 
@@ -104,9 +111,23 @@ class RoutingArgsRequestMixin(object):
     """
 
     def _get_routing_args(self):
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.RoutingArgsRequestMixin' is"
+            " deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.environ.get('wsgiorg.routing_args', (()))[0]
 
     def _set_routing_args(self, value):
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.RoutingArgsRequestMixin' is"
+            " deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if self.shallow:
             raise RuntimeError('A shallow request tried to modify the WSGI '
                                'environment.  If you really want to do that, '
@@ -118,6 +139,13 @@ class RoutingArgsRequestMixin(object):
     del _get_routing_args, _set_routing_args
 
     def _get_routing_vars(self):
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.RoutingArgsRequestMixin' is"
+            " deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         rv = self.environ.get('wsgiorg.routing_args')
         if rv is not None:
             return rv[1]
@@ -127,6 +155,13 @@ class RoutingArgsRequestMixin(object):
         return rv
 
     def _set_routing_vars(self, value):
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.RoutingArgsRequestMixin' is"
+            " deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if self.shallow:
             raise RuntimeError('A shallow request tried to modify the WSGI '
                                'environment.  If you really want to do that, '
@@ -167,6 +202,13 @@ class ReverseSlashBehaviorRequestMixin(object):
         """Requested path as unicode.  This works a bit like the regular path
         info in the WSGI environment but will not include a leading slash.
         """
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.ReverseSlashBehaviorRequestMixin'"
+            " is deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         path = wsgi_decoding_dance(self.environ.get('PATH_INFO') or '',
                                    self.charset, self.encoding_errors)
         return path.lstrip('/')
@@ -174,6 +216,13 @@ class ReverseSlashBehaviorRequestMixin(object):
     @cached_property
     def script_root(self):
         """The root path of the script includling a trailing slash."""
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.ReverseSlashBehaviorRequestMixin'"
+            " is deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         path = wsgi_decoding_dance(self.environ.get('SCRIPT_NAME') or '',
                                    self.charset, self.encoding_errors)
         return path.rstrip('/') + '/'
