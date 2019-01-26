@@ -3,9 +3,9 @@ from __future__ import absolute_import
 import datetime
 import uuid
 
-from werkzeug.utils import detect_utf_encoding
 from .._compat import text_type
 from ..exceptions import BadRequest
+from ..utils import detect_utf_encoding
 
 try:
     import simplejson as _json
