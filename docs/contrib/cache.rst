@@ -2,9 +2,10 @@
 Cache
 =====
 
-.. deprecated:: 0.15
-    This will be removed in version 1.0. It has been extracted to
-    `cachelib <https://github.com/pallets/cachelib>`_.
+.. warning::
+    .. deprecated:: 0.15
+        This will be removed in version 1.0. It has been extracted to
+        `cachelib <https://github.com/pallets/cachelib>`_.
 
 .. automodule:: werkzeug.contrib.cache
 

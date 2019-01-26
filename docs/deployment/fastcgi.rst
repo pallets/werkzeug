@@ -65,14 +65,10 @@ A basic FastCGI configuration for lighttpd looks like this::
         "^(/.*)$" => "/yourapplication.fcgi$1"
 
 Remember to enable the FastCGI, alias and rewrite modules. This configuration
-binds the application to `/yourapplication`.  If you want the application to
-work in the URL root you have to work around a lighttpd bug with the
-:class:`~werkzeug.contrib.fixers.LighttpdCGIRootFix` middleware.
+binds the application to `/yourapplication`.
 
-Make sure to apply it only if you are mounting the application the URL
-root. Also, see the Lighty docs for more information on `FastCGI and Python
-<https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_ModFastCGI>`_ (note
-that explicitly passing a socket to `run()` is no longer necessary).
+See the Lighty docs for more information on `FastCGI and Python
+<https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_ModFastCGI>`_.
 
 Configuring nginx
 =================

@@ -39,12 +39,21 @@ r"""
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import warnings
+
 try:
     import greenlet
 except ImportError:
     greenlet = None
 
 from werkzeug._compat import implements_iterator
+
+warnings.warn(
+    "'werkzeug.contrib.iterio' is deprecated as of version 0.15 and"
+    " will be removed in version 1.0.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def _mixed_join(iterable, sentinel):

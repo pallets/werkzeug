@@ -41,6 +41,7 @@ Reference
    utils
    urls
    local
+   middleware/index
    middlewares
    exceptions
 

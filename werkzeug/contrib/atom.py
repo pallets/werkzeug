@@ -28,11 +28,11 @@ from werkzeug.wrappers import BaseResponse
 from werkzeug._compat import implements_to_string, string_types
 
 warnings.warn(
-    'werkzeug.contrib.atom is deprecated as of version 0.15 and will'
-    ' be removed in version 1.0.',
+    "'werkzeug.contrib.atom' is deprecated as of version 0.15 and will"
+    " be removed in version 1.0.",
     DeprecationWarning,
+    stacklevel=2,
 )
-
 
 XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
 

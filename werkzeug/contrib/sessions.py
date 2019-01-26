@@ -54,6 +54,7 @@ r"""
 import re
 import os
 import tempfile
+import warnings
 from os import path
 from time import time
 from random import random
@@ -67,6 +68,13 @@ from werkzeug.posixemulation import rename
 from werkzeug._compat import PY2, text_type
 from werkzeug.filesystem import get_filesystem_encoding
 
+warnings.warn(
+    "'werkzeug.contrib.sessions' is deprecated as of version 0.15 and"
+    " will be removed in version 1.0. It has moved to"
+    " https://github.com/pallets/secure-cookie.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 _sha1_re = re.compile(r'^[a-f0-9]{40}$')
 
