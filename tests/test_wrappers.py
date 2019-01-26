@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import contextlib
+import json
 import os
 
 import pytest
@@ -1295,14 +1296,51 @@ class TestSetCookie(object):
         ])
 
 
-def test_json_request_mixin():
-    class MyRequest(JSONMixin, wrappers.Request):
+class TestJSONMixin(object):
+    class Request(JSONMixin, wrappers.Request):
         pass
-    req = MyRequest.from_values(
-        data=u'{"foä": "bar"}'.encode('utf-8'),
-        content_type='text/json'
-    )
-    assert req.json == {u'foä': 'bar'}
+
+    class Response(JSONMixin, wrappers.Response):
+        pass
+
+    def test_request(self):
+        value = {u"ä": "b"}
+        request = self.Request.from_values(json=value)
+        assert request.json == value
+        assert request.get_data()
+
+    def test_response(self):
+        value = {u"ä": "b"}
+        response = self.Response(
+            response=json.dumps(value),
+            content_type="application/json",
+        )
+        assert response.json == value
+
+    def test_force(self):
+        value = [1, 2, 3]
+        request = self.Request.from_values(json=value, content_type="text/plain")
+        assert request.json is None
+        assert request.get_json(force=True) == value
+
+    def test_silent(self):
+        request = self.Request.from_values(
+            data=b'{"a":}',
+            content_type="application/json",
+        )
+        assert request.get_json(silent=True) is None
+
+        with pytest.raises(BadRequest):
+            request.get_json()
+
+    def test_cache_disabled(self):
+        value = [1, 2, 3]
+        request = self.Request.from_values(json=value)
+        assert request.get_json(cache=False) == [1, 2, 3]
+        assert not request.get_data()
+
+        with pytest.raises(BadRequest):
+            request.get_json()
 
 
 def test_dynamic_charset_request_mixin():

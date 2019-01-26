@@ -27,10 +27,6 @@ General Helpers
 
 .. autoclass:: header_property
 
-.. autofunction:: parse_cookie
-
-.. autofunction:: dump_cookie
-
 .. autofunction:: redirect
 
 .. autofunction:: append_slash_redirect
