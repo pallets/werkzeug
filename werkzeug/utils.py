@@ -10,6 +10,7 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
+import codecs
 import re
 import os
 import sys
@@ -247,6 +248,53 @@ def get_content_type(mimetype, charset):
         mimetype += '; charset=' + charset
 
     return mimetype
+
+
+def detect_utf_encoding(data):
+    """Detect which UTF encoding was used to encode the given bytes.
+
+    The latest JSON standard (:rfc:`8259`) suggests that only UTF-8 is
+    accepted. Older documents allowed 8, 16, or 32. 16 and 32 can be big
+    or little endian. Some editors or libraries may prepend a BOM.
+
+    :internal:
+
+    :param data: Bytes in unknown UTF encoding.
+    :return: UTF encoding name
+
+    .. versionadded:: 0.15
+    """
+    head = data[:4]
+
+    if head[:3] == codecs.BOM_UTF8:
+        return "utf-8-sig"
+
+    if b"\x00" not in head:
+        return "utf-8"
+
+    if head in (codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE):
+        return "utf-32"
+
+    if head[:2] in (codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE):
+        return "utf-16"
+
+    if len(head) == 4:
+        if head[:3] == b"\x00\x00\x00":
+            return "utf-32-be"
+
+        if head[::2] == b"\x00\x00":
+            return "utf-16-be"
+
+        if head[1:] == b"\x00\x00\x00":
+            return "utf-32-le"
+
+        if head[1::2] == b"\x00\x00":
+            return "utf-16-le"
+
+    if len(head) == 2:
+        return "utf-16-be" if head.startswith(b'\x00') else "utf-16-le"
+
+    return "utf-8"
 
 
 def format_string(string, context):

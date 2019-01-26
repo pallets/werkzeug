@@ -185,8 +185,9 @@ These mixins are not included in the default :class:`Request` and
 :class:`Response` classes. They provide extra behavior that needs to be
 opted into by creating your own subclasses::
 
-    class Response(JSONMixin, BaseResponse):
+    class JSONRequest(JSONMixin, Request):
         pass
+
 
 .. module:: werkzeug.wrappers.json
 
@@ -195,6 +196,7 @@ JSON
 
 .. autoclass:: JSONMixin
     :members:
+
 
 .. module:: werkzeug.wrappers.charset
 

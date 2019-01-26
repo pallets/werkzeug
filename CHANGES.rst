@@ -189,8 +189,10 @@ Unreleased
     to try ``pickle`` if ``json`` fails. (`#1413`_)
 -   ``CGIRootFix`` no longer modifies ``PATH_INFO`` for very old
     versions of Lighttpd. ``LighttpdCGIRootFix`` was renamed to
-    ``CGIRootFix`` in 0.9. The old name emits a deprecation warning and
-    will be removed in the next version. (`#1141`_)
+    ``CGIRootFix`` in 0.9. Both are deprecated and will be removed in
+    version 1.0. (`#1141`_)
+-   :class:`werkzeug.wrappers.json.JSONMixin` has been replaced with
+    Flask's implementation. Check the docs for the full API. (`#1445`_)
 -   The :doc:`contrib modules </contrib/index>` are deprecated and will
     either be moved into ``werkzeug`` core or removed completely in
     version 1.0. Some modules that already issued deprecation warnings
@@ -296,6 +298,7 @@ Unreleased
 .. _#1430: https://github.com/pallets/werkzeug/pull/1430
 .. _#1433: https://github.com/pallets/werkzeug/pull/1433
 .. _#1439: https://github.com/pallets/werkzeug/pull/1439
+.. _#1445: https://github.com/pallets/werkzeug/pull/1445
 
 
 Version 0.14.1
