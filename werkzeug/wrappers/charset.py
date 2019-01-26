@@ -85,39 +85,45 @@ class DynamicCharsetRequestMixin(object):
 
         return info._is_text_encoding
 
-    Because the charset attribute is no a property at class-level, the
-    default value is stored in `default_charset`.
 
-    Because it changes the behavior or :class:`Response` this class has
-    to be mixed in *before* the actual response class::
+class DynamicCharsetResponseMixin(object):
+    """Allow setting the charset for a response after creating it.
+    Setting a new charset updates the ``Content-Type`` header.
 
-        class MyResponse(DynamicCharsetResponseMixin, Response):
-            pass
+    If the response already has data set, it is not re-encoded. Text
+    data can be set with the new charset using
+    :meth:`~werkzeug.wrappers.BaseResponse.set_data`.
 
-    .. versionadded:: 0.6
+    This might be useful in some cases, but it's more efficient to
+    pass the data and charset when creating the response.
     """
 
-    #: the default charset.
-    default_charset = 'utf-8'
+    #: The default charset that is assumed if the content type header
+    #: is missing or does not contain a charset parameter.
+    default_charset = "utf-8"
 
-    def _get_charset(self):
-        header = self.headers.get('content-type')
+    @property
+    def charset(self):
+        """The charset for the response. It's stored as a parameter of
+        the ``Content-Type`` header.
+        """
+        header = self.headers.get("content-type")
+
         if header:
-            charset = parse_options_header(header)[1].get('charset')
+            charset = parse_options_header(header)[1].get("charset")
+
             if charset:
                 return charset
+
         return self.default_charset
 
-    def _set_charset(self, charset):
-        header = self.headers.get('content-type')
+    @charset.setter
+    def charset(self, charset):
+        header = self.headers.get("content-type")
         ct, options = parse_options_header(header)
-        if not ct:
-            raise TypeError('Cannot set charset if Content-Type '
-                            'header is missing.')
-        options['charset'] = charset
-        self.headers['Content-Type'] = dump_options_header(ct, options)
 
-    charset = property(_get_charset, _set_charset, doc="""
-        The charset for the response.  It's stored inside the
-        Content-Type header as a parameter.""")
-    del _get_charset, _set_charset
+        if not ct:
+            raise TypeError("Cannot set charset if Content-Type header is missing.")
+
+        options["charset"] = charset
+        self.headers.set("content-type", ct, **options)
