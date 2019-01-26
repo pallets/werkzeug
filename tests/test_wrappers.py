@@ -33,7 +33,7 @@ from werkzeug.wsgi import LimitedStream, wrap_file
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
     ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
     MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
-from werkzeug.test import Client, create_environ, run_wsgi_app
+from werkzeug.test import Client, create_environ, run_wsgi_app, EnvironBuilder
 from werkzeug._compat import implements_iterator, text_type
 
 
@@ -1343,55 +1343,52 @@ class TestJSONMixin(object):
             request.get_json()
 
 
-def test_dynamic_charset_request_mixin():
-    class MyRequest(DynamicCharsetRequestMixin, wrappers.Request):
+class TestDynamicCharsetRequestMixin(object):
+    class Request(DynamicCharsetRequestMixin, wrappers.Request):
         pass
-    env = {'CONTENT_TYPE': 'text/html'}
-    req = MyRequest(env)
-    assert req.charset == 'latin1'
 
-    env = {'CONTENT_TYPE': 'text/html; charset=utf-8'}
-    req = MyRequest(env)
-    assert req.charset == 'utf-8'
+    def test_from_header(self):
+        builder = EnvironBuilder(content_type="text/html; charset=latin1")
+        request = builder.get_request(self.Request)
+        assert request.charset == "latin1"
+        assert request.url_charset == "utf-8"
 
-    env = {'CONTENT_TYPE': 'application/octet-stream'}
-    req = MyRequest(env)
-    assert req.charset == 'latin1'
-    assert req.url_charset == 'latin1'
+    def test_unknown_charset(self):
+        builder = EnvironBuilder(content_type="text/html; charset=x-weird")
+        request = builder.get_request(self.Request)
+        assert request.charset == "utf-8"
 
-    MyRequest.url_charset = 'utf-8'
-    env = {'CONTENT_TYPE': 'application/octet-stream'}
-    req = MyRequest(env)
-    assert req.charset == 'latin1'
-    assert req.url_charset == 'utf-8'
-
-    def return_ascii(x):
-        return "ascii"
-    env = {'CONTENT_TYPE': 'text/plain; charset=x-weird-charset'}
-    req = MyRequest(env)
-    req.unknown_charset = return_ascii
-    assert req.charset == 'ascii'
-    assert req.url_charset == 'utf-8'
+    def test_unsafe_charset(self):
+        builder = EnvironBuilder(content_type="text/html; charset=zip")
+        request = builder.get_request(self.Request)
+        assert request.charset == "utf-8"
 
 
-def test_dynamic_charset_response_mixin():
-    class MyResponse(DynamicCharsetResponseMixin, wrappers.Response):
-        default_charset = 'utf-7'
-    resp = MyResponse(mimetype='text/html')
-    assert resp.charset == 'utf-7'
-    resp.charset = 'utf-8'
-    assert resp.charset == 'utf-8'
-    assert resp.mimetype == 'text/html'
-    assert resp.mimetype_params == {'charset': 'utf-8'}
-    resp.mimetype_params['charset'] = 'iso-8859-15'
-    assert resp.charset == 'iso-8859-15'
-    resp.set_data(u'Hällo Wörld')
-    assert b''.join(resp.iter_encoded()) == \
-           u'Hällo Wörld'.encode('iso-8859-15')
-    del resp.headers['content-type']
-    try:
-        resp.charset = 'utf-8'
-    except TypeError:
+class TestDynamicCharsetResponseMixin(object):
+    class Response(DynamicCharsetResponseMixin, wrappers.Response):
         pass
-    else:
-        assert False, 'expected type error on charset setting without ct'
+
+    def test_from_header(self):
+        response = self.Response(content_type="text/html; charset=latin1")
+        assert response.charset == "latin1"
+
+    def test_set(self):
+        response = self.Response(content_type="text/html; charset=latin1")
+        response.charset = "ascii"
+        assert response.mimetype == "text/html"
+        assert response.mimetype_params["charset"] == "ascii"
+
+    def test_set_no_content_type(self):
+        response = self.Response()
+        del response.headers["content-type"]
+
+        with pytest.raises(TypeError):
+            response.charset = "ascii"
+
+    def test_set_data(self):
+        value = u"Hällo Wörld"
+        response = self.Response(response=value)
+        response.charset = "latin1"
+        assert response.get_data() == value.encode("utf-8")
+        response.set_data(value)
+        assert response.get_data() == value.encode("latin1")
