@@ -19,7 +19,7 @@ setting each header so the middleware knows what to trust.
 .. autoclass:: ProxyFix
 
 :copyright: 2007 by the Pallets team.
-:license: BSD-3-Clause, see LICENSE for details.
+:license: BSD-3-Clause, see LICENSE.rst for details.
 """
 import warnings
 

@@ -9,30 +9,16 @@
     :license: BSD, see LICENSE for more details.
 """
 import io
-try:
-    import httplib
-except ImportError:
-    from http import client as httplib
-import mimetypes
-import os
-import posixpath
 import re
-import socket
-from datetime import datetime
+import warnings
 from functools import partial, update_wrapper
 from itertools import chain
-from time import mktime, time
-from zlib import adler32
 
-from werkzeug._compat import BytesIO, PY2, implements_iterator, iteritems, \
+from werkzeug._compat import BytesIO, implements_iterator, \
     make_literal_wrapper, string_types, text_type, to_bytes, to_unicode, \
     try_coerce_native, wsgi_get_bytes
 from werkzeug._internal import _encode_idna
-from werkzeug.filesystem import get_filesystem_encoding
-from werkzeug.http import http_date, is_resource_modified, \
-    is_hop_by_hop_header
 from werkzeug.urls import uri_to_iri, url_join, url_parse, url_quote
-from werkzeug.datastructures import EnvironHeaders
 
 
 def responder(f):
@@ -457,393 +443,6 @@ def extract_path_info(
         return None
 
     return u'/' + cur_path[len(base_path):].lstrip(u'/')
-
-
-class ProxyMiddleware(object):
-    """This middleware routes some requests to the provided WSGI app and
-    proxies some requests to an external server.  This is not something that
-    can generally be done on the WSGI layer and some HTTP requests will not
-    tunnel through correctly (for instance websocket requests cannot be
-    proxied through WSGI).  As a result this is only really useful for some
-    basic requests that can be forwarded.
-
-    Example configuration::
-
-        app = ProxyMiddleware(app, {
-            '/static/': {
-                'target': 'http://127.0.0.1:5001/',
-            }
-        })
-
-    For each host options can be specified.  The following options are
-    supported:
-
-    ``target``:
-        the target URL to dispatch to
-    ``remove_prefix``:
-        if set to `True` the prefix is chopped off the URL before
-        dispatching it to the server.
-    ``host``:
-        When set to ``'<auto>'`` which is the default the host header is
-        automatically rewritten to the URL of the target.  If set to `None`
-        then the host header is unmodified from the client request.  Any
-        other value overwrites the host header with that value.
-    ``headers``:
-        An optional dictionary of headers that should be sent with the
-        request to the target host.
-    ``ssl_context``:
-        In case this is an HTTPS target host then an SSL context can be
-        provided here (:class:`ssl.SSLContext`).  This can be used for instance
-        to disable SSL verification.
-
-    In this case everything below ``'/static/'`` is proxied to the server on
-    port 5001.  The host header is automatically rewritten and so are request
-    URLs (eg: the leading `/static/` prefix here gets chopped off).
-
-    .. versionadded:: 0.14
-    """
-
-    def __init__(self, app, targets, chunk_size=2 << 13, timeout=10):
-        def _set_defaults(opts):
-            opts.setdefault('remove_prefix', False)
-            opts.setdefault('host', '<auto>')
-            opts.setdefault('headers', {})
-            opts.setdefault('ssl_context', None)
-            return opts
-        self.app = app
-        self.targets = dict(('/%s/' % k.strip('/'), _set_defaults(v))
-                            for k, v in iteritems(targets))
-        self.chunk_size = chunk_size
-        self.timeout = timeout
-
-    def proxy_to(self, opts, path, prefix):
-        target = url_parse(opts['target'])
-
-        def application(environ, start_response):
-            headers = list(EnvironHeaders(environ).items())
-            headers[:] = [(k, v) for k, v in headers
-                          if not is_hop_by_hop_header(k)
-                          and k.lower() not in ('content-length', 'host')]
-            headers.append(('Connection', 'close'))
-            if opts['host'] == '<auto>':
-                headers.append(('Host', target.ascii_host))
-            elif opts['host'] is None:
-                headers.append(('Host', environ['HTTP_HOST']))
-            else:
-                headers.append(('Host', opts['host']))
-            headers.extend(opts['headers'].items())
-
-            remote_path = path
-            if opts['remove_prefix']:
-                remote_path = '%s/%s' % (
-                    target.path.rstrip('/'),
-                    remote_path[len(prefix):].lstrip('/')
-                )
-
-            content_length = environ.get('CONTENT_LENGTH')
-            chunked = False
-            if content_length not in ('', None):
-                headers.append(('Content-Length', content_length))
-            elif content_length is not None:
-                headers.append(('Transfer-Encoding', 'chunked'))
-                chunked = True
-
-            try:
-                if target.scheme == 'http':
-                    con = httplib.HTTPConnection(
-                        target.ascii_host, target.port or 80,
-                        timeout=self.timeout)
-                elif target.scheme == 'https':
-                    con = httplib.HTTPSConnection(
-                        target.ascii_host, target.port or 443,
-                        timeout=self.timeout,
-                        context=opts['ssl_context'])
-                con.connect()
-
-                remote_url = url_quote(remote_path)
-                querystring = environ['QUERY_STRING']
-                if querystring:
-                    remote_url = remote_url + '?' + querystring
-
-                con.putrequest(environ['REQUEST_METHOD'], remote_url,
-                               skip_host=True)
-
-                for k, v in headers:
-                    if k.lower() == 'connection':
-                        v = 'close'
-                    con.putheader(k, v)
-                con.endheaders()
-
-                stream = get_input_stream(environ)
-                while 1:
-                    data = stream.read(self.chunk_size)
-                    if not data:
-                        break
-                    if chunked:
-                        con.send(b'%x\r\n%s\r\n' % (len(data), data))
-                    else:
-                        con.send(data)
-
-                resp = con.getresponse()
-            except socket.error:
-                from werkzeug.exceptions import BadGateway
-                return BadGateway()(environ, start_response)
-
-            start_response('%d %s' % (resp.status, resp.reason),
-                           [(k.title(), v) for k, v in resp.getheaders()
-                            if not is_hop_by_hop_header(k)])
-
-            def read():
-                while 1:
-                    try:
-                        data = resp.read(self.chunk_size)
-                    except socket.error:
-                        break
-                    if not data:
-                        break
-                    yield data
-            return read()
-        return application
-
-    def __call__(self, environ, start_response):
-        path = environ['PATH_INFO']
-        app = self.app
-        for prefix, opts in iteritems(self.targets):
-            if path.startswith(prefix):
-                app = self.proxy_to(opts, path, prefix)
-                break
-        return app(environ, start_response)
-
-
-class SharedDataMiddleware(object):
-
-    """A WSGI middleware that provides static content for development
-    environments or simple server setups. Usage is quite simple::
-
-        import os
-        from werkzeug.wsgi import SharedDataMiddleware
-
-        app = SharedDataMiddleware(app, {
-            '/shared': os.path.join(os.path.dirname(__file__), 'shared')
-        })
-
-    The contents of the folder ``./shared`` will now be available on
-    ``http://example.com/shared/``.  This is pretty useful during development
-    because a standalone media server is not required.  One can also mount
-    files on the root folder and still continue to use the application because
-    the shared data middleware forwards all unhandled requests to the
-    application, even if the requests are below one of the shared folders.
-
-    If `pkg_resources` is available you can also tell the middleware to serve
-    files from package data::
-
-        app = SharedDataMiddleware(app, {
-            '/shared': ('myapplication', 'shared_files')
-        })
-
-    This will then serve the ``shared_files`` folder in the `myapplication`
-    Python package.
-
-    The optional `disallow` parameter can be a list of :func:`~fnmatch.fnmatch`
-    rules for files that are not accessible from the web.  If `cache` is set to
-    `False` no caching headers are sent.
-
-    Currently the middleware does not support non ASCII filenames.  If the
-    encoding on the file system happens to be the encoding of the URI it may
-    work but this could also be by accident.  We strongly suggest using ASCII
-    only file names for static files.
-
-    The middleware will guess the mimetype using the Python `mimetype`
-    module.  If it's unable to figure out the charset it will fall back
-    to `fallback_mimetype`.
-
-    .. versionchanged:: 0.5
-       The cache timeout is configurable now.
-
-    .. versionadded:: 0.6
-       The `fallback_mimetype` parameter was added.
-
-    :param app: the application to wrap.  If you don't want to wrap an
-                application you can pass it :exc:`NotFound`.
-    :param exports: a list or dict of exported files and folders.
-    :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
-    :param fallback_mimetype: the fallback mimetype for unknown files.
-    :param cache: enable or disable caching headers.
-    :param cache_timeout: the cache timeout in seconds for the headers.
-    """
-
-    def __init__(self, app, exports, disallow=None, cache=True,
-                 cache_timeout=60 * 60 * 12, fallback_mimetype='text/plain'):
-        self.app = app
-        self.exports = []
-        self.cache = cache
-        self.cache_timeout = cache_timeout
-        if hasattr(exports, 'items'):
-            exports = iteritems(exports)
-        for key, value in exports:
-            if isinstance(value, tuple):
-                loader = self.get_package_loader(*value)
-            elif isinstance(value, string_types):
-                if os.path.isfile(value):
-                    loader = self.get_file_loader(value)
-                else:
-                    loader = self.get_directory_loader(value)
-            else:
-                raise TypeError('unknown def %r' % value)
-            self.exports.append((key, loader))
-        if disallow is not None:
-            from fnmatch import fnmatch
-            self.is_allowed = lambda x: not fnmatch(x, disallow)
-        self.fallback_mimetype = fallback_mimetype
-
-    def is_allowed(self, filename):
-        """Subclasses can override this method to disallow the access to
-        certain files.  However by providing `disallow` in the constructor
-        this method is overwritten.
-        """
-        return True
-
-    def _opener(self, filename):
-        return lambda: (
-            open(filename, 'rb'),
-            datetime.utcfromtimestamp(os.path.getmtime(filename)),
-            int(os.path.getsize(filename))
-        )
-
-    def get_file_loader(self, filename):
-        return lambda x: (os.path.basename(filename), self._opener(filename))
-
-    def get_package_loader(self, package, package_path):
-        from pkg_resources import DefaultProvider, ResourceManager, \
-            get_provider
-        loadtime = datetime.utcnow()
-        provider = get_provider(package)
-        manager = ResourceManager()
-        filesystem_bound = isinstance(provider, DefaultProvider)
-
-        def loader(path):
-            if path is None:
-                return None, None
-            path = posixpath.join(package_path, path)
-            if not provider.has_resource(path):
-                return None, None
-            basename = posixpath.basename(path)
-            if filesystem_bound:
-                return basename, self._opener(
-                    provider.get_resource_filename(manager, path))
-            s = provider.get_resource_string(manager, path)
-            return basename, lambda: (
-                BytesIO(s),
-                loadtime,
-                len(s)
-            )
-        return loader
-
-    def get_directory_loader(self, directory):
-        def loader(path):
-            if path is not None:
-                path = os.path.join(directory, path)
-            else:
-                path = directory
-            if os.path.isfile(path):
-                return os.path.basename(path), self._opener(path)
-            return None, None
-        return loader
-
-    def generate_etag(self, mtime, file_size, real_filename):
-        if not isinstance(real_filename, bytes):
-            real_filename = real_filename.encode(get_filesystem_encoding())
-        return 'wzsdm-%d-%s-%s' % (
-            mktime(mtime.timetuple()),
-            file_size,
-            adler32(real_filename) & 0xffffffff
-        )
-
-    def __call__(self, environ, start_response):
-        cleaned_path = get_path_info(environ)
-        if PY2:
-            cleaned_path = cleaned_path.encode(get_filesystem_encoding())
-        # sanitize the path for non unix systems
-        cleaned_path = cleaned_path.strip('/')
-        for sep in os.sep, os.altsep:
-            if sep and sep != '/':
-                cleaned_path = cleaned_path.replace(sep, '/')
-        path = '/' + '/'.join(x for x in cleaned_path.split('/')
-                              if x and x != '..')
-        file_loader = None
-        for search_path, loader in self.exports:
-            if search_path == path:
-                real_filename, file_loader = loader(None)
-                if file_loader is not None:
-                    break
-            if not search_path.endswith('/'):
-                search_path += '/'
-            if path.startswith(search_path):
-                real_filename, file_loader = loader(path[len(search_path):])
-                if file_loader is not None:
-                    break
-        if file_loader is None or not self.is_allowed(real_filename):
-            return self.app(environ, start_response)
-
-        guessed_type = mimetypes.guess_type(real_filename)
-        mime_type = guessed_type[0] or self.fallback_mimetype
-        f, mtime, file_size = file_loader()
-
-        headers = [('Date', http_date())]
-        if self.cache:
-            timeout = self.cache_timeout
-            etag = self.generate_etag(mtime, file_size, real_filename)
-            headers += [
-                ('Etag', '"%s"' % etag),
-                ('Cache-Control', 'max-age=%d, public' % timeout)
-            ]
-            if not is_resource_modified(environ, etag, last_modified=mtime):
-                f.close()
-                start_response('304 Not Modified', headers)
-                return []
-            headers.append(('Expires', http_date(time() + timeout)))
-        else:
-            headers.append(('Cache-Control', 'public'))
-
-        headers.extend((
-            ('Content-Type', mime_type),
-            ('Content-Length', str(file_size)),
-            ('Last-Modified', http_date(mtime))
-        ))
-        start_response('200 OK', headers)
-        return wrap_file(environ, f)
-
-
-class DispatcherMiddleware(object):
-
-    """Allows one to mount middlewares or applications in a WSGI application.
-    This is useful if you want to combine multiple WSGI applications::
-
-        app = DispatcherMiddleware(app, {
-            '/app2':        app2,
-            '/app3':        app3
-        })
-    """
-
-    def __init__(self, app, mounts=None):
-        self.app = app
-        self.mounts = mounts or {}
-
-    def __call__(self, environ, start_response):
-        script = environ.get('PATH_INFO', '')
-        path_info = ''
-        while '/' in script:
-            if script in self.mounts:
-                app = self.mounts[script]
-                break
-            script, last_item = script.rsplit('/', 1)
-            path_info = '/%s%s' % (last_item, path_info)
-        else:
-            app = self.mounts.get(script, self.app)
-        original_script_name = environ.get('SCRIPT_NAME', '')
-        environ['SCRIPT_NAME'] = original_script_name + script
-        environ['PATH_INFO'] = path_info
-        return app(environ, start_response)
 
 
 @implements_iterator
@@ -1383,3 +982,68 @@ class LimitedStream(io.IOBase):
 
     def readable(self):
         return True
+
+
+from werkzeug.middleware.dispatcher import DispatcherMiddleware as _DispatcherMiddleware
+from werkzeug.middleware.http_proxy import ProxyMiddleware as _ProxyMiddleware
+from werkzeug.middleware.shared_data import SharedDataMiddleware as _SharedDataMiddleware
+
+
+class ProxyMiddleware(_ProxyMiddleware):
+    """
+    .. deprecated:: 0.15
+        ``werkzeug.wsgi.ProxyMiddleware`` has moved to
+        :mod:`werkzeug.middleware.http_proxy`. This import will be
+        removed in 1.0.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.wsgi.ProxyMiddleware' has moved to 'werkzeug"
+            ".middleware.http_proxy.ProxyMiddleware'. This import is"
+            " deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(ProxyMiddleware, self).__init__(*args, **kwargs)
+
+
+class SharedDataMiddleware(_SharedDataMiddleware):
+    """
+    .. deprecated:: 0.15
+        ``werkzeug.wsgi.SharedDataMiddleware`` has moved to
+        :mod:`werkzeug.middleware.shared_data`. This import will be
+        removed in 1.0.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.wsgi.SharedDataMiddleware' has moved to"
+            " 'werkzeug.middleware.shared_data.SharedDataMiddleware'."
+            " This import is deprecated as of version 0.15 and will be"
+            " removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(SharedDataMiddleware, self).__init__(*args, **kwargs)
+
+
+class DispatcherMiddleware(_DispatcherMiddleware):
+    """
+    .. deprecated:: 0.15
+        ``werkzeug.wsgi.DispatcherMiddleware`` has moved to
+        :mod:`werkzeug.middleware.dispatcher`. This import will be
+        removed in 1.0.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.wsgi.DispatcherMiddleware' has moved to"
+            " 'werkzeug.middleware.dispatcher.DispatcherMiddleware'."
+            " This import is deprecated as of version 0.15 and will be"
+            " removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(DispatcherMiddleware, self).__init__(*args, **kwargs)

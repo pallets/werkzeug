@@ -57,8 +57,8 @@ all_by_module = {
                        'ArgumentValidationError', 'bind_arguments',
                        'secure_filename'],
     'werkzeug.wsgi': ['get_current_url', 'get_host', 'pop_path_info',
-                      'peek_path_info', 'SharedDataMiddleware',
-                      'DispatcherMiddleware', 'ClosingIterator', 'FileWrapper',
+                      'peek_path_info',
+                      'ClosingIterator', 'FileWrapper',
                       'make_line_iter', 'LimitedStream', 'responder',
                       'wrap_file', 'extract_path_info'],
     'werkzeug.datastructures': ['MultiDict', 'CombinedMultiDict', 'Headers',
@@ -91,6 +91,8 @@ all_by_module = {
                           'CommonResponseDescriptorsMixin', 'UserAgentMixin',
                           'AuthorizationMixin', 'WWWAuthenticateMixin',
                           'CommonRequestDescriptorsMixin'],
+    "werkzeug.middleware.dispatcher": ["DispatcherMiddleware"],
+    "werkzeug.middleware.shared_data": ["SharedDataMiddleware"],
     'werkzeug.security': ['generate_password_hash', 'check_password_hash'],
     # the undocumented easteregg ;-)
     'werkzeug._internal': ['_easteregg']
