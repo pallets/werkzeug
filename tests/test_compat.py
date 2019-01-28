@@ -29,7 +29,4 @@ def test_old_imports():
 def test_exposed_werkzeug_mod():
     import werkzeug
     for key in werkzeug.__all__:
-        # deprecated, skip it
-        if key in ('templates', 'Template'):
-            continue
         getattr(werkzeug, key)

@@ -100,8 +100,10 @@ class ProxyFix(object):
         :internal:
         """
         warnings.warn(
-            "'num_proxies' is deprecated. Use 'x_for' instead.",
+            "'num_proxies' is deprecated as of version 0.15 and will be"
+            " removed in version 1.0. Use 'x_for' instead.",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.x_for
 
@@ -109,8 +111,10 @@ class ProxyFix(object):
     def num_proxies(self, value):
         if value is not None:
             warnings.warn(
-                "'num_proxies' is deprecated. Use 'x_for' instead.",
+                "'num_proxies' is deprecated as of version 0.15 and"
+                " will be removed in version 1.0. Use 'x_for' instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
             self.x_for = value
 
@@ -133,7 +137,12 @@ class ProxyFix(object):
 
         .. versionadded:: 0.8
         """
-        warnings.warn("get_remote_addr is deprecated.", DeprecationWarning)
+        warnings.warn(
+            "'get_remote_addr' is deprecated as of version 0.15 and"
+            " will be removed in version 1.0. It is now handled"
+            " internally for each header.",
+            DeprecationWarning
+        )
         return self._get_trusted_comma(self.x_for, ",".join(forwarded_for))
 
     def _get_trusted_comma(self, trusted, value):
