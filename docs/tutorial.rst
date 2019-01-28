@@ -45,9 +45,9 @@ The final result will look something like this:
 .. image:: _static/shortly.png
    :alt: a screenshot of shortly
 
-.. _TinyURL: http://tinyurl.com/
+.. _TinyURL: https://tinyurl.com/
 .. _Jinja: http://jinja.pocoo.org/
-.. _redis: http://redis.io/
+.. _redis: https://redis.io/
 
 Step 0: A Basic WSGI Introduction
 ---------------------------------
@@ -474,4 +474,4 @@ Look at the implementation in the example dictionary in the Werkzeug
 repository to see a version of this tutorial with some small refinements
 such as a custom 404 page.
 
--   `shortly in the example folder <https://github.com/pallets/werkzeug/blob/master/examples/shortly>`_
+-   `shortly in the example folder <https://github.com/pallets/werkzeug/tree/master/examples/shortly>`_

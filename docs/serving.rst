@@ -55,7 +55,7 @@ Since version 0.10, there are two backends the reloader supports: ``stat`` and
   drain a laptop's battery.
 
 - The ``watchdog`` backend uses filesystem events, and is much faster than
-  ``stat``. It requires the `watchdog <https://pypi.python.org/pypi/watchdog>`_
+  ``stat``. It requires the `watchdog <https://pypi.org/project/watchdog/>`_
   module to be installed. The recommended way to achieve this is to add
   ``Werkzeug[watchdog]`` to your requirements file.
 
@@ -75,8 +75,8 @@ polling and ``'watchdog'`` forces it to the watchdog backend.
 Colored Logging
 ---------------
 Werkzeug is able to color the output of request logs when ran from a terminal, just install the `termcolor
-<https://pypi.python.org/pypi/termcolor>`_ package. Windows users need to install `colorama
-<https://pypi.python.org/pypi/colorama>`_ in addition to termcolor for this to work. 
+<https://pypi.org/project/termcolor/>`_ package. Windows users need to install `colorama
+<https://pypi.org/project/colorama/>`_ in addition to termcolor for this to work.
 
 Virtual Hosts
 -------------
@@ -151,7 +151,7 @@ preferring ipv6, you will be unable to connect to your server.  In that
 situation, you can either remove the localhost entry for ``::1`` or
 explicitly bind the hostname to an ipv4 address (`127.0.0.1`)
 
-.. _hosts file: http://en.wikipedia.org/wiki/Hosts_file
+.. _hosts file: https://en.wikipedia.org/wiki/Hosts_file
 
 SSL
 ---

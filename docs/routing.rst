@@ -6,10 +6,6 @@ URL Routing
 
 .. module:: werkzeug.routing
 
-.. testsetup::
-
-   from werkzeug.routing import *
-
 When it comes to combining multiple controller or view functions (however
 you want to call them), you need a dispatcher.  A simple way would be
 applying regular expression tests on ``PATH_INFO`` and call registered
@@ -19,7 +15,7 @@ Werkzeug provides a much more powerful system, similar to `Routes`_.  All the
 objects mentioned on this page must be imported from :mod:`werkzeug.routing`, not
 from :mod:`werkzeug`!
 
-.. _Routes: http://routes.groovie.org/
+.. _Routes: https://routes.readthedocs.io/en/latest/
 
 
 Quickstart

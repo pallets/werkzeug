@@ -88,15 +88,15 @@ Released on December 7th 2017
 - The built-in dev server supports receiving requests with chunked
   transfer encoding. (`#1198`_)
 
-.. _Click: https://www.palletsprojects.com/p/click/
+.. _Click: https://palletsprojects.com/p/click/
 .. _pallets/meta#24: https://github.com/pallets/meta/issues/24
 .. _#414: https://github.com/pallets/werkzeug/pull/414
-.. _#705: https://github.com/pallets/werkzeug/pull/705
+.. _#705: https://github.com/pallets/werkzeug/issues/705
 .. _#780: https://github.com/pallets/werkzeug/pull/780
 .. _#984: https://github.com/pallets/werkzeug/pull/984
 .. _#1088: https://github.com/pallets/werkzeug/pull/1088
 .. _#1090: https://github.com/pallets/werkzeug/pull/1090
-.. _#1102: https://github.com/pallets/werkzeug/pull/1102
+.. _#1102: https://github.com/pallets/werkzeug/issues/1102
 .. _#1109: https://github.com/pallets/werkzeug/pull/1109
 .. _#1116: https://github.com/pallets/werkzeug/pull/1116
 .. _#1197: https://github.com/pallets/werkzeug/pull/1197
@@ -1190,9 +1190,7 @@ Version 0.3.1
 (bugfix release, released on June 24th 2008)
 
 - fixed a security problem with `werkzeug.contrib.SecureCookie`.
-  More details available in the `release announcement`_.
 
-.. _release announcement: http://lucumr.pocoo.org/cogitations/2008/06/24/werkzeug-031-released/
 
 Version 0.3
 -----------

@@ -628,9 +628,9 @@ def iri_to_uri(iri, charset='utf-8', errors='strict', safe_conversion=False):
 
     Examples for IRI versus URI:
 
-    >>> iri_to_uri(u'http://☃.net/')
+    >>> iri_to_uri(u'http://\u2603.net/')
     'http://xn--n3h.net/'
-    >>> iri_to_uri(u'http://üser:pässword@☃.net/påth')
+    >>> iri_to_uri(u'http://üser:pässword@\u2603.net/påth')
     'http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th'
 
     There is a general problem with IRI and URI conversion with some

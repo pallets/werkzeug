@@ -127,7 +127,7 @@ your virtualenv::
 
 A few seconds later you are good to go.
 
-.. _download page: https://pypi.python.org/pypi/Werkzeug
-.. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
-.. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
-.. _Git: http://git-scm.org/
+.. _download page: https://pypi.org/project/Werkzeug/
+.. _setuptools: https://setuptools.readthedocs.io/en/latest/
+.. _easy_install: https://setuptools.readthedocs.io/en/latest/easy_install.html
+.. _Git: https://git-scm.com/

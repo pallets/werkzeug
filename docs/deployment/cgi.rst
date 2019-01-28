@@ -10,7 +10,7 @@ This is also the way you can use a Werkzeug application on Google's
 `AppEngine`_, there however the execution does happen in a CGI-like
 environment.  The application's performance is unaffected because of that.
 
-.. _AppEngine: http://code.google.com/appengine/
+.. _AppEngine: https://cloud.google.com/appengine/
 
 Creating a `.cgi` file
 ======================
