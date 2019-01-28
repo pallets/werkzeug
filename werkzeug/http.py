@@ -1180,11 +1180,61 @@ def is_byte_range_valid(start, stop, length):
 from werkzeug.datastructures import Accept, HeaderSet, ETags, Authorization, \
     WWWAuthenticate, TypeConversionDict, IfRange, Range, ContentRange, \
     RequestCacheControl
+from werkzeug.urls import iri_to_uri
 
 
 # DEPRECATED
-# backwards compatible imports
-from werkzeug.datastructures import (  # noqa
-    MIMEAccept, CharsetAccept, LanguageAccept, Headers
+from werkzeug.datastructures import (
+    MIMEAccept as _MIMEAccept,
+    CharsetAccept as _CharsetAccept,
+    LanguageAccept as _LanguageAccept,
+    Headers as _Headers,
 )
-from werkzeug.urls import iri_to_uri
+
+
+class MIMEAccept(_MIMEAccept):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.http.MIMEAccept' has moved to 'werkzeug"
+            ".datastructures.MIMEAccept' as of version 0.5. This old"
+            " import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(MIMEAccept, self).__init__(*args, **kwargs)
+
+
+class CharsetAccept(_CharsetAccept):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.http.CharsetAccept' has moved to 'werkzeug"
+            ".datastructures.CharsetAccept' as of version 0.5. This old"
+            " import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(CharsetAccept, self).__init__(*args, **kwargs)
+
+
+class LanguageAccept(_LanguageAccept):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.http.LanguageAccept' has moved to 'werkzeug"
+            ".datastructures.LanguageAccept' as of version 0.5. This"
+            " old import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(LanguageAccept, self).__init__(*args, **kwargs)
+
+
+class Headers(_Headers):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.http.Headers' has moved to 'werkzeug"
+            ".datastructures.Headers' as of version 0.5. This old"
+            " import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(Headers, self).__init__(*args, **kwargs)

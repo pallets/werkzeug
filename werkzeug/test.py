@@ -130,10 +130,18 @@ def encode_multipart(values, boundary=None, charset='utf-8'):
 
 
 def File(fd, filename=None, mimetype=None):
-    """Backwards compat."""
+    """Backwards compat.
+
+    .. deprecated:: 0.5
+    """
     from warnings import warn
-    warn(DeprecationWarning('werkzeug.test.File is deprecated, use the '
-                            'EnvironBuilder or FileStorage instead'))
+    warn(
+        "'werkzeug.test.File' is deprecated as of version 0.5 and will"
+        " be removed in version 1.0. Use 'EnvironBuilder' or"
+        " 'FileStorage' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return FileStorage(fd, filename=filename, content_type=mimetype)
 
 
@@ -422,9 +430,13 @@ class EnvironBuilder(object):
             self.files.add_file(key, *value)
         elif isinstance(value, dict):
             from warnings import warn
-            warn(DeprecationWarning('it\'s no longer possible to pass dicts '
-                                    'as `data`.  Use tuples or FileStorage '
-                                    'objects instead'), stacklevel=2)
+            warn(
+                "Passing a dict as file data is deprecated as of"
+                " version 0.5 and will be removed in version 1.0. Use"
+                " a tuple or 'FileStorage' object instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             value = dict(value)
             mimetype = value.pop('mimetype', None)
             if mimetype is not None:

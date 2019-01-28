@@ -15,6 +15,8 @@ import re
 import os
 import sys
 import pkgutil
+import warnings
+
 try:
     from html.entities import name2codepoint
 except ImportError:
@@ -381,7 +383,12 @@ def escape(s, quote=None):
         s = text_type(s)
     if quote is not None:
         from warnings import warn
-        warn(DeprecationWarning('quote parameter is implicit now'), stacklevel=2)
+        warn(
+            "The 'quote' parameter is no longer used as of version 0.9"
+            " and will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     s = s.replace('&', '&amp;').replace('<', '&lt;') \
         .replace('>', '&gt;').replace('"', "&quot;")
     return s
@@ -682,8 +689,83 @@ class ImportStringError(ImportError):
 
 
 # DEPRECATED
-# these objects were previously in this module as well.  we import
-# them here for backwards compatibility with old pickles.
-from werkzeug.datastructures import (  # noqa
-    MultiDict, CombinedMultiDict, Headers, EnvironHeaders)
-from werkzeug.http import parse_cookie, dump_cookie  # noqa
+from werkzeug.datastructures import (
+    MultiDict as _MultiDict,
+    CombinedMultiDict as _CombinedMultiDict,
+    Headers as _Headers,
+    EnvironHeaders as _EnvironHeaders,
+)
+from werkzeug.http import (
+    parse_cookie as _parse_cookie,
+    dump_cookie as _dump_cookie,
+)
+
+
+class MultiDict(_MultiDict):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.utils.MultiDict' has moved to 'werkzeug"
+            ".datastructures.MultiDict' as of version 0.5. This old"
+            " import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(MultiDict, self).__init__(*args, **kwargs)
+
+
+class CombinedMultiDict(_CombinedMultiDict):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.utils.CombinedMultiDict' has moved to 'werkzeug"
+            ".datastructures.CombinedMultiDict' as of version 0.5. This"
+            " old import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(CombinedMultiDict, self).__init__(*args, **kwargs)
+
+
+class Headers(_Headers):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.utils.Headers' has moved to 'werkzeug"
+            ".datastructures.Headers' as of version 0.5. This old"
+            " import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(Headers, self).__init__(*args, **kwargs)
+
+
+class EnvironHeaders(_EnvironHeaders):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.utils.EnvironHeaders' has moved to 'werkzeug"
+            ".datastructures.EnvironHeaders' as of version 0.5. This"
+            " old import will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super(EnvironHeaders, self).__init__(*args, **kwargs)
+
+
+def parse_cookie(*args, **kwargs):
+    warnings.warn(
+        "'werkzeug.utils.parse_cookie' as moved to 'werkzeug.http"
+        ".parse_cookie' as of version 0.5. This old import will be"
+        " removed in version 1.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _parse_cookie(*args, **kwargs)
+
+
+def dump_cookie(*args, **kwargs):
+    warnings.warn(
+        "'werkzeug.utils.dump_cookie' as moved to 'werkzeug.http"
+        ".dump_cookie' as of version 0.5. This old import will be"
+        " removed in version 1.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _dump_cookie(*args, **kwargs)

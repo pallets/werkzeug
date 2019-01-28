@@ -691,12 +691,18 @@ class BaseRequest(object):
         prototype, jQuery and Mochikit and probably some more.
 
         .. deprecated:: 0.13
-            ``X-Requested-With`` is not standard and is unreliable.
+            ``X-Requested-With`` is not standard and is unreliable. You
+            may be able to use :attr:`AcceptMixin.accept_mimetypes`
+            instead.
         """
-        warn(DeprecationWarning(
-            'Request.is_xhr is deprecated. Given that the X-Requested-With '
-            'header is not a part of any spec, it is not reliable'
-        ), stacklevel=2)
+        warn(
+            "'Request.is_xhr' is deprecated as of version 0.13 and will"
+            " be removed in version 1.0. The 'X-Requested-With' header"
+            " is not standard and is unreliable. You may be able to use"
+            " 'accept_mimetypes' instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         return self.environ.get(
             'HTTP_X_REQUESTED_WITH', ''
         ).lower() == 'xmlhttprequest'
@@ -1006,10 +1012,11 @@ class BaseResponse(object):
         if self.automatically_set_content_length:
             self.headers['Content-Length'] = str(len(value))
 
-    data = property(get_data, set_data, doc='''
-        A descriptor that calls :meth:`get_data` and :meth:`set_data`.  This
-        should not be used and will eventually get deprecated.
-        ''')
+    data = property(
+        get_data,
+        set_data,
+        doc='A descriptor that calls :meth:`get_data` and :meth:`set_data`.'
+    )
 
     def calculate_content_length(self):
         """Returns the content length if available or `None` otherwise."""

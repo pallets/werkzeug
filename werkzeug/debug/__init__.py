@@ -30,9 +30,19 @@ from werkzeug._compat import text_type
 
 
 # DEPRECATED
-#: import this here because it once was documented as being available
-#: from this module.  In case there are users left ...
-from werkzeug.debug.repr import debug_repr  # noqa
+from werkzeug.debug.repr import debug_repr as _debug_repr
+
+
+def debug_repr(*args, **kwargs):
+    import warnings
+    warnings.warn(
+        "'debug_repr' has moved to 'werkzeug.debug.repr.debug_repr'"
+        " as of version 0.7. This old import will be removed in version"
+        " 1.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _debug_repr(*args, **kwargs)
 
 
 # A week
@@ -236,7 +246,13 @@ class DebuggedApplication(object):
                  pin_security=True, pin_logging=True):
         if lodgeit_url is not None:
             from warnings import warn
-            warn(DeprecationWarning('Werkzeug now pastes into gists.'))
+            warn(
+                "'lodgeit_url' is no longer used as of version 0.9 and"
+                " will be removed in version 1.0. Werkzeug uses"
+                " https://gist.github.com/ instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if not console_init_func:
             console_init_func = None
         self.app = app

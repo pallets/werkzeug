@@ -1216,11 +1216,8 @@ def test_request_method_case_sensitivity():
 def test_is_xhr_warning():
     req = wrappers.Request.from_values()
 
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.warns(DeprecationWarning):
         req.is_xhr
-
-    assert len(record) == 1
-    assert 'Request.is_xhr is deprecated' in str(record[0].message)
 
 
 def test_write_length():
