@@ -24,16 +24,12 @@ from tests import strict_eq
 from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable, \
     BadRequest
-from werkzeug.wrappers.charset import (
-    DynamicCharsetRequestMixin,
-    DynamicCharsetResponseMixin,
-)
 from werkzeug.wrappers.json import JSONMixin
 from werkzeug.wsgi import LimitedStream, wrap_file
 from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
     ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
     MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
-from werkzeug.test import Client, create_environ, run_wsgi_app, EnvironBuilder
+from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug._compat import implements_iterator, text_type
 
 
@@ -1341,54 +1337,3 @@ class TestJSONMixin(object):
 
         with pytest.raises(BadRequest):
             request.get_json()
-
-
-class TestDynamicCharsetRequestMixin(object):
-    class Request(DynamicCharsetRequestMixin, wrappers.Request):
-        pass
-
-    def test_from_header(self):
-        builder = EnvironBuilder(content_type="text/html; charset=latin1")
-        request = builder.get_request(self.Request)
-        assert request.charset == "latin1"
-        assert request.url_charset == "utf-8"
-
-    def test_unknown_charset(self):
-        builder = EnvironBuilder(content_type="text/html; charset=x-weird")
-        request = builder.get_request(self.Request)
-        assert request.charset == "utf-8"
-
-    def test_unsafe_charset(self):
-        builder = EnvironBuilder(content_type="text/html; charset=zip")
-        request = builder.get_request(self.Request)
-        assert request.charset == "utf-8"
-
-
-class TestDynamicCharsetResponseMixin(object):
-    class Response(DynamicCharsetResponseMixin, wrappers.Response):
-        pass
-
-    def test_from_header(self):
-        response = self.Response(content_type="text/html; charset=latin1")
-        assert response.charset == "latin1"
-
-    def test_set(self):
-        response = self.Response(content_type="text/html; charset=latin1")
-        response.charset = "ascii"
-        assert response.mimetype == "text/html"
-        assert response.mimetype_params["charset"] == "ascii"
-
-    def test_set_no_content_type(self):
-        response = self.Response()
-        del response.headers["content-type"]
-
-        with pytest.raises(TypeError):
-            response.charset = "ascii"
-
-    def test_set_data(self):
-        value = u"Hällo Wörld"
-        response = self.Response(response=value)
-        response.charset = "latin1"
-        assert response.get_data() == value.encode("utf-8")
-        response.set_data(value)
-        assert response.get_data() == value.encode("latin1")

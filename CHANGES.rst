@@ -193,11 +193,6 @@ Unreleased
     version 1.0. (`#1141`_)
 -   :class:`werkzeug.wrappers.json.JSONMixin` has been replaced with
     Flask's implementation. Check the docs for the full API. (`#1445`_)
--   :class:`werkzeug.wrappers.charset.DynamicCharsetRequestMixin`
-    attempts to validate that a charset is a safe, text-based charset. A
-    strong warning about understanding the safety of this is added to
-    the docs. The default and fallback charsets are changed to UTF-8 to
-    match :class:`~werkzeug.wrappers.BaseRequest`. (`#1446`_)
 -   The :doc:`contrib modules </contrib/index>` are deprecated and will
     either be moved into ``werkzeug`` core or removed completely in
     version 1.0. Some modules that already issued deprecation warnings
@@ -210,9 +205,6 @@ Unreleased
         :mod:`werkzeug.middleware.profiler`.
     -   ``ProxyFix`` has moved to :mod:`werkzeug.middleware.proxy_fix`.
     -   ``JSONRequestMixin`` has moved to :mod:`werkzeug.wrappers.json`.
-    -   ``DynamicCharsetRequestMixin`` and
-        ``DynamicCharsetResponseMixin`` have moved to
-        :mod:`werkzeug.wrappers.charset`.
     -   ``cache`` has been extracted into a separate project,
         `cachelib <https://github.com/pallets/cachelib>`_. The version
         in Werkzeug is deprecated.
@@ -221,8 +213,7 @@ Unreleased
         `secure-cookie <https://github.com/pallets/secure-cookie>`_. The
         version in Werkzeug is deprecated.
     -   Everything in ``fixers``, except ``ProxyFix``, is deprecated.
-    -   Everything in ``wrappers``, except the JSON and charset mixins
-        mentioned above, is deprecated.
+    -   Everything in ``wrappers``, except ``JSONMixin``, is deprecated.
     -   ``atom`` is deprecated. This did not fit in with the rest of
         Werkzeug, and is better served by a dedicated library in the
         community.
@@ -315,7 +306,6 @@ Unreleased
 .. _#1433: https://github.com/pallets/werkzeug/pull/1433
 .. _#1439: https://github.com/pallets/werkzeug/pull/1439
 .. _#1445: https://github.com/pallets/werkzeug/pull/1445
-.. _#1446: https://github.com/pallets/werkzeug/pull/1446
 .. _#1452: https://github.com/pallets/werkzeug/pull/1452
 
 
