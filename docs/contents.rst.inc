@@ -42,7 +42,6 @@ Reference
    urls
    local
    middleware/index
-   middlewares
    exceptions
 
 Deployment
