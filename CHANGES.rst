@@ -1,9 +1,5 @@
 .. currentmodule:: werkzeug
 
-Werkzeug Changelog
-==================
-
-
 Version 0.15
 ------------
 

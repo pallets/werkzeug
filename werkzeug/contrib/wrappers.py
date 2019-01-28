@@ -42,7 +42,7 @@ def is_known_charset(charset):
 class JSONRequestMixin(_JSONMixin):
     """
     .. deprecated:: 0.15
-        Moved to :class:`werkzeug.wrappers.JSONMixin`. This old
+        Moved to :class:`werkzeug.wrappers.json.JSONMixin`. This old
         import will be removed in version 1.0.
     """
 
@@ -50,7 +50,7 @@ class JSONRequestMixin(_JSONMixin):
     def json(self):
         warnings.warn(
             "'werkzeug.contrib.wrappers.JSONRequestMixin' has moved to"
-            " 'werkzeug.wrappers.JSONMixin'. This old import will"
+            " 'werkzeug.wrappers.json.JSONMixin'. This old import will"
             " be removed in version 1.0.",
             DeprecationWarning,
             stacklevel=2,
