@@ -1456,8 +1456,6 @@ class Map(object):
     """
 
     #: A dict of default converters to be used.
-    #:
-    #: .. versionadded:: 0.6
     default_converters = ImmutableDict(DEFAULT_CONVERTERS)
 
     def __init__(self, rules=None, default_subdomain='', charset='utf-8',

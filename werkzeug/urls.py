@@ -678,7 +678,7 @@ def uri_to_iri(uri, charset="utf-8", errors="werkzeug.url_quote"):
     a domain, it is decoded from Punycode.
 
     >>> uri_to_iri("http://xn--n3h.net/p%C3%A5th?q=%C3%A8ry%DF")
-    'http://\u2603.net/p\xe5th?q=\xe8ry%DF'
+    'http://\\u2603.net/p\\xe5th?q=\\xe8ry%DF'
 
     :param uri: The URI to convert.
     :param charset: The encoding to encode unquoted bytes with.
@@ -710,7 +710,7 @@ def iri_to_uri(iri, charset="utf-8", errors="strict", safe_conversion=False):
     """Convert an IRI to a URI. All non-ASCII and unsafe characters are
     quoted. If the URL has a domain, it is encoded to Punycode.
 
-    >>> iri_to_uri('http://\u2603.net/p\xe5th?q=\xe8ry%DF')
+    >>> iri_to_uri('http://\\u2603.net/p\\xe5th?q=\\xe8ry%DF')
     'http://xn--n3h.net/p%C3%A5th?q=%C3%A8ry%DF'
 
     :param iri: The IRI to convert.

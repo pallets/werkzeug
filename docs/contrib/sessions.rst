@@ -9,9 +9,6 @@ Sessions
 
 .. automodule:: werkzeug.contrib.sessions
 
-.. testsetup::
-
-   from werkzeug.contrib.sessions import *
 
 Reference
 =========
@@ -19,7 +16,7 @@ Reference
 .. autoclass:: Session
 
    .. attribute:: sid
-    
+
       The session ID as string.
 
    .. attribute:: new

@@ -135,4 +135,4 @@ path.  Common problems are:
 
 .. _lighttpd: https://www.lighttpd.net/
 .. _nginx: https://nginx.org/
-.. _flup: https://www.saddi.com/software/flup/
+.. _flup: https://pypi.org/project/flup/

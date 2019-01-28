@@ -474,4 +474,4 @@ Look at the implementation in the example dictionary in the Werkzeug
 repository to see a version of this tutorial with some small refinements
 such as a custom 404 page.
 
--   `shortly in the example folder <https://github.com/pallets/werkzeug/blob/master/examples/shortly>`_
+-   `shortly in the example folder <https://github.com/pallets/werkzeug/tree/master/examples/shortly>`_

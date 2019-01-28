@@ -74,9 +74,6 @@ application under a different user for security reasons:
         </Directory>
     </VirtualHost>
 
-For more information consult the `mod_wsgi docs`_.
-
-.. _mod_wsgi: https://github.com/GrahamDumpleton/mod_wsgi
-.. _installation instructions: https://modwsgi.readthedocs.io/en/latest/user-guides/quick-installation-guide.html
+.. _mod_wsgi: https://modwsgi.readthedocs.io/en/develop/
+.. _installation instructions: https://modwsgi.readthedocs.io/en/develop/installation.html
 .. _virtual python: https://pypi.org/project/virtualenv/
-.. _mod_wsgi docs: https://modwsgi.readthedocs.io/

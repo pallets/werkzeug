@@ -193,7 +193,7 @@ class InternetExplorerFix(object):
     -   removing of `Vary` headers for unsupported mimetypes which
         causes troubles with caching.  Can be disabled by passing
         ``fix_vary=False`` to the constructor.
-        see: http://support.microsoft.com/kb/824847/en-us
+        see: https://support.microsoft.com/en-us/help/824847
 
     -   removes offending headers to work around caching bugs in
         Internet Explorer if `Content-Disposition` is set.  Can be

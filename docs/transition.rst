@@ -81,6 +81,6 @@ served by dedicated libraries.
     the WSGI server library instead of middleware.
 
 .. _Click: https://click.palletsprojects.com/
-.. _Jinja: https://jinja.pocoo.org/docs/
-.. _Flask: https://flask.pocoo.org/docs/
+.. _Jinja: http://jinja.pocoo.org/docs/
+.. _Flask: http://flask.pocoo.org/docs/
 .. _cachelib: https://github.com/pallets/cachelib

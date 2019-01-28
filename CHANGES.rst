@@ -239,29 +239,29 @@ Unreleased
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
-.. _`#609`: https://github.com/pallets/werkzeug/pull/609
-.. _`#693`: https://github.com/pallets/werkzeug/pull/693
+.. _`#609`: https://github.com/pallets/werkzeug/issues/609
+.. _`#693`: https://github.com/pallets/werkzeug/issues/693
 .. _`#718`: https://github.com/pallets/werkzeug/pull/718
 .. _`#724`: https://github.com/pallets/werkzeug/pull/724
 .. _`#735`: https://github.com/pallets/werkzeug/pull/735
 .. _`#740`: https://github.com/pallets/werkzeug/issues/740
 .. _`#768`: https://github.com/pallets/werkzeug/pull/768
-.. _`#772`: https://github.com/pallets/werkzeug/pull/772
+.. _`#772`: https://github.com/pallets/werkzeug/issues/772
 .. _`#795`: https://github.com/pallets/werkzeug/pull/795
 .. _`#988`: https://github.com/pallets/werkzeug/pull/988
-.. _`#1019`: https://github.com/pallets/werkzeug/issues/1019
+.. _`#1019`: https://github.com/pallets/werkzeug/pull/1019
 .. _`#1023`: https://github.com/pallets/werkzeug/issues/1023
 .. _#1115: https://github.com/pallets/werkzeug/issues/1115
-.. _`#1141`: https://github.com/pallets/werkzeug/issues/1141
+.. _`#1141`: https://github.com/pallets/werkzeug/pull/1141
 .. _`#1231`: https://github.com/pallets/werkzeug/issues/1231
 .. _`#1233`: https://github.com/pallets/werkzeug/pull/1233
-.. _`#1237`: https://github.com/pallets/werkzeug/pull/1237
+.. _`#1237`: https://github.com/pallets/werkzeug/issues/1237
 .. _`#1242`: https://github.com/pallets/werkzeug/pull/1242
-.. _`#1245`: https://github.com/pallets/werkzeug/pull/1245
+.. _`#1245`: https://github.com/pallets/werkzeug/issues/1245
 .. _`#1249`: https://github.com/pallets/werkzeug/issues/1249
 .. _`#1252`: https://github.com/pallets/werkzeug/pull/1252
 .. _`#1255`: https://github.com/pallets/werkzeug/pull/1255
-.. _`#1259`: https://github.com/pallets/werkzeug/pull/1259
+.. _`#1259`: https://github.com/pallets/werkzeug/issues/1259
 .. _`#1260`: https://github.com/pallets/werkzeug/pull/1260
 .. _`#1281`: https://github.com/pallets/werkzeug/pull/1281
 .. _`#1282`: https://github.com/pallets/werkzeug/pull/1282
@@ -396,15 +396,15 @@ Released on December 7th 2017
 - The built-in dev server supports receiving requests with chunked
   transfer encoding. (`#1198`_)
 
-.. _Click: https://www.palletsprojects.com/p/click/
+.. _Click: https://palletsprojects.com/p/click/
 .. _pallets/meta#24: https://github.com/pallets/meta/issues/24
 .. _#414: https://github.com/pallets/werkzeug/pull/414
-.. _#705: https://github.com/pallets/werkzeug/pull/705
+.. _#705: https://github.com/pallets/werkzeug/issues/705
 .. _#780: https://github.com/pallets/werkzeug/pull/780
 .. _#984: https://github.com/pallets/werkzeug/pull/984
 .. _#1088: https://github.com/pallets/werkzeug/pull/1088
 .. _#1090: https://github.com/pallets/werkzeug/pull/1090
-.. _#1102: https://github.com/pallets/werkzeug/pull/1102
+.. _#1102: https://github.com/pallets/werkzeug/issues/1102
 .. _#1109: https://github.com/pallets/werkzeug/pull/1109
 .. _#1116: https://github.com/pallets/werkzeug/pull/1116
 .. _#1197: https://github.com/pallets/werkzeug/pull/1197
@@ -1498,9 +1498,7 @@ Version 0.3.1
 (bugfix release, released on June 24th 2008)
 
 - fixed a security problem with `werkzeug.contrib.SecureCookie`.
-  More details available in the `release announcement`_.
 
-.. _release announcement: http://lucumr.pocoo.org/cogitations/2008/06/24/werkzeug-031-released/
 
 Version 0.3
 -----------

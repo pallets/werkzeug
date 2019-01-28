@@ -31,9 +31,9 @@ detect and use them if you install them.
 * `Watchdog`_ provides a faster, more efficient reloader for the
   development server.
 
-.. _SimpleJSON: https://simplejson.readthedocs.io/
+.. _SimpleJSON: https://simplejson.readthedocs.io/en/latest/
 .. _termcolor: https://pypi.org/project/termcolor/
-.. _Watchdog: https://pythonhosted.org/watchdog/
+.. _Watchdog: https://pypi.org/project/watchdog/
 
 
 Virtual environments
@@ -169,5 +169,5 @@ On Windows, as an administrator:
 
 Now you can continue to :ref:`install-create-env`.
 
-.. _virtualenv: https://virtualenv.pypa.io/
+.. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _get-pip.py: https://bootstrap.pypa.io/get-pip.py

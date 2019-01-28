@@ -122,7 +122,7 @@ class BaseRequest(object):
     request object will use immutable objects everywhere possible.
 
     Per default the request object will assume all the text data is `utf-8`
-    encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
+    encoded.  Please refer to :doc:`the unicode chapter </unicode>` for more
     details about customizing the behavior.
 
     Per default the request object will be added to the WSGI
@@ -761,7 +761,7 @@ class BaseResponse(object):
     known interface.
 
     Per default the response object will assume all the text data is `utf-8`
-    encoded.  Please refer to `the unicode chapter <unicode.txt>`_ for more
+    encoded.  Please refer to :doc:`the unicode chapter </unicode>` for more
     details about customizing the behavior.
 
     Response can be any kind of iterable or string.  If it's a string it's
