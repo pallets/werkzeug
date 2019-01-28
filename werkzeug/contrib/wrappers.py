@@ -20,7 +20,6 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-import codecs
 import warnings
 
 from werkzeug.exceptions import BadRequest
@@ -33,16 +32,13 @@ from werkzeug.wrappers import charset as _charset
 def is_known_charset(charset):
     """Checks if the given charset is known to Python."""
     warnings.warn(
-        "'werkzeug.contrib.wrappers.is_known_charset' is deprecated as"
-        " of version 0.15 and will be removed in version 1.0.",
+        "'werkzeug.contrib.wrappers.is_known_charset' has moved to"
+        " 'werkzeug.wrappers.charset.is_known_charset'. This old import"
+        " will be removed in version 1.0.",
         DeprecationWarning,
         stacklevel=2,
     )
-    try:
-        codecs.lookup(charset)
-    except LookupError:
-        return False
-    return True
+    return _charset.is_known_charset(charset)
 
 
 class JSONRequestMixin(_JSONMixin):

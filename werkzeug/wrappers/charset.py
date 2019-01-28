@@ -1,129 +1,117 @@
 import codecs
 
-from ..http import parse_options_header
-from ..utils import cached_property
+from werkzeug.http import parse_options_header, dump_options_header
+from werkzeug.utils import cached_property
+
+
+def is_known_charset(charset):
+    """Checks if the given charset is known to Python."""
+    try:
+        codecs.lookup(charset)
+    except LookupError:
+        return False
+    return True
 
 
 class DynamicCharsetRequestMixin(object):
-    """Take the charset attribute from the the ``Content-Type`` header.
-    Overrides the default behavior of hard-coding UTF-8. This is used
-    when decoding the data in the response body.
 
-    .. warning::
-        It may be dangerous to decode with a user-supplied charset
-        without validation in Python. Be absolutely sure you understand
-        the security implications of this before using it.
+    """If this mixin is mixed into a request class it will provide
+    a dynamic `charset` attribute.  This means that if the charset is
+    transmitted in the content type headers it's used from there.
 
-        See :meth:`is_safe_charset`.
+    Because it changes the behavior or :class:`Request` this class has
+    to be mixed in *before* the actual request class::
+
+        class MyRequest(DynamicCharsetRequestMixin, Request):
+            pass
+
+    By default the request object assumes that the URL charset is the
+    same as the data charset.  If the charset varies on each request
+    based on the transmitted data it's not a good idea to let the URLs
+    change based on that.  Most browsers assume either utf-8 or latin1
+    for the URLs if they have troubles figuring out.  It's strongly
+    recommended to set the URL charset to utf-8::
+
+        class MyRequest(DynamicCharsetRequestMixin, Request):
+            url_charset = 'utf-8'
+
+    .. versionadded:: 0.6
     """
 
-    #: The default charset that is assumed if the content type header
-    #: is missing or does not contain a charset parameter.
-    #:
-    #: ..versionchanged:: 0.15
-    #:     Set to "utf-8" rather than "latin1", which matches
-    #:     :class:`~werkzeug.wrappers.BaseRequest`.
-    default_charset = "utf-8"
-
-    #: Use this charset for URL decoding rather than :attr:`charset`,
-    #: since that now refers to the data's charset, not the URL's.
-    #:
-    #: ..versionchanged:: 0.15
-    #:     Set to "utf-8" rather than keeping the base
-    #:     :attr:`~werkzeug.wrappers.BaseRequest.url_charset` behavior.
-    url_charset = "utf-8"
+    #: the default charset that is assumed if the content type header
+    #: is missing or does not contain a charset parameter.  The default
+    #: is latin1 which is what HTTP specifies as default charset.
+    #: You may however want to set this to utf-8 to better support
+    #: browsers that do not transmit a charset for incoming data.
+    default_charset = 'latin1'
 
     def unknown_charset(self, charset):
-        """Called if a charset was provided but :meth:`is_safe_charset`
-        returned ``False``.
+        """Called if a charset was provided but is not supported by
+        the Python codecs module.  By default latin1 is assumed then
+        to not lose any information, you may override this method to
+        change the behavior.
 
-        :param charset: The unsafe charset.
-        :return: The replacement charset.
-
-        .. versionchanged:: 0.15
-            Returns "utf-8" rather than "latin1", matching
-            :attr:`default_charset`.
+        :param charset: the charset that was not found.
+        :return: the replacement charset.
         """
-        return "utf-8"
+        return 'latin1'
 
     @cached_property
     def charset(self):
         """The charset from the content type."""
-        charset = self.mimetype_params.get("charset")
-
-        if charset:
-            if self.is_safe_charset(charset):
-                return charset
-
-            return self.unknown_charset(charset)
-
+        header = self.environ.get('CONTENT_TYPE')
+        if header:
+            ct, options = parse_options_header(header)
+            charset = options.get('charset')
+            if charset:
+                if is_known_charset(charset):
+                    return charset
+                return self.unknown_charset(charset)
         return self.default_charset
-
-    def is_safe_charset(self, charset):
-        """Whether the given charset is safe to use for decoding request
-        data.
-
-        .. warning::
-            Due to the way Python implements codecs, the only 100% safe
-            implementation is checking against a whitelist you maintain.
-
-        By default this calls :func:`codecs.lookup` then checks
-        ``_is_text_encoding`` on the returned info. This will exclude
-        charsets such as "zip" that should not be used to decode
-        untrusted data. However, this check may still be unsafe if other
-        libraries you use register binary codecs and don't set that
-        internal attribute correctly.
-
-        .. versionadded:: 0.15
-            Previously, :attr:`charset` only checked that the charset
-            was known, not that it was a text charset.
-        """
-        try:
-            info = codecs.lookup(charset)
-        except LookupError:
-            return False
-
-        return info._is_text_encoding
 
 
 class DynamicCharsetResponseMixin(object):
-    """Allow setting the charset for a response after creating it.
-    Setting a new charset updates the ``Content-Type`` header.
 
-    If the response already has data set, it is not re-encoded. Text
-    data can be set with the new charset using
-    :meth:`~werkzeug.wrappers.BaseResponse.set_data`.
+    """If this mixin is mixed into a response class it will provide
+    a dynamic `charset` attribute.  This means that if the charset is
+    looked up and stored in the `Content-Type` header and updates
+    itself automatically.  This also means a small performance hit but
+    can be useful if you're working with different charsets on
+    responses.
 
-    This might be useful in some cases, but it's more efficient to
-    pass the data and charset when creating the response.
+    Because the charset attribute is no a property at class-level, the
+    default value is stored in `default_charset`.
+
+    Because it changes the behavior or :class:`Response` this class has
+    to be mixed in *before* the actual response class::
+
+        class MyResponse(DynamicCharsetResponseMixin, Response):
+            pass
+
+    .. versionadded:: 0.6
     """
 
-    #: The default charset that is assumed if the content type header
-    #: is missing or does not contain a charset parameter.
-    default_charset = "utf-8"
+    #: the default charset.
+    default_charset = 'utf-8'
 
-    @property
-    def charset(self):
-        """The charset for the response. It's stored as a parameter of
-        the ``Content-Type`` header.
-        """
-        header = self.headers.get("content-type")
-
+    def _get_charset(self):
+        header = self.headers.get('content-type')
         if header:
-            charset = parse_options_header(header)[1].get("charset")
-
+            charset = parse_options_header(header)[1].get('charset')
             if charset:
                 return charset
-
         return self.default_charset
 
-    @charset.setter
-    def charset(self, charset):
-        header = self.headers.get("content-type")
+    def _set_charset(self, charset):
+        header = self.headers.get('content-type')
         ct, options = parse_options_header(header)
-
         if not ct:
-            raise TypeError("Cannot set charset if Content-Type header is missing.")
+            raise TypeError('Cannot set charset if Content-Type '
+                            'header is missing.')
+        options['charset'] = charset
+        self.headers['Content-Type'] = dump_options_header(ct, options)
 
-        options["charset"] = charset
-        self.headers.set("content-type", ct, **options)
+    charset = property(_get_charset, _set_charset, doc="""
+        The charset for the response.  It's stored inside the
+        Content-Type header as a parameter.""")
+    del _get_charset, _set_charset
