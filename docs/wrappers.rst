@@ -185,7 +185,7 @@ These mixins are not included in the default :class:`Request` and
 :class:`Response` classes. They provide extra behavior that needs to be
 opted into by creating your own subclasses::
 
-    class JSONRequest(JSONMixin, Request):
+    class Response(JSONMixin, BaseResponse):
         pass
 
 
@@ -195,16 +195,4 @@ JSON
 ----
 
 .. autoclass:: JSONMixin
-    :members:
-
-
-.. module:: werkzeug.wrappers.charset
-
-Dynamic Charset
----------------
-
-.. autoclass:: DynamicCharsetRequestMixin
-    :members:
-
-.. autoclass:: DynamicCharsetResponseMixin
     :members:

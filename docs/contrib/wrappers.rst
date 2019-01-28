@@ -12,10 +12,6 @@ Extra Wrappers
 
 .. autoclass:: JSONRequestMixin
 
-.. autoclass:: DynamicCharsetRequestMixin
-
-.. autoclass:: DynamicCharsetResponseMixin
-
 .. autoclass:: ProtobufRequestMixin
    :members:
 
@@ -23,4 +19,10 @@ Extra Wrappers
    :members:
 
 .. autoclass:: ReverseSlashBehaviorRequestMixin
+   :members:
+
+.. autoclass:: DynamicCharsetRequestMixin
+   :members:
+
+.. autoclass:: DynamicCharsetResponseMixin
    :members:
