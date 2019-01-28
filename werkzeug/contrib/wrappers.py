@@ -67,6 +67,9 @@ class ProtobufRequestMixin(object):
     is not protobuf or if the data itself cannot be parsed property.
 
     .. _protobuf: https://github.com/protocolbuffers/protobuf
+
+    .. deprecated:: 0.15
+        This mixin will be removed in version 1.0.
     """
 
     #: by default the :class:`ProtobufRequestMixin` will raise a
@@ -106,6 +109,9 @@ class RoutingArgsRequestMixin(object):
     `specification`_.
 
     .. _specification: https://wsgi.readthedocs.io/en/latest/specifications/routing_args.html
+
+    .. deprecated:: 0.15
+        This mixin will be removed in version 1.0.
     """
 
     def _get_routing_args(self):
@@ -193,6 +199,9 @@ class ReverseSlashBehaviorRequestMixin(object):
         +---------------+-------------------+---------------------+
         | `path`        | ``/foo/bar``      | ``foo/bar``         |
         +---------------+-------------------+---------------------+
+
+    .. deprecated:: 0.15
+        This mixin will be removed in version 1.0.
     """
 
     @cached_property
@@ -248,6 +257,9 @@ class DynamicCharsetRequestMixin(object):
         class MyRequest(DynamicCharsetRequestMixin, Request):
             url_charset = 'utf-8'
 
+    .. deprecated:: 0.15
+        This mixin will be removed in version 1.0.
+
     .. versionadded:: 0.6
     """
 
@@ -272,6 +284,13 @@ class DynamicCharsetRequestMixin(object):
     @cached_property
     def charset(self):
         """The charset from the content type."""
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.DynamicCharsetRequestMixin'"
+            " is deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         header = self.environ.get('CONTENT_TYPE')
         if header:
             ct, options = parse_options_header(header)
@@ -301,6 +320,9 @@ class DynamicCharsetResponseMixin(object):
         class MyResponse(DynamicCharsetResponseMixin, Response):
             pass
 
+    .. deprecated:: 0.15
+        This mixin will be removed in version 1.0.
+
     .. versionadded:: 0.6
     """
 
@@ -308,6 +330,13 @@ class DynamicCharsetResponseMixin(object):
     default_charset = 'utf-8'
 
     def _get_charset(self):
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.DynamicCharsetResponseMixin'"
+            " is deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         header = self.headers.get('content-type')
         if header:
             charset = parse_options_header(header)[1].get('charset')
@@ -316,6 +345,13 @@ class DynamicCharsetResponseMixin(object):
         return self.default_charset
 
     def _set_charset(self, charset):
+        warnings.warn(
+            "'werkzeug.contrib.wrappers.DynamicCharsetResponseMixin'"
+            " is deprecated as of version 0.15 and will be removed in"
+            " version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         header = self.headers.get('content-type')
         ct, options = parse_options_header(header)
         if not ct:

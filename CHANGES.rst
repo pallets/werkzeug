@@ -205,9 +205,6 @@ Unreleased
         :mod:`werkzeug.middleware.profiler`.
     -   ``ProxyFix`` has moved to :mod:`werkzeug.middleware.proxy_fix`.
     -   ``JSONRequestMixin`` has moved to :mod:`werkzeug.wrappers.json`.
-    -   ``DynamicCharsetRequestMixin`` and
-        ``DynamicCharsetResponseMixin`` have moved to
-        :mod:`werkzeug.wrappers.charset`.
     -   ``cache`` has been extracted into a separate project,
         `cachelib <https://github.com/pallets/cachelib>`_. The version
         in Werkzeug is deprecated.
@@ -216,8 +213,7 @@ Unreleased
         `secure-cookie <https://github.com/pallets/secure-cookie>`_. The
         version in Werkzeug is deprecated.
     -   Everything in ``fixers``, except ``ProxyFix``, is deprecated.
-    -   Everything in ``wrappers``, except the JSON and charset mixins
-        mentioned above, is deprecated.
+    -   Everything in ``wrappers``, except ``JSONMixin``, is deprecated.
     -   ``atom`` is deprecated. This did not fit in with the rest of
         Werkzeug, and is better served by a dedicated library in the
         community.
