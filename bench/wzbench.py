@@ -99,7 +99,7 @@ def load_werkzeug(path):
                     return line[8:].strip(' \t,')[1:-1], hg_tag
         finally:
             f.close()
-    print >> sys.stderr, 'Unknown werkzeug version loaded'
+    print('Unknown werkzeug version loaded', file=sys.stderr)
     sys.exit(2)
 
 
@@ -187,7 +187,7 @@ def init_compare():
 def compare(node1, node2):
     """Compares two Werkzeug hg versions."""
     if not os.path.isdir('a'):
-        print >> sys.stderr, 'error: comparison feature not initialized'
+        print('error: comparison feature not initialized', file=sys.stderr)
         sys.exit(4)
 
     print('=' * 80)
@@ -195,7 +195,7 @@ def compare(node1, node2):
     print('-' * 80)
 
     def _error(msg):
-        print >> sys.stderr, 'error:', msg
+        print('error:', msg, file=sys.stderr)
         sys.exit(1)
 
     def _hg_update(repo, node):
