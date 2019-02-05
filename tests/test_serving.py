@@ -287,7 +287,7 @@ def test_monkeypatched_sleep(tmpdir):
     from werkzeug._reloader import ReloaderLoop
     ReloaderLoop()._sleep(0)
     '''))
-    subprocess.check_call(['python', str(script)])
+    subprocess.check_call([sys.executable, str(script)])
 
 
 def test_wrong_protocol(dev_server):
