@@ -237,6 +237,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                 environ['SSL_CLIENT_CERT'] = peer_cert
         except ValueError:
             self.server.log('error', 'Cannot fetch SSL peer certificate info')
+        except AttributeError:
+            # This error indicates that no TLS setup was made, and it is 
+            # raised because socket will not have such function getpeercert()
+            pass
 
         return environ
 
