@@ -232,6 +232,11 @@ Unreleased
         :class:`werkzeug.middleware.http_proxy.ProxyMiddleware`.
     -   ``werkzeug.wsgi.SharedDataMiddleware`` has moved to
         :class:`werkzeug.middleware.shared_data.SharedDataMiddleware`.
+-   The ``werkzeug.wrappers`` module has been converted to a package,
+    and its various classes have been organized into separate modules.
+    The documented classes, understood to be the public API, are still
+    importable from ``werkzeug.wrappers``, or may be imported from their
+    specific modules. (`#1456`_)
 
 .. _#4: https://github.com/pallets/werkzeug/issues/4
 .. _`#209`: https://github.com/pallets/werkzeug/pull/209
@@ -303,6 +308,7 @@ Unreleased
 .. _#1439: https://github.com/pallets/werkzeug/pull/1439
 .. _#1445: https://github.com/pallets/werkzeug/pull/1445
 .. _#1452: https://github.com/pallets/werkzeug/pull/1452
+.. _#1456: https://github.com/pallets/werkzeug/pull/1456
 
 
 Version 0.14.1
