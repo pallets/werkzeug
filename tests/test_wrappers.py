@@ -24,11 +24,14 @@ from tests import strict_eq
 from werkzeug import wrappers
 from werkzeug.exceptions import SecurityError, RequestedRangeNotSatisfiable, \
     BadRequest
+from werkzeug.http import generate_etag
 from werkzeug.wrappers.json import JSONMixin
 from werkzeug.wsgi import LimitedStream, wrap_file
-from werkzeug.datastructures import MultiDict, ImmutableOrderedMultiDict, \
-    ImmutableList, ImmutableTypeConversionDict, CharsetAccept, \
-    MIMEAccept, LanguageAccept, Accept, CombinedMultiDict
+from werkzeug.datastructures import (
+    MultiDict, ImmutableOrderedMultiDict,
+    ImmutableList, ImmutableTypeConversionDict, CharsetAccept,
+    MIMEAccept, LanguageAccept, Accept, CombinedMultiDict, Headers,
+)
 from werkzeug.test import Client, create_environ, run_wsgi_app
 from werkzeug._compat import implements_iterator, text_type
 
@@ -713,7 +716,7 @@ def test_etag_response_mixin_freezing():
     response = WithFreeze('Hello World')
     response.freeze()
     strict_eq(response.get_etag(),
-              (text_type(wrappers.generate_etag(b'Hello World')), False))
+              (text_type(generate_etag(b'Hello World')), False))
     response = WithoutFreeze('Hello World')
     response.freeze()
     assert response.get_etag() == (None, None)
@@ -1080,7 +1083,7 @@ def test_storage_classes():
 
 
 def test_response_headers_passthrough():
-    headers = wrappers.Headers()
+    headers = Headers()
     resp = wrappers.Response(headers=headers)
     assert resp.headers is headers
 
