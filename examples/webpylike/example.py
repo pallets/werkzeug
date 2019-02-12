@@ -5,8 +5,8 @@
 
     The application from th web.py tutorial.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from webpylike import WebPyApp, View, Response
 

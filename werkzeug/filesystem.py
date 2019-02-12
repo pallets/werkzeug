@@ -5,8 +5,8 @@
 
     Various utilities for the local filesystem.
 
-    :copyright: (c) 2015 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 
 import codecs

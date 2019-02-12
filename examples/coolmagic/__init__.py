@@ -5,7 +5,7 @@
 
     Package description goes here.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from coolmagic.application import make_app

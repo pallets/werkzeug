@@ -5,8 +5,8 @@
 
     Stores session on the client.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from time import asctime
 from werkzeug.serving import run_simple

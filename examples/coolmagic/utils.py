@@ -8,8 +8,8 @@
     and implement some additional functionallity like the ability to link
     to view functions.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from os.path import dirname, join
 from jinja import Environment, FileSystemLoader

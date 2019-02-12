@@ -53,8 +53,8 @@
     you have access to it (either as a module global you can import or you just
     put it into your WSGI application).
 
-    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 import os
 import re

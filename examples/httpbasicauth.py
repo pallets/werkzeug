@@ -6,8 +6,8 @@
     Shows how you can implement HTTP basic auth support without an
     additional component.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response

@@ -9,8 +9,8 @@
     careful not to name any other objects in the module with the same
     prefix unless you want to act them as actions.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from difflib import unified_diff
 from simplewiki.utils import Response, generate_template, parse_creole, \

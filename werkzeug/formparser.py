@@ -6,8 +6,8 @@
     This module implements the form parsing.  It supports url-encoded forms
     as well as non-nested multipart uploads.
 
-    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 import re
 import codecs

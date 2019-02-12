@@ -5,8 +5,8 @@
 
     Ensure that old stuff does not break on update.
 
-    :copyright: (c) 2014 by Armin Ronacher.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 
 # This file shouldn't be linted:

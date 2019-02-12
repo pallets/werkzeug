@@ -5,8 +5,8 @@
 
     The database definitions for the planet.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from sqlalchemy import MetaData, Table, Column, ForeignKey, Boolean, \
      Integer, String, DateTime

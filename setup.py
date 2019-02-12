@@ -15,9 +15,11 @@ setup(
     name='Werkzeug',
     version=version,
     url='https://www.palletsprojects.com/p/werkzeug/',
-    license='BSD',
+    license='BSD-3-Clause',
     author='Armin Ronacher',
     author_email='armin.ronacher@active-4.com',
+    maintainer="The Pallets Team",
+    maintainer_email="contact@palletsprojects.com",
     description='The comprehensive WSGI web application library.',
     long_description=readme,
     classifiers=[

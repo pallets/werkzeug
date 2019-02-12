@@ -8,8 +8,8 @@ that may be slowing down your application.
 
 .. autoclass:: ProfilerMiddleware
 
-:copyright: 2007 by the Pallets team.
-:license: BSD-3-Clause, see LICENSE.rst for details.
+:copyright: 2007 Pallets
+:license: BSD-3-Clause
 """
 from __future__ import print_function
 import os.path

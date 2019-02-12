@@ -9,8 +9,8 @@
     that automatically wraps the application within the require
     middlewares. Per default only the `SharedDataMiddleware` is applied.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from os import path, listdir
 from coolmagic.utils import Request, local_manager, redirect
