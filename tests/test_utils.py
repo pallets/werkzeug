@@ -161,16 +161,16 @@ def test_unescape():
 
 
 def test_import_string():
-    import cgi
+    from datetime import date
     from werkzeug.debug import DebuggedApplication
-    assert utils.import_string('cgi.escape') is cgi.escape
-    assert utils.import_string(u'cgi.escape') is cgi.escape
-    assert utils.import_string('cgi:escape') is cgi.escape
+    assert utils.import_string('datetime.date') is date
+    assert utils.import_string(u'datetime.date') is date
+    assert utils.import_string('datetime:date') is date
     assert utils.import_string('XXXXXXXXXXXX', True) is None
-    assert utils.import_string('cgi.XXXXXXXXXXXX', True) is None
+    assert utils.import_string('datetime.XXXXXXXXXXXX', True) is None
     assert utils.import_string(u'werkzeug.debug.DebuggedApplication') is DebuggedApplication
     pytest.raises(ImportError, utils.import_string, 'XXXXXXXXXXXXXXXX')
-    pytest.raises(ImportError, utils.import_string, 'cgi.XXXXXXXXXX')
+    pytest.raises(ImportError, utils.import_string, 'datetime.XXXXXXXXXX')
 
 
 def test_import_string_provides_traceback(tmpdir, monkeypatch):
