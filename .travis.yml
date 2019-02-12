@@ -1,41 +1,31 @@
 os: linux
-sudo: false
+dist: xenial
 language: python
 python:
+  - "3.7"
   - "3.6"
   - "3.5"
   - "3.4"
   - "2.7"
   - "nightly"
-  - "pypy3"
+  - "pypy3.5-6.0"
 env: TOXENV=py,codecov
 
 matrix:
   include:
-    - dist: xenial
-      sudo: required
-      python: "3.7"
     - env: TOXENV=stylecheck,docs-html
     - os: osx
       language: generic
-      env: TOXENV=py3,py2,codecov
+      env: TOXENV=py3,codecov
       cache:
         directories:
           - $HOME/Library/Caches/Homebrew
           - $HOME/Library/Caches/pip
   allow_failures:
     - python: nightly
-    - python: pypy3
+    - python: pypy3.5-6.0
     - os: osx
   fast_finish: true
-
-before_install:
-  - |
-    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-      brew upgrade python
-      brew install python@2
-      export PATH="/usr/local/opt/python/libexec/bin:${PATH}"
-    fi
 
 install:
   - pip install -U tox
@@ -51,7 +41,7 @@ cache:
 branches:
   only:
     - master
-    - /^\d+(\.\d+)*(\.x|-maintenance)?$/
+    - /^\d+(\.\d+)*(\.x)?$/
 
 notifications:
   email: false
