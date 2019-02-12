@@ -20,7 +20,7 @@ test_script:
 branches:
   only:
     - master
-    - /^\d+(\.\d+)*(\.x|-maintenance)?$/
+    - /^\d+(\.\d+)*(\.x)?$/
 
 cache:
   - '%LOCALAPPDATA%\pip\Cache'
