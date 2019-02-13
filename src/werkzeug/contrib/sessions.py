@@ -51,22 +51,26 @@ r"""
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import re
 import os
+import re
 import tempfile
 import warnings
-from os import path
-from time import time
-from random import random
 from hashlib import sha1
-from pickle import dump, load, HIGHEST_PROTOCOL
+from os import path
+from pickle import dump
+from pickle import HIGHEST_PROTOCOL
+from pickle import load
+from random import random
+from time import time
 
-from werkzeug.datastructures import CallbackDict
-from werkzeug.utils import dump_cookie, parse_cookie
-from werkzeug.wsgi import ClosingIterator
-from werkzeug.posixemulation import rename
-from werkzeug._compat import PY2, text_type
-from werkzeug.filesystem import get_filesystem_encoding
+from .._compat import PY2
+from .._compat import text_type
+from ..datastructures import CallbackDict
+from ..filesystem import get_filesystem_encoding
+from ..posixemulation import rename
+from ..utils import dump_cookie
+from ..utils import parse_cookie
+from ..wsgi import ClosingIterator
 
 warnings.warn(
     "'werkzeug.contrib.sessions' is deprecated as of version 0.15 and"
@@ -76,31 +80,28 @@ warnings.warn(
     stacklevel=2,
 )
 
-_sha1_re = re.compile(r'^[a-f0-9]{40}$')
+_sha1_re = re.compile(r"^[a-f0-9]{40}$")
 
 
 def _urandom():
-    if hasattr(os, 'urandom'):
+    if hasattr(os, "urandom"):
         return os.urandom(30)
-    return text_type(random()).encode('ascii')
+    return text_type(random()).encode("ascii")
 
 
 def generate_key(salt=None):
     if salt is None:
-        salt = repr(salt).encode('ascii')
-    return sha1(b''.join([
-        salt,
-        str(time()).encode('ascii'),
-        _urandom()
-    ])).hexdigest()
+        salt = repr(salt).encode("ascii")
+    return sha1(b"".join([salt, str(time()).encode("ascii"), _urandom()])).hexdigest()
 
 
 class ModificationTrackingDict(CallbackDict):
-    __slots__ = ('modified',)
+    __slots__ = ("modified",)
 
     def __init__(self, *args, **kwargs):
         def on_update(self):
             self.modified = True
+
         self.modified = False
         CallbackDict.__init__(self, on_update=on_update)
         dict.update(self, *args, **kwargs)
@@ -120,12 +121,12 @@ class ModificationTrackingDict(CallbackDict):
 
 
 class Session(ModificationTrackingDict):
-
     """Subclass of a dict that keeps track of direct object changes.  Changes
     in mutable structures are not tracked, for those you have to set
     `modified` to `True` by hand.
     """
-    __slots__ = ModificationTrackingDict.__slots__ + ('sid', 'new')
+
+    __slots__ = ModificationTrackingDict.__slots__ + ("sid", "new")
 
     def __init__(self, data, sid, new=False):
         ModificationTrackingDict.__init__(self, data)
@@ -133,10 +134,10 @@ class Session(ModificationTrackingDict):
         self.new = new
 
     def __repr__(self):
-        return '<%s %s%s>' % (
+        return "<%s %s%s>" % (
             self.__class__.__name__,
             dict.__repr__(self),
-            '*' if self.should_save else ''
+            "*" if self.should_save else "",
         )
 
     @property
@@ -151,7 +152,6 @@ class Session(ModificationTrackingDict):
 
 
 class SessionStore(object):
-
     """Baseclass for all session stores.  The Werkzeug contrib module does not
     implement any useful stores besides the filesystem store, application
     developers are encouraged to create their own stores.
@@ -197,11 +197,10 @@ class SessionStore(object):
 
 
 #: used for temporary files by the filesystem session store
-_fs_transaction_suffix = '.__wz_sess'
+_fs_transaction_suffix = ".__wz_sess"
 
 
 class FilesystemSessionStore(SessionStore):
-
     """Simple example session store that saves sessions on the filesystem.
     This store works best on POSIX systems and Windows Vista / Windows
     Server 2008 and newer.
@@ -223,17 +222,23 @@ class FilesystemSessionStore(SessionStore):
                           not yet saved.
     """
 
-    def __init__(self, path=None, filename_template='werkzeug_%s.sess',
-                 session_class=None, renew_missing=False, mode=0o644):
+    def __init__(
+        self,
+        path=None,
+        filename_template="werkzeug_%s.sess",
+        session_class=None,
+        renew_missing=False,
+        mode=0o644,
+    ):
         SessionStore.__init__(self, session_class)
         if path is None:
             path = tempfile.gettempdir()
         self.path = path
         if isinstance(filename_template, text_type) and PY2:
-            filename_template = filename_template.encode(
-                get_filesystem_encoding())
-        assert not filename_template.endswith(_fs_transaction_suffix), \
-            'filename templates may not end with %s' % _fs_transaction_suffix
+            filename_template = filename_template.encode(get_filesystem_encoding())
+        assert not filename_template.endswith(_fs_transaction_suffix), (
+            "filename templates may not end with %s" % _fs_transaction_suffix
+        )
         self.filename_template = filename_template
         self.renew_missing = renew_missing
         self.mode = mode
@@ -248,9 +253,8 @@ class FilesystemSessionStore(SessionStore):
 
     def save(self, session):
         fn = self.get_session_filename(session.sid)
-        fd, tmp = tempfile.mkstemp(suffix=_fs_transaction_suffix,
-                                   dir=self.path)
-        f = os.fdopen(fd, 'wb')
+        fd, tmp = tempfile.mkstemp(suffix=_fs_transaction_suffix, dir=self.path)
+        f = os.fdopen(fd, "wb")
         try:
             dump(dict(session), f, HIGHEST_PROTOCOL)
         finally:
@@ -272,7 +276,7 @@ class FilesystemSessionStore(SessionStore):
         if not self.is_valid_key(sid):
             return self.new()
         try:
-            f = open(self.get_session_filename(sid), 'rb')
+            f = open(self.get_session_filename(sid), "rb")
         except IOError:
             if self.renew_missing:
                 return self.new()
@@ -292,9 +296,10 @@ class FilesystemSessionStore(SessionStore):
 
         .. versionadded:: 0.6
         """
-        before, after = self.filename_template.split('%s', 1)
-        filename_re = re.compile(r'%s(.{5,})%s$' % (re.escape(before),
-                                                    re.escape(after)))
+        before, after = self.filename_template.split("%s", 1)
+        filename_re = re.compile(
+            r"%s(.{5,})%s$" % (re.escape(before), re.escape(after))
+        )
         result = []
         for filename in os.listdir(self.path):
             #: this is a session that is still being saved.
@@ -307,7 +312,6 @@ class FilesystemSessionStore(SessionStore):
 
 
 class SessionMiddleware(object):
-
     """A simple middleware that puts the session object of a store provided
     into the WSGI environ.  It automatically sets cookies and restores
     sessions.
@@ -323,11 +327,20 @@ class SessionMiddleware(object):
     compatibility.
     """
 
-    def __init__(self, app, store, cookie_name='session_id',
-                 cookie_age=None, cookie_expires=None, cookie_path='/',
-                 cookie_domain=None, cookie_secure=None,
-                 cookie_httponly=False, cookie_samesite='Lax',
-                 environ_key='werkzeug.session'):
+    def __init__(
+        self,
+        app,
+        store,
+        cookie_name="session_id",
+        cookie_age=None,
+        cookie_expires=None,
+        cookie_path="/",
+        cookie_domain=None,
+        cookie_secure=None,
+        cookie_httponly=False,
+        cookie_samesite="Lax",
+        environ_key="werkzeug.session",
+    ):
         self.app = app
         self.store = store
         self.cookie_name = cookie_name
@@ -341,7 +354,7 @@ class SessionMiddleware(object):
         self.environ_key = environ_key
 
     def __call__(self, environ, start_response):
-        cookie = parse_cookie(environ.get('HTTP_COOKIE', ''))
+        cookie = parse_cookie(environ.get("HTTP_COOKIE", ""))
         sid = cookie.get(self.cookie_name, None)
         if sid is None:
             session = self.store.new()
@@ -352,12 +365,25 @@ class SessionMiddleware(object):
         def injecting_start_response(status, headers, exc_info=None):
             if session.should_save:
                 self.store.save(session)
-                headers.append(('Set-Cookie', dump_cookie(self.cookie_name,
-                                                          session.sid, self.cookie_age,
-                                                          self.cookie_expires, self.cookie_path,
-                                                          self.cookie_domain, self.cookie_secure,
-                                                          self.cookie_httponly,
-                                                          samesite=self.cookie_samesite)))
+                headers.append(
+                    (
+                        "Set-Cookie",
+                        dump_cookie(
+                            self.cookie_name,
+                            session.sid,
+                            self.cookie_age,
+                            self.cookie_expires,
+                            self.cookie_path,
+                            self.cookie_domain,
+                            self.cookie_secure,
+                            self.cookie_httponly,
+                            samesite=self.cookie_samesite,
+                        ),
+                    )
+                )
             return start_response(status, headers, exc_info)
-        return ClosingIterator(self.app(environ, injecting_start_response),
-                               lambda: self.store.save_if_modified(session))
+
+        return ClosingIterator(
+            self.app(environ, injecting_start_response),
+            lambda: self.store.save_if_modified(session),
+        )

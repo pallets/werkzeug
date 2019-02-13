@@ -5,4 +5,3 @@ Requirements :
 - jinja : http://jinja.pocoo.org
 - couchdb 0.72 & above : https://couchdb.apache.org/
 - couchdb-python 0.3 & above : https://github.com/djc/couchdb-python
-

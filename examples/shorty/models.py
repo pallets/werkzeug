@@ -1,14 +1,26 @@
 from datetime import datetime
-from sqlalchemy import Table, Column, String, Boolean, DateTime
-from sqlalchemy.orm import mapper
-from shorty.utils import session, metadata, url_for, get_random_uid
 
-url_table = Table('urls', metadata,
-    Column('uid', String(140), primary_key=True),
-    Column('target', String(500)),
-    Column('added', DateTime),
-    Column('public', Boolean)
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy.orm import mapper
+
+from .utils import get_random_uid
+from .utils import metadata
+from .utils import session
+from .utils import url_for
+
+url_table = Table(
+    "urls",
+    metadata,
+    Column("uid", String(140), primary_key=True),
+    Column("target", String(500)),
+    Column("added", DateTime),
+    Column("public", Boolean),
 )
+
 
 class URL(object):
     query = session.query_property()
@@ -27,9 +39,10 @@ class URL(object):
 
     @property
     def short_url(self):
-        return url_for('link', uid=self.uid, _external=True)
+        return url_for("link", uid=self.uid, _external=True)
 
     def __repr__(self):
-        return '<URL %r>' % self.uid
+        return "<URL %r>" % self.uid
+
 
 mapper(URL, url_table)

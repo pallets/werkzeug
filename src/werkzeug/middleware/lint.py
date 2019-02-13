@@ -164,7 +164,7 @@ class GuardedIterator(object):
             content_length = headers.get("content-length", type=int)
 
             if status_code == 304:
-                for key, value in headers:
+                for key, _value in headers:
                     key = key.lower()
                     if key not in ("expires", "content-location") and is_entity_header(
                         key

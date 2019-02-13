@@ -72,10 +72,10 @@ class BaseRequest(object):
     """
 
     #: the charset for the request, defaults to utf-8
-    charset = 'utf-8'
+    charset = "utf-8"
 
     #: the error handling procedure for errors, defaults to 'replace'
-    encoding_errors = 'replace'
+    encoding_errors = "replace"
 
     #: the maximum content length.  This is forwarded to the form data
     #: parsing function (:func:`parse_form_data`).  When set and the
@@ -150,7 +150,7 @@ class BaseRequest(object):
     def __init__(self, environ, populate_request=True, shallow=False):
         self.environ = environ
         if populate_request and not shallow:
-            self.environ['werkzeug.request'] = self
+            self.environ["werkzeug.request"] = self
         self.shallow = shallow
 
     def __repr__(self):
@@ -160,14 +160,11 @@ class BaseRequest(object):
         args = []
         try:
             args.append("'%s'" % to_native(self.url, self.url_charset))
-            args.append('[%s]' % self.method)
+            args.append("[%s]" % self.method)
         except Exception:
-            args.append('(invalid WSGI environ)')
+            args.append("(invalid WSGI environ)")
 
-        return '<%s %s>' % (
-            self.__class__.__name__,
-            ' '.join(args)
-        )
+        return "<%s %s>" % (self.__class__.__name__, " ".join(args))
 
     @property
     def url_charset(self):
@@ -197,9 +194,10 @@ class BaseRequest(object):
 
         :return: request object
         """
-        from werkzeug.test import EnvironBuilder
-        charset = kwargs.pop('charset', cls.charset)
-        kwargs['charset'] = charset
+        from ..test import EnvironBuilder
+
+        charset = kwargs.pop("charset", cls.charset)
+        kwargs["charset"] = charset
         builder = EnvironBuilder(*args, **kwargs)
         try:
             return builder.get_request(cls)
@@ -228,7 +226,7 @@ class BaseRequest(object):
         #: the request.  The return value is then called with the latest
         #: two arguments.  This makes it possible to use this decorator for
         #: both methods and standalone WSGI functions.
-        from werkzeug.exceptions import HTTPException
+        from ..exceptions import HTTPException
 
         def application(*args):
             request = cls(args[-2])
@@ -241,8 +239,9 @@ class BaseRequest(object):
 
         return update_wrapper(application, f)
 
-    def _get_file_stream(self, total_content_length, content_type, filename=None,
-                         content_length=None):
+    def _get_file_stream(
+        self, total_content_length, content_type, filename=None, content_length=None
+    ):
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -266,7 +265,8 @@ class BaseRequest(object):
             total_content_length=total_content_length,
             content_type=content_type,
             filename=filename,
-            content_length=content_length)
+            content_length=content_length,
+        )
 
     @property
     def want_form_data_parsed(self):
@@ -275,7 +275,7 @@ class BaseRequest(object):
 
         .. versionadded:: 0.8
         """
-        return bool(self.environ.get('CONTENT_TYPE'))
+        return bool(self.environ.get("CONTENT_TYPE"))
 
     def make_form_data_parser(self):
         """Creates the form data parser. Instantiates the
@@ -283,12 +283,14 @@ class BaseRequest(object):
 
         .. versionadded:: 0.8
         """
-        return self.form_data_parser_class(self._get_file_stream,
-                                           self.charset,
-                                           self.encoding_errors,
-                                           self.max_form_memory_size,
-                                           self.max_content_length,
-                                           self.parameter_storage_class)
+        return self.form_data_parser_class(
+            self._get_file_stream,
+            self.charset,
+            self.encoding_errors,
+            self.max_form_memory_size,
+            self.max_content_length,
+            self.parameter_storage_class,
+        )
 
     def _load_form_data(self):
         """Method used internally to retrieve submitted data.  After calling
@@ -300,26 +302,30 @@ class BaseRequest(object):
         .. versionadded:: 0.8
         """
         # abort early if we have already consumed the stream
-        if 'form' in self.__dict__:
+        if "form" in self.__dict__:
             return
 
         _assert_not_shallow(self)
 
         if self.want_form_data_parsed:
-            content_type = self.environ.get('CONTENT_TYPE', '')
+            content_type = self.environ.get("CONTENT_TYPE", "")
             content_length = get_content_length(self.environ)
             mimetype, options = parse_options_header(content_type)
             parser = self.make_form_data_parser()
-            data = parser.parse(self._get_stream_for_parsing(),
-                                mimetype, content_length, options)
+            data = parser.parse(
+                self._get_stream_for_parsing(), mimetype, content_length, options
+            )
         else:
-            data = (self.stream, self.parameter_storage_class(),
-                    self.parameter_storage_class())
+            data = (
+                self.stream,
+                self.parameter_storage_class(),
+                self.parameter_storage_class(),
+            )
 
         # inject the values into the instance dict so that we bypass
         # our cached_property non-data descriptor.
         d = self.__dict__
-        d['stream'], d['form'], d['files'] = data
+        d["stream"], d["form"], d["files"] = data
 
     def _get_stream_for_parsing(self):
         """This is the same as accessing :attr:`stream` with the difference
@@ -328,7 +334,7 @@ class BaseRequest(object):
 
         .. versionadded:: 0.9.3
         """
-        cached_data = getattr(self, '_cached_data', None)
+        cached_data = getattr(self, "_cached_data", None)
         if cached_data is not None:
             return BytesIO(cached_data)
         return self.stream
@@ -340,8 +346,8 @@ class BaseRequest(object):
 
         .. versionadded:: 0.9
         """
-        files = self.__dict__.get('files')
-        for key, value in iter_multi_items(files or ()):
+        files = self.__dict__.get("files")
+        for _key, value in iter_multi_items(files or ()):
             value.close()
 
     def __enter__(self):
@@ -371,12 +377,14 @@ class BaseRequest(object):
         _assert_not_shallow(self)
         return get_input_stream(self.environ)
 
-    input_stream = environ_property('wsgi.input', """
-    The WSGI input stream.
+    input_stream = environ_property(
+        "wsgi.input",
+        """The WSGI input stream.
 
-    In general it's a bad idea to use this one because you can easily read past
-    the boundary.  Use the :attr:`stream` instead.
-    """)
+        In general it's a bad idea to use this one because you can
+        easily read past the boundary.  Use the :attr:`stream`
+        instead.""",
+    )
 
     @cached_property
     def args(self):
@@ -389,9 +397,12 @@ class BaseRequest(object):
         :attr:`parameter_storage_class` to a different type.  This might
         be necessary if the order of the form data is important.
         """
-        return url_decode(wsgi_get_bytes(self.environ.get('QUERY_STRING', '')),
-                          self.url_charset, errors=self.encoding_errors,
-                          cls=self.parameter_storage_class)
+        return url_decode(
+            wsgi_get_bytes(self.environ.get("QUERY_STRING", "")),
+            self.url_charset,
+            errors=self.encoding_errors,
+            cls=self.parameter_storage_class,
+        )
 
     @cached_property
     def data(self):
@@ -401,7 +412,7 @@ class BaseRequest(object):
         """
 
         if self.disable_data_descriptor:
-            raise AttributeError('data descriptor is disabled')
+            raise AttributeError("data descriptor is disabled")
         # XXX: this should eventually be deprecated.
 
         # We trigger form data parsing first which means that the descriptor
@@ -436,7 +447,7 @@ class BaseRequest(object):
 
         .. versionadded:: 0.9
         """
-        rv = getattr(self, '_cached_data', None)
+        rv = getattr(self, "_cached_data", None)
         if rv is None:
             if parse_form_data:
                 self._load_form_data()
@@ -504,9 +515,12 @@ class BaseRequest(object):
     def cookies(self):
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
-        return parse_cookie(self.environ, self.charset,
-                            self.encoding_errors,
-                            cls=self.dict_storage_class)
+        return parse_cookie(
+            self.environ,
+            self.charset,
+            self.encoding_errors,
+            cls=self.dict_storage_class,
+        )
 
     @cached_property
     def headers(self):
@@ -521,37 +535,39 @@ class BaseRequest(object):
         info in the WSGI environment but will always include a leading slash,
         even if the URL root is accessed.
         """
-        raw_path = wsgi_decoding_dance(self.environ.get('PATH_INFO') or '',
-                                       self.charset, self.encoding_errors)
-        return '/' + raw_path.lstrip('/')
+        raw_path = wsgi_decoding_dance(
+            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
+        )
+        return "/" + raw_path.lstrip("/")
 
     @cached_property
     def full_path(self):
         """Requested path as unicode, including the query string."""
-        return self.path + u'?' + to_unicode(self.query_string, self.url_charset)
+        return self.path + u"?" + to_unicode(self.query_string, self.url_charset)
 
     @cached_property
     def script_root(self):
         """The root path of the script without the trailing slash."""
-        raw_path = wsgi_decoding_dance(self.environ.get('SCRIPT_NAME') or '',
-                                       self.charset, self.encoding_errors)
-        return raw_path.rstrip('/')
+        raw_path = wsgi_decoding_dance(
+            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
+        )
+        return raw_path.rstrip("/")
 
     @cached_property
     def url(self):
         """The reconstructed current URL as IRI.
         See also: :attr:`trusted_hosts`.
         """
-        return get_current_url(self.environ,
-                               trusted_hosts=self.trusted_hosts)
+        return get_current_url(self.environ, trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def base_url(self):
         """Like :attr:`url` but without the querystring
         See also: :attr:`trusted_hosts`.
         """
-        return get_current_url(self.environ, strip_querystring=True,
-                               trusted_hosts=self.trusted_hosts)
+        return get_current_url(
+            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts
+        )
 
     @cached_property
     def url_root(self):
@@ -559,16 +575,16 @@ class BaseRequest(object):
         root as IRI.
         See also: :attr:`trusted_hosts`.
         """
-        return get_current_url(self.environ, True,
-                               trusted_hosts=self.trusted_hosts)
+        return get_current_url(self.environ, True, trusted_hosts=self.trusted_hosts)
 
     @cached_property
     def host_url(self):
         """Just the host with scheme as IRI.
         See also: :attr:`trusted_hosts`.
         """
-        return get_current_url(self.environ, host_only=True,
-                               trusted_hosts=self.trusted_hosts)
+        return get_current_url(
+            self.environ, host_only=True, trusted_hosts=self.trusted_hosts
+        )
 
     @cached_property
     def host(self):
@@ -578,39 +594,51 @@ class BaseRequest(object):
         return get_host(self.environ, trusted_hosts=self.trusted_hosts)
 
     query_string = environ_property(
-        'QUERY_STRING', '', read_only=True,
-        load_func=wsgi_get_bytes, doc='The URL parameters as raw bytestring.')
+        "QUERY_STRING",
+        "",
+        read_only=True,
+        load_func=wsgi_get_bytes,
+        doc="The URL parameters as raw bytestring.",
+    )
     method = environ_property(
-        'REQUEST_METHOD', 'GET', read_only=True,
+        "REQUEST_METHOD",
+        "GET",
+        read_only=True,
         load_func=lambda x: x.upper(),
-        doc="The request method. (For example ``'GET'`` or ``'POST'``).")
+        doc="The request method. (For example ``'GET'`` or ``'POST'``).",
+    )
 
     @cached_property
     def access_route(self):
         """If a forwarded header exists this is a list of all ip addresses
         from the client ip to the last proxy server.
         """
-        if 'HTTP_X_FORWARDED_FOR' in self.environ:
-            addr = self.environ['HTTP_X_FORWARDED_FOR'].split(',')
+        if "HTTP_X_FORWARDED_FOR" in self.environ:
+            addr = self.environ["HTTP_X_FORWARDED_FOR"].split(",")
             return self.list_storage_class([x.strip() for x in addr])
-        elif 'REMOTE_ADDR' in self.environ:
-            return self.list_storage_class([self.environ['REMOTE_ADDR']])
+        elif "REMOTE_ADDR" in self.environ:
+            return self.list_storage_class([self.environ["REMOTE_ADDR"]])
         return self.list_storage_class()
 
     @property
     def remote_addr(self):
         """The remote address of the client."""
-        return self.environ.get('REMOTE_ADDR')
+        return self.environ.get("REMOTE_ADDR")
 
-    remote_user = environ_property('REMOTE_USER', doc='''
-        If the server supports user authentication, and the script is
-        protected, this attribute contains the username the user has
-        authenticated as.''')
+    remote_user = environ_property(
+        "REMOTE_USER",
+        doc="""If the server supports user authentication, and the
+        script is protected, this attribute contains the username the
+        user has authenticated as.""",
+    )
 
-    scheme = environ_property('wsgi.url_scheme', doc='''
+    scheme = environ_property(
+        "wsgi.url_scheme",
+        doc="""
         URL scheme (http or https).
 
-        .. versionadded:: 0.7''')
+        .. versionadded:: 0.7""",
+    )
 
     @property
     def is_xhr(self):
@@ -630,28 +658,36 @@ class BaseRequest(object):
             " is not standard and is unreliable. You may be able to use"
             " 'accept_mimetypes' instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
-        return self.environ.get(
-            'HTTP_X_REQUESTED_WITH', ''
-        ).lower() == 'xmlhttprequest'
+        return self.environ.get("HTTP_X_REQUESTED_WITH", "").lower() == "xmlhttprequest"
 
-    is_secure = property(lambda self: self.environ['wsgi.url_scheme'] == 'https',
-                         doc='`True` if the request is secure.')
-    is_multithread = environ_property('wsgi.multithread', doc='''
-        boolean that is `True` if the application is served by
-        a multithreaded WSGI server.''')
-    is_multiprocess = environ_property('wsgi.multiprocess', doc='''
-        boolean that is `True` if the application is served by
-        a WSGI server that spawns multiple processes.''')
-    is_run_once = environ_property('wsgi.run_once', doc='''
-        boolean that is `True` if the application will be executed only
-        once in a process lifetime.  This is the case for CGI for example,
-        but it's not guaranteed that the execution only happens one time.''')
+    is_secure = property(
+        lambda self: self.environ["wsgi.url_scheme"] == "https",
+        doc="`True` if the request is secure.",
+    )
+    is_multithread = environ_property(
+        "wsgi.multithread",
+        doc="""boolean that is `True` if the application is served by a
+        multithreaded WSGI server.""",
+    )
+    is_multiprocess = environ_property(
+        "wsgi.multiprocess",
+        doc="""boolean that is `True` if the application is served by a
+        WSGI server that spawns multiple processes.""",
+    )
+    is_run_once = environ_property(
+        "wsgi.run_once",
+        doc="""boolean that is `True` if the application will be
+        executed only once in a process lifetime.  This is the case for
+        CGI for example, but it's not guaranteed that the execution only
+        happens one time.""",
+    )
 
 
 def _assert_not_shallow(request):
     if request.shallow:
-        raise RuntimeError('A shallow request tried to consume '
-                           'form data.  If you really want to do '
-                           'that, set `shallow` to False.')
+        raise RuntimeError(
+            "A shallow request tried to consume form data. If you really"
+            " want to do that, set `shallow` to False."
+        )

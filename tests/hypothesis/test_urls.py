@@ -1,5 +1,8 @@
 import hypothesis
-from hypothesis.strategies import text, dictionaries, lists, integers
+from hypothesis.strategies import dictionaries
+from hypothesis.strategies import integers
+from hypothesis.strategies import lists
+from hypothesis.strategies import text
 
 from werkzeug import urls
 from werkzeug.datastructures import OrderedMultiDict
@@ -22,8 +25,9 @@ def test_url_encoding_dict_str_list(d):
 
 @hypothesis.given(dictionaries(text(), integers()))
 def test_url_encoding_dict_str_int(d):
-    assert OrderedMultiDict({k: str(v) for k, v in d.items()}) == \
-        urls.url_decode(urls.url_encode(d))
+    assert OrderedMultiDict({k: str(v) for k, v in d.items()}) == urls.url_decode(
+        urls.url_encode(d)
+    )
 
 
 @hypothesis.given(text(), text())

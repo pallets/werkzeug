@@ -10,8 +10,10 @@
 """
 import copy
 from functools import update_wrapper
-from werkzeug.wsgi import ClosingIterator
-from werkzeug._compat import PY2, implements_bool
+
+from ._compat import implements_bool
+from ._compat import PY2
+from .wsgi import ClosingIterator
 
 # since each thread has its own greenlet we can just use those as identifiers
 # for the context.  If greenlets are not available we fall back to the
@@ -49,11 +51,11 @@ def release_local(local):
 
 
 class Local(object):
-    __slots__ = ('__storage__', '__ident_func__')
+    __slots__ = ("__storage__", "__ident_func__")
 
     def __init__(self):
-        object.__setattr__(self, '__storage__', {})
-        object.__setattr__(self, '__ident_func__', get_ident)
+        object.__setattr__(self, "__storage__", {})
+        object.__setattr__(self, "__ident_func__", get_ident)
 
     def __iter__(self):
         return iter(self.__storage__.items())
@@ -87,7 +89,6 @@ class Local(object):
 
 
 class LocalStack(object):
-
     """This class works similar to a :class:`Local` but keeps a stack
     of objects instead.  This is best explained with an example::
 
@@ -124,7 +125,8 @@ class LocalStack(object):
         return self._local.__ident_func__
 
     def _set__ident_func__(self, value):
-        object.__setattr__(self._local, '__ident_func__', value)
+        object.__setattr__(self._local, "__ident_func__", value)
+
     __ident_func__ = property(_get__ident_func__, _set__ident_func__)
     del _get__ident_func__, _set__ident_func__
 
@@ -132,13 +134,14 @@ class LocalStack(object):
         def _lookup():
             rv = self.top
             if rv is None:
-                raise RuntimeError('object unbound')
+                raise RuntimeError("object unbound")
             return rv
+
         return LocalProxy(_lookup)
 
     def push(self, obj):
         """Pushes a new item to the stack"""
-        rv = getattr(self._local, 'stack', None)
+        rv = getattr(self._local, "stack", None)
         if rv is None:
             self._local.stack = rv = []
         rv.append(obj)
@@ -148,7 +151,7 @@ class LocalStack(object):
         """Removes the topmost item from the stack, will return the
         old value or `None` if the stack was already empty.
         """
-        stack = getattr(self._local, 'stack', None)
+        stack = getattr(self._local, "stack", None)
         if stack is None:
             return None
         elif len(stack) == 1:
@@ -169,7 +172,6 @@ class LocalStack(object):
 
 
 class LocalManager(object):
-
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them later
     by appending them to `manager.locals`.  Every time the manager cleans up,
@@ -196,7 +198,7 @@ class LocalManager(object):
         if ident_func is not None:
             self.ident_func = ident_func
             for local in self.locals:
-                object.__setattr__(local, '__ident_func__', ident_func)
+                object.__setattr__(local, "__ident_func__", ident_func)
         else:
             self.ident_func = get_ident
 
@@ -224,8 +226,10 @@ class LocalManager(object):
         """Wrap a WSGI application so that cleaning up happens after
         request end.
         """
+
         def application(environ, start_response):
             return ClosingIterator(app(environ, start_response), self.cleanup)
+
         return application
 
     def middleware(self, func):
@@ -244,15 +248,11 @@ class LocalManager(object):
         return update_wrapper(self.make_middleware(func), func)
 
     def __repr__(self):
-        return '<%s storages: %d>' % (
-            self.__class__.__name__,
-            len(self.locals)
-        )
+        return "<%s storages: %d>" % (self.__class__.__name__, len(self.locals))
 
 
 @implements_bool
 class LocalProxy(object):
-
     """Acts as a proxy for a werkzeug local.  Forwards all operations to
     a proxied object.  The only operations not supported for forwarding
     are right handed operands and any kind of assignment.
@@ -287,40 +287,41 @@ class LocalProxy(object):
     .. versionchanged:: 0.6.1
        The class can be instantiated with a callable as well now.
     """
-    __slots__ = ('__local', '__dict__', '__name__', '__wrapped__')
+
+    __slots__ = ("__local", "__dict__", "__name__", "__wrapped__")
 
     def __init__(self, local, name=None):
-        object.__setattr__(self, '_LocalProxy__local', local)
-        object.__setattr__(self, '__name__', name)
-        if callable(local) and not hasattr(local, '__release_local__'):
+        object.__setattr__(self, "_LocalProxy__local", local)
+        object.__setattr__(self, "__name__", name)
+        if callable(local) and not hasattr(local, "__release_local__"):
             # "local" is a callable that is not an instance of Local or
             # LocalManager: mark it as a wrapped function.
-            object.__setattr__(self, '__wrapped__', local)
+            object.__setattr__(self, "__wrapped__", local)
 
     def _get_current_object(self):
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
         """
-        if not hasattr(self.__local, '__release_local__'):
+        if not hasattr(self.__local, "__release_local__"):
             return self.__local()
         try:
             return getattr(self.__local, self.__name__)
         except AttributeError:
-            raise RuntimeError('no object bound to %s' % self.__name__)
+            raise RuntimeError("no object bound to %s" % self.__name__)
 
     @property
     def __dict__(self):
         try:
             return self._get_current_object().__dict__
         except RuntimeError:
-            raise AttributeError('__dict__')
+            raise AttributeError("__dict__")
 
     def __repr__(self):
         try:
             obj = self._get_current_object()
         except RuntimeError:
-            return '<%s unbound>' % self.__class__.__name__
+            return "<%s unbound>" % self.__class__.__name__
         return repr(obj)
 
     def __bool__(self):
@@ -342,7 +343,7 @@ class LocalProxy(object):
             return []
 
     def __getattr__(self, name):
-        if name == '__members__':
+        if name == "__members__":
             return dir(self._get_current_object())
         return getattr(self._get_current_object(), name)
 

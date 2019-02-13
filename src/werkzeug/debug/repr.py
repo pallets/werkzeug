@@ -13,37 +13,38 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import sys
-import re
 import codecs
+import re
+import sys
+from collections import deque
 from traceback import format_exception_only
-try:
-    from collections import deque
-except ImportError:  # pragma: no cover
-    deque = None
-from werkzeug.utils import escape
-from werkzeug._compat import iteritems, PY2, text_type, integer_types, \
-    string_types
+
+from .._compat import integer_types
+from .._compat import iteritems
+from .._compat import PY2
+from .._compat import string_types
+from .._compat import text_type
+from ..utils import escape
 
 
 missing = object()
-_paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
+_paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")
 RegexType = type(_paragraph_re)
 
 
-HELP_HTML = '''\
+HELP_HTML = """\
 <div class=box>
   <h3>%(title)s</h3>
   <pre class=help>%(text)s</pre>
 </div>\
-'''
-OBJECT_DUMP_HTML = '''\
+"""
+OBJECT_DUMP_HTML = """\
 <div class=box>
   <h3>%(title)s</h3>
   %(repr)s
   <table>%(items)s</table>
 </div>\
-'''
+"""
 
 
 def debug_repr(obj):
@@ -64,31 +65,31 @@ def dump(obj=missing):
 
 
 class _Helper(object):
-
     """Displays an HTML version of the normal help, for the interactive
     debugger only because it requires a patched sys.stdout.
     """
 
     def __repr__(self):
-        return 'Type help(object) for help about object.'
+        return "Type help(object) for help about object."
 
     def __call__(self, topic=None):
         if topic is None:
-            sys.stdout._write('<span class=help>%s</span>' % repr(self))
+            sys.stdout._write("<span class=help>%s</span>" % repr(self))
             return
         import pydoc
+
         pydoc.help(topic)
         rv = sys.stdout.reset()
         if isinstance(rv, bytes):
-            rv = rv.decode('utf-8', 'ignore')
+            rv = rv.decode("utf-8", "ignore")
         paragraphs = _paragraph_re.split(rv)
         if len(paragraphs) > 1:
             title = paragraphs[0]
-            text = '\n\n'.join(paragraphs[1:])
+            text = "\n\n".join(paragraphs[1:])
         else:  # pragma: no cover
-            title = 'Help'
+            title = "Help"
             text = paragraphs[0]
-        sys.stdout._write(HELP_HTML % {'title': title, 'text': text})
+        sys.stdout._write(HELP_HTML % {"title": title, "text": text})
 
 
 helper = _Helper()
@@ -101,55 +102,55 @@ def _add_subclass_info(inner, obj, base):
                 return inner
     elif type(obj) is base:
         return inner
-    module = ''
-    if obj.__class__.__module__ not in ('__builtin__', 'exceptions'):
+    module = ""
+    if obj.__class__.__module__ not in ("__builtin__", "exceptions"):
         module = '<span class="module">%s.</span>' % obj.__class__.__module__
-    return '%s%s(%s)' % (module, obj.__class__.__name__, inner)
+    return "%s%s(%s)" % (module, obj.__class__.__name__, inner)
 
 
 class DebugReprGenerator(object):
-
     def __init__(self):
         self._stack = []
 
-    def _sequence_repr_maker(left, right, base=object(), limit=8):
+    def _sequence_repr_maker(left, right, base=object(), limit=8):  # noqa: B008, B902
         def proxy(self, obj, recursive):
             if recursive:
-                return _add_subclass_info(left + '...' + right, obj, base)
+                return _add_subclass_info(left + "..." + right, obj, base)
             buf = [left]
             have_extended_section = False
             for idx, item in enumerate(obj):
                 if idx:
-                    buf.append(', ')
+                    buf.append(", ")
                 if idx == limit:
                     buf.append('<span class="extended">')
                     have_extended_section = True
                 buf.append(self.repr(item))
             if have_extended_section:
-                buf.append('</span>')
+                buf.append("</span>")
             buf.append(right)
-            return _add_subclass_info(u''.join(buf), obj, base)
+            return _add_subclass_info(u"".join(buf), obj, base)
+
         return proxy
 
-    list_repr = _sequence_repr_maker('[', ']', list)
-    tuple_repr = _sequence_repr_maker('(', ')', tuple)
-    set_repr = _sequence_repr_maker('set([', '])', set)
-    frozenset_repr = _sequence_repr_maker('frozenset([', '])', frozenset)
-    if deque is not None:
-        deque_repr = _sequence_repr_maker('<span class="module">collections.'
-                                          '</span>deque([', '])', deque)
+    list_repr = _sequence_repr_maker("[", "]", list)
+    tuple_repr = _sequence_repr_maker("(", ")", tuple)
+    set_repr = _sequence_repr_maker("set([", "])", set)
+    frozenset_repr = _sequence_repr_maker("frozenset([", "])", frozenset)
+    deque_repr = _sequence_repr_maker(
+        '<span class="module">collections.' "</span>deque([", "])", deque
+    )
     del _sequence_repr_maker
 
     def regex_repr(self, obj):
         pattern = repr(obj.pattern)
         if PY2:
-            pattern = pattern.decode('string-escape', 'ignore')
+            pattern = pattern.decode("string-escape", "ignore")
         else:
-            pattern = codecs.decode(pattern, 'unicode-escape', 'ignore')
-        if pattern[:1] == 'u':
-            pattern = 'ur' + pattern[1:]
+            pattern = codecs.decode(pattern, "unicode-escape", "ignore")
+        if pattern[:1] == "u":
+            pattern = "ur" + pattern[1:]
         else:
-            pattern = 'r' + pattern
+            pattern = "r" + pattern
         return u're.compile(<span class="string regex">%s</span>)' % pattern
 
     def string_repr(self, obj, limit=70):
@@ -158,14 +159,18 @@ class DebugReprGenerator(object):
 
         # shorten the repr when the hidden part would be at least 3 chars
         if len(r) - limit > 2:
-            buf.extend((
-                escape(r[:limit]),
-                '<span class="extended">', escape(r[limit:]), '</span>',
-            ))
+            buf.extend(
+                (
+                    escape(r[:limit]),
+                    '<span class="extended">',
+                    escape(r[limit:]),
+                    "</span>",
+                )
+            )
         else:
             buf.append(escape(r))
 
-        buf.append('</span>')
+        buf.append("</span>")
         out = u"".join(buf)
 
         # if the repr looks like a standard string, add subclass info if needed
@@ -177,27 +182,29 @@ class DebugReprGenerator(object):
 
     def dict_repr(self, d, recursive, limit=5):
         if recursive:
-            return _add_subclass_info(u'{...}', d, dict)
-        buf = ['{']
+            return _add_subclass_info(u"{...}", d, dict)
+        buf = ["{"]
         have_extended_section = False
         for idx, (key, value) in enumerate(iteritems(d)):
             if idx:
-                buf.append(', ')
+                buf.append(", ")
             if idx == limit - 1:
                 buf.append('<span class="extended">')
                 have_extended_section = True
-            buf.append('<span class="pair"><span class="key">%s</span>: '
-                       '<span class="value">%s</span></span>' %
-                       (self.repr(key), self.repr(value)))
+            buf.append(
+                '<span class="pair"><span class="key">%s</span>: '
+                '<span class="value">%s</span></span>'
+                % (self.repr(key), self.repr(value))
+            )
         if have_extended_section:
-            buf.append('</span>')
-        buf.append('}')
-        return _add_subclass_info(u''.join(buf), d, dict)
+            buf.append("</span>")
+        buf.append("}")
+        return _add_subclass_info(u"".join(buf), d, dict)
 
     def object_repr(self, obj):
         r = repr(obj)
         if PY2:
-            r = r.decode('utf-8', 'replace')
+            r = r.decode("utf-8", "replace")
         return u'<span class="object">%s</span>' % escape(r)
 
     def dispatch_repr(self, obj, recursive):
@@ -225,13 +232,14 @@ class DebugReprGenerator(object):
 
     def fallback_repr(self):
         try:
-            info = ''.join(format_exception_only(*sys.exc_info()[:2]))
+            info = "".join(format_exception_only(*sys.exc_info()[:2]))
         except Exception:  # pragma: no cover
-            info = '?'
+            info = "?"
         if PY2:
-            info = info.decode('utf-8', 'ignore')
-        return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' \
-               u'</span>' % escape(info.strip())
+            info = info.decode("utf-8", "ignore")
+        return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' u"</span>" % escape(
+            info.strip()
+        )
 
     def repr(self, obj):
         recursive = False
@@ -251,7 +259,7 @@ class DebugReprGenerator(object):
     def dump_object(self, obj):
         repr = items = None
         if isinstance(obj, dict):
-            title = 'Contents of'
+            title = "Contents of"
             items = []
             for key, value in iteritems(obj):
                 if not isinstance(key, string_types):
@@ -266,23 +274,24 @@ class DebugReprGenerator(object):
                     items.append((key, self.repr(getattr(obj, key))))
                 except Exception:
                     pass
-            title = 'Details for'
-        title += ' ' + object.__repr__(obj)[1:-1]
+            title = "Details for"
+        title += " " + object.__repr__(obj)[1:-1]
         return self.render_object_dump(items, title, repr)
 
     def dump_locals(self, d):
         items = [(key, self.repr(value)) for key, value in d.items()]
-        return self.render_object_dump(items, 'Local variables in frame')
+        return self.render_object_dump(items, "Local variables in frame")
 
     def render_object_dump(self, items, title, repr=None):
         html_items = []
         for key, value in items:
-            html_items.append('<tr><th>%s<td><pre class=repr>%s</pre>' %
-                              (escape(key), value))
+            html_items.append(
+                "<tr><th>%s<td><pre class=repr>%s</pre>" % (escape(key), value)
+            )
         if not html_items:
-            html_items.append('<tr><td><em>Nothing</em>')
+            html_items.append("<tr><td><em>Nothing</em>")
         return OBJECT_DUMP_HTML % {
-            'title':    escape(title),
-            'repr':     '<pre class=repr>%s</pre>' % repr if repr else '',
-            'items':    '\n'.join(html_items)
+            "title": escape(title),
+            "repr": "<pre class=repr>%s</pre>" % repr if repr else "",
+            "items": "\n".join(html_items),
         }

@@ -11,7 +11,7 @@ class ResponseStream(object):
     iterable of the response object.
     """
 
-    mode = 'wb+'
+    mode = "wb+"
 
     def __init__(self, response):
         self.response = response
@@ -19,10 +19,10 @@ class ResponseStream(object):
 
     def write(self, value):
         if self.closed:
-            raise ValueError('I/O operation on closed file')
+            raise ValueError("I/O operation on closed file")
         self.response._ensure_sequence(mutable=True)
         self.response.response.append(value)
-        self.response.headers.pop('Content-Length', None)
+        self.response.headers.pop("Content-Length", None)
         return len(value)
 
     def writelines(self, seq):
@@ -34,11 +34,11 @@ class ResponseStream(object):
 
     def flush(self):
         if self.closed:
-            raise ValueError('I/O operation on closed file')
+            raise ValueError("I/O operation on closed file")
 
     def isatty(self):
         if self.closed:
-            raise ValueError('I/O operation on closed file')
+            raise ValueError("I/O operation on closed file")
         return False
 
     def tell(self):
@@ -62,9 +62,13 @@ class ResponseStreamMixin(object):
         return ResponseStream(self)
 
 
-class Response(BaseResponse, ETagResponseMixin, ResponseStreamMixin,
-               CommonResponseDescriptorsMixin,
-               WWWAuthenticateMixin):
+class Response(
+    BaseResponse,
+    ETagResponseMixin,
+    ResponseStreamMixin,
+    CommonResponseDescriptorsMixin,
+    WWWAuthenticateMixin,
+):
     """Full featured response object implementing the following mixins:
 
     - :class:`ETagResponseMixin` for etag and cache control handling

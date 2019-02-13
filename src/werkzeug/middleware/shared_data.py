@@ -8,7 +8,6 @@ Serve Shared Static Files
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-
 import mimetypes
 import os
 import posixpath
@@ -219,7 +218,7 @@ class SharedDataMiddleware(object):
                 search_path += "/"
 
             if path.startswith(search_path):
-                real_filename, file_loader = loader(path[len(search_path):])
+                real_filename, file_loader = loader(path[len(search_path) :])
 
                 if file_loader is not None:
                     break

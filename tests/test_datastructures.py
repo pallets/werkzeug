@@ -18,43 +18,46 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-
 import io
-import pytest
-import tempfile
-
-from tests import strict_eq
-
-
 import pickle
+import tempfile
 from contextlib import contextmanager
-from copy import copy, deepcopy
+from copy import copy
+from copy import deepcopy
 
-from werkzeug import datastructures, http
-from werkzeug._compat import iterkeys, itervalues, iteritems, iterlists, \
-    iterlistvalues, text_type, PY2
+import pytest
+
+from . import strict_eq
+from werkzeug import datastructures
+from werkzeug import http
+from werkzeug._compat import iteritems
+from werkzeug._compat import iterkeys
+from werkzeug._compat import iterlists
+from werkzeug._compat import iterlistvalues
+from werkzeug._compat import itervalues
+from werkzeug._compat import PY2
+from werkzeug._compat import text_type
 from werkzeug.datastructures import Range
 from werkzeug.exceptions import BadRequestKeyError
 
 
 class TestNativeItermethods(object):
-
     def test_basic(self):
-        @datastructures.native_itermethods(['keys', 'values', 'items'])
+        @datastructures.native_itermethods(["keys", "values", "items"])
         class StupidDict(object):
-
             def keys(self, multi=1):
-                return iter(['a', 'b', 'c'] * multi)
+                return iter(["a", "b", "c"] * multi)
 
             def values(self, multi=1):
                 return iter([1, 2, 3] * multi)
 
             def items(self, multi=1):
-                return iter(zip(iterkeys(self, multi=multi),
-                                itervalues(self, multi=multi)))
+                return iter(
+                    zip(iterkeys(self, multi=multi), itervalues(self, multi=multi))
+                )
 
         d = StupidDict()
-        expected_keys = ['a', 'b', 'c']
+        expected_keys = ["a", "b", "c"]
         expected_values = [1, 2, 3]
         expected_items = list(zip(expected_keys, expected_values))
 
@@ -81,8 +84,8 @@ class _MutableMultiDictTests(object):
                 cls.__module__ = module
                 d = cls()
                 cls.__module__ = old
-            d.setlist(b'foo', [1, 2, 3, 4])
-            d.setlist(b'bar', b'foo bar baz'.split())
+            d.setlist(b"foo", [1, 2, 3, 4])
+            d.setlist(b"bar", b"foo bar baz".split())
             return d
 
         for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -91,157 +94,173 @@ class _MutableMultiDictTests(object):
             ud = pickle.loads(s)
             assert type(ud) == type(d)
             assert ud == d
-            alternative = pickle.dumps(create_instance('werkzeug'), protocol)
+            alternative = pickle.dumps(create_instance("werkzeug"), protocol)
             assert pickle.loads(alternative) == d
-            ud[b'newkey'] = b'bla'
+            ud[b"newkey"] = b"bla"
             assert ud != d
 
     def test_basic_interface(self):
         md = self.storage_class()
         assert isinstance(md, dict)
 
-        mapping = [('a', 1), ('b', 2), ('a', 2), ('d', 3),
-                   ('a', 1), ('a', 3), ('d', 4), ('c', 3)]
+        mapping = [
+            ("a", 1),
+            ("b", 2),
+            ("a", 2),
+            ("d", 3),
+            ("a", 1),
+            ("a", 3),
+            ("d", 4),
+            ("c", 3),
+        ]
         md = self.storage_class(mapping)
 
         # simple getitem gives the first value
-        assert md['a'] == 1
-        assert md['c'] == 3
+        assert md["a"] == 1
+        assert md["c"] == 3
         with pytest.raises(KeyError):
-            md['e']
-        assert md.get('a') == 1
+            md["e"]
+        assert md.get("a") == 1
 
         # list getitem
-        assert md.getlist('a') == [1, 2, 1, 3]
-        assert md.getlist('d') == [3, 4]
+        assert md.getlist("a") == [1, 2, 1, 3]
+        assert md.getlist("d") == [3, 4]
         # do not raise if key not found
-        assert md.getlist('x') == []
+        assert md.getlist("x") == []
 
         # simple setitem overwrites all values
-        md['a'] = 42
-        assert md.getlist('a') == [42]
+        md["a"] = 42
+        assert md.getlist("a") == [42]
 
         # list setitem
-        md.setlist('a', [1, 2, 3])
-        assert md['a'] == 1
-        assert md.getlist('a') == [1, 2, 3]
+        md.setlist("a", [1, 2, 3])
+        assert md["a"] == 1
+        assert md.getlist("a") == [1, 2, 3]
 
         # verify that it does not change original lists
         l1 = [1, 2, 3]
-        md.setlist('a', l1)
+        md.setlist("a", l1)
         del l1[:]
-        assert md['a'] == 1
+        assert md["a"] == 1
 
         # setdefault, setlistdefault
-        assert md.setdefault('u', 23) == 23
-        assert md.getlist('u') == [23]
-        del md['u']
+        assert md.setdefault("u", 23) == 23
+        assert md.getlist("u") == [23]
+        del md["u"]
 
-        md.setlist('u', [-1, -2])
+        md.setlist("u", [-1, -2])
 
         # delitem
-        del md['u']
+        del md["u"]
         with pytest.raises(KeyError):
-            md['u']
-        del md['d']
-        assert md.getlist('d') == []
+            md["u"]
+        del md["d"]
+        assert md.getlist("d") == []
 
         # keys, values, items, lists
-        assert list(sorted(md.keys())) == ['a', 'b', 'c']
-        assert list(sorted(iterkeys(md))) == ['a', 'b', 'c']
+        assert list(sorted(md.keys())) == ["a", "b", "c"]
+        assert list(sorted(iterkeys(md))) == ["a", "b", "c"]
 
         assert list(sorted(itervalues(md))) == [1, 2, 3]
         assert list(sorted(itervalues(md))) == [1, 2, 3]
 
-        assert list(sorted(md.items())) == [('a', 1), ('b', 2), ('c', 3)]
-        assert list(sorted(md.items(multi=True))) == \
-            [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
-        assert list(sorted(iteritems(md))) == [('a', 1), ('b', 2), ('c', 3)]
-        assert list(sorted(iteritems(md, multi=True))) == \
-            [('a', 1), ('a', 2), ('a', 3), ('b', 2), ('c', 3)]
+        assert list(sorted(md.items())) == [("a", 1), ("b", 2), ("c", 3)]
+        assert list(sorted(md.items(multi=True))) == [
+            ("a", 1),
+            ("a", 2),
+            ("a", 3),
+            ("b", 2),
+            ("c", 3),
+        ]
+        assert list(sorted(iteritems(md))) == [("a", 1), ("b", 2), ("c", 3)]
+        assert list(sorted(iteritems(md, multi=True))) == [
+            ("a", 1),
+            ("a", 2),
+            ("a", 3),
+            ("b", 2),
+            ("c", 3),
+        ]
 
-        assert list(sorted(md.lists())) == \
-            [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
-        assert list(sorted(iterlists(md))) == \
-            [('a', [1, 2, 3]), ('b', [2]), ('c', [3])]
+        assert list(sorted(md.lists())) == [("a", [1, 2, 3]), ("b", [2]), ("c", [3])]
+        assert list(sorted(iterlists(md))) == [("a", [1, 2, 3]), ("b", [2]), ("c", [3])]
 
         # copy method
         c = md.copy()
-        assert c['a'] == 1
-        assert c.getlist('a') == [1, 2, 3]
+        assert c["a"] == 1
+        assert c.getlist("a") == [1, 2, 3]
 
         # copy method 2
         c = copy(md)
-        assert c['a'] == 1
-        assert c.getlist('a') == [1, 2, 3]
+        assert c["a"] == 1
+        assert c.getlist("a") == [1, 2, 3]
 
         # deepcopy method
         c = md.deepcopy()
-        assert c['a'] == 1
-        assert c.getlist('a') == [1, 2, 3]
+        assert c["a"] == 1
+        assert c.getlist("a") == [1, 2, 3]
 
         # deepcopy method 2
         c = deepcopy(md)
-        assert c['a'] == 1
-        assert c.getlist('a') == [1, 2, 3]
+        assert c["a"] == 1
+        assert c.getlist("a") == [1, 2, 3]
 
         # update with a multidict
-        od = self.storage_class([('a', 4), ('a', 5), ('y', 0)])
+        od = self.storage_class([("a", 4), ("a", 5), ("y", 0)])
         md.update(od)
-        assert md.getlist('a') == [1, 2, 3, 4, 5]
-        assert md.getlist('y') == [0]
+        assert md.getlist("a") == [1, 2, 3, 4, 5]
+        assert md.getlist("y") == [0]
 
         # update with a regular dict
         md = c
-        od = {'a': 4, 'y': 0}
+        od = {"a": 4, "y": 0}
         md.update(od)
-        assert md.getlist('a') == [1, 2, 3, 4]
-        assert md.getlist('y') == [0]
+        assert md.getlist("a") == [1, 2, 3, 4]
+        assert md.getlist("y") == [0]
 
         # pop, poplist, popitem, popitemlist
-        assert md.pop('y') == 0
-        assert 'y' not in md
-        assert md.poplist('a') == [1, 2, 3, 4]
-        assert 'a' not in md
-        assert md.poplist('missing') == []
+        assert md.pop("y") == 0
+        assert "y" not in md
+        assert md.poplist("a") == [1, 2, 3, 4]
+        assert "a" not in md
+        assert md.poplist("missing") == []
 
         # remaining: b=2, c=3
         popped = md.popitem()
-        assert popped in [('b', 2), ('c', 3)]
+        assert popped in [("b", 2), ("c", 3)]
         popped = md.popitemlist()
-        assert popped in [('b', [2]), ('c', [3])]
+        assert popped in [("b", [2]), ("c", [3])]
 
         # type conversion
-        md = self.storage_class({'a': '4', 'b': ['2', '3']})
-        assert md.get('a', type=int) == 4
-        assert md.getlist('b', type=int) == [2, 3]
+        md = self.storage_class({"a": "4", "b": ["2", "3"]})
+        assert md.get("a", type=int) == 4
+        assert md.getlist("b", type=int) == [2, 3]
 
         # repr
-        md = self.storage_class([('a', 1), ('a', 2), ('b', 3)])
+        md = self.storage_class([("a", 1), ("a", 2), ("b", 3)])
         assert "('a', 1)" in repr(md)
         assert "('a', 2)" in repr(md)
         assert "('b', 3)" in repr(md)
 
         # add and getlist
-        md.add('c', '42')
-        md.add('c', '23')
-        assert md.getlist('c') == ['42', '23']
-        md.add('c', 'blah')
-        assert md.getlist('c', type=int) == [42, 23]
+        md.add("c", "42")
+        md.add("c", "23")
+        assert md.getlist("c") == ["42", "23"]
+        md.add("c", "blah")
+        assert md.getlist("c", type=int) == [42, 23]
 
         # setdefault
         md = self.storage_class()
-        md.setdefault('x', []).append(42)
-        md.setdefault('x', []).append(23)
-        assert md['x'] == [42, 23]
+        md.setdefault("x", []).append(42)
+        md.setdefault("x", []).append(23)
+        assert md["x"] == [42, 23]
 
         # to dict
         md = self.storage_class()
-        md['foo'] = 42
-        md.add('bar', 1)
-        md.add('bar', 2)
-        assert md.to_dict() == {'foo': 42, 'bar': 1}
-        assert md.to_dict(flat=False) == {'foo': [42], 'bar': [1, 2]}
+        md["foo"] = 42
+        md.add("bar", 1)
+        md.add("bar", 2)
+        assert md.to_dict() == {"foo": 42, "bar": 1}
+        assert md.to_dict(flat=False) == {"foo": [42], "bar": [1, 2]}
 
         # popitem from empty dict
         with pytest.raises(KeyError):
@@ -256,9 +275,9 @@ class _MutableMultiDictTests(object):
 
         # setlist works
         md = self.storage_class()
-        md['foo'] = 42
-        md.setlist('foo', [1, 2])
-        assert md.getlist('foo') == [1, 2]
+        md["foo"] = 42
+        md.setlist("foo", [1, 2])
+        assert md.getlist("foo") == [1, 2]
 
 
 class _ImmutableDictTests(object):
@@ -267,33 +286,33 @@ class _ImmutableDictTests(object):
     def test_follows_dict_interface(self):
         cls = self.storage_class
 
-        data = {'foo': 1, 'bar': 2, 'baz': 3}
+        data = {"foo": 1, "bar": 2, "baz": 3}
         d = cls(data)
 
-        assert d['foo'] == 1
-        assert d['bar'] == 2
-        assert d['baz'] == 3
-        assert sorted(d.keys()) == ['bar', 'baz', 'foo']
-        assert 'foo' in d
-        assert 'foox' not in d
+        assert d["foo"] == 1
+        assert d["bar"] == 2
+        assert d["baz"] == 3
+        assert sorted(d.keys()) == ["bar", "baz", "foo"]
+        assert "foo" in d
+        assert "foox" not in d
         assert len(d) == 3
 
     def test_copies_are_mutable(self):
         cls = self.storage_class
-        immutable = cls({'a': 1})
+        immutable = cls({"a": 1})
         with pytest.raises(TypeError):
-            immutable.pop('a')
+            immutable.pop("a")
 
         mutable = immutable.copy()
-        mutable.pop('a')
-        assert 'a' in immutable
+        mutable.pop("a")
+        assert "a" in immutable
         assert mutable is not immutable
         assert copy(immutable) is immutable
 
     def test_dict_is_hashable(self):
         cls = self.storage_class
-        immutable = cls({'a': 1, 'b': 2})
-        immutable2 = cls({'a': 2, 'b': 2})
+        immutable = cls({"a": 1, "b": 2})
+        immutable2 = cls({"a": 2, "b": 2})
         x = set([immutable])
         assert immutable in x
         assert immutable2 not in x
@@ -317,8 +336,8 @@ class TestImmutableMultiDict(_ImmutableDictTests):
 
     def test_multidict_is_hashable(self):
         cls = self.storage_class
-        immutable = cls({'a': [1, 2], 'b': 2})
-        immutable2 = cls({'a': [1], 'b': 2})
+        immutable = cls({"a": [1, 2], "b": 2})
+        immutable2 = cls({"a": [1], "b": 2})
         x = set([immutable])
         assert immutable in x
         assert immutable2 not in x
@@ -341,8 +360,8 @@ class TestImmutableOrderedMultiDict(_ImmutableDictTests):
     storage_class = datastructures.ImmutableOrderedMultiDict
 
     def test_ordered_multidict_is_hashable(self):
-        a = self.storage_class([('a', 1), ('b', 1), ('a', 2)])
-        b = self.storage_class([('a', 1), ('a', 2), ('b', 1)])
+        a = self.storage_class([("a", 1), ("b", 1), ("a", 2)])
+        b = self.storage_class([("a", 1), ("a", 2), ("b", 1)])
         assert hash(a) != hash(b)
 
 
@@ -350,93 +369,102 @@ class TestMultiDict(_MutableMultiDictTests):
     storage_class = datastructures.MultiDict
 
     def test_multidict_pop(self):
-        make_d = lambda: self.storage_class({'foo': [1, 2, 3, 4]})
+        def make_d():
+            return self.storage_class({"foo": [1, 2, 3, 4]})
+
         d = make_d()
-        assert d.pop('foo') == 1
+        assert d.pop("foo") == 1
         assert not d
         d = make_d()
-        assert d.pop('foo', 32) == 1
+        assert d.pop("foo", 32) == 1
         assert not d
         d = make_d()
-        assert d.pop('foos', 32) == 32
+        assert d.pop("foos", 32) == 32
         assert d
 
         with pytest.raises(KeyError):
-            d.pop('foos')
+            d.pop("foos")
 
     def test_multidict_pop_raise_badrequestkeyerror_for_empty_list_value(self):
-        mapping = [('a', 'b'), ('a', 'c')]
+        mapping = [("a", "b"), ("a", "c")]
         md = self.storage_class(mapping)
 
-        md.setlistdefault('empty', [])
+        md.setlistdefault("empty", [])
 
         with pytest.raises(KeyError):
-            md.pop('empty')
+            md.pop("empty")
 
     def test_multidict_popitem_raise_badrequestkeyerror_for_empty_list_value(self):
         mapping = []
         md = self.storage_class(mapping)
 
-        md.setlistdefault('empty', [])
+        md.setlistdefault("empty", [])
 
         with pytest.raises(BadRequestKeyError):
             md.popitem()
 
     def test_setlistdefault(self):
         md = self.storage_class()
-        assert md.setlistdefault('u', [-1, -2]) == [-1, -2]
-        assert md.getlist('u') == [-1, -2]
-        assert md['u'] == -1
+        assert md.setlistdefault("u", [-1, -2]) == [-1, -2]
+        assert md.getlist("u") == [-1, -2]
+        assert md["u"] == -1
 
     def test_iter_interfaces(self):
-        mapping = [('a', 1), ('b', 2), ('a', 2), ('d', 3),
-                   ('a', 1), ('a', 3), ('d', 4), ('c', 3)]
+        mapping = [
+            ("a", 1),
+            ("b", 2),
+            ("a", 2),
+            ("d", 3),
+            ("a", 1),
+            ("a", 3),
+            ("d", 4),
+            ("c", 3),
+        ]
         md = self.storage_class(mapping)
         assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
         assert list(zip(md, iterlistvalues(md))) == list(iterlists(md))
-        assert list(zip(iterkeys(md), iterlistvalues(md))) == \
-            list(iterlists(md))
+        assert list(zip(iterkeys(md), iterlistvalues(md))) == list(iterlists(md))
 
-    @pytest.mark.skipif(not PY2, reason='viewmethods work only for the 2-nd version.')
+    @pytest.mark.skipif(not PY2, reason="viewmethods work only for the 2-nd version.")
     def test_view_methods(self):
-        mapping = [('a', 'b'), ('a', 'c')]
+        mapping = [("a", "b"), ("a", "c")]
         md = self.storage_class(mapping)
 
-        vi = md.viewitems()
-        vk = md.viewkeys()
-        vv = md.viewvalues()
+        vi = md.viewitems()  # noqa: B302
+        vk = md.viewkeys()  # noqa: B302
+        vv = md.viewvalues()  # noqa: B302
 
         assert list(vi) == list(md.items())
         assert list(vk) == list(md.keys())
         assert list(vv) == list(md.values())
 
-        md['k'] = 'n'
+        md["k"] = "n"
 
         assert list(vi) == list(md.items())
         assert list(vk) == list(md.keys())
         assert list(vv) == list(md.values())
 
-    @pytest.mark.skipif(not PY2, reason='viewmethods work only for the 2-nd version.')
+    @pytest.mark.skipif(not PY2, reason="viewmethods work only for the 2-nd version.")
     def test_viewitems_with_multi(self):
-        mapping = [('a', 'b'), ('a', 'c')]
+        mapping = [("a", "b"), ("a", "c")]
         md = self.storage_class(mapping)
 
-        vi = md.viewitems(multi=True)
+        vi = md.viewitems(multi=True)  # noqa: B302
 
         assert list(vi) == list(md.items(multi=True))
 
-        md['k'] = 'n'
+        md["k"] = "n"
 
         assert list(vi) == list(md.items(multi=True))
 
     def test_getitem_raise_badrequestkeyerror_for_empty_list_value(self):
-        mapping = [('a', 'b'), ('a', 'c')]
+        mapping = [("a", "b"), ("a", "c")]
         md = self.storage_class(mapping)
 
-        md.setlistdefault('empty', [])
+        md.setlistdefault("empty", [])
 
         with pytest.raises(KeyError):
-            md['empty']
+            md["empty"]
 
 
 class TestOrderedMultiDict(_MutableMultiDictTests):
@@ -447,90 +475,93 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
 
         d = cls()
         assert not d
-        d.add('foo', 'bar')
+        d.add("foo", "bar")
         assert len(d) == 1
-        d.add('foo', 'baz')
+        d.add("foo", "baz")
         assert len(d) == 1
-        assert list(iteritems(d)) == [('foo', 'bar')]
-        assert list(d) == ['foo']
-        assert list(iteritems(d, multi=True)) == \
-            [('foo', 'bar'), ('foo', 'baz')]
-        del d['foo']
+        assert list(iteritems(d)) == [("foo", "bar")]
+        assert list(d) == ["foo"]
+        assert list(iteritems(d, multi=True)) == [("foo", "bar"), ("foo", "baz")]
+        del d["foo"]
         assert not d
         assert len(d) == 0
         assert list(d) == []
 
-        d.update([('foo', 1), ('foo', 2), ('bar', 42)])
-        d.add('foo', 3)
-        assert d.getlist('foo') == [1, 2, 3]
-        assert d.getlist('bar') == [42]
-        assert list(iteritems(d)) == [('foo', 1), ('bar', 42)]
+        d.update([("foo", 1), ("foo", 2), ("bar", 42)])
+        d.add("foo", 3)
+        assert d.getlist("foo") == [1, 2, 3]
+        assert d.getlist("bar") == [42]
+        assert list(iteritems(d)) == [("foo", 1), ("bar", 42)]
 
-        expected = ['foo', 'bar']
+        expected = ["foo", "bar"]
 
         assert list(d.keys()) == expected
         assert list(d) == expected
         assert list(iterkeys(d)) == expected
 
-        assert list(iteritems(d, multi=True)) == \
-            [('foo', 1), ('foo', 2), ('bar', 42), ('foo', 3)]
+        assert list(iteritems(d, multi=True)) == [
+            ("foo", 1),
+            ("foo", 2),
+            ("bar", 42),
+            ("foo", 3),
+        ]
         assert len(d) == 2
 
-        assert d.pop('foo') == 1
-        assert d.pop('blafasel', None) is None
-        assert d.pop('blafasel', 42) == 42
+        assert d.pop("foo") == 1
+        assert d.pop("blafasel", None) is None
+        assert d.pop("blafasel", 42) == 42
         assert len(d) == 1
-        assert d.poplist('bar') == [42]
+        assert d.poplist("bar") == [42]
         assert not d
 
-        d.get('missingkey') is None
+        d.get("missingkey") is None
 
-        d.add('foo', 42)
-        d.add('foo', 23)
-        d.add('bar', 2)
-        d.add('foo', 42)
+        d.add("foo", 42)
+        d.add("foo", 23)
+        d.add("bar", 2)
+        d.add("foo", 42)
         assert d == datastructures.MultiDict(d)
         id = self.storage_class(d)
         assert d == id
-        d.add('foo', 2)
+        d.add("foo", 2)
         assert d != id
 
-        d.update({'blah': [1, 2, 3]})
-        assert d['blah'] == 1
-        assert d.getlist('blah') == [1, 2, 3]
+        d.update({"blah": [1, 2, 3]})
+        assert d["blah"] == 1
+        assert d.getlist("blah") == [1, 2, 3]
 
         # setlist works
         d = self.storage_class()
-        d['foo'] = 42
-        d.setlist('foo', [1, 2])
-        assert d.getlist('foo') == [1, 2]
+        d["foo"] = 42
+        d.setlist("foo", [1, 2])
+        assert d.getlist("foo") == [1, 2]
         with pytest.raises(BadRequestKeyError):
-            d.pop('missing')
+            d.pop("missing")
 
         with pytest.raises(BadRequestKeyError):
-            d['missing']
+            d["missing"]
 
         # popping
         d = self.storage_class()
-        d.add('foo', 23)
-        d.add('foo', 42)
-        d.add('foo', 1)
-        assert d.popitem() == ('foo', 23)
+        d.add("foo", 23)
+        d.add("foo", 42)
+        d.add("foo", 1)
+        assert d.popitem() == ("foo", 23)
         with pytest.raises(BadRequestKeyError):
             d.popitem()
         assert not d
 
-        d.add('foo', 23)
-        d.add('foo', 42)
-        d.add('foo', 1)
-        assert d.popitemlist() == ('foo', [23, 42, 1])
+        d.add("foo", 23)
+        d.add("foo", 42)
+        d.add("foo", 1)
+        assert d.popitemlist() == ("foo", [23, 42, 1])
 
         with pytest.raises(BadRequestKeyError):
             d.popitemlist()
 
         # Unhashable
         d = self.storage_class()
-        d.add('foo', 23)
+        d.add("foo", 23)
         pytest.raises(TypeError, hash, d)
 
     def test_iterables(self):
@@ -538,92 +569,91 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         b = datastructures.MultiDict((("key_b", "value_b"),))
         ab = datastructures.CombinedMultiDict((a, b))
 
-        assert sorted(ab.lists()) == [('key_a', ['value_a']), ('key_b', ['value_b'])]
-        assert sorted(ab.listvalues()) == [['value_a'], ['value_b']]
+        assert sorted(ab.lists()) == [("key_a", ["value_a"]), ("key_b", ["value_b"])]
+        assert sorted(ab.listvalues()) == [["value_a"], ["value_b"]]
         assert sorted(ab.keys()) == ["key_a", "key_b"]
 
-        assert sorted(iterlists(ab)) == [('key_a', ['value_a']), ('key_b', ['value_b'])]
-        assert sorted(iterlistvalues(ab)) == [['value_a'], ['value_b']]
+        assert sorted(iterlists(ab)) == [("key_a", ["value_a"]), ("key_b", ["value_b"])]
+        assert sorted(iterlistvalues(ab)) == [["value_a"], ["value_b"]]
         assert sorted(iterkeys(ab)) == ["key_a", "key_b"]
 
     def test_get_description(self):
         data = datastructures.OrderedMultiDict()
 
         with pytest.raises(BadRequestKeyError) as exc_info:
-            data['baz']
+            data["baz"]
 
-        assert 'baz' in exc_info.value.get_description()
+        assert "baz" in exc_info.value.get_description()
 
         with pytest.raises(BadRequestKeyError) as exc_info:
-            data.pop('baz')
+            data.pop("baz")
 
-        assert 'baz' in exc_info.value.get_description()
+        assert "baz" in exc_info.value.get_description()
         exc_info.value.args = ()
-        assert 'baz' not in exc_info.value.get_description()
+        assert "baz" not in exc_info.value.get_description()
 
 
 class TestTypeConversionDict(object):
     storage_class = datastructures.TypeConversionDict
 
     def test_value_conversion(self):
-        d = self.storage_class(foo='1')
-        assert d.get('foo', type=int) == 1
+        d = self.storage_class(foo="1")
+        assert d.get("foo", type=int) == 1
 
     def test_return_default_when_conversion_is_not_possible(self):
-        d = self.storage_class(foo='bar')
-        assert d.get('foo', default=-1, type=int) == -1
+        d = self.storage_class(foo="bar")
+        assert d.get("foo", default=-1, type=int) == -1
 
     def test_propagate_exceptions_in_conversion(self):
-        d = self.storage_class(foo='bar')
-        switch = {'a': 1}
+        d = self.storage_class(foo="bar")
+        switch = {"a": 1}
         with pytest.raises(KeyError):
-            d.get('foo', type=lambda x: switch[x])
+            d.get("foo", type=lambda x: switch[x])
 
 
 class TestCombinedMultiDict(object):
     storage_class = datastructures.CombinedMultiDict
 
     def test_basic_interface(self):
-        d1 = datastructures.MultiDict([('foo', '1')])
-        d2 = datastructures.MultiDict([('bar', '2'), ('bar', '3')])
+        d1 = datastructures.MultiDict([("foo", "1")])
+        d2 = datastructures.MultiDict([("bar", "2"), ("bar", "3")])
         d = self.storage_class([d1, d2])
 
         # lookup
-        assert d['foo'] == '1'
-        assert d['bar'] == '2'
-        assert d.getlist('bar') == ['2', '3']
+        assert d["foo"] == "1"
+        assert d["bar"] == "2"
+        assert d.getlist("bar") == ["2", "3"]
 
-        assert sorted(d.items()) == [('bar', '2'), ('foo', '1')]
-        assert sorted(d.items(multi=True)) == \
-            [('bar', '2'), ('bar', '3'), ('foo', '1')]
-        assert 'missingkey' not in d
-        assert 'foo' in d
+        assert sorted(d.items()) == [("bar", "2"), ("foo", "1")]
+        assert sorted(d.items(multi=True)) == [("bar", "2"), ("bar", "3"), ("foo", "1")]
+        assert "missingkey" not in d
+        assert "foo" in d
 
         # type lookup
-        assert d.get('foo', type=int) == 1
-        assert d.getlist('bar', type=int) == [2, 3]
+        assert d.get("foo", type=int) == 1
+        assert d.getlist("bar", type=int) == [2, 3]
 
         # get key errors for missing stuff
         with pytest.raises(KeyError):
-            d['missing']
+            d["missing"]
 
         # make sure that they are immutable
         with pytest.raises(TypeError):
-            d['foo'] = 'blub'
+            d["foo"] = "blub"
 
         # copies are mutable
         d = d.copy()
-        d['foo'] = 'blub'
+        d["foo"] = "blub"
 
         # make sure lists merges
         md1 = datastructures.MultiDict((("foo", "bar"),))
         md2 = datastructures.MultiDict((("foo", "blafasel"),))
         x = self.storage_class((md1, md2))
-        assert list(iterlists(x)) == [('foo', ['bar', 'blafasel'])]
+        assert list(iterlists(x)) == [("foo", ["bar", "blafasel"])]
 
     def test_length(self):
-        d1 = datastructures.MultiDict([('foo', '1')])
-        d2 = datastructures.MultiDict([('bar', '2')])
+        d1 = datastructures.MultiDict([("foo", "1")])
+        d2 = datastructures.MultiDict([("bar", "2")])
         assert len(d1) == len(d2) == 1
         d = self.storage_class([d1, d2])
         assert len(d) == 2
@@ -637,143 +667,135 @@ class TestHeaders(object):
 
     def test_basic_interface(self):
         headers = self.storage_class()
-        headers.add('Content-Type', 'text/plain')
-        headers.add('X-Foo', 'bar')
-        assert 'x-Foo' in headers
-        assert 'Content-type' in headers
+        headers.add("Content-Type", "text/plain")
+        headers.add("X-Foo", "bar")
+        assert "x-Foo" in headers
+        assert "Content-type" in headers
 
-        headers['Content-Type'] = 'foo/bar'
-        assert headers['Content-Type'] == 'foo/bar'
-        assert len(headers.getlist('Content-Type')) == 1
+        headers["Content-Type"] = "foo/bar"
+        assert headers["Content-Type"] == "foo/bar"
+        assert len(headers.getlist("Content-Type")) == 1
 
         # list conversion
-        assert headers.to_wsgi_list() == [
-            ('Content-Type', 'foo/bar'),
-            ('X-Foo', 'bar')
-        ]
-        assert str(headers) == (
-            "Content-Type: foo/bar\r\n"
-            "X-Foo: bar\r\n"
-            "\r\n"
-        )
+        assert headers.to_wsgi_list() == [("Content-Type", "foo/bar"), ("X-Foo", "bar")]
+        assert str(headers) == "Content-Type: foo/bar\r\nX-Foo: bar\r\n\r\n"
         assert str(self.storage_class()) == "\r\n"
 
         # extended add
-        headers.add('Content-Disposition', 'attachment', filename='foo')
-        assert headers['Content-Disposition'] == 'attachment; filename=foo'
+        headers.add("Content-Disposition", "attachment", filename="foo")
+        assert headers["Content-Disposition"] == "attachment; filename=foo"
 
-        headers.add('x', 'y', z='"')
-        assert headers['x'] == r'y; z="\""'
+        headers.add("x", "y", z='"')
+        assert headers["x"] == r'y; z="\""'
 
     def test_defaults_and_conversion(self):
         # defaults
-        headers = self.storage_class([
-            ('Content-Type', 'text/plain'),
-            ('X-Foo',        'bar'),
-            ('X-Bar',        '1'),
-            ('X-Bar',        '2')
-        ])
-        assert headers.getlist('x-bar') == ['1', '2']
-        assert headers.get('x-Bar') == '1'
-        assert headers.get('Content-Type') == 'text/plain'
+        headers = self.storage_class(
+            [
+                ("Content-Type", "text/plain"),
+                ("X-Foo", "bar"),
+                ("X-Bar", "1"),
+                ("X-Bar", "2"),
+            ]
+        )
+        assert headers.getlist("x-bar") == ["1", "2"]
+        assert headers.get("x-Bar") == "1"
+        assert headers.get("Content-Type") == "text/plain"
 
-        assert headers.setdefault('X-Foo', 'nope') == 'bar'
-        assert headers.setdefault('X-Bar', 'nope') == '1'
-        assert headers.setdefault('X-Baz', 'quux') == 'quux'
-        assert headers.setdefault('X-Baz', 'nope') == 'quux'
-        headers.pop('X-Baz')
+        assert headers.setdefault("X-Foo", "nope") == "bar"
+        assert headers.setdefault("X-Bar", "nope") == "1"
+        assert headers.setdefault("X-Baz", "quux") == "quux"
+        assert headers.setdefault("X-Baz", "nope") == "quux"
+        headers.pop("X-Baz")
 
         # type conversion
-        assert headers.get('x-bar', type=int) == 1
-        assert headers.getlist('x-bar', type=int) == [1, 2]
+        assert headers.get("x-bar", type=int) == 1
+        assert headers.getlist("x-bar", type=int) == [1, 2]
 
         # list like operations
-        assert headers[0] == ('Content-Type', 'text/plain')
-        assert headers[:1] == self.storage_class([('Content-Type', 'text/plain')])
+        assert headers[0] == ("Content-Type", "text/plain")
+        assert headers[:1] == self.storage_class([("Content-Type", "text/plain")])
         del headers[:2]
         del headers[-1]
-        assert headers == self.storage_class([('X-Bar', '1')])
+        assert headers == self.storage_class([("X-Bar", "1")])
 
     def test_copying(self):
-        a = self.storage_class([('foo', 'bar')])
+        a = self.storage_class([("foo", "bar")])
         b = a.copy()
-        a.add('foo', 'baz')
-        assert a.getlist('foo') == ['bar', 'baz']
-        assert b.getlist('foo') == ['bar']
+        a.add("foo", "baz")
+        assert a.getlist("foo") == ["bar", "baz"]
+        assert b.getlist("foo") == ["bar"]
 
     def test_popping(self):
-        headers = self.storage_class([('a', 1)])
-        assert headers.pop('a') == 1
-        assert headers.pop('b', 2) == 2
+        headers = self.storage_class([("a", 1)])
+        assert headers.pop("a") == 1
+        assert headers.pop("b", 2) == 2
 
         with pytest.raises(KeyError):
-            headers.pop('c')
+            headers.pop("c")
 
     def test_set_arguments(self):
         a = self.storage_class()
-        a.set('Content-Disposition', 'useless')
-        a.set('Content-Disposition', 'attachment', filename='foo')
-        assert a['Content-Disposition'] == 'attachment; filename=foo'
+        a.set("Content-Disposition", "useless")
+        a.set("Content-Disposition", "attachment", filename="foo")
+        assert a["Content-Disposition"] == "attachment; filename=foo"
 
     def test_reject_newlines(self):
         h = self.storage_class()
 
-        for variation in 'foo\nbar', 'foo\r\nbar', 'foo\rbar':
+        for variation in "foo\nbar", "foo\r\nbar", "foo\rbar":
             with pytest.raises(ValueError):
-                h['foo'] = variation
+                h["foo"] = variation
             with pytest.raises(ValueError):
-                h.add('foo', variation)
+                h.add("foo", variation)
             with pytest.raises(ValueError):
-                h.add('foo', 'test', option=variation)
+                h.add("foo", "test", option=variation)
             with pytest.raises(ValueError):
-                h.set('foo', variation)
+                h.set("foo", variation)
             with pytest.raises(ValueError):
-                h.set('foo', 'test', option=variation)
+                h.set("foo", "test", option=variation)
 
     def test_slicing(self):
         # there's nothing wrong with these being native strings
         # Headers doesn't care about the data types
         h = self.storage_class()
-        h.set('X-Foo-Poo', 'bleh')
-        h.set('Content-Type', 'application/whocares')
-        h.set('X-Forwarded-For', '192.168.0.123')
-        h[:] = [(k, v) for k, v in h if k.startswith(u'X-')]
-        assert list(h) == [
-            ('X-Foo-Poo', 'bleh'),
-            ('X-Forwarded-For', '192.168.0.123')
-        ]
+        h.set("X-Foo-Poo", "bleh")
+        h.set("Content-Type", "application/whocares")
+        h.set("X-Forwarded-For", "192.168.0.123")
+        h[:] = [(k, v) for k, v in h if k.startswith(u"X-")]
+        assert list(h) == [("X-Foo-Poo", "bleh"), ("X-Forwarded-For", "192.168.0.123")]
 
     def test_bytes_operations(self):
         h = self.storage_class()
-        h.set('X-Foo-Poo', 'bleh')
-        h.set('X-Whoops', b'\xff')
-        h.set(b'X-Bytes', b'something')
+        h.set("X-Foo-Poo", "bleh")
+        h.set("X-Whoops", b"\xff")
+        h.set(b"X-Bytes", b"something")
 
-        assert h.get('x-foo-poo', as_bytes=True) == b'bleh'
-        assert h.get('x-whoops', as_bytes=True) == b'\xff'
-        assert h.get('x-bytes') == 'something'
+        assert h.get("x-foo-poo", as_bytes=True) == b"bleh"
+        assert h.get("x-whoops", as_bytes=True) == b"\xff"
+        assert h.get("x-bytes") == "something"
 
     def test_to_wsgi_list(self):
         h = self.storage_class()
-        h.set(u'Key', u'Value')
+        h.set(u"Key", u"Value")
         for key, value in h.to_wsgi_list():
             if PY2:
-                strict_eq(key, b'Key')
-                strict_eq(value, b'Value')
+                strict_eq(key, b"Key")
+                strict_eq(value, b"Value")
             else:
-                strict_eq(key, u'Key')
-                strict_eq(value, u'Value')
+                strict_eq(key, u"Key")
+                strict_eq(value, u"Value")
 
     def test_to_wsgi_list_bytes(self):
         h = self.storage_class()
-        h.set(b'Key', b'Value')
+        h.set(b"Key", b"Value")
         for key, value in h.to_wsgi_list():
             if PY2:
-                strict_eq(key, b'Key')
-                strict_eq(value, b'Value')
+                strict_eq(key, b"Key")
+                strict_eq(value, b"Value")
             else:
-                strict_eq(key, u'Key')
-                strict_eq(value, u'Value')
+                strict_eq(key, u"Key")
+                strict_eq(value, u"Value")
 
 
 class TestEnvironHeaders(object):
@@ -783,64 +805,53 @@ class TestEnvironHeaders(object):
         # this happens in multiple WSGI servers because they
         # use a vary naive way to convert the headers;
         broken_env = {
-            'HTTP_CONTENT_TYPE':        'text/html',
-            'CONTENT_TYPE':             'text/html',
-            'HTTP_CONTENT_LENGTH':      '0',
-            'CONTENT_LENGTH':           '0',
-            'HTTP_ACCEPT':              '*',
-            'wsgi.version':             (1, 0)
+            "HTTP_CONTENT_TYPE": "text/html",
+            "CONTENT_TYPE": "text/html",
+            "HTTP_CONTENT_LENGTH": "0",
+            "CONTENT_LENGTH": "0",
+            "HTTP_ACCEPT": "*",
+            "wsgi.version": (1, 0),
         }
         headers = self.storage_class(broken_env)
         assert headers
         assert len(headers) == 3
         assert sorted(headers) == [
-            ('Accept', '*'),
-            ('Content-Length', '0'),
-            ('Content-Type', 'text/html')
+            ("Accept", "*"),
+            ("Content-Length", "0"),
+            ("Content-Type", "text/html"),
         ]
-        assert not self.storage_class({'wsgi.version': (1, 0)})
-        assert len(self.storage_class({'wsgi.version': (1, 0)})) == 0
+        assert not self.storage_class({"wsgi.version": (1, 0)})
+        assert len(self.storage_class({"wsgi.version": (1, 0)})) == 0
         assert 42 not in headers
 
     def test_skip_empty_special_vars(self):
-        env = {
-            'HTTP_X_FOO':               '42',
-            'CONTENT_TYPE':             '',
-            'CONTENT_LENGTH':           '',
-        }
+        env = {"HTTP_X_FOO": "42", "CONTENT_TYPE": "", "CONTENT_LENGTH": ""}
         headers = self.storage_class(env)
-        assert dict(headers) == {'X-Foo': '42'}
+        assert dict(headers) == {"X-Foo": "42"}
 
-        env = {
-            'HTTP_X_FOO':               '42',
-            'CONTENT_TYPE':             '',
-            'CONTENT_LENGTH':           '0',
-        }
+        env = {"HTTP_X_FOO": "42", "CONTENT_TYPE": "", "CONTENT_LENGTH": "0"}
         headers = self.storage_class(env)
-        assert dict(headers) == {'X-Foo': '42', 'Content-Length': '0'}
+        assert dict(headers) == {"X-Foo": "42", "Content-Length": "0"}
 
     def test_return_type_is_unicode(self):
         # environ contains native strings; we return unicode
-        headers = self.storage_class({
-            'HTTP_FOO': '\xe2\x9c\x93',
-            'CONTENT_TYPE': 'text/plain',
-        })
-        assert headers['Foo'] == u"\xe2\x9c\x93"
-        assert isinstance(headers['Foo'], text_type)
-        assert isinstance(headers['Content-Type'], text_type)
+        headers = self.storage_class(
+            {"HTTP_FOO": "\xe2\x9c\x93", "CONTENT_TYPE": "text/plain"}
+        )
+        assert headers["Foo"] == u"\xe2\x9c\x93"
+        assert isinstance(headers["Foo"], text_type)
+        assert isinstance(headers["Content-Type"], text_type)
         iter_output = dict(iter(headers))
-        assert iter_output['Foo'] == u"\xe2\x9c\x93"
-        assert isinstance(iter_output['Foo'], text_type)
-        assert isinstance(iter_output['Content-Type'], text_type)
+        assert iter_output["Foo"] == u"\xe2\x9c\x93"
+        assert isinstance(iter_output["Foo"], text_type)
+        assert isinstance(iter_output["Content-Type"], text_type)
 
     def test_bytes_operations(self):
-        foo_val = '\xff'
-        h = self.storage_class({
-            'HTTP_X_FOO': foo_val
-        })
+        foo_val = "\xff"
+        h = self.storage_class({"HTTP_X_FOO": foo_val})
 
-        assert h.get('x-foo', as_bytes=True) == b'\xff'
-        assert h.get('x-foo') == u'\xff'
+        assert h.get("x-foo", as_bytes=True) == b"\xff"
+        assert h.get("x-foo") == u"\xff"
 
 
 class TestHeaderSet(object):
@@ -848,21 +859,21 @@ class TestHeaderSet(object):
 
     def test_basic_interface(self):
         hs = self.storage_class()
-        hs.add('foo')
-        hs.add('bar')
-        assert 'Bar' in hs
-        assert hs.find('foo') == 0
-        assert hs.find('BAR') == 1
-        assert hs.find('baz') < 0
-        hs.discard('missing')
-        hs.discard('foo')
-        assert hs.find('foo') < 0
-        assert hs.find('bar') == 0
+        hs.add("foo")
+        hs.add("bar")
+        assert "Bar" in hs
+        assert hs.find("foo") == 0
+        assert hs.find("BAR") == 1
+        assert hs.find("baz") < 0
+        hs.discard("missing")
+        hs.discard("foo")
+        assert hs.find("foo") < 0
+        assert hs.find("bar") == 0
 
         with pytest.raises(IndexError):
-            hs.index('missing')
+            hs.index("missing")
 
-        assert hs.index('bar') == 0
+        assert hs.index("bar") == 0
         assert hs
         hs.clear()
         assert not hs
@@ -910,47 +921,44 @@ class TestCallbackDict(object):
 
     def test_callback_dict_reads(self):
         assert_calls, func = make_call_asserter()
-        initial = {'a': 'foo', 'b': 'bar'}
+        initial = {"a": "foo", "b": "bar"}
         dct = self.storage_class(initial=initial, on_update=func)
-        with assert_calls(0, 'callback triggered by read-only method'):
+        with assert_calls(0, "callback triggered by read-only method"):
             # read-only methods
-            dct['a']
-            dct.get('a')
-            pytest.raises(KeyError, lambda: dct['x'])
-            'a' in dct
+            dct["a"]
+            dct.get("a")
+            pytest.raises(KeyError, lambda: dct["x"])
+            "a" in dct
             list(iter(dct))
             dct.copy()
-        with assert_calls(0, 'callback triggered without modification'):
+        with assert_calls(0, "callback triggered without modification"):
             # methods that may write but don't
-            dct.pop('z', None)
-            dct.setdefault('a')
+            dct.pop("z", None)
+            dct.setdefault("a")
 
     def test_callback_dict_writes(self):
         assert_calls, func = make_call_asserter()
-        initial = {'a': 'foo', 'b': 'bar'}
+        initial = {"a": "foo", "b": "bar"}
         dct = self.storage_class(initial=initial, on_update=func)
-        with assert_calls(8, 'callback not triggered by write method'):
+        with assert_calls(8, "callback not triggered by write method"):
             # always-write methods
-            dct['z'] = 123
-            dct['z'] = 123  # must trigger again
-            del dct['z']
-            dct.pop('b', None)
-            dct.setdefault('x')
+            dct["z"] = 123
+            dct["z"] = 123  # must trigger again
+            del dct["z"]
+            dct.pop("b", None)
+            dct.setdefault("x")
             dct.popitem()
             dct.update([])
             dct.clear()
-        with assert_calls(0, 'callback triggered by failed del'):
-            pytest.raises(KeyError, lambda: dct.__delitem__('x'))
-        with assert_calls(0, 'callback triggered by failed pop'):
-            pytest.raises(KeyError, lambda: dct.pop('x'))
+        with assert_calls(0, "callback triggered by failed del"):
+            pytest.raises(KeyError, lambda: dct.__delitem__("x"))
+        with assert_calls(0, "callback triggered by failed pop"):
+            pytest.raises(KeyError, lambda: dct.pop("x"))
 
 
 class TestCacheControl(object):
-
     def test_repr(self):
-        cc = datastructures.RequestCacheControl(
-            [("max-age", "0"), ("private", "True")],
-        )
+        cc = datastructures.RequestCacheControl([("max-age", "0"), ("private", "True")])
         assert repr(cc) == "<RequestCacheControl max-age='0' private='True'>"
 
 
@@ -958,117 +966,118 @@ class TestAccept(object):
     storage_class = datastructures.Accept
 
     def test_accept_basic(self):
-        accept = self.storage_class([('tinker', 0), ('tailor', 0.333),
-                                     ('soldier', 0.667), ('sailor', 1)])
+        accept = self.storage_class(
+            [("tinker", 0), ("tailor", 0.333), ("soldier", 0.667), ("sailor", 1)]
+        )
         # check __getitem__ on indices
-        assert accept[3] == ('tinker', 0)
-        assert accept[2] == ('tailor', 0.333)
-        assert accept[1] == ('soldier', 0.667)
-        assert accept[0], ('sailor', 1)
+        assert accept[3] == ("tinker", 0)
+        assert accept[2] == ("tailor", 0.333)
+        assert accept[1] == ("soldier", 0.667)
+        assert accept[0], ("sailor", 1)
         # check __getitem__ on string
-        assert accept['tinker'] == 0
-        assert accept['tailor'] == 0.333
-        assert accept['soldier'] == 0.667
-        assert accept['sailor'] == 1
-        assert accept['spy'] == 0
+        assert accept["tinker"] == 0
+        assert accept["tailor"] == 0.333
+        assert accept["soldier"] == 0.667
+        assert accept["sailor"] == 1
+        assert accept["spy"] == 0
         # check quality method
-        assert accept.quality('tinker') == 0
-        assert accept.quality('tailor') == 0.333
-        assert accept.quality('soldier') == 0.667
-        assert accept.quality('sailor') == 1
-        assert accept.quality('spy') == 0
+        assert accept.quality("tinker") == 0
+        assert accept.quality("tailor") == 0.333
+        assert accept.quality("soldier") == 0.667
+        assert accept.quality("sailor") == 1
+        assert accept.quality("spy") == 0
         # check __contains__
-        assert 'sailor' in accept
-        assert 'spy' not in accept
+        assert "sailor" in accept
+        assert "spy" not in accept
         # check index method
-        assert accept.index('tinker') == 3
-        assert accept.index('tailor') == 2
-        assert accept.index('soldier') == 1
-        assert accept.index('sailor') == 0
+        assert accept.index("tinker") == 3
+        assert accept.index("tailor") == 2
+        assert accept.index("soldier") == 1
+        assert accept.index("sailor") == 0
         with pytest.raises(ValueError):
-            accept.index('spy')
+            accept.index("spy")
         # check find method
-        assert accept.find('tinker') == 3
-        assert accept.find('tailor') == 2
-        assert accept.find('soldier') == 1
-        assert accept.find('sailor') == 0
-        assert accept.find('spy') == -1
+        assert accept.find("tinker") == 3
+        assert accept.find("tailor") == 2
+        assert accept.find("soldier") == 1
+        assert accept.find("sailor") == 0
+        assert accept.find("spy") == -1
         # check to_header method
-        assert accept.to_header() == \
-            'sailor,soldier;q=0.667,tailor;q=0.333,tinker;q=0'
+        assert accept.to_header() == "sailor,soldier;q=0.667,tailor;q=0.333,tinker;q=0"
         # check best_match method
-        assert accept.best_match(['tinker', 'tailor', 'soldier', 'sailor'],
-                                 default=None) == 'sailor'
-        assert accept.best_match(['tinker', 'tailor', 'soldier'],
-                                 default=None) == 'soldier'
-        assert accept.best_match(['tinker', 'tailor'], default=None) == \
-            'tailor'
-        assert accept.best_match(['tinker'], default=None) is None
-        assert accept.best_match(['tinker'], default='x') == 'x'
+        assert (
+            accept.best_match(["tinker", "tailor", "soldier", "sailor"], default=None)
+            == "sailor"
+        )
+        assert (
+            accept.best_match(["tinker", "tailor", "soldier"], default=None)
+            == "soldier"
+        )
+        assert accept.best_match(["tinker", "tailor"], default=None) == "tailor"
+        assert accept.best_match(["tinker"], default=None) is None
+        assert accept.best_match(["tinker"], default="x") == "x"
 
     def test_accept_wildcard(self):
-        accept = self.storage_class([('*', 0), ('asterisk', 1)])
-        assert '*' in accept
-        assert accept.best_match(['asterisk', 'star'], default=None) == \
-            'asterisk'
-        assert accept.best_match(['star'], default=None) is None
+        accept = self.storage_class([("*", 0), ("asterisk", 1)])
+        assert "*" in accept
+        assert accept.best_match(["asterisk", "star"], default=None) == "asterisk"
+        assert accept.best_match(["star"], default=None) is None
 
     def test_accept_keep_order(self):
-        accept = self.storage_class([('*', 1)])
+        accept = self.storage_class([("*", 1)])
         assert accept.best_match(["alice", "bob"]) == "alice"
         assert accept.best_match(["bob", "alice"]) == "bob"
-        accept = self.storage_class([('alice', 1), ('bob', 1)])
+        accept = self.storage_class([("alice", 1), ("bob", 1)])
         assert accept.best_match(["alice", "bob"]) == "alice"
         assert accept.best_match(["bob", "alice"]) == "bob"
 
     def test_accept_wildcard_specificity(self):
-        accept = self.storage_class([('asterisk', 0), ('star', 0.5), ('*', 1)])
-        assert accept.best_match(['star', 'asterisk'], default=None) == 'star'
-        assert accept.best_match(['asterisk', 'star'], default=None) == 'star'
-        assert accept.best_match(['asterisk', 'times'], default=None) == \
-            'times'
-        assert accept.best_match(['asterisk'], default=None) is None
+        accept = self.storage_class([("asterisk", 0), ("star", 0.5), ("*", 1)])
+        assert accept.best_match(["star", "asterisk"], default=None) == "star"
+        assert accept.best_match(["asterisk", "star"], default=None) == "star"
+        assert accept.best_match(["asterisk", "times"], default=None) == "times"
+        assert accept.best_match(["asterisk"], default=None) is None
 
 
 class TestMIMEAccept(object):
     storage_class = datastructures.MIMEAccept
 
     def test_accept_wildcard_subtype(self):
-        accept = self.storage_class([('text/*', 1)])
-        assert accept.best_match(['text/html'], default=None) == 'text/html'
-        assert accept.best_match(['image/png', 'text/plain']) == 'text/plain'
-        assert accept.best_match(['image/png'], default=None) is None
+        accept = self.storage_class([("text/*", 1)])
+        assert accept.best_match(["text/html"], default=None) == "text/html"
+        assert accept.best_match(["image/png", "text/plain"]) == "text/plain"
+        assert accept.best_match(["image/png"], default=None) is None
 
     def test_accept_wildcard_specificity(self):
-        accept = self.storage_class([('*/*', 1), ('text/html', 1)])
-        assert accept.best_match(['image/png', 'text/html']) == 'text/html'
-        assert accept.best_match(['image/png', 'text/plain']) == 'image/png'
-        accept = self.storage_class([('*/*', 1), ('text/html', 1),
-                                     ('image/*', 1)])
-        assert accept.best_match(['image/png', 'text/html']) == 'text/html'
-        assert accept.best_match(['text/plain', 'image/png']) == 'image/png'
+        accept = self.storage_class([("*/*", 1), ("text/html", 1)])
+        assert accept.best_match(["image/png", "text/html"]) == "text/html"
+        assert accept.best_match(["image/png", "text/plain"]) == "image/png"
+        accept = self.storage_class([("*/*", 1), ("text/html", 1), ("image/*", 1)])
+        assert accept.best_match(["image/png", "text/html"]) == "text/html"
+        assert accept.best_match(["text/plain", "image/png"]) == "image/png"
 
 
 class TestFileStorage(object):
     storage_class = datastructures.FileStorage
 
     def test_mimetype_always_lowercase(self):
-        file_storage = self.storage_class(content_type='APPLICATION/JSON')
-        assert file_storage.mimetype == 'application/json'
+        file_storage = self.storage_class(content_type="APPLICATION/JSON")
+        assert file_storage.mimetype == "application/json"
 
     def test_bytes_proper_sentinel(self):
         # ensure we iterate over new lines and don't enter into an infinite loop
         import io
+
         unicode_storage = self.storage_class(io.StringIO(u"one\ntwo"))
-        for idx, line in enumerate(unicode_storage):
+        for idx, _line in enumerate(unicode_storage):
             assert idx < 2
         assert idx == 1
         binary_storage = self.storage_class(io.BytesIO(b"one\ntwo"))
-        for idx, line in enumerate(binary_storage):
+        for idx, _line in enumerate(binary_storage):
             assert idx < 2
         assert idx == 1
 
-    @pytest.mark.skipif(PY2, reason='io.IOBase is only needed in PY3.')
+    @pytest.mark.skipif(PY2, reason="io.IOBase is only needed in PY3.")
     @pytest.mark.parametrize("stream", (tempfile.SpooledTemporaryFile, io.BytesIO))
     def test_proxy_can_access_stream_attrs(self, stream):
         """``SpooledTemporaryFile`` doesn't implement some of
@@ -1084,9 +1093,7 @@ class TestFileStorage(object):
             assert hasattr(file_storage, name)
 
 
-@pytest.mark.parametrize(
-    "ranges", ([(0, 1), (-5, None)], [(5, None)])
-)
+@pytest.mark.parametrize("ranges", ([(0, 1), (-5, None)], [(5, None)]))
 def test_range_to_header(ranges):
     header = Range("byes", ranges).to_header()
     r = http.parse_range_header(header)

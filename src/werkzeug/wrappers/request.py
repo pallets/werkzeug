@@ -6,9 +6,14 @@ from .etag import ETagRequestMixin
 from .user_agent import UserAgentMixin
 
 
-class Request(BaseRequest, AcceptMixin, ETagRequestMixin,
-              UserAgentMixin, AuthorizationMixin,
-              CommonRequestDescriptorsMixin):
+class Request(
+    BaseRequest,
+    AcceptMixin,
+    ETagRequestMixin,
+    UserAgentMixin,
+    AuthorizationMixin,
+    CommonRequestDescriptorsMixin,
+):
     """Full featured request object implementing the following mixins:
 
     - :class:`AcceptMixin` for accept header parsing

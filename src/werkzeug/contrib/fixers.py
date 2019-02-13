@@ -28,16 +28,18 @@ This module includes various helpers that fix web server behavior.
 """
 import warnings
 
-try:
-    from urllib import unquote
-except ImportError:
-    from urllib.parse import unquote
+from ..datastructures import Headers
+from ..datastructures import ResponseCacheControl
+from ..http import parse_cache_control_header
+from ..http import parse_options_header
+from ..http import parse_set_header
+from ..middleware.proxy_fix import ProxyFix as _ProxyFix
+from ..useragents import UserAgent
 
-from werkzeug.http import parse_options_header, parse_cache_control_header, \
-    parse_set_header
-from werkzeug.useragents import UserAgent
-from werkzeug.datastructures import Headers, ResponseCacheControl
-from werkzeug.middleware.proxy_fix import ProxyFix as _ProxyFix
+try:
+    from urllib.parse import unquote
+except ImportError:
+    from urllib import unquote
 
 
 class CGIRootFix(object):
@@ -57,7 +59,7 @@ class CGIRootFix(object):
         ``LighttpdCGIRootFix``.
     """
 
-    def __init__(self, app, app_root='/'):
+    def __init__(self, app, app_root="/"):
         warnings.warn(
             "'CGIRootFix' is deprecated as of version 0.15 and will be"
             " removed in version 1.0.",
@@ -68,7 +70,7 @@ class CGIRootFix(object):
         self.app_root = app_root.strip("/")
 
     def __call__(self, environ, start_response):
-        environ['SCRIPT_NAME'] = self.app_root
+        environ["SCRIPT_NAME"] = self.app_root
         return self.app(environ, start_response)
 
 
@@ -84,7 +86,6 @@ class LighttpdCGIRootFix(CGIRootFix):
 
 
 class PathInfoFromRequestUriFix(object):
-
     """On windows environment variables are limited to the system charset
     which makes it impossible to store the `PATH_INFO` variable in the
     environment without loss of information on some systems.
@@ -112,14 +113,13 @@ class PathInfoFromRequestUriFix(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        for key in 'REQUEST_URL', 'REQUEST_URI', 'UNENCODED_URL':
+        for key in "REQUEST_URL", "REQUEST_URI", "UNENCODED_URL":
             if key not in environ:
                 continue
             request_uri = unquote(environ[key])
-            script_name = unquote(environ.get('SCRIPT_NAME', ''))
+            script_name = unquote(environ.get("SCRIPT_NAME", ""))
             if request_uri.startswith(script_name):
-                environ['PATH_INFO'] = request_uri[len(script_name):] \
-                    .split('?', 1)[0]
+                environ["PATH_INFO"] = request_uri[len(script_name) :].split("?", 1)[0]
                 break
         return self.app(environ, start_response)
 
@@ -144,7 +144,6 @@ class ProxyFix(_ProxyFix):
 
 
 class HeaderRewriterFix(object):
-
     """This middleware can remove response headers and add others.  This
     is for example useful to remove the `Date` header from responses if you
     are using a server that adds that header, no matter if it's present or
@@ -182,11 +181,11 @@ class HeaderRewriterFix(object):
                     new_headers.append((key, value))
             new_headers += self.add_headers
             return start_response(status, new_headers, exc_info)
+
         return self.app(environ, rewriting_start_response)
 
 
 class InternetExplorerFix(object):
-
     """This middleware fixes a couple of bugs with Microsoft Internet
     Explorer.  Currently the following fixes are applied:
 
@@ -224,40 +223,40 @@ class InternetExplorerFix(object):
 
     def fix_headers(self, environ, headers, status=None):
         if self.fix_vary:
-            header = headers.get('content-type', '')
+            header = headers.get("content-type", "")
             mimetype, options = parse_options_header(header)
-            if mimetype not in ('text/html', 'text/plain', 'text/sgml'):
-                headers.pop('vary', None)
+            if mimetype not in ("text/html", "text/plain", "text/sgml"):
+                headers.pop("vary", None)
 
-        if self.fix_attach and 'content-disposition' in headers:
-            pragma = parse_set_header(headers.get('pragma', ''))
-            pragma.discard('no-cache')
+        if self.fix_attach and "content-disposition" in headers:
+            pragma = parse_set_header(headers.get("pragma", ""))
+            pragma.discard("no-cache")
             header = pragma.to_header()
             if not header:
-                headers.pop('pragma', '')
+                headers.pop("pragma", "")
             else:
-                headers['Pragma'] = header
-            header = headers.get('cache-control', '')
+                headers["Pragma"] = header
+            header = headers.get("cache-control", "")
             if header:
-                cc = parse_cache_control_header(header,
-                                                cls=ResponseCacheControl)
+                cc = parse_cache_control_header(header, cls=ResponseCacheControl)
                 cc.no_cache = None
                 cc.no_store = False
                 header = cc.to_header()
                 if not header:
-                    headers.pop('cache-control', '')
+                    headers.pop("cache-control", "")
                 else:
-                    headers['Cache-Control'] = header
+                    headers["Cache-Control"] = header
 
     def run_fixed(self, environ, start_response):
         def fixing_start_response(status, headers, exc_info=None):
             headers = Headers(headers)
             self.fix_headers(environ, headers, status)
             return start_response(status, headers.to_wsgi_list(), exc_info)
+
         return self.app(environ, fixing_start_response)
 
     def __call__(self, environ, start_response):
         ua = UserAgent(environ)
-        if ua.browser != 'msie':
+        if ua.browser != "msie":
             return self.app(environ, start_response)
         return self.run_fixed(environ, start_response)

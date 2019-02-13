@@ -9,9 +9,10 @@
     :license: BSD-3-Clause
 """
 import socket
-from math import log
 from datetime import datetime
-from cupoftee.utils import unicodecmp
+from math import log
+
+from .utils import unicodecmp
 
 
 class ServerError(Exception):
@@ -31,15 +32,14 @@ class Syncable(object):
 
 
 class ServerBrowser(Syncable):
-
     def __init__(self, cup):
         self.cup = cup
-        self.servers = cup.db.setdefault('servers', dict)
+        self.servers = cup.db.setdefault("servers", dict)
 
     def _sync(self):
         to_delete = set(self.servers)
         for x in range(1, 17):
-            addr = ('master%d.teeworlds.com' % x, 8300)
+            addr = ("master%d.teeworlds.com" % x, 8300)
             print(addr)
             try:
                 self._sync_master(addr, to_delete)
@@ -48,20 +48,22 @@ class ServerBrowser(Syncable):
         for server_id in to_delete:
             self.servers.pop(server_id, None)
         if not self.servers:
-            raise IOError('no servers found')
+            raise IOError("no servers found")
         self.cup.db.sync()
 
     def _sync_master(self, addr, to_delete):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(5)
-        s.sendto(b'\x20\x00\x00\x00\x00\x48\xff\xff\xff\xffreqt', addr)
+        s.sendto(b"\x20\x00\x00\x00\x00\x48\xff\xff\xff\xffreqt", addr)
         data = s.recvfrom(1024)[0][14:]
         s.close()
 
         for n in range(0, len(data) // 6):
-            addr = ('.'.join(map(str, map(ord, data[n * 6:n * 6 + 4]))),
-                    ord(data[n * 6 + 5]) * 256 + ord(data[n * 6 + 4]))
-            server_id = '%s:%d' % addr
+            addr = (
+                ".".join(map(str, map(ord, data[n * 6 : n * 6 + 4]))),
+                ord(data[n * 6 + 5]) * 256 + ord(data[n * 6 + 4]),
+            )
+            server_id = "%s:%d" % addr
             if server_id in self.servers:
                 if not self.servers[server_id].sync():
                     continue
@@ -74,31 +76,31 @@ class ServerBrowser(Syncable):
 
 
 class Server(Syncable):
-
     def __init__(self, addr, server_id):
         self.addr = addr
         self.id = server_id
         self.players = []
         if not self.sync():
-            raise ServerError('server not responding in time')
+            raise ServerError("server not responding in time")
 
     def _sync(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(1)
-        s.sendto(b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xffgief', self.addr)
-        bits = s.recvfrom(1024)[0][14:].split(b'\x00')
+        s.sendto(b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xffgief", self.addr)
+        bits = s.recvfrom(1024)[0][14:].split(b"\x00")
         s.close()
         self.version, server_name, map_name = bits[:3]
-        self.name = server_name.decode('latin1')
-        self.map = map_name.decode('latin1')
+        self.name = server_name.decode("latin1")
+        self.map = map_name.decode("latin1")
         self.gametype = bits[3]
-        self.flags, self.progression, player_count, \
-            self.max_players = map(int, bits[4:8])
+        self.flags, self.progression, player_count, self.max_players = map(
+            int, bits[4:8]
+        )
 
         # sync the player stats
         players = dict((p.name, p) for p in self.players)
         for i in range(player_count):
-            name = bits[8 + i * 2].decode('latin1')
+            name = bits[8 + i * 2].decode("latin1")
             score = int(bits[9 + i * 2])
 
             # update existing player
@@ -112,7 +114,7 @@ class Server(Syncable):
         for player in players.values():
             try:
                 self.players.remove(player)
-            except:
+            except Exception:
                 pass
 
         # sort the player list and count them
@@ -124,7 +126,6 @@ class Server(Syncable):
 
 
 class Player(object):
-
     def __init__(self, server, name, score):
         self.server = server
         self.name = name

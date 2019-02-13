@@ -8,12 +8,12 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import pytest
-
-import time
 import copy
+import time
 from functools import partial
 from threading import Thread
+
+import pytest
 
 from werkzeug import local
 
@@ -28,8 +28,8 @@ def test_basic_local():
         ns.foo = idx
         time.sleep(0.02)
         values.append(ns.foo)
-    threads = [Thread(target=value_setter, args=(x,))
-               for x in [1, 2, 3]]
+
+    threads = [Thread(target=value_setter, args=(x,)) for x in [1, 2, 3]]
     for thread in threads:
         thread.start()
     time.sleep(0.2)
@@ -37,6 +37,7 @@ def test_basic_local():
 
     def delfoo():
         del ns.foo
+
     delfoo()
     pytest.raises(AttributeError, lambda: ns.foo)
     pytest.raises(AttributeError, delfoo)
@@ -48,7 +49,7 @@ def test_local_release():
     ns = local.Local()
     ns.foo = 42
     local.release_local(ns)
-    assert not hasattr(ns, 'foo')
+    assert not hasattr(ns, "foo")
 
     ls = local.LocalStack()
     ls.push(42)
@@ -122,7 +123,7 @@ def test_local_stack():
     assert proxy == (1, 2)
     ls.pop()
     ls.pop()
-    assert repr(proxy) == '<LocalProxy unbound>'
+    assert repr(proxy) == "<LocalProxy unbound>"
 
     assert ident not in ls._local.__storage__
 
@@ -144,18 +145,18 @@ def test_custom_idents():
     local.LocalManager([ns, stack], ident_func=lambda: ident)
 
     ns.foo = 42
-    stack.push({'foo': 42})
+    stack.push({"foo": 42})
     ident = 1
     ns.foo = 23
-    stack.push({'foo': 23})
+    stack.push({"foo": 23})
     ident = 0
     assert ns.foo == 42
-    assert stack.top['foo'] == 42
+    assert stack.top["foo"] == 42
     stack.pop()
     assert stack.top is None
     ident = 1
     assert ns.foo == 23
-    assert stack.top['foo'] == 23
+    assert stack.top["foo"] == 23
     stack.pop()
     assert stack.top is None
 
@@ -169,6 +170,7 @@ def test_deepcopy_on_proxy():
 
         def __deepcopy__(self, memo):
             return self
+
     f = Foo()
     p = local.LocalProxy(lambda: f)
     assert p.attr == 42
@@ -186,7 +188,7 @@ def test_deepcopy_on_proxy():
 
 def test_local_proxy_wrapped_attribute():
     class SomeClassWithWrapped(object):
-        __wrapped__ = 'wrapped'
+        __wrapped__ = "wrapped"
 
     def lookup_func():
         return 42
@@ -203,5 +205,5 @@ def test_local_proxy_wrapped_attribute():
     ns.foo = SomeClassWithWrapped()
     ns.bar = 42
 
-    assert ns('foo').__wrapped__ == 'wrapped'
-    pytest.raises(AttributeError, lambda: ns('bar').__wrapped__)
+    assert ns("foo").__wrapped__ == "wrapped"
+    pytest.raises(AttributeError, lambda: ns("bar").__wrapped__)

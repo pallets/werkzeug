@@ -8,7 +8,7 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from coolmagic.utils import ThreadedRequest
+from .utils import ThreadedRequest
 
 
 #: a thread local proxy request object

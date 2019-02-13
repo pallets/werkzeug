@@ -9,4 +9,4 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from simplewiki.application import SimpleWiki
+from .application import SimpleWiki

@@ -12,80 +12,82 @@
     :license: BSD-3-Clause
 """
 import re
+import warnings
 
 
 class UserAgentParser(object):
-
     """A simple user agent parser.  Used by the `UserAgent`."""
 
     platforms = (
-        ('cros', 'chromeos'),
-        ('iphone|ios', 'iphone'),
-        ('ipad', 'ipad'),
-        (r'darwin|mac|os\s*x', 'macos'),
-        ('win', 'windows'),
-        (r'android', 'android'),
-        ('netbsd', 'netbsd'),
-        ('openbsd', 'openbsd'),
-        ('freebsd', 'freebsd'),
-        ('dragonfly', 'dragonflybsd'),
-        ('(sun|i86)os', 'solaris'),
-        (r'x11|lin(\b|ux)?', 'linux'),
-        (r'nintendo\s+wii', 'wii'),
-        ('irix', 'irix'),
-        ('hp-?ux', 'hpux'),
-        ('aix', 'aix'),
-        ('sco|unix_sv', 'sco'),
-        ('bsd', 'bsd'),
-        ('amiga', 'amiga'),
-        ('blackberry|playbook', 'blackberry'),
-        ('symbian', 'symbian')
+        ("cros", "chromeos"),
+        ("iphone|ios", "iphone"),
+        ("ipad", "ipad"),
+        (r"darwin|mac|os\s*x", "macos"),
+        ("win", "windows"),
+        (r"android", "android"),
+        ("netbsd", "netbsd"),
+        ("openbsd", "openbsd"),
+        ("freebsd", "freebsd"),
+        ("dragonfly", "dragonflybsd"),
+        ("(sun|i86)os", "solaris"),
+        (r"x11|lin(\b|ux)?", "linux"),
+        (r"nintendo\s+wii", "wii"),
+        ("irix", "irix"),
+        ("hp-?ux", "hpux"),
+        ("aix", "aix"),
+        ("sco|unix_sv", "sco"),
+        ("bsd", "bsd"),
+        ("amiga", "amiga"),
+        ("blackberry|playbook", "blackberry"),
+        ("symbian", "symbian"),
     )
     browsers = (
-        ('googlebot', 'google'),
-        ('msnbot', 'msn'),
-        ('yahoo', 'yahoo'),
-        ('ask jeeves', 'ask'),
-        (r'aol|america\s+online\s+browser', 'aol'),
-        ('opera', 'opera'),
-        ('edge', 'edge'),
-        ('chrome|crios', 'chrome'),
-        ('seamonkey', 'seamonkey'),
-        ('firefox|firebird|phoenix|iceweasel', 'firefox'),
-        ('galeon', 'galeon'),
-        ('safari|version', 'safari'),
-        ('webkit', 'webkit'),
-        ('camino', 'camino'),
-        ('konqueror', 'konqueror'),
-        ('k-meleon', 'kmeleon'),
-        ('netscape', 'netscape'),
-        (r'msie|microsoft\s+internet\s+explorer|trident/.+? rv:', 'msie'),
-        ('lynx', 'lynx'),
-        ('links', 'links'),
-        ('Baiduspider', 'baidu'),
-        ('bingbot', 'bing'),
-        ('mozilla', 'mozilla')
+        ("googlebot", "google"),
+        ("msnbot", "msn"),
+        ("yahoo", "yahoo"),
+        ("ask jeeves", "ask"),
+        (r"aol|america\s+online\s+browser", "aol"),
+        ("opera", "opera"),
+        ("edge", "edge"),
+        ("chrome|crios", "chrome"),
+        ("seamonkey", "seamonkey"),
+        ("firefox|firebird|phoenix|iceweasel", "firefox"),
+        ("galeon", "galeon"),
+        ("safari|version", "safari"),
+        ("webkit", "webkit"),
+        ("camino", "camino"),
+        ("konqueror", "konqueror"),
+        ("k-meleon", "kmeleon"),
+        ("netscape", "netscape"),
+        (r"msie|microsoft\s+internet\s+explorer|trident/.+? rv:", "msie"),
+        ("lynx", "lynx"),
+        ("links", "links"),
+        ("Baiduspider", "baidu"),
+        ("bingbot", "bing"),
+        ("mozilla", "mozilla"),
     )
 
-    _browser_version_re = r'(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?'
+    _browser_version_re = r"(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?"
     _language_re = re.compile(
-        r'(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|'
-        r'(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)'
+        r"(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|"
+        r"(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)"
     )
 
     def __init__(self):
         self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platforms]
-        self.browsers = [(b, re.compile(self._browser_version_re % a, re.I))
-                         for a, b in self.browsers]
+        self.browsers = [
+            (b, re.compile(self._browser_version_re % a, re.I))
+            for a, b in self.browsers
+        ]
 
     def __call__(self, user_agent):
-        for platform, regex in self.platforms:
+        for platform, regex in self.platforms:  # noqa: B007
             match = regex.search(user_agent)
             if match is not None:
                 break
         else:
             platform = None
-        for browser, regex in self.browsers:
+        for browser, regex in self.browsers:  # noqa: B007
             match = regex.search(user_agent)
             if match is not None:
                 version = match.group(1)
@@ -101,7 +103,6 @@ class UserAgentParser(object):
 
 
 class UserAgent(object):
-
     """Represents a user agent.  Pass it a WSGI environment or a user agent
     string and you can inspect some of the details from the user agent
     string via the attributes.  The following attributes exist:
@@ -181,10 +182,11 @@ class UserAgent(object):
 
     def __init__(self, environ_or_string):
         if isinstance(environ_or_string, dict):
-            environ_or_string = environ_or_string.get('HTTP_USER_AGENT', '')
+            environ_or_string = environ_or_string.get("HTTP_USER_AGENT", "")
         self.string = environ_or_string
-        self.platform, self.browser, self.version, self.language = \
-            self._parser(environ_or_string)
+        self.platform, self.browser, self.version, self.language = self._parser(
+            environ_or_string
+        )
 
     def to_header(self):
         return self.string
@@ -198,16 +200,21 @@ class UserAgent(object):
     __bool__ = __nonzero__
 
     def __repr__(self):
-        return '<%s %r/%s>' % (
-            self.__class__.__name__,
-            self.browser,
-            self.version
+        return "<%s %r/%s>" % (self.__class__.__name__, self.browser, self.version)
+
+
+# DEPRECATED
+from .wrappers import UserAgentMixin as _UserAgentMixin
+
+
+class UserAgentMixin(_UserAgentMixin):
+    @property
+    def user_agent(self, *args, **kwargs):
+        warnings.warn(
+            "'werkzeug.useragents.UserAgentMixin' should be imported"
+            " from 'werkzeug.wrappers.UserAgentMixin'. This old import"
+            " will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-
-
-# conceptionally this belongs in this module but because we want to lazily
-# load the user agent module (which happens in wrappers.py) we have to import
-# it afterwards.  The class itself has the module set to this module so
-# pickle, inspect and similar modules treat the object as if it was really
-# implemented here.
-from werkzeug.wrappers import UserAgentMixin  # noqa
+        return super(_UserAgentMixin, self).user_agent

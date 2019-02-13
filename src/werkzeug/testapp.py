@@ -9,15 +9,19 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import base64
 import os
 import sys
-import werkzeug
 from textwrap import wrap
-from werkzeug.wrappers import BaseRequest as Request, BaseResponse as Response
-from werkzeug.utils import escape
-import base64
 
-logo = Response(base64.b64decode('''
+import werkzeug
+from .utils import escape
+from .wrappers import BaseRequest as Request
+from .wrappers import BaseResponse as Response
+
+logo = Response(
+    base64.b64decode(
+        """
 R0lGODlhoACgAOMIAAEDACwpAEpCAGdgAJaKAM28AOnVAP3rAP/////////
 //////////////////////yH5BAEKAAgALAAAAACgAKAAAAT+EMlJq704680R+F0ojmRpnuj0rWnrv
 nB8rbRs33gu0bzu/0AObxgsGn3D5HHJbCUFyqZ0ukkSDlAidctNFg7gbI9LZlrBaHGtzAae0eloe25
@@ -51,10 +55,13 @@ UpyGlhjBUljyjHhWpf8OFaXwhp9O4T1gU9UeyPPa8A2l0p1kNqPXEVRm1AOs1oAGZU596t6SOR2mcB
 Oco1srWtkaVrMUzIErrKri85keKqRQYX9VX0/eAUK1hrSu6HMEX3Qh2sCh0q0D2CtnUqS4hj62sE/z
 aDs2Sg7MBS6xnQeooc2R2tC9YrKpEi9pLXfYXp20tDCpSP8rKlrD4axprb9u1Df5hSbz9QU0cRpfgn
 kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
-='''), mimetype='image/png')
+="""
+    ),
+    mimetype="image/png",
+)
 
 
-TEMPLATE = u'''\
+TEMPLATE = u"""\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
@@ -130,24 +137,27 @@ TEMPLATE = u'''\
     environments.
   <ul class="path">%(sys_path)s</ul>
 </div>
-'''
+"""
 
 
 def iter_sys_path():
-    if os.name == 'posix':
+    if os.name == "posix":
+
         def strip(x):
-            prefix = os.path.expanduser('~')
+            prefix = os.path.expanduser("~")
             if x.startswith(prefix):
-                x = '~' + x[len(prefix):]
+                x = "~" + x[len(prefix) :]
             return x
+
     else:
-        strip = lambda x: x
+
+        def strip(x):
+            return x
 
     cwd = os.path.abspath(os.getcwd())
     for item in sys.path:
         path = os.path.join(cwd, item or os.path.curdir)
-        yield strip(os.path.normpath(path)), \
-            not os.path.isdir(path), path != item
+        yield strip(os.path.normpath(path)), not os.path.isdir(path), path != item
 
 
 def render_testapp(req):
@@ -156,51 +166,51 @@ def render_testapp(req):
     except ImportError:
         eggs = ()
     else:
-        eggs = sorted(pkg_resources.working_set,
-                      key=lambda x: x.project_name.lower())
+        eggs = sorted(pkg_resources.working_set, key=lambda x: x.project_name.lower())
     python_eggs = []
     for egg in eggs:
         try:
             version = egg.version
         except (ValueError, AttributeError):
-            version = 'unknown'
-        python_eggs.append('<li>%s <small>[%s]</small>' % (
-            escape(egg.project_name),
-            escape(version)
-        ))
+            version = "unknown"
+        python_eggs.append(
+            "<li>%s <small>[%s]</small>" % (escape(egg.project_name), escape(version))
+        )
 
     wsgi_env = []
-    sorted_environ = sorted(req.environ.items(),
-                            key=lambda x: repr(x[0]).lower())
+    sorted_environ = sorted(req.environ.items(), key=lambda x: repr(x[0]).lower())
     for key, value in sorted_environ:
-        wsgi_env.append('<tr><th>%s<td><code>%s</code>' % (
-            escape(str(key)),
-            ' '.join(wrap(escape(repr(value))))
-        ))
+        wsgi_env.append(
+            "<tr><th>%s<td><code>%s</code>"
+            % (escape(str(key)), " ".join(wrap(escape(repr(value)))))
+        )
 
     sys_path = []
     for item, virtual, expanded in iter_sys_path():
         class_ = []
         if virtual:
-            class_.append('virtual')
+            class_.append("virtual")
         if expanded:
-            class_.append('exp')
-        sys_path.append('<li%s>%s' % (
-            ' class="%s"' % ' '.join(class_) if class_ else '',
-            escape(item)
-        ))
+            class_.append("exp")
+        sys_path.append(
+            "<li%s>%s"
+            % (' class="%s"' % " ".join(class_) if class_ else "", escape(item))
+        )
 
-    return (TEMPLATE % {
-        'python_version':   '<br>'.join(escape(sys.version).splitlines()),
-        'platform':         escape(sys.platform),
-        'os':               escape(os.name),
-        'api_version':      sys.api_version,
-        'byteorder':        sys.byteorder,
-        'werkzeug_version': werkzeug.__version__,
-        'python_eggs':      '\n'.join(python_eggs),
-        'wsgi_env':         '\n'.join(wsgi_env),
-        'sys_path':         '\n'.join(sys_path)
-    }).encode('utf-8')
+    return (
+        TEMPLATE
+        % {
+            "python_version": "<br>".join(escape(sys.version).splitlines()),
+            "platform": escape(sys.platform),
+            "os": escape(os.name),
+            "api_version": sys.api_version,
+            "byteorder": sys.byteorder,
+            "werkzeug_version": werkzeug.__version__,
+            "python_eggs": "\n".join(python_eggs),
+            "wsgi_env": "\n".join(wsgi_env),
+            "sys_path": "\n".join(sys_path),
+        }
+    ).encode("utf-8")
 
 
 def test_app(environ, start_response):
@@ -218,13 +228,14 @@ def test_app(environ, start_response):
     the Python interpreter and the installed libraries.
     """
     req = Request(environ, populate_request=False)
-    if req.args.get('resource') == 'logo':
+    if req.args.get("resource") == "logo":
         response = logo
     else:
-        response = Response(render_testapp(req), mimetype='text/html')
+        response = Response(render_testapp(req), mimetype="text/html")
     return response(environ, start_response)
 
 
-if __name__ == '__main__':
-    from werkzeug.serving import run_simple
-    run_simple('localhost', 5000, test_app, use_reloader=True)
+if __name__ == "__main__":
+    from .serving import run_simple
+
+    run_simple("localhost", 5000, test_app, use_reloader=True)

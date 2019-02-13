@@ -22,6 +22,7 @@ def _run_wsgi_app(*args):
     """
     global _run_wsgi_app
     from ..test import run_wsgi_app as _run_wsgi_app
+
     return _run_wsgi_app(*args)
 
 
@@ -36,7 +37,7 @@ def _warn_if_string(iterable):
             " client one character at a time. This is almost never"
             " intended behavior, use 'response.data' to assign strings"
             " to the response object.",
-            stacklevel=2
+            stacklevel=2,
         )
 
 
@@ -129,13 +130,13 @@ class BaseResponse(object):
     """
 
     #: the charset of the response.
-    charset = 'utf-8'
+    charset = "utf-8"
 
     #: the default status if none is provided.
     default_status = 200
 
     #: the default mimetype if none is provided.
-    default_mimetype = 'text/plain'
+    default_mimetype = "text/plain"
 
     #: if set to `False` accessing properties on the response object will
     #: not try to consume the response iterator and convert it into a list.
@@ -169,8 +170,15 @@ class BaseResponse(object):
     #: .. _`cookie`: http://browsercookielimits.squawky.net/
     max_cookie_size = 4093
 
-    def __init__(self, response=None, status=None, headers=None,
-                 mimetype=None, content_type=None, direct_passthrough=False):
+    def __init__(
+        self,
+        response=None,
+        status=None,
+        headers=None,
+        mimetype=None,
+        content_type=None,
+        direct_passthrough=False,
+    ):
         if isinstance(headers, Headers):
             self.headers = headers
         elif not headers:
@@ -179,13 +187,13 @@ class BaseResponse(object):
             self.headers = Headers(headers)
 
         if content_type is None:
-            if mimetype is None and 'content-type' not in self.headers:
+            if mimetype is None and "content-type" not in self.headers:
                 mimetype = self.default_mimetype
             if mimetype is not None:
                 mimetype = get_content_type(mimetype, self.charset)
             content_type = mimetype
         if content_type is not None:
-            self.headers['Content-Type'] = content_type
+            self.headers["Content-Type"] = content_type
         if status is None:
             status = self.default_status
         if isinstance(status, integer_types):
@@ -218,14 +226,10 @@ class BaseResponse(object):
 
     def __repr__(self):
         if self.is_sequence:
-            body_info = '%d bytes' % sum(map(len, self.iter_encoded()))
+            body_info = "%d bytes" % sum(map(len, self.iter_encoded()))
         else:
-            body_info = 'streamed' if self.is_streamed else 'likely-streamed'
-        return '<%s %s [%s]>' % (
-            self.__class__.__name__,
-            body_info,
-            self.status
-        )
+            body_info = "streamed" if self.is_streamed else "likely-streamed"
+        return "<%s %s [%s]>" % (self.__class__.__name__, body_info, self.status)
 
     @classmethod
     def force_type(cls, response, environ=None):
@@ -258,8 +262,10 @@ class BaseResponse(object):
         """
         if not isinstance(response, BaseResponse):
             if environ is None:
-                raise TypeError('cannot convert WSGI application into '
-                                'response objects without an environ')
+                raise TypeError(
+                    "cannot convert WSGI application into response"
+                    " objects without an environ"
+                )
             response = BaseResponse(*_run_wsgi_app(response, environ))
         response.__class__ = cls
         return response
@@ -286,11 +292,13 @@ class BaseResponse(object):
     def _set_status_code(self, code):
         self._status_code = code
         try:
-            self._status = '%d %s' % (code, HTTP_STATUS_CODES[code].upper())
+            self._status = "%d %s" % (code, HTTP_STATUS_CODES[code].upper())
         except KeyError:
-            self._status = '%d UNKNOWN' % code
-    status_code = property(_get_status_code, _set_status_code,
-                           doc='The HTTP Status code as number')
+            self._status = "%d UNKNOWN" % code
+
+    status_code = property(
+        _get_status_code, _set_status_code, doc="The HTTP Status code as number"
+    )
     del _get_status_code, _set_status_code
 
     def _get_status(self):
@@ -300,16 +308,17 @@ class BaseResponse(object):
         try:
             self._status = to_native(value)
         except AttributeError:
-            raise TypeError('Invalid status argument')
+            raise TypeError("Invalid status argument")
 
         try:
             self._status_code = int(self._status.split(None, 1)[0])
         except ValueError:
             self._status_code = 0
-            self._status = '0 %s' % self._status
+            self._status = "0 %s" % self._status
         except IndexError:
-            raise ValueError('Empty status argument')
-    status = property(_get_status, _set_status, doc='The HTTP Status code')
+            raise ValueError("Empty status argument")
+
+    status = property(_get_status, _set_status, doc="The HTTP Status code")
     del _get_status, _set_status
 
     def get_data(self, as_text=False):
@@ -326,7 +335,7 @@ class BaseResponse(object):
         .. versionadded:: 0.9
         """
         self._ensure_sequence()
-        rv = b''.join(self.iter_encoded())
+        rv = b"".join(self.iter_encoded())
         if as_text:
             rv = rv.decode(self.charset)
         return rv
@@ -346,12 +355,12 @@ class BaseResponse(object):
             value = bytes(value)
         self.response = [value]
         if self.automatically_set_content_length:
-            self.headers['Content-Length'] = str(len(value))
+            self.headers["Content-Length"] = str(len(value))
 
     data = property(
         get_data,
         set_data,
-        doc='A descriptor that calls :meth:`get_data` and :meth:`set_data`.'
+        doc="A descriptor that calls :meth:`get_data` and :meth:`set_data`.",
     )
 
     def calculate_content_length(self):
@@ -375,14 +384,16 @@ class BaseResponse(object):
                 self.response = list(self.response)
             return
         if self.direct_passthrough:
-            raise RuntimeError('Attempted implicit sequence conversion '
-                               'but the response object is in direct '
-                               'passthrough mode.')
+            raise RuntimeError(
+                "Attempted implicit sequence conversion but the"
+                " response object is in direct passthrough mode."
+            )
         if not self.implicit_sequence_conversion:
-            raise RuntimeError('The response object required the iterable '
-                               'to be a sequence, but the implicit '
-                               'conversion was disabled.  Call '
-                               'make_sequence() yourself.')
+            raise RuntimeError(
+                "The response object required the iterable to be a"
+                " sequence, but the implicit conversion was disabled."
+                " Call make_sequence() yourself."
+            )
         self.make_sequence()
 
     def make_sequence(self):
@@ -397,7 +408,7 @@ class BaseResponse(object):
             # if we consume an iterable we have to ensure that the close
             # method of the iterable is called if available when we tear
             # down the response
-            close = getattr(self.response, 'close', None)
+            close = getattr(self.response, "close", None)
             self.response = list(self.iter_encoded())
             if close is not None:
                 self.call_on_close(close)
@@ -415,9 +426,18 @@ class BaseResponse(object):
         # value from get_app_iter or iter_encoded.
         return _iter_encoded(self.response, self.charset)
 
-    def set_cookie(self, key, value='', max_age=None, expires=None,
-                   path='/', domain=None, secure=False, httponly=False,
-                   samesite=None):
+    def set_cookie(
+        self,
+        key,
+        value="",
+        max_age=None,
+        expires=None,
+        path="/",
+        domain=None,
+        secure=False,
+        httponly=False,
+        samesite=None,
+    ):
         """Sets a cookie. The parameters are the same as in the cookie `Morsel`
         object in the Python standard library but it accepts unicode data, too.
 
@@ -445,21 +465,24 @@ class BaseResponse(object):
                          be attached to requests if those requests are
                          "same-site".
         """
-        self.headers.add('Set-Cookie', dump_cookie(
-            key,
-            value=value,
-            max_age=max_age,
-            expires=expires,
-            path=path,
-            domain=domain,
-            secure=secure,
-            httponly=httponly,
-            charset=self.charset,
-            max_size=self.max_cookie_size,
-            samesite=samesite
-        ))
+        self.headers.add(
+            "Set-Cookie",
+            dump_cookie(
+                key,
+                value=value,
+                max_age=max_age,
+                expires=expires,
+                path=path,
+                domain=domain,
+                secure=secure,
+                httponly=httponly,
+                charset=self.charset,
+                max_size=self.max_cookie_size,
+                samesite=samesite,
+            ),
+        )
 
-    def delete_cookie(self, key, path='/', domain=None):
+    def delete_cookie(self, key, path="/", domain=None):
         """Delete a cookie.  Fails silently if key doesn't exist.
 
         :param key: the key (name) of the cookie to be deleted.
@@ -503,7 +526,7 @@ class BaseResponse(object):
         .. versionadded:: 0.9
            Can now be used in a with statement.
         """
-        if hasattr(self.response, 'close'):
+        if hasattr(self.response, "close"):
             self.response.close()
         for func in self._on_close:
             func()
@@ -525,7 +548,7 @@ class BaseResponse(object):
         # we explicitly set the length to a list of the *encoded* response
         # iterator.  Even if the implicit sequence conversion is disabled.
         self.response = list(self.iter_encoded())
-        self.headers['Content-Length'] = str(sum(map(len, self.response)))
+        self.headers["Content-Length"] = str(sum(map(len, self.response)))
 
     def get_wsgi_headers(self, environ):
         """This is automatically called right before the response is started
@@ -562,11 +585,11 @@ class BaseResponse(object):
         # speedup.
         for key, value in headers:
             ikey = key.lower()
-            if ikey == u'location':
+            if ikey == u"location":
                 location = value
-            elif ikey == u'content-location':
+            elif ikey == u"content-location":
                 content_location = value
-            elif ikey == u'content-length':
+            elif ikey == u"content-length":
                 content_length = value
 
         # make sure the location header is an absolute URL
@@ -583,17 +606,17 @@ class BaseResponse(object):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
             if location != old_location:
-                headers['Location'] = location
+                headers["Location"] = location
 
         # make sure the content location is a URL
-        if content_location is not None and \
-           isinstance(content_location, text_type):
-            headers['Content-Location'] = iri_to_uri(content_location)
+        if content_location is not None and isinstance(content_location, text_type):
+            headers["Content-Location"] = iri_to_uri(content_location)
 
         if 100 <= status < 200 or status == 204:
-            # Per section 3.3.2 of RFC 7230, "a server MUST NOT send a Content-Length header field
-            # in any response with a status code of 1xx (Informational) or 204 (No Content)."
-            headers.remove('Content-Length')
+            # Per section 3.3.2 of RFC 7230, "a server MUST NOT send a
+            # Content-Length header field in any response with a status
+            # code of 1xx (Informational) or 204 (No Content)."
+            headers.remove("Content-Length")
         elif status == 304:
             remove_entity_headers(headers)
 
@@ -602,19 +625,21 @@ class BaseResponse(object):
         # flattening the iterator or encoding of unicode strings in
         # the response.  We however should not do that if we have a 304
         # response.
-        if self.automatically_set_content_length and \
-           self.is_sequence and content_length is None and \
-           status not in (204, 304) and \
-           not (100 <= status < 200):
+        if (
+            self.automatically_set_content_length
+            and self.is_sequence
+            and content_length is None
+            and status not in (204, 304)
+            and not (100 <= status < 200)
+        ):
             try:
-                content_length = sum(len(to_bytes(x, 'ascii'))
-                                     for x in self.response)
+                content_length = sum(len(to_bytes(x, "ascii")) for x in self.response)
             except UnicodeError:
                 # aha, something non-bytestringy in there, too bad, we
                 # can't safely figure out the length of the response.
                 pass
             else:
-                headers['Content-Length'] = str(content_length)
+                headers["Content-Length"] = str(content_length)
 
         return headers
 
@@ -633,8 +658,11 @@ class BaseResponse(object):
         :return: a response iterable.
         """
         status = self.status_code
-        if environ['REQUEST_METHOD'] == 'HEAD' or \
-           100 <= status < 200 or status in (204, 304):
+        if (
+            environ["REQUEST_METHOD"] == "HEAD"
+            or 100 <= status < 200
+            or status in (204, 304)
+        ):
             iterable = ()
         elif self.direct_passthrough:
             if __debug__:

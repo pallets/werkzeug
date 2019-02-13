@@ -59,23 +59,23 @@
 """
 import sys
 
+import werkzeug
+
 # Because of bootstrapping reasons we need to manually patch ourselves
 # onto our parent module.
-import werkzeug
 werkzeug.exceptions = sys.modules[__name__]
 
-from werkzeug._internal import _get_environ
-from werkzeug._compat import iteritems, integer_types, text_type, \
-    implements_to_string
-
-from werkzeug.wrappers import Response
+from ._compat import implements_to_string
+from ._compat import integer_types
+from ._compat import iteritems
+from ._compat import text_type
+from ._internal import _get_environ
+from .wrappers import Response
 
 
 @implements_to_string
 class HTTPException(Exception):
-
-    """
-    Baseclass for all HTTP exceptions.  This exception can be called as WSGI
+    """Baseclass for all HTTP exceptions.  This exception can be called as WSGI
     application to render a default error page or you can catch the subclasses
     of it independently and render nicer error messages.
     """
@@ -102,6 +102,7 @@ class HTTPException(Exception):
         .. versionchanged:: 0.15
             The description includes the wrapped exception message.
         """
+
         class newcls(cls, exception):
             def __init__(self, arg=None, *args, **kwargs):
                 super(cls, self).__init__(*args, **kwargs)
@@ -116,41 +117,43 @@ class HTTPException(Exception):
 
                 if self.args:
                     out += "<p><pre><code>{}: {}</code></pre></p>".format(
-                        exception.__name__,
-                        escape(exception.__str__(self))
+                        exception.__name__, escape(exception.__str__(self))
                     )
 
                 return out
 
-        newcls.__module__ = sys._getframe(1).f_globals.get('__name__')
+        newcls.__module__ = sys._getframe(1).f_globals.get("__name__")
         newcls.__name__ = name or cls.__name__ + exception.__name__
         return newcls
 
     @property
     def name(self):
         """The status name."""
-        return HTTP_STATUS_CODES.get(self.code, 'Unknown Error')
+        return HTTP_STATUS_CODES.get(self.code, "Unknown Error")
 
     def get_description(self, environ=None):
         """Get the description."""
-        return u'<p>%s</p>' % escape(self.description)
+        return u"<p>%s</p>" % escape(self.description)
 
     def get_body(self, environ=None):
         """Get the HTML body."""
-        return text_type((
-            u'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-            u'<title>%(code)s %(name)s</title>\n'
-            u'<h1>%(name)s</h1>\n'
-            u'%(description)s\n'
-        ) % {
-            'code':         self.code,
-            'name':         escape(self.name),
-            'description':  self.get_description(environ)
-        })
+        return text_type(
+            (
+                u'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+                u"<title>%(code)s %(name)s</title>\n"
+                u"<h1>%(name)s</h1>\n"
+                u"%(description)s\n"
+            )
+            % {
+                "code": self.code,
+                "name": escape(self.name),
+                "description": self.get_description(environ),
+            }
+        )
 
     def get_headers(self, environ=None):
         """Get a list of headers."""
-        return [('Content-Type', 'text/html')]
+        return [("Content-Type", "text/html")]
 
     def get_response(self, environ=None):
         """Get a response object.  If one was passed to the exception
@@ -179,30 +182,29 @@ class HTTPException(Exception):
         return response(environ, start_response)
 
     def __str__(self):
-        code = self.code if self.code is not None else '???'
-        return '%s %s: %s' % (code, self.name, self.description)
+        code = self.code if self.code is not None else "???"
+        return "%s %s: %s" % (code, self.name, self.description)
 
     def __repr__(self):
-        code = self.code if self.code is not None else '???'
+        code = self.code if self.code is not None else "???"
         return "<%s '%s: %s'>" % (self.__class__.__name__, code, self.name)
 
 
 class BadRequest(HTTPException):
-
     """*400* `Bad Request`
 
     Raise if the browser sends something to the application the application
     or server cannot handle.
     """
+
     code = 400
     description = (
-        'The browser (or proxy) sent a request that this server could '
-        'not understand.'
+        "The browser (or proxy) sent a request that this server could "
+        "not understand."
     )
 
 
 class ClientDisconnected(BadRequest):
-
     """Internal exception that is raised if Werkzeug detects a disconnected
     client.  Since the client is already gone at that point attempting to
     send the error message to the client might not work and might ultimately
@@ -218,7 +220,6 @@ class ClientDisconnected(BadRequest):
 
 
 class SecurityError(BadRequest):
-
     """Raised if something triggers a security error.  This is otherwise
     exactly like a bad request error.
 
@@ -227,7 +228,6 @@ class SecurityError(BadRequest):
 
 
 class BadHost(BadRequest):
-
     """Raised if the submitted host is badly formatted.
 
     .. versionadded:: 0.11.2
@@ -235,7 +235,6 @@ class BadHost(BadRequest):
 
 
 class Unauthorized(HTTPException):
-
     """*401* ``Unauthorized``
 
     Raise if the user is not authorized to access a resource.
@@ -252,12 +251,13 @@ class Unauthorized(HTTPException):
     :param description: Override the default message used for the body
         of the response.
     """
+
     code = 401
     description = (
-        'The server could not verify that you are authorized to access'
-        ' the URL requested. You either supplied the wrong credentials'
+        "The server could not verify that you are authorized to access"
+        " the URL requested. You either supplied the wrong credentials"
         " (e.g. a bad password), or your browser doesn't understand"
-        ' how to supply the credentials required.'
+        " how to supply the credentials required."
     )
 
     def __init__(self, www_authenticate=None, description=None):
@@ -269,43 +269,41 @@ class Unauthorized(HTTPException):
     def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.www_authenticate:
-            headers.append((
-                'WWW-Authenticate',
-                ', '.join([str(x) for x in self.www_authenticate])
-            ))
+            headers.append(
+                ("WWW-Authenticate", ", ".join([str(x) for x in self.www_authenticate]))
+            )
         return headers
 
 
 class Forbidden(HTTPException):
-
     """*403* `Forbidden`
 
     Raise if the user doesn't have the permission for the requested resource
     but was authenticated.
     """
+
     code = 403
     description = (
-        'You don\'t have the permission to access the requested resource. '
-        'It is either read-protected or not readable by the server.'
+        "You don't have the permission to access the requested"
+        " resource. It is either read-protected or not readable by the"
+        " server."
     )
 
 
 class NotFound(HTTPException):
-
     """*404* `Not Found`
 
     Raise if a resource does not exist and never existed.
     """
+
     code = 404
     description = (
-        'The requested URL was not found on the server.  '
-        'If you entered the URL manually please check your spelling and '
-        'try again.'
+        "The requested URL was not found on the server. If you entered"
+        " the URL manually please check your spelling and try again."
     )
 
 
 class MethodNotAllowed(HTTPException):
-
     """*405* `Method Not Allowed`
 
     Raise if the server used a method the resource does not handle.  For
@@ -315,8 +313,9 @@ class MethodNotAllowed(HTTPException):
     Strictly speaking the response would be invalid if you don't provide valid
     methods in the header which you can do with that list.
     """
+
     code = 405
-    description = 'The method is not allowed for the requested URL.'
+    description = "The method is not allowed for the requested URL."
 
     def __init__(self, valid_methods=None, description=None):
         """Takes an optional list of valid http methods
@@ -327,42 +326,41 @@ class MethodNotAllowed(HTTPException):
     def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.valid_methods:
-            headers.append(('Allow', ', '.join(self.valid_methods)))
+            headers.append(("Allow", ", ".join(self.valid_methods)))
         return headers
 
 
 class NotAcceptable(HTTPException):
-
     """*406* `Not Acceptable`
 
     Raise if the server can't return any content conforming to the
     `Accept` headers of the client.
     """
+
     code = 406
 
     description = (
-        'The resource identified by the request is only capable of '
-        'generating response entities which have content characteristics '
-        'not acceptable according to the accept headers sent in the '
-        'request.'
+        "The resource identified by the request is only capable of"
+        " generating response entities which have content"
+        " characteristics not acceptable according to the accept"
+        " headers sent in the request."
     )
 
 
 class RequestTimeout(HTTPException):
-
     """*408* `Request Timeout`
 
     Raise to signalize a timeout.
     """
+
     code = 408
     description = (
-        'The server closed the network connection because the browser '
-        'didn\'t finish the request within the specified time.'
+        "The server closed the network connection because the browser"
+        " didn't finish the request within the specified time."
     )
 
 
 class Conflict(HTTPException):
-
     """*409* `Conflict`
 
     Raise to signal that a request cannot be completed because it conflicts
@@ -370,107 +368,103 @@ class Conflict(HTTPException):
 
     .. versionadded:: 0.7
     """
+
     code = 409
     description = (
-        'A conflict happened while processing the request.  The resource '
-        'might have been modified while the request was being processed.'
+        "A conflict happened while processing the request. The"
+        " resource might have been modified while the request was being"
+        " processed."
     )
 
 
 class Gone(HTTPException):
-
     """*410* `Gone`
 
     Raise if a resource existed previously and went away without new location.
     """
+
     code = 410
     description = (
-        'The requested URL is no longer available on this server and there '
-        'is no forwarding address. If you followed a link from a foreign '
-        'page, please contact the author of this page.'
+        "The requested URL is no longer available on this server and"
+        " there is no forwarding address. If you followed a link from a"
+        " foreign page, please contact the author of this page."
     )
 
 
 class LengthRequired(HTTPException):
-
     """*411* `Length Required`
 
     Raise if the browser submitted data but no ``Content-Length`` header which
     is required for the kind of processing the server does.
     """
+
     code = 411
     description = (
-        'A request with this method requires a valid <code>Content-'
-        'Length</code> header.'
+        "A request with this method requires a valid <code>Content-"
+        "Length</code> header."
     )
 
 
 class PreconditionFailed(HTTPException):
-
     """*412* `Precondition Failed`
 
     Status code used in combination with ``If-Match``, ``If-None-Match``, or
     ``If-Unmodified-Since``.
     """
+
     code = 412
     description = (
-        'The precondition on the request for the URL failed positive '
-        'evaluation.'
+        "The precondition on the request for the URL failed positive evaluation."
     )
 
 
 class RequestEntityTooLarge(HTTPException):
-
     """*413* `Request Entity Too Large`
 
     The status code one should return if the data submitted exceeded a given
     limit.
     """
+
     code = 413
-    description = (
-        'The data value transmitted exceeds the capacity limit.'
-    )
+    description = "The data value transmitted exceeds the capacity limit."
 
 
 class RequestURITooLarge(HTTPException):
-
     """*414* `Request URI Too Large`
 
     Like *413* but for too long URLs.
     """
+
     code = 414
     description = (
-        'The length of the requested URL exceeds the capacity limit '
-        'for this server.  The request cannot be processed.'
+        "The length of the requested URL exceeds the capacity limit for"
+        " this server. The request cannot be processed."
     )
 
 
 class UnsupportedMediaType(HTTPException):
-
     """*415* `Unsupported Media Type`
 
     The status code returned if the server is unable to handle the media type
     the client transmitted.
     """
+
     code = 415
     description = (
-        'The server does not support the media type transmitted in '
-        'the request.'
+        "The server does not support the media type transmitted in the request."
     )
 
 
 class RequestedRangeNotSatisfiable(HTTPException):
-
     """*416* `Requested Range Not Satisfiable`
 
     The client asked for an invalid part of the file.
 
     .. versionadded:: 0.7
     """
+
     code = 416
-    description = (
-        'The server cannot provide the requested range.'
-    )
+    description = "The server cannot provide the requested range."
 
     def __init__(self, length=None, units="bytes", description=None):
         """Takes an optional `Content-Range` header value based on ``length``
@@ -483,27 +477,23 @@ class RequestedRangeNotSatisfiable(HTTPException):
     def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.length is not None:
-            headers.append(
-                ('Content-Range', '%s */%d' % (self.units, self.length)))
+            headers.append(("Content-Range", "%s */%d" % (self.units, self.length)))
         return headers
 
 
 class ExpectationFailed(HTTPException):
-
     """*417* `Expectation Failed`
 
     The server cannot meet the requirements of the Expect request-header.
 
     .. versionadded:: 0.7
     """
+
     code = 417
-    description = (
-        'The server could not meet the requirements of the Expect header'
-    )
+    description = "The server could not meet the requirements of the Expect header"
 
 
 class ImATeapot(HTTPException):
-
     """*418* `I'm a teapot`
 
     The server should return this if it is a teapot and someone attempted
@@ -511,54 +501,51 @@ class ImATeapot(HTTPException):
 
     .. versionadded:: 0.7
     """
+
     code = 418
-    description = (
-        'This server is a teapot, not a coffee machine'
-    )
+    description = "This server is a teapot, not a coffee machine"
 
 
 class UnprocessableEntity(HTTPException):
-
     """*422* `Unprocessable Entity`
 
     Used if the request is well formed, but the instructions are otherwise
     incorrect.
     """
+
     code = 422
     description = (
-        'The request was well-formed but was unable to be followed '
-        'due to semantic errors.'
+        "The request was well-formed but was unable to be followed due"
+        " to semantic errors."
     )
 
 
 class Locked(HTTPException):
-
     """*423* `Locked`
 
     Used if the resource that is being accessed is locked.
     """
+
     code = 423
-    description = (
-        'The resource that is being accessed is locked.'
-    )
+    description = "The resource that is being accessed is locked."
 
 
 class FailedDependency(HTTPException):
-
     """*424* `Failed Dependency`
 
     Used if the method could not be performed on the resource
     because the requested action depended on another action and that action failed.
     """
+
     code = 424
     description = (
-        'The method could not be performed on the resource because the requested action '
-        'depended on another action and that action failed.'
+        "The method could not be performed on the resource because the"
+        " requested action depended on another action and that action"
+        " failed."
     )
 
 
 class PreconditionRequired(HTTPException):
-
     """*428* `Precondition Required`
 
     The server requires this request to be conditional, typically to prevent
@@ -569,15 +556,15 @@ class PreconditionRequired(HTTPException):
     server ensures that each client has at least seen the previous revision of
     the resource.
     """
+
     code = 428
     description = (
-        'This request is required to be conditional; try using "If-Match" '
-        'or "If-Unmodified-Since".'
+        "This request is required to be conditional; try using"
+        ' "If-Match" or "If-Unmodified-Since".'
     )
 
 
 class TooManyRequests(HTTPException):
-
     """*429* `Too Many Requests`
 
     The server is limiting the rate at which this user receives responses, and
@@ -586,129 +573,117 @@ class TooManyRequests(HTTPException):
     "Retry-After" header to indicate how long the user should wait before
     retrying.
     """
+
     code = 429
-    description = (
-        'This user has exceeded an allotted request count. Try again later.'
-    )
+    description = "This user has exceeded an allotted request count. Try again later."
 
 
 class RequestHeaderFieldsTooLarge(HTTPException):
-
     """*431* `Request Header Fields Too Large`
 
     The server refuses to process the request because the header fields are too
     large. One or more individual fields may be too large, or the set of all
     headers is too large.
     """
+
     code = 431
-    description = (
-        'One or more header fields exceeds the maximum size.'
-    )
+    description = "One or more header fields exceeds the maximum size."
 
 
 class UnavailableForLegalReasons(HTTPException):
-
     """*451* `Unavailable For Legal Reasons`
 
     This status code indicates that the server is denying access to the
     resource as a consequence of a legal demand.
     """
+
     code = 451
-    description = (
-        'Unavailable for legal reasons.'
-    )
+    description = "Unavailable for legal reasons."
 
 
 class InternalServerError(HTTPException):
-
     """*500* `Internal Server Error`
 
     Raise if an internal server error occurred.  This is a good fallback if an
     unknown error occurred in the dispatcher.
     """
+
     code = 500
     description = (
-        'The server encountered an internal error and was unable to '
-        'complete your request.  Either the server is overloaded or there '
-        'is an error in the application.'
+        "The server encountered an internal error and was unable to"
+        " complete your request. Either the server is overloaded or"
+        " there is an error in the application."
     )
 
 
 class NotImplemented(HTTPException):
-
     """*501* `Not Implemented`
 
     Raise if the application does not support the action requested by the
     browser.
     """
+
     code = 501
-    description = (
-        'The server does not support the action requested by the '
-        'browser.'
-    )
+    description = "The server does not support the action requested by the browser."
 
 
 class BadGateway(HTTPException):
-
     """*502* `Bad Gateway`
 
     If you do proxying in your application you should return this status code
     if you received an invalid response from the upstream server it accessed
     in attempting to fulfill the request.
     """
+
     code = 502
     description = (
-        'The proxy server received an invalid response from an upstream '
-        'server.'
+        "The proxy server received an invalid response from an upstream server."
     )
 
 
 class ServiceUnavailable(HTTPException):
-
     """*503* `Service Unavailable`
 
     Status code you should return if a service is temporarily unavailable.
     """
+
     code = 503
     description = (
-        'The server is temporarily unable to service your request due to '
-        'maintenance downtime or capacity problems.  Please try again '
-        'later.'
+        "The server is temporarily unable to service your request due"
+        " to maintenance downtime or capacity problems. Please try"
+        " again later."
     )
 
 
 class GatewayTimeout(HTTPException):
-
     """*504* `Gateway Timeout`
 
     Status code you should return if a connection to an upstream server
     times out.
     """
+
     code = 504
-    description = (
-        'The connection to an upstream server timed out.'
-    )
+    description = "The connection to an upstream server timed out."
 
 
 class HTTPVersionNotSupported(HTTPException):
-
     """*505* `HTTP Version Not Supported`
 
     The server does not support the HTTP protocol version used in the request.
     """
+
     code = 505
     description = (
-        'The server does not support the HTTP protocol version used in the '
-        'request.'
+        "The server does not support the HTTP protocol version used in the request."
     )
 
 
 default_exceptions = {}
-__all__ = ['HTTPException']
+__all__ = ["HTTPException"]
 
 
 def _find_exceptions():
-    for name, obj in iteritems(globals()):
+    for _name, obj in iteritems(globals()):
         try:
             is_http_exception = issubclass(obj, HTTPException)
         except TypeError:
@@ -720,14 +695,14 @@ def _find_exceptions():
         if old_obj is not None and issubclass(obj, old_obj):
             continue
         default_exceptions[obj.code] = obj
+
+
 _find_exceptions()
 del _find_exceptions
 
 
 class Aborter(object):
-
-    """
-    When passed a dict of code -> exception items it can be used as
+    """When passed a dict of code -> exception items it can be used as
     callable that raises exceptions.  If the first argument to the
     callable is an integer it will be looked up in the mapping, if it's
     a WSGI application it will be raised in a proxy exception.
@@ -746,13 +721,12 @@ class Aborter(object):
         if not args and not kwargs and not isinstance(code, integer_types):
             raise HTTPException(response=code)
         if code not in self.mapping:
-            raise LookupError('no exception for %r' % code)
+            raise LookupError("no exception for %r" % code)
         raise self.mapping[code](*args, **kwargs)
 
 
 def abort(status, *args, **kwargs):
-    '''
-    Raises an :py:exc:`HTTPException` for the given status code or WSGI
+    """Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application::
 
         abort(404)  # 404 Not Found
@@ -766,8 +740,9 @@ def abort(status, *args, **kwargs):
        abort(404)
        abort(Response('Hello World'))
 
-    '''
+    """
     return _aborter(status, *args, **kwargs)
+
 
 _aborter = Aborter()
 
@@ -777,5 +752,5 @@ _aborter = Aborter()
 BadRequestKeyError = BadRequest.wrap(KeyError)
 
 # imported here because of circular dependencies of werkzeug.utils
-from werkzeug.utils import escape
-from werkzeug.http import HTTP_STATUS_CODES
+from .http import HTTP_STATUS_CODES
+from .utils import escape

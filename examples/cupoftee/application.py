@@ -9,44 +9,58 @@
     :license: BSD-3-Clause
 """
 import time
-
-from jinja2 import Environment, PackageLoader
 from os import path
 from threading import Thread
-from cupoftee.db import Database
-from cupoftee.network import ServerBrowser
 
+from jinja2 import Environment
+from jinja2 import PackageLoader
+from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import NotFound
 from werkzeug.middleware.shared_data import SharedDataMiddleware
-from werkzeug.wrappers import Request, Response
-from werkzeug.exceptions import HTTPException, NotFound
-from werkzeug.routing import Map, Rule
+from werkzeug.routing import Map
+from werkzeug.routing import Rule
+from werkzeug.wrappers import Request
+from werkzeug.wrappers import Response
+
+from .db import Database
+from .network import ServerBrowser
 
 
-templates = path.join(path.dirname(__file__), 'templates')
+templates = path.join(path.dirname(__file__), "templates")
 pages = {}
-url_map = Map([Rule('/shared/<file>', endpoint='shared')])
+url_map = Map([Rule("/shared/<file>", endpoint="shared")])
 
 
 def make_app(database, interval=120):
-    return SharedDataMiddleware(Cup(database, interval), {
-        '/shared':  path.join(path.dirname(__file__), 'shared')
-    })
+    return SharedDataMiddleware(
+        Cup(database, interval),
+        {"/shared": path.join(path.dirname(__file__), "shared")},
+    )
 
 
 class PageMeta(type):
-
     def __init__(cls, name, bases, d):
         type.__init__(cls, name, bases, d)
-        if d.get('url_rule') is not None:
+        if d.get("url_rule") is not None:
             pages[cls.identifier] = cls
-            url_map.add(Rule(cls.url_rule, endpoint=cls.identifier,
-                             **cls.url_arguments))
+            url_map.add(
+                Rule(cls.url_rule, endpoint=cls.identifier, **cls.url_arguments)
+            )
 
     identifier = property(lambda self: self.__name__.lower())
 
 
-class Page(object):
-    __metaclass__ = PageMeta
+def _with_metaclass(meta, *bases):
+    """Create a base class with a metaclass."""
+
+    class metaclass(type):
+        def __new__(metacls, name, this_bases, d):
+            return meta(name, bases, d)
+
+    return type.__new__(metaclass, "temporary_class", (), {})
+
+
+class Page(_with_metaclass(PageMeta, object)):
     url_arguments = {}
 
     def __init__(self, cup, request, url_adapter):
@@ -62,17 +76,16 @@ class Page(object):
 
     def render_template(self, template=None):
         if template is None:
-            template = self.__class__.identifier + '.html'
+            template = self.__class__.identifier + ".html"
         context = dict(self.__dict__)
         context.update(url_for=self.url_for, self=self)
         return self.cup.render_template(template, context)
 
     def get_response(self):
-        return Response(self.render_template(), mimetype='text/html')
+        return Response(self.render_template(), mimetype="text/html")
 
 
 class Cup(object):
-
     def __init__(self, database, interval=120):
         self.jinja_env = Environment(loader=PackageLoader("cupoftee"), autoescape=True)
         self.interval = interval
@@ -110,5 +123,6 @@ class Cup(object):
     def render_template(self, name, **context):
         template = self.jinja_env.get_template(name)
         return template.render(context)
+
 
 from cupoftee.pages import MissingPage

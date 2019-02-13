@@ -8,14 +8,19 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import feedparser
 from datetime import datetime
+
+import feedparser
 from werkzeug.utils import escape
-from plnt.database import Blog, Entry, session
-from plnt.utils import strip_tags, nl2p
+
+from .database import Blog
+from .database import Entry
+from .database import session
+from .utils import nl2p
+from .utils import strip_tags
 
 
-HTML_MIMETYPES = {'text/html', 'application/xhtml+xml'}
+HTML_MIMETYPES = {"text/html", "application/xhtml+xml"}
 
 
 def sync():
@@ -31,7 +36,7 @@ def sync():
         for entry in feed.entries:
             # get the guid. either the id if specified, otherwise the link.
             # if none is available we skip the entry.
-            guid = entry.get('id') or entry.get('link')
+            guid = entry.get("id") or entry.get("link")
             if not guid:
                 continue
 
@@ -41,17 +46,18 @@ def sync():
 
             # get title, url and text. skip if no title or no text is
             # given. if the link is missing we use the blog link.
-            if 'title_detail' in entry:
-                title = entry.title_detail.get('value') or ''
-                if entry.title_detail.get('type') in HTML_MIMETYPES:
+            if "title_detail" in entry:
+                title = entry.title_detail.get("value") or ""
+                if entry.title_detail.get("type") in HTML_MIMETYPES:
                     title = strip_tags(title)
                 else:
                     title = escape(title)
             else:
-                title = entry.get('title')
-            url = entry.get('link') or blog.blog_url
-            text = 'content' in entry and entry.content[0] or \
-                   entry.get('summary_detail')
+                title = entry.get("title")
+            url = entry.get("link") or blog.blog_url
+            text = (
+                "content" in entry and entry.content[0] or entry.get("summary_detail")
+            )
 
             if not title or not text:
                 continue
@@ -59,10 +65,10 @@ def sync():
             # if we have an html text we use that, otherwise we HTML
             # escape the text and use that one. We also handle XHTML
             # with our tag soup parser for the moment.
-            if text.get('type') not in HTML_MIMETYPES:
-                text = escape(nl2p(text.get('value') or ''))
+            if text.get("type") not in HTML_MIMETYPES:
+                text = escape(nl2p(text.get("value") or ""))
             else:
-                text = text.get('value') or ''
+                text = text.get("value") or ""
 
             # no text? continue
             if not text.strip():
@@ -70,10 +76,12 @@ def sync():
 
             # get the pub date and updated date. This is rather complex
             # because different feeds do different stuff
-            pub_date = entry.get('published_parsed') or \
-                       entry.get('created_parsed') or \
-                       entry.get('date_parsed')
-            updated = entry.get('updated_parsed') or pub_date
+            pub_date = (
+                entry.get("published_parsed")
+                or entry.get("created_parsed")
+                or entry.get("date_parsed")
+            )
+            updated = entry.get("updated_parsed") or pub_date
             pub_date = pub_date or updated
 
             # if we don't have a pub_date we skip.

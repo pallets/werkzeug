@@ -11,32 +11,47 @@
     :license: BSD-3-Clause
 """
 import codecs
-import re
 import os
-import sys
 import pkgutil
+import re
+import sys
 import warnings
+
+from ._compat import iteritems
+from ._compat import PY2
+from ._compat import reraise
+from ._compat import string_types
+from ._compat import text_type
+from ._compat import unichr
+from ._internal import _DictAccessorProperty
+from ._internal import _missing
+from ._internal import _parse_signature
 
 try:
     from html.entities import name2codepoint
 except ImportError:
     from htmlentitydefs import name2codepoint
 
-from werkzeug._compat import unichr, text_type, string_types, iteritems, \
-    reraise, PY2
-from werkzeug._internal import _DictAccessorProperty, \
-    _parse_signature, _missing
 
-
-_format_re = re.compile(r'\$(?:(%s)|\{(%s)\})' % (('[a-zA-Z_][a-zA-Z0-9_]*',) * 2))
-_entity_re = re.compile(r'&([^;]+);')
-_filename_ascii_strip_re = re.compile(r'[^A-Za-z0-9_.-]')
-_windows_device_files = ('CON', 'AUX', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1',
-                         'LPT2', 'LPT3', 'PRN', 'NUL')
+_format_re = re.compile(r"\$(?:(%s)|\{(%s)\})" % (("[a-zA-Z_][a-zA-Z0-9_]*",) * 2))
+_entity_re = re.compile(r"&([^;]+);")
+_filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
+_windows_device_files = (
+    "CON",
+    "AUX",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "PRN",
+    "NUL",
+)
 
 
 class cached_property(property):
-
     """A decorator that converts a function into a lazy property.  The
     function wrapped is called the first time to retrieve the result
     and then that calculated result is used the next time you access
@@ -79,7 +94,6 @@ class cached_property(property):
 
 
 class environ_property(_DictAccessorProperty):
-
     """Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an
     environ attribute:
@@ -107,7 +121,6 @@ class environ_property(_DictAccessorProperty):
 
 
 class header_property(_DictAccessorProperty):
-
     """Like `environ_property` but for headers."""
 
     def lookup(self, obj):
@@ -115,7 +128,6 @@ class header_property(_DictAccessorProperty):
 
 
 class HTMLBuilder(object):
-
     """Helper object for HTML generation.
 
     Per default there are two instances of that class.  The `html` one, and
@@ -141,20 +153,45 @@ class HTMLBuilder(object):
     u'<p>&lt;foo&gt;</p>'
     """
 
-    _entity_re = re.compile(r'&([^;]+);')
+    _entity_re = re.compile(r"&([^;]+);")
     _entities = name2codepoint.copy()
-    _entities['apos'] = 39
-    _empty_elements = set([
-        'area', 'base', 'basefont', 'br', 'col', 'command', 'embed', 'frame',
-        'hr', 'img', 'input', 'keygen', 'isindex', 'link', 'meta', 'param',
-        'source', 'wbr'
-    ])
-    _boolean_attributes = set([
-        'selected', 'checked', 'compact', 'declare', 'defer', 'disabled',
-        'ismap', 'multiple', 'nohref', 'noresize', 'noshade', 'nowrap'
-    ])
-    _plaintext_elements = set(['textarea'])
-    _c_like_cdata = set(['script', 'style'])
+    _entities["apos"] = 39
+    _empty_elements = {
+        "area",
+        "base",
+        "basefont",
+        "br",
+        "col",
+        "command",
+        "embed",
+        "frame",
+        "hr",
+        "img",
+        "input",
+        "keygen",
+        "isindex",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "wbr",
+    }
+    _boolean_attributes = {
+        "selected",
+        "checked",
+        "compact",
+        "declare",
+        "defer",
+        "disabled",
+        "ismap",
+        "multiple",
+        "nohref",
+        "noresize",
+        "noshade",
+        "nowrap",
+    }
+    _plaintext_elements = {"textarea"}
+    _c_like_cdata = {"script", "style"}
 
     def __init__(self, dialect):
         self._dialect = dialect
@@ -163,56 +200,56 @@ class HTMLBuilder(object):
         return escape(s)
 
     def __getattr__(self, tag):
-        if tag[:2] == '__':
+        if tag[:2] == "__":
             raise AttributeError(tag)
 
         def proxy(*children, **arguments):
-            buffer = '<' + tag
+            buffer = "<" + tag
             for key, value in iteritems(arguments):
                 if value is None:
                     continue
-                if key[-1] == '_':
+                if key[-1] == "_":
                     key = key[:-1]
                 if key in self._boolean_attributes:
                     if not value:
                         continue
-                    if self._dialect == 'xhtml':
+                    if self._dialect == "xhtml":
                         value = '="' + key + '"'
                     else:
-                        value = ''
+                        value = ""
                 else:
                     value = '="' + escape(value) + '"'
-                buffer += ' ' + key + value
+                buffer += " " + key + value
             if not children and tag in self._empty_elements:
-                if self._dialect == 'xhtml':
-                    buffer += ' />'
+                if self._dialect == "xhtml":
+                    buffer += " />"
                 else:
-                    buffer += '>'
+                    buffer += ">"
                 return buffer
-            buffer += '>'
+            buffer += ">"
 
-            children_as_string = ''.join([text_type(x) for x in children
-                                          if x is not None])
+            children_as_string = "".join(
+                [text_type(x) for x in children if x is not None]
+            )
 
             if children_as_string:
                 if tag in self._plaintext_elements:
                     children_as_string = escape(children_as_string)
-                elif tag in self._c_like_cdata and self._dialect == 'xhtml':
-                    children_as_string = '/*<![CDATA[*/' + \
-                                         children_as_string + '/*]]>*/'
-            buffer += children_as_string + '</' + tag + '>'
+                elif tag in self._c_like_cdata and self._dialect == "xhtml":
+                    children_as_string = (
+                        "/*<![CDATA[*/" + children_as_string + "/*]]>*/"
+                    )
+            buffer += children_as_string + "</" + tag + ">"
             return buffer
+
         return proxy
 
     def __repr__(self):
-        return '<%s for %r>' % (
-            self.__class__.__name__,
-            self._dialect
-        )
+        return "<%s for %r>" % (self.__class__.__name__, self._dialect)
 
 
-html = HTMLBuilder('html')
-xhtml = HTMLBuilder('xhtml')
+html = HTMLBuilder("html")
+xhtml = HTMLBuilder("xhtml")
 
 # https://cgit.freedesktop.org/xdg/shared-mime-info/tree/freedesktop.org.xml.in
 # https://www.iana.org/assignments/media-types/media-types.xhtml
@@ -243,11 +280,11 @@ def get_content_type(mimetype, charset):
         ``application/javascript`` are also given charsets.
     """
     if (
-        mimetype.startswith('text/')
+        mimetype.startswith("text/")
         or mimetype in _charset_mimetypes
-        or mimetype.endswith('+xml')
+        or mimetype.endswith("+xml")
     ):
-        mimetype += '; charset=' + charset
+        mimetype += "; charset=" + charset
 
     return mimetype
 
@@ -294,7 +331,7 @@ def detect_utf_encoding(data):
             return "utf-16-le"
 
     if len(head) == 2:
-        return "utf-16-be" if head.startswith(b'\x00') else "utf-16-le"
+        return "utf-16-be" if head.startswith(b"\x00") else "utf-16-le"
 
     return "utf-8"
 
@@ -311,11 +348,13 @@ def format_string(string, context):
     :param string: the format string.
     :param context: a dict with the variables to insert.
     """
+
     def lookup_arg(match):
         x = context[match.group(1) or match.group(2)]
         if not isinstance(x, string_types):
             x = type(string)(x)
         return x
+
     return _format_re.sub(lookup_arg, string)
 
 
@@ -345,21 +384,26 @@ def secure_filename(filename):
     """
     if isinstance(filename, text_type):
         from unicodedata import normalize
-        filename = normalize('NFKD', filename).encode('ascii', 'ignore')
+
+        filename = normalize("NFKD", filename).encode("ascii", "ignore")
         if not PY2:
-            filename = filename.decode('ascii')
+            filename = filename.decode("ascii")
     for sep in os.path.sep, os.path.altsep:
         if sep:
-            filename = filename.replace(sep, ' ')
-    filename = str(_filename_ascii_strip_re.sub('', '_'.join(
-                   filename.split()))).strip('._')
+            filename = filename.replace(sep, " ")
+    filename = str(_filename_ascii_strip_re.sub("", "_".join(filename.split()))).strip(
+        "._"
+    )
 
     # on nt a couple of special files are present in each folder.  We
     # have to ensure that the target file is not such a filename.  In
     # this case we prepend an underline
-    if os.name == 'nt' and filename and \
-       filename.split('.')[0].upper() in _windows_device_files:
-        filename = '_' + filename
+    if (
+        os.name == "nt"
+        and filename
+        and filename.split(".")[0].upper() in _windows_device_files
+    ):
+        filename = "_" + filename
 
     return filename
 
@@ -376,21 +420,26 @@ def escape(s, quote=None):
     :param quote: ignored.
     """
     if s is None:
-        return ''
-    elif hasattr(s, '__html__'):
+        return ""
+    elif hasattr(s, "__html__"):
         return text_type(s.__html__())
     elif not isinstance(s, string_types):
         s = text_type(s)
     if quote is not None:
         from warnings import warn
+
         warn(
             "The 'quote' parameter is no longer used as of version 0.9"
             " and will be removed in version 1.0.",
             DeprecationWarning,
             stacklevel=2,
         )
-    s = s.replace('&', '&amp;').replace('<', '&lt;') \
-        .replace('>', '&gt;').replace('"', "&quot;")
+    s = (
+        s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
     return s
 
 
@@ -400,18 +449,20 @@ def unescape(s):
 
     :param s: the string to unescape.
     """
+
     def handle_match(m):
         name = m.group(1)
         if name in HTMLBuilder._entities:
             return unichr(HTMLBuilder._entities[name])
         try:
-            if name[:2] in ('#x', '#X'):
+            if name[:2] in ("#x", "#X"):
                 return unichr(int(name[2:], 16))
-            elif name.startswith('#'):
+            elif name.startswith("#"):
                 return unichr(int(name[1:]))
         except ValueError:
             pass
-        return u''
+        return u""
+
     return _entity_re.sub(handle_match, s)
 
 
@@ -436,22 +487,26 @@ def redirect(location, code=302, Response=None):
         unspecified.
     """
     if Response is None:
-        from werkzeug.wrappers import Response
+        from .wrappers import Response
 
     display_location = escape(location)
     if isinstance(location, text_type):
         # Safe conversion is necessary here as we might redirect
         # to a broken URI scheme (for instance itms-services).
-        from werkzeug.urls import iri_to_uri
+        from .urls import iri_to_uri
+
         location = iri_to_uri(location, safe_conversion=True)
     response = Response(
         '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-        '<title>Redirecting...</title>\n'
-        '<h1>Redirecting...</h1>\n'
-        '<p>You should be redirected automatically to target URL: '
-        '<a href="%s">%s</a>.  If not click the link.' %
-        (escape(location), display_location), code, mimetype='text/html')
-    response.headers['Location'] = location
+        "<title>Redirecting...</title>\n"
+        "<h1>Redirecting...</h1>\n"
+        "<p>You should be redirected automatically to target URL: "
+        '<a href="%s">%s</a>.  If not click the link.'
+        % (escape(location), display_location),
+        code,
+        mimetype="text/html",
+    )
+    response.headers["Location"] = location
     return response
 
 
@@ -463,10 +518,10 @@ def append_slash_redirect(environ, code=301):
                     the redirect.
     :param code: the status code for the redirect.
     """
-    new_path = environ['PATH_INFO'].strip('/') + '/'
-    query_string = environ.get('QUERY_STRING')
+    new_path = environ["PATH_INFO"].strip("/") + "/"
+    query_string = environ.get("QUERY_STRING")
     if query_string:
-        new_path += '?' + query_string
+        new_path += "?" + query_string
     return redirect(new_path, code)
 
 
@@ -486,17 +541,17 @@ def import_string(import_name, silent=False):
     # force the import name to automatically convert to strings
     # __import__ is not able to handle unicode strings in the fromlist
     # if the module is a package
-    import_name = str(import_name).replace(':', '.')
+    import_name = str(import_name).replace(":", ".")
     try:
         try:
             __import__(import_name)
         except ImportError:
-            if '.' not in import_name:
+            if "." not in import_name:
                 raise
         else:
             return sys.modules[import_name]
 
-        module_name, obj_name = import_name.rsplit('.', 1)
+        module_name, obj_name = import_name.rsplit(".", 1)
         module = __import__(module_name, globals(), locals(), [obj_name])
         try:
             return getattr(module, obj_name)
@@ -506,9 +561,8 @@ def import_string(import_name, silent=False):
     except ImportError as e:
         if not silent:
             reraise(
-                ImportStringError,
-                ImportStringError(import_name, e),
-                sys.exc_info()[2])
+                ImportStringError, ImportStringError(import_name, e), sys.exc_info()[2]
+            )
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
@@ -527,11 +581,11 @@ def find_modules(import_path, include_packages=False, recursive=False):
     :return: generator
     """
     module = import_string(import_path)
-    path = getattr(module, '__path__', None)
+    path = getattr(module, "__path__", None)
     if path is None:
-        raise ValueError('%r is not a package' % import_path)
-    basename = module.__name__ + '.'
-    for importer, modname, ispkg in pkgutil.iter_modules(path):
+        raise ValueError("%r is not a package" % import_path)
+    basename = module.__name__ + "."
+    for _importer, modname, ispkg in pkgutil.iter_modules(path):
         modname = basename + modname
         if ispkg:
             if include_packages:
@@ -608,24 +662,32 @@ def bind_arguments(func, args, kwargs):
     :param kwargs: a dict of keyword arguments.
     :return: a :class:`dict` of bound keyword arguments.
     """
-    args, kwargs, missing, extra, extra_positional, \
-        arg_spec, vararg_var, kwarg_var = _parse_signature(func)(args, kwargs)
+    (
+        args,
+        kwargs,
+        missing,
+        extra,
+        extra_positional,
+        arg_spec,
+        vararg_var,
+        kwarg_var,
+    ) = _parse_signature(func)(args, kwargs)
     values = {}
-    for (name, has_default, default), value in zip(arg_spec, args):
+    for (name, _has_default, _default), value in zip(arg_spec, args):
         values[name] = value
     if vararg_var is not None:
         values[vararg_var] = tuple(extra_positional)
     elif extra_positional:
-        raise TypeError('too many positional arguments')
+        raise TypeError("too many positional arguments")
     if kwarg_var is not None:
         multikw = set(extra) & set([x[0] for x in arg_spec])
         if multikw:
-            raise TypeError('got multiple values for keyword argument '
-                            + repr(next(iter(multikw))))
+            raise TypeError(
+                "got multiple values for keyword argument " + repr(next(iter(multikw)))
+            )
         values[kwarg_var] = extra
     elif extra:
-        raise TypeError('got unexpected keyword argument '
-                        + repr(next(iter(extra))))
+        raise TypeError("got unexpected keyword argument " + repr(next(iter(extra))))
     return values
 
 
@@ -637,15 +699,14 @@ class ArgumentValidationError(ValueError):
         self.missing = set(missing or ())
         self.extra = extra or {}
         self.extra_positional = extra_positional or []
-        ValueError.__init__(self, 'function arguments invalid.  ('
-                            '%d missing, %d additional)' % (
-                                len(self.missing),
-                                len(self.extra) + len(self.extra_positional)
-                            ))
+        ValueError.__init__(
+            self,
+            "function arguments invalid. (%d missing, %d additional)"
+            % (len(self.missing), len(self.extra) + len(self.extra_positional)),
+        )
 
 
 class ImportStringError(ImportError):
-
     """Provides information about a failed :func:`import_string` attempt."""
 
     #: String in dotted notation that failed to be imported.
@@ -658,47 +719,51 @@ class ImportStringError(ImportError):
         self.exception = exception
 
         msg = (
-            'import_string() failed for %r. Possible reasons are:\n\n'
-            '- missing __init__.py in a package;\n'
-            '- package or module path not included in sys.path;\n'
-            '- duplicated package or module name taking precedence in '
-            'sys.path;\n'
-            '- missing module, class, function or variable;\n\n'
-            'Debugged import:\n\n%s\n\n'
-            'Original exception:\n\n%s: %s')
+            "import_string() failed for %r. Possible reasons are:\n\n"
+            "- missing __init__.py in a package;\n"
+            "- package or module path not included in sys.path;\n"
+            "- duplicated package or module name taking precedence in "
+            "sys.path;\n"
+            "- missing module, class, function or variable;\n\n"
+            "Debugged import:\n\n%s\n\n"
+            "Original exception:\n\n%s: %s"
+        )
 
-        name = ''
+        name = ""
         tracked = []
-        for part in import_name.replace(':', '.').split('.'):
-            name += (name and '.') + part
+        for part in import_name.replace(":", ".").split("."):
+            name += (name and ".") + part
             imported = import_string(name, silent=True)
             if imported:
-                tracked.append((name, getattr(imported, '__file__', None)))
+                tracked.append((name, getattr(imported, "__file__", None)))
             else:
-                track = ['- %r found in %r.' % (n, i) for n, i in tracked]
-                track.append('- %r not found.' % name)
-                msg = msg % (import_name, '\n'.join(track),
-                             exception.__class__.__name__, str(exception))
+                track = ["- %r found in %r." % (n, i) for n, i in tracked]
+                track.append("- %r not found." % name)
+                msg = msg % (
+                    import_name,
+                    "\n".join(track),
+                    exception.__class__.__name__,
+                    str(exception),
+                )
                 break
 
         ImportError.__init__(self, msg)
 
     def __repr__(self):
-        return '<%s(%r, %r)>' % (self.__class__.__name__, self.import_name,
-                                 self.exception)
+        return "<%s(%r, %r)>" % (
+            self.__class__.__name__,
+            self.import_name,
+            self.exception,
+        )
 
 
 # DEPRECATED
-from werkzeug.datastructures import (
-    MultiDict as _MultiDict,
-    CombinedMultiDict as _CombinedMultiDict,
-    Headers as _Headers,
-    EnvironHeaders as _EnvironHeaders,
-)
-from werkzeug.http import (
-    parse_cookie as _parse_cookie,
-    dump_cookie as _dump_cookie,
-)
+from .datastructures import CombinedMultiDict as _CombinedMultiDict
+from .datastructures import EnvironHeaders as _EnvironHeaders
+from .datastructures import Headers as _Headers
+from .datastructures import MultiDict as _MultiDict
+from .http import dump_cookie as _dump_cookie
+from .http import parse_cookie as _parse_cookie
 
 
 class MultiDict(_MultiDict):

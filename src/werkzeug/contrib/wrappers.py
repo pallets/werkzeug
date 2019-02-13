@@ -23,11 +23,12 @@
 import codecs
 import warnings
 
-from werkzeug.exceptions import BadRequest
-from werkzeug.utils import cached_property
-from werkzeug.http import dump_options_header, parse_options_header
-from werkzeug._compat import wsgi_decoding_dance
-from werkzeug.wrappers.json import JSONMixin as _JSONMixin
+from .._compat import wsgi_decoding_dance
+from ..exceptions import BadRequest
+from ..http import dump_options_header
+from ..http import parse_options_header
+from ..utils import cached_property
+from ..wrappers.json import JSONMixin as _JSONMixin
 
 
 def is_known_charset(charset):
@@ -87,8 +88,8 @@ class ProtobufRequestMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        if 'protobuf' not in self.environ.get('CONTENT_TYPE', ''):
-            raise BadRequest('Not a Protobuf request')
+        if "protobuf" not in self.environ.get("CONTENT_TYPE", ""):
+            raise BadRequest("Not a Protobuf request")
 
         obj = proto_type()
         try:
@@ -108,7 +109,8 @@ class RoutingArgsRequestMixin(object):
     """This request mixin adds support for the wsgiorg routing args
     `specification`_.
 
-    .. _specification: https://wsgi.readthedocs.io/en/latest/specifications/routing_args.html
+    .. _specification: https://wsgi.readthedocs.io/en/latest/
+       specifications/routing_args.html
 
     .. deprecated:: 0.15
         This mixin will be removed in version 1.0.
@@ -122,7 +124,7 @@ class RoutingArgsRequestMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.environ.get('wsgiorg.routing_args', (()))[0]
+        return self.environ.get("wsgiorg.routing_args", (()))[0]
 
     def _set_routing_args(self, value):
         warnings.warn(
@@ -133,13 +135,19 @@ class RoutingArgsRequestMixin(object):
             stacklevel=2,
         )
         if self.shallow:
-            raise RuntimeError('A shallow request tried to modify the WSGI '
-                               'environment.  If you really want to do that, '
-                               'set `shallow` to False.')
-        self.environ['wsgiorg.routing_args'] = (value, self.routing_vars)
+            raise RuntimeError(
+                "A shallow request tried to modify the WSGI "
+                "environment.  If you really want to do that, "
+                "set `shallow` to False."
+            )
+        self.environ["wsgiorg.routing_args"] = (value, self.routing_vars)
 
-    routing_args = property(_get_routing_args, _set_routing_args, doc='''
-        The positional URL arguments as `tuple`.''')
+    routing_args = property(
+        _get_routing_args,
+        _set_routing_args,
+        doc="""
+        The positional URL arguments as `tuple`.""",
+    )
     del _get_routing_args, _set_routing_args
 
     def _get_routing_vars(self):
@@ -150,7 +158,7 @@ class RoutingArgsRequestMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        rv = self.environ.get('wsgiorg.routing_args')
+        rv = self.environ.get("wsgiorg.routing_args")
         if rv is not None:
             return rv[1]
         rv = {}
@@ -167,13 +175,19 @@ class RoutingArgsRequestMixin(object):
             stacklevel=2,
         )
         if self.shallow:
-            raise RuntimeError('A shallow request tried to modify the WSGI '
-                               'environment.  If you really want to do that, '
-                               'set `shallow` to False.')
-        self.environ['wsgiorg.routing_args'] = (self.routing_args, value)
+            raise RuntimeError(
+                "A shallow request tried to modify the WSGI "
+                "environment.  If you really want to do that, "
+                "set `shallow` to False."
+            )
+        self.environ["wsgiorg.routing_args"] = (self.routing_args, value)
 
-    routing_vars = property(_get_routing_vars, _set_routing_vars, doc='''
-        The keyword URL arguments as `dict`.''')
+    routing_vars = property(
+        _get_routing_vars,
+        _set_routing_vars,
+        doc="""
+        The keyword URL arguments as `dict`.""",
+    )
     del _get_routing_vars, _set_routing_vars
 
 
@@ -216,9 +230,10 @@ class ReverseSlashBehaviorRequestMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        path = wsgi_decoding_dance(self.environ.get('PATH_INFO') or '',
-                                   self.charset, self.encoding_errors)
-        return path.lstrip('/')
+        path = wsgi_decoding_dance(
+            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
+        )
+        return path.lstrip("/")
 
     @cached_property
     def script_root(self):
@@ -230,9 +245,10 @@ class ReverseSlashBehaviorRequestMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        path = wsgi_decoding_dance(self.environ.get('SCRIPT_NAME') or '',
-                                   self.charset, self.encoding_errors)
-        return path.rstrip('/') + '/'
+        path = wsgi_decoding_dance(
+            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
+        )
+        return path.rstrip("/") + "/"
 
 
 class DynamicCharsetRequestMixin(object):
@@ -268,7 +284,7 @@ class DynamicCharsetRequestMixin(object):
     #: is latin1 which is what HTTP specifies as default charset.
     #: You may however want to set this to utf-8 to better support
     #: browsers that do not transmit a charset for incoming data.
-    default_charset = 'latin1'
+    default_charset = "latin1"
 
     def unknown_charset(self, charset):
         """Called if a charset was provided but is not supported by
@@ -279,7 +295,7 @@ class DynamicCharsetRequestMixin(object):
         :param charset: the charset that was not found.
         :return: the replacement charset.
         """
-        return 'latin1'
+        return "latin1"
 
     @cached_property
     def charset(self):
@@ -291,10 +307,10 @@ class DynamicCharsetRequestMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        header = self.environ.get('CONTENT_TYPE')
+        header = self.environ.get("CONTENT_TYPE")
         if header:
             ct, options = parse_options_header(header)
-            charset = options.get('charset')
+            charset = options.get("charset")
             if charset:
                 if is_known_charset(charset):
                     return charset
@@ -327,7 +343,7 @@ class DynamicCharsetResponseMixin(object):
     """
 
     #: the default charset.
-    default_charset = 'utf-8'
+    default_charset = "utf-8"
 
     def _get_charset(self):
         warnings.warn(
@@ -337,9 +353,9 @@ class DynamicCharsetResponseMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        header = self.headers.get('content-type')
+        header = self.headers.get("content-type")
         if header:
-            charset = parse_options_header(header)[1].get('charset')
+            charset = parse_options_header(header)[1].get("charset")
             if charset:
                 return charset
         return self.default_charset
@@ -352,15 +368,18 @@ class DynamicCharsetResponseMixin(object):
             DeprecationWarning,
             stacklevel=2,
         )
-        header = self.headers.get('content-type')
+        header = self.headers.get("content-type")
         ct, options = parse_options_header(header)
         if not ct:
-            raise TypeError('Cannot set charset if Content-Type '
-                            'header is missing.')
-        options['charset'] = charset
-        self.headers['Content-Type'] = dump_options_header(ct, options)
+            raise TypeError("Cannot set charset if Content-Type header is missing.")
+        options["charset"] = charset
+        self.headers["Content-Type"] = dump_options_header(ct, options)
 
-    charset = property(_get_charset, _set_charset, doc="""
+    charset = property(
+        _get_charset,
+        _set_charset,
+        doc="""
         The charset for the response.  It's stored inside the
-        Content-Type header as a parameter.""")
+        Content-Type header as a parameter.""",
+    )
     del _get_charset, _set_charset

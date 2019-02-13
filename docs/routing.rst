@@ -221,4 +221,3 @@ Variable parts are of course also possible in the host section::
         Rule('/', endpoint='www_index', host='www.example.com'),
         Rule('/', endpoint='user_index', host='<user>.example.com')
     ], host_matching=True)
-

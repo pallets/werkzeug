@@ -24,7 +24,7 @@ def test_basic_fs_sessions(tmpdir):
     x = store.new()
     assert x.new
     assert not x.modified
-    x['foo'] = [1, 2, 3]
+    x["foo"] = [1, 2, 3]
     assert x.modified
     store.save(x)
 
@@ -33,7 +33,7 @@ def test_basic_fs_sessions(tmpdir):
     assert not x2.modified
     assert x2 is not x
     assert x2 == x
-    x2['test'] = 3
+    x2["test"] = 3
     assert x2.modified
     assert not x2.new
     store.save(x2)
@@ -67,7 +67,7 @@ def test_renewing_fs_session(tmpdir):
 def test_fs_session_lising(tmpdir):
     store = FilesystemSessionStore(str(tmpdir), renew_missing=True)
     sessions = set()
-    for x in range(10):
+    for _ in range(10):
         sess = store.new()
         store.save(sess)
         sessions.add(sess.sid)

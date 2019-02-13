@@ -8,15 +8,16 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import pytest
-
 from datetime import datetime
-from warnings import filterwarnings, resetwarnings
+from warnings import filterwarnings
+from warnings import resetwarnings
 
-from werkzeug.wrappers import Request, Response
+import pytest
 
 from werkzeug import _internal as internal
 from werkzeug.test import create_environ
+from werkzeug.wrappers import Request
+from werkzeug.wrappers import Response
 
 
 def test_date_to_unix():
@@ -28,44 +29,44 @@ def test_date_to_unix():
 
 
 def test_easteregg():
-    req = Request.from_values('/?macgybarchakku')
+    req = Request.from_values("/?macgybarchakku")
     resp = Response.force_type(internal._easteregg(None), req)
-    assert b'About Werkzeug' in resp.get_data()
-    assert b'the Swiss Army knife of Python web development' in resp.get_data()
+    assert b"About Werkzeug" in resp.get_data()
+    assert b"the Swiss Army knife of Python web development" in resp.get_data()
 
 
 def test_wrapper_internals():
-    req = Request.from_values(data={'foo': 'bar'}, method='POST')
+    req = Request.from_values(data={"foo": "bar"}, method="POST")
     req._load_form_data()
-    assert req.form.to_dict() == {'foo': 'bar'}
+    assert req.form.to_dict() == {"foo": "bar"}
 
     # second call does not break
     req._load_form_data()
-    assert req.form.to_dict() == {'foo': 'bar'}
+    assert req.form.to_dict() == {"foo": "bar"}
 
     # check reprs
     assert repr(req) == "<Request 'http://localhost/' [POST]>"
     resp = Response()
-    assert repr(resp) == '<Response 0 bytes [200 OK]>'
-    resp.set_data('Hello World!')
-    assert repr(resp) == '<Response 12 bytes [200 OK]>'
-    resp.response = iter(['Test'])
-    assert repr(resp) == '<Response streamed [200 OK]>'
+    assert repr(resp) == "<Response 0 bytes [200 OK]>"
+    resp.set_data("Hello World!")
+    assert repr(resp) == "<Response 12 bytes [200 OK]>"
+    resp.response = iter(["Test"])
+    assert repr(resp) == "<Response streamed [200 OK]>"
 
     # unicode data does not set content length
-    response = Response([u'Hällo Wörld'])
+    response = Response([u"Hällo Wörld"])
     headers = response.get_wsgi_headers(create_environ())
-    assert u'Content-Length' not in headers
+    assert u"Content-Length" not in headers
 
-    response = Response([u'Hällo Wörld'.encode('utf-8')])
+    response = Response([u"Hällo Wörld".encode("utf-8")])
     headers = response.get_wsgi_headers(create_environ())
-    assert u'Content-Length' in headers
+    assert u"Content-Length" in headers
 
     # check for internal warnings
-    filterwarnings('error', category=Warning)
+    filterwarnings("error", category=Warning)
     response = Response()
     environ = create_environ()
-    response.response = 'What the...?'
+    response.response = "What the...?"
     pytest.raises(Warning, lambda: list(response.iter_encoded()))
     pytest.raises(Warning, lambda: list(response.get_app_iter(environ)))
     response.direct_passthrough = True

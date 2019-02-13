@@ -16,54 +16,68 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import base64
 import re
 import warnings
-from time import time, gmtime
+from datetime import datetime
+from datetime import timedelta
+from hashlib import md5
+from time import gmtime
+from time import time
+
+from ._compat import integer_types
+from ._compat import iteritems
+from ._compat import PY2
+from ._compat import string_types
+from ._compat import text_type
+from ._compat import to_bytes
+from ._compat import to_unicode
+from ._compat import try_coerce_native
+from ._internal import _cookie_parse_impl
+from ._internal import _cookie_quote
+from ._internal import _make_cookie_domain
+
 try:
     from email.utils import parsedate_tz
-except ImportError:  # pragma: no cover
+except ImportError:
     from email.Utils import parsedate_tz
+
 try:
     from urllib.request import parse_http_list as _parse_list_header
     from urllib.parse import unquote_to_bytes as _unquote
-except ImportError:  # pragma: no cover
-    from urllib2 import parse_http_list as _parse_list_header, \
-        unquote as _unquote
-from datetime import datetime, timedelta
-from hashlib import md5
-import base64
+except ImportError:
+    from urllib2 import parse_http_list as _parse_list_header
+    from urllib2 import unquote as _unquote
 
-from werkzeug._internal import _cookie_quote, _make_cookie_domain, \
-    _cookie_parse_impl
-from werkzeug._compat import to_unicode, iteritems, text_type, \
-    string_types, try_coerce_native, to_bytes, PY2, \
-    integer_types
-
-
-_cookie_charset = 'latin1'
-_basic_auth_charset = 'utf-8'
+_cookie_charset = "latin1"
+_basic_auth_charset = "utf-8"
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
 _accept_re = re.compile(
-    r'''(                       # media-range capturing-parenthesis
-              [^\s;,]+              # type/subtype
-              (?:[ \t]*;[ \t]*      # ";"
-                (?:                 # parameter non-capturing-parenthesis
-                  [^\s;,q][^\s;,]*  # token that doesn't start with "q"
-                |                   # or
-                  q[^\s;,=][^\s;,]* # token that is more than just "q"
-                )
-              )*                    # zero or more parameters
-            )                       # end of media-range
-            (?:[ \t]*;[ \t]*q=      # weight is a "q" parameter
-              (\d*(?:\.\d+)?)       # qvalue capturing-parentheses
-              [^,]*                 # "extension" accept params: who cares?
-            )?                      # accept params are optional
-        ''', re.VERBOSE)
-_token_chars = frozenset("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                         '^_`abcdefghijklmnopqrstuvwxyz|~')
+    r"""
+    (                       # media-range capturing-parenthesis
+      [^\s;,]+              # type/subtype
+      (?:[ \t]*;[ \t]*      # ";"
+        (?:                 # parameter non-capturing-parenthesis
+          [^\s;,q][^\s;,]*  # token that doesn't start with "q"
+        |                   # or
+          q[^\s;,=][^\s;,]* # token that is more than just "q"
+        )
+      )*                    # zero or more parameters
+    )                       # end of media-range
+    (?:[ \t]*;[ \t]*q=      # weight is a "q" parameter
+      (\d*(?:\.\d+)?)       # qvalue capturing-parentheses
+      [^,]*                 # "extension" accept params: who cares?
+    )?                      # accept params are optional
+    """,
+    re.VERBOSE,
+)
+_token_chars = frozenset(
+    "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
+)
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
-_unsafe_header_chars = set('()<>@,;:\"/[]?={} \t')
-_option_header_piece_re = re.compile(r'''
+_unsafe_header_chars = set('()<>@,;:"/[]?={} \t')
+_option_header_piece_re = re.compile(
+    r"""
     ;\s*,?\s*  # newlines were replaced with commas
     (?P<key>
         "[^"\\]*(?:\\.[^"\\]*)*"  # quoted string
@@ -89,100 +103,116 @@ _option_header_piece_re = re.compile(r'''
         )?
     )?
     \s*
-''', flags=re.VERBOSE)
-_option_header_start_mime_type = re.compile(r',\s*([^;,\s]+)([;,]\s*.+)?')
+    """,
+    flags=re.VERBOSE,
+)
+_option_header_start_mime_type = re.compile(r",\s*([^;,\s]+)([;,]\s*.+)?")
 
-_entity_headers = frozenset([
-    'allow', 'content-encoding', 'content-language', 'content-length',
-    'content-location', 'content-md5', 'content-range', 'content-type',
-    'expires', 'last-modified'
-])
-_hop_by_hop_headers = frozenset([
-    'connection', 'keep-alive', 'proxy-authenticate',
-    'proxy-authorization', 'te', 'trailer', 'transfer-encoding',
-    'upgrade'
-])
+_entity_headers = frozenset(
+    [
+        "allow",
+        "content-encoding",
+        "content-language",
+        "content-length",
+        "content-location",
+        "content-md5",
+        "content-range",
+        "content-type",
+        "expires",
+        "last-modified",
+    ]
+)
+_hop_by_hop_headers = frozenset(
+    [
+        "connection",
+        "keep-alive",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailer",
+        "transfer-encoding",
+        "upgrade",
+    ]
+)
 
 
 HTTP_STATUS_CODES = {
-    100:    'Continue',
-    101:    'Switching Protocols',
-    102:    'Processing',
-    200:    'OK',
-    201:    'Created',
-    202:    'Accepted',
-    203:    'Non Authoritative Information',
-    204:    'No Content',
-    205:    'Reset Content',
-    206:    'Partial Content',
-    207:    'Multi Status',
-    226:    'IM Used',              # see RFC 3229
-    300:    'Multiple Choices',
-    301:    'Moved Permanently',
-    302:    'Found',
-    303:    'See Other',
-    304:    'Not Modified',
-    305:    'Use Proxy',
-    307:    'Temporary Redirect',
-    308:    'Permanent Redirect',
-    400:    'Bad Request',
-    401:    'Unauthorized',
-    402:    'Payment Required',     # unused
-    403:    'Forbidden',
-    404:    'Not Found',
-    405:    'Method Not Allowed',
-    406:    'Not Acceptable',
-    407:    'Proxy Authentication Required',
-    408:    'Request Timeout',
-    409:    'Conflict',
-    410:    'Gone',
-    411:    'Length Required',
-    412:    'Precondition Failed',
-    413:    'Request Entity Too Large',
-    414:    'Request URI Too Long',
-    415:    'Unsupported Media Type',
-    416:    'Requested Range Not Satisfiable',
-    417:    'Expectation Failed',
-    418:    'I\'m a teapot',  # see RFC 2324
-    421:    'Misdirected Request',  # see RFC 7540
-    422:    'Unprocessable Entity',
-    423:    'Locked',
-    424:    'Failed Dependency',
-    426:    'Upgrade Required',
-    428:    'Precondition Required',  # see RFC 6585
-    429:    'Too Many Requests',
-    431:    'Request Header Fields Too Large',
-    449:    'Retry With',  # proprietary MS extension
-    451:    'Unavailable For Legal Reasons',
-    500:    'Internal Server Error',
-    501:    'Not Implemented',
-    502:    'Bad Gateway',
-    503:    'Service Unavailable',
-    504:    'Gateway Timeout',
-    505:    'HTTP Version Not Supported',
-    507:    'Insufficient Storage',
-    510:    'Not Extended'
+    100: "Continue",
+    101: "Switching Protocols",
+    102: "Processing",
+    200: "OK",
+    201: "Created",
+    202: "Accepted",
+    203: "Non Authoritative Information",
+    204: "No Content",
+    205: "Reset Content",
+    206: "Partial Content",
+    207: "Multi Status",
+    226: "IM Used",  # see RFC 3229
+    300: "Multiple Choices",
+    301: "Moved Permanently",
+    302: "Found",
+    303: "See Other",
+    304: "Not Modified",
+    305: "Use Proxy",
+    307: "Temporary Redirect",
+    308: "Permanent Redirect",
+    400: "Bad Request",
+    401: "Unauthorized",
+    402: "Payment Required",  # unused
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    406: "Not Acceptable",
+    407: "Proxy Authentication Required",
+    408: "Request Timeout",
+    409: "Conflict",
+    410: "Gone",
+    411: "Length Required",
+    412: "Precondition Failed",
+    413: "Request Entity Too Large",
+    414: "Request URI Too Long",
+    415: "Unsupported Media Type",
+    416: "Requested Range Not Satisfiable",
+    417: "Expectation Failed",
+    418: "I'm a teapot",  # see RFC 2324
+    421: "Misdirected Request",  # see RFC 7540
+    422: "Unprocessable Entity",
+    423: "Locked",
+    424: "Failed Dependency",
+    426: "Upgrade Required",
+    428: "Precondition Required",  # see RFC 6585
+    429: "Too Many Requests",
+    431: "Request Header Fields Too Large",
+    449: "Retry With",  # proprietary MS extension
+    451: "Unavailable For Legal Reasons",
+    500: "Internal Server Error",
+    501: "Not Implemented",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+    504: "Gateway Timeout",
+    505: "HTTP Version Not Supported",
+    507: "Insufficient Storage",
+    510: "Not Extended",
 }
 
 
 def wsgi_to_bytes(data):
-    """coerce wsgi unicode represented bytes to real ones
-
-    """
+    """coerce wsgi unicode represented bytes to real ones"""
     if isinstance(data, bytes):
         return data
-    return data.encode('latin1')  # XXX: utf8 fallback?
+    return data.encode("latin1")  # XXX: utf8 fallback?
 
 
 def bytes_to_wsgi(data):
-    assert isinstance(data, bytes), 'data must be bytes'
+    assert isinstance(data, bytes), "data must be bytes"
     if isinstance(data, str):
         return data
     else:
-        return data.decode('latin1')
+        return data.decode("latin1")
 
 
-def quote_header_value(value, extra_chars='', allow_token=True):
+def quote_header_value(value, extra_chars="", allow_token=True):
     """Quote a header value if necessary.
 
     .. versionadded:: 0.5
@@ -199,7 +229,7 @@ def quote_header_value(value, extra_chars='', allow_token=True):
         token_chars = _token_chars | set(extra_chars)
         if set(value).issubset(token_chars):
             return value
-    return '"%s"' % value.replace('\\', '\\\\').replace('"', '\\"')
+    return '"%s"' % value.replace("\\", "\\\\").replace('"', '\\"')
 
 
 def unquote_header_value(value, is_filename=False):
@@ -223,8 +253,8 @@ def unquote_header_value(value, is_filename=False):
         # replace sequence below on a UNC path has the effect of turning
         # the leading double slash into a single slash and then
         # _fix_ie_filename() doesn't work correctly.  See #458.
-        if not is_filename or value[:2] != '\\\\':
-            return value.replace('\\\\', '\\').replace('\\"', '"')
+        if not is_filename or value[:2] != "\\\\":
+            return value.replace("\\\\", "\\").replace('\\"', '"')
     return value
 
 
@@ -241,8 +271,8 @@ def dump_options_header(header, options):
         if value is None:
             segments.append(key)
         else:
-            segments.append('%s=%s' % (key, quote_header_value(value)))
-    return '; '.join(segments)
+            segments.append("%s=%s" % (key, quote_header_value(value)))
+    return "; ".join(segments)
 
 
 def dump_header(iterable, allow_token=True):
@@ -266,14 +296,12 @@ def dump_header(iterable, allow_token=True):
             if value is None:
                 items.append(key)
             else:
-                items.append('%s=%s' % (
-                    key,
-                    quote_header_value(value, allow_token=allow_token)
-                ))
+                items.append(
+                    "%s=%s" % (key, quote_header_value(value, allow_token=allow_token))
+                )
     else:
-        items = [quote_header_value(x, allow_token=allow_token)
-                 for x in iterable]
-    return ', '.join(items)
+        items = [quote_header_value(x, allow_token=allow_token) for x in iterable]
+    return ", ".join(items)
 
 
 def parse_list_header(value):
@@ -337,10 +365,10 @@ def parse_dict_header(value, cls=dict):
         # XXX: validate
         value = bytes_to_wsgi(value)
     for item in _parse_list_header(value):
-        if '=' not in item:
+        if "=" not in item:
             result[item] = None
             continue
-        name, value = item.split('=', 1)
+        name, value = item.split("=", 1)
         if value[:1] == value[-1:] == '"':
             value = unquote_header_value(value[1:-1])
         result[name] = value
@@ -369,7 +397,7 @@ def parse_options_header(value, multiple=False):
              if multiple=True
     """
     if not value:
-        return '', {}
+        return "", {}
 
     result = []
 
@@ -400,9 +428,7 @@ def parse_options_header(value, multiple=False):
                 continued_encoding = encoding
             option = unquote_header_value(option)
             if option_value is not None:
-                option_value = unquote_header_value(
-                    option_value,
-                    option == 'filename')
+                option_value = unquote_header_value(option_value, option == "filename")
                 if encoding is not None:
                     option_value = _unquote(option_value).decode(encoding)
             if count:
@@ -412,13 +438,13 @@ def parse_options_header(value, multiple=False):
                 options[option] = options.get(option, "") + option_value
             else:
                 options[option] = option_value
-            rest = rest[optmatch.end():]
+            rest = rest[optmatch.end() :]
         result.append(options)
         if multiple is False:
             return tuple(result)
         value = rest
 
-    return tuple(result) if result else ('', {})
+    return tuple(result) if result else ("", {})
 
 
 def parse_accept_header(value, cls=None):
@@ -525,26 +551,27 @@ def parse_authorization_header(value):
         auth_type = auth_type.lower()
     except ValueError:
         return
-    if auth_type == b'basic':
+    if auth_type == b"basic":
         try:
-            username, password = base64.b64decode(auth_info).split(b':', 1)
+            username, password = base64.b64decode(auth_info).split(b":", 1)
         except Exception:
             return
         return Authorization(
-            'basic', {
-                'username': to_unicode(username, _basic_auth_charset),
-                'password': to_unicode(password, _basic_auth_charset)
-            }
+            "basic",
+            {
+                "username": to_unicode(username, _basic_auth_charset),
+                "password": to_unicode(password, _basic_auth_charset),
+            },
         )
-    elif auth_type == b'digest':
+    elif auth_type == b"digest":
         auth_map = parse_dict_header(auth_info)
-        for key in 'username', 'realm', 'nonce', 'uri', 'response':
+        for key in "username", "realm", "nonce", "uri", "response":
             if key not in auth_map:
                 return
-        if 'qop' in auth_map:
-            if not auth_map.get('nc') or not auth_map.get('cnonce'):
+        if "qop" in auth_map:
+            if not auth_map.get("nc") or not auth_map.get("cnonce"):
                 return
-        return Authorization('digest', auth_map)
+        return Authorization("digest", auth_map)
 
 
 def parse_www_authenticate_header(value, on_update=None):
@@ -564,8 +591,7 @@ def parse_www_authenticate_header(value, on_update=None):
         auth_type = auth_type.lower()
     except (ValueError, AttributeError):
         return WWWAuthenticate(value.strip().lower(), on_update=on_update)
-    return WWWAuthenticate(auth_type, parse_dict_header(auth_info),
-                           on_update)
+    return WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
 
 
 def parse_if_range_header(value):
@@ -591,19 +617,19 @@ def parse_range_header(value, make_inclusive=True):
 
     .. versionadded:: 0.7
     """
-    if not value or '=' not in value:
+    if not value or "=" not in value:
         return None
 
     ranges = []
     last_end = 0
-    units, rng = value.split('=', 1)
+    units, rng = value.split("=", 1)
     units = units.strip().lower()
 
-    for item in rng.split(','):
+    for item in rng.split(","):
         item = item.strip()
-        if '-' not in item:
+        if "-" not in item:
             return None
-        if item.startswith('-'):
+        if item.startswith("-"):
             if last_end < 0:
                 return None
             try:
@@ -612,8 +638,8 @@ def parse_range_header(value, make_inclusive=True):
                 return None
             end = None
             last_end = -1
-        elif '-' in item:
-            begin, end = item.split('-', 1)
+        elif "-" in item:
+            begin, end = item.split("-", 1)
             begin = begin.strip()
             end = end.strip()
             if not begin.isdigit():
@@ -650,26 +676,26 @@ def parse_content_range_header(value, on_update=None):
     if value is None:
         return None
     try:
-        units, rangedef = (value or '').strip().split(None, 1)
+        units, rangedef = (value or "").strip().split(None, 1)
     except ValueError:
         return None
 
-    if '/' not in rangedef:
+    if "/" not in rangedef:
         return None
-    rng, length = rangedef.split('/', 1)
-    if length == '*':
+    rng, length = rangedef.split("/", 1)
+    if length == "*":
         length = None
     elif length.isdigit():
         length = int(length)
     else:
         return None
 
-    if rng == '*':
+    if rng == "*":
         return ContentRange(units, None, None, length, on_update=on_update)
-    elif '-' not in rng:
+    elif "-" not in rng:
         return None
 
-    start, stop = rng.split('-', 1)
+    start, stop = rng.split("-", 1)
     try:
         start = int(start)
         stop = int(stop) + 1
@@ -687,10 +713,10 @@ def quote_etag(etag, weak=False):
     :param weak: set to `True` to tag it "weak".
     """
     if '"' in etag:
-        raise ValueError('invalid etag')
+        raise ValueError("invalid etag")
     etag = '"%s"' % etag
     if weak:
-        etag = 'W/' + etag
+        etag = "W/" + etag
     return etag
 
 
@@ -709,7 +735,7 @@ def unquote_etag(etag):
         return None, None
     etag = etag.strip()
     weak = False
-    if etag.startswith(('W/', 'w/')):
+    if etag.startswith(("W/", "w/")):
         weak = True
         etag = etag[2:]
     if etag[:1] == etag[-1:] == '"':
@@ -734,7 +760,7 @@ def parse_etags(value):
         if match is None:
             break
         is_weak, quoted, raw = match.groups()
-        if raw == '*':
+        if raw == "*":
             return ETags(star_tag=True)
         elif quoted:
             raw = quoted
@@ -778,8 +804,7 @@ def parse_date(value):
                     year += 2000
                 elif year >= 69 and year <= 99:
                     year += 1900
-                return datetime(*((year,) + t[1:7])) - \
-                    timedelta(seconds=t[-1] or 0)
+                return datetime(*((year,) + t[1:7])) - timedelta(seconds=t[-1] or 0)
             except (ValueError, OverflowError):
                 return None
 
@@ -792,12 +817,29 @@ def _dump_date(d, delim):
         d = d.utctimetuple()
     elif isinstance(d, (integer_types, float)):
         d = gmtime(d)
-    return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
-        ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[d.tm_wday],
-        d.tm_mday, delim,
-        ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-         'Oct', 'Nov', 'Dec')[d.tm_mon - 1],
-        delim, str(d.tm_year), d.tm_hour, d.tm_min, d.tm_sec
+    return "%s, %02d%s%s%s%s %02d:%02d:%02d GMT" % (
+        ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday],
+        d.tm_mday,
+        delim,
+        (
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        )[d.tm_mon - 1],
+        delim,
+        str(d.tm_year),
+        d.tm_hour,
+        d.tm_min,
+        d.tm_sec,
     )
 
 
@@ -813,7 +855,7 @@ def cookie_date(expires=None):
 
     :param expires: If provided that date is used, otherwise the current.
     """
-    return _dump_date(expires, '-')
+    return _dump_date(expires, "-")
 
 
 def http_date(timestamp=None):
@@ -827,7 +869,7 @@ def http_date(timestamp=None):
 
     :param timestamp: If provided that date is used, otherwise the current.
     """
-    return _dump_date(timestamp, ' ')
+    return _dump_date(timestamp, " ")
 
 
 def parse_age(value=None):
@@ -868,13 +910,14 @@ def dump_age(age=None):
 
     age = int(age)
     if age < 0:
-        raise ValueError('age cannot be negative')
+        raise ValueError("age cannot be negative")
 
     return str(age)
 
 
-def is_resource_modified(environ, etag=None, data=None, last_modified=None,
-                         ignore_if_range=True):
+def is_resource_modified(
+    environ, etag=None, data=None, last_modified=None, ignore_if_range=True
+):
     """Convenience method for conditional requests.
 
     :param environ: the WSGI environment of the request to be checked.
@@ -889,8 +932,8 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
     if etag is None and data is not None:
         etag = generate_etag(data)
     elif data is not None:
-        raise TypeError('both data and etag given')
-    if environ['REQUEST_METHOD'] not in ('GET', 'HEAD'):
+        raise TypeError("both data and etag given")
+    if environ["REQUEST_METHOD"] not in ("GET", "HEAD"):
         return False
 
     unmodified = False
@@ -903,16 +946,16 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
         last_modified = last_modified.replace(microsecond=0)
 
     if_range = None
-    if not ignore_if_range and 'HTTP_RANGE' in environ:
+    if not ignore_if_range and "HTTP_RANGE" in environ:
         # https://tools.ietf.org/html/rfc7233#section-3.2
         # A server MUST ignore an If-Range header field received in a request
         # that does not contain a Range header field.
-        if_range = parse_if_range_header(environ.get('HTTP_IF_RANGE'))
+        if_range = parse_if_range_header(environ.get("HTTP_IF_RANGE"))
 
     if if_range is not None and if_range.date is not None:
         modified_since = if_range.date
     else:
-        modified_since = parse_date(environ.get('HTTP_IF_MODIFIED_SINCE'))
+        modified_since = parse_date(environ.get("HTTP_IF_MODIFIED_SINCE"))
 
     if modified_since and last_modified and last_modified <= modified_since:
         unmodified = True
@@ -922,7 +965,7 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
         if if_range is not None and if_range.etag is not None:
             unmodified = parse_etags(if_range.etag).contains(etag)
         else:
-            if_none_match = parse_etags(environ.get('HTTP_IF_NONE_MATCH'))
+            if_none_match = parse_etags(environ.get("HTTP_IF_NONE_MATCH"))
             if if_none_match:
                 # https://tools.ietf.org/html/rfc7232#section-3.2
                 # "A recipient MUST use the weak comparison function when comparing
@@ -932,14 +975,14 @@ def is_resource_modified(environ, etag=None, data=None, last_modified=None,
             # https://tools.ietf.org/html/rfc7232#section-3.1
             # "Origin server MUST use the strong comparison function when
             # comparing entity-tags for If-Match"
-            if_match = parse_etags(environ.get('HTTP_IF_MATCH'))
+            if_match = parse_etags(environ.get("HTTP_IF_MATCH"))
             if if_match:
                 unmodified = not if_match.is_strong(etag)
 
     return not unmodified
 
 
-def remove_entity_headers(headers, allowed=('expires', 'content-location')):
+def remove_entity_headers(headers, allowed=("expires", "content-location")):
     """Remove all entity headers from a list or :class:`Headers` object.  This
     operation works in-place.  `Expires` and `Content-Location` headers are
     by default not removed.  The reason for this is :rfc:`2616` section
@@ -953,8 +996,11 @@ def remove_entity_headers(headers, allowed=('expires', 'content-location')):
                     they are entity headers.
     """
     allowed = set(x.lower() for x in allowed)
-    headers[:] = [(key, value) for key, value in headers if
-                  not is_entity_header(key) or key.lower() in allowed]
+    headers[:] = [
+        (key, value)
+        for key, value in headers
+        if not is_entity_header(key) or key.lower() in allowed
+    ]
 
 
 def remove_hop_by_hop_headers(headers):
@@ -965,8 +1011,9 @@ def remove_hop_by_hop_headers(headers):
 
     :param headers: a list or :class:`Headers` object.
     """
-    headers[:] = [(key, value) for key, value in headers if
-                  not is_hop_by_hop_header(key)]
+    headers[:] = [
+        (key, value) for key, value in headers if not is_hop_by_hop_header(key)
+    ]
 
 
 def is_entity_header(header):
@@ -991,7 +1038,7 @@ def is_hop_by_hop_header(header):
     return header.lower() in _hop_by_hop_headers
 
 
-def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
+def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
     """Parse a cookie.  Either from a string or WSGI environ.
 
     Per default encoding errors are ignored.  If you want a different behavior
@@ -1011,16 +1058,16 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
                        used.
     """
     if isinstance(header, dict):
-        header = header.get('HTTP_COOKIE', '')
+        header = header.get("HTTP_COOKIE", "")
     elif header is None:
-        header = ''
+        header = ""
 
     # If the value is an unicode string it's mangled through latin1.  This
     # is done because on PEP 3333 on Python 3 all headers are assumed latin1
     # which however is incorrect for cookies, which are sent in page encoding.
     # As a result we
     if isinstance(header, text_type):
-        header = header.encode('latin1', 'replace')
+        header = header.encode("latin1", "replace")
 
     if cls is None:
         cls = TypeConversionDict
@@ -1036,10 +1083,20 @@ def parse_cookie(header, charset='utf-8', errors='replace', cls=None):
     return cls(_parse_pairs())
 
 
-def dump_cookie(key, value='', max_age=None, expires=None, path='/',
-                domain=None, secure=False, httponly=False,
-                charset='utf-8', sync_expires=True, max_size=4093,
-                samesite=None):
+def dump_cookie(
+    key,
+    value="",
+    max_age=None,
+    expires=None,
+    path="/",
+    domain=None,
+    secure=False,
+    httponly=False,
+    charset="utf-8",
+    sync_expires=True,
+    max_size=4093,
+    samesite=None,
+):
     """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
     The parameters are the same as in the cookie Morsel object in the
     Python standard library but it accepts unicode data, too.
@@ -1098,21 +1155,23 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         expires = to_bytes(cookie_date(time() + max_age))
 
     samesite = samesite.title() if samesite else None
-    if samesite not in ('Strict', 'Lax', None):
+    if samesite not in ("Strict", "Lax", None):
         raise ValueError("invalid SameSite value; must be 'Strict', 'Lax' or None")
 
-    buf = [key + b'=' + _cookie_quote(value)]
+    buf = [key + b"=" + _cookie_quote(value)]
 
     # XXX: In theory all of these parameters that are not marked with `None`
     # should be quoted.  Because stdlib did not quote it before I did not
     # want to introduce quoting there now.
-    for k, v, q in ((b'Domain', domain, True),
-                    (b'Expires', expires, False,),
-                    (b'Max-Age', max_age, False),
-                    (b'Secure', secure, None),
-                    (b'HttpOnly', httponly, None),
-                    (b'Path', path, False),
-                    (b'SameSite', samesite, False)):
+    for k, v, q in (
+        (b"Domain", domain, True),
+        (b"Expires", expires, False),
+        (b"Max-Age", max_age, False),
+        (b"Secure", secure, None),
+        (b"HttpOnly", httponly, None),
+        (b"Path", path, False),
+        (b"SameSite", samesite, False),
+    ):
         if q is None:
             if v:
                 buf.append(k)
@@ -1126,15 +1185,15 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
             v = to_bytes(text_type(v), charset)
         if q:
             v = _cookie_quote(v)
-        tmp += b'=' + v
+        tmp += b"=" + v
         buf.append(bytes(tmp))
 
     # The return value will be an incorrectly encoded latin1 header on
     # Python 3 for consistency with the headers object and a bytestring
     # on Python 2 because that's how the API makes more sense.
-    rv = b'; '.join(buf)
+    rv = b"; ".join(buf)
     if not PY2:
-        rv = rv.decode('latin1')
+        rv = rv.decode("latin1")
 
     # Warn if the final value of the cookie is less than the limit. If the
     # cookie is too large, then it may be silently ignored, which can be quite
@@ -1145,16 +1204,16 @@ def dump_cookie(key, value='', max_age=None, expires=None, path='/',
         value_size = len(value)
         warnings.warn(
             'The "{key}" cookie is too large: the value was {value_size} bytes'
-            ' but the header required {extra_size} extra bytes. The final size'
-            ' was {cookie_size} bytes but the limit is {max_size} bytes.'
-            ' Browsers may silently ignore cookies larger than this.'.format(
+            " but the header required {extra_size} extra bytes. The final size"
+            " was {cookie_size} bytes but the limit is {max_size} bytes."
+            " Browsers may silently ignore cookies larger than this.".format(
                 key=key,
                 value_size=value_size,
                 extra_size=cookie_size - value_size,
                 cookie_size=cookie_size,
-                max_size=max_size
+                max_size=max_size,
             ),
-            stacklevel=2
+            stacklevel=2,
         )
 
     return rv
@@ -1177,19 +1236,23 @@ def is_byte_range_valid(start, stop, length):
 
 
 # circular dependency fun
-from werkzeug.datastructures import Accept, HeaderSet, ETags, Authorization, \
-    WWWAuthenticate, TypeConversionDict, IfRange, Range, ContentRange, \
-    RequestCacheControl
-from werkzeug.urls import iri_to_uri
-
+from .datastructures import Accept
+from .datastructures import Authorization
+from .datastructures import ContentRange
+from .datastructures import ETags
+from .datastructures import HeaderSet
+from .datastructures import IfRange
+from .datastructures import Range
+from .datastructures import RequestCacheControl
+from .datastructures import TypeConversionDict
+from .datastructures import WWWAuthenticate
+from .urls import iri_to_uri
 
 # DEPRECATED
-from werkzeug.datastructures import (
-    MIMEAccept as _MIMEAccept,
-    CharsetAccept as _CharsetAccept,
-    LanguageAccept as _LanguageAccept,
-    Headers as _Headers,
-)
+from .datastructures import CharsetAccept as _CharsetAccept
+from .datastructures import Headers as _Headers
+from .datastructures import LanguageAccept as _LanguageAccept
+from .datastructures import MIMEAccept as _MIMEAccept
 
 
 class MIMEAccept(_MIMEAccept):

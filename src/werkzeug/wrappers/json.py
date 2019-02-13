@@ -75,9 +75,9 @@ class JSONMixin(object):
         """
         mt = self.mimetype
         return (
-            mt == 'application/json'
-            or mt.startswith('application/')
-            and mt.endswith('+json')
+            mt == "application/json"
+            or mt.startswith("application/")
+            and mt.endswith("+json")
         )
 
     def _get_data_for_json(self, cache):
@@ -142,4 +142,4 @@ class JSONMixin(object):
         for :meth:`get_json`. The default implementation raises
         :exc:`~werkzeug.exceptions.BadRequest`.
         """
-        raise BadRequest('Failed to decode JSON object: {0}'.format(e))
+        raise BadRequest("Failed to decode JSON object: {0}".format(e))

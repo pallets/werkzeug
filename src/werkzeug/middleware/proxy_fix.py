@@ -141,7 +141,7 @@ class ProxyFix(object):
             "'get_remote_addr' is deprecated as of version 0.15 and"
             " will be removed in version 1.0. It is now handled"
             " internally for each header.",
-            DeprecationWarning
+            DeprecationWarning,
         )
         return self._get_trusted_comma(self.x_for, ",".join(forwarded_for))
 

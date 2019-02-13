@@ -10,25 +10,25 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from werkzeug.serving import run_simple
-from werkzeug.utils import cached_property, escape, redirect
-from werkzeug.wrappers import Request, Response
 from werkzeug.contrib.securecookie import SecureCookie
+from werkzeug.serving import run_simple
+from werkzeug.utils import cached_property
+from werkzeug.utils import escape
+from werkzeug.utils import redirect
+from werkzeug.wrappers import Request
+from werkzeug.wrappers import Response
 
 
 # don't use this key but a different one; you could just use
 # os.unrandom(20) to get something random.  Changing this key
 # invalidates all sessions at once.
-SECRET_KEY = '\xfa\xdd\xb8z\xae\xe0}4\x8b\xea'
+SECRET_KEY = "\xfa\xdd\xb8z\xae\xe0}4\x8b\xea"
 
 # the cookie name for the session
-COOKIE_NAME = 'session'
+COOKIE_NAME = "session"
 
 # the users that may access
-USERS = {
-    'admin':    'default',
-    'user1':    'default'
-}
+USERS = {"admin": "default", "user1": "default"}
 
 
 class AppRequest(Request):
@@ -36,11 +36,11 @@ class AppRequest(Request):
 
     def logout(self):
         """Log the user out."""
-        self.session.pop('username', None)
+        self.session.pop("username", None)
 
     def login(self, username):
         """Log the user in."""
-        self.session['username'] = username
+        self.session["username"] = username
 
     @property
     def logged_in(self):
@@ -50,7 +50,7 @@ class AppRequest(Request):
     @property
     def user(self):
         """The user that is logged in."""
-        return self.session.get('username')
+        return self.session.get("username")
 
     @cached_property
     def session(self):
@@ -61,16 +61,16 @@ class AppRequest(Request):
 
 
 def login_form(request):
-    error = ''
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    error = ""
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
         if password and USERS.get(username) == password:
             request.login(username)
-            return redirect('')
-        error = '<p>Invalid credentials'
-    return Response('''
-        <title>Login</title><h1>Login</h1>
+            return redirect("")
+        error = "<p>Invalid credentials"
+    return Response(
+        """<title>Login</title><h1>Login</h1>
         <p>Not logged in.
         %s
         <form action="" method="post">
@@ -79,23 +79,28 @@ def login_form(request):
             <input type="text" name="username" size=20>
             <input type="password" name="password", size=20>
             <input type="submit" value="Login">
-        </form>''' % error, mimetype='text/html')
+        </form>"""
+        % error,
+        mimetype="text/html",
+    )
 
 
 def index(request):
-    return Response('''
-        <title>Logged in</title>
+    return Response(
+        """<title>Logged in</title>
         <h1>Logged in</h1>
         <p>Logged in as %s
-        <p><a href="/?do=logout">Logout</a>
-    ''' % escape(request.user), mimetype='text/html')
+        <p><a href="/?do=logout">Logout</a>"""
+        % escape(request.user),
+        mimetype="text/html",
+    )
 
 
 @AppRequest.application
 def application(request):
-    if request.args.get('do') == 'logout':
+    if request.args.get("do") == "logout":
         request.logout()
-        response = redirect('.')
+        response = redirect(".")
     elif request.logged_in:
         response = index(request)
     else:
@@ -104,5 +109,5 @@ def application(request):
     return response
 
 
-if __name__ == '__main__':
-    run_simple('localhost', 4000, application)
+if __name__ == "__main__":
+    run_simple("localhost", 4000, application)

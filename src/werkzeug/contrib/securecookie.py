@@ -88,19 +88,22 @@ r"""
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import pickle
 import base64
+import pickle
 import warnings
+from hashlib import sha1 as _default_hash
 from hmac import new as hmac
 from time import time
-from hashlib import sha1 as _default_hash
 
-from werkzeug._compat import iteritems, text_type, to_bytes
-from werkzeug.urls import url_quote_plus, url_unquote_plus
-from werkzeug._internal import _date_to_unix
-from werkzeug.contrib.sessions import ModificationTrackingDict
-from werkzeug.security import safe_str_cmp
-from werkzeug._compat import to_native
+from .._compat import iteritems
+from .._compat import text_type
+from .._compat import to_bytes
+from .._compat import to_native
+from .._internal import _date_to_unix
+from ..contrib.sessions import ModificationTrackingDict
+from ..security import safe_str_cmp
+from ..urls import url_quote_plus
+from ..urls import url_unquote_plus
 
 warnings.warn(
     "'werkzeug.contrib.securecookie' is deprecated as of version 0.15"
@@ -112,12 +115,10 @@ warnings.warn(
 
 
 class UnquoteError(Exception):
-
     """Internal exception used to signal failures on quoting."""
 
 
 class SecureCookie(ModificationTrackingDict):
-
     """Represents a secure cookie.  You can subclass this class and provide
     an alternative mac method.  The import thing is that the mac method
     is a function with a similar interface to the hashlib.  Required
@@ -164,7 +165,7 @@ class SecureCookie(ModificationTrackingDict):
         # explicitly convert it into a bytestring because python 2.6
         # no longer performs an implicit string conversion on hmac
         if secret_key is not None:
-            secret_key = to_bytes(secret_key, 'utf-8')
+            secret_key = to_bytes(secret_key, "utf-8")
         self.secret_key = secret_key
         self.new = new
 
@@ -178,10 +179,10 @@ class SecureCookie(ModificationTrackingDict):
             )
 
     def __repr__(self):
-        return '<%s %s%s>' % (
+        return "<%s %s%s>" % (
             self.__class__.__name__,
             dict.__repr__(self),
-            '*' if self.should_save else ''
+            "*" if self.should_save else "",
         )
 
     @property
@@ -201,7 +202,7 @@ class SecureCookie(ModificationTrackingDict):
         if cls.serialization_method is not None:
             value = cls.serialization_method.dumps(value)
         if cls.quote_base64:
-            value = b''.join(
+            value = b"".join(
                 base64.b64encode(to_bytes(value, "utf8")).splitlines()
             ).strip()
         return value
@@ -236,21 +237,19 @@ class SecureCookie(ModificationTrackingDict):
                         :class:`datetime.datetime` object)
         """
         if self.secret_key is None:
-            raise RuntimeError('no secret key defined')
+            raise RuntimeError("no secret key defined")
         if expires:
-            self['_expires'] = _date_to_unix(expires)
+            self["_expires"] = _date_to_unix(expires)
         result = []
         mac = hmac(self.secret_key, None, self.hash_method)
         for key, value in sorted(self.items()):
-            result.append(('%s=%s' % (
-                url_quote_plus(key),
-                self.quote(value).decode('ascii')
-            )).encode('ascii'))
-            mac.update(b'|' + result[-1])
-        return b'?'.join([
-            base64.b64encode(mac.digest()).strip(),
-            b'&'.join(result)
-        ])
+            result.append(
+                (
+                    "%s=%s" % (url_quote_plus(key), self.quote(value).decode("ascii"))
+                ).encode("ascii")
+            )
+            mac.update(b"|" + result[-1])
+        return b"?".join([base64.b64encode(mac.digest()).strip(), b"&".join(result)])
 
     @classmethod
     def unserialize(cls, string, secret_key):
@@ -261,24 +260,24 @@ class SecureCookie(ModificationTrackingDict):
         :return: a new :class:`SecureCookie`.
         """
         if isinstance(string, text_type):
-            string = string.encode('utf-8', 'replace')
+            string = string.encode("utf-8", "replace")
         if isinstance(secret_key, text_type):
-            secret_key = secret_key.encode('utf-8', 'replace')
+            secret_key = secret_key.encode("utf-8", "replace")
         try:
-            base64_hash, data = string.split(b'?', 1)
+            base64_hash, data = string.split(b"?", 1)
         except (ValueError, IndexError):
             items = ()
         else:
             items = {}
             mac = hmac(secret_key, None, cls.hash_method)
-            for item in data.split(b'&'):
-                mac.update(b'|' + item)
-                if b'=' not in item:
+            for item in data.split(b"&"):
+                mac.update(b"|" + item)
+                if b"=" not in item:
                     items = None
                     break
-                key, value = item.split(b'=', 1)
+                key, value = item.split(b"=", 1)
                 # try to make the key a string
-                key = url_unquote_plus(key.decode('ascii'))
+                key = url_unquote_plus(key.decode("ascii"))
                 try:
                     key = to_native(key)
                 except UnicodeError:
@@ -298,17 +297,17 @@ class SecureCookie(ModificationTrackingDict):
                 except UnquoteError:
                     items = ()
                 else:
-                    if '_expires' in items:
-                        if time() > items['_expires']:
+                    if "_expires" in items:
+                        if time() > items["_expires"]:
                             items = ()
                         else:
-                            del items['_expires']
+                            del items["_expires"]
             else:
                 items = ()
         return cls(items, secret_key, False)
 
     @classmethod
-    def load_cookie(cls, request, key='session', secret_key=None):
+    def load_cookie(cls, request, key="session", secret_key=None):
         """Loads a :class:`SecureCookie` from a cookie in request.  If the
         cookie is not set, a new :class:`SecureCookie` instanced is
         returned.
@@ -325,9 +324,19 @@ class SecureCookie(ModificationTrackingDict):
             return cls(secret_key=secret_key)
         return cls.unserialize(data, secret_key)
 
-    def save_cookie(self, response, key='session', expires=None,
-                    session_expires=None, max_age=None, path='/', domain=None,
-                    secure=None, httponly=False, force=False):
+    def save_cookie(
+        self,
+        response,
+        key="session",
+        expires=None,
+        session_expires=None,
+        max_age=None,
+        path="/",
+        domain=None,
+        secure=None,
+        httponly=False,
+        force=False,
+    ):
         """Saves the SecureCookie in a cookie on response object.  All
         parameters that are not described here are forwarded directly
         to :meth:`~BaseResponse.set_cookie`.
@@ -341,6 +350,13 @@ class SecureCookie(ModificationTrackingDict):
         """
         if force or self.should_save:
             data = self.serialize(session_expires or expires)
-            response.set_cookie(key, data, expires=expires, max_age=max_age,
-                                path=path, domain=domain, secure=secure,
-                                httponly=httponly)
+            response.set_cookie(
+                key,
+                data,
+                expires=expires,
+                max_age=max_age,
+                path=path,
+                domain=domain,
+                secure=secure,
+                httponly=httponly,
+            )

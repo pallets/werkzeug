@@ -12,6 +12,7 @@ that may be slowing down your application.
 :license: BSD-3-Clause
 """
 from __future__ import print_function
+
 import os.path
 import sys
 import time

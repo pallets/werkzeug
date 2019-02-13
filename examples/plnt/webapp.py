@@ -9,31 +9,31 @@
     :license: BSD-3-Clause
 """
 from os import path
-from sqlalchemy import create_engine
 
+from sqlalchemy import create_engine
+from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.wrappers import Request
 from werkzeug.wsgi import ClosingIterator
-from werkzeug.exceptions import HTTPException
-from plnt.utils import local, local_manager, url_map, endpoints
-from plnt.database import session, metadata
 
-# import the views module because it contains setup code
-import plnt.views
+from . import views  # noqa: F401
+from .database import metadata
+from .database import session
+from .utils import endpoints
+from .utils import local
+from .utils import local_manager
+from .utils import url_map
 
 #: path to shared data
-SHARED_DATA = path.join(path.dirname(__file__), 'shared')
+SHARED_DATA = path.join(path.dirname(__file__), "shared")
 
 
 class Plnt(object):
-
     def __init__(self, database_uri):
         self.database_engine = create_engine(database_uri)
 
         self._dispatch = local_manager.middleware(self.dispatch_request)
-        self._dispatch = SharedDataMiddleware(self._dispatch, {
-            '/shared':      SHARED_DATA
-        })
+        self._dispatch = SharedDataMiddleware(self._dispatch, {"/shared": SHARED_DATA})
 
     def init_database(self):
         metadata.create_all(self.database_engine)
@@ -50,8 +50,7 @@ class Plnt(object):
             response = endpoints[endpoint](request, **values)
         except HTTPException as e:
             response = e
-        return ClosingIterator(response(environ, start_response),
-                               session.remove)
+        return ClosingIterator(response(environ, start_response), session.remove)
 
     def __call__(self, environ, start_response):
         return self._dispatch(environ, start_response)

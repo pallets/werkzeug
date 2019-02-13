@@ -11,7 +11,7 @@
 import re
 
 
-_sort_re = re.compile(r'\w+', re.UNICODE)
+_sort_re = re.compile(r"\w+", re.UNICODE)
 
 
 def unicodecmp(a, b):
