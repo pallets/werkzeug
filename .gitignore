@@ -1,7 +1,7 @@
 MANIFEST
 build
 dist
-*.egg-info
+/src/Werkzeug.egg-info
 *.pyc
 *.pyo
 env

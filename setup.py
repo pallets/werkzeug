@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 with io.open('README.rst', 'rt', encoding='utf8') as f:
     readme = f.read()
 
-with io.open('werkzeug/__init__.py', 'rt', encoding='utf8') as f:
+with io.open('src/werkzeug/__init__.py', 'rt', encoding='utf8') as f:
     version = re.search(
         r'__version__ = \'(.*?)\'', f.read(), re.M).group(1)
 
@@ -49,7 +49,8 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    packages=find_packages(exclude=('tests*',)),
+    packages=find_packages("src"),
+    package_dir={"": "src"},
     include_package_data=True,
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     extras_require={
