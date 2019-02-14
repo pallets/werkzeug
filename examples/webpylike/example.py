@@ -8,7 +8,7 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from webpylike import WebPyApp, View, Response
+from webpylike.webpylike import WebPyApp, View, Response
 
 
 urls = (

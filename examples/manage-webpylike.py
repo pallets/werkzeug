@@ -17,7 +17,7 @@ import click
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), 'webpylike'))
-from example import app
+from webpylike.example import app
 from werkzeug.serving import run_simple
 
 

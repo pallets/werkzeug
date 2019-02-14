@@ -47,7 +47,7 @@ class WebPyApp(object):
 
     def __init__(self, urls, views):
         self.urls = [(re.compile('^%s$' % urls[i]), urls[i + 1])
-                     for i in xrange(0, len(urls), 2)]
+                     for i in range(0, len(urls), 2)]
         self.views = views
 
     def __call__(self, environ, start_response):
@@ -64,6 +64,6 @@ class WebPyApp(object):
                     break
             else:
                 raise NotFound()
-        except HTTPException, e:
+        except HTTPException as e:
             resp = e
         return resp(environ, start_response)

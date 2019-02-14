@@ -11,7 +11,11 @@ def make_app():
 def make_shell():
     from couchy import models, utils
     application = make_app()
-    return locals()
+    return {
+        "application": application,
+        "models": models,
+        "utils": utils,
+    }
 
 
 @click.group()

@@ -11,7 +11,6 @@
 """
 import click
 import os
-import tempfile
 from werkzeug.serving import run_simple
 
 

@@ -1,12 +1,12 @@
 from couchdb.client import Server
 from couchy.utils import STATIC_PATH, local, local_manager, \
      url_map
+from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.wrappers import Request
-from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
+from werkzeug.wsgi import ClosingIterator
 from werkzeug.exceptions import HTTPException, NotFound
 from couchy import views
 from couchy.models import URL
-import couchy.models
 
 
 class Couchy(object):
@@ -33,10 +33,10 @@ class Couchy(object):
             endpoint, values = adapter.match()
             handler = getattr(views, endpoint)
             response = handler(request, **values)
-        except NotFound, e:
+        except NotFound:
             response = views.not_found(request)
             response.status_code = 404
-        except HTTPException, e:
+        except HTTPException as e:
             response = e
         return ClosingIterator(response(environ, start_response),
                                 [local_manager.cleanup])

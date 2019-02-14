@@ -8,7 +8,7 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from sqlalchemy import MetaData, Table, Column, ForeignKey, Boolean, \
+from sqlalchemy import MetaData, Table, Column, ForeignKey, \
      Integer, String, DateTime
 from sqlalchemy.orm import dynamic_loader, scoped_session, create_session, \
      mapper

@@ -62,7 +62,7 @@ class Revision(object):
     query = session.query_property()
 
     def __init__(self, page, text, change_note='', timestamp=None):
-        if isinstance(page, (int, long)):
+        if isinstance(page, int):
             self.page_id = page
         else:
             self.page = page

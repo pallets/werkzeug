@@ -14,7 +14,11 @@ def make_app():
 def make_shell():
     from shorty import models, utils
     application = make_app()
-    return locals()
+    return {
+        "application": application,
+        "models": models,
+        "utils": utils,
+    }
 
 
 @click.group()

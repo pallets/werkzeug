@@ -8,6 +8,7 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+from functools import reduce
 
 from werkzeug.utils import redirect
 from werkzeug.exceptions import NotFound
@@ -50,7 +51,7 @@ class ServerList(Page):
             self.order_desc = False
 
         self.players = reduce(lambda a, b: a + b.players, self.servers, [])
-        self.players.sort(lambda a, b: unicodecmp(a.name, b.name))
+        self.players = sorted(self.players, key=lambda a, b: unicodecmp(a.name, b.name))
 
 
 class Server(Page):
@@ -70,7 +71,7 @@ class Search(Page):
         self.user = self.request.args.get('user')
         if self.user:
             self.results = []
-            for server in self.cup.master.servers.itervalues():
+            for server in self.cup.master.servers.values():
                 for player in server.players:
                     if player.name == self.user:
                         self.results.append(server)

@@ -8,16 +8,14 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import sys
 import feedparser
-from time import time
 from datetime import datetime
 from werkzeug.utils import escape
 from plnt.database import Blog, Entry, session
 from plnt.utils import strip_tags, nl2p
 
 
-HTML_MIMETYPES = set(['text/html', 'application/xhtml+xml'])
+HTML_MIMETYPES = {'text/html', 'application/xhtml+xml'}
 
 
 def sync():
@@ -29,8 +27,6 @@ def sync():
         # parse the feed. feedparser.parse will never given an exception
         # but the bozo bit might be defined.
         feed = feedparser.parse(blog.feed_url)
-        blog_author = feed.get('author') or blog.name
-        blog_author_detail = feed.get('author_detail')
 
         for entry in feed.entries:
             # get the guid. either the id if specified, otherwise the link.

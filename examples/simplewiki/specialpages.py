@@ -9,7 +9,7 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from simplewiki.utils import Response, Pagination, generate_template, href
+from simplewiki.utils import Response, Pagination, generate_template
 from simplewiki.database import RevisionedPage, Page
 from simplewiki.actions import page_missing
 

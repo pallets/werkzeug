@@ -52,7 +52,7 @@ find in real life :-)
     Requirements:
     
     -   SQLAlchemy
-    -   Jinja
+    -   Jinja2
     -   feedparser
 
     You can obtain all packages in the Cheeseshop via easy_install.

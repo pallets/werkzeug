@@ -8,7 +8,7 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from coolmagic.helpers import *
+from coolmagic.utils import export
 
 
 @export('/', template='static/index.html')
@@ -23,7 +23,6 @@ def about():
 
 @export('/broken')
 def broken():
-    foo = request.args.get('foo', 42)
     raise RuntimeError('that\'s really broken')
 
 

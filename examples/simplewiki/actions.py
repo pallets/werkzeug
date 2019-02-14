@@ -13,9 +13,10 @@
     :license: BSD-3-Clause
 """
 from difflib import unified_diff
-from simplewiki.utils import Response, generate_template, parse_creole, \
-     href, redirect, format_datetime
+from simplewiki.utils import Response, generate_template, \
+     href, format_datetime
 from simplewiki.database import RevisionedPage, Page, Revision, session
+from werkzeug.utils import redirect
 
 
 def on_show(request, page_name):

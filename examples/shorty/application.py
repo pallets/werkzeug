@@ -1,11 +1,12 @@
 from sqlalchemy import create_engine
+
+from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.wrappers import Request
-from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
+from werkzeug.wsgi import ClosingIterator
 from werkzeug.exceptions import HTTPException, NotFound
 from shorty.utils import STATIC_PATH, session, local, local_manager, \
      metadata, url_map
 
-import shorty.models
 from shorty import views
 
 
@@ -30,10 +31,10 @@ class Shorty(object):
             endpoint, values = adapter.match()
             handler = getattr(views, endpoint)
             response = handler(request, **values)
-        except NotFound, e:
+        except NotFound:
             response = views.not_found(request)
             response.status_code = 404
-        except HTTPException, e:
+        except HTTPException as e:
             response = e
         return ClosingIterator(response(environ, start_response),
                                [session.remove, local_manager.cleanup])

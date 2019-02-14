@@ -1,4 +1,7 @@
+{% extends "layout.html" %}
+{% block body %}
 <p>
   This is just another page. Maybe you want to head over to the
-  <a href="$escape(req.url_for('blog/index'))">blog</a>.
+  <a href="{{ req.url_for('blog/index') }}">blog</a>.
 </p>
+{% endblock %}

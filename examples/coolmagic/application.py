@@ -13,7 +13,8 @@
     :license: BSD-3-Clause
 """
 from os import path, listdir
-from coolmagic.utils import Request, local_manager, redirect
+from coolmagic.utils import Request, local_manager
+from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.routing import Map, Rule, RequestRedirect
 from werkzeug.exceptions import HTTPException, NotFound
 
@@ -39,7 +40,7 @@ class CoolMagicApplication(object):
                  endpoint='shared_data')
         ]
         self.views = {}
-        for endpoint, (func, rule, extra) in exported_views.iteritems():
+        for endpoint, (func, rule, extra) in exported_views.items():
             if rule is not None:
                 rules.append(Rule(rule, endpoint=endpoint, **extra))
             self.views[endpoint] = func
@@ -51,9 +52,9 @@ class CoolMagicApplication(object):
         try:
             endpoint, args = urls.match(req.path)
             resp = self.views[endpoint](**args)
-        except NotFound, e:
+        except NotFound:
             resp = self.views['static.not_found']()
-        except (HTTPException, RequestRedirect), e:
+        except (HTTPException, RequestRedirect) as e:
             resp = e
         return resp(environ, start_response)
 
@@ -67,7 +68,6 @@ def make_app(config=None):
     app = CoolMagicApplication(config)
 
     # static stuff
-    from werkzeug.wsgi import SharedDataMiddleware
     app = SharedDataMiddleware(app, {
         '/public': path.join(path.dirname(__file__), 'public')
     })

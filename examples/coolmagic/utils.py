@@ -12,9 +12,8 @@
     :license: BSD-3-Clause
 """
 from os.path import dirname, join
-from jinja import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 from werkzeug.local import Local, LocalManager
-from werkzeug.utils import redirect
 from werkzeug.wrappers import BaseRequest, BaseResponse
 
 

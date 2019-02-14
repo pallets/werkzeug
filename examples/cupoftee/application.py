@@ -9,13 +9,15 @@
     :license: BSD-3-Clause
 """
 import time
+
+from jinja2 import Environment, PackageLoader
 from os import path
 from threading import Thread
 from cupoftee.db import Database
 from cupoftee.network import ServerBrowser
-from werkzeug.templates import Template
+
+from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.wrappers import Request, Response
-from werkzeug.wsgi import SharedDataMiddleware
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.routing import Map, Rule
 
@@ -25,8 +27,8 @@ pages = {}
 url_map = Map([Rule('/shared/<file>', endpoint='shared')])
 
 
-def make_app(database, interval=60):
-    return SharedDataMiddleware(Cup(database), {
+def make_app(database, interval=120):
+    return SharedDataMiddleware(Cup(database, interval), {
         '/shared':  path.join(path.dirname(__file__), 'shared')
     })
 
@@ -40,7 +42,7 @@ class PageMeta(type):
             url_map.add(Rule(cls.url_rule, endpoint=cls.identifier,
                              **cls.url_arguments))
 
-    identifier = property(lambda x: x.__name__.lower())
+    identifier = property(lambda self: self.__name__.lower())
 
 
 class Page(object):
@@ -63,10 +65,7 @@ class Page(object):
             template = self.__class__.identifier + '.html'
         context = dict(self.__dict__)
         context.update(url_for=self.url_for, self=self)
-        body_tmpl = Template.from_file(path.join(templates, template))
-        layout_tmpl = Template.from_file(path.join(templates, 'layout.html'))
-        context['body'] = body_tmpl.render(context)
-        return layout_tmpl.render(context)
+        return self.cup.render_template(template, context)
 
     def get_response(self):
         return Response(self.render_template(), mimetype='text/html')
@@ -75,6 +74,7 @@ class Page(object):
 class Cup(object):
 
     def __init__(self, database, interval=120):
+        self.jinja_env = Environment(loader=PackageLoader("cupoftee"), autoescape=True)
         self.interval = interval
         self.db = Database(database)
         self.master = ServerBrowser(self)
@@ -83,7 +83,6 @@ class Cup(object):
         self.updater.start()
 
     def update_master(self):
-        wait = self.interval
         while 1:
             if self.master.sync():
                 wait = self.interval
@@ -97,10 +96,10 @@ class Cup(object):
             endpoint, values = url_adapter.match()
             page = pages[endpoint](self, request, url_adapter)
             response = page.process(**values)
-        except NotFound, e:
+        except NotFound:
             page = MissingPage(self, request, url_adapter)
             response = page.process()
-        except HTTPException, e:
+        except HTTPException as e:
             return e
         return response or page.get_response()
 
@@ -108,5 +107,8 @@ class Cup(object):
         request = Request(environ)
         return self.dispatch_request(request)(environ, start_response)
 
+    def render_template(self, name, **context):
+        template = self.jinja_env.get_template(name)
+        return template.render(context)
 
 from cupoftee.pages import MissingPage

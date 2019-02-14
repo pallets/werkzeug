@@ -8,8 +8,8 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from datetime import datetime, date
-from plnt.database import Blog, Entry
+from datetime import date
+from plnt.database import Entry
 from plnt.utils import Pagination, expose, render_template
 
 

@@ -4,12 +4,12 @@
   <head>
     <title>Teeworlds Server Browser</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <link rel="stylesheet" type="text/css" href="${url_for('shared', file='style.css')}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('shared', file='style.css') }}">
   </head>
   <body>
     <h1><a href="https://www.teeworlds.com/">Teeworlds</a> Server Browser</h1>
     <div class="contents">
-      ${body}
+      {% block body %}{% endblock %}
     </div>
     <div class="footer">
       <a href="https://www.teeworlds.com/">Teeworlds</a> Server Browser by

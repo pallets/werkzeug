@@ -10,9 +10,11 @@
 """
 from os import path
 from sqlalchemy import create_engine
+
+from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.wrappers import Request
-from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.wsgi import ClosingIterator
+from werkzeug.exceptions import HTTPException
 from plnt.utils import local, local_manager, url_map, endpoints
 from plnt.database import session, metadata
 
@@ -46,7 +48,7 @@ class Plnt(object):
         try:
             endpoint, values = adapter.match(request.path)
             response = endpoints[endpoint](request, **values)
-        except HTTPException, e:
+        except HTTPException as e:
             response = e
         return ClosingIterator(response(environ, start_response),
                                session.remove)

@@ -1,8 +1,8 @@
 from os import path
-from urlparse import urlparse
 from random import sample, randrange
-from jinja import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 from werkzeug.local import Local, LocalManager
+from werkzeug.urls import url_parse
 from werkzeug.utils import cached_property
 from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule
@@ -37,7 +37,7 @@ def render_template(template, **context):
                     mimetype='text/html')
 
 def validate_url(url):
-    return urlparse(url)[0] in ALLOWED_SCHEMES
+    return url_parse(url)[0] in ALLOWED_SCHEMES
 
 def get_random_uid():
     return ''.join(sample(URL_CHARS, randrange(3, 9)))
@@ -58,8 +58,8 @@ class Pagination(object):
     def entries(self):
         return self.results[((self.page - 1) * self.per_page):(((self.page - 1) * self.per_page)+self.per_page)]
 
-    has_previous = property(lambda x: x.page > 1)
-    has_next = property(lambda x: x.page < x.pages)
-    previous = property(lambda x: url_for(x.endpoint, page=x.page - 1))
-    next = property(lambda x: url_for(x.endpoint, page=x.page + 1))
-    pages = property(lambda x: max(0, x.count - 1) // x.per_page + 1)
+    has_previous = property(lambda self: self.page > 1)
+    has_next = property(lambda self: self.page < self.pages)
+    previous = property(lambda self: url_for(self.endpoint, page=self.page - 1))
+    next = property(lambda self: url_for(self.endpoint, page=self.page + 1))
+    pages = property(lambda self: max(0, self.count - 1) // self.per_page + 1)

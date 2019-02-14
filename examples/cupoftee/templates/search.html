@@ -1,6 +1,8 @@
+{% extends "layout.html" %}
+{% block body %}
 <h2>Nick Search</h2>
-<% if not user %>
-<form action="$url_for('search')" method="get">
+{% if not user %}
+<form action="{{ url_for('search') }}" method="get">
   <p>
     You have to enter a nickname.
   </p>
@@ -9,28 +11,29 @@
     <input type="submit" value="Search">
   </p>
   <p>
-    Take me <a href="$url_for('serverlist')">back to the server list</a>.
+    Take me <a href="{{ url_for('serverlist') }}">back to the server list</a>.
   </p>
 </form>
-<% else %>
-<% if results %>
+{% else %}
+{% if results %}
   <p>
-    The nickname "$escape(user)" is currently playing on the
-    following ${'server' if len(results) == 1 else 'servers'}:
+    The nickname "{{ user }}" is currently playing on the
+    following {{ 'server' if results|length == 1 else 'servers' }}:
   </p>
   <ul>
-  <% for server in results %>
-    <li><a href="$url_for('server', id=server.id)">$escape(server.name)</a></li>
-  <% endfor %>
+  {% for server in results %}
+    <li><a href="{{ url_for('server', id=server.id) }}">{{ server.name }}</a></li>
+  {% endfor %}
   </ul>
-<% else %>
+{% else %}
   <p>
-    The nickname "$escape(user)" is currently not playing.
+    The nickname "{{ user }}" is currently not playing.
   </p>
-<% endif %>
+{% endif %}
 <p>
-  You can <a href="$url_for('search', user=self.user)">bookmark this link</a>
-  to search for "$escape(user)" quickly or <a href="$url_for('serverlist')">return
+  You can <a href="{{ url_for('search', user=self.user) }}">bookmark this link</a>
+  to search for "{{ user }}" quickly or <a href="{{ url_for('serverlist') }}">return
   to the server list</a>.
 </p>
-<% endif %>
+{% endif %}
+{% endblock %}

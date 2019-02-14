@@ -11,8 +11,9 @@
 import re
 from os import path
 from jinja2 import Environment, FileSystemLoader
+
+from werkzeug._compat import unichr
 from werkzeug.local import Local, LocalManager
-from werkzeug.urls import url_encode, url_quote
 from werkzeug.utils import cached_property
 from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule
@@ -47,7 +48,11 @@ _par_re = re.compile(r'\n{2,}')
 _entity_re = re.compile(r'&([^;]+);')
 _striptags_re = re.compile(r'(<!--.*-->|<[^>]*>)')
 
-from htmlentitydefs import name2codepoint
+try:
+    from html.entities import name2codepoint
+except ImportError:
+    from htmlentitydefs import name2codepoint
+
 html_entities = name2codepoint.copy()
 html_entities['apos'] = 39
 del name2codepoint
@@ -120,8 +125,8 @@ class Pagination(object):
     def count(self):
         return self.query.count()
 
-    has_previous = property(lambda x: x.page > 1)
-    has_next = property(lambda x: x.page < x.pages)
-    previous = property(lambda x: url_for(x.endpoint, page=x.page - 1))
-    next = property(lambda x: url_for(x.endpoint, page=x.page + 1))
-    pages = property(lambda x: max(0, x.count - 1) // x.per_page + 1)
+    has_previous = property(lambda self: self.page > 1)
+    has_next = property(lambda self: self.page < self.pages)
+    previous = property(lambda self: url_for(self.endpoint, page=self.page - 1))
+    next = property(lambda self: url_for(self.endpoint, page=self.page + 1))
+    pages = property(lambda self: max(0, self.count - 1) // self.per_page + 1)

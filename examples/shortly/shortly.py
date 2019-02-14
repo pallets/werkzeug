@@ -10,11 +10,12 @@
 """
 import os
 import redis
-import urlparse
+
+from werkzeug.middleware.shared_data import SharedDataMiddleware
+from werkzeug.urls import url_parse
 from werkzeug.wrappers import Request, Response
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException, NotFound
-from werkzeug.wsgi import SharedDataMiddleware
 from werkzeug.utils import redirect
 
 from jinja2 import Environment, FileSystemLoader
@@ -32,12 +33,12 @@ def base36_encode(number):
 
 
 def is_valid_url(url):
-    parts = urlparse.urlparse(url)
+    parts = url_parse(url)
     return parts.scheme in ('http', 'https')
 
 
 def get_hostname(url):
-    return urlparse.urlparse(url).netloc
+    return url_parse(url).netloc
 
 
 class Shortly(object):
@@ -109,9 +110,9 @@ class Shortly(object):
         try:
             endpoint, values = adapter.match()
             return getattr(self, 'on_' + endpoint)(request, **values)
-        except NotFound, e:
+        except NotFound:
             return self.error_404()
-        except HTTPException, e:
+        except HTTPException as e:
             return e
 
     def wsgi_app(self, environ, start_response):

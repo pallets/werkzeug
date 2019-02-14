@@ -9,16 +9,20 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import gdbm
 from threading import Lock
 from pickle import dumps, loads
+
+try:
+    import dbm
+except ImportError:
+    import anydbm as dbm
 
 
 class Database(object):
 
     def __init__(self, filename):
         self.filename = filename
-        self._fs = gdbm.open(filename, 'cf')
+        self._fs = dbm.open(filename, 'cf')
         self._local = {}
         self._lock = Lock()
 
@@ -63,7 +67,7 @@ class Database(object):
 
     def sync(self):
         with self._lock:
-            for key, value in self._local.iteritems():
+            for key, value in self._local.items():
                 self._fs[key] = dumps(value, 2)
             self._fs.sync()
 

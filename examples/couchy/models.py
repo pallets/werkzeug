@@ -11,11 +11,11 @@ class URL(Document):
     db = None
 
     @classmethod
-    def load(self, id):
-        return super(URL, self).load(URL.db, id)
+    def load(cls, id):
+        return super(URL, cls).load(URL.db, id)
 
     @classmethod
-    def query(self, code):
+    def query(cls, code):
         return URL.db.query(code)
 
     def store(self):
@@ -23,7 +23,6 @@ class URL(Document):
             new_id = self.shorty_id if self.shorty_id else None
             while 1:
                 id = new_id if new_id else get_random_uid()
-                docid = None
                 try:
                     docid = URL.db.resource.put(content=self._data, path='/%s/' % str(id))['id']
                 except:
