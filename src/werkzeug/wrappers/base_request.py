@@ -9,7 +9,6 @@ from ..datastructures import CombinedMultiDict
 from ..datastructures import EnvironHeaders
 from ..datastructures import ImmutableList
 from ..datastructures import ImmutableMultiDict
-from ..datastructures import ImmutableTypeConversionDict
 from ..datastructures import iter_multi_items
 from ..datastructures import MultiDict
 from ..formparser import default_stream_factory
@@ -118,11 +117,11 @@ class BaseRequest(object):
 
     #: the type to be used for dict values from the incoming WSGI environment.
     #: By default an
-    #: :class:`~werkzeug.datastructures.ImmutableTypeConversionDict` is used
+    #: :class:`~werkzeug.datastructures.ImmutableMultiDict` is used
     #: (for example for :attr:`cookies`).
     #:
     #: .. versionadded:: 0.6
-    dict_storage_class = ImmutableTypeConversionDict
+    dict_storage_class = ImmutableMultiDict
 
     #: The form data parser that shoud be used.  Can be replaced to customize
     #: the form date parsing.

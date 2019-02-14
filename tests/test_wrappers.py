@@ -28,8 +28,8 @@ from werkzeug.datastructures import CharsetAccept
 from werkzeug.datastructures import CombinedMultiDict
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import ImmutableList
+from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.datastructures import ImmutableOrderedMultiDict
-from werkzeug.datastructures import ImmutableTypeConversionDict
 from werkzeug.datastructures import LanguageAccept
 from werkzeug.datastructures import MIMEAccept
 from werkzeug.datastructures import MultiDict
@@ -1247,9 +1247,12 @@ def test_storage_classes():
     assert type(req.values) is CombinedMultiDict
     assert req.values["foo"] == u"baz"
 
-    req = wrappers.Request.from_values(headers={"Cookie": "foo=bar"})
-    assert type(req.cookies) is ImmutableTypeConversionDict
-    assert req.cookies == {"foo": "bar"}
+    req = wrappers.Request.from_values(headers={"Cookie": "foo=bar;foo=baz"})
+    assert type(req.cookies) is ImmutableMultiDict
+    assert req.cookies.to_dict() == {"foo": "bar"}
+
+    # it is possible to have multiple cookies with the same name
+    assert req.cookies.getlist("foo") == ["bar", "baz"]
     assert type(req.access_route) is ImmutableList
 
     MyRequest.list_storage_class = tuple
