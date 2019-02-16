@@ -742,7 +742,7 @@ class Aborter(object):
         if extra is not None:
             self.mapping.update(extra)
 
-    def __call__(self, code, description=None, *args, **kwargs):
+    def __call__(self, code, *args, description=None, **kwargs):
         if isinstance(code, integer_types) and description is not None:
             raise HTTPException(response=code, description=description)
         if not args and not kwargs and not isinstance(code, integer_types):
@@ -752,7 +752,7 @@ class Aborter(object):
         raise self.mapping[code](*args, **kwargs)
 
 
-def abort(status, description=None, *args, **kwargs):
+def abort(status, *args, description=None, **kwargs):
     '''
     Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application::
@@ -770,7 +770,7 @@ def abort(status, description=None, *args, **kwargs):
        abort(Response('Hello World'))
 
     '''
-    return _aborter(status, description, *args, **kwargs)
+    return _aborter(status, *args, description=description, **kwargs)
 
 _aborter = Aborter()
 
