@@ -742,7 +742,9 @@ class Aborter(object):
         if extra is not None:
             self.mapping.update(extra)
 
-    def __call__(self, code, *args, **kwargs):
+    def __call__(self, code, description=None, *args, **kwargs):
+        if isinstance(code, integer_types) and description is not None:
+            raise HTTPException(response=code, description=description)
         if not args and not kwargs and not isinstance(code, integer_types):
             raise HTTPException(response=code)
         if code not in self.mapping:
@@ -750,24 +752,25 @@ class Aborter(object):
         raise self.mapping[code](*args, **kwargs)
 
 
-def abort(status, *args, **kwargs):
+def abort(status, description=None, *args, **kwargs):
     '''
     Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application::
 
         abort(404)  # 404 Not Found
+        abort(404, f'File {filename} not found')
         abort(Response('Hello World'))
 
-    Can be passed a WSGI application or a status code.  If a status code is
-    given it's looked up in the list of exceptions and will raise that
-    exception, if passed a WSGI application it will wrap it in a proxy WSGI
-    exception and raise that::
+    Can be passed a WSGI application or a status code with optional description.  
+    If a status code is given it's looked up in the list of exceptions and will 
+    raise that exception, if passed a WSGI application it will wrap it in a proxy 
+    WSGI exception and raise that::
 
        abort(404)
        abort(Response('Hello World'))
 
     '''
-    return _aborter(status, *args, **kwargs)
+    return _aborter(status, description, *args, **kwargs)
 
 _aborter = Aborter()
 
