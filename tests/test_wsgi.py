@@ -5,8 +5,8 @@
 
     Tests the WSGI utilities.
 
-    :copyright: (c) 2014 by Armin Ronacher.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 import io
 import json

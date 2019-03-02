@@ -6,8 +6,8 @@
     This module contains special pages such as the recent changes page.
 
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from simplewiki.utils import Response, Pagination, generate_template, href
 from simplewiki.database import RevisionedPage, Page

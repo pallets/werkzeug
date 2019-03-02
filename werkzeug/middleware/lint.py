@@ -9,8 +9,8 @@ common HTTP errors such as non-empty responses for 304 status codes.
 
 .. autoclass:: LintMiddleware
 
-:copyright: 2007 by the Pallets team.
-:license: BSD-3-Clause, see LICENSE.rst for details.
+:copyright: 2007 Pallets
+:license: BSD-3-Clause
 """
 from warnings import warn
 

@@ -5,8 +5,8 @@
 
     All uploaded files are directly send back to the client.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import BaseRequest, BaseResponse

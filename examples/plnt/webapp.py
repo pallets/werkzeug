@@ -5,8 +5,8 @@
 
     The web part of the planet.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from os import path
 from sqlalchemy import create_engine

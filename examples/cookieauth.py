@@ -7,8 +7,8 @@
     This is a very simple application that uses a secure cookie to do the
     user authentification.
 
-    :copyright: Copyright 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from werkzeug.serving import run_simple
 from werkzeug.utils import cached_property, escape, redirect

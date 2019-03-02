@@ -5,8 +5,8 @@
 
     Display the aggregated feeds.
 
-    :copyright: (c) 2009 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from datetime import datetime, date
 from plnt.database import Blog, Entry

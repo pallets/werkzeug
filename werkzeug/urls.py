@@ -12,8 +12,8 @@
     now this module contains a 2-and-3-compatible backport of Python 3's
     ``urllib.parse``, which is mostly API-compatible.
 
-    :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :copyright: 2007 Pallets
+    :license: BSD-3-Clause
 """
 from collections import namedtuple
 

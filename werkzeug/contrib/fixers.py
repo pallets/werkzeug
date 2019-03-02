@@ -23,8 +23,8 @@ This module includes various helpers that fix web server behavior.
 
 .. autoclass:: InternetExplorerFix
 
-:copyright: 2007 by the Pallets team.
-:license: BSD-3-Clause, see LICENSE for details.
+:copyright: 2007 Pallets
+:license: BSD-3-Clause
 """
 import warnings
 
