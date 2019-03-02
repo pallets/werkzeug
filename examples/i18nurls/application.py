@@ -81,6 +81,6 @@ class Application(object):
                 resp = views[endpoint](req, **args)
         except NotFound:
             resp = self.not_found(req)
-        except (RequestRedirect, HTTPException), e:
+        except (RequestRedirect, HTTPException) as e:
             resp = e
         return resp(environ, start_response)

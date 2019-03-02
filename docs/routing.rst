@@ -41,7 +41,7 @@ Here is a simple example which could be the URL definition for a blog::
         urls = url_map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match()
-        except HTTPException, e:
+        except HTTPException as e:
             return e(environ, start_response)
         start_response('200 OK', [('Content-Type', 'text/plain')])
         return ['Rule points to %r with arguments %r' % (endpoint, args)]

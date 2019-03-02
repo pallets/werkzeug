@@ -41,10 +41,10 @@ class ServerBrowser(Syncable):
         to_delete = set(self.servers)
         for x in xrange(1, 17):
             addr = ('master%d.teeworlds.com' % x, 8300)
-            print addr
+            print(addr)
             try:
                 self._sync_master(addr, to_delete)
-            except (socket.error, socket.timeout, IOError), e:
+            except (socket.error, socket.timeout, IOError) as e:
                 continue
         for server_id in to_delete:
             self.servers.pop(server_id, None)

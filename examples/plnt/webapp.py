@@ -46,7 +46,7 @@ class Plnt(object):
         try:
             endpoint, values = adapter.match(request.path)
             response = endpoints[endpoint](request, **values)
-        except HTTPException, e:
+        except HTTPException as e:
             response = e
         return ClosingIterator(response(environ, start_response),
                                session.remove)

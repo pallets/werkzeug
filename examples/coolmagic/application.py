@@ -51,9 +51,9 @@ class CoolMagicApplication(object):
         try:
             endpoint, args = urls.match(req.path)
             resp = self.views[endpoint](**args)
-        except NotFound, e:
+        except NotFound as e:
             resp = self.views['static.not_found']()
-        except (HTTPException, RequestRedirect), e:
+        except (HTTPException, RequestRedirect) as e:
             resp = e
         return resp(environ, start_response)
 

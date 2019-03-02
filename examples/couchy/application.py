@@ -33,10 +33,10 @@ class Couchy(object):
             endpoint, values = adapter.match()
             handler = getattr(views, endpoint)
             response = handler(request, **values)
-        except NotFound, e:
+        except NotFound as e:
             response = views.not_found(request)
             response.status_code = 404
-        except HTTPException, e:
+        except HTTPException as e:
             response = e
         return ClosingIterator(response(environ, start_response),
                                 [local_manager.cleanup])

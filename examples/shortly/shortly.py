@@ -109,9 +109,9 @@ class Shortly(object):
         try:
             endpoint, values = adapter.match()
             return getattr(self, 'on_' + endpoint)(request, **values)
-        except NotFound, e:
+        except NotFound as e:
             return self.error_404()
-        except HTTPException, e:
+        except HTTPException as e:
             return e
 
     def wsgi_app(self, environ, start_response):

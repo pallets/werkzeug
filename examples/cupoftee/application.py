@@ -97,10 +97,10 @@ class Cup(object):
             endpoint, values = url_adapter.match()
             page = pages[endpoint](self, request, url_adapter)
             response = page.process(**values)
-        except NotFound, e:
+        except NotFound as e:
             page = MissingPage(self, request, url_adapter)
             response = page.process()
-        except HTTPException, e:
+        except HTTPException as e:
             return e
         return response or page.get_response()
 

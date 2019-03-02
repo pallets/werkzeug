@@ -64,6 +64,6 @@ class WebPyApp(object):
                     break
             else:
                 raise NotFound()
-        except HTTPException, e:
+        except HTTPException as e:
             resp = e
         return resp(environ, start_response)
