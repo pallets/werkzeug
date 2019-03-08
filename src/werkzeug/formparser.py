@@ -401,7 +401,10 @@ class MultiPartParser(object):
         except (KeyError, ValueError):
             content_length = 0
         container = self.stream_factory(
-            total_content_length, content_type, filename, content_length
+            total_content_length=total_content_length,
+            filename=filename,
+            content_type=content_type,
+            content_length=content_length,
         )
         return filename, container
 

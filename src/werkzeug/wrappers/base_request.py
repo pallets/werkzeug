@@ -263,8 +263,8 @@ class BaseRequest(object):
         """
         return default_stream_factory(
             total_content_length=total_content_length,
-            content_type=content_type,
             filename=filename,
+            content_type=content_type,
             content_length=content_length,
         )
 
