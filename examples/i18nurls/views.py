@@ -1,22 +1,29 @@
-from i18nurls.application import TemplateResponse, Response, expose
+from .application import expose
+from .application import Response
+from .application import TemplateResponse
 
 
-@expose('index')
+@expose("index")
 def index(req):
-    return TemplateResponse('index.html', title='Index')
+    return TemplateResponse("index.html", title="Index")
 
-@expose('about')
+
+@expose("about")
 def about(req):
-    return TemplateResponse('about.html', title='About')
+    return TemplateResponse("about.html", title="About")
 
-@expose('blog/index')
+
+@expose("blog/index")
 def blog_index(req):
-    return TemplateResponse('blog.html', title='Blog Index', mode='index')
+    return TemplateResponse("blog.html", title="Blog Index", mode="index")
 
-@expose('blog/show')
+
+@expose("blog/show")
 def blog_show(req, post_id):
-    return TemplateResponse('blog.html', title='Blog Post #%d' % post_id,
-                            post_id=post_id, mode='show')
+    return TemplateResponse(
+        "blog.html", title="Blog Post #%d" % post_id, post_id=post_id, mode="show"
+    )
+
 
 def page_not_found(req):
-    return Response('<h1>Page Not Found</h1>', mimetype='text/html')
+    return Response("<h1>Page Not Found</h1>", mimetype="text/html")

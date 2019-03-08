@@ -1,6 +1,12 @@
 from datetime import datetime
-from couchdb.mapping import Document, TextField, BooleanField, DateTimeField
-from couchy.utils import url_for, get_random_uid
+
+from couchdb.mapping import BooleanField
+from couchdb.mapping import DateTimeField
+from couchdb.mapping import Document
+from couchdb.mapping import TextField
+
+from .utils import get_random_uid
+from .utils import url_for
 
 
 class URL(Document):
@@ -11,22 +17,23 @@ class URL(Document):
     db = None
 
     @classmethod
-    def load(self, id):
-        return super(URL, self).load(URL.db, id)
+    def load(cls, id):
+        return super(URL, cls).load(URL.db, id)
 
     @classmethod
-    def query(self, code):
+    def query(cls, code):
         return URL.db.query(code)
 
     def store(self):
-        if getattr(self._data, 'id', None) is None:
+        if getattr(self._data, "id", None) is None:
             new_id = self.shorty_id if self.shorty_id else None
             while 1:
                 id = new_id if new_id else get_random_uid()
-                docid = None
                 try:
-                    docid = URL.db.resource.put(content=self._data, path='/%s/' % str(id))['id']
-                except:
+                    docid = URL.db.resource.put(
+                        content=self._data, path="/%s/" % str(id)
+                    )["id"]
+                except Exception:
                     continue
                 if docid:
                     break
@@ -37,7 +44,7 @@ class URL(Document):
 
     @property
     def short_url(self):
-        return url_for('link', uid=self.id, _external=True)
+        return url_for("link", uid=self.id, _external=True)
 
     def __repr__(self):
-        return '<URL %r>' % self.id
+        return "<URL %r>" % self.id

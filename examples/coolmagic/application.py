@@ -12,10 +12,18 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from os import path, listdir
-from coolmagic.utils import Request, local_manager, redirect
-from werkzeug.routing import Map, Rule, RequestRedirect
-from werkzeug.exceptions import HTTPException, NotFound
+from os import listdir
+from os import path
+
+from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import NotFound
+from werkzeug.middleware.shared_data import SharedDataMiddleware
+from werkzeug.routing import Map
+from werkzeug.routing import RequestRedirect
+from werkzeug.routing import Rule
+
+from .utils import local_manager
+from .utils import Request
 
 
 class CoolMagicApplication(object):
@@ -26,20 +34,20 @@ class CoolMagicApplication(object):
     def __init__(self, config):
         self.config = config
 
-        for fn in listdir(path.join(path.dirname(__file__), 'views')):
-            if fn.endswith('.py') and fn != '__init__.py':
-                __import__('coolmagic.views.' + fn[:-3])
+        for fn in listdir(path.join(path.dirname(__file__), "views")):
+            if fn.endswith(".py") and fn != "__init__.py":
+                __import__("coolmagic.views." + fn[:-3])
 
         from coolmagic.utils import exported_views
+
         rules = [
             # url for shared data. this will always be unmatched
             # because either the middleware or the webserver
             # handles that request first.
-            Rule('/public/<path:file>',
-                 endpoint='shared_data')
+            Rule("/public/<path:file>", endpoint="shared_data")
         ]
         self.views = {}
-        for endpoint, (func, rule, extra) in exported_views.iteritems():
+        for endpoint, (func, rule, extra) in exported_views.items():
             if rule is not None:
                 rules.append(Rule(rule, endpoint=endpoint, **extra))
             self.views[endpoint] = func
@@ -51,9 +59,9 @@ class CoolMagicApplication(object):
         try:
             endpoint, args = urls.match(req.path)
             resp = self.views[endpoint](**args)
-        except NotFound, e:
-            resp = self.views['static.not_found']()
-        except (HTTPException, RequestRedirect), e:
+        except NotFound:
+            resp = self.views["static.not_found"]()
+        except (HTTPException, RequestRedirect) as e:
             resp = e
         return resp(environ, start_response)
 
@@ -67,10 +75,9 @@ def make_app(config=None):
     app = CoolMagicApplication(config)
 
     # static stuff
-    from werkzeug.wsgi import SharedDataMiddleware
-    app = SharedDataMiddleware(app, {
-        '/public': path.join(path.dirname(__file__), 'public')
-    })
+    app = SharedDataMiddleware(
+        app, {"/public": path.join(path.dirname(__file__), "public")}
+    )
 
     # clean up locals
     app = local_manager.make_middleware(app)

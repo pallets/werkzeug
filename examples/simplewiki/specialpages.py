@@ -9,10 +9,12 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from simplewiki.utils import Response, Pagination, generate_template, href
-from simplewiki.database import RevisionedPage, Page
-from simplewiki.actions import page_missing
-
+from .actions import page_missing
+from .database import Page
+from .database import RevisionedPage
+from .utils import generate_template
+from .utils import Pagination
+from .utils import Response
 
 
 def page_index(request):
@@ -20,19 +22,21 @@ def page_index(request):
     letters = {}
     for page in Page.query.order_by(Page.name):
         letters.setdefault(page.name.capitalize()[0], []).append(page)
-    return Response(generate_template('page_index.html',
-        letters=sorted(letters.items())
-    ))
+    return Response(
+        generate_template("page_index.html", letters=sorted(letters.items()))
+    )
 
 
 def recent_changes(request):
     """Display the recent changes."""
-    page = max(1, request.args.get('page', type=int))
-    query = RevisionedPage.query \
-        .order_by(RevisionedPage.revision_id.desc())
-    return Response(generate_template('recent_changes.html',
-        pagination=Pagination(query, 20, page, 'Special:Recent_Changes')
-    ))
+    page = max(1, request.args.get("page", type=int))
+    query = RevisionedPage.query.order_by(RevisionedPage.revision_id.desc())
+    return Response(
+        generate_template(
+            "recent_changes.html",
+            pagination=Pagination(query, 20, page, "Special:Recent_Changes"),
+        )
+    )
 
 
 def page_not_found(request, page_name):
@@ -43,7 +47,4 @@ def page_not_found(request, page_name):
     return page_missing(request, page_name, True)
 
 
-pages = {
-    'Index':            page_index,
-    'Recent_Changes':   recent_changes
-}
+pages = {"Index": page_index, "Recent_Changes": recent_changes}

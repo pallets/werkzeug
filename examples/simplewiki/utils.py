@@ -9,21 +9,25 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-import difflib
-import creoleparser
 from os import path
+
+import creoleparser
 from genshi import Stream
 from genshi.template import TemplateLoader
-from werkzeug.local import Local, LocalManager
-from werkzeug.urls import url_encode, url_quote
-from werkzeug.utils import cached_property, redirect
-from werkzeug.wrappers import BaseRequest, BaseResponse
+from werkzeug.local import Local
+from werkzeug.local import LocalManager
+from werkzeug.urls import url_encode
+from werkzeug.urls import url_quote
+from werkzeug.utils import cached_property
+from werkzeug.wrappers import BaseRequest
+from werkzeug.wrappers import BaseResponse
 
 
 # calculate the path to the templates an create the template loader
-TEMPLATE_PATH = path.join(path.dirname(__file__), 'templates')
-template_loader = TemplateLoader(TEMPLATE_PATH, auto_reload=True,
-                                 variable_lookup='lenient')
+TEMPLATE_PATH = path.join(path.dirname(__file__), "templates")
+template_loader = TemplateLoader(
+    TEMPLATE_PATH, auto_reload=True, variable_lookup="lenient"
+)
 
 
 # context locals.  these two objects are use by the application to
@@ -31,27 +35,25 @@ template_loader = TemplateLoader(TEMPLATE_PATH, auto_reload=True,
 # current thread and the current greenlet if there is greenlet support.
 local = Local()
 local_manager = LocalManager([local])
-request = local('request')
-application = local('application')
+request = local("request")
+application = local("application")
 
 # create a new creole parser
 creole_parser = creoleparser.Parser(
-    dialect=creoleparser.create_dialect(creoleparser.creole10_base,
-        wiki_links_base_url='',
+    dialect=creoleparser.create_dialect(
+        creoleparser.creole10_base,
+        wiki_links_base_url="",
         wiki_links_path_func=lambda page_name: href(page_name),
-        wiki_links_space_char='_',
-        no_wiki_monospace=True
+        wiki_links_space_char="_",
+        no_wiki_monospace=True,
     ),
-    method='html'
+    method="html",
 )
 
 
 def generate_template(template_name, **context):
     """Load and generate a template."""
-    context.update(
-        href=href,
-        format_datetime=format_datetime
-    )
+    context.update(href=href, format_datetime=format_datetime)
     return template_loader.load(template_name).generate(**context)
 
 
@@ -65,17 +67,17 @@ def href(*args, **kw):
     Simple function for URL generation.  Position arguments are used for the
     URL path and keyword arguments are used for the url parameters.
     """
-    result = [(request.script_root if request else '') + '/']
+    result = [(request.script_root if request else "") + "/"]
     for idx, arg in enumerate(args):
-        result.append(('/' if idx else '') + url_quote(arg))
+        result.append(("/" if idx else "") + url_quote(arg))
     if kw:
-        result.append('?' + url_encode(kw))
-    return ''.join(result)
+        result.append("?" + url_encode(kw))
+    return "".join(result)
 
 
 def format_datetime(obj):
     """Format a datetime object."""
-    return obj.strftime('%Y-%m-%d %H:%M')
+    return obj.strftime("%Y-%m-%d %H:%M")
 
 
 class Request(BaseRequest):
@@ -95,14 +97,14 @@ class Response(BaseResponse):
     to html.  This makes it possible to switch to xhtml or html5 easily.
     """
 
-    default_mimetype = 'text/html'
+    default_mimetype = "text/html"
 
-    def __init__(self, response=None, status=200, headers=None, mimetype=None,
-                 content_type=None):
+    def __init__(
+        self, response=None, status=200, headers=None, mimetype=None, content_type=None
+    ):
         if isinstance(response, Stream):
-            response = response.render('html', encoding=None, doctype='html')
-        BaseResponse.__init__(self, response, status, headers, mimetype,
-                              content_type)
+            response = response.render("html", encoding=None, doctype="html")
+        BaseResponse.__init__(self, response, status, headers, mimetype, content_type)
 
 
 class Pagination(object):
@@ -119,8 +121,11 @@ class Pagination(object):
 
     @cached_property
     def entries(self):
-        return self.query.offset((self.page - 1) * self.per_page) \
-                         .limit(self.per_page).all()
+        return (
+            self.query.offset((self.page - 1) * self.per_page)
+            .limit(self.per_page)
+            .all()
+        )
 
     @property
     def has_previous(self):

@@ -1,1 +1,1 @@
-from i18nurls.application import Application as make_app
+from .application import Application as make_app

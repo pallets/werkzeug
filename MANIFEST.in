@@ -6,5 +6,5 @@ graft docs
 prune docs/_build
 graft examples
 graft tests
-graft werkzeug/debug/shared
+graft src/werkzeug/debug/shared
 global-exclude *.py[co]

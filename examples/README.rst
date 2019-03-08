@@ -23,7 +23,7 @@ find in real life :-)
     A simple Wiki implementation.
 
     Requirements:
-    
+
     -   SQLAlchemy
     -   Creoleparser >= 0.7
     -   genshi
@@ -50,9 +50,9 @@ find in real life :-)
     A planet called plnt, pronounce plant.
 
     Requirements:
-    
+
     -   SQLAlchemy
-    -   Jinja
+    -   Jinja2
     -   feedparser
 
     You can obtain all packages in the Cheeseshop via easy_install.
@@ -76,7 +76,7 @@ find in real life :-)
     A tinyurl clone for the Werkzeug tutorial.
 
     Requirements:
-    
+
     -   SQLAlchemy
     -   Jinja2
 
@@ -98,7 +98,7 @@ find in real life :-)
     Like shorty, but implemented using CouchDB.
 
     Requirements :
-    
+
     -   werkzeug : http://werkzeug.pocoo.org
     -   jinja : http://jinja.pocoo.org
     -   couchdb 0.72 & above : https://couchdb.apache.org/

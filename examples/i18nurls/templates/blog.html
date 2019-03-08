@@ -1,4 +1,7 @@
-<p>Blog <% if mode == 'index' %>Index<% else %>Post $post_id<% endif %></p>
+{% extends "layout.html" %}
+{% block body %}
+<p>Blog {% if mode == 'index' %}Index{% else %}Post {{ post_id }}{% endif %}</p>
 <p>
-  How about going to <a href="$escape(req.url_for('index'))">the index</a>.
+  How about going to <a href="{{ req.url_for('index') }}">the index</a>.
 </p>
+{% endblock %}

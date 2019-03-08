@@ -11,9 +11,13 @@
     :license: BSD-3-Clause
 """
 import re
-from werkzeug.wrappers import BaseRequest, BaseResponse
-from werkzeug.exceptions import HTTPException, MethodNotAllowed, \
-     NotImplemented, NotFound
+
+from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import MethodNotAllowed
+from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotImplemented
+from werkzeug.wrappers import BaseRequest
+from werkzeug.wrappers import BaseResponse
 
 
 class Request(BaseRequest):
@@ -33,6 +37,7 @@ class View(object):
 
     def GET(self):
         raise MethodNotAllowed()
+
     POST = DELETE = PUT = GET
 
     def HEAD(self):
@@ -46,8 +51,9 @@ class WebPyApp(object):
     """
 
     def __init__(self, urls, views):
-        self.urls = [(re.compile('^%s$' % urls[i]), urls[i + 1])
-                     for i in xrange(0, len(urls), 2)]
+        self.urls = [
+            (re.compile("^%s$" % urls[i]), urls[i + 1]) for i in range(0, len(urls), 2)
+        ]
         self.views = views
 
     def __call__(self, environ, start_response):
@@ -57,13 +63,12 @@ class WebPyApp(object):
                 match = regex.match(req.path)
                 if match is not None:
                     view = self.views[view](self, req)
-                    if req.method not in ('GET', 'HEAD', 'POST',
-                                          'DELETE', 'PUT'):
-                        raise NotImplemented()
+                    if req.method not in ("GET", "HEAD", "POST", "DELETE", "PUT"):
+                        raise NotImplemented()  # noqa: F901
                     resp = getattr(view, req.method)(*match.groups())
                     break
             else:
                 raise NotFound()
-        except HTTPException, e:
+        except HTTPException as e:
             resp = e
         return resp(environ, start_response)

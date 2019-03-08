@@ -1,35 +1,37 @@
+{% extends "layout.html" %}
+{% block body %}
 <h2>Server List</h2>
 <p>
-  Currently <strong>$len(players)</strong> players are playing on
-  <strong>$len(servers)</strong> servers.
-  <% if cup.master.last_sync %>
+  Currently <strong>{{ len(players) }}</strong> players are playing on
+  <strong>{{ len(servers) }}</strong> servers.
+  {% if cup.master.last_sync %}
     This list was last synced on
-    <strong>$cup.master.last_sync.strftime('%d %B %Y at %H:%M UTC')</strong>.
-  <% else %>
+    <strong>{{ cup.master.last_sync.strftime('%d %B %Y at %H:%M UTC') }}</strong>.
+  {% else %}
     Syncronization with master server in progress.  Reload the page in a minute
     or two, to see the server list.
-  <% endif %>
+  {% endif %}
 </p>
 <table class="servers">
   <thead>
     <tr>
-      <th>$self.order_link('name', 'Name')</th>
-      <th>$self.order_link('map', 'Map')</th>
-      <th>$self.order_link('gametype', 'Gametype')</th>
-      <th>$self.order_link('players', 'Players')</th>
-      <th>$self.order_link('progression', 'Progression')</th>
+      <th>{{ self.order_link('name', 'Name') }}</th>
+      <th>{{ self.order_link('map', 'Map') }}</th>
+      <th>{{ self.order_link('gametype', 'Gametype') }}</th>
+      <th>{{ self.order_link('players', 'Players') }}</th>
+      <th>{{ self.order_link('progression', 'Progression') }}</th>
     </tr>
   </thead>
   <tbody>
-    <% for server in servers %>
+    {% for server in servers %}
     <tr>
-      <th><a href="$url_for('server', id=server.id)">$escape(server.name)</a></th>
-      <td>$escape(server.map)</td>
-      <td>$server.gametype</td>
-      <td>$server.player_count / $server.max_players</td>
-      <td>${'%d%%' % server.progression if server.progression >= 0 else '?'}</td>
+      <th><a href="{{ url_for('server', id=server.id) }}">{{ server.name }}</a></th>
+      <td>{{ server.map }}</td>
+      <td>{{ server.gametype }}</td>
+      <td>{{ server.player_count }} / {{ server.max_players }}</td>
+      <td>{{ '%d%%' % server.progression if server.progression >= 0 else '?' }}</td>
     </tr>
-    <% endfor %>
+    {% endfor %}
   </tbody>
 </table>
 <h3>Players online</h3>
@@ -39,10 +41,10 @@
   the detail page of the server for some more information.
 </p>
 <div class="players">
-<% for player in players %>
-  <a href="$url_for('server', id=player.server.id)" title="score: $player.score"
-     style="font-size: $player.size%">$escape(player.name)</a>
-<% endfor %>
+{% for player in players %}
+  <a href="{{ url_for('server', id=player.server.id) }}" title="score: {{ player.score }}"
+     style="font-size: {{ player.size }}%">{{ player.name }}</a>
+{% endfor %}
 </div>
 <h3>Find User</h3>
 <p>
@@ -51,9 +53,10 @@
   users can appear on multiple servers for too generic usernames (like the
   default "nameless tee" user).
 </p>
-<form action="$url_for('search')" method="get">
+<form action="{{ url_for('search') }}" method="get">
   <p>
     <input type="text" name="user" value="" size="30">
     <input type="submit" value="Search">
   </p>
 </form>
+{% endblock %}

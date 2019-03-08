@@ -95,7 +95,7 @@ argument that behaves like the `errors` parameter of the builtin string method
 Unlike the regular python decoding Werkzeug does not raise an
 :exc:`UnicodeDecodeError` if the decoding failed but an
 :exc:`~exceptions.HTTPUnicodeError` which
-is a direct subclass of `UnicodeError` and the `BadRequest` HTTP exception. 
+is a direct subclass of `UnicodeError` and the `BadRequest` HTTP exception.
 The reason is that if this exception is not caught by the application but
 a catch-all for HTTP exceptions exists a default `400 BAD REQUEST` error
 page is displayed.

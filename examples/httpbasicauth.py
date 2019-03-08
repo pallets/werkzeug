@@ -10,12 +10,12 @@
     :license: BSD-3-Clause
 """
 from werkzeug.serving import run_simple
-from werkzeug.wrappers import Request, Response
+from werkzeug.wrappers import Request
+from werkzeug.wrappers import Response
 
 
 class Application(object):
-
-    def __init__(self, users, realm='login required'):
+    def __init__(self, users, realm="login required"):
         self.users = users
         self.realm = realm
 
@@ -23,12 +23,15 @@ class Application(object):
         return username in self.users and self.users[username] == password
 
     def auth_required(self, request):
-        return Response('Could not verify your access level for that URL.\n'
-                        'You have to login with proper credentials', 401,
-                        {'WWW-Authenticate': 'Basic realm="%s"' % self.realm})
+        return Response(
+            "Could not verify your access level for that URL.\n"
+            "You have to login with proper credentials",
+            401,
+            {"WWW-Authenticate": 'Basic realm="%s"' % self.realm},
+        )
 
     def dispatch_request(self, request):
-        return Response('Logged in as %s' % request.authorization.username)
+        return Response("Logged in as %s" % request.authorization.username)
 
     def __call__(self, environ, start_response):
         request = Request(environ)
@@ -40,6 +43,6 @@ class Application(object):
         return response(environ, start_response)
 
 
-if __name__ == '__main__':
-    application = Application({'user1': 'password', 'user2': 'password'})
-    run_simple('localhost', 5000, application)
+if __name__ == "__main__":
+    application = Application({"user1": "password", "user2": "password"})
+    run_simple("localhost", 5000, application)

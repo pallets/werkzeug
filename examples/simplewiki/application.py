@@ -11,17 +11,25 @@
     :license: BSD-3-Clause
 """
 from os import path
+
 from sqlalchemy import create_engine
+from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.utils import redirect
-from werkzeug.wsgi import ClosingIterator, SharedDataMiddleware
-from simplewiki.utils import Request, Response, local, local_manager, href
-from simplewiki.database import session, metadata
-from simplewiki import actions
-from simplewiki.specialpages import pages, page_not_found
+from werkzeug.wsgi import ClosingIterator
+
+from . import actions
+from .database import metadata
+from .database import session
+from .specialpages import page_not_found
+from .specialpages import pages
+from .utils import href
+from .utils import local
+from .utils import local_manager
+from .utils import Request
 
 
 #: path to shared data
-SHARED_DATA = path.join(path.dirname(__file__), 'shared')
+SHARED_DATA = path.join(path.dirname(__file__), "shared")
 
 
 class SimpleWiki(object):
@@ -35,9 +43,9 @@ class SimpleWiki(object):
         # apply our middlewares.   we apply the middlewars *inside* the
         # application and not outside of it so that we never lose the
         # reference to the `SimpleWiki` object.
-        self._dispatch = SharedDataMiddleware(self.dispatch_request, {
-            '/_shared':     SHARED_DATA
-        })
+        self._dispatch = SharedDataMiddleware(
+            self.dispatch_request, {"/_shared": SHARED_DATA}
+        )
 
         # free the context locals at the end of the request
         self._dispatch = local_manager.make_middleware(self._dispatch)
@@ -64,16 +72,15 @@ class SimpleWiki(object):
 
         # get the current action from the url and normalize the page name
         # which is just the request path
-        action_name = request.args.get('action') or 'show'
-        page_name = u'_'.join([x for x in request.path.strip('/')
-                               .split() if x])
+        action_name = request.args.get("action") or "show"
+        page_name = u"_".join([x for x in request.path.strip("/").split() if x])
 
         # redirect to the Main_Page if the user requested the index
         if not page_name:
-            response = redirect(href('Main_Page'))
+            response = redirect(href("Main_Page"))
 
         # check special pages
-        elif page_name.startswith('Special:'):
+        elif page_name.startswith("Special:"):
             if page_name[8:] not in pages:
                 response = page_not_found(request, page_name)
             else:
@@ -83,15 +90,14 @@ class SimpleWiki(object):
         # action module.  It's "on_" + the action name.  If it doesn't
         # exists call the missing_action method from the same module.
         else:
-            action = getattr(actions, 'on_' + action_name, None)
+            action = getattr(actions, "on_" + action_name, None)
             if action is None:
                 response = actions.missing_action(request, action_name)
             else:
                 response = action(request, page_name)
 
         # make sure the session is removed properly
-        return ClosingIterator(response(environ, start_response),
-                               session.remove)
+        return ClosingIterator(response(environ, start_response), session.remove)
 
     def __call__(self, environ, start_response):
         """Just forward a WSGI call to the first internal middleware."""

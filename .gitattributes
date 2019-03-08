@@ -1,2 +1,1 @@
-tests/res/chunked.txt binary
-
+tests/**/*.http binary
