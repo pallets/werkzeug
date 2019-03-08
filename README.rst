@@ -66,7 +66,7 @@ Links
 -----
 
 -   Website: https://www.palletsprojects.com/p/werkzeug/
--   Documentation: http://werkzeug.pocoo.org/docs/
+-   Documentation: https://werkzeug.palletsprojects.com/
 -   Releases: https://pypi.org/project/Werkzeug/
 -   Code: https://github.com/pallets/werkzeug
 -   Issue tracker: https://github.com/pallets/werkzeug/issues
