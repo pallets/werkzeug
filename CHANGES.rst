@@ -5,83 +5,86 @@ Version 0.15
 
 Unreleased
 
--   :class:`~werkzeug.wsgi.ProxyMiddleware` proxies the query string.
-    (`#1252`_)
+-   :class:`~middleware.http_proxy.ProxyMiddleware` proxies the query
+    string. (:pr:`1252`)
 -   Cleanup ``werkzeug.security`` module, remove predated hashlib
-    support. (`#1282`_)
+    support. (:pr:`1282`)
 -   :class:`~test.EnvironBuilder` doesn't set ``CONTENT_TYPE`` or
     ``CONTENT_LENGTH`` in the environ if they aren't set. Previously
     these used default values if they weren't set. Now it's possible to
-    distinguish between empty and unset values. (`#1308`_)
+    distinguish between empty and unset values. (:pr:`1308`)
 -   412 responses once again include entity headers and an error message
     in the body. They were originally omitted when implementing
-    ``If-Match`` (`#1233`_), but the spec doesn't seem to disallow it.
-    (`#1231`_, `#1255`_)
+    ``If-Match`` (:pr:`1233`), but the spec doesn't seem to disallow it.
+    (:issue:`1231`, :pr:`1255`)
 -   :meth:`MapAdapter.build() <routing.MapAdapter.build>` can be passed
     a :class:`~datastructures.MultiDict` to represent multiple values
     for a key. It already did this when passing a dict with a list
-    value. (`#724`_)
+    value. (:pr:`724`)
 -   :func:`http.parse_cookie` ignores empty segments rather than
-    producing a cookie with no key or value. (`#1245`_, `#1301`_)
+    producing a cookie with no key or value. (:issue:`1245`, :pr:`1301`)
 -   Building URLs is ~7x faster. Each :class:`~routing.Rule` compiles
-    an optimized function for building itself. (`#1281`_)
+    an optimized function for building itself. (:pr:`1281`)
 -   ``Location`` autocorrection in :func:`Response.get_wsgi_headers()
     <wrappers.BaseResponse.get_wsgi_headers>` is relative to the current
-    path rather than the root path. (`#693`_, `#718`_, `#1315`_)
+    path rather than the root path. (:issue:`693`, :pr:`718`,
+    :pr:`1315`)
 -   ``path_info`` defaults to ``'/'`` for
-    :meth:`Map.bind() <routing.Map.bind>`. (`#740`_, `#768`_, `#1316`_)
+    :meth:`Map.bind() <routing.Map.bind>`. (:issue:`740`, :pr:`768`,
+    :pr:`1316`)
 -   Triggering a reload while using a tool such as PDB no longer hides
-    input. (`#1318`_)
+    input. (:pr:`1318`)
 -   The dev server can bind to a Unix socket by passing a hostname like
-    ``unix://app.socket``. (`#209`_, `#1019`_)
+    ``unix://app.socket``. (:pr:`209`, :pr:`1019`)
 -   :class:`~wsgi.ClosingIterator` calls ``close`` on the wrapped
     *iterable*, not the internal iterator. This doesn't affect objects
     where ``__iter__`` returned ``self``. For other objects, the method
-    was not called before. (`#1259`_, `#1260`_)
+    was not called before. (:issue:`1259`, :pr:`1260`)
 -   :class:`~exceptions.Unauthorized` takes a ``www_authenticate``
     parameter to set the ``WWW-Authenticate`` header for the response,
-    which is technically required for a valid 401 response. (`#772`_,
-    `#795`_)
+    which is technically required for a valid 401 response.
+    (:issue:`772`, :pr:`795`)
 -   The test client raises a ``ValueError`` if a query string argument
-    would overwrite a query string in the path. (`#1338`_)
+    would overwrite a query string in the path. (:pr:`1338`)
 -   :class:`~test.EnvironBuilder`, :class:`~datastructures.FileStorage`,
     and :func:`wsgi.get_input_stream` no longer share a global
     ``_empty_stream`` instance. This improves test isolation by
     preventing cases where closing the stream in one request would
-    affect other usages. (`#1340`_)
+    affect other usages. (:pr:`1340`)
 -   Change ``RequestRedirect`` code from 301 to 308, preserving the verb
-    and request body (form data) during redirect. (`#1342`_)
+    and request body (form data) during redirect. (:pr:`1342`)
 -   The version of jQuery used by the debugger is updated to 3.3.1.
-    (`#1390`_)
+    (:pr:`1390`)
 -   The debugger correctly renders long ``markupsafe.Markup`` instances.
-    (`#1393`_)
+    (:pr:`1393`)
 -   In :func:`~security.generate_password_hash`, PBKDF2 uses 150000
-    iterations by default, increased from 50000. (`#1377`_)
+    iterations by default, increased from 50000. (:pr:`1377`)
 -   :func:`~http.parse_authorization_header` (and
     :class:`~datastructures.Authorization`,
     :attr:`~wrappers.Request.authorization`) treats the authorization
     header as UTF-8. On Python 2, basic auth username and password are
-    ``unicode``. (`#1325`_)
+    ``unicode``. (:pr:`1325`)
 -   :class:`~exceptions.BadRequestKeyError` adds the ``KeyError``
     message to the description, making it clearer what caused the 400
     error. Frameworks like Flask can omit this information in production
-    by setting ``e.args = ()``. (`#1395`_)
+    by setting ``e.args = ()``. (:pr:`1395`)
 -   Add support for status code 424 :exc:`~exceptions.FailedDependency`.
-    (`#1358`_)
+    (:pr:`1358`)
 -   The reloader will not prepend the Python executable to the command
     line if the Python file is marked executable. This allows the
-    reloader to work on NixOS. (`#1242`_)
+    reloader to work on NixOS. (:pr:`1242`)
 -   Bytes may be used as keys in :class:`~datastructures.Headers`, they
-    will be decoded as Latin-1 like values are. (`#1346`_)
+    will be decoded as Latin-1 like values are. (:pr:`1346`)
 -   Server uses ``IPPROTO_TCP`` constant instead of ``SOL_TCP`` for
-    Jython compatibility. (`#1375`_)
+    Jython compatibility. (:pr:`1375`)
 -   The debugger can serve resources when Werkzeug is installed as a
     zip file. ``DebuggedApplication.get_resource`` uses
-    ``pkgutil.get_data``. (`#1401`_)
+    ``pkgutil.get_data``. (:pr:`1401`)
 -   If a nested ``ImportError`` occurs from :func:`~utils.import_string`
     the traceback mentions the nested import. Removes an untested code
-    path for handling "modules not yet set up by the parent." (`#735`_)
--   :class:`test.Client` redirect handling is rewritten. (`#1402`_)
+    path for handling "modules not yet set up by the parent."
+    (:pr:`735`)
+-   :class:`test.Client` redirect handling is rewritten. (:pr:`1402`)
 
     -   The redirect environ is copied from the initial request environ.
     -   Script root and path are correctly distinguished when
@@ -96,79 +99,82 @@ Unreleased
         the data.
     -   Intermediate response bodies are iterated over even when
         ``buffered=False`` to ensure iterator middleware can run cleanup
-        code safely. Only the last response is not buffered. (`#988`_)
+        code safely. Only the last response is not buffered. (:pr:`988`)
 
 -   :class:`test.EnvironBuilder` and :class:`test.Client` take a
     ``json`` argument instead of manually passing ``data`` and
     ``content_type``. This is serialized using the
-    :meth:`test.EnvironBuilder.json_dumps` method. (`#1404`_)
+    :meth:`test.EnvironBuilder.json_dumps` method. (:pr:`1404`)
 -   ``int`` and ``float`` converters in URL rules will handle negative
     values if passed the ``signed=True`` parameter. For example,
-    ``/jump/<int(signed=True):count>``. (`#1355`_)
+    ``/jump/<int(signed=True):count>``. (:pr:`1355`)
 -   :class:`~datastructures.Range` validates that list of range tuples
-    passed to it would produce a valid ``Range`` header. (`#1412`_)
+    passed to it would produce a valid ``Range`` header. (:pr:`1412`)
 -   :class:`~datastructures.FileStorage` looks up attributes on
     ``stream._file`` if they don't exist on ``stream``, working around
     an issue where :func:`tempfile.SpooledTemporaryFile` didn't
     implement all of :class:`io.IOBase`. See
-    https://github.com/python/cpython/pull/3249. (`#1409`_)
+    https://github.com/python/cpython/pull/3249. (:pr:`1409`)
 -   The debugger and server log support Python 3's chained exceptions.
-    (`#1396`_)
+    (:pr:`1396`)
 -   Fix an issue where ``sys.path`` would change between reloads when
     running with ``python -m app``. The reloader can detect that a
     module was run with "-m" and reconstructs that instead of the file
-    path in ``sys.argv`` when reloading. (`#1416`_)
+    path in ``sys.argv`` when reloading. (:pr:`1416`)
 -   The Content-Length header is removed for 1xx and 204 responses. This
     fixes a previous change where no body would be sent, but the header
     would still be present. The new behavior matches RFC 7230.
-    (`#1294`_)
+    (:pr:`1294`)
 -   :func:`~http.parse_options_header` understands :rfc:`2231` parameter
-    continuations. (`#1417`_)
+    continuations. (:pr:`1417`)
 -   The development server recognizes ``ConnectionError`` on Python 3 to
     silence client disconnects, and does not silence other ``OSErrors``
-    that may have been raised inside the application. (`#1418`_)
+    that may have been raised inside the application. (:pr:`1418`)
 -   The environ keys ``REQUEST_URI`` and ``RAW_URI`` contain the raw
     path before it was percent-decoded. This is non-standard, but many
     WSGI servers add them. Middleware could replace ``PATH_INFO`` with
-    this to route based on the raw value. (`#1419`_)
--   :meth:`CombinedMultiDict.copy() <datastructures.CombinedMultiDict
-    .copy>` returns a shallow mutable copy as a :class:`~datastructures.
-    MultiDict`. The copy no longer reflects changes to the combined
-    dicts, but is more generally useful. (`#1420`_)
+    this to route based on the raw value. (:pr:`1419`)
+-   :class:`CombinedMultiDict.copy() <datastructures.CombinedMultiDict>`
+    returns a shallow mutable copy as a
+    :class:`~datastructures.MultiDict`. The copy no longer reflects
+    changes to the combined dicts, but is more generally useful.
+    (:pr:`1420`)
 -   The interactive debugger highlights frames that come from user code
     to make them easy to pick out in a long stack trace. Note that if an
     env was created with virtualenv instead of venv, the debugger may
-    incorrectly classify some frames. (`#1421`_)
+    incorrectly classify some frames. (:pr:`1421`)
 -   Clicking the error message at the top of the interactive debugger
-    will jump down to the bottom of the traceback. (`#1422`_)
+    will jump down to the bottom of the traceback. (:pr:`1422`)
 -   :func:`~urls.uri_to_iri` does not unquote ASCII characters in the
     unreserved class, such as space, and leaves invalid bytes quoted
-    when decoding. :func:`~iri_to_uri` does not quote reserved
-    characters. See :rfc:`3987` for these character classes. (`#1433`_)
+    when decoding. :func:`~urls.iri_to_uri` does not quote reserved
+    characters. See :rfc:`3987` for these character classes.
+    (:pr:`1433`)
 -   When using an adhoc SSL cert with :func:`~serving.run_simple`, the
     cert is shown as self-signed rather than signed by an invalid
-    authority. (`#1430`_)
+    authority. (:pr:`1430`)
 -   The development server logs the unquoted IRI rather than the raw
     request line, to make it easier to work with Unicode in request
-    paths during development. (`#1115`_)
+    paths during development. (:issue:`1115`)
 -   ``get_content_type`` appends a charset for any mimetype that ends
     with ``+xml``, not just those that start with ``application/``.
     Known text types such as ``application/javascript`` are also given
-    charsets. (`#1439`_)
+    charsets. (:pr:`1439`)
 -   :func:`wsgi.get_host` no longer looks at ``X-Forwarded-For``. Use
-    :class:`~middleware.proxy_fix.ProxyFix` to handle that. (`#609`_,
-    `#1303`_)
+    :class:`~middleware.proxy_fix.ProxyFix` to handle that.
+    (:issue:`609`, :pr:`1303`)
 -   :class:`~middleware.proxy_fix.ProxyFix` is refactored to support
     more headers, multiple values, and more secure configuration.
 
     -   Each header supports multiple values. The trusted number of
         proxies is configured separately for each header. The
-        ``num_proxies`` argument is deprecated. (`#1314`_)
+        ``num_proxies`` argument is deprecated. (:pr:`1314`)
     -   Sets ``SERVER_NAME`` and ``SERVER_PORT`` based on
-        ``X-Forwarded-Host``. (`#1314`_)
+        ``X-Forwarded-Host``. (:pr:`1314`)
     -   Sets ``SERVER_PORT`` and modifies ``HTTP_HOST`` based on
-        ``X-Forwarded-Port``. (`#1023`_, `#1304`_)
-    -   Sets ``SCRIPT_NAME`` based on ``X-Forwarded-Prefix``. (`#1237`_)
+        ``X-Forwarded-Port``. (:issue:`1023`, :pr:`1304`)
+    -   Sets ``SCRIPT_NAME`` based on ``X-Forwarded-Prefix``.
+        (:issue:`1237`)
     -   The original WSGI environment values are stored in the
         ``werkzeug.proxy_fix.orig`` key, a dict. The individual keys
         ``werkzeug.proxy_fix.orig_remote_addr``,
@@ -176,25 +182,26 @@ Unreleased
         ``werkzeug.proxy_fix.orig_http_host`` are deprecated.
 
 -   The filenames generated by
-    :class:`~middleware.profiler.ProfileMiddleware` can be customized.
-    (`#1283`_)
+    :class:`~middleware.profiler.ProfilerMiddleware` can be customized.
+    (:issue:`1283`)
 -   The default :attr:`SecureCookie.serialization_method
     <contrib.securecookie.SecureCookie.serialization_method>` will
     change from :mod:`pickle` to :mod:`json` in 1.0. To upgrade existing
     tokens, override :meth:`~contrib.securecookie.SecureCookie.unquote`
-    to try ``pickle`` if ``json`` fails. (`#1413`_)
+    to try ``pickle`` if ``json`` fails. (:pr:`1413`)
 -   ``CGIRootFix`` no longer modifies ``PATH_INFO`` for very old
     versions of Lighttpd. ``LighttpdCGIRootFix`` was renamed to
     ``CGIRootFix`` in 0.9. Both are deprecated and will be removed in
-    version 1.0. (`#1141`_)
+    version 1.0. (:pr:`1141`)
 -   :class:`werkzeug.wrappers.json.JSONMixin` has been replaced with
-    Flask's implementation. Check the docs for the full API. (`#1445`_)
+    Flask's implementation. Check the docs for the full API.
+    (:pr:`1445`)
 -   The :doc:`contrib modules </contrib/index>` are deprecated and will
     either be moved into ``werkzeug`` core or removed completely in
     version 1.0. Some modules that already issued deprecation warnings
     have been removed. Be sure to run or test your code with
     ``python -W default::DeprecationWarning`` to catch any deprecated
-    code you're using. (`#4`_)
+    code you're using. (:issue:`4`)
 
     -   ``LintMiddleware`` has moved to :mod:`werkzeug.middleware.lint`.
     -   ``ProfilerMiddleware`` has moved to
@@ -221,10 +228,11 @@ Unreleased
     -   ``testtools`` is removed. It did not offer significant benefit
         over the default test client.
     -   ``iterio`` is deprecated.
+
 -   Middleware from ``werkzeug.wsgi`` has moved to separate modules
     under ``werkzeug.middleware``, along with the middleware moved from
     ``werkzeug.contrib``. The old ``werkzeug.wsgi`` imports are
-    deprecated and will be removed in version 1.0. (`#1452`_)
+    deprecated and will be removed in version 1.0. (:pr:`1452`)
 
     -   ``werkzeug.wsgi.DispatcherMiddleware`` has moved to
         :class:`werkzeug.middleware.dispatcher.DispatcherMiddleware`.
@@ -235,81 +243,9 @@ Unreleased
 
 -   The ``werkzeug.wrappers`` module has been converted to a package,
     and its various classes have been organized into separate modules.
-    The documented classes, understood to be the public API, are still
-    importable from ``werkzeug.wrappers``, or may be imported from their
-    specific modules. (`#1456`_)
-
-.. _#4: https://github.com/pallets/werkzeug/issues/4
-.. _#209: https://github.com/pallets/werkzeug/pull/209
-.. _#609: https://github.com/pallets/werkzeug/issues/609
-.. _#693: https://github.com/pallets/werkzeug/issues/693
-.. _#718: https://github.com/pallets/werkzeug/pull/718
-.. _#724: https://github.com/pallets/werkzeug/pull/724
-.. _#735: https://github.com/pallets/werkzeug/pull/735
-.. _#740: https://github.com/pallets/werkzeug/issues/740
-.. _#768: https://github.com/pallets/werkzeug/pull/768
-.. _#772: https://github.com/pallets/werkzeug/issues/772
-.. _#795: https://github.com/pallets/werkzeug/pull/795
-.. _#988: https://github.com/pallets/werkzeug/pull/988
-.. _#1019: https://github.com/pallets/werkzeug/pull/1019
-.. _#1023: https://github.com/pallets/werkzeug/issues/1023
-.. _#1115: https://github.com/pallets/werkzeug/issues/1115
-.. _#1141: https://github.com/pallets/werkzeug/pull/1141
-.. _#1231: https://github.com/pallets/werkzeug/issues/1231
-.. _#1233: https://github.com/pallets/werkzeug/pull/1233
-.. _#1237: https://github.com/pallets/werkzeug/issues/1237
-.. _#1242: https://github.com/pallets/werkzeug/pull/1242
-.. _#1245: https://github.com/pallets/werkzeug/issues/1245
-.. _#1249: https://github.com/pallets/werkzeug/issues/1249
-.. _#1252: https://github.com/pallets/werkzeug/pull/1252
-.. _#1255: https://github.com/pallets/werkzeug/pull/1255
-.. _#1259: https://github.com/pallets/werkzeug/issues/1259
-.. _#1260: https://github.com/pallets/werkzeug/pull/1260
-.. _#1281: https://github.com/pallets/werkzeug/pull/1281
-.. _#1282: https://github.com/pallets/werkzeug/pull/1282
-.. _#1283: https://github.com/pallets/werkzeug/issues/1283
-.. _#1294: https://github.com/pallets/werkzeug/pull/1294
-.. _#1301: https://github.com/pallets/werkzeug/pull/1301
-.. _#1303: https://github.com/pallets/werkzeug/pull/1303
-.. _#1304: https://github.com/pallets/werkzeug/pull/1304
-.. _#1308: https://github.com/pallets/werkzeug/pull/1308
-.. _#1312: https://github.com/pallets/werkzeug/pull/1312
-.. _#1314: https://github.com/pallets/werkzeug/pull/1314
-.. _#1315: https://github.com/pallets/werkzeug/pull/1315
-.. _#1316: https://github.com/pallets/werkzeug/pull/1316
-.. _#1318: https://github.com/pallets/werkzeug/pull/1318
-.. _#1325: https://github.com/pallets/werkzeug/pull/1325
-.. _#1338: https://github.com/pallets/werkzeug/pull/1338
-.. _#1340: https://github.com/pallets/werkzeug/pull/1340
-.. _#1342: https://github.com/pallets/werkzeug/pull/1342
-.. _#1346: https://github.com/pallets/werkzeug/pull/1346
-.. _#1355: https://github.com/pallets/werkzeug/pull/1355
-.. _#1358: https://github.com/pallets/werkzeug/pull/1358
-.. _#1375: https://github.com/pallets/werkzeug/pull/1375
-.. _#1377: https://github.com/pallets/werkzeug/pull/1377
-.. _#1390: https://github.com/pallets/werkzeug/pull/1390
-.. _#1393: https://github.com/pallets/werkzeug/pull/1393
-.. _#1395: https://github.com/pallets/werkzeug/pull/1395
-.. _#1396: https://github.com/pallets/werkzeug/pull/1396
-.. _#1401: https://github.com/pallets/werkzeug/pull/1401
-.. _#1402: https://github.com/pallets/werkzeug/pull/1402
-.. _#1404: https://github.com/pallets/werkzeug/pull/1404
-.. _#1409: https://github.com/pallets/werkzeug/pull/1409
-.. _#1412: https://github.com/pallets/werkzeug/pull/1412
-.. _#1413: https://github.com/pallets/werkzeug/pull/1413
-.. _#1416: https://github.com/pallets/werkzeug/pull/1416
-.. _#1417: https://github.com/pallets/werkzeug/pull/1417
-.. _#1418: https://github.com/pallets/werkzeug/pull/1418
-.. _#1419: https://github.com/pallets/werkzeug/pull/1419
-.. _#1420: https://github.com/pallets/werkzeug/pull/1420
-.. _#1421: https://github.com/pallets/werkzeug/pull/1421
-.. _#1422: https://github.com/pallets/werkzeug/pull/1422
-.. _#1430: https://github.com/pallets/werkzeug/pull/1430
-.. _#1433: https://github.com/pallets/werkzeug/pull/1433
-.. _#1439: https://github.com/pallets/werkzeug/pull/1439
-.. _#1445: https://github.com/pallets/werkzeug/pull/1445
-.. _#1452: https://github.com/pallets/werkzeug/pull/1452
-.. _#1456: https://github.com/pallets/werkzeug/pull/1456
+    Any previously documented classes, understood to be the existing
+    public API, are still importable from ``werkzeug.wrappers``, or may
+    be imported from their specific modules. (:pr:`1456`)
 
 
 Version 0.14.1
@@ -370,50 +306,38 @@ Released on December 7th 2017
 
 - **Deprecate support for Python 2.6 and 3.3.** CI tests will not run
   for these versions, and support will be dropped completely in the next
-  version. (`pallets/meta#24`_)
-- Raise ``TypeError`` when port is not an integer. (`#1088`_)
-- Fully deprecate ``werkzeug.script``. Use `Click`_ instead. (`#1090`_)
+  version. (:issue:`pallets/meta#24`)
+- Raise ``TypeError`` when port is not an integer. (:pr:`1088`)
+- Fully deprecate ``werkzeug.script``. Use `Click`_ instead.
+  (:pr:`1090`)
 - ``response.age`` is parsed as a ``timedelta``. Previously, it was
   incorrectly treated as a ``datetime``. The header value is an integer
-  number of seconds, not a date string. (`#414`_)
+  number of seconds, not a date string. (:pr:`414`)
 - Fix a bug in ``TypeConversionDict`` where errors are not propagated
-  when using the converter. (`#1102`_)
+  when using the converter. (:issue:`1102`)
 - ``Authorization.qop`` is a string instead of a set, to comply with
-  RFC 2617. (`#984`_)
+  RFC 2617. (:pr:`984`)
 - An exception is raised when an encoded cookie is larger than, by
   default, 4093 bytes. Browsers may silently ignore cookies larger than
   this. ``BaseResponse`` has a new attribute ``max_cookie_size`` and
   ``dump_cookie`` has a new argument ``max_size`` to configure this.
-  (`#780`_, `#1109`_)
+  (:pr:`780`, :pr:`1109`)
 - Fix a TypeError in ``werkzeug.contrib.lint.GuardedIterator.close``.
-  (`#1116`_)
+  (:pr:`1116`)
 - ``BaseResponse.calculate_content_length`` now correctly works for
   Unicode responses on Python 3. It first encodes using
-  ``iter_encoded``. (`#705`_)
+  ``iter_encoded``. (:issue:`705`)
 - Secure cookie contrib works with string secret key on Python 3.
-  (`#1205`_)
+  (:pr:`1205`)
 - Shared data middleware accepts a list instead of a dict of static
-  locations to preserve lookup order. (`#1197`_)
+  locations to preserve lookup order. (:pr:`1197`)
 - HTTP header values without encoding can contain single quotes.
-  (`#1208`_)
+  (:pr:`1208`)
 - The built-in dev server supports receiving requests with chunked
-  transfer encoding. (`#1198`_)
+  transfer encoding. (:pr:`1198`)
 
 .. _Click: https://palletsprojects.com/p/click/
-.. _pallets/meta#24: https://github.com/pallets/meta/issues/24
-.. _#414: https://github.com/pallets/werkzeug/pull/414
-.. _#705: https://github.com/pallets/werkzeug/issues/705
-.. _#780: https://github.com/pallets/werkzeug/pull/780
-.. _#984: https://github.com/pallets/werkzeug/pull/984
-.. _#1088: https://github.com/pallets/werkzeug/pull/1088
-.. _#1090: https://github.com/pallets/werkzeug/pull/1090
-.. _#1102: https://github.com/pallets/werkzeug/issues/1102
-.. _#1109: https://github.com/pallets/werkzeug/pull/1109
-.. _#1116: https://github.com/pallets/werkzeug/pull/1116
-.. _#1197: https://github.com/pallets/werkzeug/pull/1197
-.. _#1198: https://github.com/pallets/werkzeug/pull/1198
-.. _#1205: https://github.com/pallets/werkzeug/pull/1205
-.. _#1208: https://github.com/pallets/werkzeug/pull/1208
+
 
 Version 0.12.2
 --------------

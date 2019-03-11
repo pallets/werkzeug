@@ -11,8 +11,14 @@ release, version = get_version("Werkzeug")
 # General --------------------------------------------------------------
 
 master_doc = "index"
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.intersphinx", "pallets_sphinx_themes"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "pallets_sphinx_themes",
+    "sphinx_issues",
+]
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
+issues_github_path = "pallets/werkzeug"
 
 # HTML -----------------------------------------------------------------
 
