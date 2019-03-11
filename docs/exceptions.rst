@@ -44,6 +44,8 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: ImATeapot
 
+.. autoexception:: FailedDependency
+
 .. autoexception:: PreconditionRequired
 
 .. autoexception:: TooManyRequests
@@ -99,6 +101,8 @@ check if the keys exist::
 If `title` or `body` are missing in the form, a special key error will be
 raised which behaves like a :exc:`KeyError` but also a :exc:`BadRequest`
 exception.
+
+.. autoexception:: BadRequestKeyError
 
 
 Simple Aborting

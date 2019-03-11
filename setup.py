@@ -56,7 +56,13 @@ setup(
     extras_require={
         "watchdog": ["watchdog"],
         "termcolor": ["termcolor"],
-        "dev": ["pytest", "coverage", "tox", "sphinx", "pallets-sphinx-themes"],
-        "docs": ["sphinx", "pallets-sphinx-themes"],
+        "dev": [
+            "pytest",
+            "coverage",
+            "tox",
+            "sphinx",
+            "pallets-sphinx-themes",
+            "sphinx-issues",
+        ],
     },
 )
