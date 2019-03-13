@@ -92,6 +92,9 @@ Unreleased
     incorrectly classify some frames. (:pr:`1421`)
 -   Clicking the error message at the top of the interactive debugger
     will jump down to the bottom of the traceback. (:pr:`1422`)
+-   When generating a PIN, the debugger will ignore a ``KeyError``
+    raised when the current UID doesn't have an associated username,
+    which can happen in Docker. (:issue:`1471`)
 -   :class:`~exceptions.BadRequestKeyError` adds the ``KeyError``
     message to the description, making it clearer what caused the 400
     error. Frameworks like Flask can omit this information in production
