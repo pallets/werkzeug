@@ -5,85 +5,137 @@ Version 0.15
 
 Unreleased
 
--   :class:`~middleware.http_proxy.ProxyMiddleware` proxies the query
-    string. (:pr:`1252`)
--   Cleanup ``werkzeug.security`` module, remove predated hashlib
-    support. (:pr:`1282`)
--   :class:`~test.EnvironBuilder` doesn't set ``CONTENT_TYPE`` or
-    ``CONTENT_LENGTH`` in the environ if they aren't set. Previously
-    these used default values if they weren't set. Now it's possible to
-    distinguish between empty and unset values. (:pr:`1308`)
--   412 responses once again include entity headers and an error message
-    in the body. They were originally omitted when implementing
-    ``If-Match`` (:pr:`1233`), but the spec doesn't seem to disallow it.
-    (:issue:`1231`, :pr:`1255`)
+-   Building URLs is ~7x faster. Each :class:`~routing.Rule` compiles
+    an optimized function for building itself. (:pr:`1281`)
 -   :meth:`MapAdapter.build() <routing.MapAdapter.build>` can be passed
     a :class:`~datastructures.MultiDict` to represent multiple values
     for a key. It already did this when passing a dict with a list
     value. (:pr:`724`)
--   :func:`http.parse_cookie` ignores empty segments rather than
-    producing a cookie with no key or value. (:issue:`1245`, :pr:`1301`)
--   Building URLs is ~7x faster. Each :class:`~routing.Rule` compiles
-    an optimized function for building itself. (:pr:`1281`)
+-   ``path_info`` defaults to ``'/'`` for
+    :meth:`Map.bind() <routing.Map.bind>`. (:issue:`740`, :pr:`768`,
+    :pr:`1316`)
+-   Change ``RequestRedirect`` code from 301 to 308, preserving the verb
+    and request body (form data) during redirect. (:pr:`1342`)
+-   ``int`` and ``float`` converters in URL rules will handle negative
+    values if passed the ``signed=True`` parameter. For example,
+    ``/jump/<int(signed=True):count>``. (:pr:`1355`)
 -   ``Location`` autocorrection in :func:`Response.get_wsgi_headers()
     <wrappers.BaseResponse.get_wsgi_headers>` is relative to the current
     path rather than the root path. (:issue:`693`, :pr:`718`,
     :pr:`1315`)
--   ``path_info`` defaults to ``'/'`` for
-    :meth:`Map.bind() <routing.Map.bind>`. (:issue:`740`, :pr:`768`,
-    :pr:`1316`)
--   Triggering a reload while using a tool such as PDB no longer hides
-    input. (:pr:`1318`)
--   The dev server can bind to a Unix socket by passing a hostname like
-    ``unix://app.socket``. (:pr:`209`, :pr:`1019`)
--   :class:`~wsgi.ClosingIterator` calls ``close`` on the wrapped
-    *iterable*, not the internal iterator. This doesn't affect objects
-    where ``__iter__`` returned ``self``. For other objects, the method
-    was not called before. (:issue:`1259`, :pr:`1260`)
+-   412 responses once again include entity headers and an error message
+    in the body. They were originally omitted when implementing
+    ``If-Match`` (:pr:`1233`), but the spec doesn't seem to disallow it.
+    (:issue:`1231`, :pr:`1255`)
+-   The Content-Length header is removed for 1xx and 204 responses. This
+    fixes a previous change where no body would be sent, but the header
+    would still be present. The new behavior matches RFC 7230.
+    (:pr:`1294`)
 -   :class:`~exceptions.Unauthorized` takes a ``www_authenticate``
     parameter to set the ``WWW-Authenticate`` header for the response,
     which is technically required for a valid 401 response.
     (:issue:`772`, :pr:`795`)
--   The test client raises a ``ValueError`` if a query string argument
-    would overwrite a query string in the path. (:pr:`1338`)
--   :class:`~test.EnvironBuilder`, :class:`~datastructures.FileStorage`,
-    and :func:`wsgi.get_input_stream` no longer share a global
-    ``_empty_stream`` instance. This improves test isolation by
-    preventing cases where closing the stream in one request would
-    affect other usages. (:pr:`1340`)
--   Change ``RequestRedirect`` code from 301 to 308, preserving the verb
-    and request body (form data) during redirect. (:pr:`1342`)
--   The version of jQuery used by the debugger is updated to 3.3.1.
-    (:pr:`1390`)
--   The debugger correctly renders long ``markupsafe.Markup`` instances.
-    (:pr:`1393`)
--   In :func:`~security.generate_password_hash`, PBKDF2 uses 150000
-    iterations by default, increased from 50000. (:pr:`1377`)
+-   Add support for status code 424 :exc:`~exceptions.FailedDependency`.
+    (:pr:`1358`)
+-   :func:`http.parse_cookie` ignores empty segments rather than
+    producing a cookie with no key or value. (:issue:`1245`, :pr:`1301`)
 -   :func:`~http.parse_authorization_header` (and
     :class:`~datastructures.Authorization`,
     :attr:`~wrappers.Request.authorization`) treats the authorization
     header as UTF-8. On Python 2, basic auth username and password are
     ``unicode``. (:pr:`1325`)
+-   :func:`~http.parse_options_header` understands :rfc:`2231` parameter
+    continuations. (:pr:`1417`)
+-   :func:`~urls.uri_to_iri` does not unquote ASCII characters in the
+    unreserved class, such as space, and leaves invalid bytes quoted
+    when decoding. :func:`~urls.iri_to_uri` does not quote reserved
+    characters. See :rfc:`3987` for these character classes.
+    (:pr:`1433`)
+-   ``get_content_type`` appends a charset for any mimetype that ends
+    with ``+xml``, not just those that start with ``application/``.
+    Known text types such as ``application/javascript`` are also given
+    charsets. (:pr:`1439`)
+-   Clean up ``werkzeug.security`` module, remove outdated hashlib
+    support. (:pr:`1282`)
+-   In :func:`~security.generate_password_hash`, PBKDF2 uses 150000
+    iterations by default, increased from 50000. (:pr:`1377`)
+-   :class:`~wsgi.ClosingIterator` calls ``close`` on the wrapped
+    *iterable*, not the internal iterator. This doesn't affect objects
+    where ``__iter__`` returned ``self``. For other objects, the method
+    was not called before. (:issue:`1259`, :pr:`1260`)
+-   Bytes may be used as keys in :class:`~datastructures.Headers`, they
+    will be decoded as Latin-1 like values are. (:pr:`1346`)
+-   :class:`~datastructures.Range` validates that list of range tuples
+    passed to it would produce a valid ``Range`` header. (:pr:`1412`)
+-   :class:`~datastructures.FileStorage` looks up attributes on
+    ``stream._file`` if they don't exist on ``stream``, working around
+    an issue where :func:`tempfile.SpooledTemporaryFile` didn't
+    implement all of :class:`io.IOBase`. See
+    https://github.com/python/cpython/pull/3249. (:pr:`1409`)
+-   :class:`CombinedMultiDict.copy() <datastructures.CombinedMultiDict>`
+    returns a shallow mutable copy as a
+    :class:`~datastructures.MultiDict`. The copy no longer reflects
+    changes to the combined dicts, but is more generally useful.
+    (:pr:`1420`)
+-   The version of jQuery used by the debugger is updated to 3.3.1.
+    (:pr:`1390`)
+-   The debugger correctly renders long ``markupsafe.Markup`` instances.
+    (:pr:`1393`)
+-   The debugger can serve resources when Werkzeug is installed as a
+    zip file. ``DebuggedApplication.get_resource`` uses
+    ``pkgutil.get_data``. (:pr:`1401`)
+-   The debugger and server log support Python 3's chained exceptions.
+    (:pr:`1396`)
+-   The interactive debugger highlights frames that come from user code
+    to make them easy to pick out in a long stack trace. Note that if an
+    env was created with virtualenv instead of venv, the debugger may
+    incorrectly classify some frames. (:pr:`1421`)
+-   Clicking the error message at the top of the interactive debugger
+    will jump down to the bottom of the traceback. (:pr:`1422`)
 -   :class:`~exceptions.BadRequestKeyError` adds the ``KeyError``
     message to the description, making it clearer what caused the 400
     error. Frameworks like Flask can omit this information in production
     by setting ``e.args = ()``. (:pr:`1395`)
--   Add support for status code 424 :exc:`~exceptions.FailedDependency`.
-    (:pr:`1358`)
--   The reloader will not prepend the Python executable to the command
-    line if the Python file is marked executable. This allows the
-    reloader to work on NixOS. (:pr:`1242`)
--   Bytes may be used as keys in :class:`~datastructures.Headers`, they
-    will be decoded as Latin-1 like values are. (:pr:`1346`)
--   Server uses ``IPPROTO_TCP`` constant instead of ``SOL_TCP`` for
-    Jython compatibility. (:pr:`1375`)
--   The debugger can serve resources when Werkzeug is installed as a
-    zip file. ``DebuggedApplication.get_resource`` uses
-    ``pkgutil.get_data``. (:pr:`1401`)
 -   If a nested ``ImportError`` occurs from :func:`~utils.import_string`
     the traceback mentions the nested import. Removes an untested code
     path for handling "modules not yet set up by the parent."
     (:pr:`735`)
+-   Triggering a reload while using a tool such as PDB no longer hides
+    input. (:pr:`1318`)
+-   The reloader will not prepend the Python executable to the command
+    line if the Python file is marked executable. This allows the
+    reloader to work on NixOS. (:pr:`1242`)
+-   Fix an issue where ``sys.path`` would change between reloads when
+    running with ``python -m app``. The reloader can detect that a
+    module was run with "-m" and reconstructs that instead of the file
+    path in ``sys.argv`` when reloading. (:pr:`1416`)
+-   The dev server can bind to a Unix socket by passing a hostname like
+    ``unix://app.socket``. (:pr:`209`, :pr:`1019`)
+-   Server uses ``IPPROTO_TCP`` constant instead of ``SOL_TCP`` for
+    Jython compatibility. (:pr:`1375`)
+-   When using an adhoc SSL cert with :func:`~serving.run_simple`, the
+    cert is shown as self-signed rather than signed by an invalid
+    authority. (:pr:`1430`)
+-   The development server logs the unquoted IRI rather than the raw
+    request line, to make it easier to work with Unicode in request
+    paths during development. (:issue:`1115`)
+-   The development server recognizes ``ConnectionError`` on Python 3 to
+    silence client disconnects, and does not silence other ``OSErrors``
+    that may have been raised inside the application. (:pr:`1418`)
+-   The environ keys ``REQUEST_URI`` and ``RAW_URI`` contain the raw
+    path before it was percent-decoded. This is non-standard, but many
+    WSGI servers add them. Middleware could replace ``PATH_INFO`` with
+    this to route based on the raw value. (:pr:`1419`)
+-   :class:`~test.EnvironBuilder` doesn't set ``CONTENT_TYPE`` or
+    ``CONTENT_LENGTH`` in the environ if they aren't set. Previously
+    these used default values if they weren't set. Now it's possible to
+    distinguish between empty and unset values. (:pr:`1308`)
+-   The test client raises a ``ValueError`` if a query string argument
+    would overwrite a query string in the path. (:pr:`1338`)
+-   :class:`test.EnvironBuilder` and :class:`test.Client` take a
+    ``json`` argument instead of manually passing ``data`` and
+    ``content_type``. This is serialized using the
+    :meth:`test.EnvironBuilder.json_dumps` method. (:pr:`1404`)
 -   :class:`test.Client` redirect handling is rewritten. (:pr:`1402`)
 
     -   The redirect environ is copied from the initial request environ.
@@ -101,89 +153,11 @@ Unreleased
         ``buffered=False`` to ensure iterator middleware can run cleanup
         code safely. Only the last response is not buffered. (:pr:`988`)
 
--   :class:`test.EnvironBuilder` and :class:`test.Client` take a
-    ``json`` argument instead of manually passing ``data`` and
-    ``content_type``. This is serialized using the
-    :meth:`test.EnvironBuilder.json_dumps` method. (:pr:`1404`)
--   ``int`` and ``float`` converters in URL rules will handle negative
-    values if passed the ``signed=True`` parameter. For example,
-    ``/jump/<int(signed=True):count>``. (:pr:`1355`)
--   :class:`~datastructures.Range` validates that list of range tuples
-    passed to it would produce a valid ``Range`` header. (:pr:`1412`)
--   :class:`~datastructures.FileStorage` looks up attributes on
-    ``stream._file`` if they don't exist on ``stream``, working around
-    an issue where :func:`tempfile.SpooledTemporaryFile` didn't
-    implement all of :class:`io.IOBase`. See
-    https://github.com/python/cpython/pull/3249. (:pr:`1409`)
--   The debugger and server log support Python 3's chained exceptions.
-    (:pr:`1396`)
--   Fix an issue where ``sys.path`` would change between reloads when
-    running with ``python -m app``. The reloader can detect that a
-    module was run with "-m" and reconstructs that instead of the file
-    path in ``sys.argv`` when reloading. (:pr:`1416`)
--   The Content-Length header is removed for 1xx and 204 responses. This
-    fixes a previous change where no body would be sent, but the header
-    would still be present. The new behavior matches RFC 7230.
-    (:pr:`1294`)
--   :func:`~http.parse_options_header` understands :rfc:`2231` parameter
-    continuations. (:pr:`1417`)
--   The development server recognizes ``ConnectionError`` on Python 3 to
-    silence client disconnects, and does not silence other ``OSErrors``
-    that may have been raised inside the application. (:pr:`1418`)
--   The environ keys ``REQUEST_URI`` and ``RAW_URI`` contain the raw
-    path before it was percent-decoded. This is non-standard, but many
-    WSGI servers add them. Middleware could replace ``PATH_INFO`` with
-    this to route based on the raw value. (:pr:`1419`)
--   :class:`CombinedMultiDict.copy() <datastructures.CombinedMultiDict>`
-    returns a shallow mutable copy as a
-    :class:`~datastructures.MultiDict`. The copy no longer reflects
-    changes to the combined dicts, but is more generally useful.
-    (:pr:`1420`)
--   The interactive debugger highlights frames that come from user code
-    to make them easy to pick out in a long stack trace. Note that if an
-    env was created with virtualenv instead of venv, the debugger may
-    incorrectly classify some frames. (:pr:`1421`)
--   Clicking the error message at the top of the interactive debugger
-    will jump down to the bottom of the traceback. (:pr:`1422`)
--   :func:`~urls.uri_to_iri` does not unquote ASCII characters in the
-    unreserved class, such as space, and leaves invalid bytes quoted
-    when decoding. :func:`~urls.iri_to_uri` does not quote reserved
-    characters. See :rfc:`3987` for these character classes.
-    (:pr:`1433`)
--   When using an adhoc SSL cert with :func:`~serving.run_simple`, the
-    cert is shown as self-signed rather than signed by an invalid
-    authority. (:pr:`1430`)
--   The development server logs the unquoted IRI rather than the raw
-    request line, to make it easier to work with Unicode in request
-    paths during development. (:issue:`1115`)
--   ``get_content_type`` appends a charset for any mimetype that ends
-    with ``+xml``, not just those that start with ``application/``.
-    Known text types such as ``application/javascript`` are also given
-    charsets. (:pr:`1439`)
--   :func:`wsgi.get_host` no longer looks at ``X-Forwarded-For``. Use
-    :class:`~middleware.proxy_fix.ProxyFix` to handle that.
-    (:issue:`609`, :pr:`1303`)
--   :class:`~middleware.proxy_fix.ProxyFix` is refactored to support
-    more headers, multiple values, and more secure configuration.
-
-    -   Each header supports multiple values. The trusted number of
-        proxies is configured separately for each header. The
-        ``num_proxies`` argument is deprecated. (:pr:`1314`)
-    -   Sets ``SERVER_NAME`` and ``SERVER_PORT`` based on
-        ``X-Forwarded-Host``. (:pr:`1314`)
-    -   Sets ``SERVER_PORT`` and modifies ``HTTP_HOST`` based on
-        ``X-Forwarded-Port``. (:issue:`1023`, :pr:`1304`)
-    -   Sets ``SCRIPT_NAME`` based on ``X-Forwarded-Prefix``.
-        (:issue:`1237`)
-    -   The original WSGI environment values are stored in the
-        ``werkzeug.proxy_fix.orig`` key, a dict. The individual keys
-        ``werkzeug.proxy_fix.orig_remote_addr``,
-        ``werkzeug.proxy_fix.orig_wsgi_url_scheme``, and
-        ``werkzeug.proxy_fix.orig_http_host`` are deprecated.
-
--   The filenames generated by
-    :class:`~middleware.profiler.ProfilerMiddleware` can be customized.
-    (:issue:`1283`)
+-   :class:`~test.EnvironBuilder`, :class:`~datastructures.FileStorage`,
+    and :func:`wsgi.get_input_stream` no longer share a global
+    ``_empty_stream`` instance. This improves test isolation by
+    preventing cases where closing the stream in one request would
+    affect other usages. (:pr:`1340`)
 -   The default :attr:`SecureCookie.serialization_method
     <contrib.securecookie.SecureCookie.serialization_method>` will
     change from :mod:`pickle` to :mod:`json` in 1.0. To upgrade existing
@@ -229,6 +203,27 @@ Unreleased
         over the default test client.
     -   ``iterio`` is deprecated.
 
+-   :func:`wsgi.get_host` no longer looks at ``X-Forwarded-For``. Use
+    :class:`~middleware.proxy_fix.ProxyFix` to handle that.
+    (:issue:`609`, :pr:`1303`)
+-   :class:`~middleware.proxy_fix.ProxyFix` is refactored to support
+    more headers, multiple values, and more secure configuration.
+
+    -   Each header supports multiple values. The trusted number of
+        proxies is configured separately for each header. The
+        ``num_proxies`` argument is deprecated. (:pr:`1314`)
+    -   Sets ``SERVER_NAME`` and ``SERVER_PORT`` based on
+        ``X-Forwarded-Host``. (:pr:`1314`)
+    -   Sets ``SERVER_PORT`` and modifies ``HTTP_HOST`` based on
+        ``X-Forwarded-Port``. (:issue:`1023`, :pr:`1304`)
+    -   Sets ``SCRIPT_NAME`` based on ``X-Forwarded-Prefix``.
+        (:issue:`1237`)
+    -   The original WSGI environment values are stored in the
+        ``werkzeug.proxy_fix.orig`` key, a dict. The individual keys
+        ``werkzeug.proxy_fix.orig_remote_addr``,
+        ``werkzeug.proxy_fix.orig_wsgi_url_scheme``, and
+        ``werkzeug.proxy_fix.orig_http_host`` are deprecated.
+
 -   Middleware from ``werkzeug.wsgi`` has moved to separate modules
     under ``werkzeug.middleware``, along with the middleware moved from
     ``werkzeug.contrib``. The old ``werkzeug.wsgi`` imports are
@@ -241,6 +236,11 @@ Unreleased
     -   ``werkzeug.wsgi.SharedDataMiddleware`` has moved to
         :class:`werkzeug.middleware.shared_data.SharedDataMiddleware`.
 
+-   :class:`~middleware.http_proxy.ProxyMiddleware` proxies the query
+    string. (:pr:`1252`)
+-   The filenames generated by
+    :class:`~middleware.profiler.ProfilerMiddleware` can be customized.
+    (:issue:`1283`)
 -   The ``werkzeug.wrappers`` module has been converted to a package,
     and its various classes have been organized into separate modules.
     Any previously documented classes, understood to be the existing
