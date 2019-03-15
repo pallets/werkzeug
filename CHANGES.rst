@@ -8,6 +8,8 @@ Unreleased
 -   Drop support for Python 3.4. (:issue:`1478`)
 -   Remove code that issued deprecation warnings in version 0.15.
     (:issue:`1477`)
+-   Added ``utils.invalidate_cached_property()`` to invalidate cached
+    properties. (:pr:`1474`)
 
 
 Version 0.15.0

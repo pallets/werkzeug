@@ -105,6 +105,32 @@ def test_can_set_cached_property():
     assert a._prop == "value"
 
 
+def test_can_invalidate_cached_property():
+    foo = []
+
+    class A(object):
+        def prop(self):
+            foo.append(42)
+            return 42
+
+        prop = utils.cached_property(prop)
+
+    a = A()
+    p = a.prop
+    q = a.prop
+    assert p == q == 42
+    assert foo == [42]
+
+    utils.invalidate_cached_property(a, "prop")
+    r = a.prop
+    assert r == 42
+    assert foo == [42, 42]
+
+    s = a.prop
+    assert s == 42
+    assert foo == [42, 42]
+
+
 def test_inspect_treats_cached_property_as_property():
     class A(object):
         @utils.cached_property
