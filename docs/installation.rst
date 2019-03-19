@@ -8,7 +8,7 @@ Python Version
 --------------
 
 We recommend using the latest version of Python 3. Werkzeug supports
-Python 3.4 and newer and Python 2.7.
+Python 3.5 and newer and Python 2.7.
 
 
 Dependencies
