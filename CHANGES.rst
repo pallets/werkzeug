@@ -5,6 +5,7 @@ Version 1.0.0
 
 Unreleased
 
+-   Drop support for Python 3.4. (:issue:`1478`)
 -   Remove code that issued deprecation warnings in version 0.15.
     (:issue:`1477`)
 
