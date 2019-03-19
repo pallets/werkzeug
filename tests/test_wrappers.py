@@ -1374,13 +1374,6 @@ def test_request_method_case_sensitivity():
     assert req.method == "GET"
 
 
-def test_is_xhr_warning():
-    req = wrappers.Request.from_values()
-
-    with pytest.warns(DeprecationWarning):
-        req.is_xhr
-
-
 def test_write_length():
     response = wrappers.Response()
     length = response.stream.write(b"bar")

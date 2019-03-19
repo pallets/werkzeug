@@ -173,14 +173,3 @@ def test_proxy_fix(kwargs, base, url_root):
     response = Response.from_app(redirect_app, environ)
     location = response.headers["Location"]
     assert location == url_root + "parrot"
-
-
-def test_proxy_fix_deprecations():
-    app = pytest.deprecated_call(ProxyFix, None, 2)
-    assert app.x_for == 2
-
-    with pytest.deprecated_call():
-        assert app.num_proxies == 2
-
-    with pytest.deprecated_call():
-        assert app.get_remote_addr(["spam", "eggs"]) == "spam"

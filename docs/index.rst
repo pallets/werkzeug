@@ -67,15 +67,6 @@ Deployment
    deployment/index
 
 
-Contributed Modules
--------------------
-
-.. toctree::
-   :maxdepth: 3
-
-   contrib/index
-
-
 Additional Information
 ----------------------
 

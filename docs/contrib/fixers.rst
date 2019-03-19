@@ -1,1 +1,0 @@
-.. automodule:: werkzeug.contrib.fixers
