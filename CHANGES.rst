@@ -1,9 +1,9 @@
 .. currentmodule:: werkzeug
 
-Version 0.15
-------------
+Version 0.15.0
+--------------
 
-Unreleased
+Released 2019-03-19
 
 -   Building URLs is ~7x faster. Each :class:`~routing.Rule` compiles
     an optimized function for building itself. (:pr:`1281`)
