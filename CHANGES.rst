@@ -1,5 +1,11 @@
 .. currentmodule:: werkzeug
 
+Version 1.0.0
+-------------
+
+Unreleased
+
+
 Version 0.15.0
 --------------
 
