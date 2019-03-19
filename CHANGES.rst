@@ -5,6 +5,9 @@ Version 1.0.0
 
 Unreleased
 
+-   Remove code that issued deprecation warnings in version 0.15.
+    (:issue:`1477`)
+
 
 Version 0.15.0
 --------------
@@ -167,11 +170,10 @@ Released 2019-03-19
     ``_empty_stream`` instance. This improves test isolation by
     preventing cases where closing the stream in one request would
     affect other usages. (:pr:`1340`)
--   The default :attr:`SecureCookie.serialization_method
-    <contrib.securecookie.SecureCookie.serialization_method>` will
-    change from :mod:`pickle` to :mod:`json` in 1.0. To upgrade existing
-    tokens, override :meth:`~contrib.securecookie.SecureCookie.unquote`
-    to try ``pickle`` if ``json`` fails. (:pr:`1413`)
+-   The default ``SecureCookie.serialization_method`` will change from
+    :mod:`pickle` to :mod:`json` in 1.0. To upgrade existing tokens,
+    override :meth:`~contrib.securecookie.SecureCookie.unquote` to try
+    ``pickle`` if ``json`` fails. (:pr:`1413`)
 -   ``CGIRootFix`` no longer modifies ``PATH_INFO`` for very old
     versions of Lighttpd. ``LighttpdCGIRootFix`` was renamed to
     ``CGIRootFix`` in 0.9. Both are deprecated and will be removed in
@@ -179,10 +181,10 @@ Released 2019-03-19
 -   :class:`werkzeug.wrappers.json.JSONMixin` has been replaced with
     Flask's implementation. Check the docs for the full API.
     (:pr:`1445`)
--   The :doc:`contrib modules </contrib/index>` are deprecated and will
-    either be moved into ``werkzeug`` core or removed completely in
-    version 1.0. Some modules that already issued deprecation warnings
-    have been removed. Be sure to run or test your code with
+-   The contrib modules are deprecated and will either be moved into
+    ``werkzeug`` core or removed completely in version 1.0. Some modules
+    that already issued deprecation warnings have been removed. Be sure
+    to run or test your code with
     ``python -W default::DeprecationWarning`` to catch any deprecated
     code you're using. (:issue:`4`)
 

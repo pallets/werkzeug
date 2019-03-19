@@ -30,7 +30,6 @@ from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
 from .datastructures import EnvironHeaders
 from .datastructures import FileMultiDict
-from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
 from .http import dump_cookie
@@ -142,23 +141,6 @@ def encode_multipart(values, boundary=None, charset="utf-8"):
         values, use_tempfile=False, boundary=boundary, charset=charset
     )
     return boundary, stream.read()
-
-
-def File(fd, filename=None, mimetype=None):
-    """Backwards compat.
-
-    .. deprecated:: 0.5
-    """
-    from warnings import warn
-
-    warn(
-        "'werkzeug.test.File' is deprecated as of version 0.5 and will"
-        " be removed in version 1.0. Use 'EnvironBuilder' or"
-        " 'FileStorage' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return FileStorage(fd, filename=filename, content_type=mimetype)
 
 
 class _TestCookieHeaders(object):
@@ -456,21 +438,6 @@ class EnvironBuilder(object):
         """Called in the EnvironBuilder to add files from the data dict."""
         if isinstance(value, tuple):
             self.files.add_file(key, *value)
-        elif isinstance(value, dict):
-            from warnings import warn
-
-            warn(
-                "Passing a dict as file data is deprecated as of"
-                " version 0.5 and will be removed in version 1.0. Use"
-                " a tuple or 'FileStorage' object instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            value = dict(value)
-            mimetype = value.pop("mimetype", None)
-            if mimetype is not None:
-                value["content_type"] = mimetype
-            self.files.add_file(key, **value)
         else:
             self.files.add_file(key, value)
 

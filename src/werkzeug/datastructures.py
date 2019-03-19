@@ -1260,21 +1260,6 @@ class Headers(object):
         else:
             self.set(key, value)
 
-    def to_list(self, charset="iso-8859-1"):
-        """Convert the headers into a list suitable for WSGI.
-
-        .. deprecated:: 0.9
-        """
-        from warnings import warn
-
-        warn(
-            "'to_list' deprecated as of version 0.9 and will be removed"
-            " in version 1.0. Use 'to_wsgi_list' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.to_wsgi_list()
-
     def to_wsgi_list(self):
         """Convert the headers into a list suitable for WSGI.
 

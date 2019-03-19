@@ -21,7 +21,6 @@ setting each header so the middleware knows what to trust.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-import warnings
 
 
 class ProxyFix(object):
@@ -49,13 +48,20 @@ class ProxyFix(object):
     :param x_port: Number of values to trust for ``X-Forwarded-Port``.
     :param x_prefix: Number of values to trust for
         ``X-Forwarded-Prefix``.
-    :param num_proxies: Deprecated, use ``x_for`` instead.
 
     .. code-block:: python
 
         from werkzeug.middleware.proxy_fix import ProxyFix
         # App is behind one proxy that sets the -For and -Host headers.
         app = ProxyFix(app, x_for=1, x_host=1)
+
+    .. versionchanged:: 1.0
+        Deprecated code has been removed:
+
+        *   The ``num_proxies`` argument and attribute.
+        *   The ``get_remote_addr`` method.
+        *   The environ keys ``orig_remote_addr``,
+            ``orig_wsgi_url_scheme``, and ``orig_http_host``.
 
     .. versionchanged:: 0.15
         All headers support multiple values. The ``num_proxies``
@@ -76,74 +82,13 @@ class ProxyFix(object):
         ``SERVER_NAME`` and ``SERVER_PORT``.
     """
 
-    def __init__(
-        self, app, num_proxies=None, x_for=1, x_proto=0, x_host=0, x_port=0, x_prefix=0
-    ):
+    def __init__(self, app, x_for=1, x_proto=0, x_host=0, x_port=0, x_prefix=0):
         self.app = app
         self.x_for = x_for
         self.x_proto = x_proto
         self.x_host = x_host
         self.x_port = x_port
         self.x_prefix = x_prefix
-        self.num_proxies = num_proxies
-
-    @property
-    def num_proxies(self):
-        """The number of proxies setting ``X-Forwarded-For`` in front
-        of the application.
-
-        .. deprecated:: 0.15
-            A separate number of trusted proxies is configured for each
-            header. ``num_proxies`` maps to ``x_for``. This method will
-            be removed in 1.0.
-
-        :internal:
-        """
-        warnings.warn(
-            "'num_proxies' is deprecated as of version 0.15 and will be"
-            " removed in version 1.0. Use 'x_for' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.x_for
-
-    @num_proxies.setter
-    def num_proxies(self, value):
-        if value is not None:
-            warnings.warn(
-                "'num_proxies' is deprecated as of version 0.15 and"
-                " will be removed in version 1.0. Use 'x_for' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.x_for = value
-
-    def get_remote_addr(self, forwarded_for):
-        """Get the real ``remote_addr`` by looking backwards ``x_for``
-        number of values in the ``X-Forwarded-For`` header.
-
-        :param forwarded_for: List of values parsed from the
-            ``X-Forwarded-For`` header.
-        :return: The real ``remote_addr``, or ``None`` if there were not
-            at least ``x_for`` values.
-
-        .. deprecated:: 0.15
-            This is handled internally for each header. This method will
-            be removed in 1.0.
-
-        .. versionchanged:: 0.9
-            Use ``num_proxies`` instead of always picking the first
-            value.
-
-        .. versionadded:: 0.8
-        """
-        warnings.warn(
-            "'get_remote_addr' is deprecated as of version 0.15 and"
-            " will be removed in version 1.0. It is now handled"
-            " internally for each header.",
-            DeprecationWarning,
-        )
-        return self._get_trusted_comma(self.x_for, ",".join(forwarded_for))
 
     def _get_trusted_comma(self, trusted, value):
         """Get the real value from a comma-separated header based on the
@@ -180,11 +125,7 @@ class ProxyFix(object):
                     "SERVER_NAME": environ_get("SERVER_NAME"),
                     "SERVER_PORT": environ_get("SERVER_PORT"),
                     "SCRIPT_NAME": environ_get("SCRIPT_NAME"),
-                },
-                # todo: remove deprecated keys
-                "werkzeug.proxy_fix.orig_remote_addr": orig_remote_addr,
-                "werkzeug.proxy_fix.orig_wsgi_url_scheme": orig_wsgi_url_scheme,
-                "werkzeug.proxy_fix.orig_http_host": orig_http_host,
+                }
             }
         )
 
