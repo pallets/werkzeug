@@ -5,6 +5,10 @@ Version 0.15.1
 
 Unreleased
 
+-   :class:`~exceptions.Unauthorized` takes ``description`` as the first
+    argument, restoring previous behavior. The new ``www_authenticate``
+    argument is listed second. (:issue:`1483`)
+
 
 Version 0.15.0
 --------------
