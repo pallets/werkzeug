@@ -3,7 +3,7 @@
 Version 0.15.1
 --------------
 
-Unreleased
+Released 2019-03-21
 
 -   :class:`~exceptions.Unauthorized` takes ``description`` as the first
     argument, restoring previous behavior. The new ``www_authenticate``
