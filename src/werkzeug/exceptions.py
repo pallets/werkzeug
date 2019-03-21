@@ -246,10 +246,18 @@ class Unauthorized(HTTPException):
     response is invalid if it doesn't provide at least one value for
     this header, although real clients typically don't care.
 
-    :param www-authenticate: A single value, or list of values, for the
-        WWW-Authenticate header.
     :param description: Override the default message used for the body
         of the response.
+    :param www-authenticate: A single value, or list of values, for the
+        WWW-Authenticate header.
+
+    .. versionchanged:: 0.15.1
+        ``description`` was moved back as the first argument, restoring
+         its previous position.
+
+    .. versionchanged:: 0.15.0
+        ``www_authenticate`` was added as the first argument, ahead of
+        ``description``.
     """
 
     code = 401
@@ -260,7 +268,7 @@ class Unauthorized(HTTPException):
         " how to supply the credentials required."
     )
 
-    def __init__(self, www_authenticate=None, description=None):
+    def __init__(self, description=None, www_authenticate=None):
         HTTPException.__init__(self, description)
         if not isinstance(www_authenticate, (tuple, list)):
             www_authenticate = (www_authenticate,)
