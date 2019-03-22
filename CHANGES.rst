@@ -5,6 +5,10 @@ Version 0.15.2
 
 Unreleased
 
+-   ``Rule`` code generation uses a filename that coverage will ignore.
+    The previous value, "generated", was causing coverage to fail.
+    (:issue:`1487`)
+
 
 Version 0.15.1
 --------------
