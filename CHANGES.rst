@@ -8,6 +8,10 @@ Unreleased
 -   ``Rule`` code generation uses a filename that coverage will ignore.
     The previous value, "generated", was causing coverage to fail.
     (:issue:`1487`)
+-   The test client removes the cookie header if there are no persisted
+    cookies. This fixes an issue introduced in 0.15.0 where the cookies
+    from the original request were used for redirects, causing functions
+    such as logout to fail. (:issue:`1491`)
 
 
 Version 0.15.1

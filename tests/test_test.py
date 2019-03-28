@@ -520,6 +520,30 @@ def test_follow_redirect_exhaust_intermediate():
     assert not app.active
 
 
+def test_cookie_across_redirect():
+    @Request.application
+    def app(request):
+        if request.path == "/":
+            return Response(request.cookies.get("auth", "out"))
+
+        if request.path == "/in":
+            rv = redirect("/")
+            rv.set_cookie("auth", "in")
+            return rv
+
+        if request.path == "/out":
+            rv = redirect("/")
+            rv.delete_cookie("auth")
+            return rv
+
+    c = Client(app, Response)
+    assert c.get("/").data == b"out"
+    assert c.get("/in", follow_redirects=True).data == b"in"
+    assert c.get("/").data == b"in"
+    assert c.get("/out", follow_redirects=True).data == b"out"
+    assert c.get("/").data == b"out"
+
+
 def test_path_info_script_name_unquoting():
     def test_app(environ, start_response):
         start_response("200 OK", [("Content-Type", "text/plain")])
