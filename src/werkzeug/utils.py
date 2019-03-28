@@ -92,6 +92,31 @@ class cached_property(property):
         return value
 
 
+def invalidate_cached_property(obj, name):
+    """Invalidates the cache for a :class:`cached_property`:
+
+    >>> class Test(object):
+    ...     @cached_property
+    ...     def magic_number(self):
+    ...         print("recalculating...")
+    ...         return 42
+    ...
+    >>> var = Test()
+    >>> var.magic_number
+    recalculating...
+    42
+    >>> var.magic_number
+    42
+    >>> invalidate_cached_property(var, "magic_number")
+    >>> var.magic_number
+    recalculating...
+    42
+
+    You must pass the name of the cached property as the second argument.
+    """
+    obj.__dict__[name] = _missing
+
+
 class environ_property(_DictAccessorProperty):
     """Maps request attributes to environment variables. This works not only
     for the Werzeug request object, but also any other class with an

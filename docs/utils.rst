@@ -23,6 +23,8 @@ General Helpers
 .. autoclass:: cached_property
    :members:
 
+.. autofunction:: invalidate_cached_property
+
 .. autoclass:: environ_property
 
 .. autoclass:: header_property
