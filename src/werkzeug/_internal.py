@@ -91,7 +91,7 @@ def _log(type, message, *args, **kwargs):
             _logger.setLevel(logging.INFO)
         # Only set up a default log handler if the
         # end-user application didn't set anything up.
-        if not logging.root.handlers:
+        if not logging.root.handlers and not _logger.handlers:
             handler = logging.StreamHandler()
             _logger.addHandler(handler)
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
