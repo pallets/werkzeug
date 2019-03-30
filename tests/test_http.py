@@ -483,9 +483,12 @@ class TestHTTPUtility(object):
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
         strict_eq(val, 'foo="?foo"; Path=/')
-        strict_eq(dict(http.parse_cookie(val)), {"foo": u"?foo"})
-
+        strict_eq(dict(http.parse_cookie(val)), {"foo": u"?foo", "Path": u"/"})
         strict_eq(dict(http.parse_cookie(r'foo="foo\054bar"')), {"foo": u"foo,bar"})
+
+    def test_parse_set_cookie_directive(self):
+        val = 'foo="?foo"; version="0.1";'
+        strict_eq(dict(http.parse_cookie(val)), {"foo": u"?foo", "version": u"0.1"})
 
     def test_cookie_domain_resolving(self):
         val = http.dump_cookie("foo", "bar", domain=u"\N{SNOWMAN}.com")

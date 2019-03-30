@@ -26,15 +26,6 @@ from ._compat import text_type
 _logger = None
 _signature_cache = WeakKeyDictionary()
 _epoch_ord = date(1970, 1, 1).toordinal()
-_cookie_params = {
-    b"expires",
-    b"path",
-    b"comment",
-    b"max-age",
-    b"secure",
-    b"httponly",
-    b"version",
-}
 _legal_cookie_chars = (
     string.ascii_letters + string.digits + u"/=!#$%&'*+-.^_`|~:"
 ).encode("ascii")
@@ -310,9 +301,7 @@ def _cookie_parse_impl(b):
         value = match.group("val") or b""
         i = match.end(0)
 
-        # Ignore parameters.  We have no interest in them.
-        if key.lower() not in _cookie_params:
-            yield _cookie_unquote(key), _cookie_unquote(value)
+        yield _cookie_unquote(key), _cookie_unquote(value)
 
 
 def _encode_idna(domain):

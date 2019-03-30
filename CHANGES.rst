@@ -10,6 +10,9 @@ Unreleased
     (:issue:`1477`)
 -   Added ``utils.invalidate_cached_property()`` to invalidate cached
     properties. (:pr:`1474`)
+-   Directive keys for the ``Set-Cookie`` response header are not
+    ignored when parsing the ``Cookie`` request header. This allows
+    cookies with names such as "expires" and "version". (:issue:`1495`)
 
 
 Version 0.15.1
