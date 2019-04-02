@@ -9,6 +9,7 @@
     :license: BSD-3-Clause
 """
 import inspect
+import logging
 import re
 import string
 from datetime import date
@@ -80,20 +81,44 @@ def _get_environ(obj):
     return env
 
 
-def _log(type, message, *args, **kwargs):
-    """Log into the internal werkzeug logger."""
-    global _logger
-    if _logger is None:
-        import logging
+def _has_level_handler(logger):
+    """Check if there is a handler in the logging chain that will handle
+    the given logger's effective level.
+    """
+    level = logger.getEffectiveLevel()
+    current = logger
 
+    while current:
+        if any(handler.level <= level for handler in current.handlers):
+            return True
+
+        if not current.propagate:
+            break
+
+        current = current.parent
+
+    return False
+
+
+def _log(type, message, *args, **kwargs):
+    """Log a message to the 'werkzeug' logger.
+
+    The logger is created the first time it is needed. If there is no
+    level set, it is set to :data:`logging.INFO`. If there is no handler
+    for the logger's effective level, a :class:`logging.StreamHandler`
+    is added.
+    """
+    global _logger
+
+    if _logger is None:
         _logger = logging.getLogger("werkzeug")
+
         if _logger.level == logging.NOTSET:
             _logger.setLevel(logging.INFO)
-        # Only set up a default log handler if the
-        # end-user application didn't set anything up.
-        if not logging.root.handlers:
-            handler = logging.StreamHandler()
-            _logger.addHandler(handler)
+
+        if not _has_level_handler(_logger):
+            _logger.addHandler(logging.StreamHandler())
+
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
 
