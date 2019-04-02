@@ -32,6 +32,7 @@ from werkzeug.utils import redirect
 from werkzeug.wrappers import BaseResponse
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
+from werkzeug.wsgi import pop_path_info
 
 
 def cookie_app(environ, start_response):
@@ -542,6 +543,25 @@ def test_cookie_across_redirect():
     assert c.get("/").data == b"in"
     assert c.get("/out", follow_redirects=True).data == b"out"
     assert c.get("/").data == b"out"
+
+
+def test_redirect_mutate_environ():
+    @Request.application
+    def app(request):
+        if request.path == "/first":
+            return redirect("/prefix/second")
+
+        return Response(request.path)
+
+    def middleware(environ, start_response):
+        # modify the environ in place, shouldn't propagate to redirect request
+        pop_path_info(environ)
+        return app(environ, start_response)
+
+    c = Client(middleware, Response)
+    rv = c.get("/prefix/first", follow_redirects=True)
+    # if modified environ was used by client, this would be /
+    assert rv.data == b"/second"
 
 
 def test_path_info_script_name_unquoting():

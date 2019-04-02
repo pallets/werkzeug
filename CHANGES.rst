@@ -12,6 +12,9 @@ Unreleased
     cookies. This fixes an issue introduced in 0.15.0 where the cookies
     from the original request were used for redirects, causing functions
     such as logout to fail. (:issue:`1491`)
+-   The test client copies the environ before passing it to the app, to
+    prevent in-place modifications from affecting redirect requests.
+    (:issue:`1498`)
 
 
 Version 0.15.1
