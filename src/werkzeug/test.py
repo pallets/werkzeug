@@ -990,7 +990,7 @@ class Client(object):
             finally:
                 builder.close()
 
-        response = self.run_wsgi_app(environ, buffered=buffered)
+        response = self.run_wsgi_app(environ.copy(), buffered=buffered)
 
         # handle redirects
         redirect_chain = []
