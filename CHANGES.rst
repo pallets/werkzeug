@@ -15,6 +15,9 @@ Unreleased
 -   The test client copies the environ before passing it to the app, to
     prevent in-place modifications from affecting redirect requests.
     (:issue:`1498`)
+-   The ``"werkzeug"`` logger only adds a handler if there is no handler
+    configured for its level in the logging chain. This avoids double
+    logging if other code configures logging first. (:issue:`1492`)
 
 
 Version 0.15.1
