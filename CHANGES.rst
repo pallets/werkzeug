@@ -3,7 +3,7 @@
 Version 0.15.2
 --------------
 
-Unreleased
+Released 2019-04-02
 
 -   ``Rule`` code generation uses a filename that coverage will ignore.
     The previous value, "generated", was causing coverage to fail.
