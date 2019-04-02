@@ -110,6 +110,7 @@ from ._compat import implements_to_string
 from ._compat import iteritems
 from ._compat import itervalues
 from ._compat import native_string_result
+from ._compat import PY2
 from ._compat import string_types
 from ._compat import text_type
 from ._compat import to_bytes
@@ -1099,24 +1100,22 @@ class Rule(RuleFactory):
                 peak_stack = max(stack + ps, peak_stack)
                 ops += self.build_op("BUILD_TUPLE", 2)
             ops += self.build_op("RETURN_VALUE")
-            code_args = [
-                argcount,
-                len(self.var),
-                peak_stack + len(self.var),
-                flags,
-                ops,
-                tuple(self.consts),
-                (),
-                tuple(self.var),
-                "generated",
-                "<builder:%r>" % self.rule.rule,
-                1,
-                b"",
+            code_args = [  # CodeType doesn't take keywords
+                argcount,  # argcount
+                len(self.var),  # nlocals
+                peak_stack + len(self.var),  # stacksize
+                flags,  # flags
+                bytes(ops),  # codestring
+                tuple(self.consts),  # constants
+                (),  # names
+                tuple(self.var),  # varnames
+                "<werkzeug routing>",  # filename, coverage ignores "<"
+                "<builder:%r>" % self.rule.rule,  # name
+                1,  # firstlineno
+                b"",  # lnotab
             ]
-            if sys.version_info >= (3,):
-                code_args[1:1] = [0]
-            else:
-                code_args[4] = str(code_args[4])
+            if not PY2:
+                code_args[1:1] = [0]  # kwonlyargcount
             co = types.CodeType(*code_args)
             fn = types.FunctionType(co, {}, None, self.argdefs)
             return fn

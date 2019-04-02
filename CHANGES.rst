@@ -15,6 +15,26 @@ Unreleased
     cookies with names such as "expires" and "version". (:issue:`1495`)
 
 
+Version 0.15.2
+--------------
+
+Released 2019-04-02
+
+-   ``Rule`` code generation uses a filename that coverage will ignore.
+    The previous value, "generated", was causing coverage to fail.
+    (:issue:`1487`)
+-   The test client removes the cookie header if there are no persisted
+    cookies. This fixes an issue introduced in 0.15.0 where the cookies
+    from the original request were used for redirects, causing functions
+    such as logout to fail. (:issue:`1491`)
+-   The test client copies the environ before passing it to the app, to
+    prevent in-place modifications from affecting redirect requests.
+    (:issue:`1498`)
+-   The ``"werkzeug"`` logger only adds a handler if there is no handler
+    configured for its level in the logging chain. This avoids double
+    logging if other code configures logging first. (:issue:`1492`)
+
+
 Version 0.15.1
 --------------
 

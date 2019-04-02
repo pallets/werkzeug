@@ -190,11 +190,12 @@ class _TestCookieJar(CookieJar):
         """Inject the cookies as client headers into the server's wsgi
         environment.
         """
-        cvals = []
-        for cookie in self:
-            cvals.append("%s=%s" % (cookie.name, cookie.value))
+        cvals = ["%s=%s" % (c.name, c.value) for c in self]
+
         if cvals:
             environ["HTTP_COOKIE"] = "; ".join(cvals)
+        else:
+            environ.pop("HTTP_COOKIE", None)
 
     def extract_wsgi(self, environ, headers):
         """Extract the server's set-cookie headers as cookies into the
@@ -956,7 +957,7 @@ class Client(object):
             finally:
                 builder.close()
 
-        response = self.run_wsgi_app(environ, buffered=buffered)
+        response = self.run_wsgi_app(environ.copy(), buffered=buffered)
 
         # handle redirects
         redirect_chain = []
