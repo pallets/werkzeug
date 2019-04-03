@@ -1052,8 +1052,9 @@ class Rule(RuleFactory):
                 # resolve it to a constant ahead of time
                 if is_dynamic and data in self.defaults:
                     data = self.rule._converters[data].to_url(self.defaults[data])
-                    is_dynamic = False
-                if not is_dynamic:
+                    opl.append((None, data))
+                    continue
+                elif not is_dynamic:
                     opl.append(
                         (
                             None,
@@ -1260,6 +1261,8 @@ class BaseConverter(object):
         return value
 
     def to_url(self, value):
+        if isinstance(value, (bytes, bytearray)):
+            return _fast_url_quote(value)
         return _fast_url_quote(text_type(value).encode(self.map.charset))
 
 
