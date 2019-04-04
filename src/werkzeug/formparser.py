@@ -422,11 +422,24 @@ class MultiPartParser(object):
             self.fail("Boundary longer than buffer size")
 
     class LineSplitter(object):
+
+        """A stateful line splitter: call ``feed`` to push data in and receive
+        it split into lines.
+
+        :param cap: Optional maximum length of a line; if this is given,
+                    lines will be truncated to meet it.
+
+        ..versionadded:: 0.15
+        """
+
         def __init__(self, cap=None):
             self.buffer = b""
             self.cap = cap
 
         def _splitlines(self, pre, post):
+            # for most purposes, there is no difference between what we've
+            # just accepted and any other data. we accept them separately
+            # so we can tell if we're ending; see below.
             buf = pre + post
             rv = []
             if not buf:
@@ -449,6 +462,11 @@ class MultiPartParser(object):
             return rv, iv
 
         def feed(self, data):
+            """Accepts a block of data to be split into lines, returning a list
+            of complete lines, including their terminator characters.
+
+            Feeding an empty block of data will end the parse, returning
+            an unterminated line, if any, and an empty string."""
             lines, self.buffer = self._splitlines(self.buffer, data)
             if not data:
                 lines += [self.buffer]
@@ -457,6 +475,10 @@ class MultiPartParser(object):
             return lines
 
     class LineParser(object):
+
+        """Parses lines as form data, generating the same output as
+        ``parse_lines``, but as a state machine."""
+
         def __init__(self, parent, boundary):
             self.parent = parent
             self.boundary = boundary
@@ -497,6 +519,7 @@ class MultiPartParser(object):
             return self._state_done
 
         def _state_output(self, line):
+            """State for the body of a field; generate pieces of it."""
             if not line:
                 raise ValueError("Unexpected end of file")
             sline = line.rstrip()
@@ -531,6 +554,8 @@ class MultiPartParser(object):
             return self._state_output
 
         def _state_pre_term(self, line):
+            """State for the very beginning of the stream, before any content.
+            Eats empty lines until it finds a boundary line."""
             if not line:
                 raise ValueError("Unexpected end of file")
                 return self._state_pre_term
@@ -545,6 +570,8 @@ class MultiPartParser(object):
             raise ValueError("Expected boundary at start of multipart data")
 
         def _state_headers(self, line):
+            """State for field headers. They are parsed and left in
+            ``self._headers``."""
             if line is None:
                 raise ValueError("Unexpected end of file during headers")
             line = to_native(line)
