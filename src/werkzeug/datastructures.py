@@ -1846,12 +1846,15 @@ class LanguageAccept(Accept):
 
     def best_match(self, matches, default=None):
         """Calls the super version of `best_match` and if it returns none,
-        attempts to fall back to language only matches."""
+        attempts to fall back to language only matches.
+
+        :param matches: a list of matches to check for
+        :param default: the value that is returned if none match
+        """
         result = super().best_match(matches, default=default)
         if result is not None:
             return result
         fallback = Accept([(item[0][0:2], item[1]) for item in list(self)])
-        print('fallback: ' + fallback.__repr__())
         return fallback.best_match(matches, default=default)
 
 
