@@ -1100,6 +1100,35 @@ class TestMIMEAccept(object):
         assert accept.best_match(["text/plain", "image/png"]) == "image/png"
 
 
+class TestLanguageAccept(object):
+    storage_class = datastructures.LanguageAccept
+
+    def test_best_match_fallback(self):
+        accept = self.storage_class([("en-us", 1)])
+        assert accept.best_match(["en"]) == "en"
+
+        accept = self.storage_class([("de_AT", 1), ("de", 0.9)])
+        assert accept.best_match(["en"]) is None
+
+        accept = self.storage_class([("de_AT", 1), ("de", 0.9), ("en-US", 0.8)])
+        assert accept.best_match(["de", "en"]) == "de"
+
+        accept = self.storage_class([("de_AT", 0.9), ("en-US", 1)])
+        assert accept.best_match(["en"]) == "en"
+
+        accept = self.storage_class([("en-us", 1)])
+        assert accept.best_match(["en-us"]) == "en-us"
+
+        accept = self.storage_class([("en-us", 1)])
+        assert accept.best_match(["en-us", "en"]) == "en-us"
+
+        accept = self.storage_class([("en-GB", 1)])
+        assert accept.best_match(["en-US", "en"], default="en-US") == "en"
+
+        accept = self.storage_class([("de-AT", 1)])
+        assert accept.best_match(["en-US", "en"], default="en-US") == "en-US"
+
+
 class TestFileStorage(object):
     storage_class = datastructures.FileStorage
 

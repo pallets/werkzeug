@@ -1849,6 +1849,19 @@ class LanguageAccept(Accept):
 
         return item == "*" or _normalize(value) == _normalize(item)
 
+    def best_match(self, matches, default=None):
+        """Calls the super version of `best_match` and if it returns none,
+        attempts to fall back to language only matches.
+
+        :param matches: a list of matches to check for
+        :param default: the value that is returned if none match
+        """
+        result = super(LanguageAccept, self).best_match(matches)
+        if result is not None:
+            return result
+        fallback = Accept([(item[0][0:2], item[1]) for item in self])
+        return fallback.best_match(matches, default=default)
+
 
 class CharsetAccept(Accept):
     """Like :class:`Accept` but with normalization for charsets."""
