@@ -1061,9 +1061,9 @@ class TestLanguageAccept(object):
     storage_class = datastructures.LanguageAccept
 
     def test_best_match_fallback(self):
-        accept = self.storage_class([('en-us', 1)])
+        accept = self.storage_class([("en-us", 1)])
 
-        assert accept.best_match(['en']) == 'en'
+        assert accept.best_match(["en"]) == "en"
 
 
 class TestFileStorage(object):
