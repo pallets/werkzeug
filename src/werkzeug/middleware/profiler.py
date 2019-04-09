@@ -77,7 +77,7 @@ class ProfilerMiddleware(object):
         sort_by=("time", "calls"),
         restrictions=(),
         profile_dir=None,
-        filename_format="{method}.{path}.{elapsed:06d}ms.{time:d}.prof",
+        filename_format="{method}.{path}.{elapsed:.0f}ms.{time:.0f}.prof",
     ):
         self._app = app
         self._stream = stream

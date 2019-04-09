@@ -7,12 +7,15 @@ Unreleased
 
 -   Properly handle multi-line header folding in development server in
     Python 2.7. (:issue:`1080`)
--   Restore the ``response`` argument to :exc:`exceptions.Unauthorized`.
+-   Restore the ``response`` argument to :exc:`~exceptions.Unauthorized`.
     (:pr:`1527`)
--   :exc:`exceptions.Unauthorized` doesn't add the ``WWW-Authenticate``
+-   :exc:`~exceptions.Unauthorized` doesn't add the ``WWW-Authenticate``
     header if ``www_authenticate`` is not given. (:issue:`1516`)
 -   The default URL converter correctly encodes bytes to string rather
     than representing them with ``b''``. (:issue:`1502`)
+-   Fix the filename format string in
+    :class:`~middleware.profiler.ProfilerMiddleware` to correctly handle
+    float values. (:issue:`1511`)
 
 
 Version 0.15.2
