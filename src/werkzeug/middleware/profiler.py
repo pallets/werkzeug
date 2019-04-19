@@ -56,7 +56,7 @@ class ProfilerMiddleware(object):
 
     .. code-block:: python
 
-        from werkzeug.middleware.profile import ProfilerMiddleware
+        from werkzeug.middleware.profiler import ProfilerMiddleware
         app = ProfilerMiddleware(app)
 
     .. versionchanged:: 0.15
