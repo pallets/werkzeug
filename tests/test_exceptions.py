@@ -110,3 +110,7 @@ def test_unauthorized_www_authenticate():
     exc = exceptions.Unauthorized(www_authenticate=[digest, basic])
     h = dict(exc.get_headers({}))
     assert h["WWW-Authenticate"] == ", ".join((str(digest), str(basic)))
+
+    exc = exceptions.Unauthorized()
+    h = dict(exc.get_headers({}))
+    assert "WWW-Authenticate" not in h
