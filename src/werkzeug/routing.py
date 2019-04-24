@@ -102,7 +102,6 @@ import re
 import sys
 import types
 import uuid
-from functools import partial
 from pprint import pformat
 from threading import Lock
 
@@ -719,6 +718,14 @@ class Rule(RuleFactory):
             raise LookupError("the converter %r does not exist" % converter_name)
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
+    def _encode_query_vars(self, query_vars):
+        return url_encode(
+            query_vars,
+            charset=self.map.charset,
+            sort=self.map.sort_parameters,
+            key=self.map.sort_key,
+        )
+
     def compile(self):
         """Compiles the regular expression and stores it."""
         assert self.map is not None, "rule not bound"
@@ -764,8 +771,8 @@ class Rule(RuleFactory):
         if not self.is_leaf:
             self._trace.append((False, "/"))
 
-        self._build = self._compile_builder(False)
-        self._build_unknown = self._compile_builder(True)
+        self._build = self._compile_builder(False).__get__(self, None)
+        self._build_unknown = self._compile_builder(True).__get__(self, None)
 
         if self.build_only:
             return
@@ -840,8 +847,13 @@ class Rule(RuleFactory):
             self.const_table = {}
             self.var = []
             self.var_table = {}
+            self.names = []
+            self.names_table = {}
             self.argdefs = ()
             self.defaults = dict(self.rule.defaults or {})
+
+            # initialize `self` as the first argument
+            self.get_var(".self")
 
         def get_const(self, x):
             """Return a constant ID for an object, adding it to the pool
@@ -865,6 +877,18 @@ class Rule(RuleFactory):
                 self.var_table[x] = len(self.var)
                 self.var.append(x)
             return self.var_table[x]
+
+        def get_name(self, x):
+            """Return an id for a `name`, adding it to the name pool.  This is
+            used to later populate `co_names` (for looking up attributes).
+
+            We use this for `self._XXX` attributes.
+            """
+            x = str(x)
+            if x not in self.names_table:
+                self.names_table[x] = len(self.names)
+                self.names.append(x)
+            return self.names_table[x]
 
         def add_defaults(self):
             """A rule builder is allowed to receive any of its defaults
@@ -946,9 +970,7 @@ class Rule(RuleFactory):
                     "CALL_FUNCTION", 1
                 )
 
-        def emit_build(
-            self, ind, opl, append_unknown=False, encode_query_vars=None, kwargs=None
-        ):
+        def emit_build(self, ind, opl, append_unknown=False, kwargs=None):
             ops = b""
             n = len(opl)
             stack = 0
@@ -959,7 +981,14 @@ class Rule(RuleFactory):
                     ops += self.build_op("LOAD_CONST", self.get_const(elem))
                     stack_overhead = 0
                     continue
-                ops += self.build_op("LOAD_CONST", self.get_const(op))
+
+                # self._converters["argname"].to_url
+                ops += self.build_op("LOAD_FAST", self.get_var(".self"))
+                ops += self.build_op("LOAD_ATTR", self.get_name("_converters"))
+                ops += self.build_op("LOAD_CONST", self.get_const(elem))
+                ops += self.build_op("BINARY_SUBSCR")
+                ops += self.build_op("LOAD_ATTR", self.get_name("to_url"))
+
                 ops += self.build_op("LOAD_FAST", self.get_var(elem))
                 ops += self.build_op("CALL_FUNCTION", 1)
                 stack_overhead = 2
@@ -985,7 +1014,11 @@ class Rule(RuleFactory):
                 # assemble this in its own buffers because we need to
                 # jump over it
                 uops = bytearray()  # run if kwargs. TOS=kwargs
-                uops += self.build_op("LOAD_CONST", self.get_const(encode_query_vars))
+
+                # self._encode_query_vars
+                uops += self.build_op("LOAD_FAST", self.get_var(".self"))
+                uops += self.build_op("LOAD_ATTR", self.get_name("_encode_query_vars"))
+
                 uops += self.build_op("ROT_TWO")
                 uops += self.build_op("CALL_FUNCTION", 1)
                 uops += self.build_op("LOAD_CONST", self.get_const("?"))
@@ -1036,13 +1069,6 @@ class Rule(RuleFactory):
             dom_ops = []
             url_ops = []
             opl = dom_ops
-            if append_unknown:
-                encode_query_vars = partial(
-                    url_encode,
-                    charset=self.rule.map.charset,
-                    sort=self.rule.map.sort_parameters,
-                    key=self.rule.map.sort_key,
-                )
             for is_dynamic, data in self.rule._trace:
                 if data == "|" and opl is dom_ops:
                     opl = url_ops
@@ -1092,7 +1118,7 @@ class Rule(RuleFactory):
                 stack += 1
                 if append_unknown:
                     ps, rv = self.emit_build(
-                        len(ops), url_ops, append_unknown, encode_query_vars, argcount
+                        len(ops), url_ops, append_unknown, argcount
                     )
                 else:
                     ps, rv = self.emit_build(len(ops), url_ops)
@@ -1107,7 +1133,7 @@ class Rule(RuleFactory):
                 flags,  # flags
                 bytes(ops),  # codestring
                 tuple(self.consts),  # constants
-                (),  # names
+                tuple(self.names),  # names
                 tuple(self.var),  # varnames
                 "<werkzeug routing>",  # filename, coverage ignores "<"
                 "<builder:%r>" % self.rule.rule,  # name

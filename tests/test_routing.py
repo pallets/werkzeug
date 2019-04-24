@@ -8,6 +8,7 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import gc
 import uuid
 
 import pytest
@@ -1057,3 +1058,28 @@ def test_error_message_suggestion():
     with pytest.raises(r.BuildError) as excinfo:
         adapter.build("world", {"id": 2}, method="POST")
     assert "Did you mean to use methods ['GET', 'HEAD']?" in str(excinfo.value)
+
+
+def test_no_memory_leak_from_Rule_builder():
+    """See #1520"""
+
+    # generate a bunch of objects that *should* get collected
+    for _ in range(100):
+        r.Map([r.Rule("/a/<string:b>")])
+
+    # ensure that the garbage collection has had a chance to collect cyclic
+    # objects
+    for _ in range(5):
+        gc.collect()
+
+    # assert they got collected!
+    count = sum(1 for obj in gc.get_objects() if isinstance(obj, r.Rule))
+    assert count == 0
+
+
+def test_build_url_with_arg_self():
+    map = r.Map([r.Rule("/foo/<string:self>", endpoint="foo")])
+    adapter = map.bind("example.org", "/", subdomain="blah")
+
+    ret = adapter.build("foo", {"self": "bar"})
+    assert ret == "http://example.org/foo/bar"
