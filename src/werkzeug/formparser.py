@@ -294,25 +294,15 @@ def parse_multipart_headers(iterable):
 
     :param iterable: iterable of strings that are newline terminated
     """
-    result = []
-    for line in iterable:
-        line = to_native(line)
-        line, line_terminated = _line_parse(line)
-        if not line_terminated:
-            raise ValueError("unexpected end of line in multipart header")
-        if not line:
+    parser = MultiPartParser.LineParser._create_header_parser()
+    for item in iterable:
+        result = parser.feed((item,))
+        if result:
             break
-        elif line[0] in " \t" and result:
-            key, value = result[-1]
-            result[-1] = (key, value + "\n " + line[1:])
-        else:
-            parts = line.split(":", 1)
-            if len(parts) == 2:
-                result.append((parts[0].strip(), parts[1].strip()))
-
-    # we link the list to the headers, no need to create a copy, the
-    # list was not shared anyways.
-    return Headers(result)
+    else:
+        result = parser.feed(("\r\n",))
+    assert len(result) == 1, "Empty line must always end header parsing"
+    return result[0][1]
 
 
 _begin_form = "begin_form"
@@ -489,8 +479,19 @@ class MultiPartParser(object):
             self._headers = []
             self._tail = b""
             self._codec = None
+            self._header_only = False
+
+        @classmethod
+        def _create_header_parser(cls):
+            self = cls(None, b"")
+            self._state = self._state_headers
+            self._header_only = True
+            return self
 
         def _start_content(self):
+            if self._header_only:
+                self._output.append(("headers", self._headers))
+                return self._state_done
             disposition = self._headers.get("content-disposition")
             if disposition is None:
                 raise ValueError("Missing Content-Disposition header")
