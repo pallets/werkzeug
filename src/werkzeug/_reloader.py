@@ -179,13 +179,15 @@ class ReloaderLoop(object):
             if exit_code != 3:
                 return exit_code
 
-    def trigger_reload(self, filename):
-        self.log_reload(filename)
-
-        blocked = wait_for_finished_request.acquire(blocking=False)
-        if blocked:
+    def _wait_for_finished_request(self):
+        request_finished = wait_for_finished_request.acquire(blocking=False)
+        if not request_finished:
             _log("info", " * Waiting for current request to finish...")
             wait_for_finished_request.acquire()
+
+    def trigger_reload(self, filename):
+        self.log_reload(filename)
+        self._wait_for_finished_request()
         sys.exit(3)
 
     def log_reload(self, filename):
@@ -293,10 +295,9 @@ class WatchdogReloaderLoop(ReloaderLoop):
             observer.stop()
             observer.join()
 
-        request_finished = wait_for_finished_request.acquire(blocking=False)
-        if not request_finished:
-            _log("info", " * Waiting for current request to finish...")
-            wait_for_finished_request.acquire()
+        # TODO: could also be checked in the loop above - no need to keep
+        # checking then?!
+        self._wait_for_finished_request()
         sys.exit(3)
 
 
