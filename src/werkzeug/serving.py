@@ -234,6 +234,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         return environ
 
     def run_wsgi(self):
+        from ._reloader import wait_for_finished_request
+        with wait_for_finished_request:
+            return self._run_wsgi()
+
+    def _run_wsgi(self):
         if self.headers.get("Expect", "").lower().strip() == "100-continue":
             self.wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
 

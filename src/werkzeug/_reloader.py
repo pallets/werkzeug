@@ -10,6 +10,8 @@ from ._compat import PY2
 from ._compat import text_type
 from ._internal import _log
 
+wait_for_finished_request = threading.Lock()
+
 
 def _iter_module_files():
     """This iterates over all relevant Python files.  It goes through all
@@ -179,6 +181,11 @@ class ReloaderLoop(object):
 
     def trigger_reload(self, filename):
         self.log_reload(filename)
+
+        blocked = wait_for_finished_request.acquire(blocking=False)
+        if blocked:
+            _log("info", " * Waiting for current request to finish...")
+            wait_for_finished_request.acquire()
         sys.exit(3)
 
     def log_reload(self, filename):
@@ -286,6 +293,10 @@ class WatchdogReloaderLoop(ReloaderLoop):
             observer.stop()
             observer.join()
 
+        request_finished = wait_for_finished_request.acquire(blocking=False)
+        if not request_finished:
+            _log("info", " * Waiting for current request to finish...")
+            wait_for_finished_request.acquire()
         sys.exit(3)
 
 
