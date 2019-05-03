@@ -153,7 +153,7 @@ class HTTPException(Exception):
 
     def get_headers(self, environ=None):
         """Get a list of headers."""
-        return [("Content-Type", "text/html")]
+        return [("Content-Type", "text/html; charset=utf-8")]
 
     def get_response(self, environ=None):
         """Get a response object.  If one was passed to the exception
