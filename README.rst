@@ -76,6 +76,7 @@ Links
     -   Windows: https://ci.appveyor.com/project/pallets/werkzeug
 
 -   Test coverage: https://codecov.io/gh/pallets/werkzeug
+-   Official chat: https://discord.gg/t6rrQZH
 
 .. _WSGI: https://wsgi.readthedocs.io/en/latest/
 .. _Flask: https://www.palletsprojects.com/p/flask/
