@@ -50,8 +50,8 @@ steps:
   displayName: Run tox
 
 - task: PublishTestResults@2
-  displayName: Publish Test Results
   inputs:
     testResultsFiles: junit/*.xml
     testRunTitle: 'Python $(python.version)'
   condition: succeededOrFailed()
+  displayName: Publish test results
