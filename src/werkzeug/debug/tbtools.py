@@ -464,8 +464,8 @@ class Frame(object):
         if os.path.isfile(fn):
             fn = os.path.realpath(fn)
         self.filename = to_unicode(fn, get_filesystem_encoding())
-        self.module = self.globals.get("__name__")
-        self.loader = self.globals.get("__loader__")
+        self.module = self.globals.get("__name__", self.locals.get("__name__"))
+        self.loader = self.globals.get("__loader__", self.locals.get("__loader__"))
         self.code = tb.tb_frame.f_code
 
         # support for paste's traceback extensions
