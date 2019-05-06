@@ -1,0 +1,43 @@
+trigger:
+- master
+
+strategy:
+  matrix:
+    Python37Linux:
+      python.version: '3.7'
+      vmImage: 'ubuntu-latest'
+    Python37Windows:
+      python.version: '3.7'
+      vmImage: 'windows-latest'
+    Python37Mac:
+      python.version: '3.7'
+      vmImage: 'macos-latest'
+    # Pypy3Linux:
+    #   python.version: 'pypy3'
+    #   vmImage: 'ubuntu-latest'
+    # Python36Linux:
+    #   python.version: '3.6'
+    #   vmImage: 'ubuntu-latest'
+    # Python35Linux:
+    #   python.version: '3.5'
+    #   vmImage: 'ubuntu-latest'
+    # Python27Linux:
+    #   python.version: '2.7'
+    #   vmImage: 'ubuntu-latest'
+    # Python27Windows:
+    #   python.version: '2.7'
+    #   vmImage: 'windows-latest'
+
+pool:
+  vmImage: $[ variables.vmImage ]
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: $(python.version)
+
+- script: pip install tox
+  displayName: 'Install tox'
+
+- script: tox -e py
+  displayName: 'Run tox'
