@@ -5,28 +5,28 @@ strategy:
   matrix:
     Python37Linux:
       python.version: '3.7'
-      vmImage: 'ubuntu-latest'
+      vmImage: ubuntu-latest
     Python37Windows:
       python.version: '3.7'
-      vmImage: 'windows-latest'
+      vmImage: windows-latest
     Python37Mac:
       python.version: '3.7'
-      vmImage: 'macos-latest'
+      vmImage: macos-latest
     # Pypy3Linux:
     #   python.version: 'pypy3'
-    #   vmImage: 'ubuntu-latest'
+    #   vmImage: ubuntu-latest
     # Python36Linux:
     #   python.version: '3.6'
-    #   vmImage: 'ubuntu-latest'
+    #   vmImage: ubuntu-latest
     # Python35Linux:
     #   python.version: '3.5'
-    #   vmImage: 'ubuntu-latest'
+    #   vmImage: ubuntu-latest
     # Python27Linux:
     #   python.version: '2.7'
-    #   vmImage: 'ubuntu-latest'
+    #   vmImage: ubuntu-latest
     # Python27Windows:
     #   python.version: '2.7'
-    #   vmImage: 'windows-latest'
+    #   vmImage: windows-latest
 
 pool:
   vmImage: $[ variables.vmImage ]
@@ -35,9 +35,20 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: $(python.version)
+  displayName: Use Python $(python.version)
+
+- script: python -m pip install --upgrade pip
+  displayName: Use latest Pip
 
 - script: pip install tox
-  displayName: 'Install tox'
+  displayName: Install tox
 
-- script: tox -e py
-  displayName: 'Run tox'
+- script: tox -e py -- --junit-xml=junit/tox-run-$(python.version).xml
+  displayName: Run tox
+
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  inputs:
+    testResultsFiles: junit/*.xml
+    testRunTitle: 'Python $(python.version)'
+  condition: succeededOrFailed()
