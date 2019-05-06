@@ -455,7 +455,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     # If header could not be slit with : but starts with white
                     # space and it follows an existing header, it's a folded
                     # header.
-                    if header[0] in ("\t", " ") and len(items) > 0:
+                    if header[0] in ("\t", " ") and items:
                         # Pop off the last header
                         key, value = items.pop()
                         # Append the current header to the value of the last
