@@ -451,7 +451,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                 # the field name and value.
                 try:
                     key, value = header[0:-2].split(":", 1)
-                except ValueError as e:
+                except ValueError:
                     # If header could not be slit with : but starts with white
                     # space and it follows an existing header, it's a folded
                     # header.
@@ -465,7 +465,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                     # Otherwise it's just a bad header and should error
                     else:
                         # Re-raise the value error
-                        raise e
+                        raise
 
                 # Add the key and the value once stripped of leading
                 # white space. The specification allows for stripping
