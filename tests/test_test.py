@@ -56,7 +56,7 @@ def redirect_with_get_app(environ, start_response):
         "http://localhost/first/request",
         "http://localhost/some/redirect/",
     ):
-        assert False, 'redirect_demo_app() did not expect URL "%s"' % req.url
+        raise AssertionError('redirect_demo_app() did not expect URL "%s"' % req.url)
     if "/some/redirect" not in req.url:
         response = redirect("http://localhost/some/redirect/")
     else:

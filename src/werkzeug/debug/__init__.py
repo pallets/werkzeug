@@ -141,7 +141,7 @@ def get_pin_and_cookie_name(app):
         else:
             num = pin
 
-    modname = getattr(app, "__module__", getattr(app.__class__, "__module__"))
+    modname = getattr(app, "__module__", app.__class__.__module__)
 
     try:
         # getuser imports the pwd module, which does not exist in Google
@@ -158,7 +158,7 @@ def get_pin_and_cookie_name(app):
     probably_public_bits = [
         username,
         modname,
-        getattr(app, "__name__", getattr(app.__class__, "__name__")),
+        getattr(app, "__name__", app.__class__.__name__),
         getattr(mod, "__file__", None),
     ]
 
