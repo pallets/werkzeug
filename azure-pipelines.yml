@@ -3,30 +3,33 @@ trigger:
 
 strategy:
   matrix:
-    Python37Linux:
+    Python37-Linux:
       python.version: '3.7'
       vmImage: ubuntu-latest
-    Python37Windows:
+    Python37-Windows:
       python.version: '3.7'
       vmImage: windows-latest
-    Python37Mac:
+    Python37-Mac:
       python.version: '3.7'
       vmImage: macos-latest
-    # Pypy3Linux:
-    #   python.version: 'pypy3'
-    #   vmImage: ubuntu-latest
-    # Python36Linux:
-    #   python.version: '3.6'
-    #   vmImage: ubuntu-latest
-    # Python35Linux:
-    #   python.version: '3.5'
-    #   vmImage: ubuntu-latest
-    # Python27Linux:
-    #   python.version: '2.7'
-    #   vmImage: ubuntu-latest
-    # Python27Windows:
-    #   python.version: '2.7'
-    #   vmImage: windows-latest
+    Python36-Linux:
+      python.version: '3.6'
+      vmImage: ubuntu-latest
+    Python35-Linux:
+      python.version: '3.5'
+      vmImage: ubuntu-latest
+    Python27-Linux:
+      python.version: '2.7'
+      vmImage: ubuntu-latest
+    Python27-Windows:
+      python.version: '2.7'
+      vmImage: windows-latest
+    Pypy3-Linux:
+      python.version: 'pypy3'
+      vmImage: ubuntu-latest
+    Pypy2-Linux:
+      python.version: 'pypy2'
+      vmImage: ubuntu-latest
 
 pool:
   vmImage: $[ variables.vmImage ]
