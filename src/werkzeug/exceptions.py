@@ -251,6 +251,8 @@ class Unauthorized(HTTPException):
     :param www-authenticate: A single value, or list of values, for the
         WWW-Authenticate header.
 
+    .. versionchanged:: 0.15.2
+
     .. versionchanged:: 0.15.1
         ``description`` was moved back as the first argument, restoring
          its previous position.
@@ -268,8 +270,8 @@ class Unauthorized(HTTPException):
         " how to supply the credentials required."
     )
 
-    def __init__(self, description=None, www_authenticate=None):
-        HTTPException.__init__(self, description)
+    def __init__(self, description=None, response=None, www_authenticate=None):
+        HTTPException.__init__(self, description, response)
         if not isinstance(www_authenticate, (tuple, list)):
             www_authenticate = (www_authenticate,)
         self.www_authenticate = www_authenticate

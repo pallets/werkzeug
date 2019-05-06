@@ -3,8 +3,12 @@
 Version 0.15.3
 --------------
 
+Unreleased
+
 -   Properly handle multi-line header folding in development server in
     Python 2.7. (:issue:`1080`)
+-   Restore the ``response`` argument to :exc:`exceptions.Unauthorized`.
+    (:pr:`1527`)
 
 
 Version 0.15.2
