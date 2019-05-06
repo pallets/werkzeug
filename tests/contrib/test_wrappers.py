@@ -85,4 +85,4 @@ def test_dynamic_charset_response_mixin():
     except TypeError:
         pass
     else:
-        assert False, "expected type error on charset setting without ct"
+        raise AssertionError("expected type error on charset setting without ct")
