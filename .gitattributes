@@ -1,1 +1,7 @@
+# Normalize CRLF to LF for all text files
+* text=auto
+
+# Declare binary file types so they won't be normalized
+*.png binary
+*.jpg binary
 tests/**/*.http binary
