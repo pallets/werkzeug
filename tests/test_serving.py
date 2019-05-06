@@ -510,6 +510,36 @@ def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
     conn.close()
 
 
+def test_multiline_header_folding_for_http_1_1(dev_server):
+    """
+    This is testing the provision of multi-line header folding per:
+     * RFC 2616 Section 2.2
+     * RFC 3875 Section 4.1.18
+    """
+    server = dev_server(
+        r"""
+        from werkzeug.wrappers import Response
+        def app(environ, start_response):
+            start_response('200 OK', [('Content-Type', 'text/plain')])
+            return [environ['HTTP_XYZ'].encode()]
+        """
+    )
+
+    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn.connect()
+    conn.putrequest("GET", "/")
+    conn.putheader("Accept", "text/plain")
+    conn.putheader("XYZ", "first-line", "second-line", "third-line")
+    conn.endheaders()
+    conn.send(b"")
+    res = conn.getresponse()
+
+    assert res.status == 200
+    assert res.read() == b"first-line\tsecond-line\tthird-line"
+
+    conn.close()
+
+
 def can_test_unix_socket():
     if not hasattr(socket, "AF_UNIX"):
         return False
