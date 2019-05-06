@@ -1,0 +1,1 @@
+Remove code that issued deprecation warnings in version 0.15.

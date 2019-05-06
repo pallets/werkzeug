@@ -1,18 +1,6 @@
 .. currentmodule:: werkzeug
 
-Version 1.0.0
--------------
-
-Unreleased
-
--   Drop support for Python 3.4. (:issue:`1478`)
--   Remove code that issued deprecation warnings in version 0.15.
-    (:issue:`1477`)
--   Added ``utils.invalidate_cached_property()`` to invalidate cached
-    properties. (:pr:`1474`)
--   Directive keys for the ``Set-Cookie`` response header are not
-    ignored when parsing the ``Cookie`` request header. This allows
-    cookies with names such as "expires" and "version". (:issue:`1495`)
+.. towncrier release notes start
 
 
 Version 0.15.2

@@ -1,0 +1,3 @@
+Directive keys for the ``Set-Cookie`` response header are not ignored when parsing the
+``Cookie`` request header. This allows cookies with names such as "expires" and
+"version".

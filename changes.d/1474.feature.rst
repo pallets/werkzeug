@@ -1,0 +1,1 @@
+Added ``utils.invalidate_cached_property()`` to invalidate cached properties.

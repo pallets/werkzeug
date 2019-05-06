@@ -1,0 +1,8 @@
+[tool.towncrier]
+    package = "werkzeug"
+    package_dir = "src"
+    filename = "CHANGES.rst"
+    directory = "changes.d"
+    issue_format = ":issue:`{issue}`"
+    title_format = "Version {version}"
+    template = "changes.d/towncrier_template.rst"
