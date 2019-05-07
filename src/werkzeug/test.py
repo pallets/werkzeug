@@ -799,7 +799,7 @@ class ClientRedirectError(Exception):
 
 
 class Client(object):
-    """This class allows to send requests to a wrapped application.
+    """This class allows you to send requests to a wrapped application.
 
     The response wrapper can be a class or factory function that takes
     three arguments: app_iter, status and headers.  The default response
