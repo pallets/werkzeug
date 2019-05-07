@@ -218,6 +218,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
         for key, value in self.get_header_items():
             key = key.upper().replace("-", "_")
+            value = value.replace("\r\n", "")
             if key not in ("CONTENT_TYPE", "CONTENT_LENGTH"):
                 key = "HTTP_" + key
                 if key in environ:
@@ -434,7 +435,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         This function provides Python 2/3 compatibility as related to the
         parsing of request headers. Python 2.7 is not compliant with
         RFC 3875 Section 4.1.18 which requires multiple values for headers
-        to be provided. This function will return a matching list regardless
+        to be provided or RFC 2616 which allows for folding of multi-line
+        headers. This function will return a matching list regardless
         of Python version. It can be removed once Python 2.7 support
         is dropped.
 
@@ -445,9 +447,26 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             # W3C RFC 2616 Section 4.2.
             items = []
             for header in self.headers.headers:
-                # Remove "\n\r" from the header and split on ":" to get
+                # Remove "\r\n" from the header and split on ":" to get
                 # the field name and value.
-                key, value = header[0:-2].split(":", 1)
+                try:
+                    key, value = header[0:-2].split(":", 1)
+                except ValueError:
+                    # If header could not be slit with : but starts with white
+                    # space and it follows an existing header, it's a folded
+                    # header.
+                    if header[0] in ("\t", " ") and items:
+                        # Pop off the last header
+                        key, value = items.pop()
+                        # Append the current header to the value of the last
+                        # header which will be placed back on the end of the
+                        # list
+                        value = value + header
+                    # Otherwise it's just a bad header and should error
+                    else:
+                        # Re-raise the value error
+                        raise
+
                 # Add the key and the value once stripped of leading
                 # white space. The specification allows for stripping
                 # trailing white space but the Python 3 code does not

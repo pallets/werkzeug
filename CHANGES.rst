@@ -1,5 +1,12 @@
 .. currentmodule:: werkzeug
 
+Version 0.15.3
+--------------
+
+-   Properly handle multi-line header folding in development server in
+    Python 2.7. (:issue:`1080`)
+
+
 Version 0.15.2
 --------------
 
