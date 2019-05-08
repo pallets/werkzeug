@@ -9,6 +9,8 @@ Unreleased
     Python 2.7. (:issue:`1080`)
 -   Restore the ``response`` argument to :exc:`exceptions.Unauthorized`.
     (:pr:`1527`)
+-   The default URL converter correctly encodes bytes to string rather
+    than representing them with ``b''``. (:issue:`1502`)
 
 
 Version 0.15.2
