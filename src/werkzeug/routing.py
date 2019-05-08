@@ -95,14 +95,11 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import ast
 import difflib
-import dis
 import posixpath
 import re
-import sys
-import types
 import uuid
-from functools import partial
 from pprint import pformat
 from threading import Lock
 
@@ -110,7 +107,6 @@ from ._compat import implements_to_string
 from ._compat import iteritems
 from ._compat import itervalues
 from ._compat import native_string_result
-from ._compat import PY2
 from ._compat import string_types
 from ._compat import text_type
 from ._compat import to_bytes
@@ -490,6 +486,29 @@ class RuleTemplateFactory(RuleFactory):
                 )
 
 
+def _prefix_names(src):
+    """ast parse and prefix names with `.` to avoid collision with user vars"""
+    tree = ast.parse(src).body[0]
+    if isinstance(tree, ast.Expr):
+        tree = tree.value
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            node.id = "." + node.id
+    return tree
+
+
+_CALL_CONVERTER_CODE_FMT = "self._converters[{elem!r}].to_url()"
+_IF_KWARGS_URL_ENCODE_CODE = """\
+if kwargs:
+    q = '?'
+    params = self._encode_query_vars(kwargs)
+else:
+    q = params = ''
+"""
+_IF_KWARGS_URL_ENCODE_AST = _prefix_names(_IF_KWARGS_URL_ENCODE_CODE)
+_URL_ENCODE_AST_NAMES = (_prefix_names("q"), _prefix_names("params"))
+
+
 @implements_to_string
 class Rule(RuleFactory):
     """A Rule represents one URL pattern.  There are some options for `Rule`
@@ -719,6 +738,14 @@ class Rule(RuleFactory):
             raise LookupError("the converter %r does not exist" % converter_name)
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
+    def _encode_query_vars(self, query_vars):
+        return url_encode(
+            query_vars,
+            charset=self.map.charset,
+            sort=self.map.sort_parameters,
+            key=self.map.sort_key,
+        )
+
     def compile(self):
         """Compiles the regular expression and stores it."""
         assert self.map is not None, "rule not bound"
@@ -764,8 +791,8 @@ class Rule(RuleFactory):
         if not self.is_leaf:
             self._trace.append((False, "/"))
 
-        self._build = self._compile_builder(False)
-        self._build_unknown = self._compile_builder(True)
+        self._build = self._compile_builder(False).__get__(self, None)
+        self._build_unknown = self._compile_builder(True).__get__(self, None)
 
         if self.build_only:
             return
@@ -825,308 +852,102 @@ class Rule(RuleFactory):
 
                 return result
 
-    class BuilderCompiler:
-        JOIN_EMPTY = "".join
-        if sys.version_info >= (3, 6):
-            OPARG_SIZE = 256
-            OPARG_VARI = False
-        else:
-            OPARG_SIZE = 65536
-            OPARG_VARI = True
-
-        def __init__(self, rule):
-            self.rule = rule
-            self.consts = []
-            self.const_table = {}
-            self.var = []
-            self.var_table = {}
-            self.argdefs = ()
-            self.defaults = dict(self.rule.defaults or {})
-
-        def get_const(self, x):
-            """Return a constant ID for an object, adding it to the pool
-            if not already present.
-            """
-            if x not in self.const_table:
-                self.const_table[x] = len(self.consts)
-                self.consts.append(x)
-            return self.const_table[x]
-
-        def get_var(self, x):
-            """Return a local variable ID for a name, adding it to the
-            pool if not already present.
-
-            Our only use for local variables is as function arguments:
-            any variable name that exists before the call to
-            ``add_defaults()`` will become one.
-            """
-            x = str(x)
-            if x not in self.var_table:
-                self.var_table[x] = len(self.var)
-                self.var.append(x)
-            return self.var_table[x]
-
-        def add_defaults(self):
-            """A rule builder is allowed to receive any of its defaults
-            as arguments. We don't bother to check that they match
-            anywhere, since ``suitable_for()`` should have already done
-            that, but we do need them to be optional arguments. Since
-            their values are known at compile-time, the builder will
-            never refer to these arguments.
-            """
-            # ensure every default exists
-            for k in self.defaults.keys():
-                self.get_var(k)
-            # reorder to put anything with a default at the end
-            req = []
-            opt = []
-            defs = []
-            for k in self.var:
-                if k in self.defaults:
-                    opt.append(k)
-                    defs.append(self.defaults[k])
-                else:
-                    req.append(k)
-            self.var = req + opt
-            self.argdefs = tuple(defs)
-            for i, k in enumerate(self.var):
-                self.var_table[k] = i
-
-        def collapse_constants(self, opl):
-            """Given a list of build operations, spit out a new list
-            with runs of constant elements joined."""
-            new = []
-            for op, elem in opl:
-                if op is not None:
-                    new.append((op, elem))
-                    continue
-                if elem == "":
-                    continue
-                if not new or new[-1][0] is not None:
-                    new.append((op, elem))
-                    continue
-                new[-1] = (None, new[-1][1] + elem)
-            if not new:
-                new.append((None, ""))
-            return new
-
-        def build_op(self, op, arg=None):
-            """Return a byte representation of a Python instruction."""
-            if isinstance(op, str):
-                op = dis.opmap[op]
-            if arg is None and op >= dis.HAVE_ARGUMENT:
-                raise ValueError("Operation requires an argument: %s" % dis.opname[op])
-            if arg is not None and op < dis.HAVE_ARGUMENT:
-                raise ValueError("Operation takes no argument: %s" % dis.opname[op])
-            if arg is None:
-                arg = 0
-            # Python 3.6 changed the argument to an 8-bit integer, so this
-            # could be a practical consideration
-            if arg >= self.OPARG_SIZE:
-                return self.build_op(
-                    "EXTENDED_ARG", arg // self.OPARG_SIZE
-                ) + self.build_op(op, arg % self.OPARG_SIZE)
-            if not self.OPARG_VARI:
-                return bytearray((op, arg))
-            elif op >= dis.HAVE_ARGUMENT:
-                return bytearray((op, arg % 256, arg // 256))
-            else:
-                return bytearray((op,))
-
-        def build_string(self, n):
-            """Return the correct opcode(s) for building a string from
-            ``n`` elements. If the ``''.join`` crutch is needed, it must
-            already be immediately below the string elements on the
-            stack.
-            """
-            if "BUILD_STRING" in dis.opmap:
-                return self.build_op("BUILD_STRING", n)
-            else:
-                return self.build_op("BUILD_TUPLE", n) + self.build_op(
-                    "CALL_FUNCTION", 1
-                )
-
-        def emit_build(
-            self, ind, opl, append_unknown=False, encode_query_vars=None, kwargs=None
-        ):
-            ops = b""
-            n = len(opl)
-            stack = 0
-            stack_overhead = 0
-
-            for op, elem in opl:
-                if op is None:
-                    ops += self.build_op("LOAD_CONST", self.get_const(elem))
-                    stack_overhead = 0
-                    continue
-                ops += self.build_op("LOAD_CONST", self.get_const(op))
-                ops += self.build_op("LOAD_FAST", self.get_var(elem))
-                ops += self.build_op("CALL_FUNCTION", 1)
-                stack_overhead = 2
-
-            stack += len(opl)
-            peak_stack = stack + stack_overhead
-            dont_build_string = False
-            needs_build_string = "BUILD_STRING" not in dis.opmap
-
-            if n <= 1:
-                dont_build_string = True
-                needs_build_string = False
-
-            if append_unknown:
-                if "BUILD_STRING" not in dis.opmap:
-                    needs_build_string = True
-                    ops = (
-                        self.build_op("LOAD_CONST", self.get_const(self.JOIN_EMPTY))
-                        + ops
-                    )
-                ops += self.build_op("LOAD_FAST", kwargs)
-
-                # assemble this in its own buffers because we need to
-                # jump over it
-                uops = bytearray()  # run if kwargs. TOS=kwargs
-                uops += self.build_op("LOAD_CONST", self.get_const(encode_query_vars))
-                uops += self.build_op("ROT_TWO")
-                uops += self.build_op("CALL_FUNCTION", 1)
-                uops += self.build_op("LOAD_CONST", self.get_const("?"))
-                uops += self.build_op("ROT_TWO")
-                if dont_build_string:
-                    uops += self.build_string(n + 2)
-
-                nops = bytearray()  # otherwise
-                if not dont_build_string:
-                    # if we're going to build a string, we need to pad out to
-                    # a constant length
-                    nops += self.build_op("LOAD_CONST", self.get_const(""))
-                    nops += self.build_op("DUP_TOP")
-                elif needs_build_string:
-                    # we inserted the ''.join reference at the bottom of the
-                    # stack, but we don't want to call it: throw it away
-                    nops += self.build_op("ROT_TWO")
-                    nops += self.build_op("POP_TOP")
-                nops += self.build_op("JUMP_FORWARD", len(uops))
-
-                # this jump needs to take its own length into account. the
-                # simple way to do that is to compute a minimal guess for the
-                # length of the jump instruction, and keep revising it upward
-                jump_op = self.build_op("JUMP_IF_TRUE_OR_POP", 0)
-                while True:
-                    jump_len = len(jump_op)
-                    jump_target = ind + len(ops) + jump_len + len(nops)
-                    jump_op = self.build_op("JUMP_IF_TRUE_OR_POP", jump_target)
-                    assert len(jump_op) >= jump_len
-                    if len(jump_op) == jump_len:
-                        break
-
-                ops += jump_op
-                ops += nops
-                ops += uops
-                stack += 1
-                n += 2
-                peak_stack = max(peak_stack, stack + 2)
-            elif needs_build_string:
-                ops = self.build_op("LOAD_CONST", self.get_const(self.JOIN_EMPTY)) + ops
-                peak_stack += 1
-            if not dont_build_string:
-                ops += self.build_string(n)
-            return peak_stack, ops
-
-        def compile(self, append_unknown=True):
-            flags = 0x08
-            dom_ops = []
-            url_ops = []
-            opl = dom_ops
-            if append_unknown:
-                encode_query_vars = partial(
-                    url_encode,
-                    charset=self.rule.map.charset,
-                    sort=self.rule.map.sort_parameters,
-                    key=self.rule.map.sort_key,
-                )
-            for is_dynamic, data in self.rule._trace:
-                if data == "|" and opl is dom_ops:
-                    opl = url_ops
-                    continue
-                # this seems like a silly case to ever come up but:
-                # if a default is given for a value that appears in the rule,
-                # resolve it to a constant ahead of time
-                if is_dynamic and data in self.defaults:
-                    data = self.rule._converters[data].to_url(self.defaults[data])
-                    opl.append((None, data))
-                    continue
-                elif not is_dynamic:
-                    opl.append(
-                        (
-                            None,
-                            url_quote(
-                                to_bytes(data, self.rule.map.charset), safe="/:|+"
-                            ),
-                        )
-                    )
-                    continue
-                opl.append((self.rule._converters[data].to_url, data))
-            dom_ops = self.collapse_constants(dom_ops)
-            url_ops = self.collapse_constants(url_ops)
-            for op, elem in dom_ops + url_ops:
-                if op is not None:
-                    self.get_var(elem)
-            self.add_defaults()
-            argcount = len(self.var)
-            # invalid name for paranoia reasons
-            self.get_var(".keyword_arguments")
-            stack = 0
-            peak_stack = 0
-            ops = b""
-            if (
-                not append_unknown
-                and len(dom_ops) == len(url_ops) == 1
-                and dom_ops[0][0] is url_ops[0][0] is None
-            ):
-                # shortcut: just return the constant
-                stack = peak_stack = 1
-                constant_value = (dom_ops[0][1], url_ops[0][1])
-                ops += self.build_op("LOAD_CONST", self.get_const(constant_value))
-            else:
-                ps, rv = self.emit_build(len(ops), dom_ops)
-                ops += rv
-                peak_stack = max(stack + ps, peak_stack)
-                stack += 1
-                if append_unknown:
-                    ps, rv = self.emit_build(
-                        len(ops), url_ops, append_unknown, encode_query_vars, argcount
-                    )
-                else:
-                    ps, rv = self.emit_build(len(ops), url_ops)
-                ops += rv
-                peak_stack = max(stack + ps, peak_stack)
-                ops += self.build_op("BUILD_TUPLE", 2)
-            ops += self.build_op("RETURN_VALUE")
-            code_args = [  # CodeType doesn't take keywords
-                argcount,  # argcount
-                len(self.var),  # nlocals
-                peak_stack + len(self.var),  # stacksize
-                flags,  # flags
-                bytes(ops),  # codestring
-                tuple(self.consts),  # constants
-                (),  # names
-                tuple(self.var),  # varnames
-                "<werkzeug routing>",  # filename, coverage ignores "<"
-                "<builder:%r>" % self.rule.rule,  # name
-                1,  # firstlineno
-                b"",  # lnotab
-            ]
-            if not PY2:
-                code_args[1:1] = [0]  # kwonlyargcount
-            co = types.CodeType(*code_args)
-            fn = types.FunctionType(co, {}, None, self.argdefs)
-            return fn
-
     def _compile_builder(self, append_unknown=True):
-        """Generate a function that builds this rule.
+        defaults = self.defaults or {}
+        dom_ops = []
+        url_ops = []
 
-        :internal:
-        """
-        return self.BuilderCompiler(self).compile(append_unknown)
+        opl = dom_ops
+        for is_dynamic, data in self._trace:
+            if data == "|" and opl is dom_ops:
+                opl = url_ops
+                continue
+            # this seems like a silly case to ever come up but:
+            # if a default is given for a value that appears in the rule,
+            # resolve it to a constant ahead of time
+            if is_dynamic and data in defaults:
+                data = self._converters[data].to_url(defaults[data])
+                opl.append((False, data))
+            elif not is_dynamic:
+                opl.append(
+                    (False, url_quote(to_bytes(data, self.map.charset), safe="/:|+"))
+                )
+            else:
+                opl.append((True, data))
+
+        def _convert(elem):
+            ret = _prefix_names(_CALL_CONVERTER_CODE_FMT.format(elem=elem))
+            ret.args = [ast.Name(str(elem), ast.Load())]  # str for py2
+            return ret
+
+        def _parts(ops):
+            parts = [
+                _convert(elem) if is_dynamic else ast.Str(s=elem)
+                for is_dynamic, elem in ops
+            ]
+            parts = parts or [ast.Str("")]
+            # constant fold
+            ret = [parts[0]]
+            for p in parts[1:]:
+                if isinstance(p, ast.Str) and isinstance(ret[-1], ast.Str):
+                    ret[-1] = ast.Str(ret[-1].s + p.s)
+                else:
+                    ret.append(p)
+            return ret
+
+        dom_parts = _parts(dom_ops)
+        url_parts = _parts(url_ops)
+        if not append_unknown:
+            body = []
+        else:
+            body = [_IF_KWARGS_URL_ENCODE_AST]
+            url_parts.extend(_URL_ENCODE_AST_NAMES)
+
+        def _join(parts):
+            if len(parts) == 1:  # shortcut
+                return parts[0]
+            elif hasattr(ast, "JoinedStr"):  # py36+
+                return ast.JoinedStr(parts)
+            else:
+                call = _prefix_names('"".join()')
+                call.args = [ast.Tuple(parts, ast.Load())]
+                return call
+
+        body.append(
+            ast.Return(ast.Tuple([_join(dom_parts), _join(url_parts)], ast.Load()))
+        )
+
+        # str is necessary for python2
+        pargs = [
+            str(elem)
+            for is_dynamic, elem in dom_ops + url_ops
+            if is_dynamic and elem not in defaults
+        ]
+        kargs = [str(k) for k in defaults]
+
+        func_ast = _prefix_names("def _(): pass")
+        func_ast.name = "<builder:{!r}>".format(self.rule)
+        if hasattr(ast, "arg"):  # py3
+            func_ast.args.args.append(ast.arg(".self", None))
+            for arg in pargs + kargs:
+                func_ast.args.args.append(ast.arg(arg, None))
+            func_ast.args.kwarg = ast.arg(".kwargs", None)
+        else:
+            func_ast.args.args.append(ast.Name(".self", ast.Load()))
+            for arg in pargs + kargs:
+                func_ast.args.args.append(ast.Name(arg, ast.Load()))
+            func_ast.args.kwarg = ".kwargs"
+        for _ in kargs:
+            func_ast.args.defaults.append(ast.Str(""))
+        func_ast.body = body
+
+        module = ast.fix_missing_locations(ast.Module([func_ast]))
+        code = compile(module, "<werkzeug routing>", "exec")
+
+        globs, locs = {}, {}
+        exec(code, globs, locs)
+
+        return locs[func_ast.name]
 
     def build(self, values, append_unknown=True):
         """Assembles the relative url for that rule and the subdomain.
