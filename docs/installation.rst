@@ -26,13 +26,13 @@ detect and use them if you install them.
 * `SimpleJSON`_ is a fast JSON implementation that is compatible with
   Python's ``json`` module. It is preferred for JSON operations if it is
   installed.
-* `termcolor`_ provides request log highlighting when using the
+* `Click`_ provides request log highlighting when using the
   development server.
 * `Watchdog`_ provides a faster, more efficient reloader for the
   development server.
 
 .. _SimpleJSON: https://simplejson.readthedocs.io/en/latest/
-.. _termcolor: https://pypi.org/project/termcolor/
+.. _Click: https://pypi.org/project/click/
 .. _Watchdog: https://pypi.org/project/watchdog/
 
 

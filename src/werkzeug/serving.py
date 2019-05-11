@@ -72,9 +72,9 @@ except ImportError:
     ssl = _SslDummy()
 
 try:
-    import termcolor
+    import click
 except ImportError:
-    termcolor = None
+    click = None
 
 
 def _get_openssl_crypto_module():
@@ -392,23 +392,23 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
         code = str(code)
 
-        if termcolor:
-            color = termcolor.colored
+        if click:
+            color = click.style
 
             if code[0] == "1":  # 1xx - Informational
-                msg = color(msg, attrs=["bold"])
+                msg = color(msg, bold=True)
             elif code[0] == "2":  # 2xx - Success
-                msg = color(msg, color="white")
+                msg = color(msg, fg="white")
             elif code == "304":  # 304 - Resource Not Modified
-                msg = color(msg, color="cyan")
+                msg = color(msg, fg="cyan")
             elif code[0] == "3":  # 3xx - Redirection
-                msg = color(msg, color="green")
+                msg = color(msg, fg="green")
             elif code == "404":  # 404 - Resource Not Found
-                msg = color(msg, color="yellow")
+                msg = color(msg, fg="yellow")
             elif code[0] == "4":  # 4xx - Client Error
-                msg = color(msg, color="red", attrs=["bold"])
+                msg = color(msg, fg="red", bold=True)
             else:  # 5xx, or any other response
-                msg = color(msg, color="magenta", attrs=["bold"])
+                msg = color(msg, fg="magenta", bold=True)
 
         self.log("info", '"%s" %s %s', msg, code, size)
 
