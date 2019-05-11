@@ -534,7 +534,7 @@ def append_slash_redirect(environ, code=301):
                     the redirect.
     :param code: the status code for the redirect.
     """
-    new_path = environ["PATH_INFO"].strip("/") + "/"
+    new_path = environ["PATH_INFO"].rstrip("/") + "/"
     query_string = environ.get("QUERY_STRING")
     if query_string:
         new_path += "?" + query_string
