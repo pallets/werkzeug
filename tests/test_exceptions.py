@@ -110,3 +110,9 @@ def test_unauthorized_www_authenticate():
     exc = exceptions.Unauthorized(www_authenticate=[digest, basic])
     h = dict(exc.get_headers({}))
     assert h["WWW-Authenticate"] == ", ".join((str(digest), str(basic)))
+
+
+def test_response_header_content_type_should_contain_charset():
+    exc = exceptions.HTTPException("An error message")
+    h = exc.get_response({})
+    assert h.headers["Content-Type"] == "text/html; charset=utf-8"

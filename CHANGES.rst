@@ -13,6 +13,8 @@ Unreleased
 -   Directive keys for the ``Set-Cookie`` response header are not
     ignored when parsing the ``Cookie`` request header. This allows
     cookies with names such as "expires" and "version". (:issue:`1495`)
+-   Add ``charset=utf-8`` to an HTTP exception response's
+    ``CONTENT_TYPE`` header. (:pr:`1526`)
 
 
 Version 0.15.2
