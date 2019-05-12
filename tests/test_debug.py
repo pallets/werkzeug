@@ -371,3 +371,14 @@ def test_chained_exception_cycle():
     # if cycles aren't broken, this will time out
     tb = Traceback(TypeError, error, error.__traceback__)
     assert len(tb.groups) == 2
+
+
+def test_non_hashable_exception():
+    class MutableException(ValueError):
+        __hash__ = None
+
+    try:
+        raise MutableException()
+    except MutableException:
+        # previously crashed: `TypeError: unhashable type 'MutableException'`
+        Traceback(*sys.exc_info())
