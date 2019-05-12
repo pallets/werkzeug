@@ -248,11 +248,11 @@ class Traceback(object):
         memo = set()
         while True:
             self.groups.append(Group(exc_type, exc_value, tb))
-            memo.add(exc_value)
+            memo.add(id(exc_value))
             if PY2:
                 break
             exc_value = exc_value.__cause__ or exc_value.__context__
-            if exc_value is None or exc_value in memo:
+            if exc_value is None or id(exc_value) in memo:
                 break
             exc_type = type(exc_value)
             tb = exc_value.__traceback__
