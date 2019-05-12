@@ -354,3 +354,20 @@ def test_basic(dev_server, crash):
         assert "The debugger caught an exception in your WSGI application" in r.text
     else:
         assert r.text == "hello"
+
+
+@pytest.mark.skipif(PY2, reason="Python 2 doesn't have chained exceptions.")
+@pytest.mark.timeout(2)
+def test_chained_exception_cycle():
+    try:
+        try:
+            raise ValueError()
+        except ValueError:
+            raise TypeError()
+    except TypeError as e:
+        # create a cycle and make it available outside the except block
+        e.__context__.__context__ = error = e
+
+    # if cycles aren't broken, this will time out
+    tb = Traceback(TypeError, error, error.__traceback__)
+    assert len(tb.groups) == 2
