@@ -18,6 +18,8 @@ Unreleased
     float values. (:issue:`1511`)
 -   Update :class:`~middleware.lint.LintMiddleware` to work on Python 3.
     (:issue:`1510`)
+-   The debugger detects cycles in chained exceptions and does not time
+    out in that case. (:issue:`1536`)
 
 
 Version 0.15.2
