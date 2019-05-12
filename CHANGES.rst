@@ -16,6 +16,8 @@ Unreleased
 -   Fix the filename format string in
     :class:`~middleware.profiler.ProfilerMiddleware` to correctly handle
     float values. (:issue:`1511`)
+-   Update :class:`~middleware.lint.LintMiddleware` to work on Python 3.
+    (:issue:`1510`)
 
 
 Version 0.15.2
