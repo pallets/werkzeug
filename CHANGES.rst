@@ -3,7 +3,7 @@
 Version 0.15.3
 --------------
 
-Unreleased
+Released 2019-05-14
 
 -   Properly handle multi-line header folding in development server in
     Python 2.7. (:issue:`1080`)

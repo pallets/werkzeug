@@ -17,7 +17,7 @@
 import sys
 from types import ModuleType
 
-__version__ = "0.15.2"
+__version__ = "0.15.3"
 
 # This import magic raises concerns quite often which is why the implementation
 # and motivation is explained here in detail now.
