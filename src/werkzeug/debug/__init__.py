@@ -67,6 +67,19 @@ def get_machine_id():
         return rv
 
     def _generate():
+        # docker containers share the same machine id, get the
+        # container id instead
+        try:
+            with open("/proc/self/cgroup") as f:
+                value = f.readline()
+        except IOError:
+            pass
+        else:
+            value = value.strip().partition("/docker/")[2]
+
+            if value:
+                return value
+
         # Potential sources of secret information on linux.  The machine-id
         # is stable across boots, the boot id is not
         for filename in "/etc/machine-id", "/proc/sys/kernel/random/boot_id":

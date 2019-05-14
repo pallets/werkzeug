@@ -20,6 +20,8 @@ Unreleased
     (:issue:`1510`)
 -   The debugger detects cycles in chained exceptions and does not time
     out in that case. (:issue:`1536`)
+-   When running the development server in Docker, the debugger security
+    pin is now unique per container.
 
 
 Version 0.15.2
