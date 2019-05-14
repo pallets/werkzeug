@@ -14,6 +14,8 @@ common HTTP errors such as non-empty responses for 304 status codes.
 """
 from warnings import warn
 
+from .._compat import implements_iterator
+from .._compat import PY2
 from .._compat import string_types
 from ..datastructures import Headers
 from ..http import is_entity_header
@@ -124,10 +126,14 @@ class GuardedWrite(object):
         self._chunks.append(len(s))
 
 
+@implements_iterator
 class GuardedIterator(object):
     def __init__(self, iterator, headers_set, chunks):
         self._iterator = iterator
-        self._next = iter(iterator).next
+        if PY2:
+            self._next = iter(iterator).next
+        else:
+            self._next = iter(iterator).__next__
         self.closed = False
         self.headers_set = headers_set
         self.chunks = chunks
@@ -135,7 +141,7 @@ class GuardedIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         if self.closed:
             warn("Iterated over closed 'app_iter'.", WSGIWarning, stacklevel=2)
 

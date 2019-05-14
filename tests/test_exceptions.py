@@ -111,6 +111,10 @@ def test_unauthorized_www_authenticate():
     h = dict(exc.get_headers({}))
     assert h["WWW-Authenticate"] == ", ".join((str(digest), str(basic)))
 
+    exc = exceptions.Unauthorized()
+    h = dict(exc.get_headers({}))
+    assert "WWW-Authenticate" not in h
+
 
 def test_response_header_content_type_should_contain_charset():
     exc = exceptions.HTTPException("An error message")

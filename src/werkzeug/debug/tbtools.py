@@ -245,12 +245,14 @@ class Traceback(object):
         self.exception_type = exception_type
 
         self.groups = []
+        memo = set()
         while True:
             self.groups.append(Group(exc_type, exc_value, tb))
+            memo.add(id(exc_value))
             if PY2:
                 break
             exc_value = exc_value.__cause__ or exc_value.__context__
-            if exc_value is None:
+            if exc_value is None or id(exc_value) in memo:
                 break
             exc_type = type(exc_value)
             tb = exc_value.__traceback__

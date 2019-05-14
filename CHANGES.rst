@@ -17,6 +17,36 @@ Unreleased
     ``CONTENT_TYPE`` header. (:pr:`1526`)
 
 
+Version 0.15.4
+--------------
+
+Unreleased
+
+
+Version 0.15.3
+--------------
+
+Released 2019-05-14
+
+-   Properly handle multi-line header folding in development server in
+    Python 2.7. (:issue:`1080`)
+-   Restore the ``response`` argument to :exc:`~exceptions.Unauthorized`.
+    (:pr:`1527`)
+-   :exc:`~exceptions.Unauthorized` doesn't add the ``WWW-Authenticate``
+    header if ``www_authenticate`` is not given. (:issue:`1516`)
+-   The default URL converter correctly encodes bytes to string rather
+    than representing them with ``b''``. (:issue:`1502`)
+-   Fix the filename format string in
+    :class:`~middleware.profiler.ProfilerMiddleware` to correctly handle
+    float values. (:issue:`1511`)
+-   Update :class:`~middleware.lint.LintMiddleware` to work on Python 3.
+    (:issue:`1510`)
+-   The debugger detects cycles in chained exceptions and does not time
+    out in that case. (:issue:`1536`)
+-   When running the development server in Docker, the debugger security
+    pin is now unique per container.
+
+
 Version 0.15.2
 --------------
 
@@ -42,7 +72,7 @@ Version 0.15.1
 
 Released 2019-03-21
 
--   :class:`~exceptions.Unauthorized` takes ``description`` as the first
+-   :exc:`~exceptions.Unauthorized` takes ``description`` as the first
     argument, restoring previous behavior. The new ``www_authenticate``
     argument is listed second. (:issue:`1483`)
 

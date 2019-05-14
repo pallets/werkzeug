@@ -251,6 +251,13 @@ class Unauthorized(HTTPException):
     :param www-authenticate: A single value, or list of values, for the
         WWW-Authenticate header.
 
+    .. versionchanged:: 0.15.3
+        If the ``www_authenticate`` argument is not set, the
+        ``WWW-Authenticate`` header is not set.
+
+    .. versionchanged:: 0.15.3
+        The ``response`` argument was restored.
+
     .. versionchanged:: 0.15.1
         ``description`` was moved back as the first argument, restoring
          its previous position.
@@ -268,10 +275,13 @@ class Unauthorized(HTTPException):
         " how to supply the credentials required."
     )
 
-    def __init__(self, description=None, www_authenticate=None):
-        HTTPException.__init__(self, description)
-        if not isinstance(www_authenticate, (tuple, list)):
-            www_authenticate = (www_authenticate,)
+    def __init__(self, description=None, response=None, www_authenticate=None):
+        HTTPException.__init__(self, description, response)
+
+        if www_authenticate is not None:
+            if not isinstance(www_authenticate, (tuple, list)):
+                www_authenticate = (www_authenticate,)
+
         self.www_authenticate = www_authenticate
 
     def get_headers(self, environ=None):
