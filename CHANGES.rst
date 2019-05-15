@@ -17,10 +17,18 @@ Unreleased
     ``CONTENT_TYPE`` header. (:pr:`1526`)
 
 
-Version 0.15.4
+Version 0.15.5
 --------------
 
 Unreleased
+
+
+Version 0.15.4
+--------------
+
+Released 2019-05-14
+
+-   Fix a ``SyntaxError`` on Python 2.7.5. (:issue:`1544`)
 
 
 Version 0.15.3
