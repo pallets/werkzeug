@@ -3,7 +3,9 @@
 Version 0.15.4
 --------------
 
-Unreleased
+Released 2019-05-14
+
+-   Fix a ``SyntaxError`` on Python 2.7.5. (:issue:`1544`)
 
 
 Version 0.15.3
