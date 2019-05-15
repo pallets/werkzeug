@@ -852,6 +852,12 @@ class Rule(RuleFactory):
 
                 return result
 
+    @staticmethod
+    def _get_func_code(code, name):
+        globs, locs = {}, {}
+        exec(code, globs, locs)
+        return locs[name]
+
     def _compile_builder(self, append_unknown=True):
         defaults = self.defaults or {}
         dom_ops = []
@@ -943,11 +949,7 @@ class Rule(RuleFactory):
 
         module = ast.fix_missing_locations(ast.Module([func_ast]))
         code = compile(module, "<werkzeug routing>", "exec")
-
-        globs, locs = {}, {}
-        exec(code, globs, locs)
-
-        return locs[func_ast.name]
+        return self._get_func_code(code, func_ast.name)
 
     def build(self, values, append_unknown=True):
         """Assembles the relative url for that rule and the subdomain.
