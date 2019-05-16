@@ -338,6 +338,9 @@ def test_append_slash_redirect():
     response = client.get("foo", base_url="http://example.org/app")
     assert response.status_code == 301
     assert response.headers["Location"] == "http://example.org/app/foo/"
+    response = client.get("/foo", base_url="http://example.org/app")
+    assert response.status_code == 301
+    assert response.headers["Location"] == "http://example.org/foo/"
 
 
 def test_cached_property_doc():

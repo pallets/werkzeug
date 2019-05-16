@@ -5,6 +5,8 @@ Version 1.0.0
 
 Unreleased
 
+-   Don't not create unexpected relative links, when creating redirects via
+    append_slash_redirect (:pr: `1538`)
 -   Drop support for Python 3.4. (:issue:`1478`)
 -   Remove code that issued deprecation warnings in version 0.15.
     (:issue:`1477`)
