@@ -131,6 +131,16 @@ def test_can_invalidate_cached_property():
     assert foo == [42, 42]
 
 
+def test_invalidate_cached_property_on_non_property():
+    class A(object):
+        def __init__(self):
+            self.prop = 42
+
+    a = A()
+    with pytest.raises(TypeError):
+        utils.invalidate_cached_property(a, "prop")
+
+
 def test_inspect_treats_cached_property_as_property():
     class A(object):
         @utils.cached_property
