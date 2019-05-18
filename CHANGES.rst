@@ -32,6 +32,8 @@ Unreleased
     error. :pr:`1590`
 -   Headers are tested for equality independent of the header key case,
     such that ``X-Foo`` is the same as ``x-foo``. :pr:`1605`
+-   :meth:`http.dump_cookie` accepts ``'None'`` as a value for
+    ``samesite``. :issue:`1549`
 
 
 Version 0.15.5

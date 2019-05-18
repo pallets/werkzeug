@@ -543,16 +543,21 @@ class TestHTTPUtility(object):
         assert "the limit is 512 bytes" in str(w.message)
 
     @pytest.mark.parametrize(
-        "input, expected",
-        [
+        ("samesite", "expected"),
+        (
             ("strict", "foo=bar; Path=/; SameSite=Strict"),
             ("lax", "foo=bar; Path=/; SameSite=Lax"),
+            ("none", "foo=bar; Path=/; SameSite=None"),
             (None, "foo=bar; Path=/"),
-        ],
+        ),
     )
-    def test_cookie_samesite_attribute(self, input, expected):
-        val = http.dump_cookie("foo", "bar", samesite=input)
-        strict_eq(val, expected)
+    def test_cookie_samesite_attribute(self, samesite, expected):
+        value = http.dump_cookie("foo", "bar", samesite=samesite)
+        assert value == expected
+
+    def test_cookie_samesite_invalid(self):
+        with pytest.raises(ValueError):
+            http.dump_cookie("foo", "bar", samesite="invalid")
 
 
 class TestRange(object):

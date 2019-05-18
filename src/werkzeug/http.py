@@ -1135,10 +1135,13 @@ def dump_cookie(
     :param max_size: Warn if the final header value exceeds this size. The
         default, 4093, should be safely `supported by most browsers
         <cookie_>`_. Set to 0 to disable this check.
-    :param samesite: Limits the scope of the cookie such that it will only
-                     be attached to requests if those requests are "same-site".
+    :param samesite: Limits the scope of the cookie such that it will
+        only be attached to requests if those requests are same-site.
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
+
+    .. versionchanged:: 1.0.0
+        The string ``'None'`` is accepted for ``samesite``.
     """
     key = to_bytes(key, charset)
     value = to_bytes(value, charset)
@@ -1154,9 +1157,11 @@ def dump_cookie(
     elif max_age is not None and sync_expires:
         expires = to_bytes(cookie_date(time() + max_age))
 
-    samesite = samesite.title() if samesite else None
-    if samesite not in ("Strict", "Lax", None):
-        raise ValueError("invalid SameSite value; must be 'Strict', 'Lax' or None")
+    if samesite is not None:
+        samesite = samesite.title()
+
+        if samesite not in {"Strict", "Lax", "None"}:
+            raise ValueError("SameSite must be 'Strict', 'Lax', or 'None'.")
 
     buf = [key + b"=" + _cookie_quote(value)]
 
