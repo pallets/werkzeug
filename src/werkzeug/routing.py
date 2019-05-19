@@ -947,7 +947,11 @@ class Rule(RuleFactory):
             func_ast.args.defaults.append(ast.Str(""))
         func_ast.body = body
 
-        module = ast.fix_missing_locations(ast.Module([func_ast]))
+        # use `ast.parse` instead of `ast.Module` for better portability
+        # python3.8 changes the signature of `ast.Module`
+        module = ast.parse("")
+        module.body = [func_ast]
+        module = ast.fix_missing_locations(module)
         code = compile(module, "<werkzeug routing>", "exec")
         return self._get_func_code(code, func_ast.name)
 
