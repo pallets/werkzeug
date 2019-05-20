@@ -16,7 +16,10 @@ def test_get_file_loader():
     assert callable(app.get_file_loader("foo"))
 
 
-@pytest.mark.xfail(sys.version_info.major == 2 and sys.platform == "win32", reason="TODO fix test for Python 2 on Windows")
+@pytest.mark.xfail(
+    sys.version_info.major == 2 and sys.platform == "win32",
+    reason="TODO fix test for Python 2 on Windows",
+)
 def test_shared_data_middleware(tmpdir):
     def null_application(environ, start_response):
         start_response("404 NOT FOUND", [("Content-Type", "text/plain")])
