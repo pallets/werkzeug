@@ -15,6 +15,9 @@ Unreleased
     cookies with names such as "expires" and "version". (:issue:`1495`)
 -   Add ``charset=utf-8`` to an HTTP exception response's
     ``CONTENT_TYPE`` header. (:pr:`1526`)
+-   The interactive debugger handles outer variables in nested scopes
+    such as lambdas and comprehensions. :issue:`913`, :issue:`1037`,
+    :pr:`1532`
 
 
 Version 0.15.5
