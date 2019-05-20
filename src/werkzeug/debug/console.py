@@ -148,11 +148,12 @@ def _wrap_compiler(console):
 
 class _InteractiveConsole(code.InteractiveInterpreter):
     def __init__(self, globals, locals):
+        locals = dict(globals)
+        locals.update(locals)
+        locals["dump"] = dump
+        locals["help"] = helper
+        locals["__loader__"] = self.loader = _ConsoleLoader()
         code.InteractiveInterpreter.__init__(self, locals)
-        self.globals = dict(globals)
-        self.globals["dump"] = dump
-        self.globals["help"] = helper
-        self.globals["__loader__"] = self.loader = _ConsoleLoader()
         self.more = False
         self.buffer = []
         _wrap_compiler(self)
@@ -177,7 +178,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
     def runcode(self, code):
         try:
-            eval(code, self.globals, self.locals)
+            exec(code, self.locals)
         except Exception:
             self.showtraceback()
 

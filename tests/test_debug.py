@@ -16,6 +16,7 @@ import pytest
 import requests
 
 from werkzeug._compat import PY2
+from werkzeug.debug import console
 from werkzeug.debug import DebuggedApplication
 from werkzeug.debug import get_machine_id
 from werkzeug.debug.console import HTMLStringO
@@ -354,6 +355,17 @@ def test_basic(dev_server, crash):
         assert "The debugger caught an exception in your WSGI application" in r.text
     else:
         assert r.text == "hello"
+
+
+def test_console_closure_variables(monkeypatch):
+    # restore the original display hook
+    monkeypatch.setattr(sys, "displayhook", console._displayhook)
+    c = console.Console()
+    c.eval("y = 5")
+    c.eval("x = lambda: y")
+    ret = c.eval("x()")
+    expected = ">>> x()\n5" if PY2 else ">>> x()\n5\n"
+    assert ret == expected
 
 
 @pytest.mark.skipif(PY2, reason="Python 2 doesn't have chained exceptions.")
