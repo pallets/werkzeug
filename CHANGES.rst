@@ -5,6 +5,9 @@ Version 0.15.5
 
 Unreleased
 
+-   Fix a ``TypeError`` due to changes to ``ast.Module`` in Python 3.8.
+    :issue:`1551`
+
 
 Version 0.15.4
 --------------
