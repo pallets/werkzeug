@@ -114,6 +114,11 @@ def invalidate_cached_property(obj, name):
 
     You must pass the name of the cached property as the second argument.
     """
+    if not isinstance(getattr(obj.__class__, name, None), cached_property):
+        raise TypeError(
+            "Attribute {} of object {} is not a cached_property, "
+            "cannot be invalidated".format(name, obj)
+        )
     obj.__dict__[name] = _missing
 
 
