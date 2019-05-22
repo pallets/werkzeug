@@ -36,6 +36,8 @@ Unreleased
     ``samesite``. :issue:`1549`
 -   Optional request log highlighting with the development server is
     handled by Click instead of termcolor. :issue:`1235`
+-   Optional ad-hoc TLS support for the development server is handled
+    by cryptography instead of pyOpenSSL. :pr:`1555`
 
 
 Version 0.15.5

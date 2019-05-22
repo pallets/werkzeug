@@ -40,6 +40,8 @@ import os
 import signal
 import socket
 import sys
+from datetime import datetime as dt
+from datetime import timedelta
 
 import werkzeug
 from ._compat import PY2
@@ -75,15 +77,6 @@ try:
     import click
 except ImportError:
     click = None
-
-
-def _get_openssl_crypto_module():
-    try:
-        from OpenSSL import crypto
-    except ImportError:
-        raise TypeError("Using ad-hoc certificates requires the pyOpenSSL library.")
-    else:
-        return crypto
 
 
 ThreadingMixIn = socketserver.ThreadingMixIn
@@ -481,32 +474,39 @@ BaseRequestHandler = WSGIRequestHandler
 
 
 def generate_adhoc_ssl_pair(cn=None):
-    from random import random
-
-    crypto = _get_openssl_crypto_module()
+    try:
+        from cryptography import x509
+        from cryptography.x509.oid import NameOID
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import rsa
+    except ImportError:
+        raise TypeError("Using ad-hoc certificates requires the cryptography library.")
+    pkey = rsa.generate_private_key(
+        public_exponent=65537, key_size=2048, backend=default_backend()
+    )
 
     # pretty damn sure that this is not actually accepted by anyone
     if cn is None:
-        cn = "*"
+        cn = u"*"
 
-    cert = crypto.X509()
-    cert.set_serial_number(int(random() * sys.maxsize))
-    cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(60 * 60 * 24 * 365)
+    subject = x509.Name(
+        [
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Dummy Certificate"),
+            x509.NameAttribute(NameOID.COMMON_NAME, cn),
+        ]
+    )
 
-    subject = cert.get_subject()
-    subject.CN = cn
-    subject.O = "Dummy Certificate"  # noqa: E741
-
-    issuer = cert.get_issuer()
-    issuer.CN = subject.CN
-    issuer.O = subject.O  # noqa: E741
-
-    pkey = crypto.PKey()
-    pkey.generate_key(crypto.TYPE_RSA, 2048)
-    cert.set_pubkey(pkey)
-    cert.sign(pkey, "sha256")
-
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(subject)
+        .public_key(pkey.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(dt.utcnow())
+        .not_valid_after(dt.utcnow() + timedelta(days=365))
+        .sign(pkey, hashes.SHA256(), default_backend())
+    )
     return cert, pkey
 
 
@@ -528,37 +528,54 @@ def make_ssl_devcert(base_path, host=None, cn=None):
                  for the `cn`.
     :param cn: the `CN` to use.
     """
-    from OpenSSL import crypto
 
     if host is not None:
-        cn = "*.%s/CN=%s" % (host, host)
+        cn = u"*.%s/CN=%s" % (host, host)
     cert, pkey = generate_adhoc_ssl_pair(cn=cn)
+
+    from cryptography.hazmat.primitives import serialization
 
     cert_file = base_path + ".crt"
     pkey_file = base_path + ".key"
 
     with open(cert_file, "wb") as f:
-        f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+        f.write(cert.public_bytes(serialization.Encoding.PEM))
     with open(pkey_file, "wb") as f:
-        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
+        f.write(
+            pkey.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
 
     return cert_file, pkey_file
 
 
 def generate_adhoc_ssl_context():
     """Generates an adhoc SSL context for the development server."""
-    crypto = _get_openssl_crypto_module()
     import tempfile
     import atexit
 
     cert, pkey = generate_adhoc_ssl_pair()
+
+    from cryptography.hazmat.primitives import serialization
+
     cert_handle, cert_file = tempfile.mkstemp()
     pkey_handle, pkey_file = tempfile.mkstemp()
     atexit.register(os.remove, pkey_file)
     atexit.register(os.remove, cert_file)
 
-    os.write(cert_handle, crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-    os.write(pkey_handle, crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
+    os.write(cert_handle, cert.public_bytes(serialization.Encoding.PEM))
+    os.write(
+        pkey_handle,
+        pkey.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        ),
+    )
+
     os.close(cert_handle)
     os.close(pkey_handle)
     ctx = load_ssl_context(cert_file, pkey_file)
@@ -611,17 +628,9 @@ class _SSLContext(object):
 
 def is_ssl_error(error=None):
     """Checks if the given error (or the current one) is an SSL error."""
-    exc_types = (ssl.SSLError,)
-    try:
-        from OpenSSL.SSL import Error
-
-        exc_types += (Error,)
-    except ImportError:
-        pass
-
     if error is None:
         error = sys.exc_info()[1]
-    return isinstance(error, exc_types)
+    return isinstance(error, ssl.SSLError)
 
 
 def select_address_family(host, port):
