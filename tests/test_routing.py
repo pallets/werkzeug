@@ -381,10 +381,19 @@ def test_request_direct_charset_bug():
 def test_request_redirect_default():
     map = r.Map([r.Rule(u"/foo", defaults={"bar": 42}), r.Rule(u"/foo/<int:bar>")])
     adapter = map.bind("localhost", "/")
-
+    
     with pytest.raises(r.RequestRedirect) as excinfo:
         adapter.match(u"/foo/42")
     assert excinfo.value.new_url == "http://localhost/foo"
+
+
+def test_request_redirect_default_non_ascii():
+    map = r.Map([r.Rule(u"/bår", defaults={"baz": 42}), r.Rule(u"/bår/<int:baz>")])
+    adapter = map.bind("localhost", "/")
+
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match(u"/bår/42")
+    assert excinfo.value.new_url == "http://localhost/bår"
 
 
 def test_request_redirect_default_subdomain():

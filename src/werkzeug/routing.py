@@ -124,6 +124,7 @@ from .urls import _fast_url_quote
 from .urls import url_encode
 from .urls import url_join
 from .urls import url_quote
+from .urls import url_unquote
 from .utils import cached_property
 from .utils import format_string
 from .utils import redirect
@@ -1847,6 +1848,7 @@ class MapAdapter(object):
             if r.provides_defaults_for(rule) and r.suitable_for(values, method):
                 values.update(r.defaults)
                 domain_part, path = r.build(values)
+                path = url_unquote(path, self.map.charset)
                 return self.make_redirect_url(path, query_args, domain_part=domain_part)
 
     def encode_query_args(self, query_args):
