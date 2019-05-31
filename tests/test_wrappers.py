@@ -616,6 +616,14 @@ def test_user_agent_mixin():
             "3.5.1",
             "de",
         ),
+        (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36"
+            "(KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36 OPR/60.0.3255.95",
+            "opera",
+            "macos",
+            "60.0.3255.95",
+            None,
+        ),
     ]
     for ua, browser, platform, version, lang in user_agents:
         request = wrappers.Request({"HTTP_USER_AGENT": ua})
