@@ -1099,6 +1099,10 @@ class TestMIMEAccept(object):
         accept = self.storage_class([("*/*", 1), ("text/html", 1), ("image/*", 1)])
         assert accept.best_match(["image/png", "text/html"]) == "text/html"
         assert accept.best_match(["text/plain", "image/png"]) == "image/png"
+        accept = self.storage_class([("text/html", 1), ("text/html; level=1", 1)])
+        assert (
+            accept.best_match(["text/html", "text/html;level=1"]) == "text/html;level=1"
+        )
 
 
 class TestLanguageAccept(object):

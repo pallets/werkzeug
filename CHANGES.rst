@@ -20,6 +20,7 @@ Unreleased
     :pr:`1532`
 -   The user agent for Opera 60 on Mac is correctly reported as
     "opera" instead of "chrome". :issue:`1556`
+-   Use MIME parameters to better match Accept header. :issue:`458`
 -   The platform for Crosswalk on Android is correctly reported as
     "android" instead of "chromeos". (:pr:`1572`)
 -   Issue a warning when the current server name does not match the

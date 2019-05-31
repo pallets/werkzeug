@@ -1785,30 +1785,37 @@ class Accept(ImmutableList):
             return self[0][0]
 
 
+_mime_re = re.compile(r"/|(?:\s*;\s*)")
+
+
 class MIMEAccept(Accept):
     """Like :class:`Accept` but with special methods and behavior for
     mimetypes.
     """
 
     def _specificity(self, value):
-        return tuple(x != "*" for x in value.split("/", 1))
+        return tuple(x != "*" for x in _mime_re.split(value))
 
     def _value_matches(self, value, item):
         def _normalize(x):
             x = x.lower()
-            return ("*", "*") if x == "*" else x.split("/", 1)
+            return _mime_re.split(x)
 
         # this is from the application which is trusted.  to avoid developer
         # frustration we actually check these for valid values
         if "/" not in value:
             raise ValueError("invalid mimetype %r" % value)
-        value_type, value_subtype = _normalize(value)
+        normalized_value = _normalize(value)
+        value_type, value_subtype = normalized_value[:2]
+        value_params = sorted(normalized_value[2:])
         if value_type == "*" and value_subtype != "*":
             raise ValueError("invalid mimetype %r" % value)
 
         if "/" not in item:
             return False
-        item_type, item_subtype = _normalize(item)
+        normalized_item = _normalize(item)
+        item_type, item_subtype = normalized_item[:2]
+        item_params = sorted(normalized_item[2:])
         if item_type == "*" and item_subtype != "*":
             return False
         return (
@@ -1818,7 +1825,7 @@ class MIMEAccept(Accept):
             and (
                 item_subtype == "*"
                 or value_subtype == "*"
-                or item_subtype == value_subtype
+                or (item_subtype == value_subtype and item_params == value_params)
             )
         )
 
