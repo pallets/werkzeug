@@ -18,6 +18,8 @@ Unreleased
 -   The interactive debugger handles outer variables in nested scopes
     such as lambdas and comprehensions. :issue:`913`, :issue:`1037`,
     :pr:`1532`
+-   The user agent for Opera 60 on Mac is correctly reported as
+    "opera" instead of "chrome". :issue:`1556`
 
 
 Version 0.15.5
