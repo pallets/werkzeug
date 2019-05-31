@@ -321,9 +321,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
     def handle(self):
         """Handles a request ignoring dropped connections."""
-        rv = None
         try:
-            rv = BaseHTTPRequestHandler.handle(self)
+            BaseHTTPRequestHandler.handle(self)
         except (_ConnectionError, socket.timeout) as e:
             self.connection_dropped(e)
         except Exception as e:
@@ -331,7 +330,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                 raise
         if self.server.shutdown_signal:
             self.initiate_shutdown()
-        return rv
 
     def initiate_shutdown(self):
         """A horrible, horrible way to kill the server for Python 2.6 and
