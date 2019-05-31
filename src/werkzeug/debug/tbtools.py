@@ -573,13 +573,12 @@ class Frame(object):
 
         if source is None:
             try:
-                f = open(to_native(self.filename, get_filesystem_encoding()), mode="rb")
+                with open(
+                    to_native(self.filename, get_filesystem_encoding()), mode="rb"
+                ) as f:
+                    source = f.read()
             except IOError:
                 return []
-            try:
-                source = f.read()
-            finally:
-                f.close()
 
         # already unicode?  return right away
         if isinstance(source, text_type):
