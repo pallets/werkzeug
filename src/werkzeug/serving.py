@@ -297,7 +297,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             finally:
                 if hasattr(application_iter, "close"):
                     application_iter.close()
-                application_iter = None
 
         try:
             execute(self.server.app)
