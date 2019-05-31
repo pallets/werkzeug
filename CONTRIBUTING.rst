@@ -64,7 +64,7 @@ First time setup
 
 - Create a virtualenv::
 
-        python3 -m venv venv
+        python3 -m venv env
         . venv/bin/activate
         # or "venv\Scripts\activate" on Windows
 
