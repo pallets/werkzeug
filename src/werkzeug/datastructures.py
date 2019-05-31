@@ -46,8 +46,8 @@ def iter_multi_items(mapping):
     elif isinstance(mapping, dict):
         for key, value in iteritems(mapping):
             if isinstance(value, (tuple, list)):
-                for value in value:
-                    yield key, value
+                for v in value:
+                    yield key, v
             else:
                 yield key, value
     else:
