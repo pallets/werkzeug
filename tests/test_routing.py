@@ -358,6 +358,16 @@ def test_http_host_before_server_name():
     assert adapter.build("index") == "http://wiki.example.com/"
 
 
+def test_invalid_subdomain_warning():
+    env = create_environ("/foo")
+    env["SERVER_NAME"] = env["HTTP_HOST"] = "foo.example.com"
+    m = r.Map([r.Rule("/foo", endpoint="foo")])
+    with pytest.warns(UserWarning) as record:
+        a = m.bind_to_environ(env, server_name="bar.example.com")
+    assert a.subdomain == "<invalid>"
+    assert len(record) == 1
+
+
 def test_adapter_url_parameter_sorting():
     map = r.Map(
         [r.Rule("/", endpoint="index")], sort_parameters=True, sort_key=lambda x: x[1]

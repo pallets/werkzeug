@@ -22,6 +22,8 @@ Unreleased
     "opera" instead of "chrome". :issue:`1556`
 -   The platform for Crosswalk on Android is correctly reported as
     "android" instead of "chromeos". (:pr:`1572`)
+-   Issue warning when current server name does not match configured
+    server name. :issue:`760`
 
 
 Version 0.15.5
