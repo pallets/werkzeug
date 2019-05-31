@@ -40,7 +40,7 @@ class Database(object):
     def __setitem__(self, key, value):
         self._local[key] = value
 
-    def __delitem__(self, key, value):
+    def __delitem__(self, key):
         with self._lock:
             self._local.pop(key, None)
             if key in self._fs:
