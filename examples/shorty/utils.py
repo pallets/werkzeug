@@ -85,8 +85,27 @@ class Pagination(object):
             .all()
         )
 
-    has_previous = property(lambda self: self.page > 1)
-    has_next = property(lambda self: self.page < self.pages)
-    previous = property(lambda self: url_for(self.endpoint, page=self.page - 1))
-    next = property(lambda self: url_for(self.endpoint, page=self.page + 1))
-    pages = property(lambda self: max(0, self.count - 1) // self.per_page + 1)
+    @property
+    def has_previous(self):
+        """Return True if there are pages before the current one."""
+        return self.page > 1
+
+    @property
+    def has_next(self):
+        """Return True if there are pages after the current one."""
+        return self.page < self.pages
+
+    @property
+    def previous(self):
+        """Return the URL for the previous page."""
+        return url_for(self.endpoint, page=self.page - 1)
+
+    @property
+    def next(self):
+        """Return the URL for the next page."""
+        return url_for(self.endpoint, page=self.page + 1)
+
+    @property
+    def pages(self):
+        """Return the number of pages."""
+        return max(0, self.count - 1) // self.per_page + 1

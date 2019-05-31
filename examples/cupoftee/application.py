@@ -47,7 +47,9 @@ class PageMeta(type):
                 Rule(cls.url_rule, endpoint=cls.identifier, **cls.url_arguments)
             )
 
-    identifier = property(lambda self: self.__name__.lower())
+    @property
+    def identifier(cls):
+        return cls.__name__.lower()
 
 
 def _with_metaclass(meta, *bases):
