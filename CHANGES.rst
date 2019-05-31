@@ -20,6 +20,8 @@ Unreleased
     :pr:`1532`
 -   The user agent for Opera 60 on Mac is correctly reported as
     "opera" instead of "chrome". :issue:`1556`
+-   The platform for Crosswalk on Android is correctly reported as
+    "android" instead of "chromeos". (:pr:`1572`)
 
 
 Version 0.15.5
