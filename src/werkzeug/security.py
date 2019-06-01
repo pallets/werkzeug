@@ -183,6 +183,14 @@ def generate_password_hash(password, method="pbkdf2:sha256", salt_length=8):
 
         method$salt$hash
 
+    The length of the return value depends on the hash method, the name of the
+    hash method and the salt length:
+
+    * generate_password_hash(password, method="pbkdf2:sha256", salt_length=8) returns a string of length 94
+    * generate_password_hash(password, method="pbkdf2:sha256", salt_length=9) returns a string of length 95
+    * generate_password_hash(password, method="pbkdf2:sha512", salt_length=8) returns a string of length 158
+    * generate_password_hash(password, method="md5", salt_length=8) returns a string of length 45
+
     This method can **not** generate unsalted passwords but it is possible
     to set param method='plain' in order to enforce plaintext passwords.
     If a salt is used, hmac is used internally to salt the password.
