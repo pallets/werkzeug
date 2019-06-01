@@ -624,6 +624,15 @@ def test_user_agent_mixin():
             "60.0.3255.95",
             None,
         ),
+        (
+            "Mozilla/5.0 (Linux; Android 4.4.4; Google Nexus 7 2013 - 4.4.4 - "
+            "API 19 - 1200x1920 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/51.0.2704.106 Crosswalk/21.51.546.7 Safari/537.36",
+            "chrome",
+            "android",
+            "51.0.2704.106",
+            None,
+        ),
     ]
     for ua, browser, platform, version, lang in user_agents:
         request = wrappers.Request({"HTTP_USER_AGENT": ua})
