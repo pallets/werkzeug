@@ -25,7 +25,7 @@ from werkzeug.wrappers import BaseResponse
 local = Local()
 local_manager = LocalManager([local])
 template_env = Environment(
-    loader=FileSystemLoader(join(dirname(__file__), "templates"), use_memcache=False)
+    loader=FileSystemLoader(join(dirname(__file__), "templates"))
 )
 exported_views = {}
 
