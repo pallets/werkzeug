@@ -939,15 +939,28 @@ class Rule(RuleFactory):
                 func_ast.args.args.append(ast.arg(arg, None))
             func_ast.args.kwarg = ast.arg(".kwargs", None)
         else:
-            func_ast.args.args.append(ast.Name(".self", ast.Load()))
+            func_ast.args.args.append(ast.Name(".self", ast.Param()))
             for arg in pargs + kargs:
-                func_ast.args.args.append(ast.Name(arg, ast.Load()))
+                func_ast.args.args.append(ast.Name(arg, ast.Param()))
             func_ast.args.kwarg = ".kwargs"
         for _ in kargs:
             func_ast.args.defaults.append(ast.Str(""))
         func_ast.body = body
 
-        module = ast.fix_missing_locations(ast.Module([func_ast]))
+        # use `ast.parse` instead of `ast.Module` for better portability
+        # python3.8 changes the signature of `ast.Module`
+        module = ast.parse("")
+        module.body = [func_ast]
+
+        # mark everything as on line 1, offset 0
+        # less error-prone than `ast.fix_missing_locations`
+        # bad line numbers cause an assert to fail in debug builds
+        for node in ast.walk(module):
+            if "lineno" in node._attributes:
+                node.lineno = 1
+            if "col_offset" in node._attributes:
+                node.col_offset = 0
+
         code = compile(module, "<werkzeug routing>", "exec")
         return self._get_func_code(code, func_ast.name)
 

@@ -4,7 +4,7 @@
 Unicode
 =======
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 Since early Python 2 days unicode was part of all default Python builds.  It
 allows developers to write applications that deal with non-ASCII characters

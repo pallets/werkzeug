@@ -29,6 +29,11 @@ Version 0.15.5
 
 Unreleased
 
+-   Fix a ``TypeError`` due to changes to ``ast.Module`` in Python 3.8.
+    :issue:`1551`
+-   Fix a C assertion failure in debug builds of some Python 2.7
+    releases. :issue:`1553`
+
 
 Version 0.15.4
 --------------

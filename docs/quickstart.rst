@@ -2,7 +2,7 @@
 Quickstart
 ==========
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 This part of the documentation shows how to use the most important parts of
 Werkzeug.  It's intended as a starting point for developers with basic

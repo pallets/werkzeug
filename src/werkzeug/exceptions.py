@@ -84,7 +84,7 @@ class HTTPException(Exception):
     description = None
 
     def __init__(self, description=None, response=None):
-        super(Exception, self).__init__()
+        super(HTTPException, self).__init__()
         if description is not None:
             self.description = description
         self.response = response
