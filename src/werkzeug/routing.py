@@ -100,6 +100,7 @@ import difflib
 import posixpath
 import re
 import uuid
+import warnings
 from pprint import pformat
 from threading import Lock
 
@@ -1512,10 +1513,15 @@ class Map(object):
             offset = -len(real_server_name)
             if cur_server_name[offset:] != real_server_name:
                 # This can happen even with valid configs if the server was
-                # accesssed directly by IP address under some situations.
+                # accessed directly by IP address under some situations.
                 # Instead of raising an exception like in Werkzeug 0.7 or
                 # earlier we go by an invalid subdomain which will result
                 # in a 404 error on matching.
+                warnings.warn(
+                    "Current server name '{}' doesn't match configured "
+                    "server name '{}'".format(wsgi_server_name, real_server_name),
+                    stacklevel=2,
+                )
                 subdomain = "<invalid>"
             else:
                 subdomain = ".".join(filter(None, cur_server_name[:offset]))
