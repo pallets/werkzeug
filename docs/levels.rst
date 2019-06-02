@@ -2,7 +2,7 @@
 API Levels
 ==========
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 Werkzeug is intended to be a utility rather than a framework.  Because of that
 the user-friendly API is separated from the lower-level API so that Werkzeug

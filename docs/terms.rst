@@ -2,7 +2,7 @@
 Important Terms
 ===============
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 This page covers important terms used in the documentation and Werkzeug
 itself.

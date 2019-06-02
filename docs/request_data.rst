@@ -3,7 +3,7 @@
 Dealing with Request Data
 =========================
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 The most important rule about web development is "Do not trust the user".
 This is especially true for incoming request data on the input stream.

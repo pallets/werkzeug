@@ -2,7 +2,7 @@
 Werkzeug Tutorial
 =================
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 Welcome to the Werkzeug tutorial in which we will create a `TinyURL`_ clone
 that stores URLs in a redis instance.  The libraries we will use for this
