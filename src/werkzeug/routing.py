@@ -1485,32 +1485,47 @@ class Map(object):
         :class:`MapAdapter` so that you don't have to pass the path info to
         the match method.
 
-        .. versionchanged:: 0.5
-            previously this method accepted a bogus `calculate_subdomain`
-            parameter that did not have any effect.  It was removed because
-            of that.
+        .. versionchanged:: 1.0.0
+            If the passed server name specifies port 443, it will match
+            if the incoming scheme is ``https`` without a port.
+
+        .. versionchanged:: 1.0.0
+            A warning is shown when the passed server name does not
+            match the incoming WSGI server name.
 
         .. versionchanged:: 0.8
            This will no longer raise a ValueError when an unexpected server
            name was passed.
+
+        .. versionchanged:: 0.5
+            previously this method accepted a bogus `calculate_subdomain`
+            parameter that did not have any effect.  It was removed because
+            of that.
 
         :param environ: a WSGI environment.
         :param server_name: an optional server name hint (see above).
         :param subdomain: optionally the current subdomain (see above).
         """
         environ = _get_environ(environ)
-
         wsgi_server_name = get_host(environ).lower()
+        scheme = environ["wsgi.url_scheme"]
 
         if server_name is None:
             server_name = wsgi_server_name
         else:
             server_name = server_name.lower()
 
+            # strip standard port to match get_host()
+            if scheme == "http" and server_name.endswith(":80"):
+                server_name = server_name[:-3]
+            elif scheme == "https" and server_name.endswith(":443"):
+                server_name = server_name[:-4]
+
         if subdomain is None and not self.host_matching:
             cur_server_name = wsgi_server_name.split(".")
             real_server_name = server_name.split(".")
             offset = -len(real_server_name)
+
             if cur_server_name[offset:] != real_server_name:
                 # This can happen even with valid configs if the server was
                 # accessed directly by IP address under some situations.
@@ -1518,8 +1533,8 @@ class Map(object):
                 # earlier we go by an invalid subdomain which will result
                 # in a 404 error on matching.
                 warnings.warn(
-                    "Current server name '{}' doesn't match configured "
-                    "server name '{}'".format(wsgi_server_name, real_server_name),
+                    "Current server name '{}' doesn't match configured"
+                    " server name '{}'".format(wsgi_server_name, server_name),
                     stacklevel=2,
                 )
                 subdomain = "<invalid>"
@@ -1539,7 +1554,7 @@ class Map(object):
             server_name,
             script_name,
             subdomain,
-            environ["wsgi.url_scheme"],
+            scheme,
             environ["REQUEST_METHOD"],
             path_info,
             query_args=query_args,
