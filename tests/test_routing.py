@@ -368,6 +368,17 @@ def test_invalid_subdomain_warning():
     assert len(record) == 1
 
 
+@pytest.mark.parametrize(
+    ("base", "name"),
+    (("http://localhost", "localhost:80"), ("https://localhost", "localhost:443")),
+)
+def test_server_name_match_default_port(base, name):
+    environ = create_environ("/foo", base_url=base)
+    map = r.Map([r.Rule("/foo", endpoint="foo")])
+    adapter = map.bind_to_environ(environ, server_name=name)
+    assert adapter.match() == ("foo", {})
+
+
 def test_adapter_url_parameter_sorting():
     map = r.Map(
         [r.Rule("/", endpoint="index")], sort_parameters=True, sort_key=lambda x: x[1]
