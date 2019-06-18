@@ -206,10 +206,11 @@ class BaseRequest(object):
 
     @classmethod
     def application(cls, f):
-        """Decorate a function as responder that accepts the request as first
-        argument.  This works like the :func:`responder` decorator but the
-        function is passed the request object as first argument and the
-        request object will be closed automatically::
+        """Decorate a function as responder that accepts the request as
+        the last argument.  This works like the :func:`responder`
+        decorator but the function is passed the request object as the
+        last argument and the request object will be closed
+        automatically::
 
             @Request.application
             def my_wsgi_app(request):
@@ -225,7 +226,8 @@ class BaseRequest(object):
         #: and calls the function with all the arguments up to that one and
         #: the request.  The return value is then called with the latest
         #: two arguments.  This makes it possible to use this decorator for
-        #: both methods and standalone WSGI functions.
+        #: both standalone WSGI functions as well as bound methods and
+        #: partially applied functions.
         from ..exceptions import HTTPException
 
         def application(*args):
