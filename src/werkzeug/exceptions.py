@@ -624,6 +624,9 @@ class InternalServerError(HTTPException):
 
     Raise if an internal server error occurred.  This is a good fallback if an
     unknown error occurred in the dispatcher.
+
+    .. versionchanged:: 1.0.0
+        Added the :attr:`original_exception` attribute.
     """
 
     code = 500
@@ -632,6 +635,15 @@ class InternalServerError(HTTPException):
         " complete your request. Either the server is overloaded or"
         " there is an error in the application."
     )
+
+    def __init__(self, description=None, response=None, original_exception=None):
+        #: The original exception that caused this 500 error. Can be
+        #: used by frameworks to provide context when handling
+        #: unexpected errors.
+        self.original_exception = original_exception
+        super(InternalServerError, self).__init__(
+            description=description, response=response
+        )
 
 
 class NotImplemented(HTTPException):

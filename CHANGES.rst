@@ -27,6 +27,9 @@ Unreleased
 -   A configured server name with the default port for a scheme will
     match the current server name without the port if the current scheme
     matches. :pr:`1584`
+-   :exc:`~exceptions.InternalServerError` has a ``original_exception``
+    attribute that frameworks can use to track the original cause of the
+    error. :pr:`1590`
 
 
 Version 0.15.5
