@@ -53,6 +53,7 @@ The following error classes exist in Werkzeug:
 .. autoexception:: RequestHeaderFieldsTooLarge
 
 .. autoexception:: InternalServerError
+    :members:
 
 .. autoexception:: NotImplemented
 
