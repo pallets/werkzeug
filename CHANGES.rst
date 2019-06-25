@@ -9,6 +9,11 @@ Unreleased
     :issue:`1551`
 -   Fix a C assertion failure in debug builds of some Python 2.7
     releases. :issue:`1553`
+-   :class:`~exceptions.BadRequestKeyError` adds the ``KeyError``
+    message to the description if ``e.show_exception`` is set to
+    ``True``. This is a more secure default than the original 0.15.0
+    behavior and makes it easier to control without losing information.
+    (:pr:`1592`)
 
 
 Version 0.15.4

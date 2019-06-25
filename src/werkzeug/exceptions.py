@@ -96,14 +96,21 @@ class HTTPException(Exception):
 
         The first argument to the class will be passed to the
         wrapped ``exception``, the rest to the HTTP exception. If
-        ``self.args`` is not empty, the wrapped exception message is
-        added to the HTTP exception description.
+        ``e.args`` is not empty and ``e.show_exception`` is ``True``,
+        the wrapped exception message is added to the HTTP error
+        description.
 
-        .. versionchanged:: 0.15
+        .. versionchanged:: 0.15.5
+            The ``show_exception`` attribute controls whether the
+            description includes the wrapped exception message.
+
+        .. versionchanged:: 0.15.0
             The description includes the wrapped exception message.
         """
 
         class newcls(cls, exception):
+            show_exception = False
+
             def __init__(self, arg=None, *args, **kwargs):
                 super(cls, self).__init__(*args, **kwargs)
 
@@ -115,7 +122,7 @@ class HTTPException(Exception):
             def get_description(self, environ=None):
                 out = super(cls, self).get_description(environ=environ)
 
-                if self.args:
+                if self.show_exception and self.args:
                     out += "<p><pre><code>{}: {}</code></pre></p>".format(
                         exception.__name__, escape(exception.__str__(self))
                     )
@@ -765,8 +772,8 @@ def abort(status, *args, **kwargs):
 _aborter = Aborter()
 
 
-#: an exception that is used internally to signal both a key error and a
-#: bad request.  Used by a lot of the datastructures.
+#: An exception that is used to signal both a :exc:`KeyError` and a
+#: :exc:`BadRequest`. Used by many of the datastructures.
 BadRequestKeyError = BadRequest.wrap(KeyError)
 
 # imported here because of circular dependencies of werkzeug.utils
