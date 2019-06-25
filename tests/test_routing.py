@@ -444,8 +444,10 @@ def test_server_name_interpolation():
     assert adapter.match() == ("alt", {})
 
     env = create_environ("/", "http://%s/" % server_name)
-    adapter = map.bind_to_environ(env, server_name="foo")
-    assert adapter.subdomain == "<invalid>"
+
+    with pytest.warns(UserWarning):
+        adapter = map.bind_to_environ(env, server_name="foo")
+        assert adapter.subdomain == "<invalid>"
 
 
 def test_rule_emptying():
@@ -764,8 +766,10 @@ def test_external_building_with_port_bind_to_environ():
 def test_external_building_with_port_bind_to_environ_wrong_servername():
     map = r.Map([r.Rule("/", endpoint="index")])
     environ = create_environ("/", "http://example.org:5000/")
-    adapter = map.bind_to_environ(environ, server_name="example.org")
-    assert adapter.subdomain == "<invalid>"
+
+    with pytest.warns(UserWarning):
+        adapter = map.bind_to_environ(environ, server_name="example.org")
+        assert adapter.subdomain == "<invalid>"
 
 
 def test_converter_parser():
@@ -916,7 +920,10 @@ def test_server_name_casing():
     env["SERVER_NAME"] = "127.0.0.1"
     env["SERVER_PORT"] = "5000"
     del env["HTTP_HOST"]
-    a = m.bind_to_environ(env, server_name="example.com")
+
+    with pytest.warns(UserWarning):
+        a = m.bind_to_environ(env, server_name="example.com")
+
     with pytest.raises(r.NotFound):
         a.match()
 
