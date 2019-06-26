@@ -109,6 +109,7 @@ class HTTPException(Exception):
         """
 
         class newcls(cls, exception):
+            _description = cls.description
             show_exception = False
 
             def __init__(self, arg=None, *args, **kwargs):
@@ -119,18 +120,22 @@ class HTTPException(Exception):
                 else:
                     exception.__init__(self, arg)
 
-            def get_description(self, environ=None):
-                out = super(cls, self).get_description(environ=environ)
-
-                if self.show_exception and self.args:
-                    out += "<p><pre><code>{}: {}</code></pre></p>".format(
-                        exception.__name__, escape(exception.__str__(self))
+            @property
+            def description(self):
+                if self.show_exception:
+                    return "{}\n{}: {}".format(
+                        self._description, exception.__name__, exception.__str__(self)
                     )
 
-                return out
+                return self._description
+
+            @description.setter
+            def description(self, value):
+                self._description = value
 
         newcls.__module__ = sys._getframe(1).f_globals.get("__name__")
-        newcls.__name__ = name or cls.__name__ + exception.__name__
+        name = name or cls.__name__ + exception.__name__
+        newcls.__name__ = newcls.__qualname__ = name
         return newcls
 
     @property
@@ -140,7 +145,7 @@ class HTTPException(Exception):
 
     def get_description(self, environ=None):
         """Get the description."""
-        return u"<p>%s</p>" % escape(self.description)
+        return u"<p>%s</p>" % escape(self.description).replace("\n", "<br>")
 
     def get_body(self, environ=None):
         """Get the HTML body."""
