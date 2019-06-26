@@ -62,7 +62,7 @@ div.traceback div.source.expanded span.ws {
     display: inline;
 }
 
-div.traceback blockquote { margin: 1em 0 0 0; padding: 0; }
+div.traceback blockquote { margin: 1em 0 0 0; padding: 0; white-space: pre-line; }
 div.traceback img { float: right; padding: 2px; margin: -3px 2px 0 0; display: none; }
 div.traceback img:hover { background-color: #ddd; cursor: pointer;
                           border-color: #BFDDE0; }
