@@ -1195,9 +1195,9 @@ def dump_cookie(
     if not PY2:
         rv = rv.decode("latin1")
 
-    # Warn if the final value of the cookie is less than the limit. If the
-    # cookie is too large, then it may be silently ignored, which can be quite
-    # hard to debug.
+    # Warn if the final value of the cookie is larger than the limit. If the
+    # cookie is too large, then it may be silently ignored by the browser,
+    # which can be quite hard to debug.
     cookie_size = len(rv)
 
     if max_size and cookie_size > max_size:
