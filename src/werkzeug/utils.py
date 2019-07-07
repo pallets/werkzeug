@@ -303,7 +303,7 @@ def get_content_type(mimetype, charset):
     :param charset: The charset to be appended for text mimetypes.
     :return: The content type.
 
-    .. verionchanged:: 0.15
+    .. versionchanged:: 0.15
         Any type that ends with ``+xml`` gets a charset, not just those
         that start with ``application/``. Known text types such as
         ``application/javascript`` are also given charsets.

@@ -25,7 +25,7 @@ class Request(
 
 
 class StreamOnlyMixin(object):
-    """If mixed in before the request object this will change the bahavior
+    """If mixed in before the request object this will change the behavior
     of it to disable handling of form parsing.  This disables the
     :attr:`files`, :attr:`form` attributes and will just provide a
     :attr:`stream` attribute that however is always available.

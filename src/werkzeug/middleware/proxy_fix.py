@@ -78,7 +78,7 @@ class ProxyFix(object):
         Support ``X-Forwarded-Port`` and ``X-Forwarded-Prefix``.
 
     .. versionchanged:: 0.15
-        ``X-Fowarded-Host`` and ``X-Forwarded-Port`` modify
+        ``X-Forwarded-Host`` and ``X-Forwarded-Port`` modify
         ``SERVER_NAME`` and ``SERVER_PORT``.
     """
 
