@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    cupyoftee.network
+    cupoftee.network
     ~~~~~~~~~~~~~~~~~
 
     Query the servers for information.

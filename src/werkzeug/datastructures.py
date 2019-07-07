@@ -1222,7 +1222,7 @@ class Headers(object):
         ikey = _key.lower()
         for idx, (old_key, _old_value) in enumerate(listiter):
             if old_key.lower() == ikey:
-                # replace first ocurrence
+                # replace first occurrence
                 self._list[idx] = (_key, _value)
                 break
         else:

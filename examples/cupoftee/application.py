@@ -3,7 +3,7 @@
     cupoftee.application
     ~~~~~~~~~~~~~~~~~~~~
 
-    The WSGI appliction for the cup of tee browser.
+    The WSGI application for the cup of tee browser.
 
     :copyright: 2007 Pallets
     :license: BSD-3-Clause

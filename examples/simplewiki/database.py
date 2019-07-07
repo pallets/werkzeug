@@ -115,7 +115,7 @@ class Page(object):
 
 class RevisionedPage(Page, Revision):
     """
-    Represents a wiki page with a revision.  Thanks to multiple inhertiance
+    Represents a wiki page with a revision.  Thanks to multiple inheritance
     and the ability of SQLAlchemy to map to joins we can combine `Page` and
     `Revision` into one class here.
     """

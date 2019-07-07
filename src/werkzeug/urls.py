@@ -578,7 +578,7 @@ def url_unparse(components):
 
     # We generally treat file:///x and file:/x the same which is also
     # what browsers seem to do.  This also allows us to ignore a schema
-    # register for netloc utilization or having to differenciate between
+    # register for netloc utilization or having to differentiate between
     # empty and missing netloc.
     if netloc or (scheme and path.startswith(s("/"))):
         if path and path[:1] != s("/"):
