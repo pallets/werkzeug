@@ -68,13 +68,15 @@ def _get_args_for_reloading():
     a program other than python)
     """
     rv = [sys.executable]
-    py_script = os.path.abspath(sys.argv[0])
+    py_script = sys.argv[0]
     args = sys.argv[1:]
     # Need to look at main module to determine how it was executed.
     __main__ = sys.modules["__main__"]
 
     if __main__.__package__ is None:
         # Executed a file, like "python app.py".
+        py_script = os.path.abspath(py_script)
+
         if os.name == "nt":
             # Windows entry points have ".exe" extension and should be
             # called directly.
@@ -101,11 +103,16 @@ def _get_args_for_reloading():
             # TODO remove this once Flask no longer misbehaves
             args = sys.argv
         else:
-            py_module = __main__.__package__
-            name = os.path.splitext(os.path.basename(py_script))[0]
+            if os.path.isfile(py_script):
+                # Rewritten by Python from "-m script" to "/path/to/script.py".
+                py_module = __main__.__package__
+                name = os.path.splitext(os.path.basename(py_script))[0]
 
-            if name != "__main__":
-                py_module += "." + name
+                if name != "__main__":
+                    py_module += "." + name
+            else:
+                # Incorrectly rewritten by pydevd debugger from "-m script" to "script".
+                py_module = py_script
 
             rv.extend(("-m", py_module.lstrip(".")))
 

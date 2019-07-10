@@ -13,7 +13,9 @@ Unreleased
     message to the description if ``e.show_exception`` is set to
     ``True``. This is a more secure default than the original 0.15.0
     behavior and makes it easier to control without losing information.
-    (:pr:`1592`)
+    :pr:`1592`
+-   Work around an issue in some external debuggers that caused the
+    reloader to fail. :issue:`1607`
 
 
 Version 0.15.4
