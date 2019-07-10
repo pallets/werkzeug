@@ -977,7 +977,12 @@ class Headers(object):
         raise exceptions.BadRequestKeyError(key)
 
     def __eq__(self, other):
-        return other.__class__ is self.__class__ and set(other._list) == set(self._list)
+        def lowered(item):
+            return (item[0].lower(),) + item[1:]
+
+        return other.__class__ is self.__class__ and set(
+            map(lowered, other._list)
+        ) == set(map(lowered, self._list))
 
     __hash__ = None
 
