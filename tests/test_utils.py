@@ -239,14 +239,17 @@ def test_import_string_provides_traceback(tmpdir, monkeypatch):
 def test_import_string_attribute_error(tmpdir, monkeypatch):
     monkeypatch.syspath_prepend(str(tmpdir))
     tmpdir.join("foo_test.py").write("from bar_test import value")
-    tmpdir.join("bar_test.py").write('raise AttributeError("screw you!")')
-    with pytest.raises(AttributeError) as foo_exc:
-        utils.import_string("foo_test")
-    assert "screw you!" in str(foo_exc)
+    tmpdir.join("bar_test.py").write("raise AttributeError('bad')")
 
-    with pytest.raises(AttributeError) as bar_exc:
+    with pytest.raises(AttributeError) as info:
+        utils.import_string("foo_test")
+
+    assert "bad" in str(info.value)
+
+    with pytest.raises(AttributeError) as info:
         utils.import_string("bar_test")
-    assert "screw you!" in str(bar_exc)
+
+    assert "bad" in str(info.value)
 
 
 def test_find_modules():

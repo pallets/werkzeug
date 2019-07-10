@@ -363,13 +363,15 @@ def test_response_status_codes():
     strict_eq(response.status, "0 wtf")
 
     # invalid status codes
-    with pytest.raises(ValueError) as empty_string_error:
+    with pytest.raises(ValueError) as info:
         wrappers.BaseResponse(None, "")
-    assert "Empty status argument" in str(empty_string_error)
 
-    with pytest.raises(TypeError) as invalid_type_error:
+    assert "Empty status argument" in str(info.value)
+
+    with pytest.raises(TypeError) as info:
         wrappers.BaseResponse(None, tuple())
-    assert "Invalid status argument" in str(invalid_type_error)
+
+    assert "Invalid status argument" in str(info.value)
 
 
 def test_type_forcing():
