@@ -30,6 +30,8 @@ Unreleased
 -   :exc:`~exceptions.InternalServerError` has a ``original_exception``
     attribute that frameworks can use to track the original cause of the
     error. :pr:`1590`
+-   Headers are tested for equality independent of the header key case,
+    such that ``X-Foo`` is the same as ``x-foo``. :pr:`1605`
 
 
 Version 0.15.5
