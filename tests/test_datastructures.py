@@ -800,6 +800,20 @@ class TestHeaders(object):
                 strict_eq(key, u"Key")
                 strict_eq(value, u"Value")
 
+    def test_equality(self):
+        # test equality, given keys are case insensitive
+        h1 = self.storage_class()
+        h1.add("X-Foo", "foo")
+        h1.add("X-Bar", "bah")
+        h1.add("X-Bar", "humbug")
+
+        h2 = self.storage_class()
+        h2.add("x-foo", "foo")
+        h2.add("x-bar", "bah")
+        h2.add("x-bar", "humbug")
+
+        assert h1 == h2
+
 
 class TestEnvironHeaders(object):
     storage_class = datastructures.EnvironHeaders
