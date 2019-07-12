@@ -16,6 +16,8 @@ Unreleased
     :pr:`1592`
 -   Work around an issue in some external debuggers that caused the
     reloader to fail. :issue:`1607`
+-   Work around an issue where the reloader couldn't introspect a
+    setuptools script installed as an egg. :issue:`1600`
 
 
 Version 0.15.4

@@ -73,7 +73,9 @@ def _get_args_for_reloading():
     # Need to look at main module to determine how it was executed.
     __main__ = sys.modules["__main__"]
 
-    if __main__.__package__ is None:
+    # The value of __package__ indicates how Python was called. It may
+    # not exist if a setuptools script is installed as an egg.
+    if getattr(__main__, "__package__", None) is None:
         # Executed a file, like "python app.py".
         py_script = os.path.abspath(py_script)
 
