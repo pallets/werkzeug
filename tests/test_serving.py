@@ -24,9 +24,9 @@ from werkzeug import _reloader
 from werkzeug import serving
 
 try:
-    import OpenSSL
+    import cryptography
 except ImportError:
-    OpenSSL = None
+    cryptography = None
 
 try:
     import watchdog
@@ -101,7 +101,9 @@ def test_broken_app(dev_server):
     not hasattr(ssl, "SSLContext"),
     reason="Missing PEP 466 (Python 2.7.9+) or Python 3.",
 )
-@pytest.mark.skipif(OpenSSL is None, reason="OpenSSL is required for cert generation.")
+@pytest.mark.skipif(
+    cryptography is None, reason="cryptography is required for cert generation."
+)
 def test_stdlib_ssl_contexts(dev_server, tmpdir):
     certificate, private_key = serving.make_ssl_devcert(str(tmpdir.mkdir("certs")))
 
@@ -124,7 +126,7 @@ def test_stdlib_ssl_contexts(dev_server, tmpdir):
     assert r.content == b"hello"
 
 
-@pytest.mark.skipif(OpenSSL is None, reason="OpenSSL is not installed.")
+@pytest.mark.skipif(cryptography is None, reason="cryptography is not installed.")
 def test_ssl_context_adhoc(dev_server):
     server = dev_server(
         """
@@ -139,7 +141,7 @@ def test_ssl_context_adhoc(dev_server):
     assert r.content == b"hello"
 
 
-@pytest.mark.skipif(OpenSSL is None, reason="OpenSSL is not installed.")
+@pytest.mark.skipif(cryptography is None, reason="cryptography is not installed.")
 def test_make_ssl_devcert(tmpdir):
     certificate, private_key = serving.make_ssl_devcert(str(tmpdir))
     assert os.path.isfile(certificate)

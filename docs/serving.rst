@@ -229,7 +229,7 @@ certificate each time the server is reloaded.  Adhoc certificates are
 discouraged because modern browsers do a bad job at supporting them for
 security reasons.
 
-This feature requires the pyOpenSSL library to be installed.
+This feature requires the cryptography library to be installed.
 
 
 Unix Sockets
