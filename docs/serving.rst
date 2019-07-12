@@ -72,11 +72,16 @@ polling and ``'watchdog'`` forces it to the watchdog backend.
     handled by the stat reloader for performance reasons. The watchdog reloader
     monitors such files too.
 
+
 Colored Logging
 ---------------
-Werkzeug is able to color the output of request logs when ran from a terminal, just install the `termcolor
-<https://pypi.org/project/termcolor/>`_ package. Windows users need to install `colorama
-<https://pypi.org/project/colorama/>`_ in addition to termcolor for this to work.
+
+The development server can optionally highlight the request logs in
+different colors based on the status code. Install `Click`_ to enable
+this feature.
+
+.. _Click: https://pypi.org/project/click/
+
 
 Virtual Hosts
 -------------

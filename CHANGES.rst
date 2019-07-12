@@ -34,6 +34,8 @@ Unreleased
     such that ``X-Foo`` is the same as ``x-foo``. :pr:`1605`
 -   :meth:`http.dump_cookie` accepts ``'None'`` as a value for
     ``samesite``. :issue:`1549`
+-   Optional request log highlighting with the development server is
+    handled by Click instead of termcolor. :issue:`1235`
 
 
 Version 0.15.5
