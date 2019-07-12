@@ -14,6 +14,7 @@ Unreleased
     ``True``. This is a more secure default than the original 0.15.0
     behavior and makes it easier to control without losing information.
     :pr:`1592`
+-   Upgrade the debugger to jQuery 3.4.1. :issue:`1581`
 -   Work around an issue in some external debuggers that caused the
     reloader to fail. :issue:`1607`
 -   Work around an issue where the reloader couldn't introspect a
