@@ -270,10 +270,9 @@ class ETagResponseMixin(object):
 
     @property
     def content_range(self):
-        """The ``Content-Range`` header as
-        :class:`~werkzeug.datastructures.ContentRange` object. Even if
-        the header is not set it will provide such an object for easier
-        manipulation.
+        """The ``Content-Range`` header as a
+        :class:`~werkzeug.datastructures.ContentRange` object. Available
+        even if the header is not set.
 
         .. versionadded:: 0.7
         """

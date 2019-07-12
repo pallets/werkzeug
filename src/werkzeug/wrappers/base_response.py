@@ -288,7 +288,7 @@ class BaseResponse(object):
 
     @property
     def status_code(self):
-        """The HTTP Status code as number."""
+        """The HTTP status code as a number."""
         return self._status_code
 
     @status_code.setter
@@ -301,7 +301,7 @@ class BaseResponse(object):
 
     @property
     def status(self):
-        """The HTTP Status code."""
+        """The HTTP status code as a string."""
         return self._status
 
     @status.setter

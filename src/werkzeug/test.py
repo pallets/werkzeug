@@ -496,9 +496,7 @@ class EnvironBuilder(object):
         .. versionadded:: 0.14
         """
         ct = self.content_type
-        if ct:
-            return ct.split(";")[0].strip()
-        return None
+        return ct.split(";")[0].strip() if ct else None
 
     @mimetype.setter
     def mimetype(self, value):
@@ -534,36 +532,53 @@ class EnvironBuilder(object):
         else:
             self.headers["Content-Length"] = str(value)
 
-    @property
-    def form(self):
-        """A :class:`MultiDict` of form values."""
-        if self.input_stream is not None:
-            raise AttributeError("an input stream is defined")
-        if self._form is None:
-            self._form = MultiDict()
-        return self._form
+    def _get_form(self, name, storage):
+        """Common behavior for getting the :attr:`form` and
+        :attr:`files` properties.
 
-    @form.setter
-    def form(self, value):
-        self._input_stream = None
-        self._form = value
-
-    @property
-    def files(self):
-        """A :class:`FileMultiDict` of uploaded files.  You can use
-        the :meth:`~FileMultiDict.add_file` method to add new files to
-        the dict.
+        :param name: Name of the internal cached attribute.
+        :param storage: Storage class used for the data.
         """
         if self.input_stream is not None:
             raise AttributeError("an input stream is defined")
-        if self._files is None:
-            self._files = FileMultiDict()
-        return self._files
+
+        rv = getattr(self, name)
+
+        if rv is None:
+            rv = storage()
+            setattr(self, name, rv)
+
+        return rv
+
+    def _set_form(self, name, value):
+        """Common behavior for setting the :attr:`form` and
+        :attr:`files` properties.
+
+        :param name: Name of the internal cached attribute.
+        :param value: Value to assign to the attribute.
+        """
+        self._input_stream = None
+        setattr(self, name, value)
+
+    @property
+    def form(self):
+        """A :class:`MultiDict` of form values."""
+        return self._get_form("_form", MultiDict)
+
+    @form.setter
+    def form(self, value):
+        self._set_form("_form", value)
+
+    @property
+    def files(self):
+        """A :class:`FileMultiDict` of uploaded files. Use
+        :meth:`~FileMultiDict.add_file` to add new files.
+        """
+        return self._get_form("_files", FileMultiDict)
 
     @files.setter
     def files(self, value):
-        self._input_stream = None
-        self._files = value
+        self._set_form("_files", value)
 
     @property
     def input_stream(self):
