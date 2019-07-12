@@ -268,7 +268,15 @@ class ETagResponseMixin(object):
         .. versionadded:: 0.7""",
     )
 
-    def _get_content_range(self):
+    @property
+    def content_range(self):
+        """The ``Content-Range`` header as a
+        :class:`~werkzeug.datastructures.ContentRange` object. Available
+        even if the header is not set.
+
+        .. versionadded:: 0.7
+        """
+
         def on_update(rng):
             if not rng:
                 del self.headers["content-range"]
@@ -283,22 +291,11 @@ class ETagResponseMixin(object):
             rv = ContentRange(None, None, None, on_update=on_update)
         return rv
 
-    def _set_content_range(self, value):
+    @content_range.setter
+    def content_range(self, value):
         if not value:
             del self.headers["content-range"]
         elif isinstance(value, string_types):
             self.headers["Content-Range"] = value
         else:
             self.headers["Content-Range"] = value.to_header()
-
-    content_range = property(
-        _get_content_range,
-        _set_content_range,
-        doc="""The ``Content-Range`` header as
-        :class:`~werkzeug.datastructures.ContentRange` object. Even if
-        the header is not set it wil provide such an object for easier
-        manipulation.
-
-        .. versionadded:: 0.7""",
-    )
-    del _get_content_range, _set_content_range

@@ -2455,70 +2455,77 @@ class Authorization(ImmutableDictMixin, dict):
         dict.__init__(self, data or {})
         self.type = auth_type
 
-    username = property(
-        lambda self: self.get("username"),
-        doc="""
-        The username transmitted.  This is set for both basic and digest
-        auth all the time.""",
-    )
-    password = property(
-        lambda self: self.get("password"),
-        doc="""
-        When the authentication type is basic this is the password
-        transmitted by the client, else `None`.""",
-    )
-    realm = property(
-        lambda self: self.get("realm"),
-        doc="""
-        This is the server realm sent back for HTTP digest auth.""",
-    )
-    nonce = property(
-        lambda self: self.get("nonce"),
-        doc="""
-        The nonce the server sent for digest auth, sent back by the client.
-        A nonce should be unique for every 401 response for HTTP digest
-        auth.""",
-    )
-    uri = property(
-        lambda self: self.get("uri"),
-        doc="""
-        The URI from Request-URI of the Request-Line; duplicated because
+    @property
+    def username(self):
+        """The username transmitted.  This is set for both basic and digest
+        auth all the time.
+        """
+        return self.get("username")
+
+    @property
+    def password(self):
+        """When the authentication type is basic this is the password
+        transmitted by the client, else `None`.
+        """
+        return self.get("password")
+
+    @property
+    def realm(self):
+        """This is the server realm sent back for HTTP digest auth."""
+        return self.get("realm")
+
+    @property
+    def nonce(self):
+        """The nonce the server sent for digest auth, sent back by the client.
+        A nonce should be unique for every 401 response for HTTP digest auth.
+        """
+        return self.get("nonce")
+
+    @property
+    def uri(self):
+        """The URI from Request-URI of the Request-Line; duplicated because
         proxies are allowed to change the Request-Line in transit.  HTTP
-        digest auth only.""",
-    )
-    nc = property(
-        lambda self: self.get("nc"),
-        doc="""
-        The nonce count value transmitted by clients if a qop-header is
-        also transmitted.  HTTP digest auth only.""",
-    )
-    cnonce = property(
-        lambda self: self.get("cnonce"),
-        doc="""
-        If the server sent a qop-header in the ``WWW-Authenticate``
+        digest auth only.
+        """
+        return self.get("uri")
+
+    @property
+    def nc(self):
+        """The nonce count value transmitted by clients if a qop-header is
+        also transmitted.  HTTP digest auth only.
+        """
+        return self.get("nc")
+
+    @property
+    def cnonce(self):
+        """If the server sent a qop-header in the ``WWW-Authenticate``
         header, the client has to provide this value for HTTP digest auth.
-        See the RFC for more details.""",
-    )
-    response = property(
-        lambda self: self.get("response"),
-        doc="""
-        A string of 32 hex digits computed as defined in RFC 2617, which
-        proves that the user knows a password.  Digest auth only.""",
-    )
-    opaque = property(
-        lambda self: self.get("opaque"),
-        doc="""
-        The opaque header from the server returned unchanged by the client.
+        See the RFC for more details.
+        """
+        return self.get("cnonce")
+
+    @property
+    def response(self):
+        """A string of 32 hex digits computed as defined in RFC 2617, which
+        proves that the user knows a password.  Digest auth only.
+        """
+        return self.get("response")
+
+    @property
+    def opaque(self):
+        """The opaque header from the server returned unchanged by the client.
         It is recommended that this string be base64 or hexadecimal data.
-        Digest auth only.""",
-    )
-    qop = property(
-        lambda self: self.get("qop"),
-        doc="""
-        Indicates what "quality of protection" the client has applied to
+        Digest auth only.
+        """
+        return self.get("opaque")
+
+    @property
+    def qop(self):
+        """Indicates what "quality of protection" the client has applied to
         the message for HTTP digest auth. Note that this is a single token,
-        not a quoted list of alternatives as in WWW-Authenticate.""",
-    )
+        not a quoted list of alternatives as in WWW-Authenticate.
+        """
+        return self.get("qop")
 
 
 class WWWAuthenticate(UpdateDictMixin, dict):

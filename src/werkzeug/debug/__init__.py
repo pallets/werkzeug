@@ -276,16 +276,15 @@ class DebuggedApplication(object):
         else:
             self.pin = None
 
-    def _get_pin(self):
+    @property
+    def pin(self):
         if not hasattr(self, "_pin"):
             self._pin, self._pin_cookie = get_pin_and_cookie_name(self.app)
         return self._pin
 
-    def _set_pin(self, value):
+    @pin.setter
+    def pin(self, value):
         self._pin = value
-
-    pin = property(_get_pin, _set_pin)
-    del _get_pin, _set_pin
 
     @property
     def pin_cookie_name(self):
