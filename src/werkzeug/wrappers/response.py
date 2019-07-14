@@ -51,7 +51,7 @@ class ResponseStream(object):
 
 
 class ResponseStreamMixin(object):
-    """Mixin for :class:`BaseRequest` subclasses.  Classes that inherit from
+    """Mixin for :class:`BaseResponse` subclasses.  Classes that inherit from
     this mixin will automatically get a :attr:`stream` property that provides
     a write-only interface to the response iterable.
     """
