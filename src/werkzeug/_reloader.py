@@ -61,11 +61,8 @@ def _find_observable_paths(extra_files=None):
 
 
 def _get_args_for_reloading():
-    """Returns the executable. This contains a workaround for windows
-    if the executable is incorrectly reported to not have the .exe
-    extension which can cause bugs on reloading.  This also contains
-    a workaround for linux where the file is executable (possibly with
-    a program other than python)
+    """Determine how the script was executed, and return the args needed
+    to execute it again in a new process.
     """
     rv = [sys.executable]
     py_script = sys.argv[0]
@@ -90,11 +87,6 @@ def _get_args_for_reloading():
                 and os.path.splitext(py_script)[1] == ".exe"
             ):
                 rv.pop(0)
-
-        elif os.path.isfile(py_script) and os.access(py_script, os.X_OK):
-            # The file is marked as executable. Nix adds a wrapper that
-            # shouldn't be called with the Python executable.
-            rv.pop(0)
 
         rv.append(py_script)
     else:
