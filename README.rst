@@ -65,17 +65,12 @@ A Simple Example
 Links
 -----
 
--   Website: https://www.palletsprojects.com/p/werkzeug/
+-   Website: https://palletsprojects.com/p/werkzeug/
 -   Documentation: https://werkzeug.palletsprojects.com/
 -   Releases: https://pypi.org/project/Werkzeug/
 -   Code: https://github.com/pallets/werkzeug
 -   Issue tracker: https://github.com/pallets/werkzeug/issues
--   Test status:
-
-    -   Linux, Mac: https://travis-ci.org/pallets/werkzeug
-    -   Windows: https://ci.appveyor.com/project/pallets/werkzeug
-
--   Test coverage: https://codecov.io/gh/pallets/werkzeug
+-   Test status: https://dev.azure.com/pallets/werkzeug/_build
 -   Official chat: https://discord.gg/t6rrQZH
 
 .. _WSGI: https://wsgi.readthedocs.io/en/latest/

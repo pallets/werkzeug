@@ -22,7 +22,7 @@ setup(
     license="BSD-3-Clause",
     author="Armin Ronacher",
     author_email="armin.ronacher@active-4.com",
-    maintainer="The Pallets Team",
+    maintainer="Pallets",
     maintainer_email="contact@palletsprojects.com",
     description="The comprehensive WSGI web application library.",
     long_description=readme,
