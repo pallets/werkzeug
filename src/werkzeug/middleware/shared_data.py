@@ -22,6 +22,7 @@ from .._compat import string_types
 from ..filesystem import get_filesystem_encoding
 from ..http import http_date
 from ..http import is_resource_modified
+from ..security import safe_join
 from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
@@ -149,7 +150,7 @@ class SharedDataMiddleware(object):
             if path is None:
                 return None, None
 
-            path = posixpath.join(package_path, path)
+            path = safe_join(package_path, path)
 
             if not provider.has_resource(path):
                 return None, None
@@ -170,7 +171,7 @@ class SharedDataMiddleware(object):
     def get_directory_loader(self, directory):
         def loader(path):
             if path is not None:
-                path = os.path.join(directory, path)
+                path = safe_join(directory, path)
             else:
                 path = directory
 
@@ -192,19 +193,11 @@ class SharedDataMiddleware(object):
         )
 
     def __call__(self, environ, start_response):
-        cleaned_path = get_path_info(environ)
+        path = get_path_info(environ)
 
         if PY2:
-            cleaned_path = cleaned_path.encode(get_filesystem_encoding())
+            path = path.encode(get_filesystem_encoding())
 
-        # sanitize the path for non unix systems
-        cleaned_path = cleaned_path.strip("/")
-
-        for sep in os.sep, os.altsep:
-            if sep and sep != "/":
-                cleaned_path = cleaned_path.replace(sep, "/")
-
-        path = "/" + "/".join(x for x in cleaned_path.split("/") if x and x != "..")
         file_loader = None
 
         for search_path, loader in self.exports:

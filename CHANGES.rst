@@ -54,8 +54,18 @@ Unreleased
     ``True``. This is a more secure default than the original 0.15.0
     behavior and makes it easier to control without losing information.
     :pr:`1592`
+-   Upgrade the debugger to jQuery 3.4.1. :issue:`1581`
 -   Work around an issue in some external debuggers that caused the
     reloader to fail. :issue:`1607`
+-   Work around an issue where the reloader couldn't introspect a
+    setuptools script installed as an egg. :issue:`1600`
+-   The reloader will use ``sys.executable`` even if the script is
+    marked executable, reverting a behavior intended for NixOS
+    introduced in 0.15. The reloader should no longer cause
+    ``OSError: [Errno 8] Exec format error``. :issue:`1482`,
+    :issue:`1580`
+-   ``SharedDataMiddleware`` safely handles paths with Windows drive
+    names. :issue:`1589`
 
 
 Version 0.15.4
