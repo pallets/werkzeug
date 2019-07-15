@@ -19,6 +19,8 @@ Unreleased
     reloader to fail. :issue:`1607`
 -   Work around an issue where the reloader couldn't introspect a
     setuptools script installed as an egg. :issue:`1600`
+-   ``SharedDataMiddleware`` safely handles paths with Windows drive
+    names. :issue:`1589`
 
 
 Version 0.15.4
