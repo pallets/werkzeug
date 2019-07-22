@@ -118,6 +118,14 @@ class TestHTTPUtility(object):
         assert c.private is None
         assert c.to_header() == "no-cache"
 
+    def test_csp_header(self):
+        csp = http.parse_csp_header(
+            "default-src 'self'; script-src 'unsafe-inline' *; img-src"
+        )
+        assert csp.default_src == "'self'"
+        assert csp.script_src == "'unsafe-inline' *"
+        assert csp.img_src is None
+
     def test_authorization_header(self):
         a = http.parse_authorization_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
         assert a.type == "basic"
