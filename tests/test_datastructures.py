@@ -978,6 +978,12 @@ class TestCacheControl(object):
         cc = datastructures.RequestCacheControl([("max-age", "0"), ("private", "True")])
         assert repr(cc) == "<RequestCacheControl max-age='0' private='True'>"
 
+    def test_set_none(self):
+        cc = datastructures.ResponseCacheControl([("max-age", "0")])
+        assert cc.no_cache is None
+        cc.no_cache = None
+        assert cc.no_cache is None
+
 
 class TestAccept(object):
     storage_class = datastructures.Accept
