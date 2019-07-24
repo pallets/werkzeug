@@ -66,8 +66,6 @@ all_by_module = {
         "redirect",
         "cached_property",
         "import_string",
-        "dump_cookie",
-        "parse_cookie",
         "unescape",
         "format_string",
         "find_modules",
@@ -146,6 +144,8 @@ all_by_module = {
         "unquote_header_value",
         "quote_header_value",
         "HTTP_STATUS_CODES",
+        "dump_cookie",
+        "parse_cookie",
     ],
     "werkzeug.wrappers": [
         "BaseResponse",
