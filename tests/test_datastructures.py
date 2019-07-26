@@ -1109,6 +1109,11 @@ class TestFileStorage(object):
         for name in ("fileno", "writable", "readable", "seekable"):
             assert hasattr(file_storage, name)
 
+    def test_context_manager(self):
+        with self.storage_class(stream=tempfile.TemporaryFile()) as file_storage:
+            assert file_storage.read() == b""
+        assert file_storage.closed
+
 
 @pytest.mark.parametrize("ranges", ([(0, 1), (-5, None)], [(5, None)]))
 def test_range_to_header(ranges):
