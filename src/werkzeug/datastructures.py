@@ -1940,7 +1940,7 @@ class _CacheControl(UpdateDictMixin, dict):
                 self.pop(key, None)
         else:
             if value is None:
-                self.pop(key)
+                self.pop(key, None)
             elif value is True:
                 self[key] = None
             else:
