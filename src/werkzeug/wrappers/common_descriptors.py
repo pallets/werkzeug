@@ -230,6 +230,15 @@ class CommonResponseDescriptorsMixin(object):
         doc="""The Content-Security-Policy header adds an additional layer of
         security to help detect and mitigate certain types of attacks.""",
     )
+    content_security_policy_report_only = header_property(
+        "Content-Security-Policy-Report-Only",
+        None,
+        parse_csp_header,
+        dump_csp_header,
+        doc="""The Content-Security-Policy-Report-Only header adds a csp policy
+        that is not enforced but is reported thereby helping detect
+        certain types of attacks.""",
+    )
     date = header_property(
         "Date",
         None,
