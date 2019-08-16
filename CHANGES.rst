@@ -1,5 +1,7 @@
 .. currentmodule:: werkzeug
 
+-   Fix a bug that the reloader doesn't populate the path correctly on
+    Windows. :issue:`1614`
 Version 0.15.5
 --------------
 

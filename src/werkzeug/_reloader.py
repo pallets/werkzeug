@@ -72,7 +72,7 @@ def _get_args_for_reloading():
 
     # The value of __package__ indicates how Python was called. It may
     # not exist if a setuptools script is installed as an egg.
-    if getattr(__main__, "__package__", None) is None:
+    if not getattr(__main__, "__package__", None):
         # Executed a file, like "python app.py".
         py_script = os.path.abspath(py_script)
 
