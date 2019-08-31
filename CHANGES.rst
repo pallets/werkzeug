@@ -1,5 +1,16 @@
 .. currentmodule:: werkzeug
 
+Version 0.15.6
+--------------
+
+Unreleased
+
+-   Work around a bug in pip that caused the reloader to fail on
+    Windows when the script was an entry point. This fixes the issue
+    with Flask's `flask run` command failing with "No module named
+    Scripts\flask". :issue:`1614`
+
+
 Version 0.15.5
 --------------
 
