@@ -18,8 +18,9 @@ from werkzeug.wrappers import Response
                 "REMOTE_ADDR": "192.168.0.2",
                 "HTTP_HOST": "spam",
                 "HTTP_X_FORWARDED_FOR": "192.168.0.1",
+                "HTTP_X_FORWARDED_PROTO": "https",
             },
-            "http://spam/",
+            "https://spam/",
             id="for",
         ),
         pytest.param(
@@ -178,6 +179,8 @@ def test_proxy_fix(kwargs, base, url_root):
 def test_proxy_fix_deprecations():
     app = pytest.deprecated_call(ProxyFix, None, 2)
     assert app.x_for == 2
+    assert app.x_proto == 2
+    assert app.x_host == 2
 
     with pytest.deprecated_call():
         assert app.num_proxies == 2
