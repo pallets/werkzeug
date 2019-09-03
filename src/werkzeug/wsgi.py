@@ -964,7 +964,7 @@ class LimitedStream(io.IOBase):
     def readlines(self, size=None):
         """Reads a file into a list of strings.  It calls :meth:`readline`
         until the file is read to the end.  It does support the optional
-        `size` argument if the underlaying stream supports it for
+        `size` argument if the underlying stream supports it for
         `readline`.
         """
         last_pos = self._pos
