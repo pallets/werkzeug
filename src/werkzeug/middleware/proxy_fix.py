@@ -77,7 +77,7 @@ class ProxyFix(object):
     """
 
     def __init__(
-        self, app, num_proxies=None, x_for=1, x_proto=0, x_host=0, x_port=0, x_prefix=0
+        self, app, num_proxies=None, x_for=1, x_proto=1, x_host=0, x_port=0, x_prefix=0
     ):
         self.app = app
         self.x_for = x_for
@@ -112,11 +112,15 @@ class ProxyFix(object):
         if value is not None:
             warnings.warn(
                 "'num_proxies' is deprecated as of version 0.15 and"
-                " will be removed in version 1.0. Use 'x_for' instead.",
+                " will be removed in version 1.0. Use"
+                " 'x_for={value}, x_proto={value}, x_host={value}'"
+                " instead.".format(value=value),
                 DeprecationWarning,
                 stacklevel=2,
             )
             self.x_for = value
+            self.x_proto = value
+            self.x_host = value
 
     def get_remote_addr(self, forwarded_for):
         """Get the real ``remote_addr`` by looking backwards ``x_for``
