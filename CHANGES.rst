@@ -3,7 +3,7 @@
 Version 0.15.6
 --------------
 
-Unreleased
+Released 2019-09-04
 
 -   Work around a bug in pip that caused the reloader to fail on
     Windows when the script was an entry point. This fixes the issue
