@@ -18,8 +18,9 @@ from werkzeug.wrappers import Response
                 "REMOTE_ADDR": "192.168.0.2",
                 "HTTP_HOST": "spam",
                 "HTTP_X_FORWARDED_FOR": "192.168.0.1",
+                "HTTP_X_FORWARDED_PROTO": "https",
             },
-            "http://spam/",
+            "https://spam/",
             id="for",
         ),
         pytest.param(

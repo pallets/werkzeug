@@ -82,7 +82,7 @@ class ProxyFix(object):
         ``SERVER_NAME`` and ``SERVER_PORT``.
     """
 
-    def __init__(self, app, x_for=1, x_proto=0, x_host=0, x_port=0, x_prefix=0):
+    def __init__(self, app, x_for=1, x_proto=1, x_host=0, x_port=0, x_prefix=0):
         self.app = app
         self.x_for = x_for
         self.x_proto = x_proto

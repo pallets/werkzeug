@@ -40,6 +40,23 @@ Unreleased
     by cryptography instead of pyOpenSSL. :pr:`1555`
 
 
+Version 0.15.6
+--------------
+
+Released 2019-09-04
+
+-   Work around a bug in pip that caused the reloader to fail on
+    Windows when the script was an entry point. This fixes the issue
+    with Flask's `flask run` command failing with "No module named
+    Scripts\flask". :issue:`1614`
+-   ``ProxyFix`` trusts the ``X-Forwarded-Proto`` header by default.
+    :issue:`1630`
+-   The deprecated ``num_proxies`` argument to ``ProxyFix`` sets
+    ``x_for``, ``x_proto``, and ``x_host`` to match 0.14 behavior. This
+    is intended to make intermediate upgrades less disruptive, but the
+    argument will still be removed in 1.0. :issue:`1630`
+
+
 Version 0.15.5
 --------------
 
