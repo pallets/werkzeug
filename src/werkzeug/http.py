@@ -304,6 +304,19 @@ def dump_header(iterable, allow_token=True):
     return ", ".join(items)
 
 
+def dump_csp_header(header):
+    """Dump a Content Security Policy header.
+
+    These are structured into policies such as "default-src 'self';
+    script-src 'self'".
+
+    .. versionadded:: 1.0.0
+       Support for Content Security Policy headers was added.
+
+    """
+    return "; ".join("%s %s" % (key, value) for key, value in iteritems(header))
+
+
 def parse_list_header(value):
     """Parse lists as described by RFC 2068 Section 2.
 
@@ -502,6 +515,32 @@ def parse_cache_control_header(value, on_update=None, cls=None):
     if not value:
         return cls(None, on_update)
     return cls(parse_dict_header(value), on_update)
+
+
+def parse_csp_header(value, on_update=None, cls=None):
+    """Parse a Content Security Policy header.
+
+    .. versionadded:: 1.0.0
+       Support for Content Security Policy headers was added.
+
+    :param value: a csp header to be parsed.
+    :param on_update: an optional callable that is called every time a value
+                      on the object is changed.
+    :param cls: the class for the returned object.  By default
+                :class:`~werkzeug.datastructures.ContentSecurityPolicy` is used.
+    :return: a `cls` object.
+    """
+
+    if cls is None:
+        cls = ContentSecurityPolicy
+    items = []
+    for policy in value.split(";"):
+        policy = policy.strip()
+        # Ignore badly formatted policies (no space)
+        if " " in policy:
+            directive, value = policy.strip().split(" ", 1)
+            items.append((directive.strip(), value.strip()))
+    return cls(items, on_update)
 
 
 def parse_set_header(value, on_update=None):
@@ -1244,6 +1283,7 @@ def is_byte_range_valid(start, stop, length):
 from .datastructures import Accept
 from .datastructures import Authorization
 from .datastructures import ContentRange
+from .datastructures import ContentSecurityPolicy
 from .datastructures import ETags
 from .datastructures import HeaderSet
 from .datastructures import IfRange

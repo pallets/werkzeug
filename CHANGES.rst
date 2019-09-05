@@ -34,6 +34,8 @@ Unreleased
     such that ``X-Foo`` is the same as ``x-foo``. :pr:`1605`
 -   :meth:`http.dump_cookie` accepts ``'None'`` as a value for
     ``samesite``. :issue:`1549`
+-   Support the Content Security Policy header through the
+    `Response.content_security_policy` data structure. :pr:`1617`
 -   Optional request log highlighting with the development server is
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled

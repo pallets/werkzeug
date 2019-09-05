@@ -4,10 +4,12 @@ from datetime import timedelta
 from .._compat import string_types
 from ..datastructures import CallbackDict
 from ..http import dump_age
+from ..http import dump_csp_header
 from ..http import dump_header
 from ..http import dump_options_header
 from ..http import http_date
 from ..http import parse_age
+from ..http import parse_csp_header
 from ..http import parse_date
 from ..http import parse_options_header
 from ..http import parse_set_header
@@ -219,6 +221,23 @@ class CommonResponseDescriptorsMixin(object):
         entity-body. (Note: a MIC is good for detecting accidental
         modification of the entity-body in transit, but is not proof
         against malicious attacks.)""",
+    )
+    content_security_policy = header_property(
+        "Content-Security-Policy",
+        None,
+        parse_csp_header,
+        dump_csp_header,
+        doc="""The Content-Security-Policy header adds an additional layer of
+        security to help detect and mitigate certain types of attacks.""",
+    )
+    content_security_policy_report_only = header_property(
+        "Content-Security-Policy-Report-Only",
+        None,
+        parse_csp_header,
+        dump_csp_header,
+        doc="""The Content-Security-Policy-Report-Only header adds a csp policy
+        that is not enforced but is reported thereby helping detect
+        certain types of attacks.""",
     )
     date = header_property(
         "Date",

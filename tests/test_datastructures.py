@@ -985,6 +985,26 @@ class TestCacheControl(object):
         assert cc.no_cache is None
 
 
+class TestContentSecurityPolicy(object):
+    def test_construct(self):
+        csp = datastructures.ContentSecurityPolicy(
+            [("font-src", "'self'"), ("media-src", "*")]
+        )
+        assert csp.font_src == "'self'"
+        assert csp.media_src == "*"
+        policies = [policy.strip() for policy in csp.to_header().split(";")]
+        assert "font-src 'self'" in policies
+        assert "media-src *" in policies
+
+    def test_properties(self):
+        csp = datastructures.ContentSecurityPolicy()
+        csp.default_src = "* 'self' quart.com"
+        csp.img_src = "'none'"
+        policies = [policy.strip() for policy in csp.to_header().split(";")]
+        assert "default-src * 'self' quart.com" in policies
+        assert "img-src 'none'" in policies
+
+
 class TestAccept(object):
     storage_class = datastructures.Accept
 
