@@ -36,6 +36,9 @@ Unreleased
     ``samesite``. :issue:`1549`
 -   Support the Content Security Policy header through the
     `Response.content_security_policy` data structure. :pr:`1617`
+-   ``AcceptLanguage`` will fall back to matching "en" for "en-US" or
+    "en-US" for "en" to better support clients or translations that
+    only match at the primary language tag. :issue:`450`, :pr:`1507`
 -   Optional request log highlighting with the development server is
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled

@@ -1840,14 +1840,63 @@ class MIMEAccept(Accept):
         return "application/json" in self
 
 
+def _normalize_lang(value):
+    """Process a language tag for matching."""
+    return _locale_delim_re.split(value.lower())
+
+
 class LanguageAccept(Accept):
-    """Like :class:`Accept` but with normalization for languages."""
+    """Like :class:`Accept` but with normalization for language tags."""
 
     def _value_matches(self, value, item):
-        def _normalize(language):
-            return _locale_delim_re.split(language.lower())
+        return item == "*" or _normalize_lang(value) == _normalize_lang(item)
 
-        return item == "*" or _normalize(value) == _normalize(item)
+    def best_match(self, matches, default=None):
+        """Given a list of supported values, finds the best match from
+        the list of accepted values.
+
+        Language tags are normalized for the purpose of matching, but
+        are returned unchanged.
+
+        If no exact match is found, this will fall back to matching
+        the first subtag (primary language only), first with the
+        accepted values then with the match values. This partial is not
+        applied to any other language subtags.
+
+        The default is returned if no exact or fallback match is found.
+
+        :param matches: A list of supported languages to find a match.
+        :param default: The value that is returned if none match.
+        """
+        # Look for an exact match first. If a client accepts "en-US",
+        # "en-US" is a valid match at this point.
+        result = super(LanguageAccept, self).best_match(matches)
+
+        if result is not None:
+            return result
+
+        # Fall back to accepting primary tags. If a client accepts
+        # "en-US", "en" is a valid match at this point. Need to use
+        # re.split to account for 2 or 3 letter codes.
+        fallback = Accept(
+            [(_locale_delim_re.split(item[0], 1)[0], item[1]) for item in self]
+        )
+        result = fallback.best_match(matches)
+
+        if result is not None:
+            return result
+
+        # Fall back to matching primary tags. If the client accepts
+        # "en", "en-US" is a valid match at this point.
+        fallback_matches = [_locale_delim_re.split(item, 1)[0] for item in matches]
+        result = super(LanguageAccept, self).best_match(fallback_matches)
+
+        # Return a value from the original match list. Find the first
+        # original value that starts with the matched primary tag.
+        if result is not None:
+            return next(item for item in matches if item.startswith(result))
+
+        return default
 
 
 class CharsetAccept(Accept):
