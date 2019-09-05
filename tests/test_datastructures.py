@@ -38,6 +38,7 @@ from werkzeug._compat import itervalues
 from werkzeug._compat import PY2
 from werkzeug._compat import text_type
 from werkzeug.datastructures import LanguageAccept
+from werkzeug.datastructures import MIMEAccept
 from werkzeug.datastructures import Range
 from werkzeug.exceptions import BadRequestKeyError
 
@@ -1084,21 +1085,48 @@ class TestAccept(object):
 
 
 class TestMIMEAccept(object):
-    storage_class = datastructures.MIMEAccept
-
-    def test_accept_wildcard_subtype(self):
-        accept = self.storage_class([("text/*", 1)])
-        assert accept.best_match(["text/html"], default=None) == "text/html"
-        assert accept.best_match(["image/png", "text/plain"]) == "text/plain"
-        assert accept.best_match(["image/png"], default=None) is None
-
-    def test_accept_wildcard_specificity(self):
-        accept = self.storage_class([("*/*", 1), ("text/html", 1)])
-        assert accept.best_match(["image/png", "text/html"]) == "text/html"
-        assert accept.best_match(["image/png", "text/plain"]) == "image/png"
-        accept = self.storage_class([("*/*", 1), ("text/html", 1), ("image/*", 1)])
-        assert accept.best_match(["image/png", "text/html"]) == "text/html"
-        assert accept.best_match(["text/plain", "image/png"]) == "image/png"
+    @pytest.mark.parametrize(
+        ("values", "matches", "default", "expect"),
+        [
+            ([("text/*", 1)], ["text/html"], None, "text/html"),
+            ([("text/*", 1)], ["image/png"], "text/plain", "text/plain"),
+            ([("text/*", 1)], ["image/png"], None, None),
+            (
+                [("*/*", 1), ("text/html", 1)],
+                ["image/png", "text/html"],
+                None,
+                "text/html",
+            ),
+            (
+                [("*/*", 1), ("text/html", 1)],
+                ["image/png", "text/plain"],
+                None,
+                "image/png",
+            ),
+            (
+                [("*/*", 1), ("text/html", 1), ("image/*", 1)],
+                ["image/png", "text/html"],
+                None,
+                "text/html",
+            ),
+            (
+                [("*/*", 1), ("text/html", 1), ("image/*", 1)],
+                ["text/plain", "image/png"],
+                None,
+                "image/png",
+            ),
+            (
+                [("text/html", 1), ("text/html; level=1", 1)],
+                ["text/html;level=1"],
+                None,
+                "text/html;level=1",
+            ),
+        ],
+    )
+    def test_mime_accept(self, values, matches, default, expect):
+        accept = MIMEAccept(values)
+        match = accept.best_match(matches, default=default)
+        assert match == expect
 
 
 class TestLanguageAccept(object):

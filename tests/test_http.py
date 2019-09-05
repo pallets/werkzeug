@@ -61,6 +61,13 @@ class TestHTTPUtility(object):
         assert a.best_match(["foo/bar", "bar/foo"], default="foo/bar") == "foo/bar"
         assert a.best_match(["application/xml", "text/xml"]) == "application/xml"
 
+    def test_accept_mime_specificity(self):
+        a = http.parse_accept_header(
+            "text/*, text/html, text/html;level=1, */*", datastructures.MIMEAccept
+        )
+        assert a.best_match(["text/html; version=1", "text/html"]) == "text/html"
+        assert a.best_match(["text/html", "text/html; level=1"]) == "text/html; level=1"
+
     def test_charset_accept(self):
         a = http.parse_accept_header(
             "ISO-8859-1,utf-8;q=0.7,*;q=0.7", datastructures.CharsetAccept
