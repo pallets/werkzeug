@@ -29,8 +29,6 @@ from ._compat import to_native
 from ._internal import _missing
 from .filesystem import get_filesystem_encoding
 
-_locale_delim_re = re.compile(r"[_-]")
-
 
 def is_immutable(self):
     raise TypeError("%r objects are immutable" % self.__class__.__name__)
@@ -1785,7 +1783,11 @@ class Accept(ImmutableList):
             return self[0][0]
 
 
-_mime_re = re.compile(r"/|(?:\s*;\s*)")
+_mime_split_re = re.compile(r"/|(?:\s*;\s*)")
+
+
+def _normalize_mime(value):
+    return _mime_split_re.split(value.lower())
 
 
 class MIMEAccept(Accept):
@@ -1794,32 +1796,39 @@ class MIMEAccept(Accept):
     """
 
     def _specificity(self, value):
-        return tuple(x != "*" for x in _mime_re.split(value))
+        return tuple(x != "*" for x in _mime_split_re.split(value))
 
     def _value_matches(self, value, item):
-        def _normalize(x):
-            x = x.lower()
-            return _mime_re.split(x)
+        # item comes from the client, can't match if it's invalid.
+        if "/" not in item:
+            return False
 
-        # this is from the application which is trusted.  to avoid developer
-        # frustration we actually check these for valid values
+        # value comes from the application, tell the developer when it
+        # doesn't look valid.
         if "/" not in value:
             raise ValueError("invalid mimetype %r" % value)
-        normalized_value = _normalize(value)
+
+        # Split the match value into type, subtype, and a sorted list of parameters.
+        normalized_value = _normalize_mime(value)
         value_type, value_subtype = normalized_value[:2]
         value_params = sorted(normalized_value[2:])
+
+        # "*/*" is the only valid value that can start with "*".
         if value_type == "*" and value_subtype != "*":
             raise ValueError("invalid mimetype %r" % value)
 
-        if "/" not in item:
-            return False
-        normalized_item = _normalize(item)
+        # Split the accept item into type, subtype, and parameters.
+        normalized_item = _normalize_mime(item)
         item_type, item_subtype = normalized_item[:2]
         item_params = sorted(normalized_item[2:])
+
+        # "*/not-*" from the client is invalid, can't match.
         if item_type == "*" and item_subtype != "*":
             return False
+
         return (
-            item_type == item_subtype == "*" or value_type == value_subtype == "*"
+            (item_type == "*" and item_subtype == "*")
+            or (value_type == "*" and value_subtype == "*")
         ) or (
             item_type == value_type
             and (
@@ -1845,6 +1854,9 @@ class MIMEAccept(Accept):
     def accept_json(self):
         """True if this object accepts JSON."""
         return "application/json" in self
+
+
+_locale_delim_re = re.compile(r"[_-]")
 
 
 def _normalize_lang(value):
