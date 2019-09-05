@@ -37,6 +37,7 @@ from werkzeug._compat import iterlistvalues
 from werkzeug._compat import itervalues
 from werkzeug._compat import PY2
 from werkzeug._compat import text_type
+from werkzeug.datastructures import LanguageAccept
 from werkzeug.datastructures import Range
 from werkzeug.exceptions import BadRequestKeyError
 
@@ -911,12 +912,12 @@ def make_call_asserter(func=None):
 
     :param func: Additional callback for each function call.
 
-    >>> assert_calls, func = make_call_asserter()
-    >>> with assert_calls(2):
-    ...    func()
-    ...    func()
+    .. code-block:: python
+        assert_calls, func = make_call_asserter()
+        with assert_calls(2):
+            func()
+            func()
     """
-
     calls = [0]
 
     @contextmanager
@@ -1101,32 +1102,27 @@ class TestMIMEAccept(object):
 
 
 class TestLanguageAccept(object):
-    storage_class = datastructures.LanguageAccept
-
-    def test_best_match_fallback(self):
-        accept = self.storage_class([("en-us", 1)])
-        assert accept.best_match(["en"]) == "en"
-
-        accept = self.storage_class([("de_AT", 1), ("de", 0.9)])
-        assert accept.best_match(["en"]) is None
-
-        accept = self.storage_class([("de_AT", 1), ("de", 0.9), ("en-US", 0.8)])
-        assert accept.best_match(["de", "en"]) == "de"
-
-        accept = self.storage_class([("de_AT", 0.9), ("en-US", 1)])
-        assert accept.best_match(["en"]) == "en"
-
-        accept = self.storage_class([("en-us", 1)])
-        assert accept.best_match(["en-us"]) == "en-us"
-
-        accept = self.storage_class([("en-us", 1)])
-        assert accept.best_match(["en-us", "en"]) == "en-us"
-
-        accept = self.storage_class([("en-GB", 1)])
-        assert accept.best_match(["en-US", "en"], default="en-US") == "en"
-
-        accept = self.storage_class([("de-AT", 1)])
-        assert accept.best_match(["en-US", "en"], default="en-US") == "en-US"
+    @pytest.mark.parametrize(
+        ("values", "matches", "default", "expect"),
+        (
+            ([("en-us", 1)], ["en"], None, "en"),
+            ([("en", 1)], ["en_US"], None, "en_US"),
+            ([("en-GB", 1)], ["en-US"], None, None),
+            ([("de_AT", 1), ("de", 0.9)], ["en"], None, None),
+            ([("de_AT", 1), ("de", 0.9), ("en-US", 0.8)], ["de", "en"], None, "de"),
+            ([("de_AT", 0.9), ("en-US", 1)], ["en"], None, "en"),
+            ([("en-us", 1)], ["en-us"], None, "en-us"),
+            ([("en-us", 1)], ["en-us", "en"], None, "en-us"),
+            ([("en-GB", 1)], ["en-US", "en"], "en-US", "en"),
+            ([("de_AT", 1)], ["en-US", "en"], "en-US", "en-US"),
+            ([("aus-EN", 1)], ["aus"], None, "aus"),
+            ([("aus", 1)], ["aus-EN"], None, "aus-EN"),
+        ),
+    )
+    def test_best_match_fallback(self, values, matches, default, expect):
+        accept = LanguageAccept(values)
+        best = accept.best_match(matches, default=default)
+        assert best == expect
 
 
 class TestFileStorage(object):
