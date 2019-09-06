@@ -13,10 +13,11 @@ Unreleased
 -   Directive keys for the ``Set-Cookie`` response header are not
     ignored when parsing the ``Cookie`` request header. This allows
     cookies with names such as "expires" and "version". (:issue:`1495`)
--   Cookies are parsed into a ``MultiDict`` to capture all values for
-    cookies with the same key. ``cookies[key]`` returns the first value
-    received, rather than the last. Use ``cookies.getlist(key)`` to get
-    all values. :issue:`1562`, :pr:`1458`
+-   Request cookies are parsed into a ``MultiDict`` to capture all
+    values for cookies with the same key. ``cookies[key]`` returns the
+    first value rather than the last. Use ``cookies.getlist(key)`` to
+    get all values. ``parse_cookie`` also defaults to a ``MultiDict``.
+    :issue:`1562`, :pr:`1458`
 -   Add ``charset=utf-8`` to an HTTP exception response's
     ``CONTENT_TYPE`` header. (:pr:`1526`)
 -   The interactive debugger handles outer variables in nested scopes

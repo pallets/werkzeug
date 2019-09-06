@@ -1078,38 +1078,40 @@ def is_hop_by_hop_header(header):
 
 
 def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
-    """Parse a cookie.  Either from a string or WSGI environ.
+    """Parse a cookie from a string or WSGI environ.
 
-    Per default encoding errors are ignored.  If you want a different behavior
-    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
-    :exc:`HTTPUnicodeError` is raised.
+    The same key can be provided multiple times, the values are stored
+    in-order. The default :class:`MultiDict` will have the first value
+    first, and all values can be retrieved with
+    :meth:`MultiDict.getlist`.
+
+    :param header: The cookie header as a string, or a WSGI environ dict
+        with a ``HTTP_COOKIE`` key.
+    :param charset: The charset for the cookie values.
+    :param errors: The error behavior for the charset decoding.
+    :param cls: A dict-like class to store the parsed cookies in.
+        Defaults to :class:`MultiDict`.
+
+    .. versionchanged:: 1.0.0
+        Returns a :class:`MultiDict` instead of a
+        ``TypeConversionDict``.
 
     .. versionchanged:: 0.5
-       This function now returns a :class:`TypeConversionDict` instead of a
-       regular dict.  The `cls` parameter was added.
-
-    :param header: the header to be used to parse the cookie.  Alternatively
-                   this can be a WSGI environment.
-    :param charset: the charset for the cookie values.
-    :param errors: the error behavior for the charset decoding.
-    :param cls: an optional dict class to use.  If this is not specified
-                       or `None` the default :class:`TypeConversionDict` is
-                       used.
+       Returns a :class:`TypeConversionDict` instead of a regular dict.
+       The ``cls`` parameter was added.
     """
     if isinstance(header, dict):
         header = header.get("HTTP_COOKIE", "")
     elif header is None:
         header = ""
 
-    # If the value is an unicode string it's mangled through latin1.  This
-    # is done because on PEP 3333 on Python 3 all headers are assumed latin1
-    # which however is incorrect for cookies, which are sent in page encoding.
-    # As a result we
+    # On Python 3, PEP 3333 sends headers through the environ as latin1
+    # decoded strings. Encode strings back to bytes for parsing.
     if isinstance(header, text_type):
         header = header.encode("latin1", "replace")
 
     if cls is None:
-        cls = TypeConversionDict
+        cls = MultiDict
 
     def _parse_pairs():
         for key, val in _cookie_parse_impl(header):
@@ -1287,8 +1289,8 @@ from .datastructures import ContentSecurityPolicy
 from .datastructures import ETags
 from .datastructures import HeaderSet
 from .datastructures import IfRange
+from .datastructures import MultiDict
 from .datastructures import Range
 from .datastructures import RequestCacheControl
-from .datastructures import TypeConversionDict
 from .datastructures import WWWAuthenticate
 from .urls import iri_to_uri
