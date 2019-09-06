@@ -442,22 +442,22 @@ class TestHTTPUtility(object):
         assert http.http_date(0) == "Thu, 01 Jan 1970 00:00:00 GMT"
         assert http.http_date(datetime(1970, 1, 1)) == "Thu, 01 Jan 1970 00:00:00 GMT"
 
-    def test_cookies(self):
-        strict_eq(
-            dict(
-                http.parse_cookie(
-                    "dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cd"
-                    'c762809248d4beed; a=42; b="\\";"'
-                )
-            ),
-            {
-                "CP": u"null*",
-                "PHPSESSID": u"0a539d42abc001cdc762809248d4beed",
-                "a": u"42",
-                "dismiss-top": u"6",
-                "b": u'";',
-            },
+    def test_parse_cookie(self):
+        cookies = http.parse_cookie(
+            "dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed;"
+            ' a=42; b="\\";"; ; fo234{=bar;blub=Blah;'
         )
+        assert cookies.to_dict() == {
+            "CP": u"null*",
+            "PHPSESSID": u"0a539d42abc001cdc762809248d4beed",
+            "a": u"42",
+            "dismiss-top": u"6",
+            "b": u'";',
+            "fo234{": u"bar",
+            "blub": u"Blah",
+        }
+
+    def test_dump_cookie(self):
         rv = http.dump_cookie(
             "foo", "bar baz blub", 360, httponly=True, sync_expires=False
         )
@@ -468,42 +468,37 @@ class TestHTTPUtility(object):
             "Path=/",
             'foo="bar baz blub"',
         }
-
-        strict_eq(
-            dict(http.parse_cookie("fo234{=bar; blub=Blah")),
-            {"fo234{": u"bar", "blub": u"Blah"},
-        )
-
-        strict_eq(http.dump_cookie("key", "xxx/"), "key=xxx/; Path=/")
-        strict_eq(http.dump_cookie("key", "xxx="), "key=xxx=; Path=/")
+        assert http.dump_cookie("key", "xxx/") == "key=xxx/; Path=/"
+        assert http.dump_cookie("key", "xxx=") == "key=xxx=; Path=/"
 
     def test_bad_cookies(self):
-        strict_eq(
-            dict(
-                http.parse_cookie(
-                    "first=IamTheFirst ; a=1; oops ; a=2 ;second = andMeTwo;"
-                )
-            ),
-            {"first": u"IamTheFirst", "a": u"2", "oops": u"", "second": u"andMeTwo"},
+        cookies = http.parse_cookie(
+            "first=IamTheFirst ; a=1; oops ; a=2 ;second = andMeTwo;"
         )
+        expect = {
+            "first": [u"IamTheFirst"],
+            "a": [u"1", u"2"],
+            "oops": [u""],
+            "second": [u"andMeTwo"],
+        }
+        assert cookies.to_dict(flat=False) == expect
+        assert cookies["a"] == u"1"
+        assert cookies.getlist("a") == [u"1", u"2"]
 
     def test_empty_keys_are_ignored(self):
-        strict_eq(
-            dict(
-                http.parse_cookie("first=IamTheFirst ; a=1; a=2 ;second=andMeTwo; ; ")
-            ),
-            {"first": u"IamTheFirst", "a": u"2", "second": u"andMeTwo"},
-        )
+        cookies = http.parse_cookie("spam=ham; duck=mallard; ; ")
+        expect = {"spam": u"ham", "duck": u"mallard"}
+        assert cookies.to_dict() == expect
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        strict_eq(val, 'foo="?foo"; Path=/')
-        strict_eq(dict(http.parse_cookie(val)), {"foo": u"?foo", "Path": u"/"})
-        strict_eq(dict(http.parse_cookie(r'foo="foo\054bar"')), {"foo": u"foo,bar"})
+        assert val == 'foo="?foo"; Path=/'
+        assert http.parse_cookie(val).to_dict() == {"foo": u"?foo", "Path": u"/"}
+        assert http.parse_cookie(r'foo="foo\054bar"').to_dict(), {"foo": u"foo,bar"}
 
     def test_parse_set_cookie_directive(self):
         val = 'foo="?foo"; version="0.1";'
-        strict_eq(dict(http.parse_cookie(val)), {"foo": u"?foo", "version": u"0.1"})
+        assert http.parse_cookie(val).to_dict() == {"foo": u"?foo", "version": u"0.1"}
 
     def test_cookie_domain_resolving(self):
         val = http.dump_cookie("foo", "bar", domain=u"\N{SNOWMAN}.com")
