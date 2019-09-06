@@ -115,10 +115,12 @@ class BaseRequest(object):
     #: .. versionadded:: 0.6
     list_storage_class = ImmutableList
 
-    #: the type to be used for dict values from the incoming WSGI environment.
-    #: By default an
-    #: :class:`~werkzeug.datastructures.ImmutableMultiDict` is used
-    #: (for example for :attr:`cookies`).
+    #: The type to be used for dict values from the incoming WSGI
+    #: environment. (For example for :attr:`cookies`.) By default an
+    #: :class:`~werkzeug.datastructures.ImmutableMultiDict` is used.
+    #:
+    #: .. versionchanged:: 1.0.0
+    #:     Changed to ``ImmutableMultiDict`` to support multiple values.
     #:
     #: .. versionadded:: 0.6
     dict_storage_class = ImmutableMultiDict
