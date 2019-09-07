@@ -225,6 +225,20 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         if request_url.scheme and request_url.netloc:
             environ["HTTP_HOST"] = request_url.netloc
 
+        try:
+            # binary_form=False gives nicer information, but wouldn't be compatible with
+            # what Nginx or Apache could return.
+            peer_cert = self.connection.getpeercert(binary_form=True)
+            if peer_cert is not None:
+                # Nginx and Apache use PEM format.
+                environ["SSL_CLIENT_CERT"] = ssl.DER_cert_to_PEM_cert(peer_cert)
+        except ValueError:
+            # SSL handshake hasn't finished.
+            self.server.log("error", "Cannot fetch SSL peer certificate info")
+        except AttributeError:
+            # Not using TLS, the socket will not have getpeercert().
+            pass
+
         return environ
 
     def run_wsgi(self):
@@ -594,7 +608,11 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
                      module. Defaults to ``PROTOCOL_SSLv23``.
     """
     if protocol is None:
-        protocol = ssl.PROTOCOL_SSLv23
+        try:
+            protocol = ssl.PROTOCOL_TLS_SERVER
+        except AttributeError:
+            # Python <= 3.5 compat
+            protocol = ssl.PROTOCOL_SSLv23
     ctx = _SSLContext(protocol)
     ctx.load_cert_chain(cert_file, pkey_file)
     return ctx
@@ -720,6 +738,7 @@ class BaseWSGIServer(HTTPServer, object):
                 ssl_context = load_ssl_context(*ssl_context)
             if ssl_context == "adhoc":
                 ssl_context = generate_adhoc_ssl_context()
+
             # If we are on Python 2 the return value from socket.fromfd
             # is an internal socket object but what we need for ssl wrap
             # is the wrapper around it :(

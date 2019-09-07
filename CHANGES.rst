@@ -46,6 +46,10 @@ Unreleased
     only match at the primary language tag. :issue:`450`, :pr:`1507`
 -   ``MIMEAccept`` uses MIME parameters for specificity when matching.
     :issue:`458`, :pr:`1574`
+-   If the development server is started with an ``SSLContext``
+    configured to verify client certificates, the certificate in PEM
+    format will be available as ``environ["SSL_CLIENT_CERT"]``.
+    :pr:`1469`
 -   Optional request log highlighting with the development server is
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled
