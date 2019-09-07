@@ -226,14 +226,17 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             environ["HTTP_HOST"] = request_url.netloc
 
         try:
-            peer_cert = self.connection.getpeercert()
+            # binary_form=False gives nicer information, but wouldn't be compatible with
+            # what Nginx or Apache could return.
+            peer_cert = self.connection.getpeercert(binary_form=True)
             if peer_cert is not None:
-                environ["SSL_CLIENT_CERT"] = peer_cert
+                # Nginx and Apache use PEM format.
+                environ["SSL_CLIENT_CERT"] = ssl.DER_cert_to_PEM_cert(peer_cert)
         except ValueError:
+            # SSL handshake hasn't finished.
             self.server.log("error", "Cannot fetch SSL peer certificate info")
         except AttributeError:
-            # This error indicates that no TLS setup was made, and it is
-            # raised because socket will not have such function getpeercert()
+            # Not using TLS, the socket will not have getpeercert().
             pass
 
         return environ
@@ -605,7 +608,11 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
                      module. Defaults to ``PROTOCOL_SSLv23``.
     """
     if protocol is None:
-        protocol = ssl.PROTOCOL_SSLv23
+        try:
+            protocol = ssl.PROTOCOL_TLS_SERVER
+        except AttributeError:
+            # Python <= 3.5 compat
+            protocol = ssl.PROTOCOL_SSLv23
     ctx = _SSLContext(protocol)
     ctx.load_cert_chain(cert_file, pkey_file)
     return ctx
@@ -727,15 +734,8 @@ class BaseWSGIServer(HTTPServer, object):
             self.server_address = self.socket.getsockname()
 
         if ssl_context is not None:
-            ssl_kwargs = {"server_side": True}
             if isinstance(ssl_context, tuple):
                 ssl_context = load_ssl_context(*ssl_context)
-            if isinstance(ssl_context, dict):
-                cert_file = ssl_context.pop("cert_file")
-                pkey_file = ssl_context.pop("pkey_file")
-                for key in ssl_context:
-                    ssl_kwargs[key] = ssl_context[key]
-                ssl_context = load_ssl_context(cert_file, pkey_file)
             if ssl_context == "adhoc":
                 ssl_context = generate_adhoc_ssl_context()
 
@@ -745,7 +745,7 @@ class BaseWSGIServer(HTTPServer, object):
             sock = self.socket
             if PY2 and not isinstance(sock, socket.socket):
                 sock = socket.socket(sock.family, sock.type, sock.proto, sock)
-            self.socket = ssl_context.wrap_socket(sock, **ssl_kwargs)
+            self.socket = ssl_context.wrap_socket(sock, server_side=True)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None
