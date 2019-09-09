@@ -43,9 +43,9 @@ Or without a wrapper defined:
 >>> status
 '200 OK'
 >>> headers
-[('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '6658')]
->>> ''.join(i.decode() for i in app_iter).splitlines()[0]
-'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
+Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '6658')])
+>>> b''.join(app_iter).splitlines()[0]
+b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
 
 
 Environment Building
@@ -63,7 +63,7 @@ and a form field:
 >>> from werkzeug.test import EnvironBuilder
 >>> from io import BytesIO
 >>> builder = EnvironBuilder(method='POST', data={'foo': 'this is some text',
-...      'file': (BytesIO('my file contents'.encode()), 'test.txt')})
+...      'file': (BytesIO('my file contents'.encode("utf8")), 'test.txt')})
 >>> env = builder.get_environ()
 
 The resulting environment is a regular WSGI environment that can be used for
@@ -85,11 +85,10 @@ input stream you have to do that yourself.
 By default it will try to use ``application/x-www-form-urlencoded`` and only
 use ``multipart/form-data`` if files are uploaded:
 
->>> from io import StringIO
 >>> builder = EnvironBuilder(method='POST', data={'foo': 'bar'})
 >>> builder.content_type
 'application/x-www-form-urlencoded'
->>> builder.files['foo'] = StringIO('contents')
+>>> builder.files['foo'] = BytesIO('contents'.encode("utf8"))
 >>> builder.content_type
 'multipart/form-data'
 
