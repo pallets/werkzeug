@@ -32,9 +32,9 @@ in test functionality.
 >>> resp.status_code
 200
 >>> resp.headers
-Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '8339')])
+Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '6658')])
 >>> resp.data.splitlines()[0]
-'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
+b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
 
 Or without a wrapper defined:
 
@@ -43,9 +43,9 @@ Or without a wrapper defined:
 >>> status
 '200 OK'
 >>> headers
-[('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '8339')]
->>> ''.join(app_iter).splitlines()[0]
-'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
+Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '6658')])
+>>> b''.join(app_iter).splitlines()[0]
+b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
 
 
 Environment Building
@@ -61,9 +61,9 @@ The following example creates a WSGI environment with one uploaded file
 and a form field:
 
 >>> from werkzeug.test import EnvironBuilder
->>> from StringIO import StringIO
+>>> from io import BytesIO
 >>> builder = EnvironBuilder(method='POST', data={'foo': 'this is some text',
-...      'file': (StringIO('my file contents'), 'test.txt')})
+...      'file': (BytesIO('my file contents'.encode("utf8")), 'test.txt')})
 >>> env = builder.get_environ()
 
 The resulting environment is a regular WSGI environment that can be used for
@@ -72,11 +72,11 @@ further processing:
 >>> from werkzeug.wrappers import Request
 >>> req = Request(env)
 >>> req.form['foo']
-u'this is some text'
+'this is some text'
 >>> req.files['file']
 <FileStorage: u'test.txt' ('text/plain')>
 >>> req.files['file'].read()
-'my file contents'
+b'my file contents'
 
 The :class:`EnvironBuilder` figures out the content type automatically if you
 pass a dict to the constructor as `data`.  If you provide a string or an
@@ -88,7 +88,7 @@ use ``multipart/form-data`` if files are uploaded:
 >>> builder = EnvironBuilder(method='POST', data={'foo': 'bar'})
 >>> builder.content_type
 'application/x-www-form-urlencoded'
->>> builder.files['foo'] = StringIO('contents')
+>>> builder.files['foo'] = BytesIO('contents'.encode("utf8"))
 >>> builder.content_type
 'multipart/form-data'
 
