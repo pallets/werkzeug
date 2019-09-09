@@ -967,13 +967,14 @@ def is_resource_modified(
     :param ignore_if_range: If `False`, `If-Range` header will be taken into
                             account.
     :return: `True` if the resource was modified, otherwise `False`.
+
+    .. versionchanged:: 1.0.0
+        The check is run for methods other than ``GET`` and ``HEAD``.
     """
     if etag is None and data is not None:
         etag = generate_etag(data)
     elif data is not None:
         raise TypeError("both data and etag given")
-    if environ["REQUEST_METHOD"] not in ("GET", "HEAD"):
-        return False
 
     unmodified = False
     if isinstance(last_modified, string_types):

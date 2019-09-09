@@ -50,6 +50,8 @@ Unreleased
     configured to verify client certificates, the certificate in PEM
     format will be available as ``environ["SSL_CLIENT_CERT"]``.
     :pr:`1469`
+-   ``is_resource_modified`` will run for methods other than ``GET`` and
+    ``HEAD``, rather than always returning ``False``. :issue:`409`
 -   Optional request log highlighting with the development server is
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled
