@@ -386,9 +386,9 @@ class TestHTTPUtility(object):
     def test_is_resource_modified(self):
         env = create_environ()
 
-        # ignore POST
+        # any method is allowed
         env["REQUEST_METHOD"] = "POST"
-        assert not http.is_resource_modified(env, etag="testing")
+        assert http.is_resource_modified(env, etag="testing")
         env["REQUEST_METHOD"] = "GET"
 
         # etagify from data
