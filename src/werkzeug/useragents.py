@@ -12,7 +12,6 @@
     :license: BSD-3-Clause
 """
 import re
-import warnings
 
 
 class UserAgentParser(object):
@@ -203,18 +202,9 @@ class UserAgent(object):
         return "<%s %r/%s>" % (self.__class__.__name__, self.browser, self.version)
 
 
-# DEPRECATED
-from .wrappers import UserAgentMixin as _UserAgentMixin
+from werkzeug import _DeprecatedImportModule
 
-
-class UserAgentMixin(_UserAgentMixin):
-    @property
-    def user_agent(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.useragents.UserAgentMixin' should be imported"
-            " from 'werkzeug.wrappers.UserAgentMixin'. This old import"
-            " will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return super(_UserAgentMixin, self).user_agent
+_DeprecatedImportModule(
+    __name__, {".wrappers.user_agent": ["UserAgentMixin"]}, "Werkzeug 1.0"
+)
+del _DeprecatedImportModule

@@ -1,5 +1,23 @@
 .. currentmodule:: werkzeug
 
+Version 0.16.0
+--------------
+
+Unreleased
+
+-   Deprecate most top-level attributes provided by the ``werkzeug``
+    module in favor of direct imports. The deprecated imports will be
+    removed in version 1.0.
+
+    For example, instead of ``import werkzeug; werkzeug.url_quote``, do
+    ``from werkzeug.urls import url_quote. A deprecation warning will
+    show the correct import to use. ``werkzeug.exceptions`` and
+    ``werkzeug.routing`` should also be imported instead of accessed,
+    but for technical reasons can't show a warning.
+
+    :issue:`2`, :pr:`1640`
+
+
 Version 0.15.6
 --------------
 

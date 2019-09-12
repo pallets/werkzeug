@@ -67,9 +67,9 @@ from .._compat import PY2
 from .._compat import text_type
 from ..datastructures import CallbackDict
 from ..filesystem import get_filesystem_encoding
+from ..http import dump_cookie
+from ..http import parse_cookie
 from ..posixemulation import rename
-from ..utils import dump_cookie
-from ..utils import parse_cookie
 from ..wsgi import ClosingIterator
 
 warnings.warn(

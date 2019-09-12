@@ -16,6 +16,7 @@ from itertools import chain
 from itertools import repeat
 from itertools import tee
 
+from . import exceptions
 from ._compat import BytesIO
 from ._compat import text_type
 from ._compat import to_native
@@ -581,6 +582,3 @@ class MultiPartParser(object):
         form = (p[1] for p in formstream if p[0] == "form")
         files = (p[1] for p in filestream if p[0] == "file")
         return self.cls(form), self.cls(files)
-
-
-from . import exceptions

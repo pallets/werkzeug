@@ -59,18 +59,12 @@
 """
 import sys
 
-import werkzeug
-
-# Because of bootstrapping reasons we need to manually patch ourselves
-# onto our parent module.
-werkzeug.exceptions = sys.modules[__name__]
-
 from ._compat import implements_to_string
 from ._compat import integer_types
 from ._compat import iteritems
 from ._compat import text_type
 from ._internal import _get_environ
-from .wrappers import Response
+from .utils import escape
 
 
 @implements_to_string
@@ -141,6 +135,8 @@ class HTTPException(Exception):
     @property
     def name(self):
         """The status name."""
+        from .http import HTTP_STATUS_CODES
+
         return HTTP_STATUS_CODES.get(self.code, "Unknown Error")
 
     def get_description(self, environ=None):
@@ -176,6 +172,8 @@ class HTTPException(Exception):
                         on how the request looked like.
         :return: a :class:`Response` object or a subclass thereof.
         """
+        from .wrappers.response import Response
+
         if self.response is not None:
             return self.response
         if environ is not None:
@@ -776,11 +774,6 @@ def abort(status, *args, **kwargs):
 
 _aborter = Aborter()
 
-
 #: An exception that is used to signal both a :exc:`KeyError` and a
 #: :exc:`BadRequest`. Used by many of the datastructures.
 BadRequestKeyError = BadRequest.wrap(KeyError)
-
-# imported here because of circular dependencies of werkzeug.utils
-from .http import HTTP_STATUS_CODES
-from .utils import escape

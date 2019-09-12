@@ -41,7 +41,6 @@ import signal
 import socket
 import sys
 
-import werkzeug
 from ._compat import PY2
 from ._compat import reraise
 from ._compat import WIN
@@ -174,7 +173,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
     @property
     def server_version(self):
-        return "Werkzeug/" + werkzeug.__version__
+        from . import __version__
+
+        return "Werkzeug/" + __version__
 
     def make_environ(self):
         request_url = url_parse(self.path)
