@@ -1,233 +1,141 @@
-# -*- coding: utf-8 -*-
 """
-    werkzeug
-    ~~~~~~~~
+werkzeug
+~~~~~~~~
 
-    Werkzeug is the Swiss Army knife of Python web development.
+Werkzeug is the Swiss Army knife of Python web development.
 
-    It provides useful classes and functions for any WSGI application to make
-    the life of a python web developer much easier.  All of the provided
-    classes are independent from each other so you can mix it with any other
-    library.
+It provides useful classes and functions for any WSGI application to
+make the life of a python web developer much easier. All of the provided
+classes are independent from each other so you can mix it with any other
+library.
 
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+:copyright: 2007 Pallets
+:license: BSD-3-Clause
 """
-import sys
-from types import ModuleType
+from . import exceptions
+from . import routing
+from ._internal import _easteregg
+from .datastructures import Accept
+from .datastructures import Authorization
+from .datastructures import CallbackDict
+from .datastructures import CharsetAccept
+from .datastructures import CombinedMultiDict
+from .datastructures import EnvironHeaders
+from .datastructures import ETags
+from .datastructures import FileMultiDict
+from .datastructures import FileStorage
+from .datastructures import Headers
+from .datastructures import HeaderSet
+from .datastructures import ImmutableDict
+from .datastructures import ImmutableList
+from .datastructures import ImmutableMultiDict
+from .datastructures import ImmutableOrderedMultiDict
+from .datastructures import ImmutableTypeConversionDict
+from .datastructures import LanguageAccept
+from .datastructures import MIMEAccept
+from .datastructures import MultiDict
+from .datastructures import OrderedMultiDict
+from .datastructures import RequestCacheControl
+from .datastructures import ResponseCacheControl
+from .datastructures import TypeConversionDict
+from .datastructures import WWWAuthenticate
+from .debug import DebuggedApplication
+from .exceptions import abort
+from .exceptions import Aborter
+from .formparser import parse_form_data
+from .http import cookie_date
+from .http import dump_cookie
+from .http import dump_header
+from .http import dump_options_header
+from .http import generate_etag
+from .http import http_date
+from .http import HTTP_STATUS_CODES
+from .http import is_entity_header
+from .http import is_hop_by_hop_header
+from .http import is_resource_modified
+from .http import parse_accept_header
+from .http import parse_authorization_header
+from .http import parse_cache_control_header
+from .http import parse_cookie
+from .http import parse_date
+from .http import parse_dict_header
+from .http import parse_etags
+from .http import parse_list_header
+from .http import parse_options_header
+from .http import parse_set_header
+from .http import parse_www_authenticate_header
+from .http import quote_etag
+from .http import quote_header_value
+from .http import remove_entity_headers
+from .http import remove_hop_by_hop_headers
+from .http import unquote_etag
+from .http import unquote_header_value
+from .local import Local
+from .local import LocalManager
+from .local import LocalProxy
+from .local import LocalStack
+from .local import release_local
+from .middleware.dispatcher import DispatcherMiddleware
+from .middleware.shared_data import SharedDataMiddleware
+from .security import check_password_hash
+from .security import generate_password_hash
+from .serving import run_simple
+from .test import Client
+from .test import create_environ
+from .test import EnvironBuilder
+from .test import run_wsgi_app
+from .testapp import test_app
+from .urls import Href
+from .urls import iri_to_uri
+from .urls import uri_to_iri
+from .urls import url_decode
+from .urls import url_encode
+from .urls import url_fix
+from .urls import url_quote
+from .urls import url_quote_plus
+from .urls import url_unquote
+from .urls import url_unquote_plus
+from .useragents import UserAgent
+from .utils import append_slash_redirect
+from .utils import ArgumentValidationError
+from .utils import bind_arguments
+from .utils import cached_property
+from .utils import environ_property
+from .utils import escape
+from .utils import find_modules
+from .utils import format_string
+from .utils import header_property
+from .utils import html
+from .utils import HTMLBuilder
+from .utils import import_string
+from .utils import redirect
+from .utils import secure_filename
+from .utils import unescape
+from .utils import validate_arguments
+from .utils import xhtml
+from .wrappers import AcceptMixin
+from .wrappers import AuthorizationMixin
+from .wrappers import BaseRequest
+from .wrappers import BaseResponse
+from .wrappers import CommonRequestDescriptorsMixin
+from .wrappers import CommonResponseDescriptorsMixin
+from .wrappers import ETagRequestMixin
+from .wrappers import ETagResponseMixin
+from .wrappers import Request
+from .wrappers import Response
+from .wrappers import ResponseStreamMixin
+from .wrappers import UserAgentMixin
+from .wrappers import WWWAuthenticateMixin
+from .wsgi import ClosingIterator
+from .wsgi import extract_path_info
+from .wsgi import FileWrapper
+from .wsgi import get_current_url
+from .wsgi import get_host
+from .wsgi import LimitedStream
+from .wsgi import make_line_iter
+from .wsgi import peek_path_info
+from .wsgi import pop_path_info
+from .wsgi import responder
+from .wsgi import wrap_file
 
 __version__ = "1.0.0.dev0"
-
-# This import magic raises concerns quite often which is why the implementation
-# and motivation is explained here in detail now.
-#
-# The majority of the functions and classes provided by Werkzeug work on the
-# HTTP and WSGI layer.  There is no useful grouping for those which is why
-# they are all importable from "werkzeug" instead of the modules where they are
-# implemented.  The downside of that is, that now everything would be loaded at
-# once, even if unused.
-#
-# The implementation of a lazy-loading module in this file replaces the
-# werkzeug package when imported from within.  Attribute access to the werkzeug
-# module will then lazily import from the modules that implement the objects.
-
-# import mapping to objects in other modules
-all_by_module = {
-    "werkzeug.debug": ["DebuggedApplication"],
-    "werkzeug.local": [
-        "Local",
-        "LocalManager",
-        "LocalProxy",
-        "LocalStack",
-        "release_local",
-    ],
-    "werkzeug.serving": ["run_simple"],
-    "werkzeug.test": ["Client", "EnvironBuilder", "create_environ", "run_wsgi_app"],
-    "werkzeug.testapp": ["test_app"],
-    "werkzeug.exceptions": ["abort", "Aborter"],
-    "werkzeug.urls": [
-        "url_decode",
-        "url_encode",
-        "url_quote",
-        "url_quote_plus",
-        "url_unquote",
-        "url_unquote_plus",
-        "url_fix",
-        "Href",
-        "iri_to_uri",
-        "uri_to_iri",
-    ],
-    "werkzeug.formparser": ["parse_form_data"],
-    "werkzeug.utils": [
-        "escape",
-        "environ_property",
-        "append_slash_redirect",
-        "redirect",
-        "cached_property",
-        "import_string",
-        "unescape",
-        "format_string",
-        "find_modules",
-        "header_property",
-        "html",
-        "xhtml",
-        "HTMLBuilder",
-        "validate_arguments",
-        "ArgumentValidationError",
-        "bind_arguments",
-        "secure_filename",
-    ],
-    "werkzeug.wsgi": [
-        "get_current_url",
-        "get_host",
-        "pop_path_info",
-        "peek_path_info",
-        "ClosingIterator",
-        "FileWrapper",
-        "make_line_iter",
-        "LimitedStream",
-        "responder",
-        "wrap_file",
-        "extract_path_info",
-    ],
-    "werkzeug.datastructures": [
-        "MultiDict",
-        "CombinedMultiDict",
-        "Headers",
-        "EnvironHeaders",
-        "ImmutableList",
-        "ImmutableDict",
-        "ImmutableMultiDict",
-        "TypeConversionDict",
-        "ImmutableTypeConversionDict",
-        "Accept",
-        "MIMEAccept",
-        "CharsetAccept",
-        "LanguageAccept",
-        "RequestCacheControl",
-        "ResponseCacheControl",
-        "ETags",
-        "HeaderSet",
-        "WWWAuthenticate",
-        "Authorization",
-        "FileMultiDict",
-        "CallbackDict",
-        "FileStorage",
-        "OrderedMultiDict",
-        "ImmutableOrderedMultiDict",
-    ],
-    "werkzeug.useragents": ["UserAgent"],
-    "werkzeug.http": [
-        "parse_etags",
-        "parse_date",
-        "http_date",
-        "cookie_date",
-        "parse_cache_control_header",
-        "is_resource_modified",
-        "parse_accept_header",
-        "parse_set_header",
-        "quote_etag",
-        "unquote_etag",
-        "generate_etag",
-        "dump_header",
-        "parse_list_header",
-        "parse_dict_header",
-        "parse_authorization_header",
-        "parse_www_authenticate_header",
-        "remove_entity_headers",
-        "is_entity_header",
-        "remove_hop_by_hop_headers",
-        "parse_options_header",
-        "dump_options_header",
-        "is_hop_by_hop_header",
-        "unquote_header_value",
-        "quote_header_value",
-        "HTTP_STATUS_CODES",
-        "dump_cookie",
-        "parse_cookie",
-    ],
-    "werkzeug.wrappers": [
-        "BaseResponse",
-        "BaseRequest",
-        "Request",
-        "Response",
-        "AcceptMixin",
-        "ETagRequestMixin",
-        "ETagResponseMixin",
-        "ResponseStreamMixin",
-        "CommonResponseDescriptorsMixin",
-        "UserAgentMixin",
-        "AuthorizationMixin",
-        "WWWAuthenticateMixin",
-        "CommonRequestDescriptorsMixin",
-    ],
-    "werkzeug.middleware.dispatcher": ["DispatcherMiddleware"],
-    "werkzeug.middleware.shared_data": ["SharedDataMiddleware"],
-    "werkzeug.security": ["generate_password_hash", "check_password_hash"],
-    # the undocumented easteregg ;-)
-    "werkzeug._internal": ["_easteregg"],
-}
-
-# modules that should be imported when accessed as attributes of werkzeug
-attribute_modules = frozenset(["exceptions", "routing"])
-
-object_origins = {}
-for module, items in all_by_module.items():
-    for item in items:
-        object_origins[item] = module
-
-
-class module(ModuleType):
-    """Automatically import objects from the modules."""
-
-    def __getattr__(self, name):
-        if name in object_origins:
-            module = __import__(object_origins[name], None, None, [name])
-            for extra_name in all_by_module[module.__name__]:
-                setattr(self, extra_name, getattr(module, extra_name))
-            return getattr(module, name)
-        elif name in attribute_modules:
-            __import__("werkzeug." + name)
-        return ModuleType.__getattribute__(self, name)
-
-    def __dir__(self):
-        """Just show what we want to show."""
-        result = list(new_module.__all__)
-        result.extend(
-            (
-                "__file__",
-                "__doc__",
-                "__all__",
-                "__docformat__",
-                "__name__",
-                "__path__",
-                "__package__",
-                "__version__",
-            )
-        )
-        return result
-
-
-# keep a reference to this module so that it's not garbage collected
-old_module = sys.modules["werkzeug"]
-
-
-# setup the new module and patch it into the dict of loaded modules
-new_module = sys.modules["werkzeug"] = module("werkzeug")
-new_module.__dict__.update(
-    {
-        "__file__": __file__,
-        "__package__": "werkzeug",
-        "__path__": __path__,
-        "__doc__": __doc__,
-        "__version__": __version__,
-        "__all__": tuple(object_origins) + tuple(attribute_modules),
-        "__docformat__": "restructuredtext en",
-    }
-)
-
-
-# Due to bootstrapping issues we need to import exceptions here.
-# Don't ask :-(
-__import__("werkzeug.exceptions")
