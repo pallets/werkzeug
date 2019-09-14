@@ -1189,6 +1189,8 @@ def dump_cookie(
     value = to_bytes(value, charset)
 
     if path is not None:
+        from .urls import iri_to_uri
+
         path = iri_to_uri(path, charset)
     domain = _make_cookie_domain(domain)
     if isinstance(max_age, timedelta):
@@ -1282,7 +1284,7 @@ def is_byte_range_valid(start, stop, length):
     return 0 <= start < length
 
 
-# circular dependency fun
+# circular dependencies
 from .datastructures import Accept
 from .datastructures import Authorization
 from .datastructures import ContentRange
@@ -1294,4 +1296,3 @@ from .datastructures import MultiDict
 from .datastructures import Range
 from .datastructures import RequestCacheControl
 from .datastructures import WWWAuthenticate
-from .urls import iri_to_uri

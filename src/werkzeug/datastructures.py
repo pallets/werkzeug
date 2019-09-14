@@ -14,6 +14,7 @@ import re
 from copy import deepcopy
 from itertools import repeat
 
+from . import exceptions
 from ._compat import BytesIO
 from ._compat import collections_abc
 from ._compat import integer_types
@@ -2995,7 +2996,6 @@ class FileStorage(object):
 
 
 # circular dependencies
-from . import exceptions
 from .http import dump_csp_header
 from .http import dump_header
 from .http import dump_options_header
