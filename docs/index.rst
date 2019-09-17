@@ -22,7 +22,6 @@ Getting Started
    :maxdepth: 2
 
    installation
-   transition
    tutorial
    levels
    quickstart

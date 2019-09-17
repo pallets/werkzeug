@@ -11,8 +11,8 @@ Unreleased
 -   Remove most top-level attributes provided by the ``werkzeug``
     module in favor of direct imports. For example, instead of
     ``import werkzeug; werkzeug.url_quote``, do
-    ``from werkzeug.urls import url_quote. Install version 0.16 first to
-    see deprecation warnings while upgrading. :issue:`2`, :pr:`1640`
+    ``from werkzeug.urls import url_quote``. Install version 0.16 first
+    to see deprecation warnings while upgrading. :issue:`2`, :pr:`1640`
 -   Added ``utils.invalidate_cached_property()`` to invalidate cached
     properties. (:pr:`1474`)
 -   Directive keys for the ``Set-Cookie`` response header are not
