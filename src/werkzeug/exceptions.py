@@ -786,7 +786,6 @@ def abort(status, *args, **kwargs):
 
 _aborter = Aborter()
 
-
 #: An exception that is used to signal both a :exc:`KeyError` and a
 #: :exc:`BadRequest`. Used by many of the datastructures.
 BadRequestKeyError = BadRequest.wrap(KeyError)
