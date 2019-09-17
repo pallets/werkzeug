@@ -31,8 +31,6 @@ from ._compat import to_unicode
 from ._compat import try_coerce_native
 from ._internal import _decode_idna
 from ._internal import _encode_idna
-from .datastructures import iter_multi_items
-from .datastructures import MultiDict
 
 # A regular expression for what a valid schema looks like
 _scheme_re = re.compile(r"^[a-zA-Z0-9+-.]+$")
@@ -415,6 +413,8 @@ def _unquote_to_bytes(string, unsafe=""):
 
 
 def _url_encode_impl(obj, charset, encode_keys, sort, key):
+    from .datastructures import iter_multi_items
+
     iterable = iter_multi_items(obj)
     if sort:
         iterable = sorted(iterable, key=key)
@@ -825,6 +825,8 @@ def url_decode(
                        or `None` the default :class:`MultiDict` is used.
     """
     if cls is None:
+        from .datastructures import MultiDict
+
         cls = MultiDict
     if isinstance(s, text_type) and not isinstance(separator, text_type):
         separator = separator.decode(charset or "ascii")
@@ -884,6 +886,8 @@ def url_decode_stream(
         return decoder
 
     if cls is None:
+        from .datastructures import MultiDict
+
         cls = MultiDict
 
     return cls(decoder)

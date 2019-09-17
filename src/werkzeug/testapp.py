@@ -14,7 +14,7 @@ import os
 import sys
 from textwrap import wrap
 
-import werkzeug
+from . import __version__ as _werkzeug_version
 from .utils import escape
 from .wrappers import BaseRequest as Request
 from .wrappers import BaseResponse as Response
@@ -205,7 +205,7 @@ def render_testapp(req):
             "os": escape(os.name),
             "api_version": sys.api_version,
             "byteorder": sys.byteorder,
-            "werkzeug_version": werkzeug.__version__,
+            "werkzeug_version": _werkzeug_version,
             "python_eggs": "\n".join(python_eggs),
             "wsgi_env": "\n".join(wsgi_env),
             "sys_path": "\n".join(sys_path),

@@ -1144,6 +1144,8 @@ def dump_cookie(
     value = to_bytes(value, charset)
 
     if path is not None:
+        from .urls import iri_to_uri
+
         path = iri_to_uri(path, charset)
     domain = _make_cookie_domain(domain)
     if isinstance(max_age, timedelta):
@@ -1235,7 +1237,7 @@ def is_byte_range_valid(start, stop, length):
     return 0 <= start < length
 
 
-# circular dependency fun
+# circular dependencies
 from .datastructures import Accept
 from .datastructures import Authorization
 from .datastructures import ContentRange
@@ -1246,58 +1248,12 @@ from .datastructures import Range
 from .datastructures import RequestCacheControl
 from .datastructures import TypeConversionDict
 from .datastructures import WWWAuthenticate
-from .urls import iri_to_uri
 
-# DEPRECATED
-from .datastructures import CharsetAccept as _CharsetAccept
-from .datastructures import Headers as _Headers
-from .datastructures import LanguageAccept as _LanguageAccept
-from .datastructures import MIMEAccept as _MIMEAccept
+from werkzeug import _DeprecatedImportModule
 
-
-class MIMEAccept(_MIMEAccept):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.http.MIMEAccept' has moved to 'werkzeug"
-            ".datastructures.MIMEAccept' as of version 0.5. This old"
-            " import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(MIMEAccept, self).__init__(*args, **kwargs)
-
-
-class CharsetAccept(_CharsetAccept):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.http.CharsetAccept' has moved to 'werkzeug"
-            ".datastructures.CharsetAccept' as of version 0.5. This old"
-            " import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(CharsetAccept, self).__init__(*args, **kwargs)
-
-
-class LanguageAccept(_LanguageAccept):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.http.LanguageAccept' has moved to 'werkzeug"
-            ".datastructures.LanguageAccept' as of version 0.5. This"
-            " old import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(LanguageAccept, self).__init__(*args, **kwargs)
-
-
-class Headers(_Headers):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.http.Headers' has moved to 'werkzeug"
-            ".datastructures.Headers' as of version 0.5. This old"
-            " import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(Headers, self).__init__(*args, **kwargs)
+_DeprecatedImportModule(
+    __name__,
+    {".datastructures": ["CharsetAccept", "Headers", "LanguageAccept", "MIMEAccept"]},
+    "Werkzeug 1.0",
+)
+del _DeprecatedImportModule

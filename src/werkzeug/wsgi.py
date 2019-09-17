@@ -10,7 +10,6 @@
 """
 import io
 import re
-import warnings
 from functools import partial
 from functools import update_wrapper
 from itertools import chain
@@ -1001,67 +1000,14 @@ class LimitedStream(io.IOBase):
         return True
 
 
-# DEPRECATED
-from .middleware.dispatcher import DispatcherMiddleware as _DispatcherMiddleware
-from .middleware.http_proxy import ProxyMiddleware as _ProxyMiddleware
-from .middleware.shared_data import SharedDataMiddleware as _SharedDataMiddleware
+from werkzeug import _DeprecatedImportModule
 
-
-class ProxyMiddleware(_ProxyMiddleware):
-    """
-    .. deprecated:: 0.15
-        ``werkzeug.wsgi.ProxyMiddleware`` has moved to
-        :mod:`werkzeug.middleware.http_proxy`. This import will be
-        removed in 1.0.
-    """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.wsgi.ProxyMiddleware' has moved to 'werkzeug"
-            ".middleware.http_proxy.ProxyMiddleware'. This import is"
-            " deprecated as of version 0.15 and will be removed in"
-            " version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(ProxyMiddleware, self).__init__(*args, **kwargs)
-
-
-class SharedDataMiddleware(_SharedDataMiddleware):
-    """
-    .. deprecated:: 0.15
-        ``werkzeug.wsgi.SharedDataMiddleware`` has moved to
-        :mod:`werkzeug.middleware.shared_data`. This import will be
-        removed in 1.0.
-    """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.wsgi.SharedDataMiddleware' has moved to"
-            " 'werkzeug.middleware.shared_data.SharedDataMiddleware'."
-            " This import is deprecated as of version 0.15 and will be"
-            " removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(SharedDataMiddleware, self).__init__(*args, **kwargs)
-
-
-class DispatcherMiddleware(_DispatcherMiddleware):
-    """
-    .. deprecated:: 0.15
-        ``werkzeug.wsgi.DispatcherMiddleware`` has moved to
-        :mod:`werkzeug.middleware.dispatcher`. This import will be
-        removed in 1.0.
-    """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.wsgi.DispatcherMiddleware' has moved to"
-            " 'werkzeug.middleware.dispatcher.DispatcherMiddleware'."
-            " This import is deprecated as of version 0.15 and will be"
-            " removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(DispatcherMiddleware, self).__init__(*args, **kwargs)
+_DeprecatedImportModule(
+    __name__,
+    {
+        ".middleware.dispatcher": ["DispatcherMiddleware"],
+        ".middleware.http_proxy": ["ProxyMiddleware"],
+        ".middleware.shared_data": ["SharedDataMiddleware"],
+    },
+    "Werkzeug 1.0",
+)

@@ -15,7 +15,6 @@ import os
 import pkgutil
 import re
 import sys
-import warnings
 
 from ._compat import iteritems
 from ._compat import PY2
@@ -757,80 +756,19 @@ class ImportStringError(ImportError):
         )
 
 
-# DEPRECATED
-from .datastructures import CombinedMultiDict as _CombinedMultiDict
-from .datastructures import EnvironHeaders as _EnvironHeaders
-from .datastructures import Headers as _Headers
-from .datastructures import MultiDict as _MultiDict
-from .http import dump_cookie as _dump_cookie
-from .http import parse_cookie as _parse_cookie
+from werkzeug import _DeprecatedImportModule
 
-
-class MultiDict(_MultiDict):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.MultiDict' has moved to 'werkzeug"
-            ".datastructures.MultiDict' as of version 0.5. This old"
-            " import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(MultiDict, self).__init__(*args, **kwargs)
-
-
-class CombinedMultiDict(_CombinedMultiDict):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.CombinedMultiDict' has moved to 'werkzeug"
-            ".datastructures.CombinedMultiDict' as of version 0.5. This"
-            " old import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(CombinedMultiDict, self).__init__(*args, **kwargs)
-
-
-class Headers(_Headers):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.Headers' has moved to 'werkzeug"
-            ".datastructures.Headers' as of version 0.5. This old"
-            " import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(Headers, self).__init__(*args, **kwargs)
-
-
-class EnvironHeaders(_EnvironHeaders):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.EnvironHeaders' has moved to 'werkzeug"
-            ".datastructures.EnvironHeaders' as of version 0.5. This"
-            " old import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(EnvironHeaders, self).__init__(*args, **kwargs)
-
-
-def parse_cookie(*args, **kwargs):
-    warnings.warn(
-        "'werkzeug.utils.parse_cookie' as moved to 'werkzeug.http"
-        ".parse_cookie' as of version 0.5. This old import will be"
-        " removed in version 1.0.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _parse_cookie(*args, **kwargs)
-
-
-def dump_cookie(*args, **kwargs):
-    warnings.warn(
-        "'werkzeug.utils.dump_cookie' as moved to 'werkzeug.http"
-        ".dump_cookie' as of version 0.5. This old import will be"
-        " removed in version 1.0.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _dump_cookie(*args, **kwargs)
+_DeprecatedImportModule(
+    __name__,
+    {
+        ".datastructures": [
+            "CombinedMultiDict",
+            "EnvironHeaders",
+            "Headers",
+            "MultiDict",
+        ],
+        ".http": ["dump_cookie", "parse_cookie"],
+    },
+    "Werkzeug 1.0",
+)
+del _DeprecatedImportModule
