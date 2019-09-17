@@ -8,14 +8,11 @@ Unreleased
 -   Drop support for Python 3.4. (:issue:`1478`)
 -   Remove code that issued deprecation warnings in version 0.15.
     (:issue:`1477`)
--   Deprecate most top-level attributes provided by the ``werkzeug``
+-   Remove most top-level attributes provided by the ``werkzeug``
     module in favor of direct imports. For example, instead of
     ``import werkzeug; werkzeug.url_quote``, do
-    ``from werkzeug.urls import url_quote. A deprecation warning will
-    show the correct import to use. ``werkzeug.exceptions`` and
-    ``werkzeug.routing`` should also be imported instead of accessed,
-    but for technical reasons can't show a warning.
-    :issue:`2`, :pr:`1640`
+    ``from werkzeug.urls import url_quote. Install version 0.16 first to
+    see deprecation warnings while upgrading. :issue:`2`, :pr:`1640`
 -   Added ``utils.invalidate_cached_property()`` to invalidate cached
     properties. (:pr:`1474`)
 -   Directive keys for the ``Set-Cookie`` response header are not
@@ -64,6 +61,24 @@ Unreleased
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled
     by cryptography instead of pyOpenSSL. :pr:`1555`
+
+
+Version 0.16.0
+--------------
+
+Unreleased
+
+-   Deprecate most top-level attributes provided by the ``werkzeug``
+    module in favor of direct imports. The deprecated imports will be
+    removed in version 1.0.
+
+    For example, instead of ``import werkzeug; werkzeug.url_quote``, do
+    ``from werkzeug.urls import url_quote``. A deprecation warning will
+    show the correct import to use. ``werkzeug.exceptions`` and
+    ``werkzeug.routing`` should also be imported instead of accessed,
+    but for technical reasons can't show a warning.
+
+    :issue:`2`, :pr:`1640`
 
 
 Version 0.15.6

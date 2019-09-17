@@ -12,28 +12,26 @@ library.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-import sys
 from types import ModuleType
 
-from .serving import run_simple
-from .test import Client
-from .wrappers import Request
-from .wrappers import Response
-
-__version__ = "1.0.0.dev0"
+__version__ = "0.16.0.dev0"
 
 __all__ = ["run_simple", "Client", "Request", "Response", "__version__"]
 
 
-class DeprecatedImportModule(ModuleType):
+class _DeprecatedImportModule(ModuleType):
     """Wrap a module in order to raise """
 
     def __init__(self, name, available, removed_in):
-        super(DeprecatedImportModule, self).__init__(name)  # noqa F821
+        import sys
+
+        super(_DeprecatedImportModule, self).__init__(name)  # noqa F821
         self._real_module = sys.modules[name]  # noqa F821
+        sys.modules[name] = self
         self._removed_in = removed_in
         self._origin = {item: mod for mod, items in available.items() for item in items}
-        self.__all__ = sorted(self._real_module.__all__ + list(self._origin))
+        mod_all = getattr(self._real_module, "__all__", dir(self._real_module))
+        self.__all__ = sorted(mod_all + list(self._origin))
 
     def __getattr__(self, item):
         # Don't export internal variables.
@@ -55,10 +53,10 @@ class DeprecatedImportModule(ModuleType):
 
                 # Import the module, get the attribute, and show a warning about where
                 # to correctly import it from.
-                mod = import_module(origin, self.__name__)
+                mod = import_module(origin, self.__name__.rsplit(".")[0])
                 value = getattr(mod, item)
                 warn(
-                    "The top-level '{name}.{item}' is deprecated and will be removed in"
+                    "The import '{name}.{item}' is deprecated and will be removed in"
                     " {removed_in}. Use 'from {name}{origin} import {item}'"
                     " instead.".format(
                         name=self.__name__,
@@ -80,8 +78,10 @@ class DeprecatedImportModule(ModuleType):
         return sorted(dir(self._real_module) + list(self._origin))
 
 
-sys.modules["werkzeug"] = DeprecatedImportModule(
-    "werkzeug",
+del ModuleType
+
+_DeprecatedImportModule(
+    __name__,
     {
         ".": ["exceptions", "routing"],
         "._internal": ["_easteregg"],
@@ -212,6 +212,10 @@ sys.modules["werkzeug"] = DeprecatedImportModule(
             "wrap_file",
         ],
     },
-    "Werkzeug 2.0",
+    "Werkzeug 1.0",
 )
-del sys, ModuleType, DeprecatedImportModule
+
+from .serving import run_simple
+from .test import Client
+from .wrappers import Request
+from .wrappers import Response
