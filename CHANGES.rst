@@ -10,7 +10,7 @@ Unreleased
     removed in version 1.0.
 
     For example, instead of ``import werkzeug; werkzeug.url_quote``, do
-    ``from werkzeug.urls import url_quote. A deprecation warning will
+    ``from werkzeug.urls import url_quote``. A deprecation warning will
     show the correct import to use. ``werkzeug.exceptions`` and
     ``werkzeug.routing`` should also be imported instead of accessed,
     but for technical reasons can't show a warning.
