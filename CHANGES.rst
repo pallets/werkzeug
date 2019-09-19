@@ -3,7 +3,7 @@
 Version 0.16.0
 --------------
 
-Unreleased
+Released 2019-09-19
 
 -   Deprecate most top-level attributes provided by the ``werkzeug``
     module in favor of direct imports. The deprecated imports will be

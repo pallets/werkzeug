@@ -14,7 +14,7 @@ library.
 """
 from types import ModuleType
 
-__version__ = "0.16.0.dev0"
+__version__ = "0.16.0"
 
 __all__ = ["run_simple", "Client", "Request", "Response", "__version__"]
 
