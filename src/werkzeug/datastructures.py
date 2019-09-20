@@ -2050,7 +2050,6 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
 
     max_stale = cache_property("max-stale", "*", int)
     min_fresh = cache_property("min-fresh", "*", int)
-    no_transform = cache_property("no-transform", None, None)
     only_if_cached = cache_property("only-if-cached", None, bool)
 
 
@@ -2074,6 +2073,7 @@ class ResponseCacheControl(_CacheControl):
     must_revalidate = cache_property("must-revalidate", None, bool)
     proxy_revalidate = cache_property("proxy-revalidate", None, bool)
     s_maxage = cache_property("s-maxage", None, None)
+    immutable = cache_property("immutable", None, bool)
 
 
 # attach cache_property to the _CacheControl as staticmethod

@@ -60,7 +60,10 @@ Unreleased
 -   ``SharedDataMiddleware`` returns 404 rather than 500 when trying to
     access a directory instead of a file with the package loader. The
     dependency on setuptools and pkg_resources is removed.
-    :issue:`1599`, :pr:`1647`
+    :issue:`1599`
+-   Add a ``response.cache_control.immutable`` flag. Keep in mind that
+    browser support for this ``Cache-Control`` header option is still
+    experimental and may not be implemented. :issue:`1185`
 -   Optional request log highlighting with the development server is
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled
