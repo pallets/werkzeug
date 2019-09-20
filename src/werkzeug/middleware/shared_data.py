@@ -10,6 +10,7 @@ Serve Shared Static Files
 """
 import mimetypes
 import os
+import pkgutil
 import posixpath
 from datetime import datetime
 from io import BytesIO
@@ -139,32 +140,65 @@ class SharedDataMiddleware(object):
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
     def get_package_loader(self, package, package_path):
-        from pkg_resources import DefaultProvider, ResourceManager, get_provider
-
         loadtime = datetime.utcnow()
-        provider = get_provider(package)
-        manager = ResourceManager()
-        filesystem_bound = isinstance(provider, DefaultProvider)
+        provider = pkgutil.get_loader(package)
 
-        def loader(path):
-            if path is None:
-                return None, None
+        if hasattr(provider, "get_resource_reader"):
+            # Python 3
+            reader = provider.get_resource_reader(package)
 
-            path = safe_join(package_path, path)
+            def loader(path):
+                if path is None:
+                    return None, None
 
-            if not provider.has_resource(path):
-                return None, None
+                path = safe_join(package_path, path)
+                basename = posixpath.basename(path)
 
-            basename = posixpath.basename(path)
+                try:
+                    resource = reader.open_resource(path)
+                except IOError:
+                    return None, None
 
-            if filesystem_bound:
+                if isinstance(resource, BytesIO):
+                    return (
+                        basename,
+                        lambda: (resource, loadtime, len(resource.getvalue())),
+                    )
+
                 return (
                     basename,
-                    self._opener(provider.get_resource_filename(manager, path)),
+                    lambda: (
+                        resource,
+                        datetime.utcfromtimestamp(os.path.getmtime(resource.name)),
+                        os.path.getsize(resource.name),
+                    ),
                 )
 
-            s = provider.get_resource_string(manager, path)
-            return basename, lambda: (BytesIO(s), loadtime, len(s))
+        else:
+            # Python 2
+            package_filename = provider.get_filename(package)
+            is_filesystem = os.path.exists(package_filename)
+            root = os.path.join(os.path.dirname(package_filename), package_path)
+
+            def loader(path):
+                if path is None:
+                    return None, None
+
+                path = safe_join(root, path)
+                basename = posixpath.basename(path)
+
+                if is_filesystem:
+                    if not os.path.isfile(path):
+                        return None, None
+
+                    return basename, self._opener(path)
+
+                try:
+                    data = provider.get_data(path)
+                except IOError:
+                    return None, None
+
+                return basename, lambda: (BytesIO(data), loadtime, len(data))
 
         return loader
 
