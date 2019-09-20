@@ -61,6 +61,7 @@ def test_shared_data_middleware(tmpdir):
 
         assert b"$(function() {" in contents
 
-        app_iter, status, headers = run_wsgi_app(app, create_environ("/missing"))
-        assert status == "404 NOT FOUND"
-        assert b"".join(app_iter).strip() == b"NOT FOUND"
+        for path in ("/missing", "/pkg", "/pkg/", "/pkg/missing.txt"):
+            app_iter, status, headers = run_wsgi_app(app, create_environ(path))
+            assert status == "404 NOT FOUND"
+            assert b"".join(app_iter).strip() == b"NOT FOUND"

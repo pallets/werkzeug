@@ -57,6 +57,10 @@ Unreleased
     :pr:`1469`
 -   ``is_resource_modified`` will run for methods other than ``GET`` and
     ``HEAD``, rather than always returning ``False``. :issue:`409`
+-   ``SharedDataMiddleware`` returns 404 rather than 500 when trying to
+    access a directory instead of a file with the package loader. The
+    dependency on setuptools and pkg_resources is removed.
+    :issue:`1599`, :pr:`1647`
 -   Optional request log highlighting with the development server is
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled
