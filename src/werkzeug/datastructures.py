@@ -30,6 +30,11 @@ from ._compat import to_native
 from ._internal import _missing
 from .filesystem import get_filesystem_encoding
 
+try:
+    import pathlib
+except ImportError:
+    pathlib = None
+
 
 def is_immutable(self):
     raise TypeError("%r objects are immutable" % self.__class__.__name__)
@@ -2952,6 +2957,8 @@ class FileStorage(object):
         from shutil import copyfileobj
 
         close_dst = False
+        if pathlib is not None and isinstance(dst, pathlib.PurePath):
+            dst = str(dst)
         if isinstance(dst, string_types):
             dst = open(dst, "wb")
             close_dst = True

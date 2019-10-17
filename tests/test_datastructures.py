@@ -1188,6 +1188,31 @@ class TestFileStorage(object):
         for name in ("fileno", "writable", "readable", "seekable"):
             assert hasattr(file_storage, name)
 
+    @pytest.mark.skipif(PY2, reason="Test only needed in PY3")
+    def test_save_to_pathlib_dst(self, tmp_path):
+        import pathlib
+
+        tmp = str(tmp_path)
+
+        dst = pathlib.Path(tmp, "dst.txt")
+        assert isinstance(dst, pathlib.PurePath)
+
+        test_text = "test text"
+
+        src = pathlib.Path(tmp, "src.txt")
+        src.write_text(test_text)
+        file_storage = self.storage_class(src.open("rb"))
+        file_storage.save(dst)
+
+        result = pathlib.Path(dst).read_text()
+        assert result == "test text"
+
+    def test_string_instead_valid_stream(self):
+        file_storage = self.storage_class("string_instead_valid_stream")
+
+        with pytest.raises(AttributeError):
+            file_storage.read()
+
 
 @pytest.mark.parametrize("ranges", ([(0, 1), (-5, None)], [(5, None)]))
 def test_range_to_header(ranges):
