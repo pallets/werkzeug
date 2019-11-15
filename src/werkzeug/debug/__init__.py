@@ -60,7 +60,7 @@ def get_machine_id():
         except IOError:
             pass
         else:
-            value = value.strip().partition("/docker/")[2]
+            value = value.strip().partition("docker")[2]
 
             if value:
                 return value
