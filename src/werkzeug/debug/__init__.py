@@ -52,7 +52,7 @@ def get_machine_id():
         return rv
 
     def _generate():
-        # docker containers share the same machine id, get the
+        # containers share the same machine id, get the
         # container id instead
         try:
             with open("/proc/self/cgroup") as f:
@@ -60,10 +60,11 @@ def get_machine_id():
         except IOError:
             pass
         else:
-            value = value.strip().partition("docker")[2]
-
-            if value:
-                return value
+            # Different container technology uses different patterns in
+            # cgroups names.
+            for pattern in ["docker", "libpod"]:
+                if pattern in value:
+                    return value.strip().partition(pattern)[2]
 
         # Potential sources of secret information on linux.  The machine-id
         # is stable across boots, the boot id is not
