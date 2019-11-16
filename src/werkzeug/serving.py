@@ -520,10 +520,6 @@ def generate_adhoc_ssl_pair(cn=None):
         .serial_number(x509.random_serial_number())
         .not_valid_before(dt.utcnow())
         .not_valid_after(dt.utcnow() + timedelta(days=365))
-        .add_extension(x509.ExtendedKeyUsage([x509.OID_SERVER_AUTH]), critical=False)
-        .add_extension(
-            x509.SubjectAlternativeName([x509.DNSName(u"*")]), critical=False
-        )
         .sign(pkey, hashes.SHA256(), default_backend())
     )
     return cert, pkey
