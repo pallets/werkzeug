@@ -1018,7 +1018,7 @@ class Rule(RuleFactory):
         # skipped or the value is the same as the default value.
         if defaults:
             for key, value in iteritems(defaults):
-                if key in values and value != values[key]:
+                if key in values and (value != values[key] or type(value) != type(values[key])):
                     return False
 
         return True

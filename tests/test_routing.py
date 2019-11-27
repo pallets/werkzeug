@@ -193,6 +193,24 @@ def test_long_build():
         assert "/%d" % v in url
 
 
+def test_defaults_mismatch():
+    map = r.Map(
+        [
+            r.Rule("/foo/", defaults={"page": True}, endpoint="foo"),
+            r.Rule("/foo/<int:page>", endpoint="foo"),
+        ]
+    )
+    adapter = map.bind("example.org", "/")
+
+    assert adapter.match("/foo/") == ("foo", {"page": True})
+    assert adapter.match("/foo/1") == ("foo", {"page": 1})
+    assert adapter.match("/foo/2") == ("foo", {"page": 2})
+    assert adapter.build("foo", {}) == "/foo/"
+    assert adapter.build("foo", {"page": True}) == "/foo/"
+    assert adapter.build("foo", {"page": 1}) == "/foo/1"
+    assert adapter.build("foo", {"page": 2}) == "/foo/2"
+
+
 def test_defaults():
     map = r.Map(
         [
