@@ -600,10 +600,28 @@ class TooManyRequests(HTTPException):
     to identify users and their request rates). The server may include a
     "Retry-After" header to indicate how long the user should wait before
     retrying.
+
+    .. versionchanged:: 0.16.1
+        ``retry_after_secs`` was added as the first argument, ahead of
+        ``description``.
     """
 
     code = 429
     description = "This user has exceeded an allotted request count. Try again later."
+
+    def __init__(self, description=None, retry_after_secs=None):
+        """
+        Use the optional value of retry_after_secs to specify the number of seconds
+        to wait for a retry attempt.
+        """
+        HTTPException.__init__(self, description)
+        self.retry_after_secs = retry_after_secs
+
+    def get_headers(self, environ=None):
+        headers = HTTPException.get_headers(self, environ)
+        if self.retry_after_secs:
+            headers.append(("Retry-After", str(self.retry_after_secs)))
+        return headers
 
 
 class RequestHeaderFieldsTooLarge(HTTPException):

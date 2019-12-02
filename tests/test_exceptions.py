@@ -120,3 +120,13 @@ def test_response_header_content_type_should_contain_charset():
     exc = exceptions.HTTPException("An error message")
     h = exc.get_response({})
     assert h.headers["Content-Type"] == "text/html; charset=utf-8"
+
+
+def test_too_many_requests_retry_after():
+    exc = exceptions.TooManyRequests(retry_after_secs=20)
+    h = dict(exc.get_headers({}))
+    assert h["Retry-After"] == "20"
+    assert (
+        "This user has exceeded an allotted request count. Try again later."
+        in exc.get_description()
+    )
