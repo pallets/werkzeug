@@ -180,9 +180,9 @@ class ReloaderLoop(object):
                 new_environ = os.environ.copy()
 
             new_environ["WERKZEUG_RUN_MAIN"] = "true"
-            exit_code = subprocess.call(args, env=new_environ, close_fds=False)
-            if exit_code != 3:
-                return exit_code
+            subprocess.call(args, env=new_environ, close_fds=False)
+            # used to drop out if exit_code != 3, but this means
+            # constantly restarting server if you make a syntax or other error
 
     def trigger_reload(self, filename):
         self.log_reload(filename)
