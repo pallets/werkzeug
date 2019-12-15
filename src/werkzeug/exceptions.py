@@ -767,17 +767,13 @@ class Aborter(object):
 
 def abort(status, *args, **kwargs):
     """Raises an :py:exc:`HTTPException` for the given status code or WSGI
-    application::
+    application.
 
-        abort(404)  # 404 Not Found
-        abort(Response('Hello World'))
+    If a status code is given, it will be looked up in the list of
+    exceptions and will raise that exception.  If passed a WSGI application,
+    it will wrap it in a proxy WSGI exception and raise that::
 
-    Can be passed a WSGI application or a status code.  If a status code is
-    given it's looked up in the list of exceptions and will raise that
-    exception, if passed a WSGI application it will wrap it in a proxy WSGI
-    exception and raise that::
-
-       abort(404)
+       abort(404)  # 404 Not Found
        abort(Response('Hello World'))
 
     """
