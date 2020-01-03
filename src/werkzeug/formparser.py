@@ -137,7 +137,7 @@ def exhaust_stream(f):
                 while 1:
                     chunk = stream.read(1024 * 64)
                     if not chunk:
-                        break
+                        break  # noqa: B012
 
     return update_wrapper(wrapper, f)
 

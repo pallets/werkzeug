@@ -295,14 +295,14 @@ def test_reloader_reports_correct_file(tmpdir, dev_server):
         raise RuntimeError("Change event not detected.")
 
 
-def test_windows_get_args_for_reloading(monkeypatch, tmpdir):
-    test_py_exe = r"C:\Users\test\AppData\Local\Programs\Python\Python36\python.exe"
-    monkeypatch.setattr(os, "name", "nt")
-    monkeypatch.setattr(sys, "executable", test_py_exe)
-    test_exe = tmpdir.mkdir("test").join("test.exe")
-    monkeypatch.setattr(sys, "argv", [test_exe.strpath, "run"])
+def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
+    argv = [str(tmp_path / "test.exe"), "run"]
+    monkeypatch.setattr("sys.executable", str(tmp_path / "python.exe"))
+    monkeypatch.setattr("sys.argv", argv)
+    monkeypatch.setattr("__main__.__package__", None)
+    monkeypatch.setattr("os.name", "nt")
     rv = _reloader._get_args_for_reloading()
-    assert rv == [test_exe.strpath, "run"]
+    assert rv == argv
 
 
 def test_monkeypatched_sleep(tmpdir):
