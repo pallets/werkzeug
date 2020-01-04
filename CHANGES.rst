@@ -5,6 +5,7 @@ Version 2.0.0
 
 Unreleased
 
+-   Drop support for Python 2 and 3.5. :pr:`1693`
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`
     to override the bound scheme. :pr:`1721`
 -   When passing a ``Headers`` object to a test client method or
