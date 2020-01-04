@@ -47,59 +47,62 @@ _machine_id = None
 
 def get_machine_id():
     global _machine_id
-    rv = _machine_id
-    if rv is not None:
-        return rv
+
+    if _machine_id is not None:
+        return _machine_id
 
     def _generate():
-        # docker containers share the same machine id, get the
-        # container id instead
-        try:
-            with open("/proc/self/cgroup") as f:
-                value = f.readline()
-        except IOError:
-            pass
-        else:
-            value = value.strip().partition("/docker/")[2]
+        linux = b""
 
-            if value:
-                return value
-
-        # Potential sources of secret information on linux.  The machine-id
-        # is stable across boots, the boot id is not
+        # machine-id is stable across boots, boot_id is not.
         for filename in "/etc/machine-id", "/proc/sys/kernel/random/boot_id":
             try:
                 with open(filename, "rb") as f:
-                    return f.readline().strip()
+                    value = f.readline().strip()
             except IOError:
                 continue
 
-        # On OS X we can use the computer's serial number assuming that
-        # ioreg exists and can spit out that information.
+            if value:
+                linux += value
+                break
+
+        # Containers share the same machine id, add some cgroup
+        # information. This is used outside containers too but should be
+        # relatively stable across boots.
         try:
-            # Also catch import errors: subprocess may not be available, e.g.
-            # Google App Engine
-            # See https://github.com/pallets/werkzeug/issues/925
+            with open("/proc/self/cgroup", "rb") as f:
+                linux += f.readline().strip().rpartition(b"/")[2]
+        except IOError:
+            pass
+
+        if linux:
+            return linux
+
+        # On OS X, use ioreg to get the computer's serial number.
+        try:
+            # subprocess may not be available, e.g. Google App Engine
+            # https://github.com/pallets/werkzeug/issues/925
             from subprocess import Popen, PIPE
 
             dump = Popen(
                 ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE
             ).communicate()[0]
             match = re.search(b'"serial-number" = <([^>]+)', dump)
+
             if match is not None:
                 return match.group(1)
         except (OSError, ImportError):
             pass
 
-        # On Windows we can use winreg to get the machine guid
-        wr = None
+        # On Windows, use winreg to get the machine guid.
         try:
             import winreg as wr
         except ImportError:
             try:
                 import _winreg as wr
             except ImportError:
-                pass
+                wr = None
+
         if wr is not None:
             try:
                 with wr.OpenKey(
@@ -108,16 +111,17 @@ def get_machine_id():
                     0,
                     wr.KEY_READ | wr.KEY_WOW64_64KEY,
                 ) as rk:
-                    machineGuid, wrType = wr.QueryValueEx(rk, "MachineGuid")
-                    if wrType == wr.REG_SZ:
-                        return machineGuid.encode("utf-8")
-                    else:
-                        return machineGuid
+                    guid, guid_type = wr.QueryValueEx(rk, "MachineGuid")
+
+                    if guid_type == wr.REG_SZ:
+                        return guid.encode("utf-8")
+
+                    return guid
             except WindowsError:
                 pass
 
-    _machine_id = rv = _generate()
-    return rv
+    _machine_id = _generate()
+    return _machine_id
 
 
 class _ConsoleFrame(object):
