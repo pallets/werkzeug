@@ -1942,10 +1942,13 @@ class MapAdapter(object):
                 rv = rule.build(values, append_unknown)
 
                 if rv is not None:
-                    if rv[0] == self.server_name:
+                    if self.map.host_matching:
+                        if rv[0] == self.server_name:
+                            return rv
+                        elif first_match is None:
+                            first_match = rv
+                    else:
                         return rv
-                    elif first_match is None:
-                        first_match = rv
 
         return first_match
 
