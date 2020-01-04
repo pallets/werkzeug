@@ -53,15 +53,17 @@ class _DeprecatedImportModule(ModuleType):
 
                 # Import the module, get the attribute, and show a warning about where
                 # to correctly import it from.
-                mod = import_module(origin, self.__name__.rsplit(".")[0])
+                package = self.__name__.rsplit(".")[0]
+                mod = import_module(origin, package)
                 value = getattr(mod, item)
                 warn(
                     "The import '{name}.{item}' is deprecated and will be removed in"
-                    " {removed_in}. Use 'from {name}{origin} import {item}'"
+                    " {removed_in}. Use 'from {package}{origin} import {item}'"
                     " instead.".format(
                         name=self.__name__,
                         item=item,
                         removed_in=self._removed_in,
+                        package=package,
                         origin=origin,
                     ),
                     DeprecationWarning,

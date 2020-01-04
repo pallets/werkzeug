@@ -1,5 +1,12 @@
 .. currentmodule:: werkzeug
 
+Version 0.16.1
+--------------
+
+-   Fix import location in deprecation messages for subpackages.
+    :issue:`1663`
+
+
 Version 0.16.0
 --------------
 
