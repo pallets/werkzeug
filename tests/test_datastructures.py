@@ -1188,6 +1188,14 @@ class TestFileStorage(object):
         for name in ("fileno", "writable", "readable", "seekable"):
             assert hasattr(file_storage, name)
 
+    def test_save_to_pathlib_dst(self, tmp_path):
+        src = tmp_path / "src.txt"
+        src.write_text(u"test")
+        storage = self.storage_class(src.open("rb"))
+        dst = tmp_path / "dst.txt"
+        storage.save(dst)
+        assert dst.read_text() == "test"
+
 
 @pytest.mark.parametrize("ranges", ([(0, 1), (-5, None)], [(5, None)]))
 def test_range_to_header(ranges):

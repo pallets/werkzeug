@@ -68,6 +68,8 @@ Unreleased
     handled by Click instead of termcolor. :issue:`1235`
 -   Optional ad-hoc TLS support for the development server is handled
     by cryptography instead of pyOpenSSL. :pr:`1555`
+-   ``FileStorage.save()`` supports ``pathlib`` and :pep:`519`
+    ``PathLike`` objects. :issue:`1653`
 
 
 Version 0.16.0

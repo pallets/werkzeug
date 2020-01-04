@@ -17,6 +17,7 @@ from itertools import repeat
 from . import exceptions
 from ._compat import BytesIO
 from ._compat import collections_abc
+from ._compat import fspath
 from ._compat import integer_types
 from ._compat import iteritems
 from ._compat import iterkeys
@@ -2943,18 +2944,23 @@ class FileStorage(object):
 
         For secure file saving also have a look at :func:`secure_filename`.
 
-        :param dst: a filename or open file object the uploaded file
-                    is saved to.
-        :param buffer_size: the size of the buffer.  This works the same as
-                            the `length` parameter of
-                            :func:`shutil.copyfileobj`.
+        :param dst: a filename, :class:`os.PathLike`, or open file
+            object to write to.
+        :param buffer_size: Passed as the ``length`` parameter of
+            :func:`shutil.copyfileobj`.
+
+        .. versionchanged:: 1.0
+            Supports :mod:`pathlib`.
         """
         from shutil import copyfileobj
 
         close_dst = False
+        dst = fspath(dst)
+
         if isinstance(dst, string_types):
             dst = open(dst, "wb")
             close_dst = True
+
         try:
             copyfileobj(self.stream, dst, buffer_size)
         finally:

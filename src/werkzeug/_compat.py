@@ -217,3 +217,12 @@ def to_unicode(
     if charset is None and allow_none_charset:
         return x
     return x.decode(charset, errors)
+
+
+try:
+    from os import fspath
+except ImportError:
+    # Python < 3.6
+    # https://www.python.org/dev/peps/pep-0519/#backwards-compatibility
+    def fspath(path):
+        return path.__fspath__() if hasattr(path, "__fspath__") else path
