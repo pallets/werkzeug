@@ -363,9 +363,9 @@ def test_console_closure_variables(monkeypatch):
     c = console.Console()
     c.eval("y = 5")
     c.eval("x = lambda: y")
-    ret = c.eval("x()")
-    expected = ">>> x()\n5" if PY2 else ">>> x()\n5\n"
-    assert ret == expected
+    # strip() is only needed for Python 2 compat
+    ret = c.eval("x()").strip()
+    assert ret == ">>> x()\n5"
 
 
 @pytest.mark.skipif(PY2, reason="Python 2 doesn't have chained exceptions.")
