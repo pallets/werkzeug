@@ -70,6 +70,8 @@ Unreleased
     by cryptography instead of pyOpenSSL. :pr:`1555`
 -   ``FileStorage.save()`` supports ``pathlib`` and :pep:`519`
     ``PathLike`` objects. :issue:`1653`
+-   The debugger security pin is unique in containers managed by Podman.
+    :issue:`1661`
 
 
 Version 0.16.0
