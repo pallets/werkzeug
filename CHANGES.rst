@@ -83,6 +83,17 @@ Unreleased
     This is enabled by default. :pr:`1286`
 
 
+Version 0.16.1
+--------------
+
+Unreleased
+
+-   Fix import location in deprecation messages for subpackages.
+    :issue:`1663`
+-   Fix an SSL error on Python 3.5 when the dev server responds with no
+    content. :issue:`1659`
+
+
 Version 0.16.0
 --------------
 

@@ -280,7 +280,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
                 self.end_headers()
 
             assert isinstance(data, bytes), "applications must write bytes"
-            self.wfile.write(data)
+            if data:
+                # Only write data if there is any to avoid Python 3.5 SSL bug
+                self.wfile.write(data)
             self.wfile.flush()
 
         def start_response(status, response_headers, exc_info=None):
