@@ -12,6 +12,8 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+from datetime import datetime
+
 import pytest
 
 from werkzeug import exceptions
@@ -120,3 +122,20 @@ def test_response_header_content_type_should_contain_charset():
     exc = exceptions.HTTPException("An error message")
     h = exc.get_response({})
     assert h.headers["Content-Type"] == "text/html; charset=utf-8"
+
+
+@pytest.mark.parametrize(
+    ("cls", "value", "expect"),
+    [
+        (exceptions.TooManyRequests, 20, "20"),
+        (
+            exceptions.ServiceUnavailable,
+            datetime(2020, 1, 4, 18, 52, 16),
+            "Sat, 04 Jan 2020 18:52:16 GMT",
+        ),
+    ],
+)
+def test_retry_after_mixin(cls, value, expect):
+    e = cls(retry_after=value)
+    h = dict(e.get_headers({}))
+    assert h["Retry-After"] == expect

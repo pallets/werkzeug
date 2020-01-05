@@ -58,6 +58,7 @@
     :license: BSD-3-Clause
 """
 import sys
+from datetime import datetime
 
 from ._compat import implements_to_string
 from ._compat import integer_types
@@ -592,14 +593,47 @@ class PreconditionRequired(HTTPException):
     )
 
 
-class TooManyRequests(HTTPException):
+class _RetryAfter(HTTPException):
+    """Adds an optional ``retry_after`` parameter which will set the
+    ``Retry-After`` header. May be an :class:`int` number of seconds or
+    a :class:`~datetime.datetime`.
+    """
+
+    def __init__(self, description=None, response=None, retry_after=None):
+        super(_RetryAfter, self).__init__(description, response)
+        self.retry_after = retry_after
+
+    def get_headers(self, environ=None):
+        headers = super(_RetryAfter, self).get_headers(environ)
+
+        if self.retry_after:
+            if isinstance(self.retry_after, datetime):
+                from .http import http_date
+
+                value = http_date(self.retry_after)
+            else:
+                value = str(self.retry_after)
+
+            headers.append(("Retry-After", value))
+
+        return headers
+
+
+class TooManyRequests(_RetryAfter):
     """*429* `Too Many Requests`
 
-    The server is limiting the rate at which this user receives responses, and
-    this request exceeds that rate. (The server may use any convenient method
-    to identify users and their request rates). The server may include a
-    "Retry-After" header to indicate how long the user should wait before
-    retrying.
+    The server is limiting the rate at which this user receives
+    responses, and this request exceeds that rate. (The server may use
+    any convenient method to identify users and their request rates).
+    The server may include a "Retry-After" header to indicate how long
+    the user should wait before retrying.
+
+    :param retry_after: If given, set the ``Retry-After`` header to this
+        value. May be an :class:`int` number of seconds or a
+        :class:`~datetime.datetime`.
+
+    .. versionchanged:: 1.0
+        Added ``retry_after`` parameter.
     """
 
     code = 429
@@ -681,10 +715,18 @@ class BadGateway(HTTPException):
     )
 
 
-class ServiceUnavailable(HTTPException):
+class ServiceUnavailable(_RetryAfter):
     """*503* `Service Unavailable`
 
-    Status code you should return if a service is temporarily unavailable.
+    Status code you should return if a service is temporarily
+    unavailable.
+
+    :param retry_after: If given, set the ``Retry-After`` header to this
+        value. May be an :class:`int` number of seconds or a
+        :class:`~datetime.datetime`.
+
+    .. versionchanged:: 1.0
+        Added ``retry_after`` parameter.
     """
 
     code = 503
