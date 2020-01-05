@@ -70,24 +70,30 @@ exceptions have a look at the documentation of the :meth:`MapAdapter.match` meth
 Rule Format
 ===========
 
-Rule strings basically are just normal URL paths with placeholders in the
-format ``<converter(arguments):name>``, where converter and the arguments
-are optional.  If no converter is defined, the `default` converter is used
-(which means `string` in the normal configuration).
+Rule strings are URL paths with placeholders for variable parts in the
+format ``<converter(arguments):name>``. ``converter`` and ``arguments``
+(with parentheses) are optional. If no converter is given, the
+``default`` converter is used (``string`` by default). The available
+converters are discussed below.
 
-URL rules that end with a slash are branch URLs, others are leaves.  If you
-have `strict_slashes` enabled (which is the default), all branch URLs that are
-visited without a trailing slash will trigger a redirect to the same URL with
-that slash appended.
+Rules that end with a slash are "branches", others are "leaves". If
+``strict_slashes`` is enabled (the default), visiting a branch URL
+without a trailing slash will redirect to the URL with a slash appended.
 
-The list of converters can be extended, the default converters are explained
-below.
+Many HTTP servers merge consecutive slashes into one when receiving
+requests. If ``merge_slashes`` is enabled (the default), rules will
+merge slashes in non-variable parts when matching and building. Visiting
+a URL with consecutive slashes will redirect to the URL with slashes
+merged. If you want to disable ``merge_slashes`` for a :class:`Rule` or
+:class:`Map`, you'll also need to configure your web server
+appropriately.
 
 
-Builtin Converters
-==================
+Built-in Converters
+===================
 
-Here a list of converters that come with Werkzeug:
+Converters for common types of URL variables are built-in. The available
+converters can be overridden or extended through :attr:`Map.converters`.
 
 .. autoclass:: UnicodeConverter
 

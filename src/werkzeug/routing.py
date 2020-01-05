@@ -588,9 +588,9 @@ class Rule(RuleFactory):
         not specified the `Map` setting is used.
 
     `merge_slashes`
-        Override the `Map` setting for `merge_slashes` for this rule.
+        Override the ``Map`` setting for ``merge_slashes`` for this rule.
 
-        .. versionadded:: 0.15
+        .. versionadded:: 1.0
 
     `build_only`
         Set this to True and the rule will never match but will create a URL
@@ -1337,8 +1337,11 @@ class Map(object):
     :param default_subdomain: The default subdomain for rules without a
                               subdomain defined.
     :param charset: charset of the url. defaults to ``"utf-8"``
-    :param strict_slashes: Take care of trailing slashes.
-    :param merge_slashes: Take care of repeated slashes.
+    :param strict_slashes: If a rule ends with a slash but the matched
+        URL does not, redirect to the URL with a trailing slash.
+    :param merge_slashes: Merge consecutive slashes when matching or
+        building URLs. Matches will redirect to the normalized URL.
+        Slashes in variable parts are not merged.
     :param redirect_defaults: This will redirect to the default rule if it
                               wasn't visited that way. This helps creating
                               unique URLs.
@@ -1354,14 +1357,14 @@ class Map(object):
                           enabled the `host` parameter to rules is used
                           instead of the `subdomain` one.
 
-    .. versionadded:: 0.5
-        `sort_parameters` and `sort_key` was added.
-
-    .. versionadded:: 0.7
-        `encoding_errors` and `host_matching` was added.
-
-    .. versionadded:: 1.0.0
+    .. versionchanged:: 1.0
         Added ``merge_slashes``.
+
+    .. versionchanged:: 0.7
+        Added ``encoding_errors`` and ``host_matching``.
+
+    .. versionchanged:: 0.5
+        Added ``sort_parameters`` and ``sort_key``.
     """
 
     #: A dict of default converters to be used.

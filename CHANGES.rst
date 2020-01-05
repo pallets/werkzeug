@@ -80,7 +80,7 @@ Unreleased
     ``Retry-After`` header. :issue:`1657`
 -   ``Map`` and ``Rule`` have a ``merge_slashes`` option to collapse
     multiple slashes into one, similar to how many HTTP servers behave.
-    :pr:`1286`
+    This is enabled by default. :pr:`1286`
 
 
 Version 0.16.0
