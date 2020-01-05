@@ -75,6 +75,9 @@ Unreleased
 -   Building a URL when ``host_matching`` is enabled takes into account
     the current host when there are duplicate endpoints with different
     hosts. :issue:`488`
+-   The ``429 TooManyRequests`` and ``503 ServiceUnavailable`` HTTP
+    exceptions takes a ``retry_after`` parameter to set the
+    ``Retry-After`` header. :issue:`1657`
 
 
 Version 0.16.0
