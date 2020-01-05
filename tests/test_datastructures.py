@@ -780,6 +780,17 @@ class TestHeaders(object):
         assert h.get("x-whoops", as_bytes=True) == b"\xff"
         assert h.get("x-bytes") == "something"
 
+    def test_update(self):
+        h = self.storage_class()
+        h["x"] = "1"
+        h.update({"x": "2", "y": "1"})
+        assert h.getlist("x") == ["2"]
+        assert h.getlist("y") == ["1"]
+        h.update(z="2")
+        assert h.getlist("z") == ["2"]
+        h.update(self.storage_class([("a", "b")]))
+        assert h["a"] == "b"
+
     def test_to_wsgi_list(self):
         h = self.storage_class()
         h.set(u"Key", u"Value")

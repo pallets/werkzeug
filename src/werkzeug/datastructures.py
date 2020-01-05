@@ -1265,6 +1265,26 @@ class Headers(object):
         else:
             self.set(key, value)
 
+    def update(self, *args, **kwargs):
+        """Update the headers with the key/value pairs from another
+        headers object and keyword arguments.
+
+        If provided, the first argument can be another :class:`Headers`
+        object, a :class:`MultiDict`, :class:`dict`, or iterable of
+        pairs.
+
+        .. versionadded:: 1.0
+        """
+        if len(args) > 1:
+            raise TypeError("update expected at most 1 arguments, got %d" % len(args))
+
+        if args:
+            for key, value in iter_multi_items(args[0]):
+                self[key] = value
+
+        for key, value in iter_multi_items(kwargs):
+            self[key] = value
+
     def to_wsgi_list(self):
         """Convert the headers into a list suitable for WSGI.
 

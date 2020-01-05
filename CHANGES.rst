@@ -83,6 +83,8 @@ Unreleased
     This is enabled by default. :pr:`1286`
 -   Add HTTP 103, 208, 306, 425, 506, 508, and 511 to the list of status
     codes. :pr:`1678`
+-   Add an ``update`` method to the ``Headers`` data structure.
+    :pr:`1687`
 
 
 Version 0.16.1
