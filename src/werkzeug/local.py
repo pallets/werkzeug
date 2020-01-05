@@ -11,8 +11,6 @@
 import copy
 from functools import update_wrapper
 
-from ._compat import implements_bool
-from ._compat import PY2
 from .wsgi import ClosingIterator
 
 # since each thread has its own greenlet we can just use those as identifiers
@@ -250,7 +248,6 @@ class LocalManager(object):
         return "<%s storages: %d>" % (self.__class__.__name__, len(self.locals))
 
 
-@implements_bool
 class LocalProxy(object):
     """Acts as a proxy for a werkzeug local.  Forwards all operations to
     a proxied object.  The only operations not supported for forwarding
@@ -352,15 +349,6 @@ class LocalProxy(object):
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
-    if PY2:
-        __getslice__ = lambda x, i, j: x._get_current_object()[i:j]
-
-        def __setslice__(self, i, j, seq):
-            self._get_current_object()[i:j] = seq
-
-        def __delslice__(self, i, j):
-            del self._get_current_object()[i:j]
-
     __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
     __delattr__ = lambda x, n: delattr(x._get_current_object(), n)
     __str__ = lambda x: str(x._get_current_object())
@@ -409,10 +397,7 @@ class LocalProxy(object):
     __rsub__ = lambda x, o: o - x._get_current_object()
     __rmul__ = lambda x, o: o * x._get_current_object()
     __rdiv__ = lambda x, o: o / x._get_current_object()
-    if PY2:
-        __rtruediv__ = lambda x, o: x._get_current_object().__rtruediv__(o)
-    else:
-        __rtruediv__ = __rdiv__
+    __rtruediv__ = __rdiv__
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)

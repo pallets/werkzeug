@@ -22,7 +22,6 @@ from itertools import chain
 from os.path import basename
 from os.path import join
 
-from .._compat import text_type
 from .._internal import _log
 from ..http import parse_cookie
 from ..security import gen_salt
@@ -37,7 +36,7 @@ PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin):
-    if isinstance(pin, text_type):
+    if isinstance(pin, str):
         pin = pin.encode("utf-8", "replace")
     return hashlib.md5(pin + b"shittysalt").hexdigest()[:12]
 
@@ -188,7 +187,7 @@ def get_pin_and_cookie_name(app):
     for bit in chain(probably_public_bits, private_bits):
         if not bit:
             continue
-        if isinstance(bit, text_type):
+        if isinstance(bit, str):
             bit = bit.encode("utf-8")
         h.update(bit)
     h.update(b"cookiesalt")

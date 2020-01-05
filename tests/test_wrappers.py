@@ -20,9 +20,6 @@ import pytest
 
 from . import strict_eq
 from werkzeug import wrappers
-from werkzeug._compat import implements_iterator
-from werkzeug._compat import iteritems
-from werkzeug._compat import text_type
 from werkzeug.datastructures import Accept
 from werkzeug.datastructures import CharsetAccept
 from werkzeug.datastructures import CombinedMultiDict
@@ -79,7 +76,7 @@ def request_demo_app(environ, start_response):
 
 def prepare_environ_pickle(environ):
     result = {}
-    for key, value in iteritems(environ):
+    for key, value in iter(environ.items()):
         try:
             pickle.dumps((key, value))
         except Exception:
@@ -346,7 +343,6 @@ def test_base_response():
     # close call forwarding
     closed = []
 
-    @implements_iterator
     class Iterable(object):
         def __next__(self):
             raise StopIteration()
@@ -911,7 +907,7 @@ def test_etag_response_mixin_freezing():
 
     response = WithFreeze("Hello World")
     response.freeze()
-    strict_eq(response.get_etag(), (text_type(generate_etag(b"Hello World")), False))
+    strict_eq(response.get_etag(), (str(generate_etag(b"Hello World")), False))
     response = WithoutFreeze("Hello World")
     response.freeze()
     assert response.get_etag() == (None, None)

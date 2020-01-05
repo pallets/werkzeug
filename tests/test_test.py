@@ -16,9 +16,7 @@ from io import BytesIO
 import pytest
 
 from . import strict_eq
-from werkzeug._compat import implements_iterator
-from werkzeug._compat import iteritems
-from werkzeug._compat import to_bytes
+from werkzeug._internal import _to_bytes
 from werkzeug.datastructures import FileStorage
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import MultiDict
@@ -349,7 +347,7 @@ def test_create_environ():
         "SERVER_PROTOCOL": "HTTP/1.1",
         "QUERY_STRING": "bar=baz",
     }
-    for key, value in iteritems(expected):
+    for key, value in iter(expected.items()):
         assert env[key] == value
     strict_eq(env["wsgi.input"].read(0), b"")
     strict_eq(create_environ("/foo", "http://example.com/")["SCRIPT_NAME"], "")
@@ -655,7 +653,6 @@ def test_run_wsgi_apps(buffered, iterable):
 @pytest.mark.parametrize("buffered", (True, False))
 @pytest.mark.parametrize("iterable", (True, False))
 def test_lazy_start_response_empty_response_app(buffered, iterable):
-    @implements_iterator
     class app:
         def __init__(self, environ, start_response):
             self.start_response = start_response
@@ -678,7 +675,6 @@ def test_lazy_start_response_empty_response_app(buffered, iterable):
 def test_run_wsgi_app_closing_iterator():
     got_close = []
 
-    @implements_iterator
     class CloseIter(object):
         def __init__(self):
             self.iterated = False
@@ -744,7 +740,7 @@ def test_multiple_cookies():
     strict_eq(resp.data, b"[]")
     resp = client.get("/")
     strict_eq(
-        resp.data, to_bytes(repr([("test1", u"foo"), ("test2", u"bar")]), "ascii")
+        resp.data, _to_bytes(repr([("test1", u"foo"), ("test2", u"bar")]), "ascii")
     )
 
 

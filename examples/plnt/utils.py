@@ -13,7 +13,6 @@ from os import path
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from werkzeug._compat import unichr
 from werkzeug.local import Local
 from werkzeug.local import LocalManager
 from werkzeug.routing import Map
@@ -96,15 +95,15 @@ def strip_tags(s):
     def handle_match(m):
         name = m.group(1)
         if name in html_entities:
-            return unichr(html_entities[name])
+            return chr(html_entities[name])
         if name[:2] in ("#x", "#X"):
             try:
-                return unichr(int(name[2:], 16))
+                return chr(int(name[2:], 16))
             except ValueError:
                 return u""
         elif name.startswith("#"):
             try:
-                return unichr(int(name[1:]))
+                return chr(int(name[1:]))
             except ValueError:
                 return u""
         return u""

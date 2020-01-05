@@ -25,17 +25,11 @@ from hashlib import md5
 from time import gmtime
 from time import time
 
-from ._compat import integer_types
-from ._compat import iteritems
-from ._compat import PY2
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import to_unicode
-from ._compat import try_coerce_native
 from ._internal import _cookie_parse_impl
 from ._internal import _cookie_quote
 from ._internal import _make_cookie_domain
+from ._internal import _to_bytes
+from ._internal import _to_unicode
 
 try:
     from email.utils import parsedate_tz
@@ -274,7 +268,7 @@ def dump_options_header(header, options):
     segments = []
     if header is not None:
         segments.append(header)
-    for key, value in iteritems(options):
+    for key, value in iter(options.items()):
         if value is None:
             segments.append(key)
         else:
@@ -299,7 +293,7 @@ def dump_header(iterable, allow_token=True):
     """
     if isinstance(iterable, dict):
         items = []
-        for key, value in iteritems(iterable):
+        for key, value in iter(iterable.items()):
             if value is None:
                 items.append(key)
             else:
@@ -321,7 +315,7 @@ def dump_csp_header(header):
        Support for Content Security Policy headers was added.
 
     """
-    return "; ".join("%s %s" % (key, value) for key, value in iteritems(header))
+    return "; ".join("%s %s" % (key, value) for key, value in iter(header.items()))
 
 
 def parse_list_header(value):
@@ -381,7 +375,7 @@ def parse_dict_header(value, cls=dict):
     :return: an instance of `cls`
     """
     result = cls()
-    if not isinstance(value, text_type):
+    if not isinstance(value, str):
         # XXX: validate
         value = bytes_to_wsgi(value)
     for item in _parse_list_header(value):
@@ -605,8 +599,8 @@ def parse_authorization_header(value):
         return Authorization(
             "basic",
             {
-                "username": to_unicode(username, _basic_auth_charset),
-                "password": to_unicode(password, _basic_auth_charset),
+                "username": _to_unicode(username, _basic_auth_charset),
+                "password": _to_unicode(password, _basic_auth_charset),
             },
         )
     elif auth_type == b"digest":
@@ -861,7 +855,7 @@ def _dump_date(d, delim):
         d = gmtime()
     elif isinstance(d, datetime):
         d = d.utctimetuple()
-    elif isinstance(d, (integer_types, float)):
+    elif isinstance(d, (int, float)):
         d = gmtime(d)
     return "%s, %02d%s%s%s%s %02d:%02d:%02d GMT" % (
         ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday],
@@ -984,7 +978,7 @@ def is_resource_modified(
         raise TypeError("both data and etag given")
 
     unmodified = False
-    if isinstance(last_modified, string_types):
+    if isinstance(last_modified, str):
         last_modified = parse_date(last_modified)
 
     # ensure that microsecond is zero because the HTTP spec does not transmit
@@ -1115,7 +1109,7 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
 
     # On Python 3, PEP 3333 sends headers through the environ as latin1
     # decoded strings. Encode strings back to bytes for parsing.
-    if isinstance(header, text_type):
+    if isinstance(header, str):
         header = header.encode("latin1", "replace")
 
     if cls is None:
@@ -1123,11 +1117,11 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
 
     def _parse_pairs():
         for key, val in _cookie_parse_impl(header):
-            key = to_unicode(key, charset, errors, allow_none_charset=True)
+            key = _to_unicode(key, charset, errors, allow_none_charset=True)
             if not key:
                 continue
-            val = to_unicode(val, charset, errors, allow_none_charset=True)
-            yield try_coerce_native(key), val
+            val = _to_unicode(val, charset, errors, allow_none_charset=True)
+            yield key, val
 
     return cls(_parse_pairs())
 
@@ -1192,8 +1186,8 @@ def dump_cookie(
     .. versionchanged:: 1.0.0
         The string ``'None'`` is accepted for ``samesite``.
     """
-    key = to_bytes(key, charset)
-    value = to_bytes(value, charset)
+    key = _to_bytes(key, charset)
+    value = _to_bytes(value, charset)
 
     if path is not None:
         from .urls import iri_to_uri
@@ -1203,10 +1197,10 @@ def dump_cookie(
     if isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
-        if not isinstance(expires, string_types):
+        if not isinstance(expires, str):
             expires = cookie_date(expires)
     elif max_age is not None and sync_expires:
-        expires = to_bytes(cookie_date(time() + max_age))
+        expires = _to_bytes(cookie_date(time() + max_age))
 
     if samesite is not None:
         samesite = samesite.title()
@@ -1238,7 +1232,7 @@ def dump_cookie(
 
         tmp = bytearray(k)
         if not isinstance(v, (bytes, bytearray)):
-            v = to_bytes(text_type(v), charset)
+            v = _to_bytes(str(v), charset)
         if q:
             v = _cookie_quote(v)
         tmp += b"=" + v
@@ -1248,8 +1242,7 @@ def dump_cookie(
     # Python 3 for consistency with the headers object and a bytestring
     # on Python 2 because that's how the API makes more sense.
     rv = b"; ".join(buf)
-    if not PY2:
-        rv = rv.decode("latin1")
+    rv = rv.decode("latin1")
 
     # Warn if the final value of the cookie is larger than the limit. If the
     # cookie is too large, then it may be silently ignored by the browser,

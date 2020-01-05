@@ -16,15 +16,10 @@ import pkgutil
 import re
 import sys
 
-from ._compat import iteritems
-from ._compat import PY2
-from ._compat import reraise
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import unichr
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
+from ._internal import _reraise
 
 try:
     from html.entities import name2codepoint
@@ -234,7 +229,7 @@ class HTMLBuilder(object):
 
         def proxy(*children, **arguments):
             buffer = "<" + tag
-            for key, value in iteritems(arguments):
+            for key, value in arguments.items():
                 if value is None:
                     continue
                 if key[-1] == "_":
@@ -257,9 +252,7 @@ class HTMLBuilder(object):
                 return buffer
             buffer += ">"
 
-            children_as_string = "".join(
-                [text_type(x) for x in children if x is not None]
-            )
+            children_as_string = "".join([str(x) for x in children if x is not None])
 
             if children_as_string:
                 if tag in self._plaintext_elements:
@@ -380,7 +373,7 @@ def format_string(string, context):
 
     def lookup_arg(match):
         x = context[match.group(1) or match.group(2)]
-        if not isinstance(x, string_types):
+        if not isinstance(x, str):
             x = type(string)(x)
         return x
 
@@ -411,12 +404,10 @@ def secure_filename(filename):
 
     :param filename: the filename to secure
     """
-    if isinstance(filename, text_type):
+    if isinstance(filename, str):
         from unicodedata import normalize
 
-        filename = normalize("NFKD", filename).encode("ascii", "ignore")
-        if not PY2:
-            filename = filename.decode("ascii")
+        filename = normalize("NFKD", filename).encode("ascii", "ignore").decode("ascii")
     for sep in os.path.sep, os.path.altsep:
         if sep:
             filename = filename.replace(sep, " ")
@@ -451,10 +442,10 @@ def escape(s):
     if s is None:
         return ""
     elif hasattr(s, "__html__"):
-        return text_type(s.__html__())
+        return s.__html__()
 
-    if not isinstance(s, string_types):
-        s = text_type(s)
+    if not isinstance(s, str):
+        s = str(s)
 
     return (
         s.replace("&", "&amp;")
@@ -474,12 +465,12 @@ def unescape(s):
     def handle_match(m):
         name = m.group(1)
         if name in HTMLBuilder._entities:
-            return unichr(HTMLBuilder._entities[name])
+            return chr(HTMLBuilder._entities[name])
         try:
             if name[:2] in ("#x", "#X"):
-                return unichr(int(name[2:], 16))
+                return chr(int(name[2:], 16))
             elif name.startswith("#"):
-                return unichr(int(name[1:]))
+                return chr(int(name[1:]))
         except ValueError:
             pass
         return u""
@@ -511,7 +502,7 @@ def redirect(location, code=302, Response=None):
         from .wrappers import Response
 
     display_location = escape(location)
-    if isinstance(location, text_type):
+    if isinstance(location, str):
         # Safe conversion is necessary here as we might redirect
         # to a broken URI scheme (for instance itms-services).
         from .urls import iri_to_uri
@@ -581,7 +572,7 @@ def import_string(import_name, silent=False):
 
     except ImportError as e:
         if not silent:
-            reraise(
+            _reraise(
                 ImportStringError, ImportStringError(import_name, e), sys.exc_info()[2]
             )
 

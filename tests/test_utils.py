@@ -14,7 +14,6 @@ from datetime import datetime
 import pytest
 
 from werkzeug import utils
-from werkzeug._compat import text_type
 from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
@@ -186,7 +185,7 @@ def test_environ_property():
 def test_escape():
     class Foo(str):
         def __html__(self):
-            return text_type(self)
+            return str(self)
 
     assert utils.escape(None) == ""
     assert utils.escape(42) == "42"

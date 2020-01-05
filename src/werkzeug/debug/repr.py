@@ -19,11 +19,6 @@ import sys
 from collections import deque
 from traceback import format_exception_only
 
-from .._compat import integer_types
-from .._compat import iteritems
-from .._compat import PY2
-from .._compat import string_types
-from .._compat import text_type
 from ..utils import escape
 
 
@@ -143,10 +138,7 @@ class DebugReprGenerator(object):
 
     def regex_repr(self, obj):
         pattern = repr(obj.pattern)
-        if PY2:
-            pattern = pattern.decode("string-escape", "ignore")
-        else:
-            pattern = codecs.decode(pattern, "unicode-escape", "ignore")
+        pattern = codecs.decode(pattern, "unicode-escape", "ignore")
         if pattern[:1] == "u":
             pattern = "ur" + pattern[1:]
         else:
@@ -175,7 +167,7 @@ class DebugReprGenerator(object):
 
         # if the repr looks like a standard string, add subclass info if needed
         if r[0] in "'\"" or (r[0] in "ub" and r[1] in "'\""):
-            return _add_subclass_info(out, obj, (bytes, text_type))
+            return _add_subclass_info(out, obj, (bytes, str))
 
         # otherwise, assume the repr distinguishes the subclass already
         return out
@@ -185,7 +177,7 @@ class DebugReprGenerator(object):
             return _add_subclass_info(u"{...}", d, dict)
         buf = ["{"]
         have_extended_section = False
-        for idx, (key, value) in enumerate(iteritems(d)):
+        for idx, (key, value) in enumerate(iter(d.items())):
             if idx:
                 buf.append(", ")
             if idx == limit - 1:
@@ -203,16 +195,14 @@ class DebugReprGenerator(object):
 
     def object_repr(self, obj):
         r = repr(obj)
-        if PY2:
-            r = r.decode("utf-8", "replace")
         return u'<span class="object">%s</span>' % escape(r)
 
     def dispatch_repr(self, obj, recursive):
         if obj is helper:
             return u'<span class="help">%r</span>' % helper
-        if isinstance(obj, (integer_types, float, complex)):
+        if isinstance(obj, (int, float, complex)):
             return u'<span class="number">%r</span>' % obj
-        if isinstance(obj, string_types) or isinstance(obj, bytes):
+        if isinstance(obj, str) or isinstance(obj, bytes):
             return self.string_repr(obj)
         if isinstance(obj, RegexType):
             return self.regex_repr(obj)
@@ -235,8 +225,6 @@ class DebugReprGenerator(object):
             info = "".join(format_exception_only(*sys.exc_info()[:2]))
         except Exception:  # pragma: no cover
             info = "?"
-        if PY2:
-            info = info.decode("utf-8", "ignore")
         return u'<span class="brokenrepr">&lt;broken repr (%s)&gt;' u"</span>" % escape(
             info.strip()
         )
@@ -261,8 +249,8 @@ class DebugReprGenerator(object):
         if isinstance(obj, dict):
             title = "Contents of"
             items = []
-            for key, value in iteritems(obj):
-                if not isinstance(key, string_types):
+            for key, value in obj.items():
+                if not isinstance(key, str):
                     items = None
                     break
                 items.append((key, self.repr(value)))

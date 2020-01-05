@@ -14,16 +14,10 @@ from functools import partial
 from functools import update_wrapper
 from itertools import chain
 
-from ._compat import BytesIO
-from ._compat import implements_iterator
-from ._compat import make_literal_wrapper
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import to_unicode
-from ._compat import try_coerce_native
-from ._compat import wsgi_get_bytes
 from ._internal import _encode_idna
+from ._internal import _make_literal_wrapper
+from ._internal import _to_bytes
+from ._internal import _to_unicode
 from .urls import uri_to_iri
 from .urls import url_join
 from .urls import url_parse
@@ -88,10 +82,10 @@ def get_current_url(
     cat = tmp.append
     if host_only:
         return uri_to_iri("".join(tmp) + "/")
-    cat(url_quote(wsgi_get_bytes(environ.get("SCRIPT_NAME", ""))).rstrip("/"))
+    cat(url_quote(environ.get("SCRIPT_NAME", "").encode("latin1")).rstrip("/"))
     cat("/")
     if not root_only:
-        cat(url_quote(wsgi_get_bytes(environ.get("PATH_INFO", "")).lstrip(b"/")))
+        cat(url_quote(environ.get("PATH_INFO", "").encode("latin1").lstrip(b"/")))
         if not strip_querystring:
             qs = get_query_string(environ)
             if qs:
@@ -113,7 +107,7 @@ def host_is_trusted(hostname, trusted_list):
     if not hostname:
         return False
 
-    if isinstance(trusted_list, string_types):
+    if isinstance(trusted_list, str):
         trusted_list = [trusted_list]
 
     def _normalize(hostname):
@@ -229,7 +223,7 @@ def get_input_stream(environ, safe_fallback=True):
     # potentially dangerous because it could be infinite, malicious or not. If
     # safe_fallback is true, return an empty stream instead for safety.
     if content_length is None:
-        return BytesIO() if safe_fallback else stream
+        return io.BytesIO() if safe_fallback else stream
 
     # Otherwise limit the stream to the content length
     return LimitedStream(stream, content_length)
@@ -245,11 +239,11 @@ def get_query_string(environ):
 
     :param environ: the WSGI environment object to get the query string from.
     """
-    qs = wsgi_get_bytes(environ.get("QUERY_STRING", ""))
+    qs = environ.get("QUERY_STRING", "").encode("latin1")
     # QUERY_STRING really should be ascii safe but some browsers
     # will send us some unicode stuff (I am looking at you IE).
     # In that case we want to urllib quote it badly.
-    return try_coerce_native(url_quote(qs, safe=":&%=+$!*'(),"))
+    return url_quote(qs, safe=":&%=+$!*'(),")
 
 
 def get_path_info(environ, charset="utf-8", errors="replace"):
@@ -265,8 +259,8 @@ def get_path_info(environ, charset="utf-8", errors="replace"):
                     decoding should be performed.
     :param errors: the decoding error handling.
     """
-    path = wsgi_get_bytes(environ.get("PATH_INFO", ""))
-    return to_unicode(path, charset, errors, allow_none_charset=True)
+    path = environ.get("PATH_INFO", "").encode("latin1")
+    return _to_unicode(path, charset, errors, allow_none_charset=True)
 
 
 def get_script_name(environ, charset="utf-8", errors="replace"):
@@ -282,8 +276,8 @@ def get_script_name(environ, charset="utf-8", errors="replace"):
                     decoding should be performed.
     :param errors: the decoding error handling.
     """
-    path = wsgi_get_bytes(environ.get("SCRIPT_NAME", ""))
-    return to_unicode(path, charset, errors, allow_none_charset=True)
+    path = environ.get("SCRIPT_NAME", "").encode("latin1")
+    return _to_unicode(path, charset, errors, allow_none_charset=True)
 
 
 def pop_path_info(environ, charset="utf-8", errors="replace"):
@@ -328,14 +322,14 @@ def pop_path_info(environ, charset="utf-8", errors="replace"):
     if "/" not in path:
         environ["PATH_INFO"] = ""
         environ["SCRIPT_NAME"] = script_name + path
-        rv = wsgi_get_bytes(path)
+        rv = path.encode("latin1")
     else:
         segment, path = path.split("/", 1)
         environ["PATH_INFO"] = "/" + path
         environ["SCRIPT_NAME"] = script_name + segment
-        rv = wsgi_get_bytes(segment)
+        rv = segment.encode("latin1")
 
-    return to_unicode(rv, charset, errors, allow_none_charset=True)
+    return _to_unicode(rv, charset, errors, allow_none_charset=True)
 
 
 def peek_path_info(environ, charset="utf-8", errors="replace"):
@@ -361,8 +355,8 @@ def peek_path_info(environ, charset="utf-8", errors="replace"):
     """
     segments = environ.get("PATH_INFO", "").lstrip("/").split("/", 1)
     if segments:
-        return to_unicode(
-            wsgi_get_bytes(segments[0]), charset, errors, allow_none_charset=True
+        return _to_unicode(
+            segments[0].encode("latin1"), charset, errors, allow_none_charset=True
         )
 
 
@@ -462,7 +456,6 @@ def extract_path_info(
     return u"/" + cur_path[len(base_path) :].lstrip(u"/")
 
 
-@implements_iterator
 class ClosingIterator(object):
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of the iterable returned by the application.
@@ -529,7 +522,6 @@ def wrap_file(environ, file, buffer_size=8192):
     return environ.get("wsgi.file_wrapper", FileWrapper)(file, buffer_size)
 
 
-@implements_iterator
 class FileWrapper(object):
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
@@ -582,7 +574,6 @@ class FileWrapper(object):
         raise StopIteration()
 
 
-@implements_iterator
 class _RangeWrapper(object):
     # private for now, but should we make it public in the future ?
 
@@ -665,7 +656,7 @@ class _RangeWrapper(object):
 
 def _make_chunk_iter(stream, limit, buffer_size):
     """Helper for the line and chunk iter functions."""
-    if isinstance(stream, (bytes, bytearray, text_type)):
+    if isinstance(stream, (bytes, bytearray, str)):
         raise TypeError(
             "Passed a string or byte object instead of true iterator or stream."
         )
@@ -722,7 +713,7 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024, cap_at_buffer=Fals
     if not first_item:
         return
 
-    s = make_literal_wrapper(first_item)
+    s = _make_literal_wrapper(first_item)
     empty = s("")
     cr = s("\r")
     lf = s("\n")
@@ -803,12 +794,12 @@ def make_chunk_iter(
         return
 
     _iter = chain((first_item,), _iter)
-    if isinstance(first_item, text_type):
-        separator = to_unicode(separator)
+    if isinstance(first_item, str):
+        separator = _to_unicode(separator)
         _split = re.compile(r"(%s)" % re.escape(separator)).split
         _join = u"".join
     else:
-        separator = to_bytes(separator)
+        separator = _to_bytes(separator)
         _split = re.compile(b"(" + re.escape(separator) + b")").split
         _join = b"".join
 
@@ -842,7 +833,6 @@ def make_chunk_iter(
         yield _join(buffer)
 
 
-@implements_iterator
 class LimitedStream(io.IOBase):
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it

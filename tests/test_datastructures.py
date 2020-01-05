@@ -30,13 +30,6 @@ import pytest
 from . import strict_eq
 from werkzeug import datastructures
 from werkzeug import http
-from werkzeug._compat import iteritems
-from werkzeug._compat import iterkeys
-from werkzeug._compat import iterlists
-from werkzeug._compat import iterlistvalues
-from werkzeug._compat import itervalues
-from werkzeug._compat import PY2
-from werkzeug._compat import text_type
 from werkzeug.datastructures import LanguageAccept
 from werkzeug.datastructures import MIMEAccept
 from werkzeug.datastructures import Range
@@ -45,7 +38,6 @@ from werkzeug.exceptions import BadRequestKeyError
 
 class TestNativeItermethods(object):
     def test_basic(self):
-        @datastructures.native_itermethods(["keys", "values", "items"])
         class StupidDict(object):
             def keys(self, multi=1):
                 return iter(["a", "b", "c"] * multi)
@@ -55,7 +47,7 @@ class TestNativeItermethods(object):
 
             def items(self, multi=1):
                 return iter(
-                    zip(iterkeys(self, multi=multi), itervalues(self, multi=multi))
+                    zip(iter(self.keys(multi=multi)), iter(self.values(multi=multi)))
                 )
 
         d = StupidDict()
@@ -63,13 +55,13 @@ class TestNativeItermethods(object):
         expected_values = [1, 2, 3]
         expected_items = list(zip(expected_keys, expected_values))
 
-        assert list(iterkeys(d)) == expected_keys
-        assert list(itervalues(d)) == expected_values
-        assert list(iteritems(d)) == expected_items
+        assert list(d.keys()) == expected_keys
+        assert list(d.values()) == expected_values
+        assert list(d.items()) == expected_items
 
-        assert list(iterkeys(d, 2)) == expected_keys * 2
-        assert list(itervalues(d, 2)) == expected_values * 2
-        assert list(iteritems(d, 2)) == expected_items * 2
+        assert list(d.keys(2)) == expected_keys * 2
+        assert list(d.values(2)) == expected_values * 2
+        assert list(d.items(2)) == expected_items * 2
 
 
 class _MutableMultiDictTests(object):
@@ -161,10 +153,10 @@ class _MutableMultiDictTests(object):
 
         # keys, values, items, lists
         assert list(sorted(md.keys())) == ["a", "b", "c"]
-        assert list(sorted(iterkeys(md))) == ["a", "b", "c"]
+        assert list(sorted(md.keys())) == ["a", "b", "c"]
 
-        assert list(sorted(itervalues(md))) == [1, 2, 3]
-        assert list(sorted(itervalues(md))) == [1, 2, 3]
+        assert list(sorted(md.values())) == [1, 2, 3]
+        assert list(sorted(md.values())) == [1, 2, 3]
 
         assert list(sorted(md.items())) == [("a", 1), ("b", 2), ("c", 3)]
         assert list(sorted(md.items(multi=True))) == [
@@ -174,8 +166,8 @@ class _MutableMultiDictTests(object):
             ("b", 2),
             ("c", 3),
         ]
-        assert list(sorted(iteritems(md))) == [("a", 1), ("b", 2), ("c", 3)]
-        assert list(sorted(iteritems(md, multi=True))) == [
+        assert list(sorted(md.items())) == [("a", 1), ("b", 2), ("c", 3)]
+        assert list(sorted(md.items(multi=True))) == [
             ("a", 1),
             ("a", 2),
             ("a", 3),
@@ -184,7 +176,7 @@ class _MutableMultiDictTests(object):
         ]
 
         assert list(sorted(md.lists())) == [("a", [1, 2, 3]), ("b", [2]), ("c", [3])]
-        assert list(sorted(iterlists(md))) == [("a", [1, 2, 3]), ("b", [2]), ("c", [3])]
+        assert list(sorted(md.lists())) == [("a", [1, 2, 3]), ("b", [2]), ("c", [3])]
 
         # copy method
         c = md.copy()
@@ -424,40 +416,8 @@ class TestMultiDict(_MutableMultiDictTests):
         ]
         md = self.storage_class(mapping)
         assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
-        assert list(zip(md, iterlistvalues(md))) == list(iterlists(md))
-        assert list(zip(iterkeys(md), iterlistvalues(md))) == list(iterlists(md))
-
-    @pytest.mark.skipif(not PY2, reason="viewmethods work only for the 2-nd version.")
-    def test_view_methods(self):
-        mapping = [("a", "b"), ("a", "c")]
-        md = self.storage_class(mapping)
-
-        vi = md.viewitems()  # noqa: B302
-        vk = md.viewkeys()  # noqa: B302
-        vv = md.viewvalues()  # noqa: B302
-
-        assert list(vi) == list(md.items())
-        assert list(vk) == list(md.keys())
-        assert list(vv) == list(md.values())
-
-        md["k"] = "n"
-
-        assert list(vi) == list(md.items())
-        assert list(vk) == list(md.keys())
-        assert list(vv) == list(md.values())
-
-    @pytest.mark.skipif(not PY2, reason="viewmethods work only for the 2-nd version.")
-    def test_viewitems_with_multi(self):
-        mapping = [("a", "b"), ("a", "c")]
-        md = self.storage_class(mapping)
-
-        vi = md.viewitems(multi=True)  # noqa: B302
-
-        assert list(vi) == list(md.items(multi=True))
-
-        md["k"] = "n"
-
-        assert list(vi) == list(md.items(multi=True))
+        assert list(zip(md, md.listvalues())) == list(md.lists())
+        assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
 
     def test_getitem_raise_badrequestkeyerror_for_empty_list_value(self):
         mapping = [("a", "b"), ("a", "c")]
@@ -481,9 +441,9 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert len(d) == 1
         d.add("foo", "baz")
         assert len(d) == 1
-        assert list(iteritems(d)) == [("foo", "bar")]
+        assert list(d.items()) == [("foo", "bar")]
         assert list(d) == ["foo"]
-        assert list(iteritems(d, multi=True)) == [("foo", "bar"), ("foo", "baz")]
+        assert list(d.items(multi=True)) == [("foo", "bar"), ("foo", "baz")]
         del d["foo"]
         assert not d
         assert len(d) == 0
@@ -493,15 +453,15 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         d.add("foo", 3)
         assert d.getlist("foo") == [1, 2, 3]
         assert d.getlist("bar") == [42]
-        assert list(iteritems(d)) == [("foo", 1), ("bar", 42)]
+        assert list(d.items()) == [("foo", 1), ("bar", 42)]
 
         expected = ["foo", "bar"]
 
         assert list(d.keys()) == expected
         assert list(d) == expected
-        assert list(iterkeys(d)) == expected
+        assert list(d.keys()) == expected
 
-        assert list(iteritems(d, multi=True)) == [
+        assert list(d.items(multi=True)) == [
             ("foo", 1),
             ("foo", 2),
             ("bar", 42),
@@ -575,9 +535,9 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert sorted(ab.listvalues()) == [["value_a"], ["value_b"]]
         assert sorted(ab.keys()) == ["key_a", "key_b"]
 
-        assert sorted(iterlists(ab)) == [("key_a", ["value_a"]), ("key_b", ["value_b"])]
-        assert sorted(iterlistvalues(ab)) == [["value_a"], ["value_b"]]
-        assert sorted(iterkeys(ab)) == ["key_a", "key_b"]
+        assert sorted(ab.lists()) == [("key_a", ["value_a"]), ("key_b", ["value_b"])]
+        assert sorted(ab.listvalues()) == [["value_a"], ["value_b"]]
+        assert sorted(ab.keys()) == ["key_a", "key_b"]
 
     def test_get_description(self):
         data = datastructures.OrderedMultiDict()
@@ -654,7 +614,7 @@ class TestCombinedMultiDict(object):
         md1 = datastructures.MultiDict((("foo", "bar"),))
         md2 = datastructures.MultiDict((("foo", "blafasel"),))
         x = self.storage_class((md1, md2))
-        assert list(iterlists(x)) == [("foo", ["bar", "blafasel"])]
+        assert list(x.lists()) == [("foo", ["bar", "blafasel"])]
 
     def test_length(self):
         d1 = datastructures.MultiDict([("foo", "1")])
@@ -827,23 +787,15 @@ class TestHeaders(object):
         h = self.storage_class()
         h.set(u"Key", u"Value")
         for key, value in h.to_wsgi_list():
-            if PY2:
-                strict_eq(key, b"Key")
-                strict_eq(value, b"Value")
-            else:
-                strict_eq(key, u"Key")
-                strict_eq(value, u"Value")
+            strict_eq(key, u"Key")
+            strict_eq(value, u"Value")
 
     def test_to_wsgi_list_bytes(self):
         h = self.storage_class()
         h.set(b"Key", b"Value")
         for key, value in h.to_wsgi_list():
-            if PY2:
-                strict_eq(key, b"Key")
-                strict_eq(value, b"Value")
-            else:
-                strict_eq(key, u"Key")
-                strict_eq(value, u"Value")
+            strict_eq(key, u"Key")
+            strict_eq(value, u"Value")
 
     def test_equality(self):
         # test equality, given keys are case insensitive
@@ -901,12 +853,12 @@ class TestEnvironHeaders(object):
             {"HTTP_FOO": "\xe2\x9c\x93", "CONTENT_TYPE": "text/plain"}
         )
         assert headers["Foo"] == u"\xe2\x9c\x93"
-        assert isinstance(headers["Foo"], text_type)
-        assert isinstance(headers["Content-Type"], text_type)
+        assert isinstance(headers["Foo"], str)
+        assert isinstance(headers["Content-Type"], str)
         iter_output = dict(iter(headers))
         assert iter_output["Foo"] == u"\xe2\x9c\x93"
-        assert isinstance(iter_output["Foo"], text_type)
-        assert isinstance(iter_output["Content-Type"], text_type)
+        assert isinstance(iter_output["Foo"], str)
+        assert isinstance(iter_output["Content-Type"], str)
 
     def test_bytes_operations(self):
         foo_val = "\xff"
@@ -1220,7 +1172,6 @@ class TestFileStorage(object):
             assert idx < 2
         assert idx == 1
 
-    @pytest.mark.skipif(PY2, reason="io.IOBase is only needed in PY3.")
     @pytest.mark.parametrize("stream", (tempfile.SpooledTemporaryFile, io.BytesIO))
     def test_proxy_can_access_stream_attrs(self, stream):
         """``SpooledTemporaryFile`` doesn't implement some of

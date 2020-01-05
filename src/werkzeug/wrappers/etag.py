@@ -1,4 +1,3 @@
-from .._compat import string_types
 from .._internal import _get_environ
 from ..datastructures import ContentRange
 from ..datastructures import RequestCacheControl
@@ -298,7 +297,7 @@ class ETagResponseMixin(object):
     def content_range(self, value):
         if not value:
             del self.headers["content-range"]
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             self.headers["Content-Range"] = value
         else:
             self.headers["Content-Range"] = value.to_header()

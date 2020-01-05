@@ -14,9 +14,6 @@ common HTTP errors such as non-empty responses for 304 status codes.
 """
 from warnings import warn
 
-from .._compat import implements_iterator
-from .._compat import PY2
-from .._compat import string_types
 from ..datastructures import Headers
 from ..http import is_entity_header
 from ..wsgi import FileWrapper
@@ -126,14 +123,10 @@ class GuardedWrite(object):
         self._chunks.append(len(s))
 
 
-@implements_iterator
 class GuardedIterator(object):
     def __init__(self, iterator, headers_set, chunks):
         self._iterator = iterator
-        if PY2:
-            self._next = iter(iterator).next
-        else:
-            self._next = iter(iterator).__next__
+        self._next = iter(iterator).__next__
         self.closed = False
         self.headers_set = headers_set
         self.chunks = chunks
@@ -351,7 +344,7 @@ class LintMiddleware(object):
                 )
 
     def check_iterator(self, app_iter):
-        if isinstance(app_iter, string_types):
+        if isinstance(app_iter, str):
             warn(
                 "The application returned astring. The response will send one character"
                 " at a time to the client, which will kill performance. Return a list"

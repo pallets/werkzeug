@@ -1,10 +1,9 @@
 from functools import update_wrapper
 from io import BytesIO
 
-from .._compat import to_native
-from .._compat import to_unicode
-from .._compat import wsgi_decoding_dance
-from .._compat import wsgi_get_bytes
+from .._internal import _to_native
+from .._internal import _to_unicode
+from .._internal import _wsgi_decoding_dance
 from ..datastructures import CombinedMultiDict
 from ..datastructures import EnvironHeaders
 from ..datastructures import ImmutableList
@@ -160,7 +159,7 @@ class BaseRequest(object):
         # in a debug session we don't want the repr to blow up.
         args = []
         try:
-            args.append("'%s'" % to_native(self.url, self.url_charset))
+            args.append("'%s'" % _to_native(self.url, self.url_charset))
             args.append("[%s]" % self.method)
         except Exception:
             args.append("(invalid WSGI environ)")
@@ -401,7 +400,7 @@ class BaseRequest(object):
         be necessary if the order of the form data is important.
         """
         return url_decode(
-            wsgi_get_bytes(self.environ.get("QUERY_STRING", "")),
+            self.environ.get("QUERY_STRING", "").encode("latin1"),
             self.url_charset,
             errors=self.encoding_errors,
             cls=self.parameter_storage_class,
@@ -538,7 +537,7 @@ class BaseRequest(object):
         info in the WSGI environment but will always include a leading slash,
         even if the URL root is accessed.
         """
-        raw_path = wsgi_decoding_dance(
+        raw_path = _wsgi_decoding_dance(
             self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
         )
         return "/" + raw_path.lstrip("/")
@@ -546,12 +545,12 @@ class BaseRequest(object):
     @cached_property
     def full_path(self):
         """Requested path as unicode, including the query string."""
-        return self.path + u"?" + to_unicode(self.query_string, self.url_charset)
+        return self.path + u"?" + _to_unicode(self.query_string, self.url_charset)
 
     @cached_property
     def script_root(self):
         """The root path of the script without the trailing slash."""
-        raw_path = wsgi_decoding_dance(
+        raw_path = _wsgi_decoding_dance(
             self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
         )
         return raw_path.rstrip("/")
@@ -600,7 +599,7 @@ class BaseRequest(object):
         "QUERY_STRING",
         "",
         read_only=True,
-        load_func=wsgi_get_bytes,
+        load_func=lambda x: x.encode("latin1"),
         doc="The URL parameters as raw bytestring.",
     )
     method = environ_property(

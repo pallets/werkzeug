@@ -18,8 +18,6 @@ from time import mktime
 from time import time
 from zlib import adler32
 
-from .._compat import PY2
-from .._compat import string_types
 from ..filesystem import get_filesystem_encoding
 from ..http import http_date
 from ..http import is_resource_modified
@@ -111,7 +109,7 @@ class SharedDataMiddleware(object):
         for key, value in exports:
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
-            elif isinstance(value, string_types):
+            elif isinstance(value, str):
                 if os.path.isfile(value):
                     loader = self.get_file_loader(value)
                 else:
@@ -234,9 +232,6 @@ class SharedDataMiddleware(object):
 
     def __call__(self, environ, start_response):
         path = get_path_info(environ)
-
-        if PY2:
-            path = path.encode(get_filesystem_encoding())
 
         file_loader = None
 

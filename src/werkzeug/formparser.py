@@ -12,14 +12,13 @@
 import codecs
 import re
 from functools import update_wrapper
+from io import BytesIO
 from itertools import chain
 from itertools import repeat
 from itertools import tee
 
 from . import exceptions
-from ._compat import BytesIO
-from ._compat import text_type
-from ._compat import to_native
+from ._internal import _to_native
 from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
@@ -248,7 +247,7 @@ class FormDataParser(object):
         boundary = options.get("boundary")
         if boundary is None:
             raise ValueError("Missing boundary")
-        if isinstance(boundary, text_type):
+        if isinstance(boundary, str):
             boundary = boundary.encode("ascii")
         form, files = parser.parse(stream, boundary, content_length)
         return stream, form, files
@@ -299,7 +298,7 @@ def parse_multipart_headers(iterable):
     """
     result = []
     for line in iterable:
-        line = to_native(line)
+        line = _to_native(line)
         line, line_terminated = _line_parse(line)
         if not line_terminated:
             raise ValueError("unexpected end of line in multipart header")

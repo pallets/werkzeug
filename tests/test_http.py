@@ -15,15 +15,14 @@ import pytest
 from . import strict_eq
 from werkzeug import datastructures
 from werkzeug import http
-from werkzeug._compat import itervalues
-from werkzeug._compat import wsgi_encoding_dance
+from werkzeug._internal import _wsgi_encoding_dance
 from werkzeug.test import create_environ
 
 
 class TestHTTPUtility(object):
     def test_accept(self):
         a = http.parse_accept_header("en-us,ru;q=0.5")
-        assert list(itervalues(a)) == ["en-us", "ru"]
+        assert list(a.values()) == ["en-us", "ru"]
         assert a.best == "en-us"
         assert a.find("ru") == 1
         pytest.raises(ValueError, a.index, "de")
@@ -516,7 +515,7 @@ class TestHTTPUtility(object):
     def test_cookie_unicode_keys(self):
         # Yes, this is technically against the spec but happens
         val = http.dump_cookie(u"fö", u"fö")
-        assert val == wsgi_encoding_dance(u'fö="f\\303\\266"; Path=/', "utf-8")
+        assert val == _wsgi_encoding_dance(u'fö="f\\303\\266"; Path=/', "utf-8")
         cookies = http.parse_cookie(val)
         assert cookies[u"fö"] == u"fö"
 

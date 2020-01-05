@@ -15,7 +15,6 @@ import sys
 import pytest
 import requests
 
-from werkzeug._compat import PY2
 from werkzeug.debug import console
 from werkzeug.debug import DebuggedApplication
 from werkzeug.debug import get_machine_id
@@ -71,14 +70,6 @@ class TestDebugRepr(object):
             u'<span class="module">tests.test_debug.</span>'
             u"Test(<span class=\"string\">'foo'</span>)"
         )
-
-    @pytest.mark.skipif(not PY2, reason="u prefix on py2 only")
-    def test_unicode_repr(self):
-        assert debug_repr(u"foo") == u"<span class=\"string\">u'foo'</span>"
-
-    @pytest.mark.skipif(PY2, reason="b prefix on py3 only")
-    def test_bytes_repr(self):
-        assert debug_repr(b"foo") == u"<span class=\"string\">b'foo'</span>"
 
     def test_sequence_repr(self):
         assert debug_repr(list(range(20))) == (
@@ -137,8 +128,8 @@ class TestDebugRepr(object):
         )
         assert debug_repr((1, "zwei", u"drei")) == (
             u'(<span class="number">1</span>, <span class="string">\''
-            u"zwei'</span>, <span class=\"string\">%s'drei'</span>)"
-        ) % ("u" if PY2 else "")
+            u"zwei'</span>, <span class=\"string\">'drei'</span>)"
+        )
 
     def test_custom_repr(self):
         class Foo(object):
@@ -164,8 +155,7 @@ class TestDebugRepr(object):
         # No ur'' in Py3
         # https://bugs.python.org/issue15096
         assert debug_repr(re.compile(u"foo\\d")) == (
-            u"re.compile(<span class=\"string regex\">%sr'foo\\d'</span>)"
-            % ("u" if PY2 else "")
+            u"re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
         )
 
     def test_set_repr(self):
@@ -250,7 +240,6 @@ class TestDebugHelpers(object):
         assert "Help on list object" in x
         assert "__delitem__" in x
 
-    @pytest.mark.skipif(PY2, reason="Python 2 doesn't have chained exceptions.")
     def test_exc_divider_found_on_chained_exception(self):
         @Request.application
         def app(request):
@@ -278,7 +267,7 @@ class TestTraceback(object):
         except ZeroDivisionError:
             traceback = Traceback(*sys.exc_info())
 
-        buffer_ = io.BytesIO() if PY2 else io.StringIO()
+        buffer_ = io.StringIO()
         traceback.log(buffer_)
         assert buffer_.getvalue().strip() == traceback.plaintext.strip()
 
@@ -368,7 +357,6 @@ def test_console_closure_variables(monkeypatch):
     assert ret == ">>> x()\n5"
 
 
-@pytest.mark.skipif(PY2, reason="Python 2 doesn't have chained exceptions.")
 @pytest.mark.timeout(2)
 def test_chained_exception_cycle():
     try:

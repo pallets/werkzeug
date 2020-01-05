@@ -8,13 +8,12 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import io
+
 import pytest
 
 from . import strict_eq
 from werkzeug import urls
-from werkzeug._compat import BytesIO
-from werkzeug._compat import NativeStringIO
-from werkzeug._compat import text_type
 from werkzeug.datastructures import OrderedMultiDict
 
 
@@ -123,7 +122,7 @@ def test_streamed_url_decoding():
     item2 = u"b" * 400
     string = ("a=%s&b=%s&c=%s" % (item1, item2, item2)).encode("ascii")
     gen = urls.url_decode_stream(
-        BytesIO(string), limit=len(string), return_iterator=True
+        io.BytesIO(string), limit=len(string), return_iterator=True
     )
     strict_eq(next(gen), ("a", item1))
     strict_eq(next(gen), ("b", item2))
@@ -147,7 +146,7 @@ def test_url_encoding():
 def test_sorted_url_encode():
     strict_eq(
         urls.url_encode(
-            {u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True, key=lambda i: text_type(i[0])
+            {u"a": 42, u"b": 23, 1: 1, 2: 2}, sort=True, key=lambda i: str(i[0])
         ),
         "1=1&2=2&a=42&b=23",
     )
@@ -162,15 +161,15 @@ def test_sorted_url_encode():
 
 
 def test_streamed_url_encoding():
-    out = NativeStringIO()
+    out = io.StringIO()
     urls.url_encode_stream({"foo": "bar 45"}, out)
     strict_eq(out.getvalue(), "foo=bar+45")
 
     d = {"foo": 1, "bar": 23, "blah": u"Hänsel"}
-    out = NativeStringIO()
+    out = io.StringIO()
     urls.url_encode_stream(d, out, sort=True)
     strict_eq(out.getvalue(), "bar=23&blah=H%C3%A4nsel&foo=1")
-    out = NativeStringIO()
+    out = io.StringIO()
     urls.url_encode_stream(d, out, sort=True, separator=u";")
     strict_eq(out.getvalue(), "bar=23;blah=H%C3%A4nsel;foo=1")
 
@@ -326,7 +325,7 @@ def test_href_past_root():
 def test_url_unquote_plus_unicode():
     # was broken in 0.6
     strict_eq(urls.url_unquote_plus(u"\x6d"), u"\x6d")
-    assert type(urls.url_unquote_plus(u"\x6d")) is text_type
+    assert type(urls.url_unquote_plus(u"\x6d")) is str
 
 
 def test_quoting_of_local_urls():

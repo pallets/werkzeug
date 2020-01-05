@@ -16,12 +16,8 @@ import posixpath
 from random import SystemRandom
 from struct import Struct
 
-from ._compat import izip
-from ._compat import PY2
-from ._compat import range_type
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import to_native
+from ._internal import _to_bytes
+from ._internal import _to_native
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 150000
@@ -51,7 +47,7 @@ def pbkdf2_hex(
                      from the hashlib module.  Defaults to sha256.
     """
     rv = pbkdf2_bin(data, salt, iterations, keylen, hashfunc)
-    return to_native(codecs.encode(rv, "hex_codec"))
+    return _to_native(codecs.encode(rv, "hex_codec"))
 
 
 def pbkdf2_bin(
@@ -76,8 +72,8 @@ def pbkdf2_bin(
     if not hashfunc:
         hashfunc = "sha256"
 
-    data = to_bytes(data)
-    salt = to_bytes(salt)
+    data = _to_bytes(data)
+    salt = _to_bytes(salt)
 
     if callable(hashfunc):
         _test_hash = hashfunc()
@@ -95,9 +91,9 @@ def safe_str_cmp(a, b):
 
     .. versionadded:: 0.7
     """
-    if isinstance(a, text_type):
+    if isinstance(a, str):
         a = a.encode("utf-8")
-    if isinstance(b, text_type):
+    if isinstance(b, str):
         b = b.encode("utf-8")
 
     if _builtin_safe_str_cmp is not None:
@@ -107,12 +103,8 @@ def safe_str_cmp(a, b):
         return False
 
     rv = 0
-    if PY2:
-        for x, y in izip(a, b):
-            rv |= ord(x) ^ ord(y)
-    else:
-        for x, y in izip(a, b):
-            rv |= x ^ y
+    for x, y in zip(a, b):
+        rv |= x ^ y
 
     return rv == 0
 
@@ -121,7 +113,7 @@ def gen_salt(length):
     """Generate a random string of SALT_CHARS with specified ``length``."""
     if length <= 0:
         raise ValueError("Salt length must be positive")
-    return "".join(_sys_rng.choice(SALT_CHARS) for _ in range_type(length))
+    return "".join(_sys_rng.choice(SALT_CHARS) for _ in range(length))
 
 
 def _hash_internal(method, salt, password):
@@ -132,7 +124,7 @@ def _hash_internal(method, salt, password):
     if method == "plain":
         return password, method
 
-    if isinstance(password, text_type):
+    if isinstance(password, str):
         password = password.encode("utf-8")
 
     if method.startswith("pbkdf2:"):
@@ -152,7 +144,7 @@ def _hash_internal(method, salt, password):
             raise ValueError("Salt is required for PBKDF2")
         rv = pbkdf2_hex(password, salt, iterations, hashfunc=method)
     elif salt:
-        if isinstance(salt, text_type):
+        if isinstance(salt, str):
             salt = salt.encode("utf-8")
         mac = _create_mac(salt, password, method)
         rv = mac.hexdigest()

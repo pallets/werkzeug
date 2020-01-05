@@ -10,18 +10,14 @@
 """
 import inspect
 import logging
+import operator
 import re
 import string
+import sys
 from datetime import date
 from datetime import datetime
 from itertools import chain
 from weakref import WeakKeyDictionary
-
-from ._compat import int_to_byte
-from ._compat import integer_types
-from ._compat import iter_bytes
-from ._compat import range_type
-from ._compat import text_type
 
 
 _logger = None
@@ -32,8 +28,10 @@ _legal_cookie_chars = (
 ).encode("ascii")
 
 _cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\\\"}
-for _i in chain(range_type(32), range_type(127, 256)):
-    _cookie_quoting_map[int_to_byte(_i)] = ("\\%03o" % _i).encode("latin1")
+for _i in chain(range(32), range(127, 256)):
+    _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = ("\\%03o" % _i).encode(
+        "latin1"
+    )
 
 _octal_re = re.compile(br"\\[0-3][0-7][0-7]")
 _quote_re = re.compile(br"[\\].")
@@ -52,6 +50,8 @@ _cookie_re = re.compile(
     flags=re.VERBOSE,
 )
 
+_WIN = sys.platform.startswith("win")
+
 
 class _Missing(object):
     def __repr__(self):
@@ -62,6 +62,69 @@ class _Missing(object):
 
 
 _missing = _Missing()
+
+
+def _make_literal_wrapper(reference):
+    if isinstance(reference, str):
+        return lambda x: x
+    return operator.methodcaller("encode", "latin1")
+
+
+def _normalize_string_tuple(tup):
+    """Ensures that all types in the tuple are either strings or bytes."""
+    tupiter = iter(tup)
+    is_text = isinstance(next(tupiter, None), str)
+    for arg in tupiter:
+        if isinstance(arg, str) != is_text:
+            raise TypeError("Cannot mix str and bytes arguments (got %s)" % repr(tup))
+    return tup
+
+
+def _to_bytes(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa
+    if x is None:
+        return None
+    if isinstance(x, (bytes, bytearray, memoryview)):  # noqa
+        return bytes(x)
+    if isinstance(x, str):
+        return x.encode(charset, errors)
+    raise TypeError("Expected bytes")
+
+
+def _to_native(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa
+    if x is None or isinstance(x, str):
+        return x
+    return x.decode(charset, errors)
+
+
+def _to_unicode(
+    x,
+    charset=sys.getdefaultencoding(),  # noqa
+    errors="strict",
+    allow_none_charset=False,
+):
+    if x is None:
+        return None
+    if not isinstance(x, bytes):
+        return str(x)
+    if charset is None and allow_none_charset:
+        return x
+    return x.decode(charset, errors)
+
+
+def _reraise(tp, value, tb=None):
+    if value.__traceback__ is not tb:
+        raise value.with_traceback(tb)
+    raise value
+
+
+def _wsgi_decoding_dance(s, charset="utf-8", errors="replace"):
+    return s.encode("latin1").decode(charset, errors)
+
+
+def _wsgi_encoding_dance(s, charset="utf-8", errors="replace"):
+    if isinstance(s, str):
+        s = s.encode(charset)
+    return s.decode("latin1", errors)
 
 
 def _get_environ(obj):
@@ -197,7 +260,7 @@ def _date_to_unix(arg):
     """
     if isinstance(arg, datetime):
         arg = arg.utctimetuple()
-    elif isinstance(arg, integer_types + (float,)):
+    elif isinstance(arg, (int, float)):
         return int(arg)
     year, month, day, hour, minute, second = arg[:6]
     days = date(year, month, 1).toordinal() - _epoch_ord + day - 1
@@ -265,7 +328,8 @@ def _cookie_quote(b):
     _lookup = _cookie_quoting_map.get
     _push = buf.extend
 
-    for char in iter_bytes(b):
+    for char_int in b:
+        char = char_int.to_bytes(1, sys.byteorder)
         if char not in _legal_cookie_chars:
             all_legal = False
             char = _lookup(char, char)
@@ -331,7 +395,7 @@ def _cookie_parse_impl(b):
 
 def _encode_idna(domain):
     # If we're given bytes, make sure they fit into ASCII
-    if not isinstance(domain, text_type):
+    if not isinstance(domain, str):
         domain.decode("ascii")
         return domain
 
@@ -352,7 +416,7 @@ def _decode_idna(domain):
     # If the input is a string try to encode it to ascii to
     # do the idna decoding.  if that fails because of an
     # unicode error, then we already have a decoded idna domain
-    if isinstance(domain, text_type):
+    if isinstance(domain, str):
         try:
             domain = domain.encode("ascii")
         except UnicodeError:

@@ -17,16 +17,11 @@ from random import random
 from tempfile import TemporaryFile
 from time import time
 
-from ._compat import iteritems
-from ._compat import iterlists
-from ._compat import itervalues
-from ._compat import make_literal_wrapper
-from ._compat import reraise
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import wsgi_encoding_dance
 from ._internal import _get_environ
+from ._internal import _make_literal_wrapper
+from ._internal import _reraise
+from ._internal import _to_bytes
+from ._internal import _wsgi_encoding_dance
 from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
 from .datastructures import EnvironHeaders
@@ -96,7 +91,7 @@ def stream_encode_multipart(
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
-    for key, values in iterlists(values):
+    for key, values in iter(values.lists()):
         for value in values:
             write('--%s\r\nContent-Disposition: form-data; name="%s"' % (boundary, key))
             reader = getattr(value, "read", None)
@@ -120,10 +115,10 @@ def stream_encode_multipart(
                         break
                     write_binary(chunk)
             else:
-                if not isinstance(value, string_types):
+                if not isinstance(value, str):
                     value = str(value)
 
-                value = to_bytes(value, charset)
+                value = _to_bytes(value, charset)
                 write("\r\n\r\n")
                 write_binary(value)
             write("\r\n")
@@ -214,11 +209,11 @@ def _iter_data(data):
     :class:`EnvironBuilder`.
     """
     if isinstance(data, MultiDict):
-        for key, values in iterlists(data):
+        for key, values in iter(data.lists()):
             for value in values:
                 yield key, value
     else:
-        for key, values in iteritems(data):
+        for key, values in iter(data.items()):
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -341,7 +336,7 @@ class EnvironBuilder(object):
         mimetype=None,
         json=None,
     ):
-        path_s = make_literal_wrapper(path)
+        path_s = _make_literal_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
         if query_string is None and path_s("?") in path:
@@ -351,7 +346,7 @@ class EnvironBuilder(object):
         if base_url is not None:
             base_url = url_fix(iri_to_uri(base_url, charset), charset)
         self.base_url = base_url
-        if isinstance(query_string, (bytes, text_type)):
+        if isinstance(query_string, (bytes, str)):
             self.query_string = query_string
         else:
             if query_string is None:
@@ -393,7 +388,7 @@ class EnvironBuilder(object):
                 raise TypeError("can't provide input stream and data")
             if hasattr(data, "read"):
                 data = data.read()
-            if isinstance(data, text_type):
+            if isinstance(data, str):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
                 self.input_stream = BytesIO(data)
@@ -653,7 +648,7 @@ class EnvironBuilder(object):
         if self.closed:
             return
         try:
-            files = itervalues(self.files)
+            files = iter(self.files.values())
         except AttributeError:
             files = ()
         for f in files:
@@ -703,9 +698,9 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            return wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
+            return _wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
 
-        qs = wsgi_encoding_dance(self.query_string)
+        qs = _wsgi_encoding_dance(self.query_string)
 
         result.update(
             {
@@ -714,9 +709,9 @@ class EnvironBuilder(object):
                 "PATH_INFO": _path_encode(self.path),
                 "QUERY_STRING": qs,
                 # Non-standard, added by mod_wsgi, uWSGI
-                "REQUEST_URI": wsgi_encoding_dance(self.path),
+                "REQUEST_URI": _wsgi_encoding_dance(self.path),
                 # Non-standard, added by gunicorn
-                "RAW_URI": wsgi_encoding_dance(self.path),
+                "RAW_URI": _wsgi_encoding_dance(self.path),
                 "SERVER_NAME": self.server_name,
                 "SERVER_PORT": str(self.server_port),
                 "HTTP_HOST": self.host,
@@ -1095,7 +1090,7 @@ def run_wsgi_app(app, environ, buffered=False):
 
     def start_response(status, headers, exc_info=None):
         if exc_info is not None:
-            reraise(*exc_info)
+            _reraise(*exc_info)
         response[:] = [status, headers]
         return buffer.append
 

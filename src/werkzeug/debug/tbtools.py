@@ -18,13 +18,9 @@ import sysconfig
 import traceback
 from tokenize import TokenError
 
-from .._compat import PY2
-from .._compat import range_type
-from .._compat import reraise
-from .._compat import string_types
-from .._compat import text_type
-from .._compat import to_native
-from .._compat import to_unicode
+from .._internal import _reraise
+from .._internal import _to_native
+from .._internal import _to_unicode
 from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
 from ..utils import escape
@@ -192,8 +188,8 @@ def get_current_traceback(
     """
     exc_type, exc_value, tb = sys.exc_info()
     if ignore_system_exceptions and exc_type in system_exceptions:
-        reraise(exc_type, exc_value, tb)
-    for _ in range_type(skip):
+        _reraise(exc_type, exc_value, tb)
+    for _ in range(skip):
         if tb.tb_next is None:
             break
         tb = tb.tb_next
@@ -249,8 +245,6 @@ class Traceback(object):
         while True:
             self.groups.append(Group(exc_type, exc_value, tb))
             memo.add(id(exc_value))
-            if PY2:
-                break
             exc_value = exc_value.__cause__ or exc_value.__context__
             if exc_value is None or id(exc_value) in memo:
                 break
@@ -281,7 +275,7 @@ class Traceback(object):
         if logfile is None:
             logfile = sys.stderr
         tb = self.plaintext.rstrip() + u"\n"
-        logfile.write(to_native(tb, "utf-8", "replace"))
+        logfile.write(_to_native(tb, "utf-8", "replace"))
 
     def paste(self):
         """Create a paste and return the paste id."""
@@ -367,17 +361,16 @@ class Group(object):
         self.exc_type = exc_type
         self.exc_value = exc_value
         self.info = None
-        if not PY2:
-            if exc_value.__cause__ is not None:
-                self.info = (
-                    u"The above exception was the direct cause of the"
-                    u" following exception"
-                )
-            elif exc_value.__context__ is not None:
-                self.info = (
-                    u"During handling of the above exception, another"
-                    u" exception occurred"
-                )
+        if exc_value.__cause__ is not None:
+            self.info = (
+                u"The above exception was the direct cause of the"
+                u" following exception"
+            )
+        elif exc_value.__context__ is not None:
+            self.info = (
+                u"During handling of the above exception, another"
+                u" exception occurred"
+            )
 
         self.frames = []
         while tb is not None:
@@ -421,7 +414,7 @@ class Group(object):
         """String representation of the exception."""
         buf = traceback.format_exception_only(self.exc_type, self.exc_value)
         rv = "".join(buf).strip()
-        return to_unicode(rv, "utf-8", "replace")
+        return _to_unicode(rv, "utf-8", "replace")
 
     def render(self, mark_lib=True):
         out = []
@@ -463,7 +456,7 @@ class Frame(object):
         # if it's a file on the file system resolve the real filename.
         if os.path.isfile(fn):
             fn = os.path.realpath(fn)
-        self.filename = to_unicode(fn, get_filesystem_encoding())
+        self.filename = _to_unicode(fn, get_filesystem_encoding())
         self.module = self.globals.get("__name__", self.locals.get("__name__"))
         self.loader = self.globals.get("__loader__", self.locals.get("__loader__"))
         self.code = tb.tb_frame.f_code
@@ -472,7 +465,7 @@ class Frame(object):
         self.hide = self.locals.get("__traceback_hide__", False)
         info = self.locals.get("__traceback_info__")
         if info is not None:
-            info = to_unicode(info, "utf-8", "replace")
+            info = _to_unicode(info, "utf-8", "replace")
         self.info = info
 
     def render(self, mark_lib=True):
@@ -549,9 +542,7 @@ class Frame(object):
 
     def eval(self, code, mode="single"):
         """Evaluate code in the context of the frame."""
-        if isinstance(code, string_types):
-            if PY2 and isinstance(code, text_type):  # noqa
-                code = UTF8_COOKIE + code.encode("utf-8")
+        if isinstance(code, str):
             code = compile(code, "<interactive>", mode)
         return eval(code, self.globals, self.locals)
 
@@ -574,14 +565,14 @@ class Frame(object):
         if source is None:
             try:
                 with open(
-                    to_native(self.filename, get_filesystem_encoding()), mode="rb"
+                    _to_native(self.filename, get_filesystem_encoding()), mode="rb"
                 ) as f:
                     source = f.read()
             except IOError:
                 return []
 
         # already unicode?  return right away
-        if isinstance(source, text_type):
+        if isinstance(source, str):
             return source.splitlines()
 
         # yes. it should be ascii, but we don't want to reject too many
@@ -599,7 +590,7 @@ class Frame(object):
                     break
 
         # on broken cookies we fall back to utf-8 too
-        charset = to_native(charset)
+        charset = _to_native(charset)
         try:
             codecs.lookup(charset)
         except LookupError:

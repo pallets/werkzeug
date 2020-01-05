@@ -1,10 +1,7 @@
 import warnings
 
-from .._compat import integer_types
-from .._compat import string_types
-from .._compat import text_type
-from .._compat import to_bytes
-from .._compat import to_native
+from .._internal import _to_bytes
+from .._internal import _to_native
 from ..datastructures import Headers
 from ..http import dump_cookie
 from ..http import HTTP_STATUS_CODES
@@ -30,7 +27,7 @@ def _warn_if_string(iterable):
     """Helper for the response objects to check if the iterable returned
     to the WSGI server is not a string.
     """
-    if isinstance(iterable, string_types):
+    if isinstance(iterable, str):
         warnings.warn(
             "Response iterable was set to a string. This will appear to"
             " work but means that the server will send the data to the"
@@ -43,7 +40,7 @@ def _warn_if_string(iterable):
 
 def _iter_encoded(iterable, charset):
     for item in iterable:
-        if isinstance(item, text_type):
+        if isinstance(item, str):
             yield item.encode(charset)
         else:
             yield item
@@ -54,8 +51,8 @@ def _clean_accept_ranges(accept_ranges):
         return "bytes"
     elif accept_ranges is False:
         return "none"
-    elif isinstance(accept_ranges, text_type):
-        return to_native(accept_ranges)
+    elif isinstance(accept_ranges, str):
+        return _to_native(accept_ranges)
     raise ValueError("Invalid accept_ranges value")
 
 
@@ -196,7 +193,7 @@ class BaseResponse(object):
             self.headers["Content-Type"] = content_type
         if status is None:
             status = self.default_status
-        if isinstance(status, integer_types):
+        if isinstance(status, int):
             self.status_code = status
         else:
             self.status = status
@@ -208,7 +205,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, (text_type, bytes, bytearray)):
+        elif isinstance(response, (str, bytes, bytearray)):
             self.set_data(response)
         else:
             self.response = response
@@ -307,7 +304,7 @@ class BaseResponse(object):
     @status.setter
     def status(self, value):
         try:
-            self._status = to_native(value)
+            self._status = _to_native(value)
         except AttributeError:
             raise TypeError("Invalid status argument")
 
@@ -347,7 +344,7 @@ class BaseResponse(object):
         """
         # if an unicode string is set, it's encoded directly so that we
         # can set the content length
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = value.encode(self.charset)
         else:
             value = bytes(value)
@@ -593,21 +590,21 @@ class BaseResponse(object):
         # make sure the location header is an absolute URL
         if location is not None:
             old_location = location
-            if isinstance(location, text_type):
+            if isinstance(location, str):
                 # Safe conversion is necessary here as we might redirect
                 # to a broken URI scheme (for instance itms-services).
                 location = iri_to_uri(location, safe_conversion=True)
 
             if self.autocorrect_location_header:
                 current_url = get_current_url(environ, strip_querystring=True)
-                if isinstance(current_url, text_type):
+                if isinstance(current_url, str):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
             if location != old_location:
                 headers["Location"] = location
 
         # make sure the content location is a URL
-        if content_location is not None and isinstance(content_location, text_type):
+        if content_location is not None and isinstance(content_location, str):
             headers["Content-Location"] = iri_to_uri(content_location)
 
         if 100 <= status < 200 or status == 204:
@@ -631,7 +628,7 @@ class BaseResponse(object):
             and not (100 <= status < 200)
         ):
             try:
-                content_length = sum(len(to_bytes(x, "ascii")) for x in self.response)
+                content_length = sum(len(_to_bytes(x, "ascii")) for x in self.response)
             except UnicodeError:
                 # aha, something non-bytestringy in there, too bad, we
                 # can't safely figure out the length of the response.

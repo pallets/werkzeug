@@ -43,11 +43,10 @@ import sys
 from datetime import datetime as dt
 from datetime import timedelta
 
-from ._compat import PY2
-from ._compat import reraise
-from ._compat import WIN
-from ._compat import wsgi_encoding_dance
 from ._internal import _log
+from ._internal import _reraise
+from ._internal import _WIN
+from ._internal import _wsgi_encoding_dance
 from .exceptions import InternalServerError
 from .urls import uri_to_iri
 from .urls import url_parse
@@ -96,15 +95,8 @@ except AttributeError:
 
 
 LISTEN_QUEUE = 128
-can_open_by_fd = not WIN and hasattr(socket, "fromfd")
-
-# On Python 3, ConnectionError represents the same errnos as
-# socket.error from Python 2, while socket.error is an alias for the
-# more generic OSError.
-if PY2:
-    _ConnectionError = socket.error
-else:
-    _ConnectionError = ConnectionError
+can_open_by_fd = not _WIN and hasattr(socket, "fromfd")
+_ConnectionError = ConnectionError
 
 
 class DechunkedInput(io.RawIOBase):
@@ -206,12 +198,12 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             "SERVER_SOFTWARE": self.server_version,
             "REQUEST_METHOD": self.command,
             "SCRIPT_NAME": "",
-            "PATH_INFO": wsgi_encoding_dance(path_info),
-            "QUERY_STRING": wsgi_encoding_dance(request_url.query),
+            "PATH_INFO": _wsgi_encoding_dance(path_info),
+            "QUERY_STRING": _wsgi_encoding_dance(request_url.query),
             # Non-standard, added by mod_wsgi, uWSGI
-            "REQUEST_URI": wsgi_encoding_dance(self.path),
+            "REQUEST_URI": _wsgi_encoding_dance(self.path),
             # Non-standard, added by gunicorn
-            "RAW_URI": wsgi_encoding_dance(self.path),
+            "RAW_URI": _wsgi_encoding_dance(self.path),
             "REMOTE_ADDR": self.address_string(),
             "REMOTE_PORT": self.port_integer(),
             "SERVER_NAME": self.server.server_address[0],
@@ -300,7 +292,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             if exc_info:
                 try:
                     if headers_sent:
-                        reraise(*exc_info)
+                        _reraise(*exc_info)
                 finally:
                     exc_info = None
             elif headers_set:
@@ -460,41 +452,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
 
         :return: List of tuples containing header hey/value pairs
         """
-        if PY2:
-            # For Python 2, process the headers manually according to
-            # W3C RFC 2616 Section 4.2.
-            items = []
-            for header in self.headers.headers:
-                # Remove "\r\n" from the header and split on ":" to get
-                # the field name and value.
-                try:
-                    key, value = header[0:-2].split(":", 1)
-                except ValueError:
-                    # If header could not be slit with : but starts with white
-                    # space and it follows an existing header, it's a folded
-                    # header.
-                    if header[0] in ("\t", " ") and items:
-                        # Pop off the last header
-                        key, value = items.pop()
-                        # Append the current header to the value of the last
-                        # header which will be placed back on the end of the
-                        # list
-                        value = value + header
-                    # Otherwise it's just a bad header and should error
-                    else:
-                        # Re-raise the value error
-                        raise
-
-                # Add the key and the value once stripped of leading
-                # white space. The specification allows for stripping
-                # trailing white space but the Python 3 code does not
-                # strip trailing white space. Therefore, trailing space
-                # will be left as is to match the Python 3 behavior.
-                items.append((key, value.lstrip()))
-        else:
-            items = self.headers.items()
-
-        return items
+        return self.headers.items()
 
 
 #: backwards compatible name if someone is subclassing it
@@ -757,13 +715,7 @@ class BaseWSGIServer(HTTPServer, object):
             if ssl_context == "adhoc":
                 ssl_context = generate_adhoc_ssl_context()
 
-            # If we are on Python 2 the return value from socket.fromfd
-            # is an internal socket object but what we need for ssl wrap
-            # is the wrapper around it :(
-            sock = self.socket
-            if PY2 and not isinstance(sock, socket.socket):
-                sock = socket.socket(sock.family, sock.type, sock.proto, sock)
-            self.socket = ssl_context.wrap_socket(sock, server_side=True)
+            self.socket = ssl_context.wrap_socket(self.socket, server_side=True)
             self.ssl_context = ssl_context
         else:
             self.ssl_context = None

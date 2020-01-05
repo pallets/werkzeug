@@ -104,17 +104,11 @@ import warnings
 from pprint import pformat
 from threading import Lock
 
-from ._compat import implements_to_string
-from ._compat import iteritems
-from ._compat import itervalues
-from ._compat import native_string_result
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import to_unicode
-from ._compat import wsgi_decoding_dance
 from ._internal import _encode_idna
 from ._internal import _get_environ
+from ._internal import _to_bytes
+from ._internal import _to_unicode
+from ._internal import _wsgi_decoding_dance
 from .datastructures import ImmutableDict
 from .datastructures import MultiDict
 from .exceptions import BadHost
@@ -175,7 +169,7 @@ def _pythonize(value):
             pass
     if value[:1] == value[-1:] and value[0] in "\"'":
         value = value[1:-1]
-    return text_type(value)
+    return str(value)
 
 
 def parse_converter_args(argstr):
@@ -270,7 +264,6 @@ class RequestAliasRedirect(RoutingException):  # noqa: B903
         self.matched_values = matched_values
 
 
-@implements_to_string
 class BuildError(RoutingException, LookupError):
     """Raised if the build system cannot find a URL for an endpoint with the
     values provided.
@@ -479,14 +472,14 @@ class RuleTemplateFactory(RuleFactory):
                 new_defaults = subdomain = None
                 if rule.defaults:
                     new_defaults = {}
-                    for key, value in iteritems(rule.defaults):
-                        if isinstance(value, string_types):
+                    for key, value in iter(rule.defaults.items()):
+                        if isinstance(value, str):
                             value = format_string(value, self.context)
                         new_defaults[key] = value
                 if rule.subdomain is not None:
                     subdomain = format_string(rule.subdomain, self.context)
                 new_endpoint = rule.endpoint
-                if isinstance(new_endpoint, string_types):
+                if isinstance(new_endpoint, str):
                     new_endpoint = format_string(new_endpoint, self.context)
                 yield Rule(
                     format_string(rule.rule, self.context),
@@ -522,7 +515,6 @@ _IF_KWARGS_URL_ENCODE_AST = _prefix_names(_IF_KWARGS_URL_ENCODE_CODE)
 _URL_ENCODE_AST_NAMES = (_prefix_names("q"), _prefix_names("params"))
 
 
-@implements_to_string
 class Rule(RuleFactory):
     """A Rule represents one URL pattern.  There are some options for `Rule`
     that change the way it behaves and are passed to the `Rule` constructor.
@@ -889,7 +881,7 @@ class Rule(RuleFactory):
                     del groups["__suffix__"]
 
                 result = {}
-                for name, value in iteritems(groups):
+                for name, value in iter(groups.items()):
                     try:
                         value = self._converters[name].to_python(value)
                     except ValidationError:
@@ -939,7 +931,7 @@ class Rule(RuleFactory):
                 opl.append((False, data))
             elif not is_dynamic:
                 opl.append(
-                    (False, url_quote(to_bytes(data, self.map.charset), safe="/:|+"))
+                    (False, url_quote(_to_bytes(data, self.map.charset), safe="/:|+"))
                 )
             else:
                 opl.append((True, data))
@@ -1079,7 +1071,7 @@ class Rule(RuleFactory):
         # in case defaults are given we ensure that either the value was
         # skipped or the value is the same as the default value.
         if defaults:
-            for key, value in iteritems(defaults):
+            for key, value in iter(defaults.items()):
                 if key in values and value != values[key]:
                     return False
 
@@ -1129,7 +1121,6 @@ class Rule(RuleFactory):
     def __str__(self):
         return self.rule
 
-    @native_string_result
     def __repr__(self):
         if self.map is None:
             return u"<%s (unbound)>" % self.__class__.__name__
@@ -1162,7 +1153,7 @@ class BaseConverter(object):
     def to_url(self, value):
         if isinstance(value, (bytes, bytearray)):
             return _fast_url_quote(value)
-        return _fast_url_quote(text_type(value).encode(self.map.charset))
+        return _fast_url_quote(str(value).encode(self.map.charset))
 
 
 class UnicodeConverter(BaseConverter):
@@ -1628,7 +1619,7 @@ class Map(object):
         def _get_wsgi_string(name):
             val = environ.get(name)
             if val is not None:
-                return wsgi_decoding_dance(val, self.charset)
+                return _wsgi_decoding_dance(val, self.charset)
 
         script_name = _get_wsgi_string("SCRIPT_NAME")
         path_info = _get_wsgi_string("PATH_INFO")
@@ -1656,7 +1647,7 @@ class Map(object):
                 return
 
             self._rules.sort(key=lambda x: x.match_compare_key())
-            for rules in itervalues(self._rules_by_endpoint):
+            for rules in iter(self._rules_by_endpoint.values()):
                 rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False
 
@@ -1683,15 +1674,15 @@ class MapAdapter(object):
         query_args=None,
     ):
         self.map = map
-        self.server_name = to_unicode(server_name)
-        script_name = to_unicode(script_name)
+        self.server_name = _to_unicode(server_name)
+        script_name = _to_unicode(script_name)
         if not script_name.endswith(u"/"):
             script_name += u"/"
         self.script_name = script_name
-        self.subdomain = to_unicode(subdomain)
-        self.url_scheme = to_unicode(url_scheme)
-        self.path_info = to_unicode(path_info)
-        self.default_method = to_unicode(default_method)
+        self.subdomain = _to_unicode(subdomain)
+        self.url_scheme = _to_unicode(url_scheme)
+        self.path_info = _to_unicode(path_info)
+        self.default_method = _to_unicode(default_method)
         self.query_args = query_args
         self.websocket = self.url_scheme in {"ws", "wss"}
 
@@ -1850,7 +1841,7 @@ class MapAdapter(object):
         if path_info is None:
             path_info = self.path_info
         else:
-            path_info = to_unicode(path_info, self.map.charset)
+            path_info = _to_unicode(path_info, self.map.charset)
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
@@ -1900,7 +1891,7 @@ class MapAdapter(object):
                     raise RequestRedirect(redirect_url)
 
             if rule.redirect_to is not None:
-                if isinstance(rule.redirect_to, string_types):
+                if isinstance(rule.redirect_to, str):
 
                     def _handle_match(match):
                         value = rv[match.group(1)]
@@ -1982,12 +1973,12 @@ class MapAdapter(object):
         if self.map.host_matching:
             if domain_part is None:
                 return self.server_name
-            return to_unicode(domain_part, "ascii")
+            return _to_unicode(domain_part, "ascii")
         subdomain = domain_part
         if subdomain is None:
             subdomain = self.subdomain
         else:
-            subdomain = to_unicode(subdomain, "ascii")
+            subdomain = _to_unicode(subdomain, "ascii")
         return (subdomain + u"." if subdomain else u"") + self.server_name
 
     def get_default_redirect(self, rule, method, values, query_args):
@@ -2009,7 +2000,7 @@ class MapAdapter(object):
                 return self.make_redirect_url(path, query_args, domain_part=domain_part)
 
     def encode_query_args(self, query_args):
-        if not isinstance(query_args, string_types):
+        if not isinstance(query_args, str):
             query_args = url_encode(query_args, self.map.charset)
         return query_args
 
@@ -2163,9 +2154,9 @@ class MapAdapter(object):
         if values:
             if isinstance(values, MultiDict):
                 temp_values = {}
-                # iteritems(dict, values) is like `values.lists()`
+                # iter(dict.items(values)) is like `values.lists()`
                 # without the call or `list()` coercion overhead.
-                for key, value in iteritems(dict, values):
+                for key, value in iter(dict.items(values)):
                     if not value:
                         continue
                     if len(value) == 1:  # flatten single item lists
@@ -2176,7 +2167,7 @@ class MapAdapter(object):
                 values = temp_values
             else:
                 # drop None
-                values = dict(i for i in iteritems(values) if i[1] is not None)
+                values = dict(i for i in iter(values.items()) if i[1] is not None)
         else:
             values = {}
 

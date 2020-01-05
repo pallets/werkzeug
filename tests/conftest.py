@@ -21,7 +21,7 @@ from itertools import count
 import pytest
 
 from werkzeug import serving
-from werkzeug._compat import to_bytes
+from werkzeug._internal import _to_bytes
 from werkzeug.urls import url_quote
 from werkzeug.utils import cached_property
 
@@ -62,7 +62,7 @@ def _get_pid_middleware(f):
         if environ["PATH_INFO"] == "/_getpid":
             start_response("200 OK", [("Content-Type", "text/plain")])
             pid_logger.info("pid=%s", os.getpid())
-            return [to_bytes(str(os.getpid()))]
+            return [_to_bytes(str(os.getpid()))]
         return f(environ, start_response)
 
     return inner

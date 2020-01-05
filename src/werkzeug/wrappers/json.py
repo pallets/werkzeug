@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import datetime
 import uuid
 
-from .._compat import text_type
 from ..exceptions import BadRequest
 from ..utils import detect_utf_encoding
 
@@ -23,7 +22,7 @@ class _JSONModule(object):
             return str(o)
 
         if hasattr(o, "__html__"):
-            return text_type(o.__html__())
+            return str(o.__html__())
 
         raise TypeError()
 

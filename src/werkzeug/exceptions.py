@@ -60,15 +60,10 @@
 import sys
 from datetime import datetime
 
-from ._compat import implements_to_string
-from ._compat import integer_types
-from ._compat import iteritems
-from ._compat import text_type
 from ._internal import _get_environ
 from .utils import escape
 
 
-@implements_to_string
 class HTTPException(Exception):
     """Baseclass for all HTTP exceptions.  This exception can be called as WSGI
     application to render a default error page or you can catch the subclasses
@@ -146,19 +141,16 @@ class HTTPException(Exception):
 
     def get_body(self, environ=None):
         """Get the HTML body."""
-        return text_type(
-            (
-                u'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-                u"<title>%(code)s %(name)s</title>\n"
-                u"<h1>%(name)s</h1>\n"
-                u"%(description)s\n"
-            )
-            % {
-                "code": self.code,
-                "name": escape(self.name),
-                "description": self.get_description(environ),
-            }
-        )
+        return (
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+            "<title>%(code)s %(name)s</title>\n"
+            "<h1>%(name)s</h1>\n"
+            "%(description)s\n"
+        ) % {
+            "code": self.code,
+            "name": escape(self.name),
+            "description": self.get_description(environ),
+        }
 
     def get_headers(self, environ=None):
         """Get a list of headers."""
@@ -765,7 +757,7 @@ __all__ = ["HTTPException"]
 
 
 def _find_exceptions():
-    for _name, obj in iteritems(globals()):
+    for obj in globals().values():
         try:
             is_http_exception = issubclass(obj, HTTPException)
         except TypeError:
@@ -800,7 +792,7 @@ class Aborter(object):
             self.mapping.update(extra)
 
     def __call__(self, code, *args, **kwargs):
-        if not args and not kwargs and not isinstance(code, integer_types):
+        if not args and not kwargs and not isinstance(code, int):
             raise HTTPException(response=code)
         if code not in self.mapping:
             raise LookupError("no exception for %r" % code)

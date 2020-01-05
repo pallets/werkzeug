@@ -1,7 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
 
-from .._compat import string_types
 from ..datastructures import CallbackDict
 from ..http import dump_age
 from ..http import dump_csp_header
@@ -307,7 +306,7 @@ class CommonResponseDescriptorsMixin(object):
         def fset(self, value):
             if not value:
                 del self.headers[name]
-            elif isinstance(value, string_types):
+            elif isinstance(value, str):
                 self.headers[name] = value
             else:
                 self.headers[name] = dump_header(value)

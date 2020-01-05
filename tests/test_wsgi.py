@@ -16,9 +16,6 @@ import pytest
 
 from . import strict_eq
 from werkzeug import wsgi
-from werkzeug._compat import BytesIO
-from werkzeug._compat import NativeStringIO
-from werkzeug._compat import StringIO
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import ClientDisconnected
 from werkzeug.test import Client
@@ -146,13 +143,13 @@ def test_limited_stream():
         def on_exhausted(self):
             raise BadRequest("input stream exhausted")
 
-    io = BytesIO(b"123456")
-    stream = RaisingLimitedStream(io, 3)
+    io_ = io.BytesIO(b"123456")
+    stream = RaisingLimitedStream(io_, 3)
     strict_eq(stream.read(), b"123")
     pytest.raises(BadRequest, stream.read)
 
-    io = BytesIO(b"123456")
-    stream = RaisingLimitedStream(io, 3)
+    io_ = io.BytesIO(b"123456")
+    stream = RaisingLimitedStream(io_, 3)
     strict_eq(stream.tell(), 0)
     strict_eq(stream.read(1), b"1")
     strict_eq(stream.tell(), 1)
@@ -162,55 +159,55 @@ def test_limited_stream():
     strict_eq(stream.tell(), 3)
     pytest.raises(BadRequest, stream.read)
 
-    io = BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io, 9)
+    io_ = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi.LimitedStream(io_, 9)
     strict_eq(stream.readline(), b"123456\n")
     strict_eq(stream.readline(), b"ab")
 
-    io = BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io, 9)
+    io_ = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi.LimitedStream(io_, 9)
     strict_eq(stream.readlines(), [b"123456\n", b"ab"])
 
-    io = BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io, 9)
+    io_ = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi.LimitedStream(io_, 9)
     strict_eq(stream.readlines(2), [b"12"])
     strict_eq(stream.readlines(2), [b"34"])
     strict_eq(stream.readlines(), [b"56\n", b"ab"])
 
-    io = BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io, 9)
+    io_ = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi.LimitedStream(io_, 9)
     strict_eq(stream.readline(100), b"123456\n")
 
-    io = BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io, 9)
+    io_ = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi.LimitedStream(io_, 9)
     strict_eq(stream.readlines(100), [b"123456\n", b"ab"])
 
-    io = BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io, 3)
+    io_ = io.BytesIO(b"123456")
+    stream = wsgi.LimitedStream(io_, 3)
     strict_eq(stream.read(1), b"1")
     strict_eq(stream.read(1), b"2")
     strict_eq(stream.read(), b"3")
     strict_eq(stream.read(), b"")
 
-    io = BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io, 3)
+    io_ = io.BytesIO(b"123456")
+    stream = wsgi.LimitedStream(io_, 3)
     strict_eq(stream.read(-1), b"123")
 
-    io = BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io, 0)
+    io_ = io.BytesIO(b"123456")
+    stream = wsgi.LimitedStream(io_, 0)
     strict_eq(stream.read(-1), b"")
 
-    io = StringIO(u"123456")
-    stream = wsgi.LimitedStream(io, 0)
+    io_ = io.StringIO(u"123456")
+    stream = wsgi.LimitedStream(io_, 0)
     strict_eq(stream.read(-1), u"")
 
-    io = StringIO(u"123\n456\n")
-    stream = wsgi.LimitedStream(io, 8)
+    io_ = io.StringIO(u"123\n456\n")
+    stream = wsgi.LimitedStream(io_, 8)
     strict_eq(list(stream), [u"123\n", u"456\n"])
 
 
 def test_limited_stream_json_load():
-    stream = wsgi.LimitedStream(BytesIO(b'{"hello": "test"}'), 17)
+    stream = wsgi.LimitedStream(io.BytesIO(b'{"hello": "test"}'), 17)
     # flask.json adapts bytes to text with TextIOWrapper
     # this expects stream.readable() to exist and return true
     stream = io.TextIOWrapper(io.BufferedReader(stream), "UTF-8")
@@ -219,17 +216,17 @@ def test_limited_stream_json_load():
 
 
 def test_limited_stream_disconnection():
-    io = BytesIO(b"A bit of content")
+    io_ = io.BytesIO(b"A bit of content")
 
     # disconnect detection on out of bytes
-    stream = wsgi.LimitedStream(io, 255)
+    stream = wsgi.LimitedStream(io_, 255)
     with pytest.raises(ClientDisconnected):
         stream.read()
 
     # disconnect detection because file close
-    io = BytesIO(b"x" * 255)
-    io.close()
-    stream = wsgi.LimitedStream(io, 255)
+    io_ = io.BytesIO(b"x" * 255)
+    io_.close()
+    stream = wsgi.LimitedStream(io_, 255)
     with pytest.raises(ClientDisconnected):
         stream.read()
 
@@ -306,12 +303,12 @@ def test_get_current_url_invalid_utf8():
 
 def test_multi_part_line_breaks():
     data = "abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK"
-    test_stream = NativeStringIO(data)
+    test_stream = io.StringIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=16))
     assert lines == ["abcdef\r\n", "ghijkl\r\n", "mnopqrstuvwxyz\r\n", "ABCDEFGHIJK"]
 
     data = "abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz"
-    test_stream = NativeStringIO(data)
+    test_stream = io.StringIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=24))
     assert lines == [
         "abc\r\n",
@@ -322,7 +319,7 @@ def test_multi_part_line_breaks():
 
 def test_multi_part_line_breaks_bytes():
     data = b"abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK"
-    test_stream = BytesIO(data)
+    test_stream = io.BytesIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=16))
     assert lines == [
         b"abcdef\r\n",
@@ -332,7 +329,7 @@ def test_multi_part_line_breaks_bytes():
     ]
 
     data = b"abc\r\nThis line is broken by the buffer length." b"\r\nFoo bar baz"
-    test_stream = BytesIO(data)
+    test_stream = io.BytesIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=24))
     assert lines == [
         b"abc\r\n",
@@ -344,7 +341,7 @@ def test_multi_part_line_breaks_bytes():
 def test_multi_part_line_breaks_problematic():
     data = "abc\rdef\r\nghi"
     for _ in range(1, 10):
-        test_stream = NativeStringIO(data)
+        test_stream = io.StringIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=4))
         assert lines == ["abc\r", "def\r\n", "ghi"]
 
@@ -361,7 +358,7 @@ def test_make_chunk_iter():
     assert rv == [u"abcdef", u"ghijkl", u"mnopqrstuvwxyz", u"ABCDEFGHIJK"]
 
     data = u"abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK"
-    test_stream = StringIO(data)
+    test_stream = io.StringIO(data)
     rv = list(wsgi.make_chunk_iter(test_stream, "X", limit=len(data), buffer_size=4))
     assert rv == [u"abcdef", u"ghijkl", u"mnopqrstuvwxyz", u"ABCDEFGHIJK"]
 
@@ -372,12 +369,12 @@ def test_make_chunk_iter_bytes():
     assert rv == [b"abcdef", b"ghijkl", b"mnopqrstuvwxyz", b"ABCDEFGHIJK"]
 
     data = b"abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK"
-    test_stream = BytesIO(data)
+    test_stream = io.BytesIO(data)
     rv = list(wsgi.make_chunk_iter(test_stream, "X", limit=len(data), buffer_size=4))
     assert rv == [b"abcdef", b"ghijkl", b"mnopqrstuvwxyz", b"ABCDEFGHIJK"]
 
     data = b"abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK"
-    test_stream = BytesIO(data)
+    test_stream = io.BytesIO(data)
     rv = list(
         wsgi.make_chunk_iter(
             test_stream, "X", limit=len(data), buffer_size=4, cap_at_buffer=True
@@ -402,9 +399,7 @@ def test_lines_longer_buffer_size():
     data = "1234567890\n1234567890\n"
     for bufsize in range(1, 15):
         lines = list(
-            wsgi.make_line_iter(
-                NativeStringIO(data), limit=len(data), buffer_size=bufsize
-            )
+            wsgi.make_line_iter(io.StringIO(data), limit=len(data), buffer_size=bufsize)
         )
         assert lines == ["1234567890\n", "1234567890\n"]
 
@@ -414,7 +409,7 @@ def test_lines_longer_buffer_size_cap():
     for bufsize in range(1, 15):
         lines = list(
             wsgi.make_line_iter(
-                NativeStringIO(data),
+                io.StringIO(data),
                 limit=len(data),
                 buffer_size=bufsize,
                 cap_at_buffer=True,
