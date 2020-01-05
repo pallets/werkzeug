@@ -81,6 +81,8 @@ Unreleased
 -   ``Map`` and ``Rule`` have a ``merge_slashes`` option to collapse
     multiple slashes into one, similar to how many HTTP servers behave.
     This is enabled by default. :pr:`1286`
+-   Add HTTP 103, 208, 306, 425, 506, 508, and 511 to the list of status
+    codes. :pr:`1678`
 
 
 Version 0.16.1

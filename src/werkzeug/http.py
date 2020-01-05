@@ -140,6 +140,7 @@ HTTP_STATUS_CODES = {
     100: "Continue",
     101: "Switching Protocols",
     102: "Processing",
+    103: "Early Hints",  # see RFC 8297
     200: "OK",
     201: "Created",
     202: "Accepted",
@@ -148,6 +149,7 @@ HTTP_STATUS_CODES = {
     205: "Reset Content",
     206: "Partial Content",
     207: "Multi Status",
+    208: "Already Reported",  # see RFC 5842
     226: "IM Used",  # see RFC 3229
     300: "Multiple Choices",
     301: "Moved Permanently",
@@ -155,6 +157,7 @@ HTTP_STATUS_CODES = {
     303: "See Other",
     304: "Not Modified",
     305: "Use Proxy",
+    306: "Switch Proxy",  # unused
     307: "Temporary Redirect",
     308: "Permanent Redirect",
     400: "Bad Request",
@@ -180,6 +183,7 @@ HTTP_STATUS_CODES = {
     422: "Unprocessable Entity",
     423: "Locked",
     424: "Failed Dependency",
+    425: "Too Early",  # see RFC 8470
     426: "Upgrade Required",
     428: "Precondition Required",  # see RFC 6585
     429: "Too Many Requests",
@@ -192,8 +196,11 @@ HTTP_STATUS_CODES = {
     503: "Service Unavailable",
     504: "Gateway Timeout",
     505: "HTTP Version Not Supported",
+    506: "Variant Also Negotiates",  # see RFC 2295
     507: "Insufficient Storage",
+    508: "Loop Detected",  # see RFC 5842
     510: "Not Extended",
+    511: "Network Authentication Failed",  # see RFC 6585
 }
 
 
