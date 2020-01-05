@@ -62,35 +62,48 @@ def test_basic_routing():
     assert excinfo.value.new_url == "http://example.org/bar/?foo=bar"
 
 
-def test_multi_slash():
-    map = r.Map(
+def test_merge_slashes_match():
+    url_map = r.Map(
         [
-            r.Rule("/frob/zarf", endpoint="blorwoop"),
-            r.Rule("/bleeg/bloog/", endpoint="bluff"),
-            r.Rule("/quux/<path:slub>", endpoint="zoop"),
+            r.Rule("/no/tail", endpoint="no_tail"),
+            r.Rule("/yes/tail/", endpoint="yes_tail"),
+            r.Rule("/with/<path:path>", endpoint="with_path"),
+            r.Rule("/no//merge", endpoint="no_merge", merge_slashes=False),
         ]
     )
-    adapter = map.bind("localhost", "/")
-    with pytest.raises(r.RequestRedirect) as excinfo:
-        adapter.match("/frob//zarf")
-    assert excinfo.value.new_url.endswith("/frob/zarf")
+    adapter = url_map.bind("localhost", "/")
 
     with pytest.raises(r.RequestRedirect) as excinfo:
-        adapter.match("/bleeg//bloog")
-    assert excinfo.value.new_url.endswith("/bleeg/bloog/")
+        adapter.match("/no//tail")
 
-    # test some negatives too
-    adapter.match("/frob/zarf")
-    adapter.match("/bleeg/bloog/")
+    assert excinfo.value.new_url.endswith("/no/tail")
 
-    ep, rv = adapter.match("/quux/http://splud/")
-    assert rv["slub"] == "http://splud/"
-    ep, rv = adapter.match("/quux/x//splud/")
-    assert rv["slub"] == "x//splud/"
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match("/yes//tail")
 
-    map = r.Map([r.Rule("/frob//zarf", endpoint="blorwoop")])
-    adapter = map.bind("localhost", "/")
-    assert adapter.build("blorwoop") == "/frob/zarf"
+    assert excinfo.value.new_url.endswith("/yes/tail/")
+
+    assert adapter.match("/no/tail")[0] == "no_tail"
+    assert adapter.match("/yes/tail/")[0] == "yes_tail"
+
+    _, rv = adapter.match("/with/http://example.com/")
+    assert rv["path"] == "http://example.com/"
+    _, rv = adapter.match("/with/x//y")
+    assert rv["path"] == "x//y"
+
+    assert adapter.match("/no//merge")[0] == "no_merge"
+
+
+def test_merge_slashes_build():
+    url_map = r.Map(
+        [
+            r.Rule("/yes//merge", endpoint="yes_merge"),
+            r.Rule("/no//merge", endpoint="no_merge", merge_slashes=False),
+        ]
+    )
+    adapter = url_map.bind("localhost", "/")
+    assert adapter.build("yes_merge") == "/yes/merge"
+    assert adapter.build("no_merge") == "/no//merge"
 
 
 def test_strict_slashes_redirect():

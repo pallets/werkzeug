@@ -787,7 +787,7 @@ class Rule(RuleFactory):
                                 regex_parts.append(r"/+?")
                                 self._trace.append((False, "/"))
                             else:
-                                regex.parts.append(part)
+                                regex_parts.append(part)
                                 self._trace.append((False, part))
                             continue
                         self._trace.append((False, part))
