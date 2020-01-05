@@ -1932,13 +1932,25 @@ class MapAdapter(object):
             if rv is not None:
                 return rv
 
-        # default method did not match or a specific method is passed,
-        # check all and go with first result.
+        # Default method did not match or a specific method is passed.
+        # Check all for first match with matching host. If no matching
+        # host is found, go with first result.
+        first_match = None
+
         for rule in self.map._rules_by_endpoint.get(endpoint, ()):
             if rule.suitable_for(values, method):
                 rv = rule.build(values, append_unknown)
+
                 if rv is not None:
-                    return rv
+                    if self.map.host_matching:
+                        if rv[0] == self.server_name:
+                            return rv
+                        elif first_match is None:
+                            first_match = rv
+                    else:
+                        return rv
+
+        return first_match
 
     def build(
         self,

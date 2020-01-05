@@ -72,6 +72,9 @@ Unreleased
     ``PathLike`` objects. :issue:`1653`
 -   The debugger security pin is unique in containers managed by Podman.
     :issue:`1661`
+-   Building a URL when ``host_matching`` is enabled takes into account
+    the current host when there are duplicate endpoints with different
+    hosts. :issue:`488`
 
 
 Version 0.16.0

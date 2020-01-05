@@ -1131,3 +1131,28 @@ def test_build_url_with_arg_keyword():
 
     ret = adapter.build("foo", {"class": "bar"})
     assert ret == "http://example.org/foo/bar"
+
+
+def test_build_url_same_endpoint_multiple_hosts():
+    m = r.Map(
+        [
+            r.Rule("/", endpoint="index", host="alpha.example.com"),
+            r.Rule("/", endpoint="index", host="beta.example.com"),
+            r.Rule("/", endpoint="gamma", host="gamma.example.com"),
+        ],
+        host_matching=True,
+    )
+
+    alpha = m.bind("alpha.example.com")
+    assert alpha.build("index") == "/"
+    assert alpha.build("gamma") == "http://gamma.example.com/"
+
+    alpha_case = m.bind("AlPhA.ExAmPlE.CoM")
+    assert alpha_case.build("index") == "/"
+    assert alpha_case.build("gamma") == "http://gamma.example.com/"
+
+    beta = m.bind("beta.example.com")
+    assert beta.build("index") == "/"
+
+    beta_case = m.bind("BeTa.ExAmPlE.CoM")
+    assert beta_case.build("index") == "/"
