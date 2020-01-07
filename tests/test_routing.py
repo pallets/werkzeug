@@ -83,6 +83,11 @@ def test_merge_slashes_match():
 
     assert excinfo.value.new_url.endswith("/yes/tail/")
 
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match("/yes/tail//")
+
+    assert excinfo.value.new_url.endswith("/yes/tail/")
+
     assert adapter.match("/no/tail")[0] == "no_tail"
     assert adapter.match("/yes/tail/")[0] == "yes_tail"
 

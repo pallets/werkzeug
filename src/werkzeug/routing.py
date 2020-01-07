@@ -820,12 +820,14 @@ class Rule(RuleFactory):
 
         if self.build_only:
             return
-        regex = r"^%s%s$" % (
-            u"".join(regex_parts),
-            (not self.is_leaf or not self.strict_slashes)
-            and "(?<!/)(?P<__suffix__>/?)"
-            or "",
-        )
+
+        if not (self.is_leaf and self.strict_slashes):
+            reps = u"*" if self.merge_slashes else u"?"
+            tail = u"(?<!/)(?P<__suffix__>/%s)" % reps
+        else:
+            tail = u""
+
+        regex = u"^%s%s$" % (u"".join(regex_parts), tail)
         self._regex = re.compile(regex, re.UNICODE)
 
     def match(self, path, method=None):
