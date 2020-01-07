@@ -85,6 +85,8 @@ Unreleased
     codes. :pr:`1678`
 -   Add an ``update`` method to the ``Headers`` data structure.
     :pr:`1687`
+-   The development server accepts paths that start with two slashes,
+    rather than stripping off the first path segment. :issue:`491`
 
 
 Version 0.16.1
