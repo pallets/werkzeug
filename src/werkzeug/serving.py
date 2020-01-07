@@ -183,7 +183,16 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             self.client_address = (self.client_address, 0)
         else:
             pass
-        path_info = url_unquote(request_url.path)
+
+        # If there was no scheme but the path started with two slashes,
+        # the first segment may have been incorrectly parsed as the
+        # netloc, prepend it to the path again.
+        if not request_url.scheme and request_url.netloc:
+            path_info = "/%s%s" % (request_url.netloc, request_url.path)
+        else:
+            path_info = request_url.path
+
+        path_info = url_unquote(path_info)
 
         environ = {
             "wsgi.version": (1, 0),
@@ -223,6 +232,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
             environ["wsgi.input_terminated"] = True
             environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"])
 
+        # Per RFC 2616, if the URL is absolute, use that as the host.
+        # We're using "has a scheme" to indicate an absolute URL.
         if request_url.scheme and request_url.netloc:
             environ["HTTP_HOST"] = request_url.netloc
 
