@@ -1235,6 +1235,19 @@ class Headers(object):
             return
         self._list[idx + 1 :] = [t for t in listiter if t[0].lower() != ikey]
 
+    def setlist(self, key, values):
+        """Set multiple header values at once.
+
+        The `values` argument should be iterable. This will replace
+        any existing values for the key with the values passed. It is
+        the inverse of the getlist method.
+
+        .. versionadded:: 1.0
+        """
+        self.set(key, values[0])
+        for value in values[1:]:
+            self.add(key, value)
+
     def setdefault(self, key, default):
         """Returns the value for the key if it is in the dict, otherwise it
         returns `default` and sets that value for `key`.
@@ -1279,10 +1292,21 @@ class Headers(object):
             raise TypeError("update expected at most 1 arguments, got %d" % len(args))
 
         if args:
-            for key, value in iter_multi_items(args[0]):
-                self[key] = value
+            mapping = args[0]
 
-        for key, value in iter_multi_items(kwargs):
+            if isinstance(mapping, (Headers, MultiDict)):
+                for key in iterkeys(mapping):
+                    self.setlist(key, mapping.getlist(key))
+            elif isinstance(mapping, dict):
+                for key, value in iteritems(mapping):
+                    if isinstance(value, (tuple, list)):
+                        self.setlist(key, value)
+                    else:
+                        self[key] = value
+            else:
+                for item in mapping:
+                    self[key] = item
+        for key, value in iteritems(kwargs):
             self[key] = value
 
     def to_wsgi_list(self):

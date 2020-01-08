@@ -788,8 +788,11 @@ class TestHeaders(object):
         assert h.getlist("y") == ["1"]
         h.update(z="2")
         assert h.getlist("z") == ["2"]
-        h.update(self.storage_class([("a", "b")]))
-        assert h["a"] == "b"
+        h2 = self.storage_class([("a", "b")])
+        h2.add("a", "c")
+        h.update(h2, d="e")
+        assert h.getlist("a") == ["b", "c"]
+        assert h["d"] == "e"
 
     def test_to_wsgi_list(self):
         h = self.storage_class()
