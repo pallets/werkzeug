@@ -107,7 +107,7 @@ from threading import Lock
 from ._internal import _encode_idna
 from ._internal import _get_environ
 from ._internal import _to_bytes
-from ._internal import _to_unicode
+from ._internal import _to_str
 from ._internal import _wsgi_decoding_dance
 from .datastructures import ImmutableDict
 from .datastructures import MultiDict
@@ -1674,15 +1674,15 @@ class MapAdapter(object):
         query_args=None,
     ):
         self.map = map
-        self.server_name = _to_unicode(server_name)
-        script_name = _to_unicode(script_name)
+        self.server_name = _to_str(server_name)
+        script_name = _to_str(script_name)
         if not script_name.endswith(u"/"):
             script_name += u"/"
         self.script_name = script_name
-        self.subdomain = _to_unicode(subdomain)
-        self.url_scheme = _to_unicode(url_scheme)
-        self.path_info = _to_unicode(path_info)
-        self.default_method = _to_unicode(default_method)
+        self.subdomain = _to_str(subdomain)
+        self.url_scheme = _to_str(url_scheme)
+        self.path_info = _to_str(path_info)
+        self.default_method = _to_str(default_method)
         self.query_args = query_args
         self.websocket = self.url_scheme in {"ws", "wss"}
 
@@ -1841,7 +1841,7 @@ class MapAdapter(object):
         if path_info is None:
             path_info = self.path_info
         else:
-            path_info = _to_unicode(path_info, self.map.charset)
+            path_info = _to_str(path_info, self.map.charset)
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
@@ -1973,12 +1973,12 @@ class MapAdapter(object):
         if self.map.host_matching:
             if domain_part is None:
                 return self.server_name
-            return _to_unicode(domain_part, "ascii")
+            return _to_str(domain_part, "ascii")
         subdomain = domain_part
         if subdomain is None:
             subdomain = self.subdomain
         else:
-            subdomain = _to_unicode(subdomain, "ascii")
+            subdomain = _to_str(subdomain, "ascii")
         return (subdomain + u"." if subdomain else u"") + self.server_name
 
     def get_default_redirect(self, rule, method, values, query_args):

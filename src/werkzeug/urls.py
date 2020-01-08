@@ -25,7 +25,7 @@ from ._internal import _encode_idna
 from ._internal import _make_literal_wrapper
 from ._internal import _normalize_string_tuple
 from ._internal import _to_native
-from ._internal import _to_unicode
+from ._internal import _to_str
 
 # A regular expression for what a valid schema looks like
 _scheme_re = re.compile(r"^[a-zA-Z0-9+-.]+$")
@@ -632,7 +632,7 @@ def url_fix(s, charset="utf-8"):
     # First step is to switch to unicode processing and to convert
     # backslashes (which are invalid in URLs anyways) to slashes.  This is
     # consistent with what Chrome does.
-    s = _to_unicode(s, charset, "replace").replace("\\", "/")
+    s = _to_str(s, charset, "replace").replace("\\", "/")
 
     # For the specific case that we look like a malformed windows URL
     # we want to fix this up manually:
@@ -684,7 +684,7 @@ def uri_to_iri(uri, charset="utf-8", errors="werkzeug.url_quote"):
     if isinstance(uri, tuple):
         uri = url_unparse(uri)
 
-    uri = url_parse(_to_unicode(uri, charset))
+    uri = url_parse(_to_str(uri, charset))
     path = url_unquote(uri.path, charset, errors, _to_iri_unsafe)
     query = url_unquote(uri.query, charset, errors, _to_iri_unsafe)
     fragment = url_unquote(uri.fragment, charset, errors, _to_iri_unsafe)
@@ -749,7 +749,7 @@ def iri_to_uri(iri, charset="utf-8", errors="strict", safe_conversion=False):
         except UnicodeError:
             pass
 
-    iri = url_parse(_to_unicode(iri, charset, errors))
+    iri = url_parse(_to_str(iri, charset, errors))
     path = url_quote(iri.path, charset, errors, _to_uri_safe)
     query = url_quote(iri.query, charset, errors, _to_uri_safe)
     fragment = url_quote(iri.fragment, charset, errors, _to_uri_safe)
@@ -1100,7 +1100,7 @@ class Href(object):
             )
         path = "/".join(
             [
-                _to_unicode(url_quote(x, self.charset), "ascii")
+                _to_str(url_quote(x, self.charset), "ascii")
                 for x in path
                 if x is not None
             ]
@@ -1111,7 +1111,7 @@ class Href(object):
                 rv += "/"
             rv = url_join(rv, "./" + path)
         if query:
-            rv += "?" + _to_unicode(
+            rv += "?" + _to_str(
                 url_encode(query, self.charset, sort=self.sort, key=self.key), "ascii"
             )
         return _to_native(rv)

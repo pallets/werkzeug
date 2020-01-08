@@ -23,7 +23,7 @@ import random
 import sys
 import time
 
-from ._internal import _to_unicode
+from ._internal import _to_str
 from .filesystem import get_filesystem_encoding
 
 can_rename_open_file = False
@@ -37,8 +37,8 @@ if os.name == "nt":
         _MoveFileEx = ctypes.windll.kernel32.MoveFileExW
 
         def _rename(src, dst):
-            src = _to_unicode(src, get_filesystem_encoding())
-            dst = _to_unicode(dst, get_filesystem_encoding())
+            src = _to_str(src, get_filesystem_encoding())
+            dst = _to_str(dst, get_filesystem_encoding())
             if _rename_atomic(src, dst):
                 return True
             retry = 0

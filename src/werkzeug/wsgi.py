@@ -17,7 +17,7 @@ from itertools import chain
 from ._internal import _encode_idna
 from ._internal import _make_literal_wrapper
 from ._internal import _to_bytes
-from ._internal import _to_unicode
+from ._internal import _to_str
 from .urls import uri_to_iri
 from .urls import url_join
 from .urls import url_parse
@@ -260,7 +260,7 @@ def get_path_info(environ, charset="utf-8", errors="replace"):
     :param errors: the decoding error handling.
     """
     path = environ.get("PATH_INFO", "").encode("latin1")
-    return _to_unicode(path, charset, errors, allow_none_charset=True)
+    return _to_str(path, charset, errors, allow_none_charset=True)
 
 
 def get_script_name(environ, charset="utf-8", errors="replace"):
@@ -277,7 +277,7 @@ def get_script_name(environ, charset="utf-8", errors="replace"):
     :param errors: the decoding error handling.
     """
     path = environ.get("SCRIPT_NAME", "").encode("latin1")
-    return _to_unicode(path, charset, errors, allow_none_charset=True)
+    return _to_str(path, charset, errors, allow_none_charset=True)
 
 
 def pop_path_info(environ, charset="utf-8", errors="replace"):
@@ -329,7 +329,7 @@ def pop_path_info(environ, charset="utf-8", errors="replace"):
         environ["SCRIPT_NAME"] = script_name + segment
         rv = segment.encode("latin1")
 
-    return _to_unicode(rv, charset, errors, allow_none_charset=True)
+    return _to_str(rv, charset, errors, allow_none_charset=True)
 
 
 def peek_path_info(environ, charset="utf-8", errors="replace"):
@@ -355,7 +355,7 @@ def peek_path_info(environ, charset="utf-8", errors="replace"):
     """
     segments = environ.get("PATH_INFO", "").lstrip("/").split("/", 1)
     if segments:
-        return _to_unicode(
+        return _to_str(
             segments[0].encode("latin1"), charset, errors, allow_none_charset=True
         )
 
@@ -795,7 +795,7 @@ def make_chunk_iter(
 
     _iter = chain((first_item,), _iter)
     if isinstance(first_item, str):
-        separator = _to_unicode(separator)
+        separator = _to_str(separator)
         _split = re.compile(r"(%s)" % re.escape(separator)).split
         _join = u"".join
     else:

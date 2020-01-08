@@ -20,7 +20,7 @@ from tokenize import TokenError
 
 from .._internal import _reraise
 from .._internal import _to_native
-from .._internal import _to_unicode
+from .._internal import _to_str
 from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
 from ..utils import escape
@@ -414,7 +414,7 @@ class Group(object):
         """String representation of the exception."""
         buf = traceback.format_exception_only(self.exc_type, self.exc_value)
         rv = "".join(buf).strip()
-        return _to_unicode(rv, "utf-8", "replace")
+        return _to_str(rv, "utf-8", "replace")
 
     def render(self, mark_lib=True):
         out = []
@@ -456,7 +456,7 @@ class Frame(object):
         # if it's a file on the file system resolve the real filename.
         if os.path.isfile(fn):
             fn = os.path.realpath(fn)
-        self.filename = _to_unicode(fn, get_filesystem_encoding())
+        self.filename = _to_str(fn, get_filesystem_encoding())
         self.module = self.globals.get("__name__", self.locals.get("__name__"))
         self.loader = self.globals.get("__loader__", self.locals.get("__loader__"))
         self.code = tb.tb_frame.f_code
@@ -465,7 +465,7 @@ class Frame(object):
         self.hide = self.locals.get("__traceback_hide__", False)
         info = self.locals.get("__traceback_info__")
         if info is not None:
-            info = _to_unicode(info, "utf-8", "replace")
+            info = _to_str(info, "utf-8", "replace")
         self.info = info
 
     def render(self, mark_lib=True):

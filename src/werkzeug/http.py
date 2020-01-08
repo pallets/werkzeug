@@ -29,7 +29,7 @@ from ._internal import _cookie_parse_impl
 from ._internal import _cookie_quote
 from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
-from ._internal import _to_unicode
+from ._internal import _to_str
 
 try:
     from email.utils import parsedate_tz
@@ -599,8 +599,8 @@ def parse_authorization_header(value):
         return Authorization(
             "basic",
             {
-                "username": _to_unicode(username, _basic_auth_charset),
-                "password": _to_unicode(password, _basic_auth_charset),
+                "username": _to_str(username, _basic_auth_charset),
+                "password": _to_str(password, _basic_auth_charset),
             },
         )
     elif auth_type == b"digest":
@@ -1117,10 +1117,10 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
 
     def _parse_pairs():
         for key, val in _cookie_parse_impl(header):
-            key = _to_unicode(key, charset, errors, allow_none_charset=True)
+            key = _to_str(key, charset, errors, allow_none_charset=True)
             if not key:
                 continue
-            val = _to_unicode(val, charset, errors, allow_none_charset=True)
+            val = _to_str(val, charset, errors, allow_none_charset=True)
             yield key, val
 
     return cls(_parse_pairs())

@@ -96,7 +96,7 @@ def _to_native(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa
     return x.decode(charset, errors)
 
 
-def _to_unicode(
+def _to_str(
     x,
     charset=sys.getdefaultencoding(),  # noqa
     errors="strict",

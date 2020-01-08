@@ -2,7 +2,7 @@ from functools import update_wrapper
 from io import BytesIO
 
 from .._internal import _to_native
-from .._internal import _to_unicode
+from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
 from ..datastructures import CombinedMultiDict
 from ..datastructures import EnvironHeaders
@@ -545,7 +545,7 @@ class BaseRequest(object):
     @cached_property
     def full_path(self):
         """Requested path as unicode, including the query string."""
-        return self.path + u"?" + _to_unicode(self.query_string, self.url_charset)
+        return self.path + u"?" + _to_str(self.query_string, self.url_charset)
 
     @cached_property
     def script_root(self):
