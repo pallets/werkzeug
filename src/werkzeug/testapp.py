@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.testapp
     ~~~~~~~~~~~~~~~~
@@ -61,7 +60,7 @@ kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
 )
 
 
-TEMPLATE = u"""\
+TEMPLATE = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
@@ -174,7 +173,9 @@ def render_testapp(req):
         except (ValueError, AttributeError):
             version = "unknown"
         python_eggs.append(
-            "<li>%s <small>[%s]</small>" % (escape(egg.project_name), escape(version))
+            "<li>{} <small>[{}]</small>".format(
+                escape(egg.project_name), escape(version)
+            )
         )
 
     wsgi_env = []

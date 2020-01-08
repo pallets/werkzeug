@@ -3,7 +3,7 @@ from ..http import parse_www_authenticate_header
 from ..utils import cached_property
 
 
-class AuthorizationMixin(object):
+class AuthorizationMixin:
     """Adds an :attr:`authorization` property that represents the parsed
     value of the `Authorization` header as
     :class:`~werkzeug.datastructures.Authorization` object.
@@ -16,7 +16,7 @@ class AuthorizationMixin(object):
         return parse_authorization_header(header)
 
 
-class WWWAuthenticateMixin(object):
+class WWWAuthenticateMixin:
     """Adds a :attr:`www_authenticate` property to a response object."""
 
     @property

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.exceptions
     ~~~~~~~~~~~~~~~~~~~
@@ -74,7 +73,7 @@ class HTTPException(Exception):
     description = None
 
     def __init__(self, description=None, response=None):
-        super(HTTPException, self).__init__()
+        super().__init__()
         if description is not None:
             self.description = description
         self.response = response
@@ -137,7 +136,7 @@ class HTTPException(Exception):
 
     def get_description(self, environ=None):
         """Get the description."""
-        return u"<p>%s</p>" % escape(self.description).replace("\n", "<br>")
+        return "<p>%s</p>" % escape(self.description).replace("\n", "<br>")
 
     def get_body(self, environ=None):
         """Get the HTML body."""
@@ -186,11 +185,11 @@ class HTTPException(Exception):
 
     def __str__(self):
         code = self.code if self.code is not None else "???"
-        return "%s %s: %s" % (code, self.name, self.description)
+        return f"{code} {self.name}: {self.description}"
 
     def __repr__(self):
         code = self.code if self.code is not None else "???"
-        return "<%s '%s: %s'>" % (self.__class__.__name__, code, self.name)
+        return f"<{self.__class__.__name__} '{code}: {self.name}'>"
 
 
 class BadRequest(HTTPException):
@@ -592,11 +591,11 @@ class _RetryAfter(HTTPException):
     """
 
     def __init__(self, description=None, response=None, retry_after=None):
-        super(_RetryAfter, self).__init__(description, response)
+        super().__init__(description, response)
         self.retry_after = retry_after
 
     def get_headers(self, environ=None):
-        headers = super(_RetryAfter, self).get_headers(environ)
+        headers = super().get_headers(environ)
 
         if self.retry_after:
             if isinstance(self.retry_after, datetime):
@@ -677,9 +676,7 @@ class InternalServerError(HTTPException):
         #: used by frameworks to provide context when handling
         #: unexpected errors.
         self.original_exception = original_exception
-        super(InternalServerError, self).__init__(
-            description=description, response=response
-        )
+        super().__init__(description=description, response=response)
 
 
 class NotImplemented(HTTPException):
@@ -775,7 +772,7 @@ _find_exceptions()
 del _find_exceptions
 
 
-class Aborter(object):
+class Aborter:
     """When passed a dict of code -> exception items it can be used as
     callable that raises exceptions.  If the first argument to the
     callable is an integer it will be looked up in the mapping, if it's

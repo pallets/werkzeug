@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.formparser
     ~~~~~~~~~~~~~~~~
@@ -50,7 +49,7 @@ def get_contents(filename):
         return f.read()
 
 
-class TestFormParser(object):
+class TestFormParser:
     def test_limiting(self):
         data = b"foo=Hello+World&bar=baz"
         req = Request.from_values(
@@ -60,7 +59,7 @@ class TestFormParser(object):
             method="POST",
         )
         req.max_content_length = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        strict_eq(req.form["foo"], "Hello World")
 
         req = Request.from_values(
             input_stream=io.BytesIO(data),
@@ -78,7 +77,7 @@ class TestFormParser(object):
             method="POST",
         )
         req.max_form_memory_size = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        strict_eq(req.form["foo"], "Hello World")
 
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"
@@ -102,7 +101,7 @@ class TestFormParser(object):
             method="POST",
         )
         req.max_content_length = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        strict_eq(req.form["foo"], "Hello World")
 
         req = Request.from_values(
             input_stream=io.BytesIO(data),
@@ -120,7 +119,7 @@ class TestFormParser(object):
             method="POST",
         )
         req.max_form_memory_size = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        strict_eq(req.form["foo"], "Hello World")
 
     def test_missing_multipart_boundary(self):
         data = (
@@ -235,7 +234,7 @@ class TestFormParser(object):
         assert stream is not None
 
 
-class TestMultiPart(object):
+class TestMultiPart:
     def test_basic(self):
         resources = join(dirname(__file__), "multipart")
         client = Client(form_data_consumer, Response)
@@ -245,46 +244,46 @@ class TestMultiPart(object):
                 "firefox3-2png1txt",
                 "---------------------------186454651713519341951581030105",
                 [
-                    (u"anchor.png", "file1", "image/png", "file1.png"),
-                    (u"application_edit.png", "file2", "image/png", "file2.png"),
+                    ("anchor.png", "file1", "image/png", "file1.png"),
+                    ("application_edit.png", "file2", "image/png", "file2.png"),
                 ],
-                u"example text",
+                "example text",
             ),
             (
                 "firefox3-2pnglongtext",
                 "---------------------------14904044739787191031754711748",
                 [
-                    (u"accept.png", "file1", "image/png", "file1.png"),
-                    (u"add.png", "file2", "image/png", "file2.png"),
+                    ("accept.png", "file1", "image/png", "file1.png"),
+                    ("add.png", "file2", "image/png", "file2.png"),
                 ],
-                u"--long text\r\n--with boundary\r\n--lookalikes--",
+                "--long text\r\n--with boundary\r\n--lookalikes--",
             ),
             (
                 "opera8-2png1txt",
                 "----------zEO9jQKmLc2Cq88c23Dx19",
                 [
-                    (u"arrow_branch.png", "file1", "image/png", "file1.png"),
-                    (u"award_star_bronze_1.png", "file2", "image/png", "file2.png"),
+                    ("arrow_branch.png", "file1", "image/png", "file1.png"),
+                    ("award_star_bronze_1.png", "file2", "image/png", "file2.png"),
                 ],
-                u"blafasel öäü",
+                "blafasel öäü",
             ),
             (
                 "webkit3-2png1txt",
                 "----WebKitFormBoundaryjdSFhcARk8fyGNy6",
                 [
-                    (u"gtk-apply.png", "file1", "image/png", "file1.png"),
-                    (u"gtk-no.png", "file2", "image/png", "file2.png"),
+                    ("gtk-apply.png", "file1", "image/png", "file1.png"),
+                    ("gtk-no.png", "file2", "image/png", "file2.png"),
                 ],
-                u"this is another text with ümläüts",
+                "this is another text with ümläüts",
             ),
             (
                 "ie6-2png1txt",
                 "---------------------------7d91b03a20128",
                 [
-                    (u"file1.png", "file1", "image/x-png", "file1.png"),
-                    (u"file2.png", "file2", "image/x-png", "file2.png"),
+                    ("file1.png", "file1", "image/x-png", "file1.png"),
+                    ("file2.png", "file2", "image/x-png", "file2.png"),
                 ],
-                u"ie6 sucks :-/",
+                "ie6 sucks :-/",
             ),
         ]
 
@@ -325,7 +324,7 @@ class TestMultiPart(object):
         lines = response.get_data().split(b"\n", 3)
         strict_eq(
             lines[0],
-            repr(u"Sellersburg Town Council Meeting 02-22-2010doc.doc").encode("ascii"),
+            repr("Sellersburg Town Council Meeting 02-22-2010doc.doc").encode("ascii"),
         )
 
     def test_end_of_file(self):
@@ -407,7 +406,7 @@ class TestMultiPart(object):
             method="POST",
         )
         assert not data.files
-        strict_eq(data.form["foo"], u"a string")
+        strict_eq(data.form["foo"], "a string")
 
     def test_headers(self):
         data = (
@@ -452,8 +451,8 @@ class TestMultiPart(object):
                 content_type="multipart/form-data; boundary=foo",
                 method="POST",
             )
-            strict_eq(req.form["foo"], u"this is just bar")
-            strict_eq(req.form["bar"], u"blafasel")
+            strict_eq(req.form["foo"], "this is just bar")
+            strict_eq(req.form["bar"], "blafasel")
 
     def test_failures(self):
         def parse_multipart(stream, boundary, content_length):
@@ -497,7 +496,7 @@ class TestMultiPart(object):
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
-        strict_eq(req.form["test"], u"Sk\xe5ne l\xe4n")
+        strict_eq(req.form["test"], "Sk\xe5ne l\xe4n")
 
     def test_empty_multipart(self):
         environ = {}
@@ -513,7 +512,7 @@ class TestMultiPart(object):
         assert files == MultiDict()
 
 
-class TestMultiPartParser(object):
+class TestMultiPartParser:
     def test_constructor_not_pass_stream_factory_and_cls(self):
         parser = formparser.MultiPartParser()
 
@@ -549,7 +548,7 @@ class TestMultiPartParser(object):
         assert request.files["rfc2231"].read() == b"file contents"
 
 
-class TestInternalFunctions(object):
+class TestInternalFunctions:
     def test_line_parser(self):
         assert formparser._line_parse("foo") == ("foo", False)
         assert formparser._line_parse("foo\r\n") == ("foo", True)

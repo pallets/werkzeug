@@ -11,8 +11,6 @@ that may be slowing down your application.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-from __future__ import print_function
-
 import os.path
 import sys
 import time
@@ -24,7 +22,7 @@ except ImportError:
     from profile import Profile
 
 
-class ProfilerMiddleware(object):
+class ProfilerMiddleware:
     """Wrap a WSGI application and profile the execution of each
     request. Responses are buffered so that timings are more exact.
 

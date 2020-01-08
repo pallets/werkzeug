@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.datastructures
     ~~~~~~~~~~~~~~~~~~~~
@@ -36,9 +35,9 @@ from werkzeug.datastructures import Range
 from werkzeug.exceptions import BadRequestKeyError
 
 
-class TestNativeItermethods(object):
+class TestNativeItermethods:
     def test_basic(self):
-        class StupidDict(object):
+        class StupidDict:
             def keys(self, multi=1):
                 return iter(["a", "b", "c"] * multi)
 
@@ -64,7 +63,7 @@ class TestNativeItermethods(object):
         assert list(d.items(2)) == expected_items * 2
 
 
-class _MutableMultiDictTests(object):
+class _MutableMultiDictTests:
     storage_class = None
 
     def test_pickle(self):
@@ -274,7 +273,7 @@ class _MutableMultiDictTests(object):
         assert md.getlist("foo") == [1, 2]
 
 
-class _ImmutableDictTests(object):
+class _ImmutableDictTests:
     storage_class = None
 
     def test_follows_dict_interface(self):
@@ -307,7 +306,7 @@ class _ImmutableDictTests(object):
         cls = self.storage_class
         immutable = cls({"a": 1, "b": 2})
         immutable2 = cls({"a": 2, "b": 2})
-        x = set([immutable])
+        x = {immutable}
         assert immutable in x
         assert immutable2 not in x
         x.discard(immutable)
@@ -332,7 +331,7 @@ class TestImmutableMultiDict(_ImmutableDictTests):
         cls = self.storage_class
         immutable = cls({"a": [1, 2], "b": 2})
         immutable2 = cls({"a": [1], "b": 2})
-        x = set([immutable])
+        x = {immutable}
         assert immutable in x
         assert immutable2 not in x
         x.discard(immutable)
@@ -558,7 +557,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert "baz" not in exc_info.value.get_description()
 
 
-class TestTypeConversionDict(object):
+class TestTypeConversionDict:
     storage_class = datastructures.TypeConversionDict
 
     def test_value_conversion(self):
@@ -576,7 +575,7 @@ class TestTypeConversionDict(object):
             d.get("foo", type=lambda x: switch[x])
 
 
-class TestCombinedMultiDict(object):
+class TestCombinedMultiDict:
     storage_class = datastructures.CombinedMultiDict
 
     def test_basic_interface(self):
@@ -627,7 +626,7 @@ class TestCombinedMultiDict(object):
         assert len(d) == 1
 
 
-class TestHeaders(object):
+class TestHeaders:
     storage_class = datastructures.Headers
 
     def test_basic_interface(self):
@@ -727,7 +726,7 @@ class TestHeaders(object):
         h.set("X-Foo-Poo", "bleh")
         h.set("Content-Type", "application/whocares")
         h.set("X-Forwarded-For", "192.168.0.123")
-        h[:] = [(k, v) for k, v in h if k.startswith(u"X-")]
+        h[:] = [(k, v) for k, v in h if k.startswith("X-")]
         assert list(h) == [("X-Foo-Poo", "bleh"), ("X-Forwarded-For", "192.168.0.123")]
 
     def test_bytes_operations(self):
@@ -785,17 +784,17 @@ class TestHeaders(object):
 
     def test_to_wsgi_list(self):
         h = self.storage_class()
-        h.set(u"Key", u"Value")
+        h.set("Key", "Value")
         for key, value in h.to_wsgi_list():
-            strict_eq(key, u"Key")
-            strict_eq(value, u"Value")
+            strict_eq(key, "Key")
+            strict_eq(value, "Value")
 
     def test_to_wsgi_list_bytes(self):
         h = self.storage_class()
         h.set(b"Key", b"Value")
         for key, value in h.to_wsgi_list():
-            strict_eq(key, u"Key")
-            strict_eq(value, u"Value")
+            strict_eq(key, "Key")
+            strict_eq(value, "Value")
 
     def test_equality(self):
         # test equality, given keys are case insensitive
@@ -812,7 +811,7 @@ class TestHeaders(object):
         assert h1 == h2
 
 
-class TestEnvironHeaders(object):
+class TestEnvironHeaders:
     storage_class = datastructures.EnvironHeaders
 
     def test_basic_interface(self):
@@ -852,11 +851,11 @@ class TestEnvironHeaders(object):
         headers = self.storage_class(
             {"HTTP_FOO": "\xe2\x9c\x93", "CONTENT_TYPE": "text/plain"}
         )
-        assert headers["Foo"] == u"\xe2\x9c\x93"
+        assert headers["Foo"] == "\xe2\x9c\x93"
         assert isinstance(headers["Foo"], str)
         assert isinstance(headers["Content-Type"], str)
         iter_output = dict(iter(headers))
-        assert iter_output["Foo"] == u"\xe2\x9c\x93"
+        assert iter_output["Foo"] == "\xe2\x9c\x93"
         assert isinstance(iter_output["Foo"], str)
         assert isinstance(iter_output["Content-Type"], str)
 
@@ -865,10 +864,10 @@ class TestEnvironHeaders(object):
         h = self.storage_class({"HTTP_X_FOO": foo_val})
 
         assert h.get("x-foo", as_bytes=True) == b"\xff"
-        assert h.get("x-foo") == u"\xff"
+        assert h.get("x-foo") == "\xff"
 
 
-class TestHeaderSet(object):
+class TestHeaderSet:
     storage_class = datastructures.HeaderSet
 
     def test_basic_interface(self):
@@ -893,7 +892,7 @@ class TestHeaderSet(object):
         assert not hs
 
 
-class TestImmutableList(object):
+class TestImmutableList:
     storage_class = datastructures.ImmutableList
 
     def test_list_hashable(self):
@@ -930,7 +929,7 @@ def make_call_asserter(func=None):
     return asserter, wrapped
 
 
-class TestCallbackDict(object):
+class TestCallbackDict:
     storage_class = datastructures.CallbackDict
 
     def test_callback_dict_reads(self):
@@ -970,7 +969,7 @@ class TestCallbackDict(object):
             pytest.raises(KeyError, lambda: dct.pop("x"))
 
 
-class TestCacheControl(object):
+class TestCacheControl:
     def test_repr(self):
         cc = datastructures.RequestCacheControl([("max-age", "0"), ("private", "True")])
         assert repr(cc) == "<RequestCacheControl max-age='0' private='True'>"
@@ -982,7 +981,7 @@ class TestCacheControl(object):
         assert cc.no_cache is None
 
 
-class TestContentSecurityPolicy(object):
+class TestContentSecurityPolicy:
     def test_construct(self):
         csp = datastructures.ContentSecurityPolicy(
             [("font-src", "'self'"), ("media-src", "*")]
@@ -1002,7 +1001,7 @@ class TestContentSecurityPolicy(object):
         assert "img-src 'none'" in policies
 
 
-class TestAccept(object):
+class TestAccept:
     storage_class = datastructures.Accept
 
     def test_accept_basic(self):
@@ -1083,7 +1082,7 @@ class TestAccept(object):
         assert accept.best == "a"
 
 
-class TestMIMEAccept(object):
+class TestMIMEAccept:
     @pytest.mark.parametrize(
         ("values", "matches", "default", "expect"),
         [
@@ -1128,7 +1127,7 @@ class TestMIMEAccept(object):
         assert match == expect
 
 
-class TestLanguageAccept(object):
+class TestLanguageAccept:
     @pytest.mark.parametrize(
         ("values", "matches", "default", "expect"),
         (
@@ -1152,7 +1151,7 @@ class TestLanguageAccept(object):
         assert best == expect
 
 
-class TestFileStorage(object):
+class TestFileStorage:
     storage_class = datastructures.FileStorage
 
     def test_mimetype_always_lowercase(self):
@@ -1163,7 +1162,7 @@ class TestFileStorage(object):
         # ensure we iterate over new lines and don't enter into an infinite loop
         import io
 
-        unicode_storage = self.storage_class(io.StringIO(u"one\ntwo"))
+        unicode_storage = self.storage_class(io.StringIO("one\ntwo"))
         for idx, _line in enumerate(unicode_storage):
             assert idx < 2
         assert idx == 1
@@ -1188,7 +1187,7 @@ class TestFileStorage(object):
 
     def test_save_to_pathlib_dst(self, tmp_path):
         src = tmp_path / "src.txt"
-        src.write_text(u"test")
+        src.write_text("test")
         storage = self.storage_class(src.open("rb"))
         dst = tmp_path / "dst.txt"
         storage.save(dst)

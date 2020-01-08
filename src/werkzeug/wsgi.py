@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.wsgi
     ~~~~~~~~~~~~~
@@ -409,18 +408,18 @@ def extract_path_info(
     """
 
     def _normalize_netloc(scheme, netloc):
-        parts = netloc.split(u"@", 1)[-1].split(u":", 1)
+        parts = netloc.split("@", 1)[-1].split(":", 1)
         if len(parts) == 2:
             netloc, port = parts
-            if (scheme == u"http" and port == u"80") or (
-                scheme == u"https" and port == u"443"
+            if (scheme == "http" and port == "80") or (
+                scheme == "https" and port == "443"
             ):
                 port = None
         else:
             netloc = parts[0]
             port = None
         if port is not None:
-            netloc += u":" + port
+            netloc += ":" + port
         return netloc
 
     # make sure whatever we are working on is a IRI and parse it
@@ -438,10 +437,10 @@ def extract_path_info(
     # is that IRI even on a known HTTP scheme?
     if collapse_http_schemes:
         for scheme in base_scheme, cur_scheme:
-            if scheme not in (u"http", u"https"):
+            if scheme not in ("http", "https"):
                 return None
     else:
-        if not (base_scheme in (u"http", u"https") and base_scheme == cur_scheme):
+        if not (base_scheme in ("http", "https") and base_scheme == cur_scheme):
             return None
 
     # are the netlocs compatible?
@@ -449,14 +448,14 @@ def extract_path_info(
         return None
 
     # are we below the application path?
-    base_path = base_path.rstrip(u"/")
+    base_path = base_path.rstrip("/")
     if not cur_path.startswith(base_path):
         return None
 
-    return u"/" + cur_path[len(base_path) :].lstrip(u"/")
+    return "/" + cur_path[len(base_path) :].lstrip("/")
 
 
-class ClosingIterator(object):
+class ClosingIterator:
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of the iterable returned by the application.
     Because it is useful to add another close action to a returned iterable
@@ -522,7 +521,7 @@ def wrap_file(environ, file, buffer_size=8192):
     return environ.get("wsgi.file_wrapper", FileWrapper)(file, buffer_size)
 
 
-class FileWrapper(object):
+class FileWrapper:
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
     read.
@@ -574,7 +573,7 @@ class FileWrapper(object):
         raise StopIteration()
 
 
-class _RangeWrapper(object):
+class _RangeWrapper:
     # private for now, but should we make it public in the future ?
 
     """This class can be used to convert an iterable object into
@@ -797,7 +796,7 @@ def make_chunk_iter(
     if isinstance(first_item, str):
         separator = _to_str(separator)
         _split = re.compile(r"(%s)" % re.escape(separator)).split
-        _join = u"".join
+        _join = "".join
     else:
         separator = _to_bytes(separator)
         _split = re.compile(b"(" + re.escape(separator) + b")").split
@@ -927,7 +926,7 @@ class LimitedStream(io.IOBase):
         to_read = min(self.limit - self._pos, size)
         try:
             read = self._read(to_read)
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             return self.on_disconnect()
         if to_read and len(read) != to_read:
             return self.on_disconnect()
@@ -944,7 +943,7 @@ class LimitedStream(io.IOBase):
             size = min(size, self.limit - self._pos)
         try:
             line = self._readline(size)
-        except (ValueError, IOError):
+        except (ValueError, OSError):
             return self.on_disconnect()
         if size and not line:
             return self.on_disconnect()

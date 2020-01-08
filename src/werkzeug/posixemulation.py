@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
     werkzeug.posixemulation
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,7 +102,7 @@ if os.name == "nt":
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-            old = "%s-%08x" % (dst, random.randint(0, sys.maxsize))
+            old = "{}-{:08x}".format(dst, random.randint(0, sys.maxsize))
             os.rename(dst, old)
             os.rename(src, dst)
             try:

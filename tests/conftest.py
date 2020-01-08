@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.conftest
     ~~~~~~~~~~~~~~
@@ -6,8 +5,6 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from __future__ import print_function
-
 import logging
 import os
 import platform
@@ -77,7 +74,7 @@ def _dev_server():
     serving.run_simple(application=app, **testsuite_app.kwargs)
 
 
-class _ServerInfo(object):
+class _ServerInfo:
     xprocess = None
     addr = None
     url = None
@@ -159,15 +156,15 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
 
         hostname = testsuite_app.kwargs["hostname"]
         port = testsuite_app.kwargs["port"]
-        addr = "{}:{}".format(hostname, port)
+        addr = f"{hostname}:{port}"
 
         if hostname.startswith("unix://"):
             addr = hostname.split("unix://", 1)[1]
             requests_url = "http+unix://" + url_quote(addr, safe="")
         elif testsuite_app.kwargs.get("ssl_context", None):
-            requests_url = "https://localhost:{0}".format(port)
+            requests_url = f"https://localhost:{port}"
         else:
-            requests_url = "http://localhost:{0}".format(port)
+            requests_url = f"http://localhost:{port}"
 
         info = _ServerInfo(xprocess, addr, requests_url, port)
 

@@ -32,7 +32,7 @@ and the static files would be served directly by the HTTP server.
 """
 
 
-class DispatcherMiddleware(object):
+class DispatcherMiddleware:
     """Combine multiple applications as a single WSGI application.
     Requests are dispatched to an application based on the path it is
     mounted under.
@@ -56,7 +56,7 @@ class DispatcherMiddleware(object):
                 break
 
             script, last_item = script.rsplit("/", 1)
-            path_info = "/%s%s" % (last_item, path_info)
+            path_info = f"/{last_item}{path_info}"
         else:
             app = self.mounts.get(script, self.app)
 

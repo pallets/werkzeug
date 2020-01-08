@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.test
     ~~~~~~~~~~
@@ -145,11 +144,11 @@ def test_environ_builder_basics():
     req = b.get_request()
     b.close()
 
-    strict_eq(req.url, u"http://localhost/")
+    strict_eq(req.url, "http://localhost/")
     strict_eq(req.method, "POST")
-    strict_eq(req.form["test"], u"normal value")
+    strict_eq(req.form["test"], "normal value")
     assert req.files["test"].content_type == "text/plain"
-    strict_eq(req.files["test"].filename, u"test.txt")
+    strict_eq(req.files["test"].filename, "test.txt")
     strict_eq(req.files["test"].read(), b"test contents")
 
 
@@ -283,12 +282,12 @@ def test_environ_builder_content_type():
     builder.files.add_file("blafasel", BytesIO(b"foo"), "test.txt")
     assert builder.content_type == "multipart/form-data"
     req = builder.get_request()
-    strict_eq(req.form["foo"], u"bar")
+    strict_eq(req.form["foo"], "bar")
     strict_eq(req.files["blafasel"].read(), b"foo")
 
 
 def test_environ_builder_stream_switch():
-    d = MultiDict(dict(foo=u"bar", blub=u"blah", hu=u"hum"))
+    d = MultiDict(dict(foo="bar", blub="blah", hu="hum"))
     for use_tempfile in False, True:
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
@@ -308,8 +307,8 @@ def test_environ_builder_stream_switch():
 
 def test_environ_builder_unicode_file_mix():
     for use_tempfile in False, True:
-        f = FileStorage(BytesIO(u"\N{SNOWMAN}".encode("utf-8")), "snowman.txt")
-        d = MultiDict(dict(f=f, s=u"\N{SNOWMAN}"))
+        f = FileStorage(BytesIO(br"\N{SNOWMAN}"), "snowman.txt")
+        d = MultiDict(dict(f=f, s="\N{SNOWMAN}"))
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
         )
@@ -322,10 +321,10 @@ def test_environ_builder_unicode_file_mix():
                 "CONTENT_TYPE": 'multipart/form-data; boundary="%s"' % boundary,
             }
         )
-        strict_eq(form["s"], u"\N{SNOWMAN}")
+        strict_eq(form["s"], "\N{SNOWMAN}")
         strict_eq(files["f"].name, "f")
-        strict_eq(files["f"].filename, u"snowman.txt")
-        strict_eq(files["f"].read(), u"\N{SNOWMAN}".encode("utf-8"))
+        strict_eq(files["f"].filename, "snowman.txt")
+        strict_eq(files["f"].read(), br"\N{SNOWMAN}")
         stream.close()
 
 
@@ -377,7 +376,7 @@ def test_builder_from_environ():
 def test_file_closing():
     closed = []
 
-    class SpecialInput(object):
+    class SpecialInput:
         def read(self, size):
             return ""
 
@@ -505,7 +504,7 @@ def test_follow_redirect_non_root_base_url():
 
 
 def test_follow_redirect_exhaust_intermediate():
-    class Middleware(object):
+    class Middleware:
         def __init__(self, app):
             self.app = app
             self.active = 0
@@ -517,8 +516,7 @@ def test_follow_redirect_exhaust_intermediate():
             assert not self.active
             self.active += 1
             try:
-                for chunk in self.app(environ, start_response):
-                    yield chunk
+                yield from self.app(environ, start_response)
             finally:
                 self.active -= 1
 
@@ -597,7 +595,7 @@ def test_multi_value_submit():
 
 
 def test_iri_support():
-    b = EnvironBuilder(u"/föö-bar", base_url=u"http://☃.net/")
+    b = EnvironBuilder("/föö-bar", base_url="http://☃.net/")
     strict_eq(b.path, "/f%C3%B6%C3%B6-bar")
     strict_eq(b.base_url, "http://xn--n3h.net/")
 
@@ -626,7 +624,7 @@ def test_run_wsgi_apps(buffered, iterable):
         leaked_data.append("harhar")
         start_response("200 OK", [("Content-Type", "text/html")])
 
-        class Rv(object):
+        class Rv:
             def __iter__(self):
                 yield "Hello "
                 yield "World"
@@ -675,7 +673,7 @@ def test_lazy_start_response_empty_response_app(buffered, iterable):
 def test_run_wsgi_app_closing_iterator():
     got_close = []
 
-    class CloseIter(object):
+    class CloseIter:
         def __init__(self):
             self.iterated = False
 
@@ -713,7 +711,7 @@ def iterable_middleware(app):
     def inner(environ, start_response):
         rv = app(environ, start_response)
 
-        class Iterable(object):
+        class Iterable:
             def __iter__(self):
                 return iter(rv)
 
@@ -731,17 +729,15 @@ def test_multiple_cookies():
     @Request.application
     def test_app(request):
         response = Response(repr(sorted(request.cookies.items())))
-        response.set_cookie(u"test1", b"foo")
-        response.set_cookie(u"test2", b"bar")
+        response.set_cookie("test1", b"foo")
+        response.set_cookie("test2", b"bar")
         return response
 
     client = Client(test_app, Response)
     resp = client.get("/")
     strict_eq(resp.data, b"[]")
     resp = client.get("/")
-    strict_eq(
-        resp.data, _to_bytes(repr([("test1", u"foo"), ("test2", u"bar")]), "ascii")
-    )
+    strict_eq(resp.data, _to_bytes(repr([("test1", "foo"), ("test2", "bar")]), "ascii"))
 
 
 def test_correct_open_invocation_on_redirect():
@@ -765,9 +761,9 @@ def test_correct_open_invocation_on_redirect():
 
 
 def test_correct_encoding():
-    req = Request.from_values(u"/\N{SNOWMAN}", u"http://example.com/foo")
-    strict_eq(req.script_root, u"/foo")
-    strict_eq(req.path, u"/\N{SNOWMAN}")
+    req = Request.from_values("/\N{SNOWMAN}", "http://example.com/foo")
+    strict_eq(req.script_root, "/foo")
+    strict_eq(req.path, "/\N{SNOWMAN}")
 
 
 def test_full_url_requests_with_args():

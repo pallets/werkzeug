@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.serving
     ~~~~~~~~~~~~~
@@ -281,10 +280,10 @@ def test_reloader_reports_correct_file(tmpdir, dev_server):
     real_app_binary.write("anything is fine here")
     server.wait_for_reloader()
 
-    change_event = " * Detected change in '%(path)s', reloading" % {
+    change_event = " * Detected change in '{path}', reloading".format(
         # need to double escape Windows paths
-        "path": str(real_app_binary).replace("\\", "\\\\")
-    }
+        path=str(real_app_binary).replace("\\", "\\\\")
+    )
     server.logfile.seek(0)
     for i in range(20):
         time.sleep(0.1 * i)

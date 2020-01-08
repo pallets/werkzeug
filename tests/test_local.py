@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.local
     ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,7 +161,7 @@ def test_custom_idents():
 
 
 def test_deepcopy_on_proxy():
-    class Foo(object):
+    class Foo:
         attr = 42
 
         def __copy__(self):
@@ -187,7 +186,7 @@ def test_deepcopy_on_proxy():
 
 
 def test_local_proxy_wrapped_attribute():
-    class SomeClassWithWrapped(object):
+    class SomeClassWithWrapped:
         __wrapped__ = "wrapped"
 
     def lookup_func():

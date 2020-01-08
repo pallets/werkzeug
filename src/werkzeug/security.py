@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.security
     ~~~~~~~~~~~~~~~~~
@@ -193,7 +192,7 @@ def generate_password_hash(password, method="pbkdf2:sha256", salt_length=8):
     """
     salt = gen_salt(salt_length) if method != "plain" else ""
     h, actual_method = _hash_internal(method, salt, password)
-    return "%s$%s$%s" % (actual_method, salt, h)
+    return f"{actual_method}${salt}${h}"
 
 
 def check_password_hash(pwhash, password):

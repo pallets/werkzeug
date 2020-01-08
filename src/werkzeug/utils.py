@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.utils
     ~~~~~~~~~~~~~~
@@ -151,7 +150,7 @@ class header_property(_DictAccessorProperty):
         return obj.headers
 
 
-class HTMLBuilder(object):
+class HTMLBuilder:
     """Helper object for HTML generation.
 
     Per default there are two instances of that class.  The `html` one, and
@@ -267,7 +266,7 @@ class HTMLBuilder(object):
         return proxy
 
     def __repr__(self):
-        return "<%s for %r>" % (self.__class__.__name__, self._dialect)
+        return f"<{self.__class__.__name__} for {self._dialect!r}>"
 
 
 html = HTMLBuilder("html")
@@ -473,7 +472,7 @@ def unescape(s):
                 return chr(int(name[1:]))
         except ValueError:
             pass
-        return u""
+        return ""
 
     return _entity_re.sub(handle_match, s)
 
@@ -603,8 +602,7 @@ def find_modules(import_path, include_packages=False, recursive=False):
             if include_packages:
                 yield modname
             if recursive:
-                for item in find_modules(modname, include_packages, True):
-                    yield item
+                yield from find_modules(modname, include_packages, True)
         else:
             yield modname
 
@@ -692,7 +690,7 @@ def bind_arguments(func, args, kwargs):
     elif extra_positional:
         raise TypeError("too many positional arguments")
     if kwarg_var is not None:
-        multikw = set(extra) & set([x[0] for x in arg_spec])
+        multikw = set(extra) & {x[0] for x in arg_spec}
         if multikw:
             raise TypeError(
                 "got multiple values for keyword argument " + repr(next(iter(multikw)))
@@ -749,7 +747,7 @@ class ImportStringError(ImportError):
             if imported:
                 tracked.append((name, getattr(imported, "__file__", None)))
             else:
-                track = ["- %r found in %r." % (n, i) for n, i in tracked]
+                track = [f"- {n!r} found in {i!r}." for n, i in tracked]
                 track.append("- %r not found." % name)
                 msg = msg % (
                     import_name,
@@ -762,8 +760,6 @@ class ImportStringError(ImportError):
         ImportError.__init__(self, msg)
 
     def __repr__(self):
-        return "<%s(%r, %r)>" % (
-            self.__class__.__name__,
-            self.import_name,
-            self.exception,
+        return "<{}({!r}, {!r})>".format(
+            self.__class__.__name__, self.import_name, self.exception,
         )

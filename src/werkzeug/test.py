@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.test
     ~~~~~~~~~~~~~
@@ -61,7 +60,7 @@ def stream_encode_multipart(
     in a file descriptor.
     """
     if boundary is None:
-        boundary = "---------------WerkzeugFormPart_%s%s" % (time(), random())
+        boundary = "---------------WerkzeugFormPart_{}{}".format(time(), random())
     _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
@@ -93,7 +92,7 @@ def stream_encode_multipart(
 
     for key, values in iter(values.lists()):
         for value in values:
-            write('--%s\r\nContent-Disposition: form-data; name="%s"' % (boundary, key))
+            write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
             reader = getattr(value, "read", None)
             if reader is not None:
                 filename = getattr(value, "filename", getattr(value, "name", None))
@@ -139,7 +138,7 @@ def encode_multipart(values, boundary=None, charset="utf-8"):
     return boundary, stream.read()
 
 
-class _TestCookieHeaders(object):
+class _TestCookieHeaders:
 
     """A headers adapter for cookielib
     """
@@ -163,7 +162,7 @@ class _TestCookieHeaders(object):
         return rv or default or []
 
 
-class _TestCookieResponse(object):
+class _TestCookieResponse:
 
     """Something that looks like a httplib.HTTPResponse, but is actually just an
     adapter for our test responses to make them available for cookielib.
@@ -186,7 +185,7 @@ class _TestCookieJar(CookieJar):
         """Inject the cookies as client headers into the server's wsgi
         environment.
         """
-        cvals = ["%s=%s" % (c.name, c.value) for c in self]
+        cvals = [f"{c.name}={c.value}" for c in self]
 
         if cvals:
             environ["HTTP_COOKIE"] = "; ".join(cvals)
@@ -221,7 +220,7 @@ def _iter_data(data):
                 yield key, values
 
 
-class EnvironBuilder(object):
+class EnvironBuilder:
     """This class can be used to conveniently create a WSGI environment
     for testing purposes.  It can be used to quickly create WSGI environments
     or request objects from arbitrary data.
@@ -766,7 +765,7 @@ class ClientRedirectError(Exception):
     """
 
 
-class Client(object):
+class Client:
     """This class allows you to send requests to a wrapped application.
 
     The response wrapper can be a class or factory function that takes
@@ -1042,7 +1041,7 @@ class Client(object):
         return self.open(*args, **kw)
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.application)
+        return f"<{self.__class__.__name__} {self.application!r}>"
 
 
 def create_environ(*args, **kwargs):

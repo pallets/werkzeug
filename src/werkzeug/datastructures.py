@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.datastructures
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -34,8 +33,7 @@ def iter_multi_items(mapping):
     without dropping any from more complex structures.
     """
     if isinstance(mapping, MultiDict):
-        for item in iter(mapping.items(multi=True)):
-            yield item
+        yield from iter(mapping.items(multi=True))
     elif isinstance(mapping, dict):
         for key, value in iter(mapping.items()):
             if isinstance(value, (tuple, list)):
@@ -44,11 +42,10 @@ def iter_multi_items(mapping):
             else:
                 yield key, value
     else:
-        for item in mapping:
-            yield item
+        yield from mapping
 
 
-class ImmutableListMixin(object):
+class ImmutableListMixin:
     """Makes a :class:`list` immutable.
 
     .. versionadded:: 0.5
@@ -108,10 +105,10 @@ class ImmutableList(ImmutableListMixin, list):
     """
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, list.__repr__(self))
+        return "{}({})".format(self.__class__.__name__, list.__repr__(self))
 
 
-class ImmutableDictMixin(object):
+class ImmutableDictMixin:
     """Makes a :class:`dict` immutable.
 
     .. versionadded:: 0.5
@@ -191,7 +188,7 @@ class ImmutableMultiDictMixin(ImmutableDictMixin):
         is_immutable(self)
 
 
-class UpdateDictMixin(object):
+class UpdateDictMixin:
     """Makes dicts call `self.on_update` on modifications.
 
     .. versionadded:: 0.5
@@ -213,7 +210,7 @@ class UpdateDictMixin(object):
 
     def setdefault(self, key, default=None):
         modified = key not in self
-        rv = super(UpdateDictMixin, self).setdefault(key, default)
+        rv = super().setdefault(key, default)
         if modified and self.on_update is not None:
             self.on_update(self)
         return rv
@@ -221,9 +218,9 @@ class UpdateDictMixin(object):
     def pop(self, key, default=_missing):
         modified = key in self
         if default is _missing:
-            rv = super(UpdateDictMixin, self).pop(key)
+            rv = super().pop(key)
         else:
-            rv = super(UpdateDictMixin, self).pop(key, default)
+            rv = super().pop(key, default)
         if modified and self.on_update is not None:
             self.on_update(self)
         return rv
@@ -295,7 +292,7 @@ class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
         return self
 
 
-class ViewItems(object):
+class ViewItems:
     def __init__(self, multi_dict, method, repr_name, *a, **kw):
         self.__multi_dict = multi_dict
         self.__method = method
@@ -307,7 +304,7 @@ class ViewItems(object):
         return getattr(self.__multi_dict, self.__method)(*self.__a, **self.__kw)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__repr_name, list(self.__get_items()))
+        return "{}({!r})".format(self.__repr_name, list(self.__get_items()))
 
     def __iter__(self):
         return iter(self.__get_items())
@@ -643,10 +640,12 @@ class MultiDict(TypeConversionDict):
         return self.deepcopy(memo=memo)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, list(iter(self.items(multi=True))))
+        return "{}({!r})".format(
+            self.__class__.__name__, list(iter(self.items(multi=True)))
+        )
 
 
-class _omd_bucket(object):
+class _omd_bucket:
     """Wraps values in the :class:`OrderedMultiDict`.  This makes it
     possible to keep an order over multiple different keys.  It requires
     a lot of extra memory and slows down access a lot, but makes it
@@ -855,9 +854,7 @@ class OrderedMultiDict(MultiDict):
 
 
 def _options_header_vkw(value, kw):
-    return dump_options_header(
-        value, dict((k.replace("_", "-"), v) for k, v in kw.items())
-    )
+    return dump_options_header(value, {k.replace("_", "-"): v for k, v in kw.items()})
 
 
 def _unicodify_header_value(value):
@@ -868,7 +865,7 @@ def _unicodify_header_value(value):
     return value
 
 
-class Headers(object):
+class Headers:
     """An object that stores some headers.  It has a dict-like interface
     but is ordered and can store the same keys multiple times.
 
@@ -1143,7 +1140,7 @@ class Headers(object):
     def _validate_value(self, value):
         if not isinstance(value, str):
             raise TypeError("Value should be unicode.")
-        if u"\n" in value or u"\r" in value:
+        if "\n" in value or "\r" in value:
             raise ValueError(
                 "Detected newline in header value.  This is "
                 "a potential security problem"
@@ -1322,15 +1319,15 @@ class Headers(object):
         """Returns formatted headers suitable for HTTP transmission."""
         strs = []
         for key, value in self.to_wsgi_list():
-            strs.append("%s: %s" % (key, value))
+            strs.append(f"{key}: {value}")
         strs.append("\r\n")
         return "\r\n".join(strs)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, list(self))
+        return "{}({!r})".format(self.__class__.__name__, list(self))
 
 
-class ImmutableHeadersMixin(object):
+class ImmutableHeadersMixin:
     """Makes a :class:`Headers` immutable.  We do not mark them as
     hashable though since the only usecase for this datastructure
     in Werkzeug is a view on a mutable structure.
@@ -1570,7 +1567,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     has_key = __contains__
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.dicts)
+        return f"{self.__class__.__name__}({self.dicts!r})"
 
 
 class FileMultiDict(MultiDict):
@@ -1613,7 +1610,7 @@ class ImmutableDict(ImmutableDictMixin, dict):
     """
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, dict.__repr__(self))
+        return "{}({})".format(self.__class__.__name__, dict.__repr__(self))
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
@@ -1749,9 +1746,8 @@ class Accept(ImmutableList):
         return False
 
     def __repr__(self):
-        return "%s([%s])" % (
-            self.__class__.__name__,
-            ", ".join("(%r, %s)" % (x, y) for x, y in self),
+        return "{}([{}])".format(
+            self.__class__.__name__, ", ".join(f"({x!r}, {y})" for x, y in self),
         )
 
     def index(self, key):
@@ -1790,7 +1786,7 @@ class Accept(ImmutableList):
         result = []
         for value, quality in self:
             if quality != 1:
-                value = "%s;q=%s" % (value, quality)
+                value = f"{value};q={quality}"
             result.append(value)
         return ",".join(result)
 
@@ -1942,7 +1938,7 @@ class LanguageAccept(Accept):
         """
         # Look for an exact match first. If a client accepts "en-US",
         # "en-US" is a valid match at this point.
-        result = super(LanguageAccept, self).best_match(matches)
+        result = super().best_match(matches)
 
         if result is not None:
             return result
@@ -1961,7 +1957,7 @@ class LanguageAccept(Accept):
         # Fall back to matching primary tags. If the client accepts
         # "en", "en-US" is a valid match at this point.
         fallback_matches = [_locale_delim_re.split(item, 1)[0] for item in matches]
-        result = super(LanguageAccept, self).best_match(fallback_matches)
+        result = super().best_match(fallback_matches)
 
         # Return a value from the original match list. Find the first
         # original value that starts with the matched primary tag.
@@ -2080,9 +2076,9 @@ class _CacheControl(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return "<%s %s>" % (
+        return "<{} {}>".format(
             self.__class__.__name__,
-            " ".join("%s=%r" % (k, v) for k, v in sorted(self.items())),
+            " ".join(f"{k}={v!r}" for k, v in sorted(self.items())),
         )
 
 
@@ -2218,9 +2214,9 @@ class ContentSecurityPolicy(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return "<%s %s>" % (
+        return "<{} {}>".format(
             self.__class__.__name__,
-            " ".join("%s=%r" % (k, v) for k, v in sorted(self.items())),
+            " ".join(f"{k}={v!r}" for k, v in sorted(self.items())),
         )
 
 
@@ -2234,7 +2230,7 @@ class CallbackDict(UpdateDictMixin, dict):
         self.on_update = on_update
 
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, dict.__repr__(self))
+        return "<{} {}>".format(self.__class__.__name__, dict.__repr__(self))
 
 
 class HeaderSet(MutableSet):
@@ -2252,7 +2248,7 @@ class HeaderSet(MutableSet):
 
     def __init__(self, headers=None, on_update=None):
         self._headers = list(headers or ())
-        self._set = set([x.lower() for x in self._headers])
+        self._set = {x.lower() for x in self._headers}
         self.on_update = on_update
 
     def add(self, header):
@@ -2384,7 +2380,7 @@ class HeaderSet(MutableSet):
         return self.to_header()
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self._headers)
+        return f"{self.__class__.__name__}({self._headers!r})"
 
 
 class ETags(Container, Iterable):
@@ -2467,10 +2463,10 @@ class ETags(Container, Iterable):
         return self.contains(etag)
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, str(self))
+        return "<{} {!r}>".format(self.__class__.__name__, str(self))
 
 
-class IfRange(object):
+class IfRange:
     """Very simple object that represents the `If-Range` header in parsed
     form.  It will either have neither a etag or date or one of either but
     never both.
@@ -2497,10 +2493,10 @@ class IfRange(object):
         return self.to_header()
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, str(self))
+        return "<{} {!r}>".format(self.__class__.__name__, str(self))
 
 
-class Range(object):
+class Range:
     """Represents a ``Range`` header. All methods only support only
     bytes as the unit. Stores a list of ranges if given, but the methods
     only work if only one range is provided.
@@ -2554,8 +2550,8 @@ class Range(object):
             if end is None:
                 ranges.append("%s-" % begin if begin >= 0 else str(begin))
             else:
-                ranges.append("%s-%s" % (begin, end - 1))
-        return "%s=%s" % (self.units, ",".join(ranges))
+                ranges.append("{}-{}".format(begin, end - 1))
+        return "{}={}".format(self.units, ",".join(ranges))
 
     def to_content_range_header(self, length):
         """Converts the object into `Content-Range` HTTP header,
@@ -2575,10 +2571,10 @@ class Range(object):
         return self.to_header()
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, str(self))
+        return "<{} {!r}>".format(self.__class__.__name__, str(self))
 
 
-class ContentRange(object):
+class ContentRange:
     """Represents the content range header.
 
     .. versionadded:: 0.7
@@ -2635,8 +2631,8 @@ class ContentRange(object):
         else:
             length = self.length
         if self.start is None:
-            return "%s */%s" % (self.units, length)
-        return "%s %s-%s/%s" % (self.units, self.start, self.stop - 1, length)
+            return f"{self.units} */{length}"
+        return "{} {}-{}/{}".format(self.units, self.start, self.stop - 1, length)
 
     def __nonzero__(self):
         return self.units is not None
@@ -2647,7 +2643,7 @@ class ContentRange(object):
         return self.to_header()
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, str(self))
+        return "<{} {!r}>".format(self.__class__.__name__, str(self))
 
 
 class Authorization(ImmutableDictMixin, dict):
@@ -2784,7 +2780,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         """Convert the stored values into a WWW-Authenticate header."""
         d = dict(self)
         auth_type = d.pop("__auth_type__", None) or "basic"
-        return "%s %s" % (
+        return "{} {}".format(
             auth_type.title(),
             ", ".join(
                 [
@@ -2804,7 +2800,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.to_header())
+        return "<{} {!r}>".format(self.__class__.__name__, self.to_header())
 
     def auth_property(name, doc=None):  # noqa: B902
         """A static helper function for subclasses to add extra authentication
@@ -2905,7 +2901,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
     del _set_property
 
 
-class FileStorage(object):
+class FileStorage:
     """The :class:`FileStorage` class is a thin wrapper over incoming files.
     It is used by the request object to represent uploaded files.  All the
     attributes of the wrapper stream are proxied by the file storage so
@@ -3045,10 +3041,8 @@ class FileStorage(object):
         return iter(self.stream)
 
     def __repr__(self):
-        return "<%s: %r (%r)>" % (
-            self.__class__.__name__,
-            self.filename,
-            self.content_type,
+        return "<{}: {!r} ({!r})>".format(
+            self.__class__.__name__, self.filename, self.content_type,
         )
 
 

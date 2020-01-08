@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.urls
     ~~~~~~~~~~~~~
@@ -41,9 +40,7 @@ _always_safe = frozenset(
 )
 
 _hexdigits = "0123456789ABCDEFabcdef"
-_hextobyte = dict(
-    ((a + b).encode(), int(a + b, 16)) for a in _hexdigits for b in _hexdigits
-)
+_hextobyte = {(a + b).encode(): int(a + b, 16) for a in _hexdigits for b in _hexdigits}
 _bytetohex = [("%%%02X" % char).encode("ascii") for char in range(256)]
 
 
@@ -174,7 +171,7 @@ class BaseURL(_URLTuple):
             )
         )
         if auth:
-            rv = "%s@%s" % (auth, rv)
+            rv = f"{auth}@{rv}"
         return rv
 
     def to_uri_tuple(self):
@@ -325,7 +322,7 @@ class URL(BaseURL):
             )
         )
         if auth:
-            rv = "%s@%s" % (auth, rv)
+            rv = f"{auth}@{rv}"
         return _to_native(rv)
 
     def encode(self, charset="utf-8", errors="replace"):
@@ -610,7 +607,7 @@ def url_unquote_plus(s, charset="utf-8", errors="replace"):
     :param errors: The error handling for the `charset` decoding.
     """
     if isinstance(s, str):
-        s = s.replace(u"+", u" ")
+        s = s.replace("+", " ")
     else:
         s = s.replace(b"+", b" ")
     return url_unquote(s, charset, errors)
@@ -1022,7 +1019,7 @@ def url_join(base, url, allow_fragments=True):
     return url_unparse((scheme, netloc, path, query, fragment))
 
 
-class Href(object):
+class Href:
     """Implements a callable that constructs URLs with the given base. The
     function can be called with any number of positional and keyword
     arguments which than are used to assemble the URL.  Works with URLs
@@ -1095,9 +1092,7 @@ class Href(object):
                 raise TypeError("keyword arguments and query-dicts can't be combined")
             query, path = path[-1], path[:-1]
         elif query:
-            query = dict(
-                [(k.endswith("_") and k[:-1] or k, v) for k, v in query.items()]
-            )
+            query = {k.endswith("_") and k[:-1] or k: v for k, v in query.items()}
         path = "/".join(
             [
                 _to_str(url_quote(x, self.charset), "ascii")

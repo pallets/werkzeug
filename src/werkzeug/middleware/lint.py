@@ -35,12 +35,12 @@ class HTTPWarning(Warning):
 def check_string(context, obj, stacklevel=3):
     if type(obj) is not str:
         warn(
-            "'%s' requires strings, got '%s'" % (context, type(obj).__name__),
+            "'{}' requires strings, got '{}'".format(context, type(obj).__name__),
             WSGIWarning,
         )
 
 
-class InputStream(object):
+class InputStream:
     def __init__(self, stream):
         self._stream = stream
 
@@ -92,7 +92,7 @@ class InputStream(object):
         self._stream.close()
 
 
-class ErrorStream(object):
+class ErrorStream:
     def __init__(self, stream):
         self._stream = stream
 
@@ -112,7 +112,7 @@ class ErrorStream(object):
         self._stream.close()
 
 
-class GuardedWrite(object):
+class GuardedWrite:
     def __init__(self, write, chunks):
         self._write = write
         self._chunks = chunks
@@ -123,7 +123,7 @@ class GuardedWrite(object):
         self._chunks.append(len(s))
 
 
-class GuardedIterator(object):
+class GuardedIterator:
     def __init__(self, iterator, headers_set, chunks):
         self._iterator = iterator
         self._next = iter(iterator).__next__
@@ -200,7 +200,7 @@ class GuardedIterator(object):
                 pass
 
 
-class LintMiddleware(object):
+class LintMiddleware:
     """Warns about common errors in the WSGI and HTTP behavior of the
     server and wrapped application. Some of the issues it check are:
 

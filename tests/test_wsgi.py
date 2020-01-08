@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.wsgi
     ~~~~~~~~~~
@@ -125,15 +124,15 @@ def test_peek_path_info():
 
 
 def test_path_info_and_script_name_fetching():
-    env = create_environ(u"/\N{SNOWMAN}", u"http://example.com/\N{COMET}/")
-    assert wsgi.get_path_info(env) == u"/\N{SNOWMAN}"
-    assert wsgi.get_path_info(env, charset=None) == u"/\N{SNOWMAN}".encode("utf-8")
-    assert wsgi.get_script_name(env) == u"/\N{COMET}"
-    assert wsgi.get_script_name(env, charset=None) == u"/\N{COMET}".encode("utf-8")
+    env = create_environ("/\N{SNOWMAN}", "http://example.com/\N{COMET}/")
+    assert wsgi.get_path_info(env) == "/\N{SNOWMAN}"
+    assert wsgi.get_path_info(env, charset=None) == "/\N{SNOWMAN}".encode()
+    assert wsgi.get_script_name(env) == "/\N{COMET}"
+    assert wsgi.get_script_name(env, charset=None) == "/\N{COMET}".encode()
 
 
 def test_query_string_fetching():
-    env = create_environ(u"/?\N{SNOWMAN}=\N{COMET}")
+    env = create_environ("/?\N{SNOWMAN}=\N{COMET}")
     qs = wsgi.get_query_string(env)
     strict_eq(qs, "%E2%98%83=%E2%98%84")
 
@@ -197,13 +196,13 @@ def test_limited_stream():
     stream = wsgi.LimitedStream(io_, 0)
     strict_eq(stream.read(-1), b"")
 
-    io_ = io.StringIO(u"123456")
+    io_ = io.StringIO("123456")
     stream = wsgi.LimitedStream(io_, 0)
-    strict_eq(stream.read(-1), u"")
+    strict_eq(stream.read(-1), "")
 
-    io_ = io.StringIO(u"123\n456\n")
+    io_ = io.StringIO("123\n456\n")
     stream = wsgi.LimitedStream(io_, 8)
-    strict_eq(list(stream), [u"123\n", u"456\n"])
+    strict_eq(list(stream), ["123\n", "456\n"])
 
 
 def test_limited_stream_json_load():
@@ -233,25 +232,25 @@ def test_limited_stream_disconnection():
 
 def test_path_info_extraction():
     x = wsgi.extract_path_info("http://example.com/app", "/app/hello")
-    assert x == u"/hello"
+    assert x == "/hello"
     x = wsgi.extract_path_info(
         "http://example.com/app", "https://example.com/app/hello"
     )
-    assert x == u"/hello"
+    assert x == "/hello"
     x = wsgi.extract_path_info(
         "http://example.com/app/", "https://example.com/app/hello"
     )
-    assert x == u"/hello"
+    assert x == "/hello"
     x = wsgi.extract_path_info("http://example.com/app/", "https://example.com/app")
-    assert x == u"/"
-    x = wsgi.extract_path_info(u"http://☃.net/", u"/fööbär")
-    assert x == u"/fööbär"
-    x = wsgi.extract_path_info(u"http://☃.net/x", u"http://☃.net/x/fööbär")
-    assert x == u"/fööbär"
+    assert x == "/"
+    x = wsgi.extract_path_info("http://☃.net/", "/fööbär")
+    assert x == "/fööbär"
+    x = wsgi.extract_path_info("http://☃.net/x", "http://☃.net/x/fööbär")
+    assert x == "/fööbär"
 
-    env = create_environ(u"/fööbär", u"http://☃.net/x/")
-    x = wsgi.extract_path_info(env, u"http://☃.net/x/fööbär")
-    assert x == u"/fööbär"
+    env = create_environ("/fööbär", "http://☃.net/x/")
+    x = wsgi.extract_path_info(env, "http://☃.net/x/fööbär")
+    assert x == "/fööbär"
 
     x = wsgi.extract_path_info("http://example.com/app/", "https://example.com/a/hello")
     assert x is None
@@ -287,9 +286,9 @@ def test_get_host_fallback():
 
 
 def test_get_current_url_unicode():
-    env = create_environ(query_string=u"foo=bar&baz=blah&meh=\xcf")
+    env = create_environ(query_string="foo=bar&baz=blah&meh=\xcf")
     rv = wsgi.get_current_url(env)
-    strict_eq(rv, u"http://localhost/?foo=bar&baz=blah&meh=\xcf")
+    strict_eq(rv, "http://localhost/?foo=bar&baz=blah&meh=\xcf")
 
 
 def test_get_current_url_invalid_utf8():
@@ -298,7 +297,7 @@ def test_get_current_url_invalid_utf8():
     env["QUERY_STRING"] = "foo=bar&baz=blah&meh=\xcf"
     rv = wsgi.get_current_url(env)
     # it remains percent-encoded
-    strict_eq(rv, u"http://localhost/?foo=bar&baz=blah&meh=%CF")
+    strict_eq(rv, "http://localhost/?foo=bar&baz=blah&meh=%CF")
 
 
 def test_multi_part_line_breaks():
@@ -353,14 +352,14 @@ def test_iter_functions_support_iterators():
 
 
 def test_make_chunk_iter():
-    data = [u"abcdefXghi", u"jklXmnopqrstuvwxyzX", u"ABCDEFGHIJK"]
+    data = ["abcdefXghi", "jklXmnopqrstuvwxyzX", "ABCDEFGHIJK"]
     rv = list(wsgi.make_chunk_iter(data, "X"))
-    assert rv == [u"abcdef", u"ghijkl", u"mnopqrstuvwxyz", u"ABCDEFGHIJK"]
+    assert rv == ["abcdef", "ghijkl", "mnopqrstuvwxyz", "ABCDEFGHIJK"]
 
-    data = u"abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK"
+    data = "abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK"
     test_stream = io.StringIO(data)
     rv = list(wsgi.make_chunk_iter(test_stream, "X", limit=len(data), buffer_size=4))
-    assert rv == [u"abcdef", u"ghijkl", u"mnopqrstuvwxyz", u"ABCDEFGHIJK"]
+    assert rv == ["abcdef", "ghijkl", "mnopqrstuvwxyz", "ABCDEFGHIJK"]
 
 
 def test_make_chunk_iter_bytes():
@@ -432,13 +431,13 @@ def test_range_wrapper():
     range_wrapper = _RangeWrapper(response.response, 6, 100)
     assert next(range_wrapper) == b"World"
 
-    response = BaseResponse((x for x in (b"He", b"ll", b"o ", b"Wo", b"rl", b"d")))
+    response = BaseResponse(x for x in (b"He", b"ll", b"o ", b"Wo", b"rl", b"d"))
     range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert not range_wrapper.seekable
     assert next(range_wrapper) == b"Wo"
     assert next(range_wrapper) == b"rl"
 
-    response = BaseResponse((x for x in (b"He", b"ll", b"o W", b"o", b"rld")))
+    response = BaseResponse(x for x in (b"He", b"ll", b"o W", b"o", b"rld"))
     range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert next(range_wrapper) == b"W"
     assert next(range_wrapper) == b"o"
@@ -446,7 +445,7 @@ def test_range_wrapper():
     with pytest.raises(StopIteration):
         next(range_wrapper)
 
-    response = BaseResponse((x for x in (b"Hello", b" World")))
+    response = BaseResponse(x for x in (b"Hello", b" World"))
     range_wrapper = _RangeWrapper(response.response, 1, 1)
     assert next(range_wrapper) == b"e"
     with pytest.raises(StopIteration):
@@ -471,11 +470,11 @@ def test_range_wrapper():
 
 
 def test_closing_iterator():
-    class Namespace(object):
+    class Namespace:
         got_close = False
         got_additional = False
 
-    class Response(object):
+    class Response:
         def __init__(self, environ, start_response):
             self.start = start_response
 

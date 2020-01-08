@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.filesystem
     ~~~~~~~~~~~~~~~~~~~
@@ -56,7 +55,7 @@ def get_filesystem_encoding():
         if not _warned_about_filesystem_encoding:
             warnings.warn(
                 "Detected a misconfigured UNIX filesystem: Will use"
-                " UTF-8 as filesystem encoding instead of {0!r}".format(rv),
+                " UTF-8 as filesystem encoding instead of {!r}".format(rv),
                 BrokenFilesystemWarning,
             )
             _warned_about_filesystem_encoding = True

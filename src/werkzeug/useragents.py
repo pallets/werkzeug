@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.useragents
     ~~~~~~~~~~~~~~~~~~~
@@ -14,7 +13,7 @@
 import re
 
 
-class UserAgentParser(object):
+class UserAgentParser:
     """A simple user agent parser.  Used by the `UserAgent`."""
 
     platforms = (
@@ -101,7 +100,7 @@ class UserAgentParser(object):
         return platform, browser, version, language
 
 
-class UserAgent(object):
+class UserAgent:
     """Represents a user agent.  Pass it a WSGI environment or a user agent
     string and you can inspect some of the details from the user agent
     string via the attributes.  The following attributes exist:
@@ -199,4 +198,4 @@ class UserAgent(object):
     __bool__ = __nonzero__
 
     def __repr__(self):
-        return "<%s %r/%s>" % (self.__class__.__name__, self.browser, self.version)
+        return f"<{self.__class__.__name__} {self.browser!r}/{self.version}>"

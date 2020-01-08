@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.routing
     ~~~~~~~~~~~~~~~~
@@ -320,7 +319,7 @@ class BuildError(RoutingException, LookupError):
                     )
             else:
                 message.append(" Did you mean %r instead?" % self.suggested.endpoint)
-        return u"".join(message)
+        return "".join(message)
 
 
 class WebsocketMismatch(BadRequest):
@@ -335,7 +334,7 @@ class ValidationError(ValueError):
     """
 
 
-class RuleFactory(object):
+class RuleFactory:
     """As soon as you have more complex URL setups it's a good idea to use rule
     factories to avoid repetitive tasks.  Some of them are builtin, others can
     be added by subclassing `RuleFactory` and overriding `get_rules`.
@@ -429,7 +428,7 @@ class EndpointPrefix(RuleFactory):
                 yield rule
 
 
-class RuleTemplate(object):
+class RuleTemplate:
     """Returns copies of the rules wrapped and expands string templates in
     the endpoint, rule, defaults or subdomain sections.
 
@@ -748,7 +747,7 @@ class Rule(RuleFactory):
         :internal:
         """
         if self.map is not None and not rebind:
-            raise RuntimeError("url rule %r already bound to map %r" % (self, self.map))
+            raise RuntimeError(f"url rule {self!r} already bound to map {self.map!r}")
         self.map = map
         if self.strict_slashes is None:
             self.strict_slashes = map.strict_slashes
@@ -815,7 +814,7 @@ class Rule(RuleFactory):
                         c_args = ()
                         c_kwargs = {}
                     convobj = self.get_converter(variable, converter, c_args, c_kwargs)
-                    regex_parts.append("(?P<%s>%s)" % (variable, convobj.regex))
+                    regex_parts.append(f"(?P<{variable}>{convobj.regex})")
                     self._converters[variable] = convobj
                     self._trace.append((True, variable))
                     self._argument_weights.append(convobj.weight)
@@ -836,12 +835,12 @@ class Rule(RuleFactory):
             return
 
         if not (self.is_leaf and self.strict_slashes):
-            reps = u"*" if self.merge_slashes else u"?"
-            tail = u"(?<!/)(?P<__suffix__>/%s)" % reps
+            reps = "*" if self.merge_slashes else "?"
+            tail = "(?<!/)(?P<__suffix__>/%s)" % reps
         else:
-            tail = u""
+            tail = ""
 
-        regex = u"^%s%s$" % (u"".join(regex_parts), tail)
+        regex = "^{}{}$".format("".join(regex_parts), tail)
         self._regex = re.compile(regex, re.UNICODE)
 
     def match(self, path, method=None):
@@ -987,7 +986,7 @@ class Rule(RuleFactory):
         kargs = [str(k) for k in defaults]
 
         func_ast = _prefix_names("def _(): pass")
-        func_ast.name = "<builder:{!r}>".format(self.rule)
+        func_ast.name = f"<builder:{self.rule!r}>"
         if hasattr(ast, "arg"):  # py3
             func_ast.args.args.append(ast.arg(".self", None))
             for arg in pargs + kargs:
@@ -1123,22 +1122,22 @@ class Rule(RuleFactory):
 
     def __repr__(self):
         if self.map is None:
-            return u"<%s (unbound)>" % self.__class__.__name__
+            return "<%s (unbound)>" % self.__class__.__name__
         tmp = []
         for is_dynamic, data in self._trace:
             if is_dynamic:
-                tmp.append(u"<%s>" % data)
+                tmp.append("<%s>" % data)
             else:
                 tmp.append(data)
-        return u"<%s %s%s -> %s>" % (
+        return "<{} {}{} -> {}>".format(
             self.__class__.__name__,
-            repr((u"".join(tmp)).lstrip(u"|")).lstrip(u"u"),
-            self.methods is not None and u" (%s)" % u", ".join(self.methods) or u"",
+            repr(("".join(tmp)).lstrip("|")).lstrip("u"),
+            self.methods is not None and " (%s)" % ", ".join(self.methods) or "",
             self.endpoint,
         )
 
 
-class BaseConverter(object):
+class BaseConverter:
     """Base class for all converters."""
 
     regex = "[^/]+"
@@ -1183,7 +1182,7 @@ class UnicodeConverter(BaseConverter):
                 maxlength = ""
             else:
                 maxlength = int(maxlength)
-            length = "{%s,%s}" % (int(minlength), maxlength)
+            length = "{{{},{}}}".format(int(minlength), maxlength)
         self.regex = "[^/]" + length
 
 
@@ -1341,7 +1340,7 @@ DEFAULT_CONVERTERS = {
 }
 
 
-class Map(object):
+class Map:
     """The map class stores all the URL rules and some configuration
     parameters.  Some of the configuration values are only stored on the
     `Map` instance since those affect all rules, others are just defaults
@@ -1653,10 +1652,10 @@ class Map(object):
 
     def __repr__(self):
         rules = self.iter_rules()
-        return "%s(%s)" % (self.__class__.__name__, pformat(list(rules)))
+        return "{}({})".format(self.__class__.__name__, pformat(list(rules)))
 
 
-class MapAdapter(object):
+class MapAdapter:
 
     """Returned by :meth:`Map.bind` or :meth:`Map.bind_to_environ` and does
     the URL matching and building based on runtime information.
@@ -1676,8 +1675,8 @@ class MapAdapter(object):
         self.map = map
         self.server_name = _to_str(server_name)
         script_name = _to_str(script_name)
-        if not script_name.endswith(u"/"):
-            script_name += u"/"
+        if not script_name.endswith("/"):
+            script_name += "/"
         self.script_name = script_name
         self.subdomain = _to_str(subdomain)
         self.url_scheme = _to_str(url_scheme)
@@ -1851,7 +1850,7 @@ class MapAdapter(object):
 
         require_redirect = False
 
-        path = u"%s|%s" % (
+        path = "{}|{}".format(
             self.map.host_matching and self.server_name or self.subdomain,
             path_info and "/%s" % path_info.lstrip("/"),
         )
@@ -1979,7 +1978,7 @@ class MapAdapter(object):
             subdomain = self.subdomain
         else:
             subdomain = _to_str(subdomain, "ascii")
-        return (subdomain + u"." if subdomain else u"") + self.server_name
+        return (subdomain + "." if subdomain else "") + self.server_name
 
     def get_default_redirect(self, rule, method, values, query_args):
         """A helper that returns the URL to redirect to if it finds one.
@@ -2197,7 +2196,7 @@ class MapAdapter(object):
             (self.map.host_matching and host == self.server_name)
             or (not self.map.host_matching and domain_part == self.subdomain)
         ):
-            return "%s/%s" % (self.script_name.rstrip("/"), path.lstrip("/"))
+            return "{}/{}".format(self.script_name.rstrip("/"), path.lstrip("/"))
         return str(
             "%s//%s%s/%s"
             % (

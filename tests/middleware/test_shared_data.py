@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import sys
 from contextlib import closing
@@ -27,8 +26,8 @@ def test_shared_data_middleware(tmpdir):
 
     test_dir = str(tmpdir)
 
-    with open(os.path.join(test_dir, _to_native(u"äöü", "utf-8")), "w") as test_file:
-        test_file.write(u"FOUND")
+    with open(os.path.join(test_dir, _to_native("äöü", "utf-8")), "w") as test_file:
+        test_file.write("FOUND")
 
     for t in [list, dict]:
         app = SharedDataMiddleware(

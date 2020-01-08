@@ -24,7 +24,7 @@ from ..wsgi import get_host
 from ..wsgi import get_input_stream
 
 
-class BaseRequest(object):
+class BaseRequest:
     """Very basic request object.  This does not implement advanced stuff like
     entity tag parsing or cache controls.  The request object is created with
     the WSGI environment as first argument and will add itself to the WSGI
@@ -164,7 +164,7 @@ class BaseRequest(object):
         except Exception:
             args.append("(invalid WSGI environ)")
 
-        return "<%s %s>" % (self.__class__.__name__, " ".join(args))
+        return "<{} {}>".format(self.__class__.__name__, " ".join(args))
 
     @property
     def url_charset(self):
@@ -545,7 +545,7 @@ class BaseRequest(object):
     @cached_property
     def full_path(self):
         """Requested path as unicode, including the query string."""
-        return self.path + u"?" + _to_str(self.query_string, self.url_charset)
+        return self.path + "?" + _to_str(self.query_string, self.url_charset)
 
     @cached_property
     def script_root(self):

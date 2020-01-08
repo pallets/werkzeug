@@ -56,7 +56,7 @@ def _clean_accept_ranges(accept_ranges):
     raise ValueError("Invalid accept_ranges value")
 
 
-class BaseResponse(object):
+class BaseResponse:
     """Base response class.  The most important fact about a response object
     is that it's a regular WSGI application.  It's initialized with a couple
     of response parameters (headers, body, status code etc.) and will start a
@@ -226,7 +226,7 @@ class BaseResponse(object):
             body_info = "%d bytes" % sum(map(len, self.iter_encoded()))
         else:
             body_info = "streamed" if self.is_streamed else "likely-streamed"
-        return "<%s %s [%s]>" % (self.__class__.__name__, body_info, self.status)
+        return f"<{self.__class__.__name__} {body_info} [{self.status}]>"
 
     @classmethod
     def force_type(cls, response, environ=None):
@@ -580,11 +580,11 @@ class BaseResponse(object):
         # speedup.
         for key, value in headers:
             ikey = key.lower()
-            if ikey == u"location":
+            if ikey == "location":
                 location = value
-            elif ikey == u"content-location":
+            elif ikey == "content-location":
                 content_location = value
-            elif ikey == u"content-length":
+            elif ikey == "content-length":
                 content_length = value
 
         # make sure the location header is an absolute URL

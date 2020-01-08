@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.formparser
     ~~~~~~~~~~~~~~~~~~~
@@ -141,7 +140,7 @@ def exhaust_stream(f):
     return update_wrapper(wrapper, f)
 
 
-class FormDataParser(object):
+class FormDataParser:
     """This class implements parsing of form data for Werkzeug.  By itself
     it can parse multipart and url encoded form data.  It can be subclassed
     and extended but for most mimetypes it is a better idea to use the
@@ -323,7 +322,7 @@ _cont = "cont"
 _end = "end"
 
 
-class MultiPartParser(object):
+class MultiPartParser:
     def __init__(
         self,
         stream_factory=None,

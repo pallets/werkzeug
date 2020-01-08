@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.debug
     ~~~~~~~~~~~
@@ -29,25 +28,25 @@ from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
 
-class TestDebugRepr(object):
+class TestDebugRepr:
     def test_basic_repr(self):
-        assert debug_repr([]) == u"[]"
+        assert debug_repr([]) == "[]"
         assert (
             debug_repr([1, 2])
-            == u'[<span class="number">1</span>, <span class="number">2</span>]'
+            == '[<span class="number">1</span>, <span class="number">2</span>]'
         )
         assert (
             debug_repr([1, "test"])
-            == u'[<span class="number">1</span>, <span class="string">\'test\'</span>]'
+            == '[<span class="number">1</span>, <span class="string">\'test\'</span>]'
         )
-        assert debug_repr([None]) == u'[<span class="object">None</span>]'
+        assert debug_repr([None]) == '[<span class="object">None</span>]'
 
     def test_string_repr(self):
-        assert debug_repr("") == u"<span class=\"string\">''</span>"
-        assert debug_repr("foo") == u"<span class=\"string\">'foo'</span>"
+        assert debug_repr("") == "<span class=\"string\">''</span>"
+        assert debug_repr("foo") == "<span class=\"string\">'foo'</span>"
         assert (
             debug_repr("s" * 80)
-            == u'<span class="string">\''
+            == '<span class="string">\''
             + "s" * 69
             + '<span class="extended">'
             + "s" * 11
@@ -55,7 +54,7 @@ class TestDebugRepr(object):
         )
         assert (
             debug_repr("<" * 80)
-            == u'<span class="string">\''
+            == '<span class="string">\''
             + "&lt;" * 69
             + '<span class="extended">'
             + "&lt;" * 11
@@ -67,72 +66,72 @@ class TestDebugRepr(object):
             pass
 
         assert debug_repr(Test("foo")) == (
-            u'<span class="module">tests.test_debug.</span>'
-            u"Test(<span class=\"string\">'foo'</span>)"
+            '<span class="module">tests.test_debug.</span>'
+            "Test(<span class=\"string\">'foo'</span>)"
         )
 
     def test_sequence_repr(self):
         assert debug_repr(list(range(20))) == (
-            u'[<span class="number">0</span>, <span class="number">1</span>, '
-            u'<span class="number">2</span>, <span class="number">3</span>, '
-            u'<span class="number">4</span>, <span class="number">5</span>, '
-            u'<span class="number">6</span>, <span class="number">7</span>, '
-            u'<span class="extended"><span class="number">8</span>, '
-            u'<span class="number">9</span>, <span class="number">10</span>, '
-            u'<span class="number">11</span>, <span class="number">12</span>, '
-            u'<span class="number">13</span>, <span class="number">14</span>, '
-            u'<span class="number">15</span>, <span class="number">16</span>, '
-            u'<span class="number">17</span>, <span class="number">18</span>, '
-            u'<span class="number">19</span></span>]'
+            '[<span class="number">0</span>, <span class="number">1</span>, '
+            '<span class="number">2</span>, <span class="number">3</span>, '
+            '<span class="number">4</span>, <span class="number">5</span>, '
+            '<span class="number">6</span>, <span class="number">7</span>, '
+            '<span class="extended"><span class="number">8</span>, '
+            '<span class="number">9</span>, <span class="number">10</span>, '
+            '<span class="number">11</span>, <span class="number">12</span>, '
+            '<span class="number">13</span>, <span class="number">14</span>, '
+            '<span class="number">15</span>, <span class="number">16</span>, '
+            '<span class="number">17</span>, <span class="number">18</span>, '
+            '<span class="number">19</span></span>]'
         )
 
     def test_mapping_repr(self):
-        assert debug_repr({}) == u"{}"
+        assert debug_repr({}) == "{}"
         assert debug_repr({"foo": 42}) == (
-            u'{<span class="pair"><span class="key"><span class="string">\'foo\''
-            u'</span></span>: <span class="value"><span class="number">42'
-            u"</span></span></span>}"
+            '{<span class="pair"><span class="key"><span class="string">\'foo\''
+            '</span></span>: <span class="value"><span class="number">42'
+            "</span></span></span>}"
         )
         assert debug_repr(dict(zip(range(10), [None] * 10))) == (
-            u'{<span class="pair"><span class="key"><span class="number">0'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">1'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">2'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">3'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="extended">'
-            u'<span class="pair"><span class="key"><span class="number">4'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">5'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">6'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">7'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">8'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span>, "
-            u'<span class="pair"><span class="key"><span class="number">9'
-            u'</span></span>: <span class="value"><span class="object">None'
-            u"</span></span></span></span>}"
+            '{<span class="pair"><span class="key"><span class="number">0'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">1'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">2'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">3'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="extended">'
+            '<span class="pair"><span class="key"><span class="number">4'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">5'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">6'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">7'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">8'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span>, "
+            '<span class="pair"><span class="key"><span class="number">9'
+            '</span></span>: <span class="value"><span class="object">None'
+            "</span></span></span></span>}"
         )
-        assert debug_repr((1, "zwei", u"drei")) == (
-            u'(<span class="number">1</span>, <span class="string">\''
-            u"zwei'</span>, <span class=\"string\">'drei'</span>)"
+        assert debug_repr((1, "zwei", "drei")) == (
+            '(<span class="number">1</span>, <span class="string">\''
+            "zwei'</span>, <span class=\"string\">'drei'</span>)"
         )
 
     def test_custom_repr(self):
-        class Foo(object):
+        class Foo:
             def __repr__(self):
                 return "<Foo 42>"
 
@@ -143,45 +142,45 @@ class TestDebugRepr(object):
             pass
 
         assert debug_repr(MyList([1, 2])) == (
-            u'<span class="module">tests.test_debug.</span>MyList(['
-            u'<span class="number">1</span>, <span class="number">2</span>])'
+            '<span class="module">tests.test_debug.</span>MyList(['
+            '<span class="number">1</span>, <span class="number">2</span>])'
         )
 
     def test_regex_repr(self):
         assert (
             debug_repr(re.compile(r"foo\d"))
-            == u"re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
+            == "re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
         )
         # No ur'' in Py3
         # https://bugs.python.org/issue15096
-        assert debug_repr(re.compile(u"foo\\d")) == (
-            u"re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
+        assert debug_repr(re.compile("foo\\d")) == (
+            "re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
         )
 
     def test_set_repr(self):
         assert (
             debug_repr(frozenset("x"))
-            == u"frozenset([<span class=\"string\">'x'</span>])"
+            == "frozenset([<span class=\"string\">'x'</span>])"
         )
-        assert debug_repr(set("x")) == u"set([<span class=\"string\">'x'</span>])"
+        assert debug_repr(set("x")) == "set([<span class=\"string\">'x'</span>])"
 
     def test_recursive_repr(self):
         a = [1]
         a.append(a)
-        assert debug_repr(a) == u'[<span class="number">1</span>, [...]]'
+        assert debug_repr(a) == '[<span class="number">1</span>, [...]]'
 
     def test_broken_repr(self):
-        class Foo(object):
+        class Foo:
             def __repr__(self):
                 raise Exception("broken!")
 
         assert debug_repr(Foo()) == (
-            u'<span class="brokenrepr">&lt;broken repr (Exception: '
-            u"broken!)&gt;</span>"
+            '<span class="brokenrepr">&lt;broken repr (Exception: '
+            "broken!)&gt;</span>"
         )
 
 
-class Foo(object):
+class Foo:
     x = 42
     y = 23
 
@@ -189,7 +188,7 @@ class Foo(object):
         self.z = 15
 
 
-class TestDebugHelpers(object):
+class TestDebugHelpers:
     def test_object_dumping(self):
         drg = DebugReprGenerator()
         out = drg.dump_object(Foo())
@@ -255,12 +254,12 @@ class TestDebugHelpers(object):
         client = Client(debugged, Response)
         response = client.get("/")
         data = response.get_data(as_text=True)
-        assert u'raise ValueError("inner")' in data
-        assert u'<div class="exc-divider">' in data
-        assert u'raise KeyError("outer")' in data
+        assert 'raise ValueError("inner")' in data
+        assert '<div class="exc-divider">' in data
+        assert 'raise KeyError("outer")' in data
 
 
-class TestTraceback(object):
+class TestTraceback:
     def test_log(self):
         try:
             1 / 0
@@ -273,11 +272,11 @@ class TestTraceback(object):
 
     def test_sourcelines_encoding(self):
         source = (
-            u"# -*- coding: latin1 -*-\n\n"
-            u"def foo():\n"
-            u'    """höhö"""\n'
-            u"    1 / 0\n"
-            u"foo()"
+            "# -*- coding: latin1 -*-\n\n"
+            "def foo():\n"
+            '    """höhö"""\n'
+            "    1 / 0\n"
+            "foo()"
         ).encode("latin1")
         code = compile(source, filename="lol.py", mode="exec")
         try:
@@ -290,7 +289,7 @@ class TestTraceback(object):
         assert frames[1].filename == "lol.py"
         assert frames[2].filename == "lol.py"
 
-        class Loader(object):
+        class Loader:
             def get_source(self, module):
                 return source
 
@@ -299,7 +298,7 @@ class TestTraceback(object):
         assert [line.code for line in frames[1].get_annotated_lines()] == [
             line.code for line in frames[2].get_annotated_lines()
         ]
-        assert u"höhö" in frames[1].sourcelines[3]
+        assert "höhö" in frames[1].sourcelines[3]
 
     def test_filename_encoding(self, tmpdir, monkeypatch):
         moduledir = tmpdir.mkdir("föö")
@@ -313,7 +312,7 @@ class TestTraceback(object):
         except ZeroDivisionError:
             traceback = Traceback(*sys.exc_info())
 
-        assert u"föö" in u"\n".join(frame.render() for frame in traceback.frames)
+        assert "föö" in "\n".join(frame.render() for frame in traceback.frames)
 
 
 def test_get_machine_id():

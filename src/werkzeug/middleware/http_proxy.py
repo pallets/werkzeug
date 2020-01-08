@@ -7,8 +7,6 @@ Basic HTTP Proxy
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-import socket
-
 from ..datastructures import EnvironHeaders
 from ..http import is_hop_by_hop_header
 from ..urls import url_parse
@@ -21,7 +19,7 @@ except ImportError:
     import httplib as client
 
 
-class ProxyMiddleware(object):
+class ProxyMiddleware:
     """Proxy requests under a path to an external server, routing other
     requests to the app.
 
@@ -84,9 +82,9 @@ class ProxyMiddleware(object):
             return opts
 
         self.app = app
-        self.targets = dict(
-            ("/%s/" % k.strip("/"), _set_defaults(v)) for k, v in targets.items()
-        )
+        self.targets = {
+            "/%s/" % k.strip("/"): _set_defaults(v) for k, v in targets.items()
+        }
         self.chunk_size = chunk_size
         self.timeout = timeout
 
@@ -114,9 +112,8 @@ class ProxyMiddleware(object):
             remote_path = path
 
             if opts["remove_prefix"]:
-                remote_path = "%s/%s" % (
-                    target.path.rstrip("/"),
-                    remote_path[len(prefix) :].lstrip("/"),
+                remote_path = "{}/{}".format(
+                    target.path.rstrip("/"), remote_path[len(prefix) :].lstrip("/"),
                 )
 
             content_length = environ.get("CONTENT_LENGTH")
@@ -177,7 +174,7 @@ class ProxyMiddleware(object):
                         con.send(data)
 
                 resp = con.getresponse()
-            except socket.error:
+            except OSError:
                 from ..exceptions import BadGateway
 
                 return BadGateway()(environ, start_response)
@@ -195,7 +192,7 @@ class ProxyMiddleware(object):
                 while 1:
                     try:
                         data = resp.read(self.chunk_size)
-                    except socket.error:
+                    except OSError:
                         break
 
                     if not data:

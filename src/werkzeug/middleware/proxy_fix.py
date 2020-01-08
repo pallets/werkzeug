@@ -24,7 +24,7 @@ setting each header so the middleware knows what to trust.
 from werkzeug.http import parse_list_header
 
 
-class ProxyFix(object):
+class ProxyFix:
     """Adjust the WSGI environ based on ``X-Forwarded-`` that proxies in
     front of the application may set.
 
@@ -157,7 +157,7 @@ class ProxyFix(object):
             if host:
                 parts = host.split(":", 1)
                 host = parts[0] if len(parts) == 2 else host
-                environ["HTTP_HOST"] = "%s:%s" % (host, x_port)
+                environ["HTTP_HOST"] = f"{host}:{x_port}"
             environ["SERVER_PORT"] = x_port
 
         x_prefix = self._get_real_value(

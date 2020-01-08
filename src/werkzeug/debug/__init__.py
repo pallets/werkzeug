@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.debug
     ~~~~~~~~~~~~~~
@@ -58,7 +57,7 @@ def get_machine_id():
             try:
                 with open(filename, "rb") as f:
                     value = f.readline().strip()
-            except IOError:
+            except OSError:
                 continue
 
             if value:
@@ -71,7 +70,7 @@ def get_machine_id():
         try:
             with open("/proc/self/cgroup", "rb") as f:
                 linux += f.readline().strip().rpartition(b"/")[2]
-        except IOError:
+        except OSError:
             pass
 
         if linux:
@@ -116,14 +115,14 @@ def get_machine_id():
                         return guid.encode("utf-8")
 
                     return guid
-            except WindowsError:
+            except OSError:
                 pass
 
     _machine_id = _generate()
     return _machine_id
 
 
-class _ConsoleFrame(object):
+class _ConsoleFrame:
     """Helper class so that we can reuse the frame console code for the
     standalone console.
     """
@@ -216,7 +215,7 @@ def get_pin_and_cookie_name(app):
     return rv, cookie_name
 
 
-class DebuggedApplication(object):
+class DebuggedApplication:
     """Enables debugging support for a given application::
 
         from werkzeug.debug import DebuggedApplication
@@ -301,8 +300,7 @@ class DebuggedApplication(object):
         app_iter = None
         try:
             app_iter = self.app(environ, start_response)
-            for item in app_iter:
-                yield item
+            yield from app_iter
             if hasattr(app_iter, "close"):
                 app_iter.close()
         except Exception:
@@ -443,7 +441,7 @@ class DebuggedApplication(object):
         if auth:
             rv.set_cookie(
                 self.pin_cookie_name,
-                "%s|%s" % (int(time.time()), hash_pin(self.pin)),
+                "{}|{}".format(int(time.time()), hash_pin(self.pin)),
                 httponly=True,
             )
         elif bad_cookie:

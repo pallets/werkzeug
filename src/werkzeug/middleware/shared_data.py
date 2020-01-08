@@ -27,7 +27,7 @@ from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
 
-class SharedDataMiddleware(object):
+class SharedDataMiddleware:
 
     """A WSGI middleware that provides static content for development
     environments or simple server setups. Usage is quite simple::
@@ -160,7 +160,7 @@ class SharedDataMiddleware(object):
 
                 try:
                     resource = reader.open_resource(path)
-                except IOError:
+                except OSError:
                     return None, None
 
                 if isinstance(resource, BytesIO):
@@ -199,7 +199,7 @@ class SharedDataMiddleware(object):
 
                 try:
                     data = provider.get_data(path)
-                except IOError:
+                except OSError:
                     return None, None
 
                 return basename, lambda: (BytesIO(data), loadtime, len(data))

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.wrappers
     ~~~~~~~~~~~~~~
@@ -99,8 +98,8 @@ def test_base_request():
 
     # get requests
     response = client.get("/?foo=bar&foo=hehe")
-    strict_eq(response["args"], MultiDict([("foo", u"bar"), ("foo", u"hehe")]))
-    strict_eq(response["args_as_list"], [("foo", [u"bar", u"hehe"])])
+    strict_eq(response["args"], MultiDict([("foo", "bar"), ("foo", "hehe")]))
+    strict_eq(response["args_as_list"], [("foo", ["bar", "hehe"])])
     strict_eq(response["form"], MultiDict())
     strict_eq(response["form_as_list"], [])
     strict_eq(response["data"], b"")
@@ -112,9 +111,9 @@ def test_base_request():
         data="foo=blub+hehe&blah=42",
         content_type="application/x-www-form-urlencoded",
     )
-    strict_eq(response["args"], MultiDict([("blub", u"blah")]))
-    strict_eq(response["args_as_list"], [("blub", [u"blah"])])
-    strict_eq(response["form"], MultiDict([("foo", u"blub hehe"), ("blah", u"42")]))
+    strict_eq(response["args"], MultiDict([("blub", "blah")]))
+    strict_eq(response["args_as_list"], [("blub", ["blah"])])
+    strict_eq(response["form"], MultiDict([("foo", "blub hehe"), ("blah", "42")]))
     strict_eq(response["data"], b"")
     # currently we do not guarantee that the values are ordered correctly
     # for post data.
@@ -127,9 +126,9 @@ def test_base_request():
         data="foo=blub+hehe&blah=42",
         content_type="application/x-www-form-urlencoded",
     )
-    strict_eq(response["args"], MultiDict([("blub", u"blah")]))
-    strict_eq(response["args_as_list"], [("blub", [u"blah"])])
-    strict_eq(response["form"], MultiDict([("foo", u"blub hehe"), ("blah", u"42")]))
+    strict_eq(response["args"], MultiDict([("blub", "blah")]))
+    strict_eq(response["args_as_list"], [("blub", ["blah"])])
+    strict_eq(response["form"], MultiDict([("foo", "blub hehe"), ("blah", "42")]))
     strict_eq(response["data"], b"")
     assert_environ(response["environ"], "PATCH")
 
@@ -137,12 +136,12 @@ def test_base_request():
     json = b'{"foo": "bar", "blub": "blah"}'
     response = client.post("/?a=b", data=json, content_type="application/json")
     strict_eq(response["data"], json)
-    strict_eq(response["args"], MultiDict([("a", u"b")]))
+    strict_eq(response["args"], MultiDict([("a", "b")]))
     strict_eq(response["form"], MultiDict())
 
 
 def test_query_string_is_bytes():
-    req = wrappers.Request.from_values(u"/?foo=%2f")
+    req = wrappers.Request.from_values("/?foo=%2f")
     strict_eq(req.query_string, b"foo=%2f")
 
 
@@ -153,7 +152,7 @@ def test_request_repr():
     req = wrappers.Request.from_values("/привет")
     assert "<Request 'http://localhost/привет' [GET]>" == repr(req)
     # test with unicode type for python 2
-    req = wrappers.Request.from_values(u"/привет")
+    req = wrappers.Request.from_values("/привет")
     assert "<Request 'http://localhost/привет' [GET]>" == repr(req)
 
 
@@ -172,13 +171,13 @@ def test_access_route():
 
 def test_url_request_descriptors():
     req = wrappers.Request.from_values("/bar?foo=baz", "http://example.com/test")
-    strict_eq(req.path, u"/bar")
-    strict_eq(req.full_path, u"/bar?foo=baz")
-    strict_eq(req.script_root, u"/test")
-    strict_eq(req.url, u"http://example.com/test/bar?foo=baz")
-    strict_eq(req.base_url, u"http://example.com/test/bar")
-    strict_eq(req.url_root, u"http://example.com/test/")
-    strict_eq(req.host_url, u"http://example.com/")
+    strict_eq(req.path, "/bar")
+    strict_eq(req.full_path, "/bar?foo=baz")
+    strict_eq(req.script_root, "/test")
+    strict_eq(req.url, "http://example.com/test/bar?foo=baz")
+    strict_eq(req.base_url, "http://example.com/test/bar")
+    strict_eq(req.url_root, "http://example.com/test/")
+    strict_eq(req.host_url, "http://example.com/")
     strict_eq(req.host, "example.com")
     strict_eq(req.scheme, "http")
 
@@ -189,21 +188,21 @@ def test_url_request_descriptors():
 def test_url_request_descriptors_query_quoting():
     next = "http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash"
     req = wrappers.Request.from_values("/bar?next=" + next, "http://example.com/")
-    assert req.path == u"/bar"
-    strict_eq(req.full_path, u"/bar?next=" + next)
-    strict_eq(req.url, u"http://example.com/bar?next=" + next)
+    assert req.path == "/bar"
+    strict_eq(req.full_path, "/bar?next=" + next)
+    strict_eq(req.url, "http://example.com/bar?next=" + next)
 
 
 def test_url_request_descriptors_hosts():
     req = wrappers.Request.from_values("/bar?foo=baz", "http://example.com/test")
     req.trusted_hosts = ["example.com"]
-    strict_eq(req.path, u"/bar")
-    strict_eq(req.full_path, u"/bar?foo=baz")
-    strict_eq(req.script_root, u"/test")
-    strict_eq(req.url, u"http://example.com/test/bar?foo=baz")
-    strict_eq(req.base_url, u"http://example.com/test/bar")
-    strict_eq(req.url_root, u"http://example.com/test/")
-    strict_eq(req.host_url, u"http://example.com/")
+    strict_eq(req.path, "/bar")
+    strict_eq(req.full_path, "/bar?foo=baz")
+    strict_eq(req.script_root, "/test")
+    strict_eq(req.url, "http://example.com/test/bar?foo=baz")
+    strict_eq(req.base_url, "http://example.com/test/bar")
+    strict_eq(req.url_root, "http://example.com/test/")
+    strict_eq(req.host_url, "http://example.com/")
     strict_eq(req.host, "example.com")
     strict_eq(req.scheme, "http")
 
@@ -225,8 +224,8 @@ def test_authorization_mixin():
     )
     a = request.authorization
     strict_eq(a.type, "basic")
-    strict_eq(a.username, u"Aladdin")
-    strict_eq(a.password, u"open sesame")
+    strict_eq(a.username, "Aladdin")
+    strict_eq(a.password, "open sesame")
 
 
 def test_authorization_with_unicode():
@@ -235,8 +234,8 @@ def test_authorization_with_unicode():
     )
     a = request.authorization
     strict_eq(a.type, "basic")
-    strict_eq(a.username, u"русскиЁ")
-    strict_eq(a.password, u"Буквы")
+    strict_eq(a.username, "русскиЁ")
+    strict_eq(a.password, "Буквы")
 
 
 def test_stream_only_mixing():
@@ -294,8 +293,8 @@ def test_response_access_control():
 
 def test_base_response():
     # unicode
-    response = wrappers.BaseResponse(u"öäü")
-    strict_eq(response.get_data(), u"öäü".encode("utf-8"))
+    response = wrappers.BaseResponse("öäü")
+    strict_eq(response.get_data(), "öäü".encode())
 
     # writing
     response = wrappers.Response("foo")
@@ -343,7 +342,7 @@ def test_base_response():
     # close call forwarding
     closed = []
 
-    class Iterable(object):
+    class Iterable:
         def __next__(self):
             raise StopIteration()
 
@@ -672,7 +671,7 @@ def test_user_agent_mixin():
 
 
 def test_stream_wrapping():
-    class LowercasingStream(object):
+    class LowercasingStream:
         def __init__(self, stream):
             self._stream = stream
 
@@ -697,7 +696,7 @@ def test_data_descriptor_triggers_parsing():
     )
 
     assert req.data == b""
-    assert req.form["foo"] == u"Hello World"
+    assert req.form["foo"] == "Hello World"
 
 
 def test_get_data_method_parsing_caching_behavior():
@@ -708,14 +707,14 @@ def test_get_data_method_parsing_caching_behavior():
 
     # get_data() caches, so form stays available
     assert req.get_data() == data
-    assert req.form["foo"] == u"Hello World"
+    assert req.form["foo"] == "Hello World"
     assert req.get_data() == data
 
     # here we access the form data first, caching is bypassed
     req = wrappers.Request.from_values(
         "/", method="POST", data=data, content_type="application/x-www-form-urlencoded"
     )
-    assert req.form["foo"] == u"Hello World"
+    assert req.form["foo"] == "Hello World"
     assert req.get_data() == b""
 
     # Another case is uncached get data which trashes everything
@@ -732,7 +731,7 @@ def test_get_data_method_parsing_caching_behavior():
         "/", method="POST", data=data, content_type="application/x-www-form-urlencoded"
     )
     assert req.get_data(parse_form_data=True) == b""
-    assert req.form["foo"] == u"Hello World"
+    assert req.form["foo"] == "Hello World"
 
 
 def test_etag_response_mixin():
@@ -920,7 +919,7 @@ def test_authenticate_mixin():
     resp = wrappers.Response()
     resp.www_authenticate.type = "basic"
     resp.www_authenticate.realm = "Testing"
-    strict_eq(resp.headers["WWW-Authenticate"], u'Basic realm="Testing"')
+    strict_eq(resp.headers["WWW-Authenticate"], 'Basic realm="Testing"')
     resp.www_authenticate.realm = None
     resp.www_authenticate.type = None
     assert "WWW-Authenticate" not in resp.headers
@@ -1153,7 +1152,7 @@ def test_response_freeze():
 
 
 def test_response_content_length_uses_encode():
-    r = wrappers.Response(u"你好")
+    r = wrappers.Response("你好")
     assert r.calculate_content_length() == 6
 
 
@@ -1171,8 +1170,8 @@ def test_other_method_payload():
 
 def test_urlfication():
     resp = wrappers.Response()
-    resp.headers["Location"] = u"http://üser:pässword@☃.net/påth"
-    resp.headers["Content-Location"] = u"http://☃.net/"
+    resp.headers["Location"] = "http://üser:pässword@☃.net/påth"
+    resp.headers["Content-Location"] = "http://☃.net/"
     headers = resp.get_wsgi_headers(create_environ())
     assert headers["location"] == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
     assert headers["content-location"] == "http://xn--n3h.net/"
@@ -1180,7 +1179,7 @@ def test_urlfication():
 
 def test_new_response_iterator_behavior():
     req = wrappers.Request.from_values()
-    resp = wrappers.Response(u"Hello Wörld!")
+    resp = wrappers.Response("Hello Wörld!")
 
     def get_content_length(resp):
         headers = resp.get_wsgi_headers(req.environ)
@@ -1188,20 +1187,20 @@ def test_new_response_iterator_behavior():
 
     def generate_items():
         yield "Hello "
-        yield u"Wörld!"
+        yield "Wörld!"
 
     # werkzeug encodes when set to `data` now, which happens
     # if a string is passed to the response object.
-    assert resp.response == [u"Hello Wörld!".encode("utf-8")]
-    assert resp.get_data() == u"Hello Wörld!".encode("utf-8")
+    assert resp.response == ["Hello Wörld!".encode()]
+    assert resp.get_data() == "Hello Wörld!".encode()
     assert get_content_length(resp) == 13
     assert not resp.is_streamed
     assert resp.is_sequence
 
     # try the same for manual assignment
-    resp.set_data(u"Wörd")
-    assert resp.response == [u"Wörd".encode("utf-8")]
-    assert resp.get_data() == u"Wörd".encode("utf-8")
+    resp.set_data("Wörd")
+    assert resp.response == ["Wörd".encode()]
+    assert resp.get_data() == "Wörd".encode()
     assert get_content_length(resp) == 5
     assert not resp.is_streamed
     assert resp.is_sequence
@@ -1210,8 +1209,8 @@ def test_new_response_iterator_behavior():
     resp.response = generate_items()
     assert resp.is_streamed
     assert not resp.is_sequence
-    assert resp.get_data() == u"Hello Wörld!".encode("utf-8")
-    assert resp.response == [b"Hello ", u"Wörld!".encode("utf-8")]
+    assert resp.get_data() == "Hello Wörld!".encode()
+    assert resp.response == [b"Hello ", "Wörld!".encode()]
     assert not resp.is_streamed
     assert resp.is_sequence
 
@@ -1222,8 +1221,8 @@ def test_new_response_iterator_behavior():
     assert not resp.is_sequence
     pytest.raises(RuntimeError, lambda: resp.get_data())
     resp.make_sequence()
-    assert resp.get_data() == u"Hello Wörld!".encode("utf-8")
-    assert resp.response == [b"Hello ", u"Wörld!".encode("utf-8")]
+    assert resp.get_data() == "Hello Wörld!".encode()
+    assert resp.response == [b"Hello ", "Wörld!".encode()]
     assert not resp.is_streamed
     assert resp.is_sequence
 
@@ -1266,7 +1265,7 @@ def test_storage_classes():
 
     assert type(req.args) is dict
     assert type(req.values) is CombinedMultiDict
-    assert req.values["foo"] == u"baz"
+    assert req.values["foo"] == "baz"
 
     req = wrappers.Request.from_values(headers={"Cookie": "foo=bar;foo=baz"})
     assert type(req.cookies) is ImmutableMultiDict
@@ -1408,8 +1407,8 @@ def test_modified_url_encoding():
     class ModifiedRequest(wrappers.Request):
         url_charset = "euc-kr"
 
-    req = ModifiedRequest.from_values(u"/?foo=정상처리".encode("euc-kr"))
-    strict_eq(req.args["foo"], u"정상처리")
+    req = ModifiedRequest.from_values("/?foo=정상처리".encode("euc-kr"))
+    strict_eq(req.args["foo"], "정상처리")
 
 
 def test_request_method_case_sensitivity():
@@ -1436,7 +1435,7 @@ def test_stream_zip():
         assert z.read("foo") == b"bar"
 
 
-class TestSetCookie(object):
+class TestSetCookie:
     """Tests for :meth:`werkzeug.wrappers.BaseResponse.set_cookie`."""
 
     def test_secure(self):
@@ -1540,7 +1539,7 @@ class TestSetCookie(object):
         )
 
 
-class TestJSONMixin(object):
+class TestJSONMixin:
     class Request(JSONMixin, wrappers.Request):
         pass
 
@@ -1548,13 +1547,13 @@ class TestJSONMixin(object):
         pass
 
     def test_request(self):
-        value = {u"ä": "b"}
+        value = {"ä": "b"}
         request = self.Request.from_values(json=value)
         assert request.json == value
         assert request.get_data()
 
     def test_response(self):
-        value = {u"ä": "b"}
+        value = {"ä": "b"}
         response = self.Response(
             response=json.dumps(value), content_type="application/json"
         )

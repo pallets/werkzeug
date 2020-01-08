@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.serving
     ~~~~~~~~~~~~~~~~
@@ -65,7 +64,7 @@ try:
     import ssl
 except ImportError:
 
-    class _SslDummy(object):
+    class _SslDummy:
         def __getattr__(self, name):
             raise RuntimeError("SSL support unavailable")
 
@@ -84,7 +83,7 @@ if can_fork:
     ForkingMixIn = socketserver.ForkingMixIn
 else:
 
-    class ForkingMixIn(object):
+    class ForkingMixIn:
         pass
 
 
@@ -115,9 +114,9 @@ class DechunkedInput(io.RawIOBase):
             line = self._rfile.readline().decode("latin1")
             _len = int(line.strip(), 16)
         except ValueError:
-            raise IOError("Invalid chunk header")
+            raise OSError("Invalid chunk header")
         if _len < 0:
-            raise IOError("Negative chunk length not allowed")
+            raise OSError("Negative chunk length not allowed")
         return _len
 
     def readinto(self, buf):
@@ -147,12 +146,12 @@ class DechunkedInput(io.RawIOBase):
                 # consumed. This also applies to the 0-sized final chunk
                 terminator = self._rfile.readline()
                 if terminator not in (b"\n", b"\r\n", b"\r"):
-                    raise IOError("Missing chunk terminating newline")
+                    raise OSError("Missing chunk terminating newline")
 
         return read
 
 
-class WSGIRequestHandler(BaseHTTPRequestHandler, object):
+class WSGIRequestHandler(BaseHTTPRequestHandler):
 
     """A request handler that implements WSGI dispatching."""
 
@@ -180,7 +179,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         # the first segment may have been incorrectly parsed as the
         # netloc, prepend it to the path again.
         if not request_url.scheme and request_url.netloc:
-            path_info = "/%s%s" % (request_url.netloc, request_url.path)
+            path_info = f"/{request_url.netloc}{request_url.path}"
         else:
             path_info = request_url.path
 
@@ -398,7 +397,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
     def log_request(self, code="-", size="-"):
         try:
             path = uri_to_iri(self.path)
-            msg = "%s %s %s" % (self.command, path, self.request_version)
+            msg = f"{self.command} {path} {self.request_version}"
         except AttributeError:
             # path isn't set if the requestline was bad
             msg = self.requestline
@@ -474,11 +473,11 @@ def generate_adhoc_ssl_pair(cn=None):
 
     # pretty damn sure that this is not actually accepted by anyone
     if cn is None:
-        cn = u"*"
+        cn = "*"
 
     subject = x509.Name(
         [
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Dummy Certificate"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Dummy Certificate"),
             x509.NameAttribute(NameOID.COMMON_NAME, cn),
         ]
     )
@@ -492,9 +491,7 @@ def generate_adhoc_ssl_pair(cn=None):
         .not_valid_before(dt.utcnow())
         .not_valid_after(dt.utcnow() + timedelta(days=365))
         .add_extension(x509.ExtendedKeyUsage([x509.OID_SERVER_AUTH]), critical=False)
-        .add_extension(
-            x509.SubjectAlternativeName([x509.DNSName(u"*")]), critical=False
-        )
+        .add_extension(x509.SubjectAlternativeName([x509.DNSName("*")]), critical=False)
         .sign(pkey, hashes.SHA256(), default_backend())
     )
     return cert, pkey
@@ -520,7 +517,7 @@ def make_ssl_devcert(base_path, host=None, cn=None):
     """
 
     if host is not None:
-        cn = u"*.%s/CN=%s" % (host, host)
+        cn = f"*.{host}/CN={host}"
     cert, pkey = generate_adhoc_ssl_pair(cn=cn)
 
     from cryptography.hazmat.primitives import serialization
@@ -594,7 +591,7 @@ def load_ssl_context(cert_file, pkey_file=None, protocol=None):
     return ctx
 
 
-class _SSLContext(object):
+class _SSLContext:
 
     """A dummy class with a small subset of Python3's ``ssl.SSLContext``, only
     intended to be used with and by Werkzeug."""
@@ -616,7 +613,7 @@ class _SSLContext(object):
             keyfile=self._keyfile,
             certfile=self._certfile,
             ssl_version=self._protocol,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -663,7 +660,7 @@ def get_sockaddr(host, port, family):
     return res[0][4]
 
 
-class BaseWSGIServer(HTTPServer, object):
+class BaseWSGIServer(HTTPServer):
 
     """Simple single-threaded, single-process WSGI server."""
 

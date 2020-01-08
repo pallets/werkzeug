@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug._internal
     ~~~~~~~~~~~~~~~~~~
@@ -24,7 +23,7 @@ _logger = None
 _signature_cache = WeakKeyDictionary()
 _epoch_ord = date(1970, 1, 1).toordinal()
 _legal_cookie_chars = (
-    string.ascii_letters + string.digits + u"/=!#$%&'*+-.^_`|~:"
+    string.ascii_letters + string.digits + "/=!#$%&'*+-.^_`|~:"
 ).encode("ascii")
 
 _cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\\\"}
@@ -53,7 +52,7 @@ _cookie_re = re.compile(
 _WIN = sys.platform.startswith("win")
 
 
-class _Missing(object):
+class _Missing:
     def __repr__(self):
         return "no value"
 
@@ -270,7 +269,7 @@ def _date_to_unix(arg):
     return seconds
 
 
-class _DictAccessorProperty(object):
+class _DictAccessorProperty:
     """Baseclass for `environ_property` and `header_property`."""
 
     read_only = False
@@ -319,7 +318,7 @@ class _DictAccessorProperty(object):
         self.lookup(obj).pop(self.name, None)
 
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__} {self.name}>"
 
 
 def _cookie_quote(b):
@@ -461,9 +460,9 @@ def _easteregg(app=None):
 
         return zlib.decompress(base64.b64decode(gyver)).decode("ascii")
 
-    gyver = u"\n".join(
+    gyver = "\n".join(
         [
-            x + (77 - len(x)) * u" "
+            x + (77 - len(x)) * " "
             for x in bzzzzzzz(
                 b"""
 eJyFlzuOJDkMRP06xRjymKgDJCDQStBYT8BCgK4gTwfQ2fcFs2a2FzvZk+hvlcRvRJD148efHt9m
@@ -511,7 +510,7 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
         injecting_start_response("200 OK", [("Content-Type", "text/html")])
         return [
             (
-                u"""
+                """
 <!DOCTYPE html>
 <html>
 <head>

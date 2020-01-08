@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.http
     ~~~~~~~~~~~~~
@@ -272,7 +271,7 @@ def dump_options_header(header, options):
         if value is None:
             segments.append(key)
         else:
-            segments.append("%s=%s" % (key, quote_header_value(value)))
+            segments.append("{}={}".format(key, quote_header_value(value)))
     return "; ".join(segments)
 
 
@@ -298,7 +297,9 @@ def dump_header(iterable, allow_token=True):
                 items.append(key)
             else:
                 items.append(
-                    "%s=%s" % (key, quote_header_value(value, allow_token=allow_token))
+                    "{}={}".format(
+                        key, quote_header_value(value, allow_token=allow_token)
+                    )
                 )
     else:
         items = [quote_header_value(x, allow_token=allow_token) for x in iterable]
@@ -315,7 +316,7 @@ def dump_csp_header(header):
        Support for Content Security Policy headers was added.
 
     """
-    return "; ".join("%s %s" % (key, value) for key, value in iter(header.items()))
+    return "; ".join(f"{key} {value}" for key, value in iter(header.items()))
 
 
 def parse_list_header(value):
@@ -1036,7 +1037,7 @@ def remove_entity_headers(headers, allowed=("expires", "content-location")):
     :param allowed: a list of headers that should still be allowed even though
                     they are entity headers.
     """
-    allowed = set(x.lower() for x in allowed)
+    allowed = {x.lower() for x in allowed}
     headers[:] = [
         (key, value)
         for key, value in headers

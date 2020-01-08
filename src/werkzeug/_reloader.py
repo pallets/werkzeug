@@ -39,10 +39,10 @@ def _iter_module_files():
 
 def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
-    rv = set(
+    rv = {
         os.path.dirname(os.path.abspath(x)) if os.path.isfile(x) else os.path.abspath(x)
         for x in sys.path
-    )
+    }
 
     for filename in extra_files or ():
         rv.add(os.path.dirname(os.path.abspath(filename)))
@@ -139,7 +139,7 @@ def _find_common_roots(paths):
     return rv
 
 
-class ReloaderLoop(object):
+class ReloaderLoop:
     name = None
 
     # monkeypatched by testsuite. wrapping with `staticmethod` is required in
@@ -148,7 +148,7 @@ class ReloaderLoop(object):
     _sleep = staticmethod(time.sleep)
 
     def __init__(self, extra_files=None, interval=1):
-        self.extra_files = set(os.path.abspath(x) for x in extra_files or ())
+        self.extra_files = {os.path.abspath(x) for x in extra_files or ()}
         self.interval = interval
 
     def run(self):
