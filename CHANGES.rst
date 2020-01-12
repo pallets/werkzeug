@@ -83,8 +83,9 @@ Unreleased
     This is enabled by default. :pr:`1286, 1694`
 -   Add HTTP 103, 208, 306, 425, 506, 508, and 511 to the list of status
     codes. :pr:`1678`
--   Add an ``update`` method to the ``Headers`` data structure.
-    :pr:`1687`
+-   Add ``update``, ``setlist``, and ``setlistdefault`` methods to the
+    ``Headers`` data structure. ``extend`` method can take ``MultiDict``
+    and kwargs. :pr:`1687, 1697`
 -   The development server accepts paths that start with two slashes,
     rather than stripping off the first path segment. :issue:`491`
 

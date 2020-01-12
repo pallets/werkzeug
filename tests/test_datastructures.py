@@ -780,19 +780,48 @@ class TestHeaders(object):
         assert h.get("x-whoops", as_bytes=True) == b"\xff"
         assert h.get("x-bytes") == "something"
 
+    def test_extend(self):
+        h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])
+        h.extend(datastructures.Headers([("a", "3"), ("a", "4")]))
+        assert h.getlist("a") == ["0", "3", "4"]
+        h.extend(b=["5", "6"])
+        assert h.getlist("b") == ["1", "5", "6"]
+        h.extend({"c": "7", "d": ["8", "9"]}, c="10")
+        assert h.getlist("c") == ["2", "7", "10"]
+        assert h.getlist("d") == ["8", "9"]
+
+        with pytest.raises(TypeError):
+            h.extend({"x": "x"}, {"x": "x"})
+
     def test_update(self):
-        h = self.storage_class()
-        h["x"] = "1"
-        h.update({"x": "2", "y": "1"})
-        assert h.getlist("x") == ["2"]
-        assert h.getlist("y") == ["1"]
-        h.update(z="2")
-        assert h.getlist("z") == ["2"]
-        h2 = self.storage_class([("a", "b")])
-        h2.add("a", "c")
-        h.update(h2, d="e")
-        assert h.getlist("a") == ["b", "c"]
-        assert h["d"] == "e"
+        h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])
+        h.update(datastructures.Headers([("a", "3"), ("a", "4")]))
+        assert h.getlist("a") == ["3", "4"]
+        h.update(b=["5", "6"])
+        assert h.getlist("b") == ["5", "6"]
+        h.update({"c": "7", "d": ["8", "9"]})
+        assert h.getlist("c") == ["7"]
+        assert h.getlist("d") == ["8", "9"]
+        h.update({"c": "10"}, c="11")
+        assert h.getlist("c") == ["11"]
+
+        with pytest.raises(TypeError):
+            h.extend({"x": "x"}, {"x": "x"})
+
+    def test_setlist(self):
+        h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])
+        h.setlist("b", ["3", "4"])
+        assert h[1] == ("b", "3")
+        assert h[-1] == ("b", "4")
+        h.setlist("b", [])
+        assert "b" not in h
+        h.setlist("d", ["5"])
+        assert h["d"] == "5"
+
+    def test_setlistdefault(self):
+        h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])
+        assert h.setlistdefault("a", ["3"]) == ["0"]
+        assert h.setlistdefault("d", ["4", "5"]) == ["4", "5"]
 
     def test_to_wsgi_list(self):
         h = self.storage_class()
