@@ -21,6 +21,7 @@ setting each header so the middleware knows what to trust.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from werkzeug.http import parse_list_header
 
 
 class ProxyFix(object):
@@ -90,20 +91,23 @@ class ProxyFix(object):
         self.x_port = x_port
         self.x_prefix = x_prefix
 
-    def _get_trusted_comma(self, trusted, value):
-        """Get the real value from a comma-separated header based on the
-        configured number of trusted proxies.
+    def _get_real_value(self, trusted, value):
+        """Get the real value from a list header based on the configured
+        number of trusted proxies.
 
         :param trusted: Number of values to trust in the header.
-        :param value: Header value to parse.
+        :param value: Comma separated list header value to parse.
         :return: The real value, or ``None`` if there are fewer values
             than the number of trusted proxies.
+
+        .. versionchanged:: 1.0
+            Renamed from ``_get_trusted_comma``.
 
         .. versionadded:: 0.15
         """
         if not (trusted and value):
             return
-        values = [x.strip() for x in value.split(",")]
+        values = parse_list_header(value)
         if len(values) >= trusted:
             return values[-trusted]
 
@@ -129,19 +133,17 @@ class ProxyFix(object):
             }
         )
 
-        x_for = self._get_trusted_comma(self.x_for, environ_get("HTTP_X_FORWARDED_FOR"))
+        x_for = self._get_real_value(self.x_for, environ_get("HTTP_X_FORWARDED_FOR"))
         if x_for:
             environ["REMOTE_ADDR"] = x_for
 
-        x_proto = self._get_trusted_comma(
+        x_proto = self._get_real_value(
             self.x_proto, environ_get("HTTP_X_FORWARDED_PROTO")
         )
         if x_proto:
             environ["wsgi.url_scheme"] = x_proto
 
-        x_host = self._get_trusted_comma(
-            self.x_host, environ_get("HTTP_X_FORWARDED_HOST")
-        )
+        x_host = self._get_real_value(self.x_host, environ_get("HTTP_X_FORWARDED_HOST"))
         if x_host:
             environ["HTTP_HOST"] = x_host
             parts = x_host.split(":", 1)
@@ -149,9 +151,7 @@ class ProxyFix(object):
             if len(parts) == 2:
                 environ["SERVER_PORT"] = parts[1]
 
-        x_port = self._get_trusted_comma(
-            self.x_port, environ_get("HTTP_X_FORWARDED_PORT")
-        )
+        x_port = self._get_real_value(self.x_port, environ_get("HTTP_X_FORWARDED_PORT"))
         if x_port:
             host = environ.get("HTTP_HOST")
             if host:
@@ -160,7 +160,7 @@ class ProxyFix(object):
                 environ["HTTP_HOST"] = "%s:%s" % (host, x_port)
             environ["SERVER_PORT"] = x_port
 
-        x_prefix = self._get_trusted_comma(
+        x_prefix = self._get_real_value(
             self.x_prefix, environ_get("HTTP_X_FORWARDED_PREFIX")
         )
         if x_prefix:
