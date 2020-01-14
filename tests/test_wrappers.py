@@ -270,6 +270,31 @@ def test_request_application():
     assert resp.status_code == 400
 
 
+def test_request_access_control():
+    request = wrappers.Request.from_values(
+        headers={
+            "Origin": "https://palletsprojects.com",
+            "Access-Control-Request-Headers": "X-A, X-B",
+            "Access-Control-Request-Method": "PUT",
+        },
+    )
+    assert request.origin == "https://palletsprojects.com"
+    assert request.access_control_request_headers == {"X-A", "X-B"}
+    assert request.access_control_request_method == "PUT"
+
+
+def test_response_access_control():
+    response = wrappers.Response("Hello World")
+    assert response.access_control_allow_credentials is False
+    response.access_control_allow_credentials = True
+    response.access_control_allow_headers = ["X-A", "X-B"]
+    assert response.headers["Access-Control-Allow-Credentials"] == "true"
+    assert set(response.headers["Access-Control-Allow-Headers"].split(", ")) == {
+        "X-A",
+        "X-B",
+    }
+
+
 def test_base_response():
     # unicode
     response = wrappers.BaseResponse(u"öäü")

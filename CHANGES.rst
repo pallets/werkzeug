@@ -88,6 +88,8 @@ Unreleased
     and kwargs. :pr:`1687, 1697`
 -   The development server accepts paths that start with two slashes,
     rather than stripping off the first path segment. :issue:`491`
+-   Add access control (Cross Origin Request Sharing, CORS) header
+    properties to the ``Request`` and ``Response`` wrappers. :pr:`1699`
 
 
 Version 0.16.1
