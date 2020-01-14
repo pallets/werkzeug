@@ -18,13 +18,13 @@ class Request(
 ):
     """Full featured request object implementing the following mixins:
 
-    - :class:`AcceptMixin` for accept header parsing
-    - :class:`ETagRequestMixin` for etag and cache control handling
-    - :class:`UserAgentMixin` for user agent introspection
-    - :class:`AuthorizationMixin` for http auth handling
-    - :class:`RequestCORSMixin` for Cross Origin Resource Sharing
-      headers
-    - :class:`CommonRequestDescriptorsMixin` for common headers
+    -   :class:`AcceptMixin` for accept header parsing
+    -   :class:`ETagRequestMixin` for etag and cache control handling
+    -   :class:`UserAgentMixin` for user agent introspection
+    -   :class:`AuthorizationMixin` for http auth handling
+    -   :class:`~werkzeug.wrappers.cors.CORSRequestMixin` for Cross
+        Origin Resource Sharing headers
+    -   :class:`CommonRequestDescriptorsMixin` for common headers
 
     """
 

@@ -5,9 +5,9 @@ from ..utils import header_property
 
 
 class CORSRequestMixin(object):
-    """A mixin for :class:`BaseRequest` subclasses. ``Request`` classes
-    that subclass this will get descriptors for Cross Origin Resource
-    Sharing (CORS) headers.
+    """A mixin for :class:`~werkzeug.wrappers.BaseRequest` subclasses
+    that adds descriptors for Cross Origin Resource Sharing (CORS)
+    headers.
 
     .. versionadded:: 1.0
     """
@@ -44,9 +44,9 @@ class CORSRequestMixin(object):
 
 
 class CORSResponseMixin(object):
-    """A mixin for :class:`BaseResponse` subclasses. ``Response``
-    classes that subclass this will get descriptors for Cross Origin
-    Resource Sharing (CORS) headers.
+    """A mixin for :class:`~werkzeug.wrappers.BaseResponse` subclasses
+    that adds descriptors for Cross Origin Resource Sharing (CORS)
+    headers.
 
     .. versionadded:: 1.0
     """

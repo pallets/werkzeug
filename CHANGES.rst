@@ -89,7 +89,7 @@ Unreleased
 -   The development server accepts paths that start with two slashes,
     rather than stripping off the first path segment. :issue:`491`
 -   Add access control (Cross Origin Request Sharing, CORS) header
-    methods to the Request and Response wrappers. :pr:`1699`
+    properties to the ``Request`` and ``Response`` wrappers. :pr:`1699`
 
 
 Version 0.16.1

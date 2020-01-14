@@ -73,10 +73,12 @@ class Response(
 ):
     """Full featured response object implementing the following mixins:
 
-    - :class:`ETagResponseMixin` for etag and cache control handling
-    - :class:`WWWAuthenticateMixin` for HTTP authentication support
-    - :class:`ResponseCORSMixin` for Cross Origin Resource Sharing
-      headers
-    - :class:`ResponseStreamMixin` to add support for the `stream` property
-    - :class:`CommonResponseDescriptorsMixin` for various HTTP descriptors
+    -   :class:`ETagResponseMixin` for etag and cache control handling
+    -   :class:`WWWAuthenticateMixin` for HTTP authentication support
+    -   :class:`~werkzeug.wrappers.cors.CORSResponseMixin` for Cross
+        Origin Resource Sharing headers
+    -   :class:`ResponseStreamMixin` to add support for the ``stream``
+        property
+    -   :class:`CommonResponseDescriptorsMixin` for various HTTP
+        descriptors
     """
