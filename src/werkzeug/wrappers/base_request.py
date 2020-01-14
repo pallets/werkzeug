@@ -14,6 +14,7 @@ from ..datastructures import MultiDict
 from ..formparser import default_stream_factory
 from ..formparser import FormDataParser
 from ..http import parse_cookie
+from ..http import parse_list_header
 from ..http import parse_options_header
 from ..urls import url_decode
 from ..utils import cached_property
@@ -616,8 +617,9 @@ class BaseRequest(object):
         from the client ip to the last proxy server.
         """
         if "HTTP_X_FORWARDED_FOR" in self.environ:
-            addr = self.environ["HTTP_X_FORWARDED_FOR"].split(",")
-            return self.list_storage_class([x.strip() for x in addr])
+            return self.list_storage_class(
+                parse_list_header(self.environ["HTTP_X_FORWARDED_FOR"])
+            )
         elif "REMOTE_ADDR" in self.environ:
             return self.list_storage_class([self.environ["REMOTE_ADDR"]])
         return self.list_storage_class()
