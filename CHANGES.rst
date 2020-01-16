@@ -90,6 +90,8 @@ Unreleased
     rather than stripping off the first path segment. :issue:`491`
 -   Add access control (Cross Origin Request Sharing, CORS) header
     properties to the ``Request`` and ``Response`` wrappers. :pr:`1699`
+-   ``Accept`` values are no longer ordered alphabetically for equal
+    quality tags. Instead the initial order is preserved. :issue:`1686`
 
 
 Version 0.16.1

@@ -438,9 +438,9 @@ def test_accept_mixin():
     assert request.accept_mimetypes == MIMEAccept(
         [
             ("text/xml", 1),
-            ("image/png", 1),
             ("application/xml", 1),
             ("application/xhtml+xml", 1),
+            ("image/png", 1),
             ("text/html", 0.9),
             ("text/plain", 0.8),
             ("*/*", 0.5),

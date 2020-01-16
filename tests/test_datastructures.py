@@ -1126,6 +1126,10 @@ class TestAccept(object):
         assert accept.best_match(["asterisk", "times"], default=None) == "times"
         assert accept.best_match(["asterisk"], default=None) is None
 
+    def test_accept_equal_quality(self):
+        accept = self.storage_class([("a", 1), ("b", 1)])
+        assert accept.best == "a"
+
 
 class TestMIMEAccept(object):
     @pytest.mark.parametrize(
