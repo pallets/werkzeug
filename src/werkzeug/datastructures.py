@@ -1743,6 +1743,12 @@ class Accept(ImmutableList):
 
     .. versionchanged:: 0.5
        :class:`Accept` objects are forced immutable now.
+
+    .. versionchanged:: 1.0.0
+       :class:`Accept` internal values are no longer ordered
+       alphabetically for equal quality tags. Instead the initial
+       order is preserved.
+
     """
 
     def __init__(self, values=()):
@@ -1755,9 +1761,7 @@ class Accept(ImmutableList):
         else:
             self.provided = True
             values = sorted(
-                values,
-                key=lambda x: (self._specificity(x[0]), x[1], x[0]),
-                reverse=True,
+                values, key=lambda x: (self._specificity(x[0]), x[1]), reverse=True,
             )
             list.__init__(self, values)
 
