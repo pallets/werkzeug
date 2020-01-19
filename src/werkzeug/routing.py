@@ -1372,6 +1372,11 @@ class Map(object):
     #: A dict of default converters to be used.
     default_converters = ImmutableDict(DEFAULT_CONVERTERS)
 
+    #: The type of lock to use when updating.
+    #:
+    #: .. versionadded:: 1.0
+    lock_class = Lock
+
     def __init__(
         self,
         rules=None,
@@ -1389,7 +1394,7 @@ class Map(object):
         self._rules = []
         self._rules_by_endpoint = {}
         self._remap = True
-        self._remap_lock = Lock()
+        self._remap_lock = self.lock_class()
 
         self.default_subdomain = default_subdomain
         self.charset = charset
