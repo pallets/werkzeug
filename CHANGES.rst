@@ -44,6 +44,8 @@ Unreleased
     such that ``X-Foo`` is the same as ``x-foo``. :pr:`1605`
 -   :meth:`http.dump_cookie` accepts ``'None'`` as a value for
     ``samesite``. :issue:`1549`
+-   :meth:`~test.Client.set_cookie` accepts a ``samesite`` argument.
+    :pr:`1705`
 -   Support the Content Security Policy header through the
     `Response.content_security_policy` data structure. :pr:`1617`
 -   ``LanguageAccept`` will fall back to matching "en" for "en-US" or
