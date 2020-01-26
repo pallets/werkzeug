@@ -68,49 +68,16 @@ a text file from the file system looks like this::
 There is also the codecs module which provides an open function that decodes
 automatically from the given encoding.
 
+
 Error Handling
 ==============
 
-With Werkzeug 0.3 onwards you can further control the way Werkzeug works with
-unicode.  In the past Werkzeug ignored encoding errors silently on incoming
-data.  This decision was made to avoid internal server errors if the user
-tampered with the submitted data.  However there are situations where you
-want to abort with a `400 BAD REQUEST` instead of silently ignoring the error.
+Functions that do internal encoding or decoding accept an ``errors``
+keyword argument that is passed to :meth:`str.decode` and
+:meth:`str.encode`. The default is ``'replace'`` so that errors are easy
+to spot. It might be useful to set it to ``'strict'`` in order to catch
+the error and report the bad data to the client.
 
-All the functions that do internal decoding now accept an `errors` keyword
-argument that behaves like the `errors` parameter of the builtin string method
-`decode`.  The following values are possible:
-
-`ignore`
-    This is the default behavior and tells the codec to ignore characters that
-    it doesn't understand silently.
-
-`replace`
-    The codec will replace unknown characters with a replacement character
-    (`U+FFFD` ``REPLACEMENT CHARACTER``)
-
-`strict`
-    Raise an exception if decoding fails.
-
-Unlike the regular python decoding Werkzeug does not raise an
-:exc:`UnicodeDecodeError` if the decoding failed but an
-:exc:`~exceptions.HTTPUnicodeError` which
-is a direct subclass of `UnicodeError` and the `BadRequest` HTTP exception.
-The reason is that if this exception is not caught by the application but
-a catch-all for HTTP exceptions exists a default `400 BAD REQUEST` error
-page is displayed.
-
-There is additional error handling available which is a Werkzeug extension
-to the regular codec error handling which is called `fallback`.  Often you
-want to use utf-8 but support latin1 as legacy encoding too if decoding
-failed.  For this case you can use the `fallback` error handling.  For
-example you can specify ``'fallback:iso-8859-15'`` to tell Werkzeug it should
-try with `iso-8859-15` if `utf-8` failed.  If this decoding fails too (which
-should not happen for most legacy charsets such as `iso-8859-15`) the error
-is silently ignored as if the error handling was `ignore`.
-
-Further details are available as part of the API documentation of the concrete
-implementations of the functions or classes working with unicode.
 
 Request and Response Objects
 ============================
