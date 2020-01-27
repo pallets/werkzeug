@@ -824,6 +824,7 @@ class Client(object):
         domain=None,
         secure=None,
         httponly=False,
+        samesite=None,
         charset="utf-8",
     ):
         """Sets a cookie in the client's cookie jar.  The server name
@@ -832,7 +833,16 @@ class Client(object):
         """
         assert self.cookie_jar is not None, "cookies disabled"
         header = dump_cookie(
-            key, value, max_age, expires, path, domain, secure, httponly, charset
+            key,
+            value,
+            max_age,
+            expires,
+            path,
+            domain,
+            secure,
+            httponly,
+            charset,
+            samesite=samesite,
         )
         environ = create_environ(path, base_url="http://" + server_name)
         headers = [("Set-Cookie", header)]
