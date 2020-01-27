@@ -97,7 +97,7 @@ Unreleased
 Version 0.16.1
 --------------
 
-Unreleased
+Released 2020-01-27
 
 -   Fix import location in deprecation messages for subpackages.
     :issue:`1663`
