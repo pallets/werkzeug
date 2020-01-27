@@ -92,6 +92,8 @@ Unreleased
     properties to the ``Request`` and ``Response`` wrappers. :pr:`1699`
 -   ``Accept`` values are no longer ordered alphabetically for equal
     quality tags. Instead the initial order is preserved. :issue:`1686`
+-   Added ``Map.lock_class`` attribute for alternative
+    implementations. :pr:`1702`
 
 
 Version 0.16.1
