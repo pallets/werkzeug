@@ -27,6 +27,8 @@ def test_basic_routing():
             r.Rule("/", endpoint="index"),
             r.Rule("/foo", endpoint="foo"),
             r.Rule("/bar/", endpoint="bar"),
+            r.Rule("/ws", endpoint="ws", websocket=True),
+            r.Rule("/", endpoint="indexws", websocket=True),
         ]
     )
     adapter = map.bind("example.org", "/")
@@ -35,6 +37,9 @@ def test_basic_routing():
     assert adapter.match("/bar/") == ("bar", {})
     pytest.raises(r.RequestRedirect, lambda: adapter.match("/bar"))
     pytest.raises(r.NotFound, lambda: adapter.match("/blub"))
+
+    adapter = map.bind("example.org", "/", url_scheme="ws")
+    assert adapter.match("/") == ("indexws", {})
 
     adapter = map.bind("example.org", "/test")
     with pytest.raises(r.RequestRedirect) as excinfo:
@@ -60,6 +65,13 @@ def test_basic_routing():
     with pytest.raises(r.RequestRedirect) as excinfo:
         adapter.match()
     assert excinfo.value.new_url == "http://example.org/bar/?foo=bar"
+
+    adapter = map.bind("example.org", "/ws", url_scheme="wss")
+    assert adapter.match("/ws", websocket=True) == ("ws", {})
+    with pytest.raises(r.WebsocketMismatch):
+        adapter.match("/ws", websocket=False)
+    with pytest.raises(r.WebsocketMismatch):
+        adapter.match("/foo", websocket=True)
 
 
 def test_merge_slashes_match():
@@ -192,6 +204,7 @@ def test_basic_building():
             r.Rule("/bar/<float:bazf>", endpoint="barf"),
             r.Rule("/bar/<path:bazp>", endpoint="barp"),
             r.Rule("/hehe", endpoint="blah", subdomain="blah"),
+            r.Rule("/ws", endpoint="ws", websocket=True),
         ]
     )
     adapter = map.bind("example.org", "/", subdomain="blah")
@@ -222,6 +235,11 @@ def test_basic_building():
     adapter = map.bind("example.org", url_scheme="")
     assert adapter.build("foo", {}) == "/foo"
     assert adapter.build("foo", {}, force_external=True) == "//example.org/foo"
+
+    adapter = map.bind("example.org", url_scheme="ws")
+    assert adapter.build("ws", {}) == "ws://example.org/ws"
+    assert adapter.build("foo", {}, force_external=True) == "http://example.org/foo"
+    assert adapter.build("foo", {}) == "/foo"
 
 
 def test_long_build():
@@ -1205,3 +1223,16 @@ def test_build_url_same_endpoint_multiple_hosts():
 
     beta_case = m.bind("BeTa.ExAmPlE.CoM")
     assert beta_case.build("index") == "/"
+
+
+def test_rule_websocket_methods():
+    with pytest.raises(ValueError):
+        r.Rule("/ws", endpoint="ws", websocket=True, methods=["post"])
+    with pytest.raises(ValueError):
+        r.Rule(
+            "/ws",
+            endpoint="ws",
+            websocket=True,
+            methods=["get", "head", "options", "post"],
+        )
+    r.Rule("/ws", endpoint="ws", websocket=True, methods=["get", "head", "options"])

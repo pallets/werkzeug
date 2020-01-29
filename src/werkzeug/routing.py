@@ -118,6 +118,7 @@ from ._internal import _get_environ
 from .datastructures import ImmutableDict
 from .datastructures import MultiDict
 from .exceptions import BadHost
+from .exceptions import BadRequest
 from .exceptions import HTTPException
 from .exceptions import MethodNotAllowed
 from .exceptions import NotFound
@@ -329,7 +330,15 @@ class BuildError(RoutingException, LookupError):
         return u"".join(message)
 
 
+class WebsocketMismatch(BadRequest):
+    """The only matched rule is either a websocket and the request is http
+    or the rule is http and the request is a websocket."""
+
+    pass
+
+
 class ValidationError(ValueError):
+
     """Validation error.  If a rule converter raises this exception the rule
     does not match the current URL and the next URL is tried.
     """
@@ -631,8 +640,15 @@ class Rule(RuleFactory):
         used to provide a match rule for the whole host.  This also means
         that the subdomain feature is disabled.
 
+    `websocket`
+        If True (defaults to False) this represents a WebSocket, rather than
+        a http route.
+
     .. versionadded:: 0.7
        The `alias` and `host` parameters were added.
+
+    .. versionadded:: 1.0
+       The `websocket` parameter was added.
     """
 
     def __init__(
@@ -648,6 +664,7 @@ class Rule(RuleFactory):
         redirect_to=None,
         alias=False,
         host=None,
+        websocket=False,
     ):
         if not string.startswith("/"):
             raise ValueError("urls must start with a leading slash")
@@ -662,14 +679,27 @@ class Rule(RuleFactory):
         self.defaults = defaults
         self.build_only = build_only
         self.alias = alias
+        self.websocket = websocket
+        if methods is not None:
+            if isinstance(methods, str):
+                raise TypeError("param `methods` should be `Iterable[str]`, not `str`")
+            methods = set([x.upper() for x in methods])
+            if "HEAD" not in methods and "GET" in methods:
+                methods.add("HEAD")
+
+        if (
+            websocket
+            and methods is not None
+            and len(methods - {"GET", "HEAD", "OPTIONS"}) > 0
+        ):
+            raise ValueError(
+                "WebSocket Rules can only use 'GET', 'HEAD', or 'OPTIONS' methods"
+            )
+
         if methods is None:
             self.methods = None
         else:
-            if isinstance(methods, str):
-                raise TypeError("param `methods` should be `Iterable[str]`, not `str`")
-            self.methods = set([x.upper() for x in methods])
-            if "HEAD" not in self.methods and "GET" in self.methods:
-                self.methods.add("HEAD")
+            self.methods = methods
         self.endpoint = endpoint
         self.redirect_to = redirect_to
 
@@ -1490,8 +1520,12 @@ class Map(object):
         .. versionadded:: 0.8
            `query_args` can now also be a string.
 
+        .. versionadded:: 1.0
+           `websocket` added
+
         .. versionchanged:: 0.15
             ``path_info`` defaults to ``'/'`` if ``None``.
+
         """
         server_name = server_name.lower()
         if self.host_matching:
@@ -1663,6 +1697,7 @@ class MapAdapter(object):
         self.path_info = to_unicode(path_info)
         self.default_method = to_unicode(default_method)
         self.query_args = query_args
+        self.websocket = self.url_scheme in {"ws", "wss"}
 
     def dispatch(
         self, view_func, path_info=None, method=None, catch_http_exceptions=False
@@ -1720,7 +1755,14 @@ class MapAdapter(object):
                 return e
             raise
 
-    def match(self, path_info=None, method=None, return_rule=False, query_args=None):
+    def match(
+        self,
+        path_info=None,
+        method=None,
+        return_rule=False,
+        query_args=None,
+        websocket=None,
+    ):
         """The usage is simple: you just pass the match method the current
         path info as well as the method (which defaults to `GET`).  The
         following things can then happen:
@@ -1740,6 +1782,10 @@ class MapAdapter(object):
           case if you request ``/foo`` although the correct URL is ``/foo/``
           You can use the `RequestRedirect` instance as response-like object
           similar to all other subclasses of `HTTPException`.
+
+        - you receive a ``WebsocketMismatch`` exception if the only match is
+          a websocket rule and the bind is to a http request, or if the match
+          is a http rule and the bind is to a websocket request.
 
         - you get a tuple in the form ``(endpoint, arguments)`` if there is
           a match (unless `return_rule` is True, in which case you get a tuple
@@ -1805,6 +1851,8 @@ class MapAdapter(object):
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
+        if websocket is None:
+            websocket = self.websocket
 
         require_redirect = False
 
@@ -1814,6 +1862,7 @@ class MapAdapter(object):
         )
 
         have_match_for = set()
+        websocket_mismatch = False
         for rule in self.map._rules:
             try:
                 rv = rule.match(path, method)
@@ -1834,6 +1883,9 @@ class MapAdapter(object):
                 continue
             if rule.methods is not None and method not in rule.methods:
                 have_match_for.update(rule.methods)
+                continue
+            if rule.websocket != websocket:
+                websocket_mismatch = True
                 continue
 
             if self.map.redirect_defaults:
@@ -1880,6 +1932,8 @@ class MapAdapter(object):
 
         if have_match_for:
             raise MethodNotAllowed(valid_methods=list(have_match_for))
+        if websocket_mismatch:
+            raise WebsocketMismatch()
         raise NotFound()
 
     def test(self, path_info=None, method=None):
@@ -2005,6 +2059,7 @@ class MapAdapter(object):
                 rv = rule.build(values, append_unknown)
 
                 if rv is not None:
+                    rv = (rv[0], rv[1], rule.websocket)
                     if self.map.host_matching:
                         if rv[0] == self.server_name:
                             return rv
@@ -2114,9 +2169,21 @@ class MapAdapter(object):
         rv = self._partial_build(endpoint, values, method, append_unknown)
         if rv is None:
             raise BuildError(endpoint, values, method, self)
-        domain_part, path = rv
+        domain_part, path, websocket = rv
 
         host = self.get_host(domain_part)
+
+        # Only build WebSocket routes with the scheme (as relative
+        # WebSocket paths aren't useful and are misleading). In
+        # addition if bound to a WebSocket ensure that http routes are
+        # built with a http scheme (if required).
+        url_scheme = self.url_scheme
+        secure = url_scheme in {"https", "wss"}
+        if websocket:
+            force_external = True
+            url_scheme = "wss" if secure else "ws"
+        elif url_scheme:
+            url_scheme = "https" if secure else "http"
 
         # shortcut this.
         if not force_external and (
@@ -2127,7 +2194,7 @@ class MapAdapter(object):
         return str(
             "%s//%s%s/%s"
             % (
-                self.url_scheme + ":" if self.url_scheme else "",
+                url_scheme + ":" if url_scheme else "",
                 host,
                 self.script_name[:-1],
                 path.lstrip("/"),
