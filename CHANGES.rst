@@ -96,6 +96,8 @@ Unreleased
     quality tags. Instead the initial order is preserved. :issue:`1686`
 -   Added ``Map.lock_class`` attribute for alternative
     implementations. :pr:`1702`
+-   Support matching and building WebSocket rules in the routing system,
+    for use by async frameworks. :pr:`1709`
 
 
 Version 0.16.1

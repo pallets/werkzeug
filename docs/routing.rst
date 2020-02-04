@@ -227,3 +227,39 @@ Variable parts are of course also possible in the host section::
         Rule('/', endpoint='www_index', host='www.example.com'),
         Rule('/', endpoint='user_index', host='<user>.example.com')
     ], host_matching=True)
+
+
+WebSockets
+==========
+
+.. versionadded:: 1.0
+
+If a :class:`Rule` is created with ``websocket=True``, it will only
+match if the :class:`Map` is bound to a request with a ``url_scheme`` of
+``ws`` or ``wss``.
+
+.. note::
+
+   Werkzeug has no further WebSocket support beyond routing. This
+   functionality is mostly of use to ASGI projects.
+
+.. code-block:: python
+
+    url_map = Map([
+        Rule("/ws", endpoint="comm", websocket=True),
+    ])
+    adapter = map.bind("example.org", "/ws", url_scheme="ws")
+    assert adapter.match() == ("comm", {})
+
+If the only match is a WebSocket rule and the bind is HTTP (or the
+only match is HTTP and the bind is WebSocket) a
+:exc:`WebsocketMismatch` (derives from
+:exc:`~werkzeug.exceptions.BadRequest`) exception is raised.
+
+As WebSocket URLs have a different scheme, rules are always built with a
+scheme and host, ``force_external=True`` is implied.
+
+.. code-block:: python
+
+    url = adapter.build("comm")
+    assert url == "ws://example.org/ws"
