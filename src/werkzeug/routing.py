@@ -331,14 +331,12 @@ class BuildError(RoutingException, LookupError):
 
 
 class WebsocketMismatch(BadRequest):
-    """The only matched rule is either a websocket and the request is http
-    or the rule is http and the request is a websocket."""
-
-    pass
+    """The only matched rule is either a WebSocket and the request is
+    HTTP, or the rule is HTTP and the request is a WebSocket.
+    """
 
 
 class ValidationError(ValueError):
-
     """Validation error.  If a rule converter raises this exception the rule
     does not match the current URL and the next URL is tried.
     """
@@ -585,21 +583,12 @@ class Rule(RuleFactory):
         `MethodNotAllowed` rather than `NotFound`.  If `GET` is present in the
         list of methods and `HEAD` is not, `HEAD` is added automatically.
 
-        .. versionchanged:: 0.6.1
-           `HEAD` is now automatically added to the methods if `GET` is
-           present.  The reason for this is that existing code often did not
-           work properly in servers not rewriting `HEAD` to `GET`
-           automatically and it was not documented how `HEAD` should be
-           treated.  This was considered a bug in Werkzeug because of that.
-
     `strict_slashes`
         Override the `Map` setting for `strict_slashes` only for this rule. If
         not specified the `Map` setting is used.
 
     `merge_slashes`
-        Override the ``Map`` setting for ``merge_slashes`` for this rule.
-
-        .. versionadded:: 1.0
+        Override :attr:`Map.merge_slashes` for this rule.
 
     `build_only`
         Set this to True and the rule will never match but will create a URL
@@ -641,14 +630,21 @@ class Rule(RuleFactory):
         that the subdomain feature is disabled.
 
     `websocket`
-        If True (defaults to False) this represents a WebSocket, rather than
-        a http route.
-
-    .. versionadded:: 0.7
-       The `alias` and `host` parameters were added.
+        If ``True``, this rule is only matches for WebSocket (``ws://``,
+        ``wss://``) requests. By default, rules will only match for HTTP
+        requests.
 
     .. versionadded:: 1.0
-       The `websocket` parameter was added.
+        Added ``websocket``.
+
+    .. versionadded:: 1.0
+        Added ``merge_slashes``.
+
+    .. versionadded:: 0.7
+        Added ``alias`` and ``host``.
+
+    .. versionchanged:: 0.6.1
+       ``HEAD`` is added to ``methods`` if ``GET`` is present.
     """
 
     def __init__(
@@ -680,26 +676,22 @@ class Rule(RuleFactory):
         self.build_only = build_only
         self.alias = alias
         self.websocket = websocket
+
         if methods is not None:
             if isinstance(methods, str):
-                raise TypeError("param `methods` should be `Iterable[str]`, not `str`")
-            methods = set([x.upper() for x in methods])
+                raise TypeError("'methods' should be a list of strings.")
+
+            methods = {x.upper() for x in methods}
+
             if "HEAD" not in methods and "GET" in methods:
                 methods.add("HEAD")
 
-        if (
-            websocket
-            and methods is not None
-            and len(methods - {"GET", "HEAD", "OPTIONS"}) > 0
-        ):
-            raise ValueError(
-                "WebSocket Rules can only use 'GET', 'HEAD', or 'OPTIONS' methods"
-            )
+            if websocket and methods - {"GET", "HEAD", "OPTIONS"}:
+                raise ValueError(
+                    "WebSocket rules can only use 'GET', 'HEAD', and 'OPTIONS' methods."
+                )
 
-        if methods is None:
-            self.methods = None
-        else:
-            self.methods = methods
+        self.methods = methods
         self.endpoint = endpoint
         self.redirect_to = redirect_to
 
@@ -1390,6 +1382,10 @@ class Map(object):
                           instead of the `subdomain` one.
 
     .. versionchanged:: 1.0
+        If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules
+        will match.
+
+    .. versionchanged:: 1.0
         Added ``merge_slashes``.
 
     .. versionchanged:: 0.7
@@ -1514,18 +1510,18 @@ class Map(object):
         no defined. If there is no `default_subdomain` you cannot use the
         subdomain feature.
 
-        .. versionadded:: 0.7
-           `query_args` added
-
-        .. versionadded:: 0.8
-           `query_args` can now also be a string.
-
-        .. versionadded:: 1.0
-           `websocket` added
+        .. versionchanged:: 1.0
+            If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules
+            will match.
 
         .. versionchanged:: 0.15
             ``path_info`` defaults to ``'/'`` if ``None``.
 
+        .. versionchanged:: 0.8
+            ``query_args`` can be a string.
+
+        .. versionchanged:: 0.7
+            Added ``query_args``.
         """
         server_name = server_name.lower()
         if self.host_matching:
@@ -1783,9 +1779,10 @@ class MapAdapter(object):
           You can use the `RequestRedirect` instance as response-like object
           similar to all other subclasses of `HTTPException`.
 
-        - you receive a ``WebsocketMismatch`` exception if the only match is
-          a websocket rule and the bind is to a http request, or if the match
-          is a http rule and the bind is to a websocket request.
+        - you receive a ``WebsocketMismatch`` exception if the only
+          match is a WebSocket rule but the bind is an HTTP request, or
+          if the match is an HTTP rule but the bind is a WebSocket
+          request.
 
         - you get a tuple in the form ``(endpoint, arguments)`` if there is
           a match (unless `return_rule` is True, in which case you get a tuple
@@ -1833,15 +1830,21 @@ class MapAdapter(object):
                            automatic redirects as string or dictionary.  It's
                            currently not possible to use the query arguments
                            for URL matching.
+        :param websocket: Match WebSocket instead of HTTP requests. A
+            websocket request has a ``ws`` or ``wss``
+            :attr:`url_scheme`. This overrides that detection.
 
-        .. versionadded:: 0.6
-           `return_rule` was added.
-
-        .. versionadded:: 0.7
-           `query_args` was added.
+        .. versionadded:: 1.0
+            Added ``websocket``.
 
         .. versionchanged:: 0.8
-           `query_args` can now also be a string.
+            ``query_args`` can be a string.
+
+        .. versionadded:: 0.7
+            Added ``query_args``.
+
+        .. versionadded:: 0.6
+            Added ``return_rule``.
         """
         self.map.update()
         if path_info is None:
@@ -1851,6 +1854,7 @@ class MapAdapter(object):
         if query_args is None:
             query_args = self.query_args
         method = (method or self.default_method).upper()
+
         if websocket is None:
             websocket = self.websocket
 
@@ -1863,6 +1867,7 @@ class MapAdapter(object):
 
         have_match_for = set()
         websocket_mismatch = False
+
         for rule in self.map._rules:
             try:
                 rv = rule.match(path, method)
@@ -1884,6 +1889,7 @@ class MapAdapter(object):
             if rule.methods is not None and method not in rule.methods:
                 have_match_for.update(rule.methods)
                 continue
+
             if rule.websocket != websocket:
                 websocket_mismatch = True
                 continue
@@ -1932,8 +1938,10 @@ class MapAdapter(object):
 
         if have_match_for:
             raise MethodNotAllowed(valid_methods=list(have_match_for))
+
         if websocket_mismatch:
             raise WebsocketMismatch()
+
         raise NotFound()
 
     def test(self, path_info=None, method=None):
@@ -2169,16 +2177,16 @@ class MapAdapter(object):
         rv = self._partial_build(endpoint, values, method, append_unknown)
         if rv is None:
             raise BuildError(endpoint, values, method, self)
-        domain_part, path, websocket = rv
 
+        domain_part, path, websocket = rv
         host = self.get_host(domain_part)
 
-        # Only build WebSocket routes with the scheme (as relative
-        # WebSocket paths aren't useful and are misleading). In
-        # addition if bound to a WebSocket ensure that http routes are
-        # built with a http scheme (if required).
+        # Always build WebSocket routes with the scheme (browsers
+        # require full URLs). If bound to a WebSocket, ensure that HTTP
+        # routes are built with an HTTP scheme.
         url_scheme = self.url_scheme
         secure = url_scheme in {"https", "wss"}
+
         if websocket:
             force_external = True
             url_scheme = "wss" if secure else "ws"
