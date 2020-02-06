@@ -101,6 +101,11 @@ Unreleased
 -   Range requests that span an entire file respond with 206 instead of
     200, to be more compliant with :rfc:`7233`. This may help serving
     media to older browsers. :issue:`410, 1704`
+-   The :class:`~middleware.shared_data.SharedDataMiddleware` default
+    ``fallback_mimetype`` is ``application/octet-stream``. If a filename
+    looks like a text mimetype, the ``utf-8`` charset is added to it.
+    This matches the behavior of :class:`~wrappers.BaseResponse` and
+    Flask's ``send_file()``. :issue:`1689`
 
 
 Version 0.16.1

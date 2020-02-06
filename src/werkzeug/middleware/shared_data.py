@@ -24,6 +24,7 @@ from ..filesystem import get_filesystem_encoding
 from ..http import http_date
 from ..http import is_resource_modified
 from ..security import safe_join
+from ..utils import get_content_type
 from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
@@ -70,19 +71,24 @@ class SharedDataMiddleware(object):
     module.  If it's unable to figure out the charset it will fall back
     to `fallback_mimetype`.
 
-    .. versionchanged:: 0.5
-       The cache timeout is configurable now.
-
-    .. versionadded:: 0.6
-       The `fallback_mimetype` parameter was added.
-
     :param app: the application to wrap.  If you don't want to wrap an
                 application you can pass it :exc:`NotFound`.
     :param exports: a list or dict of exported files and folders.
     :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
-    :param fallback_mimetype: the fallback mimetype for unknown files.
     :param cache: enable or disable caching headers.
     :param cache_timeout: the cache timeout in seconds for the headers.
+    :param fallback_mimetype: The fallback mimetype for unknown files.
+
+    .. versionchanged:: 1.0
+        The default ``fallback_mimetype`` is
+        ``application/octet-stream``. If a filename looks like a text
+        mimetype, the ``utf-8`` charset is added to it.
+
+    .. versionadded:: 0.6
+        Added ``fallback_mimetype``.
+
+    .. versionchanged:: 0.5
+        Added ``cache_timeout``.
     """
 
     def __init__(
@@ -92,7 +98,7 @@ class SharedDataMiddleware(object):
         disallow=None,
         cache=True,
         cache_timeout=60 * 60 * 12,
-        fallback_mimetype="text/plain",
+        fallback_mimetype="application/octet-stream",
     ):
         self.app = app
         self.exports = []
@@ -254,7 +260,7 @@ class SharedDataMiddleware(object):
             return self.app(environ, start_response)
 
         guessed_type = mimetypes.guess_type(real_filename)
-        mime_type = guessed_type[0] or self.fallback_mimetype
+        mime_type = get_content_type(guessed_type[0] or self.fallback_mimetype, "utf-8")
         f, mtime, file_size = file_loader()
 
         headers = [("Date", http_date())]
