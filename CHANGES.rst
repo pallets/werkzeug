@@ -3,7 +3,7 @@
 Version 1.0.0
 -------------
 
-Unreleased
+Released 2020-02-06
 
 -   Drop support for Python 3.4. (:issue:`1478`)
 -   Remove code that issued deprecation warnings in version 0.15.
