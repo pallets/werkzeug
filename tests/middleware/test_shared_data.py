@@ -47,6 +47,10 @@ def test_shared_data_middleware(tmpdir):
             app_iter, status, headers = run_wsgi_app(app, create_environ(p))
             assert status == "200 OK"
 
+            if p.endswith(".txt"):
+                content_type = next(v for k, v in headers if k == "Content-Type")
+                assert content_type == "text/plain; charset=utf-8"
+
             with closing(app_iter) as app_iter:
                 data = b"".join(app_iter).strip()
 
