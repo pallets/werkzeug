@@ -142,28 +142,31 @@ class ETagResponseMixin(object):
         """
         from ..exceptions import RequestedRangeNotSatisfiable
 
-        if accept_ranges is None:
+        if (
+            accept_ranges is None
+            or complete_length is None
+            or not self._is_range_request_processable(environ)
+        ):
             return False
-        self.headers["Accept-Ranges"] = accept_ranges
-        if not self._is_range_request_processable(environ) or complete_length is None:
-            return False
+
         parsed_range = parse_range_header(environ.get("HTTP_RANGE"))
+
         if parsed_range is None:
             raise RequestedRangeNotSatisfiable(complete_length)
+
         range_tuple = parsed_range.range_for_length(complete_length)
         content_range_header = parsed_range.to_content_range_header(complete_length)
+
         if range_tuple is None or content_range_header is None:
             raise RequestedRangeNotSatisfiable(complete_length)
+
         content_length = range_tuple[1] - range_tuple[0]
-        # Be sure not to send 206 response
-        # if requested range is the full content.
-        if content_length != complete_length:
-            self.headers["Content-Length"] = content_length
-            self.content_range = content_range_header
-            self.status_code = 206
-            self._wrap_response(range_tuple[0], content_length)
-            return True
-        return False
+        self.headers["Content-Length"] = content_length
+        self.headers["Accept-Ranges"] = accept_ranges
+        self.content_range = content_range_header
+        self.status_code = 206
+        self._wrap_response(range_tuple[0], content_length)
+        return True
 
     def make_conditional(
         self, request_or_environ, accept_ranges=False, complete_length=None

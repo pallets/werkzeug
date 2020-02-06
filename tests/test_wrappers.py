@@ -878,9 +878,9 @@ def test_range_request_with_complete_file():
         response = wrappers.Response(wrap_file(env, f))
         env["HTTP_RANGE"] = "bytes=0-%d" % (fsize - 1)
         response.make_conditional(env, accept_ranges=True, complete_length=fsize)
-        assert response.status_code == 200
+        assert response.status_code == 206
         assert response.headers["Accept-Ranges"] == "bytes"
-        assert "Content-Range" not in response.headers
+        assert response.headers["Content-Range"] == "bytes 0-%d/%d" % (fsize - 1, fsize)
         assert response.headers["Content-Length"] == str(fsize)
         assert response.data == fcontent
 
