@@ -98,6 +98,9 @@ Unreleased
     implementations. :pr:`1702`
 -   Support matching and building WebSocket rules in the routing system,
     for use by async frameworks. :pr:`1709`
+-   Range requests that span an entire file respond with 206 instead of
+    200, to be more compliant with :rfc:`7233`. This may help serving
+    media to older browsers. :issue:`410, 1704`
 
 
 Version 0.16.1
