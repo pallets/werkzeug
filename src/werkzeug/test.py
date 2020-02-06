@@ -13,7 +13,7 @@ import sys
 from io import BytesIO
 from itertools import chain
 from random import random
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 from time import time
 
 from ._compat import iteritems
@@ -79,7 +79,7 @@ def stream_encode_multipart(
                 if length + _closure[1] <= threshold:
                     stream.write(string)
                 else:
-                    new_stream = TemporaryFile("wb+")
+                    new_stream = NamedTemporaryFile("wb+")
                     new_stream.write(stream.getvalue())
                     new_stream.write(string)
                     _closure[0] = new_stream
