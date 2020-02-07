@@ -1,5 +1,14 @@
 .. currentmodule:: werkzeug
 
+Version 1.0.1
+-------------
+
+Unreleased
+
+-   Make the argument to ``RequestRedirect.get_response`` optional.
+    :issue:`1718`
+
+
 Version 1.0.0
 -------------
 
