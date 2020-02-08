@@ -7,6 +7,7 @@ Unreleased
 
 -   Make the argument to ``RequestRedirect.get_response`` optional.
     :issue:`1718`
+-   Only allow a single access control allow origin value. :pr:`1723`
 
 
 Version 1.0.0

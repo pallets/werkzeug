@@ -82,9 +82,7 @@ class CORSResponseMixin(object):
 
     access_control_allow_origin = header_property(
         "Access-Control-Allow-Origin",
-        load_func=parse_set_header,
-        dump_func=dump_header,
-        doc="The origins that may make cross origin requests.",
+        doc="The origin or '*' for any origin that may make cross origin requests.",
     )
 
     access_control_expose_headers = header_property(
