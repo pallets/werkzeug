@@ -1,5 +1,14 @@
 .. currentmodule:: werkzeug
 
+Version 2.0.0
+-------------
+
+Unreleased
+
+-   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`
+    to override the bound scheme. :pr:`1721`
+
+
 Version 1.0.0
 -------------
 
