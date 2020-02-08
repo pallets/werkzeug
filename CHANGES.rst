@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 1.0.1
+-------------
+
+Unreleased
+
+-   Bugfix, only allow a single access control allow origin
+    value. :pr:`1723`.
+
 Version 1.0.0
 -------------
 
