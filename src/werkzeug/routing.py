@@ -250,7 +250,7 @@ class RequestRedirect(HTTPException, RoutingException):
         RoutingException.__init__(self, new_url)
         self.new_url = new_url
 
-    def get_response(self, environ):
+    def get_response(self, environ=None):
         return redirect(self.new_url, self.code)
 
 
