@@ -235,11 +235,16 @@ def test_basic_building():
     adapter = map.bind("example.org", url_scheme="")
     assert adapter.build("foo", {}) == "/foo"
     assert adapter.build("foo", {}, force_external=True) == "//example.org/foo"
+    assert (
+        adapter.build("foo", {}, url_scheme="https", force_external=True)
+        == "https://example.org/foo"
+    )
 
     adapter = map.bind("example.org", url_scheme="ws")
     assert adapter.build("ws", {}) == "ws://example.org/ws"
     assert adapter.build("foo", {}, force_external=True) == "http://example.org/foo"
     assert adapter.build("foo", {}) == "/foo"
+    assert adapter.build("ws", {}, url_scheme="https") == "wss://example.org/ws"
 
 
 def test_long_build():

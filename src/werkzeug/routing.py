@@ -2085,6 +2085,7 @@ class MapAdapter(object):
         method=None,
         force_external=False,
         append_unknown=True,
+        url_scheme=None,
     ):
         """Building URLs works pretty much the other way round.  Instead of
         `match` you call `build` and pass it the endpoint and a dict of
@@ -2137,9 +2138,6 @@ class MapAdapter(object):
         to specify the method you want to have an URL built for if you have
         different methods for the same endpoint specified.
 
-        .. versionadded:: 0.6
-           the `append_unknown` parameter was added.
-
         :param endpoint: the endpoint of the URL to build.
         :param values: the values for the URL to build.  Unhandled values are
                        appended to the URL as query parameters.
@@ -2151,6 +2149,14 @@ class MapAdapter(object):
         :param append_unknown: unknown parameters are appended to the generated
                                URL as query string argument.  Disable this
                                if you want the builder to ignore those.
+        :param url_scheme: Scheme to use in place of the bound
+            :attr:`url_scheme`.
+
+        .. versionadded:: 2.0
+            Added the ``url_scheme`` parameter.
+
+        .. versionadded:: 0.6
+           Added the ``append_unknown`` parameter.
         """
         self.map.update()
 
@@ -2181,10 +2187,12 @@ class MapAdapter(object):
         domain_part, path, websocket = rv
         host = self.get_host(domain_part)
 
+        if url_scheme is None:
+            url_scheme = self.url_scheme
+
         # Always build WebSocket routes with the scheme (browsers
         # require full URLs). If bound to a WebSocket, ensure that HTTP
         # routes are built with an HTTP scheme.
-        url_scheme = self.url_scheme
         secure = url_scheme in {"https", "wss"}
 
         if websocket:
