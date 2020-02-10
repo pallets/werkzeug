@@ -20,6 +20,7 @@ from werkzeug._compat import implements_iterator
 from werkzeug._compat import iteritems
 from werkzeug._compat import to_bytes
 from werkzeug.datastructures import FileStorage
+from werkzeug.datastructures import Headers
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.test import Client
@@ -222,6 +223,15 @@ def test_environ_builder_headers_content_type():
     b = EnvironBuilder()
     env = b.get_environ()
     assert "CONTENT_TYPE" not in env
+
+
+def test_envrion_builder_multiple_headers():
+    h = Headers()
+    h.add("FOO", "bar")
+    h.add("FOO", "baz")
+    b = EnvironBuilder(headers=h)
+    env = b.get_environ()
+    assert env["HTTP_FOO"] == "bar, baz"
 
 
 def test_environ_builder_paths():

@@ -10,6 +10,7 @@
 """
 import mimetypes
 import sys
+from collections import defaultdict
 from io import BytesIO
 from itertools import chain
 from random import random
@@ -740,8 +741,13 @@ class EnvironBuilder(object):
             result["CONTENT_LENGTH"] = str(content_length)
             headers.set("Content-Length", content_length)
 
+        combined_headers = defaultdict(list)
+
         for key, value in headers.to_wsgi_list():
-            result["HTTP_%s" % key.upper().replace("-", "_")] = value
+            combined_headers["HTTP_%s" % key.upper().replace("-", "_")].append(value)
+
+        for key, values in combined_headers.items():
+            result[key] = ", ".join(values)
 
         if self.environ_overrides:
             result.update(self.environ_overrides)
