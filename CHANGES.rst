@@ -7,6 +7,10 @@ Unreleased
 
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`
     to override the bound scheme. :pr:`1721`
+-   When passing a ``Headers`` object to a test client method or
+    ``EnvironBuilder``, multiple values for a key are joined into one
+    comma separated value. This matches the HTTP spec on multi-value
+    headers. :issue:`1655`
 
 
 Version 1.0.1
