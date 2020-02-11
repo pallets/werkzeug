@@ -540,6 +540,8 @@ def parse_csp_header(value, on_update=None, cls=None):
 
     if cls is None:
         cls = ContentSecurityPolicy
+    if value is None:
+        return cls(None, on_update)
     items = []
     for policy in value.split(";"):
         policy = policy.strip()
