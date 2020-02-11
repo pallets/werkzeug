@@ -22,3 +22,4 @@ test_uwsgi_failed
 .pytest_cache/
 venv/
 .vscode
+.insignificantchange
