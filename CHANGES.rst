@@ -14,6 +14,8 @@ Unreleased
     :issue:`1739`
 -   Fix missing local variables in interactive debugger console.
     :issue:`1746`
+-   Fix passing file-like objects like ``io.BytesIO`` to
+    ``FileStorage.save``. :issue:`1733`
 
 
 Version 1.0.0

@@ -3058,7 +3058,9 @@ class FileStorage(object):
         from shutil import copyfileobj
 
         close_dst = False
-        dst = fspath(dst)
+
+        if hasattr(dst, "__fspath__"):
+            dst = fspath(dst)
 
         if isinstance(dst, string_types):
             dst = open(dst, "wb")
