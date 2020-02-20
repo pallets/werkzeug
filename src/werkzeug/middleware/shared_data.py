@@ -35,7 +35,7 @@ class SharedDataMiddleware(object):
     environments or simple server setups. Usage is quite simple::
 
         import os
-        from werkzeug.wsgi import SharedDataMiddleware
+        from werkzeug.middleware.shared_data import SharedDataMiddleware
 
         app = SharedDataMiddleware(app, {
             '/static': os.path.join(os.path.dirname(__file__), 'static')
