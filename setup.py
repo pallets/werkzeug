@@ -61,6 +61,7 @@ setup(
             "tox",
             "sphinx",
             "pallets-sphinx-themes",
+            "sphinxcontrib-log-cabinet",
             "sphinx-issues",
         ],
     },
