@@ -148,8 +148,9 @@ def _wrap_compiler(console):
 
 class _InteractiveConsole(code.InteractiveInterpreter):
     def __init__(self, globals, locals):
-        locals = dict(globals)
-        locals.update(locals)
+        _locals = dict(globals)
+        _locals.update(locals)
+        locals = _locals
         locals["dump"] = dump
         locals["help"] = helper
         locals["__loader__"] = self.loader = _ConsoleLoader()

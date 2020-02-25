@@ -12,6 +12,8 @@ Unreleased
     Policy header. :pr:`1731`
 -   ``http_date`` zero fills years < 1000 to always output four digits.
     :issue:`1739`
+-   Fix missing local variables in interactive debugger console.
+    :issue:`1746`
 
 
 Version 1.0.0
