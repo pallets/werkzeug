@@ -10,6 +10,8 @@ Unreleased
 -   Only allow a single access control allow origin value. :pr:`1723`
 -   Fix crash when trying to parse a non-existent Content Security
     Policy header. :pr:`1731`
+-   ``http_date`` zero fills years < 1000 to always output four digits.
+    :issue:`1739`
 
 
 Version 1.0.0
