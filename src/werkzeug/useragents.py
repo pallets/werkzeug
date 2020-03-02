@@ -112,8 +112,8 @@ class UserAgent(object):
 
     .. attribute:: platform
 
-       the browser platform.  The following platforms are currently
-       recognized:
+       the browser platform. ``None`` if not recognized.
+       The following platforms are currently recognized:
 
        -   `aix`
        -   `amiga`
@@ -139,8 +139,8 @@ class UserAgent(object):
 
     .. attribute:: browser
 
-        the name of the browser.  The following browsers are currently
-        recognized:
+        the name of the browser. ``None`` if not recognized.
+        The following browsers are currently recognized:
 
         -   `aol` *
         -   `ask` *
@@ -170,11 +170,11 @@ class UserAgent(object):
 
     .. attribute:: version
 
-        the version of the browser
+        the version of the browser. ``None`` if not recognized.
 
     .. attribute:: language
 
-        the language of the browser
+        the language of the browser. ``None`` if not recognized.
     """
 
     _parser = UserAgentParser()
