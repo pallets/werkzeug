@@ -259,7 +259,7 @@ The way we will do it in this tutorial is by calling the method ``on_``
         try:
             endpoint, values = adapter.match()
             return getattr(self, 'on_' + endpoint)(request, **values)
-        except HTTPException, e:
+        except HTTPException as e:
             return e
 
 We bind the URL map to the current environment and get back a
