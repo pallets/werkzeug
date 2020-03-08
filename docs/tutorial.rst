@@ -123,7 +123,7 @@ if they are not used right away, to keep it from being confusing::
 
     import os
     import redis
-    import urlparse
+    from werkzeug.urls import url_parse
     from werkzeug.wrappers import Request, Response
     from werkzeug.routing import Map, Rule
     from werkzeug.exceptions import HTTPException, NotFound
