@@ -123,7 +123,7 @@ if they are not used right away, to keep it from being confusing::
 
     import os
     import redis
-    import urlparse
+    from werkzeug.urls import url_parse
     from werkzeug.wrappers import Request, Response
     from werkzeug.routing import Map, Rule
     from werkzeug.exceptions import HTTPException, NotFound
@@ -259,7 +259,7 @@ The way we will do it in this tutorial is by calling the method ``on_``
         try:
             endpoint, values = adapter.match()
             return getattr(self, 'on_' + endpoint)(request, **values)
-        except HTTPException, e:
+        except HTTPException as e:
             return e
 
 We bind the URL map to the current environment and get back a
@@ -306,7 +306,7 @@ we need to write a function and a helper method.  For URL validation this
 is good enough::
 
     def is_valid_url(url):
-        parts = urlparse.urlparse(url)
+        parts = url_parse(url)
         return parts.scheme in ('http', 'https')
 
 For inserting the URL, all we need is this little method on our class::
