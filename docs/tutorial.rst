@@ -306,7 +306,7 @@ we need to write a function and a helper method.  For URL validation this
 is good enough::
 
     def is_valid_url(url):
-        parts = urlparse.urlparse(url)
+        parts = url_parse(url)
         return parts.scheme in ('http', 'https')
 
 For inserting the URL, all we need is this little method on our class::
