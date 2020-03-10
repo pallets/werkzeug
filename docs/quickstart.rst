@@ -77,7 +77,7 @@ was transmitted in a POST/PUT request.
 For testing purposes we can create a request object from supplied data
 using the :meth:`~BaseRequest.from_values` method:
 
->>> from cStringIO import StringIO
+>>> from io import StringIO
 >>> data = "name=this+is+encoded+form+data&another_key=another+one"
 >>> request = Request.from_values(query_string='foo=bar&blah=blafasel',
 ...    content_length=len(data), input_stream=StringIO(data),
