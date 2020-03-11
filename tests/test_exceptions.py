@@ -137,3 +137,54 @@ def test_retry_after_mixin(cls, value, expect):
     e = cls(retry_after=value)
     h = dict(e.get_headers({}))
     assert h["Retry-After"] == expect
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [
+        exceptions.HTTPException,
+        exceptions.BadRequest,
+        exceptions.ClientDisconnected,
+        exceptions.SecurityError,
+        exceptions.BadHost,
+        exceptions.Unauthorized,
+        exceptions.Forbidden,
+        exceptions.NotFound,
+        exceptions.MethodNotAllowed,
+        exceptions.NotAcceptable,
+        exceptions.RequestTimeout,
+        exceptions.Conflict,
+        exceptions.Gone,
+        exceptions.LengthRequired,
+        exceptions.PreconditionFailed,
+        exceptions.RequestEntityTooLarge,
+        exceptions.RequestURITooLarge,
+        exceptions.UnsupportedMediaType,
+        exceptions.RequestedRangeNotSatisfiable,
+        exceptions.ExpectationFailed,
+        exceptions.ImATeapot,
+        exceptions.UnprocessableEntity,
+        exceptions.Locked,
+        exceptions.FailedDependency,
+        exceptions.PreconditionRequired,
+        exceptions.TooManyRequests,
+        exceptions.RequestHeaderFieldsTooLarge,
+        exceptions.UnavailableForLegalReasons,
+        exceptions.InternalServerError,
+        exceptions.NotImplemented,
+        exceptions.BadGateway,
+        exceptions.ServiceUnavailable,
+        exceptions.GatewayTimeout,
+        exceptions.HTTPVersionNotSupported,
+    ],
+)
+def test_passing_response(cls):
+    dummy_mimetype = "application/x-dummy"
+
+    class TestResponse(Response):
+        default_mimetype = dummy_mimetype
+
+    exc = cls(response=TestResponse("dummy"))
+    rp = exc.get_response({})
+    assert rp.content_type == dummy_mimetype
+    assert isinstance(rp, TestResponse)

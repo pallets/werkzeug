@@ -332,10 +332,10 @@ class MethodNotAllowed(HTTPException):
     code = 405
     description = "The method is not allowed for the requested URL."
 
-    def __init__(self, valid_methods=None, description=None):
+    def __init__(self, valid_methods=None, description=None, response=None):
         """Takes an optional list of valid http methods
         starting with werkzeug 0.3 the list will be mandatory."""
-        HTTPException.__init__(self, description)
+        HTTPException.__init__(self, description, response=response)
         self.valid_methods = valid_methods
 
     def get_headers(self, environ=None):
@@ -481,11 +481,11 @@ class RequestedRangeNotSatisfiable(HTTPException):
     code = 416
     description = "The server cannot provide the requested range."
 
-    def __init__(self, length=None, units="bytes", description=None):
+    def __init__(self, length=None, units="bytes", description=None, response=None):
         """Takes an optional `Content-Range` header value based on ``length``
         parameter.
         """
-        HTTPException.__init__(self, description)
+        HTTPException.__init__(self, description, response=response)
         self.length = length
         self.units = units
 
