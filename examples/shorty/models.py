@@ -22,7 +22,7 @@ url_table = Table(
 )
 
 
-class URL(object):
+class URL:
     query = session.query_property()
 
     def __init__(self, target, public=True, uid=None, added=None):

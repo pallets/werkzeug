@@ -14,7 +14,7 @@ from .utils import STATIC_PATH
 from .utils import url_map
 
 
-class Shorty(object):
+class Shorty:
     def __init__(self, db_uri):
         local.application = self
         self.database_engine = create_engine(db_uri, convert_unicode=True)

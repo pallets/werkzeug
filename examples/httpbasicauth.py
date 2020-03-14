@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     HTTP Basic Auth Example
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,7 +13,7 @@ from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
 
-class Application(object):
+class Application:
     def __init__(self, users, realm="login required"):
         self.users = users
         self.realm = realm

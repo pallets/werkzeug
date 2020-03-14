@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     coolmagic.utils
     ~~~~~~~~~~~~~~~
@@ -76,7 +75,7 @@ class Request(BaseRequest):
         local.request = self
 
 
-class ThreadedRequest(object):
+class ThreadedRequest:
     """
     A pseudo request object that always poins to the current
     context active request.

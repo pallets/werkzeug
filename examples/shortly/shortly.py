@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     shortly
     ~~~~~~~
@@ -44,7 +43,7 @@ def get_hostname(url):
     return url_parse(url).netloc
 
 
-class Shortly(object):
+class Shortly:
     def __init__(self, config):
         self.redis = redis.Redis(config["redis_host"], config["redis_port"])
         template_path = os.path.join(os.path.dirname(__file__), "templates")

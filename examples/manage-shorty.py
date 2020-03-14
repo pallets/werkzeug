@@ -10,7 +10,7 @@ def make_app():
     from shorty.application import Shorty
 
     filename = os.path.join(tempfile.gettempdir(), "shorty.db")
-    return Shorty("sqlite:///{0}".format(filename))
+    return Shorty(f"sqlite:///{filename}")
 
 
 def make_shell():

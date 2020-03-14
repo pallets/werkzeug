@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     simplewiki.utils
     ~~~~~~~~~~~~~~~~
@@ -107,7 +106,7 @@ class Response(BaseResponse):
         BaseResponse.__init__(self, response, status, headers, mimetype, content_type)
 
 
-class Pagination(object):
+class Pagination:
     """
     Paginate a SQLAlchemy query object.
     """

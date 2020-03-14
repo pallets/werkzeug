@@ -80,7 +80,7 @@ def load_werkzeug(path):
     # get the real version from the setup file
     try:
         f = open(os.path.join(path, "setup.py"))
-    except IOError:
+    except OSError:
         pass
     else:
         try:
@@ -248,7 +248,11 @@ def compare(node1, node2):
             delta = "=="
         else:
             delta = "%+.4f (%+d%%)" % (delta, round(d2[key] / d1[key] * 100 - 100))
-        print("%36s   %.4f    %.4f    %s" % (format_func(key), d1[key], d2[key], delta))
+        print(
+            "{:>36}   {:.4f}    {:.4f}    {}".format(
+                format_func(key), d1[key], d2[key], delta
+            )
+        )
     print("-" * 80)
 
 
@@ -278,7 +282,7 @@ def run(path, no_header=False):
     return result
 
 
-URL_DECODED_DATA = dict((str(x), str(x)) for x in range(100))
+URL_DECODED_DATA = {str(x): str(x) for x in range(100)}
 URL_ENCODED_DATA = "&".join("%s=%s" % x for x in URL_DECODED_DATA.items())
 MULTIPART_ENCODED_DATA = "\n".join(
     (
@@ -359,7 +363,7 @@ def after_multidict_lookup_miss():
 
 
 def time_cached_property():
-    class Foo(object):
+    class Foo:
         @wz.cached_property
         def x(self):
             return 42
@@ -425,13 +429,13 @@ def after_request_shallow_init():
 
 
 def time_response_iter_performance():
-    resp = wz.Response(u"Hällo Wörld " * 1000, mimetype="text/html")
+    resp = wz.Response("Hällo Wörld " * 1000, mimetype="text/html")
     for _ in resp({"REQUEST_METHOD": "GET"}, lambda *s: None):
         pass
 
 
 def time_response_iter_head_performance():
-    resp = wz.Response(u"Hällo Wörld " * 1000, mimetype="text/html")
+    resp = wz.Response("Hällo Wörld " * 1000, mimetype="text/html")
     for _ in resp({"REQUEST_METHOD": "HEAD"}, lambda *s: None):
         pass
 

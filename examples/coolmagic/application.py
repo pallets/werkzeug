@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     coolmagic.application
     ~~~~~~~~~~~~~~~~~~~~~
@@ -26,7 +25,7 @@ from .utils import local_manager
 from .utils import Request
 
 
-class CoolMagicApplication(object):
+class CoolMagicApplication:
     """
     The application class. It's passed a directory with configuration values.
     """

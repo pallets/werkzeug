@@ -56,7 +56,7 @@ def get_random_uid():
     return "".join(sample(URL_CHARS, randrange(3, 9)))
 
 
-class Pagination(object):
+class Pagination:
     def __init__(self, results, per_page, page, endpoint):
         self.results = results
         self.per_page = per_page

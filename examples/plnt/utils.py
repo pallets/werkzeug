@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     plnt.utils
     ~~~~~~~~~~
@@ -78,7 +77,7 @@ def render_template(template_name, **context):
 
 def nl2p(s):
     """Add paragraphs to a text."""
-    return u"\n".join(u"<p>%s</p>" % p for p in _par_re.split(s))
+    return "\n".join("<p>%s</p>" % p for p in _par_re.split(s))
 
 
 def url_for(endpoint, **kw):
@@ -97,18 +96,18 @@ def strip_tags(s):
             try:
                 return chr(int(name[2:], 16))
             except ValueError:
-                return u""
+                return ""
         elif name.startswith("#"):
             try:
                 return chr(int(name[1:]))
             except ValueError:
-                return u""
-        return u""
+                return ""
+        return ""
 
     return _entity_re.sub(handle_match, _striptags_re.sub("", s))
 
 
-class Pagination(object):
+class Pagination:
     """
     Paginate a SQLAlchemy query object.
     """

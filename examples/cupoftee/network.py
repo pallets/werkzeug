@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     cupoftee.network
     ~~~~~~~~~~~~~~~~~
@@ -19,13 +18,13 @@ class ServerError(Exception):
     pass
 
 
-class Syncable(object):
+class Syncable:
     last_sync = None
 
     def sync(self):
         try:
             self._sync()
-        except (socket.error, socket.timeout, IOError):
+        except (OSError, socket.timeout):
             return False
         self.last_sync = datetime.utcnow()
         return True
@@ -43,12 +42,12 @@ class ServerBrowser(Syncable):
             print(addr)
             try:
                 self._sync_master(addr, to_delete)
-            except (socket.error, socket.timeout, IOError):
+            except (OSError, socket.timeout):
                 continue
         for server_id in to_delete:
             self.servers.pop(server_id, None)
         if not self.servers:
-            raise IOError("no servers found")
+            raise OSError("no servers found")
         self.cup.db.sync()
 
     def _sync_master(self, addr, to_delete):
@@ -98,7 +97,7 @@ class Server(Syncable):
         )
 
         # sync the player stats
-        players = dict((p.name, p) for p in self.players)
+        players = {p.name: p for p in self.players}
         for i in range(player_count):
             name = bits[8 + i * 2].decode("latin1")
             score = int(bits[9 + i * 2])
@@ -125,7 +124,7 @@ class Server(Syncable):
         return unicodecmp(self.name, other.name)
 
 
-class Player(object):
+class Player:
     def __init__(self, server, name, score):
         self.server = server
         self.name = name

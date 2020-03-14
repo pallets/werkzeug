@@ -13,7 +13,7 @@ from .utils import STATIC_PATH
 from .utils import url_map
 
 
-class Couchy(object):
+class Couchy:
     def __init__(self, db_uri):
         local.application = self
 

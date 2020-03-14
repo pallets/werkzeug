@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     cupoftee.db
     ~~~~~~~~~~~
@@ -15,7 +14,7 @@ from pickle import loads
 from threading import Lock
 
 
-class Database(object):
+class Database:
     def __init__(self, filename):
         self.filename = filename
         self._fs = dbm.open(filename, "cf")

@@ -18,7 +18,7 @@ class URL(Document):
 
     @classmethod
     def load(cls, id):
-        return super(URL, cls).load(URL.db, id)
+        return super().load(URL.db, id)
 
     @classmethod
     def query(cls, code):
@@ -39,7 +39,7 @@ class URL(Document):
                     break
             self._data = URL.db.get(docid)
         else:
-            super(URL, self).store(URL.db)
+            super().store(URL.db)
         return self
 
     @property

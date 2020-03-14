@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     cupoftee.application
     ~~~~~~~~~~~~~~~~~~~~
@@ -87,7 +86,7 @@ class Page(_with_metaclass(PageMeta, object)):
         return Response(self.render_template(), mimetype="text/html")
 
 
-class Cup(object):
+class Cup:
     def __init__(self, database, interval=120):
         self.jinja_env = Environment(loader=PackageLoader("cupoftee"), autoescape=True)
         self.interval = interval
