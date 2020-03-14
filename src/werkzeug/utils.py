@@ -14,17 +14,12 @@ import os
 import pkgutil
 import re
 import sys
+from html.entities import name2codepoint
 
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
 from ._internal import _reraise
-
-try:
-    from html.entities import name2codepoint
-except ImportError:
-    from htmlentitydefs import name2codepoint
-
 
 _format_re = re.compile(r"\$(?:(%s)|\{(%s)\})" % (("[a-zA-Z_][a-zA-Z0-9_]*",) * 2))
 _entity_re = re.compile(r"&([^;]+);")

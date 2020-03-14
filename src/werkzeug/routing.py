@@ -471,7 +471,7 @@ class RuleTemplateFactory(RuleFactory):
                 new_defaults = subdomain = None
                 if rule.defaults:
                     new_defaults = {}
-                    for key, value in iter(rule.defaults.items()):
+                    for key, value in rule.defaults.items():
                         if isinstance(value, str):
                             value = format_string(value, self.context)
                         new_defaults[key] = value
@@ -880,7 +880,7 @@ class Rule(RuleFactory):
                     del groups["__suffix__"]
 
                 result = {}
-                for name, value in iter(groups.items()):
+                for name, value in groups.items():
                     try:
                         value = self._converters[name].to_python(value)
                     except ValidationError:
@@ -977,9 +977,8 @@ class Rule(RuleFactory):
             ast.Return(ast.Tuple([_join(dom_parts), _join(url_parts)], ast.Load()))
         )
 
-        # str is necessary for python2
         pargs = [
-            str(elem)
+            elem
             for is_dynamic, elem in dom_ops + url_ops
             if is_dynamic and elem not in defaults
         ]
@@ -987,22 +986,16 @@ class Rule(RuleFactory):
 
         func_ast = _prefix_names("def _(): pass")
         func_ast.name = f"<builder:{self.rule!r}>"
-        if hasattr(ast, "arg"):  # py3
-            func_ast.args.args.append(ast.arg(".self", None))
-            for arg in pargs + kargs:
-                func_ast.args.args.append(ast.arg(arg, None))
-            func_ast.args.kwarg = ast.arg(".kwargs", None)
-        else:
-            func_ast.args.args.append(ast.Name(".self", ast.Param()))
-            for arg in pargs + kargs:
-                func_ast.args.args.append(ast.Name(arg, ast.Param()))
-            func_ast.args.kwarg = ".kwargs"
+        func_ast.args.args.append(ast.arg(".self", None))
+        for arg in pargs + kargs:
+            func_ast.args.args.append(ast.arg(arg, None))
+        func_ast.args.kwarg = ast.arg(".kwargs", None)
         for _ in kargs:
             func_ast.args.defaults.append(ast.Str(""))
         func_ast.body = body
 
         # use `ast.parse` instead of `ast.Module` for better portability
-        # python3.8 changes the signature of `ast.Module`
+        # Python 3.8 changes the signature of `ast.Module`
         module = ast.parse("")
         module.body = [func_ast]
 
@@ -1070,7 +1063,7 @@ class Rule(RuleFactory):
         # in case defaults are given we ensure that either the value was
         # skipped or the value is the same as the default value.
         if defaults:
-            for key, value in iter(defaults.items()):
+            for key, value in defaults.items():
                 if key in values and value != values[key]:
                     return False
 
@@ -1646,7 +1639,7 @@ class Map:
                 return
 
             self._rules.sort(key=lambda x: x.match_compare_key())
-            for rules in iter(self._rules_by_endpoint.values()):
+            for rules in self._rules_by_endpoint.values():
                 rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False
 
@@ -2153,9 +2146,9 @@ class MapAdapter:
         if values:
             if isinstance(values, MultiDict):
                 temp_values = {}
-                # iter(dict.items(values)) is like `values.lists()`
+                # dict.items(values) is like `values.lists()`
                 # without the call or `list()` coercion overhead.
-                for key, value in iter(dict.items(values)):
+                for key, value in dict.items(values):
                     if not value:
                         continue
                     if len(value) == 1:  # flatten single item lists
@@ -2166,7 +2159,7 @@ class MapAdapter:
                 values = temp_values
             else:
                 # drop None
-                values = dict(i for i in iter(values.items()) if i[1] is not None)
+                values = dict(i for i in values.items() if i[1] is not None)
         else:
             values = {}
 

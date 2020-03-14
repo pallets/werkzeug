@@ -433,8 +433,7 @@ class BaseResponse:
         httponly=False,
         samesite=None,
     ):
-        """Sets a cookie. The parameters are the same as in the cookie `Morsel`
-        object in the Python standard library but it accepts unicode data, too.
+        """Sets a cookie.
 
         A warning is raised if the size of the cookie header exceeds
         :attr:`max_cookie_size`, but the header will still be set.

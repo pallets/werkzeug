@@ -20,27 +20,18 @@ import re
 import warnings
 from datetime import datetime
 from datetime import timedelta
+from email.utils import parsedate_tz
 from hashlib import md5
 from time import gmtime
 from time import time
+from urllib.parse import unquote_to_bytes as _unquote
+from urllib.request import parse_http_list as _parse_list_header
 
 from ._internal import _cookie_parse_impl
 from ._internal import _cookie_quote
 from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
-
-try:
-    from email.utils import parsedate_tz
-except ImportError:
-    from email.Utils import parsedate_tz
-
-try:
-    from urllib.request import parse_http_list as _parse_list_header
-    from urllib.parse import unquote_to_bytes as _unquote
-except ImportError:
-    from urllib2 import parse_http_list as _parse_list_header
-    from urllib2 import unquote as _unquote
 
 _cookie_charset = "latin1"
 _basic_auth_charset = "utf-8"
@@ -267,7 +258,7 @@ def dump_options_header(header, options):
     segments = []
     if header is not None:
         segments.append(header)
-    for key, value in iter(options.items()):
+    for key, value in options.items():
         if value is None:
             segments.append(key)
         else:
@@ -292,7 +283,7 @@ def dump_header(iterable, allow_token=True):
     """
     if isinstance(iterable, dict):
         items = []
-        for key, value in iter(iterable.items()):
+        for key, value in iterable.items():
             if value is None:
                 items.append(key)
             else:
@@ -316,7 +307,7 @@ def dump_csp_header(header):
        Support for Content Security Policy headers was added.
 
     """
-    return "; ".join(f"{key} {value}" for key, value in iter(header.items()))
+    return "; ".join(f"{key} {value}" for key, value in header.items())
 
 
 def parse_list_header(value):
@@ -945,10 +936,7 @@ def dump_age(age=None):
     if age is None:
         return
     if isinstance(age, timedelta):
-        # do the equivalent of Python 2.7's timedelta.total_seconds(),
-        # but disregarding fractional seconds
-        age = age.seconds + (age.days * 24 * 3600)
-
+        age = age.total_seconds()
     age = int(age)
     if age < 0:
         raise ValueError("age cannot be negative")
@@ -1108,8 +1096,8 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
     elif header is None:
         header = ""
 
-    # On Python 3, PEP 3333 sends headers through the environ as latin1
-    # decoded strings. Encode strings back to bytes for parsing.
+    # PEP 3333 sends headers through the environ as latin1 decoded
+    # strings. Encode strings back to bytes for parsing.
     if isinstance(header, str):
         header = header.encode("latin1", "replace")
 
@@ -1141,16 +1129,11 @@ def dump_cookie(
     max_size=4093,
     samesite=None,
 ):
-    """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
-    The parameters are the same as in the cookie Morsel object in the
-    Python standard library but it accepts unicode data, too.
+    """Create a Set-Cookie header without the ``Set-Cookie`` prefix.
 
-    On Python 3 the return value of this function will be a unicode
-    string, on Python 2 it will be a native string.  In both cases the
-    return value is usually restricted to ascii as the vast majority of
-    values are properly escaped, but that is no guarantee.  If a unicode
-    string is returned it's tunneled through latin1 as required by
-    PEP 3333.
+    The return value is usually restricted to ascii as the vast majority
+    of values are properly escaped, but that is no guarantee. It's
+    tunneled through latin1 as required by :pep:`3333`.
 
     The return value is not ASCII safe if the key contains unicode
     characters.  This is technically against the specification but
@@ -1239,9 +1222,8 @@ def dump_cookie(
         tmp += b"=" + v
         buf.append(bytes(tmp))
 
-    # The return value will be an incorrectly encoded latin1 header on
-    # Python 3 for consistency with the headers object and a bytestring
-    # on Python 2 because that's how the API makes more sense.
+    # The return value will be an incorrectly encoded latin1 header for
+    # consistency with the headers object.
     rv = b"; ".join(buf)
     rv = rv.decode("latin1")
 

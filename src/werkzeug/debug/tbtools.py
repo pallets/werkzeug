@@ -285,10 +285,8 @@ class Traceback:
                 "files": {"traceback.txt": {"content": self.plaintext}},
             }
         ).encode("utf-8")
-        try:
-            from urllib2 import urlopen
-        except ImportError:
-            from urllib.request import urlopen
+        from urllib.request import urlopen
+
         rv = urlopen("https://api.github.com/gists", data=data)
         resp = json.loads(rv.read().decode("utf-8"))
         rv.close()
@@ -351,9 +349,9 @@ class Traceback:
 
 
 class Group:
-    """A group of frames for an exception in a traceback. On Python 3,
-    if the exception has a ``__cause__`` or ``__context__``, there are
-    multiple exception groups.
+    """A group of frames for an exception in a traceback. If the
+    exception has a ``__cause__`` or ``__context__``, there are multiple
+    exception groups.
     """
 
     def __init__(self, exc_type, exc_value, tb):
@@ -362,11 +360,11 @@ class Group:
         self.info = None
         if exc_value.__cause__ is not None:
             self.info = (
-                "The above exception was the direct cause of the" " following exception"
+                "The above exception was the direct cause of the following exception"
             )
         elif exc_value.__context__ is not None:
             self.info = (
-                "During handling of the above exception, another" " exception occurred"
+                "During handling of the above exception, another exception occurred"
             )
 
         self.frames = []

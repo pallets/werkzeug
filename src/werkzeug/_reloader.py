@@ -13,8 +13,7 @@ def _iter_module_files():
     loaded files from modules, all files in folders of already loaded modules
     as well as all files reachable through a package.
     """
-    # The list call is necessary on Python 3 in case the module
-    # dictionary modifies during iteration.
+    # The list is in case sys.modules is modified during iteration.
     for module in list(sys.modules.values()):
         if module is None:
             continue
@@ -130,7 +129,7 @@ def _find_common_roots(paths):
     rv = set()
 
     def _walk(node, path):
-        for prefix, child in iter(node.items()):
+        for prefix, child in node.items():
             _walk(child, path + (prefix,))
         if not node:
             rv.add("/".join(path))

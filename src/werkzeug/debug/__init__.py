@@ -94,24 +94,20 @@ def get_machine_id():
 
         # On Windows, use winreg to get the machine guid.
         try:
-            import winreg as wr
+            import winreg
         except ImportError:
+            pass
+        else:
             try:
-                import _winreg as wr
-            except ImportError:
-                wr = None
-
-        if wr is not None:
-            try:
-                with wr.OpenKey(
-                    wr.HKEY_LOCAL_MACHINE,
+                with winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
                     "SOFTWARE\\Microsoft\\Cryptography",
                     0,
-                    wr.KEY_READ | wr.KEY_WOW64_64KEY,
+                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
                 ) as rk:
-                    guid, guid_type = wr.QueryValueEx(rk, "MachineGuid")
+                    guid, guid_type = winreg.QueryValueEx(rk, "MachineGuid")
 
-                    if guid_type == wr.REG_SZ:
+                    if guid_type == winreg.REG_SZ:
                         return guid.encode("utf-8")
 
                     return guid

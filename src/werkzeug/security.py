@@ -159,9 +159,6 @@ def _create_mac(key, msg, method):
     def hashfunc(d=b""):
         return hashlib.new(method, d)
 
-    # Python 2.7 used ``hasattr(digestmod, '__call__')``
-    # to detect if hashfunc is callable
-    hashfunc.__call__ = hashfunc
     return hmac.HMAC(key, msg, hashfunc)
 
 

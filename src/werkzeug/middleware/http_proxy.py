@@ -7,16 +7,13 @@ Basic HTTP Proxy
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from http import client
+
 from ..datastructures import EnvironHeaders
 from ..http import is_hop_by_hop_header
 from ..urls import url_parse
 from ..urls import url_quote
 from ..wsgi import get_input_stream
-
-try:
-    from http import client
-except ImportError:
-    import httplib as client
 
 
 class ProxyMiddleware:

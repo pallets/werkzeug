@@ -105,7 +105,7 @@ def test_url_decoding():
     strict_eq(x["bar"], "23")
     strict_eq(x["uni"], "Hänsel")
 
-    x = urls.url_decode(b"%C3%9Ch=H%C3%A4nsel", decode_keys=True)
+    x = urls.url_decode(b"%C3%9Ch=H%C3%A4nsel")
     strict_eq(x["Üh"], "Hänsel")
 
 

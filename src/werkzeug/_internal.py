@@ -49,8 +49,6 @@ _cookie_re = re.compile(
     flags=re.VERBOSE,
 )
 
-_WIN = sys.platform.startswith("win")
-
 
 class _Missing:
     def __repr__(self):

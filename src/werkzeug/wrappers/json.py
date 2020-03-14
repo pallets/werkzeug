@@ -2,7 +2,6 @@ import datetime
 import uuid
 
 from ..exceptions import BadRequest
-from ..utils import detect_utf_encoding
 
 try:
     import simplejson as _json
@@ -33,11 +32,6 @@ class _JSONModule:
 
     @staticmethod
     def loads(s, **kw):
-        if isinstance(s, bytes):
-            # Needed for Python < 3.6
-            encoding = detect_utf_encoding(s)
-            s = s.decode(encoding)
-
         return _json.loads(s, **kw)
 
 

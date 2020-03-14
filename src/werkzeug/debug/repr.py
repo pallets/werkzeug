@@ -176,7 +176,7 @@ class DebugReprGenerator:
             return _add_subclass_info("{...}", d, dict)
         buf = ["{"]
         have_extended_section = False
-        for idx, (key, value) in enumerate(iter(d.items())):
+        for idx, (key, value) in enumerate(d.items()):
             if idx:
                 buf.append(", ")
             if idx == limit - 1:

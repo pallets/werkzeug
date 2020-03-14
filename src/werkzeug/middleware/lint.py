@@ -12,16 +12,12 @@ common HTTP errors such as non-empty responses for 304 status codes.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from urllib.parse import urlparse
 from warnings import warn
 
 from ..datastructures import Headers
 from ..http import is_entity_header
 from ..wsgi import FileWrapper
-
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
 
 
 class WSGIWarning(Warning):

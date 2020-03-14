@@ -9,14 +9,10 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import dbm
 from pickle import dumps
 from pickle import loads
 from threading import Lock
-
-try:
-    import dbm
-except ImportError:
-    import anydbm as dbm
 
 
 class Database(object):

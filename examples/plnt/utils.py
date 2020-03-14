@@ -50,10 +50,7 @@ _par_re = re.compile(r"\n{2,}")
 _entity_re = re.compile(r"&([^;]+);")
 _striptags_re = re.compile(r"(<!--.*-->|<[^>]*>)")
 
-try:
-    from html.entities import name2codepoint
-except ImportError:
-    from htmlentitydefs import name2codepoint
+from html.entities import name2codepoint
 
 html_entities = name2codepoint.copy()
 html_entities["apos"] = 39

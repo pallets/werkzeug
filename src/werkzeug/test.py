@@ -10,11 +10,13 @@
 import mimetypes
 import sys
 from collections import defaultdict
+from http.cookiejar import CookieJar
 from io import BytesIO
 from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
+from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
 from ._internal import _make_literal_wrapper
@@ -40,16 +42,6 @@ from .utils import get_content_type
 from .wrappers import BaseRequest
 from .wsgi import ClosingIterator
 from .wsgi import get_current_url
-
-try:
-    from urllib.request import Request as U2Request
-except ImportError:
-    from urllib2 import Request as U2Request
-
-try:
-    from http.cookiejar import CookieJar
-except ImportError:
-    from cookielib import CookieJar
 
 
 def stream_encode_multipart(
@@ -90,7 +82,7 @@ def stream_encode_multipart(
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
-    for key, values in iter(values.lists()):
+    for key, values in values.lists():
         for value in values:
             write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
             reader = getattr(value, "read", None)
@@ -197,7 +189,7 @@ class _TestCookieJar(CookieJar):
         cookie jar.
         """
         self.extract_cookies(
-            _TestCookieResponse(headers), U2Request(get_current_url(environ))
+            _TestCookieResponse(headers), _UrllibRequest(get_current_url(environ))
         )
 
 
@@ -208,11 +200,11 @@ def _iter_data(data):
     :class:`EnvironBuilder`.
     """
     if isinstance(data, MultiDict):
-        for key, values in iter(data.lists()):
+        for key, values in data.lists():
             for value in values:
                 yield key, value
     else:
-        for key, values in iter(data.items()):
+        for key, values in data.items():
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -647,7 +639,7 @@ class EnvironBuilder:
         if self.closed:
             return
         try:
-            files = iter(self.files.values())
+            files = self.files.values()
         except AttributeError:
             files = ()
         for f in files:

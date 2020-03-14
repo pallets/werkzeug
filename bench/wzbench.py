@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
     wzbench
     ~~~~~~~
@@ -11,26 +10,13 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from __future__ import division
-from __future__ import print_function
-
 import gc
 import os
 import subprocess
 import sys
+from io import StringIO
 from timeit import default_timer as timer
 from types import FunctionType
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-PY2 = sys.version_info[0] == 2
-
-if not PY2:
-    xrange = range
-
 
 # create a new module where we later store all the werkzeug attributes.
 wz = type(sys)("werkzeug_nonlazy")
@@ -132,10 +118,10 @@ def bench(func):
 
     # figure out how many times we have to run the function to
     # get reliable timings.
-    for i in xrange(3, 10):
+    for i in range(3, 10):
         rounds = 1 << i
         t = timer()
-        for _ in xrange(rounds):
+        for _ in range(rounds):
             func()
         if timer() - t >= 0.2:
             break
@@ -147,13 +133,13 @@ def bench(func):
         gc.disable()
         try:
             t = timer()
-            for _ in xrange(rounds):
+            for _ in range(rounds):
                 func()
             return (timer() - t) / rounds * 1000
         finally:
             gc.enable()
 
-    delta = median(_run() for x in xrange(TEST_RUNS))
+    delta = median(_run() for x in range(TEST_RUNS))
     sys.stdout.write("%.4f\n" % delta)
     sys.stdout.flush()
 
@@ -292,7 +278,7 @@ def run(path, no_header=False):
     return result
 
 
-URL_DECODED_DATA = dict((str(x), str(x)) for x in xrange(100))
+URL_DECODED_DATA = dict((str(x), str(x)) for x in range(100))
 URL_ENCODED_DATA = "&".join("%s=%s" % x for x in URL_DECODED_DATA.items())
 MULTIPART_ENCODED_DATA = "\n".join(
     (
@@ -379,7 +365,7 @@ def time_cached_property():
             return 42
 
     f = Foo()
-    for _ in xrange(60):
+    for _ in range(60):
         f.x
 
 
@@ -401,7 +387,7 @@ def before_request_form_access():
 
 
 def time_request_form_access():
-    for _ in xrange(30):
+    for _ in range(30):
         REQUEST.path
         REQUEST.script_root
         REQUEST.args["foo"]
@@ -457,9 +443,9 @@ def before_local_manager_dispatch():
 
 
 def time_local_manager_dispatch():
-    for _ in xrange(10):
+    for _ in range(10):
         LOCAL.x = 42
-    for _ in xrange(10):
+    for _ in range(10):
         LOCAL.x
 
 

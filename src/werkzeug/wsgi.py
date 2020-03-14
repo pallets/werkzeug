@@ -229,14 +229,13 @@ def get_input_stream(environ, safe_fallback=True):
 
 
 def get_query_string(environ):
-    """Returns the `QUERY_STRING` from the WSGI environment.  This also takes
-    care about the WSGI decoding dance on Python 3 environments as a
-    native string.  The string returned will be restricted to ASCII
-    characters.
+    """Returns the ``QUERY_STRING`` from the WSGI environment. This also
+    takes care of the WSGI decoding dance. The string returned will be
+    restricted to ASCII characters.
+
+    :param environ: WSGI environment to get the query string from.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environment object to get the query string from.
     """
     qs = environ.get("QUERY_STRING", "").encode("latin1")
     # QUERY_STRING really should be ascii safe but some browsers
@@ -246,34 +245,30 @@ def get_query_string(environ):
 
 
 def get_path_info(environ, charset="utf-8", errors="replace"):
-    """Returns the `PATH_INFO` from the WSGI environment and properly
-    decodes it.  This also takes care about the WSGI decoding dance
-    on Python 3 environments.  if the `charset` is set to `None` a
-    bytestring is returned.
+    """Return the ``PATH_INFO`` from the WSGI environment and decode it
+    unless ``charset`` is ``None``.
+
+    :param environ: WSGI environment to get the path from.
+    :param charset: The charset for the path info, or ``None`` if no
+        decoding should be performed.
+    :param errors: The decoding error handling.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environment object to get the path from.
-    :param charset: the charset for the path info, or `None` if no
-                    decoding should be performed.
-    :param errors: the decoding error handling.
     """
     path = environ.get("PATH_INFO", "").encode("latin1")
     return _to_str(path, charset, errors, allow_none_charset=True)
 
 
 def get_script_name(environ, charset="utf-8", errors="replace"):
-    """Returns the `SCRIPT_NAME` from the WSGI environment and properly
-    decodes it.  This also takes care about the WSGI decoding dance
-    on Python 3 environments.  if the `charset` is set to `None` a
-    bytestring is returned.
+    """Return the ``SCRIPT_NAME`` from the WSGI environment and decode
+    it unless `charset` is set to ``None``.
+
+    :param environ: WSGI environment to get the path from.
+    :param charset: The charset for the path, or ``None`` if no decoding
+        should be performed.
+    :param errors: The decoding error handling.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environment object to get the path from.
-    :param charset: the charset for the path, or `None` if no
-                    decoding should be performed.
-    :param errors: the decoding error handling.
     """
     path = environ.get("SCRIPT_NAME", "").encode("latin1")
     return _to_str(path, charset, errors, allow_none_charset=True)

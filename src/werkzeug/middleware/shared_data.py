@@ -144,7 +144,7 @@ class SharedDataMiddleware:
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
     def get_package_loader(self, package, package_path):
-        loadtime = datetime.utcnow()
+        load_time = datetime.utcnow()
         provider = pkgutil.get_loader(package)
 
         if hasattr(provider, "get_resource_reader"):
@@ -166,7 +166,7 @@ class SharedDataMiddleware:
                 if isinstance(resource, BytesIO):
                     return (
                         basename,
-                        lambda: (resource, loadtime, len(resource.getvalue())),
+                        lambda: (resource, load_time, len(resource.getvalue())),
                     )
 
                 return (
@@ -179,7 +179,7 @@ class SharedDataMiddleware:
                 )
 
         else:
-            # Python 2
+            # Python 3.6
             package_filename = provider.get_filename(package)
             is_filesystem = os.path.exists(package_filename)
             root = os.path.join(os.path.dirname(package_filename), package_path)
@@ -202,7 +202,7 @@ class SharedDataMiddleware:
                 except OSError:
                     return None, None
 
-                return basename, lambda: (BytesIO(data), loadtime, len(data))
+                return basename, lambda: (BytesIO(data), load_time, len(data))
 
         return loader
 

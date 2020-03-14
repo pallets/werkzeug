@@ -14,6 +14,7 @@ import subprocess
 import sys
 import textwrap
 import time
+from http import client as http_client
 
 import pytest
 import requests.exceptions
@@ -21,6 +22,7 @@ import requests.exceptions
 from werkzeug import __version__ as version
 from werkzeug import _reloader
 from werkzeug import serving
+
 
 try:
     import cryptography
@@ -31,11 +33,6 @@ try:
     import watchdog
 except ImportError:
     watchdog = None
-
-try:
-    from http import client as httplib
-except ImportError:
-    import httplib
 
 
 require_cryptography = pytest.mark.skipif(
@@ -68,7 +65,7 @@ def test_absolute_requests(dev_server):
         """
     )
 
-    conn = httplib.HTTPConnection(server.addr)
+    conn = http_client.HTTPConnection(server.addr)
     conn.request(
         "GET",
         "http://surelynotexisting.example.com:1337/index.htm#ignorethis",
@@ -422,7 +419,7 @@ def test_chunked_encoding(dev_server):
 
     testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
     conn.putheader("Accept", "text/plain")
@@ -462,7 +459,7 @@ def test_chunked_encoding_with_content_length(dev_server):
 
     testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
     conn.putheader("Accept", "text/plain")
@@ -496,7 +493,7 @@ def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
         """
     )
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("GET", "/")
     conn.putheader("Accept", "text/plain")
@@ -532,7 +529,7 @@ def test_multiline_header_folding_for_http_1_1(dev_server):
         """
     )
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("GET", "/")
     conn.putheader("Accept", "text/plain")

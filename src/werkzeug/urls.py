@@ -1,22 +1,12 @@
-"""
-    werkzeug.urls
-    ~~~~~~~~~~~~~
+"""Functions for working with URLs.
 
-    ``werkzeug.urls`` used to provide several wrapper functions for Python 2
-    urlparse, whose main purpose were to work around the behavior of the Py2
-    stdlib and its lack of unicode support. While this was already a somewhat
-    inconvenient situation, it got even more complicated because Python 3's
-    ``urllib.parse`` actually does handle unicode properly. In other words,
-    this module would wrap two libraries with completely different behavior. So
-    now this module contains a 2-and-3-compatible backport of Python 3's
-    ``urllib.parse``, which is mostly API-compatible.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+Contains implementations of functions from :mod:`urllib.parse` that
+handle bytes and strings.
 """
 import codecs
 import os
 import re
+import warnings
 from collections import namedtuple
 
 from ._internal import _decode_idna
@@ -42,7 +32,6 @@ _always_safe = frozenset(
 _hexdigits = "0123456789ABCDEFabcdef"
 _hextobyte = {(a + b).encode(): int(a + b, 16) for a in _hexdigits for b in _hexdigits}
 _bytetohex = [("%%%02X" % char).encode("ascii") for char in range(256)]
-
 
 _URLTuple = namedtuple("_URLTuple", ["scheme", "netloc", "path", "query", "fragment"])
 
@@ -401,7 +390,7 @@ def _unquote_to_bytes(string, unsafe=""):
     return bytes(result)
 
 
-def _url_encode_impl(obj, charset, encode_keys, sort, key):
+def _url_encode_impl(obj, charset, sort, key):
     from .datastructures import iter_multi_items
 
     iterable = iter_multi_items(obj)
@@ -598,8 +587,7 @@ def url_unquote_plus(s, charset="utf-8", errors="replace"):
     whitespace.
 
     Per default encoding errors are ignored.  If you want a different behavior
-    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
-    :exc:`HTTPUnicodeError` is raised.
+    you can set `errors` to ``'replace'`` or ``'strict'``.
 
     :param s: The string to unquote.
     :param charset: the charset of the query string.  If set to `None`
@@ -758,50 +746,40 @@ def iri_to_uri(iri, charset="utf-8", errors="strict", safe_conversion=False):
 def url_decode(
     s,
     charset="utf-8",
-    decode_keys=False,
+    decode_keys=None,
     include_empty=True,
     errors="replace",
     separator="&",
     cls=None,
 ):
-    """
-    Parse a querystring and return it as :class:`MultiDict`.  There is a
-    difference in key decoding on different Python versions.  On Python 3
-    keys will always be fully decoded whereas on Python 2, keys will
-    remain bytestrings if they fit into ASCII.  On 2.x keys can be forced
-    to be unicode by setting `decode_keys` to `True`.
+    """Parse a query string and return it as a :class:`MultiDict`.
 
-    If the charset is set to `None` no unicode decoding will happen and
-    raw bytes will be returned.
+    :param s: The query string to parse.
+    :param charset: Decode bytes to string with this charset. If not
+        given, bytes are returned as-is.
+    :param include_empty: Include keys with empty values in the dict.
+    :param errors: Error handling behavior when decoding bytes.
+    :param separator: Separator character between pairs.
+    :param cls: Container to hold result instead of :class:`MultiDict`.
 
-    Per default a missing value for a key will default to an empty key.  If
-    you don't want that behavior you can set `include_empty` to `False`.
-
-    Per default encoding errors are ignored.  If you want a different behavior
-    you can set `errors` to ``'replace'`` or ``'strict'``.  In strict mode a
-    `HTTPUnicodeError` is raised.
+    .. versionchanged:: 2.0
+        The ``decode_keys`` argument is deprecated and will be removed
+        in 2.1.
 
     .. versionchanged:: 0.5
-       In previous versions ";" and "&" could be used for url decoding.
-       This changed in 0.5 where only "&" is supported.  If you want to
-       use ";" instead a different `separator` can be provided.
+        In previous versions ";" and "&" could be used for url decoding.
+        Now only "&" is supported. If you want to use ";", a different
+        ``separator`` can be provided.
 
-       The `cls` parameter was added.
-
-    :param s: a string with the query string to decode.
-    :param charset: the charset of the query string.  If set to `None`
-                    no unicode decoding will take place.
-    :param decode_keys: Used on Python 2.x to control whether keys should
-                        be forced to be unicode objects.  If set to `True`
-                        then keys will be unicode in all cases. Otherwise,
-                        they remain `str` if they fit into ASCII.
-    :param include_empty: Set to `False` if you don't want empty values to
-                          appear in the dict.
-    :param errors: the decoding error behavior.
-    :param separator: the pair separator to be used, defaults to ``&``
-    :param cls: an optional dict class to use.  If this is not specified
-                       or `None` the default :class:`MultiDict` is used.
+    .. versionchanged:: 0.5
+        The ``cls`` parameter was added.
     """
+    if decode_keys is not None:
+        warnings.warn(
+            "'decode_keys' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if cls is None:
         from .datastructures import MultiDict
 
@@ -810,17 +788,13 @@ def url_decode(
         separator = separator.decode(charset or "ascii")
     elif isinstance(s, bytes) and not isinstance(separator, bytes):
         separator = separator.encode(charset or "ascii")
-    return cls(
-        _url_decode_impl(
-            s.split(separator), charset, decode_keys, include_empty, errors
-        )
-    )
+    return cls(_url_decode_impl(s.split(separator), charset, include_empty, errors))
 
 
 def url_decode_stream(
     stream,
     charset="utf-8",
-    decode_keys=False,
+    decode_keys=None,
     include_empty=True,
     errors="replace",
     separator="&",
@@ -839,10 +813,6 @@ def url_decode_stream(
     :param stream: a stream with the encoded querystring
     :param charset: the charset of the query string.  If set to `None`
                     no unicode decoding will take place.
-    :param decode_keys: Used on Python 2.x to control whether keys should
-                        be forced to be unicode objects.  If set to `True`,
-                        keys will be unicode in all cases. Otherwise, they
-                        remain `str` if they fit into ASCII.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
     :param errors: the decoding error behavior.
@@ -854,11 +824,24 @@ def url_decode_stream(
     :param return_iterator: if set to `True` the `cls` argument is ignored
                             and an iterator over all decoded pairs is
                             returned
+
+    .. versionchanged:: 2.0
+        The ``decode_keys`` argument is deprecated and will be removed
+        in 2.1.
+
+    .. versionadded:: 0.8
     """
     from .wsgi import make_chunk_iter
 
+    if decode_keys is not None:
+        warnings.warn(
+            "'decode_keys' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     pair_iter = make_chunk_iter(stream, separator, limit)
-    decoder = _url_decode_impl(pair_iter, charset, decode_keys, include_empty, errors)
+    decoder = _url_decode_impl(pair_iter, charset, include_empty, errors)
 
     if return_iterator:
         return decoder
@@ -871,7 +854,7 @@ def url_decode_stream(
     return cls(decoder)
 
 
-def _url_decode_impl(pair_iter, charset, decode_keys, include_empty, errors):
+def _url_decode_impl(pair_iter, charset, include_empty, errors):
     for pair in pair_iter:
         if not pair:
             continue
@@ -889,37 +872,41 @@ def _url_decode_impl(pair_iter, charset, decode_keys, include_empty, errors):
 
 
 def url_encode(
-    obj, charset="utf-8", encode_keys=False, sort=False, key=None, separator=b"&"
+    obj, charset="utf-8", encode_keys=None, sort=False, key=None, separator=b"&"
 ):
     """URL encode a dict/`MultiDict`.  If a value is `None` it will not appear
     in the result string.  Per default only values are encoded into the target
-    charset strings.  If `encode_keys` is set to ``True`` unicode keys are
-    supported too.
-
-    If `sort` is set to `True` the items are sorted by `key` or the default
-    sorting algorithm.
-
-    .. versionadded:: 0.5
-        `sort`, `key`, and `separator` were added.
+    charset strings.
 
     :param obj: the object to encode into a query string.
     :param charset: the charset of the query string.
-    :param encode_keys: set to `True` if you have unicode keys. (Ignored on
-                        Python 3.x)
     :param sort: set to `True` if you want parameters to be sorted by `key`.
     :param separator: the separator to be used for the pairs.
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
+
+    .. versionchanged:: 2.0
+        The ``encode_keys`` argument is deprecated and will be removed
+        in 2.1.
+
+    .. versionchanged:: 0.5
+        Added the ``sort``, ``key``, and ``separator`` parameters.
     """
+    if encode_keys is not None:
+        warnings.warn(
+            "'encode_keys' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     separator = _to_native(separator, "ascii")
-    return separator.join(_url_encode_impl(obj, charset, encode_keys, sort, key))
+    return separator.join(_url_encode_impl(obj, charset, sort, key))
 
 
 def url_encode_stream(
     obj,
     stream=None,
     charset="utf-8",
-    encode_keys=False,
+    encode_keys=None,
     sort=False,
     key=None,
     separator=b"&",
@@ -928,22 +915,30 @@ def url_encode_stream(
     object.  If the stream is `None` a generator over all encoded
     pairs is returned.
 
-    .. versionadded:: 0.8
-
     :param obj: the object to encode into a query string.
     :param stream: a stream to write the encoded object into or `None` if
                    an iterator over the encoded pairs should be returned.  In
                    that case the separator argument is ignored.
     :param charset: the charset of the query string.
-    :param encode_keys: set to `True` if you have unicode keys. (Ignored on
-                        Python 3.x)
     :param sort: set to `True` if you want parameters to be sorted by `key`.
     :param separator: the separator to be used for the pairs.
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
+
+    .. versionchanged:: 2.0
+        The ``encode_keys`` argument is deprecated and will be removed
+        in 2.1.
+
+    .. versionadded:: 0.8
     """
+    if encode_keys is not None:
+        warnings.warn(
+            "'encode_keys' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     separator = _to_native(separator, "ascii")
-    gen = _url_encode_impl(obj, charset, encode_keys, sort, key)
+    gen = _url_encode_impl(obj, charset, sort, key)
     if stream is None:
         return gen
     for idx, chunk in enumerate(gen):

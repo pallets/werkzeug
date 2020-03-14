@@ -21,6 +21,7 @@ except ImportError:
     try:
         from thread import get_ident
     except ImportError:
+        # Python < 3.7
         from _thread import get_ident
 
 
