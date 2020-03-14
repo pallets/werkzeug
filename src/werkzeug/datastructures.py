@@ -2765,7 +2765,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, self.to_header())
+        return f"<{self.__class__.__name__} {self.to_header()!r}>"
 
     def auth_property(name, doc=None):  # noqa: B902
         """A static helper function for subclasses to add extra authentication

@@ -415,7 +415,7 @@ class MultiPartParser:
             self.fail("Missing boundary")
         if not is_valid_multipart_boundary(boundary):
             self.fail("Invalid boundary: %s" % boundary)
-        if len(boundary) > self.buffer_size:  # pragma: no cover
+        if len(boundary) > self.buffer_size:
             # this should never happen because we check for a minimum size
             # of 1024 and boundaries may not be longer than 200.  The only
             # situation when this happens is for non debug builds where
@@ -515,7 +515,7 @@ class MultiPartParser:
                     cutoff = -1
                 yield _cont, line[:cutoff]
 
-            else:  # pragma: no cover
+            else:
                 raise ValueError("unexpected end of part")
 
             # if we have a leftover in the buffer that is not a newline

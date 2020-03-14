@@ -312,7 +312,7 @@ class TestHTTPUtility:
         )
         # Issue #404
         assert http.parse_options_header(
-            'multipart/form-data; name="foo bar"; ' 'filename="bar foo"'
+            'multipart/form-data; name="foo bar"; filename="bar foo"'
         ) == ("multipart/form-data", {"name": "foo bar", "filename": "bar foo"})
         # Examples from RFC
         assert http.parse_options_header("audio/*; q=0.2, audio/basic") == (

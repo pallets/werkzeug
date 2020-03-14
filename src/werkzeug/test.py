@@ -52,7 +52,7 @@ def stream_encode_multipart(
     in a file descriptor.
     """
     if boundary is None:
-        boundary = "---------------WerkzeugFormPart_{}{}".format(time(), random())
+        boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
     _closure = [BytesIO(), 0, False]
 
     if use_tempfile:

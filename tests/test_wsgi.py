@@ -327,12 +327,12 @@ def test_multi_part_line_breaks_bytes():
         b"ABCDEFGHIJK",
     ]
 
-    data = b"abc\r\nThis line is broken by the buffer length." b"\r\nFoo bar baz"
+    data = b"abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz"
     test_stream = io.BytesIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=24))
     assert lines == [
         b"abc\r\n",
-        b"This line is broken by the buffer " b"length.\r\n",
+        b"This line is broken by the buffer length.\r\n",
         b"Foo bar baz",
     ]
 

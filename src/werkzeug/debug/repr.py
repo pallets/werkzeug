@@ -80,7 +80,7 @@ class _Helper:
         if len(paragraphs) > 1:
             title = paragraphs[0]
             text = "\n\n".join(paragraphs[1:])
-        else:  # pragma: no cover
+        else:
             title = "Help"
             text = paragraphs[0]
         sys.stdout._write(HELP_HTML % {"title": title, "text": text})
@@ -131,17 +131,14 @@ class DebugReprGenerator:
     set_repr = _sequence_repr_maker("set([", "])", set)
     frozenset_repr = _sequence_repr_maker("frozenset([", "])", frozenset)
     deque_repr = _sequence_repr_maker(
-        '<span class="module">collections.' "</span>deque([", "])", deque
+        '<span class="module">collections.</span>deque([', "])", deque
     )
     del _sequence_repr_maker
 
     def regex_repr(self, obj):
         pattern = repr(obj.pattern)
         pattern = codecs.decode(pattern, "unicode-escape", "ignore")
-        if pattern[:1] == "u":
-            pattern = "ur" + pattern[1:]
-        else:
-            pattern = "r" + pattern
+        pattern = "r" + pattern
         return 're.compile(<span class="string regex">%s</span>)' % pattern
 
     def string_repr(self, obj, limit=70):
@@ -165,7 +162,7 @@ class DebugReprGenerator:
         out = "".join(buf)
 
         # if the repr looks like a standard string, add subclass info if needed
-        if r[0] in "'\"" or (r[0] in "ub" and r[1] in "'\""):
+        if r[0] in "'\"" or (r[0] == "b" and r[1] in "'\""):
             return _add_subclass_info(out, obj, (bytes, str))
 
         # otherwise, assume the repr distinguishes the subclass already
@@ -222,9 +219,9 @@ class DebugReprGenerator:
     def fallback_repr(self):
         try:
             info = "".join(format_exception_only(*sys.exc_info()[:2]))
-        except Exception:  # pragma: no cover
+        except Exception:
             info = "?"
-        return '<span class="brokenrepr">&lt;broken repr (%s)&gt;' "</span>" % escape(
+        return '<span class="brokenrepr">&lt;broken repr (%s)&gt;</span>' % escape(
             info.strip()
         )
 
