@@ -131,7 +131,7 @@ def _hash_internal(method, salt, password):
         if len(args) not in (1, 2):
             raise ValueError("Invalid number of arguments for PBKDF2")
         method = args.pop(0)
-        iterations = args and int(args[0] or 0) or DEFAULT_PBKDF2_ITERATIONS
+        iterations = int(args[0] or 0) if args else DEFAULT_PBKDF2_ITERATIONS
         is_pbkdf2 = True
         actual_method = "pbkdf2:%s:%d" % (method, iterations)
     else:

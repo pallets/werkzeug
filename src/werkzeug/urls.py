@@ -1087,7 +1087,7 @@ class Href:
                 raise TypeError("keyword arguments and query-dicts can't be combined")
             query, path = path[-1], path[:-1]
         elif query:
-            query = {k.endswith("_") and k[:-1] or k: v for k, v in query.items()}
+            query = {k[:-1] if k.endswith("_") else k: v for k, v in query.items()}
         path = "/".join(
             [
                 _to_str(url_quote(x, self.charset), "ascii")

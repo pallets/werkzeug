@@ -1120,7 +1120,7 @@ class Rule(RuleFactory):
         return "<{} {}{} -> {}>".format(
             self.__class__.__name__,
             repr(("".join(tmp)).lstrip("|")),
-            self.methods is not None and " (%s)" % ", ".join(self.methods) or "",
+            " (%s)" % ", ".join(self.methods) if self.methods is not None else "",
             self.endpoint,
         )
 
@@ -1839,7 +1839,7 @@ class MapAdapter:
         require_redirect = False
 
         path = "{}|{}".format(
-            self.map.host_matching and self.server_name or self.subdomain,
+            self.server_name if self.map.host_matching else self.subdomain,
             path_info and "/%s" % path_info.lstrip("/"),
         )
 

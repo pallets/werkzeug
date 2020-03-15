@@ -2351,7 +2351,11 @@ class ETags(Container, Iterable):
     """
 
     def __init__(self, strong_etags=None, weak_etags=None, star_tag=False):
-        self._strong = frozenset(not star_tag and strong_etags or ())
+        if not star_tag and strong_etags:
+            self._strong = frozenset(strong_etags)
+        else:
+            self._strong = frozenset()
+
         self._weak = frozenset(weak_etags or ())
         self.star_tag = star_tag
 

@@ -79,7 +79,7 @@ class Application:
             req.matched_url = (endpoint, args)
             if endpoint == "#language_select":
                 lng = req.accept_languages.best
-                lng = lng and lng.split("-")[0].lower() or "en"
+                lng = lng.split("-")[0].lower() if lng else "en"
                 index_url = urls.build("index", {"lang_code": lng})
                 resp = Response("Moved to %s" % index_url, status=302)
                 resp.headers["Location"] = index_url

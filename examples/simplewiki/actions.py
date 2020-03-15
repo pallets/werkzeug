@@ -175,7 +175,7 @@ def on_revert(request, page_name):
                 page = old_revision.page
                 if request.method == "POST":
                     change_note = request.form.get("change_note", "")
-                    change_note = "revert" + (change_note and ": " + change_note or "")
+                    change_note = "revert" + (": " + change_note if change_note else "")
                     session.add(Revision(page, old_revision.text, change_note))
                     session.commit()
                     return redirect(href(page_name))
