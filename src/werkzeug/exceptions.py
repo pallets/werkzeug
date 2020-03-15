@@ -246,7 +246,12 @@ class Unauthorized(HTTPException):
     :param description: Override the default message used for the body
         of the response.
     :param www-authenticate: A single value, or list of values, for the
-        WWW-Authenticate header.
+        WWW-Authenticate header(s).
+
+    .. versionchanged:: 2.0.0
+        Serialize multiple ``www_authenticate`` items into multiple
+        ``WWW-Authenticate`` headers, rather than joining them
+        into a single value, for better interoperability.
 
     .. versionchanged:: 0.15.3
         If the ``www_authenticate`` argument is not set, the
@@ -284,9 +289,7 @@ class Unauthorized(HTTPException):
     def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.www_authenticate:
-            headers.append(
-                ("WWW-Authenticate", ", ".join([str(x) for x in self.www_authenticate]))
-            )
+            headers.extend(("WWW-Authenticate", str(x)) for x in self.www_authenticate)
         return headers
 
 
