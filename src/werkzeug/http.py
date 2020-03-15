@@ -189,7 +189,7 @@ HTTP_STATUS_CODES = {
 
 
 def wsgi_to_bytes(data):
-    """coerce wsgi unicode represented bytes to real ones"""
+    """If data is not bytes, encode it as latin1 for WSGI."""
     if isinstance(data, bytes):
         return data
     return data.encode("latin1")  # XXX: utf8 fallback?
@@ -1156,7 +1156,7 @@ def dump_cookie(
     :param httponly: disallow JavaScript to access the cookie.  This is an
                      extension to the cookie standard and probably not
                      supported by all browsers.
-    :param charset: the encoding for unicode values.
+    :param charset: the encoding for string values.
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
     :param max_size: Warn if the final header value exceeds this size. The

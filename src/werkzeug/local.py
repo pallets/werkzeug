@@ -326,12 +326,6 @@ class LocalProxy:
         except RuntimeError:
             return False
 
-    def __unicode__(self):
-        try:
-            return unicode(self._get_current_object())  # noqa
-        except RuntimeError:
-            return repr(self)
-
     def __dir__(self):
         try:
             return dir(self._get_current_object())

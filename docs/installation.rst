@@ -7,8 +7,8 @@ Installation
 Python Version
 --------------
 
-We recommend using the latest version of Python 3. Werkzeug supports
-Python 3.5 and newer and Python 2.7.
+We recommend using the latest version of Python. Werkzeug supports
+Python 3.6 and newer.
 
 
 Dependencies
@@ -27,13 +27,14 @@ detect and use them if you install them.
   Python's ``json`` module. It is preferred for JSON operations if it is
   installed.
 * `Click`_ provides request log highlighting when using the
-  development server.
+  development server. On Windows, you should also install `colorama`_.
 * `Watchdog`_ provides a faster, more efficient reloader for the
   development server.
 
 .. _SimpleJSON: https://simplejson.readthedocs.io/en/latest/
 .. _Click: https://pypi.org/project/click/
 .. _Watchdog: https://pypi.org/project/watchdog/
+.. _colorama: https://pypi.org/project/colorama/
 
 
 Virtual environments
@@ -52,11 +53,8 @@ Virtual environments are independent groups of Python libraries, one for
 each project. Packages installed for one project will not affect other
 projects or the operating system's packages.
 
-Python 3 comes bundled with the :mod:`venv` module to create virtual
-environments. If you're using a modern version of Python, you can
-continue on to the next section.
-
-If you're using Python 2, see :ref:`install-install-virtualenv` first.
+Python comes bundled with the :mod:`venv` module to create virtual
+environments.
 
 .. _install-create-env:
 
@@ -76,19 +74,6 @@ On Windows:
 .. code-block:: bat
 
     py -3 -m venv venv
-
-If you needed to install virtualenv because you are on an older version
-of Python, use the following command instead:
-
-.. code-block:: sh
-
-    virtualenv venv
-
-On Windows:
-
-.. code-block:: bat
-
-    \Python27\Scripts\virtualenv.exe venv
 
 
 Activate the environment
@@ -119,55 +104,3 @@ Werkzeug:
 .. code-block:: sh
 
     pip install Werkzeug
-
-
-Living on the edge
-~~~~~~~~~~~~~~~~~~
-
-If you want to work with the latest Werkzeug code before it's released,
-install or update the code from the master branch:
-
-.. code-block:: sh
-
-    pip install -U https://github.com/pallets/werkzeug/archive/master.tar.gz
-
-
-.. _install-install-virtualenv:
-
-Install virtualenv
-------------------
-
-If you are using Python 2, the venv module is not available. Instead,
-install `virtualenv`_.
-
-On Linux, virtualenv is provided by your package manager:
-
-.. code-block:: sh
-
-    # Debian, Ubuntu
-    sudo apt-get install python-virtualenv
-
-    # CentOS, Fedora
-    sudo yum install python-virtualenv
-
-    # Arch
-    sudo pacman -S python-virtualenv
-
-If you are on Mac OS X or Windows, download `get-pip.py`_, then:
-
-.. code-block:: sh
-
-    sudo python2 Downloads/get-pip.py
-    sudo python2 -m pip install virtualenv
-
-On Windows, as an administrator:
-
-.. code-block:: bat
-
-    \Python27\python.exe Downloads\get-pip.py
-    \Python27\python.exe -m pip install virtualenv
-
-Now you can continue to :ref:`install-create-env`.
-
-.. _virtualenv: https://virtualenv.pypa.io/en/latest/
-.. _get-pip.py: https://bootstrap.pypa.io/get-pip.py

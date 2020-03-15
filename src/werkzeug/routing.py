@@ -151,7 +151,7 @@ _converter_args_re = re.compile(
         [urUR]?(?P<stringval>"[^"]*?"|'[^']*')
     )\s*,
     """,
-    re.VERBOSE | re.UNICODE,
+    re.VERBOSE,
 )
 
 
@@ -841,7 +841,7 @@ class Rule(RuleFactory):
             tail = ""
 
         regex = "^{}{}$".format("".join(regex_parts), tail)
-        self._regex = re.compile(regex, re.UNICODE)
+        self._regex = re.compile(regex)
 
     def match(self, path, method=None):
         """Check if the rule matches a given path. Path is a string in the
@@ -1124,7 +1124,7 @@ class Rule(RuleFactory):
                 tmp.append(data)
         return "<{} {}{} -> {}>".format(
             self.__class__.__name__,
-            repr(("".join(tmp)).lstrip("|")).lstrip("u"),
+            repr(("".join(tmp)).lstrip("|")),
             self.methods is not None and " (%s)" % ", ".join(self.methods) or "",
             self.endpoint,
         )
@@ -2093,10 +2093,10 @@ class MapAdapter:
         'http://example.com/downloads/42'
 
         Because URLs cannot contain non ASCII data you will always get
-        bytestrings back.  Non ASCII characters are urlencoded with the
+        bytes back.  Non ASCII characters are urlencoded with the
         charset defined on the map instance.
 
-        Additional values are converted to unicode and appended to the URL as
+        Additional values are converted to strings and appended to the URL as
         URL querystring parameters:
 
         >>> urls.build("index", {'q': 'My Searchstring'})

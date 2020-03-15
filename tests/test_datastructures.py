@@ -1158,17 +1158,15 @@ class TestFileStorage:
         file_storage = self.storage_class(content_type="APPLICATION/JSON")
         assert file_storage.mimetype == "application/json"
 
-    def test_bytes_proper_sentinel(self):
-        # ensure we iterate over new lines and don't enter into an infinite loop
-        import io
+    @pytest.mark.parametrize("data", [io.StringIO("one\ntwo"), io.BytesIO(b"one\ntwo")])
+    def test_bytes_proper_sentinel(self, data):
+        # iterate over new lines and don't enter an infinite loop
+        storage = self.storage_class(data)
+        idx = -1
 
-        unicode_storage = self.storage_class(io.StringIO("one\ntwo"))
-        for idx, _line in enumerate(unicode_storage):
+        for idx, _line in enumerate(storage):
             assert idx < 2
-        assert idx == 1
-        binary_storage = self.storage_class(io.BytesIO(b"one\ntwo"))
-        for idx, _line in enumerate(binary_storage):
-            assert idx < 2
+
         assert idx == 1
 
     @pytest.mark.parametrize("stream", (tempfile.SpooledTemporaryFile, io.BytesIO))

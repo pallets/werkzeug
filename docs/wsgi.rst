@@ -69,21 +69,17 @@ Convenience Helpers
 Bytes, Strings, and Encodings
 -----------------------------
 
-The WSGI environment on Python 3 works slightly different than it does
-on Python 2. Werkzeug hides the differences from you if you use the
-higher level APIs.
+The values in HTTP requests come in as bytes representing (or encoded
+to) ASCII. The WSGI specification (:pep:`3333`) decided to always use
+the ``str`` type to represent values. To accomplish this, the raw bytes
+are decoded using the ISO-8859-1 charset to produce a string.
 
-The WSGI specification (`PEP 3333`_) decided to always use the native
-``str`` type. On Python 2 this means the raw bytes are passed through
-and can be decoded directly. On Python 3, however, the raw bytes are
-always decoded using the ISO-8859-1 charset to produce a Unicode string.
-
-Python 3 Unicode strings in the WSGI environment are restricted to
-ISO-8859-1 code points. If a string read from the environment might
-contain characters outside that charset, it must first be decoded to
-bytes as ISO-8859-1, then encoded to a Unicode string using the proper
-charset (typically UTF-8). The reverse is done when writing to the
-environ. This is known as the "WSGI encoding dance".
+Strings in the WSGI environment are restricted to ISO-8859-1 code
+points. If a string read from the environment might contain characters
+outside that charset, it must first be decoded to bytes as ISO-8859-1,
+then encoded to a string using the proper charset (typically UTF-8). The
+reverse is done when writing to the environ. This is known as the "WSGI
+encoding dance".
 
 Werkzeug provides functions to deal with this automatically so that you
 don't need to be aware of the inner workings. Use the functions on this
@@ -95,8 +91,6 @@ environment unless they take care of the proper encoding or decoding
 step. All high level interfaces in Werkzeug will apply the encoding and
 decoding as necessary.
 
-.. _PEP 3333: https://www.python.org/dev/peps/pep-3333/#unicode-issues
-
 
 Raw Request URI and Path Encoding
 ---------------------------------
@@ -107,7 +101,7 @@ show up from the WSGI server to Werkzeug as ``/hello/world``. This loses
 the information that the slash was a raw character as opposed to a path
 separator.
 
-The WSGI specification (`PEP 3333`_) does not provide a way to get the
+The WSGI specification (:pep:`3333`) does not provide a way to get the
 original value, so it is impossible to route some types of data in the
 path. The most compatible way to work around this is to send problematic
 data in the query string instead of the path.

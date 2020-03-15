@@ -519,9 +519,7 @@ class TestHTTPUtility:
         assert cookies["fö"] == "fö"
 
     def test_cookie_unicode_parsing(self):
-        # This is actually a correct test.  This is what is being submitted
-        # by firefox if you set an unicode cookie and we get the cookie sent
-        # in on Python 3 under PEP 3333.
+        # This is submitted by Firefox if you set a Unicode cookie.
         cookies = http.parse_cookie("fÃ¶=fÃ¶")
         assert cookies["fö"] == "fö"
 

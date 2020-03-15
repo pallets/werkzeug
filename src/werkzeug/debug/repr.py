@@ -42,7 +42,7 @@ OBJECT_DUMP_HTML = """\
 
 
 def debug_repr(obj):
-    """Creates a debug repr of an object as HTML unicode string."""
+    """Creates a debug repr of an object as HTML string."""
     return DebugReprGenerator().repr(obj)
 
 

@@ -921,9 +921,6 @@ class Headers:
         >>> d.get('Content-Length', type=int)
         42
 
-        If a headers object is bound you must not add unicode strings
-        because no encoding takes place.
-
         .. versionadded:: 0.9
            Added support for `as_bytes`.
 
@@ -934,7 +931,7 @@ class Headers:
         :param type: A callable that is used to cast the value in the
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the default value is returned.
-        :param as_bytes: return bytes instead of unicode strings.
+        :param as_bytes: return bytes instead of strings.
         """
         try:
             rv = self.__getitem__(key, _get_mode=True)
@@ -963,7 +960,7 @@ class Headers:
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the value will be removed from the list.
         :return: a :class:`list` of all the values for the key.
-        :param as_bytes: return bytes instead of unicode strings.
+        :param as_bytes: return bytes instead of strings.
         """
         ikey = key.lower()
         result = []
@@ -1111,7 +1108,7 @@ class Headers:
 
     def _validate_value(self, value):
         if not isinstance(value, str):
-            raise TypeError("Value should be unicode.")
+            raise TypeError("Value should be a string.")
         if "\n" in value or "\r" in value:
             raise ValueError(
                 "Detected newline in header value.  This is "
@@ -2896,9 +2893,8 @@ class FileStorage:
             if filename and filename[0] == s("<") and filename[-1] == s(">"):
                 filename = None
 
-            # We want to make sure the filename is always unicode.
-            # This might not be if the name attribute is bytes due to the
-            # file being opened from the bytes API.
+            # Make sure the filename is not bytes. This might happen if
+            # the file was opened from the bytes API.
             if isinstance(filename, bytes):
                 filename = filename.decode(get_filesystem_encoding(), "replace")
 

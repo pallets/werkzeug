@@ -351,9 +351,8 @@ def test_console_closure_variables(monkeypatch):
     c = console.Console()
     c.eval("y = 5")
     c.eval("x = lambda: y")
-    # strip() is only needed for Python 2 compat
-    ret = c.eval("x()").strip()
-    assert ret == ">>> x()\n5"
+    ret = c.eval("x()")
+    assert ret == ">>> x()\n5\n"
 
 
 @pytest.mark.timeout(2)

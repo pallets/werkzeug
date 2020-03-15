@@ -52,7 +52,7 @@ def test_wrapper_internals():
     resp.response = iter(["Test"])
     assert repr(resp) == "<Response streamed [200 OK]>"
 
-    # unicode data does not set content length
+    # string data does not set content length
     response = Response(["Hällo Wörld"])
     headers = response.get_wsgi_headers(create_environ())
     assert "Content-Length" not in headers

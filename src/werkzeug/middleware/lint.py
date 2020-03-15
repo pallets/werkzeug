@@ -201,7 +201,7 @@ class LintMiddleware:
     server and wrapped application. Some of the issues it check are:
 
     -   invalid status codes
-    -   non-bytestrings sent to the WSGI server
+    -   non-bytes sent to the WSGI server
     -   strings returned from the WSGI application
     -   non-empty conditional responses
     -   unquoted etags

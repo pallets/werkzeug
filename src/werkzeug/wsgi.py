@@ -278,7 +278,7 @@ def pop_path_info(environ, charset="utf-8", errors="replace"):
     """Removes and returns the next segment of `PATH_INFO`, pushing it onto
     `SCRIPT_NAME`.  Returns `None` if there is nothing left on `PATH_INFO`.
 
-    If the `charset` is set to `None` a bytestring is returned.
+    If the `charset` is set to `None` bytes are returned.
 
     If there are empty segments (``'/foo//bar``) these are ignored but
     properly pushed to the `SCRIPT_NAME`:
@@ -337,7 +337,7 @@ def peek_path_info(environ, charset="utf-8", errors="replace"):
     >>> peek_path_info(env)
     'a'
 
-    If the `charset` is set to `None` a bytestring is returned.
+    If the `charset` is set to `None` bytes are returned.
 
     .. versionadded:: 0.5
 
@@ -362,18 +362,17 @@ def extract_path_info(
     collapse_http_schemes=True,
 ):
     """Extracts the path info from the given URL (or WSGI environment) and
-    path.  The path info returned is a unicode string, not a bytestring
-    suitable for a WSGI environment.  The URLs might also be IRIs.
+    path. The path info returned is a string. The URLs might also be IRIs.
 
     If the path info could not be determined, `None` is returned.
 
     Some examples:
 
     >>> extract_path_info('http://example.com/app', '/app/hello')
-    u'/hello'
+    '/hello'
     >>> extract_path_info('http://example.com/app',
     ...                   'https://example.com/app/hello')
-    u'/hello'
+    '/hello'
     >>> extract_path_info('http://example.com/app',
     ...                   'https://example.com/app/hello',
     ...                   collapse_http_schemes=False) is None
@@ -386,8 +385,7 @@ def extract_path_info(
                                application.
     :param path_or_url: an absolute path from the server root, a
                         relative path (in which case it's the path info)
-                        or a full URL.  Also accepts IRIs and unicode
-                        parameters.
+                        or a full URL.
     :param charset: the charset for byte data in URLs
     :param errors: the error handling on decode
     :param collapse_http_schemes: if set to `False` the algorithm does

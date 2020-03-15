@@ -11,7 +11,7 @@ def test_http_proxy(dev_server):
 
         @Request.application
         def app(request):
-            return Response(u'%s|%s|%s' % (
+            return Response('%s|%s|%s' % (
                 request.headers.get('X-Special'),
                 request.environ['HTTP_HOST'],
                 request.full_path,

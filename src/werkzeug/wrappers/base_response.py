@@ -95,8 +95,8 @@ class BaseResponse:
     known interface.
 
     Per default the response object will assume all the text data is `utf-8`
-    encoded.  Please refer to :doc:`the unicode chapter </unicode>` for more
-    details about customizing the behavior.
+    encoded.  Please refer to :doc:`/unicode` for more details about
+    customizing the behavior.
 
     Response can be any kind of iterable or string.  If it's a string it's
     considered being an iterable with one item which is the string passed.
@@ -325,7 +325,7 @@ class BaseResponse:
         :attr:`implicit_sequence_conversion` to `False`.
 
         If `as_text` is set to `True` the return value will be a decoded
-        unicode string.
+        string.
 
         .. versionadded:: 0.9
         """
@@ -336,13 +336,13 @@ class BaseResponse:
         return rv
 
     def set_data(self, value):
-        """Sets a new string as response.  The value set must be either a
-        unicode or bytestring.  If a unicode string is set it's encoded
-        automatically to the charset of the response (utf-8 by default).
+        """Sets a new string as response.  The value must be a string or
+        bytes. If a string is set it's encoded to the charset of the
+        response (utf-8 by default).
 
         .. versionadded:: 0.9
         """
-        # if an unicode string is set, it's encoded directly so that we
+        # if a string is set, it's encoded directly so that we
         # can set the content length
         if isinstance(value, str):
             value = value.encode(self.charset)
@@ -616,8 +616,8 @@ class BaseResponse:
 
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve
-        # flattening the iterator or encoding of unicode strings in
-        # the response.  We however should not do that if we have a 304
+        # flattening the iterator or encoding of strings in the
+        # response. We however should not do that if we have a 304
         # response.
         if (
             self.automatically_set_content_length
@@ -629,8 +629,8 @@ class BaseResponse:
             try:
                 content_length = sum(len(_to_bytes(x, "ascii")) for x in self.response)
             except UnicodeError:
-                # aha, something non-bytestringy in there, too bad, we
-                # can't safely figure out the length of the response.
+                # Something other than bytes, can't safely figure out
+                # the length of the response.
                 pass
             else:
                 headers["Content-Length"] = str(content_length)

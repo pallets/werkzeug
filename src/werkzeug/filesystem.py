@@ -41,7 +41,7 @@ _warned_about_filesystem_encoding = False
 def get_filesystem_encoding():
     """Returns the filesystem encoding that should be used. Note that this is
     different from the Python understanding of the filesystem encoding which
-    might be deeply flawed. Do not use this value against Python's unicode APIs
+    might be deeply flawed. Do not use this value against Python's string APIs
     because it might be different. See :ref:`filesystem-encoding` for the exact
     behavior.
 

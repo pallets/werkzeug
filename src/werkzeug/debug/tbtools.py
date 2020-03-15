@@ -540,7 +540,7 @@ class Frame:
 
     @cached_property
     def sourcelines(self):
-        """The sourcecode of the file as list of unicode strings."""
+        """The sourcecode of the file as list of strings."""
         # get sourcecode from loader or file
         source = None
         if self.loader is not None:
@@ -563,7 +563,7 @@ class Frame:
             except OSError:
                 return []
 
-        # already unicode?  return right away
+        # already str?  return right away
         if isinstance(source, str):
             return source.splitlines()
 

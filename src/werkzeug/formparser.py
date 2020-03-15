@@ -426,7 +426,7 @@ class MultiPartParser:
         """Generate parts of
         ``('begin_form', (headers, name))``
         ``('begin_file', (headers, name, filename))``
-        ``('cont', bytestring)``
+        ``('cont', bytes)``
         ``('end', None)``
 
         Always obeys the grammar

@@ -8,9 +8,9 @@ Werkzeug is a comprehensive `WSGI`_ web application library. It began as
 a simple collection of various utilities for WSGI applications and has
 become one of the most advanced WSGI utility libraries.
 
-Werkzeug is Unicode aware and doesn't enforce any dependencies. It is up
-to the developer to choose a template engine, database adapter, and even
-how to handle requests.
+Werkzeug doesn't enforce any dependencies. It is up to the developer to
+choose a template engine, database adapter, and even how to handle
+requests.
 
 .. _WSGI: https://wsgi.readthedocs.io/en/latest/
 

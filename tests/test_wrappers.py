@@ -148,10 +148,6 @@ def test_query_string_is_bytes():
 def test_request_repr():
     req = wrappers.Request.from_values("/foobar")
     assert "<Request 'http://localhost/foobar' [GET]>" == repr(req)
-    # test with non-ascii characters
-    req = wrappers.Request.from_values("/привет")
-    assert "<Request 'http://localhost/привет' [GET]>" == repr(req)
-    # test with unicode type for python 2
     req = wrappers.Request.from_values("/привет")
     assert "<Request 'http://localhost/привет' [GET]>" == repr(req)
 
@@ -292,7 +288,6 @@ def test_response_access_control():
 
 
 def test_base_response():
-    # unicode
     response = wrappers.BaseResponse("öäü")
     strict_eq(response.get_data(), "öäü".encode())
 

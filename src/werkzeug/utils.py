@@ -159,7 +159,7 @@ class HTMLBuilder:
 
     >>> html.p(class_='foo', *[html.a('foo', href='foo.html'), ' ',
     ...                        html.a('bar', href='bar.html')])
-    u'<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
+    '<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
 
     This class works around some browser limitations and can not be used for
     arbitrary SGML/XML generation.  For that purpose lxml and similar
@@ -168,7 +168,7 @@ class HTMLBuilder:
     Calling the builder escapes the string passed:
 
     >>> html.p(html("<foo>"))
-    u'<p>&lt;foo&gt;</p>'
+    '<p>&lt;foo&gt;</p>'
     """
 
     _entity_re = re.compile(r"&([^;]+);")
@@ -387,7 +387,7 @@ def secure_filename(filename):
     'My_cool_movie.mov'
     >>> secure_filename("../../../etc/passwd")
     'etc_passwd'
-    >>> secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+    >>> secure_filename('i contain cool \xfcml\xe4uts.txt')
     'i_contain_cool_umlauts.txt'
 
     The function might return an empty filename.  It's your responsibility
@@ -544,10 +544,7 @@ def import_string(import_name, silent=False):
                    `None` is returned instead.
     :return: imported object
     """
-    # force the import name to automatically convert to strings
-    # __import__ is not able to handle unicode strings in the fromlist
-    # if the module is a package
-    import_name = str(import_name).replace(":", ".")
+    import_name = import_name.replace(":", ".")
     try:
         try:
             __import__(import_name)

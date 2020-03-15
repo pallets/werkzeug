@@ -140,7 +140,7 @@ Usage example:
 >>> stream.read()
 ''
 >>> form['test']
-u'Hello World!'
+'Hello World!'
 >>> not files
 True
 

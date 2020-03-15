@@ -12,7 +12,7 @@ WSGI
 ----
 
 WSGI a specification for Python web applications Werkzeug follows.  It was
-specified in the :pep:`333` and is widely supported.  Unlike previous solutions
+specified in the :pep:`3333` and is widely supported.  Unlike previous solutions
 it guarantees that web applications, servers and utilities can work together.
 
 Response Object

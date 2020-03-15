@@ -122,7 +122,7 @@ def stream_encode_multipart(
 
 def encode_multipart(values, boundary=None, charset="utf-8"):
     """Like `stream_encode_multipart` but returns a tuple in the form
-    (``boundary``, ``data``) where data is a bytestring.
+    (``boundary``, ``data``) where data is bytes.
     """
     stream, length, boundary = stream_encode_multipart(
         values, use_tempfile=False, boundary=boundary, charset=charset
@@ -276,7 +276,7 @@ class EnvironBuilder:
         Serialized with the function assigned to :attr:`json_dumps`.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
-    :param charset: the charset used to encode unicode data.
+    :param charset: the charset used to encode string data.
 
     .. versionadded:: 0.15
         The ``json`` param and :meth:`json_dumps` method.

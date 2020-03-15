@@ -49,8 +49,8 @@ class BaseRequest:
     request object will use immutable objects everywhere possible.
 
     Per default the request object will assume all the text data is `utf-8`
-    encoded.  Please refer to :doc:`the unicode chapter </unicode>` for more
-    details about customizing the behavior.
+    encoded.  Please refer to :doc:`/unicode` for more details about
+    customizing the behavior.
 
     Per default the request object will be added to the WSGI
     environment as `werkzeug.request` to support the debugging system.
@@ -426,7 +426,7 @@ class BaseRequest:
 
     def get_data(self, cache=True, as_text=False, parse_form_data=False):
         """This reads the buffered incoming data from the client into one
-        bytestring.  By default this is cached but that behavior can be
+        bytes object.  By default this is cached but that behavior can be
         changed by setting `cache` to `False`.
 
         Usually it's a bad idea to call this method without checking the
@@ -445,7 +445,7 @@ class BaseRequest:
         to avoid exhausting server memory.
 
         If `as_text` is set to `True` the return value will be a decoded
-        unicode string.
+        string.
 
         .. versionadded:: 0.9
         """
@@ -533,7 +533,7 @@ class BaseRequest:
 
     @cached_property
     def path(self):
-        """Requested path as unicode.  This works a bit like the regular path
+        """Requested path. This works a bit like the regular path
         info in the WSGI environment but will always include a leading slash,
         even if the URL root is accessed.
         """
@@ -544,7 +544,7 @@ class BaseRequest:
 
     @cached_property
     def full_path(self):
-        """Requested path as unicode, including the query string."""
+        """Requested path, including the query string."""
         return self.path + "?" + _to_str(self.query_string, self.url_charset)
 
     @cached_property
@@ -600,7 +600,7 @@ class BaseRequest:
         "",
         read_only=True,
         load_func=lambda x: x.encode("latin1"),
-        doc="The URL parameters as raw bytestring.",
+        doc="The URL parameters as raw bytes.",
     )
     method = environ_property(
         "REQUEST_METHOD",

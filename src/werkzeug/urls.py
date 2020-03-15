@@ -91,7 +91,7 @@ class BaseURL(_URLTuple):
     @property
     def username(self):
         """The username if it was part of the URL, `None` otherwise.
-        This undergoes URL decoding and will always be a unicode string.
+        This undergoes URL decoding and will always be a string.
         """
         rv = self._split_auth()[0]
         if rv is not None:
@@ -107,7 +107,7 @@ class BaseURL(_URLTuple):
     @property
     def password(self):
         """The password if it was part of the URL, `None` otherwise.
-        This undergoes URL decoding and will always be a unicode string.
+        This undergoes URL decoding and will always be a string.
         """
         rv = self._split_auth()[1]
         if rv is not None:
@@ -568,12 +568,12 @@ def url_unparse(components):
 
 def url_unquote(string, charset="utf-8", errors="replace", unsafe=""):
     """URL decode a single string with a given encoding.  If the charset
-    is set to `None` no unicode decoding is performed and raw bytes
-    are returned.
+    is set to `None` no decoding is performed and raw bytes are
+    returned.
 
     :param s: the string to unquote.
     :param charset: the charset of the query string.  If set to `None`
-                    no unicode decoding will take place.
+        no decoding will take place.
     :param errors: the error handling for the charset decoding.
     """
     rv = _unquote_to_bytes(string, unsafe)
@@ -591,7 +591,7 @@ def url_unquote_plus(s, charset="utf-8", errors="replace"):
 
     :param s: The string to unquote.
     :param charset: the charset of the query string.  If set to `None`
-                    no unicode decoding will take place.
+        no decoding will take place.
     :param errors: The error handling for the `charset` decoding.
     """
     if isinstance(s, str):
@@ -607,14 +607,14 @@ def url_fix(s, charset="utf-8"):
     some of the problems in a similar way browsers handle data entered by the
     user:
 
-    >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
+    >>> url_fix('http://de.wikipedia.org/wiki/Elf (Begriffskl\xe4rung)')
     'http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)'
 
     :param s: the string with the URL to fix.
-    :param charset: The target charset for the URL if the url was given as
-                    unicode string.
+    :param charset: The target charset for the URL if the url was given
+        as a string.
     """
-    # First step is to switch to unicode processing and to convert
+    # First step is to switch to text processing and to convert
     # backslashes (which are invalid in URLs anyways) to slashes.  This is
     # consistent with what Chrome does.
     s = _to_str(s, charset, "replace").replace("\\", "/")
@@ -812,7 +812,7 @@ def url_decode_stream(
 
     :param stream: a stream with the encoded querystring
     :param charset: the charset of the query string.  If set to `None`
-                    no unicode decoding will take place.
+        no decoding will take place.
     :param include_empty: Set to `False` if you don't want empty values to
                           appear in the dict.
     :param errors: the decoding error behavior.

@@ -859,7 +859,7 @@ def test_converter_parser():
     args, kwargs = r.parse_converter_args("True, False, None")
     assert args == (True, False, None)
 
-    args, kwargs = r.parse_converter_args('"foo", u"bar"')
+    args, kwargs = r.parse_converter_args('"foo", "bar"')
     assert args == ("foo", "bar")
 
 

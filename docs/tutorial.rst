@@ -270,7 +270,7 @@ endpoint and a dictionary of values in the URL.  For instance the rule for
 to ``http://localhost:5000/foo`` we will get the following values back::
 
     endpoint = 'follow_short_link'
-    values = {'short_id': u'foo'}
+    values = {'short_id': 'foo'}
 
 If it does not match anything, it will raise a
 :exc:`~werkzeug.exceptions.NotFound` exception, which is an
