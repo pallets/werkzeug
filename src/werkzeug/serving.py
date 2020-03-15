@@ -895,8 +895,7 @@ def run_simple(
             s = socket.socket(address_family, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(server_address)
-            if hasattr(s, "set_inheritable"):
-                s.set_inheritable(True)
+            s.set_inheritable(True)
 
             # If we can open the socket by file descriptor, then we can just
             # reuse this one and our socket will survive the restarts.

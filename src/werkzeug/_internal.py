@@ -175,19 +175,13 @@ def _log(type, message, *args, **kwargs):
 
 def _parse_signature(func):
     """Return a signature object for the function."""
-    if hasattr(func, "im_func"):
-        func = func.im_func
-
     # if we have a cached validator for this function, return it
     parse = _signature_cache.get(func)
     if parse is not None:
         return parse
 
     # inspect the function signature and collect all the information
-    if hasattr(inspect, "getfullargspec"):
-        tup = inspect.getfullargspec(func)
-    else:
-        tup = inspect.getargspec(func)
+    tup = inspect.getfullargspec(func)
     positional, vararg_var, kwarg_var, defaults = tup[:4]
     defaults = defaults or ()
     arg_count = len(positional)

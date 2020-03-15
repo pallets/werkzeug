@@ -966,12 +966,7 @@ class Rule(RuleFactory):
         def _join(parts):
             if len(parts) == 1:  # shortcut
                 return parts[0]
-            elif hasattr(ast, "JoinedStr"):  # py36+
-                return ast.JoinedStr(parts)
-            else:
-                call = _prefix_names('"".join()')
-                call.args = [ast.Tuple(parts, ast.Load())]
-                return call
+            return ast.JoinedStr(parts)
 
         body.append(
             ast.Return(ast.Tuple([_join(dom_parts), _join(url_parts)], ast.Load()))
