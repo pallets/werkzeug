@@ -14,7 +14,6 @@ from os.path import join
 
 import pytest
 
-from . import strict_eq
 from werkzeug import formparser
 from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -59,7 +58,7 @@ class TestFormParser:
             method="POST",
         )
         req.max_content_length = 400
-        strict_eq(req.form["foo"], "Hello World")
+        assert req.form["foo"] == "Hello World"
 
         req = Request.from_values(
             input_stream=io.BytesIO(data),
@@ -77,7 +76,7 @@ class TestFormParser:
             method="POST",
         )
         req.max_form_memory_size = 400
-        strict_eq(req.form["foo"], "Hello World")
+        assert req.form["foo"] == "Hello World"
 
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"
@@ -101,7 +100,7 @@ class TestFormParser:
             method="POST",
         )
         req.max_content_length = 400
-        strict_eq(req.form["foo"], "Hello World")
+        assert req.form["foo"] == "Hello World"
 
         req = Request.from_values(
             input_stream=io.BytesIO(data),
@@ -119,7 +118,7 @@ class TestFormParser:
             method="POST",
         )
         req.max_form_memory_size = 400
-        strict_eq(req.form["foo"], "Hello World")
+        assert req.form["foo"] == "Hello World"
 
     def test_missing_multipart_boundary(self):
         data = (
@@ -146,17 +145,17 @@ class TestFormParser:
         env = create_environ("/foo", "http://example.org/", method="PUT")
 
         stream, form, files = formparser.parse_form_data(env)
-        strict_eq(stream.read(), b"")
-        strict_eq(len(form), 0)
-        strict_eq(len(files), 0)
+        assert stream.read() == b""
+        assert len(form) == 0
+        assert len(files) == 0
 
     def test_parse_form_data_get_without_content(self):
         env = create_environ("/foo", "http://example.org/", method="GET")
 
         stream, form, files = formparser.parse_form_data(env)
-        strict_eq(stream.read(), b"")
-        strict_eq(len(form), 0)
-        strict_eq(len(files), 0)
+        assert stream.read() == b""
+        assert len(form) == 0
+        assert len(files) == 0
 
     @pytest.mark.parametrize(
         ("no_spooled", "size"), ((False, 100), (False, 3000), (True, 100), (True, 3000))
@@ -215,10 +214,10 @@ class TestFormParser:
         req = StreamReq.from_values(
             data={"foo": (io.BytesIO(data), "test.txt")}, method="POST"
         )
-        strict_eq("begin_file", req.files["one"][0])
-        strict_eq(("foo", "test.txt"), req.files["one"][1][1:])
-        strict_eq("cont", req.files["two"][0])
-        strict_eq(data, req.files["two"][1])
+        assert "begin_file" == req.files["one"][0]
+        assert ("foo", "test.txt") == req.files["one"][1][1:]
+        assert "cont" == req.files["two"][0]
+        assert data == req.files["two"][1]
 
     def test_parse_bad_content_type(self):
         parser = FormDataParser()
@@ -298,17 +297,17 @@ class TestMultiPart:
                     content_length=len(data),
                 )
                 lines = response.get_data().split(b"\n", 3)
-                strict_eq(lines[0], repr(filename).encode("ascii"))
-                strict_eq(lines[1], repr(field).encode("ascii"))
-                strict_eq(lines[2], repr(content_type).encode("ascii"))
-                strict_eq(lines[3], get_contents(join(folder, fsname)))
+                assert lines[0] == repr(filename).encode("ascii")
+                assert lines[1] == repr(field).encode("ascii")
+                assert lines[2] == repr(content_type).encode("ascii")
+                assert lines[3] == get_contents(join(folder, fsname))
             response = client.post(
                 "/?object=text",
                 data=data,
                 content_type=f'multipart/form-data; boundary="{boundary}"',
                 content_length=len(data),
             )
-            strict_eq(response.get_data(), repr(text).encode("utf-8"))
+            assert response.get_data() == repr(text).encode("utf-8")
 
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer, Response)
@@ -322,10 +321,7 @@ class TestMultiPart:
             content_length=len(data),
         )
         lines = response.get_data().split(b"\n", 3)
-        strict_eq(
-            lines[0],
-            repr("Sellersburg Town Council Meeting 02-22-2010doc.doc").encode("ascii"),
-        )
+        assert lines[0] == b"'Sellersburg Town Council Meeting 02-22-2010doc.doc'"
 
     def test_end_of_file(self):
         # This test looks innocent but it was actually timeing out in
@@ -388,7 +384,7 @@ class TestMultiPart:
             method="POST",
         )
         assert data.files["test"].filename == "test.txt"
-        strict_eq(data.files["test"].read(), b"file contents")
+        assert data.files["test"].read() == b"file contents"
 
     def test_extra_newline(self):
         # this test looks innocent but it was actually timeing out in
@@ -406,7 +402,7 @@ class TestMultiPart:
             method="POST",
         )
         assert not data.files
-        strict_eq(data.form["foo"], "a string")
+        assert data.form["foo"] == "a string"
 
     def test_headers(self):
         data = (
@@ -424,11 +420,11 @@ class TestMultiPart:
             method="POST",
         )
         foo = req.files["foo"]
-        strict_eq(foo.mimetype, "text/plain")
-        strict_eq(foo.mimetype_params, {"charset": "utf-8"})
-        strict_eq(foo.headers["content-type"], foo.content_type)
-        strict_eq(foo.content_type, "text/plain; charset=utf-8")
-        strict_eq(foo.headers["x-custom-header"], "blah")
+        assert foo.mimetype == "text/plain"
+        assert foo.mimetype_params == {"charset": "utf-8"}
+        assert foo.headers["content-type"] == foo.content_type
+        assert foo.content_type == "text/plain; charset=utf-8"
+        assert foo.headers["x-custom-header"] == "blah"
 
     def test_nonstandard_line_endings(self):
         for nl in b"\n", b"\r", b"\r\n":
@@ -451,8 +447,8 @@ class TestMultiPart:
                 content_type="multipart/form-data; boundary=foo",
                 method="POST",
             )
-            strict_eq(req.form["foo"], "this is just bar")
-            strict_eq(req.form["bar"], "blafasel")
+            assert req.form["foo"] == "this is just bar"
+            assert req.form["bar"] == "blafasel"
 
     def test_failures(self):
         def parse_multipart(stream, boundary, content_length):
@@ -476,7 +472,7 @@ class TestMultiPart:
         pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
 
         x = formparser.parse_multipart_headers(["foo: bar\r\n", " x test\r\n"])
-        strict_eq(x["foo"], "bar\n x test")
+        assert x["foo"] == "bar\n x test"
         pytest.raises(
             ValueError, formparser.parse_multipart_headers, ["foo: bar\r\n", " x test"]
         )
@@ -496,7 +492,7 @@ class TestMultiPart:
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
-        strict_eq(req.form["test"], "Sk\xe5ne l\xe4n")
+        assert req.form["test"] == "Sk\xe5ne l\xe4n"
 
     def test_empty_multipart(self):
         environ = {}

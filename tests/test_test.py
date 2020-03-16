@@ -14,7 +14,6 @@ from io import BytesIO
 
 import pytest
 
-from . import strict_eq
 from werkzeug._internal import _to_bytes
 from werkzeug.datastructures import FileStorage
 from werkzeug.datastructures import Headers
@@ -87,7 +86,7 @@ def test_cookie_forging():
     c = Client(cookie_app)
     c.set_cookie("localhost", "foo", "bar")
     appiter, code, headers = c.open()
-    strict_eq(list(appiter), [b"foo=bar"])
+    assert list(appiter) == [b"foo=bar"]
 
 
 def test_set_cookie_app():
@@ -105,28 +104,28 @@ def test_cookiejar_stores_cookie():
 def test_no_initial_cookie():
     c = Client(cookie_app)
     appiter, code, headers = c.open()
-    strict_eq(b"".join(appiter), b"No Cookie")
+    assert b"".join(appiter) == b"No Cookie"
 
 
 def test_resent_cookie():
     c = Client(cookie_app)
     c.open()
     appiter, code, headers = c.open()
-    strict_eq(b"".join(appiter), b"test=test")
+    assert b"".join(appiter) == b"test=test"
 
 
 def test_disable_cookies():
     c = Client(cookie_app, use_cookies=False)
     c.open()
     appiter, code, headers = c.open()
-    strict_eq(b"".join(appiter), b"No Cookie")
+    assert b"".join(appiter) == b"No Cookie"
 
 
 def test_cookie_for_different_path():
     c = Client(cookie_app)
     c.open("/path1")
     appiter, code, headers = c.open("/path2")
-    strict_eq(b"".join(appiter), b"test=test")
+    assert b"".join(appiter) == b"test=test"
 
 
 def test_environ_builder_basics():
@@ -144,12 +143,12 @@ def test_environ_builder_basics():
     req = b.get_request()
     b.close()
 
-    strict_eq(req.url, "http://localhost/")
-    strict_eq(req.method, "POST")
-    strict_eq(req.form["test"], "normal value")
+    assert req.url == "http://localhost/"
+    assert req.method == "POST"
+    assert req.form["test"] == "normal value"
     assert req.files["test"].content_type == "text/plain"
-    strict_eq(req.files["test"].filename, "test.txt")
-    strict_eq(req.files["test"].read(), b"test contents")
+    assert req.files["test"].filename == "test.txt"
+    assert req.files["test"].read() == b"test contents"
 
 
 def test_environ_builder_data():
@@ -201,13 +200,13 @@ def test_environ_builder_headers():
     )
     b.headers["X-Beat-My-Horse"] = "very well sir"
     env = b.get_environ()
-    strict_eq(env["HTTP_USER_AGENT"], "Foo/0.1")
-    strict_eq(env["HTTP_X_BEAT_MY_HORSE"], "very well sir")
-    strict_eq(env["wsgi.version"], (1, 1))
+    assert env["HTTP_USER_AGENT"] == "Foo/0.1"
+    assert env["HTTP_X_BEAT_MY_HORSE"] == "very well sir"
+    assert env["wsgi.version"] == (1, 1)
 
     b.headers["User-Agent"] = "Bar/1.0"
     env = b.get_environ()
-    strict_eq(env["HTTP_USER_AGENT"], "Bar/1.0")
+    assert env["HTTP_USER_AGENT"] == "Bar/1.0"
 
 
 def test_environ_builder_headers_content_type():
@@ -233,35 +232,35 @@ def test_envrion_builder_multiple_headers():
 
 def test_environ_builder_paths():
     b = EnvironBuilder(path="/foo", base_url="http://example.com/")
-    strict_eq(b.base_url, "http://example.com/")
-    strict_eq(b.path, "/foo")
-    strict_eq(b.script_root, "")
-    strict_eq(b.host, "example.com")
+    assert b.base_url == "http://example.com/"
+    assert b.path == "/foo"
+    assert b.script_root == ""
+    assert b.host == "example.com"
 
     b = EnvironBuilder(path="/foo", base_url="http://example.com/bar")
-    strict_eq(b.base_url, "http://example.com/bar/")
-    strict_eq(b.path, "/foo")
-    strict_eq(b.script_root, "/bar")
-    strict_eq(b.host, "example.com")
+    assert b.base_url == "http://example.com/bar/"
+    assert b.path == "/foo"
+    assert b.script_root == "/bar"
+    assert b.host == "example.com"
 
     b.host = "localhost"
-    strict_eq(b.base_url, "http://localhost/bar/")
+    assert b.base_url == "http://localhost/bar/"
     b.base_url = "http://localhost:8080/"
-    strict_eq(b.host, "localhost:8080")
-    strict_eq(b.server_name, "localhost")
-    strict_eq(b.server_port, 8080)
+    assert b.host == "localhost:8080"
+    assert b.server_name == "localhost"
+    assert b.server_port == 8080
 
     b.host = "foo.invalid"
     b.url_scheme = "https"
     b.script_root = "/test"
     env = b.get_environ()
-    strict_eq(env["SERVER_NAME"], "foo.invalid")
-    strict_eq(env["SERVER_PORT"], "443")
-    strict_eq(env["SCRIPT_NAME"], "/test")
-    strict_eq(env["PATH_INFO"], "/foo")
-    strict_eq(env["HTTP_HOST"], "foo.invalid")
-    strict_eq(env["wsgi.url_scheme"], "https")
-    strict_eq(b.base_url, "https://foo.invalid/test/")
+    assert env["SERVER_NAME"] == "foo.invalid"
+    assert env["SERVER_PORT"] == "443"
+    assert env["SCRIPT_NAME"] == "/test"
+    assert env["PATH_INFO"] == "/foo"
+    assert env["HTTP_HOST"] == "foo.invalid"
+    assert env["wsgi.url_scheme"] == "https"
+    assert b.base_url == "https://foo.invalid/test/"
 
 
 def test_environ_builder_content_type():
@@ -282,8 +281,8 @@ def test_environ_builder_content_type():
     builder.files.add_file("blafasel", BytesIO(b"foo"), "test.txt")
     assert builder.content_type == "multipart/form-data"
     req = builder.get_request()
-    strict_eq(req.form["foo"], "bar")
-    strict_eq(req.files["blafasel"].read(), b"foo")
+    assert req.form["foo"] == "bar"
+    assert req.files["blafasel"].read() == b"foo"
 
 
 def test_environ_builder_stream_switch():
@@ -301,7 +300,7 @@ def test_environ_builder_stream_switch():
                 "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )[1]
-        strict_eq(form, d)
+        assert form == d
         stream.close()
 
 
@@ -321,10 +320,10 @@ def test_environ_builder_unicode_file_mix():
                 "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )
-        strict_eq(form["s"], "\N{SNOWMAN}")
-        strict_eq(files["f"].name, "f")
-        strict_eq(files["f"].filename, "snowman.txt")
-        strict_eq(files["f"].read(), br"\N{SNOWMAN}")
+        assert form["s"] == "\N{SNOWMAN}"
+        assert files["f"].name == "f"
+        assert files["f"].filename == "snowman.txt"
+        assert files["f"].read() == br"\N{SNOWMAN}"
         stream.close()
 
 
@@ -348,8 +347,8 @@ def test_create_environ():
     }
     for key, value in iter(expected.items()):
         assert env[key] == value
-    strict_eq(env["wsgi.input"].read(0), b"")
-    strict_eq(create_environ("/foo", "http://example.com/")["SCRIPT_NAME"], "")
+    assert env["wsgi.input"].read(0) == b""
+    assert create_environ("/foo", "http://example.com/")["SCRIPT_NAME"] == ""
 
 
 def test_create_environ_query_string_error():
@@ -384,31 +383,31 @@ def test_file_closing():
             closed.append(self)
 
     create_environ(data={"foo": SpecialInput()})
-    strict_eq(len(closed), 1)
+    assert len(closed) == 1
     builder = EnvironBuilder()
     builder.files.add_file("blah", SpecialInput())
     builder.close()
-    strict_eq(len(closed), 2)
+    assert len(closed) == 2
 
 
 def test_follow_redirect():
     env = create_environ("/", base_url="http://localhost")
     c = Client(redirect_with_get_app)
     appiter, code, headers = c.open(environ_overrides=env, follow_redirects=True)
-    strict_eq(code, "200 OK")
-    strict_eq(b"".join(appiter), b"current url: http://localhost/some/redirect/")
+    assert code == "200 OK"
+    assert b"".join(appiter) == b"current url: http://localhost/some/redirect/"
 
     # Test that the :cls:`Client` is aware of user defined response wrappers
     c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
     resp = c.get("/", follow_redirects=True)
-    strict_eq(resp.status_code, 200)
-    strict_eq(resp.data, b"current url: http://localhost/some/redirect/")
+    assert resp.status_code == 200
+    assert resp.data == b"current url: http://localhost/some/redirect/"
 
     # test with URL other than '/' to make sure redirected URL's are correct
     c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
     resp = c.get("/first/request", follow_redirects=True)
-    strict_eq(resp.status_code, 200)
-    strict_eq(resp.data, b"current url: http://localhost/some/redirect/")
+    assert resp.status_code == 200
+    assert resp.data == b"current url: http://localhost/some/redirect/"
 
 
 def test_follow_local_redirect():
@@ -425,8 +424,8 @@ def test_follow_local_redirect():
 
     c = Client(local_redirect_app, response_wrapper=BaseResponse)
     resp = c.get("/from/location", follow_redirects=True)
-    strict_eq(resp.status_code, 200)
-    strict_eq(resp.data, b"current path: /to/location")
+    assert resp.status_code == 200
+    assert resp.data == b"current path: /to/location"
 
 
 @pytest.mark.parametrize(
@@ -577,27 +576,27 @@ def test_path_info_script_name_unquoting():
 
     c = Client(test_app, response_wrapper=BaseResponse)
     resp = c.get("/foo%40bar")
-    strict_eq(resp.data, b"/foo@bar\n")
+    assert resp.data == b"/foo@bar\n"
     c = Client(test_app, response_wrapper=BaseResponse)
     resp = c.get("/foo%40bar", "http://localhost/bar%40baz")
-    strict_eq(resp.data, b"/foo@bar\n/bar@baz")
+    assert resp.data == b"/foo@bar\n/bar@baz"
 
 
 def test_multi_value_submit():
     c = Client(multi_value_post_app, response_wrapper=BaseResponse)
     data = {"field": ["val1", "val2"]}
     resp = c.post("/", data=data)
-    strict_eq(resp.status_code, 200)
+    assert resp.status_code == 200
     c = Client(multi_value_post_app, response_wrapper=BaseResponse)
     data = MultiDict({"field": ["val1", "val2"]})
     resp = c.post("/", data=data)
-    strict_eq(resp.status_code, 200)
+    assert resp.status_code == 200
 
 
 def test_iri_support():
     b = EnvironBuilder("/föö-bar", base_url="http://☃.net/")
-    strict_eq(b.path, "/f%C3%B6%C3%B6-bar")
-    strict_eq(b.base_url, "http://xn--n3h.net/")
+    assert b.path == "/f%C3%B6%C3%B6-bar"
+    assert b.base_url == "http://xn--n3h.net/"
 
 
 @pytest.mark.parametrize("buffered", (True, False))
@@ -639,9 +638,9 @@ def test_run_wsgi_apps(buffered, iterable):
         if iterable:
             app = iterable_middleware(app)
         app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
-        strict_eq(status, "200 OK")
-        strict_eq(list(headers), [("Content-Type", "text/html")])
-        strict_eq("".join(app_iter), "Hello World!")
+        assert status == "200 OK"
+        assert list(headers) == [("Content-Type", "text/html")]
+        assert "".join(app_iter) == "Hello World!"
 
         if hasattr(app_iter, "close"):
             app_iter.close()
@@ -665,9 +664,9 @@ def test_lazy_start_response_empty_response_app(buffered, iterable):
     if iterable:
         app = iterable_middleware(app)
     app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
-    strict_eq(status, "200 OK")
-    strict_eq(list(headers), [("Content-Type", "text/html")])
-    strict_eq("".join(app_iter), "")
+    assert status == "200 OK"
+    assert list(headers) == [("Content-Type", "text/html")]
+    assert "".join(app_iter) == ""
 
 
 def test_run_wsgi_app_closing_iterator():
@@ -735,9 +734,9 @@ def test_multiple_cookies():
 
     client = Client(test_app, Response)
     resp = client.get("/")
-    strict_eq(resp.data, b"[]")
+    assert resp.data == b"[]"
     resp = client.get("/")
-    strict_eq(resp.data, _to_bytes(repr([("test1", "foo"), ("test2", "bar")]), "ascii"))
+    assert resp.data == _to_bytes(repr([("test1", "foo"), ("test2", "bar")]), "ascii")
 
 
 def test_correct_open_invocation_on_redirect():
@@ -755,15 +754,15 @@ def test_correct_open_invocation_on_redirect():
         return Response(str(request.environ["werkzeug._foo"]))
 
     c = MyClient(test_app, response_wrapper=Response)
-    strict_eq(c.get("/").data, b"1")
-    strict_eq(c.get("/").data, b"2")
-    strict_eq(c.get("/").data, b"3")
+    assert c.get("/").data == b"1"
+    assert c.get("/").data == b"2"
+    assert c.get("/").data == b"3"
 
 
 def test_correct_encoding():
     req = Request.from_values("/\N{SNOWMAN}", "http://example.com/foo")
-    strict_eq(req.script_root, "/foo")
-    strict_eq(req.path, "/\N{SNOWMAN}")
+    assert req.script_root == "/foo"
+    assert req.path == "/\N{SNOWMAN}"
 
 
 def test_full_url_requests_with_args():
@@ -775,9 +774,9 @@ def test_full_url_requests_with_args():
 
     client = Client(test_app, Response)
     resp = client.get("/?x=42", base)
-    strict_eq(resp.data, b"42")
+    assert resp.data == b"42"
     resp = client.get("http://www.example.com/?x=23", base)
-    strict_eq(resp.data, b"23")
+    assert resp.data == b"23"
 
 
 def test_delete_requests_with_form():
@@ -787,7 +786,7 @@ def test_delete_requests_with_form():
 
     client = Client(test_app, Response)
     resp = client.delete("/", data={"x": 42})
-    strict_eq(resp.data, b"42")
+    assert resp.data == b"42"
 
 
 def test_post_with_file_descriptor(tmpdir):
@@ -796,10 +795,10 @@ def test_post_with_file_descriptor(tmpdir):
     f.write("foo")
     with open(f.strpath, mode="rt") as data:
         resp = c.post("/", data=data)
-    strict_eq(resp.status_code, 200)
+    assert resp.status_code == 200
     with open(f.strpath, mode="rb") as data:
         resp = c.post("/", data=data)
-    strict_eq(resp.status_code, 200)
+    assert resp.status_code == 200
 
 
 def test_content_type():
@@ -810,10 +809,10 @@ def test_content_type():
     client = Client(test_app, Response)
 
     resp = client.get("/", data=b"testing", mimetype="text/css")
-    strict_eq(resp.data, b"text/css; charset=utf-8")
+    assert resp.data == b"text/css; charset=utf-8"
 
     resp = client.get("/", data=b"testing", mimetype="application/octet-stream")
-    strict_eq(resp.data, b"application/octet-stream")
+    assert resp.data == b"application/octet-stream"
 
 
 def test_raw_request_uri():

@@ -11,7 +11,6 @@ from datetime import datetime
 
 import pytest
 
-from . import strict_eq
 from werkzeug import datastructures
 from werkzeug import http
 from werkzeug._internal import _wsgi_encoding_dance
@@ -459,7 +458,6 @@ class TestHTTPUtility:
         rv = http.dump_cookie(
             "foo", "bar baz blub", 360, httponly=True, sync_expires=False
         )
-        assert type(rv) is str
         assert set(rv.split("; ")) == {
             "HttpOnly",
             "Max-Age=360",
@@ -500,7 +498,7 @@ class TestHTTPUtility:
 
     def test_cookie_domain_resolving(self):
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")
-        strict_eq(val, "foo=bar; Domain=xn--n3h.com; Path=/")
+        assert val == "foo=bar; Domain=xn--n3h.com; Path=/"
 
     def test_cookie_unicode_dumping(self):
         val = http.dump_cookie("foo", "\N{SNOWMAN}")
@@ -525,13 +523,13 @@ class TestHTTPUtility:
 
     def test_cookie_domain_encoding(self):
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")
-        strict_eq(val, "foo=bar; Domain=xn--n3h.com; Path=/")
+        assert val == "foo=bar; Domain=xn--n3h.com; Path=/"
 
         val = http.dump_cookie("foo", "bar", domain=".\N{SNOWMAN}.com")
-        strict_eq(val, "foo=bar; Domain=.xn--n3h.com; Path=/")
+        assert val == "foo=bar; Domain=.xn--n3h.com; Path=/"
 
         val = http.dump_cookie("foo", "bar", domain=".foo.com")
-        strict_eq(val, "foo=bar; Domain=.foo.com; Path=/")
+        assert val == "foo=bar; Domain=.foo.com; Path=/"
 
     def test_cookie_maxsize(self, recwarn):
         val = http.dump_cookie("foo", "bar" * 1360 + "b")

@@ -12,7 +12,6 @@ import uuid
 
 import pytest
 
-from . import strict_eq
 from werkzeug import routing as r
 from werkzeug.datastructures import ImmutableDict
 from werkzeug.datastructures import MultiDict
@@ -175,12 +174,12 @@ def test_strict_slashes_redirect():
 
 def test_environ_defaults():
     environ = create_environ("/foo")
-    strict_eq(environ["PATH_INFO"], "/foo")
+    assert environ["PATH_INFO"] == "/foo"
     m = r.Map([r.Rule("/foo", endpoint="foo"), r.Rule("/bar", endpoint="bar")])
     a = m.bind_to_environ(environ)
-    strict_eq(a.match("/foo"), ("foo", {}))
-    strict_eq(a.match(), ("foo", {}))
-    strict_eq(a.match("/bar"), ("bar", {}))
+    assert a.match("/foo") == ("foo", {})
+    assert a.match() == ("foo", {})
+    assert a.match("/bar") == ("bar", {})
     pytest.raises(r.NotFound, a.match, "/bars")
 
 
@@ -188,8 +187,8 @@ def test_environ_nonascii_pathinfo():
     environ = create_environ("/лошадь")
     m = r.Map([r.Rule("/", endpoint="index"), r.Rule("/лошадь", endpoint="horse")])
     a = m.bind_to_environ(environ)
-    strict_eq(a.match("/"), ("index", {}))
-    strict_eq(a.match("/лошадь"), ("horse", {}))
+    assert a.match("/") == ("index", {})
+    assert a.match("/лошадь") == ("horse", {})
     pytest.raises(r.NotFound, a.match, "/барсук")
 
 
@@ -1002,7 +1001,7 @@ def test_redirect_request_exception_code():
     exc = r.RequestRedirect("http://www.google.com/")
     exc.code = 307
     env = create_environ()
-    strict_eq(exc.get_response(env).status_code, exc.code)
+    assert exc.get_response(env).status_code == exc.code
 
 
 def test_redirect_path_quoting():
@@ -1017,7 +1016,7 @@ def test_redirect_path_quoting():
     with pytest.raises(r.RequestRedirect) as excinfo:
         adapter.match("/foo bar/page/1")
     response = excinfo.value.get_response({})
-    strict_eq(response.headers["location"], "http://example.com/foo%20bar")
+    assert response.headers["location"] == "http://example.com/foo%20bar"
 
 
 def test_unicode_rules():
@@ -1027,28 +1026,28 @@ def test_unicode_rules():
     a = m.bind("☃.example.com")
     with pytest.raises(r.RequestRedirect) as excinfo:
         a.match("/войти")
-    strict_eq(
-        excinfo.value.new_url,
-        "http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/",
+    assert (
+        excinfo.value.new_url
+        == "http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/"
     )
 
     endpoint, values = a.match("/войти/")
-    strict_eq(endpoint, "enter")
-    strict_eq(values, {})
+    assert endpoint == "enter"
+    assert values == {}
 
     with pytest.raises(r.RequestRedirect) as excinfo:
         a.match("/foo+bar")
-    strict_eq(excinfo.value.new_url, "http://xn--n3h.example.com/foo+bar/")
+    assert excinfo.value.new_url == "http://xn--n3h.example.com/foo+bar/"
 
     endpoint, values = a.match("/foo+bar/")
-    strict_eq(endpoint, "foobar")
-    strict_eq(values, {})
+    assert endpoint == "foobar"
+    assert values == {}
 
     url = a.build("enter", {}, force_external=True)
-    strict_eq(url, "http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/")
+    assert url == "http://xn--n3h.example.com/%D0%B2%D0%BE%D0%B9%D1%82%D0%B8/"
 
     url = a.build("foobar", {}, force_external=True)
-    strict_eq(url, "http://xn--n3h.example.com/foo+bar/")
+    assert url == "http://xn--n3h.example.com/foo+bar/"
 
 
 def test_empty_path_info():
@@ -1068,13 +1067,13 @@ def test_empty_path_info():
 def test_both_bind_and_match_path_info_are_none():
     m = r.Map([r.Rule("/", endpoint="index")])
     ma = m.bind("example.org")
-    strict_eq(ma.match(), ("index", {}))
+    assert ma.match() == ("index", {})
 
 
 def test_map_repr():
     m = r.Map([r.Rule("/wat", endpoint="enter"), r.Rule("/woop", endpoint="foobar")])
     rv = repr(m)
-    strict_eq(rv, "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])")
+    assert rv == "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])"
 
 
 def test_empty_subclass_rules_with_custom_kwargs():

@@ -13,7 +13,6 @@ import os
 
 import pytest
 
-from . import strict_eq
 from werkzeug import wsgi
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import ClientDisconnected
@@ -134,7 +133,7 @@ def test_path_info_and_script_name_fetching():
 def test_query_string_fetching():
     env = create_environ("/?\N{SNOWMAN}=\N{COMET}")
     qs = wsgi.get_query_string(env)
-    strict_eq(qs, "%E2%98%83=%E2%98%84")
+    assert qs == "%E2%98%83=%E2%98%84"
 
 
 def test_limited_stream():
@@ -144,65 +143,65 @@ def test_limited_stream():
 
     io_ = io.BytesIO(b"123456")
     stream = RaisingLimitedStream(io_, 3)
-    strict_eq(stream.read(), b"123")
+    assert stream.read() == b"123"
     pytest.raises(BadRequest, stream.read)
 
     io_ = io.BytesIO(b"123456")
     stream = RaisingLimitedStream(io_, 3)
-    strict_eq(stream.tell(), 0)
-    strict_eq(stream.read(1), b"1")
-    strict_eq(stream.tell(), 1)
-    strict_eq(stream.read(1), b"2")
-    strict_eq(stream.tell(), 2)
-    strict_eq(stream.read(1), b"3")
-    strict_eq(stream.tell(), 3)
+    assert stream.tell() == 0
+    assert stream.read(1) == b"1"
+    assert stream.tell() == 1
+    assert stream.read(1) == b"2"
+    assert stream.tell() == 2
+    assert stream.read(1) == b"3"
+    assert stream.tell() == 3
     pytest.raises(BadRequest, stream.read)
 
     io_ = io.BytesIO(b"123456\nabcdefg")
     stream = wsgi.LimitedStream(io_, 9)
-    strict_eq(stream.readline(), b"123456\n")
-    strict_eq(stream.readline(), b"ab")
+    assert stream.readline() == b"123456\n"
+    assert stream.readline() == b"ab"
 
     io_ = io.BytesIO(b"123456\nabcdefg")
     stream = wsgi.LimitedStream(io_, 9)
-    strict_eq(stream.readlines(), [b"123456\n", b"ab"])
+    assert stream.readlines() == [b"123456\n", b"ab"]
 
     io_ = io.BytesIO(b"123456\nabcdefg")
     stream = wsgi.LimitedStream(io_, 9)
-    strict_eq(stream.readlines(2), [b"12"])
-    strict_eq(stream.readlines(2), [b"34"])
-    strict_eq(stream.readlines(), [b"56\n", b"ab"])
+    assert stream.readlines(2) == [b"12"]
+    assert stream.readlines(2) == [b"34"]
+    assert stream.readlines() == [b"56\n", b"ab"]
 
     io_ = io.BytesIO(b"123456\nabcdefg")
     stream = wsgi.LimitedStream(io_, 9)
-    strict_eq(stream.readline(100), b"123456\n")
+    assert stream.readline(100) == b"123456\n"
 
     io_ = io.BytesIO(b"123456\nabcdefg")
     stream = wsgi.LimitedStream(io_, 9)
-    strict_eq(stream.readlines(100), [b"123456\n", b"ab"])
+    assert stream.readlines(100) == [b"123456\n", b"ab"]
 
     io_ = io.BytesIO(b"123456")
     stream = wsgi.LimitedStream(io_, 3)
-    strict_eq(stream.read(1), b"1")
-    strict_eq(stream.read(1), b"2")
-    strict_eq(stream.read(), b"3")
-    strict_eq(stream.read(), b"")
+    assert stream.read(1) == b"1"
+    assert stream.read(1) == b"2"
+    assert stream.read() == b"3"
+    assert stream.read() == b""
 
     io_ = io.BytesIO(b"123456")
     stream = wsgi.LimitedStream(io_, 3)
-    strict_eq(stream.read(-1), b"123")
+    assert stream.read(-1) == b"123"
 
     io_ = io.BytesIO(b"123456")
     stream = wsgi.LimitedStream(io_, 0)
-    strict_eq(stream.read(-1), b"")
+    assert stream.read(-1) == b""
 
     io_ = io.StringIO("123456")
     stream = wsgi.LimitedStream(io_, 0)
-    strict_eq(stream.read(-1), "")
+    assert stream.read(-1) == ""
 
     io_ = io.StringIO("123\n456\n")
     stream = wsgi.LimitedStream(io_, 8)
-    strict_eq(list(stream), ["123\n", "456\n"])
+    assert list(stream) == ["123\n", "456\n"]
 
 
 def test_limited_stream_json_load():
@@ -288,7 +287,7 @@ def test_get_host_fallback():
 def test_get_current_url_unicode():
     env = create_environ(query_string="foo=bar&baz=blah&meh=\xcf")
     rv = wsgi.get_current_url(env)
-    strict_eq(rv, "http://localhost/?foo=bar&baz=blah&meh=\xcf")
+    assert rv == "http://localhost/?foo=bar&baz=blah&meh=\xcf"
 
 
 def test_get_current_url_invalid_utf8():
@@ -297,7 +296,7 @@ def test_get_current_url_invalid_utf8():
     env["QUERY_STRING"] = "foo=bar&baz=blah&meh=\xcf"
     rv = wsgi.get_current_url(env)
     # it remains percent-encoded
-    strict_eq(rv, "http://localhost/?foo=bar&baz=blah&meh=%CF")
+    assert rv == "http://localhost/?foo=bar&baz=blah&meh=%CF"
 
 
 def test_multi_part_line_breaks():

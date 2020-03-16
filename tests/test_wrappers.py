@@ -17,7 +17,6 @@ from io import BytesIO
 
 import pytest
 
-from . import strict_eq
 from werkzeug import wrappers
 from werkzeug.datastructures import Accept
 from werkzeug.datastructures import CharsetAccept
@@ -85,12 +84,12 @@ def prepare_environ_pickle(environ):
 
 
 def assert_environ(environ, method):
-    strict_eq(environ["REQUEST_METHOD"], method)
-    strict_eq(environ["PATH_INFO"], "/")
-    strict_eq(environ["SCRIPT_NAME"], "")
-    strict_eq(environ["SERVER_NAME"], "localhost")
-    strict_eq(environ["wsgi.version"], (1, 0))
-    strict_eq(environ["wsgi.url_scheme"], "http")
+    assert environ["REQUEST_METHOD"] == method
+    assert environ["PATH_INFO"] == "/"
+    assert environ["SCRIPT_NAME"] == ""
+    assert environ["SERVER_NAME"] == "localhost"
+    assert environ["wsgi.version"] == (1, 0)
+    assert environ["wsgi.url_scheme"] == "http"
 
 
 def test_base_request():
@@ -98,11 +97,11 @@ def test_base_request():
 
     # get requests
     response = client.get("/?foo=bar&foo=hehe")
-    strict_eq(response["args"], MultiDict([("foo", "bar"), ("foo", "hehe")]))
-    strict_eq(response["args_as_list"], [("foo", ["bar", "hehe"])])
-    strict_eq(response["form"], MultiDict())
-    strict_eq(response["form_as_list"], [])
-    strict_eq(response["data"], b"")
+    assert response["args"] == MultiDict([("foo", "bar"), ("foo", "hehe")])
+    assert response["args_as_list"] == [("foo", ["bar", "hehe"])]
+    assert response["form"] == MultiDict()
+    assert response["form_as_list"] == []
+    assert response["data"] == b""
     assert_environ(response["environ"], "GET")
 
     # post requests with form data
@@ -111,13 +110,13 @@ def test_base_request():
         data="foo=blub+hehe&blah=42",
         content_type="application/x-www-form-urlencoded",
     )
-    strict_eq(response["args"], MultiDict([("blub", "blah")]))
-    strict_eq(response["args_as_list"], [("blub", ["blah"])])
-    strict_eq(response["form"], MultiDict([("foo", "blub hehe"), ("blah", "42")]))
-    strict_eq(response["data"], b"")
+    assert response["args"] == MultiDict([("blub", "blah")])
+    assert response["args_as_list"] == [("blub", ["blah"])]
+    assert response["form"] == MultiDict([("foo", "blub hehe"), ("blah", "42")])
+    assert response["data"] == b""
     # currently we do not guarantee that the values are ordered correctly
     # for post data.
-    # strict_eq(response['form_as_list'], [('foo', ['blub hehe']), ('blah', ['42'])])
+    # assert response['form_as_list'] == [('foo', ['blub hehe']), ('blah', ['42'])]
     assert_environ(response["environ"], "POST")
 
     # patch requests with form data
@@ -126,23 +125,23 @@ def test_base_request():
         data="foo=blub+hehe&blah=42",
         content_type="application/x-www-form-urlencoded",
     )
-    strict_eq(response["args"], MultiDict([("blub", "blah")]))
-    strict_eq(response["args_as_list"], [("blub", ["blah"])])
-    strict_eq(response["form"], MultiDict([("foo", "blub hehe"), ("blah", "42")]))
-    strict_eq(response["data"], b"")
+    assert response["args"] == MultiDict([("blub", "blah")])
+    assert response["args_as_list"] == [("blub", ["blah"])]
+    assert response["form"] == MultiDict([("foo", "blub hehe"), ("blah", "42")])
+    assert response["data"] == b""
     assert_environ(response["environ"], "PATCH")
 
     # post requests with json data
     json = b'{"foo": "bar", "blub": "blah"}'
     response = client.post("/?a=b", data=json, content_type="application/json")
-    strict_eq(response["data"], json)
-    strict_eq(response["args"], MultiDict([("a", "b")]))
-    strict_eq(response["form"], MultiDict())
+    assert response["data"] == json
+    assert response["args"] == MultiDict([("a", "b")])
+    assert response["form"] == MultiDict()
 
 
 def test_query_string_is_bytes():
     req = wrappers.Request.from_values("/?foo=%2f")
-    strict_eq(req.query_string, b"foo=%2f")
+    assert req.query_string == b"foo=%2f"
 
 
 def test_request_repr():
@@ -158,52 +157,52 @@ def test_access_route():
     )
     req.environ["REMOTE_ADDR"] = "192.168.1.3"
     assert req.access_route == ["192.168.1.2", "192.168.1.1"]
-    strict_eq(req.remote_addr, "192.168.1.3")
+    assert req.remote_addr == "192.168.1.3"
 
     req = wrappers.Request.from_values()
     req.environ["REMOTE_ADDR"] = "192.168.1.3"
-    strict_eq(list(req.access_route), ["192.168.1.3"])
+    assert list(req.access_route) == ["192.168.1.3"]
 
 
 def test_url_request_descriptors():
     req = wrappers.Request.from_values("/bar?foo=baz", "http://example.com/test")
-    strict_eq(req.path, "/bar")
-    strict_eq(req.full_path, "/bar?foo=baz")
-    strict_eq(req.script_root, "/test")
-    strict_eq(req.url, "http://example.com/test/bar?foo=baz")
-    strict_eq(req.base_url, "http://example.com/test/bar")
-    strict_eq(req.url_root, "http://example.com/test/")
-    strict_eq(req.host_url, "http://example.com/")
-    strict_eq(req.host, "example.com")
-    strict_eq(req.scheme, "http")
+    assert req.path == "/bar"
+    assert req.full_path == "/bar?foo=baz"
+    assert req.script_root == "/test"
+    assert req.url == "http://example.com/test/bar?foo=baz"
+    assert req.base_url == "http://example.com/test/bar"
+    assert req.url_root == "http://example.com/test/"
+    assert req.host_url == "http://example.com/"
+    assert req.host == "example.com"
+    assert req.scheme == "http"
 
     req = wrappers.Request.from_values("/bar?foo=baz", "https://example.com/test")
-    strict_eq(req.scheme, "https")
+    assert req.scheme == "https"
 
 
 def test_url_request_descriptors_query_quoting():
     next = "http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash"
     req = wrappers.Request.from_values(f"/bar?next={next}", "http://example.com/")
     assert req.path == "/bar"
-    strict_eq(req.full_path, f"/bar?next={next}")
-    strict_eq(req.url, f"http://example.com/bar?next={next}")
+    assert req.full_path == f"/bar?next={next}"
+    assert req.url == f"http://example.com/bar?next={next}"
 
 
 def test_url_request_descriptors_hosts():
     req = wrappers.Request.from_values("/bar?foo=baz", "http://example.com/test")
     req.trusted_hosts = ["example.com"]
-    strict_eq(req.path, "/bar")
-    strict_eq(req.full_path, "/bar?foo=baz")
-    strict_eq(req.script_root, "/test")
-    strict_eq(req.url, "http://example.com/test/bar?foo=baz")
-    strict_eq(req.base_url, "http://example.com/test/bar")
-    strict_eq(req.url_root, "http://example.com/test/")
-    strict_eq(req.host_url, "http://example.com/")
-    strict_eq(req.host, "example.com")
-    strict_eq(req.scheme, "http")
+    assert req.path == "/bar"
+    assert req.full_path == "/bar?foo=baz"
+    assert req.script_root == "/test"
+    assert req.url == "http://example.com/test/bar?foo=baz"
+    assert req.base_url == "http://example.com/test/bar"
+    assert req.url_root == "http://example.com/test/"
+    assert req.host_url == "http://example.com/"
+    assert req.host == "example.com"
+    assert req.scheme == "http"
 
     req = wrappers.Request.from_values("/bar?foo=baz", "https://example.com/test")
-    strict_eq(req.scheme, "https")
+    assert req.scheme == "https"
 
     req = wrappers.Request.from_values("/bar?foo=baz", "http://example.com/test")
     req.trusted_hosts = ["example.org"]
@@ -219,9 +218,9 @@ def test_authorization_mixin():
         headers={"Authorization": "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="}
     )
     a = request.authorization
-    strict_eq(a.type, "basic")
-    strict_eq(a.username, "Aladdin")
-    strict_eq(a.password, "open sesame")
+    assert a.type == "basic"
+    assert a.username == "Aladdin"
+    assert a.password == "open sesame"
 
 
 def test_authorization_with_unicode():
@@ -229,9 +228,9 @@ def test_authorization_with_unicode():
         headers={"Authorization": "Basic 0YDRg9GB0YHQutC40IE60JHRg9C60LLRiw=="}
     )
     a = request.authorization
-    strict_eq(a.type, "basic")
-    strict_eq(a.username, "русскиЁ")
-    strict_eq(a.password, "Буквы")
+    assert a.type == "basic"
+    assert a.username == "русскиЁ"
+    assert a.password == "Буквы"
 
 
 def test_stream_only_mixing():
@@ -241,7 +240,7 @@ def test_stream_only_mixing():
     assert list(request.files.items()) == []
     assert list(request.form.items()) == []
     pytest.raises(AttributeError, lambda: request.data)
-    strict_eq(request.stream.read(), b"foo=blub+hehe")
+    assert request.stream.read() == b"foo=blub+hehe"
 
 
 def test_request_application():
@@ -289,12 +288,12 @@ def test_response_access_control():
 
 def test_base_response():
     response = wrappers.BaseResponse("öäü")
-    strict_eq(response.get_data(), "öäü".encode())
+    assert response.get_data() == "öäü".encode()
 
     # writing
     response = wrappers.Response("foo")
     response.stream.write("bar")
-    strict_eq(response.get_data(), b"foobar")
+    assert response.get_data() == b"foobar"
 
     # set cookie
     response = wrappers.BaseResponse()
@@ -307,32 +306,26 @@ def test_base_response():
         domain="example.org",
         samesite="Strict",
     )
-    strict_eq(
-        response.headers.to_wsgi_list(),
-        [
-            ("Content-Type", "text/plain; charset=utf-8"),
-            (
-                "Set-Cookie",
-                "foo=bar; Domain=example.org; Expires=Thu, "
-                "01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; "
-                "SameSite=Strict",
-            ),
-        ],
-    )
+    assert response.headers.to_wsgi_list() == [
+        ("Content-Type", "text/plain; charset=utf-8"),
+        (
+            "Set-Cookie",
+            "foo=bar; Domain=example.org;"
+            " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+            " Path=/blub; SameSite=Strict",
+        ),
+    ]
 
     # delete cookie
     response = wrappers.BaseResponse()
     response.delete_cookie("foo")
-    strict_eq(
-        response.headers.to_wsgi_list(),
-        [
-            ("Content-Type", "text/plain; charset=utf-8"),
-            (
-                "Set-Cookie",
-                "foo=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/",
-            ),
-        ],
-    )
+    assert response.headers.to_wsgi_list() == [
+        ("Content-Type", "text/plain; charset=utf-8"),
+        (
+            "Set-Cookie",
+            "foo=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/",
+        ),
+    ]
 
     # close call forwarding
     closed = []
@@ -350,9 +343,9 @@ def test_base_response():
     response = wrappers.BaseResponse(Iterable())
     response.call_on_close(lambda: closed.append(True))
     app_iter, status, headers = run_wsgi_app(response, create_environ(), buffered=True)
-    strict_eq(status, "200 OK")
-    strict_eq("".join(app_iter), "")
-    strict_eq(len(closed), 2)
+    assert status == "200 OK"
+    assert "".join(app_iter) == ""
+    assert len(closed) == 2
 
     # with statement
     del closed[:]
@@ -365,17 +358,17 @@ def test_base_response():
 def test_response_status_codes():
     response = wrappers.BaseResponse()
     response.status_code = 404
-    strict_eq(response.status, "404 NOT FOUND")
+    assert response.status == "404 NOT FOUND"
     response.status = "200 OK"
-    strict_eq(response.status_code, 200)
+    assert response.status_code == 200
     response.status = "999 WTF"
-    strict_eq(response.status_code, 999)
+    assert response.status_code == 999
     response.status_code = 588
-    strict_eq(response.status_code, 588)
-    strict_eq(response.status, "588 UNKNOWN")
+    assert response.status_code == 588
+    assert response.status == "588 UNKNOWN"
     response.status = "wtf"
-    strict_eq(response.status_code, 0)
-    strict_eq(response.status, "0 wtf")
+    assert response.status_code == 0
+    assert response.status == "0 wtf"
 
     # invalid status codes
     with pytest.raises(ValueError) as info:
@@ -407,8 +400,8 @@ def test_type_forcing():
     for orig_resp in wsgi_application, base_response:
         response = SpecialResponse.force_type(orig_resp, fake_env)
         assert response.__class__ is SpecialResponse
-        strict_eq(response.foo(), 42)
-        strict_eq(response.get_data(), b"Hello World!")
+        assert response.foo() == 42
+        assert response.get_data() == b"Hello World!"
         assert response.content_type == "text/html"
 
     # without env, no arbitrary conversion
@@ -436,15 +429,14 @@ def test_accept_mixin():
             ("*/*", 0.5),
         ]
     )
-    strict_eq(
-        request.accept_charsets,
-        CharsetAccept([("ISO-8859-1", 1), ("utf-8", 0.7), ("*", 0.7)]),
+    assert request.accept_charsets == CharsetAccept(
+        [("ISO-8859-1", 1), ("utf-8", 0.7), ("*", 0.7)]
     )
-    strict_eq(request.accept_encodings, Accept([("gzip", 1), ("deflate", 1)]))
-    strict_eq(request.accept_languages, LanguageAccept([("en-us", 1), ("en", 0.5)]))
+    assert request.accept_encodings == Accept([("gzip", 1), ("deflate", 1)])
+    assert request.accept_languages == LanguageAccept([("en-us", 1), ("en", 0.5)])
 
     request = wrappers.Request({"HTTP_ACCEPT": ""})
-    strict_eq(request.accept_mimetypes, MIMEAccept())
+    assert request.accept_mimetypes == MIMEAccept()
 
 
 def test_etag_request_mixin():
@@ -653,13 +645,13 @@ def test_user_agent_mixin():
     ]
     for ua, browser, platform, version, lang in user_agents:
         request = wrappers.Request({"HTTP_USER_AGENT": ua})
-        strict_eq(request.user_agent.browser, browser)
-        strict_eq(request.user_agent.platform, platform)
-        strict_eq(request.user_agent.version, version)
-        strict_eq(request.user_agent.language, lang)
+        assert request.user_agent.browser == browser
+        assert request.user_agent.platform == platform
+        assert request.user_agent.version == version
+        assert request.user_agent.language == lang
         assert bool(request.user_agent)
-        strict_eq(request.user_agent.to_header(), ua)
-        strict_eq(str(request.user_agent), ua)
+        assert request.user_agent.to_header() == ua
+        assert str(request.user_agent) == ua
 
     request = wrappers.Request({"HTTP_USER_AGENT": "foo"})
     assert not request.user_agent
@@ -901,7 +893,7 @@ def test_etag_response_mixin_freezing():
 
     response = WithFreeze("Hello World")
     response.freeze()
-    strict_eq(response.get_etag(), (str(generate_etag(b"Hello World")), False))
+    assert response.get_etag() == (str(generate_etag(b"Hello World")), False)
     response = WithoutFreeze("Hello World")
     response.freeze()
     assert response.get_etag() == (None, None)
@@ -914,7 +906,7 @@ def test_authenticate_mixin():
     resp = wrappers.Response()
     resp.www_authenticate.type = "basic"
     resp.www_authenticate.realm = "Testing"
-    strict_eq(resp.headers["WWW-Authenticate"], 'Basic realm="Testing"')
+    assert resp.headers["WWW-Authenticate"] == 'Basic realm="Testing"'
     resp.www_authenticate.realm = None
     resp.www_authenticate.type = None
     assert "WWW-Authenticate" not in resp.headers
@@ -1403,7 +1395,7 @@ def test_modified_url_encoding():
         url_charset = "euc-kr"
 
     req = ModifiedRequest.from_values("/?foo=정상처리".encode("euc-kr"))
-    strict_eq(req.args["foo"], "정상처리")
+    assert req.args["foo"] == "정상처리"
 
 
 def test_request_method_case_sensitivity():
@@ -1445,17 +1437,15 @@ class TestSetCookie:
             secure=True,
             samesite=None,
         )
-        strict_eq(
-            response.headers.to_wsgi_list(),
-            [
-                ("Content-Type", "text/plain; charset=utf-8"),
-                (
-                    "Set-Cookie",
-                    "foo=bar; Domain=example.org; Expires=Thu, "
-                    "01-Jan-1970 00:00:00 GMT; Max-Age=60; Secure; Path=/blub",
-                ),
-            ],
-        )
+        assert response.headers.to_wsgi_list() == [
+            ("Content-Type", "text/plain; charset=utf-8"),
+            (
+                "Set-Cookie",
+                "foo=bar; Domain=example.org;"
+                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " Secure; Path=/blub",
+            ),
+        ]
 
     def test_httponly(self):
         response = wrappers.BaseResponse()
@@ -1470,17 +1460,15 @@ class TestSetCookie:
             httponly=True,
             samesite=None,
         )
-        strict_eq(
-            response.headers.to_wsgi_list(),
-            [
-                ("Content-Type", "text/plain; charset=utf-8"),
-                (
-                    "Set-Cookie",
-                    "foo=bar; Domain=example.org; Expires=Thu, "
-                    "01-Jan-1970 00:00:00 GMT; Max-Age=60; HttpOnly; Path=/blub",
-                ),
-            ],
-        )
+        assert response.headers.to_wsgi_list() == [
+            ("Content-Type", "text/plain; charset=utf-8"),
+            (
+                "Set-Cookie",
+                "foo=bar; Domain=example.org;"
+                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " HttpOnly; Path=/blub",
+            ),
+        ]
 
     def test_secure_and_httponly(self):
         response = wrappers.BaseResponse()
@@ -1495,18 +1483,15 @@ class TestSetCookie:
             httponly=True,
             samesite=None,
         )
-        strict_eq(
-            response.headers.to_wsgi_list(),
-            [
-                ("Content-Type", "text/plain; charset=utf-8"),
-                (
-                    "Set-Cookie",
-                    "foo=bar; Domain=example.org; Expires=Thu, "
-                    "01-Jan-1970 00:00:00 GMT; Max-Age=60; Secure; HttpOnly; "
-                    "Path=/blub",
-                ),
-            ],
-        )
+        assert response.headers.to_wsgi_list() == [
+            ("Content-Type", "text/plain; charset=utf-8"),
+            (
+                "Set-Cookie",
+                "foo=bar; Domain=example.org;"
+                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " Secure; HttpOnly; Path=/blub",
+            ),
+        ]
 
     def test_samesite(self):
         response = wrappers.BaseResponse()
@@ -1520,18 +1505,15 @@ class TestSetCookie:
             secure=False,
             samesite="strict",
         )
-        strict_eq(
-            response.headers.to_wsgi_list(),
-            [
-                ("Content-Type", "text/plain; charset=utf-8"),
-                (
-                    "Set-Cookie",
-                    "foo=bar; Domain=example.org; Expires=Thu, "
-                    "01-Jan-1970 00:00:00 GMT; Max-Age=60; Path=/blub; "
-                    "SameSite=Strict",
-                ),
-            ],
-        )
+        assert response.headers.to_wsgi_list() == [
+            ("Content-Type", "text/plain; charset=utf-8"),
+            (
+                "Set-Cookie",
+                "foo=bar; Domain=example.org;"
+                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " Path=/blub; SameSite=Strict",
+            ),
+        ]
 
 
 class TestJSONMixin:

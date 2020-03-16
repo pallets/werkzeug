@@ -11,7 +11,6 @@ import io
 
 import pytest
 
-from . import strict_eq
 from werkzeug import urls
 from werkzeug.datastructures import OrderedMultiDict
 
@@ -60,60 +59,58 @@ def test_fileurl_parsing_windows(implicit_format, localhost, monkeypatch):
 
 def test_replace():
     url = urls.url_parse("http://de.wikipedia.org/wiki/Troll")
-    strict_eq(
-        url.replace(query="foo=bar"),
-        urls.url_parse("http://de.wikipedia.org/wiki/Troll?foo=bar"),
+    assert url.replace(query="foo=bar") == urls.url_parse(
+        "http://de.wikipedia.org/wiki/Troll?foo=bar"
     )
-    strict_eq(
-        url.replace(scheme="https"),
-        urls.url_parse("https://de.wikipedia.org/wiki/Troll"),
+    assert url.replace(scheme="https") == urls.url_parse(
+        "https://de.wikipedia.org/wiki/Troll"
     )
 
 
 def test_quoting():
-    strict_eq(urls.url_quote("\xf6\xe4\xfc"), "%C3%B6%C3%A4%C3%BC")
-    strict_eq(urls.url_unquote(urls.url_quote('#%="\xf6')), '#%="\xf6')
-    strict_eq(urls.url_quote_plus("foo bar"), "foo+bar")
-    strict_eq(urls.url_unquote_plus("foo+bar"), "foo bar")
-    strict_eq(urls.url_quote_plus("foo+bar"), "foo%2Bbar")
-    strict_eq(urls.url_unquote_plus("foo%2Bbar"), "foo+bar")
-    strict_eq(urls.url_encode({b"a": None, b"b": b"foo bar"}), "b=foo+bar")
-    strict_eq(urls.url_encode({"a": None, "b": "foo bar"}), "b=foo+bar")
-    strict_eq(
-        urls.url_fix("http://de.wikipedia.org/wiki/Elf (Begriffsklärung)"),
-        "http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)",
+    assert urls.url_quote("\xf6\xe4\xfc") == "%C3%B6%C3%A4%C3%BC"
+    assert urls.url_unquote(urls.url_quote('#%="\xf6')) == '#%="\xf6'
+    assert urls.url_quote_plus("foo bar") == "foo+bar"
+    assert urls.url_unquote_plus("foo+bar") == "foo bar"
+    assert urls.url_quote_plus("foo+bar") == "foo%2Bbar"
+    assert urls.url_unquote_plus("foo%2Bbar") == "foo+bar"
+    assert urls.url_encode({b"a": None, b"b": b"foo bar"}) == "b=foo+bar"
+    assert urls.url_encode({"a": None, "b": "foo bar"}) == "b=foo+bar"
+    assert (
+        urls.url_fix("http://de.wikipedia.org/wiki/Elf (Begriffsklärung)")
+        == "http://de.wikipedia.org/wiki/Elf%20(Begriffskl%C3%A4rung)"
     )
-    strict_eq(urls.url_quote_plus(42), "42")
-    strict_eq(urls.url_quote(b"\xff"), "%FF")
+    assert urls.url_quote_plus(42) == "42"
+    assert urls.url_quote(b"\xff") == "%FF"
 
 
 def test_bytes_unquoting():
-    strict_eq(
-        urls.url_unquote(urls.url_quote('#%="\xf6', charset="latin1"), charset=None),
-        b'#%="\xf6',
+    assert (
+        urls.url_unquote(urls.url_quote('#%="\xf6', charset="latin1"), charset=None)
+        == b'#%="\xf6'
     )
 
 
 def test_url_decoding():
     x = urls.url_decode(b"foo=42&bar=23&uni=H%C3%A4nsel")
-    strict_eq(x["foo"], "42")
-    strict_eq(x["bar"], "23")
-    strict_eq(x["uni"], "Hänsel")
+    assert x["foo"] == "42"
+    assert x["bar"] == "23"
+    assert x["uni"] == "Hänsel"
 
     x = urls.url_decode(b"foo=42;bar=23;uni=H%C3%A4nsel", separator=b";")
-    strict_eq(x["foo"], "42")
-    strict_eq(x["bar"], "23")
-    strict_eq(x["uni"], "Hänsel")
+    assert x["foo"] == "42"
+    assert x["bar"] == "23"
+    assert x["uni"] == "Hänsel"
 
     x = urls.url_decode(b"%C3%9Ch=H%C3%A4nsel")
-    strict_eq(x["Üh"], "Hänsel")
+    assert x["Üh"] == "Hänsel"
 
 
 def test_url_bytes_decoding():
     x = urls.url_decode(b"foo=42&bar=23&uni=H%C3%A4nsel", charset=None)
-    strict_eq(x[b"foo"], b"42")
-    strict_eq(x[b"bar"], b"23")
-    strict_eq(x[b"uni"], "Hänsel".encode())
+    assert x[b"foo"] == b"42"
+    assert x[b"bar"] == b"23"
+    assert x[b"uni"] == "Hänsel".encode()
 
 
 def test_streamed_url_decoding():
@@ -123,9 +120,9 @@ def test_streamed_url_decoding():
     gen = urls.url_decode_stream(
         io.BytesIO(string), limit=len(string), return_iterator=True
     )
-    strict_eq(next(gen), ("a", item1))
-    strict_eq(next(gen), ("b", item2))
-    strict_eq(next(gen), ("c", item2))
+    assert next(gen) == ("a", item1)
+    assert next(gen) == ("b", item2)
+    assert next(gen) == ("c", item2)
     pytest.raises(StopIteration, lambda: next(gen))
 
 
@@ -134,48 +131,48 @@ def test_stream_decoding_string_fails():
 
 
 def test_url_encoding():
-    strict_eq(urls.url_encode({"foo": "bar 45"}), "foo=bar+45")
+    assert urls.url_encode({"foo": "bar 45"}) == "foo=bar+45"
     d = {"foo": 1, "bar": 23, "blah": "Hänsel"}
-    strict_eq(urls.url_encode(d, sort=True), "bar=23&blah=H%C3%A4nsel&foo=1")
-    strict_eq(
-        urls.url_encode(d, sort=True, separator=";"), "bar=23;blah=H%C3%A4nsel;foo=1"
+    assert urls.url_encode(d, sort=True) == "bar=23&blah=H%C3%A4nsel&foo=1"
+    assert (
+        urls.url_encode(d, sort=True, separator=";") == "bar=23;blah=H%C3%A4nsel;foo=1"
     )
 
 
 def test_sorted_url_encode():
-    strict_eq(
+    assert (
         urls.url_encode(
             {"a": 42, "b": 23, 1: 1, 2: 2}, sort=True, key=lambda i: str(i[0])
-        ),
-        "1=1&2=2&a=42&b=23",
+        )
+        == "1=1&2=2&a=42&b=23"
     )
-    strict_eq(
+    assert (
         urls.url_encode(
             {"A": 1, "a": 2, "B": 3, "b": 4},
             sort=True,
             key=lambda x: x[0].lower() + x[0],
-        ),
-        "A=1&a=2&B=3&b=4",
+        )
+        == "A=1&a=2&B=3&b=4"
     )
 
 
 def test_streamed_url_encoding():
     out = io.StringIO()
     urls.url_encode_stream({"foo": "bar 45"}, out)
-    strict_eq(out.getvalue(), "foo=bar+45")
+    assert out.getvalue() == "foo=bar+45"
 
     d = {"foo": 1, "bar": 23, "blah": "Hänsel"}
     out = io.StringIO()
     urls.url_encode_stream(d, out, sort=True)
-    strict_eq(out.getvalue(), "bar=23&blah=H%C3%A4nsel&foo=1")
+    assert out.getvalue() == "bar=23&blah=H%C3%A4nsel&foo=1"
     out = io.StringIO()
     urls.url_encode_stream(d, out, sort=True, separator=";")
-    strict_eq(out.getvalue(), "bar=23;blah=H%C3%A4nsel;foo=1")
+    assert out.getvalue() == "bar=23;blah=H%C3%A4nsel;foo=1"
 
     gen = urls.url_encode_stream(d, sort=True)
-    strict_eq(next(gen), "bar=23")
-    strict_eq(next(gen), "blah=H%C3%A4nsel")
-    strict_eq(next(gen), "foo=1")
+    assert next(gen) == "bar=23"
+    assert next(gen) == "blah=H%C3%A4nsel"
+    assert next(gen) == "foo=1"
     pytest.raises(StopIteration, lambda: next(gen))
 
 
@@ -224,47 +221,47 @@ def test_url_fixing_qs():
 
 
 def test_iri_support():
-    strict_eq(urls.uri_to_iri("http://xn--n3h.net/"), "http://\u2603.net/")
-    strict_eq(
-        urls.uri_to_iri(b"http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"),
-        "http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th",
+    assert urls.uri_to_iri("http://xn--n3h.net/") == "http://\u2603.net/"
+    assert (
+        urls.uri_to_iri(b"http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th")
+        == "http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th"
     )
-    strict_eq(urls.iri_to_uri("http://☃.net/"), "http://xn--n3h.net/")
-    strict_eq(
-        urls.iri_to_uri("http://üser:pässword@☃.net/påth"),
-        "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th",
+    assert urls.iri_to_uri("http://☃.net/") == "http://xn--n3h.net/"
+    assert (
+        urls.iri_to_uri("http://üser:pässword@☃.net/påth")
+        == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
     )
 
-    strict_eq(
-        urls.uri_to_iri("http://test.com/%3Fmeh?foo=%26%2F"),
-        "http://test.com/%3Fmeh?foo=%26%2F",
+    assert (
+        urls.uri_to_iri("http://test.com/%3Fmeh?foo=%26%2F")
+        == "http://test.com/%3Fmeh?foo=%26%2F"
     )
 
     # this should work as well, might break on 2.4 because of a broken
     # idna codec
-    strict_eq(urls.uri_to_iri(b"/foo"), "/foo")
-    strict_eq(urls.iri_to_uri("/foo"), "/foo")
+    assert urls.uri_to_iri(b"/foo") == "/foo"
+    assert urls.iri_to_uri("/foo") == "/foo"
 
-    strict_eq(
-        urls.iri_to_uri("http://föö.com:8080/bam/baz"),
-        "http://xn--f-1gaa.com:8080/bam/baz",
+    assert (
+        urls.iri_to_uri("http://föö.com:8080/bam/baz")
+        == "http://xn--f-1gaa.com:8080/bam/baz"
     )
 
 
 def test_iri_safe_conversion():
-    strict_eq(urls.iri_to_uri("magnet:?foo=bar"), "magnet:?foo=bar")
-    strict_eq(urls.iri_to_uri("itms-service://?foo=bar"), "itms-service:?foo=bar")
-    strict_eq(
-        urls.iri_to_uri("itms-service://?foo=bar", safe_conversion=True),
-        "itms-service://?foo=bar",
+    assert urls.iri_to_uri("magnet:?foo=bar") == "magnet:?foo=bar"
+    assert urls.iri_to_uri("itms-service://?foo=bar") == "itms-service:?foo=bar"
+    assert (
+        urls.iri_to_uri("itms-service://?foo=bar", safe_conversion=True)
+        == "itms-service://?foo=bar"
     )
 
 
 def test_iri_safe_quoting():
     uri = "http://xn--f-1gaa.com/%2F%25?q=%C3%B6&x=%3D%25#%25"
     iri = "http://föö.com/%2F%25?q=ö&x=%3D%25#%25"
-    strict_eq(urls.uri_to_iri(uri), iri)
-    strict_eq(urls.iri_to_uri(urls.uri_to_iri(uri)), uri)
+    assert urls.uri_to_iri(uri) == iri
+    assert urls.iri_to_uri(urls.uri_to_iri(uri)) == uri
 
 
 def test_ordered_multidict_encoding():
@@ -288,20 +285,20 @@ def test_multidict_encoding():
 
 def test_href():
     x = urls.Href("http://www.example.com/")
-    strict_eq(x("foo"), "http://www.example.com/foo")
-    strict_eq(x.foo("bar"), "http://www.example.com/foo/bar")
-    strict_eq(x.foo("bar", x=42), "http://www.example.com/foo/bar?x=42")
-    strict_eq(x.foo("bar", class_=42), "http://www.example.com/foo/bar?class=42")
-    strict_eq(x.foo("bar", {"class": 42}), "http://www.example.com/foo/bar?class=42")
+    assert x("foo") == "http://www.example.com/foo"
+    assert x.foo("bar") == "http://www.example.com/foo/bar"
+    assert x.foo("bar", x=42) == "http://www.example.com/foo/bar?x=42"
+    assert x.foo("bar", class_=42) == "http://www.example.com/foo/bar?class=42"
+    assert x.foo("bar", {"class": 42}) == "http://www.example.com/foo/bar?class=42"
     pytest.raises(AttributeError, lambda: x.__blah__)
 
     x = urls.Href("blah")
-    strict_eq(x.foo("bar"), "blah/foo/bar")
+    assert x.foo("bar") == "blah/foo/bar"
 
     pytest.raises(TypeError, x.foo, {"foo": 23}, x=42)
 
     x = urls.Href("")
-    strict_eq(x("foo"), "foo")
+    assert x("foo") == "foo"
 
 
 def test_href_url_join():
@@ -313,72 +310,70 @@ def test_href_url_join():
 
 def test_href_past_root():
     base_href = urls.Href("http://www.blagga.com/1/2/3")
-    strict_eq(base_href("../foo"), "http://www.blagga.com/1/2/foo")
-    strict_eq(base_href("../../foo"), "http://www.blagga.com/1/foo")
-    strict_eq(base_href("../../../foo"), "http://www.blagga.com/foo")
-    strict_eq(base_href("../../../../foo"), "http://www.blagga.com/foo")
-    strict_eq(base_href("../../../../../foo"), "http://www.blagga.com/foo")
-    strict_eq(base_href("../../../../../../foo"), "http://www.blagga.com/foo")
+    assert base_href("../foo") == "http://www.blagga.com/1/2/foo"
+    assert base_href("../../foo") == "http://www.blagga.com/1/foo"
+    assert base_href("../../../foo") == "http://www.blagga.com/foo"
+    assert base_href("../../../../foo") == "http://www.blagga.com/foo"
+    assert base_href("../../../../../foo") == "http://www.blagga.com/foo"
+    assert base_href("../../../../../../foo") == "http://www.blagga.com/foo"
 
 
 def test_url_unquote_plus_unicode():
     # was broken in 0.6
-    strict_eq(urls.url_unquote_plus("\x6d"), "\x6d")
-    assert type(urls.url_unquote_plus("\x6d")) is str
+    assert urls.url_unquote_plus("\x6d") == "\x6d"
 
 
 def test_quoting_of_local_urls():
     rv = urls.iri_to_uri("/foo\x8f")
-    strict_eq(rv, "/foo%C2%8F")
-    assert type(rv) is str
+    assert rv == "/foo%C2%8F"
 
 
 def test_url_attributes():
     rv = urls.url_parse("http://foo%3a:bar%3a@[::1]:80/123?x=y#frag")
-    strict_eq(rv.scheme, "http")
-    strict_eq(rv.auth, "foo%3a:bar%3a")
-    strict_eq(rv.username, "foo:")
-    strict_eq(rv.password, "bar:")
-    strict_eq(rv.raw_username, "foo%3a")
-    strict_eq(rv.raw_password, "bar%3a")
-    strict_eq(rv.host, "::1")
+    assert rv.scheme == "http"
+    assert rv.auth == "foo%3a:bar%3a"
+    assert rv.username == "foo:"
+    assert rv.password == "bar:"
+    assert rv.raw_username == "foo%3a"
+    assert rv.raw_password == "bar%3a"
+    assert rv.host == "::1"
     assert rv.port == 80
-    strict_eq(rv.path, "/123")
-    strict_eq(rv.query, "x=y")
-    strict_eq(rv.fragment, "frag")
+    assert rv.path == "/123"
+    assert rv.query == "x=y"
+    assert rv.fragment == "frag"
 
     rv = urls.url_parse("http://\N{SNOWMAN}.com/")
-    strict_eq(rv.host, "\N{SNOWMAN}.com")
-    strict_eq(rv.ascii_host, "xn--n3h.com")
+    assert rv.host == "\N{SNOWMAN}.com"
+    assert rv.ascii_host == "xn--n3h.com"
 
 
 def test_url_attributes_bytes():
     rv = urls.url_parse(b"http://foo%3a:bar%3a@[::1]:80/123?x=y#frag")
-    strict_eq(rv.scheme, b"http")
-    strict_eq(rv.auth, b"foo%3a:bar%3a")
-    strict_eq(rv.username, "foo:")
-    strict_eq(rv.password, "bar:")
-    strict_eq(rv.raw_username, b"foo%3a")
-    strict_eq(rv.raw_password, b"bar%3a")
-    strict_eq(rv.host, b"::1")
+    assert rv.scheme == b"http"
+    assert rv.auth == b"foo%3a:bar%3a"
+    assert rv.username == "foo:"
+    assert rv.password == "bar:"
+    assert rv.raw_username == b"foo%3a"
+    assert rv.raw_password == b"bar%3a"
+    assert rv.host == b"::1"
     assert rv.port == 80
-    strict_eq(rv.path, b"/123")
-    strict_eq(rv.query, b"x=y")
-    strict_eq(rv.fragment, b"frag")
+    assert rv.path == b"/123"
+    assert rv.query == b"x=y"
+    assert rv.fragment == b"frag"
 
 
 def test_url_joining():
-    strict_eq(urls.url_join("/foo", "/bar"), "/bar")
-    strict_eq(urls.url_join("http://example.com/foo", "/bar"), "http://example.com/bar")
-    strict_eq(urls.url_join("file:///tmp/", "test.html"), "file:///tmp/test.html")
-    strict_eq(urls.url_join("file:///tmp/x", "test.html"), "file:///tmp/test.html")
-    strict_eq(urls.url_join("file:///tmp/x", "../../../x.html"), "file:///x.html")
+    assert urls.url_join("/foo", "/bar") == "/bar"
+    assert urls.url_join("http://example.com/foo", "/bar") == "http://example.com/bar"
+    assert urls.url_join("file:///tmp/", "test.html") == "file:///tmp/test.html"
+    assert urls.url_join("file:///tmp/x", "test.html") == "file:///tmp/test.html"
+    assert urls.url_join("file:///tmp/x", "../../../x.html") == "file:///x.html"
 
 
 def test_partial_unencoded_decode():
     ref = "foo=정상처리".encode("euc-kr")
     x = urls.url_decode(ref, charset="euc-kr")
-    strict_eq(x["foo"], "정상처리")
+    assert x["foo"] == "정상처리"
 
 
 def test_iri_to_uri_idempotence_ascii_only():

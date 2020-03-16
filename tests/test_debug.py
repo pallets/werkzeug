@@ -58,7 +58,7 @@ class TestDebugRepr:
             pass
 
         assert debug_repr(Test("foo")) == (
-            '<span class="module">tests.test_debug.</span>'
+            '<span class="module">test_debug.</span>'
             "Test(<span class=\"string\">'foo'</span>)"
         )
 
@@ -134,7 +134,7 @@ class TestDebugRepr:
             pass
 
         assert debug_repr(MyList([1, 2])) == (
-            '<span class="module">tests.test_debug.</span>MyList(['
+            '<span class="module">test_debug.</span>MyList(['
             '<span class="number">1</span>, <span class="number">2</span>])'
         )
 
@@ -184,7 +184,7 @@ class TestDebugHelpers:
     def test_object_dumping(self):
         drg = DebugReprGenerator()
         out = drg.dump_object(Foo())
-        assert re.search("Details for tests.test_debug.Foo object at", out)
+        assert re.search("Details for test_debug.Foo object at", out)
         assert re.search('<th>x.*<span class="number">42</span>', out, flags=re.DOTALL)
         assert re.search('<th>y.*<span class="number">23</span>', out, flags=re.DOTALL)
         assert re.search('<th>z.*<span class="number">15</span>', out, flags=re.DOTALL)

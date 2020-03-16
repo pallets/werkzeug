@@ -26,7 +26,6 @@ from copy import deepcopy
 
 import pytest
 
-from . import strict_eq
 from werkzeug import datastructures
 from werkzeug import http
 from werkzeug.datastructures import LanguageAccept
@@ -786,15 +785,15 @@ class TestHeaders:
         h = self.storage_class()
         h.set("Key", "Value")
         for key, value in h.to_wsgi_list():
-            strict_eq(key, "Key")
-            strict_eq(value, "Value")
+            assert key == "Key"
+            assert value == "Value"
 
     def test_to_wsgi_list_bytes(self):
         h = self.storage_class()
         h.set(b"Key", b"Value")
         for key, value in h.to_wsgi_list():
-            strict_eq(key, "Key")
-            strict_eq(value, "Value")
+            assert key == "Key"
+            assert value == "Value"
 
     def test_equality(self):
         # test equality, given keys are case insensitive
@@ -846,18 +845,10 @@ class TestEnvironHeaders:
         headers = self.storage_class(env)
         assert dict(headers) == {"X-Foo": "42", "Content-Length": "0"}
 
-    def test_return_type_is_unicode(self):
-        # environ contains native strings; we return unicode
-        headers = self.storage_class(
-            {"HTTP_FOO": "\xe2\x9c\x93", "CONTENT_TYPE": "text/plain"}
-        )
+    def test_return_type_is_str(self):
+        headers = self.storage_class({"HTTP_FOO": "\xe2\x9c\x93"})
         assert headers["Foo"] == "\xe2\x9c\x93"
-        assert isinstance(headers["Foo"], str)
-        assert isinstance(headers["Content-Type"], str)
-        iter_output = dict(iter(headers))
-        assert iter_output["Foo"] == "\xe2\x9c\x93"
-        assert isinstance(iter_output["Foo"], str)
-        assert isinstance(iter_output["Content-Type"], str)
+        assert next(iter(headers)) == ("Foo", "\xe2\x9c\x93")
 
     def test_bytes_operations(self):
         foo_val = "\xff"
