@@ -31,7 +31,7 @@ processing::
 
     def application(environ, start_response):
         request = Request(environ)
-        response = Response("Hello %s!" % request.args.get('name', 'World!'))
+        response = Response(f"Hello {request.args.get('name', 'World!')}!")
         return response(environ, start_response)
 
 Because this is a very common task the :class:`~Request` object provides
@@ -41,7 +41,7 @@ a helper for that.  The above code can be rewritten like this::
 
     @Request.application
     def application(request):
-        return Response("Hello %s!" % request.args.get('name', 'World!'))
+        return Response(f"Hello {request.args.get('name', 'World!')}!")
 
 The `application` is still a valid WSGI application that accepts the
 environment and `start_response` callable.

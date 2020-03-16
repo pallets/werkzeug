@@ -169,7 +169,7 @@ def get_pin_and_cookie_name(app):
     probably_public_bits = [
         username,
         modname,
-        getattr(app, "__name__", app.__class__.__name__),
+        getattr(app, "__name__", type(app).__name__),
         getattr(mod, "__file__", None),
     ]
 
@@ -187,13 +187,13 @@ def get_pin_and_cookie_name(app):
         h.update(bit)
     h.update(b"cookiesalt")
 
-    cookie_name = "__wzd" + h.hexdigest()[:20]
+    cookie_name = f"__wzd{h.hexdigest()[:20]}"
 
     # If we need to generate a pin we salt it a bit more so that we don't
     # end up with the same value and generate out 9 digits
     if num is None:
         h.update(b"pinsalt")
-        num = ("%09d" % int(h.hexdigest(), 16))[:9]
+        num = f"{int(h.hexdigest(), 16):09d}"[:9]
 
     # Format the pincode in groups of digits for easier remembering if
     # we don't have a result yet.
@@ -270,7 +270,7 @@ class DebuggedApplication:
                 if self.pin is None:
                     _log("warning", " * Debugger PIN disabled. DEBUGGER UNSECURED!")
                 else:
-                    _log("info", " * Debugger PIN: %s" % self.pin)
+                    _log("info", " * Debugger PIN: %s", self.pin)
         else:
             self.pin = None
 
@@ -437,7 +437,7 @@ class DebuggedApplication:
         if auth:
             rv.set_cookie(
                 self.pin_cookie_name,
-                "{}|{}".format(int(time.time()), hash_pin(self.pin)),
+                f"{int(time.time())}|{hash_pin(self.pin)}",
                 httponly=True,
             )
         elif bad_cookie:
@@ -450,7 +450,7 @@ class DebuggedApplication:
             _log(
                 "info", " * To enable the debugger you need to enter the security pin:"
             )
-            _log("info", " * Debugger pin code: %s" % self.pin)
+            _log("info", " * Debugger pin code: %s", self.pin)
         return Response("")
 
     def __call__(self, environ, start_response):

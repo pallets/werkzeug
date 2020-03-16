@@ -247,21 +247,20 @@ def test_basic_building():
 
 
 def test_long_build():
-    long_args = {"v%d" % x: x for x in range(10000)}
+    long_args = {f"v{x}": x for x in range(10000)}
     map = r.Map(
         [
             r.Rule(
-                "".join("/<%s>" % k for k in long_args.keys()),
+                "".join(f"/<{k}>" for k in long_args.keys()),
                 endpoint="bleep",
                 build_only=True,
             )
         ]
     )
     adapter = map.bind("localhost", "/")
-    url = adapter.build("bleep", long_args)
-    url += "/"
+    url = f"{adapter.build('bleep', long_args)}/"
     for v in long_args.values():
-        assert "/%d" % v in url
+        assert f"/{v}" in url
 
 
 def test_defaults():
@@ -506,15 +505,15 @@ def test_server_name_interpolation():
         [r.Rule("/", endpoint="index"), r.Rule("/", endpoint="alt", subdomain="alt")]
     )
 
-    env = create_environ("/", "http://%s/" % server_name)
+    env = create_environ("/", f"http://{server_name}/")
     adapter = map.bind_to_environ(env, server_name=server_name)
     assert adapter.match() == ("index", {})
 
-    env = create_environ("/", "http://alt.%s/" % server_name)
+    env = create_environ("/", f"http://alt.{server_name}/")
     adapter = map.bind_to_environ(env, server_name=server_name)
     assert adapter.match() == ("alt", {})
 
-    env = create_environ("/", "http://%s/" % server_name)
+    env = create_environ("/", f"http://{server_name}/")
 
     with pytest.warns(UserWarning):
         adapter = map.bind_to_environ(env, server_name="foo")
@@ -697,7 +696,7 @@ def test_converter_with_tuples():
             return one, two
 
         def to_url(self, values):
-            return "{}/{}".format(values[0], values[1])
+            return f"{values[0]}/{values[1]}"
 
     map = r.Map(
         [r.Rule("/<two:foo>/", endpoint="handler")],
@@ -881,7 +880,7 @@ def test_alias_redirects():
     def ensure_redirect(path, new_url, args=None):
         with pytest.raises(r.RequestRedirect) as excinfo:
             a.match(path, query_args=args)
-        assert excinfo.value.new_url == "http://example.com" + new_url
+        assert excinfo.value.new_url == f"http://example.com{new_url}"
 
     ensure_redirect("/index.html", "/")
     ensure_redirect("/users/index.html", "/users/")
@@ -898,25 +897,25 @@ def test_alias_redirects():
 def test_double_defaults(prefix):
     m = r.Map(
         [
-            r.Rule(prefix + "/", defaults={"foo": 1, "bar": False}, endpoint="x"),
-            r.Rule(prefix + "/<int:foo>", defaults={"bar": False}, endpoint="x"),
-            r.Rule(prefix + "/bar/", defaults={"foo": 1, "bar": True}, endpoint="x"),
-            r.Rule(prefix + "/bar/<int:foo>", defaults={"bar": True}, endpoint="x"),
+            r.Rule(f"{prefix}/", defaults={"foo": 1, "bar": False}, endpoint="x"),
+            r.Rule(f"{prefix}/<int:foo>", defaults={"bar": False}, endpoint="x"),
+            r.Rule(f"{prefix}/bar/", defaults={"foo": 1, "bar": True}, endpoint="x"),
+            r.Rule(f"{prefix}/bar/<int:foo>", defaults={"bar": True}, endpoint="x"),
         ]
     )
     a = m.bind("example.com")
 
-    assert a.match(prefix + "/") == ("x", {"foo": 1, "bar": False})
-    assert a.match(prefix + "/2") == ("x", {"foo": 2, "bar": False})
-    assert a.match(prefix + "/bar/") == ("x", {"foo": 1, "bar": True})
-    assert a.match(prefix + "/bar/2") == ("x", {"foo": 2, "bar": True})
+    assert a.match(f"{prefix}/") == ("x", {"foo": 1, "bar": False})
+    assert a.match(f"{prefix}/2") == ("x", {"foo": 2, "bar": False})
+    assert a.match(f"{prefix}/bar/") == ("x", {"foo": 1, "bar": True})
+    assert a.match(f"{prefix}/bar/2") == ("x", {"foo": 2, "bar": True})
 
-    assert a.build("x", {"foo": 1, "bar": False}) == prefix + "/"
-    assert a.build("x", {"foo": 2, "bar": False}) == prefix + "/2"
-    assert a.build("x", {"bar": False}) == prefix + "/"
-    assert a.build("x", {"foo": 1, "bar": True}) == prefix + "/bar/"
-    assert a.build("x", {"foo": 2, "bar": True}) == prefix + "/bar/2"
-    assert a.build("x", {"bar": True}) == prefix + "/bar/"
+    assert a.build("x", {"foo": 1, "bar": False}) == f"{prefix}/"
+    assert a.build("x", {"foo": 2, "bar": False}) == f"{prefix}/2"
+    assert a.build("x", {"bar": False}) == f"{prefix}/"
+    assert a.build("x", {"foo": 1, "bar": True}) == f"{prefix}/bar/"
+    assert a.build("x", {"foo": 2, "bar": True}) == f"{prefix}/bar/2"
+    assert a.build("x", {"bar": True}) == f"{prefix}/bar/"
 
 
 def test_building_bytes():

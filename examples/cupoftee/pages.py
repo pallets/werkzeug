@@ -21,11 +21,11 @@ class ServerList(Page):
 
     def order_link(self, name, title):
         cls = ""
-        link = "?order_by=" + name
+        link = f"?order_by={name}"
         desc = False
         if name == self.order_by:
             desc = not self.order_desc
-            cls = ' class="%s"' % ("down" if desc else "up")
+            cls = f' class="{"down" if desc else "up"}"'
         if desc:
             link += "&amp;dir=desc"
         return f'<a href="{link}"{cls}>{title}</a>'

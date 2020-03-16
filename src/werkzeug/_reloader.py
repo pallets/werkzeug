@@ -73,7 +73,7 @@ def _get_args_for_reloading():
         os.name == "nt"
         and __main__.__package__ == ""
         and not os.path.exists(py_script)
-        and os.path.exists(py_script + ".exe")
+        and os.path.exists(f"{py_script}.exe")
     ):
         # Executed a file, like "python app.py".
         py_script = os.path.abspath(py_script)
@@ -81,7 +81,7 @@ def _get_args_for_reloading():
         if os.name == "nt":
             # Windows entry points have ".exe" extension and should be
             # called directly.
-            if not os.path.exists(py_script) and os.path.exists(py_script + ".exe"):
+            if not os.path.exists(py_script) and os.path.exists(f"{py_script}.exe"):
                 py_script += ".exe"
 
             if (
@@ -105,7 +105,7 @@ def _get_args_for_reloading():
                 name = os.path.splitext(os.path.basename(py_script))[0]
 
                 if name != "__main__":
-                    py_module += "." + name
+                    py_module += f".{name}"
             else:
                 # Incorrectly rewritten by pydevd debugger from "-m script" to "script".
                 py_module = py_script
@@ -158,7 +158,7 @@ class ReloaderLoop:
         but running the reloader thread.
         """
         while 1:
-            _log("info", " * Restarting with %s" % self.name)
+            _log("info", f" * Restarting with {self.name}")
             args = _get_args_for_reloading()
 
             new_environ = os.environ.copy()
@@ -173,7 +173,7 @@ class ReloaderLoop:
 
     def log_reload(self, filename):
         filename = os.path.abspath(filename)
-        _log("info", " * Detected change in %r, reloading" % filename)
+        _log("info", f" * Detected change in {filename!r}, reloading")
 
 
 class StatReloaderLoop(ReloaderLoop):

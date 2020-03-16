@@ -109,8 +109,9 @@ class HTTPException(Exception):
             @property
             def description(self):
                 if self.show_exception:
-                    return "{}\n{}: {}".format(
-                        self._description, exception.__name__, exception.__str__(self)
+                    return (
+                        f"{self._description}\n"
+                        f"{exception.__name__}: {exception.__str__(self)}"
                     )
 
                 return self._description
@@ -133,20 +134,17 @@ class HTTPException(Exception):
 
     def get_description(self, environ=None):
         """Get the description."""
-        return "<p>%s</p>" % escape(self.description).replace("\n", "<br>")
+        description = escape(self.description).replace("\n", "<br>")
+        return f"<p>{description}</p>"
 
     def get_body(self, environ=None):
         """Get the HTML body."""
         return (
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-            "<title>%(code)s %(name)s</title>\n"
-            "<h1>%(name)s</h1>\n"
-            "%(description)s\n"
-        ) % {
-            "code": self.code,
-            "name": escape(self.name),
-            "description": self.get_description(environ),
-        }
+            f"<title>{self.code} {escape(self.name)}</title>\n"
+            f"<h1>{escape(self.name)}</h1>\n"
+            f"{self.get_description(environ)}\n"
+        )
 
     def get_headers(self, environ=None):
         """Get a list of headers."""
@@ -186,7 +184,7 @@ class HTTPException(Exception):
 
     def __repr__(self):
         code = self.code if self.code is not None else "???"
-        return f"<{self.__class__.__name__} '{code}: {self.name}'>"
+        return f"<{type(self).__name__} '{code}: {self.name}'>"
 
 
 class BadRequest(HTTPException):
@@ -494,7 +492,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
     def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.length is not None:
-            headers.append(("Content-Range", "%s */%d" % (self.units, self.length)))
+            headers.append(("Content-Range", f"{self.units} */{self.length}"))
         return headers
 
 
@@ -789,7 +787,7 @@ class Aborter:
         if not args and not kwargs and not isinstance(code, int):
             raise HTTPException(response=code)
         if code not in self.mapping:
-            raise LookupError("no exception for %r" % code)
+            raise LookupError(f"no exception for {code!r}")
         raise self.mapping[code](*args, **kwargs)
 
 

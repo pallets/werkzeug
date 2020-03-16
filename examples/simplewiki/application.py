@@ -89,7 +89,7 @@ class SimpleWiki:
         # action module.  It's "on_" + the action name.  If it doesn't
         # exists call the missing_action method from the same module.
         else:
-            action = getattr(actions, "on_" + action_name, None)
+            action = getattr(actions, f"on_{action_name}", None)
             if action is None:
                 response = actions.missing_action(request, action_name)
             else:

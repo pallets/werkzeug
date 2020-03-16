@@ -51,10 +51,10 @@ def test_fileurl_parsing_windows(implicit_format, localhost, monkeypatch):
     url = urls.url_parse("file://///server.tld")
     assert url.get_file_location(pathformat) == ("server.tld", "")
 
-    url = urls.url_parse("file://///%s" % localhost)
+    url = urls.url_parse(f"file://///{localhost}")
     assert url.get_file_location(pathformat) == (None, "")
 
-    url = urls.url_parse("file://///%s/file.txt" % localhost)
+    url = urls.url_parse(f"file://///{localhost}/file.txt")
     assert url.get_file_location(pathformat) == (None, r"file.txt")
 
 

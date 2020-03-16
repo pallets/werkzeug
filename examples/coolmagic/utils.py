@@ -36,7 +36,7 @@ def export(string, template=None, **extra):
     """
 
     def wrapped(f):
-        endpoint = (f.__module__ + "." + f.__name__)[16:]
+        endpoint = f"{f.__module__}.{f.__name__}"[16:]
         if template is not None:
             old_f = f
 

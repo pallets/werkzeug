@@ -54,11 +54,11 @@ def redirect_with_get_app(environ, start_response):
         "http://localhost/first/request",
         "http://localhost/some/redirect/",
     ):
-        raise AssertionError('redirect_demo_app() did not expect URL "%s"' % req.url)
+        raise AssertionError(f'redirect_demo_app() did not expect URL "{req.url}"')
     if "/some/redirect" not in req.url:
         response = redirect("http://localhost/some/redirect/")
     else:
-        response = Response("current url: %s" % req.url)
+        response = Response(f"current url: {req.url}")
     return response(environ, start_response)
 
 
@@ -298,7 +298,7 @@ def test_environ_builder_stream_switch():
             {
                 "wsgi.input": stream,
                 "CONTENT_LENGTH": str(length),
-                "CONTENT_TYPE": 'multipart/form-data; boundary="%s"' % boundary,
+                "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )[1]
         strict_eq(form, d)
@@ -318,7 +318,7 @@ def test_environ_builder_unicode_file_mix():
             {
                 "wsgi.input": stream,
                 "CONTENT_LENGTH": str(length),
-                "CONTENT_TYPE": 'multipart/form-data; boundary="%s"' % boundary,
+                "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )
         strict_eq(form["s"], "\N{SNOWMAN}")
@@ -420,7 +420,7 @@ def test_follow_local_redirect():
         if "/from/location" in req.url:
             response = redirect("/to/location", Response=LocalResponse)
         else:
-            response = Response("current path: %s" % req.path)
+            response = Response(f"current path: {req.path}")
         return response(environ, start_response)
 
     c = Client(local_redirect_app, response_wrapper=BaseResponse)
@@ -444,7 +444,7 @@ def test_follow_redirect_body(code, keep):
             else:
                 assert not request.form
 
-            return Response("current url: %s" % request.url)
+            return Response(f"current url: {request.url}")
 
         return redirect("http://localhost/some/redirect/", code=code)
 
@@ -573,7 +573,7 @@ def test_redirect_mutate_environ():
 def test_path_info_script_name_unquoting():
     def test_app(environ, start_response):
         start_response("200 OK", [("Content-Type", "text/plain")])
-        return [environ["PATH_INFO"] + "\n" + environ["SCRIPT_NAME"]]
+        return [f"{environ['PATH_INFO']}\n{environ['SCRIPT_NAME']}"]
 
     c = Client(test_app, response_wrapper=BaseResponse)
     resp = c.get("/foo%40bar")

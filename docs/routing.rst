@@ -44,7 +44,7 @@ Here is a simple example which could be the URL definition for a blog::
         except HTTPException, e:
             return e(environ, start_response)
         start_response('200 OK', [('Content-Type', 'text/plain')])
-        return ['Rule points to %r with arguments %r' % (endpoint, args)]
+        return [f'Rule points to {endpoint!r} with arguments {args!r}']
 
 So what does that do?  First of all we create a new :class:`Map` which stores
 a bunch of URL rules.  Then we pass it a list of :class:`Rule` objects.

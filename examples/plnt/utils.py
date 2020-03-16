@@ -77,7 +77,7 @@ def render_template(template_name, **context):
 
 def nl2p(s):
     """Add paragraphs to a text."""
-    return "\n".join("<p>%s</p>" % p for p in _par_re.split(s))
+    return "\n".join(f"<p>{p}</p>" for p in _par_re.split(s))
 
 
 def url_for(endpoint, **kw):

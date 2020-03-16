@@ -100,7 +100,7 @@ class _ServerInfo:
         for i in range(10):
             time.sleep(0.1 * i)
             try:
-                response = rget(self.url + "/_getpid", verify=False)
+                response = rget(f"{self.url}/_getpid", verify=False)
                 self.last_pid = int(response.text)
                 return self.last_pid
             except Exception as e:  # urllib also raises socketerrors
@@ -139,16 +139,8 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
         app_pkg = tmpdir.mkdir("testsuite_app")
         appfile = app_pkg.join("__init__.py")
         port = next(port_generator)
-        appfile.write(
-            "\n\n".join(
-                (
-                    "kwargs = {{'hostname': 'localhost', 'port': {port:d}}}".format(
-                        port=port
-                    ),
-                    textwrap.dedent(application),
-                )
-            )
-        )
+        kwargs_str = f"kwargs = {{'hostname': 'localhost', 'port': {port:d}}}"
+        appfile.write(f"{kwargs_str}\n\n{textwrap.dedent(application)}")
 
         monkeypatch.delitem(sys.modules, "testsuite_app", raising=False)
         monkeypatch.syspath_prepend(str(tmpdir))
@@ -160,7 +152,7 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
 
         if hostname.startswith("unix://"):
             addr = hostname.split("unix://", 1)[1]
-            requests_url = "http+unix://" + url_quote(addr, safe="")
+            requests_url = f"http+unix://{url_quote(addr, safe='')}"
         elif testsuite_app.kwargs.get("ssl_context", None):
             requests_url = f"https://localhost:{port}"
         else:
@@ -175,7 +167,7 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
 
             @property
             def pattern(self):
-                return "pid=%s" % info.request_pid()
+                return f"pid={info.request_pid()}"
 
         xprocess.ensure("dev_server", Starter, restart=True)
 

@@ -55,7 +55,7 @@ def get_filesystem_encoding():
         if not _warned_about_filesystem_encoding:
             warnings.warn(
                 "Detected a misconfigured UNIX filesystem: Will use"
-                " UTF-8 as filesystem encoding instead of {!r}".format(rv),
+                f" UTF-8 as filesystem encoding instead of {rv!r}",
                 BrokenFilesystemWarning,
             )
             _warned_about_filesystem_encoding = True

@@ -30,9 +30,9 @@ class URL(Document):
             while 1:
                 id = new_id if new_id else get_random_uid()
                 try:
-                    docid = URL.db.resource.put(
-                        content=self._data, path="/%s/" % str(id)
-                    )["id"]
+                    docid = URL.db.resource.put(content=self._data, path=f"/{id}/")[
+                        "id"
+                    ]
                 except Exception:
                     continue
                 if docid:
@@ -47,4 +47,4 @@ class URL(Document):
         return url_for("link", uid=self.id, _external=True)
 
     def __repr__(self):
-        return "<URL %r>" % self.id
+        return f"<URL {self.id!r}>"

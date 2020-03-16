@@ -133,7 +133,7 @@ def _hash_internal(method, salt, password):
         method = args.pop(0)
         iterations = int(args[0] or 0) if args else DEFAULT_PBKDF2_ITERATIONS
         is_pbkdf2 = True
-        actual_method = "pbkdf2:%s:%d" % (method, iterations)
+        actual_method = f"pbkdf2:{method}:{iterations}"
     else:
         is_pbkdf2 = False
         actual_method = method

@@ -236,7 +236,7 @@ class Traceback:
 
         exception_type = exc_type.__name__
         if exc_type.__module__ not in {"builtins", "__builtin__", "exceptions"}:
-            exception_type = exc_type.__module__ + "." + exception_type
+            exception_type = f"{exc_type.__module__}.{exception_type}"
         self.exception_type = exception_type
 
         self.groups = []
@@ -273,7 +273,7 @@ class Traceback:
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
-        tb = self.plaintext.rstrip() + "\n"
+        tb = f"{self.plaintext.rstrip()}\n"
         logfile.write(_to_native(tb, "utf-8", "replace"))
 
     def paste(self):
@@ -311,15 +311,15 @@ class Traceback:
                 title = "Traceback <em>(most recent call last)</em>:"
 
         if self.is_syntax_error:
-            description_wrapper = "<pre class=syntaxerror>%s</pre>"
+            description = f"<pre class=syntaxerror>{escape(self.exception)}</pre>"
         else:
-            description_wrapper = "<blockquote>%s</blockquote>"
+            description = f"<blockquote>{escape(self.exception)}</blockquote>"
 
         return SUMMARY_HTML % {
             "classes": " ".join(classes),
-            "title": "<h3>%s</h3>" % title if title else "",
+            "title": f"<h3>{title if title else ''}</h3>",
             "frames": "\n".join(frames),
-            "description": description_wrapper % escape(self.exception),
+            "description": description,
         }
 
     def render_full(self, evalex=False, secret=None, evalex_trusted=True):
@@ -414,21 +414,16 @@ class Group:
     def render(self, mark_lib=True):
         out = []
         if self.info is not None:
-            out.append('<li><div class="exc-divider">%s:</div>' % self.info)
+            out.append(f'<li><div class="exc-divider">{self.info}:</div>')
         for frame in self.frames:
-            out.append(
-                "<li%s>%s"
-                % (
-                    ' title="%s"' % escape(frame.info) if frame.info else "",
-                    frame.render(mark_lib=mark_lib),
-                )
-            )
+            title = f' title="{escape(frame.info)}"' if frame.info else ""
+            out.append(f"<li{title}>{frame.render(mark_lib=mark_lib)}")
         return "\n".join(out)
 
     def render_text(self):
         out = []
         if self.info is not None:
-            out.append("\n%s:\n" % self.info)
+            out.append(f"\n{self.info}:\n")
         out.append("Traceback (most recent call last):")
         for frame in self.frames:
             out.append(frame.render_text())
@@ -481,8 +476,9 @@ class Frame:
         )
 
     def render_text(self):
-        return '  File "{}", line {}, in {}\n    {}'.format(
-            self.filename, self.lineno, self.function_name, self.current_line.strip(),
+        return (
+            f'  File "{self.filename}", line {self.lineno}, in {self.function_name}\n'
+            f"    {self.current_line.strip()}"
         )
 
     def render_line_context(self):
@@ -494,8 +490,8 @@ class Frame:
             stripped_line = line.strip()
             prefix = len(line) - len(stripped_line)
             rv.append(
-                '<pre class="line %s"><span class="ws">%s</span>%s</pre>'
-                % (cls, " " * prefix, escape(stripped_line) or " ")
+                f'<pre class="line {cls}"><span class="ws">{" " * prefix}</span>'
+                f"{escape(stripped_line) if stripped_line else ' '}</pre>"
             )
 
         for line in before:
@@ -518,7 +514,7 @@ class Frame:
                     break
                 lineno -= 1
             try:
-                offset = len(inspect.getblock([x.code + "\n" for x in lines[lineno:]]))
+                offset = len(inspect.getblock([f"{x.code}\n" for x in lines[lineno:]]))
             except TokenError:
                 offset = 0
             for line in lines[lineno : lineno + offset]:

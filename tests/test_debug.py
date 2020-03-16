@@ -44,21 +44,13 @@ class TestDebugRepr:
     def test_string_repr(self):
         assert debug_repr("") == "<span class=\"string\">''</span>"
         assert debug_repr("foo") == "<span class=\"string\">'foo'</span>"
-        assert (
-            debug_repr("s" * 80)
-            == '<span class="string">\''
-            + "s" * 69
-            + '<span class="extended">'
-            + "s" * 11
-            + "'</span></span>"
+        assert debug_repr("s" * 80) == (
+            f'<span class="string">\'{"s" * 69}'
+            f'<span class="extended">{"s" * 11}\'</span></span>'
         )
-        assert (
-            debug_repr("<" * 80)
-            == '<span class="string">\''
-            + "&lt;" * 69
-            + '<span class="extended">'
-            + "&lt;" * 11
-            + "'</span></span>"
+        assert debug_repr("<" * 80) == (
+            f'<span class="string">\'{"&lt;" * 69}'
+            f'<span class="extended">{"&lt;" * 11}\'</span></span>'
         )
 
     def test_string_subclass_repr(self):
@@ -323,18 +315,16 @@ def test_get_machine_id():
 @pytest.mark.parametrize("crash", (True, False))
 def test_basic(dev_server, crash):
     server = dev_server(
-        """
-    from werkzeug.debug import DebuggedApplication
+        f"""
+        from werkzeug.debug import DebuggedApplication
 
-    @DebuggedApplication
-    def app(environ, start_response):
-        if {crash}:
-            1 / 0
-        start_response('200 OK', [('Content-Type', 'text/html')])
-        return [b'hello']
-    """.format(
-            crash=crash
-        )
+        @DebuggedApplication
+        def app(environ, start_response):
+            if {crash}:
+                1 / 0
+            start_response('200 OK', [('Content-Type', 'text/html')])
+            return [b'hello']
+        """
     )
 
     r = requests.get(server.url)

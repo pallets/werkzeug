@@ -26,11 +26,11 @@ class Application:
             "Could not verify your access level for that URL.\n"
             "You have to login with proper credentials",
             401,
-            {"WWW-Authenticate": 'Basic realm="%s"' % self.realm},
+            {"WWW-Authenticate": f'Basic realm="{self.realm}"'},
         )
 
     def dispatch_request(self, request):
-        return Response("Logged in as %s" % request.authorization.username)
+        return Response(f"Logged in as {request.authorization.username}")
 
     def __call__(self, environ, start_response):
         request = Request(environ)

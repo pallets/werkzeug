@@ -38,7 +38,7 @@ class ServerBrowser(Syncable):
     def _sync(self):
         to_delete = set(self.servers)
         for x in range(1, 17):
-            addr = ("master%d.teeworlds.com" % x, 8300)
+            addr = (f"master{x}.teeworlds.com", 8300)
             print(addr)
             try:
                 self._sync_master(addr, to_delete)
@@ -62,7 +62,7 @@ class ServerBrowser(Syncable):
                 ".".join(map(str, map(ord, data[n * 6 : n * 6 + 4]))),
                 ord(data[n * 6 + 5]) * 256 + ord(data[n * 6 + 4]),
             )
-            server_id = "%s:%d" % addr
+            server_id = f"{addr[0]}:{addr[1]}"
             if server_id in self.servers:
                 if not self.servers[server_id].sync():
                     continue

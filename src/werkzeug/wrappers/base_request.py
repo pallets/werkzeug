@@ -159,12 +159,12 @@ class BaseRequest:
         # in a debug session we don't want the repr to blow up.
         args = []
         try:
-            args.append("'%s'" % _to_native(self.url, self.url_charset))
-            args.append("[%s]" % self.method)
+            args.append(f"'{_to_native(self.url, self.url_charset)}'")
+            args.append(f"[{self.method}]")
         except Exception:
             args.append("(invalid WSGI environ)")
 
-        return "<{} {}>".format(self.__class__.__name__, " ".join(args))
+        return f"<{type(self).__name__} {' '.join(args)}>"
 
     @property
     def url_charset(self):
@@ -545,7 +545,7 @@ class BaseRequest:
     @cached_property
     def full_path(self):
         """Requested path, including the query string."""
-        return self.path + "?" + _to_str(self.query_string, self.url_charset)
+        return f"{self.path}?{_to_str(self.query_string, self.url_charset)}"
 
     @cached_property
     def script_root(self):

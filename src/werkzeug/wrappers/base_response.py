@@ -223,10 +223,10 @@ class BaseResponse:
 
     def __repr__(self):
         if self.is_sequence:
-            body_info = "%d bytes" % sum(map(len, self.iter_encoded()))
+            body_info = f"{sum(map(len, self.iter_encoded()))} bytes"
         else:
             body_info = "streamed" if self.is_streamed else "likely-streamed"
-        return f"<{self.__class__.__name__} {body_info} [{self.status}]>"
+        return f"<{type(self).__name__} {body_info} [{self.status}]>"
 
     @classmethod
     def force_type(cls, response, environ=None):
@@ -292,9 +292,9 @@ class BaseResponse:
     def status_code(self, code):
         self._status_code = code
         try:
-            self._status = "%d %s" % (code, HTTP_STATUS_CODES[code].upper())
+            self._status = f"{code} {HTTP_STATUS_CODES[code].upper()}"
         except KeyError:
-            self._status = "%d UNKNOWN" % code
+            self._status = f"{code} UNKNOWN"
 
     @property
     def status(self):
@@ -312,7 +312,7 @@ class BaseResponse:
             self._status_code = int(self._status.split(None, 1)[0])
         except ValueError:
             self._status_code = 0
-            self._status = "0 %s" % self._status
+            self._status = f"0 {self._status}"
         except IndexError:
             raise ValueError("Empty status argument")
 

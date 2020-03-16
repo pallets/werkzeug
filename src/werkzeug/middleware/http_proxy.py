@@ -80,7 +80,7 @@ class ProxyMiddleware:
 
         self.app = app
         self.targets = {
-            "/%s/" % k.strip("/"): _set_defaults(v) for k, v in targets.items()
+            f"/{k.strip('/')}/": _set_defaults(v) for k, v in targets.items()
         }
         self.chunk_size = chunk_size
         self.timeout = timeout
@@ -109,9 +109,8 @@ class ProxyMiddleware:
             remote_path = path
 
             if opts["remove_prefix"]:
-                remote_path = "{}/{}".format(
-                    target.path.rstrip("/"), remote_path[len(prefix) :].lstrip("/"),
-                )
+                remote_path = remote_path[len(prefix) :].lstrip("/")
+                remote_path = f"{target.path.rstrip('/')}/{remote_path}"
 
             content_length = environ.get("CONTENT_LENGTH")
             chunked = False
@@ -136,9 +135,8 @@ class ProxyMiddleware:
                     )
                 else:
                     raise RuntimeError(
-                        "Target scheme must be 'http' or 'https', got '{}'.".format(
-                            target.scheme
-                        )
+                        "Target scheme must be 'http' or 'https', got"
+                        f" {target.scheme!r}."
                     )
 
                 con.connect()
@@ -146,7 +144,7 @@ class ProxyMiddleware:
                 querystring = environ["QUERY_STRING"]
 
                 if querystring:
-                    remote_url = remote_url + "?" + querystring
+                    remote_url = f"{remote_url}?{querystring}"
 
                 con.putrequest(environ["REQUEST_METHOD"], remote_url, skip_host=True)
 
@@ -177,7 +175,7 @@ class ProxyMiddleware:
                 return BadGateway()(environ, start_response)
 
             start_response(
-                "%d %s" % (resp.status, resp.reason),
+                f"{resp.status} {resp.reason}",
                 [
                     (k.title(), v)
                     for k, v in resp.getheaders()

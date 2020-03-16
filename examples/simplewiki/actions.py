@@ -117,8 +117,8 @@ def on_diff(request, page_name):
             old_rev = revisions[old]
             page = old_rev.page
             diff = unified_diff(
-                (old_rev.text + "\n").splitlines(True),
-                (new_rev.text + "\n").splitlines(True),
+                f"{old_rev.text}\n".splitlines(True),
+                f"{new_rev.text}\n".splitlines(True),
                 page.name,
                 page.name,
                 format_datetime(old_rev.timestamp),
@@ -175,7 +175,12 @@ def on_revert(request, page_name):
                 page = old_revision.page
                 if request.method == "POST":
                     change_note = request.form.get("change_note", "")
-                    change_note = "revert" + (": " + change_note if change_note else "")
+
+                    if change_note:
+                        change_note = f"revert: {change_note}"
+                    else:
+                        change_note = "revert"
+
                     session.add(Revision(page, old_revision.text, change_note))
                     session.commit()
                     return redirect(href(page_name))

@@ -145,7 +145,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def server_version(self):
         from . import __version__
 
-        return "Werkzeug/" + __version__
+        return f"Werkzeug/{__version__}"
 
     def make_environ(self):
         request_url = url_parse(self.path)
@@ -200,9 +200,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             key = key.upper().replace("-", "_")
             value = value.replace("\r\n", "")
             if key not in ("CONTENT_TYPE", "CONTENT_LENGTH"):
-                key = "HTTP_" + key
+                key = f"HTTP_{key}"
                 if key in environ:
-                    value = "{},{}".format(environ[key], value)
+                    value = f"{environ[key]},{value}"
             environ[key] = value
 
         if environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
@@ -353,7 +353,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         if message is None:
             message = self.responses[code][0] if code in self.responses else ""
         if self.request_version != "HTTP/0.9":
-            hdr = "%s %d %s\r\n" % (self.protocol_version, code, message)
+            hdr = f"{self.protocol_version} {code} {message}\r\n"
             self.wfile.write(hdr.encode("ascii"))
 
     def version_string(self):
@@ -411,8 +411,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def log(self, type, message, *args):
         _log(
             type,
-            "%s - - [%s] %s\n"
-            % (self.address_string(), self.log_date_time_string(), message % args),
+            f"{self.address_string()} - - [{self.log_date_time_string()}] {message}\n",
+            *args,
         )
 
 
@@ -484,8 +484,8 @@ def make_ssl_devcert(base_path, host=None, cn=None):
 
     from cryptography.hazmat.primitives import serialization
 
-    cert_file = base_path + ".crt"
-    pkey_file = base_path + ".key"
+    cert_file = f"{base_path}.crt"
+    pkey_file = f"{base_path}.key"
 
     with open(cert_file, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
@@ -844,7 +844,7 @@ def run_simple(
             _log("info", " * Running on %s %s", display_hostname, quit_msg)
         else:
             if ":" in display_hostname:
-                display_hostname = "[%s]" % display_hostname
+                display_hostname = f"[{display_hostname}]"
             port = sock.getsockname()[1]
             _log(
                 "info",
@@ -906,7 +906,7 @@ def run_simple(
             else:
                 s.close()
                 if address_family == af_unix:
-                    _log("info", "Unlinking %s" % server_address)
+                    _log("info", "Unlinking %s", server_address)
                     os.unlink(server_address)
 
         from ._reloader import run_with_reloader

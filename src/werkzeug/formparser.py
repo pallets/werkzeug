@@ -305,7 +305,7 @@ def parse_multipart_headers(iterable):
             break
         elif line[0] in " \t" and result:
             key, value = result[-1]
-            result[-1] = (key, value + "\n " + line[1:])
+            result[-1] = (key, f"{value}\n {line[1:]}")
         else:
             parts = line.split(":", 1)
             if len(parts) == 2:
@@ -414,7 +414,7 @@ class MultiPartParser:
         if not boundary:
             self.fail("Missing boundary")
         if not is_valid_multipart_boundary(boundary):
-            self.fail("Invalid boundary: %s" % boundary)
+            self.fail(f"Invalid boundary: {boundary}")
         if len(boundary) > self.buffer_size:
             # this should never happen because we check for a minimum size
             # of 1024 and boundaries may not be longer than 200.  The only

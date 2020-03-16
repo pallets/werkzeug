@@ -22,15 +22,13 @@ from weakref import WeakKeyDictionary
 _logger = None
 _signature_cache = WeakKeyDictionary()
 _epoch_ord = date(1970, 1, 1).toordinal()
-_legal_cookie_chars = (
-    string.ascii_letters + string.digits + "/=!#$%&'*+-.^_`|~:"
-).encode("ascii")
+_legal_cookie_chars = f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:".encode(
+    "ascii"
+)
 
 _cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\\\"}
 for _i in chain(range(32), range(127, 256)):
-    _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = ("\\%03o" % _i).encode(
-        "latin1"
-    )
+    _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = f"\\{_i:03o}".encode("latin1")
 
 _octal_re = re.compile(br"\\[0-3][0-7][0-7]")
 _quote_re = re.compile(br"[\\].")
@@ -73,7 +71,7 @@ def _normalize_string_tuple(tup):
     is_text = isinstance(next(tupiter, None), str)
     for arg in tupiter:
         if isinstance(arg, str) != is_text:
-            raise TypeError("Cannot mix str and bytes arguments (got %s)" % repr(tup))
+            raise TypeError(f"Cannot mix str and bytes arguments (got {tup!r})")
     return tup
 
 
@@ -126,9 +124,9 @@ def _wsgi_encoding_dance(s, charset="utf-8", errors="replace"):
 
 def _get_environ(obj):
     env = getattr(obj, "environ", obj)
-    assert isinstance(env, dict), (
-        "%r is not a WSGI environment (has to be a dict)" % type(obj).__name__
-    )
+    assert isinstance(
+        env, dict
+    ), f"{type(obj).__name__!r} is not a WSGI environment (has to be a dict)"
     return env
 
 
@@ -310,7 +308,7 @@ class _DictAccessorProperty:
         self.lookup(obj).pop(self.name, None)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.name}>"
+        return f"<{type(self).__name__} {self.name}>"
 
 
 def _cookie_quote(b):
@@ -501,28 +499,27 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
             return app(environ, injecting_start_response)
         injecting_start_response("200 OK", [("Content-Type", "text/html")])
         return [
-            (
-                """
+            f"""\
 <!DOCTYPE html>
 <html>
 <head>
 <title>About Werkzeug</title>
 <style type="text/css">
-  body { font: 15px Georgia, serif; text-align: center; }
-  a { color: #333; text-decoration: none; }
-  h1 { font-size: 30px; margin: 20px 0 10px 0; }
-  p { margin: 0 0 30px 0; }
-  pre { font: 11px 'Consolas', 'Monaco', monospace; line-height: 0.95; }
+  body {{ font: 15px Georgia, serif; text-align: center; }}
+  a {{ color: #333; text-decoration: none; }}
+  h1 {{ font-size: 30px; margin: 20px 0 10px 0; }}
+  p {{ margin: 0 0 30px 0; }}
+  pre {{ font: 11px 'Consolas', 'Monaco', monospace; line-height: 0.95; }}
 </style>
 </head>
 <body>
 <h1><a href="http://werkzeug.pocoo.org/">Werkzeug</a></h1>
 <p>the Swiss Army knife of Python web development.</p>
-<pre>%s\n\n\n</pre>
+<pre>{gyver}\n\n\n</pre>
 </body>
-</html>"""
-                % gyver
-            ).encode("latin1")
+</html>""".encode(
+                "latin1"
+            )
         ]
 
     return easteregged

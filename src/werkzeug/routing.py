@@ -211,14 +211,14 @@ def parse_rule(rule):
         variable = data["variable"]
         converter = data["converter"] or "default"
         if variable in used_names:
-            raise ValueError("variable name %r used twice." % variable)
+            raise ValueError(f"variable name {variable!r} used twice.")
         used_names.add(variable)
         yield converter, data["args"] or None, variable
         pos = m.end()
     if pos < end:
         remaining = rule[pos:]
         if ">" in remaining or "<" in remaining:
-            raise ValueError("malformed url rule: %r" % rule)
+            raise ValueError(f"malformed url rule: {rule!r}")
         yield None, None, remaining
 
 
@@ -297,28 +297,28 @@ class BuildError(RoutingException, LookupError):
 
     def __str__(self):
         message = []
-        message.append("Could not build url for endpoint %r" % self.endpoint)
+        message.append(f"Could not build url for endpoint {self.endpoint!r}")
         if self.method:
-            message.append(" (%r)" % self.method)
+            message.append(f" ({self.method!r})")
         if self.values:
-            message.append(" with values %r" % sorted(self.values.keys()))
+            message.append(f" with values {sorted(self.values)!r}")
         message.append(".")
         if self.suggested:
             if self.endpoint == self.suggested.endpoint:
                 if self.method and self.method not in self.suggested.methods:
                     message.append(
-                        " Did you mean to use methods %r?"
-                        % sorted(self.suggested.methods)
+                        " Did you mean to use methods"
+                        f" {sorted(self.suggested.methods)!r}?"
                     )
                 missing_values = self.suggested.arguments.union(
                     set(self.suggested.defaults or ())
                 ) - set(self.values.keys())
                 if missing_values:
                     message.append(
-                        " Did you forget to specify values %r?" % sorted(missing_values)
+                        f" Did you forget to specify values {sorted(missing_values)!r}?"
                     )
             else:
-                message.append(" Did you mean %r instead?" % self.suggested.endpoint)
+                message.append(f" Did you mean {self.suggested.endpoint!r} instead?")
         return "".join(message)
 
 
@@ -498,7 +498,7 @@ def _prefix_names(src):
         tree = tree.value
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
-            node.id = "." + node.id
+            node.id = f".{node.id}"
     return tree
 
 
@@ -596,7 +596,7 @@ class Rule(RuleFactory):
             def foo_with_slug(adapter, id):
                 # ask the database for the slug for the old id.  this of
                 # course has nothing to do with werkzeug.
-                return 'foo/' + Foo.get_slug_for_id(id)
+                return f'foo/{Foo.get_slug_for_id(id)}'
 
             url_map = Map([
                 Rule('/foo/<slug>', endpoint='foo'),
@@ -763,7 +763,7 @@ class Rule(RuleFactory):
         .. versionadded:: 0.9
         """
         if converter_name not in self.map.converters:
-            raise LookupError("the converter %r does not exist" % converter_name)
+            raise LookupError(f"the converter {converter_name!r} does not exist")
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
     def _encode_query_vars(self, query_vars):
@@ -836,11 +836,11 @@ class Rule(RuleFactory):
 
         if not (self.is_leaf and self.strict_slashes):
             reps = "*" if self.merge_slashes else "?"
-            tail = "(?<!/)(?P<__suffix__>/%s)" % reps
+            tail = f"(?<!/)(?P<__suffix__>/{reps})"
         else:
             tail = ""
 
-        regex = "^{}{}$".format("".join(regex_parts), tail)
+        regex = f"^{''.join(regex_parts)}{tail}$"
         self._regex = re.compile(regex)
 
     def match(self, path, method=None):
@@ -1110,19 +1110,16 @@ class Rule(RuleFactory):
 
     def __repr__(self):
         if self.map is None:
-            return "<%s (unbound)>" % self.__class__.__name__
-        tmp = []
+            return f"<{type(self).__name__} (unbound)>"
+        parts = []
         for is_dynamic, data in self._trace:
             if is_dynamic:
-                tmp.append("<%s>" % data)
+                parts.append(f"<{data}>")
             else:
-                tmp.append(data)
-        return "<{} {}{} -> {}>".format(
-            self.__class__.__name__,
-            repr(("".join(tmp)).lstrip("|")),
-            " (%s)" % ", ".join(self.methods) if self.methods is not None else "",
-            self.endpoint,
-        )
+                parts.append(data)
+        parts = "".join(parts).lstrip("|")
+        methods = f" ({', '.join(self.methods)})" if self.methods is not None else ""
+        return f"<{type(self).__name__} {parts!r}{methods} -> {self.endpoint}>"
 
 
 class BaseConverter:
@@ -1164,14 +1161,14 @@ class UnicodeConverter(BaseConverter):
     def __init__(self, map, minlength=1, maxlength=None, length=None):
         BaseConverter.__init__(self, map)
         if length is not None:
-            length = "{%d}" % int(length)
+            length = f"{{{int(length)}}}"
         else:
             if maxlength is None:
                 maxlength = ""
             else:
                 maxlength = int(maxlength)
-            length = "{{{},{}}}".format(int(minlength), maxlength)
-        self.regex = "[^/]" + length
+            length = f"{{{int(minlength)},{maxlength}}}"
+        self.regex = f"[^/]{length}"
 
 
 class AnyConverter(BaseConverter):
@@ -1187,7 +1184,7 @@ class AnyConverter(BaseConverter):
 
     def __init__(self, map, *items):
         BaseConverter.__init__(self, map)
-        self.regex = "(?:%s)" % "|".join([re.escape(x) for x in items])
+        self.regex = f"(?:{'|'.join([re.escape(x) for x in items])})"
 
 
 class PathConverter(BaseConverter):
@@ -1234,12 +1231,12 @@ class NumberConverter(BaseConverter):
     def to_url(self, value):
         value = self.num_convert(value)
         if self.fixed_digits:
-            value = ("%%0%sd" % self.fixed_digits) % value
+            value = str(value).zfill(self.fixed_digits)
         return str(value)
 
     @property
     def signed_regex(self):
-        return r"-?" + self.regex
+        return f"-?{self.regex}"
 
 
 class IntegerConverter(NumberConverter):
@@ -1595,8 +1592,8 @@ class Map:
                 # earlier we go by an invalid subdomain which will result
                 # in a 404 error on matching.
                 warnings.warn(
-                    "Current server name '{}' doesn't match configured"
-                    " server name '{}'".format(wsgi_server_name, server_name),
+                    f"Current server name {wsgi_server_name!r} doesn't match configured"
+                    f" server name {server_name!r}",
                     stacklevel=2,
                 )
                 subdomain = "<invalid>"
@@ -1640,7 +1637,7 @@ class Map:
 
     def __repr__(self):
         rules = self.iter_rules()
-        return "{}({})".format(self.__class__.__name__, pformat(list(rules)))
+        return f"{type(self).__name__}({pformat(list(rules))})"
 
 
 class MapAdapter:
@@ -1838,10 +1835,9 @@ class MapAdapter:
 
         require_redirect = False
 
-        path = "{}|{}".format(
-            self.server_name if self.map.host_matching else self.subdomain,
-            path_info and "/%s" % path_info.lstrip("/"),
-        )
+        domain_part = self.server_name if self.map.host_matching else self.subdomain
+        path_part = f"/{path_info.lstrip('/')}" if path_info else ""
+        path = f"{domain_part}|{path_part}"
 
         have_match_for = set()
         websocket_mismatch = False
@@ -1887,18 +1883,16 @@ class MapAdapter:
                     redirect_url = _simple_rule_re.sub(_handle_match, rule.redirect_to)
                 else:
                     redirect_url = rule.redirect_to(self, **rv)
+
+                if self.subdomain:
+                    netloc = f"{self.subdomain}.{self.server_name}"
+                else:
+                    netloc = self.server_name
+
                 raise RequestRedirect(
-                    str(
-                        url_join(
-                            "%s://%s%s%s"
-                            % (
-                                self.url_scheme or "http",
-                                self.subdomain + "." if self.subdomain else "",
-                                self.server_name,
-                                self.script_name,
-                            ),
-                            redirect_url,
-                        )
+                    url_join(
+                        f"{self.url_scheme or 'http'}://{netloc}{self.script_name}",
+                        redirect_url,
                     )
                 )
 
@@ -1966,7 +1960,11 @@ class MapAdapter:
             subdomain = self.subdomain
         else:
             subdomain = _to_str(subdomain, "ascii")
-        return (subdomain + "." if subdomain else "") + self.server_name
+
+        if subdomain:
+            return f"{subdomain}.{self.server_name}"
+        else:
+            return self.server_name
 
     def get_default_redirect(self, rule, method, values, query_args):
         """A helper that returns the URL to redirect to if it finds one.
@@ -1996,20 +1994,15 @@ class MapAdapter:
 
         :internal:
         """
-        suffix = ""
         if query_args:
-            suffix = "?" + self.encode_query_args(query_args)
-        return str(
-            "%s://%s/%s%s"
-            % (
-                self.url_scheme or "http",
-                self.get_host(domain_part),
-                posixpath.join(
-                    self.script_name[:-1].lstrip("/"), path_info.lstrip("/")
-                ),
-                suffix,
-            )
-        )
+            suffix = f"?{self.encode_query_args(query_args)}"
+        else:
+            suffix = ""
+
+        scheme = self.url_scheme or "http"
+        host = self.get_host(domain_part)
+        path = posixpath.join(self.script_name.strip("/"), path_info.lstrip("/"))
+        return f"{scheme}://{host}/{path}{suffix}"
 
     def make_alias_redirect_url(self, path, endpoint, values, method, query_args):
         """Internally called to make an alias redirect URL."""
@@ -2017,7 +2010,7 @@ class MapAdapter:
             endpoint, values, method, append_unknown=False, force_external=True
         )
         if query_args:
-            url += "?" + self.encode_query_args(query_args)
+            url += f"?{self.encode_query_args(query_args)}"
         assert url != path, "detected invalid alias setting. No canonical URL found"
         return url
 
@@ -2184,13 +2177,7 @@ class MapAdapter:
             (self.map.host_matching and host == self.server_name)
             or (not self.map.host_matching and domain_part == self.subdomain)
         ):
-            return "{}/{}".format(self.script_name.rstrip("/"), path.lstrip("/"))
-        return str(
-            "%s//%s%s/%s"
-            % (
-                url_scheme + ":" if url_scheme else "",
-                host,
-                self.script_name[:-1],
-                path.lstrip("/"),
-            )
-        )
+            return f"{self.script_name.rstrip('/')}/{path.lstrip('/')}"
+
+        scheme = f"{url_scheme}:" if url_scheme else ""
+        return f"{scheme}//{host}{self.script_name[:-1]}/{path.lstrip('/')}"

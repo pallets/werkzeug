@@ -220,7 +220,8 @@ def quote_header_value(value, extra_chars="", allow_token=True):
         token_chars = _token_chars | set(extra_chars)
         if set(value).issubset(token_chars):
             return value
-    return '"%s"' % value.replace("\\", "\\\\").replace('"', '\\"')
+    value = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{value}"'
 
 
 def unquote_header_value(value, is_filename=False):
@@ -262,7 +263,7 @@ def dump_options_header(header, options):
         if value is None:
             segments.append(key)
         else:
-            segments.append("{}={}".format(key, quote_header_value(value)))
+            segments.append(f"{key}={quote_header_value(value)}")
     return "; ".join(segments)
 
 
@@ -288,9 +289,7 @@ def dump_header(iterable, allow_token=True):
                 items.append(key)
             else:
                 items.append(
-                    "{}={}".format(
-                        key, quote_header_value(value, allow_token=allow_token)
-                    )
+                    f"{key}={quote_header_value(value, allow_token=allow_token)}"
                 )
     else:
         items = [quote_header_value(x, allow_token=allow_token) for x in iterable]
@@ -746,9 +745,9 @@ def quote_etag(etag, weak=False):
     """
     if '"' in etag:
         raise ValueError("invalid etag")
-    etag = '"%s"' % etag
+    etag = f'"{etag}"'
     if weak:
-        etag = "W/" + etag
+        etag = f"W/{etag}"
     return etag
 
 
@@ -849,29 +848,24 @@ def _dump_date(d, delim):
         d = d.utctimetuple()
     elif isinstance(d, (int, float)):
         d = gmtime(d)
-    return "%s, %02d%s%s%s%s %02d:%02d:%02d GMT" % (
-        ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday],
-        d.tm_mday,
-        delim,
-        (
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        )[d.tm_mon - 1],
-        delim,
-        str(d.tm_year),
-        d.tm_hour,
-        d.tm_min,
-        d.tm_sec,
+    weekday = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday]
+    month = (
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    )[d.tm_mon - 1]
+    return (
+        f"{weekday}, {d.tm_mday:02d}{delim}{month}{delim}{d.tm_year}"
+        f" {d.tm_hour:02d}:{d.tm_min:02d}:{d.tm_sec:02d} GMT"
     )
 
 
@@ -1235,16 +1229,10 @@ def dump_cookie(
     if max_size and cookie_size > max_size:
         value_size = len(value)
         warnings.warn(
-            'The "{key}" cookie is too large: the value was {value_size} bytes'
-            " but the header required {extra_size} extra bytes. The final size"
-            " was {cookie_size} bytes but the limit is {max_size} bytes."
-            " Browsers may silently ignore cookies larger than this.".format(
-                key=key,
-                value_size=value_size,
-                extra_size=cookie_size - value_size,
-                cookie_size=cookie_size,
-                max_size=max_size,
-            ),
+            f'The "{key}" cookie is too large: the value was {value_size} bytes but the'
+            f" header required {cookie_size - value_size} extra bytes. The final size"
+            f" was {cookie_size} bytes but the limit is {max_size} bytes. Browsers may"
+            f" silently ignore cookies larger than this.",
             stacklevel=2,
         )
 

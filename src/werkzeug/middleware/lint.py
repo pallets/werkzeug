@@ -31,8 +31,7 @@ class HTTPWarning(Warning):
 def check_string(context, obj, stacklevel=3):
     if type(obj) is not str:
         warn(
-            "'{}' requires strings, got '{}'".format(context, type(obj).__name__),
-            WSGIWarning,
+            f"'{context}' requires strings, got '{type(obj).__name__}'", WSGIWarning,
         )
 
 
@@ -165,20 +164,18 @@ class GuardedIterator:
                         key
                     ):
                         warn(
-                            "Entity header %r found in 304 response." % key, HTTPWarning
+                            f"Entity header {key!r} found in 304 response.", HTTPWarning
                         )
                 if bytes_sent:
                     warn("304 responses must not have a body.", HTTPWarning)
             elif 100 <= status_code < 200 or status_code == 204:
                 if content_length != 0:
                     warn(
-                        "%r responses must have an empty content length." % status_code,
+                        f"{status_code} responses must have an empty content length.",
                         HTTPWarning,
                     )
                 if bytes_sent:
-                    warn(
-                        "%r responses must not have a body." % status_code, HTTPWarning
-                    )
+                    warn(f"{status_code} responses must not have a body.", HTTPWarning)
             elif content_length is not None and content_length != bytes_sent:
                 warn(
                     "Content-Length and the number of bytes sent to the client do not"
@@ -242,7 +239,7 @@ class LintMiddleware:
         ):
             if key not in environ:
                 warn(
-                    "Required environment key %r not found" % key,
+                    f"Required environment key {key!r} not found",
                     WSGIWarning,
                     stacklevel=3,
                 )
@@ -254,14 +251,14 @@ class LintMiddleware:
 
         if script_name and script_name[0] != "/":
             warn(
-                "'SCRIPT_NAME' does not start with a slash: %r" % script_name,
+                f"'SCRIPT_NAME' does not start with a slash: {script_name!r}",
                 WSGIWarning,
                 stacklevel=3,
             )
 
         if path_info and path_info[0] != "/":
             warn(
-                "'PATH_INFO' does not start with a slash: %r" % path_info,
+                f"'PATH_INFO' does not start with a slash: {path_info!r}",
                 WSGIWarning,
                 stacklevel=3,
             )
@@ -276,7 +273,7 @@ class LintMiddleware:
         if len(status) < 4 or status[3] != " ":
             warn(
                 WSGIWarning(
-                    "Invalid value for status %r.  Valid "
+                    f"Invalid value for status {status!r}.  Valid "
                     "status strings are three digits, a space "
                     "and a status explanation"
                 ),
@@ -342,9 +339,9 @@ class LintMiddleware:
     def check_iterator(self, app_iter):
         if isinstance(app_iter, str):
             warn(
-                "The application returned astring. The response will send one character"
-                " at a time to the client, which will kill performance. Return a list"
-                " or iterable instead.",
+                "The application returned a string. The response will send one"
+                " character at a time to the client, which will kill performance."
+                " Return a list or iterable instead.",
                 WSGIWarning,
                 stacklevel=3,
             )
@@ -374,7 +371,7 @@ class LintMiddleware:
         def checking_start_response(*args, **kwargs):
             if len(args) not in (2, 3):
                 warn(
-                    "Invalid number of arguments: %s, expected 2 or 3." % len(args),
+                    f"Invalid number of arguments: {len(args)}, expected 2 or 3.",
                     WSGIWarning,
                     stacklevel=2,
                 )

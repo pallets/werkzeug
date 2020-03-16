@@ -51,7 +51,7 @@ class WebPyApp:
 
     def __init__(self, urls, views):
         self.urls = [
-            (re.compile("^%s$" % urls[i]), urls[i + 1]) for i in range(0, len(urls), 2)
+            (re.compile(f"^{urls[i]}$"), urls[i + 1]) for i in range(0, len(urls), 2)
         ]
         self.views = views
 

@@ -65,14 +65,14 @@ class Blog:
         self.description = description
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.url!r}>"
+        return f"<{type(self).__name__} {self.url!r}>"
 
 
 class Entry:
     query = session.query_property()
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.guid!r}>"
+        return f"<{type(self).__name__} {self.guid!r}>"
 
 
 mapper(Entry, entry_table)

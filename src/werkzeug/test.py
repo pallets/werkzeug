@@ -96,10 +96,10 @@ def stream_encode_multipart(
                         or "application/octet-stream"
                     )
                 if filename is not None:
-                    write('; filename="%s"\r\n' % filename)
+                    write(f'; filename="{filename}"\r\n')
                 else:
                     write("\r\n")
-                write("Content-Type: %s\r\n\r\n" % content_type)
+                write(f"Content-Type: {content_type}\r\n\r\n")
                 while 1:
                     chunk = reader(16384)
                     if not chunk:
@@ -113,7 +113,7 @@ def stream_encode_multipart(
                 write("\r\n\r\n")
                 write_binary(value)
             write("\r\n")
-    write("--%s--\r\n" % boundary)
+    write(f"--{boundary}--\r\n")
 
     length = int(_closure[0].tell())
     _closure[0].seek(0)
@@ -674,9 +674,8 @@ class EnvironBuilder:
             input_stream, content_length, boundary = stream_encode_multipart(
                 values, charset=self.charset
             )
-            content_type = mimetype + '; boundary="%s"' % boundary
+            content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
-            # XXX: py2v3 review
             values = url_encode(self.form, charset=self.charset)
             values = values.encode("ascii")
             content_length = len(values)
@@ -730,7 +729,7 @@ class EnvironBuilder:
         combined_headers = defaultdict(list)
 
         for key, value in headers.to_wsgi_list():
-            combined_headers["HTTP_%s" % key.upper().replace("-", "_")].append(value)
+            combined_headers[f"HTTP_{key.upper().replace('-', '_')}"].append(value)
 
         for key, values in combined_headers.items():
             result[key] = ", ".join(values)
@@ -836,7 +835,7 @@ class Client:
             charset,
             samesite=samesite,
         )
-        environ = create_environ(path, base_url="http://" + server_name)
+        environ = create_environ(path, base_url=f"http://{server_name}")
         headers = [("Set-Cookie", header)]
         self.cookie_jar.extract_wsgi(environ, headers)
 
@@ -1033,7 +1032,7 @@ class Client:
         return self.open(*args, **kw)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.application!r}>"
+        return f"<{type(self).__name__} {self.application!r}>"
 
 
 def create_environ(*args, **kwargs):

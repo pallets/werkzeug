@@ -93,7 +93,7 @@ class ThreadedStream:
             stream._write(debug_repr(obj))
 
     def __setattr__(self, name, value):
-        raise AttributeError("read only attribute %s" % name)
+        raise AttributeError(f"read only attribute {name}")
 
     def __dir__(self):
         return dir(sys.__stdout__)
@@ -158,7 +158,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         _wrap_compiler(self)
 
     def runsource(self, source):
-        source = source.rstrip() + "\n"
+        source = f"{source.rstrip()}\n"
         ThreadedStream.push()
         prompt = "... " if self.more else ">>> "
         try:

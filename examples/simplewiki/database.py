@@ -90,7 +90,7 @@ class Revision:
         return parse_creole(self.text)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.page_id!r}:{self.revision_id!r}>"
+        return f"<{type(self).__name__} {self.page_id!r}:{self.revision_id!r}>"
 
 
 class Page:
@@ -109,7 +109,7 @@ class Page:
         return self.name.replace("_", " ")
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.name!r}>"
+        return f"<{type(self).__name__} {self.name!r}>"
 
 
 class RevisionedPage(Page, Revision):
@@ -128,7 +128,7 @@ class RevisionedPage(Page, Revision):
         )
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.name!r}:{self.revision_id!r}>"
+        return f"<{type(self).__name__} {self.name!r}:{self.revision_id!r}>"
 
 
 # setup mappers

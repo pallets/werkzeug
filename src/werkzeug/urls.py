@@ -30,8 +30,12 @@ _always_safe = frozenset(
 )
 
 _hexdigits = "0123456789ABCDEFabcdef"
-_hextobyte = {(a + b).encode(): int(a + b, 16) for a in _hexdigits for b in _hexdigits}
-_bytetohex = [("%%%02X" % char).encode("ascii") for char in range(256)]
+_hextobyte = {
+    f"{a}{b}".encode("ascii"): int(f"{a}{b}", 16)
+    for a in _hexdigits
+    for b in _hexdigits
+}
+_bytetohex = [f"%{char:02X}".encode("ascii") for char in range(256)]
 
 _URLTuple = namedtuple("_URLTuple", ["scheme", "netloc", "path", "query", "fragment"])
 
@@ -146,10 +150,10 @@ class BaseURL(_URLTuple):
         rv = _decode_idna(self.host or "")
 
         if ":" in rv:
-            rv = "[%s]" % rv
+            rv = f"[{rv}]"
         port = self.port
         if port is not None:
-            rv = "%s:%d" % (rv, port)
+            rv = f"{rv}:{port}"
         auth = ":".join(
             filter(
                 None,
@@ -216,7 +220,7 @@ class BaseURL(_URLTuple):
 
         if pathformat == "windows":
             if path[:1] == "/" and path[1:2].isalpha() and path[2:3] in "|:":
-                path = path[1:2] + ":" + path[3:]
+                path = f"{path[1:2]}:{path[3:]}"
             windows_share = path[:3] in ("\\" * 3, "/" * 3)
             import ntpath
 
@@ -237,7 +241,7 @@ class BaseURL(_URLTuple):
 
             path = posixpath.normpath(path)
         else:
-            raise TypeError("Invalid path format %s" % repr(pathformat))
+            raise TypeError(f"Invalid path format {pathformat!r}")
 
         if host in ("127.0.0.1", "::1", "localhost"):
             host = None
@@ -297,10 +301,10 @@ class URL(BaseURL):
         """Encodes the netloc part to an ASCII safe URL as bytes."""
         rv = self.ascii_host or ""
         if ":" in rv:
-            rv = "[%s]" % rv
+            rv = f"[{rv}]"
         port = self.port
         if port is not None:
-            rv = "%s:%d" % (rv, port)
+            rv = f"{rv}:{port}"
         auth = ":".join(
             filter(
                 None,
@@ -403,7 +407,7 @@ def _url_encode_impl(obj, charset, sort, key):
             key = str(key).encode(charset)
         if not isinstance(value, bytes):
             value = str(value).encode(charset)
-        yield _fast_url_quote_plus(key) + "=" + _fast_url_quote_plus(value)
+        yield f"{_fast_url_quote_plus(key)}={_fast_url_quote_plus(value)}"
 
 
 def _url_unquote_legacy(value, unsafe=""):
@@ -480,7 +484,7 @@ def _make_fast_url_quote(charset="utf-8", errors="strict", safe="/:", unsafe="")
         unsafe = unsafe.encode(charset, errors)
 
     safe = (frozenset(bytearray(safe)) | _always_safe) - frozenset(bytearray(unsafe))
-    table = [chr(c) if c in safe else "%%%02X" % c for c in range(256)]
+    table = [chr(c) if c in safe else f"%{c:02X}" for c in range(256)]
 
     def quote(string):
         return "".join([table[c] for c in string])
@@ -622,7 +626,7 @@ def url_fix(s, charset="utf-8"):
     # For the specific case that we look like a malformed windows URL
     # we want to fix this up manually:
     if s.startswith("file://") and s[7:8].isalpha() and s[8:10] in (":/", "|/"):
-        s = "file:///" + s[7:]
+        s = f"file:///{s[7:]}"
 
     url = url_parse(s)
     path = url_quote(url.path, charset, safe="/%+$!*'(),")
@@ -1099,7 +1103,7 @@ class Href:
         if path:
             if not rv.endswith("/"):
                 rv += "/"
-            rv = url_join(rv, "./" + path)
+            rv = url_join(rv, f"./{path}")
         if query:
             rv += "?" + _to_str(
                 url_encode(query, self.charset, sort=self.sort, key=self.key), "ascii"

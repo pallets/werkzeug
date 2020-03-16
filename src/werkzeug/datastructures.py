@@ -25,7 +25,7 @@ from .filesystem import get_filesystem_encoding
 
 
 def is_immutable(self):
-    raise TypeError("%r objects are immutable" % self.__class__.__name__)
+    raise TypeError(f"{type(self).__name__!r} objects are immutable")
 
 
 def iter_multi_items(mapping):
@@ -105,7 +105,7 @@ class ImmutableList(ImmutableListMixin, list):
     """
 
     def __repr__(self):
-        return "{}({})".format(self.__class__.__name__, list.__repr__(self))
+        return f"{type(self).__name__}({list.__repr__(self)})"
 
 
 class ImmutableDictMixin:
@@ -614,7 +614,7 @@ class MultiDict(TypeConversionDict):
         return self.deepcopy(memo=memo)
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, list(self.items(multi=True)))
+        return f"{type(self).__name__}({list(self.items(multi=True))!r})"
 
 
 class _omd_bucket:
@@ -1013,7 +1013,7 @@ class Headers:
             Support :class:`MultiDict`. Allow passing ``kwargs``.
         """
         if len(args) > 1:
-            raise TypeError("update expected at most 1 arguments, got %d" % len(args))
+            raise TypeError(f"update expected at most 1 arguments, got {len(args)}")
 
         if args:
             for key, value in iter_multi_items(args[0]):
@@ -1244,7 +1244,7 @@ class Headers:
         .. versionadded:: 1.0
         """
         if len(args) > 1:
-            raise TypeError("update expected at most 1 arguments, got %d" % len(args))
+            raise TypeError(f"update expected at most 1 arguments, got {len(args)}")
 
         if args:
             mapping = args[0]
@@ -1290,7 +1290,7 @@ class Headers:
         return "\r\n".join(strs)
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, list(self))
+        return f"{type(self).__name__}({list(self)!r})"
 
 
 class ImmutableHeadersMixin:
@@ -1373,7 +1373,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         key = key.upper().replace("-", "_")
         if key in ("CONTENT_TYPE", "CONTENT_LENGTH"):
             return _unicodify_header_value(self.environ[key])
-        return _unicodify_header_value(self.environ["HTTP_" + key])
+        return _unicodify_header_value(self.environ[f"HTTP_{key}"])
 
     def __len__(self):
         # the iter is necessary because otherwise list calls our
@@ -1394,7 +1394,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
                 yield (key.replace("_", "-").title(), _unicodify_header_value(value))
 
     def copy(self):
-        raise TypeError("cannot create %r copies" % self.__class__.__name__)
+        raise TypeError(f"cannot create {type(self).__name__!r} copies")
 
 
 class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
@@ -1428,7 +1428,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
 
     @classmethod
     def fromkeys(cls):
-        raise TypeError("cannot create %r instances by fromkeys" % cls.__name__)
+        raise TypeError(f"cannot create {cls.__name__!r} instances by fromkeys")
 
     def __getitem__(self, key):
         for d in self.dicts:
@@ -1529,7 +1529,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     has_key = __contains__
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.dicts!r})"
+        return f"{type(self).__name__}({self.dicts!r})"
 
 
 class FileMultiDict(MultiDict):
@@ -1572,7 +1572,7 @@ class ImmutableDict(ImmutableDictMixin, dict):
     """
 
     def __repr__(self):
-        return "{}({})".format(self.__class__.__name__, dict.__repr__(self))
+        return f"{type(self).__name__}({dict.__repr__(self)})"
 
     def copy(self):
         """Return a shallow mutable copy of this object.  Keep in mind that
@@ -1708,9 +1708,8 @@ class Accept(ImmutableList):
         return False
 
     def __repr__(self):
-        return "{}([{}])".format(
-            self.__class__.__name__, ", ".join(f"({x!r}, {y})" for x, y in self),
-        )
+        pairs_str = ", ".join(f"({x!r}, {y})" for x, y in self)
+        return f"{type(self).__name__}([{pairs_str}])"
 
     def index(self, key):
         """Get the position of an entry or raise :exc:`ValueError`.
@@ -1817,7 +1816,7 @@ class MIMEAccept(Accept):
         # value comes from the application, tell the developer when it
         # doesn't look valid.
         if "/" not in value:
-            raise ValueError("invalid mimetype %r" % value)
+            raise ValueError(f"invalid mimetype {value!r}")
 
         # Split the match value into type, subtype, and a sorted list of parameters.
         normalized_value = _normalize_mime(value)
@@ -1826,7 +1825,7 @@ class MIMEAccept(Accept):
 
         # "*/*" is the only valid value that can start with "*".
         if value_type == "*" and value_subtype != "*":
-            raise ValueError("invalid mimetype %r" % value)
+            raise ValueError(f"invalid mimetype {value!r}")
 
         # Split the accept item into type, subtype, and parameters.
         normalized_item = _normalize_mime(item)
@@ -1949,7 +1948,7 @@ def cache_property(key, empty, type):
         lambda x: x._get_cache_value(key, empty, type),
         lambda x, v: x._set_cache_value(key, v, type),
         lambda x: x._del_cache_value(key),
-        "accessor for %r" % key,
+        f"accessor for {key!r}",
     )
 
 
@@ -2038,10 +2037,8 @@ class _CacheControl(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return "<{} {}>".format(
-            self.__class__.__name__,
-            " ".join(f"{k}={v!r}" for k, v in sorted(self.items())),
-        )
+        kv_str = " ".join(f"{k}={v!r}" for k, v in sorted(self.items()))
+        return f"<{type(self).__name__} {kv_str}>"
 
 
 class RequestCacheControl(ImmutableDictMixin, _CacheControl):
@@ -2100,7 +2097,7 @@ def csp_property(key):
         lambda x: x._get_value(key),
         lambda x, v: x._set_value(key, v),
         lambda x: x._del_value(key),
-        "accessor for %r" % key,
+        f"accessor for {key!r}",
     )
 
 
@@ -2176,10 +2173,8 @@ class ContentSecurityPolicy(UpdateDictMixin, dict):
         return self.to_header()
 
     def __repr__(self):
-        return "<{} {}>".format(
-            self.__class__.__name__,
-            " ".join(f"{k}={v!r}" for k, v in sorted(self.items())),
-        )
+        kv_str = " ".join(f"{k}={v!r}" for k, v in sorted(self.items()))
+        return f"<{type(self).__name__} {kv_str}>"
 
 
 class CallbackDict(UpdateDictMixin, dict):
@@ -2192,7 +2187,7 @@ class CallbackDict(UpdateDictMixin, dict):
         self.on_update = on_update
 
     def __repr__(self):
-        return "<{} {}>".format(self.__class__.__name__, dict.__repr__(self))
+        return f"<{type(self).__name__} {dict.__repr__(self)}>"
 
 
 class HeaderSet(MutableSet):
@@ -2342,7 +2337,7 @@ class HeaderSet(MutableSet):
         return self.to_header()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self._headers!r})"
+        return f"{type(self).__name__}({self._headers!r})"
 
 
 class ETags(Container, Iterable):
@@ -2401,7 +2396,7 @@ class ETags(Container, Iterable):
         if self.star_tag:
             return "*"
         return ", ".join(
-            ['"%s"' % x for x in self._strong] + ['W/"%s"' % x for x in self._weak]
+            [f'"{x}"' for x in self._strong] + [f'W/"{x}"' for x in self._weak]
         )
 
     def __call__(self, etag=None, data=None, include_weak=False):
@@ -2429,7 +2424,7 @@ class ETags(Container, Iterable):
         return self.contains(etag)
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, str(self))
+        return f"<{type(self).__name__} {str(self)!r}>"
 
 
 class IfRange:
@@ -2459,7 +2454,7 @@ class IfRange:
         return self.to_header()
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, str(self))
+        return f"<{type(self).__name__} {str(self)!r}>"
 
 
 class Range:
@@ -2484,7 +2479,7 @@ class Range:
 
         for start, end in ranges:
             if start is None or (end is not None and (start < 0 or start >= end)):
-                raise ValueError("{} is not a valid range.".format((start, end)))
+                raise ValueError(f"{(start, end)} is not a valid range.")
 
     def range_for_length(self, length):
         """If the range is for bytes, the length is not None and there is
@@ -2514,30 +2509,25 @@ class Range:
         ranges = []
         for begin, end in self.ranges:
             if end is None:
-                ranges.append("%s-" % begin if begin >= 0 else str(begin))
+                ranges.append(f"{begin}-" if begin >= 0 else str(begin))
             else:
-                ranges.append("{}-{}".format(begin, end - 1))
-        return "{}={}".format(self.units, ",".join(ranges))
+                ranges.append(f"{begin}-{end - 1}")
+        return f"{self.units}={','.join(ranges)}"
 
     def to_content_range_header(self, length):
         """Converts the object into `Content-Range` HTTP header,
         based on given length
         """
-        range_for_length = self.range_for_length(length)
-        if range_for_length is not None:
-            return "%s %d-%d/%d" % (
-                self.units,
-                range_for_length[0],
-                range_for_length[1] - 1,
-                length,
-            )
+        range = self.range_for_length(length)
+        if range is not None:
+            return f"{self.units} {range[0]}-{range[1] - 1}/{length}"
         return None
 
     def __str__(self):
         return self.to_header()
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, str(self))
+        return f"<{type(self).__name__} {str(self)!r}>"
 
 
 class ContentRange:
@@ -2598,7 +2588,7 @@ class ContentRange:
             length = self.length
         if self.start is None:
             return f"{self.units} */{length}"
-        return "{} {}-{}/{}".format(self.units, self.start, self.stop - 1, length)
+        return f"{self.units} {self.start}-{self.stop - 1}/{length}"
 
     def __nonzero__(self):
         return self.units is not None
@@ -2609,7 +2599,7 @@ class ContentRange:
         return self.to_header()
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, str(self))
+        return f"<{type(self).__name__} {str(self)!r}>"
 
 
 class Authorization(ImmutableDictMixin, dict):
@@ -2746,27 +2736,18 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         """Convert the stored values into a WWW-Authenticate header."""
         d = dict(self)
         auth_type = d.pop("__auth_type__", None) or "basic"
-        return "{} {}".format(
-            auth_type.title(),
-            ", ".join(
-                [
-                    "%s=%s"
-                    % (
-                        key,
-                        quote_header_value(
-                            value, allow_token=key not in self._require_quoting
-                        ),
-                    )
-                    for key, value in d.items()
-                ]
-            ),
+        kv_items = (
+            (k, quote_header_value(v, allow_token=k not in self._require_quoting))
+            for k, v in d.items()
         )
+        kv_string = ", ".join([f"{k}={v}" for k, v in kv_items])
+        return f"{auth_type.title()} {kv_string}"
 
     def __str__(self):
         return self.to_header()
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.to_header()!r}>"
+        return f"<{type(self).__name__} {self.to_header()!r}>"
 
     def auth_property(name, doc=None):  # noqa: B902
         """A static helper function for subclasses to add extra authentication
@@ -3006,9 +2987,7 @@ class FileStorage:
         return iter(self.stream)
 
     def __repr__(self):
-        return "<{}: {!r} ({!r})>".format(
-            self.__class__.__name__, self.filename, self.content_type,
-        )
+        return f"<{type(self).__name__}: {self.filename!r} ({self.content_type!r})>"
 
 
 # circular dependencies

@@ -89,7 +89,7 @@ against another word)::
 
     def application(environ, start_response):
         request = Request(environ)
-        text = 'Hello %s!' % request.args.get('name', 'World')
+        text = f"Hello {request.args.get('name', 'World')}!"
         response = Response(text, mimetype='text/plain')
         return response(environ, start_response)
 
@@ -258,7 +258,7 @@ The way we will do it in this tutorial is by calling the method ``on_``
         adapter = self.url_map.bind_to_environ(request.environ)
         try:
             endpoint, values = adapter.match()
-            return getattr(self, 'on_' + endpoint)(request, **values)
+            return getattr(self, f'on_{endpoint}')(request, **values)
         except HTTPException as e:
             return e
 
@@ -296,7 +296,10 @@ Let's start with the first view: the one for new URLs::
                 error = 'Please enter a valid URL'
             else:
                 short_id = self.insert_url(url)
-                return redirect('/%s+' % short_id)
+                return redirect(f"/{short_id}+"
+
+
+                )
         return self.render_template('new_url.html', error=error, url=url)
 
 This logic should be easy to understand.  Basically we are checking that
@@ -312,13 +315,13 @@ is good enough::
 For inserting the URL, all we need is this little method on our class::
 
     def insert_url(self, url):
-        short_id = self.redis.get('reverse-url:' + url)
+        short_id = self.redis.get(f'reverse-url:{url}')
         if short_id is not None:
             return short_id
         url_num = self.redis.incr('last-url-id')
         short_id = base36_encode(url_num)
-        self.redis.set('url-target:' + short_id, url)
-        self.redis.set('reverse-url:' + url, short_id)
+        self.redis.set(f'url-target:{short_id}', url)
+        self.redis.set(f'reverse-url:{url}', short_id)
         return short_id
 
 ``reverse-url:`` + the URL will store the short id.  If the URL was
@@ -349,10 +352,10 @@ redis and redirect to it.  Additionally we will also increment a counter
 so that we know how often a link was clicked::
 
     def on_follow_short_link(self, request, short_id):
-        link_target = self.redis.get('url-target:' + short_id)
+        link_target = self.redis.get(f'url-target:{short_id')
         if link_target is None:
             raise NotFound()
-        self.redis.incr('click-count:' + short_id)
+        self.redis.incr(f'click-count:{short_id}')
         return redirect(link_target)
 
 In this case we will raise a :exc:`~werkzeug.exceptions.NotFound` exception
@@ -369,10 +372,10 @@ number of times the link was clicked and let it default to zero if such
 a key does not yet exist::
 
     def on_short_link_details(self, request, short_id):
-        link_target = self.redis.get('url-target:' + short_id)
+        link_target = self.redis.get(f'url-target:{short_id}')
         if link_target is None:
             raise NotFound()
-        click_count = int(self.redis.get('click-count:' + short_id) or 0)
+        click_count = int(self.redis.get(f'click-count:{short_id}') or 0)
         return self.render_template('short_link_details.html',
             link_target=link_target,
             short_id=short_id,

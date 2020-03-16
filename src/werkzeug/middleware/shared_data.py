@@ -115,7 +115,7 @@ class SharedDataMiddleware:
                 else:
                     loader = self.get_directory_loader(value)
             else:
-                raise TypeError("unknown def %r" % value)
+                raise TypeError(f"unknown def {value!r}")
 
             self.exports.append((key, loader))
 
@@ -224,11 +224,9 @@ class SharedDataMiddleware:
         if not isinstance(real_filename, bytes):
             real_filename = real_filename.encode(get_filesystem_encoding())
 
-        return "wzsdm-%d-%s-%s" % (
-            mktime(mtime.timetuple()),
-            file_size,
-            adler32(real_filename) & 0xFFFFFFFF,
-        )
+        timestamp = mktime(mtime.timetuple())
+        checksum = adler32(real_filename) & 0xFFFFFFFF
+        return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
     def __call__(self, environ, start_response):
         path = get_path_info(environ)
@@ -264,8 +262,8 @@ class SharedDataMiddleware:
             timeout = self.cache_timeout
             etag = self.generate_etag(mtime, file_size, real_filename)
             headers += [
-                ("Etag", '"%s"' % etag),
-                ("Cache-Control", "max-age=%d, public" % timeout),
+                ("Etag", f'"{etag}"'),
+                ("Cache-Control", f"max-age={timeout}, public"),
             ]
 
             if not is_resource_modified(environ, etag, last_modified=mtime):

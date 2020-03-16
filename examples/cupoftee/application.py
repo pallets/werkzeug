@@ -77,7 +77,7 @@ class Page(_with_metaclass(PageMeta, object)):
 
     def render_template(self, template=None):
         if template is None:
-            template = self.__class__.identifier + ".html"
+            template = f"{type(self).identifier}.html"
         context = dict(self.__dict__)
         context.update(url_for=self.url_for, self=self)
         return self.cup.render_template(template, context)

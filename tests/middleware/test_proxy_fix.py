@@ -173,4 +173,4 @@ def test_proxy_fix(kwargs, base, url_root):
     redirect_app = redirect(url_map.bind_to_environ(environ).build("parrot"))
     response = Response.from_app(redirect_app, environ)
     location = response.headers["Location"]
-    assert location == url_root + "parrot"
+    assert location == f"{url_root}parrot"

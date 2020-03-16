@@ -183,10 +183,10 @@ def test_url_request_descriptors():
 
 def test_url_request_descriptors_query_quoting():
     next = "http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash"
-    req = wrappers.Request.from_values("/bar?next=" + next, "http://example.com/")
+    req = wrappers.Request.from_values(f"/bar?next={next}", "http://example.com/")
     assert req.path == "/bar"
-    strict_eq(req.full_path, "/bar?next=" + next)
-    strict_eq(req.url, "http://example.com/bar?next=" + next)
+    strict_eq(req.full_path, f"/bar?next={next}")
+    strict_eq(req.url, f"http://example.com/bar?next={next}")
 
 
 def test_url_request_descriptors_hosts():
@@ -787,7 +787,7 @@ def test_etag_response_412():
     assert "date" not in response.headers
     env = create_environ()
     env.update(
-        {"REQUEST_METHOD": "GET", "HTTP_IF_MATCH": response.get_etag()[0] + "xyz"}
+        {"REQUEST_METHOD": "GET", "HTTP_IF_MATCH": f"{response.get_etag()[0]}xyz"}
     )
     response.make_conditional(env)
     assert "date" in response.headers
@@ -852,7 +852,7 @@ def test_range_request_with_file():
         )
         assert response.status_code == 206
         assert response.headers["Accept-Ranges"] == "bytes"
-        assert response.headers["Content-Range"] == "bytes 0-0/%d" % len(fcontent)
+        assert response.headers["Content-Range"] == f"bytes 0-0/{len(fcontent)}"
         assert response.headers["Content-Length"] == "1"
         assert response.data == fcontent[:1]
 
@@ -866,11 +866,11 @@ def test_range_request_with_complete_file():
     with open(fname, "rb") as f:
         fsize = os.path.getsize(fname)
         response = wrappers.Response(wrap_file(env, f))
-        env["HTTP_RANGE"] = "bytes=0-%d" % (fsize - 1)
+        env["HTTP_RANGE"] = f"bytes=0-{fsize - 1}"
         response.make_conditional(env, accept_ranges=True, complete_length=fsize)
         assert response.status_code == 206
         assert response.headers["Accept-Ranges"] == "bytes"
-        assert response.headers["Content-Range"] == "bytes 0-%d/%d" % (fsize - 1, fsize)
+        assert response.headers["Content-Range"] == f"bytes 0-{fsize - 1}/{fsize}"
         assert response.headers["Content-Length"] == str(fsize)
         assert response.data == fcontent
 
@@ -925,13 +925,13 @@ def test_authenticate_mixin_quoted_qop():
     resp = wrappers.Response()
     resp.www_authenticate.set_digest("REALM", "NONCE", qop=("auth", "auth-int"))
 
-    actual = set((resp.headers["WWW-Authenticate"] + ",").split())
+    actual = set(f"{resp.headers['WWW-Authenticate']},".split())
     expected = set('Digest nonce="NONCE", realm="REALM", qop="auth, auth-int",'.split())
     assert actual == expected
 
     resp.www_authenticate.set_digest("REALM", "NONCE", qop=("auth",))
 
-    actual = set((resp.headers["WWW-Authenticate"] + ",").split())
+    actual = set(f"{resp.headers['WWW-Authenticate']},".split())
     expected = set('Digest nonce="NONCE", realm="REALM", qop="auth",'.split())
     assert actual == expected
 

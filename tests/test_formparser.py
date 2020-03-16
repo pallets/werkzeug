@@ -292,9 +292,9 @@ class TestMultiPart:
             data = get_contents(join(folder, "request.http"))
             for filename, field, content_type, fsname in files:
                 response = client.post(
-                    "/?object=" + field,
+                    f"/?object={field}",
                     data=data,
-                    content_type='multipart/form-data; boundary="%s"' % boundary,
+                    content_type=f'multipart/form-data; boundary="{boundary}"',
                     content_length=len(data),
                 )
                 lines = response.get_data().split(b"\n", 3)
@@ -305,7 +305,7 @@ class TestMultiPart:
             response = client.post(
                 "/?object=text",
                 data=data,
-                content_type='multipart/form-data; boundary="%s"' % boundary,
+                content_type=f'multipart/form-data; boundary="{boundary}"',
                 content_length=len(data),
             )
             strict_eq(response.get_data(), repr(text).encode("utf-8"))
@@ -318,7 +318,7 @@ class TestMultiPart:
         response = client.post(
             "/?object=cb_file_upload_multiple",
             data=data,
-            content_type='multipart/form-data; boundary="%s"' % boundary,
+            content_type=f'multipart/form-data; boundary="{boundary}"',
             content_length=len(data),
         )
         lines = response.get_data().split(b"\n", 3)

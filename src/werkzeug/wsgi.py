@@ -80,7 +80,7 @@ def get_current_url(
     tmp = [environ["wsgi.url_scheme"], "://", get_host(environ, trusted_hosts)]
     cat = tmp.append
     if host_only:
-        return uri_to_iri("".join(tmp) + "/")
+        return uri_to_iri(f"{''.join(tmp)}/")
     cat(url_quote(environ.get("SCRIPT_NAME", "").encode("latin1")).rstrip("/"))
     cat("/")
     if not root_only:
@@ -88,7 +88,7 @@ def get_current_url(
         if not strip_querystring:
             qs = get_query_string(environ)
             if qs:
-                cat("?" + qs)
+                cat(f"?{qs}")
     return uri_to_iri("".join(tmp))
 
 
@@ -163,12 +163,12 @@ def get_host(environ, trusted_hosts=None):
             ("https", "443"),
             ("http", "80"),
         ):
-            rv += ":" + environ["SERVER_PORT"]
+            rv += f":{environ['SERVER_PORT']}"
     if trusted_hosts is not None:
         if not host_is_trusted(rv, trusted_hosts):
             from .exceptions import SecurityError
 
-            raise SecurityError('Host "%s" is not trusted' % rv)
+            raise SecurityError(f'Host "{rv}" is not trusted')
     return rv
 
 
@@ -319,7 +319,7 @@ def pop_path_info(environ, charset="utf-8", errors="replace"):
         rv = path.encode("latin1")
     else:
         segment, path = path.split("/", 1)
-        environ["PATH_INFO"] = "/" + path
+        environ["PATH_INFO"] = f"/{path}"
         environ["SCRIPT_NAME"] = script_name + segment
         rv = segment.encode("latin1")
 
@@ -412,7 +412,7 @@ def extract_path_info(
             netloc = parts[0]
             port = None
         if port is not None:
-            netloc += ":" + port
+            netloc += f":{port}"
         return netloc
 
     # make sure whatever we are working on is a IRI and parse it
@@ -445,7 +445,7 @@ def extract_path_info(
     if not cur_path.startswith(base_path):
         return None
 
-    return "/" + cur_path[len(base_path) :].lstrip("/")
+    return f"/{cur_path[len(base_path) :].lstrip('/')}"
 
 
 class ClosingIterator:
@@ -788,7 +788,7 @@ def make_chunk_iter(
     _iter = chain((first_item,), _iter)
     if isinstance(first_item, str):
         separator = _to_str(separator)
-        _split = re.compile(r"(%s)" % re.escape(separator)).split
+        _split = re.compile(f"({re.escape(separator)})").split
         _join = "".join
     else:
         separator = _to_bytes(separator)

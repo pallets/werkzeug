@@ -11,10 +11,10 @@ def copy_stream(request):
     from os import mkdir
     from time import time
 
-    folder = "request-%d" % time()
+    folder = f"request-{time()}"
     mkdir(folder)
     environ = request.environ
-    f = open(folder + "/request.http", "wb+")
+    f = open(f"{folder}/request.http", "wb+")
     f.write(environ["wsgi.input"].read(int(environ["CONTENT_LENGTH"])))
     f.flush()
     f.seek(0)
@@ -27,9 +27,9 @@ def stats(request):
     f1 = request.files["file1"]
     f2 = request.files["file2"]
     text = request.form["text"]
-    f1.save(request.stat_folder + "/file1.bin")
-    f2.save(request.stat_folder + "/file2.bin")
-    with open(request.stat_folder + "/text.txt", "w") as f:
+    f1.save(f"{request.stat_folder}/file1.bin")
+    f2.save(f"{request.stat_folder}/file2.bin")
+    with open(f"{request.stat_folder}/text.txt", "w") as f:
         f.write(text.encode("utf-8"))
     return Response("Done.")
 

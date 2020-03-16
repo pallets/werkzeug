@@ -65,7 +65,7 @@ class UserAgentParser:
         ("mozilla", "mozilla"),
     )
 
-    _browser_version_re = r"(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?"
+    _browser_version_re = r"(?:{pattern})[/\sa-z(]*(\d+[.\da-z]+)?"
     _language_re = re.compile(
         r"(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|"
         r"(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)"
@@ -74,7 +74,7 @@ class UserAgentParser:
     def __init__(self):
         self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platforms]
         self.browsers = [
-            (b, re.compile(self._browser_version_re % a, re.I))
+            (b, re.compile(self._browser_version_re.format(pattern=a), re.I))
             for a, b in self.browsers
         ]
 
@@ -198,4 +198,4 @@ class UserAgent:
     __bool__ = __nonzero__
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.browser!r}/{self.version}>"
+        return f"<{type(self).__name__} {self.browser!r}/{self.version}>"

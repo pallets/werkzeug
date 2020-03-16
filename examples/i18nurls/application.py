@@ -81,7 +81,7 @@ class Application:
                 lng = req.accept_languages.best
                 lng = lng.split("-")[0].lower() if lng else "en"
                 index_url = urls.build("index", {"lang_code": lng})
-                resp = Response("Moved to %s" % index_url, status=302)
+                resp = Response(f"Moved to {index_url}", status=302)
                 resp.headers["Location"] = index_url
             else:
                 req.language = args.pop("lang_code", None)

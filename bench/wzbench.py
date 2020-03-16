@@ -113,7 +113,7 @@ def format_func(func):
 
 def bench(func):
     """Times a single function."""
-    sys.stdout.write("%44s   " % format_func(func))
+    sys.stdout.write(f"{format_func(func):44}   ")
     sys.stdout.flush()
 
     # figure out how many times we have to run the function to
@@ -139,8 +139,8 @@ def bench(func):
         finally:
             gc.enable()
 
-    delta = median(_run() for x in range(TEST_RUNS))
-    sys.stdout.write("%.4f\n" % delta)
+    delta = median(_run() for _ in range(TEST_RUNS))
+    sys.stdout.write(f"{delta:.4f}\n")
     sys.stdout.flush()
 
     return delta
@@ -247,12 +247,9 @@ def compare(node1, node2):
         if abs(1 - d1[key] / d2[key]) < TOLERANCE or abs(delta) < MIN_RESOLUTION:
             delta = "=="
         else:
-            delta = "%+.4f (%+d%%)" % (delta, round(d2[key] / d1[key] * 100 - 100))
-        print(
-            "{:>36}   {:.4f}    {:.4f}    {}".format(
-                format_func(key), d1[key], d2[key], delta
-            )
-        )
+            pct = round(d2[key] / d1[key] * 100 - 100)
+            delta = f"{delta:+.4f} ({pct:+d}%)"
+        print(f"{format_func(key):>36}   {d1[key]:.4f}    {d2[key]:.4f}    {delta}")
     print("-" * 80)
 
 
@@ -264,18 +261,18 @@ def run(path, no_header=False):
         print("=" * 80)
         print("WERKZEUG INTERNAL BENCHMARK".center(80))
         print("-" * 80)
-    print("Path:    %s" % path)
-    print("Version: %s" % wz_version)
+    print(f"Path:    {path}")
+    print(f"Version: {wz_version}")
     if hg_tag is not None:
-        print("HG Tag:  %s" % hg_tag)
+        print(f"HG Tag:  {hg_tag}")
     print("-" * 80)
     for key, value in sorted(globals().items()):
         if key.startswith("time_"):
-            before = globals().get("before_" + key[5:])
+            before = globals().get(f"before_{key[5:]}")
             if before:
                 before()
             result[key] = bench(value)
-            after = globals().get("after_" + key[5:])
+            after = globals().get(f"after_{key[5:]}")
             if after:
                 after()
     print("-" * 80)
@@ -283,7 +280,7 @@ def run(path, no_header=False):
 
 
 URL_DECODED_DATA = {str(x): str(x) for x in range(100)}
-URL_ENCODED_DATA = "&".join("%s=%s" % x for x in URL_DECODED_DATA.items())
+URL_ENCODED_DATA = "&".join(f"{k}={v}" for k, v in URL_DECODED_DATA.items())
 MULTIPART_ENCODED_DATA = "\n".join(
     (
         "--foo",

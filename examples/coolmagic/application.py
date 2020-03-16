@@ -35,7 +35,7 @@ class CoolMagicApplication:
 
         for fn in listdir(path.join(path.dirname(__file__), "views")):
             if fn.endswith(".py") and fn != "__init__.py":
-                __import__("coolmagic.views." + fn[:-3])
+                __import__(f"coolmagic.views.{fn[:-3]}")
 
         from coolmagic.utils import exported_views
 
