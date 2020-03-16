@@ -19,7 +19,6 @@ from html.entities import name2codepoint
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
-from ._internal import _reraise
 
 _format_re = re.compile(r"\$(?:([a-zA-Z_][a-zA-Z0-9_]*)|\{([a-zA-Z_][a-zA-Z0-9_]*)\})")
 _entity_re = re.compile(r"&([^;]+);")
@@ -560,9 +559,7 @@ def import_string(import_name, silent=False):
 
     except ImportError as e:
         if not silent:
-            _reraise(
-                ImportStringError, ImportStringError(import_name, e), sys.exc_info()[2]
-            )
+            raise ImportStringError(import_name, e).with_traceback(sys.exc_info()[2])
 
 
 def find_modules(import_path, include_packages=False, recursive=False):

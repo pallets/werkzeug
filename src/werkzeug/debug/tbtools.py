@@ -17,7 +17,6 @@ import sysconfig
 import traceback
 from tokenize import TokenError
 
-from .._internal import _reraise
 from .._internal import _to_native
 from .._internal import _to_str
 from ..filesystem import get_filesystem_encoding
@@ -187,7 +186,7 @@ def get_current_traceback(
     """
     exc_type, exc_value, tb = sys.exc_info()
     if ignore_system_exceptions and exc_type in system_exceptions:
-        _reraise(exc_type, exc_value, tb)
+        raise
     for _ in range(skip):
         if tb.tb_next is None:
             break

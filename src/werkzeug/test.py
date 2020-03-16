@@ -20,7 +20,6 @@ from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
 from ._internal import _make_literal_wrapper
-from ._internal import _reraise
 from ._internal import _to_bytes
 from ._internal import _wsgi_encoding_dance
 from .datastructures import CallbackDict
@@ -1079,8 +1078,11 @@ def run_wsgi_app(app, environ, buffered=False):
     buffer = []
 
     def start_response(status, headers, exc_info=None):
-        if exc_info is not None:
-            _reraise(*exc_info)
+        if exc_info:
+            try:
+                raise exc_info[1].with_traceback(exc_info[2])
+            finally:
+                exc_info = None
         response[:] = [status, headers]
         return buffer.append
 

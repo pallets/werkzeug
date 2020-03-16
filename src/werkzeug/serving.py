@@ -43,7 +43,6 @@ from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 
 from ._internal import _log
-from ._internal import _reraise
 from ._internal import _wsgi_encoding_dance
 from .exceptions import InternalServerError
 from .urls import uri_to_iri
@@ -275,7 +274,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             if exc_info:
                 try:
                     if headers_sent:
-                        _reraise(*exc_info)
+                        raise exc_info[1].with_traceback(exc_info[2])
                 finally:
                     exc_info = None
             elif headers_set:

@@ -106,12 +106,6 @@ def _to_str(
     return x.decode(charset, errors)
 
 
-def _reraise(tp, value, tb=None):
-    if value.__traceback__ is not tb:
-        raise value.with_traceback(tb)
-    raise value
-
-
 def _wsgi_decoding_dance(s, charset="utf-8", errors="replace"):
     return s.encode("latin1").decode(charset, errors)
 
