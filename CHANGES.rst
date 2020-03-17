@@ -12,6 +12,8 @@ Unreleased
     ``EnvironBuilder``, multiple values for a key are joined into one
     comma separated value. This matches the HTTP spec on multi-value
     headers. :issue:`1655`
+-   Setting ``Response.status`` and ``status_code`` uses identical
+    parsing and error checking. :issue:`1658`, :pr:`1728`
 
 
 Version 1.0.1

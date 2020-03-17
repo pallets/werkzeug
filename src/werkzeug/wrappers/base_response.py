@@ -296,13 +296,10 @@ class BaseResponse:
 
     @status.setter
     def status(self, value):
-        self._check_status_is_valid(value)
-        self._status, self._status_code = self._clean_status(value)
-
-    @staticmethod
-    def _check_status_is_valid(value):
         if not isinstance(value, (str, bytes, int)):
             raise TypeError("Invalid status argument")
+
+        self._status, self._status_code = self._clean_status(value)
 
     def _clean_status(self, value):
         status = _to_str(value, self.charset)
@@ -313,31 +310,25 @@ class BaseResponse:
 
         if len(split_status) > 1:
             if split_status[0].isdigit():
-                return self._clean_custom_status(status, split_status)
+                # code and message
+                return status, int(split_status[0])
 
-            return self._clean_status_with_no_code_provided(status)
+            # multi-word message
+            return f"0 {status}", 0
 
         if split_status[0].isdigit():
-            return self._clean_status_with_only_code_provided(split_status)
+            # code only
+            status_code = int(split_status[0])
 
-        return self._clean_status_with_no_code_provided(status)
+            try:
+                status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
+            except KeyError:
+                status = f"{status_code} UNKNOWN"
 
-    @staticmethod
-    def _clean_custom_status(status, split_status):
-        return status, int(split_status[0])
+            return status, status_code
 
-    @staticmethod
-    def _clean_status_with_no_code_provided(status):
+        # one-word message
         return f"0 {status}", 0
-
-    @staticmethod
-    def _clean_status_with_only_code_provided(split_status):
-        status_code = int(split_status[0])
-        try:
-            status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
-        except KeyError:
-            status = f"{status_code} UNKNOWN"
-        return status, status_code
 
     def get_data(self, as_text=False):
         """The string representation of the request body.  Whenever you call
