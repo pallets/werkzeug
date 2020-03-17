@@ -193,10 +193,7 @@ class BaseResponse:
             self.headers["Content-Type"] = content_type
         if status is None:
             status = self.default_status
-        if isinstance(status, int):
-            self.status_code = status
-        else:
-            self.status = status
+        self.status = status
 
         self.direct_passthrough = direct_passthrough
         self._on_close = []
@@ -290,11 +287,7 @@ class BaseResponse:
 
     @status_code.setter
     def status_code(self, code):
-        self._status_code = code
-        try:
-            self._status = f"{code} {HTTP_STATUS_CODES[code].upper()}"
-        except KeyError:
-            self._status = f"{code} UNKNOWN"
+        self.status = code
 
     @property
     def status(self):
@@ -303,18 +296,39 @@ class BaseResponse:
 
     @status.setter
     def status(self, value):
-        if not isinstance(value, (str, bytes)):
+        if not isinstance(value, (str, bytes, int)):
             raise TypeError("Invalid status argument")
 
-        self._status = _to_str(value)
+        self._status, self._status_code = self._clean_status(value)
 
-        try:
-            self._status_code = int(self._status.split(None, 1)[0])
-        except ValueError:
-            self._status_code = 0
-            self._status = f"0 {self._status}"
-        except IndexError:
+    def _clean_status(self, value):
+        status = _to_str(value, self.charset)
+        split_status = status.split(None, 1)
+
+        if len(split_status) == 0:
             raise ValueError("Empty status argument")
+
+        if len(split_status) > 1:
+            if split_status[0].isdigit():
+                # code and message
+                return status, int(split_status[0])
+
+            # multi-word message
+            return f"0 {status}", 0
+
+        if split_status[0].isdigit():
+            # code only
+            status_code = int(split_status[0])
+
+            try:
+                status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
+            except KeyError:
+                status = f"{status_code} UNKNOWN"
+
+            return status, status_code
+
+        # one-word message
+        return f"0 {status}", 0
 
     def get_data(self, as_text=False):
         """The string representation of the request body.  Whenever you call

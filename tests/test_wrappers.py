@@ -355,27 +355,56 @@ def test_base_response():
     assert len(closed) == 1
 
 
-def test_response_status_codes():
+@pytest.mark.parametrize(
+    ("status_code", "expected_status"),
+    [
+        (200, "200 OK"),
+        (404, "404 NOT FOUND"),
+        (588, "588 UNKNOWN"),
+        (999, "999 UNKNOWN"),
+    ],
+)
+def test_response_set_status_code(status_code, expected_status):
     response = wrappers.BaseResponse()
-    response.status_code = 404
-    assert response.status == "404 NOT FOUND"
-    response.status = "200 OK"
-    assert response.status_code == 200
-    response.status = "999 WTF"
-    assert response.status_code == 999
-    response.status_code = 588
-    assert response.status_code == 588
-    assert response.status == "588 UNKNOWN"
-    response.status = "wtf"
-    assert response.status_code == 0
-    assert response.status == "0 wtf"
+    response.status_code = status_code
+    assert response.status_code == status_code
+    assert response.status == expected_status
 
+
+@pytest.mark.parametrize(
+    ("status", "expected_status_code", "expected_status"),
+    [
+        ("404", 404, "404 NOT FOUND"),
+        ("588", 588, "588 UNKNOWN"),
+        ("999", 999, "999 UNKNOWN"),
+        ("200 OK", 200, "200 OK"),
+        ("999 WTF", 999, "999 WTF"),
+        ("wtf", 0, "0 wtf"),
+        ("200 TEA POT", 200, "200 TEA POT"),
+        (200, 200, "200 OK"),
+        (400, 400, "400 BAD REQUEST"),
+    ],
+)
+def test_response_set_status(status, expected_status_code, expected_status):
+    response = wrappers.BaseResponse()
+    response.status = status
+    assert response.status_code == expected_status_code
+    assert response.status == expected_status
+
+    response = wrappers.Response(status=status)
+    assert response.status_code == expected_status_code
+    assert response.status == expected_status
+
+
+def test_response_init_status_empty_string():
     # invalid status codes
     with pytest.raises(ValueError) as info:
         wrappers.BaseResponse(None, "")
 
     assert "Empty status argument" in str(info.value)
 
+
+def test_response_init_status_tuple():
     with pytest.raises(TypeError) as info:
         wrappers.BaseResponse(None, tuple())
 
